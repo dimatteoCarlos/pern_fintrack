@@ -1,0 +1,41 @@
+{
+  "name": "fintrack",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/react-datepicker": "7.0.0",
+    "axios": "^1.8.4",
+    "date-fns": "3.6.0",
+    "react": "18.3.1",
+    "react-datepicker": "7.3.0",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.25.1",
+    "react-select": "5.8.0",
+    "zustand": "5.0.3"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@typescript-eslint/eslint-plugin": "7.15.0",
+    "@typescript-eslint/parser": "7.15.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "8.57.0",
+    "eslint-plugin-react-hooks": "4.6.2",
+    "eslint-plugin-react-refresh": "0.4.7",
+    "typescript": "5.2.2",
+    "vite": "^5.4.16",
+    "vite-plugin-svgr": "4.2.0"
+  },
+  "description": "**FinTrack** is an application designed to provide a comprehensive and personalized solution for tracking and managing your personal finances. Its main purpose is to offer users effective tools to monitor their expenses, income, investments, debts, income sources, and account balances, as well as facilitate the tracking of savings goals and long-term investment projections. 🎯📊💡",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,39 @@
+.trackerStateButton__container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: fit-content;
+  /* background-color: green; */
+}
+
+.trackerStateIconButton {
+  border-radius: 0.75rem;
+  height: 3.5rem;
+  width: 3.5rem;
+
+  background-color: var(--dark);
+  cursor: pointer;
+
+  padding: 2.5px;
+}
+
+.trackerStateIconButton.active,
+.trackerStateIconButton:focus,
+.trackerStateIconButton:active {
+  border: 2px solid var(--creme);
+  border-color: var(--creme);
+  padding: 0;
+  border-radius: 0.75rem;
+}
+
+.trackerStateIconButton:not(.active, :active):hover {
+  border: 2px solid cyan;
+}
+
+.trackerStateButton__state--title {
+  font-size: 0.625rem;
+  color: #f7f7f7;
+  text-transform: capitalize;
+  text-align: center;
+  margin-top: 0.25em;
+}

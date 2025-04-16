@@ -1,0 +1,259 @@
+/*global styles*/
+
+/*min screen height visible 720px . min height breakdown: 768 px
+layout style is stablished by the followind elements: --topSpaceHeight height:2.75rem, .home__header top height: 11rem, .mainNavbar__container bottom 0%, .total__container tracker top:20%, .cards__presentation--tracker top 34% --*/
+
+:root {
+  /*figma*/
+  --figmaWidth: 22.5rem;
+  --topSpaceHeight: 2.75rem;
+  --dark: #141414;
+  --light: white;
+  --creme: #e8e4da;
+  --textColor: #141414;
+
+  --primary: #5b8c93; /*status square*/
+  --squareAlert: #c97474; /*status square alert*/
+  --error: #fc0c0c;
+  --warn: orange;
+
+  --lightSuccess: lightgreen;
+  --success: green;
+  --hoverColor: cyan;
+  --secondary: #7f7f7f;
+  --bgBodyColor: #1b1b1b;
+}
+
+body {
+  color: var(--dark);
+  background-color: var(--bgBodyColor);
+}
+
+[class*='icon'] {
+  cursor: pointer;
+}
+
+.iconContainer {
+  padding: 0;
+  margin: 0;
+}
+
+.flx-col-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+.flex-col-sb {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.flx-row-jc {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flx-row-sb {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
+}
+
+.flx-row-end {
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  padding: 0;
+}
+.flx-row-start {
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  padding: 0;
+}
+
+.iconArrowLeftDark,
+.iconArrowLeftLight {
+  display: flex;
+  /* padding: 0.5rem 0.75rem; */
+  /* border-radius: 0.5rem; */
+  position: absolute;
+  left: 0rem;
+  cursor: pointer;
+  z-index: 1;
+  /* border: 1px solid var(--dark); */
+}
+
+.iconArrowLeftDark:hover,
+.iconArrowLeftDark:active,
+.iconArrowLeftDark:focus {
+  /* background-color: rgba(232, 228, 218, 0.5); */
+  background-color: transparent;
+}
+
+.iconArrowLeftLight:hover {
+  background-color: rgba(41, 41, 41, 1);
+}
+
+.pt-2 {
+  padding-top: 2rem;
+}
+
+/*------Layout-------*/
+.home__layout {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  min-width: var(--figmaWidth);
+  max-width: 40rem;
+
+  padding-bottom: 1rem;
+  overflow-x: auto;
+
+  /* border: 5px solid cyan; */
+}
+
+.home__layout {
+  position: relative;
+  height: 100dvh;
+  min-height: 48rem;
+  /* max-height: 50rem; */ /*DEFINE A BREAKDOWN FOR SCREEN BEYOND 50 REM HEIGHT */
+}
+
+.home__header {
+  width: 100%;
+  min-height: 12.5rem; /*figma*/
+  height: 12.5rem; /*figma*/
+  /*test*/ /*try calc or clap and put height, Top and Bottom as a function of topSpaceHeight and head layout height*/
+  /* min-height: 11rem; */
+  /* height: 11rem; */
+  /*---*/
+  background-color: var(--light);
+  flex-direction: column;
+  align-items: center;
+
+  justify-content: start;
+
+  /* border: 5px solid cyan; */
+}
+
+.content__presentation {
+  display: flex;
+  flex-direction: column;
+  padding: 5rem 0 1.5rem 0; /*original*/
+  padding: 4rem 0 1.5rem 0; /*tentative*/
+  align-items: center;
+  justify-content: space-between;
+  /* border: 10px solid yellow; */
+}
+
+.cards__presentation {
+  width: 88%;
+  margin: 0 auto;
+  border-radius: 1rem;
+  padding: 1rem 0;
+  /* border: 5px solid purple; */
+}
+
+/*general styles*/
+.layout__header {
+  width: 100%;
+  position: absolute;
+  top: var(--topSpaceHeight);
+  left: 0;
+  background-color: var(--light);
+  z-index: 1;
+  /* background-color: orange; */
+}
+
+.headerContent__container {
+  display: flex;
+  flex-direction: column;
+  width: 80%; /*original*/
+  width: 88%; /*changed*/
+  margin: 0 auto;
+  justify-content: center;
+  align-items: center;
+  /* border: 1px solid yellowgreen; */
+}
+
+/*StatusSquare*/
+.status__square {
+  /* height: 0.5rem;
+  width: 0.5rem; */
+  height: 0.75rem;
+  width: 0.75rem;
+  background-color: var(--primary, #5b8c93);
+
+  border: none;
+  border-radius: 0.125rem;
+}
+
+.status__square.alert {
+  background-color: var(--squareAlert, #c97474);
+}
+
+/*input css rules */
+textarea::placeholder,
+textarea.input__note__description::placeholder,
+input::placeholder
+/* input.inputNumber::placeholder */ {
+  color: var(--secondary, gray);
+  background: transparent;
+  outline: none;
+  font-weight: lighter;
+  font-size: 1rem;
+}
+
+/*Hide Input Number Arrows*/
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+/*Firefox*/
+input[type='number'] {
+  -moz-appearance: none;
+  appearance: none;
+}
+/******************/
+
+.validation__errMsg {
+  color: var(--error);
+  font-size: 0.7rem;
+  font-style: italic;
+  font-weight: normal;
+}
+
+.hover:hover {
+  color: var(--hoverColor, cyan);
+  cursor: pointer;
+}
+
+@media screen and (min-height: 50rem) {
+  .home__layout {
+    max-height: 55rem;
+  }
+}
+
+@media screen and (max-height: 48rem) {
+  :root {
+    --topSpaceHeight: 0rem;
+  }
+  .mainNavbar__container {
+    bottom: calc(4.5% - var(--topSpaceHeight));
+  }
+}

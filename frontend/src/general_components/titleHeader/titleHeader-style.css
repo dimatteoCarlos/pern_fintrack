@@ -1,0 +1,23 @@
+
+.title__header__container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  color: var(--dark);
+  padding:2.25rem 0 1.7rem 0;
+  position: relative;
+
+  /* background-color: green; */
+}
+.title__header {
+  text-transform: capitalize;
+  font-size: 1.25rem;
+  font-weight: 600;
+  background-color: transparent;
+  position: absolute;
+  top: auto;
+  left: 0;
+  width: 100%;
+  text-align: center;
+}

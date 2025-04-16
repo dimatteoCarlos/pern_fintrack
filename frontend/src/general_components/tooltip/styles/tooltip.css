@@ -1,0 +1,32 @@
+/*tootip.css*/
+.tooltip__wrapper {
+  position: relative;
+  display: inline-block;
+  /* padding:0.5rem; */
+}
+
+.tooltip__wrapper--text {
+  font-size: 0.775rem;
+  font-weight: bold;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+
+  padding: 0.25rem;
+
+  background-color: var(--creme, beige);
+  color: var(--dark, black);
+  border-radius: 0.25rem;
+  white-space: nowrap;
+
+  visibility: visible;
+  opacity: 0;
+
+  z-index: 10;
+}
+
+.tooltip__wrapper:hover .tooltip__wrapper--text {
+  border: 1px solid var(--dark);
+  opacity: 1;
+}

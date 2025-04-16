@@ -1,0 +1,281 @@
+//I used https://jvilk.com/MakeTypes/ to define the types
+
+//API RESPONSE TYPE DEFINITIONS
+import { CurrencyType } from './types';
+
+//ACCOUNT BALANCE BY TYPE
+
+export type BalanceBankRespType = {
+  status: number;
+  message: string;
+  data: {
+    total_balance: number | null;
+  };
+};
+
+export type BalancePocketRespType = {
+  status: number;
+  message: string;
+  data: {
+    total_balance: number | null;
+    total_target: number | null;
+  };
+};
+export type BalanceCategoryRespType = {
+  status: number;
+  message: string;
+  data: {
+    total_balance: number | null;
+    total_budget: number | null;
+  };
+};
+
+export type DebtorRespType = {
+  status: number;
+  message: string;
+  data: {
+    total_debt_balance: number | null;
+    debt_receivable: number | null;
+    debt_payable: number | null;
+    debtors: number | null;
+    creditors: number | null;
+    debtors_without_debt: number | null;
+  }[];
+};
+
+//CREATE BASIC ACCOUNT RESPONSE TYPE FROM API
+
+// Complete API response structure
+export interface CreateBasicAccountApiResponseType {
+  status: number;
+  data: ResponseDataType;
+  message: string;
+}
+
+// Main response data structure
+interface ResponseDataType {
+  user_id: string;
+  account_basic_data: AccountBasicDataType;
+  new_account_data: NewAccountDataType;
+  counter_account_data: CounterAccountDataType;
+}
+
+// Base transaction data interface (reused in multiple places)
+export interface TransactionDataType {
+  description: string;
+  transaction_type_id: number;
+  amount: number;
+  currency_id: number;
+  account_id: number;
+  source_account_id?: number;
+  destination_account_id?: number;
+  movement_type_id: number;
+  status: string;
+  transaction_actual_date: string;
+}
+
+// Extended transaction info (includes additional fields)
+interface TransactionInfoType extends TransactionDataType {
+  transaction_id: number;
+  created_at: string;
+  amount: number;
+  // Note: amount is string here (different from TransactionData)
+}
+
+// Account basic data structure
+export interface AccountBasicDataType {
+  account_id: number;
+  account_name: string;
+  account_type_id: number;
+  account_type_name: string;
+  currency_id?: number;
+  currency_code: CurrencyType;
+  account_balance: number;
+  account_starting_amount?: number;
+  account_start_date?: string | Date;
+  created_at?: Date;
+  updated_at?: Date;
+}
+
+// New account data structure
+interface NewAccountDataType {
+  account_name: string;
+  transaction_data: TransactionDataType;
+  transaction_info: TransactionInfoType;
+  transaction_type_name: string;
+}
+
+// Counter account data structure
+interface CounterAccountDataType {
+  transaction_data: TransactionDataType & {
+    userId: string;
+  };
+  transaction_info: TransactionInfoType;
+  transaction_type_name: string;
+  balance: number;
+  account_type_name: string;
+}
+
+//CREATE CATEGORY BUDGET ACCOUNT
+
+export type CreateCategoryBudgetAccountApiResponseType = {
+  status: number;
+  data: CategoryBudgetResponseDataType;
+  message: string;
+};
+
+interface CategoryBudgetResponseDataType extends ResponseDataType {
+  new_category_budget_account: CategoryBudgetAccountType;
+}
+
+type CategoryBudgetAccountType = {
+  account_id: number;
+  category_name: string;
+  category_nature_type_id: number;
+  subcategory?: string | null;
+  budget: number | string;
+  amount?: number;
+  account_start_date: Date | string;
+  nature_type_name: string;
+  currency_code: CurrencyType;
+};
+
+//CREATE DEBTOR ACCOUNT
+
+export type CreateDebtorAccountApiResponseType = {
+  status: number;
+  data: DebtorResponseDataType;
+  message: string;
+};
+
+interface DebtorResponseDataType extends ResponseDataType {
+  new_debtor_account: DebtorAccountType;
+}
+
+type DebtorAccountType = {
+  account_id: number;
+  value: number; // Formato monetario -120.00
+  debtor_name: string;
+  debtor_lastname: string;
+  selected_account_name: string;
+  selected_account_id: number | null;
+  account_start_date: Date | string; // ISO 8601 format
+  currency_code: CurrencyType;
+  account_type_name: 'debtor';
+};
+
+//CREATE POCKET ACCOUNT
+// PENDIENTE
+// new_pocket_saving_account: {
+// 			account_id: 199,
+// 			target: 0.00,
+// 			desired_date: 2025-12-31T04:00:00.000Z,
+// 			account_start_date: 2025-03-21T20:02:24.191Z,
+// 			currency_code: usd,
+// 			account_type_name: pocket_saving
+// 		},
+
+//GET ACCOUNT BY TYPE. RESPONSE TYPE
+//bank type
+export type AccountByTypeResponseType = {
+  status: number;
+  message: string;
+  data: {
+    rows: number;
+    accountList: AccountListType[];
+  };
+};
+
+export type AccountListType = Omit<
+  AccountBasicDataType,
+  'currency_id' | 'created_at' | 'updated_at'
+>;
+
+//category_budget type
+export type CategoryBudgetAccountsResponseType = {
+  status: number;
+  message: string;
+  data: {
+    rows: number;
+    accountList: CategoryBudgetAccountListType[];
+  };
+};
+
+ type CategoryBudgetAccountListType = Omit<
+  AccountBasicDataType,
+  'currency_id' | 'created_at' | 'updated_at'
+> & {
+  budget: number;
+  subcategory?: string;
+  category_nature_type_name: string;
+  account_starting_amount: number;
+  account_start_date: Date | string;
+};
+
+//MOVEMENT TRANSFER BETWEEN ACCOUNTS
+export type MovementTransactionResponseType = {
+  status: number;
+  message: string;
+  data: DataTransactionType;
+};
+type DataTransactionType = {
+  movement: MovementType;
+  source: SourceOrDestinationType;
+  destination: SourceOrDestinationType;
+};
+
+type MovementType = {
+  movement_type_name: string;
+  movement_type_id: number;
+};
+type SourceOrDestinationType = {
+  account_info: AccountInfo;
+  balance_updated: BalanceUpdatedType;
+  transaction_info: RecordTransactionInfoType;
+};
+type AccountInfo = {
+  account_name: string;
+  account_type: string;
+  amount: number;
+  currency: CurrencyType;
+};
+
+type BalanceUpdatedType = {
+  amount_transaction: number;
+  new_balance: number;
+};
+
+type RecordTransactionInfoType = {
+  transaction_type: string;
+  transaction_description: string;
+  transaction_date: string | Date;
+};
+
+//MONTHLY TOTAL AMOUNT BY MOVEMENT TYPE AND CURRENCY
+
+export type FinancialDataRespType = {
+  status: number;
+  message: string;
+  data: FinancialDataType;
+};
+export interface FinancialDataType {
+  meta: MetaDataType;
+  data?: MonthlyDataType[] | null;
+}
+export interface MetaDataType {
+  dateRange: DateRange;
+}
+export interface DateRange {
+  start: string;
+  end: string;
+}
+export interface MonthlyDataType {
+  month_index: number;
+  month_name: string;
+  movement_type_id: number;
+  transaction_type_id: number;
+  name: string;
+  amount: number;
+  currency_code: CurrencyType;
+  type: 'expense' | 'income' | 'saving' | 'other';
+}

@@ -1,0 +1,25 @@
+
+/* formSubmitBtn.css */
+/*------save btn-----------*/
+.btn__container {
+  padding: 0.5rem 0 0.5rem 0;
+  display: flex;
+  justify-content: center;
+  /* border: 1px solid green; */
+}
+
+.submit__btn {
+  height: 3.125rem;
+  width: 100%;
+  color: var(--dark);
+  background-color: var(--creme);
+  border-radius: 0.75em;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-size: 1rem;
+  text-transform:capitalize;
+  font-weight: bold;
+  height: 2.125rem;
+}
+/*--------------*/

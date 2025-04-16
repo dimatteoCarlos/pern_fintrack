@@ -1,0 +1,209 @@
+/*Functional Pages*/
+/*----Budget----------*/
+
+.budgetLayout {
+  border: none;
+}
+
+/*BigBoxResult*/
+
+/*it includes the tracker navbar styles*/
+.budgetLayout .total__container {
+  display: flex;
+  flex-direction: column;
+
+  gap: 1rem;
+  top: 7.5rem;
+  width: 81.11%; /*ORIGINAL*/
+  width: 88%; /*CHANGED*/
+  padding: 0.75rem;
+  /* border:1px solid red; */
+}
+
+/*afecta solo a budget*/
+.budgetLayout .total__container .total__amount {
+  font-size: 2rem;
+  display: flex;
+  color: var(--light);
+  letter-spacing: 1px;
+}
+
+/*conflicto con displayScreen*/
+
+.budgetLayout .displayScreen.light {
+  border-radius: 0.75rem;
+  width: 85%;
+  background-color: var(--creme);
+  padding: 0.5em 0.75em;
+  border: none;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* hay conflicto con .displayScreen--concept/result*/
+.budgetLayout .displayScreen--concept,
+.displayScreen--result.dark {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-align: left;
+  color: var(--dark);
+}
+
+.displayScreen--result.dark {
+  color: var(--dark);
+  font-weight: 700;
+}
+
+/*Budget*/
+/*Category List*/
+.list__main__container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  /* border:1px solid blue; */
+}
+
+.card__budget--title {
+  color: var(--light);
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding: 1rem 0 1rem;
+}
+
+.box__container,
+.box__row {
+  /* width: 100%; */
+  border: none;
+}
+
+.box__container {
+  border-bottom: 1px solid var(--light);
+  padding: 0.125rem 0 0.125rem 0;
+  /* border:1px solid yellow; */
+}
+
+.box__title,
+.box__title--category__name,
+.box__title--spent {
+  color: var(--light);
+  /* font-size: 0.875rem; */
+  font-size: 1rem;
+  line-height: 1.625rem;
+  white-space: 10px;
+
+  text-transform: capitalize;
+}
+
+.box__title--category__name {
+  cursor: pointer;
+}
+.box__title--category__name:hover {
+  color: cyan f;
+}
+
+.box__title--spent {
+  letter-spacing: 1.25px;
+}
+
+.box__subtitle,
+.box__subtitle--status,
+.box__subtitle--budget {
+  /* font-size: 0.625rem; */
+  font-size: 0.875rem;
+  color: #5b5b5b;
+  color: var(--creme);
+  letter-spacing: 0.5px;
+  font-weight: 400;
+  text-transform: capitalize;
+}
+
+/* Open Add Edit Button */
+
+.line__container {
+  border-radius: 0.75rem;
+  border: 2px solid var(--light);
+  cursor: pointer;
+
+  /* border:1px solid blue; */
+}
+
+button.line__container {
+  padding: 0.5rem 0 0.5rem 0;
+  margin-top: 1.75rem;
+}
+
+.add__edit__btn {
+  height: 3.125rem;
+  width: 100%;
+  background-color: transparent;
+}
+
+.open__btn__label {
+  font-size: 0.875rem;
+  color: var(--light);
+  letter-spacing: 0.5px;
+}
+
+/*Card Tile Pocket*/
+.card__tile__pocket {
+  padding: 2.25rem 0.75rem;
+  height: 6.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card__tile__pocket {
+  background-color: #1b1b1b;
+}
+.card__tile__pocket:hover {
+  border-color: cyan;
+}
+
+.card__tile__pocket .tile__left {
+  width: 60%;
+  flex-direction: column;
+  gap: 0.25rem;
+  display: flex;
+}
+
+.card__tile__pocket .tile__right {
+  width: 40%;
+  height: 3.75rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  border-left: 3px dashed var(--light);
+}
+
+/*copy it also for overview*/
+.budgetLayout .tile__title {
+  color: var(--light);
+  font-size: 0.875rem;
+  font-weight: 400;
+  text-transform: capitalize;
+  /* color: red; */
+}
+
+.budgetLayout .tile__subtitle {
+  color: #5b5b5b; /*this color is figma, but I can't see it*/
+  color: #bdb1b1;
+  /* color: var(--creme); */
+  font-size: 0.625rem;
+  letter-spacing: 1px;
+  font-weight: 400;
+
+  text-transform: capitalize;
+}
+
+.budgetLayout .tile__subtitle--opc {
+  opacity: 0.9 !important;
+}
+.budgetLayout .tile__right .tile__title {
+  font-weight: 500;
+}

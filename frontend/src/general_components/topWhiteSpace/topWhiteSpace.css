@@ -1,0 +1,7 @@
+
+
+.top--whiteSpace {
+  width: 100%;
+  height: var(--topSpaceHeight);
+  border-bottom: 0.5px solid var(--dark);
+}
