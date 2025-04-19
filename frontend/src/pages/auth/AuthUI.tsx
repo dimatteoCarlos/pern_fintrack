@@ -148,6 +148,7 @@ function AuthUI({
             type='text'
             id='email'
             name='email'
+            placeholder='email'
             className={styles['auth-form__input']}
             value={credentials.email}
             onChange={(e) => inputCredentialsHandler(e)}
@@ -163,6 +164,7 @@ function AuthUI({
             type='password'
             id='password'
             name='password'
+            placeholder='password'
             className={styles['auth-form__input']}
             value={credentials.password || ''}
             onChange={(e) => inputCredentialsHandler(e)}
@@ -181,6 +183,7 @@ function AuthUI({
                 type='text'
                 id='firstName'
                 name='user_firstname'
+                placeholder='user_firstname'
                 className={styles['auth-form__input']}
                 value={credentials.user_firstname}
                 onChange={(e) => inputCredentialsHandler(e)}
@@ -196,6 +199,7 @@ function AuthUI({
                 type='text'
                 id='lastName'
                 name='user_lastname'
+                placeholder='user_lastname'
                 className={styles['auth-form__input']}
                 value={credentials.user_lastname}
                 onChange={(e) => inputCredentialsHandler(e)}
