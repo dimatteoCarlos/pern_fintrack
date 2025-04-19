@@ -1,3 +1,51 @@
+empezar creando el usuario.
+comenzar con crear cuentas de bank, expense, pocket_saving, investment, income_source
+tracker de expense
+Hacer seguimiento del comportamiento del currency, en las tablas.
+Fijar el currency en usd.
+Hasta definir que es lo que se quiere hacer con la seleccion del currency a cop?
+Una plataforma que haga seguimiento a multiples monedas, me parece engorroso, por lo menos al principio, y hay varias maneras de manejarlo:
+1.- seleccion solo una moneda por defecto para todo.
+2.- si los tracker seleccionan una moneda distinta al usd, entonces se registra y ya, pero el monto debe estar en la moneda por defecto o usd. se registraria el monto y el currency origen, pero se guarda usd.
+3.- Se puede incorporar una libreria que haga conversiones actualizadas de la moneda seleccionada a la moneda usd por defecto, para guardar todos los datos y calculos, etc.
+6.- llevar el seguimiento de datos multimonedas, y esto seria, que todos las transacciones se pudieran llevar en multimonedas, y los reportes en multimonedas, lo que quiere decir que seria una capa o subdivision, sobre todos los procesos, para reflejar las monedas que concuerden, asi como llevar historicos de tasas de cambio, etc.
+esto lo veo que es una complicacion innecesaria.
+
+# verificar los currency en todas las tablas incluyendo las tablas especificas.
+
+pendiente el calculo de los promedio9s de income y de expenses
+separar en el componente de goal savings lo corresponidnete a promedios mnesuales de income y expense.
+
+determinar los estados globales, cuales serian globales y cuales loclaes en los componentes.
+
+una vez probado el tracker de expense, seguir con los otros trackers...
+
+y luego armar las paginas de detalles: account detail, debtor detail, pocket detail, etc.
+
+incorporar las funciones de agreagar dinero a una cuenta, modificar el balance para incoporar ganancias, de pronto se pudiera crear una cuenta de ganacias por inversion, realizar transferencias entre cuentas bancarias, debtors y pocket saving, no lo se todavia.
+como se maneja las ediciones, es decir si se quiere editar un balance de cuenta, como se debe registrar la transaccion, > edicion, balance viejo monto, nuevo monto?. y luego el balance se cambia en el user_accounts,
+que se puede editar: la incormacion de lasl cuentas bank,, no lo se.
+
+si se quivoca en la trasaccion, entonces se deberia poder editar la transaccion, pero eso involucra deshacer todas las operaciones involucradas, dependiendo del tipo de operacion, por ejemplo:
+borrar cuentas, se borrarian todas las transacciones asociadas, modificar balance de una cuenta, involucra modificar las transacciones o registrar una transaccion de modificacion, pero igual no tiene sentido, porque lo que interesa es que todos los balances cuadren.
+
+como llevar el retorno de las cuentas, se deberia entonces poder reiniciar el balances de cuentas de banco y de investment, pero entonces como llevarias el calculos de lo que se ha ganado o perdido, por cuenta, porque se debe comparar siempre con el monto incial de la lcuenta en un periodo determnado.
+
+a meno que la edicion de los balances se cuente como una operacion mas, desde una cuenta ficticia?
+
+const user = import.meta.env.VITE_USER_ID;
+
+adaptar en el backend al uso de multimoneda.
+
+/dashboard/multicurrency/balance/summary/
+router.use('/dashboard/multicurrency', dashboardMulticurrencyRoutes)
+multicurrency.routes
+dashboardMulticurrencyRoutes.js
+//GET SUMMARY OF CATEGORIES, POCKETS, AND DEBTORS
+router.get('/balance/summary/', dashboardMulticurrencydAccountSummaryList);
+
+AGREGAR CURRENCY A LAS TABLAS ESPECIFICAS, PARA BUDGET Y PARA TARGET CATEGORIES Y POCKET_SAVINGS
+
 last movements
 desde el backend< MOVEMENT NAME>
 expenseMovementsResponseType
@@ -118,7 +166,6 @@ usar get accounts by type, para mostrar cuentas de de pocket
 
 el total balacne of each type account deberia contemplar multimonedas, y presentar po tipo de moneda
 
-PARA EL ESADO GLOBAL 
-debtor> dashboard total account balance, 
+PARA EL ESADO GLOBAL
+debtor> dashboard total account balance,
 modificar para multinmoneda
-

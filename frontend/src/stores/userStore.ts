@@ -4,8 +4,8 @@ import { USER_ID } from '../endpoints';
 export type UserDataType = {
   userId: string | null;
   username: string;
-  name: string;
-  lastname: string;
+  user_firstname: string;
+  user_lastname: string;
   email: string;
 };
 

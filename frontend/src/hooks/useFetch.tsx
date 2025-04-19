@@ -5,12 +5,15 @@ export type FetchResponse<R> = {
   data: R | null;
   isLoading: boolean;
   error: Error | string | null;
+  message:string | null
 };
 
 export function useFetch<R>(url: string): FetchResponse<R> {
   const [data, setData] = useState<R | null>(null); //respuesta - response
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null | string>(null);
+  const [message, setMessage] = useState<string | null>(null); // <-- NUEVO
+
   useEffect(() => {
     const fetchData = async (url: string) => {
       setIsLoading(true);
@@ -22,9 +25,10 @@ export function useFetch<R>(url: string): FetchResponse<R> {
         const response: AxiosResponse<R> = await axios.get(url);
 
         if (response.status >= 200 && response.status < 300) {
-          const respData = (await response.data) as R;
+          const respData = (response.data) as {data:R, message:string};
           console.log('🚀 ~ fetchData ~ respData:', respData);
-          setData(await response.data);
+          setData(response.data);
+          setMessage(respData.message)
 
         } else {
           const errMsg = `Unexpected status code: ${response.status}`;
@@ -53,12 +57,12 @@ export function useFetch<R>(url: string): FetchResponse<R> {
 
     fetchData(url);
 
-    return () => {
-      setIsLoading(false);
-      setError(null);
-      setData(null);
-    };
+    // return () => {
+    //   setIsLoading(false);
+    //   setError(null);
+    //   setData(null);
+    // };
   }, [url]);
 
-  return { data, isLoading, error };
+  return { message, data, isLoading, error };
 }

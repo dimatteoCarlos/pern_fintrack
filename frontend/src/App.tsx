@@ -33,90 +33,129 @@ import AccountDetail from './pages/forms/accountDetail/AccountDetail.tsx';
 import DebtorDetail from './pages/forms/debtorDetail/DebtorDetail.tsx';
 import CategoryDetail from './pages/forms/categoryDetail/CategoryDetail.tsx';
 import PocketDetail from './pages/forms/pocketDetail/PocketDetail.tsx';
+import ProtectedRoute from './pages/auth/ProtectedRoute.tsx';
+
+//--------------------------------
+
+import AuthLayout from './pages/auth/AuthLayout';
+import AuthPage from './pages/auth/AuthPage.tsx';
 
 function App() {
   const router = createBrowserRouter([
-    //pages
-    //pages/Layout
+    //access to fintrack app
+
+    { path: '/', element: <Navigate to='/auth/signin' replace /> },
+
+    //authentication routes
     {
-      path: '/',
-      element: <Layout />,
-      errorElement: <NotFoundPage />,
+      path: '/auth',
+      element: <AuthLayout />,
+      // children: [
+      //   { path: '/auth/signin', element: <AuthPage /> },
+      //   { path: '/auth/signup', element: <AuthPage /> },
+      // ],
+    },
 
+    //pages/Layout
+
+    //set the function for isAuthenticated
+    {
+      path: '/fintrack',
+      element: <ProtectedRoute isAuthenticated={true} />,
       children: [
-        //pages/tracker
-        { index: true, element: <Navigate to='/tracker/expense' /> },
         {
-          path: '/tracker',
-          element: <TrackerLayout />,
+          path: '/fintrack/',
+          element: <Layout />,
+          errorElement: <NotFoundPage />,
+
           children: [
-            { index: true, element: <Expense /> },
-            { path: '/tracker/expense', element: <Expense /> },
-            { path: '/tracker/income', element: <Income /> },
-            { path: '/tracker/investment', element: <Investment /> },
-            { path: '/tracker/debts', element: <Debts /> },
+            //pages/tracker
+            {
+              index: true,
+              element: <Navigate to='/fintrack/tracker/expense' />,
+            },
+            {
+              path: '/fintrack/tracker',
+              element: <TrackerLayout />,
+              children: [
+                { index: true, element: <Expense /> },
+                { path: '/fintrack/tracker/expense', element: <Expense /> },
+                { path: '/fintrack/tracker/income', element: <Income /> },
+                {
+                  path: '/fintrack/tracker/investment',
+                  element: <Investment />,
+                },
+                { path: '/fintrack/tracker/debts', element: <Debts /> },
+              ],
+            },
+            // main navbar pages
+            {
+              path: '/fintrack/budget',
+              element: <BudgetLayout />,
+              children: [
+                { path: '/fintrack/budget/presentation', element: <Budget /> },
+              ],
+            },
+
+            {
+              path: '/fintrack/debts',
+              element: <DebtsLayout />,
+              children: [
+                { index: true, element: <Debtors /> },
+                { path: '/fintrack/debts/debtors', element: <Debtors /> },
+              ],
+            },
+
+            {
+              path: '/fintrack/overview',
+              element: <OverviewLayout />,
+              children: [{ index: true, element: <Overview /> }],
+            },
           ],
         },
-        // main navbar pages
+
+        { path: '/fintrack/accounting', element: <Accounting /> },
+
+        //page form new item
+        { path: '/fintrack/budget/new_category', element: <NewCategory /> },
+        { path: '/fintrack/budget/new_pocket', element: <NewPocket /> },
         {
-          path: '/budget',
-          element: <BudgetLayout />,
-          children: [{ path: '/budget/presentation', element: <Budget /> }],
+          path: '/fintrack/debts/debtors/new_profile',
+          element: <NewProfile />,
+        },
+        { path: '/fintrack/overview/new_account', element: <NewAccount /> },
+
+        //rendering movements view or layout not yet defined
+        {
+          path: '/fintrack/overview/movements/expense',
+          element: <Movements />,
+        },
+        {
+          path: '/fintrack/overview/movements/debt',
+          element: <Movements />,
+        },
+
+        //show detailed item page
+        {
+          path: '/fintrack/overview/accounts/:accountId',
+          element: <AccountDetail />,
         },
 
         {
-          path: '/debts',
-          element: <DebtsLayout />,
-          children: [
-            { index: true, element: <Debtors /> },
-            { path: '/debts/debtors', element: <Debtors /> },
-          ],
+          path: '/fintrack/debts/debtors/:debtorId',
+          element: <DebtorDetail />,
         },
-
         {
-          path: '/overview',
-          element: <OverviewLayout />,
-          children: [{ index: true, element: <Overview /> }],
+          path: '/fintrack/budget/categories/:categoryId',
+          element: <CategoryDetail />,
+        },
+        {
+          path: '/fintrack/budget/pockets/:pocketId',
+          element: <PocketDetail />,
         },
       ],
     },
 
-    { path: '/accounting', element: <Accounting /> },
-
-    //page form new item
-    { path: '/budget/new_category', element: <NewCategory /> },
-    { path: '/budget/new_pocket', element: <NewPocket /> },
-    { path: '/debts/debtors/new_profile', element: <NewProfile /> },
-    { path: '/overview/new_account', element: <NewAccount /> },
-
-    //rendering movements view or layout not yet defined
-    {
-      path: '/overview/movements/expense',
-      element: <Movements />,
-    },
-    {
-      path: '/overview/movements/debt',
-      element: <Movements />,
-    },
-
-    //show detailed item page
-    {
-      path: '/overview/accounts/:accountId',
-      element: <AccountDetail />,
-    },
-
-    {
-      path: '/debts/debtors/:debtorId',
-      element: <DebtorDetail />,
-    },
-    {
-      path: '/budget/categories/:categoryId',
-      element: <CategoryDetail />,
-    },
-    {
-      path: '/budget/pockets/:pocketId',
-      element: <PocketDetail />,
-    },
     //
   ]);
 

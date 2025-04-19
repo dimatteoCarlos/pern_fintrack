@@ -221,12 +221,55 @@ FROM categories cat
 -- LEFT JOIN categories cat ON m.month = cat.month
 ORDER BY cat.month_index ASC, cat.category_name, cat.currency_code
 ---------------------------------------------------------------------
+-- get monthly financial data by binding movement type id and transaction type id  for user, movement type id and currency. Reflecting the movemento related to each type of movement (expense, pocket_saving and income). Income is going to be negative, since it is always a withdraw from income_source account type.
+
+WITH financial_data AS (
+          SELECT
+            EXTRACT(MONTH FROM tr.transaction_actual_date) AS month_index,
+     		TRIM(TO_CHAR(tr.transaction_actual_date, 'month')) AS month_name,
+            tr.movement_type_id,
+            tr.transaction_type_id,
+            COALESCE(cba.category_name, ua.account_name) AS name,
+            CAST(SUM(tr.amount) AS FLOAT) AS amount,
+            ct.currency_code,
+            CASE
+              WHEN tr.movement_type_id = 1 AND tr.transaction_type_id = 2 THEN 'expense'
+              WHEN tr.movement_type_id = 2 AND tr.transaction_type_id = 1 THEN 'income'
+              WHEN tr.movement_type_id = 5 AND tr.transaction_type_id = 2 THEN 'saving'
+              ELSE 'other'
+            END AS type
+          FROM transactions tr
+          -- JOIN user_accounts ua ON tr.account_id = ua.account_id
+          LEFT JOIN category_budget_accounts cba ON tr.account_id = cba.account_id
+		  LEFT JOIN pocket_saving_accounts psa ON tr.account_id = psa.account_id
+          LEFT JOIN user_accounts ua ON tr.account_id = ua.account_id
+          JOIN currencies ct ON tr.currency_id = ct.currency_id
+          JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
+          WHERE ua.user_id = 'eacef623-6fb0-4168-a27f-fa135de093e1'
+            AND tr.transaction_actual_date BETWEEN '2025-01-01' AND '2025-12-31'
+            AND (
+              (tr.movement_type_id = 1 AND tr.transaction_type_id = 2) -- Gastos
+              OR
+              (tr.movement_type_id = 2 AND tr.transaction_type_id = 1) -- Ingresos
+              OR
+              (tr.movement_type_id = 5 AND tr.transaction_type_id = 1) -- Ahorros
+            )
+          GROUP BY 
+            EXTRACT(MONTH FROM tr.transaction_actual_date),
+            TO_CHAR(tr.transaction_actual_date, 'month'),
+            tr.movement_type_id,
+            tr.transaction_type_id,
+            cba.category_name,
+            ua.account_name,
+            ct.currency_code
+        )
 
 
 
+-- get the summary list of category budget account expenses,grouped by category name separated by currencies.
 
 
--- gasto mensual por categoria
+
 
 
 

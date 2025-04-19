@@ -21,10 +21,16 @@ export const signUpUser = async (req, res, next) => {
         user_lastname
       )
     ) {
-      return next(createError(404, 'username, email, password, first name and lastname, all fields must be provided. Currency usd will be default value if not provided'));
+      return next(
+        createError(
+          404,
+          'username, email, password, first name and lastname, all fields must be provided. Currency usd will be default value if not provided'
+        )
+      );
     }
 
     //de manera estricta la condicion deberia ser por: username AND email, o por google_id
+
     const userExists = await pool.query({
       text: `SELECT EXISTS (SELECT 1 FROM users WHERE username=$1 OR email = $2)`,
       values: [username, email],
@@ -45,7 +51,7 @@ export const signUpUser = async (req, res, next) => {
     req.body.password = undefined;
 
     const newUserId = uuidv4();
-
+    //currency_id = 1 , currency_code= 'usd'
     const currencyId = !currency ? 1 : await getCurrencyId(currency);
     console.log('🚀 ~ signUpUser ~ currencyId:', currencyId);
 
@@ -53,6 +59,7 @@ export const signUpUser = async (req, res, next) => {
     // console.log('testUUID:', newUserId);
 
     //consider adding: google_id, display_name
+
     const userData = await pool.query({
       text: `INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id) VALUES ($1, $2, $3,$4,$5, $6, $7) RETURNING user_id, username, email, user_firstname, user_lastname, currency_id;`,
       values: [
@@ -73,6 +80,7 @@ export const signUpUser = async (req, res, next) => {
       message: `User successfully suscribed. Username: ${username} email: ${email}`,
       user: userData.rows[0], //an object with info
     });
+    
   } catch (error) {
     console.log(pc.red('auth error:', error));
     next(createError(500, error.message || 'internal signup user error'));
@@ -156,3 +164,5 @@ export const signInUser = async (req, res, next) => {
     next(createError(500, error.message || 'internal sign-in user error'));
   }
 };
+
+

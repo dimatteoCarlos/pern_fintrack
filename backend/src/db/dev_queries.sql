@@ -294,3 +294,10 @@
 -- SELECT * FROM account_types WHERE account_type_name = 'investment'
 -- SELECT account_type_id FROM account_types WHERE account_type_id = 3
 -- SELECT * FROM user_accounts WHERE user_id ='430e5635-d1e6-4f53-a104-5575c6e60c81' AND account_type_id = 2
+
+
+ -- COPIAR E INSERTAR
+--  INSERT INTO user_accounts(user_id,account_name,account_type_id,currency_id,account_starting_amount,account_balance,account_start_date)
+-- SELECT 	user_id,account_name,account_type_id,2,account_starting_amount,550 AS account_balance,account_start_date
+-- FROM user_accounts
+-- WHERE account_id = 37

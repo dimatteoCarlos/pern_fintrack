@@ -8,7 +8,6 @@ import {
   checkNumberFormatValue,
   numberFormat,
   validationData,
-  // numberFormatCurrency,
 } from '../../../helpers/functions.ts';
 import {} from '../../../helpers/functions.ts';
 import {
@@ -17,18 +16,10 @@ import {
   FormNumberInputType,
   ExpenseInputDataType,
   VariantType,
-  // ExpenseAccountType,
-  // ExpenseType,
-  // CategoriesType,
-  // CategoryType,
-  // ExpenseAccountsType,
-  // BankAccountType,
 } from '../../../types/types.ts';
 import {
   url_get_accounts_by_type,
   url_movement_transaction_record,
-  // url_accounts,
-  // url_categories,
 } from '../../../endpoints.ts';
 import {
   ACCOUNT_OPTIONS_DEFAULT,
@@ -47,9 +38,8 @@ import {
 import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import { AxiosRequestConfig } from 'axios';
-// import CardNote from '../components/CardNote.tsx';
 
-//-----temporarily data 'till deciding how to handle currencies
+//-----temporarily data 'till decide how to handle currencies
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 console.log('', { formatNumberCountry });
@@ -75,14 +65,14 @@ const initialFormData: FormNumberInputType = {
 function Expense(): JSX.Element {
   //----Expense Tracker Movement -------
   //rules: only bank accounts type are used to make expenses
-  //bank account options are the existence bank accounts but the slack account
+  //select option accounts rendered are all existing bank accounts, but the slack account which is not shown
   const router = useLocation();
   const trackerState = router.pathname.split('/')[2];
   const typeMovement = trackerState.toLowerCase();
   console.log('movement:', typeMovement);
   const user = import.meta.env.VITE_USER_ID;
-  // el usuario se deberia pasar via cookie o header al backend
 
+  // el usuario se deberia pasar via cookie o header al backend
   //url_get_accounts_by_type
   //DATA FETCHING
   //GET: AVAILABLE ACCOUNTS OF TYPE BANK
@@ -95,9 +85,12 @@ function Expense(): JSX.Element {
     data: BankAccountsResponse,
     isLoading: isLoadingBankAccounts,
     error: fetchedErrorBankAccounts,
+    message: messageBA,
   } = useFetch<AccountByTypeResponseType>(
     `${url_get_accounts_by_type}/?type=bank&user=${user}`
   );
+
+  console.log('PRUEBA ERROR:', fetchedErrorBankAccounts);
 
   const optionsExpenseAccounts = useMemo(() => {
     return !isLoadingBankAccounts &&
@@ -123,11 +116,12 @@ function Expense(): JSX.Element {
   //--------
   //category options
   //GET: ACCOUNTS OF TYPE CATEGORY_BUDGET AVAILABLE
-
+  //DATA FETCHING
   const {
     data: CategoryBudgetAccountsResponse,
     isLoading: isLoadingCategoryBudgetAccounts,
     error: fetchedErrorCategoryBudgetAccounts,
+    message: messageCBA,
   } = useFetch<CategoryBudgetAccountsResponseType>(
     `${url_get_accounts_by_type}/?type=category_budget&user=${user}`
   );
@@ -182,7 +176,67 @@ function Expense(): JSX.Element {
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
   );
+  //---
+  const [showMessage, setShowMessage] = useState(false);
 
+  //--------------------------------------------
+
+  //--------------------------------------------
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
+    if ((data || error) && !isLoading) {
+      setShowMessage(true);
+      timer = setTimeout(() => {
+        setShowMessage(false);
+      }, 3000);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [data, error, isLoading]);
+  //---------------------------------------------
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    //Success for POST
+    if (data && !isLoading && !error) {
+      // Success response
+
+      console.log('Received data:', data);
+      setMessageToUser('Movement completed successfully!');
+      // setMessageToUser(message || 'Movement completed successfully!');
+
+      //resetting message to user
+      timer = setTimeout(() => {
+        setMessageToUser(null);
+      }, 6000);
+    }
+    //Any error
+    else if (
+      error ||
+      fetchedErrorBankAccounts ||
+      fetchedErrorCategoryBudgetAccounts
+    ) {
+      const errorMessage = messageBA || messageCBA ;
+
+      setMessageToUser(errorMessage || 'Unknown error');
+
+      timer = setTimeout(() => setMessageToUser(null), 7000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [
+    data,
+    isLoading,
+    error,
+    fetchedErrorBankAccounts,
+    fetchedErrorCategoryBudgetAccounts,
+    messageBA,
+    messageCBA,
+  ]);
   //----functions--------
   function updateDataCurrency(currency: CurrencyType) {
     setCurrency(currency);
@@ -290,7 +344,7 @@ function Expense(): JSX.Element {
 
       setCurrency(defaultCurrency);
       setExpenseData(initialExpenseData);
-      setIsReset(true); //admitir que category sea undefined - must admit undefined category 
+      setIsReset(true); //admitir que category sea undefined - must admit undefined category
       setValidationMessages({});
       setFormData(initialFormData);
 
@@ -301,27 +355,6 @@ function Expense(): JSX.Element {
   }
 
   //---------------------------------------------
-
-  //---------------------------------------------
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    if (data && !isLoading && !error) {
-      // Success response
-      setMessageToUser(data.message || 'Account created successfully!');
-      // console.log('Received data:', data);
-
-      //resetting message to user
-      timer = setTimeout(() => {
-        setMessageToUser(null);
-      }, 10000);
-    } else if (error) {
-      setMessageToUser(error);
-      timer = setTimeout(() => setMessageToUser(null), 5000);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [data, isLoading, error]);
 
   //-------Top Card elements -----------------------
   const topCardElements = {
@@ -387,6 +420,17 @@ function Expense(): JSX.Element {
         messageToUser={messageToUser}
         variant='tracker'
       />
+
+      {showMessage && !isLoading && (
+        <div className='fade-message'>
+          <MessageToUser
+            isLoading={false}
+            error={error}
+            messageToUser={messageToUser}
+            variant='form'
+          />
+        </div>
+      )}
     </>
   );
 }

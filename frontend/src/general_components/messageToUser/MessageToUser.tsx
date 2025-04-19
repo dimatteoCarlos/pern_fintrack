@@ -1,5 +1,6 @@
 import { capitalize } from '../../helpers/functions';
 import { VariantType } from '../../types/types';
+import './messageToUser.css'
 
 type MessageToUserPropType = {
   isLoading: boolean;
@@ -7,6 +8,7 @@ type MessageToUserPropType = {
   messageToUser: string | null | undefined;
   variant?: VariantType;
 };
+
 export const MessageToUser = ({
   isLoading,
   error,

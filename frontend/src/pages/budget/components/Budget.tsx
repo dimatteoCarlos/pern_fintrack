@@ -4,6 +4,7 @@ import OpenAddEditBtn from '../../../general_components/OpenAddEditBtn';
 import ListCategory from './ListCategory';
 import ListPocket from './ListPocket';
 
+
 function Budget() {
   const originRoute = useLocation().pathname;
   const navigateTo: NavigateFunction = useNavigate();

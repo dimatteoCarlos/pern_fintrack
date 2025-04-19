@@ -24,31 +24,31 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
   {
     tblName: 'bank_accounts',
     table:
-      'CREATE TABLE IF NOT EXISTS bank_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),account_start_date TIMESTAMP NOT NULL )',
+      'CREATE TABLE IF NOT EXISTS bank_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMP NOT NULL )',
   },
 
   {
     tblName: 'investment_accounts',
     table:
-      'CREATE TABLE IF NOT EXISTS investment_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),account_start_date TIMESTAMP NOT NULL)',
+      'CREATE TABLE IF NOT EXISTS investment_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMP NOT NULL)',
   },
 
   {
     tblName: 'income_source_accounts',
     table:
-      'CREATE TABLE IF NOT EXISTS income_source_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),account_start_date TIMESTAMP NOT NULL)',
+      'CREATE TABLE IF NOT EXISTS income_source_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMP NOT NULL)',
   },
 
   {
     tblName: `category_budget_accounts`,
-    table: `CREATE TABLE IF NOT EXISTS category_budget_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), category_name VARCHAR(50) NOT NULL,category_nature_type_id INT REFERENCES category_nature_types(category_nature_type_id), subcategory VARCHAR(25), budget DECIMAL(15, 2),account_start_date TIMESTAMP NOT NULL)`,
+    table: `CREATE TABLE IF NOT EXISTS category_budget_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), category_name VARCHAR(50) NOT NULL,category_nature_type_id INT REFERENCES category_nature_types(category_nature_type_id), subcategory VARCHAR(25), budget DECIMAL(15, 2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMP NOT NULL)`,
   },
 
   {
     tblName: `debtor_accounts`,
     table: `CREATE TABLE IF NOT EXISTS debtor_accounts (
          account_id INT PRIMARY KEY REFERENCES user_accounts(account_id),
-         value DECIMAL(15, 2),
+         value DECIMAL(15, 2),currency_id,
          debtor_name VARCHAR(25),
          debtor_lastname VARCHAR(25),
          selected_account_name VARCHAR(50),
@@ -57,7 +57,7 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
 
   {
     tblName: `pocket_saving_accounts`,
-    table: `CREATE TABLE IF NOT EXISTS pocket_saving_accounts (account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), target DECIMAL(15, 2), desired_date TIMESTAMP NOT NULL,account_start_date TIMESTAMP NOT NULL)`,
+    table: `CREATE TABLE IF NOT EXISTS pocket_saving_accounts (account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), target DECIMAL(15, 2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,  desired_date TIMESTAMP NOT NULL,account_start_date TIMESTAMP NOT NULL)`,
   },
 
   // -----n
@@ -76,17 +76,17 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )`,
   },
-  // {
-  //   tblName: 'movement_types',
-  //   table: `CREATE TABLE movement_types (movement_type_id SERIAL PRIMARY KEY NOT NULL, movement_type_name VARCHAR(15) NOT NULL CHECK (movement_type_name IN ('expense', 'income', 'investment', 'debt', 'pocket', 'transfer', 'receive','account-opening')))`,
-  // },
-
   {
-    tblName: 'expense_movements',
-    table: `CREATE TABLE IF NOT EXISTS expense_movements (movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    category_id INT,
-    account_id INT NOT NULL REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE)`,
+    tblName: 'movement_types',
+    table: `CREATE TABLE movement_types (movement_type_id SERIAL PRIMARY KEY NOT NULL, movement_type_name VARCHAR(15) NOT NULL CHECK (movement_type_name IN ('expense', 'income', 'investment', 'debt', 'pocket', 'transfer', 'receive','account-opening')))`,
   },
+
+  // {
+  //   tblName: 'expense_movements',
+  //   table: `CREATE TABLE IF NOT EXISTS expense_movements (movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  //   category_id INT,
+  //   account_id INT NOT NULL REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE)`,
+  // },
 
   {
     tblName: 'expense_categories',
@@ -94,33 +94,34 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
     category_id SERIAL PRIMARY KEY NOT NULL,
     category_name VARCHAR(50) NOT NULL,
     nature_name VARCHAR(8) NOT NULL CHECK (nature_name IN ('must', 'need', 'other', 'want')),
-    budget DECIMAL(15,2) NOT NULL
+    budget DECIMAL(15,2) NOT NULL, 
+    currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, 
 )`,
   },
 
-  {
-    tblName: 'income_movements',
-    table: `CREATE TABLE IF NOT EXISTS income_movements (
-    movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    source_id INT NOT NULL REFERENCES expense_categories(category_id),
-    account_id INT NOT NULL REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE
-)`,
-  },
+  //   {
+  //     tblName: 'income_movements',
+  //     table: `CREATE TABLE IF NOT EXISTS income_movements (
+  //     movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  //     source_id INT NOT NULL REFERENCES expense_categories(category_id),
+  //     account_id INT NOT NULL REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE
+  // )`,
+  //   },
 
-  {
-    tblName: 'investment_movements',
-    table: `CREATE TABLE IF NOT EXISTS investment_movements (
-    movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    account_id INT NOT NULL REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE
-)`,
-  },
-  {
-    tblName: 'debt_movements',
-    table: `CREATE TABLE IF NOT EXISTS debt_movements (
-    movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    debtor_id INT NOT NULL
- )`,
-  },
+  //   {
+  //     tblName: 'investment_movements',
+  //     table: `CREATE TABLE IF NOT EXISTS investment_movements (
+  //     movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  //     account_id INT NOT NULL REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE
+  // )`,
+  //   },
+  //   {
+  //     tblName: 'debt_movements',
+  //     table: `CREATE TABLE IF NOT EXISTS debt_movements (
+  //     movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  //     debtor_id INT NOT NULL
+  //  )`,
+  //   },
   {
     tblName: 'debt_debtors',
     table: `CREATE TABLE IF NOT EXISTS debt_debtors (
@@ -129,17 +130,17 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
     debtor_lastname VARCHAR(25) NOT NULL
     )`,
   },
-  {
-    tblName: 'pocket_movements',
-    table: `CREATE TABLE IF NOT EXISTS pocket_movements (
-    pocket_id SERIAL PRIMARY KEY NOT NULL,
-    movement_id INT NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    pocket_name VARCHAR(50) NOT NULL,
-    target_amount DECIMAL(15,2),
-    pocket_note VARCHAR(50),
-    desired_date TIMESTAMP
-)`,
-  },
+  //   {
+  //     tblName: 'pocket_movements',
+  //     table: `CREATE TABLE IF NOT EXISTS pocket_movements (
+  //     pocket_id SERIAL PRIMARY KEY NOT NULL,
+  //     movement_id INT NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  //     pocket_name VARCHAR(50) NOT NULL,
+  //     target_amount DECIMAL(15,2),
+  //     pocket_note VARCHAR(50),
+  //     desired_date TIMESTAMP
+  // )`,
+  //   },
   {
     tblName: 'transactions',
     table: `CREATE TABLE IF NOT EXISTS transactions(
@@ -173,6 +174,7 @@ export const createSearchIndexes = [
   },
 ];
 
+// ===========================
 // source_account_id INT  REFERENCES user_accounts(account_id) ON DELETE SET NULL ON UPDATE CASCADE,
 // destination_account_id INT  REFERENCES user_accounts(account_id) ON DELETE SET NULL ON UPDATE CASCADE,
 

@@ -10,12 +10,31 @@ dotenv.config();
 const backendColor = 'greenBright';
 const errorColor = 'red';
 
+//common functions
+
+const RESPONSE = (res, status, message, data = null) => {
+  const backendColor =
+    status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
+  console.log(pc[backendColor](`[${status}] ${message}`));
+  res.status(status).json({ status, message, data });
+};
+
+const ERR_RESP = (status, message, controllerName = null) => {
+  const backendColor =
+    status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
+  console.log(pc[backendColor](`[${status}] ${message}. ${controllerName}`));
+  const error = new Error(message);
+  error.status = 400;
+  throw error;
+};
+
 //get all accounts info by account type: id, name, type, currency and balance, by user id and account_type but slack account.
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${bank}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
 //type can be: bank, category_budget, income_source, investment, debtor, bankAndInvestement
 
 export const getAllAccountsByType = async (req, res, next) => {
-  console.log(pc[backendColor]('getAccountsByType'));
+  console.log(pc[backendColor]('getAllAccountsByType'));
+  const controllerName = 'getAllAccountsByType';
 
   try {
     const { type } = req.query;
@@ -24,12 +43,13 @@ export const getAllAccountsByType = async (req, res, next) => {
 
     const accountType = type.trim().toLowerCase();
 
-    console.log(userId, accountType);
+    console.log(userId, accountType, controllerName);
 
     if (!accountType || !userId) {
       const message = `User ID and account type are required.Try again!.`;
       console.warn(pc[backendColor](message));
-      return res.status(400).json({ status: 400, message });
+      // return res.status(400).json({ status: 400, message });
+      ERR_RESP(400, message, controllerName);
     }
     if (
       ![
@@ -44,7 +64,8 @@ export const getAllAccountsByType = async (req, res, next) => {
     ) {
       const message = `Account of type ${accountType} is not valid.Try again!.`;
       console.warn(pc[backendColor](message));
-      return res.status(400).json({ status: 400, message });
+      // return res.status(400).json({ status: 400, message });
+      ERR_RESP(400, message, controllerName);
     }
     //------------------------------------------
     const accountTypeQuery = {
@@ -179,9 +200,10 @@ JOIN debtor_accounts ps ON ua.account_id = ps.account_id
 
     const data = { rows: accountList.length, accountList };
     const message = `Account list successfully completed for accounts type "${accountType}"`;
-    console.log('success:', pc[backendColor](message));
+    console.log('success:', pc[backendColor](message), controllerName);
 
-    res.status(200).json({ status: 200, message, data });
+    // res.status(200).json({ status: 200, message, data });
+    RESPONSE(res, 200, message);
   } catch (error) {
     if (error instanceof Error) {
       console.error(pc.red('Error while getting accounts by account type'));
@@ -192,11 +214,12 @@ JOIN debtor_accounts ps ON ua.account_id = ps.account_id
     } else {
       console.error(
         pc.red('Error during transfer'),
-        pc[errorColor]('Unknown error occurred')
+        pc[errorColor]('Unknown error occurred'),
+        controllerName
       );
     }
     // Manejo de errores de PostgreSQL - pg sql error handling
-    const { code, message } = handlePostgresError(error);
+    // const { code: sqlCode, message: sqlMsg } = handlePostgresError(error);
     next(createError(code, message));
   }
 };

@@ -108,12 +108,14 @@ async function initializeDatabase() {
     // await tbltransactionTypes();
     // await tblCategoryNatureTypes();
     //--------------------------------------------------
-    //truncate tables
+    //truncate or drop tables
     if (false) {
       await Promise.allSettled(
         createMainTables.map(async (item, indx) => {
           try {
-            //await pool.query({ text: `TRUNCATE TABLE ${item.tblName} CASCADE` });
+            await pool.query({
+              text: `TRUNCATE TABLE ${item.tblName} CASCADE`,
+            });
             await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
             console.log(indx, item.tblName, 'truncated');
           } catch (error) {
@@ -195,13 +197,13 @@ pool.on('error', (err) => {
 //message error handling
 // app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
 app.use((err, req, response, next) => {
-  console.error(pc.red('error handled response ', err));
+  console.error(('error handled response ', err));
   const errorStatus = err.status || 500;
   const errorMessage = err.message || 'Something went wrong';
   response.status(errorStatus).json({
     message: errorMessage,
     status: errorStatus,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : err.stack,
+    stack: process.env.NODE_ENV == 'development' ? err.stack : undefined, //modificado
   });
 });
 

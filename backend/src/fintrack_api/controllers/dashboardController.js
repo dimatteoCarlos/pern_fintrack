@@ -30,16 +30,30 @@ import { pool } from '../../db/configDB.js';
 
 //common functions
 
+const RESPONSE = (res, status, message, data = null) => {
+  const backendColor =
+    status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
+  console.log(pc[backendColor](`[${status}] ${message}`));
+  res.status(status).json({ status, message, data });
+};
+
+const ERR_RESP = (status, message, controllerName = null) => {
+  const backendColor =
+    status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
+  console.log(pc[backendColor](`[${status}] ${message}. ${controllerName}`));
+  const error = new Error(message);
+  error.status = 400;
+  throw error;
+};
+
 // get: //http://localhost:5000/api/fintrack/dashboard/balance
 //get the total balance account for each group of account type, for all account types
+
 export const dashboardTotalBalanceAccounts = async (req, res, next) => {
-  const backendColor = 'green';
+  let backendColor = 'green';
   const errorColor = 'red';
-  console.log(pc[backendColor]('dashboardTotalBalanceAccountByType'));
-  const RESPONSE = (res, status, message, data = null) => {
-    console.log(pc[backendColor](message));
-    res.status(status).json({ status, message, data });
-  };
+  const controllerName = 'dashboardTotalBalanceAccounts';
+  console.log(pc[backendColor]('dashboardTotalBalanceAccounts'));
 
   try {
     const userId = req.body.user ?? req.query.user;
@@ -64,9 +78,10 @@ ORDER BY account_type_name ASC
     const accountTotalBalanceResult = await pool.query(TOTAL_BALANCE_QUERY);
 
     if (accountTotalBalanceResult.rows.length === 0) {
-      const message = `No available accounts or something went wrong`;
+      const message = `No available accounts for this user`;
       console.warn(pc[errorColor](message));
-      return RESPONSE(res, 400, message);
+      // return RESPONSE(res, 400, message);
+      ERR_RESP(400, message, controllerName);
     }
 
     const accountTotalBalance = accountTotalBalanceResult.rows;
@@ -77,9 +92,9 @@ ORDER BY account_type_name ASC
     console.log(data);
     return RESPONSE(res, 200, successMsg, data);
   } catch (error) {
-    if (error instanceof Error) {
-      console.error(pc.red('Error while getting accounts balances'));
+    console.error(pc.red('Error while getting account balance'), error);
 
+    if (error instanceof Error) {
       if (process.env.NODE_ENV === 'development') {
         console.log(error.stack);
       }
@@ -88,11 +103,11 @@ ORDER BY account_type_name ASC
         pc.red('Something went wrong'),
         pc[errorColor]('Unknown error occurred')
       );
+      RESPONSE(res, 500, 'Error desconocido al procesar la solicitud');
     }
     // Manejo de errores de PostgreSQL
     const { code, message } = handlePostgresError(error);
     next(createError(code, message));
-    // return RESPONSE(error, next)
   }
 };
 
@@ -120,12 +135,9 @@ ORDER BY account_type_name ASC
 export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
   const backendColor = 'cyan';
   const errorColor = 'red';
-  const RESPONSE = (res, status, message, data = null) => {
-    console.log(pc[backendColor](message));
-    res.status(status).json({ status, message, data });
-  };
 
-  console.log(pc[backendColor]('dashboardTotalBalanceAccountByType'));
+  const controllerName = 'dashboardTotalBalanceAccountByType';
+  console.log(pc[backendColor](controllerName));
 
   try {
     const { type } = req.query; //bank| investment | income_source | category_budget | debtor | pocket_saving
@@ -142,7 +154,9 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     const accountType = type;
 
     if (!accountType || !userId) {
-      return RESPONSE(res, 400, 'User ID and account TYPE are required');
+      const message = 'User ID and account TYPE are required';
+      ERR_RESP(400, message, controllerName);
+      // return RESPONSE(res, 400, 'User ID and account TYPE are required');
     }
 
     if (
@@ -156,11 +170,15 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
       ].includes(accountType)
     ) {
       const message = `${accountType} is not a valid type account. Try again`;
-      return RESPONSE(res, 400, message);
+      ERR_RESP(400, message, controllerName);
+
+      // return RESPONSE(res, 400, message);
     }
 
     const successMsg = `Total balance account of account type ${accountType} successfully calculated`;
+
     //********************************************/
+    //---queries definition
     const TOTAL_BALANCE_QUERY = {
       text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,COUNT(*) AS accounts, ct.currency_code FROM user_accounts ua
 JOIN account_types act ON ua.account_type_id = act.account_type_id
@@ -225,13 +243,13 @@ GROUP BY  ct.currency_code
       accountType === 'income_source'
     ) {
       const query = TOTAL_BALANCE_QUERY;
-      console.log('🚀 ~ dashboardTotalBalanceAccount ~ query:', query);
+      // console.log('🚀 ~ dashboardTotalBalanceAccount ~ query:', query);
 
       const accountTotalBalanceResult = await pool.query(query);
 
       if (accountTotalBalanceResult.rows.length === 0) {
-        const message = `No available accounts of type ${accountType}`;
-        return RESPONSE(res, 400, message);
+        const message = `No available accounts of type ${accountType} from total balance account by type`;
+        ERR_RESP(res, 400, message, controllerName);
       }
 
       const data = accountTotalBalanceResult.rows[0];
@@ -250,17 +268,12 @@ GROUP BY  ct.currency_code
     ) {
       const query = TOTAL_BALANCE_AND_GOAL_BY_TYPE[accountType];
 
-      // if (!query) {
-      //   const message = `Invalid account type "${accountType}" check endpoint queries.`;
-      //   console.warn(pc.red(message));
-      //   return RESPONSE(res, 400, message);
-      // }
-
       const accountTotalBalanceResult = await pool.query(query);
 
       if (accountTotalBalanceResult.rows.length === 0) {
         const message = `No available accounts of type ${accountType}`;
-        return RESPONSE(res, 400, message);
+        ERR_RESP(res, 400, message);
+        // return RESPONSE(res, 400, message);
       }
 
       const data = accountTotalBalanceResult.rows;
@@ -271,14 +284,17 @@ GROUP BY  ct.currency_code
     //----------------------------------------------
 
     //in case accountType does not exist
-    const message = `No available accounts of type ${accountType}`;
-    return RESPONSE(res, 400, message);
+    const message = `None accounts of type ${accountType} were found`;
+    throw new error(message);
+    // return RESPONSE(res, 400, message);
   } catch (error) {
     if (error instanceof Error) {
-      console.error(pc.red('Error while getting account summary list'));
-      if (process.env.NODE_ENV === 'development') {
-        console.log(error.stack);
+      console.error(pc.red('Error while getting account by type'));
+      if (process.env.NODE_ENV !== 'development') {
+        //modificado
+        console.log('stack:', error.stack);
       }
+      next(createError(error.status, error.message));
     } else {
       console.error(
         pc.red('Something went wrong'),
@@ -292,7 +308,6 @@ GROUP BY  ct.currency_code
   }
 };
 
-
 //------------------------------------------------
 //==============================================================================
 //get the total balance for a specific type account
@@ -304,7 +319,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
     console.log(pc[backendColor](message));
     res.status(status).json({ status, message, data });
   };
-
+  const controllerName = 'dashboardAccountSummaryList';
   console.log(pc[backendColor]('dashboardAccountSummaryList'));
 
   try {
@@ -327,7 +342,8 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
     if (!['category_budget', 'debtor', 'pocket_saving'].includes(accountType)) {
       const message = `Invalid account type for summary list "${accountType}" check endpoint queries.`;
       console.warn(pc.red(message));
-      return RESPONSE(res, 400, message);
+      ERR_RESP(400, message, controllerName);
+      // return RESPONSE(res, 400, message);
     }
 
     const successMsg = `Summary list of accounts type ${accountType} was successfully calculated`;
@@ -335,21 +351,23 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
     //***********************************************/
     const SUMMARY_BALANCE_AND_GOAL_BY_TYPE = {
       category_budget: {
-        text: `SELECT  cba.category_name, 
-    CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,
-    CAST(SUM(cba.budget) AS FLOAT ) AS total_budget,
-    (CAST(SUM(cba.budget) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining,
-    ct.currency_code
-
-    FROM user_accounts ua
-
-  JOIN account_types act ON ua.account_type_id = act.account_type_id
-  JOIN currencies ct ON ua.currency_id = ct.currency_id
-  JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
-  WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
-
-    GROUP BY cba.category_name, ct.currency_code
-    ORDER BY cba.category_name ASC,ct.currency_code DESC,total_balance DESC
+        text: `
+        SELECT cba.category_name,  ct.currency_code, 
+          SUM(ua.account_balance)::FLOAT AS total_balance, 
+          (COALESCE(SUM(cba.budget), 0) - SUM(ua.account_balance))::FLOAT AS total_remaining
+          
+          FROM user_accounts ua
+          
+          JOIN account_types act ON ua.account_type_id = act.account_type_id
+          JOIN currencies ct ON ua.currency_id = ct.currency_id
+          LEFT JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
+          
+          WHERE ua.user_id = $1
+          AND act.account_type_name =$2
+          AND ua.account_name !=$3
+          
+          GROUP BY ct.currency_code, cba.category_name
+          ORDER BY cba.category_name ASC, ct.currency_code DESC;
 `,
         values: [userId, accountType, 'slack'],
       },
@@ -405,8 +423,9 @@ ORDER BY total_balance DESC, ua.account_name ASC
       const accountSummaryResult = await pool.query(query);
 
       if (accountSummaryResult.rows.length === 0) {
-        const message = `No accounts available of type ${accountType}`;
-        return RESPONSE(res, 400, message);
+        const message = `No accounts available of type ${accountType}.`;
+        ERR_RESP(400, message, controllerName);
+        // return RESPONSE(res, 400, message);
       }
 
       const data = accountSummaryResult.rows;
@@ -419,7 +438,7 @@ ORDER BY total_balance DESC, ua.account_name ASC
     //-------------------------------------
 
     //in case accountType does not exist
-    const message = `No available accounts of type ${accountType}`;
+    const message = `No available accounts of type ${accountType} for summary list`;
     return RESPONSE(res, 400, message);
   } catch (error) {
     if (error instanceof Error) {
@@ -439,7 +458,6 @@ ORDER BY total_balance DESC, ua.account_name ASC
     // return RESPONSE(error, next)
   }
 };
-
 
 //**********************************************************************************/
 //GET ALL USER TRACKER MOVEMENT TRANSACTIONS BY MOVEMENT_TYPE_NAME WITH A PRE-FIXED CORRESPONDING ACCOUNT TYPE
@@ -953,5 +971,3 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
     next(createError(code, message));
   }
 };
-
-
