@@ -1,4 +1,3 @@
-
 import express from 'express';
 import passport from 'passport';
 import { signUpUser, signInUser } from '../controllers/authController.js';
@@ -12,7 +11,10 @@ router.post('/sign-up', signUpUser);
 router.post('/sign-in', signInUser);
 
 // Ruta de Google OAuth: redirige a Google para la autenticación
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get(
+  '/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
 
 // Callback de Google OAuth: recibirá el código de Google y autenticará al usuario
 router.get(
@@ -25,6 +27,3 @@ router.get(
 );
 
 export default router;
-
-
-

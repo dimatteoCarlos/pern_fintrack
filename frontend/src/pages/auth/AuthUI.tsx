@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './styles/AuthUI.module.css';
 import GoogleLogo from '../../assets/auth/GoogleLogo';
 import {
@@ -60,6 +60,8 @@ function AuthUI({
 }: AuthUIPropsType): JSX.Element {
   //--STATES
   const [credentials, setCredentials] = useState(INITIAL_CREDENTIALS_STATE);
+  const [showMessageToUser, setShowMessageToUser] = useState(true);
+  const [showError, setShowError] = useState(true);
 
   //
   // const navigateTo = useNavigate();
@@ -108,9 +110,33 @@ function AuthUI({
     setCredentials((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (messageToUser && !isLoading) setShowMessageToUser(true);
+    timer = setTimeout(() => {
+      setShowMessageToUser(false);
+      setShowError(false);
+    }, 3000);
+
+    if (error && !isLoading) setShowError(true);
+    timer = setTimeout(() => {
+      setShowError(false);
+    }, 3000);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [messageToUser, error, isLoading]);
+
   return (
     <div className={styles['auth-container']}>
-      {error && <p className={styles['auth-container__errorMsg']}>{error}</p>}
+      {/* {succes message to user} */}
+      {messageToUser && showMessageToUser && (
+        <span className={styles['messageToUser__msg']}>{messageToUser}</span>
+      )}
+      {error && showError && (
+        <p className={styles['auth-container__errorMsg']}>{error}</p>
+      )}
 
       <h2 className={styles['auth-container__title']}>
         {isSignIn ? 'Sign In' : 'Sign Up'}
@@ -229,7 +255,7 @@ function AuthUI({
           onClick={toggleAuthMode}
         >
           {isSignIn
-            ? 'Do not have an account? Sign up'
+            ? "Don't have an account? Sign up"
             : 'Already have an account? Log in'}
         </button>
 
@@ -254,11 +280,6 @@ function AuthUI({
 
         {/* Botón de Google Auth (lo añadiremos después con la lógica) */}
         {/* <button type="button" className="auth-actions__google-button">Iniciar sesión con Google</button> */}
-
-        {/* {succes message to user} */}
-        {messageToUser && (
-          <span className={styles['messageToUser__msg']}>{messageToUser}</span>
-        )}
       </div>
     </div>
   );

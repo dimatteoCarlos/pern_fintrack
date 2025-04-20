@@ -1,3 +1,14 @@
+//temporary user id
+export const USER_ID: string = import.meta.env.VITE_USER_ID;
+//http://localhost:5000/api/
+
+//authentication
+// http://localhost:5000/api/auth/
+//sign-up
+export const url_signup: string = 'http://localhost:5000/api/auth/sign-up';
+//sign-in
+export const url_signin: string = 'http://localhost:5000/api/auth/sign-in';
+
 //http://localhost:5000/api/fintrack
 export const BASE_URL: string = import.meta.env.VITE_API_URL;
 export const url_debtors = BASE_URL + '/' + 'debtors';
@@ -9,20 +20,9 @@ export const url_budget = BASE_URL + '/' + 'budget';
 export const url_accounts = BASE_URL + '/' + 'accounts'; //expense and income accounts are the same
 export const url_investment_acc = BASE_URL + '/' + 'investment-accounts'; //not implemented yet
 
-export const USER_ID: string = import.meta.env.VITE_USER_ID;
-
-//auth sign in user
-
-//api/auth/sign-up
-//api/auth/sign-in
-//http://localhost:5000/api/auth/sign-in
-export const url_signin: string =
-  BASE_URL + '/' + '/auth/sign-in';
-
 //account_types list
 //http://localhost:5000/api/fintrack/account/type/list
-export const url_account_type_list: string =
-  BASE_URL + '/' + '/account/type/list';
+export const url_account_type_list: string = BASE_URL + '/account/type/list';
 
 //create a new account for types: bank, investment and income_source
 //http://localhost:5000/api/fintrack/account/new_account/account_type
@@ -37,8 +37,7 @@ export const url_create_category_budget_account: string =
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${bank}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
 //ex:for expense tracker, types used are: bank or category_budget,
-export const url_get_accounts_by_type: string =
-  BASE_URL + '/account/type';
+export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
 
 //get user accounts info by account prefixed type_name bank and investment except slack account
 //for accounting and overview components
@@ -59,4 +58,3 @@ export const url_get_total_account_balance_by_type: string =
 //ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?user=eacef623-6fb0-4168-a27f-fa135de093e1&movement=expense
 export const url_movement_transaction_record: string =
   BASE_URL + '/transaction/transfer-between-accounts';
-

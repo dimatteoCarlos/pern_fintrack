@@ -1,4 +1,4 @@
-// src/pages/auth/AuthPage.tsx
+//src/pages/auth/AuthPage.tsx
 import styles from './styles/authPage.module.css';
 import { useState } from 'react';
 import AuthUI from './AuthUI';
@@ -8,7 +8,7 @@ import {
   SignInCredentialsType,
   SignUpCredentialsType,
 } from '../../auth/types/authTypes';
-import { url_signin } from '../../endpoints';
+import { url_signin, url_signup } from '../../endpoints';
 
 //--MAIN COMPONENT
 export default function AuthPage() {
@@ -22,21 +22,23 @@ export default function AuthPage() {
     isLoading: isSigninLoading,
     error: signinError,
     request: signinRequest,
+    message: signinMessage,
   } = useFetchPost<SignInCredentialsType, unknown>();
   // } = useFetchPost<unknown>();
   const {
     isLoading: isSignupLoading,
     error: signupError,
     request: signupRequest,
+    message: signupMessage,
   } = useFetchPost<SignUpCredentialsType, unknown>();
 
   console.log(
     isSigninLoading,
     signinError,
-    signinRequest,
     isSignupLoading,
     signupError,
-    signupRequest
+    signinMessage,
+    signupMessage
   );
   //------------------------------------
   //FUNCTIONS EVENT HANDLERS
@@ -61,7 +63,10 @@ export default function AuthPage() {
   };
   //--AUTH FUNCTIONS---------------
   //url: string, body?: SignInCredentialsType | undefined, headers?: Record<string, string>) => Promise<FetchPostStateType<unknown>>
+  //desarrollar la lociga y el backend, incluir ya de una vez el google auth creo que si se puede, sin meter passport.y seguir el hibirdo para mobile y web, cont headers y cookies, analizando el userAgent
+
   const handleSignIn = async (credentials: SignInCredentialsType) => {
+    console.log('desde el handle:', credentials)
     const url = url_signin;
     const result = await signinRequest(url, credentials);
     console.log('handleSignIn:', result);
@@ -69,6 +74,19 @@ export default function AuthPage() {
       //que empiece la fiesta
       closeAuthModal();
     }
+  };
+
+  const handleSignUp = async (userData: SignUpCredentialsType) => {
+    console.log('desde el handle:', userData)
+    const url = url_signup;
+    const result = await signupRequest(url, userData);
+    console.log('🚀 ~ handleSignUp ~ result:', result);
+    if (!result.data) {
+      console.log('no resulta data');
+    }
+    //start the party
+
+    closeAuthModal();
   };
 
   //------------------------------------
@@ -120,10 +138,11 @@ export default function AuthPage() {
               {/* <h2>Signin</h2> */}
               <AuthUI
                 onSignIn={handleSignIn}
-                onSignUp={() => console.log('Sign up')}
+                onSignUp={handleSignUp}
                 isLoading={isSigninLoading}
                 error={signinError}
                 isSignInInitial={true}
+                messageToUser={signinMessage}
               />
               <button className={styles.closeButton} onClick={closeAuthModal}>
                 Close
@@ -142,10 +161,11 @@ export default function AuthPage() {
 
               <AuthUI
                 onSignIn={handleSignIn}
-                onSignUp={() => console.log('Signup')}
-                isLoading={false}
-                error={null}
+                onSignUp={handleSignUp}
+                isLoading={isSignupLoading}
+                error={signupError}
                 isSignInInitial={false}
+                messageToUser={signupMessage}
               />
               <button className={styles.closeButton} onClick={closeAuthModal}>
                 Close
