@@ -1,16 +1,42 @@
 import { useState } from 'react';
-import { UserRolesType } from '../../types/userTypes';
 import styles from './styles/AuthUI.module.css';
+import GoogleLogo from '../../assets/auth/GoogleLogo';
+import {
+  CredentialsType,
+  SignInCredentialsType,
+  SignUpCredentialsType,
+} from '../../auth/types/authTypes';
 // import { useNavigate } from 'react-router-dom';
 
-type CredentialsType = {
-  username: string;
-  email: string;
-  user_firstname: string;
-  user_lastname: string;
-  password: string;
-  // role?: 'user' | 'admin' | 'super_admin';
-  role?: UserRolesType;
+// type CredentialsType = {
+//   username: string;
+//   email: string;
+//   user_firstname: string;
+//   user_lastname: string;
+//   password: string;
+//   // role?: 'user' | 'admin' | 'super_admin';
+//   role?: UserRolesType;
+// };
+
+// interface SignInCredentialsType {
+//   username?: string;
+//   email?: string;
+//   password: string;
+// }
+// interface SignUpCredentialsType extends SignInCredentialsType {
+//   user_firstname: string;
+//   user_lastname: string;
+//   role?: UserRolesType;
+// }
+type AuthUIPropsType = {
+  onSignIn: (credentials: SignInCredentialsType) => void;
+  onSignUp: (userData: SignUpCredentialsType) => void;
+  isSignInInitial?: boolean;
+
+  googleSignInUrl?: string; // Optional Google Sign-in URL
+  isLoading: boolean;
+  error: string | null;
+  messageToUser?: string | undefined | null;
 };
 
 //INITIAL STATES VALUES
@@ -19,29 +45,7 @@ const INITIAL_CREDENTIALS_STATE: CredentialsType = {
   email: '',
   user_firstname: '',
   user_lastname: '',
-  role: 'user',
   password: '',
-};
-
-interface SignInCredentialsType {
-  username?: string;
-  email?: string;
-  password: string;
-}
-interface SignUpCredentialsType extends SignInCredentialsType {
-  user_firstname: string;
-  user_lastname: string;
-  role?: UserRolesType;
-}
-type AuthUIPropsType = {
-  onSignIn: (credentials: SignInCredentialsType) => void;
-  onSignUp: (userData: SignUpCredentialsType) => void;
-  isSignInInitial?:boolean;
-
-  googleSignInUrl?: string; // Optional Google Sign-in URL
-  isLoading: boolean;
-  error: string | null;
-  messageToUser?: string | undefined | null;
 };
 
 //--MAIN COMPONENT
@@ -52,7 +56,7 @@ function AuthUI({
   isLoading,
   error,
   messageToUser,
-  isSignInInitial
+  isSignInInitial,
 }: AuthUIPropsType): JSX.Element {
   //--STATES
   const [credentials, setCredentials] = useState(INITIAL_CREDENTIALS_STATE);
@@ -65,6 +69,7 @@ function AuthUI({
   //--FUNCTIONS
   const handleSignInSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+
     onSignIn({
       username: credentials.username,
       email: credentials.email,
@@ -112,7 +117,7 @@ function AuthUI({
       </h2>
 
       <form
-        className={`auth-form ${
+        className={`auth-form  ${
           isSignIn ? 'auth-form--signin' : 'auth-form--signup'
         }`}
         onSubmit={isSignIn ? handleSignInSubmit : handleSignUpSubmit}
@@ -158,7 +163,7 @@ function AuthUI({
 
         <div className={styles['auth-form__field']}>
           <label htmlFor='password' className={styles['auth-form__label']}>
-            Contraseña
+            Password
           </label>
           <input
             type='password'
@@ -174,7 +179,6 @@ function AuthUI({
 
         {!isSignIn && (
           <>
-           
             <div className={styles['auth-form__field']}>
               <label htmlFor='firstName' className={styles['auth-form__label']}>
                 First Name
@@ -193,7 +197,7 @@ function AuthUI({
 
             <div className={styles['auth-form__field']}>
               <label htmlFor='lastName' className={styles['auth-form__label']}>
-              Last Name
+                Last Name
               </label>
               <input
                 type='text'
@@ -206,7 +210,6 @@ function AuthUI({
                 required
               />
             </div>
-           
           </>
         )}
 
@@ -233,7 +236,7 @@ function AuthUI({
         {/* <button type="button" className="auth-actions__google-button" onClick={handleGoogleSignIn}>
           Sign In with Google
         </button> */}
-        {googleSignInUrl && (
+        {!googleSignInUrl && (
           <>
             <div className={styles['separator']}>
               <span>OR</span>
@@ -243,19 +246,8 @@ function AuthUI({
               className={styles['google-signin-button']}
               // onClick={handleGoogleSignIn}
             >
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                viewBox='0 0 48 48'
-                width='24'
-                height='24'
-              >
-                {/* Google Icon SVG Path (same as in your Auth component) */}
-                <path
-                  fill='#EA4335'
-                  d='M24 9.5c3.54 0 6.71 1.22 9.21 3.2l6.88-6.88c-5.86-5.28-13.5-8.2-22.09-8.2-17.21 0-31.28 14.07-31.28 31.28 0 11.59 8.14 22.73 19.73 28.93l-6.77-6.77c-3.91-2.76-6.11-7.08-6.11-11.96 0-8.02 5.84-14.62 13.8-14.62 2.25 0 4.42.61 6.33 1.64l4.73-4.73c-2.75-1.69-6.15-2.7-9.89-2.7-7.1 0-13.07 4.14-15.08 9.89l6.77 6.77c3.9-2.23 6.77-3.47 9.86-3.47 6.05 0 11.27 3.96 13.07 9l6.88 6.88c-3.14-5.33-7.96-8.69-13.07-8.69-11.59 0-21.27 9.67-21.27 21.27 0 11.59 9.67 21.27 21.27 21.27 11.59 0 21.27-9.67 21.27-21.27 0-5.18-2.06-9.86-5.86-13.5z'
-                ></path>
-              </svg>
-              Continuar con Google
+              <GoogleLogo size={16} />
+              Continue with Google
             </button>
           </>
         )}

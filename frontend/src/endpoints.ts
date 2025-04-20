@@ -11,6 +11,14 @@ export const url_investment_acc = BASE_URL + '/' + 'investment-accounts'; //not 
 
 export const USER_ID: string = import.meta.env.VITE_USER_ID;
 
+//auth sign in user
+
+//api/auth/sign-up
+//api/auth/sign-in
+//http://localhost:5000/api/auth/sign-in
+export const url_signin: string =
+  BASE_URL + '/' + '/auth/sign-in';
+
 //account_types list
 //http://localhost:5000/api/fintrack/account/type/list
 export const url_account_type_list: string =

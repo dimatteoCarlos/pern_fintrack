@@ -1,5 +1,7 @@
 /* src/components/auth/AuthUI.module.css */
-
+.borderTest{
+  border:3px solid red;
+}
 .auth-container {
   display: flex;
   flex-direction: column;
@@ -8,7 +10,9 @@
   border: 1px solid #e0e0e0;
   border-radius: 0.5rem; /* 8px / 16px */
   background-color: #f9f9f9;
-  width: 21.875rem; /* 350px / 16px */
+  width: 90%; /* 350px / 16px */
+  max-width: 22rem;
+  /* width: 21.875rem; */
   margin: 1.25rem auto;
   
 }
@@ -17,12 +21,14 @@
   font-size: 1.8rem; /* 1.8 * 16px = 28.8px */
   margin-bottom: 1.25rem;
   color: #333;
+  
 }
 
 .auth-container__errorMsg {
   color: #d32f2f;
   margin-bottom: 0.625rem; /* 10px / 16px */
   font-size: 0.9rem; /* 0.9 * 16px = 14.4px */
+  
 }
 
 .auth-form {
@@ -30,6 +36,8 @@
   flex-direction: column;
   width: 100%;
   margin-bottom: 1.25rem;
+  
+  
 }
 
 .auth-form__field {

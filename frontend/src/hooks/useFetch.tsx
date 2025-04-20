@@ -20,7 +20,6 @@ export function useFetch<R>(url: string): FetchResponse<R> {
       setError(null);
 
     console.log('url:', url)
-
       try {
         const response: AxiosResponse<R> = await axios.get(url);
 

@@ -1,16 +1,17 @@
-/* src/pages/auth/styles/authLayout.module.css */
+/* src/pages/auth/styles/authPage.module.css */
 button {
   cursor: pointer;
 }
-.authLayoutContainer {
+.authPageContainer {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f4f4f4; /* Un fondo claro para el layout */
-  --opacidad-negro: 0.7;
+  background-color: #f4f4f4;
+  --opacidad-black-start: 0.1;
+  --opacidad-black-end: 0.8;
   background-image: linear-gradient(
-      rgba(0, 0, 0, var(--opacidad-negro)),
-      rgba(0, 0, 0, var(--opacidad-negro))
+      rgba(0, 0, 0, var(--opacidad-black-start, 0.1)),
+      rgba(0, 0, 0, var(--opacidad-black-end))
     ),
     url('/src/assets/fintrackDemo.png');
   background-repeat: no-repeat;
@@ -40,9 +41,8 @@ button {
 
 .logoText {
   color: black;
-  /* Estilos para el texto del logo si no usas una imagen */
 }
-
+/*ul*/
 .navList {
   list-style: none;
   display: flex;
@@ -58,6 +58,7 @@ button {
 .navItem {
   /* Estilos para cada item de la lista */
   border: 1px solid black;
+  cursor: pointer;
 }
 .navItem {
   padding: 0.5rem;
@@ -71,43 +72,17 @@ button {
   margin-right: 1rem;
 }
 
-/* .navLink {
-  text-decoration: none;
-  color: #333;
-  font-size: 1rem;
-  transition: color 0.3s ease;
-} */
-
-/* .navLink:hover {
+.navItem:hover {
   color: #007bff;
-} */
-/*El atributo composes es una característica de CSS Modules que permite heredar estilos de otra clase*/
-/* .navLinkActive {
-  composes: navLink;
-  color: #0056b3;
-  font-weight: bold;
-} */
-/* .navButton {
-  background: none;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 1rem;
-  color: #333;
-  font-size: 1rem;
-  transition: color 0.3s ease;
-  background-color: red;
+  font-weight: bolder;
 }
-
-.navButton:hover {
-  color: #007bff;
-} */
 
 .mainContent {
   flex-grow: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
+  padding: 1rem;
 }
 
 .menuToggleButton {
@@ -121,7 +96,7 @@ button {
 .menuToggleButton {
   color: black;
 }
-
+/*MODAL*/
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -133,15 +108,16 @@ button {
   justify-content: center;
   align-items: center;
   z-index: 100;
+  backdrop-filter: blur(2px);
 }
 
 .modalContent {
   background-color: #fff;
-  padding: 2rem;
+  padding: 1rem;
   border-radius: 0.5rem;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   width: 90%; /* Ajusta el ancho según necesites */
-  max-width: 400px; /* Ancho máximo del modal */
+  max-width: 400px;
 }
 
 .modalContent h2 {
@@ -172,7 +148,7 @@ button {
     flex-direction: column;
     background-color: #fff;
     position: absolute;
-    top: 3.5rem; /* Ajusta según la altura de tu navbar */
+    top: 3.5rem; /* Ajusta según la altura de navbar */
     left: 0;
     width: 100%;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -193,10 +169,10 @@ button {
   }
 
   .navButton {
-    width: 100%;
     border-radius: 0.25rem;
     padding: 0.75rem;
     margin-bottom: 0.5rem;
+    width: 100%;
   }
 
   .menuToggleButton {
@@ -204,6 +180,6 @@ button {
   }
 
   .logoContainer {
-    font-size: 1.2rem; /* Ajusta el tamaño del logo en pantallas pequeñas */
+    font-size: 1.2rem; /* adjust logo text size */
   }
 }

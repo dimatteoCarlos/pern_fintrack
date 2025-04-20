@@ -37,19 +37,18 @@ import ProtectedRoute from './pages/auth/ProtectedRoute.tsx';
 
 //--------------------------------
 
-import AuthLayout from './pages/auth/AuthLayout';
 import AuthPage from './pages/auth/AuthPage.tsx';
 
 function App() {
   const router = createBrowserRouter([
     //access to fintrack app
 
-    { path: '/', element: <Navigate to='/auth/signin' replace /> },
+    { path: '/', element: <Navigate to='/auth/' replace /> },
 
     //authentication routes
     {
       path: '/auth',
-      element: <AuthLayout />,
+      element: <AuthPage />,
       // children: [
       //   { path: '/auth/signin', element: <AuthPage /> },
       //   { path: '/auth/signup', element: <AuthPage /> },

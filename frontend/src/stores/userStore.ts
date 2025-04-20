@@ -23,8 +23,8 @@ const initialUserState: UserDataType = {
   // userId: null,
   userId: USERID,
   username: '',
-  name: '',
-  lastname: '',
+  user_firstname: '',
+  user_lastname: '',
   email: '',
 };
 

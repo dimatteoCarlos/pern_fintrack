@@ -49,7 +49,7 @@ export function useFetchLoad<R, D = unknown>({
       const response: AxiosResponse<R> = await axios(config);
 
       if (response.status >= 200 && response.status < 300) {
-        const respData = (await response.data) as R;
+        const respData = ( response.data) as R;
         setData(respData);
         // setData(response.data);
       } else {
