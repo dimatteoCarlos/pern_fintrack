@@ -49,10 +49,6 @@ function App() {
     {
       path: '/auth',
       element: <AuthPage />,
-      // children: [
-      //   { path: '/auth/signin', element: <AuthPage /> },
-      //   { path: '/auth/signup', element: <AuthPage /> },
-      // ],
     },
 
     //pages/Layout
@@ -60,7 +56,7 @@ function App() {
     //set the function for isAuthenticated
     {
       path: '/fintrack',
-      element: <ProtectedRoute isAuthenticated={true} />,
+      element: <ProtectedRoute />,
       children: [
         {
           path: '/fintrack/',

@@ -1,22 +1,8 @@
 // src/auth/store/authStore.ts
 import { create } from 'zustand';
-import { UserDataType } from '../types/authTypes';
+import { AuthStateType } from '../types/authTypes';
 
 // Define the state structure for authentication
-
-interface AuthStateType {
-  isAuthenticated: boolean;
-  userData: UserDataType | null;
-  isLoading: boolean;
-  error: string | null;
-  setIsAuthenticated: (isAuthenticated: boolean) => void;
-  setUserData: (userData: UserDataType | null) => void;
-  setError: (error: string | null) => void;
-  clearError: () => void;
-  successMessage: string | null;
-  setSuccessMessage: (successMessage: string | null) => void;
-  clearSuccessMessage: () => void;
-}
 
 // Create the Zustand store for authentication
 export const useAuthStore = create<AuthStateType>((set) => ({
@@ -24,6 +10,8 @@ export const useAuthStore = create<AuthStateType>((set) => ({
   userData: null,
   isLoading: false,
   error: null,
+  setIsLoading:(isLoading:boolean)=>set({isLoading})
+  ,
   // Action to set the authentication status
   setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
 
@@ -37,4 +25,8 @@ export const useAuthStore = create<AuthStateType>((set) => ({
   successMessage: '',
   setSuccessMessage: (successMessage) => set({ successMessage }),
   clearSuccessMessage: () => set({ successMessage: null }),
+
+  showSignInModalOnLoad: false,
+  setShowSignInModalOnLoad: (showSignInModalOnLoad) =>
+    set({ showSignInModalOnLoad }),
 }));

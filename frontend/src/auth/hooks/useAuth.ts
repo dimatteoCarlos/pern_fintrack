@@ -1,8 +1,13 @@
 // src/auth/hooks/useAuth.ts
-import { useAuthStore } from '../stores/useAuthStore.ts'; // Import our Zustand store
-import useFetchPost from '../../hooks/useFetchPost'; // For making POST requests to the backend
-import { useNavigate } from 'react-router-dom'; // For programmatic navigation
-import { url_signin, url_signup } from '../../endpoints'; // Our API endpoint URLs
+
+// Import  Zustand store
+import { useAuthStore } from '../stores/useAuthStore.ts';
+ // For making POST requests to the backend
+import useFetchPost from '../../hooks/useFetchPost'; 
+// For programmatic navigation
+import { url_signin, url_signup } from '../../endpoints';
+import { useNavigate } from 'react-router-dom';
+ //API endpoint URLs
 import {
   AuthResponseType,
   SignInCredentialsType,
@@ -16,6 +21,7 @@ const useAuth = () => {
     isAuthenticated,
     userData,
     isLoading,
+    setIsLoading,
     error,
     setIsAuthenticated,
     setUserData,
@@ -24,6 +30,8 @@ const useAuth = () => {
     successMessage,
     setSuccessMessage,
     clearSuccessMessage,
+    showSignInModalOnLoad, 
+    setShowSignInModalOnLoad, 
   } = useAuthStore();
 
   // Get the navigate function from React Router
@@ -40,31 +48,37 @@ const useAuth = () => {
     AuthResponseType
   >();
 
-  // const { request: signinRequest } = useFetchPost();
-
   // Asynchronous function to handle user sign-in
   const handleSignIn = async (credentials: SignInCredentialsType) => {
     // Clear any previous errors or success messages
     clearError();
     clearSuccessMessage();
+    setIsLoading(true);
+
     // Attempt to sign in the user by calling the backend API
     const result = await signinRequest(url_signin, credentials);
+    setIsLoading(false);
     // Check if the sign-in was successful (we received data)
     console.log('handleSignIn:', result);
 
     if (result?.data?.token && result?.data?.user) {
       // Store the access token in sessionStorage (for web context, temporary)
       sessionStorage.setItem('accessToken', result.data.token);
+
       // Update the authentication state in the Zustand store
       setUserData(result.data.user);
       setIsAuthenticated(true);
+
       // Set a success message for the user
       setSuccessMessage('Sign in successful!');
+
       // Navigate the user to the main application page
       navigateTo('/fintrack');
+
       return true; // Indicate successful sign-in
     } else if (result?.error) {
       setError(result.error || 'Sign up failed. Please try again.');
+
       // If there was an error, return false
       return false;
     }
@@ -77,9 +91,11 @@ const useAuth = () => {
     // Clear any previous errors or success messages
     clearError();
     clearSuccessMessage();
+    setIsLoading(true);
+ 
     // Attempt to sign up the user by calling the backend API
     const result = await signupRequest(url_signup, userData);
-
+    setIsLoading(false);
     // Check if the sign-up was successful (we received data potentially with a token and user)
     if (result?.data?.token && result?.data?.user) {
       // Store the access token in sessionStorage (for web context, temporary)
@@ -124,6 +140,8 @@ const useAuth = () => {
     handleSignOut,
     clearError,
     clearSuccessMessage,
+    showSignInModalOnLoad,
+    setShowSignInModalOnLoad,
   };
 };
 

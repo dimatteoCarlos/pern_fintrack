@@ -1,3 +1,4 @@
+//AuthUI.tsx
 import { useEffect, useState } from 'react';
 import styles from './styles/AuthUI.module.css';
 import GoogleLogo from '../../assets/auth/GoogleLogo';
@@ -8,26 +9,6 @@ import {
 } from '../../auth/types/authTypes';
 // import { useNavigate } from 'react-router-dom';
 
-// type CredentialsType = {
-//   username: string;
-//   email: string;
-//   user_firstname: string;
-//   user_lastname: string;
-//   password: string;
-//   // role?: 'user' | 'admin' | 'super_admin';
-//   role?: UserRolesType;
-// };
-
-// interface SignInCredentialsType {
-//   username?: string;
-//   email?: string;
-//   password: string;
-// }
-// interface SignUpCredentialsType extends SignInCredentialsType {
-//   user_firstname: string;
-//   user_lastname: string;
-//   role?: UserRolesType;
-// }
 type AuthUIPropsType = {
   onSignIn: (credentials: SignInCredentialsType) => void;
   onSignUp: (userData: SignUpCredentialsType) => void;
@@ -109,14 +90,14 @@ function AuthUI({
   function inputCredentialsHandler(e: React.ChangeEvent<HTMLInputElement>) {
     setCredentials((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
-
+// 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if (messageToUser && !isLoading) setShowMessageToUser(true);
     timer = setTimeout(() => {
       setShowMessageToUser(false);
       setShowError(false);
-    }, 3000);
+    }, 7000);
 
     if (error && !isLoading) setShowError(true);
     timer = setTimeout(() => {
@@ -127,6 +108,13 @@ function AuthUI({
       if (timer) clearTimeout(timer);
     };
   }, [messageToUser, error, isLoading]);
+
+  //Reset form on signup error
+  useEffect(() => {
+    if (error && !isLoading && !isSignIn) {
+      setCredentials(INITIAL_CREDENTIALS_STATE);
+    }
+  }, [error, isLoading, isSignIn]);
 
   return (
     <div className={styles['auth-container']}>
@@ -277,9 +265,6 @@ function AuthUI({
             </button>
           </>
         )}
-
-        {/* Botón de Google Auth (lo añadiremos después con la lógica) */}
-        {/* <button type="button" className="auth-actions__google-button">Iniciar sesión con Google</button> */}
       </div>
     </div>
   );

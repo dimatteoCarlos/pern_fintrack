@@ -1,14 +1,9 @@
 //src/pages/auth/AuthPage.tsx
 import styles from './styles/authPage.module.css';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AuthUI from './AuthUI';
+import useAuth from '../../auth/hooks/useAuth';
 import Logo from '../../assets/logo.svg';
-import useFetchPost from '../../hooks/useFetchPost';
-import {
-  SignInCredentialsType,
-  SignUpCredentialsType,
-} from '../../auth/types/authTypes';
-import { url_signin, url_signup } from '../../endpoints';
 
 //--MAIN COMPONENT
 export default function AuthPage() {
@@ -16,90 +11,77 @@ export default function AuthPage() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [showSigninModal, setShowSigninModal] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
-  //CUSTOM HOOKS FOR SIGNIN AND SIGNUP
-  //--execute useHooks, variables destructuring and aliasing
-  const {
-    isLoading: isSigninLoading,
-    error: signinError,
-    request: signinRequest,
-    message: signinMessage,
-  } = useFetchPost<SignInCredentialsType, unknown>();
-  // } = useFetchPost<unknown>();
-  const {
-    isLoading: isSignupLoading,
-    error: signupError,
-    request: signupRequest,
-    message: signupMessage,
-  } = useFetchPost<SignUpCredentialsType, unknown>();
 
-  console.log(
-    isSigninLoading,
-    signinError,
-    isSignupLoading,
-    signupError,
-    signinMessage,
-    signupMessage
-  );
+  //CUSTOM HOOKS FOR SIGNIN AND SIGNUP
+  // Execute the useAuth hook to get authentication state and actions
+  const {
+    // isAuthenticated,
+    // userData,
+    // handleSignOut,
+    isLoading,
+    error,
+    successMessage,
+    handleSignIn,
+    handleSignUp,
+    clearError,
+    clearSuccessMessage,
+    showSignInModalOnLoad,
+    setShowSignInModalOnLoad ,
+  } = useAuth();
+
+
   //------------------------------------
   //FUNCTIONS EVENT HANDLERS
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const openSigninModal = () => {
-    setIsMenuOpen(false);
+  const openSigninModalHandler = () => {
+    setIsMenuOpen(false); //
     setShowSigninModal(true);
     setShowSignupModal(false);
+    clearError();
+    clearSuccessMessage();
+    setShowSignInModalOnLoad(false); 
   };
-  const openSignupModal = () => {
-    setIsMenuOpen(false);
+
+  const openSignupModalHandler = () => {
+    setIsMenuOpen(false); //
     setShowSigninModal(false);
     setShowSignupModal(true);
+
+    clearError();
+    clearSuccessMessage();
+    setShowSignInModalOnLoad(false);
   };
 
   const closeAuthModal = () => {
     setShowSignupModal(false);
     setShowSigninModal(false);
-  };
-  //--AUTH FUNCTIONS---------------
-  //url: string, body?: SignInCredentialsType | undefined, headers?: Record<string, string>) => Promise<FetchPostStateType<unknown>>
-  //desarrollar la lociga y el backend, incluir ya de una vez el google auth creo que si se puede, sin meter passport.y seguir el hibirdo para mobile y web, cont headers y cookies, analizando el userAgent
+    clearError;
+    clearSuccessMessage;
+    setShowSigninModal(false);
 
-  const handleSignIn = async (credentials: SignInCredentialsType) => {
-    console.log('desde el handle:', credentials)
-    const url = url_signin;
-    const result = await signinRequest(url, credentials);
-    console.log('handleSignIn:', result);
-    if (result.data) {
-      //que empiece la fiesta
-      closeAuthModal();
+  };
+//------------------------------------
+  // Effect to show sign-in modal on load if triggered by ProtectedRoute
+  useEffect(() => {
+    if (showSignInModalOnLoad) {
+      setShowSigninModal(true);
+      setShowSignInModalOnLoad(false); // Reset after showing
     }
-  };
+  }, [showSignInModalOnLoad, setShowSignInModalOnLoad]);
 
-  const handleSignUp = async (userData: SignUpCredentialsType) => {
-    console.log('desde el handle:', userData)
-    const url = url_signup;
-    const result = await signupRequest(url, userData);
-    console.log('🚀 ~ handleSignUp ~ result:', result);
-    if (!result.data) {
-      console.log('no resulta data');
-    }
-    //start the party
-
-    closeAuthModal();
-  };
 
   //------------------------------------
   return (
     <div className={styles.authPageContainer}>
       {/* {navbar} */}
       <nav className={styles.navbar}>
-        <div className={styles.logoContainer} onClick={openSigninModal}>
-          {/* <Link to='/auth/signin' className={styles.logoLink}> */}
+        <div className={styles.logoContainer} onClick={openSigninModalHandler}>
           <span>
             <Logo />
           </span>
-          {/* </Link> */}
         </div>
 
         <button
@@ -116,11 +98,11 @@ export default function AuthPage() {
             isMenuOpen ? styles.navMenuActive : ''
           }`}
         >
-          <li className={styles.navItem} onClick={openSigninModal}>
+          <li className={styles.navItem} onClick={openSigninModalHandler}>
             Signin
           </li>
 
-          <li className={styles.navItem} onClick={openSignupModal}>
+          <li className={styles.navItem} onClick={openSignupModalHandler}>
             Sign Up
           </li>
         </ul>
@@ -138,11 +120,11 @@ export default function AuthPage() {
               {/* <h2>Signin</h2> */}
               <AuthUI
                 onSignIn={handleSignIn}
-                onSignUp={handleSignUp}
-                isLoading={isSigninLoading}
-                error={signinError}
+                onSignUp={() => {}}
+                isLoading={isLoading}
+                error={error}
                 isSignInInitial={true}
-                messageToUser={signinMessage}
+                messageToUser={successMessage}
               />
               <button className={styles.closeButton} onClick={closeAuthModal}>
                 Close
@@ -160,12 +142,12 @@ export default function AuthPage() {
               {/* <h2>Signup</h2> */}
 
               <AuthUI
-                onSignIn={handleSignIn}
                 onSignUp={handleSignUp}
-                isLoading={isSignupLoading}
-                error={signupError}
+                onSignIn={() => {}}
+                isLoading={isLoading}
+                error={error}
                 isSignInInitial={false}
-                messageToUser={signupMessage}
+                messageToUser={successMessage}
               />
               <button className={styles.closeButton} onClick={closeAuthModal}>
                 Close
@@ -177,32 +159,3 @@ export default function AuthPage() {
     </div>
   );
 }
-
-// {showSignupModal && (
-//   <Modal onClose={closeAuthModal}>
-//     <AuthUI
-//       onSignIn={handleLogin}
-//       onSignUp={handleSignup}
-//       isLoading={isSignupLoading}
-//       error={signupError}
-//       messageToUser={signupMessage}
-//       isSignInInitial={false}
-//     />
-//   </Modal>
-// )}
-// </main>
-// </div>
-// );
-// }
-
-// // Componente simple para el modal reutilizable
-// function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-// return (
-// <div className={styles.modalOverlay} onClick={onClose}>
-// <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-// {children}
-// <button className={styles.closeButton} onClick={onClose}>Close</button>
-// </div>
-// </div>
-// );
-// }
