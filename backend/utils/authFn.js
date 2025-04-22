@@ -28,8 +28,9 @@ export const createToken = (id, role) => {
   if (!id) {
     throw new Error('the user id is required to generate the token.');
   }
+
   if (!role) {
-    throw new Error('the user role  is required to generate the token.');
+    throw new Error('the user role is required to generate the token.');
   }
 
   // Verificar que la clave secreta esté configurada
@@ -39,7 +40,33 @@ export const createToken = (id, role) => {
     );
   }
 
-  return jwt.sign({ userId: id, userRole: role }, process.env.JWT_SECRET, {
-    expiresIn: '1d',
-  });
+  return jwt.sign(
+    { userId: id, type: 'access_token', role },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '1h',
+    }
+  );
+};
+
+//--
+export const createRefreshToken = (id) => {
+  if (!id) {
+    throw new Error('the user id is required to generate the token.');
+  }
+
+  // Verificar que la clave secreta esté configurada
+  if (!process.env.JWT_REFRESH_TOKEN_SECRET) {
+    throw new Error(
+      'Secret refresh JWT key is not configured on environment variables. La clave secreta JWT no está configurada en las variables de entorno.'
+    );
+  }
+
+  return jwt.sign(
+    { userId: id, type: 'refresh_token' },
+    process.env.JWT_REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: '1d',
+    }
+  );
 };

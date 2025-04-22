@@ -6,6 +6,8 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { pool, checkConnection } from './db/configDB.js';
+import useragent from 'express-useragent';
+
 import {
   tblAccountTypes,
   tblCategoryNatureTypes,
@@ -27,6 +29,7 @@ dotenv.config();
 // type CustomError = Error & { status?: number };
 // const app: Express = express();
 const app = express();
+app.use(useragent.express());
 app.disable('x-powered-by');
 // const {
 //   DB_USER,
@@ -116,7 +119,7 @@ async function initializeDatabase() {
             await pool.query({
               text: `TRUNCATE TABLE ${item.tblName} CASCADE`,
             });
-            await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
+            // await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
             console.log(indx, item.tblName, 'truncated');
           } catch (error) {
             console.error('error truncating the table', `${item.tblName}`);
@@ -206,7 +209,7 @@ app.use((err, req, response, next) => {
     stack: process.env.NODE_ENV == 'development' ? err.stack : undefined, //modificado
   });
 });
-
+//--------------------------------
 process.on('SIGINT', () => {
   console.log(pc.cyan('Shutting down gracefully...'));
   pool.end(() => {

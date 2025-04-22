@@ -2,12 +2,12 @@
 
 // Import  Zustand store
 import { useAuthStore } from '../stores/useAuthStore.ts';
- // For making POST requests to the backend
-import useFetchPost from '../../hooks/useFetchPost'; 
+// For making POST requests to the backend
+import useFetchPost from '../../hooks/useFetchPost';
 // For programmatic navigation
 import { url_signin, url_signup } from '../../endpoints';
 import { useNavigate } from 'react-router-dom';
- //API endpoint URLs
+//API endpoint URLs
 import {
   AuthResponseType,
   SignInCredentialsType,
@@ -30,8 +30,8 @@ const useAuth = () => {
     successMessage,
     setSuccessMessage,
     clearSuccessMessage,
-    showSignInModalOnLoad, 
-    setShowSignInModalOnLoad, 
+    showSignInModalOnLoad,
+    setShowSignInModalOnLoad,
   } = useAuthStore();
 
   // Get the navigate function from React Router
@@ -92,7 +92,7 @@ const useAuth = () => {
     clearError();
     clearSuccessMessage();
     setIsLoading(true);
- 
+
     // Attempt to sign up the user by calling the backend API
     const result = await signupRequest(url_signup, userData);
     setIsLoading(false);
@@ -127,6 +127,45 @@ const useAuth = () => {
     // Navigate the user back to the authentication page
     navigateTo('/auth');
   };
+  //extract token from cookies (web)
+  // Function to retrieve the 'accessToken' value from the browser's cookies
+
+  // const getAccessTokenFromCookies = (): string | null => {
+  //   const match = document.cookie.match(/(?:^|;\s*)accessToken=([^;]*)/);
+  //   return match ? decodeURIComponent(match[1]) : null;
+  // };
+  
+  const getAccessTokenFromCookies = (): string | null => {
+    // Define the name of the cookie we're looking for
+    const name = 'accessToken=';
+
+    // Decode the cookie string to handle special characters (e.g., %20 for space)
+    // decodifica una cadena que ha sido codificada como URI (por ejemplo, usando encodeURIComponent()).
+    const decodedCookie = decodeURIComponent(document.cookie);
+
+    // Split the cookies into an array, each item is "key=value"
+    const cookieArray = decodedCookie.split(';');
+
+    // Loop through the cookies
+    for (let i = 0; i < cookieArray.length; i++) {
+      // Get the current cookie string
+      const c = cookieArray[i].trimStart();
+
+      // Check if the cookie starts with "accessToken="
+      if (c.startsWith(name)) {
+        // Return the value part of the cookie (after 'accessToken=')
+        return c.substring(name.length, c.length).trim();
+      }
+    }
+
+    // If not found, return null
+    return null;
+  };
+
+    // Función para eliminar el token de las cookies (para logout en web)
+    const clearAccessTokenFromCookies = () => {
+      document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    };
 
   // Return the authentication state and action functions
   return {

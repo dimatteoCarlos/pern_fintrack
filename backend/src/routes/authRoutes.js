@@ -1,11 +1,14 @@
 import express from 'express';
 import passport from 'passport';
 import { signUpUser, signInUser } from '../controllers/authController.js';
+import { authDetectClienttype } from '../middlewares/authDetectClientType.js';
+import { validateSignUp } from '../middlewares/validateSignUp.js';
 
 const router = express.Router();
 
 // Ruta para el registro de usuarios: //api/auth/sign-up
-router.post('/sign-up', signUpUser);
+router.post('/sign-up',signUpUser);
+// router.post('/sign-up',validateSignUp, signUpUser);
 
 // Ruta para el inicio de sesión: //api/auth/sign-in
 router.post('/sign-in', signInUser);

@@ -244,7 +244,7 @@ function AuthUI({
         >
           {isSignIn
             ? "Don't have an account? Sign up"
-            : 'Already have an account? Log in'}
+            : 'Already have an account? Sign in'}
         </button>
 
         {/* <button type="button" className="auth-actions__google-button" onClick={handleGoogleSignIn}>

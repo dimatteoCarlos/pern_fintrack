@@ -56,7 +56,7 @@ export type UseAuthResponseType={
   clearError: () => void;
   clearSuccessMessage: () => void;
 
-  showSignInModalOnLoad: boolean; // Añade esta línea
+  showSignInModalOnLoad: boolean; 
   setShowSignInModalOnLoad: (showSignInModalOnLoad: boolean) => void;
 
 }

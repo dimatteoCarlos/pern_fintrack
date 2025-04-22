@@ -99,11 +99,11 @@ export default function AuthPage() {
           }`}
         >
           <li className={styles.navItem} onClick={openSigninModalHandler}>
-            Signin
+            Sign in
           </li>
 
           <li className={styles.navItem} onClick={openSignupModalHandler}>
-            Sign Up
+            Sign up
           </li>
         </ul>
       </nav>
