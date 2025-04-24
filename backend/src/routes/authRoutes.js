@@ -1,13 +1,14 @@
 import express from 'express';
 import passport from 'passport';
-import { signUpUser, signInUser } from '../controllers/authController.js';
-import { authDetectClienttype } from '../middlewares/authDetectClientType.js';
-import { validateSignUp } from '../middlewares/validateSignUp.js';
+import { signUpUser, signInUser, signOutUser } from '../controllers/authController.js';
+import { authRefreshToken } from '../controllers/authRefreshToken.js';
+
+// import { validateSignUp } from '../middlewares/validateSignUp.js';
 
 const router = express.Router();
 
 // Ruta para el registro de usuarios: //api/auth/sign-up
-router.post('/sign-up',signUpUser);
+router.post('/sign-up', signUpUser);
 // router.post('/sign-up',validateSignUp, signUpUser);
 
 // Ruta para el inicio de sesión: //api/auth/sign-in
@@ -28,5 +29,10 @@ router.get(
     res.cookie('access_token', token, { httpOnly: true }).redirect('/');
   }
 );
+
+//api/auth/refresh-token
+router.post('/refresh-token', authRefreshToken);
+//api/auth/sign-out
+router.post('/sign-out', signOutUser);
 
 export default router;

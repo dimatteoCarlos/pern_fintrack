@@ -1,7 +1,10 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import pc from 'picocolors';
+import { pool } from '../../src/db/configDB.js';
 dotenv.config();
+pool
 
 const salt = Number(process.env.SALT_ROUNDS);
 
@@ -70,3 +73,47 @@ export const createRefreshToken = (id) => {
     }
   );
 };
+
+export async function cleanRevokedTokens() {
+  try {
+
+    await pool.query('SELECT 1');
+    const daysAgo = new Date();
+    daysAgo.setDate(daysAgo.getDate() - 1);
+
+    const result = await pool.query(
+      'DELETE FROM refresh_tokens WHERE revoked = TRUE AND updated_at <= $1',
+      [daysAgo]
+    );
+
+    console.log(
+      pc.greenBright(
+        `Limpieza de tokens revocados al inicio: ${result.rowCount} tokens eliminados.`
+      )
+    );
+  } catch (error) {
+    console.error(
+      pc.redBright(
+        'Error durante la limpieza inicial de tokens revocados:',
+        error
+      )
+    );
+  }
+}
+//table diagnostic
+export async function verifyTableStructure() {
+  try {
+
+
+    const result = await pool.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'refresh_tokens'
+    `);
+    console.log('Estructura de refresh_tokens:', result.rows);
+    return result.rows;
+  } catch (error) {
+    console.error('Error al verificar estructura:', error);
+    throw error;
+  }
+}

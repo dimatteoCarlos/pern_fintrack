@@ -1,40 +1,41 @@
-//input of: user_accounts, expense_categories, movements, trac
+// src/middleware/authMiddleware.js
 
 import jwt from 'jsonwebtoken';
 import { createError } from '../../utils/errorHandling.js';
 
-export const verifyHeaderAuth = (req, res, next) => {
-  const authHeader = req?.headers?.authorization;
+//---
+export const getAuthToken = (req) => {
+  if (req.headers['authorization']) {
+    const authHeader = req.headers['authorization'];
+    if (authHeader.startsWith('Bearer ')) {
+      return authHeader.split(' ')[1];
+    }
+  }
 
-  if (!authHeader || !authHeader?.startsWith('Bearer')) {
-    return res.status(401).json({ message: 'Authentication failed' });
+  if (req.cookies.accessToken) {
+    return req.cookies.accessToken;
   }
-  const token = authHeader.split(' ')[1];
-  try {
-    const userToken = jwt.verify(token, process.env.JWT_SECRET);
-    req.body.user = { userId: userToken.userId };
-    next();
-  } catch (error) {
-    console.log(error);
-    res.status(401).json({ message: 'Authentication fialed' });
-  }
+
+  return null;
 };
 
-//---
 export const verifyToken = async (req, res, next) => {
   console.log('verifyToken');
-
-  const token = req.cookies.access_token;
+  // Get token from Authorization header (for mobile) or cookies (for web)
+  const token = getAuthToken(req);
 
   if (!token) {
     console.error('Error when verifying token');
     return next(
-      createError(401, 'Access Unauthenticated. No token provided. Please log in again')
+      createError(
+        401,
+        'Access Unauthenticated. No token provided. Please sign in again'
+      )
     );
   }
 
   try {
-    const getDecoded = await new Promise((resolve, reject) => {
+    const decoded = await new Promise((resolve, reject) => {
       jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
         if (err) {
           reject(err);
@@ -44,7 +45,7 @@ export const verifyToken = async (req, res, next) => {
       });
     });
 
-    req.user = getDecoded;
+    req.user = decoded;
     next();
   } catch (error) {
     return next(
@@ -53,7 +54,7 @@ export const verifyToken = async (req, res, next) => {
   }
 };
 
-// {
+//example:  {
 //   userId: 'f7c5abf9-89e5-4891-bfb8-6dfe3022f226',
 //   userRole: 'user',
 //   iat: 1740504868,
@@ -113,3 +114,19 @@ export const verifyAdmin = (req, res, next) => {
 };
 
 //-------
+export const verifyHeaderAuth = (req, res, next) => {
+  const authHeader = req?.headers?.authorization;
+
+  if (!authHeader || !authHeader?.startsWith('Bearer')) {
+    return res.status(401).json({ message: 'Authentication failed' });
+  }
+  const token = authHeader.split(' ')[1];
+  try {
+    const userToken = jwt.verify(token, process.env.JWT_SECRET);
+    req.body.user = { userId: userToken.userId };
+    next();
+  } catch (error) {
+    console.log(error);
+    res.status(401).json({ message: 'Authentication fialed' });
+  }
+};

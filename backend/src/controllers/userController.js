@@ -1,4 +1,5 @@
-import { hashed, isRight } from '../../utils/authFn.js';
+import { hashed, isRight } from '../../utils/authUtils/authFn.js';
+
 import { createError } from '../../utils/errorHandling.js';
 import { pool } from '../db/configDB.js';
 

@@ -1,3 +1,4 @@
+//version de SQL mayor a 13.
 export const createMainTables = [
   {
     tblName: 'users',
@@ -156,8 +157,25 @@ account_id INTEGER NOT NULL,
 destination_account_id INT  , 
 status VARCHAR(50) NOT NULL, 
 transaction_actual_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT 
 )`,
+  },
+
+  {
+    tblName: 'refresh_tokens',
+    table: `
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+token_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+token TEXT NOT NULL UNIQUE,
+expiration_date TIMESTAMP NOT NULL,
+revoked BOOLEAN DEFAULT FALSE,
+user_agent TEXT,
+ip_address TEXT, 
+created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+`,
   },
 ];
 
@@ -172,23 +190,13 @@ export const createSearchIndexes = [
     tblName: 'account_types',
     index: `CREATE UNIQUE INDEX index_account_type_name ON account_types(account_type_name)`,
   },
+
+  {
+    tblName: 'refresh_tokens',
+    index: `CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens (user_id);`,
+  },
 ];
 
 // ===========================
 // source_account_id INT  REFERENCES user_accounts(account_id) ON DELETE SET NULL ON UPDATE CASCADE,
 // destination_account_id INT  REFERENCES user_accounts(account_id) ON DELETE SET NULL ON UPDATE CASCADE,
-
-//let's create main tables
-// const {
-//   tblName: user_accounts,
-//   tblName: movements,
-//   tblName: expense_movements,
-//   tblName: expense_categories,
-//   tblName: income_movements,
-//   tblName: income_sources,
-//   tblName: investment_movements,
-//   tblName: debt_movements,
-//   tblName: debt_debtors,
-//   tblName: pocket_movements,
-//   tblName: transactions,
-// } = createMainTables;

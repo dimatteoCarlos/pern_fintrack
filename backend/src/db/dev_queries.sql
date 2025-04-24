@@ -301,3 +301,4 @@
 -- SELECT 	user_id,account_name,account_type_id,2,account_starting_amount,550 AS account_balance,account_start_date
 -- FROM user_accounts
 -- WHERE account_id = 37
+

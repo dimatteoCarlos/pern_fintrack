@@ -1,3 +1,4 @@
+//backend/src/index.js
 // import express, { Express, Request, Response, NextFunction } from 'express';
 import express from 'express';
 import cors from 'cors';
@@ -7,6 +8,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { pool, checkConnection } from './db/configDB.js';
 import useragent from 'express-useragent';
+import '../utils/authUtils/cronJobs.js';
 
 import {
   tblAccountTypes,
@@ -20,14 +22,13 @@ import pc from 'picocolors';
 import { createMainTables } from './db/createTables.js';
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
+import { verifyToken } from './middlewares/authMiddleware.js';
+import { cleanRevokedTokens } from '../utils/authUtils/authFn.js';
 
 // import passport from 'passport';
 // import './config/passport.js';
 
 dotenv.config();
-// interface CustomError extends Error {status?:number}
-// type CustomError = Error & { status?: number };
-// const app: Express = express();
 const app = express();
 app.use(useragent.express());
 app.disable('x-powered-by');
@@ -86,7 +87,7 @@ app.use(cookieParser());
 //------------------
 //Middleware route handling or routes configuration
 app.use('/api', routes);
-app.use('/api/fintrack', fintrack_routes);
+app.use('/api/fintrack', verifyToken, fintrack_routes);
 //------------------
 //response to undefined route request
 app.use('*', (req, res) => {
@@ -180,12 +181,18 @@ async function initializeDatabase() {
 await checkConnection();
 
 await initializeDatabase()
-  .then(() => {
-    // Iniciar el servidor
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(pc.yellowBright(`Server running on port ${PORT}`));
-    });
+  .then(async () => {
+    try {
+      await cleanRevokedTokens(); // Ahora con await
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(pc.yellowBright(`Server running on port ${PORT}`));
+      });
+    } catch (error) {
+      console.error(pc.red('Error cleaning tokens:', error));
+      process.exit(1);
+    }
   })
+
   .catch((error) => {
     console.error(pc.red('Critical error during initialization:', error));
     process.exit(1); // Salir del proceso si hay un error crítico
