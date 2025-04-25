@@ -22,11 +22,16 @@ type AuthUIPropsType = {
 
 //INITIAL STATES VALUES
 const INITIAL_CREDENTIALS_STATE: CredentialsType = {
-  username: '',
-  email: '',
-  user_firstname: '',
-  user_lastname: '',
-  password: '',
+  username: 'user02',
+  email: 'user01@user02.com',
+  user_firstname: 'nombre usuario 01',
+  user_lastname: 'usuario apellido',
+  password: '100',
+  // username: '',
+  // email: '',
+  // user_firstname: '',
+  // user_lastname: '',
+  // password: '',
 };
 
 //--MAIN COMPONENT
@@ -44,7 +49,6 @@ function AuthUI({
   const [showMessageToUser, setShowMessageToUser] = useState(true);
   const [showError, setShowError] = useState(true);
 
-  //
   // const navigateTo = useNavigate();
 
   const [isSignIn, setIsSignIn] = useState(isSignInInitial);
@@ -250,6 +254,7 @@ function AuthUI({
         {/* <button type="button" className="auth-actions__google-button" onClick={handleGoogleSignIn}>
           Sign In with Google
         </button> */}
+
         {!googleSignInUrl && (
           <>
             <div className={styles['separator']}>

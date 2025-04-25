@@ -52,7 +52,7 @@ export const signUpUser = async (req, res, next) => {
       return next(
         createError(
           400,
-          'Bad request: username, email, password, first name and lastname, all fields must be provided. If currency was not provided, usd will be the default currency'
+          'All fields are required. If currency was not provided, usd will be the default currency'
         )
       );
     }
@@ -133,16 +133,23 @@ export const signUpUser = async (req, res, next) => {
         req.ip,
       ]
     );
+
     console.log('🚀 ~ signUpUser ~ newUser:', newUser);
     // delete newUser.password; delete newUser.password_hashed; delete newUser.user_role_name
+
+    const data = {
+      user:{...newUser,
+      currency: currency_code},
+      userAccess: clientDevice,
+    };
 
     // Response handling
     if (clientDevice.trim().toLowerCase() === 'mobile') {
       sendSuccessResponse(
         res,
         201,
-        `User successfully subscribed. Username: ${newUser.username}, email: ${newUser.email}`,
-        { ...newUser, currency: currency_code },
+        `User successfully subscribed. Username: ${newUser.username}, email: ${newUser.email}, accessed: ${clientDevice}`,
+        data,
         accessToken,
         refreshToken
       );
@@ -155,15 +162,16 @@ export const signUpUser = async (req, res, next) => {
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 8 * 60 * 60 * 1000,
-      }); //8h
-      /*maxAge:  7*24* 60 * 60 * 1000, */
+        maxAge: 1 * 60 * 60 * 1000,
+        // maxAge: 7*24 * 60 * 60 * 1000,
+      });
+      /*maxAge:  8* 60 * 60 * 1000, */
 
       sendSuccessResponse(
         res,
         201,
         `User successfully subscribed via ${clientDevice}. Username: ${newUser.username}, email: ${newUser.email}`,
-        { ...newUser, currency: currency_code }
+        data
       );
     }
     await pool.query('COMMIT');
@@ -261,43 +269,55 @@ export const signInUser = async (req, res, next) => {
         req.ip,
       ]
     );
-
     // console.log( accessToken, refreshToken);
 
     req.body.password = undefined;
     user.password_hashed = undefined;
     // console.log('Ejecutando en línea: ' + arguments.callee.caller.toString());
     //Response Handling
+    const data = { user, userAccess: clientDevice };
     if (clientDevice && clientDevice.trim().toLowerCase() === 'mobile') {
       sendSuccessResponse(
         res,
         200,
-        `User ${user.username || user.email} successfully logged in.`,
-        { user },
+        `User ${
+          user.username || user.email
+        }, successfully logged in with ${clientDevice}.`,
+        data,
         accessToken,
         refreshToken
       );
     } else if (clientDevice && clientDevice.trim().toLowerCase() === 'web') {
       res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        httpOnly: false,
+        secure: false,
         maxAge: 60 * 60 * 1000,
-        sameSite: 'strict',
+        sameSite: 'lax',
       });
+      // res.cookie('accessToken', accessToken, {
+      //   httpOnly: true,
+      //   secure: process.env.NODE_ENV === 'production',
+      //   maxAge: 60 * 60 * 1000,
+      //   sameSite: 'strict',
+      // });
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV == 'production',
         maxAge: (24 * 60 * 60 * 1000) / 24,
         sameSite: 'strict',
       });
-      // sendSuccessResponse(res, 200, 'Login successful', { user });
-      return res.status(200).json({
-        message: 'successfully logged in',
-        username: user.username,
-        email: user.email,
-        role: user.user_role_name,
-        userId: user.user_id,
-      });
+      sendSuccessResponse(
+        res,
+        200,
+        `Login successful with ${clientDevice}`,
+        { user },
+        data
+      );
+      // return res.status(200).json({
+      //   message: 'successfully logged in',
+      //   user,  userAccess:clientDevice
+
+      // });
     } else {
       console.error(pc.red('Login error:'), error);
       throw new Error('no mobile nor web site access');
@@ -310,7 +330,9 @@ export const signInUser = async (req, res, next) => {
       userData[0].user_id,
       req.body.password,
       userData[0].password_hashed,
-      user.role
+      user.role,
+      'data:',
+      data
     );
   } catch (error) {
     console.log('auth error:', error);

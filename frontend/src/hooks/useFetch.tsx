@@ -5,7 +5,7 @@ export type FetchResponse<R> = {
   data: R | null;
   isLoading: boolean;
   error: Error | string | null;
-  message:string | null
+  message: string | null;
 };
 
 export function useFetch<R>(url: string): FetchResponse<R> {
@@ -19,16 +19,23 @@ export function useFetch<R>(url: string): FetchResponse<R> {
       setIsLoading(true);
       setError(null);
 
-    console.log('url:', url)
+      console.log('url:', url);
       try {
-        const response: AxiosResponse<R> = await axios.get(url);
+        const response: AxiosResponse<R> = await axios.get(url, {
+          withCredentials: true,
+
+          headers: {
+            ...(sessionStorage.getItem('accessToken') && {
+              Autorization: `Bearer ${sessionStorage.getItem('accessToken')}`,
+            }),
+          },
+        });
 
         if (response.status >= 200 && response.status < 300) {
-          const respData = (response.data) as {data:R, message:string};
+          const respData = response.data as { data: R; message: string };
           console.log('🚀 ~ fetchData ~ respData:', respData);
           setData(response.data);
-          setMessage(respData.message)
-
+          setMessage(respData.message);
         } else {
           const errMsg = `Unexpected status code: ${response.status}`;
           console.log('from useFetch:', errMsg);

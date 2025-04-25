@@ -34,6 +34,7 @@ export function useFetchLoad<R, D = unknown>({
         method,
         url: initialUrl,
         data: payload,
+        withCredentials:true,
         ...(overrideConfig || {}), //overrideConfig must come last to overwrite dynamic url or anything in the initial config, even method
       };
 

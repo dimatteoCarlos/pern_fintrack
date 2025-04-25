@@ -18,11 +18,4 @@ export function classifyAccessDevice(clientType) {
   }
 }
 
-// if (clientType === 'bot') {
-//   return res.status(403).json({ message: 'Los bots no requieren autenticación.' });
 
-// }
-
-// if (clientType === 'unknown') {
-//   return res.status(400).json({ message: 'No se pudo determinar el tipo de cliente. Acceso denegado.' });
-// }

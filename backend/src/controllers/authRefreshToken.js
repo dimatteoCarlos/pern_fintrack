@@ -9,6 +9,7 @@ import { createError } from '../../utils/errorHandling.js';
 import { pool } from '../db/configDB.js';
 import pc from 'picocolors';
 import { sendSuccessResponse } from '../../utils/authUtils/sendSuccessResponse.js';
+
 // Controller for refreshing the access token using a valid refresh token
 export const authRefreshToken = async (req, res, next) => {
   console.log(pc.green('authRefreshToken'));

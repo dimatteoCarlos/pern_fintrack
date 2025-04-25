@@ -9,10 +9,25 @@ import { url_signin, url_signup } from '../../endpoints';
 import { useNavigate } from 'react-router-dom';
 //API endpoint URLs
 import {
-  AuthResponseType,
+  // AuthResponseType,
+  SignInResponseType,
   SignInCredentialsType,
   SignUpCredentialsType,
+  SignUpResponseType,
+  UserDataType,
+  UserResponseDataType,
 } from '../types/authTypes.ts';
+
+// Helper: Mapea respuesta del backend al tipo que usás en el store
+const mapUserResponseToUserData = (
+  user: UserResponseDataType
+): UserDataType => ({
+  userId: user.user_id,
+  username: user.username,
+  user_firstname: user.user_firstname,
+  user_lastname: user.user_lastname,
+  email: user.email,
+});
 
 // CUSTOM HOOK FOR AUTHENTICATION MANAGEMENT
 const useAuth = () => {
@@ -39,16 +54,17 @@ const useAuth = () => {
 
   // Use the custom useFetchPost hook for making API calls
   const { request: signupRequest } = useFetchPost<
-    SignUpCredentialsType,
-    AuthResponseType
+    SignUpCredentialsType, //payload or input with user info T
+    SignUpResponseType //data response from backend R
   >();
 
   const { request: signinRequest } = useFetchPost<
-    SignInCredentialsType,
-    AuthResponseType
+    SignInCredentialsType, //payload or input with user info
+    SignInResponseType
   >();
 
   // Asynchronous function to handle user sign-in
+
   const handleSignIn = async (credentials: SignInCredentialsType) => {
     // Clear any previous errors or success messages
     clearError();
@@ -58,63 +74,112 @@ const useAuth = () => {
     // Attempt to sign in the user by calling the backend API
     const result = await signinRequest(url_signin, credentials);
     setIsLoading(false);
-    // Check if the sign-in was successful (we received data)
-    console.log('handleSignIn:', result);
+    // Check if the sign-in was successful
+    const resp = { ...result };
+    console.log('handleSignIn:', result, 'resp', resp);
 
-    if (result?.data?.token && result?.data?.user) {
-      // Store the access token in sessionStorage (for web context, temporary)
-      sessionStorage.setItem('accessToken', result.data.token);
+    if (result?.status === 200 && result?.data?.user) {
+      const userResponse = result.data.user;
 
-      // Update the authentication state in the Zustand store
-      setUserData(result.data.user);
-      setIsAuthenticated(true);
+      // Map properties from UserResponseDataType to UserDataType
+      const userDataForStore: UserDataType = {
+        userId: userResponse.user_id,
+        username: userResponse.username,
+        user_firstname: userResponse.user_firstname,
+        user_lastname: userResponse.user_lastname,
+        email: userResponse.email,
+      };
+      setUserData(userDataForStore);
+      console.log('token', result.data.accessToken);
 
-      // Set a success message for the user
-      setSuccessMessage('Sign in successful!');
+      if (result.data.accessToken && userResponse) {
+        //MOBILE
+        console.log('MOBILE');
+        sessionStorage.setItem('accessToken', result.data.accessToken);
 
-      // Navigate the user to the main application page
-      navigateTo('/fintrack');
+        // Update the authentication state in the Zustand store
+        // setUserData(user);
+        setIsAuthenticated(true);
+        setSuccessMessage(result.message);
 
-      return true; // Indicate successful sign-in
-    } else if (result?.error) {
-      setError(result.error || 'Sign up failed. Please try again.');
+        // Navigate the user to the main application page
+        navigateTo('/fintrack');
 
-      // If there was an error, return false
-      return false;
+        return true; // Indicate successful sign-in
+      } else if (userResponse) {
+        //WEB
+        console.log('WEB');
+        // Web client: No accessToken in JSON, expecting cookies
+        console.log(userResponse);
+
+        // Update the authentication state in the Zustand store
+        // setUserData(user);
+        setIsAuthenticated(true);
+        setSuccessMessage(result.message);
+        // Navigate the user to the main application page
+        navigateTo('/fintrack');
+      } else if (result?.error) {
+        setError(result.error || 'Sign up failed. Please try again.');
+        // If there was an error, return false
+        return false;
+      }
+      setError('Unexpected error during sign in.');
+      return false; // Default return if no data or error
+    } else {
+      setError(result.error || 'Error during login');
+      return false; // Default return if no data or error
     }
-    setError('Unexpected error during sign in.');
-    return false; // Default return if no data or error
   };
-
+  //----------------
   // Asynchronous function to handle user sign-up
   const handleSignUp = async (userData: SignUpCredentialsType) => {
-    // Clear any previous errors or success messages
+    // // Clear any previous errors or success messages
     clearError();
     clearSuccessMessage();
     setIsLoading(true);
 
     // Attempt to sign up the user by calling the backend API
     const result = await signupRequest(url_signup, userData);
+    console.log('🚀 ~ handleSignUp ~ result:', result, 'result.data', result.apiData, 'result.data.data:',result?.apiData?.data);
+
+    const signUpApiData = result.apiData;
+
     setIsLoading(false);
-    // Check if the sign-up was successful (we received data potentially with a token and user)
-    if (result?.data?.token && result?.data?.user) {
-      // Store the access token in sessionStorage (for web context, temporary)
-      sessionStorage.setItem('accessToken', result.data.token);
+    // // Check if the sign-up was successful (we received data potentially with a token and user)
+
+    console.log("signUpApiData?.data?.user",signUpApiData?.data.user, signUpApiData?.data.userAccess)
+
+    if (result?.status === 201 && signUpApiData?.data?.user) {
+      console.log('sign up exitoso entro a actualizar userdat')
+      if (
+        signUpApiData?.data?.userAccess == 'mobile' &&
+        signUpApiData?.accessToken
+      ) {
+        console.log('acessToken', signUpApiData.accessToken);
+        sessionStorage.setItem('accessToken', signUpApiData?.accessToken);
+      }
       // Update the authentication state in the Zustand store
-      setUserData(result.data.user);
+      const userResponse = signUpApiData.data.user;
+      const userDataForStore = mapUserResponseToUserData(userResponse);
+      setUserData(userDataForStore);
       setIsAuthenticated(true);
       // Set a success message for the user
-      setSuccessMessage('Registration successful!');
+      console.log('aqui is authenticated se paso a treu el modal se debe cerrar e ir a fintrack')
+      setSuccessMessage(
+        signUpApiData.message ||
+          `Hey, sign-up went fine — you can move forward!. Your access: ${signUpApiData?.data?.userAccess}`
+      );
       // Navigate the user to the main application page
       navigateTo('/fintrack');
+
       return true; // Indicate successful sign-up
     } else if (result?.error) {
       // If there was an error, return false
-      setError(result.error || 'Sign up failed. Please try again.');
-      return false;
+      setError(
+        result.error || 'Nope, sign-up didnt go through. Please try again.'
+      );
+      return false; // Default return if no data or error
     }
-    setError('Unexpected error during sign up.');
-    return false; // Default return if no data or error
   };
 
   // Asynchronous function to handle user sign-out
@@ -134,7 +199,7 @@ const useAuth = () => {
   //   const match = document.cookie.match(/(?:^|;\s*)accessToken=([^;]*)/);
   //   return match ? decodeURIComponent(match[1]) : null;
   // };
-  
+  /*
   const getAccessTokenFromCookies = (): string | null => {
     // Define the name of the cookie we're looking for
     const name = 'accessToken=';
@@ -161,11 +226,13 @@ const useAuth = () => {
     // If not found, return null
     return null;
   };
+  */
 
-    // Función para eliminar el token de las cookies (para logout en web)
-    const clearAccessTokenFromCookies = () => {
-      document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    };
+  // Función para eliminar el token de las cookies (para logout en web)
+  // const clearAccessTokenFromCookies = () => {
+  //   document.cookie =
+  //     'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  // };
 
   // Return the authentication state and action functions
   return {

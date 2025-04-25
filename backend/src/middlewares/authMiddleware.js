@@ -6,21 +6,31 @@ import { createError } from '../../utils/errorHandling.js';
 //---
 export const getAuthToken = (req) => {
   if (req.headers['authorization']) {
+    // Check Authorization header (for mobile)
     const authHeader = req.headers['authorization'];
     if (authHeader.startsWith('Bearer ')) {
-      return authHeader.split(' ')[1];
+      const token = authHeader.split(' ')[1];
+      console.log('getAuthToken', 'token headers', token);
+      return token;
     }
   }
-
+  // Check cookie (for web app)
   if (req.cookies.accessToken) {
+    console.log(
+      'getAuthToken',
+      'req.cookies',
+      req.cookies,
+      req.cookies.accessToken
+    );
     return req.cookies.accessToken;
   }
-
+  console.log('no devuelve un sevillo');
   return null;
 };
-
+//---
 export const verifyToken = async (req, res, next) => {
   console.log('verifyToken');
+
   // Get token from Authorization header (for mobile) or cookies (for web)
   const token = getAuthToken(req);
 
@@ -33,8 +43,13 @@ export const verifyToken = async (req, res, next) => {
       )
     );
   }
+  // Basic token validation
+  if (typeof token !== 'string' || token.trim().length === 0) {
+    return next(createError(400, 'Invalid token format'));
+  }
 
   try {
+    // jwt.verify returns a promise if no callback is provided - seams jwt.verify works with promise already
     const decoded = await new Promise((resolve, reject) => {
       jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
         if (err) {
@@ -46,20 +61,25 @@ export const verifyToken = async (req, res, next) => {
     });
 
     req.user = decoded;
+    console.log('decoded:', decoded)
+
     next();
   } catch (error) {
+    let errorMessage = 'Invalid token. Please log in again.';
+    let statusCode = 403; // Forbidden
+
+    if (error.name === 'TokenExpiredError') {
+      errorMessage = 'Token expired. Please log in again.';
+      statusCode = 401; // Unauthorized
+    } else if (error.name === 'JsonWebTokenError') {
+      errorMessage = 'Invalid token. Please log in again.';
+    }
+
     return next(
-      createError(403, 'Invalid or expired token. Please log in again.') //forbidden
+      createError(createError(statusCode, errorMessage)) //forbidden
     );
   }
 };
-
-//example:  {
-//   userId: 'f7c5abf9-89e5-4891-bfb8-6dfe3022f226',
-//   userRole: 'user',
-//   iat: 1740504868,
-//   exp: 1740591268
-// }
 
 //---
 export const verifyUser = async (req, res, next) => {

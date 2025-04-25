@@ -8,7 +8,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { pool, checkConnection } from './db/configDB.js';
 import useragent from 'express-useragent';
-import '../utils/authUtils/cronJobs.js';
+// import '../utils/authUtils/cronJobs.js';
 
 import {
   tblAccountTypes,
@@ -55,11 +55,12 @@ app.use(
     origin: (origin, callback) => {
       const ACCEPTED_ORIGINS = [
         'http://localhost:5000',
+        'http://localhost:5173',
+        'http://localhost:3000',
         'http://localhost:3001',
         'http://localhost:8080',
         'http://localhost:1234',
         'http://localhost:5432',
-        'http://localhost:5173',
       ];
       if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
         return callback(null, true);
@@ -87,6 +88,7 @@ app.use(cookieParser());
 //------------------
 //Middleware route handling or routes configuration
 app.use('/api', routes);
+// app.use('/api/fintrack',  fintrack_routes);
 app.use('/api/fintrack', verifyToken, fintrack_routes);
 //------------------
 //response to undefined route request

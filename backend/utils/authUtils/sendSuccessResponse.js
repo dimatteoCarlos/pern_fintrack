@@ -2,13 +2,13 @@ export const sendSuccessResponse = (
   res,
   statusCode,
   message,
-  user,
+  data,
   accessToken,
   refreshToken
 ) => {
   const responseData = {
     message,
-    user: { ...user },
+    data: { ...data },
   };
   if (accessToken) {
     responseData.accessToken = accessToken;

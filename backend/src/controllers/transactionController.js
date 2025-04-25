@@ -1,13 +1,13 @@
 //transactionController: getTransaction, addTransaction, getDashboardInformation
 
 import { pool } from '../db/configDB.js';
-import {
-  createError,
-  handlePostgresError,
-  handlePostgresErrorEs,
-} from '../../utils/errorHandling.js';
-import { getMonthName, validateAndNormalizeDate } from '../../utils/helpers.js';
+import { createError, handlePostgresError } from '../../utils/errorHandling.js';
+import { getMonthName } from '../../utils/helpers.js';
 import pc from 'picocolors';
+
+// import {  validateAndNormalizeDate } from '../../utils/helpers.js';
+// import {handlePostgresErrorEs,
+// } from '../../utils/errorHandling.js';
 
 //*************/
 //getTransaction
@@ -338,8 +338,8 @@ export const transferMoneyToAccount = async (req, res, next) => {
     const descriptionReceived = `Received (from ${fromAccountInfo.account_name} deposit to ${toAccountInfo.rows[0].account_name})`;
 
     const movement_type_id_to = 7, //transfer
-    //  status_to = 'completed',
-    //  source_account_id = from_account,
+      //  status_to = 'completed',
+      //  source_account_id = from_account,
       transaction_type_id_to = 2; //deposit
     //  const destination_account_id = to_account; //cash
     //  const transaction_actual_date = transactionActualDdate ?? new Date();
@@ -556,3 +556,5 @@ export const getDashboardInformation = async (req, res, next) => {
     return next(createError(code, message));
   }
 };
+
+

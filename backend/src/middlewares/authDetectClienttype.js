@@ -2,7 +2,8 @@
 import { classifyAccessDevice } from '../../utils/classifyAccessDevice.js';
 
 export function authDetectClienttype(req, res, next) {
-  //Después de aplicar el middleware useragent.express() en index.js, la información del User-Agent se adjunta al objeto req automaticamente pueh.
+  //Después de aplicar el middleware useragent.express() en index.js, la información del User-Agent se adjunta al objeto req automaticamente pues.
+
   const ua = req.useragent;
   console.log('User-Agent:', req.headers['user-agent']); // Log del User-Agent
   if (!ua) {
@@ -13,10 +14,10 @@ export function authDetectClienttype(req, res, next) {
   }
   let clientType = 'unknown';
   //---
-  const userAgentHeader = req.headers['user-agent']?.toLowerCase();
+  const userAgentHeader = req.headers['user-agent'];
   const isApiClient = userAgentHeader?.includes('insomnia') ||
                      userAgentHeader?.includes('postman') ||
-                     userAgentHeader?.includes('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36') ||
+                     userAgentHeader?.includes('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36') ||
                      userAgentHeader?.includes('bruno') ||
                      userAgentHeader?.includes('apidog') ||
                      userAgentHeader?.includes('hoppscotch') ||
@@ -27,7 +28,7 @@ export function authDetectClienttype(req, res, next) {
 
   if (isApiClient) {
     req.clientTypeAccess = 'api-client';
-    req.clientDeviceType = 'mobile'; // mobile o web segun la prueba a realizar
+    req.clientDeviceType = 'web'; // mobile o web segun la prueba a realizar
     console.log( `'Client type detected: ${req.clientTypeAccess}, handled as: ${req.clientDeviceType}`);
     return next();
   }
