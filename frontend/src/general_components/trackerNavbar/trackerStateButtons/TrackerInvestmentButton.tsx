@@ -11,7 +11,7 @@ function TrackerInvestmentButton() {
   return (
     <>
       <div className='trackerStateButton__container'>
-        <NavLink to='/tracker/investment' className={classNavLink}>
+        <NavLink to='investment' className={classNavLink}>
           <InvestmentSvg />
         </NavLink>
         <div className='trackerStateButton__state--title'>{'Investment'}</div>

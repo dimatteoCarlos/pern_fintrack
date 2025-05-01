@@ -46,26 +46,26 @@ const ACCOUNTING_DEFAULT: AccountingListType[] = [
 
 function Accounting() {
   const location = useLocation();
-  const previousRoute = location.state?.originRoute || '/tracker/expense';
+  const previousRoute = location.state?.originRoute || '/fintrack/tracker/expense';
   const user = import.meta.env.VITE_USER_ID || 'eacef623-6fb0-4168-a27f-fa135de093e1';
 
 //DATA FETCHING -------------------------
-  const { data, isLoading, error } = useFetch<AccountByTypeResponseType>(
+  const { apiData, isLoading, error } = useFetch<AccountByTypeResponseType>(
     `${url_get_accounting_accounts}&user=${user}`
   );
 //--------------------------------------
   console.log('accounting url:', `${url_get_accounting_accounts}&user=${user}`);
 
   const accounting = useMemo(() => {
-    return !error && !isLoading && data?.data.accountList.length
-      ? data.data.accountList.map((acc) => ({
+    return !error && !isLoading && apiData?.data.accountList.length
+      ? apiData.data.accountList.map((acc) => ({
           title: acc.account_name,
           amount: acc.account_balance,
           currency: acc.currency_code,
           account_type: `(${capitalize(acc.account_type_name).slice(0, 6)})`,
         }))
       : ACCOUNTING_DEFAULT;
-  }, [error, isLoading, data?.data.accountList]);
+  }, [error, isLoading, apiData?.data.accountList]);
 
   // console.log('accounting:', accounting)
   // const accounting = ACCOUNTING_DEFAULT

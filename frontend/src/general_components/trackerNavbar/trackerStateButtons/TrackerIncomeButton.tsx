@@ -7,7 +7,7 @@ function TrackerIncomeButton() {
       <div className='trackerStateButton__container'>
         <div className={`trackerStateButton`}>
           <NavLink
-            to={'/tracker/income'}
+            to={'income'}
             className={`trackerStateIconButton flx-col-center ${(isActive: {
               isActive: boolean;
             }) => (isActive ? 'active' : '')}`}

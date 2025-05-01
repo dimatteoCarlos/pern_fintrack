@@ -7,8 +7,8 @@ export type CredentialsType = {
 };
 
 export interface SignInCredentialsType {
-  username?: string;
-  email?: string;
+  username: string;
+  email: string;
   password: string;
 }
 export interface SignUpCredentialsType extends SignInCredentialsType {
@@ -19,9 +19,9 @@ export interface SignUpCredentialsType extends SignInCredentialsType {
 export type UserDataType = {
   userId: string | null;
   username: string;
-  user_firstname: string;
-  user_lastname: string;
   email: string;
+  user_firstname?: string;
+  user_lastname?: string;
 };
 
 //--useAuthStoreTypes
@@ -117,3 +117,20 @@ export interface RefreshTokenUserInfoType {
   accessToken: string;
   refreshToken: string;
 }
+
+//Error format backend response
+export type ErrorResponseType = {
+  status: number;      //  HTTP status code
+  message: string;    //  Descriptive error messager
+  errors?: unknown;         //  Detailed error information optional
+  timestamp?: string;  // Timestamp of the error (opcional)
+}
+
+// Define the success response format for the frontend
+export interface SuccessResponseType<T> { // Make SuccessResponse generic
+  message: string;    // Success message
+  data?: T;         // Optional: Response data, now of type T
+  accessToken?: string; // Optional: Access token
+  refreshToken?: string; // Optional: Refresh token
+}
+

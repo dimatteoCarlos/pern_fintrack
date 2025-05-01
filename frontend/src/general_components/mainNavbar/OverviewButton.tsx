@@ -12,14 +12,12 @@ const classNavLink = `mainNavbarButton ${({
 function OverviewButton() {
   const btnName = 'overview';
   const isBtnActive =
-    useLocation().pathname.split('/')[1] == btnName ? 'active' : '';
+    useLocation().pathname.split('/')[2] == btnName ? 'active' : '';
+    console.log(useLocation().pathname, isBtnActive, )
 
   return (
     <>
-      <NavLink
-        to='/overview'
-        className={`${classNavLink} ${isBtnActive}`}
-      >
+      <NavLink to='/fintrack/overview' className={`${classNavLink} ${isBtnActive}`}>
         <div className='iconContainer flx-col-center'>
           <Tooltip
             tipText={capitalize(btnName)}

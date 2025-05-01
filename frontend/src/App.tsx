@@ -18,7 +18,6 @@ import BudgetLayout from './pages/budget/BudgetLayout.tsx';
 import DebtsLayout from './pages/debts/DebtsLayout.tsx';
 import OverviewLayout from './pages/overview/OverviewLayout.tsx';
 
-import NotFoundPage from './pages/error/NotFoundPage.tsx';
 
 import Accounting from './pages/accounting/Accounting.tsx';
 
@@ -37,23 +36,26 @@ import ProtectedRoute from './pages/auth/ProtectedRoute.tsx';
 
 //--------------------------------
 
-import AuthPage from './pages/auth/AuthPage.tsx';
+// import AuthPage from './pages/auth/AuthPage.tsx';
+import ErrorPage from './pages/error/ErrorPage.tsx';
+// import NotFoundPage from './pages/error/NotFoundPage.tsx';
 
 function App() {
   const router = createBrowserRouter([
     //access to fintrack app
 
-    { path: '/', element: <Navigate to='/auth/' replace /> },
+    { path: '/', element: <Navigate to='/fintrack/'  /> },
+    // { path: '/', element: <Navigate to='/auth/' replace /> },
 
-    //authentication routes
-    {
-      path: '/auth',
-      element: <AuthPage />,
-    },
+    // //authentication routes
+    // {
+    //   path: '/auth',
+    //   element: <AuthPage />,
+    // },
 
     //pages/Layout
 
-    //set the function for isAuthenticated
+    //app routes
     {
       path: '/fintrack',
       element: <ProtectedRoute />,
@@ -61,7 +63,8 @@ function App() {
         {
           path: '/fintrack/',
           element: <Layout />,
-          errorElement: <NotFoundPage />,
+          errorElement: <ErrorPage />,
+          // errorElement: <NotFoundPage />,
 
           children: [
             //pages/tracker
@@ -81,6 +84,7 @@ function App() {
                   element: <Investment />,
                 },
                 { path: '/fintrack/tracker/debts', element: <Debts /> },
+                
               ],
             },
             // main navbar pages
@@ -109,7 +113,7 @@ function App() {
           ],
         },
 
-        { path: '/fintrack/accounting', element: <Accounting /> },
+        { path: '/fintrack/tracker/accounting', element: <Accounting /> },
 
         //page form new item
         { path: '/fintrack/budget/new_category', element: <NewCategory /> },

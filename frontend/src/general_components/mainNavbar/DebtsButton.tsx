@@ -12,10 +12,11 @@ const classNavLink = `mainNavbarButton ${({
 function DebtsButton() {
   const btnName = 'debts';
   const isBtnActive =
-    useLocation().pathname.split('/')[1] == btnName ? 'active' : '';
+    useLocation().pathname.split('/')[2] == btnName ? 'active' : '';
+    console.log(useLocation().pathname, isBtnActive, )
   return (
     <>
-      <NavLink to='/debts/debtors' className={`${classNavLink} ${isBtnActive}`}>
+      <NavLink to='/fintrack/debts/debtors' className={`${classNavLink} ${isBtnActive}`}>
         <Tooltip
           tipText={capitalize(btnName)}
           isActive={isBtnActive ? true : false}

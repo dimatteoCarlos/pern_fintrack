@@ -4,6 +4,7 @@ import CardSeparator from '../components/CardSeparator.tsx';
 import { useFetch } from '../../../hooks/useFetch.tsx';
 //---
 import { useLocation } from 'react-router-dom';
+// import { Navigate, useLocation } from 'react-router-dom';
 import {
   checkNumberFormatValue,
   numberFormat,
@@ -26,6 +27,7 @@ import {
   CATEGORY_OPTIONS_DEFAULT,
   CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
+  PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
 import TopCard from '../components/TopCard.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
@@ -38,15 +40,16 @@ import {
 import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import { AxiosRequestConfig } from 'axios';
+// import { useAuthStore } from '../../../auth/stores/useAuthStore.ts';
+// import SpinLoader from '../../../loader/spin/SpinLoader.tsx';
 
 //-----temporarily data 'till decide how to handle currencies
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 console.log('', { formatNumberCountry });
 
-// ********************PENDIENTE: hay que definir algunas reglas de negocio para status. Establecer como es el manejo de los currencies. data fetching from backend, edition  pages design, buttons and functionality and integration to backend as post (Updating, deleting, patching), definir en overview lo que se refleja en los goals, definir funcionalidad de los pockets y manejo de la informacion. Todo el proceso de calculo en el backend. Que es available Budget? es la suma de los budget? es el balance total de las cuentas tipo bank? o es todo el patrimonio?o que?.
+// ********************PENDIENTE: hay que definir algunas reglas de negocio para status. Establecer como es el manejo de los currencies.buttons and functionality as post (Updating, deleting, patching), definir en overview lo que se refleja en los goals, definir funcionalidad de los pockets y manejo de la informacion. Todo el proceso de calculo en el backend. Que es available Budget? es la suma de los budget? es el balance total de las cuentas tipo bank? o es todo el patrimonio?o que?.
 //------------------------------------------------------
-
 const initialExpenseData: ExpenseInputDataType = {
   amount: 0,
   account: '',
@@ -67,45 +70,69 @@ function Expense(): JSX.Element {
   //rules: only bank accounts type are used to make expenses
   //select option accounts rendered are all existing bank accounts, but the slack account which is not shown
   const router = useLocation();
-  const trackerState = router.pathname.split('/')[2];
+  const trackerState = router.pathname.split('/')[PAGE_LOC_NUM];
+
   const typeMovement = trackerState.toLowerCase();
   console.log('movement:', typeMovement);
+
+  //deal here with user id and authentication
+  // const { userData } = useAuthStore((state) => ({
+  //   userData: state.userData,
+  //   isAuthenticated: state.isAuthenticated,
+  // }));
+
+  // console.log('userData state:', userData);
+  //userId
+  // const userID = userData?.userId;
+  // console.log('userID', userID);
+
   const user = import.meta.env.VITE_USER_ID;
 
+  // const user = 'e71a1b29-8838-4398-b481-bd149bceb01f';
+
   // el usuario se deberia pasar via cookie o header al backend
+  //-----------------------------------------------------
   //url_get_accounts_by_type
   //DATA FETCHING
   //GET: AVAILABLE ACCOUNTS OF TYPE BANK
-  // console.log(
-  //   'url get accounts by type:',
-  //   `${url_get_accounts_by_type}/?type=bank&user=${user}`
-  // );
+  const fetchUrl = user
+    ? `${url_get_accounts_by_type}/?type=bank&user=${user}`
+    : // <Navigate to='/auth' />
+      undefined; //esto ees forzar un error de user ID required
+  //definir que hacer si no hay user id
+  console.log('🚀 ~ Expense ~ fetchUrl:', fetchUrl);
 
   const {
-    data: BankAccountsResponse,
+    apiData: BankAccountsResponse,
     isLoading: isLoadingBankAccounts,
     error: fetchedErrorBankAccounts,
-    message: messageBA,
-  } = useFetch<AccountByTypeResponseType>(
-    `${url_get_accounts_by_type}/?type=bank&user=${user}`
-  );
+  } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
 
-  console.log('PRUEBA ERROR:', fetchedErrorBankAccounts);
-
-  const optionsExpenseAccounts = useMemo(() => {
-    return !isLoadingBankAccounts &&
-      !fetchedErrorBankAccounts &&
-      BankAccountsResponse?.data.accountList?.length
-      ? BankAccountsResponse?.data.accountList?.map((acc) => ({
-          value: `${acc.account_name}`,
-          label: `${acc.account_name}`,
-        }))
-      : ACCOUNT_OPTIONS_DEFAULT;
-  }, [
-    BankAccountsResponse?.data.accountList,
+  console.log({
+    BankAccountsResponse,
     isLoadingBankAccounts,
     fetchedErrorBankAccounts,
-  ]);
+  });
+
+  console.log('🚀 ~ Expense ~ BankAccountsResponse:', BankAccountsResponse);
+  console.log('BANK resp', BankAccountsResponse, fetchedErrorBankAccounts);
+
+  const optionsExpenseAccounts = useMemo(() => {
+    if (fetchedErrorBankAccounts) {
+      return ACCOUNT_OPTIONS_DEFAULT;
+    }
+    if (fetchedErrorBankAccounts) {
+      return ACCOUNT_OPTIONS_DEFAULT;
+    }
+    const accountList = BankAccountsResponse?.data?.accountList ?? [];
+
+    return accountList.length
+      ? accountList.map((acc) => ({
+          value: acc.account_name,
+          label: acc.account_name,
+        }))
+      : ACCOUNT_OPTIONS_DEFAULT;
+  }, [BankAccountsResponse?.data.accountList, fetchedErrorBankAccounts]);
 
   const accountOptions = {
     title: 'Available Account',
@@ -117,37 +144,59 @@ function Expense(): JSX.Element {
   //category options
   //GET: ACCOUNTS OF TYPE CATEGORY_BUDGET AVAILABLE
   //DATA FETCHING
+
+  console.log('user antes de budget acc', user);
+
   const {
-    data: CategoryBudgetAccountsResponse,
+    apiData: CategoryBudgetAccountsResponse,
     isLoading: isLoadingCategoryBudgetAccounts,
     error: fetchedErrorCategoryBudgetAccounts,
-    message: messageCBA,
   } = useFetch<CategoryBudgetAccountsResponseType>(
     `${url_get_accounts_by_type}/?type=category_budget&user=${user}`
   );
 
-  const optionsExpenseCategories = useMemo(() => {
-    return !isLoadingCategoryBudgetAccounts &&
-      !fetchedErrorCategoryBudgetAccounts
-      ? CategoryBudgetAccountsResponse?.data.accountList?.map((cat) => ({
-          value: `${cat.account_name}`,
-          label: `${cat.account_name}`,
-        }))
-      : null;
-  }, [
+  console.log('catBudgetResp', {
+    CategoryBudgetAccountsResponse,
     isLoadingCategoryBudgetAccounts,
     fetchedErrorCategoryBudgetAccounts,
-    CategoryBudgetAccountsResponse?.data.accountList,
+  });
+
+  //evaluar si hay un error y de que tipo>
+
+  // const optionsExpenseCategories = CATEGORY_OPTIONS_DEFAULT;
+
+  const optionsExpenseCategories = useMemo(() => {
+    const categoryList =
+      CategoryBudgetAccountsResponse?.data?.accountList || [];
+
+    if (fetchedErrorCategoryBudgetAccounts) {
+      return CATEGORY_OPTIONS_DEFAULT;
+    }
+
+    // if (isLoadingCategoryBudgetAccounts || fetchedErrorCategoryBudgetAccounts) {
+    //   return CATEGORY_OPTIONS_DEFAULT;
+    // }
+
+    return categoryList.map((cat) => ({
+      value: cat.account_name,
+      label: cat.account_name,
+    }));
+  }, [
+    CategoryBudgetAccountsResponse?.data?.accountList,
+    fetchedErrorCategoryBudgetAccounts,
   ]);
 
+  //---------------------------------------------
   const categoryOptions = {
-    title:
-      optionsExpenseCategories && !fetchedErrorCategoryBudgetAccounts
-        ? 'Category / Subategory'
-        : 'No Categories available',
+    title: optionsExpenseCategories
+      ? //  && !fetchedErrorCategoryBudgetAccounts
+        'Category / Subategory'
+      : 'No Categories available',
     options: optionsExpenseCategories ?? CATEGORY_OPTIONS_DEFAULT,
     variant: VARIANT_DEFAULT as VariantType,
   };
+
+  //---------------------------------------------
 
   //---------------------------------------------
   //OBTAIN THE REQUESTFN FROM userFetchLoad
@@ -155,7 +204,7 @@ function Expense(): JSX.Element {
     user: string;
     // transaction_actual_date: string | Date;
   };
-
+  //DATA POST FETCHING
   const { data, isLoading, error, requestFn } = useFetchLoad<
     MovementTransactionResponseType,
     PayloadType
@@ -164,6 +213,7 @@ function Expense(): JSX.Element {
   //---states-------------
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
   const [isReset, setIsReset] = useState<boolean>(false);
+
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
   }>({});
@@ -183,60 +233,30 @@ function Expense(): JSX.Element {
 
   //--------------------------------------------
 
+  //---------------------------------------------
+  //Handle states related to the data submit form
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
 
     if ((data || error) && !isLoading) {
+      const success = data && !error;
+      setMessageToUser(
+        success
+          ? 'Movement completed successfully!'
+          : error ?? 'An error occurred during submission'
+      );
       setShowMessage(true);
-      timer = setTimeout(() => {
-        setShowMessage(false);
-      }, 3000);
-    }
 
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [data, error, isLoading]);
-  //---------------------------------------------
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    //Success for POST
-    if (data && !isLoading && !error) {
-      // Success response
-
-      console.log('Received data:', data);
-      setMessageToUser('Movement completed successfully!');
-      // setMessageToUser(message || 'Movement completed successfully!');
-
-      //resetting message to user
       timer = setTimeout(() => {
         setMessageToUser(null);
-      }, 6000);
+        setShowMessage(false);
+      }, 8000);
     }
-    //Any error
-    else if (
-      error ||
-      fetchedErrorBankAccounts ||
-      fetchedErrorCategoryBudgetAccounts
-    ) {
-      const errorMessage = messageBA || messageCBA ;
 
-      setMessageToUser(errorMessage || 'Unknown error');
+    return () => clearTimeout(timer);
+  }, [data, error, isLoading]);
 
-      timer = setTimeout(() => setMessageToUser(null), 7000);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [
-    data,
-    isLoading,
-    error,
-    fetchedErrorBankAccounts,
-    fetchedErrorCategoryBudgetAccounts,
-    messageBA,
-    messageCBA,
-  ]);
+  //------------------------------------------------------
   //----functions--------
   function updateDataCurrency(currency: CurrencyType) {
     setCurrency(currency);
@@ -416,7 +436,12 @@ function Expense(): JSX.Element {
         isLoading={
           isLoading || isLoadingBankAccounts || isLoadingCategoryBudgetAccounts
         }
-        error={error}
+        //probar que muestra como error o si muestra algo
+        error={
+          error ||
+          fetchedErrorBankAccounts ||
+          fetchedErrorCategoryBudgetAccounts
+        }
         messageToUser={messageToUser}
         variant='tracker'
       />
@@ -436,15 +461,3 @@ function Expense(): JSX.Element {
 }
 
 export default Expense;
-
-// if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-//   console.log('Data from New Account request:', BankAccountsResponse);
-// }
-
-// (${numberFormatCurrency(
-//   acc.account_balance,
-//   0,
-//   acc.currency_code,
-//   'en-US'
-// )}
-//   )

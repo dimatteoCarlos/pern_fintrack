@@ -1,7 +1,6 @@
 // src/auth/store/authStore.ts
 import { create } from 'zustand';
 import { AuthStateType, UserDataType } from '../types/authTypes';
-// import { AuthStateType, SignInCredentialsType, UserDataType, UserResponseDataType } from '../types/authTypes';
 
 // Define the state structure for authentication
 interface AuthStoreStateType extends AuthStateType<UserDataType> {
@@ -9,16 +8,19 @@ interface AuthStoreStateType extends AuthStateType<UserDataType> {
 } // Specify UserDataType as the generic type
 
 // Create the Zustand store for authentication
-// type UserType = UserResponseDataType | UserDataType | SignInCredentialsType | SignUpCredentialsType
 
 export const useAuthStore = create<AuthStoreStateType>((set) => ({
-  isAuthenticated: false,
+  isAuthenticated: true,//temporalmente para prueba
+
+  // isAuthenticated: false,
+  
   userData: null,
   isLoading: false,
   error: null,
   userAccess: null,
 
   setIsLoading: (isLoading: boolean) => set({ isLoading }),
+
   // Action to set the authentication status
   setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
 
@@ -29,11 +31,15 @@ export const useAuthStore = create<AuthStoreStateType>((set) => ({
   clearError: () => set({ error: null }),
   setError: (error) => set({ error }),
 
+  
+  // state and Action to handle the success message and sign in modal use to force login when no authenticated
+
   successMessage: '',
   setSuccessMessage: (successMessage) => set({ successMessage }),
-  clearSuccessMessage: () => set({ successMessage: null }),
+  clearSuccessMessage: () => set({ successMessage: 'desde useAuthStore' }),
 
   showSignInModalOnLoad: false,
   setShowSignInModalOnLoad: (showSignInModalOnLoad) =>
     set({ showSignInModalOnLoad }),
 }));
+

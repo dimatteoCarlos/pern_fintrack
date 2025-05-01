@@ -94,6 +94,7 @@ function AuthUI({
   function inputCredentialsHandler(e: React.ChangeEvent<HTMLInputElement>) {
     setCredentials((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
+
 // 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -101,12 +102,12 @@ function AuthUI({
     timer = setTimeout(() => {
       setShowMessageToUser(false);
       setShowError(false);
-    }, 7000);
+    }, 10000);
 
     if (error && !isLoading) setShowError(true);
     timer = setTimeout(() => {
       setShowError(false);
-    }, 3000);
+    }, 10000);
 
     return () => {
       if (timer) clearTimeout(timer);
@@ -122,24 +123,28 @@ function AuthUI({
 
   return (
     <div className={styles['auth-container']}>
+
       {/* {succes message to user} */}
       {messageToUser && showMessageToUser && (
         <span className={styles['messageToUser__msg']}>{messageToUser}</span>
       )}
+
       {error && showError && (
-        <p className={styles['auth-container__errorMsg']}>{error}</p>
+        <p className={styles['auth-container__errorMsg']}
+        >{error}</p>
       )}
 
       <h2 className={styles['auth-container__title']}>
         {isSignIn ? 'Sign In' : 'Sign Up'}
       </h2>
-
+{/* //------------------------------------------ */}
       <form
         className={`auth-form  ${
           isSignIn ? 'auth-form--signin' : 'auth-form--signup'
         }`}
         onSubmit={isSignIn ? handleSignInSubmit : handleSignUpSubmit}
       >
+
         <div className={styles['auth-form__field']}>
           <label
             htmlFor='usernameOrEmail'

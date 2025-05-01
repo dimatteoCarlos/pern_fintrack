@@ -22,6 +22,7 @@ import {
   CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   INVESTMENT_ACCOUNT_OPTIONS_DEFAULT,
+  PAGE_LOC_NUM,
   VARIANT_DEFAULT,
 } from '../../../helpers/constants.ts';
 import TopCard from '../components/TopCard.tsx';
@@ -53,7 +54,7 @@ const initialInvestmentData: InvestmentInputDataType = {
 function Investment() {
   //----Investment account Options----------
   const { pathname } = useLocation();
-  const trackerState = pathname.split('/')[2];
+  const trackerState = pathname.split('/')[PAGE_LOC_NUM];
   //investment accounts - from backend database
   
    //DATA FETCHING

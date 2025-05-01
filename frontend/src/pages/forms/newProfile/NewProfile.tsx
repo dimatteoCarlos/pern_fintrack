@@ -6,7 +6,10 @@ import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitB
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import '../styles/forms-styles.css';
 import { useFetch } from '../../../hooks/useFetch.tsx';
-import {  DropdownOptionType, ExpenseAccountsType } from '../../../types/types.ts';
+import {
+  DropdownOptionType,
+  ExpenseAccountsType,
+} from '../../../types/types.ts';
 import { url_accounts } from '../../../endpoints.ts';
 import {
   ACCOUNT_OPTIONS_DEFAULT,
@@ -28,7 +31,7 @@ console.log('', { formatNumberCountry });
 type ProfileDataType = {
   name: string;
   lastname: string;
-  account: string ;
+  account: string;
   type: string;
   amount: number | '';
 };
@@ -81,16 +84,16 @@ function NewProfile() {
   const [formData, setFormData] =
     useState<FormNumberInputType>(initialFormData);
 
- //DATA FETCHING for option selection
+  //DATA FETCHING for option selection
   const {
-    data,
+    apiData,
     isLoading,
     error: accountError,
   } = useFetch<ExpenseAccountsType>(url_accounts);
 
   const optionsExpenseAccounts =
-    !accountError && !isLoading && data?.accounts?.length
-      ? data.accounts.map((acc) => ({
+    !accountError && !isLoading && apiData?.accounts?.length
+      ? apiData.accounts.map((acc) => ({
           value: acc.name,
           label: acc.name,
         }))
@@ -113,7 +116,10 @@ function NewProfile() {
     //check any
     if (selectedOption) {
       // console.log('selectedOption desde typeSelectHandler', { selectedOption });
-      setProfileData((prev: ProfileDataType) => ({ ...prev, type: selectedOption.value })); //check any
+      setProfileData((prev: ProfileDataType) => ({
+        ...prev,
+        type: selectedOption.value,
+      })); //check any
     } else {
       console.log(`No option selected for ${'type'}`);
     }
@@ -158,8 +164,8 @@ function NewProfile() {
       amount: formDataNumber.keyName || profileData.amount,
       date: new Date(),
       //---
-      debtor_lastname:profileData.lastname,
-      debtor_name:profileData.name,
+      debtor_lastname: profileData.lastname,
+      debtor_name: profileData.name,
       value: formDataNumber.keyName || profileData.amount,
       selected_account_name: profileData.account, //
       // selected_account_id: profileData.account_id, //

@@ -26,6 +26,7 @@ import {
   CURRENCY_OPTIONS,
   SOURCE_OPTIONS_DEFAULT,
   INCOME_OPTIONS_DEFAULT,
+  PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
 import TopCard from '../components/TopCard.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
@@ -58,7 +59,7 @@ const initialFormData: FormNumberInputType = { amount: '' };
 function Income() {
   //---- Income account Options ----------
   const { pathname } = useLocation();
-  const trackerState = pathname.split('/')[2];
+  const trackerState = pathname.split('/')[PAGE_LOC_NUM];
   //income accounts
    //DATA FETCHING
   const {

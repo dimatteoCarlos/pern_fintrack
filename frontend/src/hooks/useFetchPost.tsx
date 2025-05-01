@@ -2,10 +2,8 @@
 import axios, { AxiosResponse, AxiosRequestConfig } from 'axios';
 import { useState, useCallback } from 'react';
 
-
-
-//hook state type
-type FetchPostStateType<R> = {
+//state type for api response
+type FetchResponseType<R> = {
   apiData: R | null;
   isLoading: boolean;
   error: string | null;
@@ -17,10 +15,10 @@ type FetchPostRequestType<T, R> = (
   url: string,
   body?: T,
   headers?: Record<string, string>
-) => Promise<FetchPostStateType<R>>;
+) => Promise<FetchResponseType<R>>;
 
 // hook return type
-type UseFetchPostReturnType<T, R> = FetchPostStateType<R> & {
+type UseFetchPostReturnType<T, R> = FetchResponseType<R> & {
   request: FetchPostRequestType<T, R>;
 };
 
@@ -30,7 +28,7 @@ type UseFetchPostReturnType<T, R> = FetchPostStateType<R> & {
  * @returns {UseFetchPostReturn<R>} Objeto con estado y función request.
  */
 export function useFetchPost<T, R>(): UseFetchPostReturnType<T, R> {
-  const [state, setState] = useState<FetchPostStateType<R>>({
+  const [state, setState] = useState<FetchResponseType<R>>({
     apiData: null,
     isLoading: false,
     error: null,
@@ -44,7 +42,7 @@ export function useFetchPost<T, R>(): UseFetchPostReturnType<T, R> {
    * @param url URL del endpoint
    * @param body Cuerpo de la petición
    * @param headers Headers adicionales
-   * @returns {Promise<FetchPostStateType<R>>} Promesa con el estado resultante
+   * @returns {Promise<FetchResponseType<R>>} Promesa con el estado resultante
    */
   const request = useCallback<FetchPostRequestType<T, R>>(
     async (url, body, headers) => {
@@ -56,7 +54,7 @@ export function useFetchPost<T, R>(): UseFetchPostReturnType<T, R> {
         // message: null,
       }));
 
-      console.log(`[useFetchPost] URL: ${url}`, {body}, {headers});
+      console.log(`[useFetchPost] URL: ${url}`, { body }, { headers });
 
       const config: AxiosRequestConfig = {
         method: 'POST',
@@ -66,15 +64,14 @@ export function useFetchPost<T, R>(): UseFetchPostReturnType<T, R> {
           ...headers,
         },
         data: body,
-        withCredentials: true,//send and receive cookies
+        withCredentials: true, //send and receive cookies
       };
 
       try {
         const response: AxiosResponse<R> = await axios(config);
-        console.log("🚀 ~ response:", response)
+        console.log('🚀 ~ response:', response);
 
         if (response.status >= 200 && response.status < 300) {
-          
           // const responseData = response.data as { data?: R; message?: string };
 
           const result = {
@@ -90,7 +87,6 @@ export function useFetchPost<T, R>(): UseFetchPostReturnType<T, R> {
         }
 
         throw new Error(`Unexpected status code: ${response.status}`);
-        
       } catch (err: unknown) {
         const errorMessage = getErrorMessage(err);
         const status = axios.isAxiosError(err)

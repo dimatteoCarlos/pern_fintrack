@@ -10,13 +10,14 @@ ${({ isActive }: { isActive: boolean }) => (isActive ? 'active' : '')}
 function BudgetButton() {
   const btnName = 'budget';
   const isBtnActive =
-    useLocation().pathname.split('/')[1] == btnName ? 'active' : '';
+    useLocation().pathname.split('/')[2] == btnName ? 'active' : '';
+  console.log(useLocation().pathname.split('/')[2], isBtnActive);
 
   return (
     <>
       <NavLink
-        to='/budget'
-        className={`${classNavLink} ${isBtnActive}`}
+        to='/fintrack/budget'
+        className={`${classNavLink} ${isBtnActive} `}
       >
         <Tooltip
           tipText={capitalize(btnName)}

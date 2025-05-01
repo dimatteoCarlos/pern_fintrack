@@ -9,7 +9,7 @@ function LogoMenuIcon() {
     <div className='header__logoAndIcon'>
       <Logo />
       <Link
-        to='/accounting'
+        to='accounting'
         className='iconContainer'
         state={{ originRoute: pathname }}
       >

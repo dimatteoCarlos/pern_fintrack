@@ -20,6 +20,7 @@ import {
   CURRENCY_OPTIONS,
   DEBTOR_OPTIONS_DEFAULT,
   DEFAULT_CURRENCY,
+  PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
 import TopCard from '../components/TopCard.tsx';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.tsx';
@@ -41,7 +42,7 @@ const initialTrackerData: DebtsTrackerInputDataType = {
 };
 
 function Debts() {
-  const trackerState = useLocation().pathname.split('/')[2];
+  const trackerState = useLocation().pathname.split('/')[PAGE_LOC_NUM];
   //----Debtors Options----------
   //debtors
    //DATA FETCHING

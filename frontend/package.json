@@ -18,6 +18,7 @@
     "react-dom": "18.3.1",
     "react-router-dom": "6.25.1",
     "react-select": "5.8.0",
+    "react-toastify": "11.0.5",
     "zustand": "5.0.3"
   },
   "devDependencies": {
@@ -30,8 +31,8 @@
     "eslint-plugin-react-hooks": "4.6.2",
     "eslint-plugin-react-refresh": "0.4.7",
     "typescript": "5.2.2",
-    "vite": "^5.4.16",
-    "vite-plugin-svgr": "4.2.0"
+    "vite": "^5.4.19",
+    "vite-plugin-svgr": "^4.3.0"
   },
   "description": "**FinTrack** is an application designed to provide a comprehensive and personalized solution for tracking and managing your personal finances. Its main purpose is to offer users effective tools to monitor their expenses, income, investments, debts, income sources, and account balances, as well as facilitate the tracking of savings goals and long-term investment projections. 🎯📊💡",
   "main": "index.js",

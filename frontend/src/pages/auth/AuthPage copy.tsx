@@ -9,11 +9,11 @@ import Logo from '../../assets/logo.svg';
 export default function AuthPage() {
   //--MODAL STATES
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [showSigninModal, setShowSigninModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [initialAuthMode, setInitialAuthMode] = useState<'signin' | 'signup'>(
-    'signin'
-  );
+
   //CUSTOM HOOKS FOR SIGNIN AND SIGNUP
   // Execute the useAuth hook to get authentication state and actions
   const {
@@ -43,8 +43,9 @@ export default function AuthPage() {
     clearSuccessMessage();
     setShowSignInModalOnLoad(false);
     //-----------------------
+    setShowSigninModal(true);
+    setShowSignupModal(false);
     setShowAuthModal(true);
-    setInitialAuthMode('signin');
   };
 
   const openSignupModalHandler = () => {
@@ -53,14 +54,17 @@ export default function AuthPage() {
     clearSuccessMessage();
     setShowSignInModalOnLoad(false);
     //-----------------------
+    setShowSigninModal(false);
+    setShowSignupModal(true);
     setShowAuthModal(true);
-    setInitialAuthMode('signup');
   };
 
   const closeAuthModal = () => {
     clearError;
-    // clearSuccessMessage;
+    clearSuccessMessage;
     //-------------------
+    setShowSignupModal(false);
+    setShowSigninModal(false);
     setShowAuthModal(false);
   };
 
@@ -70,7 +74,7 @@ export default function AuthPage() {
   // Effect to show sign-in modal on load if triggered by ProtectedRoute
   useEffect(() => {
     if (showSignInModalOnLoad) {
-      setShowAuthModal(true);
+      setShowSigninModal(true);
       setShowSignInModalOnLoad(false); // Reset after showing
     }
   }, [showSignInModalOnLoad, setShowSignInModalOnLoad]);
@@ -112,7 +116,53 @@ export default function AuthPage() {
 
       {/* {auth section} */}
       <main className={styles.mainContent}>
-        {/* unico modal */}
+        {/* <Outlet /> */}
+        
+        {showSigninModal && (
+          <div className={styles.modalOverlay} onClick={closeAuthModal}>
+            <div
+              className={styles.modalContent}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* <h2>Signin</h2> */}
+              <AuthUI
+                onSignIn={handleSignIn}
+                onSignUp={handleSignUp}
+                isLoading={isLoading}
+                error={error}
+                isSignInInitial={true}
+                messageToUser={successMessage}
+              />
+              <button className={styles.closeButton} onClick={closeAuthModal}>
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+        {showSignupModal && (
+          <div className={styles.modalOverlay} onClick={closeAuthModal}>
+            <div
+              className={styles.modalContent}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* <h2>Signup</h2> */}
+
+              <AuthUI
+                onSignUp={handleSignUp}
+                onSignIn={handleSignIn}
+                isLoading={isLoading}
+                error={error}
+                isSignInInitial={false}
+                messageToUser={successMessage}
+              />
+              <button className={styles.closeButton} onClick={closeAuthModal}>
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {/* Sustituir por este unico modal */}
         {showAuthModal && (
           <div className={styles.modalOverlay} onClick={closeAuthModal}>
             <div
@@ -124,7 +174,7 @@ export default function AuthPage() {
                 onSignUp={handleSignUp}
                 isLoading={isLoading}
                 error={error}
-                isSignInInitial={initialAuthMode === 'signin'}
+                isSignInInitial={true} // o false según prefieras
                 messageToUser={successMessage}
               />
               <button className={styles.closeButton} onClick={closeAuthModal}>

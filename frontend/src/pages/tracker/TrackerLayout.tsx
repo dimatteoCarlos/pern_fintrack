@@ -2,8 +2,6 @@ import LogoMenuIcon from '../../general_components/header/LogoMenuIcon';
 import TrackerNavbar from '../../general_components/trackerNavbar/TrackerNavbar';
 import { Outlet } from 'react-router-dom';
 import { currencyFormat } from '../../helpers/functions';
-
-import './styles/tracker-style.css';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../helpers/constants';
 import { useFetch } from '../../hooks/useFetch';
 import { BalanceBankRespType } from '../../types/responseApiTypes';
@@ -11,6 +9,8 @@ import { url_get_total_account_balance_by_type } from '../../endpoints';
 import CoinSpinner from '../../loader/coin/CoinSpinner';
 import { MessageToUser } from '../../general_components/messageToUser/MessageToUser';
 import { useEffect, useState } from 'react';
+import './styles/tracker-style.css';
+// import { useAuthStore } from '../../auth/stores/useAuthStore';
 
 function TrackerLayout() {
   //temporary values------------
@@ -19,8 +19,24 @@ function TrackerLayout() {
   //---------------------------------
   //DATA FETCHING -------------------
   const user = import.meta.env.VITE_USER_ID;
-  const { data, isLoading, error } = useFetch<BalanceBankRespType>(
-    `${url_get_total_account_balance_by_type}/?type=bank&user=${user}`
+  // const userId = useAuthStore((state) => state.userData?.userId);
+  const userId = user;
+  console.log('🚀 ~ TrackerLayout ~ userId:', userId);
+
+  const { apiData, isLoading, error, status } = useFetch<BalanceBankRespType>(
+    `${url_get_total_account_balance_by_type}/?type=bank&user=${userId}`
+  );
+
+  console.log(
+    'http status code',
+    status,
+    'data',
+    apiData,
+    isLoading,
+    'error',
+    error,
+    'user',
+    userId
   );
 
   //------states-----------
@@ -28,14 +44,14 @@ function TrackerLayout() {
   const [messageToUser, setMessageToUser] = useState<string | null | Error>('');
 
   useEffect(() => {
-    if (data?.data.total_balance !== undefined) {
-      setAvailableBudget(data?.data.total_balance ?? 0);
+    if (apiData?.data.total_balance !== undefined) {
+      setAvailableBudget(apiData?.data.total_balance ?? 0);
     }
 
     let timer: ReturnType<typeof setTimeout>;
-    if (data && !isLoading && !error) {
+    if (apiData && !isLoading && !error) {
       // Success response
-      setMessageToUser(data.message || '');
+      setMessageToUser(apiData.message || '');
       // console.log('Received data:', data);
 
       //resetting message to user
@@ -49,7 +65,7 @@ function TrackerLayout() {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [data, isLoading, error]);
+  }, [apiData, isLoading, error]);
 
   return (
     <>
@@ -84,7 +100,7 @@ function TrackerLayout() {
         {messageToUser && (
           <MessageToUser
             isLoading={isLoading}
-            messageToUser={data?.message}
+            messageToUser={apiData?.message}
             error={error}
             variant={'tracker'}
           />

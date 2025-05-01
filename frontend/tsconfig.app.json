@@ -21,7 +21,20 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    //modificacion para
+    // "baseUrl": "./src", // Establece la raíz para resolver rutas no relativas
+
+    "paths": {
+      // "assets/*": ["src/assets/*"], // Define un alias para resolver 'assets'
+      // "auth/*": ["src/auth/*"], // Define un alias para resolver 'auth'
+      // "general_components/*": ["src/general_components/*"] // y así sucesivamente
+    }
   },
-  "include": ["src"]
+
+  "include": [
+    "src", // Asegúrate de incluir la carpeta src
+    "src/types/svg.d.ts" // Incluye el archivo de definiciones si está en una carpeta específica
+  ]
 }

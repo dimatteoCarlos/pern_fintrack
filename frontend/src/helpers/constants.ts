@@ -4,6 +4,9 @@ import {
   VariantType,
 } from '../types/types';
 
+//------------------------
+export const PAGE_LOC_NUM = 3
+
 //-------------------------
 export const CURRENCY_OPTIONS = { usd: 'en-US', cop: 'cop-CO', eur: 'en-US' };
 export const DEFAULT_CURRENCY = 'usd';

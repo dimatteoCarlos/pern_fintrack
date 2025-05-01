@@ -2,7 +2,6 @@ import { Navigate, useLocation, Outlet } from 'react-router-dom';
 
 import useAuth from '../../auth/hooks/useAuth';
 import { useEffect } from 'react';
-// import { ReactNode } from 'react';
 
 const ProtectedRoute = () => {
   const location = useLocation();
@@ -21,10 +20,9 @@ const ProtectedRoute = () => {
     // preserving the location user tried to access
     return <Navigate to='/auth' state={{ from: location }} replace />;
   }
-
+  
   return (
     <>
-      isAuthenticated: {isAuthenticated}
       <Outlet />
     </>
   );

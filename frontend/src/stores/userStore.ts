@@ -41,3 +41,5 @@ export const useUserStore = create<UserStoreType>((set) => ({
   updateUser: (updates: Partial<UserDataType>) =>
     set((state) => ({ userData: { ...state.userData, ...updates } })),
 }));
+
+
