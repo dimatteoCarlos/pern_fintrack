@@ -39,7 +39,7 @@ export function useFetch<R>(url: string): FetchResponseType<R> {
         
       } catch (err: unknown) {
         let errorMessage = 'An unknown error occurred';
-        let status = null;
+        let status: number | null = null;
 
         if (axios.isAxiosError(err)) {
           errorMessage = err.response?.data?.message || err.message;
@@ -48,7 +48,7 @@ export function useFetch<R>(url: string): FetchResponseType<R> {
           errorMessage = err.message;
         }
 
-        console.error('[useFetch] Fetch error:', errorMessage);
+        console.error('[useFetch] Fetch error:', errorMessage, 'status' , status);
 
         setState({
           apiData: null,

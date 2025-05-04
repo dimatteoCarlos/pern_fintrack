@@ -5,6 +5,7 @@ import {
 } from '../../../utils/errorHandling.js';
 import { pool } from '../../db/configDB.js';
 import dotenv from 'dotenv';
+import { respondError, respondSuccess } from '../../../utils/responseHelpers.js';
 dotenv.config();
 
 const backendColor = 'greenBright';
@@ -38,9 +39,7 @@ export const getAllAccountsByType = async (req, res, next) => {
 
   try {
     const { type } = req.query;
-    // const { user: userId } = req.body;
     const userId = req.body.user ?? req.query.user;
-
     const accountType = type.trim().toLowerCase();
 
     console.log(userId, accountType, controllerName);
@@ -49,7 +48,7 @@ export const getAllAccountsByType = async (req, res, next) => {
       const message = `User ID and account type are required.Try again!.`;
       console.warn(pc[backendColor](message));
       // return res.status(400).json({ status: 400, message });
-      ERR_RESP(400, message, controllerName);
+      return respondError(res, 400, message);
     }
     if (
       ![
@@ -60,12 +59,13 @@ export const getAllAccountsByType = async (req, res, next) => {
         'pocket_saving',
         'debtor',
         'bank_and_investment',
-      ]
+      ].includes(accountType)
     ) {
       const message = `Account of type ${accountType} is not valid.Try again!.`;
-      console.warn(pc[backendColor](message));
+      console.warn(pc[backendColor](message, controllerName));
+      return respondError(res, 400, message);
       // return res.status(400).json({ status: 400, message });
-      ERR_RESP(400, message, controllerName);
+      // ERR_RESP(400, message, controllerName);
     }
     //------------------------------------------
     const accountTypeQuery = {
@@ -182,47 +182,51 @@ JOIN debtor_accounts ps ON ua.account_id = ps.account_id
       },
     };
 
-    //es necesario chequear si el usuario tiene ese tipo de cuentas?
-
     const accountListResult = await pool.query(
       accountTypeQuery[accountType].typeQuery
     );
 
     if (accountListResult.rows.length === 0) {
-      const message = `No accounts of type: "${accountType}" available`;
+      const message = `No accounts of type: "${accountType}" found`;
       console.warn(pc[backendColor](message));
-      return res.status(400).json({ status: 400, message });
+      return respondError(res, 404, message);
     }
 
     const accountList = accountListResult.rows;
 
     //devolver el nombre de la cuenta, (balance actual), currency_code
+    const data = {
+      rows: accountList.length,
+      accountList: accountListResult.rows,
+    };
 
-    const data = { rows: accountList.length, accountList };
-    const message = `Account list successfully completed for accounts type "${accountType}"`;
+    const message = `Accounts retrieved successfully for accounts type "${accountType}"`;
     console.log('success:', pc[backendColor](message), controllerName);
 
     // res.status(200).json({ status: 200, message, data });
-    RESPONSE(res, 200, message);
+    return respondSuccess(res, data, 200, message);
   } catch (error) {
     if (error instanceof Error) {
       console.error(pc.red('Error while getting accounts by account type'));
+      console.error(pc.red(`[${controllerName}] Error:`), error);
 
       if (process.env.NODE_ENV === 'development') {
         console.log(error.stack);
       }
-    } else {
-      console.error(
-        pc.red('Error during transfer'),
-        pc[errorColor]('Unknown error occurred'),
-        controllerName
-      );
     }
-    // Manejo de errores de PostgreSQL - pg sql error handling
-    // const { code: sqlCode, message: sqlMsg } = handlePostgresError(error);
-    next(createError(code, message));
+
+    // console.error(
+    //   pc.red('Error during transfer'),
+    //   pc[errorColor]('Unknown error occurred'),
+    //   controllerName
+    // );
+    next(error);
+    // next(createError(code, message));
   }
+  // Manejo de errores de PostgreSQL - pg sql error handling
+  // const { code: sqlCode, message: sqlMsg } = handlePostgresError(error);
 };
+
 //***************************************************/
 // get all the available accounts, all types,  but slack acount
 //endpoint: http://localhost:5000/api/fintrack/account/allAccounts/?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c

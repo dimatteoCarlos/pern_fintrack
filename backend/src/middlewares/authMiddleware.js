@@ -3,8 +3,10 @@
 import jwt from 'jsonwebtoken';
 import { createError } from '../../utils/errorHandling.js';
 
-//---
+//---utils functions
+
 export const getAuthToken = (req) => {
+
   if (req.headers['authorization']) {
     // Check Authorization header (for mobile)
     const authHeader = req.headers['authorization'];
@@ -20,17 +22,24 @@ export const getAuthToken = (req) => {
       'getAuthToken',
       'req.cookies',
       req.cookies,
-      req.cookies.accessToken
     );
     return req.cookies.accessToken;
   }
-  console.log('no devuelve un sevillo');
+  console.log('no token provided');
   return null;
+};
+
+export const clearAccessTokenFromCookie = () => {
+  res.clearCookie('accessToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
+  });
 };
 //---
 export const verifyToken = async (req, res, next) => {
   console.log('verifyToken');
-
   // Get token from Authorization header (for mobile) or cookies (for web)
   const token = getAuthToken(req);
 
@@ -43,16 +52,18 @@ export const verifyToken = async (req, res, next) => {
       )
     );
   }
+
   // Basic token validation
   if (typeof token !== 'string' || token.trim().length === 0) {
     return next(createError(400, 'Invalid token format'));
   }
 
   try {
-    // jwt.verify returns a promise if no callback is provided - seams jwt.verify works with promise already
+    // jwt.verify returns a promise if no callback is provided - it seems jwt.verify works with promise already
     const decoded = await new Promise((resolve, reject) => {
       jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
         if (err) {
+          console.error('Token expired', err);
           reject(err);
         } else {
           resolve(decoded);
@@ -61,18 +72,21 @@ export const verifyToken = async (req, res, next) => {
     });
 
     req.user = decoded;
-    console.log('decoded:', decoded)
-
+    console.log('decoded:', decoded);
     next();
   } catch (error) {
-    let errorMessage = 'Invalid token. Please log in again.';
+    let errorMessage = 'Invalid token. Please sign in again.';
     let statusCode = 403; // Forbidden
 
     if (error.name === 'TokenExpiredError') {
-      errorMessage = 'Token expired. Please log in again.';
+      errorMessage = 'Token expired.';
       statusCode = 401; // Unauthorized
+      //borrar de una vez la cookie
+      if (req.cookies.accessToken) {
+        clearAccessTokenFromCookie();
+      }
     } else if (error.name === 'JsonWebTokenError') {
-      errorMessage = 'Invalid token. Please log in again.';
+      errorMessage = 'Invalid token.';
     }
 
     return next(
@@ -81,7 +95,9 @@ export const verifyToken = async (req, res, next) => {
   }
 };
 
-//---
+//-----------------
+
+//-------------------
 export const verifyUser = async (req, res, next) => {
   console.log('verifyUser');
 

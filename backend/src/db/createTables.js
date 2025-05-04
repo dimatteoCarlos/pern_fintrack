@@ -49,7 +49,7 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
     tblName: `debtor_accounts`,
     table: `CREATE TABLE IF NOT EXISTS debtor_accounts (
          account_id INT PRIMARY KEY REFERENCES user_accounts(account_id),
-         value DECIMAL(15, 2),currency_id,
+         value DECIMAL(15, 2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,
          debtor_name VARCHAR(25),
          debtor_lastname VARCHAR(25),
          selected_account_name VARCHAR(50),
@@ -79,7 +79,7 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
   },
   {
     tblName: 'movement_types',
-    table: `CREATE TABLE movement_types (movement_type_id SERIAL PRIMARY KEY NOT NULL, movement_type_name VARCHAR(15) NOT NULL CHECK (movement_type_name IN ('expense', 'income', 'investment', 'debt', 'pocket', 'transfer', 'receive','account-opening')))`,
+    table: `CREATE TABLE IF NOT EXISTS movement_types (movement_type_id SERIAL PRIMARY KEY NOT NULL, movement_type_name VARCHAR(15) NOT NULL CHECK (movement_type_name IN ('expense', 'income', 'investment', 'debt', 'pocket', 'transfer', 'receive','account-opening')))`,
   },
 
   // {

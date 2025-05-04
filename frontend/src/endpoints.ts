@@ -11,7 +11,8 @@ export const url_signin: string = 'http://localhost:5000/api/auth/sign-in';
 //sign-out
 export const url_signout: string = 'http://localhost:5000/api/auth/sign-out';
 //refresh-token
-export const url_refrestoken: string = 'http://localhost:5000/api/auth/refresh-token';
+export const url_refrestoken: string =
+  'http://localhost:5000/api/auth/refresh-token';
 
 //http://localhost:5000/api/fintrack
 export const BASE_URL: string = import.meta.env.VITE_API_URL_APP;
@@ -21,7 +22,7 @@ export const url_categories = BASE_URL + '/' + 'categories';
 export const url_investment = BASE_URL + '/' + 'investment';
 export const url_sources = BASE_URL + '/' + 'sources';
 export const url_budget = BASE_URL + '/' + 'budget';
-export const url_accounts = BASE_URL + '/' + 'accounts'; //expense and income accounts are the same
+export const url_accounts = BASE_URL + '/' + 'accounts'; //expense and income accounts are TREATED the same WAY
 export const url_investment_acc = BASE_URL + '/' + 'investment-accounts'; //not implemented yet
 
 //account_types list
@@ -37,7 +38,7 @@ export const url_create_basic_account: string =
 //http://localhost:5000/api/fintrack/account/new_account/category_budget
 export const url_create_category_budget_account: string =
   BASE_URL + '/account/new_account/category_budget';
-
+//----
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${bank}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
 //ex:for expense tracker, types used are: bank or category_budget,
@@ -54,7 +55,9 @@ export const url_get_accounting_accounts: string =
 //ex: available budget, only bank accounts
 //for pocket and category budget also get the total goal or budget respectively
 //also, get the balance of income source accounts
+// fintrack dashboardTotalBalanceAccountByType
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type
+//used in:OverviewLayoute.tsx, Overview.tsx,
 export const url_get_total_account_balance_by_type: string =
   BASE_URL + '/dashboard/balance/type';
 
@@ -62,3 +65,36 @@ export const url_get_total_account_balance_by_type: string =
 //ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?user=eacef623-6fb0-4168-a27f-fa135de093e1&movement=expense
 export const url_movement_transaction_record: string =
   BASE_URL + '/transaction/transfer-between-accounts';
+
+//endpoints for OVERVIEWLAYOUT page
+//endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type
+// export const url_get_total_account_balance_by_type: string =
+//   BASE_URL + '/dashboard/balance/type';
+
+//endpoints for OVERVIEW page
+//
+
+//dashboardMonthlyTotalAmountByType
+//get.http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?type=expense&user=
+
+export const url_monthly_TotalAmount_ByType: string =
+  BASE_URL + '/dashboard/balance/monthly_total_amount_by_type/';//?type=expense&user=
+
+//get: //http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?type=${type}&user=eacef623-6fb0-4168-a27f-fa135de093e1
+
+//for accounting and overview components
+//http://localhost:5000/api/fintrack/account/type/?type=
+// export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
+
+//LAST MOVEMENTS BY MOVEMENT TYPE
+//http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
+// export const url_get_movements_by_type: string = BASE_URL + '/account/type';
+
+//this includes transaction_type
+//http://localhost:5000/api/fintrack/dashboard/movements/account_type/?start=&end=&movement=account-opening&transaction_type=withdraw&account_type=&user=e71a1b29-8838-4398-b481-bd149bceb01f
+// dashboardMovementTransactionsByType
+
+//fintrack dashboard movements
+//this is more general since it can search
+//get.http://localhost:5000/api/fintrack/dashboard/movements/search/?start=&end=&search=opening&user=eacef623-6fb0-4168-a27f-fa135de093e1
+// dashboardMovementTransactionsSearch

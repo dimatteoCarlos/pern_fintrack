@@ -1,5 +1,5 @@
 //createError.js
-import pc from 'picocolors'
+// import pc from 'picocolors'
 export function createError(statusCode, message) {
   const err = new Error();
   err.status = statusCode;
@@ -7,6 +7,7 @@ export function createError(statusCode, message) {
   console.log('Running create error fn:', 'status:',err.status, err.message);
   return { status: err.status, message: err.message };
 }
+//------------------------------
 
 export const handlePostgresErrorEs = (error) => {
   let code = 500; // Código de estado HTTP por defecto
@@ -41,7 +42,7 @@ export const handlePostgresErrorEs = (error) => {
 
   return { code, message };
 };
-
+//-------------------------------
 export const handlePostgresError = (error) => {
   let code = 500; // Default HTTP status code
   let message = error.message || 'Internal server error'; // Default message
@@ -74,3 +75,21 @@ export const handlePostgresError = (error) => {
 
   return { code, message };
 };
+
+//-----------------
+export const createErrorResponse = (
+  status,
+  message,
+  errors,
+) => {
+  const errorResponse = {
+    status,
+    message,
+    errors,
+    timestamp: new Date().toISOString(), // Added timestamp
+  };
+  return errorResponse;
+};
+
+//--------
+

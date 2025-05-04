@@ -53,7 +53,7 @@ export const authRefreshToken = async (req, res, next) => {
     // If no valid refresh token is found in the database, the token is invalid or expired
 
     if (!storedRefreshToken) {
-      return next(createError(401, 'Invalid or expired refresh token.'));
+      return next(createError(401, 'Token expired'));
     }
     // Fetch the user information from the users table
     const userResult = await pool.query(
@@ -73,14 +73,21 @@ export const authRefreshToken = async (req, res, next) => {
 
     //new refresh token if less a limit remained life is left
     const currentRefreshTokenExpiry = decoded.exp * 1000;
-    const limitRemLife = ((decoded.exp - decoded.iat) * 1000) /4 ; //set arbitrarily
+    const limitRemLife = ((decoded.exp - decoded.iat) * 1000) / 4; //set arbitrarily
     const now = new Date();
     const remainingTime = currentRefreshTokenExpiry - now;
 
     let newRefreshToken = refreshTokenFromClient;
 
     if (remainingTime < limitRemLife) {
-      console.log('token a punto de expirar hay que hacer uno nuevo')
+      console.log('token a punto de expirar hay que hacer uno nuevo');
+
+      // Revoke the old refresh token first
+      await pool.query(
+        'UPDATE refresh_tokens SET revoked = TRUE WHERE token = $1',
+        [refreshTokenFromClient]
+      );
+
       newRefreshToken = createRefreshToken(user.user_id);
       //insert new refresh token in db
       const expirationDate = new Date(now.setDate(now.getDate() + 7));
@@ -97,11 +104,6 @@ export const authRefreshToken = async (req, res, next) => {
         ]
       );
 
-      // Revoke the old refresh token
-      await pool.query(
-        'UPDATE refresh_tokens SET revoked = TRUE WHERE token = $1',
-        [refreshTokenFromClient]
-      );
     }
 
     console.log(
@@ -113,7 +115,8 @@ export const authRefreshToken = async (req, res, next) => {
 
     // Determine client type and send tokens accordingly
     if (req.clientDeviceType === 'mobile') {
-      sendSuccessResponse(res, 200, 'Access token refreshed.', {...user,
+      sendSuccessResponse(res, 200, 'Access token refreshed.', {
+        ...user,
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
       });
@@ -132,7 +135,7 @@ export const authRefreshToken = async (req, res, next) => {
       });
       res.clearCookie('accessToken'); // Clear the old access token cookie
 
-//probar esto
+      //probar esto
       sendSuccessResponse(res, 200, 'Access token refreshed.');
     }
   } catch (error) {
@@ -141,7 +144,7 @@ export const authRefreshToken = async (req, res, next) => {
   }
 };
 
-
+//AGREGAR UN BOTON DE LOGOUT A FINTRACK
 /*Aquí están los pasos que la aplicación cliente debería seguir:
 
 Detectar el error: Interceptar la respuesta de la API /api/auth/refresh-token y verificar el código de estado (debería ser 401) y el mensaje de error.

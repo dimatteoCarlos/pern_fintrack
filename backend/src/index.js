@@ -88,14 +88,13 @@ app.use(cookieParser());
 //------------------
 //Middleware route handling or routes configuration
 app.use('/api', routes);
-// app.use('/api/fintrack',  fintrack_routes);
-app.use('/api/fintrack', verifyToken, fintrack_routes);
+app.use('/api/fintrack', fintrack_routes);
+// app.use('/api/fintrack', verifyToken, fintrack_routes);
 //------------------
 //response to undefined route request
 app.use('*', (req, res) => {
-  res.status(404).json({ error: '404', message: 'Rooute link was not found' });
+  res.status(404).json({ error: '404', message: 'Route link was not found' });
 });
-
 //------------------
 
 //Initiate
@@ -179,9 +178,9 @@ async function initializeDatabase() {
     throw error; // Relanzar el error para manejarlo en el nivel superior
   }
 }
-// Server starts here. Inicializar la base de datos y luego iniciar el servidor
+// Server starts here.
+// Inicializar la base de datos y luego iniciar el servidor
 await checkConnection();
-
 await initializeDatabase()
   .then(async () => {
     try {

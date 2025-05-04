@@ -31,18 +31,8 @@ const remaining = {
   amount: 0,
   actual: 'Actual (no investment)',
 };
-const income = {
-  title: 'Monthly Income (Avg.)',
-  concept: '',
-  amount: 0,
-  status: '% status',
-};
-const expenses = {
-  title: 'Monthly Expenses (Avg.)',
-  concept: '',
-  amount: 0,
-  status: '% status',
-};
+
+//-------
 
 function SavingGoals() {
   return (
@@ -83,82 +73,26 @@ function SavingGoals() {
       {/* GOALS INDICATORS  */}
       {/* Goal info  row card  w first 2 cards */}
 
-      <div className='tiles__container flx-row-sb'>
+      <div className='tiles__container flx-row-sb '>
         <div className='tile__container tile__container__col tile__container__col--goalInfo'>
           <div className='tile__subtitle'>{saved.title}</div>
           <div className='tile__title tile__title--goalInfo'>
             {saved.concept}
           </div>
+          {/* dynamic */}
           <div className='tile__subtitle'>{saved.actual}</div>
         </div>
 
         <div className='tile__container tile__container__col tile__container__col--goalInfo'>
           <div className='tile__subtitle'>{remaining.title}</div>
           <div className='tile__title tile__title--goalInfo'>
-            {remaining.concept}
+            {remaining.concept} {/* dynamic */}
           </div>
-          <div className='tile__subtitle'>{remaining.actual}</div>
+          <div className='tile__subtitle'>{remaining.actual}</div>{' '}
+          {/* dynamic */}
         </div>
       </div>
 
-      {/* Monthly average income and expense info  row card  w pair of cards */}
-      <div
-        className='tiles__container flx-row-sb'
-        style={{ backgroundColor: 'red' }}
-      >
-        Esto deberia ser otra seccion identificada average monthly income and
-        expense y fuera de Saving Goals hacer otro componente para esto
-        <div className='tiles__container flx-row-sb'>
-          {/* Goal info left column*/}
-          <div className='tile__container tile__container__col tile__container__col--goalInfo'>
-            <div className='tile__subtitle letterSpaceSmall'>
-              {income.title}
-            </div>
-            <div className='tile__title '>
-              {currencyFormat(
-                defaultCurrency,
-                income.amount,
-                formatNumberCountry
-              )}
-            </div>
-
-            <div className='tile__status__container flx-row-sb'>
-              <StatusSquare
-                alert={0.5 - Math.random() < 0 ? 'alert' : ''} //temporary values
-              ></StatusSquare>
-
-              {/*esto deberia ser otra seccion distinta de Saving Goals */}
-              <div className='tile__subtitle tile__status--goal'>
-                {income.status}
-              </div>
-            </div>
-          </div>
-
-          {/* Goal info right column */}
-
-          <div className='tile__container tile__container__col tile__container__col--goalInfo'>
-            <div className='tile__subtitle letterSpaceSmall'>
-              {expenses.title}
-            </div>
-            <div className='tile__title '>
-              {currencyFormat(
-                defaultCurrency,
-                expenses.amount,
-                formatNumberCountry
-              )}
-            </div>
-            <div className='tile__status__container flx-row-sb'>
-              <StatusSquare
-                alert={0.5 - Math.random() < 0 ? 'alert' : ''} //temporary values
-              ></StatusSquare>
-
-              <div className='tile__subtitle tile__status--goal'>
-                {expenses.status}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
       {/*---------------- */}
     </article>
   );

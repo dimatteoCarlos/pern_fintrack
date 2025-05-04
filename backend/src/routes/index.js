@@ -7,7 +7,10 @@ import { authDetectClienttype } from '../middlewares/authDetectClientType.js';
 
 const router = express.Router(); 
 console.log('index routes');
+
 router.use('/auth', authDetectClienttype,authRoutes);
+
+
 router.use('/user', userRoutes);
 router.use('/account', accountRoutes);
 router.use('/transaction', transactionRoutes);

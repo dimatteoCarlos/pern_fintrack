@@ -10,6 +10,17 @@ export type BalanceBankRespType = {
   message: string;
   data: {
     total_balance: number | null;
+    accounts: number;
+    currency_code: CurrencyType;
+  };
+};
+export type BalanceIncomeRespType = {
+  status: number;
+  message: string;
+  data: {
+    total_balance: number | null;
+    accounts: number;
+    currency_code: CurrencyType;
   };
 };
 
@@ -19,6 +30,9 @@ export type BalancePocketRespType = {
   data: {
     total_balance: number | null;
     total_target: number | null;
+    total_remaining: number | null;
+    currency_code: CurrencyType;
+
   };
 };
 export type BalanceCategoryRespType = {
@@ -27,6 +41,8 @@ export type BalanceCategoryRespType = {
   data: {
     total_balance: number | null;
     total_budget: number | null;
+    total_remaining: number | null;
+    currency_code: CurrencyType;
   };
 };
 
@@ -201,7 +217,7 @@ export type CategoryBudgetAccountsResponseType = {
   };
 };
 
- type CategoryBudgetAccountListType = Omit<
+type CategoryBudgetAccountListType = Omit<
   AccountBasicDataType,
   'currency_id' | 'created_at' | 'updated_at'
 > & {

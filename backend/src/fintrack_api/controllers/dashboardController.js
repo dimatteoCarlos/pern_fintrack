@@ -18,7 +18,6 @@
 //manejo del currency: se debe definir el manejo de multiples monedas, por ahora todo se asumira en usd.
 
 //------
-//debido a las dudas en como es la funcionalidad de fintrack en el disenio, me planteo empezar con el frontend de la aplicacion de espenses tipo sitio web, y dejar fintrack para cuando quieran reunirse para aclarar lo que hace falta definir y se hagan los disenios que faltan. Asi, avanzo en aplicar mantine y otras tecnologias como next js con backend y type script y otro tipo de aplicaciones
 
 //get: //http://localhost:5000/api/fintrack/dashboard/balance
 import {
@@ -47,7 +46,7 @@ const ERR_RESP = (status, message, controllerName = null) => {
 };
 
 // get: //http://localhost:5000/api/fintrack/dashboard/balance
-//get the total balance account for each group of account type, for all account types
+//get the total balance account for each group of account type, for all account types. this use for accounting list
 
 export const dashboardTotalBalanceAccounts = async (req, res, next) => {
   let backendColor = 'green';
@@ -113,6 +112,7 @@ ORDER BY account_type_name ASC
 
 //========================================================
 //get the total balance for a specific type account
+//used:TrackerLayout, OverviewLayout.tsx
 //========================================================
 //get: //http://localhost:5000/api/fintrack/dashboard/balance/type
 //get the sum total balance of a specified account type
@@ -171,7 +171,6 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     ) {
       const message = `${accountType} is not a valid type account. Try again`;
       ERR_RESP(400, message, controllerName);
-
       // return RESPONSE(res, 400, message);
     }
 
@@ -179,8 +178,11 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
 
     //********************************************/
     //---queries definition
+    // TOTAL_BALANCE_QUERY  is used for bank, investment and income_source type account
+
     const TOTAL_BALANCE_QUERY = {
-      text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,COUNT(*) AS accounts, ct.currency_code FROM user_accounts ua
+      text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
+      FROM user_accounts ua
 JOIN account_types act ON ua.account_type_id = act.account_type_id
 JOIN currencies ct ON ua.currency_id = ct.currency_id
 WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
@@ -192,7 +194,7 @@ GROUP BY ct.currency_code
     const TOTAL_BALANCE_AND_GOAL_BY_TYPE = {
       category_budget: {
         text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,  CAST(SUM(st.budget) AS FLOAT ) AS total_budget,
-        (CAST(SUM(st.budget) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining,
+        (CAST(SUM(st.budget) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining,CAST(COUNT(*) AS INTEGER) AS accounts,
         ct.currency_code FROM user_accounts ua
 JOIN account_types act ON ua.account_type_id = act.account_type_id
 JOIN currencies ct ON ua.currency_id = ct.currency_id
@@ -205,15 +207,14 @@ GROUP BY  ct.currency_code
       //-----------
       pocket_saving: {
         text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance, CAST(SUM(st.target) AS FLOAT ) AS total_target,
-         (CAST(SUM(st.target) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining
-        
+         (CAST(SUM(st.target) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining,CAST(COUNT(*) AS INTEGER) AS accounts,  ct.currency_code
         FROM user_accounts ua
-JOIN account_types act ON ua.account_type_id = act.account_type_id
-JOIN pocket_saving_accounts st ON ua.account_id = st.account_id
-JOIN currencies ct ON ua.currency_id = ct.currency_id
-WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
-GROUP BY  ct.currency_code
-`,
+          JOIN account_types act ON ua.account_type_id = act.account_type_id
+          JOIN pocket_saving_accounts st ON ua.account_id = st.account_id
+          JOIN currencies ct ON ua.currency_id = ct.currency_id
+          WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+          GROUP BY  ct.currency_code
+          `,
         values: [userId, accountType, 'slack'],
       },
 
@@ -253,14 +254,12 @@ GROUP BY  ct.currency_code
       }
 
       const data = accountTotalBalanceResult.rows[0];
-      console.log(data);
+      console.log('datos', data);
 
       return RESPONSE(res, 200, successMsg, data);
     }
     //-------
-
     //---total balance, target or limit
-
     if (
       accountType == 'category_budget' ||
       accountType == 'debtor' ||
@@ -276,8 +275,8 @@ GROUP BY  ct.currency_code
         // return RESPONSE(res, 400, message);
       }
 
-      const data = accountTotalBalanceResult.rows;
-      console.log(data);
+      const data = accountTotalBalanceResult.rows[0];
+      console.log('datos', data);
 
       return RESPONSE(res, 200, successMsg, data);
     }
@@ -312,6 +311,8 @@ GROUP BY  ct.currency_code
 //==============================================================================
 //get the total balance for a specific type account
 //get: //http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=&user=
+
+//para falta calcular los goals, budget, tegarget
 export const dashboardAccountSummaryList = async (req, res, next) => {
   const backendColor = 'yellow';
   const errorColor = 'red';

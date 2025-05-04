@@ -10,17 +10,30 @@ import CoinSpinner from '../../loader/coin/CoinSpinner';
 import { MessageToUser } from '../../general_components/messageToUser/MessageToUser';
 import { useEffect, useState } from 'react';
 import './styles/tracker-style.css';
-// import { useAuthStore } from '../../auth/stores/useAuthStore';
+import useBalanceStore from '../../stores/useBalanceStore';
 
+//temporary values------------
+const defaultCurrency = DEFAULT_CURRENCY;
+//------------------------------
 function TrackerLayout() {
-  //temporary values------------
-  const defaultCurrency = DEFAULT_CURRENCY;
   const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
   //---------------------------------
+
+  //------states---------------------
+  const [messageToUser, setMessageToUser] = useState<string | null | Error>(
+    null
+  );
+  //---store states
+  const availableBudget = useBalanceStore((state) => state.availableBudget);
+  const setAvailableBudget = useBalanceStore((state) => state.setAvailableBudget);
+
+  //-----------------------------------
+
   //DATA FETCHING -------------------
   const user = import.meta.env.VITE_USER_ID;
-  // const userId = useAuthStore((state) => state.userData?.userId);
   const userId = user;
+
+  // const userId = useAuthStore((state) => state.userData?.userId);
   console.log('🚀 ~ TrackerLayout ~ userId:', userId);
 
   const { apiData, isLoading, error, status } = useFetch<BalanceBankRespType>(
@@ -39,14 +52,13 @@ function TrackerLayout() {
     userId
   );
 
-  //------states-----------
-  const [availableBudget, setAvailableBudget] = useState(0);
-  const [messageToUser, setMessageToUser] = useState<string | null | Error>('');
-
   useEffect(() => {
     if (apiData?.data.total_balance !== undefined) {
-      setAvailableBudget(apiData?.data.total_balance ?? 0);
+      setAvailableBudget(apiData.data.total_balance ?? 0);
     }
+  }, [apiData,setAvailableBudget]);
+
+  useEffect(() => {
 
     let timer: ReturnType<typeof setTimeout>;
     if (apiData && !isLoading && !error) {
@@ -57,10 +69,10 @@ function TrackerLayout() {
       //resetting message to user
       timer = setTimeout(() => {
         setMessageToUser(null);
-      }, 1000);
+      }, 3000);
     } else if (error) {
       setMessageToUser(error);
-      timer = setTimeout(() => setMessageToUser(null), 1000);
+      timer = setTimeout(() => setMessageToUser(null), 3000);
     }
     return () => {
       if (timer) clearTimeout(timer);

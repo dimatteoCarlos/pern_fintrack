@@ -157,6 +157,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
       `SELECT * FROM movement_types`
     );
     const movement_typesResultsExist = movement_typesResults.rows.length > 0;
+
+    console.log('movement_types', movement_typesResultsExist)
+    
     if (!movement_typesResultsExist) {
       const message = 'something went wrong with the movement_types table';
       console.warn(pc.magentaBright(message));

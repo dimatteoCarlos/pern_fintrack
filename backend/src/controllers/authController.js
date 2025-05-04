@@ -5,6 +5,7 @@ import {
   hashed,
   isRight,
 } from '../../utils/authUtils/authFn.js';
+import jwt from 'jsonwebtoken';
 import { createError } from '../../utils/errorHandling.js';
 import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../db/configDB.js';
@@ -13,11 +14,10 @@ import { getCurrencyId } from '../fintrack_api/controllers/transactionController
 import { sendSuccessResponse } from '../../utils/authUtils/sendSuccessResponse.js';
 
 // src/utils/responseUtils.js
-
 //---
 //--sign-up or register
 export const signUpUser = async (req, res, next) => {
-  console.log('sign-up entered');
+  // console.log('sign-up entered');
   await pool.query('BEGIN');
   try {
     const { username, user_firstname, user_lastname, email, currency } =
@@ -25,12 +25,11 @@ export const signUpUser = async (req, res, next) => {
 
     const currency_code = currency ?? 'usd';
 
-    console.log(req.body);
+    // console.log(req.body);
 
     //-----
     // const isMobile = req.headers['user-agent']?.toLowerCase().includes('mobile')
 
-    //como VALIDAR req.clientDeviceType?
     const clientDevice = req.clientDeviceType; //web | mobile | bot |unknown
     const clientTypeAccess = req.clientTypeAccess; //mobile-app | mobile-browser|tablet-app...
     console.log(
@@ -90,7 +89,6 @@ export const signUpUser = async (req, res, next) => {
     //consider adding: google_id, display_name, auth_method, user_contact, user_role_id is 1 by default.
 
     //---
-
     const userData = await pool.query({
       text: `INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id) VALUES ($1, $2, $3,$4,$5, $6, $7, $8) RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id;`,
       values: [
@@ -106,7 +104,7 @@ export const signUpUser = async (req, res, next) => {
     });
     // console.log('pwd:', userData.rows);
     hashedPassword = undefined;
-
+    //Allowed Access Device
     const allowedDevices = ['mobile', 'web'];
     if (!allowedDevices.includes(clientDevice)) {
       return next(
@@ -123,7 +121,8 @@ export const signUpUser = async (req, res, next) => {
     const refreshTokenExpiry = new Date();
     refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 7);
     //Store refresh token in refresh_tokens table
-    const insertedRefreshTokenResult = await pool.query(
+    // const insertedRefreshTokenResult = await pool.query(
+    await pool.query(
       `INSERT INTO refresh_tokens(user_id, token, expiration_date, user_agent, ip_address) VALUES($1,$2,$3,$4,$5) RETURNING token_id`,
       [
         newUser.user_id,
@@ -137,13 +136,12 @@ export const signUpUser = async (req, res, next) => {
     console.log('🚀 ~ signUpUser ~ newUser:', newUser);
     // delete newUser.password; delete newUser.password_hashed; delete newUser.user_role_name
 
+    // Response handling
     const data = {
-      user:{...newUser,
-      currency: currency_code},
+      user: { ...newUser, currency: currency_code },
       userAccess: clientDevice,
     };
 
-    // Response handling
     if (clientDevice.trim().toLowerCase() === 'mobile') {
       sendSuccessResponse(
         res,
@@ -182,13 +180,19 @@ export const signUpUser = async (req, res, next) => {
   }
 };
 
-//--login
-/* get the req.body info - whith username and or email get the user info from the db  - check if not found - check the hashed pwd with userpwd - compare if !isRight - generate a token with the user info required - get the user info from db - message status - res .cookie('acces_token...*/
-
 export const signInUser = async (req, res, next) => {
   const { username, email } = req.body;
+  console.log('signInUser');
+  console.log('req.body', req.body);
+
   const clientDevice = req.clientDeviceType; //web | mobile | bot |unknown
-  console.log('signInUser', req.body);
+  const clientTypeAccess = req.clientTypeAccess; //mobile-app | mobile-browser|tablet-app...
+  console.log(
+    '🚀 ~ signUpUser ~ clientTypeAccess:',
+    clientDevice,
+    clientTypeAccess
+  );
+  await pool.query('BEGIN');
   try {
     //----
     if (!(username && email && req.body.password)) {
@@ -196,21 +200,22 @@ export const signInUser = async (req, res, next) => {
         createError(400, 'username, email and password, are required')
       );
     }
-
+    //get user data from db
     const userData = await pool
       .query({
-        text: `SELECT u.username, u.email, u.password_hashed, u.user_id , u.user_role_id, ur.user_role_name FROM users u
+        text: `SELECT u.username, u.email, u.password_hashed, u.user_id ,u.user_firstname, u.user_lastname, u.user_role_id, ur.user_role_name, ct.currency_code as currency FROM users u
         JOIN user_roles ur ON u.user_role_id = ur.user_role_id
+        JOIN currencies ct ON u.currency_id = ct.currency_id
         WHERE (u.username = $1 AND u.email = $2) OR u.username = $1 OR u.email = $2`,
         values: [username, email],
       })
       .then((res) => res.rows);
 
     console.log('userdata:', userData);
-
+//------------------
     if (!userData[0]) {
       // 400 (Bad Request) user exists but invalid.
-      return next(createError(400, 'Invalid credentials'));
+      return next(createError(400, 'User not found'));
     }
 
     if (userData.length > 1) {
@@ -234,7 +239,6 @@ export const signInUser = async (req, res, next) => {
         return next(createError(400, 'username/email mismatch'));
       }
     }
-
     // console.log(req.body.password, userData[0].password_hashed);
     const isPasswordCorrect = await isRight(
       req.body.password,
@@ -247,6 +251,14 @@ export const signInUser = async (req, res, next) => {
       return next(createError(401, 'Invalid password'));
     }
     // console.log(user.user_id, user.user_role_name)
+    //------------------------------
+    //Allowed Acces
+    const allowedDevices = ['mobile', 'web'];
+    if (!allowedDevices.includes(clientDevice)) {
+      return next(
+        createError(400, `Device ${clientDevice} access not allowed`)
+      );
+    }
 
     // Generate tokens with user role
     const accessToken = createToken(user.user_id, user.user_role_name);
@@ -270,36 +282,34 @@ export const signInUser = async (req, res, next) => {
       ]
     );
     // console.log( accessToken, refreshToken);
-
     req.body.password = undefined;
     user.password_hashed = undefined;
-    // console.log('Ejecutando en línea: ' + arguments.callee.caller.toString());
+
     //Response Handling
-    const data = { user, userAccess: clientDevice };
+    const data = {
+      user: { ...user },
+      userAccess: clientDevice,
+    };
+
     if (clientDevice && clientDevice.trim().toLowerCase() === 'mobile') {
       sendSuccessResponse(
         res,
         200,
         `User ${
           user.username || user.email
-        }, successfully logged in with ${clientDevice}.`,
+        }, successfully logged in with ${clientDevice}`,
         data,
         accessToken,
         refreshToken
       );
     } else if (clientDevice && clientDevice.trim().toLowerCase() === 'web') {
+
       res.cookie('accessToken', accessToken, {
-        httpOnly: false,
-        secure: false,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 60 * 60 * 1000,
-        sameSite: 'lax',
+        sameSite: 'strict',
       });
-      // res.cookie('accessToken', accessToken, {
-      //   httpOnly: true,
-      //   secure: process.env.NODE_ENV === 'production',
-      //   maxAge: 60 * 60 * 1000,
-      //   sameSite: 'strict',
-      // });
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV == 'production',
@@ -309,16 +319,12 @@ export const signInUser = async (req, res, next) => {
       sendSuccessResponse(
         res,
         200,
-        `Login successful with ${clientDevice}`,
-        { user },
+        `Login successful via ${clientDevice}`,
         data
       );
-      // return res.status(200).json({
-      //   message: 'successfully logged in',
-      //   user,  userAccess:clientDevice
-
-      // });
+      await pool.query('COMMIT');
     } else {
+      await pool.query('ROLLBACK');
       console.error(pc.red('Login error:'), error);
       throw new Error('no mobile nor web site access');
     }
@@ -335,6 +341,7 @@ export const signInUser = async (req, res, next) => {
       data
     );
   } catch (error) {
+    await pool.query('ROLLBACK');
     console.log('auth error:', error);
     next(createError(500, error.message || 'internal sign-in user error'));
   }
@@ -343,7 +350,8 @@ export const signInUser = async (req, res, next) => {
 // Sign-out with token revocation
 export const signOutUser = async (req, res, next) => {
   const refreshTokenFromClient =
-    req.body.refreshToken || req.cooqies.refreshToken;
+    req.body.refreshToken || req.cookies.refreshToken;
+  const clientDevice = req.clientDeviceType; //web | mobile | bot |unknown
 
   // if (!refreshTokenFromClient) {
   //   return next(createError(400, 'Refresh token is required for logout.'));
@@ -389,10 +397,35 @@ export const signOutUser = async (req, res, next) => {
     if (req.clientDeviceType !== 'mobile') {
       res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
+
+      //double check
+      res.cookie('accessToken', '', {
+        expires: new Date(0),
+        httpOnly: true,
+        secure: true,
+      });
+      res.cookie('refreshToken', '', {
+        expires: new Date(0),
+        httpOnly: true,
+        secure: true,
+      });
     }
     sendSuccessResponse(res, 200, 'Logged out successfully.');
   } catch (error) {
     console.log(pc.red('auth error:', error));
     next(createError(500, error.message || 'Logout failed'));
   }
+};
+//--Verify auth status for web access. Requested from frontend
+export const verifyAuthStatus = async (req, res) => {
+  const token = req.cookies.accessToken; //for web access
+  if (!token)
+    return res.status(401).json({ status: 401, message: 'Token not provided' });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err)
+      return res.status(401).json({ message: 'Token is invalid or expired' });
+
+    res.status(200).json({ message: 'Token is valid', userData: decoded });
+  });
 };

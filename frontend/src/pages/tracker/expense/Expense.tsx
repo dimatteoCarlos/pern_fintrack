@@ -20,6 +20,7 @@ import {
 } from '../../../types/types.ts';
 import {
   url_get_accounts_by_type,
+  url_get_total_account_balance_by_type,
   url_movement_transaction_record,
 } from '../../../endpoints.ts';
 import {
@@ -34,12 +35,14 @@ import CardNoteSave from '../components/CardNoteSave.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import {
   AccountByTypeResponseType,
+  BalanceBankRespType,
   CategoryBudgetAccountsResponseType,
   MovementTransactionResponseType,
 } from '../../../types/responseApiTypes.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
-import { AxiosRequestConfig } from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
+import useBalanceStore from '../../../stores/useBalanceStore.ts';
 // import { useAuthStore } from '../../../auth/stores/useAuthStore.ts';
 // import SpinLoader from '../../../loader/spin/SpinLoader.tsx';
 
@@ -230,7 +233,9 @@ function Expense(): JSX.Element {
   const [showMessage, setShowMessage] = useState(false);
 
   //--------------------------------------------
-
+  const setAvailableBudget = useBalanceStore(
+    (state) => state.setAvailableBudget
+  );
   //--------------------------------------------
 
   //---------------------------------------------
@@ -369,12 +374,26 @@ function Expense(): JSX.Element {
       setFormData(initialFormData);
 
       setTimeout(() => setIsReset(false), 300);
+
+      //-------------------------------
+      //update total available budget global state
+      const {
+        data: {
+          data: { total_balance },
+        },
+      } = await axios.get<BalanceBankRespType>(
+        `${url_get_total_account_balance_by_type}/?type=bank&user=${user}`
+      );
+
+      if (typeof total_balance === 'number') {
+        setAvailableBudget(total_balance);
+      }
     } catch (error) {
       console.error('Submission error:', error);
     }
   }
 
-  //---------------------------------------------
+  //---------------------------------------------,
 
   //-------Top Card elements -----------------------
   const topCardElements = {

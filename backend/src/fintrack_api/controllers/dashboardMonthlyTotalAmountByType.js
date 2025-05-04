@@ -126,7 +126,7 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
         SELECT * FROM financial_data
         ORDER BY month_index ASC, type, name, currency_code
 `;
-    
+
       const result = await pool.query(queryText, [
         userId,
         dateRange.start,
@@ -155,14 +155,13 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
     }
 
     const responseData = {
-      meta: {
-        dateRange: {
-          start: dateRange.start.toISOString(),
-          end: dateRange.end.toISOString(),
-        },
-        // currency: dataArr.length > 0 ? dataArr[0].currency_code : 'usd', //Asume USD by default
+      dateRange: {
+        start: dateRange.start.toISOString(),
+        end: dateRange.end.toISOString(),
       },
-      data: dataArr,
+      // currency: dataArr.length > 0 ? dataArr[0].currency_code : 'usd', //Asume USD by default
+
+      monthlyAmounts: dataArr,
     };
     return RESPONSE(
       res,
@@ -170,7 +169,6 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
       'Financial data retrieved successfully',
       responseData
     );
-    
   } catch (error) {
     if (error instanceof Error) {
       console.error(
@@ -192,7 +190,3 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
     next(createError(code, message));
   }
 };
-
-
-
-

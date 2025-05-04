@@ -1,6 +1,11 @@
 import Overview from './Overview';
 import { BigBoxResult } from './components/BigBoxResult';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader';
+import { url_get_total_account_balance_by_type } from '../../endpoints';
+import { BalanceIncomeRespType } from '../../types/responseApiTypes';
+import { useFetch } from '../../hooks/useFetch';
+import { useMemo } from 'react';
+import CoinSpinner from '../../loader/coin/CoinSpinner';
 import './styles/overview-styles.css';
 // import { Outlet } from 'react-router-dom';
 
@@ -9,22 +14,86 @@ function OverviewLayout() {
   //Temporary Dummy data
   //Saving Goals
   //to be fetched from data bases. Need ENDPOINT to get from backend.
+
+  const userId = import.meta.env.VITE_USER_ID;
+  //data fetching balance of account type income_source and category_budget
+  const {
+    apiData: incomeBalanceApiData,
+    isLoading: incomeBalanceIsLoading,
+    error: incomeBalanceError,
+    status: incomeBalanceStatus,
+  } = useFetch<BalanceIncomeRespType>(
+    `${url_get_total_account_balance_by_type}/?type=income_source&user=${userId}`
+  );
+  console.log(
+    '🚀 ~ OverviewLayout ~ incomeBalanceApiData:',
+    incomeBalanceApiData,
+    incomeBalanceError,
+    incomeBalanceStatus
+  );
+
+  const {
+    apiData: expenseBalanceApiData,
+    isLoading: expenseBalanceIsLoading,
+    error: expenseBalanceError,
+    status: expenseBalanceStatus,
+  } = useFetch<BalanceIncomeRespType>(
+    `${url_get_total_account_balance_by_type}/?type=category_budget&user=${userId}`
+  );
+
+  console.log(
+    '🚀 ~ OverviewLayout ~ expenseBalanceApiData:',
+    expenseBalanceApiData,
+    expenseBalanceError,
+    expenseBalanceStatus
+  );
+
+  //remeber income account balance is negative (withdraws) and expense accoutn balance is positive (deposits)
+  const { netWorth, totalIncome, totalExpense } = useMemo(() => {
+    const totalIncome = incomeBalanceApiData?.data?.total_balance ?? 0;
+    const totalExpense = expenseBalanceApiData?.data?.total_balance ?? 0;
+    return { totalIncome, totalExpense, netWorth: -totalIncome - totalExpense };
+  }, [
+    incomeBalanceApiData?.data?.total_balance,
+    expenseBalanceApiData?.data?.total_balance,
+  ]);
+
   const bigScreenInfo = [
-    { title: 'net worth', amount: 0 },
-    { title: 'income', amount: 0 },
-    { title: 'expenses', amount: 0 },
+    { title: 'net worth', amount: netWorth },
+    { title: 'income', amount: totalIncome },
+    { title: 'expenses', amount: totalExpense },
   ];
 
   return (
-    <main className='overviewLayout'>
+    <main className='overviewLayout '>
       <div className='layout__header'>
-        <div className='headerContent__container'>
+        <div className='headerContent__container '>
           <TitleHeader />{' '}
         </div>
       </div>
-
+      {(incomeBalanceIsLoading || expenseBalanceIsLoading) && (
+        <div
+          className='loader__container'
+          style={{ position: 'absolute', left: '50%', top: '20%', zIndex: '1' }}
+        >
+          <CoinSpinner />
+        </div>
+      )}
       <BigBoxResult bigScreenInfo={bigScreenInfo} />
-      {/* <Outlet/> */}
+
+      {(incomeBalanceError || expenseBalanceError) && (
+        <p
+          style={{
+            color: 'red',
+            position: 'absolute',
+            top: '1.5%',
+            left: '10%',
+            zIndex: '148',
+          }}
+        >
+          Error: {incomeBalanceError || expenseBalanceError}
+        </p>
+      )}
       <Overview />
     </main>
   );
