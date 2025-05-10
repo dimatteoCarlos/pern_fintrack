@@ -32,7 +32,7 @@ import CardNoteSave from '../components/CardNoteSave.tsx';
 //temporary values
 const defaultCurrency: CurrencyType = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-console.log('🚀 ~ Debts ~ formatNumberCountry:', formatNumberCountry);
+// console.log('🚀 ~ Debts ~ formatNumberCountry:', formatNumberCountry);
 //input investment data state variables
 // type InvestmentInputDataType = {
 //   amount: number | '';

@@ -9,8 +9,7 @@ import CoinSpinner from '../../loader/coin/CoinSpinner';
 import './styles/overview-styles.css';
 // import { Outlet } from 'react-router-dom';
 
-//
-function OverviewLayout() {
+ function OverviewLayout() {
   //Temporary Dummy data
   //Saving Goals
   //to be fetched from data bases. Need ENDPOINT to get from backend.

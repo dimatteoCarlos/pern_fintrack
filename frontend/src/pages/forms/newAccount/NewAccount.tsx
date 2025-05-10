@@ -38,7 +38,7 @@ import { AxiosRequestConfig } from 'axios';
 //-----temporarily 'till decide how to handle currencies
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-console.log('', { formatNumberCountry });
+// console.log('', { formatNumberCountry });
 
 //---- data config---------
 type AccountDataType = {

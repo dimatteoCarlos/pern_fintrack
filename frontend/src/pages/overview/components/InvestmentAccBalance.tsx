@@ -93,7 +93,7 @@ function InvestmentAccountBalance({
 
   //DATA FETCHING
   const urlInvestmentAccounts = `${url_get_accounts_by_type}/?type=investment&user=${user}`;
-  const { data, isLoading, error } = useFetch<AccountByTypeResponseType>(
+  const { apiData, isLoading, error } = useFetch<AccountByTypeResponseType>(
     urlInvestmentAccounts
   );
   // console.log('Investment_accounts:', data, error, isLoading);
@@ -103,8 +103,8 @@ function InvestmentAccountBalance({
   useEffect(() => {
     function updateInvestmentAccounts() {
       const newInvestmentAccounts: InvestmentAccountToRenderType[] =
-        data && !isLoading && !error && !!data.data.accountList?.length
-          ? data.data?.accountList?.map((acc, indx) => {
+        apiData && !isLoading && !error && !!apiData.data.accountList?.length
+          ? apiData.data?.accountList?.map((acc, indx) => {
               const isProfit =
                 acc.account_balance >= (acc.account_starting_amount ?? 0);
               const balanceType = isProfit ? '% Profit' : '% Loss';
@@ -126,7 +126,7 @@ function InvestmentAccountBalance({
     }
     //---
     updateInvestmentAccounts();
-  }, [data, isLoading, error]);
+  }, [apiData, isLoading, error]);
 
   //-------------------------------------
 

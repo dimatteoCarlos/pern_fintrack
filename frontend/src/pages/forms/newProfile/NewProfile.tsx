@@ -25,7 +25,7 @@ import InputNumberFormHandler from '../../../general_components/inputNumberHandl
 //-----temporarily 'till decide how to handle currencies
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-console.log('', { formatNumberCountry });
+// console.log('', { formatNumberCountry });
 
 //----Temporary initial values----------
 type ProfileDataType = {

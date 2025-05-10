@@ -73,7 +73,7 @@ function AccountBalance({
   //bank accounts balance
   const urlBankAccounts = `${url_get_accounts_by_type}/?type=bank&user=${user}`;
   const {
-    data: bankAccountsData,
+    apiData: bankAccountsData,
     isLoading,
     error,
   } = useFetch<AccountByTypeResponseType>(urlBankAccounts);

@@ -35,7 +35,7 @@ import DropDownSelection from '../../../general_components/dropdownSelection/Dro
 //temporary values
 const defaultCurrency: CurrencyType = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-console.log('🚀 ~ Debts ~ formatNumberCountry:', formatNumberCountry);
+// console.log('🚀 ~ Income ~ formatNumberCountry:', formatNumberCountry);
 //input income data state variables
 // type IncomeInputDataType = {
 //   amount: number;

@@ -782,7 +782,7 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
     //-------------------------------------------------
     const movementsResult = await pool.query({
       text: `
-  SELECT mt.movement_type_name, ua.*, tr.*, trt.transaction_type_name,
+  SELECT mt.movement_type_name, ct.currency_code,ua.*, tr.*, trt.transaction_type_name,
     CAST(tr.amount AS FLOAT), CAST(ua.account_balance AS FLOAT), CAST(ua.account_starting_amount AS FLOAT)
   FROM transactions tr
           JOIN user_accounts ua ON tr.account_id = ua.account_id
@@ -901,22 +901,21 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
 
     const movementsResult = await pool.query({
       text: `
-  SELECT mt.movement_type_name, ua.*, tr.*, trt.transaction_type_name,act.account_type_name,
+  SELECT mt.movement_type_name, ct.currency_code, ua.*, tr.*, trt.transaction_type_name,act.account_type_name,
   CAST ( ua.account_starting_amount AS FLOAT),  CAST (tr.amount AS FLOAT),CAST(ua.account_balance AS FLOAT)
-
   FROM transactions tr
           JOIN user_accounts ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
           JOIN transaction_types trt ON tr.transaction_type_id = trt.transaction_type_id
+
   WHERE ua.user_id = $1 
 
   AND (tr.transaction_actual_date BETWEEN $2 AND $3 OR tr.created_at BETWEEN $2 AND $3 AND ua.account_name !=$4)
   
   AND (mt.movement_type_name = $6)
-  AND (trt.transaction_type_name = $5
-  OR act.account_type_name = $7)
+  AND (trt.transaction_type_name = $5 OR act.account_type_name = $7)
 
   ORDER BY tr.transaction_actual_date DESC, tr.created_at DESC
   `,

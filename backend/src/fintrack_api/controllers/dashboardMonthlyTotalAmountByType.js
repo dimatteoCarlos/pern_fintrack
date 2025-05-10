@@ -18,9 +18,9 @@ import { pool } from '../../db/configDB.js';
 import { validate as uuidValidate } from 'uuid';
 
 export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
+  //response function
   const backendColor = 'yellow';
   const errorColor = 'red';
-
   const RESPONSE = (res, status, message, data = null) => {
     console.log(pc[backendColor](message));
     res.status(status).json({ status, message, data });
@@ -28,25 +28,25 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
   console.log(pc[backendColor]('dashboardMonthlyTotalAmountByType'));
 
   //params validation
-
-  const { type: movement_type, startDate, endDate } = req.query;
+  const { startDate, endDate } = req.query;
   const userId = req.body.user ?? req.query.user; //uuid
 
   console.log(
     '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
     userId,
     req.query,
-    req.body,
-    movement_type
+    req.body
+    // movement_type
   );
 
-  if (!movement_type || !userId) {
+  if (!userId) {
     return RESPONSE(res, 400, 'User ID and account type are required');
   }
-  if (!['expense', 'income', 'saving'].includes(movement_type)) {
-    const msg = 'Movement type must be expense, income or saving';
-    return RESPONSE(res, 400, msg);
-  }
+
+  // if (!['expense', 'income', 'saving'].includes(movement_type)) {
+  //   const msg = 'Movement type must be expense, income or saving';
+  //   return RESPONSE(res, 400, msg);
+  // }
 
   if (!uuidValidate(userId)) {
     const msg = 'Invalid user ID format';

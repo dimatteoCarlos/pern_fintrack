@@ -166,6 +166,9 @@ const response = {
   },
 };
 
+//JSON.stringify(response) - Converts the response object into a JSON string
+//JSON.parse(...) - Parses that JSON string back into a JavaScript object
+
 const data = JSON.parse(JSON.stringify(response)).data.data;
 // console.log('🚀 ~ objresp:', Array.isArray(data));
 
@@ -429,3 +432,81 @@ console.log('result', result);
 
 // ¿Necesitas alguna adaptación adicional o explicación más detallada de alguna parte del código TypeScript?
 
+// Thought for a second
+
+
+// Aquí tienes el algoritmo en **seudocódigo** (combinando lenguaje natural y estructuras de control) para el procesamiento de **solo los gastos (`expense`)**:
+
+// ```
+// INICIO
+
+// // 1. Inicializar estructuras de datos
+// CREAR diccionario RESULT con claves 'expense', 'income', 'saving', cada una apuntando a un diccionario vacío
+// CREAR diccionario MONTH_TRACKER con mismas claves, cada una apuntando a un diccionario vacío
+
+// // 2. Recorrer cada transacción en DATA
+// PARA CADA transacción EN DATA HACER
+//     SI transacción.type ≠ 'expense' ENTONCES
+//         CONTINUAR al siguiente elemento
+//     FIN SI
+
+//     ASIGNAR tipo ← transacción.type          // siempre 'expense'
+//     ASIGNAR moneda ← transacción.currency_code
+//     ASIGNAR mesClave ← transacción.month_index + "-" + transacción.month_name
+
+//     // 2.1. Si no existe aún la moneda en RESULT['expense'], inicializarla
+//     SI RESULT[tipo] NO TIENE llave moneda ENTONCES
+//         RESULT[tipo][moneda] ← {
+//             totalAmount: 0,
+//             months: 0,
+//             monthlyAverage: 0,
+//             currency: moneda
+//         }
+//         MONTH_TRACKER[tipo][moneda] ← diccionario vacío
+//     FIN SI
+
+//     // 2.2. Contar mes único
+//     SI MONTH_TRACKER[tipo][moneda] NO TIENE llave mesClave ENTONCES
+//         MONTH_TRACKER[tipo][moneda][mesClave] ← true
+//         RESULT[tipo][moneda].months ← RESULT[tipo][moneda].months + 1
+//     FIN SI
+
+//     // 2.3. Sumar monto al total
+//     RESULT[tipo][moneda].totalAmount ← RESULT[tipo][moneda].totalAmount + transacción.amount
+// FIN PARA
+
+// // 3. Calcular promedio mensual
+// PARA CADA moneda EN RESULT['expense'] HACER
+//     SI RESULT['expense'][moneda].months > 0 ENTONCES
+//         RESULT['expense'][moneda].monthlyAverage ←
+//             RESULT['expense'][moneda].totalAmount / RESULT['expense'][moneda].months
+//     FIN SI
+// FIN PARA
+
+// // 4. Mostrar o devolver RESULT
+// IMPRIMIR "Resumen de gastos:"
+// PARA CADA (moneda, resumen) EN RESULT['expense'] HACER
+//     IMPRIMIR "- Moneda:", moneda
+//     IMPRIMIR "  Total gastado:", resumen.totalAmount
+//     IMPRIMIR "  Meses únicos:", resumen.months
+//     IMPRIMIR "  Promedio mensual:", resumen.monthlyAverage
+// FIN PARA
+
+// FIN
+// ```
+
+// **Explicación en lenguaje natural:**
+
+// 1. **Inicializar** dos estructuras:
+
+//    * `RESULT` para guardar totales y promedios.
+//    * `MONTH_TRACKER` para registrar qué meses ya contamos por cada moneda.
+// 2. **Recorrer** cada transacción:
+
+//    * Si no es un gasto, se ignora.
+//    * Si es la primera vez que vemos esa moneda en `RESULT`, la inicializamos.
+//    * Construimos una clave de mes (`"4-april"`).
+//    * Si ese mes aún no está en `MONTH_TRACKER`, lo contamos y aumentamos el contador de meses.
+//    * Sumamos el monto al total acumulado de esa moneda.
+// 3. **Calcular** al final el promedio mensual para cada moneda dividiendo el total entre el número de meses únicos.
+// 4. **Mostrar** el resumen resultante.

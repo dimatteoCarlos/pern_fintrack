@@ -1,4 +1,5 @@
 //I used https://jvilk.com/MakeTypes/ to define the types
+//API RESPONSE TYPES FROM BACKEND
 
 //API RESPONSE TYPE DEFINITIONS
 import { CurrencyType } from './types';
@@ -14,6 +15,7 @@ export type BalanceBankRespType = {
     currency_code: CurrencyType;
   };
 };
+
 export type BalanceIncomeRespType = {
   status: number;
   message: string;
@@ -32,7 +34,6 @@ export type BalancePocketRespType = {
     total_target: number | null;
     total_remaining: number | null;
     currency_code: CurrencyType;
-
   };
 };
 export type BalanceCategoryRespType = {
@@ -87,7 +88,7 @@ export interface TransactionDataType {
   destination_account_id?: number;
   movement_type_id: number;
   status: string;
-  transaction_actual_date: string;
+  transaction_actual_date: string | Date;
 }
 
 // Extended transaction info (includes additional fields)
@@ -275,17 +276,16 @@ export type FinancialDataRespType = {
   data: FinancialDataType;
 };
 export interface FinancialDataType {
-  meta: MetaDataType;
-  data?: MonthlyDataType[] | null;
-}
-export interface MetaDataType {
   dateRange: DateRange;
+  monthlyAmounts: MonthlyDataType[] | null;
 }
+
 export interface DateRange {
-  start: string;
-  end: string;
+  start: string | Date;
+  end: string | Date;
 }
-export interface MonthlyDataType {
+
+export type MonthlyDataType = {
   month_index: number;
   month_name: string;
   movement_type_id: number;
@@ -294,4 +294,39 @@ export interface MonthlyDataType {
   amount: number;
   currency_code: CurrencyType;
   type: 'expense' | 'income' | 'saving' | 'other';
+};
+
+//MOVEMENT TRANSACTIONS BY TYPE
+//LAST MOVEMENTS LIST
+
+export type LastMovementRespType ={
+  status: number;
+  message: string;
+  data: MovementTransactionDataType[] | null;
+}
+
+export type MovementTransactionDataType= {
+  movement_type_name: string;
+  account_id: number;
+  user_id: string;
+  account_name: string;
+  account_type_id: number;
+  currency_code: CurrencyType;
+  currency_id: number;
+  account_starting_amount: number;
+  account_balance: number;
+  account_start_date: string | Date;
+  created_at: string;
+  updated_at: string;
+  transaction_id: number;
+  description: string;
+  amount: number;
+  movement_type_id: number;
+  transaction_type_id: number;
+  source_account_id: number;
+  destination_account_id: number;
+  status: string;
+  transaction_actual_date: string | Date;
+  transaction_type_name: string;
+  account_type_name: string;
 }

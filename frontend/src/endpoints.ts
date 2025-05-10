@@ -71,30 +71,31 @@ export const url_movement_transaction_record: string =
 // export const url_get_total_account_balance_by_type: string =
 //   BASE_URL + '/dashboard/balance/type';
 
-//endpoints for OVERVIEW page
-//
+//ENDPOINTS for OVERVIEW page
 
 //dashboardMonthlyTotalAmountByType
 //get.http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?type=expense&user=
 
 export const url_monthly_TotalAmount_ByType: string =
-  BASE_URL + '/dashboard/balance/monthly_total_amount_by_type/';//?type=expense&user=
-
-//get: //http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?type=${type}&user=eacef623-6fb0-4168-a27f-fa135de093e1
+  BASE_URL + '/dashboard/balance/monthly_total_amount_by_type/'; //?type=expense&user=
 
 //for accounting and overview components
 //http://localhost:5000/api/fintrack/account/type/?type=
 // export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
 
 //LAST MOVEMENTS BY MOVEMENT TYPE
-//http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
-// export const url_get_movements_by_type: string = BASE_URL + '/account/type';
 
 //this includes transaction_type
 //http://localhost:5000/api/fintrack/dashboard/movements/account_type/?start=&end=&movement=account-opening&transaction_type=withdraw&account_type=&user=e71a1b29-8838-4398-b481-bd149bceb01f
 // dashboardMovementTransactionsByType
+export const url_get_transactions_by_movement: string =
+  BASE_URL + '/dashboard/movements/account_type/';
+
+//http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
 
 //fintrack dashboard movements
 //this is more general since it can search
 //get.http://localhost:5000/api/fintrack/dashboard/movements/search/?start=&end=&search=opening&user=eacef623-6fb0-4168-a27f-fa135de093e1
 // dashboardMovementTransactionsSearch
+export const url_get_transactions_by_search: string =
+  BASE_URL + '/dashboard/movements/search/';
