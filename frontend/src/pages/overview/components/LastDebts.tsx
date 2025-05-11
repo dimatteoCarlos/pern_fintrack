@@ -2,7 +2,21 @@ import ChevronRightSvg from '../../../assets/ChevronRightSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle';
 import { Link } from 'react-router-dom';
 import ListMovementContent from '../../../general_components/listContent/ListContent';
+import { CurrencyType } from '../../../types/types';
 
+
+
+export type LastMovementType = {
+  accountName: string; //category of expense
+  record: number; //data or title?
+  description: string; //data
+  date: Date | string;
+  currency: CurrencyType;
+};
+
+type LastMovementsProps = {
+  data: LastMovementType[] | null;
+};
 function LastDebts() {
   //Last Debts
   const latestDebtsrecords = [

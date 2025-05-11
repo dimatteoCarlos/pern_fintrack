@@ -195,6 +195,17 @@ export function capitalize(word: string) {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
+//----------------
+export const truncateText = (
+  textContent: string = '',
+  maxLength: number = 255
+) => {
+  if (textContent.length > maxLength) {
+    textContent = textContent.slice(0, maxLength) + '...';
+    return textContent;
+  }
+};
+
 //-------------------------
 
 export function validationData(stateToValidate: {
@@ -213,7 +224,7 @@ export function validationData(stateToValidate: {
       )} negative values are not allowed`;
       continue;
     }
-//zero is allowed
+    //zero is allowed
     if (
       (typeof value == 'string' && value == '') ||
       value == null ||

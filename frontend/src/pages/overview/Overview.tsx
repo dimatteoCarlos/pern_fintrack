@@ -1,8 +1,9 @@
 import SavingGoals from './components/SavingGoals.tsx';
 import AccountBalance from './components/AccountBalance.tsx';
 import MonthlyAverage from './components/MonthlyAverage';
-import LastMovements from './components/LastMovements.tsx';
-import LastDebts from './components/LastDebts.tsx';
+import LastMovements, {
+  LastMovementType,
+} from './components/LastMovements.tsx';
 import InvestmentAccountBalance from './components/InvestmentAccBalance';
 
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
@@ -17,17 +18,17 @@ import {
   BalancePocketRespType,
   FinancialDataRespType,
   LastMovementRespType,
-  MovementTransactionDataType,
+  // MovementTransactionDataType,
 } from '../../types/responseApiTypes.ts';
 
 import { overviewFetchAll } from './overviewFetchAll.ts';
 import { useEffect, useState } from 'react';
 import {
   calculateMonthlyAverage,
-  FinancialResultType,
+  // FinancialResultType,
   ResultType,
 } from './CalculateMonthlyAverage.ts';
-import { CurrencyType } from '../../types/types.ts';
+// import { CurrencyType } from '../../types/types.ts';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 
 export type CreateNewAccountPropType = {
@@ -53,26 +54,11 @@ type KPIEndpointType = {
   type: BalancePocketRespType | FinancialDataRespType | LastMovementRespType;
 };
 
-type LastExpenseMovementType = {
-  categoryName: string; //category of expense
-  record: number; //data or title?
-  description: string; //data
-  date: Date | string;
-  currency: CurrencyType;
-};
-type LastMovementType = {
-  accountName: string; //category of expense
-  record: number; //data or title?
-  description: string; //data
-  date: Date | string;
-  currency: CurrencyType;
-};
-
 //type of state data
 type KPIDataStateType = {
   SavingGoals: BalancePocketRespType | null;
   MonthlyMovementKPI: ResultType | null;
-  LastExpenseMovements: LastExpenseMovementType[] | null;
+  LastExpenseMovements: LastMovementType[] | null;
   LastMovements: LastMovementType[] | null;
 };
 //----------------------------
@@ -174,8 +160,8 @@ function Overview() {
               } = movementTransactionsData[i];
 
               const obj = {
-                categoryName: account_name,
-                record: amount, //data or title?
+                accountName: account_name,
+                record: amount, //data? or title?
                 description: description,
                 date: transaction_actual_date,
                 currency: currency_code,
@@ -232,10 +218,7 @@ function Overview() {
   console.log('estado', kpiData);
 
   //-----
-  // const movementCurrencyKPI = calulcateMonthlyAverage()
-  //-----
 
-  // if (loading) return <p>Loading...</p>;
   if (error) return <div className='error-message'>{error}</div>;
 
   return (
@@ -267,14 +250,22 @@ function Overview() {
           />
         }
 
-        {/* {        <InvestmentAccountBalance
-          createNewAccount={createNewAccount}
-          originRoute={originRoute}
-        />} */}
+        {
+          <InvestmentAccountBalance
+            createNewAccount={createNewAccount}
+            originRoute={originRoute}
+          />
+        }
 
-        <LastMovements />
-
-        <LastDebts />
+        <LastMovements
+          data={kpiData.LastExpenseMovements}
+          title='Last Movements (expense)'
+        />
+        
+        <LastMovements
+          data={kpiData.LastMovements}
+          title='Last Movements (debts)'
+        />
       </div>
     </section>
   );

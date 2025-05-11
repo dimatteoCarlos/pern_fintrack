@@ -81,10 +81,7 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
   console.log('🚀 ~ MonthlyAverage ~ income:', income);
   // console.log("🚀 ~ MonthlyAverage ~ saving:", saving)
   //HACER ESTE RESPONSIVE lt 428 una cell , despuesd e633 3 cells
-  const renderCardFinancialData = (
-    movement: string,
-    items: DataToRenderType[]
-  ) => (
+  const renderCardFinancialData = (items: DataToRenderType[]) => (
     <div className='monthly__card tile__container tile__container__col tile__container__col--goalInfo '>
       {items.map((item, indx) => (
         <article className='' key={indx}>
@@ -109,10 +106,10 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
   return (
     <div className='tiles__container flx-row-sb '>
       {/* Monthly info left column */}
-      {renderCardFinancialData('income', income)}
+      {renderCardFinancialData(income)}
       {/* Monthly info right column */}
-      {renderCardFinancialData('expense', expense)}
-      {/* {renderCardFinancialData('saving', saving)} */}
+      {renderCardFinancialData(expense)}
+      {/* {renderCardFinancialData(saving)} */}
     </div>
   );
 }
