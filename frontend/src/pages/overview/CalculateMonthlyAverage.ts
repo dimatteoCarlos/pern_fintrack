@@ -1,14 +1,11 @@
 //monthlyAverage.ts
-//group by type of movement and by month and by currency
+//group by type of movement by month and by currency
 //input data structure
 
-import {
-  FinancialDataRespType,
-  MonthlyDataType,
-} from '../../types/responseApiTypes';
+import { MonthlyDataType } from '../../types/responseApiTypes';
 
 import { CurrencyType } from '../../types/types';
-type MovementType = 'expense' | 'income' | 'saving' | 'other';
+export type MovementType = 'expense' | 'income' | 'saving' | 'other';
 
 export type FinancialResultType = {
   monthlyAverage: number;
@@ -29,64 +26,7 @@ type MonthCurrencyTrackerType = {
   };
 };
 
-const response: FinancialDataRespType = {
-  status: 200,
-  message: 'Financial data retrieved successfully',
-  data: {
-    dateRange: {
-      start: '2025-01-01T04:00:00.000Z',
-      end: '2026-01-01T03:59:59.000Z',
-    },
-
-    monthlyAmounts: [
-      {
-        month_index: 2,
-        month_name: 'february',
-        movement_type_id: 1,
-        transaction_type_id: 2,
-        name: 'housing',
-        amount: 125000,
-        currency_code: 'usd',
-        type: 'expense',
-      },
-      {
-        month_index: 1,
-        month_name: 'january',
-        movement_type_id: 1,
-        transaction_type_id: 2,
-        name: 'housing',
-        amount: 100,
-        currency_code: 'usd',
-        type: 'expense',
-      },
-      {
-        month_index: 3,
-        month_name: 'march',
-        movement_type_id: 1,
-        transaction_type_id: 2,
-        name: 'housing',
-        amount: 1000,
-        currency_code: 'usd',
-        type: 'income',
-      },
-      {
-        month_index: 4,
-        month_name: 'april',
-        movement_type_id: 1,
-        transaction_type_id: 2,
-        name: 'appliences',
-        amount: 4344,
-        currency_code: 'usd',
-        type: 'saving',
-      },
-    ],
-  },
-};
-
-const arrayData: MonthlyDataType[] = JSON.parse(JSON.stringify(response)).data
-  .monthlyAmounts;
-console.log(arrayData);
-
+//----------------------------------------------
 export function calculateMonthlyAverage(
   arrayData: MonthlyDataType[]
 ): ResultType {
@@ -153,3 +93,93 @@ export function calculateMonthlyAverage(
   console.log('result', result);
   return result;
 }
+
+//------------------------------------------------
+// //example of ResultType data structure
+// type ResultType = {
+//     expense?: {
+//         usd?: {
+// //   monthlyAverage: number;
+//   totalAmount: number;
+//   currency: CurrencyType;
+//   monthCounter: number;
+// } | undefined;
+// //         cop?: FinancialResultType | undefined;
+//         eur?: FinancialResultType | undefined;
+//     } | undefined;
+//     income?: {
+//         usd?: FinancialResultType | undefined;
+//         cop?: FinancialResultType | undefined;
+//         eur?: FinancialResultType | undefined;
+//     } | undefined;
+//     saving?: {
+//         usd?: FinancialResultType | undefined;
+//         cop?: FinancialResultType | undefined;
+//         eur?: FinancialResultType | undefined;
+//     } | undefined;
+//     other?: {
+//         usd?: FinancialResultType | undefined;
+//         cop?: FinancialResultType | undefined;
+//         eur?: FinancialResultType | undefined;
+//     } | undefined;
+// }
+//------------------------------------------------
+
+// //example of api response input data structure
+// const response: FinancialDataRespType = {
+//   status: 200,
+//   message: 'Financial data retrieved successfully',
+//   data: {
+//     dateRange: {
+//       start: '2025-01-01T04:00:00.000Z',
+//       end: '2026-01-01T03:59:59.000Z',
+//     },
+
+//     monthlyAmounts: [
+//       {
+//         month_index: 2,
+//         month_name: 'february',
+//         movement_type_id: 1,
+//         transaction_type_id: 2,
+//         name: 'housing',
+//         amount: 125000,
+//         currency_code: 'usd',
+//         type: 'expense',
+//       },
+//       {
+//         month_index: 1,
+//         month_name: 'january',
+//         movement_type_id: 1,
+//         transaction_type_id: 2,
+//         name: 'housing',
+//         amount: 100,
+//         currency_code: 'usd',
+//         type: 'expense',
+//       },
+//       {
+//         month_index: 3,
+//         month_name: 'march',
+//         movement_type_id: 1,
+//         transaction_type_id: 2,
+//         name: 'housing',
+//         amount: 1000,
+//         currency_code: 'usd',
+//         type: 'income',
+//       },
+//       {
+//         month_index: 4,
+//         month_name: 'april',
+//         movement_type_id: 1,
+//         transaction_type_id: 2,
+//         name: 'appliences',
+//         amount: 4344,
+//         currency_code: 'usd',
+//         type: 'saving',
+//       },
+//     ],
+//   },
+// };
+
+// const arrayData: MonthlyDataType[] = JSON.parse(JSON.stringify(response)).data
+//   .monthlyAmounts;
+// console.log(arrayData);

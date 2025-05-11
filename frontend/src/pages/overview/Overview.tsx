@@ -28,6 +28,7 @@ import {
   ResultType,
 } from './CalculateMonthlyAverage.ts';
 import { CurrencyType } from '../../types/types.ts';
+import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 
 export type CreateNewAccountPropType = {
   originRoute: string;
@@ -118,7 +119,7 @@ function Overview() {
     LastMovements: null,
   });
 
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   //------------------
 
@@ -221,7 +222,7 @@ function Overview() {
         setError('Failed to load overview data');
         console.error('Overview fetch error:', err);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
@@ -234,19 +235,30 @@ function Overview() {
   // const movementCurrencyKPI = calulcateMonthlyAverage()
   //-----
 
-  if (loading) return <p>Loading...</p>;
+  // if (loading) return <p>Loading...</p>;
   if (error) return <div className='error-message'>{error}</div>;
 
   return (
     <section className='content__presentation'>
       <div className='cards__presentation'>
-        {/* <SavingGoals data={kpiData.SavingsGoals} /> */}
+        {isLoading && (
+          <div
+            className='loader__container'
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              zIndex: '1',
+            }}
+          >
+            <CoinSpinner />
+          </div>
+        )}
+
+        <SavingGoals data={kpiData.SavingGoals} />
         {/*  */}
 
-        {/*<MonthlyAverage
-       data={kpiData.MonthlyMovementKPI}
-          
-        />*/}
+        <MonthlyAverage data={kpiData.MonthlyMovementKPI} />
 
         {
           <AccountBalance

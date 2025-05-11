@@ -132,6 +132,12 @@ a.icon {
 .overviewLayout .tile__status--goal {
   text-transform: lowercase;
 }
+
+
+
+
+
+
 /*------------*/
 /*Goals Indicators*/
 
@@ -157,6 +163,12 @@ a.icon {
 .letterSpaceSmall {
   letter-spacing: 0.65px;
 }
+
+/*---------------*/
+
+
+
+
 
 /*****************/
 /*GOALS ACCOUNTS*/
