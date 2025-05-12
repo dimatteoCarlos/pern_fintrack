@@ -1,9 +1,12 @@
 //pages/tracker/debts/debts.tsx
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import CardSeparator from '../components/CardSeparator.tsx';
 import { capitalize, validationData } from '../../../helpers/functions.ts';
 import { useFetch } from '../../../hooks/useFetch.tsx';
-import { url_debtors } from '../../../endpoints.ts';
+import {
+  url_get_accounts_by_type,
+  url_movement_transaction_record,
+} from '../../../endpoints.ts';
 import { useLocation } from 'react-router-dom';
 import Datepicker from '../../../general_components/datepicker/Datepicker.tsx';
 import {
@@ -25,7 +28,15 @@ import {
 import TopCard from '../components/TopCard.tsx';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
+import {
+  AccountByTypeResponseType,
+  MovementTransactionResponseType,
+} from '../../../types/responseApiTypes.ts';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
+import useBalanceStore from '../../../stores/useBalanceStore.ts';
+import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 
+const VARIANT_DEFAULT: VariantType = 'tracker';
 //temporary values
 const defaultCurrency: CurrencyType = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
@@ -41,37 +52,73 @@ const initialTrackerData: DebtsTrackerInputDataType = {
   note: '',
 };
 
-function Debts() {
+const initialFormData: FormNumberInputType = {
+  amount: '',
+};
+
+//-----------------------------------
+function Debts(): JSX.Element {
+  //----Debt Tracker Movement -------
+  //oberv:no counterpart account is known. lend is deposit/borrow is withdraw
   const trackerState = useLocation().pathname.split('/')[PAGE_LOC_NUM];
+
+  const typeMovement = trackerState.toLowerCase();
+  console.log('movement:', typeMovement);
+
+  //deal here with user id and authentication
+  const user = import.meta.env.VITE_USER_ID;
+
   //----Debtors Options----------
   //debtors
-   //DATA FETCHING
+  //DATA FETCHING
+  const fetchUrl = user
+    ? `${url_get_accounts_by_type}/?type=debtor&user=${user}`
+    : //<Navigate to = '/auth'/>
+      undefined; //this forces to user req err
+
   const {
-    data: dataDebtors,
+    apiData: DebtorsResponse,
     error: fetchedError,
-    isLoading,
-  } = useFetch<DebtorsListType>(url_debtors); //apply deboune
-  // console.log('debtors datatrack:', dataDebtors);
+    isLoading: isLoadingDebtor,
+  } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
+
+  //apply debounce
+  // console.log('debtors datatrack:', DebtorsResponse);
   //define what to do when error
-  const debtors =
-    !fetchedError && !isLoading && dataDebtors?.debtors?.length
-      ? dataDebtors?.debtors?.map((debtor) => ({
-          value: debtor.first_name + debtor.last_name,
-          label: `${capitalize(debtor.first_name)}, ${capitalize(
-            debtor.last_name
-          )}`,
-        }))
-      : DEBTOR_OPTIONS_DEFAULT;
+  const debtors = useMemo(
+    () =>
+      !fetchedError &&
+      !isLoadingDebtor &&
+      DebtorsResponse?.data.accountList.length
+        ? DebtorsResponse.data.accountList.map((debtor) => ({
+            value: `${debtor.account_name}`,
+            label: debtor.account_name,
+          }))
+        : // ? DebtorsResponse?.data.accountList.map((debtor) => ({
+          //     value: `${capitalize(debtor.account_name)}` ,
+          //     label: `${capitalize(debtor.account_name)}`,
+          //   }))
+          DEBTOR_OPTIONS_DEFAULT,
+    [DebtorsResponse?.data.accountList, fetchedError, isLoadingDebtor]
+  );
 
   const debtorOptions = {
     title: debtors ? 'Debtors' : 'No info. available',
     options: debtors,
-    variant: 'tracker' as VariantType,
+    variant: VARIANT_DEFAULT as VariantType,
   };
-  //-----------------
-  const initialFormData: FormNumberInputType = {
-    amount: '',
-  };
+
+  //---------------------------------------------
+  //OBTAIN THE REQUESTFN FROM userFetchLoad
+  //extend the type of input data with user id
+  type PayloadType = DebtsTrackerInputDataType & { user: string };
+
+  //DATA POST FETCHING
+  const { data, isLoading, error, requestFn } = useFetchLoad<
+    MovementTransactionResponseType,
+    PayloadType
+  >({ url: url_movement_transaction_record, method: 'POST' });
+
   //---states--------
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
   const [type, setType] = useState<DebtsTypeMovementType>('lend');
@@ -83,9 +130,45 @@ function Debts() {
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
   }>({});
+
   const [isReset, setIsReset] = useState<boolean>(false);
+
   const [formData, setFormData] =
     useState<FormNumberInputType>(initialFormData);
+  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
+    null
+  );
+  const [showMessage, setShowMessage] = useState(false);
+
+  //--------------------------------------------
+  const setAvailableBudget = useBalanceStore(
+    (state) => state.setAvailableBudget
+  );
+
+  //---------------------------------------------
+  //Handle states related to the data submit form
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
+    if ((data || error) && !isLoading) {
+      const success = data && !error;
+      setMessageToUser(
+        success
+          ? 'Movement completed successfully!'
+          : error ?? 'An error occurred during submission'
+      );
+      setShowMessage(true);
+
+      timer = setTimeout(() => {
+        setMessageToUser(null);
+        setShowMessage(false);
+      }, 8000);
+    }
+
+    return () => clearTimeout(timer);
+  }, [data, error, isLoading]);
+
+  //------------------------------------------------------
   //----Functions ------
   const { inputNumberHandlerFn } = useInputNumberHandler(
     setFormData,
@@ -132,12 +215,13 @@ function Debts() {
   function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
     console.log('On Save Handler');
     e.preventDefault();
-    const formattedNumber = numberFormat(datatrack.amount || 0);
-    console.log(
-      'formatted amount as a string:',
-      { formattedNumber },
-      typeof formattedNumber
-    );
+
+    // const formattedNumber = numberFormat(datatrack.amount || 0);
+    // console.log(
+    //   'formatted amount as a string:',
+    //   { formattedNumber },
+    //   typeof formattedNumber
+    // );
     //-------entered datatrack validation messages --------
     const newValidationMessages = validationData(datatrack);
     if (Object.values(newValidationMessages).length > 0) {
@@ -147,6 +231,7 @@ function Debts() {
     //----------------------------
     //do the post to the endpoint api
     //ENDPOINT HERE FOR POSTING
+
     //----------------------------
     //reset values
 
@@ -230,6 +315,25 @@ function Debts() {
           />
         </div>
       </form>
+
+      <MessageToUser
+        isLoading={isLoading || isLoadingDebtor}
+        //probar que muestra como error o si muestra algo
+        error={error || fetchedError}
+        messageToUser={messageToUser}
+        variant='tracker'
+      />
+
+      {showMessage && !isLoading && (
+        <div className='fade-message'>
+          <MessageToUser
+            isLoading={false}
+            error={error}
+            messageToUser={messageToUser}
+            variant='form'
+          />
+        </div>
+      )}
     </>
   );
 }

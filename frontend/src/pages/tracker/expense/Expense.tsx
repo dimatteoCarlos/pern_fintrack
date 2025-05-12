@@ -10,7 +10,6 @@ import {
   numberFormat,
   validationData,
 } from '../../../helpers/functions.ts';
-import {} from '../../../helpers/functions.ts';
 import {
   CurrencyType,
   DropdownOptionType,
@@ -26,8 +25,8 @@ import {
 import {
   ACCOUNT_OPTIONS_DEFAULT,
   CATEGORY_OPTIONS_DEFAULT,
-  CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
+  // CURRENCY_OPTIONS,
   PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
 import TopCard from '../components/TopCard.tsx';
@@ -48,7 +47,7 @@ import useBalanceStore from '../../../stores/useBalanceStore.ts';
 
 //-----temporarily data 'till decide how to handle currencies
 const defaultCurrency = DEFAULT_CURRENCY;
-const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
+// const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // console.log('', { formatNumberCountry });
 
 // ********************PENDIENTE: hay que definir algunas reglas de negocio para status. Establecer como es el manejo de los currencies.buttons and functionality as post (Updating, deleting, patching), definir en overview lo que se refleja en los goals, definir funcionalidad de los pockets y manejo de la informacion. Todo el proceso de calculo en el backend. Que es available Budget? es la suma de los budget? es el balance total de las cuentas tipo bank? o es todo el patrimonio?o que?.
@@ -111,22 +110,20 @@ function Expense(): JSX.Element {
     error: fetchedErrorBankAccounts,
   } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
 
-  console.log({
-    BankAccountsResponse,
-    isLoadingBankAccounts,
-    fetchedErrorBankAccounts,
-  });
+  // console.log({
+  //   BankAccountsResponse,
+  //   isLoadingBankAccounts,
+  //   fetchedErrorBankAccounts,
+  // });
 
-  console.log('🚀 ~ Expense ~ BankAccountsResponse:', BankAccountsResponse);
-  console.log('BANK resp', BankAccountsResponse, fetchedErrorBankAccounts);
+  // console.log('🚀 ~ Expense ~ BankAccountsResponse:', BankAccountsResponse);
+  // console.log('BANK resp', BankAccountsResponse, fetchedErrorBankAccounts);
 
   const optionsExpenseAccounts = useMemo(() => {
     if (fetchedErrorBankAccounts) {
       return ACCOUNT_OPTIONS_DEFAULT;
     }
-    if (fetchedErrorBankAccounts) {
-      return ACCOUNT_OPTIONS_DEFAULT;
-    }
+
     const accountList = BankAccountsResponse?.data?.accountList ?? [];
 
     return accountList.length
@@ -148,8 +145,6 @@ function Expense(): JSX.Element {
   //GET: ACCOUNTS OF TYPE CATEGORY_BUDGET AVAILABLE
   //DATA FETCHING
 
-  console.log('user antes de budget acc', user);
-
   const {
     apiData: CategoryBudgetAccountsResponse,
     isLoading: isLoadingCategoryBudgetAccounts,
@@ -158,13 +153,13 @@ function Expense(): JSX.Element {
     `${url_get_accounts_by_type}/?type=category_budget&user=${user}`
   );
 
-  console.log('catBudgetResp', {
-    CategoryBudgetAccountsResponse,
-    isLoadingCategoryBudgetAccounts,
-    fetchedErrorCategoryBudgetAccounts,
-  });
+  // console.log('catBudgetResp', {
+  //   CategoryBudgetAccountsResponse,
+  //   isLoadingCategoryBudgetAccounts,
+  //   fetchedErrorCategoryBudgetAccounts,
+  // });
 
-  //evaluar si hay un error y de que tipo>
+  //como evaluar si hay un error y de que tipo>
 
   // const optionsExpenseCategories = CATEGORY_OPTIONS_DEFAULT;
 
@@ -199,9 +194,7 @@ function Expense(): JSX.Element {
     variant: VARIANT_DEFAULT as VariantType,
   };
 
-  //---------------------------------------------
-
-  //---------------------------------------------
+  //--------------------------------------------
   //OBTAIN THE REQUESTFN FROM userFetchLoad
   type PayloadType = ExpenseInputDataType & {
     user: string;
@@ -287,15 +280,16 @@ function Expense(): JSX.Element {
     const { name, value } = e.target;
     //-----------
     if (name === 'amount') {
-      const { formatMessage, valueNumber, isError, valueToSave } =
+      const { formatMessage, isError, valueToSave } =
         checkNumberFormatValue(value);
+        // valueNumber,
 
       // Update numeric state value. Actualizar el estado numerico en el formulario
       setFormData({
         ...formData,
         [name]: value,
       });
-      console.log({ formatMessage, valueNumber, isError, valueToSave });
+      // console.log({ formatMessage, valueNumber, isError, valueToSave });
       setValidationMessages((prev) => ({
         ...prev,
         [name]: ` Format: ${formatMessage}`,
@@ -319,12 +313,12 @@ function Expense(): JSX.Element {
     console.log('On Save Handler');
     e.preventDefault();
 
-    const formattedNumber = numberFormat(expenseData.amount || 0);
-    console.log(
-      'Expense formatted amount as a string:',
-      { formattedNumber },
-      typeof formattedNumber
-    );
+    // const formattedNumber = numberFormat(expenseData.amount || 0);
+    // console.log(
+    //   'Expense formatted amount as a string:',
+    //   { formattedNumber },
+    //   typeof formattedNumber
+    // );
 
     //----------------------------------------------
     //validation of entered data
@@ -348,14 +342,14 @@ function Expense(): JSX.Element {
         user,
       };
       const finalUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
-      console.log(
-        '🚀 ~ onSubmitForm ~ finalUrl:',
-        finalUrl,
-        'date:',
-        payload.date,
-        'este es el payload:',
-        payload
-      );
+      // console.log(
+      //   '🚀 ~ onSubmitForm ~ finalUrl:',
+      //   finalUrl,
+      //   'date:',
+      //   payload.date,
+      //   'este es el payload:',
+      //   payload
+      // );
 
       const data = await requestFn(payload, {
         url: finalUrl,
@@ -366,7 +360,6 @@ function Expense(): JSX.Element {
       }
 
       //reset the state and the selected options on select component
-
       setCurrency(defaultCurrency);
       setExpenseData(initialExpenseData);
       setIsReset(true); //admitir que category sea undefined - must admit undefined category

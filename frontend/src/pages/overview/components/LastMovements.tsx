@@ -4,7 +4,6 @@ import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import ListContent from '../../../general_components/listContent/ListContent.tsx';
 import { CurrencyType } from '../../../types/types.ts';
 
-
 export type LastMovementType = {
   accountName: string; //category of expense
   record: number; //data or title?
@@ -15,7 +14,7 @@ export type LastMovementType = {
 
 type LastMovementsProps = {
   data: LastMovementType[] | null;
-  title:string
+  title: string;
 };
 
 function LastMovements({ data, title }: LastMovementsProps) {
@@ -46,7 +45,7 @@ function LastMovements({ data, title }: LastMovementsProps) {
         <ListContent listOfItems={lastMovements} />
       </article>
 
-      <Link className='seeMore' to={'overview/movements/expense'}>
+      <Link className='seeMore' to={'/fintrack/overview/movements/expense'}>
         <div className='link' onClick={() => console.log('See More')}>
           {'See More'}
         </div>

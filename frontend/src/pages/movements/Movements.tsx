@@ -6,7 +6,7 @@ function Movements() {
   const { pathname } = useLocation();
   const routes = pathname.split('/');
   const movementsOf = routes[3].toUpperCase();
-  const previousRoute = '/' + routes[1];
+  const previousRoute = '/' + routes[2];
   // console.log('location:', pathname, useLocation(), routes, previousRoute);
 
   const Message = `You've navigated to a page that should render all the ${movementsOf} Movements.\n  "Endpoints" for data fetching of all the movements with its data structure, and the Rendering VIEWS design are PENDING`;

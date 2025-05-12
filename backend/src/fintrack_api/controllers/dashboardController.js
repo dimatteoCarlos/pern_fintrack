@@ -502,10 +502,11 @@ export const dashboardMovementTransactions = async (req, res, next) => {
 
   //---------------------------------------
 
-  const { movement: movement_type_name } = req.query;
+  const { movement } = req.query;
+  const movement_type_name = movement === 'debts' ? 'debt' : movement;
   const userId = req.body.user ?? req.query.user;
 
-  console.log('params:', req.body, req.query);
+  // console.log('params:', req.body, req.query);
 
   //later add a function to validate type and movement against the types
   //!account_type_name ||
@@ -513,6 +514,17 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     const message =
       'Missing required parameters: user, account type name, movement type name';
     return RESPONSE(res, 400, message);
+  }
+
+  if (
+    !['expense', 'income', 'investment', 'debt', 'pocket'].includes(
+      movement_type_name
+    )
+  ) {
+    const message = `movement name " ${movement_type_name} " is not correct`;
+    console.warn(pc.magentaBright(message));
+    return RESPONSE(res, 400, message);
+    // return res.status(400).json({ status: 400, message });
   }
 
   //verify whether is necessary to check the existence of these parameters in the db tables

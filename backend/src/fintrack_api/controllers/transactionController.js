@@ -99,10 +99,13 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
   try {
     // const { user: userId, movement: movementName } = req.query;
-    const { movement: movementName } = req.query;
+    const { movement } = req.query;
+    const movementName = movement === 'debts' ? 'debt' : movement; //debt mov is called as debts in frontend
+
+    console.log(movementName);
+
     // const { user: userId } = req.body;
     const userId = req.body.user ?? req.query.user;
-    console.log(movementName);
 
     if (!userId) {
       const message = 'User ID is required';
@@ -147,6 +150,15 @@ export const transferBetweenAccounts = async (req, res, next) => {
       console.warn(pc.magentaBright(message));
       return res.status(400).json({ status: 400, message });
     }
+    if (
+      !['expense', 'income', 'investment', 'debt', 'pocket'].includes(
+        movementName
+      )
+    ) {
+      const message = `movement name " ${movementName} " is not correct`;
+      console.warn(pc.magentaBright(message));
+      return res.status(400).json({ status: 400, message });
+    }
     //------------------
     if (movementName !== 'expense' && movementName !== 'income') {
       checkAndInsertAccount(req, res, next, userId);
@@ -158,8 +170,8 @@ export const transferBetweenAccounts = async (req, res, next) => {
     );
     const movement_typesResultsExist = movement_typesResults.rows.length > 0;
 
-    console.log('movement_types', movement_typesResultsExist)
-    
+    // console.log('movement_types', movement_typesResultsExist)
+
     if (!movement_typesResultsExist) {
       const message = 'something went wrong with the movement_types table';
       console.warn(pc.magentaBright(message));
@@ -263,11 +275,11 @@ export const transferBetweenAccounts = async (req, res, next) => {
         : new Date(Date.parse(transactionActualDate));
     // : Date.parse(transactionActualDate);
 
-    console.log(
-      transaction_actual_date,
-      '🚀 ~ transferBetweenAccounts ~ transactionActualDate:',
-      transactionActualDate
-    );
+    // console.log(
+    //   transaction_actual_date,
+    //   '🚀 ~ transferBetweenAccounts ~ transactionActualDate:',
+    //   transactionActualDate
+    // );
 
     //-------account info------------------------------------
     //source and destination account info
@@ -281,12 +293,12 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountTypeName,
       userId
     );
-    console.log(
-      '🚀 ~ transferBetweenAccounts ~ destinationAccountInfo:',
-      destinationAccountInfo
-    );
+    // console.log(
+    //   '🚀 ~ transferBetweenAccounts ~ destinationAccountInfo:',
+    //   destinationAccountInfo
+    // );
 
-    console.log('🚀 ~ sourceAccountInfo:', sourceAccountInfo);
+    // console.log('🚀 ~ sourceAccountInfo:', sourceAccountInfo);
 
     if (!sourceAccountInfo || !destinationAccountInfo) {
       // message: `Account  ${sourceAccountName} and type ${sourceAccountTypeName} not found`, // for individual message
@@ -331,12 +343,12 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const newSourceAccountBalance =
       parseFloat(sourceAccountBalance) + numericAmount * transactionSign;
 
-    console.log(
-      '🚀 ~ newSourceAccountBalance:',
-      newSourceAccountBalance,
-      '  typeof',
-      balanceMultiplierFn(sourceAccountTransactionType)
-    );
+    // console.log(
+    //   '🚀 ~ newSourceAccountBalance:',
+    //   newSourceAccountBalance,
+    //   '  typeof',
+    //   balanceMultiplierFn(sourceAccountTransactionType)
+    // );
 
     const sourceAccountId = sourceAccountInfo.account_id;
     console.log('tad:', transaction_actual_date);
@@ -346,12 +358,12 @@ export const transferBetweenAccounts = async (req, res, next) => {
       sourceAccountId,
       transaction_actual_date
     );
-    console.log(
-      '🚀 ~ updatedSourceAccountInfo:',
-      updatedSourceAccountInfo,
-      'type of:',
-      typeof sourceAccountBalance
-    );
+    // console.log(
+    //   '🚀 ~ updatedSourceAccountInfo:',
+    //   updatedSourceAccountInfo,
+    //   'type of:',
+    //   typeof sourceAccountBalance
+    // );
     //-------------------------------------------------------
     //---Update the balance in the destination account
     const destinationAccountBalance = destinationAccountInfo.account_balance;
@@ -378,17 +390,17 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const transactionDescription = `${note}. Transaction: ${sourceAccountTransactionType}. Transfered  ${numericAmount} ${currencyCode} from account "${sourceAccountName}" of type: "${sourceAccountTypeName}" to "${destinationAccountName}" of type ${destinationAccountTypeName}. Date: ${transaction_actual_date.toLocaleString()}`;
     //revisar formato de fecha
 
-    console.log(
-      userId,
-      transactionDescription,
-      movement_type_id,
-      sourceTransactionTypeId,
-      newSourceAccountBalance,
-      currencyIdReq,
-      sourceAccountId,
-      destinationAccountId,
-      transaction_actual_date
-    );
+    // console.log(
+    //   userId,
+    //   transactionDescription,
+    //   movement_type_id,
+    //   sourceTransactionTypeId,
+    //   newSourceAccountBalance,
+    //   currencyIdReq,
+    //   sourceAccountId,
+    //   destinationAccountId,
+    //   transaction_actual_date
+    // );
 
     const sourceTransactionOption = {
       userId,
@@ -409,18 +421,18 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //-----------destination transaction-----------------------
     const transactionDescriptionReceived = `${note}.Transaction: ${destinationAccountTransactionType}.Received ${numericAmount} ${currencyCode} from account ${sourceAccountName} of type: ${sourceAccountTypeName} account, to ${destinationAccountName} of type ${destinationAccountTypeName}. Date: ${transaction_actual_date.toLocaleString()}`; //revisar formato de fecha
 
-    console.log(
-      userId,
-      transactionDescriptionReceived,
-      movement_type_id,
-      sourceTransactionTypeId,
-      newDestinationAccountBalance,
-      numericAmount * balanceMultiplierFn(destinationAccountTransactionType), //
-      currencyIdReq,
-      sourceAccountId,
-      destinationAccountId,
-      transaction_actual_date
-    );
+    // console.log(
+    //   userId,
+    //   transactionDescriptionReceived,
+    //   movement_type_id,
+    //   sourceTransactionTypeId,
+    //   newDestinationAccountBalance,
+    //   numericAmount * balanceMultiplierFn(destinationAccountTransactionType), //
+    //   currencyIdReq,
+    //   sourceAccountId,
+    //   destinationAccountId,
+    //   transaction_actual_date
+    // );
 
     const destinationTransactionOption = {
       userId,

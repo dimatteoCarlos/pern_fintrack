@@ -446,7 +446,7 @@ export const getDashboardInformation = async (req, res, next) => {
       totalPocketInfo[0].total_amount
     );
 
-    //   //movement debts transaction_type: borrow /
+    //   //movement debt transaction_type: borrow /
     //   // debtor_lend / debtor_borrow /investment_withdraw/investment_deposit/pocket_deposit/pocket_withraw, o sea que la tranasaction tambien tiene que tener el tipo de cuenta?
 
     const availableBalance =

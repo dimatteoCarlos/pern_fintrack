@@ -5,8 +5,16 @@ type ChildrenPropType = { children?: React.ReactNode; previousRoute: string };
 //--------------------------------------------------------
 export function SeeMore({ children, previousRoute }: ChildrenPropType) {
   function onClickHandler() {
-    console.log('Message:', 'See More is a wraping component to render its children');
+    console.log(
+      'Message:',
+      'See More is a wraping component to render its children'
+    );
   }
+
+  const currentRoute = location.pathname;
+  console.log('cur', currentRoute);
+  const previousPage = currentRoute.split('/').slice(1, 3).join('/');
+  console.log('🚀 ~ SeeMore ~ previousPage:', previousPage);
 
   return (
     <div className='see_more'>
@@ -14,7 +22,11 @@ export function SeeMore({ children, previousRoute }: ChildrenPropType) {
         onClick={onClickHandler}
         style={{ backgroundColor: 'white', color: 'brown', padding: '0.5rem' }}
       >
-        <Link to={previousRoute} relative='path' className='iconArrowLeftDark'>
+        <Link
+          to='/fintrack/overview'
+          relative='path'
+          className='iconArrowLeftDark'
+        >
           <LeftArrowDarkSvg />
         </Link>
         {children}

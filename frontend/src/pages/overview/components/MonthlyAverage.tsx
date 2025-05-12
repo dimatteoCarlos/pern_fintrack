@@ -76,10 +76,10 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
 
   const expense = convertMovementData('expense', data);
   const income = convertMovementData('income', data);
-  // const saving = convertMovementData('saving', data);
+  const saving = convertMovementData('saving', data);
   console.log('🚀 ~ MonthlyAverage ~ expense:', expense);
   console.log('🚀 ~ MonthlyAverage ~ income:', income);
-  // console.log("🚀 ~ MonthlyAverage ~ saving:", saving)
+  console.log("🚀 ~ MonthlyAverage ~ saving:", saving)
   //HACER ESTE RESPONSIVE lt 428 una cell , despuesd e633 3 cells
   const renderCardFinancialData = (items: DataToRenderType[]) => (
     <div className='monthly__card tile__container tile__container__col tile__container__col--goalInfo '>
@@ -89,7 +89,6 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
           <div className='tile__title '>
             {currencyFormat(item.currency, item.amount, formatNumberCountry)}
           </div>
-
           <div className='tile__status__container flx-row-start '>
             <StatusSquare
               alert={0.5 - Math.random() < 0 ? 'alert' : ''} // Valores temporales hay que definir la funcion a aplicar
@@ -109,7 +108,7 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
       {renderCardFinancialData(income)}
       {/* Monthly info right column */}
       {renderCardFinancialData(expense)}
-      {/* {renderCardFinancialData(saving)} */}
+      {renderCardFinancialData(saving)}
     </div>
   );
 }
