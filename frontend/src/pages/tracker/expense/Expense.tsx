@@ -49,9 +49,7 @@ import useBalanceStore from '../../../stores/useBalanceStore.ts';
 const defaultCurrency = DEFAULT_CURRENCY;
 // const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // console.log('', { formatNumberCountry });
-
-// ********************PENDIENTE: hay que definir algunas reglas de negocio para status. Establecer como es el manejo de los currencies.buttons and functionality as post (Updating, deleting, patching), definir en overview lo que se refleja en los goals, definir funcionalidad de los pockets y manejo de la informacion. Todo el proceso de calculo en el backend. Que es available Budget? es la suma de los budget? es el balance total de las cuentas tipo bank? o es todo el patrimonio?o que?.
-//------------------------------------------------------
+// ********************
 const initialExpenseData: ExpenseInputDataType = {
   amount: 0,
   account: '',
@@ -65,10 +63,9 @@ const VARIANT_DEFAULT: VariantType = 'tracker';
 const initialFormData: FormNumberInputType = {
   amount: '',
 };
-
 //-------------------------------------
+//----Expense Tracker Movement -------
 function Expense(): JSX.Element {
-  //----Expense Tracker Movement -------
   //rules: only bank accounts type are used to make expenses
   //select option accounts rendered are all existing bank accounts, but the slack account which is not shown
   const router = useLocation();
@@ -85,14 +82,14 @@ function Expense(): JSX.Element {
 
   // console.log('userData state:', userData);
   //userId
-  // const userID = userData?.userId;
+  // const user = userData?.userId;
   // console.log('userID', userID);
 
   const user = import.meta.env.VITE_USER_ID;
 
   // const user = 'e71a1b29-8838-4398-b481-bd149bceb01f';
 
-  // el usuario se deberia pasar via cookie o header al backend
+  // el user se deberia pasar via cookie o header al backend
   //-----------------------------------------------------
   //url_get_accounts_by_type
   //DATA FETCHING
@@ -123,7 +120,6 @@ function Expense(): JSX.Element {
     if (fetchedErrorBankAccounts) {
       return ACCOUNT_OPTIONS_DEFAULT;
     }
-
     const accountList = BankAccountsResponse?.data?.accountList ?? [];
 
     return accountList.length
@@ -139,7 +135,6 @@ function Expense(): JSX.Element {
     options: optionsExpenseAccounts,
     variant: 'tracker' as VariantType,
   };
-
   //--------
   //category options
   //GET: ACCOUNTS OF TYPE CATEGORY_BUDGET AVAILABLE
@@ -229,7 +224,6 @@ function Expense(): JSX.Element {
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
-  //--------------------------------------------
 
   //---------------------------------------------
   //Handle states related to the data submit form
@@ -282,7 +276,7 @@ function Expense(): JSX.Element {
     if (name === 'amount') {
       const { formatMessage, isError, valueToSave } =
         checkNumberFormatValue(value);
-        // valueNumber,
+      // valueNumber,
 
       // Update numeric state value. Actualizar el estado numerico en el formulario
       setFormData({
@@ -303,6 +297,7 @@ function Expense(): JSX.Element {
         }));
       }
       setExpenseData((prev) => ({ ...prev, [name]: valueToSave }));
+
       return;
     } else {
       setExpenseData((prev) => ({ ...prev, [name]: value }));
@@ -328,8 +323,7 @@ function Expense(): JSX.Element {
       setValidationMessages(newValidationMessages);
       return;
     }
-
-    //--------------------------------------------------
+    //-------------------------------------------------
     //POST ENDPOINT FOR MOVEMENT TRANSACTION HERE
     //update balance account of bank account and category budget account in: user_accounts table.
     //record both transaction descriptions: transfer and receive transactions with the correspondent account info.

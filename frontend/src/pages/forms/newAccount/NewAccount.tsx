@@ -8,9 +8,9 @@ import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBad
 import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
 import {
   ACCOUNT_TYPE_DEFAULT,
-  CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   VARIANT_FORM,
+  // CURRENCY_OPTIONS,
 } from '../../../helpers/constants.ts';
 import '../styles/forms-styles.css';
 import {
@@ -37,7 +37,7 @@ import { AxiosRequestConfig } from 'axios';
 
 //-----temporarily 'till decide how to handle currencies
 const defaultCurrency = DEFAULT_CURRENCY;
-const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
+// const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // console.log('', { formatNumberCountry });
 
 //---- data config---------

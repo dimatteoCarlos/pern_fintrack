@@ -61,7 +61,7 @@ export const getAllAccountsByType = async (req, res, next) => {
         'bank_and_investment',
       ].includes(accountType)
     ) {
-      const message = `Account of type ${accountType} is not valid.Try again!.`;
+      const message = `Account of type ${accountType} is not valid. Try again!.`;
       console.warn(pc[backendColor](message, controllerName));
       return respondError(res, 400, message);
       // return res.status(400).json({ status: 400, message });

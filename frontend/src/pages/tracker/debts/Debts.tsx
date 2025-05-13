@@ -1,7 +1,7 @@
 //pages/tracker/debts/debts.tsx
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import CardSeparator from '../components/CardSeparator.tsx';
-import { capitalize, validationData } from '../../../helpers/functions.ts';
+import { validationData } from '../../../helpers/functions.ts';
 import { useFetch } from '../../../hooks/useFetch.tsx';
 import {
   url_get_accounts_by_type,
@@ -12,16 +12,15 @@ import { useLocation } from 'react-router-dom';
 import Datepicker from '../../../general_components/datepicker/Datepicker.tsx';
 import {
   CurrencyType,
-  DebtorsListType,
   DebtsTrackerInputDataType,
   DebtsTypeMovementType,
   FormNumberInputType,
   TopCardSelectStateType,
   VariantType,
 } from '../../../types/types.ts';
-import { numberFormat } from '../../../helpers/functions.ts';
+// import { numberFormat } from '../../../helpers/functions.ts';
 import {
-  CURRENCY_OPTIONS,
+  // CURRENCY_OPTIONS,
   DEBTOR_OPTIONS_DEFAULT,
   DEFAULT_CURRENCY,
   PAGE_LOC_NUM,
@@ -42,7 +41,7 @@ import axios from 'axios';
 const VARIANT_DEFAULT: VariantType = 'tracker';
 //temporary values
 const defaultCurrency: CurrencyType = DEFAULT_CURRENCY;
-const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
+// const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // console.log('🚀 ~ Debts ~ formatNumberCountry:', formatNumberCountry);
 
 //input debts datatracked variables
@@ -62,7 +61,8 @@ const initialFormData: FormNumberInputType = {
 //-----------------------------------
 function Debts(): JSX.Element {
   //----Debt Tracker Movement -------
-  //oberv:no counterpart account is known. lend is deposit/borrow is withdraw
+  //observ:no counterpart account is known. lend is equivalent to a deposit in deptor account.
+
   const trackerState = useLocation().pathname.split('/')[PAGE_LOC_NUM];
 
   const typeMovement = trackerState.toLowerCase();
@@ -97,11 +97,7 @@ function Debts(): JSX.Element {
             value: `${debtor.account_name}`,
             label: debtor.account_name,
           }))
-        : // ? DebtorsResponse?.data.accountList.map((debtor) => ({
-          //     value: `${capitalize(debtor.account_name)}` ,
-          //     label: `${capitalize(debtor.account_name)}`,
-          //   }))
-          DEBTOR_OPTIONS_DEFAULT,
+        : DEBTOR_OPTIONS_DEFAULT,
     [DebtorsResponse?.data.accountList, fetchedError, isLoadingDebtor]
   );
 
@@ -138,16 +134,19 @@ function Debts(): JSX.Element {
 
   const [formData, setFormData] =
     useState<FormNumberInputType>(initialFormData);
+
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
   );
   const [showMessage, setShowMessage] = useState(false);
 
   //--------------------------------------------
+  //This function is thrown here, but, is dead letter, since, the counter  account in the transaction is up in the air.
+  //Definitivamente el enfoque original de no colocar la cuenta que sea origen o destino de los fondos, no sirve para realizar un verdadero trackeing
+
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
-
   //------------------------------------------------------
   //----Functions ------
   const { inputNumberHandlerFn } = useInputNumberHandler(
@@ -161,6 +160,7 @@ function Debts(): JSX.Element {
   ) {
     e.preventDefault();
     const { name, value } = e.target;
+
     if (name === 'amount') {
       inputNumberHandlerFn(name, value);
     } else {
@@ -176,10 +176,11 @@ function Debts(): JSX.Element {
     []
     // [currency]
   );
-  //---
+  //--------
   const toggleType = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
+
       setType((prev: DebtsTypeMovementType) =>
         prev === 'lend' ? 'borrow' : 'lend'
       );
@@ -196,7 +197,7 @@ function Debts(): JSX.Element {
     console.log('On Save Handler');
     e.preventDefault();
 
-    //---------
+    //-------------------------
     // const formattedNumber = numberFormat(datatrack.amount || 0);
     // console.log(
     //   'formatted amount as a string:',
@@ -259,8 +260,7 @@ function Debts(): JSX.Element {
       }
     }
   }
-  //----------------------------
-
+  //---------------------------------
   //---------------------------------------------
   //Handle states related to the data submit form
   useEffect(() => {

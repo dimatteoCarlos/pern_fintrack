@@ -1,226 +1,60 @@
 aclarar>
-// ********************PENDIENTE: hay que definir algunas reglas de negocio para status. Establecer como es el manejo de los currencies.buttons and functionality as post (Updating, deleting, patching), definir en overview lo que se refleja en los goals, definir funcionalidad de los pockets y manejo de la informacion. Todo el proceso de calculo en el backend. Que es available Budget? es la suma de los budget? es el balance total de las cuentas tipo bank? o es todo el patrimonio?o que?.
+// ********************PENDIENTE: hay que definir algunas reglas de negocio para status. 
+
+Establecer como es el manejo de los currencies. Multicurrency es una complicacion innecesaria, sin embargo, se puede hacer para hay que definir el enforque y como mostrar la informacion en los overview y e indicadores.
+Se imp puede implementar libreria de conversion en linaea.
+
+ definir funcionalidad de los pockets y manejo de la informacion.
+  Todo el proceso de calculo en el backend.en lo posible.
+	
+	 Que es available Budget? es la suma de los budget? es el balance total de las cuentas tipo bank? o es todo el patrimonio?o que?.
 //
 
 NO se dice que periodo se mostraran los ingresos y eso, vamos ver se mostrara el balance actual de las cuentas de cada tipo.
 
-crear un pocket_saving, no me retorna mensaje de exitoroso
-tampoco me da mensajes de error ni alerta por uso de mismo nombre de cuenta que uno existente
-es mi ni siquiera se graban en base de datos.  dede frontend
-el error contstraint violation o de postgress se envian como 
-{
-	"message": "Constraint violation: Invalid foreign key.",
-	"status": 400
-}
-que corresponde a un usuario que no existe, esto debe estar controlado con el mensaje usuario no existe.
+crear un pocket_saving, 
 
-exito el baknd devuelve 
-{
-	"status": 201,
-	"data": {
-		"user_id": "e71a1b29-8838-4398-b481-bd149bceb01f",
-		"account_basic_data": {
-			"account_id": 8,
-			"account_name": "pocket01",
-			"account_type_id": 4,
-			"currency_id": 1,
-			"account_starting_amount": "10.00",
-			"account_balance": "10.00",
-			"account_start_date": "2025-05-01T21:05:26.805Z",
-			"created_at": "2025-05-02T01:05:29.786Z",
-			"updated_at": "2025-05-02T01:05:29.786Z",
-			"account_type_name": "pocket_saving",
-			"currency_code": "usd"
-		},
-		"new_pocket_saving_account": {
-			"account_id": 8,
-			"target": "0.00",
-			"currency_id": null,
-			"desired_date": "2026-12-31T04:00:00.000Z",
-			"account_start_date": "2025-05-01T21:05:26.805Z",
-			"currency_code": "usd",
-			"account_type_name": "pocket_saving"
-		},
-		"new_account_data": {
-			"account_name": "pocket01",
-			"transaction_data": {
-				"description": "Transaction: deposit. Account: pocket01 type: pocket_saving. Initial-(deposit). Amount: 10 usd. Date: Thu May 01 2025 17:05:26 GMT-0400 (GMT-04:00)",
-				"transaction_type_id": 2,
-				"amount": 10,
-				"currency_id": 1,
-				"account_id": 8,
-				"source_account_id": 1,
-				"destination_account_id": 8,
-				"movement_type_id": 8,
-				"status": "complete",
-				"transaction_actual_date": "2025-05-01T21:05:26.805Z"
-			},
-			"transaction_info": {
-				"transaction_id": 12,
-				"description": "Transaction: deposit. Account: pocket01 type: pocket_saving. Initial-(deposit). Amount: 10 usd. Date: Thu May 01 2025 17:05:26 GMT-0400 (GMT-04:00)",
-				"amount": "10.00",
-				"movement_type_id": 8,
-				"transaction_type_id": 2,
-				"currency_id": 1,
-				"account_id": 8,
-				"source_account_id": 1,
-				"destination_account_id": 8,
-				"status": "complete",
-				"transaction_actual_date": "2025-05-01T21:05:26.805Z",
-				"created_at": "2025-05-02T01:05:31.494Z"
-			},
-			"transaction_type_name": "deposit"
-		},
-		"counter_account_data": {
-			"transaction_data": {
-				"userId": "e71a1b29-8838-4398-b481-bd149bceb01f",
-				"description": "Transaction: withdraw. Account: slack of type: bank with number: 1. Amount:-10 usd. Account reference: pocket01)",
-				"transaction_type_id": 1,
-				"amount": -10,
-				"currency_id": 1,
-				"account_id": 1,
-				"source_account_id": 1,
-				"destination_account_id": 8,
-				"movement_type_id": 8,
-				"status": "complete",
-				"transaction_actual_date": "2025-05-01T21:05:26.805Z"
-			},
-			"transaction_info": {
-				"transaction_id": 13,
-				"user_id": "e71a1b29-8838-4398-b481-bd149bceb01f",
-				"description": "Transaction: withdraw. Account: slack of type: bank with number: 1. Amount:-10 usd. Account reference: pocket01)",
-				"amount": "-10.00",
-				"movement_type_id": 8,
-				"transaction_type_id": 1,
-				"currency_id": 1,
-				"account_id": 1,
-				"source_account_id": 1,
-				"destination_account_id": 8,
-				"status": "complete",
-				"transaction_actual_date": "2025-05-01T21:05:26.805Z",
-				"created_at": "2025-05-02T01:05:31.839Z"
-			}
-		}
-	},
-	"message": "pocket01 account of type pocket_saving with number 8 was successfully created "
-}
 
 **************************************************
 DEBTOR ACCOUNT
-al crear el debtor acc no se muestra la cuenta que aparece alli.
-en el selector, que no tengo idea para que es. precisar eso.
+Al crear una cuenta dbtor, no aparece el boton del usd currency, no esta en el figam.
+
+Las cuentas DEbtor e Investment, no tienen una cuenta contra partida, en la transaccion o movimiento, por lo que no se puede hacer un tracking verdadero.
+
+hay en el selector, que no tengo idea para que es. precisar eso.
 hay que crear debtor_accounts
 hay que montarlo en el frontend la creacion de la cuenta
-el back devuelve
-{
-	"message": "Account(s) with a similar name \"debtor-2, debtor Dos\" was found of type \"debtor\". Try again with different attributes.",
-	"status": 500
-}
+
  OJO SE PUEDEN CREAR CUENTAS DEBTOR, SIN TENER CREADA LA debtor_accounts, NO DEBERIA SER, LA TRANSACTION SE DEBE IMPDEDIR.
 
- {
-	"status": 201,
-	"data": {
-		"user_id": "e71a1b29-8838-4398-b481-bd149bceb01f",
-		"account_basic_data": {
-			"account_id": 11,
-			"account_name": "debtor-1, debtor Uno",
-			"account_type_id": 3,
-			"currency_id": 1,
-			"account_starting_amount": "120.00",
-			"account_balance": "-120.00",
-			"account_start_date": "2025-05-01T21:19:37.724Z",
-			"created_at": "2025-05-02T01:19:40.731Z",
-			"updated_at": "2025-05-02T01:19:40.731Z",
-			"account_type_name": "debtor",
-			"currency_code": "usd"
-		},
-		"new_debtor_account": {
-			"account_id": 11,
-			"value": "-120.00",
-			"currency_id": null,
-			"debtor_name": "debtor Uno",
-			"debtor_lastname": "debtor-1",
-			"selected_account_name": "account to be selected",
-			"selected_account_id": null,
-			"account_start_date": "2025-05-01T21:19:41.998Z",
-			"currency_code": "usd",
-			"account_type_name": "debtor"
-		},
-		"new_account_data": {
-			"account_name": "debtor-1, debtor Uno",
-			"transaction_data": {
-				"userId": "e71a1b29-8838-4398-b481-bd149bceb01f",
-				"description": "Transaction: borrow. Account: debtor-1, debtor Uno type: debtor. Initial-(borrow). Amount: -120 usd. Date: Thu May 01 2025 17:19:37 GMT-0400 (GMT-04:00)",
-				"transaction_type_id": 4,
-				"amount": -120,
-				"currency_id": 1,
-				"account_id": 11,
-				"source_account_id": 11,
-				"destination_account_id": 1,
-				"movement_type_id": 8,
-				"status": "complete",
-				"transaction_actual_date": "2025-05-01T21:19:37.724Z"
-			},
-			"transaction_info": {
-				"transaction_id": 14,
-				"description": "Transaction: borrow. Account: debtor-1, debtor Uno type: debtor. Initial-(borrow). Amount: -120 usd. Date: Thu May 01 2025 17:19:37 GMT-0400 (GMT-04:00)",
-				"amount": "-120.00",
-				"movement_type_id": 8,
-				"transaction_type_id": 4,
-				"currency_id": 1,
-				"account_id": 11,
-				"source_account_id": 11,
-				"destination_account_id": 1,
-				"status": "complete",
-				"transaction_actual_date": "2025-05-01T21:19:37.724Z",
-				"created_at": "2025-05-02T01:19:42.445Z"
-			},
-			"transaction_type_name": "borrow"
-		},
-		"counter_account_data": {
-			"transaction_data": {
-				"userId": "e71a1b29-8838-4398-b481-bd149bceb01f",
-				"description": "Transaction: lend. Account: slack of type: bank, with number: 1. Amount: 120 usd. Account reference: debtor-1, debtor Uno). Date: Thu May 01 2025 17:19:37 GMT-0400 (GMT-04:00)",
-				"transaction_type_id": 3,
-				"amount": 120,
-				"currency_id": 1,
-				"account_id": 1,
-				"source_account_id": 11,
-				"destination_account_id": 1,
-				"movement_type_id": 8,
-				"status": "complete",
-				"transaction_actual_date": "2025-05-01T21:19:37.724Z"
-			},
-			"transaction_info": {
-				"transaction_id": 15,
-				"description": "Transaction: lend. Account: slack of type: bank, with number: 1. Amount: 120 usd. Account reference: debtor-1, debtor Uno). Date: Thu May 01 2025 17:19:37 GMT-0400 (GMT-04:00)",
-				"amount": "120.00",
-				"movement_type_id": 8,
-				"transaction_type_id": 3,
-				"currency_id": 1,
-				"account_id": 1,
-				"source_account_id": 11,
-				"destination_account_id": 1,
-				"status": "complete",
-				"transaction_actual_date": "2025-05-01T21:19:37.724Z",
-				"created_at": "2025-05-02T01:19:42.788Z"
-			}
-		}
-	},
-	"message": "debtor-1, debtor Uno account of type debtor with number 11 was successfully created "
-}
+ creo QUE LA PAGE DE TRACKER DE DEBTS Y INCOME SE DEBEN CAMBIAR PARA QUE INCLUYAN LA CUENTA CONTRA PARTIDA, COMOM EXPENSE E INCOME.
 
-**********************
-PARA BALANCE POR TIPO DE CUENTAS{
-	"status": 200,
-	"message": "Total balance account of account type income_source successfully calculated",
-	"data": {
-		"total_balance": 0,
-		"accounts": "2",
-		"currency_code": "usd"
-	}
-}
+NO CONSIDERA REALIZAR TRANSFERENCIAS ENTRE E CUENTAS, POR EJEMPLO. BANK TO BANK, O INVESTMENT TO INVESTMENT, O DEBTOR TO DEBTOR
+
+NO HAY LUGAR PARA POCKET MOVEMENT
+
+CREAR UN JA PAGINA PARA TRANSFERENCIA ENTRE CUENTAS, POR EJEMPLO. SELECCIONAR TIPO DE CUENTA ORIEN. APARECE EL DROPDOWND DE CUENTAS PARA SELECCION LA CUENTA ORIGEN. SELECCTION TIPO DE CUENTA.  Y LUEGO APARECE EL DROP SELECTOR DDE CUENTA ORIGEN. incluir MOVIMIENTOS COMO AJUSTE POR GANANCIAS, AJUESTE POR PERDIDAS.
+
+al crear una cuenta se pueden hacer deositos, y el origen de los mismos se reflejaran como egresos desde la cuenta slack. 
+
+si se hacen retiros, se puede crear una cuenta cash.
+
+si manejas pesos, utiliza un conversor de pesos a dolares. ahora como quieres reflejar que el dinero era distinto a usd?.
+
+arreglar el problema de la autenticacion con freshtoken, es una ladilla.
+
+
+pendiente>
+crear cuentas debtor,  o new profile, o pocket, category budget, income soruce, 
+la lista de pockets, lista de e debtors, etc.
+
+que se puede editar, no lo veo muy claro en un verdadero tracker, solo se pueden etditar loq que evquivale a settings, por ejemplo?
+
+permitir hacer transferencias entre cuentas, y verificar si tienen fondos suficientes.
+
+
+
+
 
 *****************
 user id definido en env.local temporary - > VITE_USER_ID=e71a1b29-8838-4398-b481-bd149bceb01f

@@ -8,7 +8,7 @@ export const getExpenseConfig = (body) => ({
 });
 
 export const getIncomeConfig = (body) => ({
-  sourceAccountName: body.incomeSource,
+  sourceAccountName: body.source,
   destinationAccountName: body.account,
   sourceAccountTypeName: 'income_source',
   destinationAccountTypeName: 'bank',

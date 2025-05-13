@@ -70,6 +70,9 @@ const initialFormData: FormNumberInputType = {
 //-----------------------
 function NewProfile() {
   const location = useLocation();
+  //get userId from stores
+  // const user = useUserStore((state: UserStoreType) => state.userData.userId);
+  const user = import.meta.env.VITE_USER_ID;
   //-----states------
   const [profileData, setProfileData] = useState<ProfileDataType>(
     initialNewProfileData
@@ -81,10 +84,16 @@ function NewProfile() {
   }>({});
 
   const [isReset, setIsReset] = useState<boolean>(false);
+
   const [formData, setFormData] =
     useState<FormNumberInputType>(initialFormData);
 
+      const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
+        null
+      );
+
   //DATA FETCHING for option selection
+  // ...y esto pa que es?.....
   const {
     apiData,
     isLoading,
@@ -153,6 +162,7 @@ function NewProfile() {
     //   type: string;
     //   amount: number | '';
     // };
+
 
     console.log('New debtor data to POST:', { profileData });
     console.log('check this:', formData, formDataNumber);
@@ -304,6 +314,8 @@ function NewProfile() {
           </div>
         </form>
       </div>
+
+      {/* //insertar aqui los mensajes de erro, etc. */}
     </section>
   );
 }

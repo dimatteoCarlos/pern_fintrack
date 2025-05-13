@@ -15,7 +15,7 @@ import { recordTransaction } from '../../../utils/recordTransaction.js';
 
 //endpoint: put:/api/fintrack/transaction/transfer-between-accounts?user=UUID&&movement=expense
 
-//functions declaration
+//FUNCTIONS DECLARATION
 //get the currency_id by the currency_code
 export const getCurrencyId = async (currency_code) => {
   const currencyQuery = `SELECT * FROM currencies WHERE currency_code = $1`;
@@ -88,8 +88,10 @@ export const updateAccountBalance = async (
   const updatedAccountResult = await pool.query(insertBalanceQuery);
   return updatedAccountResult.rows[0];
 };
-//------------------
 
+
+//controller: transferBetweenAccounts
+//------------------
 //------------------
 export const transferBetweenAccounts = async (req, res, next) => {
   console.log(pc.magentaBright('transferBetweenAccounts'));
@@ -105,7 +107,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
     console.log(movementName);
 
     // const { user: userId } = req.body;
-    const userId = req.body.user ?? req.query.user;
+    const userId =
+      req.body.user === '' || !req.body.user ? req.query.user : req.body.user;
+    // const userId = req.body.user ?? req.query.user;
 
     if (!userId) {
       const message = 'User ID is required';

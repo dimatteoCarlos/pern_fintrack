@@ -184,7 +184,7 @@ export type TopCardSelectStateType =
   | DebtsTrackerInputDataType;
 
 export type ExpenseInputDataType = {
-  amount: number;
+  amount: number | '';
   account: string;
   category: string|undefined; //ojo
   note: string;
@@ -194,11 +194,11 @@ export type ExpenseInputDataType = {
 };
 
 export type IncomeInputDataType = {
-  amount: number;
+  amount: number | '';
   account: string;
-  source: string;
+  source: string | undefined;
   note: string;
-  currency: string;
+  currency: CurrencyType;
   date?: Date;
   type?: TypeMovementType;
 };
