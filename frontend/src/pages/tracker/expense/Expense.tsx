@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom';
 // import { Navigate, useLocation } from 'react-router-dom';
 import {
   checkNumberFormatValue,
-  numberFormat,
+  // numberFormat,
   validationData,
 } from '../../../helpers/functions.ts';
 import {
@@ -194,7 +194,7 @@ function Expense(): JSX.Element {
     variant: VARIANT_DEFAULT as VariantType,
   };
 
-  //--------------------------------------------
+  //------------------------------------------
   //OBTAIN THE REQUESTFN FROM userFetchLoad
   type PayloadType = ExpenseInputDataType & {
     user: string;
@@ -356,7 +356,7 @@ function Expense(): JSX.Element {
       } as AxiosRequestConfig);
 
       if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-        console.log('Data from New Account request:', data);
+        console.log('Data from record transaction request:', data);
       }
 
       //reset the state and the selected options on select component

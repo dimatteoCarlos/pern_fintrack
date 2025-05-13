@@ -380,7 +380,7 @@ export const createDebtorAccount = async (req, res, next) => {
       value,
       selected_account_name, //verify what is this for in DEBTOR INPUT?
       selectedAccountInput, //optional
-      type: debtor_transaction_type, //here type is transaction type name, meanwhile in other input to create other accounts, it refers to type of account.  Check fintrack frontend.
+      type: debtor_transaction_type, //here type is transaction type name (lending/borrowing), meanwhile in other input to create other accounts, it refers to type of account (bank, pocket_saving, ecc).  Check fintrack frontend.
     } = req.body;
 
     const account_type_name = 'debtor';
@@ -389,17 +389,17 @@ export const createDebtorAccount = async (req, res, next) => {
       debtorTypeTransactionInput[debtor_transaction_type];
     //-----------------------
     //check coherence of type account requested
-    const typeAccountRequested = req.originalUrl.split('/').pop().split('?')[0];
-    const checkTypeCoherence = typeAccountRequested === account_type_name;
-    if (!checkTypeCoherence) {
-      const message = `Check coherence between account type requested on url: ${typeAccountRequested.toUpperCase()} vs account type entered: ${account_type_name.toUpperCase()}`;
-      console.warn('Warning:', pc.cyanBright(message));
-      throw new Error(message);
-    }
-    console.log(
-      '🚀 ~ createDebtorAccount ~ debtor_transaction_type_name:',
-      debtor_transaction_type_name
-    );
+    // const typeAccountRequested = req.originalUrl.split('/').pop().split('?')[0];
+    // const checkTypeCoherence = typeAccountRequested === account_type_name;
+    // if (!checkTypeCoherence) {
+    //   const message = `Check coherence between account type requested on url: ${typeAccountRequested.toUpperCase()} vs account type entered: ${account_type_name.toUpperCase()}`;
+    //   console.warn('Warning:', pc.cyanBright(message));
+    //   throw new Error(message);
+    // }
+    // console.log(
+    //   '🚀 ~ createDebtorAccount ~ debtor_transaction_type_name:',
+    //   debtor_transaction_type_name
+    // );
     //-----------------------
     //NEW ACCOUNT BASIC DATA
     //currency id and type account id
@@ -452,9 +452,10 @@ export const createDebtorAccount = async (req, res, next) => {
     const currencyResult = await pool.query(currencyQuery);
     const currencyArr = currencyResult?.rows;
     const currencyIdReq = currencyArr.filter(
-      (currency) => currency.currency_code === currency_code
+      (currency) => currency.currency_code == currency_code
     )[0].currency_id;
-    // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
+
+    console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
     //----------------------------------------
     //--DEBTOR ACCOUNT -----
     //---debtor_initial_balance
@@ -482,13 +483,14 @@ export const createDebtorAccount = async (req, res, next) => {
     //---------------------------------------------------------------
     //---INSERT DEBTOR ACCOUNT into debtor_accounts table
     const debtorInsertQuery = {
-      text: `INSERT INTO debtor_accounts (account_id, debtor_lastname, debtor_name, value, selected_account_name, selected_account_id, account_start_date) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      text: `INSERT INTO debtor_accounts (account_id, debtor_lastname, debtor_name, value,currency_id, selected_account_name, selected_account_id, account_start_date) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7,$8) RETURNING *`,
       values: [
         account_id,
         debtor_lastname,
         debtor_name,
         newAccountBalance,
+        currencyIdReq,
         selected_account_name,
         selectedAccountInput || null, // selected_account_id
         new Date(), // account_start_date
@@ -573,10 +575,10 @@ export const createDebtorAccount = async (req, res, next) => {
       transaction_actual_date
     );
 
-    console.log(
-      '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
-      updatedCounterAccountInfo
-    );
+    // console.log(
+    //   '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
+    //   updatedCounterAccountInfo
+    // );
 
     //--- determine which account serves as a SOURCE OR DESTINATION account
     const { destination_account_id, source_account_id, isAccountOpening } =
@@ -764,7 +766,7 @@ export const createPocketAccount = async (req, res, next) => {
     const currencyIdReq = currencyArr.filter(
       (currency) => currency.currency_code === currency_code
     )[0].currency_id;
-    // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
+    console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
     //--POCKET_SAVING ACCOUNT -----
     //---pocket_initial_balance
     const transactionAmount =

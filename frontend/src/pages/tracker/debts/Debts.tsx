@@ -5,6 +5,7 @@ import { capitalize, validationData } from '../../../helpers/functions.ts';
 import { useFetch } from '../../../hooks/useFetch.tsx';
 import {
   url_get_accounts_by_type,
+  url_get_total_account_balance_by_type,
   url_movement_transaction_record,
 } from '../../../endpoints.ts';
 import { useLocation } from 'react-router-dom';
@@ -30,11 +31,13 @@ import useInputNumberHandler from '../../../hooks/useInputNumberHandler.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
 import {
   AccountByTypeResponseType,
+  BalanceBankRespType,
   MovementTransactionResponseType,
 } from '../../../types/responseApiTypes.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
 import useBalanceStore from '../../../stores/useBalanceStore.ts';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+import axios from 'axios';
 
 const VARIANT_DEFAULT: VariantType = 'tracker';
 //temporary values
@@ -74,7 +77,7 @@ function Debts(): JSX.Element {
   const fetchUrl = user
     ? `${url_get_accounts_by_type}/?type=debtor&user=${user}`
     : //<Navigate to = '/auth'/>
-      undefined; //this forces to user req err
+      undefined; //this forces to user required error
 
   const {
     apiData: DebtorsResponse,
@@ -145,29 +148,6 @@ function Debts(): JSX.Element {
     (state) => state.setAvailableBudget
   );
 
-  //---------------------------------------------
-  //Handle states related to the data submit form
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-
-    if ((data || error) && !isLoading) {
-      const success = data && !error;
-      setMessageToUser(
-        success
-          ? 'Movement completed successfully!'
-          : error ?? 'An error occurred during submission'
-      );
-      setShowMessage(true);
-
-      timer = setTimeout(() => {
-        setMessageToUser(null);
-        setShowMessage(false);
-      }, 8000);
-    }
-
-    return () => clearTimeout(timer);
-  }, [data, error, isLoading]);
-
   //------------------------------------------------------
   //----Functions ------
   const { inputNumberHandlerFn } = useInputNumberHandler(
@@ -212,10 +192,11 @@ function Debts(): JSX.Element {
     setDataTrack((prev) => ({ ...prev, date: selectedDate }));
   }
 
-  function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
+  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
     console.log('On Save Handler');
     e.preventDefault();
 
+    //---------
     // const formattedNumber = numberFormat(datatrack.amount || 0);
     // console.log(
     //   'formatted amount as a string:',
@@ -229,26 +210,79 @@ function Debts(): JSX.Element {
       return;
     }
     //----------------------------
-    //do the post to the endpoint api
     //ENDPOINT HERE FOR POSTING
 
-    //----------------------------
-    //reset values
+    //update balance account of debtor account and counter part slack account in: user_accounts table.
+    //record both transaction descriptions: transfer and receive transactions with the correspondent account info.
+    // there should be also a debtor_accounts table, updated with specific debtor data
+    //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=debts
+    //user id is sent via req.body btu can be sent via query param ttoo
+    try {
+      const payload = { ...datatrack, user } as PayloadType;
+      // DebtsTrackerInputDataType & {user:string}
 
-    setIsReset(true);
-    setDataTrack({
-      ...initialTrackerData,
-      date: new Date(),
-      currency: defaultCurrency,
-    });
-    setValidationMessages({});
-    setType('lend');
-    updateDataCurrency(defaultCurrency);
-    setFormData(initialFormData);
-    setTimeout(() => {
-      setIsReset(false);
-    }, 500);
+      const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
+
+      const data = await requestFn(payload, { url: postUrl });
+
+      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+        console.log('Data from record transaction request:', data);
+      }
+
+      //reset the state and the selected options on select component
+      setCurrency(defaultCurrency);
+      setIsReset(true);
+      setDataTrack({
+        ...initialTrackerData,
+        date: new Date(),
+        currency: defaultCurrency,
+      });
+
+      setType('lend');
+      setValidationMessages({});
+      updateDataCurrency(defaultCurrency);
+      setFormData(initialFormData);
+      setTimeout(() => {
+        setIsReset(false);
+      }, 500);
+
+      //-------------------------------
+      //update total available budget global state
+    } catch (error) {
+      console.error('Submission error:', error);
+      const response = await axios.get<BalanceBankRespType>(
+        `${url_get_total_account_balance_by_type}/?type=bank&user=${user}`
+      );
+      const totalBalance = response.data.data.total_balance;
+      if (typeof totalBalance === 'number') {
+        setAvailableBudget(totalBalance);
+      }
+    }
   }
+  //----------------------------
+
+  //---------------------------------------------
+  //Handle states related to the data submit form
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
+    if ((data || error) && !isLoading) {
+      const success = data && !error;
+      setMessageToUser(
+        success
+          ? 'Movement completed successfully!'
+          : error ?? 'An error occurred during submission'
+      );
+      setShowMessage(true);
+
+      timer = setTimeout(() => {
+        setMessageToUser(null);
+        setShowMessage(false);
+      }, 8000);
+    }
+
+    return () => clearTimeout(timer);
+  }, [data, error, isLoading]);
 
   //-----useEffect--------
   useEffect(() => {
@@ -256,7 +290,6 @@ function Debts(): JSX.Element {
     setDataTrack((prev) => ({ ...prev, currency: currency }));
     setDataTrack((prev) => ({ ...prev, type: type }));
   }, [currency, type, updateDataCurrency]);
-
   //--------------------------
   //-------Top Card elements
   const topCardElements = {

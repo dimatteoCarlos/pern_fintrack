@@ -150,6 +150,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       console.warn(pc.magentaBright(message));
       return res.status(400).json({ status: 400, message });
     }
+    //aqui de antemano sabemos los tipos de movimientos
     if (
       !['expense', 'income', 'investment', 'debt', 'pocket'].includes(
         movementName
@@ -182,7 +183,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   '🚀 ~ transferBetweenAccounts ~ movement_types:',
     //   movement_types
     // );
-
+    //aqui aseguro que el movement introducido exista como tipo , es mas dinamico, porque no necesito pre conocer los tipos
     const movement_type_idResult = movement_types.filter(
       (mov) => mov.movement_type_name === movementName.trim().toLowerCase()
     );
@@ -191,7 +192,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   movement_type_idResult
     // );
     // throw new Error
-    //MEJORAR VALIDACION DE MOVEMENT NAME DE DEBT
+
     if (!movement_type_idResult) {
       const message = `movement ${movementName} was not found. Try again with valid movement type!`;
       console.warn(pc.magentaBright(message));
@@ -208,8 +209,14 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //since frontend input data form are controlled by selection options, then, data should be considered already validated from frontend. Also, frontend, for selection option gets the data through this api
     //example:expense
     //movementName: expense, sourceAccountTypeName: 'bank', destinationAccountTypeName:'category_budget', sourceAccountTransactionType:withdraw, destinationAccountTransactionType:deposit,
-    //--------------------------------------
-    const { note, amount, currency: currencyCode } = req.body; //common fields to all tracker movements.
+    //---------------------------------------
+    const {
+      note,
+      amount,
+      currency: currencyCode,
+      type: transactionTypeName,
+    } = req.body; //common fields to all tracker movements.
+    console.log('tipo de transaccion', transactionTypeName);
     //-----------------
     //Not all tracker movement have the same input data, so, get the config strategy based on movementName
     const config = {
@@ -239,14 +246,14 @@ export const transferBetweenAccounts = async (req, res, next) => {
       (type) => type.transaction_type_name === destinationAccountTransactionType
     )[0].transaction_type_id;
 
-    console.log(
-      '🚀 ~ transferBetweenAccounts ~ transactionsTypes:',
-      sourceTransactionTypeId,
-      'sourceAccountTransactionType',
-      sourceAccountTransactionType,
-      'destinationTransactionTypeId',
-      destinationTransactionTypeId
-    );
+    // console.log(
+    //   '🚀 ~ transferBetweenAccounts ~ transactionsTypes:',
+    //   sourceTransactionTypeId,
+    //   'sourceAccountTransactionType',
+    //   sourceAccountTransactionType,
+    //   'destinationTransactionTypeId',
+    //   destinationTransactionTypeId
+    // );
 
     const accountTypes = await getAccountTypes();
     //==============================================
@@ -333,22 +340,27 @@ export const transferBetweenAccounts = async (req, res, next) => {
       const message = `Not enough funds to transfer ${currencyCode} ${numericAmount} from account ${sourceAccountName} (${currencyCode} ${sourceAccountBalance})`;
       console.warn(pc.magentaBright(message));
 
+      //Verificar si se aplicaran restriccionespor falta de fondos?
+      //rules in case transfer between accounts are restricted.
       //overdraft not allowed: bank to category_budget, bank to investment, bank to debtor , others: investment to investment, bank to bank,
 
       //overdraft allowed: slack to any account, income_source to any account, debtor to debtor,  bank to debtor/ debtor to bank, any to debtor/ debtor to any acc
     }
     //==============================================
     //pg transaction to insert data in user_accounts
-    const transactionSign = balanceMultiplierFn(sourceAccountTransactionType);
-    const newSourceAccountBalance =
-      parseFloat(sourceAccountBalance) + numericAmount * transactionSign;
+    //las source account deberian ser negativo
+    // const transactionSign = balanceMultiplierFn(sourceAccountTransactionType);
 
-    // console.log(
-    //   '🚀 ~ newSourceAccountBalance:',
-    //   newSourceAccountBalance,
-    //   '  typeof',
-    //   balanceMultiplierFn(sourceAccountTransactionType)
-    // );
+    const newSourceAccountBalance =
+      parseFloat(sourceAccountBalance) - numericAmount;
+    // parseFloat(sourceAccountBalance) + numericAmount * transactionSign;
+
+    console.log(
+      '🚀 ~ newSourceAccountBalance:',
+      newSourceAccountBalance,
+      '  typeof'
+      // balanceMultiplierFn(sourceAccountTransactionType)
+    );
 
     const sourceAccountId = sourceAccountInfo.account_id;
     console.log('tad:', transaction_actual_date);
@@ -358,17 +370,18 @@ export const transferBetweenAccounts = async (req, res, next) => {
       sourceAccountId,
       transaction_actual_date
     );
-    // console.log(
-    //   '🚀 ~ updatedSourceAccountInfo:',
-    //   updatedSourceAccountInfo,
-    //   'type of:',
-    //   typeof sourceAccountBalance
-    // );
+    console.log(
+      '🚀 ~ updatedSourceAccountInfo:',
+      updatedSourceAccountInfo,
+      'type of:',
+      typeof sourceAccountBalance
+    );
     //-------------------------------------------------------
     //---Update the balance in the destination account
     const destinationAccountBalance = destinationAccountInfo.account_balance;
     const newDestinationAccountBalance =
-      parseFloat(destinationAccountBalance) - numericAmount * transactionSign;
+      parseFloat(destinationAccountBalance) + numericAmount;
+    // parseFloat(destinationAccountBalance) - numericAmount * transactionSign;
     // balanceMultiplierFn(destinationAccountTransactionType);
 
     const destinationAccountId = destinationAccountInfo.account_id;
@@ -408,7 +421,8 @@ export const transferBetweenAccounts = async (req, res, next) => {
       movement_type_id,
       transaction_type_id: sourceTransactionTypeId, //withdraw or lend
       status: 'complete',
-      amount: numericAmount * balanceMultiplierFn(sourceAccountTransactionType), //
+      amount: -numericAmount,
+      // amount: -numericAmount * balanceMultiplierFn(sourceAccountTransactionType),
       currency_id: currencyIdReq,
       source_account_id: sourceAccountId,
       destination_account_id: destinationAccountId,
@@ -427,7 +441,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   movement_type_id,
     //   sourceTransactionTypeId,
     //   newDestinationAccountBalance,
-    //   numericAmount * balanceMultiplierFn(destinationAccountTransactionType), //
+    //   numericAmount
     //   currencyIdReq,
     //   sourceAccountId,
     //   destinationAccountId,
@@ -440,8 +454,8 @@ export const transferBetweenAccounts = async (req, res, next) => {
       movement_type_id,
       transaction_type_id: destinationTransactionTypeId, //withdraw or borrow
       status: 'complete',
-      amount:
-        numericAmount * balanceMultiplierFn(destinationAccountTransactionType), //
+      amount: numericAmount,
+      // numericAmount * balanceMultiplierFn(destinationAccountTransactionType),
       currency_id: currencyIdReq,
       source_account_id: sourceAccountId,
       destination_account_id: destinationAccountId,
@@ -451,7 +465,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     destinationTransactionOption.movement_type_id;
 
     await recordTransaction(destinationTransactionOption);
-    //=======================================================
+    //=====================================================
     await client.query('COMMIT');
     //data response
     const data = {

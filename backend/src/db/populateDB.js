@@ -398,4 +398,3 @@ export async function tbltransactionTypes() {
     console.error('Error inserting tuples:', error);
   }
 }
-//tblTransactionTypes();

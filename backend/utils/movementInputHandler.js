@@ -43,22 +43,19 @@ export const getPocketConfig = (body) => ({
   destinationAccountTransactionType: 'deposit',
 });
 
-export const getDebtConfig = (body) => ({
-  destinationAccountName:
-    body.transactionTypeName === 'lend' ? body.debtor : 'slack',
+export const getDebtConfig = (body) => {
+  const isLend = body.type === 'lend';
+  console.log('islend', isLend, body.debtor);
 
-  destinationAccountTypeName:
-    body.transactionTypeName === 'lend' ? 'debtor' : 'bank',
-
-  sourceAccountName:
-    body.transactionTypeName === 'lend' ? 'slack' : body.debtor,
-
-  sourceAccountTypeName:
-    body.transactionTypeName === 'lend' ? 'bank' : 'debtor',
-
-  sourceAccountTransactionType: 'borrow',
-  destinationAccountTransactionType: 'lend',
-});
+  return {
+    destinationAccountName: isLend ? body.debtor : 'slack',
+    destinationAccountTypeName: isLend ? 'debtor' : 'bank',
+    sourceAccountName: isLend ? 'slack' : body.debtor,
+    sourceAccountTypeName: isLend ? 'bank' : 'debtor',
+    sourceAccountTransactionType: 'borrow',
+    destinationAccountTransactionType: 'lend',
+  };
+};
 
 //transaction_types:
 // "transaction_type_id"	"transaction_type_name"

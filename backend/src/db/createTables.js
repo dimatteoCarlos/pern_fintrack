@@ -49,7 +49,8 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
     tblName: `debtor_accounts`,
     table: `CREATE TABLE IF NOT EXISTS debtor_accounts (
          account_id INT PRIMARY KEY REFERENCES user_accounts(account_id),
-         value DECIMAL(15, 2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,
+         value DECIMAL(15, 2),
+         currency_id INT REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,
          debtor_name VARCHAR(25),
          debtor_lastname VARCHAR(25),
          selected_account_name VARCHAR(50),

@@ -1,4 +1,7 @@
 aclarar>
+// ********************PENDIENTE: hay que definir algunas reglas de negocio para status. Establecer como es el manejo de los currencies.buttons and functionality as post (Updating, deleting, patching), definir en overview lo que se refleja en los goals, definir funcionalidad de los pockets y manejo de la informacion. Todo el proceso de calculo en el backend. Que es available Budget? es la suma de los budget? es el balance total de las cuentas tipo bank? o es todo el patrimonio?o que?.
+//
+
 NO se dice que periodo se mostraran los ingresos y eso, vamos ver se mostrara el balance actual de las cuentas de cada tipo.
 
 crear un pocket_saving, no me retorna mensaje de exitoroso
