@@ -306,7 +306,6 @@ function Income() {
     try {
       const payload: PayloadType = {
         ...incomeData,
-        // source: incomeData.source || '',
         user,
       };
       const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;

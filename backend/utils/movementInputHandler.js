@@ -17,28 +17,21 @@ export const getIncomeConfig = (body) => ({
 });
 
 export const getInvestmentConfig = (body) => ({
-  destinationAccountName:
-    body.transactionTypeName === 'deposit' ? body.account : 'slack',
-  sourceAccountName:
-    body.transactionTypeName === 'deposit' ? 'slack' : body.account,
-  sourceAccountTypeName:
-    body.transactionTypeName === 'deposit' ? 'bank' : 'investment',
-  destinationAccountTypeName:
-    body.transactionTypeName === 'deposit' ? 'investment' : 'bank',
+  destinationAccountName: body.type === 'deposit' ? body.account : 'slack',
+  sourceAccountName: body.type === 'deposit' ? 'slack' : body.account,
+  sourceAccountTypeName: body.type === 'deposit' ? 'bank' : 'investment',
+  destinationAccountTypeName: body.type === 'deposit' ? 'investment' : 'bank',
   sourceAccountTransactionType: 'withdraw',
   destinationAccountTransactionType: 'deposit',
 });
 
 export const getPocketConfig = (body) => ({
-  destinationAccountName:
-    body.transactionTypeName === 'deposit' ? body.account : 'slack',
-  sourceAccountName:
-    body.transactionTypeName === 'deposit' ? 'slack' : body.account,
+  destinationAccountName: body.type === 'deposit' ? body.account : 'slack',
+  sourceAccountName: body.type === 'deposit' ? 'slack' : body.account,
   //los tipos de cuentas se deben determinar segun las cuentas seleccionadas.
-  sourceAccountTypeName:
-    body.transactionTypeName === 'deposit' ? 'bank' : 'pocket_saving',
+  sourceAccountTypeName: body.type === 'deposit' ? 'bank' : 'pocket_saving',
   destinationAccountTypeName:
-    body.transactionTypeName === 'deposit' ? 'pocket_saving' : 'bank',
+    body.type === 'deposit' ? 'pocket_saving' : 'bank',
   sourceAccountTransactionType: 'withdraw',
   destinationAccountTransactionType: 'deposit',
 });

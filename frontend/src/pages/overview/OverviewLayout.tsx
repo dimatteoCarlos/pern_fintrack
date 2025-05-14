@@ -9,7 +9,7 @@ import CoinSpinner from '../../loader/coin/CoinSpinner';
 import './styles/overview-styles.css';
 // import { Outlet } from 'react-router-dom';
 
- function OverviewLayout() {
+function OverviewLayout() {
   //Temporary Dummy data
   //Saving Goals
   //to be fetched from data bases. Need ENDPOINT to get from backend.
@@ -49,7 +49,8 @@ import './styles/overview-styles.css';
 
   //remeber income account balance is negative (withdraws) and expense accoutn balance is positive (deposits)
   const { netWorth, totalIncome, totalExpense } = useMemo(() => {
-    const totalIncome = incomeBalanceApiData?.data?.total_balance ?? 0;
+    let totalIncome = incomeBalanceApiData?.data?.total_balance ?? 0;
+    totalIncome = totalIncome * -1;
     const totalExpense = expenseBalanceApiData?.data?.total_balance ?? 0;
     return { totalIncome, totalExpense, netWorth: -totalIncome - totalExpense };
   }, [
