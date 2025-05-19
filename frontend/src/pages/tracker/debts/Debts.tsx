@@ -13,7 +13,7 @@ import Datepicker from '../../../general_components/datepicker/Datepicker.tsx';
 import {
   CurrencyType,
   DebtsTrackerInputDataType,
-  DebtsTypeMovementType,
+  DebtsTransactionType,
   FormNumberInputType,
   TopCardSelectStateType,
   VariantType,
@@ -120,7 +120,7 @@ function Debts(): JSX.Element {
 
   //---states--------
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
-  const [type, setType] = useState<DebtsTypeMovementType>('lend');
+  const [type, setType] = useState<DebtsTransactionType>('lend');
 
   const [datatrack, setDataTrack] = useState<
     DebtsTrackerInputDataType | TopCardSelectStateType
@@ -181,7 +181,7 @@ function Debts(): JSX.Element {
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
 
-      setType((prev: DebtsTypeMovementType) =>
+      setType((prev: DebtsTransactionType) =>
         prev === 'lend' ? 'borrow' : 'lend'
       );
     },

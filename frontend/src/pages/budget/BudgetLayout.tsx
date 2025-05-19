@@ -21,6 +21,7 @@ function BudgetLayout() {
 
   // const resultAmount = 0;
   // const remaining = 0;
+  // get for total balance,total budget and remaining, also the state and funtion to update the hese numbers, asn and passit to budget and its child components, for new category, also wehn creating a nuew caetegory, then summary categori list should be updated.bueno este ultimo se haria automatico, pus al regresar a la pagina se deberia renderizar , esaria la busquea en un useEffect? osea al regresar a la pagina todo se renderizaria de nuevo? o sin necesidad de que este en un useEffect?
 
   return (
     <>

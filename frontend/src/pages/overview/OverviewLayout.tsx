@@ -52,7 +52,7 @@ function OverviewLayout() {
     let totalIncome = incomeBalanceApiData?.data?.total_balance ?? 0;
     totalIncome = totalIncome * -1;
     const totalExpense = expenseBalanceApiData?.data?.total_balance ?? 0;
-    return { totalIncome, totalExpense, netWorth: -totalIncome - totalExpense };
+    return { totalIncome, totalExpense, netWorth: totalIncome - totalExpense };
   }, [
     incomeBalanceApiData?.data?.total_balance,
     expenseBalanceApiData?.data?.total_balance,

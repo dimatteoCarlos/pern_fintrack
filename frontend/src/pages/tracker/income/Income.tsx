@@ -376,7 +376,7 @@ function Income() {
           trackerName={trackerState}
           currency={currency}
           updateCurrency={updateDataCurrency}
-          selectedValue={incomeData.account}
+          // selectedValue={incomeData.account}
           setSelectState={setIncomeData}
           isReset={isReset}
           setIsReset={setIsReset}

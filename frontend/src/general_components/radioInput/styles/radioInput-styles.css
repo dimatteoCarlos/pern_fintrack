@@ -1,0 +1,85 @@
+/* Puedes agregar variables CSS aquí para un estilo consistente */
+:root {
+  --primary: var(--dark, black);
+  --text-color: var(--dark, black);
+}
+
+.radio-input__container {
+  /* border: 1px solid var(--dark); */
+  /* padding: 0.1rem 0; */
+  /* border-radius: 2rem; */
+  /* width: 100%; */
+  cursor: pointer;
+  background: transparent;
+}
+
+.radio-input__title {
+  font-size: 0.5rem;
+  font-weight: 200;
+  color: var(--text-color);
+  /* margin-bottom: 0.5rem; */
+  /* padding-left: 1rem; */
+}
+
+.radio-input__options {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  /* padding: 0.25rem 0.5rem; */
+}
+
+.radio-input__option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  /* gap: 0.25rem; */
+
+  margin-right: 1rem; 
+}
+
+.radio-input__radio {
+  /* Estilizar el input de radio en sí */
+  appearance: none;
+  border-radius: 50%;
+  margin-right: 0.25rem;
+  border: 1px solid var(--dark);
+  width: 0.625rem;
+  height: 0.625rem;
+  cursor: pointer;
+  background-color: transparent;
+}
+
+.radio-input__radio:checked {
+  /* Style when radio checked.Estilizar cuando el radio está seleccionado */
+  appearance: none; /* importante */
+  display: inline-block;
+  background-color: var(--dark, black);
+  border: 1px solid var(--dark);
+
+  /* 
+  /* Puedes necesitar usar appearance: none; y un estilo personalizado para la consistencia entre navegadores */
+  /* width: 1rem;
+  height: 1rem; */
+  padding: 0;
+  border-radius: 100%;
+  /*background-clip: content-box en CSS limita la extensión del fondo de un elemento al área de contenido del elemento*/
+  /* background-clip: content-box; */
+  /* background-image: radial-gradient(var(--dark) 100%, transparent 100%); */
+}
+
+.radio-input__radio:focus {
+  outline: none;
+  /* box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); */
+}
+
+.radio-input__label {
+  font-weight: regular;
+  font-size: 0.875rem;
+  width: fit-content;
+  padding: 0;
+  margin: 0 auto;
+  color: var(--dark);
+  cursor: pointer;
+  /* text-transform: capitalize; */
+}

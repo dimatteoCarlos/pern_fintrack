@@ -6,7 +6,7 @@ import {
 
 import Expense from './pages/tracker/expense/Expense.tsx';
 import Income from './pages/tracker/income/Income.tsx';
-import Investment from './pages/tracker/investment/Investment.tsx';
+// import Investment from './pages/tracker/investment/Investment.tsx';
 import Debts from './pages/tracker/debts/Debts.tsx';
 
 import Budget from './pages/budget/components/Budget.tsx';
@@ -38,6 +38,7 @@ import ProtectedRoute from './pages/auth/ProtectedRoute.tsx';
 
 // import AuthPage from './pages/auth/AuthPage.tsx';
 import ErrorPage from './pages/error/ErrorPage.tsx';
+import Transfer from './pages/tracker/transfer/Transfer.tsx';
 // import NotFoundPage from './pages/error/NotFoundPage.tsx';
 
 function App() {
@@ -80,9 +81,13 @@ function App() {
                 { path: '/fintrack/tracker/expense', element: <Expense /> },
                 { path: '/fintrack/tracker/income', element: <Income /> },
                 {
-                  path: '/fintrack/tracker/investment',
-                  element: <Investment />,
+                  path: '/fintrack/tracker/transfer',
+                  element: <Transfer />,
                 },
+                // {
+                //   path: '/fintrack/tracker/investment',
+                //   element: <Investment />,
+                // },
                 { path: '/fintrack/tracker/debts', element: <Debts /> },
                 
               ],

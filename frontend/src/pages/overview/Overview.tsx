@@ -271,48 +271,4 @@ function Overview() {
   );
 }
 export default Overview;
-/*
-<section className='content__presentation'>
-<div className='cards__presentation'>
-  <SavingGoals data={kpiData.SavingGoals} />
-  <MonthlyAverage data={kpiData.MonthlyMovementKPI} />
-  <AccountBalance
-    createNewAccount={createNewAccount}
-    originRoute={originRoute}
-  />
-  <InvestmentAccountBalance
-    createNewAccount={createNewAccount}
-    originRoute={originRoute}
-  />
-  <LastMovements data={kpiData.LastExpenseMovements} />
-  <LastDebts data={kpiData.LastMovements} />
-</div>
-</section>
-*/
 
-// const endpointsOverview = {
-//   //BalancePocketRespType
-//   savingGoalsUrl: `${url_get_total_account_balance_by_type}+/type=pocket_saving&user=${userId}`,
-
-//   //FinancialDataRespType
-//   monthlyTotaExpenseUrl: `${url_monthly_TotalAmount_ByType}+?type=expense&user=${userId}`,
-
-//   monthlyTotalIncomeUrl: `${url_monthly_TotalAmount_ByType}+?type=income&user=${userId}`,
-
-//   //LastMovementRespType
-//   expenseLastMovementsUrl: `${url_get_transactions_by_movement}/?start=&end=&movement=expense&transaction_type=deposit&account_type=category_budget&user=${userId}`,
-
-//   investmentLastMovementsUrl: `${url_get_transactions_by_movement}/?start=&end=&movement=investment&transaction_type=&account_type=investment&&user=${userId}`,
-
-//   debtLastMovementsUrl: `${url_get_transactions_by_movement}/?start=&end=&movement=debt&transaction_type=&account_type=debtor&&user=${userId}`,
-// };
-
-//arreglar los componentes para que aceptaen los datos dinamicos, y probar si renderizan
-//verficiar l el tipado sobreante, para que y porque
-//terminado overview, faltaria que mostrar al hacer click en las burbujas, por ejemplo detalles de cuentas, detalles de movimientos, ver mas movimientos por busqueda o filtrado
-//establecer que cuando se abra una cuenta de categoria, no se meta plata, ni de pocket, ni de debtor, porque no dice n de donse sale la otra cuenta cotntraparte.
-//faltarian , debt, budget, pocket, creaction de cuentas, manejo de cuentas, yh vistas de detalles, con las box o big boxes con su informacion.
-//y despues seguir con income, investmente, debt y pocket y transferecnia de entre cuentas.
-//en accounting, pod ponder menu de puntos para ajustar, positivo o negativo.
-//fijar el currency en las pantallas de entrada, i y fijarlo a usd.
-//que borrar, que editar, quec que filtrar, pagination con scroll infinito?

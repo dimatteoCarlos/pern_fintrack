@@ -34,7 +34,7 @@ export function useFetchLoad<R, D = unknown>({
         method,
         url: initialUrl,
         data: payload,
-        withCredentials:true,
+        withCredentials: true,
         ...(overrideConfig || {}), //overrideConfig must come last to overwrite dynamic url or anything in the initial config, even method
       };
 
@@ -50,7 +50,7 @@ export function useFetchLoad<R, D = unknown>({
       const response: AxiosResponse<R> = await axios(config);
 
       if (response.status >= 200 && response.status < 300) {
-        const respData = ( response.data) as R;
+        const respData = response.data as R;
         setData(respData);
         // setData(response.data);
       } else {

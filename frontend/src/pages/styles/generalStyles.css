@@ -237,6 +237,7 @@ input[type='number'] {
   font-size: 0.7rem;
   font-style: italic;
   font-weight: normal;
+  width: 50%;
 }
 
 .hover:hover {

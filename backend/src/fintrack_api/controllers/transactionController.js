@@ -89,7 +89,6 @@ export const updateAccountBalance = async (
   return updatedAccountResult.rows[0];
 };
 
-
 //controller: transferBetweenAccounts
 //------------------
 //------------------
@@ -102,7 +101,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
   try {
     // const { user: userId, movement: movementName } = req.query;
     const { movement } = req.query;
-    const movementName = movement === 'debts' ? 'debt' : movement; //debt mov is called as debts in frontend
+    const movementName = movement === 'debts' ? 'debt' : movement; //debt movement is called as debts in frontend
 
     console.log(movementName);
 
@@ -156,16 +155,25 @@ export const transferBetweenAccounts = async (req, res, next) => {
     }
     //aqui de antemano sabemos los tipos de movimientos
     if (
-      !['expense', 'income', 'investment', 'debt', 'pocket'].includes(
-        movementName
-      )
+      ![
+        'expense',
+        'income',
+        'investment',
+        'debt',
+        'pocket',
+        'transfer',
+      ].includes(movementName)
     ) {
       const message = `movement name " ${movementName} " is not correct`;
       console.warn(pc.magentaBright(message));
       return res.status(400).json({ status: 400, message });
     }
-    //------------------
-    if (movementName !== 'expense' && movementName !== 'income') {
+    //--this is for the old version where debt and investment movements do not consider an explicit counter account
+    if (
+      movementName !== 'expense' &&
+      movementName !== 'income' &&
+      movementName !== 'transfer'
+    ) {
       checkAndInsertAccount(req, res, next, userId);
     }
     //------------------
@@ -201,6 +209,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       const message = `movement ${movementName} was not found. Try again with valid movement type!`;
       console.warn(pc.magentaBright(message));
       console.log('🚀 ~ transferBetweenAccounts ~ message:', message);
+
       throw new Error({ status: 400, message });
       // console.warn(pc.magentaBright(message));
       // return res.status(400).json({ status: 400, message });
@@ -218,17 +227,19 @@ export const transferBetweenAccounts = async (req, res, next) => {
       note,
       amount,
       currency: currencyCode,
-      type: transactionTypeName,
+      type: transactionTypeName, //for old version
     } = req.body; //common fields to all tracker movements.
     console.log('tipo de transaccion', transactionTypeName);
     //-----------------
-    //Not all tracker movement have the same input data, so, get the config strategy based on movementName
+    //Not all tracker movements have the same input data structure, so, get the data structure config strategy based on movementName
     const config = {
       expense: getExpenseConfig(req.body),
       income: getIncomeConfig(req.body),
+      transfer: getTransferConfig(req.body),
+      debt: getDebtConfig(req.body),
+      //old version
       investment: getInvestmentConfig(req.body),
       pocket: getPocketConfig(req.body),
-      debt: getDebtConfig(req.body),
     }[movementName];
     console.log('🚀 ~ transferBetweenAccounts ~ config:', config);
 
@@ -236,6 +247,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       sourceAccountName,
       sourceAccountTransactionType,
       sourceAccountTypeName,
+
       destinationAccountName,
       destinationAccountTypeName,
       destinationAccountTransactionType,

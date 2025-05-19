@@ -12,7 +12,7 @@ import ArrowDownDarkSvg from '../../assets/ArrowDownDarkSvg.svg';
 import ArrowDownLightSvg from '../../assets/ArrowDownLightSvg.svg';
 import { VariantType, DropdownOptionType } from '../../types/types';
 
-export interface DropdownSelectPropType {
+export type DropdownSelectPropType = {
   dropDownOptions: {
     title: string;
     options: DropdownOptionType[];
@@ -21,7 +21,9 @@ export interface DropdownSelectPropType {
   updateOptionHandler: (selectedOption: DropdownOptionType | null) => void;
   setIsReset: (value: boolean) => void;
   isReset: boolean;
-}
+  setIsResetDropdown?: (value: boolean) => void;
+  isResetDropdown?: boolean;
+};
 
 // 1.  `create a DropdownIndicator function that returns DropdownIndicator as component
 const createDropdownIndicator =
@@ -80,12 +82,11 @@ const createStyles = (
   }),
 
   option: (provided, state) =>
-    
     variant === 'tracker'
       ? {
           ...provided,
-           backgroundColor: state.isSelected ? '#e8e4da' : 'white',
-           //variant:tracker
+          backgroundColor: state.isSelected ? '#e8e4da' : 'white',
+          //variant:tracker
           color: 'var(--dark)', //variant:tracker
           ':active': { backgroundColor: 'transparent' },
           ':hover': { backgroundColor: 'rgba(232, 228, 218 , 0.4)' },
@@ -99,16 +100,17 @@ const createStyles = (
           padding: '0.5rem',
           ':active': { backgroundColor: '#333030' },
           ':hover': { backgroundColor: 'hsla(0, 3.00%, 19.40%, 0.50)' },
-        }
-
+        },
 });
-
-// Main component
+//----------------------------------
+//--Main component
 function DropDownSelection({
   dropDownOptions,
   updateOptionHandler,
   isReset,
-  setIsReset,
+  // setIsReset,
+  isResetDropdown,
+  // setIsResetDropdown,
 }: DropdownSelectPropType) {
   const { title, options, variant } = dropDownOptions;
   // console.log('dropSel:', { title, options, variant });
@@ -118,11 +120,12 @@ function DropDownSelection({
     >(null);
 
   useEffect(() => {
-    if (isReset && selectRef.current) {
+    if ((isReset || isResetDropdown) && selectRef.current) {
       selectRef.current.clearValue();
-      setIsReset(false); //test this
+      //setIsReset(false); //Parent does this
+      // setIsResetDropdown(false);
     }
-  }, [isReset, setIsReset]);
+  }, [isReset, isResetDropdown]);
 
   const handleChange = (
     newValue: SingleValue<DropdownOptionType> | MultiValue<DropdownOptionType>

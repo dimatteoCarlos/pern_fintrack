@@ -11,7 +11,7 @@ import {
   CurrencyType,
   FormNumberInputType,
   InvestmentInputDataType,
-  InvestmentTypeMovementType,
+  TransactionType,
   VariantType,
 } from '../../../types/types.ts';
 import {
@@ -48,7 +48,7 @@ const defaultCurrency: CurrencyType = DEFAULT_CURRENCY;
 //   amount: number | '';
 //   account: string;
 //   currency: CurrencyType;
-//   type: InvestmentTypeMovementType;
+//   type: TransactionType;
 //   date: Date;
 //   note: string;
 // };
@@ -64,7 +64,7 @@ const VARIANT_DEFAULT: VariantType = 'tracker';
 const initialFormData: FormNumberInputType = {
   amount: '',
 };
-//-----------------------------------------
+//------------------------------------------
 function Investment() {
   //----Investment account Options----------
   const { pathname } = useLocation();
@@ -137,7 +137,7 @@ function Investment() {
   const [investmentData, setInvestmentData] = useState<InvestmentInputDataType>(
     initialInvestmentData
   );
-  const [typeInv, setTypeInv] = useState<InvestmentTypeMovementType>('deposit');
+  const [typeInv, setTypeInv] = useState<TransactionType>('deposit');
   const [isReset, setIsReset] = useState<boolean>(false);
   const [formData, setFormData] =
     useState<FormNumberInputType>(initialFormData);
@@ -225,7 +225,7 @@ function Investment() {
   const toggleInvestmentType = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      setTypeInv((prev: InvestmentTypeMovementType) =>
+      setTypeInv((prev: TransactionType) =>
         prev === 'deposit' ? 'withdraw' : 'deposit'
       );
     },
@@ -330,12 +330,11 @@ function Investment() {
       console.error('Submission error:', error);
     }
   }
-
   //---------------------------------------------
 
   //-------Top Card elements
   const topCardElements = {
-    titles: { title1: 'amount', title2: 'account' },
+    titles: { title1: 'amount', title2: 'debit account' },
     value: formData.amount,
     selectOptions: optionsInvestmentAccounts,
   };
@@ -343,7 +342,15 @@ function Investment() {
   return (
     <>
       <form className='investment' style={{ color: 'inherit' }}>
+        {/* <RadioInput
+          title={ratioTitle}
+          inputRadioOptions={inputRadioOptions}
+          radioOptionSelected={radioOptionSelected}
+          setRadioOptionSelected={setRadioOptionSelected}
+        /> */}
+
         {/* TOP CARD START */}
+
         <TopCard
           topCardElements={topCardElements}
           validationMessages={validationMessages}
@@ -351,10 +358,10 @@ function Investment() {
           trackerName={trackerState}
           currency={currency}
           updateCurrency={updateDataCurrency}
-          // selectedValue={investmentData.account}
           setSelectState={setInvestmentData}
           isReset={isReset}
           setIsReset={setIsReset}
+          // selectedValue={investmentData.account}
         />
         <CardSeparator />
         {/* BOTTOM CARD START */}

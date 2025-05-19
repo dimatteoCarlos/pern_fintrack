@@ -12,6 +12,7 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 type DataToRenderType = {
   title: string;
   amount: number;
+  months: number;
   currency: CurrencyType;
   status: string;
 };
@@ -59,18 +60,24 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
         {
           title: `Monthly ${movement} (Avg.) (${defaultCurrency})`,
           amount: 0,
+          months: 0,
           currency: defaultCurrency,
           status: 'N/A',
         },
       ];
     }
-    //convert movement-currency object to andarray of DataToRenderType
-    return Object.entries(data[movement]).map(([currency, financialDatum]) => ({
-      title: `Monthly ${movement} (Avg.) (${currency})`,
-      amount: financialDatum.monthlyAverage || 0,
-      currency: currency as CurrencyType,
-      status: '% status',
-    }));
+    //convert movement-currency object to an array of DataToRenderType
+    return Object.entries(data[movement]).map(([currency, financialDatum]) => {
+      const incomeFactor = movement === 'income' ? -1 : 1;
+      return {
+        amount: incomeFactor * (financialDatum?.monthlyAverage ?? 0),
+        months: financialDatum?.monthCounter ?? 0,
+
+        title: `Monthly ${movement} (Avg.) (${currency})`,
+        currency: currency as CurrencyType,
+        status: '% status',
+      };
+    });
   };
   // title: 'Monthly Income (Avg.)',
 
@@ -78,8 +85,8 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
   const income = convertMovementData('income', data);
   const saving = convertMovementData('saving', data);
   console.log('🚀 ~ MonthlyAverage ~ expense:', expense);
-  console.log('🚀 ~ MonthlyAverage ~ income:', income);
-  console.log("🚀 ~ MonthlyAverage ~ saving:", saving)
+  console.log('🚀 ~ MonthlyAverage ~ income:', income[0].amount);
+  console.log('🚀 ~ MonthlyAverage ~ saving:', saving);
   //HACER ESTE RESPONSIVE lt 428 una cell , despuesd e633 3 cells
   const renderCardFinancialData = (items: DataToRenderType[]) => (
     <div className='monthly__card tile__container tile__container__col tile__container__col--goalInfo '>
@@ -88,6 +95,7 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
           <div className='tile__subtitle letterSpaceSmall '>{item.title}</div>
           <div className='tile__title '>
             {currencyFormat(item.currency, item.amount, formatNumberCountry)}
+            {` (m:${item.months ?? 0})`}
           </div>
           <div className='tile__status__container flx-row-start '>
             <StatusSquare

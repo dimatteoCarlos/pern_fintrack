@@ -231,6 +231,7 @@ export function validationData(stateToValidate: {
       value == undefined
     ) {
       errorValidationMessages[key] = `* Please provide the ${capitalize(key)}`;
+      console.log('key from string validation', key)
       continue;
     }
   }

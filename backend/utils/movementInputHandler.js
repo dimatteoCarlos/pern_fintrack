@@ -50,6 +50,17 @@ export const getDebtConfig = (body) => {
   };
 };
 
+export const getTransferConfig = (body) => {
+  return {
+    destinationAccountName: body.destination_account,
+    destinationAccountTypeName: body.destinationAccountType,
+    destinationAccountTransactionType: 'deposit',
+    sourceAccountName: body.origin_account,
+    sourceAccountTypeName: originAccountType,
+    sourceAccountTransactionType: 'withdraw',
+  };
+};
+
 //transaction_types:
 // "transaction_type_id"	"transaction_type_name"
 // 1	"withdraw"

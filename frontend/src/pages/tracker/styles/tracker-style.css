@@ -60,7 +60,7 @@
 .total__container {
   position: absolute;
   top: 20%; /*figma*/
-  top:calc(var(--topSpaceHeight) * 1 + 15%);
+  top: calc(var(--topSpaceHeight) * 1 + 15%);
   left: 50%;
   transform: translateX(-50%);
   z-index: 0;
@@ -144,6 +144,16 @@ article {
   padding: 0.5rem 0;
   color: var(--dark);
 }
+
+
+/***********/
+.account.card--title{
+  /* background-color: orange; */
+  display:flex;
+  justify-content: space-between;
+
+}
+/***********/
 
 .card--title--top {
   padding: 2rem 0 0.5rem 0;
@@ -260,7 +270,6 @@ textarea:invalid {
 .card__screen--date {
   background-color: var(--creme);
   border-radius: 0.75rem;
-
   padding: 0.6rem;
   width: 100%;
   text-align: center;
@@ -270,3 +279,10 @@ textarea:invalid {
 }
 
 /*-----------*/
+
+.radio-input-section {
+  background-color: transparent;
+  /* border-radius: 4px; */
+  /* margin: 1rem 0; */
+  /* padding: 0.5rem; */
+}

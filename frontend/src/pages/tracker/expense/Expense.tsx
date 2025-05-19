@@ -401,10 +401,10 @@ function Expense(): JSX.Element {
           trackerName={trackerState}
           currency={currency}
           updateCurrency={updateDataCurrency}
-          selectedValue={expenseData.account}
           setSelectState={setExpenseData}
           isReset={isReset}
           setIsReset={setIsReset}
+          // selectedValue={expenseData.account}
         />
         {/* end of TOP CARD */}
 

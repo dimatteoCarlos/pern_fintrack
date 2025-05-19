@@ -1,12 +1,26 @@
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation';
+import RadioInput from '../../../general_components/radioInput/RadioInput';
 import { capitalize } from '../../../helpers/functions';
 import {
   CurrencyType,
   DropdownOptionType,
   VariantType,
 } from '../../../types/types';
+
+//-------------------------------
+type RadioInputPropsType = {
+  radioOptionSelected: string;
+
+  inputRadioOptions: { value: string; label: string }[];
+
+  setRadioOptionSelected: (option: string) => void;
+
+  title?: string;
+
+  disabled?: boolean;
+};
 
 type TopCardPropType<T extends Record<string, unknown>> = {
   topCardElements: {
@@ -23,6 +37,7 @@ type TopCardPropType<T extends Record<string, unknown>> = {
   };
 
   validationMessages: { [key: string]: string };
+
   updateTrackerData: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
@@ -30,11 +45,22 @@ type TopCardPropType<T extends Record<string, unknown>> = {
   trackerName: string;
   updateCurrency: (x: CurrencyType) => void;
   currency: CurrencyType;
-  selectedValue?: string;
+
+  // selectedValue?: string;
   setSelectState: React.Dispatch<React.SetStateAction<T>>; //generic type
+
   isReset: boolean;
   setIsReset: React.Dispatch<React.SetStateAction<boolean>>;
+  //-----
+  isResetDropdown?: boolean;
+  setIsResetDropdown?: React.Dispatch<React.SetStateAction<boolean>>;
+
+  radioInputProps?: RadioInputPropsType;
+
+  //--handle special case of Transfer
+  customSelectHandler?: (selectedOption: DropdownOptionType | null) => void;
 };
+
 //----Component
 const TopCard = <T extends Record<string, unknown>>({
   topCardElements,
@@ -43,10 +69,18 @@ const TopCard = <T extends Record<string, unknown>>({
   trackerName,
   currency,
   updateCurrency,
-  selectedValue,
+  // selectedValue,
   setSelectState,
   isReset,
   setIsReset,
+  //-------
+  isResetDropdown,
+  setIsResetDropdown,
+  //-------
+  radioInputProps,
+  //-------
+  customSelectHandler,
+
 }: TopCardPropType<T>): JSX.Element => {
   const {
     selectOptions: topCardOptions,
@@ -56,15 +90,25 @@ const TopCard = <T extends Record<string, unknown>>({
     value, //amount input value
   } = topCardElements;
 
+  console.log('🚀 ~ title2:', title2.trim().toLowerCase());
+
+  //selection handler
   function stateSelectHandler(selectedOption: DropdownOptionType | null) {
+    // get the account_id of the selected account_name. it supposes thet account_name is unique too.
     setSelectState((prev) => ({
       ...prev,
-      [title2]: selectedOption?.value,
+      [title2.trim().toLowerCase()]: selectedOption?.value,
+      // ['origin_account']: selectedOption?.value,
     }));
   }
 
-  console.log('selected value from TopCard:', selectedValue);
+  //usage of customSelectHandler if it exists
+  const finalSelectHandler = customSelectHandler || stateSelectHandler;
 
+  console.log('isResetDropdoen', { isResetDropdown });
+
+  // console.log('selected value from TopCard:', selectedValue);
+  //-------------------------------------------
   return (
     <>
       <div className='state__card--top  '>
@@ -75,7 +119,6 @@ const TopCard = <T extends Record<string, unknown>>({
         />
 
         <div className='card__screen'>
-          {/* make the input number a component? */}
           <input
             className='inputNumber'
             name={title1}
@@ -92,19 +135,33 @@ const TopCard = <T extends Record<string, unknown>>({
           />
         </div>
 
-        <div className='card--title'>
+        <div className='account card--title '>
           {capitalize(title2)}
-          <span className='validation__errMsg'>
-            {' '}
-            {validationMessages[title2]}
-          </span>
+
+          {radioInputProps && (
+            <RadioInput
+              radioOptionSelected={radioInputProps.radioOptionSelected}
+              inputRadioOptions={radioInputProps.inputRadioOptions}
+              setRadioOptionSelected={radioInputProps.setRadioOptionSelected}
+              title={radioInputProps.title}
+              labelId='origin'
+              // disabled={radioInputProps.disabled}
+            />
+          )}
+        </div>
+
+        <div className='validation__errMsg '>
+          {validationMessages[title2.replace(' ', '_')]}
         </div>
 
         <DropDownSelection
           dropDownOptions={topCardOptions}
-          updateOptionHandler={stateSelectHandler}
-          isReset={isReset}
+          updateOptionHandler={finalSelectHandler}
           setIsReset={setIsReset}
+          isReset={isReset}
+          // isReset={isReset || isResetDropdown }
+          setIsResetDropdown={setIsResetDropdown}
+          isResetDropdown={isResetDropdown}
         />
       </div>
     </>

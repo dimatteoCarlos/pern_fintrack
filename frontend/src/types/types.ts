@@ -1,4 +1,3 @@
-
 export type CategoriesType = {
   categories?: CategoryType[] | null;
 };
@@ -92,17 +91,45 @@ export type InvestmentAccountsType = {
   accounts?: InvestmentAccountType[] | null;
 };
 
-export type InvestmentTypeMovementType = 'deposit' | 'withdraw';
+export type TransactionType = 'deposit' | 'withdraw';
 
 export type InvestmentAccountType = {
   id: number;
   name: string;
   description: string;
-  type: InvestmentTypeMovementType;
+  type: TransactionType;
   currency: string;
   balance: number;
 };
 
+//transfer (between investment, bank and pocket_saving account types)
+export type MovementInputDataType = {
+  amount: number | '';
+  origin: string;
+  currency: CurrencyType;
+  destination: string | undefined;
+  originAccountId?: number;
+  destinationAccountId?: number;
+  note: string;
+  originAccountType: string | undefined;
+  destinationAccountType: string | undefined;
+
+  type?: MovementTransactionType;
+  date?: Date;
+};
+
+export type MovementTransaction = 'deposit' | 'withdraw';
+
+export type MovementAccountType = {
+  id: number;
+  name: string;
+  description: string;
+  type: TransactionType;
+  currency: string;
+  balance: number;
+};
+
+//-------------------
 //debtors-tracker
 export type DebtorsListType = { debtors: DebtorDataType[] };
 export type DebtorDataType = {
@@ -113,7 +140,7 @@ export type DebtorDataType = {
   description: string;
 };
 
-export type DebtsTypeMovementType = 'lend' | 'borrow';
+export type DebtsTransactionType = 'lend' | 'borrow';
 
 export type DebtorNewProfileType = 'lending' | 'borrowing';
 
@@ -168,6 +195,7 @@ export type CURRENCY_OPTIONSTYPE = {
   cop: 'cop-CO';
   eur: 'en-US';
 };
+
 //LabelInputNumberHandler
 export type FormNumberInputType = { [key: string]: string };
 
@@ -186,11 +214,11 @@ export type TopCardSelectStateType =
 export type ExpenseInputDataType = {
   amount: number | '';
   account: string;
-  category: string|undefined; //ojo
+  category: string | undefined; //ojo
   note: string;
   currency: string;
   date?: Date;
-  type?: TypeMovementType;
+  type?: MovementTransactionType;
 };
 
 export type IncomeInputDataType = {
@@ -200,14 +228,14 @@ export type IncomeInputDataType = {
   note: string;
   currency: CurrencyType;
   date?: Date;
-  type?: TypeMovementType;
+  type?: MovementTransactionType;
 };
 
 export type InvestmentInputDataType = {
   amount: number | '';
   account: string;
   currency: CurrencyType;
-  type: TypeMovementType;
+  type: MovementTransactionType;
   date: Date;
   note: string;
 };
@@ -216,14 +244,12 @@ export type DebtsTrackerInputDataType = {
   amount: number | '';
   debtor: string;
   currency: CurrencyType;
-  type: TypeMovementType;
+  type: MovementTransactionType;
   date: Date;
   note: string;
 };
 
-export type TypeMovementType =
-  | InvestmentTypeMovementType
-  | DebtsTypeMovementType;
+export type MovementTransactionType = TransactionType | DebtsTransactionType;
 
 export type BaseTrackerType = {
   amount: number | '';
@@ -234,4 +260,4 @@ export type BaseTrackerType = {
 
 //-----------------------------------------------
 
-export type UserRolesType = 'user'| 'admin' | 'super_admin'
+export type UserRolesType = 'user' | 'admin' | 'super_admin';

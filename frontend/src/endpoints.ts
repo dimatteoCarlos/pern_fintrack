@@ -84,10 +84,9 @@ export const url_monthly_TotalAmount_ByType: string =
 // export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
 
 //LAST MOVEMENTS BY MOVEMENT TYPE
-
 //this includes transaction_type
-//http://localhost:5000/api/fintrack/dashboard/movements/account_type/?start=&end=&movement=account-opening&transaction_type=withdraw&account_type=&user=e71a1b29-8838-4398-b481-bd149bceb01f
 // dashboardMovementTransactionsByType
+//http://localhost:5000/api/fintrack/dashboard/movements/account_type/?start=&end=&movement=account-opening&transaction_type=withdraw&account_type=&user=e71a1b29-8838-4398-b481-bd149bceb01f
 export const url_get_transactions_by_movement: string =
   BASE_URL + '/dashboard/movements/account_type/';
 

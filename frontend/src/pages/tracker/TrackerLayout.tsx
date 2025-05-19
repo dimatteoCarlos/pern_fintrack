@@ -25,7 +25,9 @@ function TrackerLayout() {
   );
   //---store states
   const availableBudget = useBalanceStore((state) => state.availableBudget);
-  const setAvailableBudget = useBalanceStore((state) => state.setAvailableBudget);
+  const setAvailableBudget = useBalanceStore(
+    (state) => state.setAvailableBudget
+  );
 
   //-----------------------------------
 
@@ -34,32 +36,32 @@ function TrackerLayout() {
   const userId = user;
 
   // const userId = useAuthStore((state) => state.userData?.userId);
-  console.log('🚀 ~ TrackerLayout ~ userId:', userId);
+
+  // console.log('🚀 ~ TrackerLayout ~ userId:', userId);
 
   const { apiData, isLoading, error, status } = useFetch<BalanceBankRespType>(
     `${url_get_total_account_balance_by_type}/?type=bank&user=${userId}`
   );
 
-  console.log(
-    'http status code',
-    status,
-    'data',
-    apiData,
-    isLoading,
-    'error',
-    error,
-    'user',
-    userId
-  );
+  // console.log(
+  //   'http status code',
+  //   status,
+  //   'data',
+  //   apiData,
+  //   isLoading,
+  //   'error',
+  //   error,
+  //   'user',
+  //   userId
+  // );
 
   useEffect(() => {
     if (apiData?.data.total_balance !== undefined) {
       setAvailableBudget(apiData.data.total_balance ?? 0);
     }
-  }, [apiData,setAvailableBudget]);
+  }, [apiData, setAvailableBudget]);
 
   useEffect(() => {
-
     let timer: ReturnType<typeof setTimeout>;
     if (apiData && !isLoading && !error) {
       // Success response
@@ -93,7 +95,7 @@ function TrackerLayout() {
             )}
 
             <div className={`displayScreen--concept ${'dark'}`}>
-              {'Available Budget'}
+              {'Available Balance'}
             </div>
             <div className={`displayScreen--result ${'dark'}`}>
               {currencyFormat(

@@ -2,8 +2,9 @@
 import TrackerDebtsButton from './trackerStateButtons/TrackerDebtsButton';
 import TrackerExpenseButton from './trackerStateButtons/TrackerExpenseButton';
 import TrackerIncomeButton from './trackerStateButtons/TrackerIncomeButton';
-import TrackerInvestmentButton from './trackerStateButtons/TrackerInvestmentButton';
+import TrackerTransferButton from './trackerStateButtons/TrackerTransferButton';
 import './trackerStateButtons/trackerStateButton.css';
+// import TrackerInvestmentButton from './trackerStateButtons/TrackerInvestmentButton';
 // import { useEffect } from 'react';
 
 function TrackerNavbar() {
@@ -19,7 +20,8 @@ function TrackerNavbar() {
     <nav className='trackerNavbar__container'>
       <TrackerExpenseButton />
       <TrackerIncomeButton />
-      <TrackerInvestmentButton />
+      {/* <TrackerInvestmentButton /> */}
+      <TrackerTransferButton />
       <TrackerDebtsButton />
     </nav>
   );
