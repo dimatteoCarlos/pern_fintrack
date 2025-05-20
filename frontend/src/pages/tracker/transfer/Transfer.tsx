@@ -7,7 +7,6 @@ import { useLocation } from 'react-router-dom';
 // import { Navigate, useLocation } from 'react-router-dom';
 import {
   checkNumberFormatValue,
-  // numberFormat,
   validationData,
 } from '../../../helpers/functions.ts';
 import {
@@ -27,7 +26,7 @@ import {
   INVESTMENT_ACCOUNT_OPTIONS_DEFAULT,
   DEFAULT_CURRENCY,
   PAGE_LOC_NUM,
-  // CURRENCY_OPTIONS,
+  // CURRENCY_OPTIONS,//multimoneda?
 } from '../../../helpers/constants.ts';
 import TopCard from '../components/TopCard.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
@@ -60,8 +59,8 @@ const initialMovementData: MovementInputDataType = {
   origin: '',
   destination: '',
 
-  originAccountId: -1000,
-  destinationAccountId: -1000,
+  originAccountId: undefined,
+  destinationAccountId: undefined,
 
   note: '',
   currency: defaultCurrency,
@@ -76,7 +75,7 @@ const initialFormData: FormNumberInputType = {
 };
 //-------------------------------------
 //--Transfer Tracker Movement between accounts
-//-- account types allowed: investment, bank, pocket_saving accounts   -------
+//-- account types allowed: investment, bank and  pocket_saving accounts   -------
 function Transfer(): JSX.Element {
   //rules: only investment, bank, pocket_saving  are used
   //select option accounts rendered are all existing bank accounts, but the slack account which is not shown
@@ -101,10 +100,8 @@ function Transfer(): JSX.Element {
 
   // const user = 'e71a1b29-8838-4398-b481-bd149bceb01f';
 
-  // el user se deberia pasar via cookie o header al backend
   //-----------------------------------------------------
-  //--RadioOption selection for account type
-  // const [radioOptionSelected, setRadioOptionSelected] = useState('investment');
+  //--RadioOption selection for account types
 
   const inputRadioOptions = [
     { value: 'bank', label: 'bank' },
@@ -114,41 +111,66 @@ function Transfer(): JSX.Element {
   //-----------------------------------------------------
   //---states-------------
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
-  const [isReset, setIsReset] = useState<boolean>(false);
-
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
   }>({});
+  const [isReset, setIsReset] = useState<boolean>(false);
 
   const [movementInputData, setMovementInputData] =
     useState<MovementInputDataType>(initialMovementData);
 
   const [formData, setFormData] = useState(initialFormData);
-
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
   );
   //---
   const [showMessage, setShowMessage] = useState(false);
-  //--------------------------------------------
+  //--available balance or funds, former available budget from figma design---------------------------
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
   //--------------------------------------------
   //--set states for account types selected and default values
-
-  // const [originAccountType, setOriginAccountType] = useState<string>('pocket');
-
   const [isResetOriginAccount, setIsResetOriginAccount] =
     useState<boolean>(true);
   const [isResetDestinationAccount, setIsResetDestinationAccount] =
     useState<boolean>(true);
+  //-------------------------------
+  //VALIDATION OF DATA INPUT FORM
+  // Validación de datos de entrada
+  const validateForm = (): boolean => {
+    const errors: { [key: string]: string } = {};
 
-  // const [destinationAccountType, setDestinationAccountType] =
-  //   useState<string>('investment');
-  //account type url get based on user existence
-  //url_get_accounts_by_type
+    if (
+      movementInputData.amount &&
+      movementInputData?.amount < 0
+      // || !movementInputData.amount
+    ) {
+      errors.amount = 'Amount must be greater or equal to 0';
+    }
 
+    if (!movementInputData.origin) {
+      errors.origin = 'Origin account is required';
+    }
+
+    if (!movementInputData.destination) {
+      errors.destination = 'Destination account is required';
+    }
+
+    if (movementInputData.origin === movementInputData.destination) {
+      errors.origin = 'Origin and destination accounts must be different';
+    }
+
+    if (!movementInputData.note) {
+      errors.note = ' Note is required';
+    }
+
+    setValidationMessages(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  //-------------------------------
+  // Fetch origin accounts
   const originAccTypeDb =
     movementInputData.originAccountType === 'pocket'
       ? 'pocket_saving'
@@ -159,6 +181,8 @@ function Transfer(): JSX.Element {
       ? `${url_get_accounts_by_type}/?type=${originAccTypeDb}&user=${user}`
       : // <Navigate to='/auth' />
         undefined;
+  //-------------------------------
+
   //-------------------------------
   //DATA FETCHING
   //GET: AVAILABLE ACCOUNTS OF TYPE BANK
@@ -194,6 +218,7 @@ function Transfer(): JSX.Element {
       ? originAccountList.map((acc) => ({
           value: acc.account_name,
           label: acc.account_name,
+          // account_id: acc.account_id,
         }))
       : ACCOUNT_OPTIONS_DEFAULT;
   }, [originAccountsResponse?.data.accountList, fetchedErrorOriginAccounts]);
@@ -224,13 +249,15 @@ function Transfer(): JSX.Element {
 
   //---------------------------------------------
   const originAccountOptionsToRender = {
-    title: 'Available Accounts',
+    title: originAccountsResponse?.data?.accountList.length
+      ? 'Available Accounts'
+      : '', //'No accounts available',
     options: filteredOriginOptions,
     variant: 'tracker' as VariantType,
   };
 
   //------------------------------------------------------
-  //destination options
+  // Fetch destination accounts
   //GET: ACCOUNTS OF TYPE DESTINATION AVAILABLE
   //DATA FETCHING
   const destinationAccTypeDb =
@@ -258,8 +285,6 @@ function Transfer(): JSX.Element {
   //   fetchedErrorDestinationAccounts,
   // });
 
-  // const optionsDestinationAccounts = INVESTMENT_ACCOUNT_OPTIONS_DEFAULT;
-
   const optionsDestinationAccounts = useMemo(() => {
     if (fetchedErrorDestinationAccounts) {
       return INVESTMENT_ACCOUNT_OPTIONS_DEFAULT;
@@ -277,6 +302,7 @@ function Transfer(): JSX.Element {
       ? destinationAccountList.map((acc: AccountListType) => ({
           value: acc.account_name,
           label: acc.account_name,
+          // account_id: acc.account_id,
         }))
       : INVESTMENT_ACCOUNT_OPTIONS_DEFAULT;
   }, [
@@ -290,32 +316,39 @@ function Transfer(): JSX.Element {
     if (!movementInputData.originAccountId) {
       return optionsDestinationAccounts;
     }
-
     //filtereing excluding origin account id
     const destinationAccountList =
       destinationAccountsResponse?.data.accountList ?? [];
-    const filteredAccounts = destinationAccountList.filter(
-      (acc) => acc.account_id !== movementInputData.originAccountId
-    );
 
-    if (filteredAccounts.length === 0) {
-      return INVESTMENT_ACCOUNT_OPTIONS_DEFAULT;
-    }
+    const filteredAccounts = destinationAccountList.length
+      ? destinationAccountList.filter(
+          (acc) => acc.account_id !== movementInputData.originAccountId
+        )
+      : destinationAccountList;
+
+    // if (filteredAccounts.length === 0) {
+    //   return INVESTMENT_ACCOUNT_OPTIONS_DEFAULT;
+    // }
 
     //map to the dropdown format
 
     return filteredAccounts.map((acc) => ({
       value: acc.account_name,
       label: acc.account_name,
+      // account_id: acc.account_id,
     }));
-  });
+  }, [
+    destinationAccountsResponse?.data.accountList,
+    movementInputData.originAccountId,
+    optionsDestinationAccounts,
+  ]);
 
-  //---------------------------------------------
+  //------------------------------------------
   const destinationAccountOptionsToRender = {
-    title: optionsDestinationAccounts
+    title: destinationAccountsResponse?.data.accountList.length
       ? //  && !fetchedErrorDestinationAccounts
         'Accounts'
-      : 'No accounts available',
+      : '', //'No accounts available',
     options: fileteredDestinationOptions,
     variant: VARIANT_DEFAULT as VariantType,
   };
@@ -332,31 +365,7 @@ function Transfer(): JSX.Element {
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
 
-  // //---states-------------
-  // const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
-  // const [isReset, setIsReset] = useState<boolean>(false);
-
-  // const [validationMessages, setValidationMessages] = useState<{
-  //   [key: string]: string;
-  // }>({});
-
-  // const [movementInputData, setMovementInputData] =
-  //   useState<MovementInputDataType>(initialMovementData);
-
-  // const [formData, setFormData] = useState(initialFormData);
-
-  // const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
-  //   null
-  // );
-  // //---
-  // const [showMessage, setShowMessage] = useState(false);
-
-  // //--------------------------------------------
-  // const setAvailableBudget = useBalanceStore(
-  //   (state) => state.setAvailableBudget
-  // );
-
-  // //---------------------------------------------
+  //---------------------------------------------
   //Handle states related to the data submit form
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -449,13 +458,16 @@ function Transfer(): JSX.Element {
       selectedOption,
       selectedOption?.value
     );
+
+    //reset origin accoutn
+    setValidationMessages((prev) => ({ ...prev, origin: '' }));
   }
 
   //--for DropdownSelection
   function destinationAccountSelectHandler(
     selectedOption: DropdownOptionType | null
   ) {
-    // get the account_id of the selected account_name. it suppose account)name is unique too.
+    // get the account_id of the selected account_name. it supposes that account name is unique too.
 
     const selectedAccount = destinationAccountsResponse?.data?.accountList.find(
       (acc) => acc.account_name === selectedOption?.value
@@ -472,17 +484,23 @@ function Transfer(): JSX.Element {
       selectedOption,
       selectedOption?.value
     );
+
+    setValidationMessages((prev) => ({ ...prev, destination: '' }));
   }
   //-----
   //for RadioInput
-
   function handleOriginAccountTypeChange(newAccountType: string) {
+    console.log(
+      '🚀 ~ handleOriginAccountTypeChange ~ newAccountType:',
+      newAccountType
+    );
+
     //reset selected values on movementInputData state
     setMovementInputData((prev) => ({
       ...prev,
       origin: '', //reset dropdown selected values
       originAccountType: newAccountType,
-      // destination: '',
+      //  originAccountId: undefined,
     }));
 
     //reset error messages
@@ -522,7 +540,7 @@ function Transfer(): JSX.Element {
     setTimeout(() => setIsResetDestinationAccount(true), 100);
   }
   //-----------------------------------------------
-
+  //--submit form
   async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
     console.log('On Save Handler');
     e.preventDefault();
@@ -534,6 +552,10 @@ function Transfer(): JSX.Element {
     //   typeof formattedNumber
     // );
 
+    if (!validateForm()) {
+      return;
+    }
+
     //----------------------------------------------
     //validation of entered data
     const newValidationMessages = validationData(movementInputData);
@@ -542,10 +564,11 @@ function Transfer(): JSX.Element {
       newValidationMessages
     );
 
-    // if (Object.values(newValidationMessages).length > 0) {
-    //   setValidationMessages(newValidationMessages);
-    //   return;
-    // }
+    if (Object.values(newValidationMessages).length > 0) {
+      setValidationMessages(newValidationMessages);
+      return;
+    }
+
     //-------------------------------------------------
     //-------------------------------------------------
     //POST ENDPOINT FOR MOVEMENT TRANSACTION HERE
@@ -601,13 +624,14 @@ function Transfer(): JSX.Element {
       }
     } catch (error) {
       console.error('Submission error:', error);
+      setMessageToUser('Error processing transaction');
+      setShowMessage(true);
     }
   }
-
   //---------------------------------------------,
-  //-------Top Card elements --------------------------
+  //-------Top Card elements --------------------
   const topCardElements = {
-    titles: { title1: 'amount', title2: ' Origin' }, //deben coincidir con el key de validation messages
+    titles: { title1: 'amount', title2: 'origin' }, //deben coincidir con el key de validation messages
     value: formData.amount,
     selectOptions: originAccountOptionsToRender,
   };
