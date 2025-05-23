@@ -140,7 +140,9 @@ export type DebtorDataType = {
   description: string;
 };
 
-export type DebtsTransactionType = 'lend' | 'borrow';
+export type DebtsTransactionType = string;
+
+// export type DebtsTransactionType = 'lend' | 'borrow';
 
 export type DebtorNewProfileType = 'lending' | 'borrowing';
 
@@ -245,6 +247,9 @@ export type DebtsTrackerInputDataType = {
   debtor: string;
   currency: CurrencyType;
   type: MovementTransactionType;
+  account: string;
+  accountType: string | undefined;
+
   date: Date;
   note: string;
 };
@@ -258,6 +263,6 @@ export type BaseTrackerType = {
   note: string;
 };
 
-//-----------------------------------------------
+//------------------------------------
 
 export type UserRolesType = 'user' | 'admin' | 'super_admin';

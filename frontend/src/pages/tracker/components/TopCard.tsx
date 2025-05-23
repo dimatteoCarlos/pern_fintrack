@@ -15,11 +15,11 @@ type RadioInputPropsType = {
 
   inputRadioOptions: { value: string; label: string }[];
 
-  setRadioOptionSelected: (option: string) => void;
+  setRadioOptionSelected: (option: string ) => void;
 
   title?: string;
 
-  disabled?: boolean;
+  // disabled?: boolean;
 };
 
 type TopCardPropType<T extends Record<string, unknown>> = {
@@ -80,7 +80,6 @@ const TopCard = <T extends Record<string, unknown>>({
   radioInputProps,
   //-------
   customSelectHandler,
-
 }: TopCardPropType<T>): JSX.Element => {
   const {
     selectOptions: topCardOptions,
@@ -90,7 +89,7 @@ const TopCard = <T extends Record<string, unknown>>({
     value, //amount input value
   } = topCardElements;
 
-  console.log('🚀 ~ title2:', title2.trim().toLowerCase());
+  // console.log('🚀 ~ title2:', title2.trim().toLowerCase());
 
   //selection handler
   function stateSelectHandler(selectedOption: DropdownOptionType | null) {
@@ -105,7 +104,8 @@ const TopCard = <T extends Record<string, unknown>>({
   //usage of customSelectHandler if it exists
   const finalSelectHandler = customSelectHandler || stateSelectHandler;
 
-  console.log('isResetDropdoen', { isResetDropdown });
+  // console.log('isResetDropdown', { isResetDropdown });
+  // console.log('title2', title2.trim().length, 'origin'.length);
 
   // console.log('selected value from TopCard:', selectedValue);
   //-------------------------------------------
@@ -136,7 +136,7 @@ const TopCard = <T extends Record<string, unknown>>({
         </div>
 
         <div className='account card--title '>
-          {capitalize(title2)}
+          {capitalize(title2).trim()}
 
           {radioInputProps && (
             <RadioInput
@@ -144,14 +144,14 @@ const TopCard = <T extends Record<string, unknown>>({
               inputRadioOptions={radioInputProps.inputRadioOptions}
               setRadioOptionSelected={radioInputProps.setRadioOptionSelected}
               title={radioInputProps.title}
-              labelId='origin'
+              labelId={title2.trim()}
               // disabled={radioInputProps.disabled}
             />
           )}
         </div>
 
         <div className='validation__errMsg '>
-          {validationMessages[title2.replace(' ', '_')]}
+          {validationMessages[`${title2.toLowerCase().trim()}`]}
         </div>
 
         <DropDownSelection
@@ -159,9 +159,9 @@ const TopCard = <T extends Record<string, unknown>>({
           updateOptionHandler={finalSelectHandler}
           setIsReset={setIsReset}
           isReset={isReset}
-          // isReset={isReset || isResetDropdown }
           setIsResetDropdown={setIsResetDropdown}
           isResetDropdown={isResetDropdown}
+          // isReset={isReset || isResetDropdown }
         />
       </div>
     </>

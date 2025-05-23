@@ -39,7 +39,10 @@ function TrackerLayout() {
 
   // console.log('🚀 ~ TrackerLayout ~ userId:', userId);
 
-  const { apiData, isLoading, error, status } = useFetch<BalanceBankRespType>(
+  const { apiData, isLoading, error,
+    //  status
+
+   } = useFetch<BalanceBankRespType>(
     `${url_get_total_account_balance_by_type}/?type=bank&user=${userId}`
   );
 

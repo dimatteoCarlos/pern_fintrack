@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { checkNumberFormatValue } from '../helpers/functions';
 
+//update numeric state and validation messages
 function useInputNumberHandler<T>(
   setFormData: React.Dispatch<React.SetStateAction<{ [key: string]: string }>>,
   setValidationMessages: React.Dispatch<
@@ -16,7 +17,6 @@ function useInputNumberHandler<T>(
         checkNumberFormatValue(value);
       // const { formatMessage, valueNumber, isError, valueToSave } =
       //   checkNumberFormatValue(value);
-
       // Actualizar el estado numerico en el formulario
 
       setFormData((formData) => ({
@@ -33,12 +33,12 @@ function useInputNumberHandler<T>(
 
       setStateData((prev) => ({ ...prev, [name]: valueToSave }));
 
-      // console.log('from:', {
-      //   formatMessage,
-      //   valueNumber,
-      //   isError,
-      //   valueToSave,
-      // });
+      console.log('from: useInputNumberHandler', {
+        formatMessage,
+        // valueNumber,
+        isError,
+        valueToSave,
+      });
     },
     [setFormData, setValidationMessages, setStateData]
   );

@@ -30,9 +30,9 @@ export const MessageToUser = ({
             style={{
               color: colorStyles.failure,
               borderRadius: '4px',
-              fontSize: '1.1rem',
+              fontSize: '0.625rem',
               fontWeight: '400',
-              lineHeight: '1.5rem',
+              lineHeight: '1rem',
             }}
           >
             {/* Error: {error} */}

@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom';
 // import { Navigate, useLocation } from 'react-router-dom';
 import {
   checkNumberFormatValue,
-  validationData,
+  // validationData,
 } from '../../../helpers/functions.ts';
 import {
   CurrencyType,
@@ -64,6 +64,7 @@ const initialMovementData: MovementInputDataType = {
 
   note: '',
   currency: defaultCurrency,
+
   originAccountType: 'bank',
   destinationAccountType: 'investment',
 };
@@ -103,12 +104,12 @@ function Transfer(): JSX.Element {
   //-----------------------------------------------------
   //--RadioOption selection for account types
 
-  const inputRadioOptions = [
+  const inputRadioOptionsAccountType = [
     { value: 'bank', label: 'bank' },
     { value: 'investment', label: 'investment' },
     { value: 'pocket', label: 'pocket' },
   ];
-  //-----------------------------------------------------
+  //--------------------------------------------------
   //---states-------------
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
   const [validationMessages, setValidationMessages] = useState<{
@@ -120,17 +121,19 @@ function Transfer(): JSX.Element {
     useState<MovementInputDataType>(initialMovementData);
 
   const [formData, setFormData] = useState(initialFormData);
+
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
   );
   //---
   const [showMessage, setShowMessage] = useState(false);
-  //--available balance or funds, former available budget from figma design---------------------------
+
+  //--available balance or funds, former named available budget from figma design-------------------------------------
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
-  //--------------------------------------------
-  //--set states for account types selected and default values
+  //------------------------------------------
+  //--set states for reseting dropdown selection of accounts
   const [isResetOriginAccount, setIsResetOriginAccount] =
     useState<boolean>(true);
   const [isResetDestinationAccount, setIsResetDestinationAccount] =
@@ -182,8 +185,6 @@ function Transfer(): JSX.Element {
       : // <Navigate to='/auth' />
         undefined;
   //-------------------------------
-
-  //-------------------------------
   //DATA FETCHING
   //GET: AVAILABLE ACCOUNTS OF TYPE BANK
 
@@ -209,10 +210,10 @@ function Transfer(): JSX.Element {
 
     const originAccountList = originAccountsResponse?.data?.accountList ?? [];
 
-    console.log(
-      '🚀 ~ optionsOriginAccounts ~ originAccountList:',
-      originAccountList
-    );
+    // console.log(
+    //   '🚀 ~ optionsOriginAccounts ~ originAccountList:',
+    //   originAccountList
+    // );
 
     return originAccountList.length
       ? originAccountList.map((acc) => ({
@@ -293,10 +294,10 @@ function Transfer(): JSX.Element {
     const destinationAccountList =
       destinationAccountsResponse?.data?.accountList ?? [];
 
-    console.log(
-      '🚀 ~ optionsDestinationAccounts ~ destinationAccountList:',
-      destinationAccountList
-    );
+    // console.log(
+    //   '🚀 ~ optionsDestinationAccounts ~ destinationAccountList:',
+    //   destinationAccountList
+    // );
 
     return destinationAccountList.length
       ? destinationAccountList.map((acc: AccountListType) => ({
@@ -309,7 +310,6 @@ function Transfer(): JSX.Element {
     destinationAccountsResponse?.data.accountList,
     fetchedErrorDestinationAccounts,
   ]);
-
   //---------------------------------------------
   //filtering destination account list
   const fileteredDestinationOptions = useMemo(() => {
@@ -342,7 +342,6 @@ function Transfer(): JSX.Element {
     movementInputData.originAccountId,
     optionsDestinationAccounts,
   ]);
-
   //------------------------------------------
   const destinationAccountOptionsToRender = {
     title: destinationAccountsResponse?.data.accountList.length
@@ -352,7 +351,6 @@ function Transfer(): JSX.Element {
     options: fileteredDestinationOptions,
     variant: VARIANT_DEFAULT as VariantType,
   };
-
   //------------------------------------------
   //OBTAIN THE REQUESTFN FROM userFetchLoad
   type PayloadType = MovementInputDataType & {
@@ -364,7 +362,6 @@ function Transfer(): JSX.Element {
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
-
   //---------------------------------------------
   //Handle states related to the data submit form
   useEffect(() => {
@@ -401,7 +398,7 @@ function Transfer(): JSX.Element {
   ) {
     e.preventDefault();
     const { name, value } = e.target;
-    console.log('🚀 ~ Transfer ~ e.target:', e.target);
+    // console.log('🚀 ~ Transfer ~ e.target:', e.target);
 
     //-----------
     if (name === 'amount') {
@@ -415,6 +412,7 @@ function Transfer(): JSX.Element {
         [name]: value,
       });
       // console.log({ formatMessage, valueNumber, isError, valueToSave });
+
       setValidationMessages((prev) => ({
         ...prev,
         [name]: ` Format: ${formatMessage}`,
@@ -453,22 +451,21 @@ function Transfer(): JSX.Element {
       originAccountId: selectedAccount?.account_id,
     }));
 
-    console.log(
-      'desde destinationAccountSelectHandler:',
-      selectedOption,
-      selectedOption?.value
-    );
+    // console.log(
+    //   'desde destinationAccountSelectHandler:',
+    //   selectedOption,
+    //   selectedOption?.value
+    // );
 
     //reset origin accoutn
     setValidationMessages((prev) => ({ ...prev, origin: '' }));
   }
 
-  //--for DropdownSelection
+  //--for DropdownSelection. add the account_id
   function destinationAccountSelectHandler(
     selectedOption: DropdownOptionType | null
   ) {
     // get the account_id of the selected account_name. it supposes that account name is unique too.
-
     const selectedAccount = destinationAccountsResponse?.data?.accountList.find(
       (acc) => acc.account_name === selectedOption?.value
     );
@@ -479,21 +476,21 @@ function Transfer(): JSX.Element {
       destinationAccountId: selectedAccount?.account_id,
     }));
 
-    console.log(
-      'desde destinationAccountSelectHandler:',
-      selectedOption,
-      selectedOption?.value
-    );
+    // console.log(
+    //   'desde destinationAccountSelectHandler:',
+    //   selectedOption,
+    //   selectedOption?.value
+    // );
 
     setValidationMessages((prev) => ({ ...prev, destination: '' }));
   }
   //-----
   //for RadioInput
   function handleOriginAccountTypeChange(newAccountType: string) {
-    console.log(
-      '🚀 ~ handleOriginAccountTypeChange ~ newAccountType:',
-      newAccountType
-    );
+    // console.log(
+    //   '🚀 ~ handleOriginAccountTypeChange ~ newAccountType:',
+    //   newAccountType
+    // );
 
     //reset selected values on movementInputData state
     setMovementInputData((prev) => ({
@@ -558,16 +555,16 @@ function Transfer(): JSX.Element {
 
     //----------------------------------------------
     //validation of entered data
-    const newValidationMessages = validationData(movementInputData);
-    console.log(
-      '🚀 ~ onSaveHandler ~ newValidationMessages:',
-      newValidationMessages
-    );
+    // const newValidationMessages = validationData(movementInputData);
+    // console.log(
+    //   '🚀 ~ onSaveHandler ~ newValidationMessages:',
+    //   newValidationMessages
+    // );
 
-    if (Object.values(newValidationMessages).length > 0) {
-      setValidationMessages(newValidationMessages);
-      return;
-    }
+    // if (Object.values(newValidationMessages).length > 0) {
+    //   setValidationMessages(newValidationMessages);
+    //   return;
+    // }
 
     //-------------------------------------------------
     //-------------------------------------------------
@@ -584,14 +581,6 @@ function Transfer(): JSX.Element {
       };
 
       const finalUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
-      // console.log(
-      //   '🚀 ~ onSubmitForm ~ finalUrl:',
-      //   finalUrl,
-      //   'date:',
-      //   payload.date,
-      //   'este es el payload:',
-      //   payload
-      // );
 
       const data = await requestFn(payload, {
         url: finalUrl,
@@ -607,7 +596,7 @@ function Transfer(): JSX.Element {
       setIsReset(true); //admitir que category sea undefined - must admit undefined category
       setValidationMessages({});
       setFormData(initialFormData);
-      setTimeout(() => setIsReset(false), 300);
+      setTimeout(() => setIsReset(false), 100);
 
       //-------------------------------
       //update total available budget global state
@@ -636,7 +625,7 @@ function Transfer(): JSX.Element {
     selectOptions: originAccountOptionsToRender,
   };
 
-  console.log('validation messages', validationMessages);
+  // console.log('validation messages', validationMessages);
   //-------------------------------------
   return (
     <>
@@ -662,7 +651,7 @@ function Transfer(): JSX.Element {
             radioOptionSelected:
               movementInputData.originAccountType ??
               initialMovementData.originAccountType!,
-            inputRadioOptions,
+            inputRadioOptions: inputRadioOptionsAccountType,
             setRadioOptionSelected: handleOriginAccountTypeChange,
             title: '',
             // setRadioOptionSelected: setOriginAccountType,
@@ -683,12 +672,12 @@ function Transfer(): JSX.Element {
                 movementInputData.destinationAccountType ??
                 initialMovementData.destinationAccountType!
               }
-              inputRadioOptions={inputRadioOptions}
+              inputRadioOptions={inputRadioOptionsAccountType}
               setRadioOptionSelected={handleDestinationAccountTypeChange}
               title={''}
               labelId='destination'
 
-              // disabled={radioInputProps.disabled}
+              // disabfled={radioInputProps.disabled}
             />
           </div>
           <div className='validation__errMsg'>

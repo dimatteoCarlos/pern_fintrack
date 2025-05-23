@@ -7,9 +7,10 @@ import {
 import {
   getExpenseConfig,
   getIncomeConfig,
-  getInvestmentConfig,
-  getPocketConfig,
   getDebtConfig,
+  getTransferConfig,
+  // getInvestmentConfig,
+  // getPocketConfig,
 } from '../../../utils/movementInputHandler.js';
 import { recordTransaction } from '../../../utils/recordTransaction.js';
 
@@ -30,10 +31,10 @@ export const getAccountTypeId = async (accountTypeName) => {
     values: [accountTypeName],
   });
 
-  console.log(
-    'Get type id acc By accountTypeName',
-    accountTypeResult.rows[0]?.account_type_id
-  );
+  // console.log(
+  //   'Get type id acc By accountTypeName',
+  //   accountTypeResult.rows[0]?.account_type_id
+  // );
   return accountTypeResult.rows[0]?.account_type_id;
 };
 
@@ -79,7 +80,7 @@ export const updateAccountBalance = async (
   accountId,
   transactionActualDate
 ) => {
-  console.log('updateAccountBalance tad:', transactionActualDate);
+  // console.log('updateAccountBalance tad:', transactionActualDate);
   //assure first the existence of updatedAccountResult
   const insertBalanceQuery = {
     text: `UPDATE user_accounts SET account_balance=$1, updated_at = $2 WHERE account_id = $3 RETURNING *`,
@@ -103,7 +104,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const { movement } = req.query;
     const movementName = movement === 'debts' ? 'debt' : movement; //debt movement is called as debts in frontend
 
-    console.log(movementName);
+    console.log({ movementName });
 
     // const { user: userId } = req.body;
     const userId =
@@ -115,7 +116,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       console.warn(pc.magentaBright(message));
       return res.status(400).json({ status: 400, message });
     }
-    //------------------------------------------------------
+    //----------------------------------------------------
 
     // Debts and Investment Movements need a compensation account, in this case named "slack", to serve as a counter part of the transaction.
 
@@ -169,13 +170,14 @@ export const transferBetweenAccounts = async (req, res, next) => {
       return res.status(400).json({ status: 400, message });
     }
     //--this is for the old version where debt and investment movements do not consider an explicit counter account
-    if (
-      movementName !== 'expense' &&
-      movementName !== 'income' &&
-      movementName !== 'transfer'
-    ) {
-      checkAndInsertAccount(req, res, next, userId);
-    }
+    //la nueva version no requiere gestionar el slack
+    // if (
+    //   movementName !== 'expense' &&
+    //   movementName !== 'income' &&
+    //   movementName !== 'transfer'
+    // ) {
+    //   checkAndInsertAccount(req, res, next, userId);
+    // }
     //------------------
     //--get the movement types, get the movement type id and check --------------
     const movement_typesResults = await pool.query(
@@ -227,9 +229,11 @@ export const transferBetweenAccounts = async (req, res, next) => {
       note,
       amount,
       currency: currencyCode,
-      type: transactionTypeName, //for old version
+      type: transactionTypeName, //for old versions of investment or for debt in current version
     } = req.body; //common fields to all tracker movements.
-    console.log('tipo de transaccion', transactionTypeName);
+    // console.log('tipo de transaccion', transactionTypeName);
+
+    // console.log('body', req.body);
     //-----------------
     //Not all tracker movements have the same input data structure, so, get the data structure config strategy based on movementName
     const config = {
@@ -237,10 +241,12 @@ export const transferBetweenAccounts = async (req, res, next) => {
       income: getIncomeConfig(req.body),
       transfer: getTransferConfig(req.body),
       debt: getDebtConfig(req.body),
+
       //old version
-      investment: getInvestmentConfig(req.body),
-      pocket: getPocketConfig(req.body),
+      // investment: getInvestmentConfig(req.body),
+      // pocket: getPocketConfig(req.body),
     }[movementName];
+
     console.log('🚀 ~ transferBetweenAccounts ~ config:', config);
 
     const {
@@ -336,10 +342,10 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const sourceAccountTypeid = accountTypes.filter(
       (type) => type.account_type_name === sourceAccountTypeName
     )[0].account_type_name;
-    console.log(
-      '🚀 ~ transferBetweenAccounts ~ accountTypes:',
-      sourceAccountTypeid
-    );
+    // console.log(
+    //   '🚀 ~ transferBetweenAccounts ~ accountTypes:',
+    //   sourceAccountTypeid
+    // );
     //-------------------------
     //-------------------------
     //---begin transaction-----
@@ -351,14 +357,20 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //---check balance only for source account
     if (
       sourceAccountBalance < numericAmount &&
-      sourceAccountTypeName === 'bank'
+      (sourceAccountTypeName === 'bank' ||
+        sourceAccountTypeName === 'investment')
     ) {
       const message = `Not enough funds to transfer ${currencyCode} ${numericAmount} from account ${sourceAccountName} (${currencyCode} ${sourceAccountBalance})`;
+
       console.warn(pc.magentaBright(message));
+      return res.status(400).json({
+        status: 400,
+        message,
+      });
 
       //Verificar si se aplicaran restriccionespor falta de fondos?
       //rules in case transfer between accounts are restricted.
-      //overdraft not allowed: bank to category_budget, bank to investment, bank to debtor , others: investment to investment, bank to bank,
+      //overdraft not allowed: bank to category_budget, bank to investment, bank to debtor , others: investment to investment, bank to bank, bank or investment to pocket, or pocket to any
 
       //overdraft allowed: slack to any account, income_source to any account, debtor to debtor,  bank to debtor/ debtor to bank, any to debtor/ debtor to any acc
     }
@@ -371,28 +383,28 @@ export const transferBetweenAccounts = async (req, res, next) => {
       parseFloat(sourceAccountBalance) - numericAmount;
     // parseFloat(sourceAccountBalance) + numericAmount * transactionSign;
 
-    console.log(
-      '🚀 ~ newSourceAccountBalance:',
-      newSourceAccountBalance,
-      '  typeof'
-      // balanceMultiplierFn(sourceAccountTransactionType)
-    );
+    // console.log(
+    //   '🚀 ~ newSourceAccountBalance:',
+    //   newSourceAccountBalance,
+    //   '  typeof'
+    //   // balanceMultiplierFn(sourceAccountTransactionType)
+    // );
 
     const sourceAccountId = sourceAccountInfo.account_id;
-    console.log('tad:', transaction_actual_date);
+    // console.log('tad:', transaction_actual_date);
 
     const updatedSourceAccountInfo = await updateAccountBalance(
       newSourceAccountBalance,
       sourceAccountId,
       transaction_actual_date
     );
-    console.log(
-      '🚀 ~ updatedSourceAccountInfo:',
-      updatedSourceAccountInfo,
-      'type of:',
-      typeof sourceAccountBalance
-    );
-    //-------------------------------------------------------
+    // console.log(
+    //   '🚀 ~ updatedSourceAccountInfo:',
+    //   updatedSourceAccountInfo,
+    //   'type of:',
+    //   typeof sourceAccountBalance
+    // );
+    //-----------------------------------------------
     //---Update the balance in the destination account
     const destinationAccountBalance = destinationAccountInfo.account_balance;
     const newDestinationAccountBalance =
@@ -407,12 +419,12 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountId,
       transaction_actual_date
     );
-    console.log(
-      '🚀 ~ updatedDestinationAccountInfo:',
-      updatedDestinationAccountInfo,
-      'type of:',
-      typeof destinationAccountBalance
-    );
+    // console.log(
+    //   '🚀 ~ updatedDestinationAccountInfo:',
+    //   updatedDestinationAccountInfo,
+    //   'type of:',
+    //   typeof destinationAccountBalance
+    // );
 
     //----Register transfer/receive transaction-----------------
     //-----------source transaction-----------------------------

@@ -1,14 +1,13 @@
 //src/general_components/radioIniput/RadionInput.tsx
 //victorPace= value id className type
-// import RadioInput from '../../../general_components/radioInput/RadioInput.tsx';
-// import { useState } from 'react';
+
 import './styles/radioInput-styles.css';
-type RadioInputPropType = {
-  radioOptionSelected: string;
-  inputRadioOptions: { [key: string]: string }[];
-  setRadioOptionSelected: (radioOptionSelected: string) => void;
+type RadioInputPropsType<T = string> = {
+  radioOptionSelected: T;
+  inputRadioOptions: { [key: string]: T }[];
+  setRadioOptionSelected: (radioOptionSelected: T) => void;
   title?: string;
-  labelId:string;
+  labelId: string;
 };
 
 const RadioInput = ({
@@ -16,27 +15,15 @@ const RadioInput = ({
   inputRadioOptions,
   setRadioOptionSelected,
   title = '',
-  labelId
-}: RadioInputPropType) => {
+  labelId,
+}: RadioInputPropsType) => {
   //vitorpace
   const onChangeHandleRadio = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSelectedOption = e.target.value;
     setRadioOptionSelected(newSelectedOption);
   };
 
-  //---data and state to select type of debit account
-  // const inputRadioOptions = [
-  //   { label: 'bank', value: 'bank' },
-  //   { label: 'investment', value: 'investment' },
-  //   { label: 'pocket', value: 'pocket' },
-  // ];
-  // const initialSelectedOptionState = 'bank';
   const ratioTitle = title;
-  // const ratioTitle = 'type';
-
-  // const [radioOptionSelected, setRadioOptionSelected] = useState(
-  //   initialSelectedOptionState
-  // );
   //---
 
   return (
@@ -51,7 +38,7 @@ const RadioInput = ({
             >
               <input
                 type='radio'
-                id={`option-${labelId}-${index}`} 
+                id={`option-${labelId}-${index}`}
                 value={option.value}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   onChangeHandleRadio(e)
@@ -59,7 +46,10 @@ const RadioInput = ({
                 checked={option.value === radioOptionSelected}
                 className='radio-input__radio'
               />
-              <label htmlFor={`option-${labelId}-${index}`} className='radio-input__label'>
+              <label
+                htmlFor={`option-${labelId}-${index}`}
+                className='radio-input__label'
+              >
                 {option.label}
               </label>
             </div>
