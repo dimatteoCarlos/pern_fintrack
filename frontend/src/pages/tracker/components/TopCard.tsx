@@ -15,7 +15,7 @@ type RadioInputPropsType = {
 
   inputRadioOptions: { value: string; label: string }[];
 
-  setRadioOptionSelected: (option: string ) => void;
+  setRadioOptionSelected: (option: string) => void;
 
   title?: string;
 

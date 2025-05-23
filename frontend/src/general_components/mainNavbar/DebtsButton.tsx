@@ -13,7 +13,7 @@ function DebtsButton() {
   const btnName = 'debts';
   const isBtnActive =
     useLocation().pathname.split('/')[2] == btnName ? 'active' : '';
-    console.log(useLocation().pathname, isBtnActive, )
+    // console.log(useLocation().pathname, isBtnActive, )
   return (
     <>
       <NavLink to='/fintrack/debts/debtors' className={`${classNavLink} ${isBtnActive}`}>

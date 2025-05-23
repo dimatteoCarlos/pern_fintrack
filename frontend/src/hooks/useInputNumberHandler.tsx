@@ -13,7 +13,7 @@ function useInputNumberHandler<T>(
 ) {
   const inputNumberHandlerFn = useCallback(
     (name: string, value: string) => {
-      const { formatMessage,  isError, valueToSave } =
+      const { formatMessage, isError, valueToSave } =
         checkNumberFormatValue(value);
       // const { formatMessage, valueNumber, isError, valueToSave } =
       //   checkNumberFormatValue(value);
@@ -33,12 +33,12 @@ function useInputNumberHandler<T>(
 
       setStateData((prev) => ({ ...prev, [name]: valueToSave }));
 
-      console.log('from: useInputNumberHandler', {
-        formatMessage,
-        // valueNumber,
-        isError,
-        valueToSave,
-      });
+      // console.log('from: useInputNumberHandler', {
+      //   formatMessage,
+      //   // valueNumber,
+      //   isError,
+      //   valueToSave,
+      // });
     },
     [setFormData, setValidationMessages, setStateData]
   );

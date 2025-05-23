@@ -1,3 +1,13 @@
+//accounting
+export type AccountingListType = {
+  title: string;
+  amount: number | string;
+  currency: CurrencyType;
+  type: string;
+};
+
+
+//-------------------
 export type CategoriesType = {
   categories?: CategoryType[] | null;
 };

@@ -11,7 +11,7 @@ function BudgetButton() {
   const btnName = 'budget';
   const isBtnActive =
     useLocation().pathname.split('/')[2] == btnName ? 'active' : '';
-  console.log(useLocation().pathname.split('/')[2], isBtnActive);
+  // console.log(useLocation().pathname.split('/')[2], isBtnActive);
 
   return (
     <>

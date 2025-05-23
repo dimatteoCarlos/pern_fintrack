@@ -13,7 +13,7 @@ function TrackerButton() {
   const btnName = 'tracker';
   const isBtnActive =
     useLocation().pathname.split('/')[2] == btnName ? 'active' : '';
-  console.log(useLocation().pathname, isBtnActive);
+  // console.log(useLocation().pathname, isBtnActive);
 
   return (
     <>

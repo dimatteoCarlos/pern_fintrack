@@ -39,10 +39,12 @@ function TrackerLayout() {
 
   // console.log('🚀 ~ TrackerLayout ~ userId:', userId);
 
-  const { apiData, isLoading, error,
+  const {
+    apiData,
+    isLoading,
+    error,
     //  status
-
-   } = useFetch<BalanceBankRespType>(
+  } = useFetch<BalanceBankRespType>(
     `${url_get_total_account_balance_by_type}/?type=bank&user=${userId}`
   );
 
@@ -87,7 +89,7 @@ function TrackerLayout() {
   return (
     <>
       {/* <div className='trackerLayout bordered'> */}
-      <div className='layout__header'>
+      <div className='layout__header '>
         <div className='headerContent__container '>
           <LogoMenuIcon />
           <div className={`displayScreen ${'light'}`}>
@@ -116,8 +118,9 @@ function TrackerLayout() {
         <Outlet />
         {messageToUser && (
           <MessageToUser
-            isLoading={isLoading}
-            messageToUser={apiData?.message}
+            isLoading={false}
+            // isLoading={isLoading}
+            messageToUser={error ? apiData?.message : ''}
             error={error}
             variant={'tracker'}
           />

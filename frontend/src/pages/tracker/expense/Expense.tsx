@@ -72,7 +72,7 @@ function Expense(): JSX.Element {
   const trackerState = router.pathname.split('/')[PAGE_LOC_NUM];
 
   const typeMovement = trackerState.toLowerCase();
-  console.log('movement:', typeMovement);
+  // console.log('movement:', typeMovement);
 
   //deal here with user id and authentication
   // const { userData } = useAuthStore((state) => ({
@@ -99,7 +99,7 @@ function Expense(): JSX.Element {
     : // <Navigate to='/auth' />
       undefined; //esto ees forzar un error de user ID required
   //definir que hacer si no hay user id
-  console.log('🚀 ~ Expense ~ fetchUrl:', fetchUrl);
+  // console.log('🚀 ~ Expense ~ fetchUrl:', fetchUrl);
 
   const {
     apiData: BankAccountsResponse,

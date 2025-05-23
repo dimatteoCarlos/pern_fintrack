@@ -79,7 +79,7 @@ function Income() {
   const trackerState = pathname.split('/')[PAGE_LOC_NUM];
 
   const typeMovement = trackerState.toLowerCase();
-  console.log('movement:', typeMovement);
+  // console.log('movement:', typeMovement);
   //--------------------------------------
   //deal here with user id and authentication
   // const { userData } = useAuthStore((state) => ({
@@ -101,7 +101,7 @@ function Income() {
     : // <Navigate to='/auth' />
       undefined; //esto ees forzar un error de user ID required
   //definir que hacer si no hay user id
-  console.log('🚀 ~ Income ~ fetchUrl:', fetchUrl);
+  // console.log('🚀 ~ Income ~ fetchUrl:', fetchUrl);
 
   const {
     apiData: BankAccountsResponse,

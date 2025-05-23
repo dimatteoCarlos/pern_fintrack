@@ -183,7 +183,7 @@ function Debts(): JSX.Element {
     error: fetchedErrorAccounts,
   } = useFetch<AccountByTypeResponseType>(fetchAccountUrl as string);
 
-  console.log('🚀 ~ Debts ~ accountsResponse:', accountsResponse);
+  // console.log('🚀 ~ Debts ~ accountsResponse:', accountsResponse);
 
   const optionsAccounts = useMemo(() => {
     if (fetchedErrorAccounts) {
@@ -272,14 +272,14 @@ function Debts(): JSX.Element {
 
   //for DropdownSelection of counter balance account
   function accountSelectHandler(selectedOption: DropdownOptionType | null) {
-    const selectedAccount = accountsResponse?.data?.accountList.find(
-      (acc) => acc.account_name === selectedOption?.value
-    );
-    console.log(
-      '🚀 ~ accountSelectHandler ~ selectedAccount:',
-      selectedAccount?.account_balance,
-      'como mostrar el balance de la cuenta en la seleccion?'
-    );
+    // const selectedAccount = accountsResponse?.data?.accountList.find(
+    //   (acc) => acc.account_name === selectedOption?.value
+    // );
+
+    // console.log(
+    //   '🚀 ~ accountSelectHandler ~ selectedAccount:',
+    //   selectedAccount?.account_balance,
+    // );
 
     setDataTrack((prev) => ({
       ...prev,
@@ -521,7 +521,7 @@ function Debts(): JSX.Element {
           />
         </div>
       </form>
-
+      {/*
       <MessageToUser
         isLoading={isLoading || isLoadingAccounts || isLoadingDebtors}
         //probar que muestra como error o si muestra algo
@@ -529,13 +529,13 @@ function Debts(): JSX.Element {
         messageToUser={messageToUser}
         variant='tracker'
       />
-
+*/}
       {showMessage && !isLoading && (
         <div className='fade-message'>
           <MessageToUser
             isLoading={isLoading || isLoadingAccounts || isLoadingDebtors}
             // isLoading={false}
-            error={error}
+            error={error || fetchedErrorDebtors}
             messageToUser={messageToUser}
             variant='form'
           />
