@@ -313,7 +313,6 @@ GROUP BY  ct.currency_code
 //------------------------------------------------
 //==============================================================================
 //get the total balance for 'category_budget', 'debtor' and 'pocket_saving'. Consdiering also goals, budget, target,
-
 //get: //http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=&user=
 
 export const dashboardAccountSummaryList = async (req, res, next) => {
