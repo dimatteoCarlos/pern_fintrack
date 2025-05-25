@@ -1,4 +1,5 @@
 import {
+  AccountingListType,
   DropdownOptionType,
   PocketsToRenderType,
   VariantType,
@@ -81,7 +82,9 @@ export const ACCOUNT_TYPE_DEFAULT: DropdownOptionType[] = [
 ];
 
 //pages/debts/ListPocket.tsx
-export const DEFAULT_POCKET_LIST: PocketsToRenderType[] = [
+
+
+ export const DEFAULT_POCKET_LIST: PocketsToRenderType[] = [
   {
     pocketName: 'Name Pocket 01',
     description: 'Description 01',
@@ -117,6 +120,9 @@ export const DEFAULT_POCKET_LIST: PocketsToRenderType[] = [
 ];
 
 //account detail
+
+
+
 export const DEFAULT_LAST_MOVEMENTS = [
   {
     categoryName: 'Category Name_01',

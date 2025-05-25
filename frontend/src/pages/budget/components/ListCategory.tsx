@@ -9,77 +9,62 @@ import {
   // divide,
 } from '../../../helpers/functions.ts';
 import {
-  CategoryBudgetListType,
+  // CategoryBudgetListType,
   CategoryBudgetType,
   CurrencyType,
 } from '../../../types/types.ts';
 import { useFetch } from '../../../hooks/useFetch.tsx';
-import { url_budget } from '../../../endpoints.ts';
+import {
+  // url_budget,
+  url_summary_balance_ByType,
+  USER_ID,
+} from '../../../endpoints.ts';
+
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
-import { Link } from 'react-router-dom';
+
+// import { Link } from 'react-router-dom';
+import {
+  CategoryListSummaryType,
+  CategoryListType,
+} from '../../../types/responseApiTypes.ts';
 
 export type CategoryToRenderType = CategoryBudgetType & {
   currency?: CurrencyType;
+  total_budget: number;
 };
 
-const defaultCategoryBudget: CategoryToRenderType[] = [
-  {
-    category_name: 'Category Name 1',
-    spent: Math.random() * 100,
-    amount: Math.random() * 100,
-    currency: 'usd',
-    category_id: Math.round(Math.floor(Math.random() * 100)),
-  },
-  {
-    category_name: 'Category Name 2',
-    spent: Math.random() * 100,
-    amount: Math.random() * 100,
-    currency: 'cop',
-    category_id: Math.round(Math.floor(Math.random() * 100)),
-  },
-  {
-    category_name: 'Category Name 3',
-    spent: Math.random() * 100,
-    amount: Math.random() * 100,
-    currency: 'eur',
-    category_id: Math.round(Math.floor(Math.random() * 100)),
-  },
-  {
-    category_name: 'Category Name 4',
-    spent: Math.random() * 100,
-    amount: Math.random() * 100,
-    currency: 'cop',
-    category_id: Math.round(Math.floor(Math.random() * 100)),
-  },
-];
+const defaultCategoryBudget: CategoryToRenderType[] = [];
 
 function ListCategory() {
   //List Category
 
-  // let data: CategoriesToRenderType[] = [],
-  //   isLoading = false,
-  //   error = null;
-
   // en el backend: generar la data segun estructura de los datos a renderizar, es decir,
-  //agrupar para cada caategoria, expenses y  budgets, y cualquier otra; la sumatoria de los expense se refleja en el spent, y la sumatoria de los budget de cada categoria seria el budget por categoria o por subcategoria? hay que definir,  y el status seria el resultado de la resta entre el budget - expense de cada categoria, o si se prefiere reflejar el status de una vez desde el backend?.
-  //no se esta claro, si los valores o informacion se obtendra de los movimientos de expenses, realizados en cada categoria y budget...definir procedimiento de calculo.
+  //agrupar para cada caategoria, expenses y  budgets, y cualquier otra; la sumatoria de los expense se refleja en el spent, y la sumatoria de los budget de cada categoria seria el budget por categoria o por subcategoria? hay que definir esto, no e tengo claro el manejo de las subcategorias. ,  y el status refleja el estado de lo disponible en el presupuesto,  seria el resultado de la resta entre el expense-budget  de cada categoria, ..
 
   //DATA FETCHING
-  const { data, isLoading, error } =
-    useFetch<CategoryBudgetListType>(url_budget);
-  console.log(data); //Los Datos actuales no tienen el campo "category_nature"
+  // CategoryListSummaryType
+  const { apiData, isLoading, error } = useFetch<CategoryListSummaryType>(
+    `${url_summary_balance_ByType}?type=category_budget&user=${USER_ID}`
+  );
+  // console.log(apiData);
 
   //-------
   const budgetList: CategoryToRenderType[] =
-    data?.budgets && !isLoading && !error && data.budgets.length > 0
-      ? data.budgets.map((catBudget: CategoryBudgetType) => {
-          const { category_name, spent, amount, category_id } = catBudget;
+    apiData?.data && !isLoading && !error && apiData.data.length > 0
+      ? apiData.data.map((catBudget: CategoryListType) => {
+          const {
+            category_name,
+            total_balance: spent,
+            total_remaining: remaining,
+            currency_code: currency,
+          } = catBudget;
 
           return {
-            category_id,
+            total_budget: spent + remaining,
             category_name,
             spent,
-            amount,
+            remaining,
+            currency,
           };
         })
       : defaultCategoryBudget;
@@ -89,30 +74,48 @@ function ListCategory() {
   return (
     <>
       {/*LIST CATEGORY  */}
-
       <article className='list__main__container '>
         {budgetList.map((category, indx) => {
           const {
             category_name,
             spent,
-            amount: budget,
+            total_budget: budget,
             currency,
-            category_id,
           } = category;
-          const diff = Math.round(budget - spent);
-          const statusAlert = diff <= 0;
+
+          // const { remaining } = category;
+          const remain = Math.round(-spent + budget);
+          // console.log('remaining', remaining);
+
+          const statusAlert = remain <= 0;
 
           return (
             <div className='box__container .flx-row-sb' key={indx}>
               <BoxRow>
-                <Link to={`/budget/categories/:${category_id}`}>
-                  <div className='box__title box__title--category__name hover '>
-                    {category_name}{' '}
-                  </div>
-                </Link>
+                {/* <Link to={`/budget/categories/:${category_id}`}> */}
+                <div className='box__title box__title--category__name hover '>
+                  {category_name}{' '}
+                </div>
+                {/* </Link> */}
 
-                <div className='box__title--spent'>
-                  spent: {currencyFormat(currency, spent, 'en-US')}{' '}
+                <div
+                  className='box__title--spent  '
+                  style={{
+                    width: 'max-content',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    textAlign: 'right',
+                    borderBottom: '0.5px dashed var(--creme)',
+                  }}
+                >
+                  spent: {currencyFormat(currency, spent, 'en-US')}&nbsp;
+                  <span style={{ fontSize: '0.75rem' }}>
+                    (
+                    {budget === 0
+                      ? ''
+                      : ((spent / budget) * 100).toFixed(1) + '%'}
+                    )
+                  </span>
                 </div>
               </BoxRow>
 
@@ -122,20 +125,20 @@ function ListCategory() {
                     <StatusSquare alert={statusAlert ? 'alert' : ''} />
                     <div className='box__subtitle'>
                       &nbsp;
-                      {/* HAY QUE DEFINIR LA REGLA PARA ESTABLECER EL STATUS */}
-                      {/* {'status:'}{' '} */}
-                      {/* {currencyFormat(currency, diff, 'en-US')}{' '} */}
-                      {/* {budget === 0
-                        ? ''
-                        : (divide(-diff, budget) * 100).toFixed(0) + '%'} */}
-                      &nbsp;
-                      {/* {`${currency ?? '$'}${diff.toFixed(0)}`} */}
                       {numberFormatCurrency(
-                        diff,
+                        remain,
                         0,
                         currency ?? DEFAULT_CURRENCY,
                         'en-US'
                       )}
+                      &nbsp;
+                      <span style={{ fontSize: '0.75rem' }}>
+                        (
+                        {budget === 0
+                          ? ''
+                          : ((1 - spent / budget) * 100).toFixed(1) + '%'}
+                        )
+                      </span>
                     </div>
                   </div>
                 </BoxRow>

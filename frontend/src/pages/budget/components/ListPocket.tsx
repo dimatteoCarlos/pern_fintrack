@@ -1,46 +1,60 @@
 //ListPocket.tsx
-
 import { Link } from 'react-router-dom';
 import { StatusSquare } from '../../../general_components/boxComponents';
 import {
   DEFAULT_CURRENCY,
-  DEFAULT_POCKET_LIST,
+  // DEFAULT_POCKET_LIST,
 } from '../../../helpers/constants';
 import {
   currencyFormat,
   numberFormatCurrency,
 } from '../../../helpers/functions';
 import { PocketsToRenderType } from '../../../types/types';
+import { url_summary_balance_ByType, USER_ID } from '../../../endpoints.ts';
+import {
+  // BalancePocketRespType,
+  // PocketListType,
+  PocketListSummaryType,
+} from '../../../types/responseApiTypes.ts';
+import { useFetch } from '../../../hooks/useFetch.tsx';
 
-// import { useFetch } from '../../../hooks/useFetch.tsx';
+const defaultPocket: PocketsToRenderType[] = [];
 
 function ListPocket() {
-  //List Pocket
   //DATA FETCHING
-  // const{ data, isLoading, error } = useFetch<PocketsType>(url_budget_pocket);//Data Fetching //Este endpoint no existe
+  //List Pocket - get accounts by type:pocket_saving
 
-  //temporary values
-  const data: PocketsToRenderType[] = [],
-    isLoading = false,
-    error = null;
+  const { apiData, isLoading, error } = useFetch<PocketListSummaryType>(
+    `${url_summary_balance_ByType}?type=pocket_saving&user=${USER_ID}`
+  );
+
+  console.log('🚀 ~ ListPocket ~ apiData:', apiData);
+
+  // const pocketList: PocketsToRenderType[] = [];
 
   const pocketList: PocketsToRenderType[] =
-    !isLoading && !error && data?.length
-      ? data?.map(
-          ({ pocketName, description, saved, goal, currency, pocket_id }) => ({
-            pocketName,
-            description,
-            saved,
-            goal,
-            currency,
-            pocket_id,
+    apiData?.data && !isLoading && !error && apiData?.data.length
+      ? apiData?.data.map(
+          // (pocket:PocketListType)
+          ({
+            account_name,
+            account_id,
+            currency_code,
+            total_balance,
+            total_target,
+            note,
+            // total_remaining,
+          }) => ({
+            pocketName: account_name,
+            description: note ?? '',
+            saved: total_balance,
+            goal: total_target,
+            currency: currency_code ?? DEFAULT_CURRENCY,
+            // status:?,
+            pocket_id: account_id,
           })
         )
-      : DEFAULT_POCKET_LIST;
-
-  // en el backend: generar la data segun estructura de los datos a renderizar, es decir,
-  //agrupar para cada pocket el saved y el goal, de cada uno de los movimientos almacenados, la sumatoria de saved se refleja en el saved, ,  y el status seria el resultado de la resta entre el budget - expense de cada categoria, o si se prefiere reflejar el status de una vez, haciendo calculo en backend.
-  //no estoy claro, si los valores o informacion se obtendra de los movimientos de expense realizados en cada categoria, seria desde backend.
+      : defaultPocket;
 
   return (
     <article className='list__main__container '>
@@ -49,7 +63,7 @@ function ListPocket() {
           pocket;
         return (
           <Link
-            to={`/budget/pockets/:${pocket_id}`}
+            to={`pockets/:${pocket_id}`}
             className='card__tile__pocket line__container'
             key={`pockect-${indx}-${pocket_id}`}
           >
@@ -79,7 +93,7 @@ function ListPocket() {
                 </span>
 
                 {/* {'definir regla de negocio, ejemplo: diferencia entre los montos saved y goal'} */}
-                <StatusSquare alert={saved - goal <= 0 ? 'alert' : ''} />
+                <StatusSquare alert={saved - goal < 0 ? 'alert' : ''} />
               </div>
             </div>
           </Link>

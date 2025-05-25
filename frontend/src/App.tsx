@@ -17,10 +17,7 @@ import Layout from './pages/layout/Layout.tsx';
 import BudgetLayout from './pages/budget/BudgetLayout.tsx';
 import DebtsLayout from './pages/debts/DebtsLayout.tsx';
 import OverviewLayout from './pages/overview/OverviewLayout.tsx';
-
-
 import Accounting from './pages/accounting/Accounting.tsx';
-
 import NewCategory from './pages/forms/newCategory/NewCategory.tsx';
 import NewPocket from './pages/forms/newPocket/NewPocket.tsx';
 import NewProfile from './pages/forms/newProfile/NewProfile.tsx';
@@ -45,7 +42,7 @@ function App() {
   const router = createBrowserRouter([
     //access to fintrack app
 
-    { path: '/', element: <Navigate to='/fintrack/'  /> },
+    { path: '/', element: <Navigate to='/fintrack/' /> },
     // { path: '/', element: <Navigate to='/auth/' replace /> },
 
     // //authentication routes
@@ -89,7 +86,6 @@ function App() {
                 //   element: <Investment />,
                 // },
                 { path: '/fintrack/tracker/debts', element: <Debts /> },
-                
               ],
             },
             // main navbar pages

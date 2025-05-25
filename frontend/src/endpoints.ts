@@ -28,7 +28,7 @@ export const url_investment_acc = BASE_URL + '/' + 'investment-accounts'; //not 
 //account_types list
 //http://localhost:5000/api/fintrack/account/type/list
 export const url_account_type_list: string = BASE_URL + '/account/type/list';
-
+//CREATE NEW ACCOUNT 
 //create a new account for types: bank, investment and income_source
 //http://localhost:5000/api/fintrack/account/new_account/account_type
 export const url_create_basic_account: string =
@@ -38,6 +38,7 @@ export const url_create_basic_account: string =
 //http://localhost:5000/api/fintrack/account/new_account/category_budget
 export const url_create_category_budget_account: string =
   BASE_URL + '/account/new_account/category_budget';
+
 //----
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${bank}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
@@ -51,8 +52,8 @@ export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
 export const url_get_accounting_accounts: string =
   BASE_URL + '/account/type/?type= bank_and_investment';
 
-//get the sum of balance of account by account type
-//ex: available budget, only bank accounts
+//get the sum of balance of all accounts of one account type
+//example: former available budget now total balance are only bank accounts
 //for pocket and category budget also get the total goal or budget respectively
 //also, get the balance of income source accounts
 // fintrack dashboardTotalBalanceAccountByType
@@ -66,11 +67,17 @@ export const url_get_total_account_balance_by_type: string =
 export const url_movement_transaction_record: string =
   BASE_URL + '/transaction/transfer-between-accounts';
 
+// ENDPOINTS FOR BUDGET PAGE  
+//accouny list summary by account type and acc name
+//http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=category_budget&user=
+export const url_summary_balance_ByType: string =
+  BASE_URL + '/dashboard/balance/summary/'; //?type=expense&user=
+//=================================================
 //endpoints for OVERVIEWLAYOUT page
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type
 // export const url_get_total_account_balance_by_type: string =
 //   BASE_URL + '/dashboard/balance/type';
-
+//==================================================
 //ENDPOINTS for OVERVIEW page
 
 //dashboardMonthlyTotalAmountByType

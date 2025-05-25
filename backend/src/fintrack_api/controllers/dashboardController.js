@@ -46,8 +46,8 @@ const ERR_RESP = (status, message, controllerName = null) => {
 };
 
 // get: //http://localhost:5000/api/fintrack/dashboard/balance
-//get the total balance account for each group of account type, for all account types. this use for accounting list
-
+//get the total balance account for each group of account type, for all account types. this is used for accounting list
+//------------------------------------------
 export const dashboardTotalBalanceAccounts = async (req, res, next) => {
   let backendColor = 'green';
   const errorColor = 'red';
@@ -131,7 +131,7 @@ ORDER BY account_type_name ASC
 	]
 }
   */
-
+//-------------------------------------------
 export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
   const backendColor = 'cyan';
   const errorColor = 'red';
@@ -147,7 +147,9 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
       '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
       userId,
       req.query,
+      'Body',
       req.body,
+      'type',
       type
     );
 
@@ -181,7 +183,7 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     // TOTAL_BALANCE_QUERY  is used for bank, investment and income_source type account
 
     const TOTAL_BALANCE_QUERY = {
-      text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
+      text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance, CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
       FROM user_accounts ua
 JOIN account_types act ON ua.account_type_id = act.account_type_id
 JOIN currencies ct ON ua.currency_id = ct.currency_id
@@ -190,6 +192,7 @@ GROUP BY ct.currency_code
 `,
       values: [userId, accountType, 'slack'],
     };
+
     //-----------
     const TOTAL_BALANCE_AND_GOAL_BY_TYPE = {
       category_budget: {
@@ -309,10 +312,10 @@ GROUP BY  ct.currency_code
 
 //------------------------------------------------
 //==============================================================================
-//get the total balance for a specific type account
+//get the total balance for 'category_budget', 'debtor' and 'pocket_saving'. Consdiering also goals, budget, target,
+
 //get: //http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=&user=
 
-//para falta calcular los goals, budget, tegarget
 export const dashboardAccountSummaryList = async (req, res, next) => {
   const backendColor = 'yellow';
   const errorColor = 'red';
@@ -373,22 +376,23 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
         values: [userId, accountType, 'slack'],
       },
 
-      pocket_saving: {
-        text: `SELECT ua.account_name, CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance, CAST(SUM(st.target) AS FLOAT ) AS total_target,  ct.currency_code
-  FROM user_accounts ua
-JOIN account_types act ON ua.account_type_id = act.account_type_id
-JOIN pocket_saving_accounts st ON ua.account_id = st.account_id
-JOIN currencies ct ON ua.currency_id = ct.currency_id
+      //for pocket_saving and debtor account,  is like listing the account balance of each account.grouping by currency.
 
-WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
-GROUP BY ua.account_name, ct.currency_code
-ORDER BY total_balance DESC, ua.account_name ASC
+      pocket_saving: {
+        text: `SELECT ua.account_name, ua.account_id, CAST((ua.account_balance) AS FLOAT ) AS total_balance, CAST((st.target) AS FLOAT ) AS total_target,  ct.currency_code
+  FROM user_accounts ua
+  JOIN account_types act ON ua.account_type_id = act.account_type_id
+  JOIN pocket_saving_accounts st ON ua.account_id = st.account_id
+  JOIN currencies ct ON ua.currency_id = ct.currency_id
+  WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+  GROUP BY ua.account_name, ct.currency_code, ua.account_id, st.target
+  ORDER BY total_balance DESC, ua.account_name ASC
 `,
         values: [userId, accountType, 'slack'],
       },
 
       debtor: {
-        text: `SELECT ua.account_name, CAST(SUM(ua.account_balance) AS FLOAT ) AS total_debt_balance, CAST(SUM(CASE WHEN ua.account_balance > 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_receivable,  CAST(SUM(CASE WHEN ua.account_balance < 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_payable,
+        text: `SELECT ua.account_name, ua.account_id, CAST((ua.account_balance) AS FLOAT ) AS total_debt_balance, CAST((CASE WHEN ua.account_balance > 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_receivable,  CAST((CASE WHEN ua.account_balance < 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_payable,
 
         CAST(COUNT(CASE WHEN ua.account_balance>0 THEN 1 ELSE NULL END) AS FLOAT) AS debtor, 
         CAST(COUNT(*) FILTER (WHERE ua.account_balance<0) AS FLOAT) AS creditor, 
@@ -400,7 +404,7 @@ ORDER BY total_balance DESC, ua.account_name ASC
         JOIN currencies ct ON ua.currency_id = ct.currency_id
 
         WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
-        GROUP BY ua.account_name, ct.currency_code
+        GROUP BY ua.account_name, ct.currency_code, ua.account_id
         ORDER BY total_debt_balance DESC, ua.account_name ASC
 `,
         values: [userId, accountType, 'slack'],
@@ -506,7 +510,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   const movement_type_name = movement === 'debts' ? 'debt' : movement;
   const userId = req.body.user ?? req.query.user;
 
-  // console.log('params:', req.body, req.query);
+  console.log('params:', req.body, req.query);
 
   //later add a function to validate type and movement against the types
   //!account_type_name ||
@@ -533,6 +537,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   let tableName;
   let queryModel;
   console.log('mov:', movement_type_name);
+
   switch (movement_type_name) {
     case 'expense':
       tableName = 'category_budget_accounts'; //destination account
@@ -615,7 +620,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     case 'pocket':
       tableName = 'pocket_saving_accounts'; //pocket source/destination account
       queryModel = {
-        text: `SELECT  mt.movement_type_name,ua.account_id, ua.account_name, ua.account_balance,
+        text: `SELECT  mt.movement_type_name, ua.account_id, ua.account_name, ua.account_balance,
         ct.currency_code, act.account_type_id, act.account_type_name,
         psa.target,psa.desired_date,           
         ua.account_starting_amount, ua.account_start_date, 

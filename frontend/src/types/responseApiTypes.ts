@@ -30,12 +30,16 @@ export type BalancePocketRespType = {
   status: number;
   message: string;
   data: {
+    account_name: string | null;
+    account_id?: number | null;
     total_balance: number | null;
     total_target: number | null;
-    total_remaining: number | null;
+    total_remaining?: number | null;
     currency_code: CurrencyType;
+    note?: string | null;
   };
 };
+
 export type BalanceCategoryRespType = {
   status: number;
   message: string;
@@ -245,6 +249,7 @@ type MovementType = {
   movement_type_name: string;
   movement_type_id: number;
 };
+
 type SourceOrDestinationType = {
   account_info: AccountInfo;
   balance_updated: BalanceUpdatedType;
@@ -299,13 +304,13 @@ export type MonthlyDataType = {
 //MOVEMENT TRANSACTIONS BY TYPE
 //LAST MOVEMENTS LIST
 
-export type LastMovementRespType ={
+export type LastMovementRespType = {
   status: number;
   message: string;
   data: MovementTransactionDataType[] | null;
-}
+};
 
-export type MovementTransactionDataType= {
+export type MovementTransactionDataType = {
   movement_type_name: string;
   account_id: number;
   user_id: string;
@@ -329,4 +334,36 @@ export type MovementTransactionDataType= {
   transaction_actual_date: string | Date;
   transaction_type_name: string;
   account_type_name: string;
+};
+
+//CATEGORY LIST SUMMARY
+export interface CategoryListSummaryType {
+  status: number;
+  message: string;
+  data?: CategoryListType[] | null;
 }
+export interface CategoryListType {
+  category_name: string;
+  currency_code: CurrencyType;
+  total_balance: number;
+  total_remaining: number;
+}
+
+//POCKET LIST SUMMARY
+export interface PocketListSummaryType {
+  status: number;
+  message: string;
+  data?: PocketListType[] | null;
+}
+
+export interface PocketListType {
+  account_name: string;
+  account_id: number ;//| null;
+  currency_code: CurrencyType;
+  total_balance: number ;//| null;
+  total_remaining?: number ;//| null;
+  total_target: number ;
+  note: string ;
+}
+
+

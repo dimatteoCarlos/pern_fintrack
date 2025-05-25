@@ -4,13 +4,11 @@ import OpenAddEditBtn from '../../../general_components/OpenAddEditBtn';
 import ListCategory from './ListCategory';
 import ListPocket from './ListPocket';
 
-//do a promise.allSettled with the endpoints for category list, list pocket, al crear una nueva categoria hay que actualizar el total budget, y deberia aparecer alli tambien saved y target?
-
 function Budget() {
   const originRoute = useLocation().pathname;
   const navigateTo: NavigateFunction = useNavigate();
 
-  console.log(originRoute);
+  // console.log(originRoute);
 
   //functions
   const createNewCategory = (originRoute: string) => {

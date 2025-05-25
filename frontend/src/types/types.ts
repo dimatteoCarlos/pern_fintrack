@@ -6,7 +6,6 @@ export type AccountingListType = {
   type: string;
 };
 
-
 //-------------------
 export type CategoriesType = {
   categories?: CategoryType[] | null;
@@ -180,8 +179,8 @@ export type CategoryBudgetListType = {
 
 export type CategoryBudgetType = {
   category_name: string;
-  category_id: number;
-  amount: number; //amount
+  // category_id: number;
+  remaining: number; //amount
   spent: number;
 };
 
@@ -191,9 +190,9 @@ export type PocketsToRenderType = {
   description: string;
   saved: number;
   goal: number;
-  currency?: CurrencyType;
+  currency: CurrencyType;
   status?: number;
-  pocket_id?: number;
+  pocket_id: number;
 };
 //----------------------------------
 export type StatusType = boolean;

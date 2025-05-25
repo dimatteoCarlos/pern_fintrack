@@ -326,7 +326,9 @@ function Expense(): JSX.Element {
     //-------------------------------------------------
     //POST ENDPOINT FOR MOVEMENT TRANSACTION HERE
     //update balance account of bank account and category budget account in: user_accounts table.
+
     //record both transaction descriptions: transfer and receive transactions with the correspondent account info.
+    
     //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=expense
     //user id is sent via req.body
 

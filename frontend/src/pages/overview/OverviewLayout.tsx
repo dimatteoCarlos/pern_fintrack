@@ -1,11 +1,14 @@
+// OverviewLayout.tsx
+
 import Overview from './Overview';
 import { BigBoxResult } from './components/BigBoxResult';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader';
 import { url_get_total_account_balance_by_type } from '../../endpoints';
 import { BalanceIncomeRespType } from '../../types/responseApiTypes';
 import { useFetch } from '../../hooks/useFetch';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import CoinSpinner from '../../loader/coin/CoinSpinner';
+
 import './styles/overview-styles.css';
 // import { Outlet } from 'react-router-dom';
 
@@ -15,6 +18,7 @@ function OverviewLayout() {
   //to be fetched from data bases. Need ENDPOINT to get from backend.
 
   const userId = import.meta.env.VITE_USER_ID;
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   //data fetching balance of account type income_source and category_budget
   const {
     apiData: incomeBalanceApiData,
@@ -46,7 +50,19 @@ function OverviewLayout() {
     expenseBalanceError,
     expenseBalanceStatus
   );
+  //---show error message
+  useEffect(() => {
+    if (incomeBalanceError || expenseBalanceError) {
+      setErrorMessage(incomeBalanceError || expenseBalanceError);
+      const timer = setTimeout(() => {
+        setErrorMessage(null);
+      }, 3000);
 
+      return () => clearTimeout(timer);
+    }
+  }, [incomeBalanceError, expenseBalanceError]);
+
+  //-------------------------
   //remeber income account balance is negative (withdraws) and expense accoutn balance is positive (deposits)
   const { netWorth, totalIncome, totalExpense } = useMemo(() => {
     let totalIncome = incomeBalanceApiData?.data?.total_balance ?? 0;
@@ -88,10 +104,10 @@ function OverviewLayout() {
             position: 'absolute',
             top: '1.5%',
             left: '10%',
-            zIndex: '148',
+            zIndex: '150',
           }}
         >
-          Error: {incomeBalanceError || expenseBalanceError}
+          Error: {errorMessage}
         </p>
       )}
       <Overview />

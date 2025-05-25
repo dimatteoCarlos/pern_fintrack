@@ -302,3 +302,39 @@
 -- FROM user_accounts
 -- WHERE account_id = 37
 
+
+-- group queries
+--       pocket_saving: {
+--         text: `SELECT ua.account_name, CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance, CAST(SUM(st.target) AS FLOAT ) AS total_target,  ct.currency_code
+--   FROM user_accounts ua
+-- JOIN account_types act ON ua.account_type_id = act.account_type_id
+-- JOIN pocket_saving_accounts st ON ua.account_id = st.account_id
+-- JOIN currencies ct ON ua.currency_id = ct.currency_id
+
+-- WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+-- GROUP BY ua.account_name, ct.currency_code
+-- ORDER BY total_balance DESC, ua.account_name ASC
+-- `,
+--         values: [userId, accountType, 'slack'],
+--       },
+
+--       debtor: {
+--         text: `SELECT ua.account_name, CAST(SUM(ua.account_balance) AS FLOAT ) AS total_debt_balance, CAST(SUM(CASE WHEN ua.account_balance > 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_receivable,  CAST(SUM(CASE WHEN ua.account_balance < 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_payable,
+
+--         CAST(COUNT(CASE WHEN ua.account_balance>0 THEN 1 ELSE NULL END) AS FLOAT) AS debtor, 
+--         CAST(COUNT(*) FILTER (WHERE ua.account_balance<0) AS FLOAT) AS creditor, 
+--         ct.currency_code
+        
+--         FROM user_accounts ua
+--         JOIN account_types act ON ua.account_type_id = act.account_type_id
+--         JOIN debtor_accounts st ON ua.account_id = st.account_id
+--         JOIN currencies ct ON ua.currency_id = ct.currency_id
+
+--         WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+--         GROUP BY ua.account_name, ct.currency_code
+--         ORDER BY total_debt_balance DESC, ua.account_name ASC
+-- `,
+--         values: [userId, accountType, 'slack'],
+--       },
+--     };
+

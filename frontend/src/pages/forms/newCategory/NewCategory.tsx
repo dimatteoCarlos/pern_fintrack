@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
+
 import { Link } from 'react-router-dom';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import { validationData } from '../../../helpers/functions.ts';
@@ -14,6 +14,7 @@ import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
 import { url_create_category_budget_account } from '../../../endpoints.ts';
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+// import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
 // import { useLocation } from 'react-router-dom';
 
 //----Category Nature Tiles---------------
@@ -101,11 +102,11 @@ function NewCategory() {
     }
   }
   //---------
-  function addHandler(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    //adding function
-    console.log('addHandler subcategory method PENDING to define');
-  }
+  // function addHandler(e: React.MouseEvent<HTMLButtonElement>) {
+  //   e.preventDefault();
+  //   //adding function
+  //   console.log('addHandler subcategory method PENDING to define');
+  // }
   //---------
   function natureHandler(e: React.MouseEvent<HTMLButtonElement>) {
     // console.log('natureHandler', e.currentTarget.id);
@@ -228,16 +229,18 @@ function NewCategory() {
               <input
                 type='text'
                 className={`input__container`}
-                placeholder={`category name`}
+                placeholder={`subcategory name`}
                 name={'subcategory'}
                 onChange={inputHandler}
                 value={categoryData.subcategory}
               />
             </div>
-            <button className={'input__container'} onClick={addHandler}>
+
+            {/* functionalitiy logic and data structure for this add button of subcategories is PENDING */}
+
+            {/* <button className={'input__container'} onClick={addHandler}>
               <PlusSignSvg />
-              {/* functionalitiy and data structure for this add button of  subcategories is PENDING */}
-            </button>
+            </button> */}
 
             <div className='input__box'>
               <LabelNumberValidation
