@@ -1,5 +1,5 @@
 //NewPocket.tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { Link, useLocation } from 'react-router-dom';
@@ -9,45 +9,92 @@ import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
 import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
 import '../styles/forms-styles.css';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.tsx';
-//----Temporary initial values----------
+import { CreatePocketSavingAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+import { url_create_pocket_saving_account } from '../../../endpoints.ts';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
+import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+//----Type definitions and constants ----------
 type PocketDataType = {
   name: string;
+  // amount?: number | '';
   note: string;
-  target: number | '';
-  saved?: number;
-  date: Date;
   currency?: CurrencyType;
+  desiredDate: Date;
+  target: number | '';
 };
+
+type PocketSavingPayloadType = {
+  name: string;
+  note: string;
+  type: 'pocket_saving';
+  target: number | '';
+  desired_date: Date;
+  currency?: CurrencyType;
+  user: string;
+  // saved?: number;
+};
+const defaultCurrency = DEFAULT_CURRENCY;
+
 const initialNewPocketData: PocketDataType = {
   name: '',
   note: '',
-  target: '',
-  date: new Date(),
+  // amount: 0,
+  target: 0,
+  desiredDate: new Date(),
+  currency: defaultCurrency,
 };
 const formDataNumber = { keyName: 'target', title: 'target' };
+
 const initialFormData: FormNumberInputType = {
-  target: '',
+  [formDataNumber.keyName]: '',
 };
+
 //-------------------------
 function NewPocket() {
   const location = useLocation();
+  //get userId from stores
+  const user: string = import.meta.env.VITE_USER_ID;
   //where to get saved
-  const saved = 'alguito'; //Need to define what this is.
+  // const saved = 'alguito'; //Need to define what this is.
   //---states------
+  // const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
+
+  const [formData, setFormData] =
+    useState<FormNumberInputType>(initialFormData);
+
   const [pocketData, setPocketData] =
     useState<PocketDataType>(initialNewPocketData);
+
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
   }>({});
+
   const [isReset, setIsReset] = useState<boolean>(false);
-  const [formData, setFormData] =
-    useState<FormNumberInputType>(initialFormData);
-  //functions---
+
+  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
+    null
+  );
+
+  //------------------------------------------------
+  //DATA FETCHING POST
+  //POST: NEW ACCOUNT DATA
+  //endpoint: http://localhost:5000/api/fintrack/account/new_account/pocket_saving
+  const { data, isLoading, error, requestFn } = useFetchLoad<
+    CreatePocketSavingAccountApiResponseType,
+    PocketSavingPayloadType
+  >({ url: url_create_pocket_saving_account, method: 'POST' });
+
+  //--------------------------------------
+  //event handler hook for number input handling
   const { inputNumberHandlerFn } = useInputNumberHandler(
     setFormData,
     setValidationMessages,
     setPocketData
   );
+
+  //functions---
+  // input handling
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
@@ -57,53 +104,91 @@ function NewPocket() {
       setPocketData((prev) => ({ ...prev, [name]: value }));
     }
   }
+
   //--
   function changeDesiredDate(selectedDate: Date): void {
     setPocketData((data) => ({
       ...data,
+      desiredDate: selectedDate,
       // desiredDate: selectedDate.toDateString(),
-      date: selectedDate,
     }));
   }
-  //---
-  function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
+
+  //FORM SUBMISSION ---
+  async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     console.log('onSubmitForm');
+
+    // Form validation
     const newValidationMessages = { ...validationData(pocketData) };
-    // console.log('mensajes de validacion:', { newValidationMessages });
+    console.log('mensajes de validacion:', { newValidationMessages });
+
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
       return;
     }
-    //-------------------------------------------------------
+    //----------------------------------------------------
     //POST the new pocket data into database
+    //  Prepare and send payload
 
-    console.log('New pocket data to POST:', { pocketData });
-    console.log('check this:', formData, formDataNumber);
+    try {
+      const payload: PocketSavingPayloadType = {
+        name: pocketData.name.toLowerCase().trim(),
+        note: pocketData.note,
+        type: 'pocket_saving',
+        currency: pocketData.currency ?? defaultCurrency, //by default
+        target: pocketData.target ?? initialNewPocketData.target,
+        desired_date: pocketData.desiredDate ?? new Date(), // ISO format
+        user,
+      };
 
-    const pocketAccountData = {
-      type: 'pocket_saving',
-      name: pocketData.name,
-      currency: 'usd',
-      amount: formDataNumber.keyName || pocketData.target,
-      date: new Date(),
-      //---
-      target: formDataNumber.keyName || pocketData.target,
-      desired_date: pocketData.date, //desired date
-      note: pocketData.note,
-    };
-    console.log(pocketAccountData);
+      const data = await requestFn(payload);
 
-    //-------------------------------------------------------
-    //resetting form values
-    setIsReset(true);
-    setValidationMessages({});
-    setFormData(initialFormData);
+      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+        console.log('Data from New Pocket request:', data);
+      }
 
-    setPocketData(initialNewPocketData);
-    setPocketData((prev) => ({ ...prev, date: new Date() }));
-    setTimeout(() => setIsReset(false), 500);
+      console.log('New pocket data to POST:', { payload });
+      console.log('check this:', formData, formDataNumber);
+
+      //---------------------------------------------------
+      //resetting form values
+      setIsReset(true);
+      setValidationMessages({});
+      setFormData(initialFormData);
+
+      setPocketData(initialNewPocketData);
+      // setPocketData((prev) => ({ ...prev, desiredDate: new Date() }));
+      setTimeout(() => setIsReset(false), 500);
+    } catch (error) {
+      console.error('Error when posting data:', error);
+    }
   }
+
+  //-----------------------
+  useEffect(() => {
+    if (data && !isLoading && !error) {
+      //success response
+      setMessageToUser(
+        data.message || 'Pocket saving account successfully created!'
+      );
+      console.log('Received data:', data);
+    } else if (!isLoading && error) {
+      setMessageToUser(error);
+    }
+
+    //resetting message to user
+    const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
+      setMessageToUser(null);
+    }, 10000);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [data, error, isLoading]);
+
+  // //-----------------------
+
   return (
     <section className='newPocket__page page__container'>
       <TopWhiteSpace variant={'dark'} />
@@ -128,6 +213,7 @@ function NewPocket() {
                   {validationMessages['name']}
                 </span>
               </label>
+
               <input
                 type='text'
                 className={`input__container`}
@@ -169,27 +255,14 @@ function NewPocket() {
                 {validationMessages[formDataNumber.keyName]}
               </div>
             </label>
-            <div className='targetAmount input__container '>
-              <div className='target__label__amount'>
-                <label
-                  htmlFor={formDataNumber.keyName}
-                  className='label label__target'
-                >
-                  {formDataNumber.title}&nbsp;
-                </label>
-                <input
-                  className={'input__targetAmount'}
-                  type='text'
-                  name={formDataNumber.keyName}
-                  placeholder={formDataNumber.keyName}
-                  onChange={inputHandler}
-                  value={formData[formDataNumber.keyName]}
-                />
-              </div>
-              <div className='target__label__saved'>
-                saved: {pocketData['saved'] ?? saved}
-              </div>
-            </div>
+            <input
+              type='text'
+              className={`input__container`}
+              onChange={inputHandler}
+              name={formDataNumber.keyName}
+              placeholder={formDataNumber.keyName}
+              value={formData[formDataNumber.keyName]}
+            />
             {/* datepicker */}
             <label className='label '>
               {'Desired Date'}&nbsp;
@@ -200,7 +273,7 @@ function NewPocket() {
             <div className='form__datepicker__container'>
               <FormDatepicker
                 changeDate={changeDesiredDate}
-                date={pocketData.date}
+                date={pocketData.desiredDate}
                 variant={'form'}
                 isReset={isReset}
               />
@@ -209,6 +282,11 @@ function NewPocket() {
           {/* save button */}
           <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
         </form>
+        <MessageToUser
+          isLoading={isLoading}
+          error={error}
+          messageToUser={messageToUser}
+        />
       </div>
     </section>
   );

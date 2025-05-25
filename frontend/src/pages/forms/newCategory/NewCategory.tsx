@@ -1,3 +1,6 @@
+//NewCategory.tsx
+
+
 import { useEffect, useState } from 'react';
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
@@ -19,7 +22,7 @@ import { MessageToUser } from '../../../general_components/messageToUser/Message
 
 //----Category Nature Tiles---------------
 const tileTitle = 'Category Nature';
-//-------data config---------------------------------------
+//-------data config----------------------------------
 type CategoryDataType = {
   category: string;
   subcategory: string;
@@ -45,10 +48,12 @@ const initialNewCategoryData: CategoryDataType = {
   amount: '',
   nature: '',
 };
+
 const formDataNumber = { keyName: 'amount', title: 'budget' };
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
 };
+
 //------------------------
 function NewCategory() {
   //get userId from stores
@@ -76,14 +81,12 @@ function NewCategory() {
 
   //endpoint: http://localhost:5000/api/fintrack/account/new_account/category_budget
   //------------------------------------------------
-  //DATA FETCHING
-
+  //DATA FETCHING POST
   //POST: NEW ACCOUNT DATA
   const { data, isLoading, error, requestFn } = useFetchLoad<
     CreateCategoryBudgetAccountApiResponseType,
     CategoryBudgetPayloadType
   >({ url: url_create_category_budget_account, method: 'POST' });
-
   //--------------------------------------
   //functions
   const { inputNumberHandlerFn } = useInputNumberHandler(
@@ -91,7 +94,7 @@ function NewCategory() {
     setValidationMessages,
     setCategoryData
   );
-  //---------
+  //FUNCTIONS---------
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
@@ -101,7 +104,7 @@ function NewCategory() {
       setCategoryData((prev) => ({ ...prev, [name]: value }));
     }
   }
-  //---------
+  //--NEED TO RE DEFINE THIS FUNCTION
   // function addHandler(e: React.MouseEvent<HTMLButtonElement>) {
   //   e.preventDefault();
   //   //adding function
@@ -154,13 +157,12 @@ function NewCategory() {
       if (import.meta.env.VITE_ENVIRONMENT === 'development') {
         console.log('Data from New Category request:', data);
       }
-
       //-------------------------------------------
       //resetting form values
       setActiveNature(initialNewCategoryData.nature);
-      setCategoryData(initialNewCategoryData);
       setValidationMessages({});
       setFormData(initialFormData);
+      setCategoryData(initialNewCategoryData);
     } catch (error) {
       console.error('Error when posting data:', error);
     }
@@ -226,6 +228,7 @@ function NewCategory() {
               <span className='validation__errMsg'>
                 {validationMessages['subcategory']}
               </span>
+
               <input
                 type='text'
                 className={`input__container`}
@@ -248,6 +251,7 @@ function NewCategory() {
                 validationMessages={validationMessages}
                 variant={VARIANT_FORM}
               />
+              
               <input
                 className={'input__container'}
                 type='text'

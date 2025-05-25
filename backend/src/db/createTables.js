@@ -59,10 +59,12 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
 
   {
     tblName: `pocket_saving_accounts`,
-    table: `CREATE TABLE IF NOT EXISTS pocket_saving_accounts (account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), target DECIMAL(15, 2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,  desired_date TIMESTAMP NOT NULL,account_start_date TIMESTAMP NOT NULL)`,
+    table: `CREATE TABLE IF NOT EXISTS pocket_saving_accounts (account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), target DECIMAL(15, 2),
+    note  VARCHAR(155), 
+    desired_date TIMESTAMP NOT NULL,account_start_date TIMESTAMP NOT NULL)`,
   },
 
-  // -----n
+  // -----
   {
     tblName: 'movements',
     table: `CREATE TABLE IF NOT EXISTS movements (

@@ -28,7 +28,8 @@ export const url_investment_acc = BASE_URL + '/' + 'investment-accounts'; //not 
 //account_types list
 //http://localhost:5000/api/fintrack/account/type/list
 export const url_account_type_list: string = BASE_URL + '/account/type/list';
-//CREATE NEW ACCOUNT 
+
+//CREATE NEW ACCOUNT
 //create a new account for types: bank, investment and income_source
 //http://localhost:5000/api/fintrack/account/new_account/account_type
 export const url_create_basic_account: string =
@@ -39,7 +40,12 @@ export const url_create_basic_account: string =
 export const url_create_category_budget_account: string =
   BASE_URL + '/account/new_account/category_budget';
 
-//----
+//create a pocket_saving account
+//http://localhost:5000/api/fintrack/account/new_account/pocket_saving
+export const url_create_pocket_saving_account: string =
+  BASE_URL + '/account/new_account/pocket_saving';
+
+//----GET ALL ACCOUNTS INFO OF A SPECIFIC ACCOUNT TYPE
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${bank}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
 //ex:for expense tracker, types used are: bank or category_budget,
@@ -67,7 +73,7 @@ export const url_get_total_account_balance_by_type: string =
 export const url_movement_transaction_record: string =
   BASE_URL + '/transaction/transfer-between-accounts';
 
-// ENDPOINTS FOR BUDGET PAGE  
+// ENDPOINTS FOR BUDGET PAGE
 //accouny list summary by account type and acc name
 //http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=category_budget&user=
 export const url_summary_balance_ByType: string =

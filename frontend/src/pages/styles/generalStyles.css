@@ -239,6 +239,10 @@ input[type='number'] {
   font-weight: normal;
   width: 50%;
 }
+/*target amount*/
+.form__title1 .validation__errMsg {
+  width: 100%;
+}
 
 .hover:hover {
   color: var(--hoverColor, cyan);

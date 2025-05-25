@@ -138,7 +138,6 @@ interface CounterAccountDataType {
 }
 
 //CREATE CATEGORY BUDGET ACCOUNT
-
 export type CreateCategoryBudgetAccountApiResponseType = {
   status: number;
   data: CategoryBudgetResponseDataType;
@@ -162,7 +161,6 @@ type CategoryBudgetAccountType = {
 };
 
 //CREATE DEBTOR ACCOUNT
-
 export type CreateDebtorAccountApiResponseType = {
   status: number;
   data: DebtorResponseDataType;
@@ -185,16 +183,27 @@ type DebtorAccountType = {
   account_type_name: 'debtor';
 };
 
-//CREATE POCKET ACCOUNT
-// PENDIENTE
-// new_pocket_saving_account: {
-// 			account_id: 199,
-// 			target: 0.00,
-// 			desired_date: 2025-12-31T04:00:00.000Z,
-// 			account_start_date: 2025-03-21T20:02:24.191Z,
-// 			currency_code: usd,
-// 			account_type_name: pocket_saving
-// 		},
+//CREATE POCKET SAVING ACCOUNT
+
+export type CreatePocketSavingAccountApiResponseType = {
+  status: number;
+  data: PocketResponseDataType;
+  message: string;
+};
+
+interface PocketResponseDataType extends ResponseDataType {
+  new_pocket_saving_account: PocketSavingAccountType;
+}
+
+type PocketSavingAccountType = {
+  account_id: number;
+  note: string;
+  target: number; //| string;
+  desired_date: Date | string;
+  account_start_date: Date | string;
+  // currency_code: CurrencyType;
+  // account_type_name: pocket_saving
+};
 
 //GET ACCOUNT BY TYPE. RESPONSE TYPE
 //bank type
@@ -358,12 +367,10 @@ export interface PocketListSummaryType {
 
 export interface PocketListType {
   account_name: string;
-  account_id: number ;//| null;
+  account_id: number; //| null;
   currency_code: CurrencyType;
-  total_balance: number ;//| null;
-  total_remaining?: number ;//| null;
-  total_target: number ;
-  note: string ;
+  total_balance: number; //| null;
+  total_remaining?: number; //| null;
+  total_target: number;
+  note: string;
 }
-
-

@@ -675,7 +675,8 @@ export const createPocketAccount = async (req, res, next) => {
 
   try {
     //implement verifyUser middleware and then get userId from res.user
-    const { user: userId } = req.query;
+    const { user: userId } = req.body ?? req.query;
+
     if (!userId) {
       const message = 'User ID is required';
       console.warn(pc.blueBright(message));
@@ -684,14 +685,15 @@ export const createPocketAccount = async (req, res, next) => {
     //data from new pocket saving form
     const {
       name,
-      targetAmount,
+      target: targetAmount,
       transactionTypeName,
       note,
-      sourceAccountId,
-      sourceAccountName,
+      // sourceAccountId,
+      // sourceAccountName,
     } = req.body;
     const { currency, date, transactionActualDate, amount } = req.body;
 
+    console.log(req.body, 'desde el principio de pocket', targetAmount);
     //at creation transactionTypeName must always be deposit or account-opening
     const transaction_type_name = transactionTypeName
       ? transactionTypeName
@@ -718,8 +720,13 @@ export const createPocketAccount = async (req, res, next) => {
       return res.status(400).json({ status: 400, message });
     }
     const account_starting_amount = amount ? parseFloat(amount) : 0.0;
+
     const target =
-      targetAmount && !targetAmount < 0 ? parseFloat(targetAmount) : 0.0;
+      targetAmount && parseFloat(targetAmount) >= 0
+        ? parseFloat(targetAmount)
+        : 0.0;
+
+    console.log('target', target, targetAmount);
 
     const transaction_actual_date =
       !transactionActualDate || transactionActualDate == ''
@@ -767,6 +774,7 @@ export const createPocketAccount = async (req, res, next) => {
       (currency) => currency.currency_code === currency_code
     )[0].currency_id;
     console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
+
     //--POCKET_SAVING ACCOUNT -----
     //---pocket_initial_balance
     const transactionAmount =
@@ -788,11 +796,11 @@ export const createPocketAccount = async (req, res, next) => {
       account_start_date ?? transaction_actual_date
     );
     const account_id = account_basic_data.account_id;
-    //---------------------------------------------------------------
+    //-----------------------------------------------------
     //---INSERT POCKET ACCOUNT into pocket_saving_accounts table
     const pocket_saving_accountQuery = {
-      text: `INSERT INTO pocket_saving_accounts (account_id,target,desired_date,account_start_date) VALUES ($1,$2,$3,$4) RETURNING *`,
-      values: [account_id, target, desired_date, account_start_date],
+      text: `INSERT INTO pocket_saving_accounts (account_id,target , desired_date, account_start_date, note ) VALUES ($1,$2::FLOAT,$3,$4, $5) RETURNING *`,
+      values: [account_id, target, desired_date, account_start_date, note],
     };
     const pocket_saving_accountResult = await pool.query(
       pocket_saving_accountQuery
@@ -803,6 +811,9 @@ export const createPocketAccount = async (req, res, next) => {
       currency_code,
       account_type_name,
     };
+
+    console.log('vergacion', pocket_saving_account);
+
     //---------------------------------------------------------------
     //DETERMINE THE TRANSACTION TYPE FOR NEW POCKET ACCOUNT AND FOR COUNTER ACCOUNT (SLACK)
     const transactionTypeDescriptionObj = determineTransactionType(
@@ -854,7 +865,7 @@ export const createPocketAccount = async (req, res, next) => {
     const counterAccountTransactionAmount = -transactionAmount;
 
     const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} of type: bank with number: ${counterAccountInfo.account.account_id}. Amount:${counterAccountTransactionAmount} ${currency_code}. Account reference: ${account_name})`;
-    //-------------------------------------------------------------
+    //----------------------------------------------------
     //-------------SLACK COUNTER ACCOUNT INFO ------
     const slackCounterAccountInfo = {
       user_id: userId,
