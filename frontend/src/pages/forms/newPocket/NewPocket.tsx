@@ -17,11 +17,11 @@ import { MessageToUser } from '../../../general_components/messageToUser/Message
 //----Type definitions and constants ----------
 type PocketDataType = {
   name: string;
-  // amount?: number | '';
   note: string;
   currency?: CurrencyType;
   desiredDate: Date;
   target: number | '';
+  // amount?: number | '';
 };
 
 type PocketSavingPayloadType = {
@@ -44,6 +44,7 @@ const initialNewPocketData: PocketDataType = {
   desiredDate: new Date(),
   currency: defaultCurrency,
 };
+
 const formDataNumber = { keyName: 'target', title: 'target' };
 
 const initialFormData: FormNumberInputType = {
@@ -58,19 +59,20 @@ function NewPocket() {
   //where to get saved
   // const saved = 'alguito'; //Need to define what this is.
   //---states------
-  // const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
-
-  const [formData, setFormData] =
-    useState<FormNumberInputType>(initialFormData);
 
   const [pocketData, setPocketData] =
     useState<PocketDataType>(initialNewPocketData);
+
+  // const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
 
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
   }>({});
 
   const [isReset, setIsReset] = useState<boolean>(false);
+
+  const [formData, setFormData] =
+    useState<FormNumberInputType>(initialFormData);
 
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
@@ -105,7 +107,7 @@ function NewPocket() {
     }
   }
 
-  //--
+  //---
   function changeDesiredDate(selectedDate: Date): void {
     setPocketData((data) => ({
       ...data,
@@ -114,6 +116,7 @@ function NewPocket() {
     }));
   }
 
+  //--------------------
   //FORM SUBMISSION ---
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
@@ -180,7 +183,7 @@ function NewPocket() {
     //resetting message to user
     const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
       setMessageToUser(null);
-    }, 10000);
+    }, 1000);
 
     return () => {
       if (timer) clearTimeout(timer);
@@ -223,6 +226,7 @@ function NewPocket() {
                 value={pocketData['name']}
               />
             </div>
+
             <div className='input__box'>
               <label htmlFor='note' className='label form__title'>
                 {'Note'}&nbsp;
@@ -255,6 +259,7 @@ function NewPocket() {
                 {validationMessages[formDataNumber.keyName]}
               </div>
             </label>
+            
             <input
               type='text'
               className={`input__container`}

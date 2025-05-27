@@ -6,7 +6,7 @@ import {
 } from '../types/types';
 
 //------------------------
-export const PAGE_LOC_NUM = 3
+export const PAGE_LOC_NUM = 3;
 
 //-------------------------
 export const CURRENCY_OPTIONS = { usd: 'en-US', cop: 'cop-CO', eur: 'en-US' };
@@ -82,9 +82,8 @@ export const ACCOUNT_TYPE_DEFAULT: DropdownOptionType[] = [
 ];
 
 //pages/debts/ListPocket.tsx
-
-
- export const DEFAULT_POCKET_LIST: PocketsToRenderType[] = [
+//just a DEMO
+export const DEFAULT_POCKET_LIST: PocketsToRenderType[] = [
   {
     pocketName: 'Name Pocket 01',
     description: 'Description 01',
@@ -92,6 +91,7 @@ export const ACCOUNT_TYPE_DEFAULT: DropdownOptionType[] = [
     goal: Math.random() * 100,
     status: Math.floor((Math.random() - 0.5) * 100),
     pocket_id: 4,
+    currency: 'usd',
   },
   {
     pocketName: 'Name Pocket 02',
@@ -120,8 +120,6 @@ export const ACCOUNT_TYPE_DEFAULT: DropdownOptionType[] = [
 ];
 
 //account detail
-
-
 
 export const DEFAULT_LAST_MOVEMENTS = [
   {

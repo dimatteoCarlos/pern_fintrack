@@ -7,7 +7,7 @@ const ProtectedRoute = () => {
   const location = useLocation();
 
   const { isAuthenticated, setShowSignInModalOnLoad } = useAuth();
-  console.log('iasAuthenticated', isAuthenticated);
+  console.log('isAuthenticated', isAuthenticated);
 
   useEffect(() => {
     if (!isAuthenticated) {

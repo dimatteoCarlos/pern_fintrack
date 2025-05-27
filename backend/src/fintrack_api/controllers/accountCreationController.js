@@ -367,7 +367,7 @@ export const createDebtorAccount = async (req, res, next) => {
   const client = await pool.connect();
   try {
     //implement verifyUser middleware and then get userId from res.user
-    const { user: userId } = req.query;
+    const userId = req.body.user ?? req.query.user;
     if (!userId) {
       const message = 'User ID is required';
       console.warn(pc.blueBright(message));
@@ -375,9 +375,9 @@ export const createDebtorAccount = async (req, res, next) => {
     }
     //data from debt new profile form - frontend fintrack
     const {
-      debtor_lastname,
-      debtor_name,
-      value,
+      lastname: debtor_lastname,
+      name: debtor_name,
+      amount: value,
       selected_account_name, //verify what is this for in DEBTOR INPUT?
       selectedAccountInput, //optional
       type: debtor_transaction_type, //here type is transaction type name (lending/borrowing), meanwhile in other input to create other accounts, it refers to type of account (bank, pocket_saving, ecc).  Check fintrack frontend.
@@ -418,7 +418,7 @@ export const createDebtorAccount = async (req, res, next) => {
         : transactionActualDate;
     //---------------------------------------
     // console.log(pc.cyan(`userId: ${userId}`));
-    // console.log('dateInput:', transactionActualDate, transaction_actual_date);
+    console.log('dateInput:', transactionActualDate, transaction_actual_date);
     //---------------------------------------
     //currency and account_type data, are better defined by frontend
     if (!account_type_name || !currency_code || !account_name) {
@@ -457,7 +457,7 @@ export const createDebtorAccount = async (req, res, next) => {
 
     console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
     //----------------------------------------
-    //--DEBTOR ACCOUNT -----
+    //--DEBTOR ACCOUNT --------
     //---debtor_initial_balance
     const transactionAmount =
       debtor_transaction_type_name === 'borrow' && value !== 0
@@ -483,7 +483,9 @@ export const createDebtorAccount = async (req, res, next) => {
     //---------------------------------------------------------------
     //---INSERT DEBTOR ACCOUNT into debtor_accounts table
     const debtorInsertQuery = {
-      text: `INSERT INTO debtor_accounts (account_id, debtor_lastname, debtor_name, value,currency_id, selected_account_name, selected_account_id, account_start_date) 
+      text: `INSERT INTO debtor_accounts (account_id, debtor_lastname, debtor_name, value,
+      currency_id,
+       selected_account_name, selected_account_id, account_start_date) 
              VALUES ($1, $2, $3, $4, $5, $6, $7,$8) RETURNING *`,
       values: [
         account_id,
@@ -502,7 +504,7 @@ export const createDebtorAccount = async (req, res, next) => {
       currency_code,
       account_type_name,
     };
-    //---------------------------------------------------------------
+    //--------------------------------------------------------
     //DETERMINE THE TRANSACTION TYPE FOR NEW DEBTOR ACCOUNT AND FOR COUNTER ACCOUNT (SLACK)
     const transactionTypeDescriptionObj = determineTransactionType(
       transactionAmount,
@@ -539,7 +541,7 @@ export const createDebtorAccount = async (req, res, next) => {
       account_type_id: account_basic_data.account_type_id,
       balance: newAccountBalance,
     };
-    //------- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT)------
+    //--- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT OR BANK ACCOUNT SELECTED)------
     //check whether slack account exists if not create it with start amount and balance = 0
     //slack account or counter account, is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation
     const counterAccountInfo = await checkAndInsertAccount(userId, 'slack');
@@ -550,7 +552,7 @@ export const createDebtorAccount = async (req, res, next) => {
     const counterAccountTransactionAmount = -transactionAmount;
 
     const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} of type: bank, with number: ${counterAccountInfo.account.account_id}. Amount: ${counterAccountTransactionAmount} ${currency_code}. Account reference: ${account_name}). Date: ${transaction_actual_date}`;
-    //-------------------------------------------------------------
+    //---------------------------------------------------------
     //-------------SLACK COUNTER ACCOUNT INFO ------
     const slackCounterAccountInfo = {
       user_id: userId,
@@ -584,14 +586,14 @@ export const createDebtorAccount = async (req, res, next) => {
     const { destination_account_id, source_account_id, isAccountOpening } =
       determineSourceAndDestinationAccounts(newAccountInfo, counterAccountInfo);
 
-    //------------------------------------------------------------
+    //-------------------------------------------------------
     //------- RECORD TRANSACTION INTO transactions table ----
-    //------------------------------------------------------------
+    //-------------------------------------------------------
     //--------Rules to register  a transaction
     //movement_type_name:account-opening, movement_type_id: 8,  transaction_type_name:lend/borrow/account-opening, transaction_type_id: 3/4/5
     //nombre de la cuenta principal- tipo de cuenta -initial-transaction type name
     //*************************************
-    //------MOVEMENT TYPE ASSOCIATED TO CREATE A NEW ACCOUNT ---
+    //----MOVEMENT TYPE ASSOCIATED TO CREATE A NEW ACCOUNT ---
     const movement_type_id = 8; //account opening
     //--------REGISTER NEW ACCOUNT TRANSACTION -------
     const transactionOption = prepareTransactionOption(
@@ -662,7 +664,8 @@ export const createDebtorAccount = async (req, res, next) => {
     client.release();
   }
 };
-//----------------------
+//-------------------------------------------------
+//-------------------------------------------------
 //POST: http://localhost:5000/api/fintrack/account/new_account/pocket_saving?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c
 //ADAPTAR CREATEPOCKET ACCOUNT A UNA TRANSFERENCIA ENTRE CUENTAS
 export const createPocketAccount = async (req, res, next) => {
@@ -812,9 +815,9 @@ export const createPocketAccount = async (req, res, next) => {
       account_type_name,
     };
 
-    console.log('vergacion', pocket_saving_account);
+    // console.log('checked', pocket_saving_account);
 
-    //---------------------------------------------------------------
+    //-------------------------------------------------------
     //DETERMINE THE TRANSACTION TYPE FOR NEW POCKET ACCOUNT AND FOR COUNTER ACCOUNT (SLACK)
     const transactionTypeDescriptionObj = determineTransactionType(
       transactionAmount,
@@ -855,8 +858,12 @@ export const createPocketAccount = async (req, res, next) => {
       balance: parseFloat(account_balance),
     };
     //---- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT)------
+    //a fictitious counter account is created to be a counter account of creating account when initial amount is greater than 0. Frontend must be checked.
+
     //check whether slack account exists if not create it with start amount and balance = 0
+
     //slack account or counter account, is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation
+
     const counterAccountInfo = await checkAndInsertAccount(userId, 'slack');
 
     const newCounterAccountBalance =
@@ -896,7 +903,7 @@ export const createPocketAccount = async (req, res, next) => {
     //--- determine which account serves as a SOURCE OR DESTINATION account
     const { destination_account_id, source_account_id, isAccountOpening } =
       determineSourceAndDestinationAccounts(newAccountInfo, counterAccountInfo);
-    //------------------------------------------------------------
+    //---------------------------------------------------------
     //--------REGISTER NEW ACCOUNT TRANSACTION -------
     //--------Rules to register  a transaction
     //movement_type_name:account-opening, movement_type_id: 8,  transaction_type_name:deposit/account-opening, transaction_type_id: 2/5 evenually withdraw is allowed but not recomnended
@@ -968,7 +975,7 @@ export const createPocketAccount = async (req, res, next) => {
     client.release();
   }
 };
-//-------------------------------------------------------------------
+//-----------------------------------------------------------
 //POST: http://localhost:5000/api/fintrack/account/new_account/category_budget?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c
 //this is an OLD VERSION go to accountCategoryCreationcontroller.js
 export const createCategoryBudgetAccount = async (req, res, next) => {
@@ -1232,4 +1239,4 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     client.release();
   }
 };
-//--------------------------
+//--------------------------------------------------------

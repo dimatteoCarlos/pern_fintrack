@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { Link, useLocation } from 'react-router-dom';
@@ -7,13 +7,18 @@ import DropDownSelection from '../../../general_components/dropdownSelection/Dro
 import '../styles/forms-styles.css';
 import { useFetch } from '../../../hooks/useFetch.tsx';
 import {
+  CurrencyType,
   DropdownOptionType,
-  ExpenseAccountsType,
+  // ExpenseAccountsType,
 } from '../../../types/types.ts';
-import { url_accounts } from '../../../endpoints.ts';
+import {
+  // url_accounts,
+  url_create_debtor_account,
+  url_get_accounts_by_type,
+} from '../../../endpoints.ts';
 import {
   ACCOUNT_OPTIONS_DEFAULT,
-  CURRENCY_OPTIONS,
+  // CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   TYPEDEBTS_OPTIONS_DEFAULT,
   VARIANT_FORM,
@@ -21,36 +26,56 @@ import {
 import { capitalize, validationData } from '../../../helpers/functions.ts';
 import { FormNumberInputType } from '../../../types/types.ts';
 import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
+import {
+  AccountByTypeResponseType,
+  CreateDebtorAccountApiResponseType,
+} from '../../../types/responseApiTypes.ts';
+import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
+// import ProtectedRoute from '../../auth/ProtectedRoute.tsx';
 
 //-----temporarily 'till decide how to handle currencies
 const defaultCurrency = DEFAULT_CURRENCY;
-const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
+// const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // console.log('', { formatNumberCountry });
 
-//----Temporary initial values----------
-type ProfileDataType = {
+//----Type definitions, initialization and constants ----------
+type ProfileInputDataType = {
   name: string;
   lastname: string;
   account: string;
   type: string;
   amount: number | '';
+  currency?: CurrencyType;
 };
-const initialNewProfileData: ProfileDataType = {
+
+type ProfilePayloadType = {
+  name: string;
+  lastname: string;
+  transaction_type: string;
+  account_type: 'debtor';
+  amount: number | '';
+  currency?: CurrencyType;
+  user: string;
+  selected_account_name: string;
+};
+const initialNewProfileData: ProfileInputDataType = {
   name: '',
   lastname: '',
-  account: '',
   type: '',
   amount: '',
+  account: '',
 };
-//Type Options
+//Type transaction Options
 const typeSelectionProp = {
-  title: 'select type', //select type
+  title: 'select type',
   options: TYPEDEBTS_OPTIONS_DEFAULT,
-  variant: VARIANT_FORM, //this set the customStyle to use in selection dropdown component
+  variant: VARIANT_FORM, //set customStyle in selection dropdown component
 };
 // const initialFormData: FormNumberInputType = {
-//   amount: '',
+//   value: '',
 // };
+
 const formDataNumber = { keyName: 'amount', title: 'value' };
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
@@ -59,22 +84,15 @@ const initialFormData: FormNumberInputType = {
 //   value: '',
 // };
 
-// type CreateDebtorAccountPayload = {
-//   value: number; // Puede ser number aquí y convertirse a string después
-//   debtor_name: string;
-//   debtor_lastname: string;
-//   selected_account_id?: number; // Opcional para creación
-//   currency_code: CurrencyCode;
-
-// };
 //-----------------------
 function NewProfile() {
   const location = useLocation();
   //get userId from stores
   // const user = useUserStore((state: UserStoreType) => state.userData.userId);
-  const user = import.meta.env.VITE_USER_ID;
+  const user: string = import.meta.env.VITE_USER_ID;
+
   //-----states------
-  const [profileData, setProfileData] = useState<ProfileDataType>(
+  const [profileData, setProfileData] = useState<ProfileInputDataType>(
     initialNewProfileData
   );
   // const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
@@ -88,33 +106,57 @@ function NewProfile() {
   const [formData, setFormData] =
     useState<FormNumberInputType>(initialFormData);
 
-      const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
-        null
-      );
-
+  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
+    null
+  );
+  //------------------------------------------------
   //DATA FETCHING for option selection
-  // ...y esto pa que es?.....
-  const {
-    apiData,
-    isLoading,
-    error: accountError,
-  } = useFetch<ExpenseAccountsType>(url_accounts);
+  // ...y esta cuenta pa que es?.....
 
-  const optionsExpenseAccounts =
-    !accountError && !isLoading && apiData?.accounts?.length
-      ? apiData.accounts.map((acc) => ({
-          value: acc.name,
-          label: acc.name,
+  //url_get_accounts_by_type
+  //GET: AVAILABLE ACCOUNTS OF TYPE BANK
+  const fetchUrl = user
+    ? `${url_get_accounts_by_type}/?type=bank&user=${user}`
+    : // <Navigate to='/auth' />
+      undefined; //esto ees forzar un error de user en el backend
+
+  const {
+    apiData: BankAccountsResponse,
+    isLoading: isLoadingBankAccounts,
+    error: fetchedErrorBankAccounts,
+  } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
+
+  const optionAccounts = useMemo(() => {
+    if (fetchedErrorBankAccounts) {
+      return ACCOUNT_OPTIONS_DEFAULT;
+    }
+    const accountList = BankAccountsResponse?.data?.accountList ?? [];
+
+    return accountList.length
+      ? accountList.map((acc) => ({
+          value: acc.account_name,
+          label: acc.account_name,
         }))
       : ACCOUNT_OPTIONS_DEFAULT;
+  }, [BankAccountsResponse?.data.accountList, fetchedErrorBankAccounts]);
 
   //--for drop down selection
   const accountSelectionProp = {
     title: 'Available Account',
-    options: optionsExpenseAccounts,
+    options: optionAccounts,
     variant: VARIANT_FORM, //this stablishes the custom styles to use in selection dropdown component
   };
-  //---functions-----
+
+  //----------------------------------------------
+  //DATA FETCHING POST
+  ////OBTAIN THE REQUESTFN FROM userFetchLoad
+  //endpoint: http://localhost:5000/api/fintrack/account/new_account/pocket_saving
+  const { data, isLoading, error, requestFn } = useFetchLoad<
+    CreateDebtorAccountApiResponseType,
+    ProfilePayloadType
+  >({ url: url_create_debtor_account, method: 'POST' });
+  //-------------------------------------
+  //---functions----------------
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
@@ -122,13 +164,14 @@ function NewProfile() {
   }
 
   function typeSelectHandler(selectedOption: DropdownOptionType | null) {
-    //check any
     if (selectedOption) {
-      // console.log('selectedOption desde typeSelectHandler', { selectedOption });
-      setProfileData((prev: ProfileDataType) => ({
+      console.log('selectedOption desde typeSelectHandler', { selectedOption });
+
+      setProfileData((prev: ProfileInputDataType) => ({
         ...prev,
-        type: selectedOption.value,
-      })); //check any
+        type: selectedOption.label,
+        // type: selectedOption.value,
+      }));
     } else {
       console.log(`No option selected for ${'type'}`);
     }
@@ -136,69 +179,105 @@ function NewProfile() {
 
   //Esta funcion "accountSelectHandler" se puede definir dentro del componente DropDownSelection y solo pasar como prop, la funcion para modificar el estado correspondiente, en este caso setProfileData. selectedOption es manejado internamente por la libreria Select.
 
+  //---
   function accountSelectHandler(selectedOption: DropdownOptionType | null) {
-    //check any
-    setProfileData((prev: ProfileDataType) => ({
+    const newValue = selectedOption?.value || '';
+    setProfileData((prev) => ({
       ...prev,
-      account: selectedOption!.value,
+      account: newValue,
     }));
   }
-  //------------------
-  function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
+
+  //--------------------
+  //FORM SUBMISSION ---
+  async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     console.log('onSubmitForm');
+
     //--data form validation
-    const newValidationMessages = { ...validationData(profileData) }; // console.log('mensajes:', { newValidationMessages });
+    const newValidationMessages = validationData(profileData);
+
+    // console.log('mensajes:', { newValidationMessages });
+
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
+      console.log('pase por messages>0', newValidationMessages);
       return;
     }
     //-------------------------------------------------------
     //POST the new profile debtor data into database
-    // type ProfileDataType = {
+    // type ProfileInputDataType = {
     //   name: string;
     //   lastname: string;
     //   account: string | number;
     //   type: string;
-    //   amount: number | '';
+    //   value: number | '';
     // };
-
 
     console.log('New debtor data to POST:', { profileData });
     console.log('check this:', formData, formDataNumber);
 
-    const debtorAccountData = {
-      type: 'debtor',
-      name: `${profileData.name}, ${profileData.lastname}`, //name, lastname
-      currency: 'usd',
-      amount: formDataNumber.keyName || profileData.amount,
-      date: new Date(),
-      //---
-      debtor_lastname: profileData.lastname,
-      debtor_name: profileData.name,
-      value: formDataNumber.keyName || profileData.amount,
-      selected_account_name: profileData.account, //
-      // selected_account_id: profileData.account_id, //
-      selected_account_id: 1, //
-      debtor_transaction_type_name: profileData.type,
-    };
-    console.log(debtorAccountData);
+    try {
+      const payload: ProfilePayloadType = {
+        account_type: 'debtor',
+        currency: defaultCurrency,
+        amount: profileData.amount ?? 0.0,
+        //---
+        lastname: profileData.lastname,
+        name: profileData.name,
+        transaction_type: profileData.type,
+        selected_account_name: profileData.account,
+        user,
+      };
 
-    //-------------------------------------------------------
-    //POST the new profile data into database
-    console.log('data to POST:', { profileData });
-    //resetting form values
-    setIsReset(true);
-    setValidationMessages({});
-    setProfileData(initialNewProfileData);
-    console.log('submit form button');
-    setFormData(initialFormData);
-    // after a delay, change isReset to false
-    setTimeout(() => setIsReset(false), 500);
+      const data = await requestFn(payload);
+
+      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+        console.log('Data from New Debtor request:', data);
+      }
+
+      console.log('check this:', formData, formDataNumber);
+
+      //-------------------------------------------------------
+      //POST the new profile data into database
+      console.log('data to POST:', { profileData });
+
+      //resetting form values
+      setIsReset(true);
+      setValidationMessages({});
+      setProfileData(initialNewProfileData);
+      setFormData(initialFormData);
+      // after a delay, change isReset to false
+      setTimeout(() => setIsReset(false), 300);
+    } catch (error) {
+      console.log('Error when posting data:', error);
+    }
   }
-  //input number form params
-  const keyName = 'amount',
-    title = 'value';
+
+  //-----------------------
+  useEffect(() => {
+    if (data && !isLoading && !error) {
+      //success response
+      setMessageToUser(
+        data.message || 'Pocket saving account successfully created!'
+      );
+      console.log('Received data:', data);
+    } else if (!isLoading && error) {
+      setMessageToUser(error);
+    }
+
+    //resetting message to user
+    const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
+      setMessageToUser(null);
+    }, 5000);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [data, error, isLoading]);
+
+  // //-----------------------
+
   return (
     <section className='profile__page__container page__container '>
       <TopWhiteSpace variant={'dark'} />
@@ -222,6 +301,7 @@ function NewProfile() {
                   {validationMessages['name']}
                 </span>
               </label>
+
               <input
                 type='text'
                 className={`input__container`}
@@ -239,6 +319,7 @@ function NewProfile() {
                   {validationMessages['lastname']}
                 </span>
               </label>
+
               <input
                 type='text'
                 className={`input__container`}
@@ -248,14 +329,15 @@ function NewProfile() {
                 value={profileData.lastname}
               />
             </div>
+
             <div className='input__box'>
-              {/* <label className='label form__title'>{'Add Money'}</label> */}
               <label className='label form__title'>
                 Account &nbsp;
                 <span className='validation__errMsg'>
                   {validationMessages['account']}
                 </span>
               </label>
+
               {/* accounts*/}
               <DropDownSelection
                 dropDownOptions={accountSelectionProp}
@@ -265,27 +347,33 @@ function NewProfile() {
                 setIsReset={setIsReset}
               />
 
-              <label htmlFor={keyName} className='label form__title'>
-                {capitalize(title)}&nbsp;
+              <label
+                htmlFor={formDataNumber.keyName}
+                className='label form__title'
+              >
+                {capitalize(formDataNumber.title)}&nbsp;
                 <span
                   className='validation__errMsg'
                   style={{
-                    color: validationMessages[keyName]
+                    color: validationMessages[formDataNumber.keyName]
                       ?.toLowerCase()
                       .includes('format:')
                       ? 'var(--lightSuccess)'
                       : 'var(--error)',
                   }}
                 >
-                  {validationMessages[keyName]?.replace('Format:', '')}
+                  {validationMessages[formDataNumber.keyName]?.replace(
+                    'Format:',
+                    ''
+                  )}
                 </span>
               </label>
 
               <InputNumberFormHandler
                 validationMessages={validationMessages}
                 setValidationMessages={setValidationMessages}
-                keyName={keyName}
-                placeholderText={keyName}
+                keyName={formDataNumber.keyName}
+                placeholderText={formDataNumber.title}
                 formData={formData}
                 setFormData={setFormData}
                 setStateData={setProfileData}
@@ -313,9 +401,13 @@ function NewProfile() {
             <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
           </div>
         </form>
+        <MessageToUser
+          isLoading={isLoading || isLoadingBankAccounts}
+          error={error || fetchedErrorBankAccounts}
+          messageToUser={messageToUser}
+          variant='form'
+        />
       </div>
-
-      {/* //insertar aqui los mensajes de erro, etc. */}
     </section>
   );
 }

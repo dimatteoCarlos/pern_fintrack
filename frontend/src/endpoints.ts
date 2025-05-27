@@ -22,7 +22,8 @@ export const url_categories = BASE_URL + '/' + 'categories';
 export const url_investment = BASE_URL + '/' + 'investment';
 export const url_sources = BASE_URL + '/' + 'sources';
 export const url_budget = BASE_URL + '/' + 'budget';
-export const url_accounts = BASE_URL + '/' + 'accounts'; //expense and income accounts are TREATED the same WAY
+ //expense and income accounts are TREATED the same WAY
+export const url_accounts = BASE_URL + '/' + 'accounts';
 export const url_investment_acc = BASE_URL + '/' + 'investment-accounts'; //not implemented yet
 
 //account_types list
@@ -45,6 +46,11 @@ export const url_create_category_budget_account: string =
 export const url_create_pocket_saving_account: string =
   BASE_URL + '/account/new_account/pocket_saving';
 
+//create a debtor account
+//http://localhost:5000/api/fintrack/account/new_account/debtor
+export const url_create_debtor_account: string =
+  BASE_URL + '/account/new_account/debtor';
+
 //----GET ALL ACCOUNTS INFO OF A SPECIFIC ACCOUNT TYPE
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${bank}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
@@ -64,7 +70,7 @@ export const url_get_accounting_accounts: string =
 //also, get the balance of income source accounts
 // fintrack dashboardTotalBalanceAccountByType
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type
-//used in:OverviewLayoute.tsx, Overview.tsx,
+//used in:OverviewLayout.tsx, Overview.tsx,
 export const url_get_total_account_balance_by_type: string =
   BASE_URL + '/dashboard/balance/type';
 

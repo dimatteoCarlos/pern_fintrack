@@ -258,7 +258,6 @@ export type DebtsTrackerInputDataType = {
   type: MovementTransactionType;
   account: string;
   accountType: string | undefined;
-
   date: Date;
   note: string;
 };

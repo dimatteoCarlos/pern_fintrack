@@ -2,7 +2,7 @@ import pc from 'picocolors';
 import { pool } from '../src/db/configDB.js';
 import { handlePostgresError } from './errorHandling.js';
 
-//----------------------------------------------------------------------------
+//---------------------------------------------------------------//this check is restricted to bank account type
 export const checkAndInsertAccount = async (userId, accountName = 'slack') => {
   try {
     const chekAccountResult = await pool.query(

@@ -26,7 +26,6 @@ function InputNumberFormHandler<T>({
   setFormData,
   setStateData,
 }: InputNumberFormHandlerPropType<T>) {
-  //check any
 
   const { inputNumberHandlerFn } = useInputNumberHandler(
     setFormData,
@@ -46,7 +45,7 @@ function InputNumberFormHandler<T>({
         type='text'
         name={keyName}
         placeholder={placeholderText}
-        value={formData[keyName]}
+        value={formData[keyName]??""}
         onChange={inputHandler}
       />
     </>

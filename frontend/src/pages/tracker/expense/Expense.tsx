@@ -43,7 +43,6 @@ import { MessageToUser } from '../../../general_components/messageToUser/Message
 import axios, { AxiosRequestConfig } from 'axios';
 import useBalanceStore from '../../../stores/useBalanceStore.ts';
 // import { useAuthStore } from '../../../auth/stores/useAuthStore.ts';
-// import SpinLoader from '../../../loader/spin/SpinLoader.tsx';
 
 //-----temporarily data 'till decide how to handle currencies
 const defaultCurrency = DEFAULT_CURRENCY;
@@ -154,9 +153,7 @@ function Expense(): JSX.Element {
   //   fetchedErrorCategoryBudgetAccounts,
   // });
 
-  //como evaluar si hay un error y de que tipo>
 
-  // const optionsExpenseCategories = CATEGORY_OPTIONS_DEFAULT;
 
   const optionsExpenseCategories = useMemo(() => {
     const categoryList =
@@ -328,7 +325,7 @@ function Expense(): JSX.Element {
     //update balance account of bank account and category budget account in: user_accounts table.
 
     //record both transaction descriptions: transfer and receive transactions with the correspondent account info.
-    
+
     //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=expense
     //user id is sent via req.body
 
@@ -381,7 +378,6 @@ function Expense(): JSX.Element {
       console.error('Submission error:', error);
     }
   }
-
   //---------------------------------------------,
 
   //-------Top Card elements -----------------------
@@ -390,7 +386,6 @@ function Expense(): JSX.Element {
     value: formData.amount,
     selectOptions: accountOptions,
   };
-
   //-------------------------------------------------
   return (
     <>
