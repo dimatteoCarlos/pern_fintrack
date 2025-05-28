@@ -9,7 +9,10 @@ import { pool } from '../../db/configDB.js';
 import { determineTransactionType } from '../../../utils/helpers.js';
 import { recordTransaction } from '../../../utils/recordTransaction.js';
 import { checkAndInsertAccount } from '../../../utils/checkAndInsertAccount.js';
-import { verifyAccountExistence } from '../../../utils/verifyAccountExistence.js';
+import {
+  verifyAccountExistence,
+  verifyAccountExists,
+} from '../../../utils/verifyAccountExistence.js';
 import { updateAccountBalance } from '../../../utils/updateAccountBalance.js';
 import { insertAccount } from '../../../utils/insertAccount.js';
 import { getTransactionTypeId } from '../../../utils/getTransactionTypeId.js';
@@ -356,15 +359,17 @@ export const createBasicAccount = async (req, res, next) => {
     client.release();
   }
 };
-//----------------------
+//---------------------------------------------------
+//---------------------------------------------------
 //POST: http://localhost:5000/api/fintrack/account/new_account/debtor?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c
 export const createDebtorAccount = async (req, res, next) => {
   //basic_account_data:  userId,account_type_name,currency_code,amount,account_start_date,account_starting_amount
-  //account type: debtor.
+  //account_type_name: debtor.
   //movement_type_name:'account-opening', movement_type_id: 8, transaction_type_name:lend / borrow,
   console.log(pc.blueBright('createDebtorAccount'));
   console.log(req.body, req.params, req.query);
   const client = await pool.connect();
+
   try {
     //implement verifyUser middleware and then get userId from res.user
     const userId = req.body.user ?? req.query.user;
@@ -375,15 +380,17 @@ export const createDebtorAccount = async (req, res, next) => {
     }
     //data from debt new profile form - frontend fintrack
     const {
+      account_type,
       lastname: debtor_lastname,
       name: debtor_name,
       amount: value,
-      selected_account_name, //verify what is this for in DEBTOR INPUT?
-      selectedAccountInput, //optional
-      type: debtor_transaction_type, //here type is transaction type name (lending/borrowing), meanwhile in other input to create other accounts, it refers to type of account (bank, pocket_saving, ecc).  Check fintrack frontend.
+      selected_account_name,
+      selected_account_type,
+      // selectedAccountInput, //optional
+      transaction_type: debtor_transaction_type, //here type in the ui frontend input form, is transaction type name (lending/borrowing), meanwhile in other input to create other accounts, it refers to type of account (bank, pocket_saving, ecc).  Check fintrack frontend.
     } = req.body;
 
-    const account_type_name = 'debtor';
+    const account_type_name = account_type ?? 'debtor';
     const debtorTypeTransactionInput = { lending: 'lend', borrowing: 'borrow' };
     const debtor_transaction_type_name =
       debtorTypeTransactionInput[debtor_transaction_type];
@@ -402,52 +409,98 @@ export const createDebtorAccount = async (req, res, next) => {
     // );
     //-----------------------
     //NEW ACCOUNT BASIC DATA
-    //currency id and type account id
-    // const accountTypeId = await getAccountTypeId(account_type_name);
-    // const currencyId = await getCurrencyId('usd'); // Asumimos USD por defecto
+    // Asumimos USD por defecto
     const { currency, date, transactionActualDate } = req.body;
     const currency_code = currency ? currency : 'usd';
     const account_name = `${debtor_lastname}, ${debtor_name}`;
     const account_starting_amount = value ? parseFloat(value) : 0.0;
     //---------------------------------------
-    //definir como se introduce la fecha ya que no esta contemplado en el input de fintrack para debtor
-    const account_start_date = !!date && date !== '' ? date : new Date(); //in case it received a date
+    //definir como se introduce la fecha ya que no esta contemplado en el input de fintrack para debtor / set how to use the transaction date
+    const account_start_date = !!date && date !== '' ? date : new Date();
+    //originally actual transaction date is not entered from ui
     const transaction_actual_date =
       !transactionActualDate || transactionActualDate == ''
         ? new Date()
         : transactionActualDate;
     //---------------------------------------
     // console.log(pc.cyan(`userId: ${userId}`));
-    console.log('dateInput:', transactionActualDate, transaction_actual_date);
+    // console.log('dateInput:', transactionActualDate, transaction_actual_date);
     //---------------------------------------
     //currency and account_type data, are better defined by frontend
     if (!account_type_name || !currency_code || !account_name) {
       const message =
         'Currency_code, account name and account type name fields are required';
+      //theses fields are required, although, not originally considered in the ui frontend.
       console.warn(pc.blueBright(message));
       return res.status(400).json({ status: 400, message });
     }
     //---------------------------------------
-    //get all account types and then get the account type id requested
+    //get all account types and then get the account type id for the account name requested. although id debtor is 3 and id bank is 1.
     const accountTypeQuery = `SELECT * FROM account_types`;
     const accountTypeResult = await pool.query(accountTypeQuery);
     const accountTypeArr = accountTypeResult.rows;
-    //console.log('🚀 ~ createAccount ~ accountTypeArr:', accountTypeArr);
+    console.log(
+      '🚀 ~ createAccount ~ accountTypeArr01:',
+      accountTypeArr,
+      'selected_account_type01',
+      {selected_account_type}
+    );
+
     const accountTypeIdReqObj = accountTypeArr.filter(
       (type) => type.account_type_name == account_type_name.trim()
     )[0];
     const accountTypeIdReq = accountTypeIdReqObj.account_type_id;
-    // console.log('🚀 ~ createAccount ~ account_type_id:', accountTypeIdReq);
-    //---------------------------------------
-    //verify account existence in user_accounts by userId and account name
+    console.log('🚀 ~ createAccount ~ account_type_id:', accountTypeIdReq,'actypetArr', accountTypeArr);
+
+    if (accountTypeIdReq === undefined) {
+      throw new Error(`Account type "${account_type_name}" not found`);
+    }
+
+    //for selected account
+    const selectedAccountTypeIdReqObj = accountTypeArr.filter(
+      (type) => type.account_type_name == selected_account_type.trim()
+    )[0];
+
+    console.log("🚀 ~ createDebtorAccount ~ selectedAccountTypeIdReqObj:", selectedAccountTypeIdReqObj)
+
+    const selectedAccountTypeIdReq =
+      selectedAccountTypeIdReqObj.account_type_id;
+
+    console.log(
+      '🚀 ~ createAccount ~ selected_account_type_id:',
+      selectedAccountTypeIdReq
+    );
+
+    if (selectedAccountTypeIdReq === undefined) {
+      throw new Error(
+        `Selected Account type "${selected_account_type}" not found`
+      );
+    }
+
+    //---------------------------------------------------
+    //verify and assure new debtor account non existence in user_accounts by userId and account name
+    ///este pudiera returnar el account_id
     const accountExist = await verifyAccountExistence(
       userId,
       account_name,
       account_type_name
     );
-    // console.log('🚀 ~ createDebtorAccount ~ accountExist:', accountExist);
-    //----------------------------------------
+    console.log(
+      '🚀 ~ createDebtorAccount ~ accountExist:',
+      accountExist,
+      account_name
+    );
+    //----------------------------------------------------
+    //verify selected account existence in user_accounts by userId and selected account name verifyAccountExists
+    const selectedAccountExist = await verifyAccountExists(
+      userId,
+      selected_account_name,
+      selected_account_type
+    );
+
+    //---------------------------------------------------
     //get currency id from currency_code requested
+    //necessary for multi currency app
     const currencyQuery = `SELECT * FROM currencies`;
     const currencyResult = await pool.query(currencyQuery);
     const currencyArr = currencyResult?.rows;
@@ -455,7 +508,8 @@ export const createDebtorAccount = async (req, res, next) => {
       (currency) => currency.currency_code == currency_code
     )[0].currency_id;
 
-    console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
+    // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
+
     //----------------------------------------
     //--DEBTOR ACCOUNT --------
     //---debtor_initial_balance
@@ -466,7 +520,7 @@ export const createDebtorAccount = async (req, res, next) => {
     const newAccountBalance = transactionAmount;
 
     // console.log({ debtor_transaction_type_name }, { transactionAmount });
-    //--------- INSERT NEW DEBTOR BASIC ACCOUNT ----------------
+    //------- INSERT NEW DEBTOR BASIC ACCOUNT ----------------
     await client.query('BEGIN');
     //---INSERT DEBTOR ACCOUNT into user_accounts table
     const { account_basic_data } = await insertAccount(
@@ -479,14 +533,15 @@ export const createDebtorAccount = async (req, res, next) => {
       account_start_date ?? transaction_actual_date
     );
     const account_id = account_basic_data.account_id;
-
-    //---------------------------------------------------------------
+    //---------------------------------------------------------
     //---INSERT DEBTOR ACCOUNT into debtor_accounts table
+    //CREO QUE NO ES NECESARIO GUARDAR NI CURRENCY ID, NI SELECTED ACCOUNT VALUES
     const debtorInsertQuery = {
       text: `INSERT INTO debtor_accounts (account_id, debtor_lastname, debtor_name, value,
       currency_id,
-       selected_account_name, selected_account_id, account_start_date) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7,$8) RETURNING *`,
+       selected_account_name, 
+       account_start_date) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
       values: [
         account_id,
         debtor_lastname,
@@ -494,10 +549,11 @@ export const createDebtorAccount = async (req, res, next) => {
         newAccountBalance,
         currencyIdReq,
         selected_account_name,
-        selectedAccountInput || null, // selected_account_id
+        // selected_account_id
         new Date(), // account_start_date
       ],
     };
+
     const debtorAccount = await pool.query(debtorInsertQuery);
     const debtor_account = {
       ...debtorAccount.rows[0],
@@ -542,18 +598,26 @@ export const createDebtorAccount = async (req, res, next) => {
       balance: newAccountBalance,
     };
     //--- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT OR BANK ACCOUNT SELECTED)------
-    //check whether slack account exists if not create it with start amount and balance = 0
-    //slack account or counter account, is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation
-    const counterAccountInfo = await checkAndInsertAccount(userId, 'slack');
+    //OLD VERSION:check whether slack account exists if not create it with start amount and balance = 0
+    // const counterAccountInfo = await checkAndInsertAccount(userId, 'slack');
 
+    //NEW VERSION:get selected account as the counter account
+
+    //slack account or selected account, is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation
+
+    const counterAccountInfo = await checkAndInsertAccount(
+      userId,
+      selected_account_name
+    );
+    //------------------------------------
     const newCounterAccountBalance =
       counterAccountInfo.account.account_balance - transactionAmount;
 
     const counterAccountTransactionAmount = -transactionAmount;
 
-    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} of type: bank, with number: ${counterAccountInfo.account.account_id}. Amount: ${counterAccountTransactionAmount} ${currency_code}. Account reference: ${account_name}). Date: ${transaction_actual_date}`;
+    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} of type: ${selected_account_type}, with number: ${counterAccountInfo.account.account_id}. Amount: ${counterAccountTransactionAmount} ${currency_code}. Account reference: ${account_name}). Date: ${transaction_actual_date}`;
     //---------------------------------------------------------
-    //-------------SLACK COUNTER ACCOUNT INFO ------
+    //--COUNTER ACCOUNT INFO (SLACK OR SELECTED ACCOUNT ------
     const slackCounterAccountInfo = {
       user_id: userId,
       description: counterTransactionDescription,

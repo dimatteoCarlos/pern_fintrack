@@ -53,11 +53,12 @@ type ProfilePayloadType = {
   name: string;
   lastname: string;
   transaction_type: string;
-  account_type: 'debtor';
+  account_type: string;
   amount: number | '';
   currency?: CurrencyType;
   user: string;
   selected_account_name: string;
+  selected_account_type: string;
 };
 const initialNewProfileData: ProfileInputDataType = {
   name: '',
@@ -77,9 +78,14 @@ const typeSelectionProp = {
 // };
 
 const formDataNumber = { keyName: 'amount', title: 'value' };
+
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
 };
+
+const selected_account_type = 'bank',
+  account_type = 'debtor';
+
 // const initialFormData: FormNumberInputType = {
 //   value: '',
 // };
@@ -155,8 +161,8 @@ function NewProfile() {
     CreateDebtorAccountApiResponseType,
     ProfilePayloadType
   >({ url: url_create_debtor_account, method: 'POST' });
-  //-------------------------------------
-  //---functions----------------
+  //------------------------------------------
+  //---functions------------------------------
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
@@ -219,7 +225,7 @@ function NewProfile() {
 
     try {
       const payload: ProfilePayloadType = {
-        account_type: 'debtor',
+        account_type,
         currency: defaultCurrency,
         amount: profileData.amount ?? 0.0,
         //---
@@ -227,6 +233,7 @@ function NewProfile() {
         name: profileData.name,
         transaction_type: profileData.type,
         selected_account_name: profileData.account,
+        selected_account_type,
         user,
       };
 
