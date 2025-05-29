@@ -3,8 +3,6 @@ import { CardTitle } from '../../../general_components/CardTitle';
 import OpenAddEditBtn from '../../../general_components/OpenAddEditBtn';
 import ListOfDebtors from './ListOfDebtors';
 
-//shares css styles from general styles and budget styles
-
 function Debtors() {
   const originRoute = useLocation().pathname;
   const navigateTo: NavigateFunction = useNavigate();
@@ -21,10 +19,6 @@ function Debtors() {
     <>
       <section className='content__presentation'>
         <div className='cards__presentation'>
-          <CardTitle>Summary</CardTitle>
-
-          <ListOfDebtors></ListOfDebtors>
-
           <OpenAddEditBtn
             btnFunction={createNewProfile}
             btnFunctionArg={originRoute}
@@ -32,6 +26,10 @@ function Debtors() {
           >
             <div className='open__btn__label'>New Debtor</div>
           </OpenAddEditBtn>
+          
+          <CardTitle>Summary</CardTitle>
+
+          <ListOfDebtors></ListOfDebtors>
         </div>
       </section>
     </>

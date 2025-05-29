@@ -171,7 +171,7 @@ function NewProfile() {
 
   function typeSelectHandler(selectedOption: DropdownOptionType | null) {
     if (selectedOption) {
-      console.log('selectedOption desde typeSelectHandler', { selectedOption });
+      // console.log('selectedOption desde typeSelectHandler', { selectedOption });
 
       setProfileData((prev: ProfileInputDataType) => ({
         ...prev,
@@ -207,7 +207,7 @@ function NewProfile() {
 
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
-      console.log('pase por messages>0', newValidationMessages);
+
       return;
     }
     //-------------------------------------------------------
@@ -220,8 +220,8 @@ function NewProfile() {
     //   value: number | '';
     // };
 
-    console.log('New debtor data to POST:', { profileData });
-    console.log('check this:', formData, formDataNumber);
+    // console.log('New debtor data to POST:', { profileData });
+    // console.log('check this:', formData, formDataNumber);
 
     try {
       const payload: ProfilePayloadType = {
@@ -243,9 +243,7 @@ function NewProfile() {
         console.log('Data from New Debtor request:', data);
       }
 
-      console.log('check this:', formData, formDataNumber);
-
-      //-------------------------------------------------------
+      //---------------------------------------------
       //POST the new profile data into database
       console.log('data to POST:', { profileData });
 
@@ -268,7 +266,7 @@ function NewProfile() {
       setMessageToUser(
         data.message || 'Pocket saving account successfully created!'
       );
-      console.log('Received data:', data);
+      // console.log('Received data:', data);
     } else if (!isLoading && error) {
       setMessageToUser(error);
     }

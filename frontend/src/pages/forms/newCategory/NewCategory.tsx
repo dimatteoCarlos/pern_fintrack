@@ -175,7 +175,7 @@ function NewCategory() {
       setMessageToUser(
         data.message || 'Category budget account successfully created!'
       );
-      console.log('Received data:', data);
+      // console.log('Received data:', data);
     } else if (!isLoading && error) {
       setMessageToUser(error);
     }

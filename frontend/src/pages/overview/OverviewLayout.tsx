@@ -65,8 +65,8 @@ function OverviewLayout() {
   //-------------------------
   //remeber income account balance is negative (withdraws) and expense accoutn balance is positive (deposits)
   const { netWorth, totalIncome, totalExpense } = useMemo(() => {
-    let totalIncome = incomeBalanceApiData?.data?.total_balance ?? 0;
-    totalIncome = totalIncome * -1;
+    const totalIncome = incomeBalanceApiData?.data?.total_balance ?? 0;
+
     const totalExpense = expenseBalanceApiData?.data?.total_balance ?? 0;
     return { totalIncome, totalExpense, netWorth: totalIncome - totalExpense };
   }, [

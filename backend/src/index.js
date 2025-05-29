@@ -119,7 +119,7 @@ async function initializeDatabase() {
         createMainTables.map(async (item, indx) => {
           try {
             await pool.query({
-              text: `TRUNCATE TABLE ${item.tblName} CASCADE`,
+              text: `TRUNCATE TABLE ${item.tblName}  RESTART IDENTITY CASCADE`,
             });
             // await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
             console.log(indx, item.tblName, 'truncated');

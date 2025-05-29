@@ -23,7 +23,7 @@ export const determineTransactionType = (
       counterTransactionType = 'deposit';
     }
   } else {
-    //debtor account
+    //for debtor accounts. lend means debtor is receiving money from user and amount is positive
     if (account_type_name === 'debtor' && transaction_amount > 0) {
       transactionType = 'lend';
       counterTransactionType = 'borrow';
@@ -235,6 +235,7 @@ export function getMonthName(index) {
   return monthName;
   // console.log(monthName);
 }
+
 //---------------
 export function numberToWords(num) {
   if (num === 0) return 'Zero';

@@ -2,7 +2,7 @@
 .fade-message {
   opacity: 0;
   animation: fadeInOut 3s ease-in-out forwards;
-background-color: orange;
+
 }
 
 .fade-message {

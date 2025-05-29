@@ -38,14 +38,14 @@ export function useFetchLoad<R, D = unknown>({
         ...(overrideConfig || {}), //overrideConfig must come last to overwrite dynamic url or anything in the initial config, even method
       };
 
-      console.log(
-        'desde useFetch config:',
-        config,
-        'overrideConfig',
-        overrideConfig,
-        'url inicial:',
-        initialUrl
-      );
+      // console.log(
+      //   'desde useFetch config:',
+      //   config,
+      //   'overrideConfig',
+      //   overrideConfig,
+      //   'url inicial:',
+      //   initialUrl
+      // );
 
       const response: AxiosResponse<R> = await axios(config);
 

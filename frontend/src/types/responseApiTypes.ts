@@ -358,6 +358,24 @@ export interface CategoryListType {
   total_remaining: number;
 }
 
+//DEBTOR LIST SUMMARY
+export interface DebtorListSummaryType {
+  status: number;
+  message: string;
+  data?: DebtorListType[] | null;
+}
+
+export interface DebtorListType {
+  account_name: string;
+  account_id: number; //| null;
+  currency_code: CurrencyType;
+  total_debt_balance: number; //| null;
+  debt_receivable: number; //| null;
+  debt_payable: number;
+  debtor: number; //1/0
+  creditor: number; //1/0
+}
+
 //POCKET LIST SUMMARY
 export interface PocketListSummaryType {
   status: number;

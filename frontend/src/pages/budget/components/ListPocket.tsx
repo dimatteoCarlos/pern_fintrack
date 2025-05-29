@@ -28,9 +28,7 @@ function ListPocket() {
     `${url_summary_balance_ByType}?type=pocket_saving&user=${USER_ID}`
   );
 
-  console.log('🚀 ~ ListPocket ~ apiData:', apiData);
-
-  // const pocketList: PocketsToRenderType[] = [];
+  // console.log('🚀 ~ ListPocket ~ apiData:', apiData);
 
   const pocketList: PocketsToRenderType[] =
     apiData?.data && !isLoading && !error && apiData?.data.length
