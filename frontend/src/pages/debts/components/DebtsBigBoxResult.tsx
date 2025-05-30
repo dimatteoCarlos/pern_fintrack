@@ -35,15 +35,15 @@ export function DebtsBigBoxResult({
   return (
     <div className='bigBox__container flex-col-sb'>
       <div className='bigBox__mainInfo'>
-        {bigScreenInfo[0].title.toUpperCase()} {totalAmount}
+        {totalTitle.toUpperCase()} 
       </div>
 
       <div className='displayScreen dark flex-row-sb'>
-        <div className='displayScreen--concept light'>{totalTitle}</div>
+        <div className='displayScreen--concept light'>{'total'}</div>
         <div className='displayScreen--result light'>
           {currencyFormat(
             defaultCurrency,
-            receivableAmount,
+            totalAmount,
             formatNumberCountry
           )}
         </div>
@@ -72,7 +72,7 @@ export function DebtsBigBoxResult({
           <div className='displayScreen--result light'>
             {currencyFormat(
               defaultCurrency,
-              bigScreenInfo[0].amount,
+              receivableAmount,
               formatNumberCountry
             )}
           </div>
@@ -90,7 +90,7 @@ export function DebtsBigBoxResult({
           }}
         >
           <div className='displayScreen--concept light'>
-            {payable}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            {payable}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           </div>
           <div className='displayScreen--result light'>
             {currencyFormat(
