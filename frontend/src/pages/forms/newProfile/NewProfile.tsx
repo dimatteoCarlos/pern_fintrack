@@ -39,7 +39,7 @@ const defaultCurrency = DEFAULT_CURRENCY;
 // const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // console.log('', { formatNumberCountry });
 
-//----Type definitions, initialization and constants ----------
+//----Type definitions, initialization and constants ------
 type ProfileInputDataType = {
   name: string;
   lastname: string;
@@ -73,9 +73,6 @@ const typeSelectionProp = {
   options: TYPEDEBTS_OPTIONS_DEFAULT,
   variant: VARIANT_FORM, //set customStyle in selection dropdown component
 };
-// const initialFormData: FormNumberInputType = {
-//   value: '',
-// };
 
 const formDataNumber = { keyName: 'amount', title: 'value' };
 
@@ -85,10 +82,6 @@ const initialFormData: FormNumberInputType = {
 
 const selected_account_type = 'bank',
   account_type = 'debtor';
-
-// const initialFormData: FormNumberInputType = {
-//   value: '',
-// };
 
 //-----------------------
 function NewProfile() {
@@ -117,14 +110,11 @@ function NewProfile() {
   );
   //------------------------------------------------
   //DATA FETCHING for option selection
-  // ...y esta cuenta pa que es?.....
-
-  //url_get_accounts_by_type
   //GET: AVAILABLE ACCOUNTS OF TYPE BANK
   const fetchUrl = user
     ? `${url_get_accounts_by_type}/?type=bank&user=${user}`
     : // <Navigate to='/auth' />
-      undefined; //esto ees forzar un error de user en el backend
+      undefined; //forzar un error de user en el backend / force an error inthe backend
 
   const {
     apiData: BankAccountsResponse,
@@ -156,7 +146,7 @@ function NewProfile() {
   //----------------------------------------------
   //DATA FETCHING POST
   ////OBTAIN THE REQUESTFN FROM userFetchLoad
-  //endpoint: http://localhost:5000/api/fintrack/account/new_account/pocket_saving
+  //endpoint: http://localhost:5000/api/fintrack/account/new_account/debtor
   const { data, isLoading, error, requestFn } = useFetchLoad<
     CreateDebtorAccountApiResponseType,
     ProfilePayloadType
@@ -182,8 +172,6 @@ function NewProfile() {
       console.log(`No option selected for ${'type'}`);
     }
   }
-
-  //Esta funcion "accountSelectHandler" se puede definir dentro del componente DropDownSelection y solo pasar como prop, la funcion para modificar el estado correspondiente, en este caso setProfileData. selectedOption es manejado internamente por la libreria Select.
 
   //---
   function accountSelectHandler(selectedOption: DropdownOptionType | null) {
@@ -211,17 +199,6 @@ function NewProfile() {
       return;
     }
     //-------------------------------------------------------
-    //POST the new profile debtor data into database
-    // type ProfileInputDataType = {
-    //   name: string;
-    //   lastname: string;
-    //   account: string | number;
-    //   type: string;
-    //   value: number | '';
-    // };
-
-    // console.log('New debtor data to POST:', { profileData });
-    // console.log('check this:', formData, formDataNumber);
 
     try {
       const payload: ProfilePayloadType = {

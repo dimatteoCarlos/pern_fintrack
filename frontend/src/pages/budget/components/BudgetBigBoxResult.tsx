@@ -11,7 +11,6 @@ type BigBoxResultPropType = {
 
 function BudgetBigBoxResult({ bigScreenInfo, currency }: BigBoxResultPropType) {
   const resultAmount = bigScreenInfo[0].amount;
-
   const title = bigScreenInfo[1].title;
   const remaining = bigScreenInfo[1].amount;
   const currency_code = currency ?? DEFAULT_CURRENCY;

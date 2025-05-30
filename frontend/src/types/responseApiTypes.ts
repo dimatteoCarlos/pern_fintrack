@@ -61,7 +61,8 @@ export type DebtorRespType = {
     debtors: number | null;
     creditors: number | null;
     debtors_without_debt: number | null;
-  }[];
+        currency_code: CurrencyType;
+  };
 };
 
 //CREATE BASIC ACCOUNT RESPONSE TYPE FROM API

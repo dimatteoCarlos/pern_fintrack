@@ -66,6 +66,10 @@
   padding: 1.5rem 0 1rem 0;
   /* border: 1px solid blue; */
 }
+.debtsLayout .content__presentation {
+  /* background-color: orange; */
+  padding-top: 5rem;
+}
 
 .debtsLayout .presentation__card--title {
   color: var(--light);

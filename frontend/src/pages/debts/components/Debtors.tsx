@@ -18,7 +18,7 @@ function Debtors() {
   return (
     <>
       <section className='content__presentation'>
-        <div className='cards__presentation'>
+        <div className='debts cards__presentation '>
           <OpenAddEditBtn
             btnFunction={createNewProfile}
             btnFunctionArg={originRoute}
