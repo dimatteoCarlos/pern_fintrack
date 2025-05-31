@@ -45,7 +45,7 @@ type EndpointItemType<K extends KPIKeyType> = {
 };
 
 //type guard Evalúa si ese valor tiene al menos la estructura mínima esperada del tipo FinancialDataRespType.
-// TypeScript cambia el tipo de data al tipo FinancialDataRespType dentro del if donde la uses.Esto se conoce como type narrowing.
+// TypeScript cambia el tipo de data al tipo FinancialDataRespType dentro del if donde se use.Esto se conoce como type narrowing.
 
 //: data is FinancialDataRespType, Indica que si la función retorna true, TypeScript redefinirá el tipo de data como FinancialDataRespType en el ámbito donde se use.
 

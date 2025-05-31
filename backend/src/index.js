@@ -141,7 +141,7 @@ async function initializeDatabase() {
       });
     }
     //create tables
-    if (false) {
+    if (!false) {
       await Promise.allSettled(
         createMainTables.map(async (item, ind) => {
           try {

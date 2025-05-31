@@ -16,15 +16,15 @@ export const url_refrestoken: string =
 
 //http://localhost:5000/api/fintrack
 export const BASE_URL: string = import.meta.env.VITE_API_URL_APP;
-export const url_debtors = BASE_URL + '/' + 'debtors';
-export const url_debtors_debt = BASE_URL + '/' + 'debtors/debt';
-export const url_categories = BASE_URL + '/' + 'categories';
-export const url_investment = BASE_URL + '/' + 'investment';
-export const url_sources = BASE_URL + '/' + 'sources';
-export const url_budget = BASE_URL + '/' + 'budget';
- //expense and income accounts are TREATED the same WAY
-export const url_accounts = BASE_URL + '/' + 'accounts';
-export const url_investment_acc = BASE_URL + '/' + 'investment-accounts'; //not implemented yet
+// export const url_debtors = BASE_URL + '/' + 'debtors';
+// export const url_debtors_debt = BASE_URL + '/' + 'debtors/debt';
+// export const url_categories = BASE_URL + '/' + 'categories';
+// export const url_investment = BASE_URL + '/' + 'investment';
+// export const url_sources = BASE_URL + '/' + 'sources';
+// export const url_budget = BASE_URL + '/' + 'budget';
+//  //expense and income accounts are TREATED the same WAY
+// export const url_accounts = BASE_URL + '/' + 'accounts';
+// export const url_investment_acc = BASE_URL + '/' + 'investment-accounts'; //not implemented yet
 
 //account_types list
 //http://localhost:5000/api/fintrack/account/type/list

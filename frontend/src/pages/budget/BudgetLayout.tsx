@@ -21,7 +21,7 @@ function BudgetLayout() {
 
   const userId = import.meta.env.VITE_USER_ID;
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
+
   const budgetUrl = `${url_get_total_account_balance_by_type}?type=category_budget&user=${userId}`;
 
   const { apiData, isLoading, error } =
@@ -53,7 +53,7 @@ function BudgetLayout() {
   // const bigScreenInfo = [
   const bigScreenInfo = [
     { title: 'total budget', amount: total_budget },
-    { title: 'remaining', amount: total_remaining },
+    { title: 'Remaining', amount: total_remaining },
     { title: 'expenses', amount: total_balance },
   ];
 

@@ -89,6 +89,8 @@ function NewAccount() {
     [key: string]: string;
   }>({});
 
+  const [isDisabledValue, setIsDisabledValue] = useState<boolean>(false);
+
   const [isReset, setIsReset] = useState<boolean>(false);
 
   const [formData, setFormData] =
@@ -135,16 +137,32 @@ function NewAccount() {
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
-    // const valueToSave = name === 'value' ? parseFloat(value) : value;
+
     setAccountData((prev) => ({ ...prev, [name]: value }));
   }
-
+  //---
+  function amountIncomeSource() {
+    setIsDisabledValue(true);
+    setAccountData((prev) => ({ ...prev, ['amount']: 0 }));
+  }
+  //---
   function accountTypeSelectHandler(selectedOption: DropdownOptionType | null) {
     if (selectedOption) {
       setAccountData((acc: AccountDataType) => ({
         ...acc,
         type: selectedOption?.label,
       }));
+
+      if (selectedOption.label === 'income_source') {
+        amountIncomeSource();
+        setIsDisabledValue(true);
+        // return;
+      } else {
+        setAccountData((acc: AccountDataType) => ({
+          ...acc,
+          type: selectedOption?.label,
+        }));
+      }
     } else {
       console.log(`No option selected for ${'account type'}`);
 
@@ -170,7 +188,7 @@ function NewAccount() {
     e.preventDefault();
     //--data form validation
     const newValidationMessages = { ...validationData(accountData) };
-    // console.log('mensajes:', { newValidationMessages });
+    console.log('mensajes:', { newValidationMessages });
 
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
@@ -200,6 +218,7 @@ function NewAccount() {
       setCurrency(defaultCurrency);
       setValidationMessages({});
       setFormData(initialFormData);
+      setIsDisabledValue(false);
 
       //delay isReset so dropdown type selection updates to null
       setTimeout(() => {
@@ -304,26 +323,28 @@ function NewAccount() {
               </div>
             </div>
 
-            <div className='input__box'>
-              <LabelNumberValidation
-                formDataNumber={formDataNumber}
-                validationMessages={validationMessages}
-                variant={VARIANT_FORM}
-              />
+            {!isDisabledValue && (
+              <div className='input__box'>
+                <LabelNumberValidation
+                  formDataNumber={formDataNumber}
+                  validationMessages={validationMessages}
+                  variant={VARIANT_FORM}
+                />
 
-              <InputNumberFormHandler
-                validationMessages={validationMessages}
-                setValidationMessages={setValidationMessages}
-                keyName={formDataNumber.keyName}
-                placeholderText={formDataNumber.keyName}
-                formData={formData}
-                setFormData={setFormData}
-                setStateData={setAccountData}
-              />
-              {/* <input
+                <InputNumberFormHandler
+                  validationMessages={validationMessages}
+                  setValidationMessages={setValidationMessages}
+                  keyName={formDataNumber.keyName}
+                  placeholderText={formDataNumber.keyName}
+                  formData={formData}
+                  setFormData={setFormData}
+                  setStateData={setAccountData}
+                />
+                {/* <input
                 style={{ fontSize: '1.25rem', padding: '0 0.75rem' }}
               /> FIGMA STYLE*/}
-            </div>
+              </div>
+            )}
           </div>
 
           <div className='submit__btn__container'>

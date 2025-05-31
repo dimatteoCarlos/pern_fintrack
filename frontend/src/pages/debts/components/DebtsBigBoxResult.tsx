@@ -48,9 +48,7 @@ export function DebtsBigBoxResult({
           )}
         </div>
       </div>
-
       {/***/}
-
       <div
         className='displayScreen dark flex-row-sb'
         style={{

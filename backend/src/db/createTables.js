@@ -80,10 +80,10 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )`,
   },
-  {
-    tblName: 'movement_types',
-    table: `CREATE TABLE IF NOT EXISTS movement_types (movement_type_id SERIAL PRIMARY KEY NOT NULL, movement_type_name VARCHAR(15) NOT NULL CHECK (movement_type_name IN ('expense', 'income', 'investment', 'debt', 'pocket', 'transfer', 'receive','account-opening')))`,
-  },
+  // {
+  //   tblName: 'movement_types',
+  //   table: `CREATE TABLE IF NOT EXISTS movement_types (movement_type_id SERIAL PRIMARY KEY NOT NULL, movement_type_name VARCHAR(15) NOT NULL CHECK (movement_type_name IN ('expense', 'income', 'investment', 'debt', 'pocket', 'transfer', 'receive','account-opening')))`,
+  // },
 
   // {
   //   tblName: 'expense_movements',
