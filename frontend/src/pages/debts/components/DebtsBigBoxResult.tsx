@@ -34,23 +34,17 @@ export function DebtsBigBoxResult({
 
   return (
     <div className='bigBox__container flex-col-sb'>
-      <div className='bigBox__mainInfo'>
-        {totalTitle.toUpperCase()} 
-      </div>
+      <div className='bigBox__mainInfo'>{totalTitle.toUpperCase()}</div>
 
       <div className='displayScreen dark flex-row-sb'>
         <div className='displayScreen--concept light'>{'total'}</div>
         <div className='displayScreen--result light'>
-          {currencyFormat(
-            defaultCurrency,
-            totalAmount,
-            formatNumberCountry
-          )}
+          {currencyFormat(defaultCurrency, totalAmount, formatNumberCountry)}
         </div>
       </div>
       {/***/}
       <div
-        className='displayScreen dark flex-row-sb'
+        className='displayScreen  dark flex-row-sb'
         style={{
           display: 'flex',
           width: '100%',
@@ -61,9 +55,11 @@ export function DebtsBigBoxResult({
         <div
           className='debtInfo '
           style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-around',
+            width: '85%',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr 1fr',
+            gap: '2rem',
+            // backgroundColor: 'orange',
           }}
         >
           <div className='displayScreen--concept light'>{receivable}</div>
@@ -82,14 +78,16 @@ export function DebtsBigBoxResult({
         <div
           className='debtInfo '
           style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-around',
+            display: 'grid',
+            width: '85%',
+            gridTemplateColumns: '1fr 1fr 1fr 1fr',
+            gap: '2rem',
           }}
         >
-          <div className='displayScreen--concept light'>
-            {payable}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <div className='displayScreen--concept light' style={{}}>
+            {payable}
           </div>
+
           <div className='displayScreen--result light'>
             {currencyFormat(
               defaultCurrency,

@@ -24,17 +24,11 @@ import InputNumberFormHandler from '../../../general_components/inputNumberHandl
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
 // import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
-
-import {
-  // url_account_type_list,
-  url_create_basic_account,
-} from '../../../endpoints.ts';
+import { url_create_basic_account } from '../../../endpoints.ts';
 import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { AxiosRequestConfig } from 'axios';
 
-// import { useFetch } from '../../../hooks/useFetch.tsx';
 //------------------------
-
 //-----temporarily 'till decide how to handle currencies
 const defaultCurrency = DEFAULT_CURRENCY;
 // const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
@@ -105,20 +99,10 @@ function NewAccount() {
   //DATA FETCHING
   //OPTION SELECTION: ACCOUNT TYPE
   //account types from account_types table
-  // const url = url_account_type_list;
-  // const { data, isLoading, error } = useFetch<DropdownOptionType[]>(url);
+
   const title = 'type';
-  const optionsTypeAccounts =
-    // !error && !isLoading && data?.length //this is for more general cases where types could change
-    //   ? data.map((type) => ({
-    //       value: title, //Object.keys(type)[0],
-    //       label: Object.values(type)[0], //this is the option name rendered
-    //     }))
-    //   :
-    ACCOUNT_TYPE_DEFAULT;
-
+  const optionsTypeAccounts = ACCOUNT_TYPE_DEFAULT;
   // console.log('arreglo:', optionsTypeAccounts);
-
   //POST: NEW ACCOUNT DATA
 
   const { data, isLoading, error, requestFn } = useFetchLoad<
@@ -239,7 +223,7 @@ function NewAccount() {
       //resetting message to user
       timer = setTimeout(() => {
         setMessageToUser(null);
-      }, 10000);
+      }, 4000);
     } else if (error) {
       setMessageToUser(error);
       timer = setTimeout(() => setMessageToUser(null), 3000);

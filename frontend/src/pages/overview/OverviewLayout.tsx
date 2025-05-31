@@ -107,7 +107,8 @@ function OverviewLayout() {
             zIndex: '150',
           }}
         >
-          Error: {errorMessage}
+          {/* Error: */}
+          {errorMessage}
         </p>
       )}
       <Overview />

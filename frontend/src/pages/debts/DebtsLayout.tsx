@@ -49,7 +49,6 @@ function DebtsLayout() {
       debtors: apiData?.data.debtors ?? 0,
       debt_receivable: apiData?.data.debt_receivable ?? 0,
 
-
       debtors_without_debt: apiData?.data.debtors_without_debt ?? 0,
 
       currency: apiData?.data.currency_code ?? defaultCurrency,
@@ -69,11 +68,11 @@ function DebtsLayout() {
       title: total_debt_balance >= 0 ? "you're owed" : 'you owe',
       amount: total_debt_balance,
     },
-      {
+    {
       title: 'receivable',
       amount: debt_receivable,
     },
-      {
+    {
       title: 'debtors',
       amount: debtors,
     },
@@ -81,8 +80,7 @@ function DebtsLayout() {
       title: 'payable',
       amount: debt_payable,
     },
-  
-  
+
     {
       title: 'creditors',
       amount: creditors,
@@ -126,7 +124,8 @@ function DebtsLayout() {
             zIndex: '150',
           }}
         >
-          Error: {errorMessage}
+          {/* Error:  */}
+          {errorMessage}
         </p>
       )}
       <Debtors />

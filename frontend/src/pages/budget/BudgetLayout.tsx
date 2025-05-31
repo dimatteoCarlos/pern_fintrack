@@ -92,7 +92,8 @@ function BudgetLayout() {
               zIndex: '150',
             }}
           >
-            Error: {errorMessage}
+            {/* Error:  */}
+            {errorMessage}
           </p>
         )}
         <Budget />

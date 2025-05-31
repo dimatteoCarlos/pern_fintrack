@@ -74,7 +74,6 @@ export function useFetchLoad<R, D = unknown>({
         else {
           errorMessage = 'Unexpected error occurred';
         }
-
         console.error('Error:', errorMessage);
         setData(null);
         setError(errorMessage);
