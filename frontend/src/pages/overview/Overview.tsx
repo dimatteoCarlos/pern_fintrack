@@ -56,7 +56,7 @@ type KPIEndpointType = {
 
 //type of state data
 type KPIDataStateType = {
-  SavingGoals: BalancePocketRespType | null;
+  SavingGoals: BalancePocketRespType | null;  //??
   MonthlyMovementKPI: ResultType | null;
   LastExpenseMovements: LastMovementType[] | null;
   LastMovements: LastMovementType[] | null;

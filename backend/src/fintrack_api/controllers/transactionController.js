@@ -220,8 +220,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const movement_type_id = movement_type_idResult[0].movement_type_id;
 
     //---------------------------------------
-    //VALIDAR TAMBIEN EL TIPO DE TRANSACTION?
+    //VALIDATION
     //since frontend input data form are controlled by selection options, then, data should be considered already validated from frontend. Also, frontend, for selection option gets the data through this api
+    
     //example:expense
     //movementName: expense, sourceAccountTypeName: 'bank', destinationAccountTypeName:'category_budget', sourceAccountTransactionType:withdraw, destinationAccountTransactionType:deposit,
     //---------------------------------------
