@@ -111,6 +111,7 @@ ORDER BY account_type_name ASC
 };
 //------------------------------------------
 //========================================================
+//--- dashboardTotalBalanceAccountByType -----------------
 //get the total balance for a specific type account
 //used:TrackerLayout, OverviewLayout.tsx
 //========================================================
@@ -131,7 +132,7 @@ ORDER BY account_type_name ASC
 	]
 }
   */
-//-------------------------------------------
+//--------------
 export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
   const backendColor = 'cyan';
   const errorColor = 'red';
@@ -309,12 +310,10 @@ GROUP BY  ct.currency_code
     // return RESPONSE(error, next)
   }
 };
-
 //========================================================
 //get the total balance for 'category_budget', 'debtor' and 'pocket_saving'. Considering also goals, budget, target,
 //get: //http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=&user=
 //========================================================
-
 export const dashboardAccountSummaryList = async (req, res, next) => {
   const backendColor = 'yellow';
   const errorColor = 'red';
@@ -467,7 +466,11 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
 //GET ALL USER TRACKER MOVEMENT TRANSACTIONS BY MOVEMENT_TYPE_NAME WITH A PRE-FIXED CORRESPONDING ACCOUNT TYPE
 //endpoint: http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=${mov_type}&user=${user}
 //usage: to show all transaction by movement name with corresponding accounts.
+//examples:
+// http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=investment&user=51ba...
+// http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=pocket&user=51ba7...
 
+//------------------------------------------------
 export const dashboardMovementTransactions = async (req, res, next) => {
   const backendColor = 'yellow';
   const errorColor = 'red';
@@ -486,9 +489,9 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     investment: 'investment',
     debt: 'debtor',
     pocket: 'pocket_saving',
-    transfer: 'all',
-    receive: 'all',
-    'account-opening': 'all',
+    transfer: '',
+    receive: '',
+    'account-opening': '',
   };
 
   //------------------------------
@@ -549,9 +552,6 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     return RESPONSE(res, 400, message);
     // return res.status(400).json({ status: 400, message });
   }
-
-  //verify whether is necessary to check the existence of these parameters in the db tables
-
   //account types are related to the movement type, and db table name, in order to track movement transactions
   let tableName;
   let queryModel;
@@ -563,9 +563,9 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       //category_budget
       queryModel = {
         text: `SELECT  mt.movement_type_name,ua.account_id, ua.account_name, ua.account_balance, cba.budget,
-          ct.currency_code, act.account_type_id, act.account_type_name,
-           cba.category_name, cba.subcategory, cnt.category_nature_type_name,
-            ua.account_starting_amount, ua.account_start_date, 
+        ct.currency_code, act.account_type_id, act.account_type_name,
+        cba.category_name, cba.subcategory, cnt.category_nature_type_name,
+        ua.account_starting_amount, ua.account_start_date, 
              tr.description, tr.transaction_actual_date, tr.amount
 
           FROM transactions tr 
@@ -578,7 +578,6 @@ export const dashboardMovementTransactions = async (req, res, next) => {
                WHERE ua.user_id = $1
                AND (act.account_type_name = $2) AND ua.account_name != $3
                AND mt.movement_type_name = $4
-               
                AND (tr.transaction_actual_date BETWEEN $5 AND $6 OR tr.created_at BETWEEN $5 AND $6  )
 
             ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
@@ -613,7 +612,6 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           WHERE ua.user_id = $1
           AND (act.account_type_name = $2) AND ua.account_name != $3
           AND mt.movement_type_name = $4
-
             ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
           `,
         values: [userId, accountTypeMap.income, 'slack', movement_type_name],
@@ -625,24 +623,28 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       queryModel = {
         text: `SELECT mt.movement_type_name,ua.account_id, ua.account_name, ua.account_balance,
           ct.currency_code, act.account_type_id, act.account_type_name,
-           ua.account_starting_amount, ua.account_start_date, 
-          tr.description, tr.transaction_actual_date, tr.amount
-               FROM transactions tr 
-          JOIN user_accounts ua ON tr.account_id = ua.account_id
-          JOIN account_types act ON ua.account_type_id = act.account_type_id
-          JOIN currencies ct ON ua.currency_id = ct.currency_id
-          JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
-          JOIN investment_accounts iac ON ua.account_id = iac.account_id
-          WHERE ua.user_id = $1
+            ua.account_starting_amount, ua.account_start_date, 
+            tr.description, tr.transaction_actual_date, tr.amount
+
+          FROM transactions tr 
+            JOIN user_accounts ua ON tr.account_id = ua.account_id
+            JOIN account_types act ON ua.account_type_id = act.account_type_id
+            JOIN currencies ct ON ua.currency_id = ct.currency_id
+            JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
+         
+               WHERE ua.user_id = $1
+
           AND (act.account_type_name = $2) AND ua.account_name != $3
-          AND mt.movement_type_name = $4
+          AND (mt.movement_type_name = $5 OR mt.movement_type_name = $4)
+          
             ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
           `,
         values: [
           userId,
           accountTypeMap.investment,
           'slack',
-          movement_type_name,
+          'transfer',
+          'account-opening',
         ],
       };
       break;
@@ -655,18 +657,18 @@ export const dashboardMovementTransactions = async (req, res, next) => {
         psa.target,psa.desired_date,           
         ua.account_starting_amount, ua.account_start_date, 
         tr.description, tr.transaction_actual_date, tr.amount
-          FROM transactions tr 
+         FROM transactions tr 
           JOIN user_accounts ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
-           JOIN pocket_saving_accounts psa ON ua.account_id = psa.account_id
+          JOIN pocket_saving_accounts psa ON ua.account_id = psa.account_id
             WHERE ua.user_id = $1
-            AND (act.account_type_name = $2) AND ua.account_name != $3
-            AND mt.movement_type_name = $4
-            ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
+              AND (act.account_type_name = $2) AND ua.account_name != $3
+              AND mt.movement_type_name = $4
+                ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
           `,
-        values: [userId, accountTypeMap.expense, 'slack', movement_type_name],
+        values: [userId, accountTypeMap.pocket, 'slack', 'transfer'],
       };
       break;
 
@@ -787,11 +789,8 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   }
 };
 //------------------------------------------------
-
-//------------------------------------------------
-
 //************************************************/
-//GET: TRACKER MOVEMENT TRANSACTIONS. BY USER, PERIOD (default:last 30 days) AND SEARCH PARAM
+//GET: TRACKER MOVEMENT TRANSACTIONS. BY USER, PERIOD (default:last 30 days) AND  a SEARCH PARAM
 //endpoint: http://localhost:5000/api/fintrack/dashboard/movements/search/?start=sd&end=ed&search=searchParam&user=${user}
 
 export const dashboardMovementTransactionsSearch = async (req, res, next) => {
@@ -859,9 +858,7 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
   OR CAST(tr.source_account_id AS TEXT) ILIKE '%'||$4||'%'
   OR CAST(tr.destination_account_id  AS TEXT) ILIKE '%'||$4||'%'
     )
-     
    ORDER BY tr.transaction_actual_date DESC, tr.created_at DESC
-
   `,
       values: [
         userId,
@@ -910,6 +907,11 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
 //************************************************/
 //GET: TRACKER MOVEMENT TRANSACTIONS. BY USER, MOVEMENT_TYPE_NAME, ACCOUNT_TYPE_NAME, TRANSACTION_TYPE_NAME
 //endpoint: http://localhost:5000/api/fintrack/dashboard/movements/account_type/?start=sd&end=ed&movement=&account_type=&transaction_type=&user=${user}
+//examples:
+// ?start=&end=&movement=expense&transaction_type=&account_type=category_budget&user=51ba7238...
+// ?start=&end=&movement=debt&transaction_type=&account_type=debtor&user=51ba7238-31f0-...
+//http://localhost:5000/api/fintrack/dashboard/movements/account_type/?start=&end=&movement=income&transaction_type=&account_type=income_source&user=51ba7...
+//for transfer movements (pocket, investment) use other endpoint:dashboardMovementTransactions
 
 export const dashboardMovementTransactionsByType = async (req, res, next) => {
   const backendColor = 'blue';
@@ -931,7 +933,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
     const { start, end, transaction_type, movement, account_type } = req.query;
     const userId = req.user ?? req.query.user;
 
-    if (!userId || !movement || !(transaction_type || account_type)) {
+    if (!userId || !(movement || transaction_type || account_type)) {
       const message = 'User Id , movement and transaction_type are required';
       return RESPONSE(res, 400, message);
     }
@@ -952,8 +954,6 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
     //   'endDate:',
     //   endDate
     // );
-    //HACER UN QUERY PARA MOVEMENT TYPE Y TRANSACTION TYPE, PARA REFLEJAR LOS MOVIMIENTOS.
-    // Y LA ORIGINAL DE ESTE QUERY QUEDARIA PARA REALIZAR BUSQUEDAS ENTRE LAS TRANSACCIONES
 
     const movementsResult = await pool.query({
       text: `
@@ -965,13 +965,11 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
           JOIN transaction_types trt ON tr.transaction_type_id = trt.transaction_type_id
-
   WHERE ua.user_id = $1 
 
-  AND (tr.transaction_actual_date BETWEEN $2 AND $3 OR tr.created_at BETWEEN $2 AND $3 AND ua.account_name !=$4)
-  
-  AND (mt.movement_type_name = $6)
-  AND (trt.transaction_type_name = $5 OR act.account_type_name = $7)
+    AND (tr.transaction_actual_date BETWEEN $2 AND $3 OR tr.created_at BETWEEN $2 AND $3 AND ua.account_name !=$4)
+    AND (mt.movement_type_name = $6 OR mt.movement_type_name = $8 )
+    AND (trt.transaction_type_name = $5 OR act.account_type_name = $7)
 
   ORDER BY tr.transaction_actual_date DESC, tr.created_at DESC
   `,
@@ -983,6 +981,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
         transaction_type,
         movement,
         account_type,
+        movement === 'debt' ? 'account-opening' : '',
       ],
     });
 
@@ -1010,8 +1009,8 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
     if (error instanceof Error) {
       console.error(
         pc.red(
-          // `Error while getting movement transactions in the period between ${startDate} and ${endDate}` //variables should be out of try/catch scope
-          `Error while getting movement transactions in the period`
+          `Error while getting movement transactions in the period between ${startDate} and ${endDate}` //variables should be out of try/catch scope
+          // `Error while getting movement transactions in the period`
         )
       );
       if (process.env.NODE_ENV === 'development') {

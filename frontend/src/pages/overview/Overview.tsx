@@ -5,14 +5,13 @@ import LastMovements, {
   LastMovementType,
 } from './components/LastMovements.tsx';
 import InvestmentAccountBalance from './components/InvestmentAccBalance';
-
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 
 import {
   url_get_total_account_balance_by_type,
   url_monthly_TotalAmount_ByType,
-  url_get_transactions_by_movement,
-  url_get_transactions_by_search,
+  dashboardMovementTransactionsByType,
+  // url_get_transactions_by_search,
 } from '../../endpoints.ts';
 import {
   BalancePocketRespType,
@@ -25,8 +24,8 @@ import { overviewFetchAll } from './overviewFetchAll.ts';
 import { useEffect, useState } from 'react';
 import {
   calculateMonthlyAverage,
-  // FinancialResultType,
   ResultType,
+  // FinancialResultType,
 } from './CalculateMonthlyAverage.ts';
 // import { CurrencyType } from '../../types/types.ts';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
@@ -40,12 +39,12 @@ export type CreateNewAccountPropType = {
 const userId = import.meta.env.VITE_USER_ID;
 
 //type of api response
-
 type ApiRespDataType = {
   SavingGoals: BalancePocketRespType | null;
   MonthlyTotalAmountByType: FinancialDataRespType | null;
-  MovementTransactionsByType: LastMovementRespType | null;
+  MovementExpenseTransactionsByType: LastMovementRespType | null;
   MovementDebtTransactions: LastMovementRespType | null;
+  MovementIncomeTransactionsByType: LastMovementRespType | null;
 };
 //---------------------
 type KPIEndpointType = {
@@ -54,12 +53,13 @@ type KPIEndpointType = {
   type: BalancePocketRespType | FinancialDataRespType | LastMovementRespType;
 };
 
-//type of state data
+//type of state data to render
 type KPIDataStateType = {
-  SavingGoals: BalancePocketRespType | null;  //??
+  SavingGoals: BalancePocketRespType | null; //??
   MonthlyMovementKPI: ResultType | null;
   LastExpenseMovements: LastMovementType[] | null;
   LastMovements: LastMovementType[] | null;
+  LastIncomeMovements: LastMovementType[] | null;
 };
 //----------------------------
 //data to be fetched
@@ -75,14 +75,20 @@ const overviewKPIendpoints: KPIEndpointType[] = [
     type: {} as FinancialDataRespType,
   },
   {
-    key: 'MovementTransactionsByType',
-    url: `${url_get_transactions_by_movement}?start=&end=&movement=expense&transaction_type=deposit&account_type=category_budget&user=${userId}`,
+    key: 'MovementExpenseTransactionsByType',
+    url: `${dashboardMovementTransactionsByType}?start=&end=&movement=expense&transaction_type=&account_type=category_budget&user=${userId}`,
     type: {} as LastMovementRespType,
   },
-
   {
     key: 'MovementDebtTransactions',
-    url: `${url_get_transactions_by_search}?start=&end=&search=debt&user=${userId}`,
+    url: `${dashboardMovementTransactionsByType}?start=&end=&movement=debt&transaction_type=&account_type=debtor&user=${userId}`,
+    // url: `${url_get_transactions_by_search}?start=&end=&search=debt&user=${userId}`,
+    type: {} as LastMovementRespType,
+  },
+  {
+    key: 'MovementIncomeTransactionsByType',
+    url: `${dashboardMovementTransactionsByType}?start=&end=&movement=income&transaction_type=&account_type=income_source&user=${userId}`,
+    // url: `${dashboardMovementTransactionsByType}?start=&end=&search=income&user=${userId}`,
     type: {} as LastMovementRespType,
   },
 ];
@@ -103,6 +109,7 @@ function Overview() {
     MonthlyMovementKPI: null,
     LastExpenseMovements: null,
     LastMovements: null,
+    LastIncomeMovements: null,
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -110,7 +117,6 @@ function Overview() {
   //------------------
 
   //------------------
-
   function createNewAccount(originRoute: string) {
     navigateTo(originRoute + '/new_account', {
       state: { previousRoute: originRoute },
@@ -144,30 +150,33 @@ function Overview() {
           : null;
 
         //-------------------
-        const movementTransactionsData =
-          result.MovementTransactionsByType.status === 'success'
-            ? result.MovementTransactionsByType?.data?.data
+        const movementExpenseTransactionsData =
+          result.MovementExpenseTransactionsByType.status === 'success'
+            ? result.MovementExpenseTransactionsByType?.data?.data
             : null;
 
-        const movementTransactions = movementTransactionsData
-          ? Array.from({ length: movementTransactionsData.length }, (_, i) => {
-              const {
-                account_name,
-                amount,
-                description,
-                transaction_actual_date,
-                currency_code,
-              } = movementTransactionsData[i];
+        const movementExpenseTransactions = movementExpenseTransactionsData
+          ? Array.from(
+              { length: movementExpenseTransactionsData.length },
+              (_, i) => {
+                const {
+                  account_name,
+                  amount,
+                  description,
+                  transaction_actual_date,
+                  currency_code,
+                } = movementExpenseTransactionsData[i];
 
-              const obj = {
-                accountName: account_name,
-                record: amount, //data? or title?
-                description: description,
-                date: transaction_actual_date,
-                currency: currency_code,
-              };
-              return { ...obj };
-            })
+                const obj = {
+                  accountName: account_name,
+                  record: amount, //data? or title?
+                  description: description,
+                  date: transaction_actual_date,
+                  currency: currency_code,
+                };
+                return { ...obj };
+              }
+            )
           : null;
 
         //---
@@ -197,12 +206,42 @@ function Overview() {
           : null;
 
         //---
+        const movementIncomeTransactionsData =
+          result.MovementIncomeTransactionsByType.status === 'success'
+            ? result.MovementIncomeTransactionsByType?.data?.data
+            : null;
 
+        const movementIncomeTransactions = movementIncomeTransactionsData
+          ? Array.from(
+              { length: movementIncomeTransactionsData.length },
+              (_, i) => {
+                const {
+                  account_name,
+                  amount,
+                  description,
+                  transaction_actual_date,
+                  currency_code,
+                } = movementIncomeTransactionsData[i];
+
+                const obj = {
+                  accountName: account_name,
+                  record: amount, //data? or title?
+                  description: description,
+                  date: transaction_actual_date,
+                  currency: currency_code,
+                };
+                return { ...obj };
+              }
+            )
+          : null;
+
+        //---
         setKpiData({
           SavingGoals: savingGoalsData,
           MonthlyMovementKPI: totalAndMonthlyAmount,
-          LastExpenseMovements: movementTransactions,
+          LastExpenseMovements: movementExpenseTransactions,
           LastMovements: debtTransactions,
+          LastIncomeMovements: movementIncomeTransactions,
         });
       } catch (err) {
         setError('Failed to load overview data');
@@ -261,14 +300,20 @@ function Overview() {
           data={kpiData.LastExpenseMovements}
           title='Last Movements (expense)'
         />
-        
+
         <LastMovements
           data={kpiData.LastMovements}
           title='Last Movements (debts)'
         />
+
+        {
+          <LastMovements
+            data={kpiData.LastIncomeMovements}
+            title='Last Movements (income)'
+          />
+        }
       </div>
     </section>
   );
 }
 export default Overview;
-

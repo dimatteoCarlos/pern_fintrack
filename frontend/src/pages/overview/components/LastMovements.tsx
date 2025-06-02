@@ -22,7 +22,7 @@ function LastMovements({ data, title }: LastMovementsProps) {
 
   const lastMovementDefault: LastMovementType[] = [
     {
-      accountName: 'Category Name',
+      accountName: 'Account Name',
       record: 0,
       description: 'Description',
       date: new Date(),

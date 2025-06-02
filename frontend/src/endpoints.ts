@@ -65,9 +65,10 @@ export const url_get_accounting_accounts: string =
   BASE_URL + '/account/type/?type= bank_and_investment';
 
 //get the sum of balance of all accounts of one account type
-//example: former available budget now total balance are only bank accounts
+//example: total balance is the sum of all bank accounts balance
 //for pocket and category budget also get the total goal or budget respectively
 //also, get the balance of income source accounts
+
 // fintrack dashboardTotalBalanceAccountByType
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type
 //used in:OverviewLayout.tsx, Overview.tsx,
@@ -102,14 +103,24 @@ export const url_monthly_TotalAmount_ByType: string =
 //http://localhost:5000/api/fintrack/account/type/?type=
 // export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
 
+//=========================================================================================================
 //LAST MOVEMENTS BY MOVEMENT TYPE
 //this includes transaction_type
-// dashboardMovementTransactionsByType
-//http://localhost:5000/api/fintrack/dashboard/movements/account_type/?start=&end=&movement=account-opening&transaction_type=withdraw&account_type=&user=e71a1b29-8838-4398-b481-bd149bceb01f
-export const url_get_transactions_by_movement: string =
+// controller:dashboardMovementTransactionsByType
+// insomnia:fintrack dashboardMovementTransactionType
+// endpoint:dashboardMovementTransactionsByType
+//example: http://localhost:5000/api/fintrack/dashboard/movements/account_type/?start=&end=&movement=expense&transaction_type=&account_type=category_budget&user=51ba7238-31f0-4153-a80b-6709c34a1955
+
+export const dashboardMovementTransactionsByType: string =
   BASE_URL + '/dashboard/movements/account_type/';
+//-----------------------------------------------------------
+
 
 //http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
+
+
+//controller: dashboardMovementTransactions
+
 
 //fintrack dashboard movements
 //this is more general since it can search

@@ -27,8 +27,9 @@ type FetchResult<T> = FetchSuccess<T> | FetchError;
 type ApiRespDataType = {
   SavingGoals: BalancePocketRespType | null;
   MonthlyTotalAmountByType: FinancialDataRespType | null;
-  MovementTransactionsByType: LastMovementRespType | null;
+  MovementExpenseTransactionsByType: LastMovementRespType | null;
   MovementDebtTransactions: LastMovementRespType | null;
+  MovementIncomeTransactionsByType: LastMovementRespType | null;
 };
 
 // Las claves válidas que puede tener ApiRespDataType
@@ -121,7 +122,7 @@ export async function overviewFetchAll(
 
     if (result.status === 'fulfilled') {
       const data = result.value.data;
-      console.log('🚀 ~ data:', i, data);
+      console.log('🚀 ~ data overviewFetchAll:', i, data);
 
       if (endpoint.key === 'SavingGoals' && isBalancePocketRespType(data)) {
         results[endpoint.key] = { status: 'success', data };
@@ -132,8 +133,9 @@ export async function overviewFetchAll(
         console.log('pasando por MonthlyTotalAmountByType');
         results[endpoint.key] = { status: 'success', data };
       } else if (
-        (endpoint.key === 'MovementTransactionsByType' ||
-          endpoint.key === 'MovementDebtTransactions') &&
+        (endpoint.key === 'MovementExpenseTransactionsByType' ||
+          endpoint.key === 'MovementDebtTransactions' ||
+          endpoint.key === 'MovementIncomeTransactionsByType') &&
         isLastMovementRespType(data)
       ) {
         console.log('pasando por MovementTransactionsByType');
