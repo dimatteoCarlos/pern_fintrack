@@ -46,6 +46,7 @@ export async function recordTransaction(options) {
     // console.log(pc.yellowBright(message));
 
     return transactionResult.rows[0];
+
   } catch (error) {
     // await client.query('ROLLBACK');
     const message = error.message || `Error when recording transaction.`;
@@ -70,8 +71,4 @@ export async function recordTransaction(options) {
 				"transaction_actual_date": "2025-01-01T04:00:00.000Z",
 				"created_at": "2025-03-19T20:12:05.094Z"
 			}
-
-
-
-
 */

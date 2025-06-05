@@ -80,7 +80,7 @@ export const url_get_total_account_balance_by_type: string =
 export const url_movement_transaction_record: string =
   BASE_URL + '/transaction/transfer-between-accounts';
 
-// ENDPOINTS FOR BUDGET PAGE
+//ENDPOINTS FOR BUDGET PAGE
 //accouny list summary by account type and acc name
 //http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=category_budget&user=
 export const url_summary_balance_ByType: string =
@@ -92,7 +92,6 @@ export const url_summary_balance_ByType: string =
 //   BASE_URL + '/dashboard/balance/type';
 //==================================================
 //ENDPOINTS for OVERVIEW page
-
 //dashboardMonthlyTotalAmountByType
 //get.http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?type=expense&user=
 
@@ -103,7 +102,7 @@ export const url_monthly_TotalAmount_ByType: string =
 //http://localhost:5000/api/fintrack/account/type/?type=
 // export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
 
-//=========================================================================================================
+//======================================================
 //LAST MOVEMENTS BY MOVEMENT TYPE
 //this includes transaction_type
 // controller:dashboardMovementTransactionsByType
@@ -114,14 +113,15 @@ export const url_monthly_TotalAmount_ByType: string =
 export const dashboardMovementTransactionsByType: string =
   BASE_URL + '/dashboard/movements/account_type/';
 //-----------------------------------------------------------
+// controller:dashboardMovementTransactions
+// insomnia:fintrack dashboard movement transaction by MOVEMENT NAME
+// endpoint:dashboardMovementTransactionsByType
+//example:http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=pocket&user=${user}
+//http://localhost:5000/api/fintrack/dashboard/movements/movement/??start=&end=&movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
+export const dashboardMovementTransactions: string =
+  BASE_URL + '/dashboard/movements/movement/';
 
-
-//http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
-
-
-//controller: dashboardMovementTransactions
-
-
+//-----------------------------------------------------------
 //fintrack dashboard movements
 //this is more general since it can search
 //get.http://localhost:5000/api/fintrack/dashboard/movements/search/?start=&end=&search=opening&user=eacef623-6fb0-4168-a27f-fa135de093e1

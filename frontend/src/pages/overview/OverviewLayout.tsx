@@ -24,16 +24,16 @@ function OverviewLayout() {
     apiData: incomeBalanceApiData,
     isLoading: incomeBalanceIsLoading,
     error: incomeBalanceError,
-    status: incomeBalanceStatus,
+    // status: incomeBalanceStatus,
   } = useFetch<BalanceIncomeRespType>(
     `${url_get_total_account_balance_by_type}/?type=income_source&user=${userId}`
   );
-  console.log(
-    '🚀 ~ OverviewLayout ~ incomeBalanceApiData:',
-    incomeBalanceApiData,
-    incomeBalanceError,
-    incomeBalanceStatus
-  );
+  // console.log(
+  //   '🚀 ~ OverviewLayout ~ incomeBalanceApiData:',
+  //   incomeBalanceApiData,
+  //   incomeBalanceError,
+  //   incomeBalanceStatus
+  // );
 
   const {
     apiData: expenseBalanceApiData,
@@ -46,7 +46,7 @@ function OverviewLayout() {
 
   console.log(
     '🚀 ~ OverviewLayout ~ expenseBalanceApiData:',
-    expenseBalanceApiData,
+    // expenseBalanceApiData,
     expenseBalanceError,
     expenseBalanceStatus
   );

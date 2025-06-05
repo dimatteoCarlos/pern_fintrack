@@ -43,26 +43,9 @@ export function DebtsBigBoxResult({
         </div>
       </div>
       {/***/}
-      <div
-        className='displayScreen  dark flex-row-sb'
-        style={{
-          display: 'flex',
-          width: '100%',
-          flexDirection: 'column',
-          gap: '0.5rem',
-        }}
-      >
-        <div
-          className='debtInfo '
-          style={{
-            width: '85%',
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr 1fr',
-            gap: '2rem',
-            // backgroundColor: 'orange',
-          }}
-        >
-          <div className='displayScreen--concept light'>{receivable}</div>
+      <div className='debtIndicatorContainer '>
+        <div className='debtInfo '>
+          <div className='displayScreen--concept light'>{receivable}:</div>
           <div className='displayScreen--result light'>
             {currencyFormat(
               defaultCurrency,
@@ -71,22 +54,12 @@ export function DebtsBigBoxResult({
             )}
           </div>
 
-          <div className='displayScreen--concept light'>{debtors}</div>
+          <div className='displayScreen--concept light'>{debtors}:</div>
           <div className='displayScreen--result light'>{debtorCount}</div>
         </div>
-
-        <div
-          className='debtInfo '
-          style={{
-            display: 'grid',
-            width: '85%',
-            gridTemplateColumns: '1fr 1fr 1fr 1fr',
-            gap: '2rem',
-          }}
-        >
-          <div className='displayScreen--concept light' style={{}}>
-            {payable}
-          </div>
+        {}
+        <div className='debtInfo '>
+          <div className='displayScreen--concept light'>{payable}:</div>
 
           <div className='displayScreen--result light'>
             {currencyFormat(
@@ -96,7 +69,7 @@ export function DebtsBigBoxResult({
             )}
           </div>
 
-          <div className='displayScreen--concept light'>{creditors}</div>
+          <div className='displayScreen--concept light'>{creditors}:</div>
           <div className='displayScreen--result light'>{creditorCount}</div>
         </div>
       </div>

@@ -506,14 +506,12 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       );
     }
   };
-
   //---------------------------------------
   const { movement } = req.query;
   const movement_type_name = movement === 'debts' ? 'debt' : movement;
   const userId = req.body.user ?? req.query.user;
   console.log('params:', req.body, req.query);
-
-  //------------------------------
+  //---------------------------------------
   //date period input
   //take care of ddbb server date
   const today = new Date();
@@ -657,6 +655,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
         psa.target,psa.desired_date,           
         ua.account_starting_amount, ua.account_start_date, 
         tr.description, tr.transaction_actual_date, tr.amount
+
          FROM transactions tr 
           JOIN user_accounts ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
@@ -666,9 +665,19 @@ export const dashboardMovementTransactions = async (req, res, next) => {
             WHERE ua.user_id = $1
               AND (act.account_type_name = $2) AND ua.account_name != $3
               AND mt.movement_type_name = $4
+
+              AND (tr.transaction_actual_date BETWEEN $5 AND $6 OR tr.created_at BETWEEN $5 AND $6  )
+
                 ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
           `,
-        values: [userId, accountTypeMap.pocket, 'slack', 'transfer'],
+        values: [
+          userId,
+          accountTypeMap.pocket,
+          'slack',
+          'transfer',
+          startDate,
+          endDate,
+        ],
       };
       break;
 
@@ -760,14 +769,26 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   //-------------------------------
   try {
     const movements = await queryFn(queryModel.text, queryModel.values);
-    console.log('🚀 ~ dashboardMovementTransactions ~ result:', movements);
+    // console.log('🚀 ~ dashboardMovementTransactions ~ result:', movements);
 
     if (movements?.length === 0) {
-      return res.status(404).json({
-        message: `No info encountered for movement: ${movement_type_name} and type: ${accountTypeMap[movement_type_name]}`,
-      });
+      const message = `No info encountered for movement: ${movement_type_name} and type: ${accountTypeMap[movement_type_name]}`;
+
+      return RESPONSE(res, 400, message);
+
+      // return res.status(404).json({
+      //   message: `No info encountered for movement: ${movement_type_name} and type: ${accountTypeMap[movement_type_name]}`,
+      // });
     }
-    return res.status(200).json(movements);
+
+    const message = `${movements.length} transaction(s) found. Period between ${
+      startDate.toISOString().split('T')[0]
+    } and ${endDate.toISOString().split('T')[0]}`;
+    // console.log(pc[backendColor](message));
+
+    return RESPONSE(res, 200, message, movements);
+
+    // return res.status(200).json(movements);
   } catch (error) {
     if (error instanceof Error) {
       console.error(
@@ -981,7 +1002,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
         transaction_type,
         movement,
         account_type,
-        movement === 'debt' ? 'account-opening' : '',
+        movement === 'debt' || movement === 'pocket' ? 'account-opening' : '',
       ],
     });
 
@@ -997,6 +1018,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
 
       return RESPONSE(res, 404, message);
     }
+
     const message = `${
       movementsResult.rows.length
     } transaction(s) found. Period between ${

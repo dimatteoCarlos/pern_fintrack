@@ -30,7 +30,7 @@
   background-color: var(--dark);
   border: none;
   border-radius: 0.75rem;
-  min-height: 2.4375rem;
+  min-height: 2.375rem;
   color: var(--light);
   width: 86.3%;
   padding: 0.5rem 0.75rem;
@@ -38,12 +38,27 @@
   font-size: 0.875rem;
   font-weight: 700;
   font-weight: bolder;
-}
 
-.debtsLayout .displayScreen {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.debtsLayout .debtIndicatorContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--dark);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  gap: 0.5rem;
+}
+
+.debtsLayout .debtInfo {
+  /* border: 1px solid yellow; */
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .debtsLayout .displayScreen--concept.light,
@@ -52,10 +67,16 @@
   font-size: 0.875rem;
   text-transform: capitalize;
   font-weight: 400;
+  /* background-color: red; */
 }
 
-.debtsLayout .displayScreen--result {
+.debtsLayout .displayScreen--result.light {
   font-weight: 500;
+  text-align: right;
+  /* background-color: red; */
+}
+
+.debtsLayout .displayScreen--concept.light {
   text-align: right;
 }
 

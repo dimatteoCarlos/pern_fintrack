@@ -11,8 +11,9 @@ import {
   url_get_total_account_balance_by_type,
   url_monthly_TotalAmount_ByType,
   dashboardMovementTransactionsByType,
-  // url_get_transactions_by_search,
+  dashboardMovementTransactions,
 } from '../../endpoints.ts';
+
 import {
   BalancePocketRespType,
   FinancialDataRespType,
@@ -28,6 +29,7 @@ import {
   // FinancialResultType,
 } from './CalculateMonthlyAverage.ts';
 // import { CurrencyType } from '../../types/types.ts';
+
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 
 export type CreateNewAccountPropType = {
@@ -38,15 +40,16 @@ export type CreateNewAccountPropType = {
 //---------------------------------
 const userId = import.meta.env.VITE_USER_ID;
 
-//type of api response
+//---type of api response
 type ApiRespDataType = {
   SavingGoals: BalancePocketRespType | null;
   MonthlyTotalAmountByType: FinancialDataRespType | null;
   MovementExpenseTransactionsByType: LastMovementRespType | null;
   MovementDebtTransactions: LastMovementRespType | null;
   MovementIncomeTransactionsByType: LastMovementRespType | null;
+  MovementPocketTransactions: LastMovementRespType | null;
 };
-//---------------------
+//---endpoint config------------------
 type KPIEndpointType = {
   key: keyof ApiRespDataType;
   url: string;
@@ -60,8 +63,9 @@ type KPIDataStateType = {
   LastExpenseMovements: LastMovementType[] | null;
   LastMovements: LastMovementType[] | null;
   LastIncomeMovements: LastMovementType[] | null;
+  LastPocketMovements: LastMovementType[] | null;
 };
-//----------------------------
+//----------------------------------------------
 //data to be fetched
 const overviewKPIendpoints: KPIEndpointType[] = [
   {
@@ -79,6 +83,7 @@ const overviewKPIendpoints: KPIEndpointType[] = [
     url: `${dashboardMovementTransactionsByType}?start=&end=&movement=expense&transaction_type=&account_type=category_budget&user=${userId}`,
     type: {} as LastMovementRespType,
   },
+
   {
     key: 'MovementDebtTransactions',
     url: `${dashboardMovementTransactionsByType}?start=&end=&movement=debt&transaction_type=&account_type=debtor&user=${userId}`,
@@ -88,7 +93,11 @@ const overviewKPIendpoints: KPIEndpointType[] = [
   {
     key: 'MovementIncomeTransactionsByType',
     url: `${dashboardMovementTransactionsByType}?start=&end=&movement=income&transaction_type=&account_type=income_source&user=${userId}`,
-    // url: `${dashboardMovementTransactionsByType}?start=&end=&search=income&user=${userId}`,
+    type: {} as LastMovementRespType,
+  },
+  {
+    key: 'MovementPocketTransactions',
+    url: `${dashboardMovementTransactions}?start=&end=&movement=pocket&user=${userId}`,
     type: {} as LastMovementRespType,
   },
 ];
@@ -110,6 +119,7 @@ function Overview() {
     LastExpenseMovements: null,
     LastMovements: null,
     LastIncomeMovements: null,
+    LastPocketMovements: null,
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -122,7 +132,6 @@ function Overview() {
       state: { previousRoute: originRoute },
     });
   }
-
   //------------------
 
   useEffect(() => {
@@ -234,17 +243,51 @@ function Overview() {
               }
             )
           : null;
-
         //---
+    
+        const movementPocketTransactionsData =
+          result.MovementPocketTransactions.status === 'success'
+            ? result.MovementPocketTransactions?.data?.data
+            : null;
+
+        const movementPocketTransactions = movementPocketTransactionsData
+          ? Array.from(
+              { length: movementPocketTransactionsData.length },
+              (_, i) => {
+                const {
+                  account_name,
+                  amount,
+                  description,
+                  transaction_actual_date,
+                  currency_code,
+                } = movementPocketTransactionsData[i];
+
+                const obj = {
+                  accountName: account_name,
+                  record: amount, //data? or title?
+                  description: description,
+                  date: transaction_actual_date,
+                  currency: currency_code,
+                };
+                return { ...obj };
+              }
+            )
+          : null;
+
+             console.log('recvisar result pocket6', result)
+
+        //-------------
         setKpiData({
           SavingGoals: savingGoalsData,
           MonthlyMovementKPI: totalAndMonthlyAmount,
           LastExpenseMovements: movementExpenseTransactions,
           LastMovements: debtTransactions,
           LastIncomeMovements: movementIncomeTransactions,
+          LastPocketMovements: movementPocketTransactions,
         });
       } catch (err) {
         setError('Failed to load overview data');
+        // console.log('pocket', kpiData.LastPocketMovements);
         console.error('Overview fetch error:', err);
       } finally {
         setIsLoading(false);
@@ -312,6 +355,11 @@ function Overview() {
             title='Last Movements (income)'
           />
         }
+
+        <LastMovements
+          data={kpiData.LastPocketMovements}
+          title='Last Movements (pocket)'
+        />
       </div>
     </section>
   );

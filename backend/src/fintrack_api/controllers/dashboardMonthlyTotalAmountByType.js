@@ -110,8 +110,7 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
               (tr.movement_type_id = 1 AND tr.transaction_type_id = 2) -- Expense
               OR
               (tr.movement_type_id = 2 AND tr.transaction_type_id = 1) -- Income
-              OR
-              (tr.movement_type_id = 5 AND tr.transaction_type_id = 1) -- Saving
+              
             )
           GROUP BY 
             EXTRACT(MONTH FROM tr.transaction_actual_date),
@@ -126,6 +125,10 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
         SELECT * FROM financial_data
         ORDER BY month_index ASC, type, name, currency_code
 `;
+
+
+// OR
+//               (tr.movement_type_id = 5 AND tr.transaction_type_id = 1) -- Saving
 
       const result = await pool.query(queryText, [
         userId,

@@ -30,6 +30,7 @@ type ApiRespDataType = {
   MovementExpenseTransactionsByType: LastMovementRespType | null;
   MovementDebtTransactions: LastMovementRespType | null;
   MovementIncomeTransactionsByType: LastMovementRespType | null;
+  MovementPocketTransactions: LastMovementRespType | null;
 };
 
 // Las claves válidas que puede tener ApiRespDataType
@@ -41,7 +42,6 @@ type EndpointItemType<K extends KPIKeyType> = {
   key: K;
   url: string;
   type: ApiRespDataType[K]; // Solo se usa
-  //
   //  como referencia para tipar el resultado
 };
 
@@ -135,6 +135,7 @@ export async function overviewFetchAll(
       } else if (
         (endpoint.key === 'MovementExpenseTransactionsByType' ||
           endpoint.key === 'MovementDebtTransactions' ||
+          endpoint.key === 'MovementPocketTransactions' ||
           endpoint.key === 'MovementIncomeTransactionsByType') &&
         isLastMovementRespType(data)
       ) {

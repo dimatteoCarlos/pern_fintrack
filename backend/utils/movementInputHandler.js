@@ -40,6 +40,7 @@ export const getTransferConfig = (body) => {
     body.destinationAccountType === 'pocket'
       ? 'pocket_saving'
       : body.destinationAccountType;
+      //set movement type to saving or pocket
 
   return {
     destinationAccountName: body.destination,
