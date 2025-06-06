@@ -76,9 +76,9 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
   //-----get expense, saving or income data by month and currency ----------------------
   //functions definition
   async function getFinancialData(userId) {
-    //withdraw amount from income source accounts, represents income deposited to bank accounts
-    //deposit amount in category budget account, represents an expense, withdrawed from a bank account
-    //deposit amount in pocket saving account, represents a saving contribution, withdrawed from a bank account, but is possible to withdraw from pockets too, so this would measured the contribution to saving but no the balance of total saved in the period
+    //rules: withdrawed amount from income source accounts represents income deposited to bank accounts.
+    //deposited amount in category budget account, represents an expense, withdrawed from a bank account
+    //deposit amount in pocket saving account, represents a saving contribution, withdrawed from a bank account, but it is possible to withdraw from pockets too, so this would measured the contribution to saving but no the balance of total saved in the period
 
     try {
       const queryText = `
@@ -126,9 +126,8 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
         ORDER BY month_index ASC, type, name, currency_code
 `;
 
-
 // OR
-//               (tr.movement_type_id = 5 AND tr.transaction_type_id = 1) -- Saving
+// (tr.movement_type_id = 5 AND tr.transaction_type_id = 1) -- Saving
 
       const result = await pool.query(queryText, [
         userId,

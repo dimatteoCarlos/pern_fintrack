@@ -22,7 +22,8 @@ export const checkAndInsertAccount = async (
       return { exists: true, account: chekAccountResult.rows[0] };
     } else {
       //old version creates a slack account
-      //new version would create a new account named accountName, but, it is not necessary. SE PUEDE OPTIMIZAR DESPUES DE REVISAR CON EL CLIENTE LO QUE REALMENTE NECESITA SEGUN REQUERIMIENTO ORIGINAL
+      //new version would create a new account named accountName, but, it is not necessary.
+      //  SE PUEDE OPTIMIZAR DESPUES DE REVISAR CON EL CLIENTE LO QUE REALMENTE NECESITA SEGUN REQUERIMIENTO ORIGINAL
       const insertResult = await pool.query(
         'INSERT INTO user_accounts (user_id,account_name,account_type_id,currency_id,account_starting_amount,account_balance,account_start_date) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
         [

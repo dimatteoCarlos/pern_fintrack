@@ -6,7 +6,7 @@ export const getExpenseConfig = (body) => ({
   sourceAccountTransactionType: 'withdraw',
   destinationAccountTransactionType: 'deposit',
 });
-
+//===================================================
 export const getIncomeConfig = (body) => ({
   sourceAccountName: body.source,
   destinationAccountName: body.account,
@@ -15,7 +15,7 @@ export const getIncomeConfig = (body) => ({
   sourceAccountTransactionType: 'withdraw',
   destinationAccountTransactionType: 'deposit',
 });
-
+//===================================================
 export const getDebtConfig = (body) => {
   const isLend = body.type === 'lend';
   // console.log('is lend', isLend, body.debtor, {body});
@@ -29,7 +29,7 @@ export const getDebtConfig = (body) => {
     destinationAccountTransactionType: 'lend',
   };
 };
-
+//===========================================
 export const getTransferConfig = (body) => {
   const originAccountType =
     body.originAccountType === 'pocket'
@@ -51,7 +51,7 @@ export const getTransferConfig = (body) => {
     sourceAccountTransactionType: 'withdraw',
   };
 };
-
+//===================================================
 //---config strategy for old version
 
 // export const getInvestmentConfig = (body) => ({
