@@ -1,3 +1,6 @@
+//controller:transferBetweenAccounts.js
+//functions:getAccountTypeId,getAccountInfo,getAccountTypes,getTransactionTypes,balanceMultiplierFn,updateAccountBalance,
+//
 import pc from 'picocolors';
 import { pool } from '../../db/configDB.js';
 import {
@@ -92,6 +95,23 @@ export const updateAccountBalance = async (
   const updatedAccountResult = await pool.query(insertBalanceQuery);
   return updatedAccountResult.rows[0];
 };
+
+export function transformMovementType(
+  movementName,
+  sourceAccountTypeName,
+  destinationAccountTypeName
+) {
+  if (movementName === 'transfer') {
+    if (sourceAccountTypeName !== destinationAccountTypeName) {
+      if (destinationAccountTypeName === 'pocket_saving') return 'pocket';
+
+      if (destinationAccountTypeName === 'investment') return 'investment';
+    }
+
+    return movementName;
+  }
+}
+
 //------------------
 //controller: transferBetweenAccounts
 //------------------
@@ -105,7 +125,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
     // const { user: userId, movement: movementName } = req.query;
     const { movement } = req.query;
     const movementName = movement === 'debts' ? 'debt' : movement; //debt movement is called as debts in frontend
-
     console.log({ movementName });
 
     const userId =
@@ -153,7 +172,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       console.warn(pc.magentaBright(message));
       return res.status(400).json({ status: 400, message });
     }
-    //aqui de antemano sabemos los tipos de movimientos
+
     if (
       ![
         'expense',
@@ -199,30 +218,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   '🚀 ~ transferBetweenAccounts ~ movement_types:',
     //   movement_types
     // );
-    //===========================================================
-    //get the movement type ID
-    //aqui aseguro que el movement introducido exista como tipo , es mas dinamico, porque no necesito pre conocer los tipos
-    const movement_type_idResult = movement_types.filter(
-      (mov) => mov.movement_type_name === movementName.trim().toLowerCase()
-    );
-    // console.log(
-    //   '🚀 ~ transferBetweenAccounts ~ movement_type_idResult:',
-    //   movement_type_idResult
-    // );
-    // throw new Error
-
-    if (!movement_type_idResult) {
-      const message = `movement type id of ${movementName} was not found. Try again with valid movement type!`;
-      console.warn(pc.magentaBright(message));
-      console.log('🚀 ~ transferBetweenAccounts ~ message:', message);
-
-      throw new Error({ status: 400, message });
-      // console.warn(pc.magentaBright(message));
-      // return res.status(400).json({ status: 400, message });
-    }
-
-    const movement_type_id = movement_type_idResult[0].movement_type_id;
-    //=====================================================
 
     //---------------------------------------
     //VALIDATION
@@ -263,23 +258,38 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountTransactionType,
     } = config;
 
-    //AQUI AJUSTARIA EL MOVEMENT TYPE NAME EN EL CASO DE TRANSFER. ES DECIR> UNA NVA VARIABLE PARA EL MOVEMENTTYPENAME, Y HACER LA BUSQUEDA DEL N MOVMENT TYPE ID AQUI. AHORA , TENDRIA SENTIDO HACER AQUI LA VALIDACION DE LA EXISTENCIA DEL MOVMENT NAME CORRECTO? AQUI?J OSEA, HACER PRIMERO LA VALIDACION DEL MOVEMENT NAME. LUEGO ESTABLECER EL CONFIG. DEFINIR LA NUEVA MOVEMENT TYPE NAME. BUSCAR Y VALIDAR EL MOVEMENT TYPE ID Y LUEGO, SUSTITUIR EL MOVEMENT TYPE NAME CON EL NUEVO MOVEMENTTYPENAME
+    //adjust the movement type name
+    const movement_type_name = transformMovementType(
+      movementName,
+      sourceAccountTypeName,
+      destinationAccountTypeName
+    );
 
-    /*
-function determinarTipoMovimiento(movimiento) {
-    const { sourceAccountType, destinationAccountType } = movimiento;
-    
-    // Si los tipos son diferentes y el destino es 'pocket' o 'investment'
-    if (sourceAccountType !== destinationAccountType) {
-        if (destinationAccountType === 'pocket') return 'pocket';
-        if (destinationAccountType === 'investment') return 'investment';
+    //====================================================
+    // get the movement type ID
+
+    const movement_type_idResult = movement_types.filter(
+      (mov) =>
+        mov.movement_type_name === movement_type_name.trim().toLowerCase()
+    );
+    // console.log(
+    //   '🚀 ~ transferBetweenAccounts ~ movement_type_idResult:',
+    //   movement_type_idResult
+    // );
+    // throw new Error
+
+    if (!movement_type_idResult) {
+      const message = `movement type id of ${movement_type_name} was not found. Try again with valid movement type!`;
+      console.warn(pc.magentaBright(message));
+      console.log('🚀 ~ transferBetweenAccounts ~ message:', message);
+
+      throw new Error({ status: 400, message });
+      // console.warn(pc.magentaBright(message));
+      // return res.status(400).json({ status: 400, message });
     }
-    
-    // Todos los demás casos son 'transfer' (por defecto)
-    return 'transfer';
-}
 
-    */
+    const movement_type_id = movement_type_idResult[0].movement_type_id;
+    //=====================================================
 
     //======= transaction and account types from db.
     const transactionsTypes = await getTransactionTypes();
@@ -290,7 +300,6 @@ function determinarTipoMovimiento(movimiento) {
     const destinationTransactionTypeId = transactionsTypes.filter(
       (type) => type.transaction_type_name === destinationAccountTransactionType
     )[0].transaction_type_id;
-
     // console.log(
     //   '🚀 ~ transferBetweenAccounts ~ transactionsTypes:',
     //   sourceTransactionTypeId,
@@ -326,7 +335,6 @@ function determinarTipoMovimiento(movimiento) {
         ? new Date()
         : new Date(Date.parse(transactionActualDate));
     // : Date.parse(transactionActualDate);
-
     // console.log(
     //   transaction_actual_date,
     //   '🚀 ~ transferBetweenAccounts ~ transactionActualDate:',
@@ -377,7 +385,14 @@ function determinarTipoMovimiento(movimiento) {
     //---Update the balance in the source account
     const sourceAccountBalance = sourceAccountInfo.account_balance;
 
-    //---check balance only for source account
+    //---check for enough funds on source account
+    //rules in which overdraft due to transfer between accounts are restricted.
+    //overdraft not allowed: bank to category_budget, bank to investment, bank to debtor , others: investment to investment, bank to bank, bank or investment to pocket, or pocket to any
+
+    //allowed overdraft : slack to any account, income_source to any account, debtor to debtor,  debtor to bank, debtor to any acc
+    //only transfers acceptable:
+    //not possible transfer: category_budget to any,other than bank to category_budget, any to income_source. Any transaction between debt and category_budget nor income_source
+
     if (
       sourceAccountBalance < numericAmount &&
       (sourceAccountTypeName === 'bank' ||
@@ -385,23 +400,14 @@ function determinarTipoMovimiento(movimiento) {
         sourceAccountTypeName === 'pocket_saving')
     ) {
       const message = `Not enough funds to transfer ${currencyCode} ${numericAmount} from account ${sourceAccountName} (${currencyCode} ${sourceAccountBalance})`;
-
       console.warn(pc.magentaBright(message));
       return res.status(400).json({
         status: 400,
         message,
       });
-
-      //Verificar si se aplicaran restriccionespor falta de fondos?
-      //rules in which transfer between accounts are restricted.
-      //overdraft not allowed: bank to category_budget, bank to investment, bank to debtor , others: investment to investment, bank to bank, bank or investment to pocket, or pocket to any
-
-      //allowed overdraft : slack to any account, income_source to any account, debtor to debtor,  debtor to bank, debtor to any acc
     }
     //==============================================
     //pg transaction to insert data in user_accounts
-    //las source account deberian ser negativo
-    // const transactionSign = balanceMultiplierFn(sourceAccountTransactionType);
 
     const newSourceAccountBalance =
       parseFloat(sourceAccountBalance) - numericAmount;
@@ -450,8 +456,8 @@ function determinarTipoMovimiento(movimiento) {
     //   typeof destinationAccountBalance
     // );
 
-    //----Register transfer/receive transaction-----------------
-    //-----------source transaction-----------------------------
+    //----Register transfer/receive transaction-----------
+    //----Source transaction-----------------------------
     const transactionDescription = `${note}. Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount} ${currencyCode} from account "${sourceAccountName}" of type: "${sourceAccountTypeName}" to "${destinationAccountName}". Type ${destinationAccountTypeName}. Date: ${transaction_actual_date.toLocaleString()}`;
 
     //revisar formato de fecha
@@ -483,7 +489,7 @@ function determinarTipoMovimiento(movimiento) {
 
     await recordTransaction(sourceTransactionOption);
     //=========================================================
-    //-----------destination transaction-----------------------
+    //-----------destination transaction---------------------
     const transactionDescriptionReceived = `${note}.Transaction: ${destinationAccountTransactionType}.Received ${numericAmount} ${currencyCode} from account "${sourceAccountName}" .Type: "${sourceAccountTypeName}" account, to "${destinationAccountName}". Type "${destinationAccountTypeName}". Date: ${transaction_actual_date.toLocaleString()}`; //revisar formato de fecha
 
     // console.log(
@@ -520,7 +526,7 @@ function determinarTipoMovimiento(movimiento) {
     await client.query('COMMIT');
     //data response
     const data = {
-      movement: { movement_type_name: movementName, movement_type_id }, //AQUI COLOCAR EL NVO MOVEMENT NAME
+      movement: { movement_type_name, movement_type_id },
       source: {
         account_info: {
           account_name: sourceAccountName,

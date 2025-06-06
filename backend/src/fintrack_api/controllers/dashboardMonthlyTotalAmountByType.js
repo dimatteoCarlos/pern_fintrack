@@ -1,7 +1,7 @@
 //=========================================================
 //GET TOTAL AND AVERAGE of MONTH transactions FOR CATEGORIES (expenses) AND INCOMES (income source)
 //get the total and monthly average amount for category expense accounts and income from source accounts
-//rules: the time period considered is the current year from january the first to december the 31 first or till today.
+//rules: the time period considered is the current year from january the first to december the 31st or till today.
 //---------------------------------------------------------
 //COMENTARIOS AL MARGEN: alternative: se puede hacer el promedio mensual durante un periodo dado, independientement de la cantidad de agnios reportados.
 //aunque se requiere solo los valores de promedio mensual del total de los gastos, se hara un procedimiento donde se obtenga primero los gastos por mes por cada cuenta o categoria, y luego con estos datos se calculan los valores agregados o totales. los valores por mes pueden servir de insumo para realizar graficos de gastos por mes.

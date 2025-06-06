@@ -292,7 +292,7 @@ WITH financial_data AS (
 -- -- join user_accounts ua ON tr.destination_account_id = ua.account_id
 -- -- where mt.movement_type_name = 'expense'
 -- GROUP BY mt.movement_type_name, ua.account_name
-
+  
 -- TO GET THE RESTRICTION NAME
 SELECT constraint_name
 FROM information_schema.table_constraints
