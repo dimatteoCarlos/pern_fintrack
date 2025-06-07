@@ -96,7 +96,7 @@ function Expense(): JSX.Element {
   const fetchUrl = user
     ? `${url_get_accounts_by_type}/?type=bank&user=${user}`
     : // <Navigate to='/auth' />
-      undefined; //esto ees forzar un error de user ID required
+      undefined; //esto es forzar un error de user ID required
   //definir que hacer si no hay user id
   // console.log('🚀 ~ Expense ~ fetchUrl:', fetchUrl);
 
@@ -389,6 +389,7 @@ function Expense(): JSX.Element {
   //-------------------------------------------------
   return (
     <>
+    {!isLoading &&
       <form className='expense' style={{ color: 'inherit' }}>
         {/* start of TOP CARD */}
         <TopCard
@@ -416,12 +417,12 @@ function Expense(): JSX.Element {
             </span>
           </div>
 
-          <DropDownSelection
-            dropDownOptions={categoryOptions}
-            updateOptionHandler={categorySelectHandler}
-            isReset={isReset}
-            setIsReset={setIsReset}
-          />
+        <DropDownSelection
+          dropDownOptions={categoryOptions}
+          updateOptionHandler={categorySelectHandler}
+          isReset={isReset}
+          setIsReset={setIsReset}
+        />
 
           <CardNoteSave
             title={'note'}
@@ -434,7 +435,7 @@ function Expense(): JSX.Element {
           {/* end of BOTTOM CARD */}
         </div>
       </form>
-
+}
       <MessageToUser
         isLoading={
           isLoading || isLoadingBankAccounts || isLoadingCategoryBudgetAccounts

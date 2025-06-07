@@ -107,9 +107,8 @@ export function transformMovementType(
 
       if (destinationAccountTypeName === 'investment') return 'investment';
     }
-
-    return movementName;
   }
+  return movementName;
 }
 
 //------------------
@@ -267,11 +266,15 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
     //====================================================
     // get the movement type ID
+    console.log(
+      '🚀 ~ transferBetweenAccounts ~ movement_type_name:',
+      movement_type_name
+    );
 
     const movement_type_idResult = movement_types.filter(
-      (mov) =>
-        mov.movement_type_name === movement_type_name.trim().toLowerCase()
+      (mov) => mov.movement_type_name === movement_type_name
     );
+
     // console.log(
     //   '🚀 ~ transferBetweenAccounts ~ movement_type_idResult:',
     //   movement_type_idResult

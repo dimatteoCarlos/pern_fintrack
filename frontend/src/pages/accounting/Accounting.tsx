@@ -61,9 +61,11 @@ function Accounting() {
           </Link>
           {isLoading && <CoinSpinner />}
 
-          {accounting.map((balance, indx) => (
+
+          {!isLoading && accounting.map((balance, indx) => (
             <AccountingBox {...balance} key={`account-${indx}`} />
           ))}
+
         </div>
       </section>
     </>
