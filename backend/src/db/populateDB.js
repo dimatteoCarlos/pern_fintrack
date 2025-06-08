@@ -5,15 +5,16 @@ import {
 import { pool } from './configDB.js';
 import pc from 'picocolors';
 
+//==========================================
+//check table name validation
 function isValidTableName(tableName) {
-  return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName); // Solo permite nombres de tablas válidos
+  return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName); // only allowed table names from create table array | Solo permite nombres de tablas válidos
 }
-
-async function tableExists(tableName) {
+//check if table exists
+export async function tableExists(tableName) {
   if (!isValidTableName(tableName)) {
     throw new Error('Invalid table name');
   }
-
   const queryText = `
     SELECT EXISTS (
       SELECT 1 FROM information_schema.tables
@@ -25,6 +26,7 @@ async function tableExists(tableName) {
   return result.rows[0].exists; // Returns true or false
 }
 
+//check if table is populated
 async function isTablePopulated(tableName, minCount = 1) {
   if (!isValidTableName(tableName)) {
     throw new Error('Invalid table name');
@@ -33,7 +35,7 @@ async function isTablePopulated(tableName, minCount = 1) {
   const result = await pool.query(queryText);
   return result.rows[0].count >= minCount;
 }
-
+//==========================================
 //--
 //currencies
 export async function tblCurrencies() {
