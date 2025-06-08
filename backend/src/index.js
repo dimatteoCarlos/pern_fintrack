@@ -11,6 +11,7 @@ import useragent from 'express-useragent';
 // import '../utils/authUtils/cronJobs.js';
 
 import {
+  tableExists,
   tblAccountTypes,
   tblCategoryNatureTypes,
   tblCurrencies,
@@ -19,7 +20,7 @@ import {
   tblUserRoles,
 } from './db/populateDB.js';
 import pc from 'picocolors';
-import { createMainTables } from './db/createTables.js';
+import { mainTables, createTables } from './db/createTables.js';
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
 import { verifyToken } from './middlewares/authMiddleware.js';
@@ -56,6 +57,7 @@ app.use(
       const ACCEPTED_ORIGINS = [
         'http://localhost:5000',
         'http://localhost:5173',
+        'http://localhost:5174',
         'http://localhost:3000',
         'http://localhost:3001',
         'http://localhost:8080',
@@ -95,33 +97,84 @@ app.use('/api/fintrack', fintrack_routes);
 app.use('*', (req, res) => {
   res.status(404).json({ error: '404', message: 'Route link was not found' });
 });
-//------------------
 
-//Initiate
-console.log('Hola Mundo');
-//------------------
+//---function declration---------------
 //Database initialization.  Función para inicializar la base de datos
 async function initializeDatabase() {
   try {
     console.log(pc.cyanBright('Verificando existencia de datos en tablas ...'));
+
+    //---------------------
+    // Verify initialization status
+    //verify if app_initialization table exists
+    const exists = await tableExists('app_initialization');
+    if (!exists) {
+      const createQuery = ` CREATE TABLE IF NOT EXISTS app_initialization (
+      id SERIAL PRIMARY KEY,
+      tables_created BOOLEAN NOT NULL DEFAULT FALSE,
+      initialized_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+      await pool.query(createQuery);
+    }
+
+    const initCheck = await pool.query(
+      `SELECT tables_created FROM app_initialization ORDER BY id DESC LIMIT 1`
+    );
+    //------------------------------
+    // Create tables as per status of initialization
+    // if (initCheck.rows.length === 0 || !initCheck.rows[0].tables_created) {
+    //   console.log(pc.cyan('Initializing app for the first time....'));
     // --
-    // Initialize tables with catalogued field attributes
-    // await tblCurrencies();
-    // await tblUserRoles();
-    // await tblAccountTypes();
-    // await tblMovementTypes();
-    // await tbltransactionTypes();
-    // await tblCategoryNatureTypes();
+
+    //Transaction pg
+    await pool.query('BEGIN');
+    try {
+      // Initialize tables with catalogued field attributes
+      await tblAccountTypes();
+      await tblCurrencies();
+      await tblCategoryNatureTypes();
+      await tblUserRoles();
+      await tbltransactionTypes();
+      await tblMovementTypes();
+
+      //Create all the main tables
+      await pool.query('SET CONSTRAINTS ALL DEFERRED');
+      await createTables();
+      await pool.query('SET CONSTRAINTS ALL IMMEDIATE');
+      //Mark as initialized app
+      await pool.query(
+        `
+        INSERT INTO app_initialization (tables_created) VALUES (TRUE)
+        ON CONFLICT (id)
+        DO UPDATE SET
+          tables_created = EXCLUDED.tables_created,
+          updated_at = NOW()
+        `
+      );
+
+      console.log(pc.green('Application initialized successfully'));
+    } catch (error) {
+      await pool.query('ROLLBACK');
+      throw error;
+    }
+    // } else {
+    //   console.log(pc.yellow('Application already initialized. Skipping.'));
+    // }
     //--------------------------------------------------
-    //truncate or drop tables
+    //truncate or drop all tables manually
     if (false) {
       await Promise.allSettled(
-        createMainTables.map(async (item, indx) => {
+        mainTables.map(async (item, indx) => {
           try {
-            await pool.query({
-              text: `TRUNCATE TABLE ${item.tblName}  RESTART IDENTITY CASCADE`,
-            });
-            // await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
+            if (item.tblName == 'users') {
+              console.log('skip users table');
+              return false;
+            }
+            // await pool.query({
+            //   text: `TRUNCATE TABLE ${item.tblName}  RESTART IDENTITY CASCADE`,
+            // });
+            await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
             console.log(indx, item.tblName, 'truncated');
           } catch (error) {
             console.error('error truncating the table', `${item.tblName}`);
@@ -130,44 +183,47 @@ async function initializeDatabase() {
       ).then((results) => {
         if (results.status === 'fulfilled') {
           console.log(
-            `Table ${createMainTables[indx].tblName} was successfully truncated .`
+            `Table ${mainTables[indx].tblName} was successfully truncated .`
           );
         } else if (results.status === 'rejected') {
           console.error(
-            `Table ${createMainTables[indx].tblName} failed to truncate:`,
+            `Table ${mainTables[indx].tblName} failed to truncate:`,
             results.reason
           );
         }
       });
     }
-    //create tables
-    if (!false) {
+    //=====================================
+    //create tables manually
+    if (false) {
       await Promise.allSettled(
-        createMainTables.map(async (item, ind) => {
+        mainTables.map(async (item, ind) => {
           try {
             await pool.query(item.table);
-            console.log(ind, item.tblName, 'created');
+            console.log(ind, item.tblName, 'verified/created');
           } catch (error) {
             console.error(
               pc.red(`Error creating table ${item.tblName}:`, error)
             );
+            throw error;
           }
         })
       ).then((results) => {
         results.forEach((result, indx) => {
           if (result.status === 'fulfilled') {
             console.log(
-              `Table ${createMainTables[indx].tblName} was successfully created .`
+              `Table ${mainTables[indx].tblName} was successfully created .`
             );
           } else if (result.status === 'rejected') {
             console.error(
-              `Table ${createMainTables[indx].tblName} failed to create:`,
+              `Table ${mainTables[indx].tblName} failed to create:`,
               result.reason
             );
           }
         });
       });
     }
+    //=========================
     //---
     console.log(pc.greenBright('Base de datos inicializada correctamente.'));
   } catch (error) {
@@ -178,8 +234,14 @@ async function initializeDatabase() {
     throw error; // Relanzar el error para manejarlo en el nivel superior
   }
 }
+//---
+//=================================================================
 // Server starts here.
+//=======================
 // Inicializar la base de datos y luego iniciar el servidor
+//------------------
+//Initiate
+console.log('Hola Mundo');
 await checkConnection();
 await initializeDatabase()
   .then(async () => {
@@ -193,12 +255,11 @@ await initializeDatabase()
       process.exit(1);
     }
   })
-
   .catch((error) => {
     console.error(pc.red('Critical error during initialization:', error));
     process.exit(1); // Salir del proceso si hay un error crítico
   });
-
+//=======================
 pool.on('error', (err) => {
   console.error(pc.redBright('Unexpected error on idle client', err));
   // Termina la aplicación si hay un error grave
