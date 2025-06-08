@@ -567,15 +567,18 @@ export const dashboardMovementTransactions = async (req, res, next) => {
              tr.description, tr.transaction_actual_date, tr.amount
 
           FROM transactions tr 
-            JOIN user_accounts ua ON tr.account_id = ua.account_id
+            JOIN user_accounts ua ON tr.destination_account_id = ua.account_id
             JOIN account_types act ON ua.account_type_id = act.account_type_id
             JOIN currencies ct ON ua.currency_id = ct.currency_id
             JOIN movement_types mt  ON tr.movement_type_id = mt.movement_type_id
             JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
             JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
+
                WHERE ua.user_id = $1
                AND (act.account_type_name = $2) AND ua.account_name != $3
                AND mt.movement_type_name = $4
+               AND tr.destination_account_id IS NOT NULL 
+               AND( tr.amount>0)
                AND (tr.transaction_actual_date BETWEEN $5 AND $6 OR tr.created_at BETWEEN $5 AND $6  )
 
             ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
@@ -592,25 +595,27 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       break;
 
     case 'income':
-      tableName = 'income_source_accounts'; //source account
+      tableName = 'income_source_accounts'; //as source account
 
       queryModel = {
         text: `SELECT mt.movement_type_name,ua.account_id, ua.account_name, ua.account_balance,
           ct.currency_code, act.account_type_id, act.account_type_name,
            ua.account_starting_amount, ua.account_start_date, 
-          tr.description, tr.transaction_actual_date, tr.amount
+          tr.description, tr.transaction_actual_date, ABS(tr.amount) as amount
 
           FROM transactions tr 
             JOIN user_accounts ua ON tr.account_id = ua.account_id
             JOIN account_types act ON ua.account_type_id = act.account_type_id
             JOIN currencies ct ON ua.currency_id = ct.currency_id
             JOIN movement_types mt  ON tr.movement_type_id = mt.movement_type_id
-            JOIN income_source_accounts isc ON ua.account_id = isc.account_id
 
-          WHERE ua.user_id = $1
-          AND (act.account_type_name = $2) AND ua.account_name != $3
-          AND mt.movement_type_name = $4
-            ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
+            --JOIN income_source_accounts isc ON ua.account_id = isc.account_id
+
+          WHERE tr.user_id = $1
+            AND (act.account_type_name = $2) AND ua.account_name != $3
+            AND mt.movement_type_name = $4
+            AND( tr.amount<0)
+          ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
           `,
         values: [userId, accountTypeMap.income, 'slack', movement_type_name],
       };
@@ -664,17 +669,15 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           JOIN pocket_saving_accounts psa ON ua.account_id = psa.account_id
             WHERE ua.user_id = $1
               AND (act.account_type_name = $2) AND ua.account_name != $3
-              AND mt.movement_type_name = $4
-
-              AND (tr.transaction_actual_date BETWEEN $5 AND $6 OR tr.created_at BETWEEN $5 AND $6  )
-
-                ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
+               AND mt.movement_type_name = $4
+                  AND (tr.transaction_actual_date BETWEEN $5 AND $6 OR tr.created_at BETWEEN $5 AND $6  )
+            ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
           `,
         values: [
           userId,
           accountTypeMap.pocket,
           'slack',
-          'transfer',
+          'pocket',
           startDate,
           endDate,
         ],
@@ -765,15 +768,13 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       );
   }
   //-------------------------------
-
   //-------------------------------
   try {
     const movements = await queryFn(queryModel.text, queryModel.values);
-    // console.log('🚀 ~ dashboardMovementTransactions ~ result:', movements);
+    console.log('🚀 ~ dashboardMovementTransactions ~ result:', movements);
 
     if (movements?.length === 0) {
       const message = `No info encountered for movement: ${movement_type_name} and type: ${accountTypeMap[movement_type_name]}`;
-
       return RESPONSE(res, 400, message);
 
       // return res.status(404).json({
@@ -787,7 +788,6 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     // console.log(pc[backendColor](message));
 
     return RESPONSE(res, 200, message, movements);
-
     // return res.status(200).json(movements);
   } catch (error) {
     if (error instanceof Error) {
@@ -989,6 +989,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
   WHERE ua.user_id = $1 
 
     AND (tr.transaction_actual_date BETWEEN $2 AND $3 OR tr.created_at BETWEEN $2 AND $3 AND ua.account_name !=$4)
+
     AND (mt.movement_type_name = $6 OR mt.movement_type_name = $8 )
     AND (trt.transaction_type_name = $5 OR act.account_type_name = $7)
 
@@ -1002,7 +1003,9 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
         transaction_type,
         movement,
         account_type,
-        movement === 'debt' || movement === 'pocket' ? 'account-opening' : '',
+        movement === 'debt' || movement === 'pocket'
+          ? 'account-opening'
+          : movement,
       ],
     });
 

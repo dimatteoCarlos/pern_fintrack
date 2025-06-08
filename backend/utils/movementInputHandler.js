@@ -1,7 +1,7 @@
 export const getExpenseConfig = (body) => ({
   sourceAccountName: body.account,
   destinationAccountName: body.category,
-  sourceAccountTypeName: 'bank',
+  c: 'bank',
   destinationAccountTypeName: 'category_budget',
   sourceAccountTransactionType: 'withdraw',
   destinationAccountTransactionType: 'deposit',

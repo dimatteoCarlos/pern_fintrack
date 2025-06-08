@@ -31,12 +31,12 @@ export function calculateMonthlyAverage(
   arrayData: MonthlyDataType[]
 ): ResultType {
   const result: ResultType = { expense: {}, income: {}
-  // , saving: {}
+  , saving: {}
  };
   const monthCurrencyTracker: MonthCurrencyTrackerType = {
     expense: {},
     income: {},
-    // saving: {},
+    saving: {},
   };
 
   //find total amount and count unique months

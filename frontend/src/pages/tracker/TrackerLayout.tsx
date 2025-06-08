@@ -115,7 +115,7 @@ function TrackerLayout() {
 
       <TrackerNavbar />
       <div className='cards__presentation--tracker'>
-   {  !error &&   <Outlet />}
+   {  <Outlet />}
         {messageToUser && (
           <MessageToUser
             isLoading={false}

@@ -139,7 +139,7 @@ JOIN user_accounts ua ON tr.account_id = ua.account_id
        JOIN currencies ct ON ua.currency_id = ct.currency_id
        JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
        JOIN movement_types mt  ON tr.movement_type_id = mt.movement_type_id
-       WHERE ua.user_id = 'eacef623-6fb0-4168-a27f-fa135de093e1'
+       WHERE ua.user_id = '51ba7238-31f0-4153-a80b-6709c34a1955'
        AND (act.account_type_name = 'category_budget') AND ua.account_name != 'slack'
 	AND mt.movement_type_name = 'expense'
        ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC

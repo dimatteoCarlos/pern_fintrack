@@ -232,9 +232,10 @@ export const transferBetweenAccounts = async (req, res, next) => {
       type: transactionTypeName, //for old versions of investment or for debt in new version
     } = req.body; //common fields to all tracker movements.
     // console.log('tipo de transaccion', transactionTypeName);
-    // console.log('body', req.body);
+    console.log('body', req.body);
     //-----------------
     //From original design, Not all tracker movements have the same input data structure, so, get the data structure configuration strategy based on movementName
+    
     const config = {
       expense: getExpenseConfig(req.body),
       income: getIncomeConfig(req.body),
@@ -245,7 +246,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       // pocket: getPocketConfig(req.body),
     }[movementName];
 
-    console.log('🚀 ~ transferBetweenAccounts ~ config:', config);
+
 
     const {
       sourceAccountName,
@@ -256,6 +257,8 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountTypeName,
       destinationAccountTransactionType,
     } = config;
+
+        console.log('🚀 ~ transferBetweenAccounts ~ config:', config, sourceAccountTypeName);
 
     //adjust the movement type name
     const movement_type_name = transformMovementType(
@@ -361,7 +364,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   destinationAccountInfo
     // );
 
-    // console.log('🚀 ~ sourceAccountInfo:', sourceAccountInfo);
+    console.log('🚀 ~ sourceAccountInfo:', sourceAccountInfo);
 
     if (!sourceAccountInfo || !destinationAccountInfo) {
       // message: `Account  ${sourceAccountName} and type ${sourceAccountTypeName} not found`, // for individual message

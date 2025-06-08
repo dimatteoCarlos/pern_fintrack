@@ -10,7 +10,7 @@ import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import {
   url_get_total_account_balance_by_type,
   url_monthly_TotalAmount_ByType,
-  dashboardMovementTransactionsByType,
+  // dashboardMovementTransactionsByType,
   dashboardMovementTransactions,
 } from '../../endpoints.ts';
 
@@ -80,19 +80,19 @@ const overviewKPIendpoints: KPIEndpointType[] = [
   },
   {
     key: 'MovementExpenseTransactionsByType',
-    url: `${dashboardMovementTransactionsByType}?start=&end=&movement=expense&transaction_type=&account_type=category_budget&user=${userId}`,
+    url: `${dashboardMovementTransactions}?start=&end=&movement=expense&transaction_type=&account_type=category_budget&user=${userId}`,
     type: {} as LastMovementRespType,
   },
 
   {
     key: 'MovementDebtTransactions',
-    url: `${dashboardMovementTransactionsByType}?start=&end=&movement=debt&transaction_type=&account_type=debtor&user=${userId}`,
+    url: `${dashboardMovementTransactions}?start=&end=&movement=debt&user=${userId}`,
     // url: `${url_get_transactions_by_search}?start=&end=&search=debt&user=${userId}`,
     type: {} as LastMovementRespType,
   },
   {
     key: 'MovementIncomeTransactionsByType',
-    url: `${dashboardMovementTransactionsByType}?start=&end=&movement=income&transaction_type=&account_type=income_source&user=${userId}`,
+    url: `${dashboardMovementTransactions}?start=&end=&movement=incom&user=${userId}`,
     type: {} as LastMovementRespType,
   },
   {
@@ -133,7 +133,6 @@ function Overview() {
     });
   }
   //------------------
-
   useEffect(() => {
     const fetchOverviewData = async () => {
       try {
@@ -244,7 +243,7 @@ function Overview() {
             )
           : null;
         //---
-    
+
         const movementPocketTransactionsData =
           result.MovementPocketTransactions.status === 'success'
             ? result.MovementPocketTransactions?.data?.data
@@ -274,7 +273,7 @@ function Overview() {
             )
           : null;
 
-             console.log('recvisar result pocket6', result)
+        console.log('recvisar result pocket6', result);
 
         //-------------
         setKpiData({

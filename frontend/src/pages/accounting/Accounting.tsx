@@ -3,7 +3,7 @@ import LeftArrowSvg from '../../assets/LeftArrowSvg.svg';
 import { Link, useLocation } from 'react-router-dom';
 import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { url_get_accounting_accounts } from '../../endpoints.ts';
-import { AccountingListType } from '../../types/types.ts';
+// import { AccountingListType } from '../../types/types.ts';
 // import { CurrencyType } from '../../types/types.ts';
 import './styles/accounting-styles.css';
 import { useMemo } from 'react';
@@ -11,11 +11,12 @@ import { useFetch } from '../../hooks/useFetch.tsx';
 import { AccountByTypeResponseType } from '../../types/responseApiTypes.ts';
 import { capitalize } from '../../helpers/functions.ts';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
+import { ACCOUNTING_DEFAULT } from '../../helpers/constants.ts';
 // import { AccountByTypeResponseType } from '../../types/responseApiTypes.ts';
 // import { useFetch } from '../../hooks/useFetch.tsx';
 // import { useMemo } from 'react';
 
-const ACCOUNTING_DEFAULT: AccountingListType[] = [];
+// const ACCOUNTING_DEFAULT: AccountingListType[] = [];
 
 function Accounting() {
   const location = useLocation();
@@ -30,7 +31,7 @@ function Accounting() {
   );
   //--------------------------------------
   // console.log('accounting url:', `${url_get_accounting_accounts}&user=${user}`);
-
+  
   const accounting = useMemo(() => {
     return !error && !isLoading && apiData?.data.accountList.length
       ? apiData.data.accountList.map((acc) => ({

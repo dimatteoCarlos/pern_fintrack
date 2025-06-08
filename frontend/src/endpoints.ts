@@ -92,12 +92,12 @@ export const url_summary_balance_ByType: string =
 //   BASE_URL + '/dashboard/balance/type';
 //==================================================
 //ENDPOINTS for OVERVIEW page
-//dashboardMonthlyTotalAmountByType
-//get.http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?type=expense&user=
+//controller:dashboardMonthlyTotalAmountByType
+//get.http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?user=
 
 export const url_monthly_TotalAmount_ByType: string =
-  BASE_URL + '/dashboard/balance/monthly_total_amount_by_type/'; //?type=expense&user=
-
+  BASE_URL + '/dashboard/balance/monthly_total_amount_by_type/'; //?&user=
+//---------------------------------------
 //for accounting and overview components
 //http://localhost:5000/api/fintrack/account/type/?type=
 // export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
@@ -117,7 +117,7 @@ export const dashboardMovementTransactionsByType: string =
 // insomnia:fintrack dashboard movement transaction by MOVEMENT NAME
 // endpoint:dashboardMovementTransactionsByType
 //example:http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=pocket&user=${user}
-//http://localhost:5000/api/fintrack/dashboard/movements/movement/??start=&end=&movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
+//http://localhost:5000/api/fintrack/dashboard/movements/movement/?start=&end=&movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
 export const dashboardMovementTransactions: string =
   BASE_URL + '/dashboard/movements/movement/';
 

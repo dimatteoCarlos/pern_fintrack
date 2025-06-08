@@ -5,7 +5,7 @@
 //---------------------------------------------------------
 //COMENTARIOS AL MARGEN: alternative: se puede hacer el promedio mensual durante un periodo dado, independientement de la cantidad de agnios reportados.
 //aunque se requiere solo los valores de promedio mensual del total de los gastos, se hara un procedimiento donde se obtenga primero los gastos por mes por cada cuenta o categoria, y luego con estos datos se calculan los valores agregados o totales. los valores por mes pueden servir de insumo para realizar graficos de gastos por mes.
-//---------------------------------------------------------
+//-------------------------------------------
 // router.get('/balance/monthly_total_amount_by_type/?type=${type}&', dashboardMonthlyTotalAmountByType);
 //get: //http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?type=${type}&user=eacef623-6fb0-4168-a27f-fa135de093e1
 
@@ -110,8 +110,10 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
               (tr.movement_type_id = 1 AND tr.transaction_type_id = 2) -- Expense
               OR
               (tr.movement_type_id = 2 AND tr.transaction_type_id = 1) -- Income
-              
+              OR
+              (tr.movement_type_id = 5 AND tr.transaction_type_id = 2) -- Saving
             )
+              
           GROUP BY 
             EXTRACT(MONTH FROM tr.transaction_actual_date),
             TO_CHAR(tr.transaction_actual_date, 'month'),
@@ -125,9 +127,6 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
         SELECT * FROM financial_data
         ORDER BY month_index ASC, type, name, currency_code
 `;
-
-// OR
-// (tr.movement_type_id = 5 AND tr.transaction_type_id = 1) -- Saving
 
       const result = await pool.query(queryText, [
         userId,
