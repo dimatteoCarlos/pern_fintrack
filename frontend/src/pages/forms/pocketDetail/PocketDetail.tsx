@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link  } from 'react-router-dom';
 import { useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
@@ -18,6 +18,12 @@ import {
 // import { StatusSquare } from '../../../general_components/boxComponents.tsx';
 
 function PocketDetail() {
+
+  // const location = useLocation();
+
+
+
+
   //temporary data
   const pocketInfo = {
     name: 'pocket name',
@@ -90,7 +96,8 @@ function PocketDetail() {
         <TopWhiteSpace variant={'dark'} />
         <div className='page__content'>
           <div className='main__title--container'>
-            <Link to='/budget' relative='path' className='iconLeftArrow'>
+            <Link  to='budget' relative='path' className='iconLeftArrow'>
+            {/* <Link  to={location.state.previousRoute} relative='path' className='iconLeftArrow'> */}
               <LeftArrowLightSvg />
             </Link>
             <div className='form__title'>{pocketInfo.name}</div>

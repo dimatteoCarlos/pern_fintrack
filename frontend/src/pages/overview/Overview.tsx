@@ -44,9 +44,9 @@ const userId = import.meta.env.VITE_USER_ID;
 type ApiRespDataType = {
   SavingGoals: BalancePocketRespType | null;
   MonthlyTotalAmountByType: FinancialDataRespType | null;
-  MovementExpenseTransactionsByType: LastMovementRespType | null;
+  MovementExpenseTransactions: LastMovementRespType | null;
   MovementDebtTransactions: LastMovementRespType | null;
-  MovementIncomeTransactionsByType: LastMovementRespType | null;
+  MovementIncomeTransactions: LastMovementRespType | null;
   MovementPocketTransactions: LastMovementRespType | null;
 };
 //---endpoint config------------------
@@ -79,7 +79,7 @@ const overviewKPIendpoints: KPIEndpointType[] = [
     type: {} as FinancialDataRespType,
   },
   {
-    key: 'MovementExpenseTransactionsByType',
+    key: 'MovementExpenseTransactions',
     url: `${dashboardMovementTransactions}?start=&end=&movement=expense&transaction_type=&account_type=category_budget&user=${userId}`,
     type: {} as LastMovementRespType,
   },
@@ -91,8 +91,8 @@ const overviewKPIendpoints: KPIEndpointType[] = [
     type: {} as LastMovementRespType,
   },
   {
-    key: 'MovementIncomeTransactionsByType',
-    url: `${dashboardMovementTransactions}?start=&end=&movement=incom&user=${userId}`,
+    key: 'MovementIncomeTransactions',
+    url: `${dashboardMovementTransactions}?start=&end=&movement=income&user=${userId}`,
     type: {} as LastMovementRespType,
   },
   {
@@ -137,7 +137,7 @@ function Overview() {
     const fetchOverviewData = async () => {
       try {
         const result = await overviewFetchAll(overviewKPIendpoints);
-        console.log('🚀 ~ fetchOverviewData ~ result:', result);
+        // console.log('🚀 ~ fetchOverviewData ~ result:', result);
 
         if (!result) {
           throw new Error('No data received from API');
@@ -159,8 +159,8 @@ function Overview() {
 
         //-------------------
         const movementExpenseTransactionsData =
-          result.MovementExpenseTransactionsByType.status === 'success'
-            ? result.MovementExpenseTransactionsByType?.data?.data
+          result.MovementExpenseTransactions.status === 'success'
+            ? result.MovementExpenseTransactions?.data?.data
             : null;
 
         const movementExpenseTransactions = movementExpenseTransactionsData
@@ -215,8 +215,8 @@ function Overview() {
 
         //---
         const movementIncomeTransactionsData =
-          result.MovementIncomeTransactionsByType.status === 'success'
-            ? result.MovementIncomeTransactionsByType?.data?.data
+          result.MovementIncomeTransactions.status === 'success'
+            ? result.MovementIncomeTransactions?.data?.data
             : null;
 
         const movementIncomeTransactions = movementIncomeTransactionsData
@@ -243,7 +243,6 @@ function Overview() {
             )
           : null;
         //---
-
         const movementPocketTransactionsData =
           result.MovementPocketTransactions.status === 'success'
             ? result.MovementPocketTransactions?.data?.data
@@ -296,7 +295,7 @@ function Overview() {
     fetchOverviewData();
   }, []);
 
-  console.log('estado', kpiData);
+  // console.log('data state kpi', kpiData);
 
   //-----
 

@@ -37,7 +37,6 @@ import ProtectedRoute from './pages/auth/ProtectedRoute.tsx';
 import ErrorPage from './pages/error/ErrorPage.tsx';
 import Transfer from './pages/tracker/transfer/Transfer.tsx';
 // import NotFoundPage from './pages/error/NotFoundPage.tsx';
-
 function App() {
   const router = createBrowserRouter([
     //access to fintrack app
@@ -167,3 +166,4 @@ function App() {
 }
 
 export default App;
+

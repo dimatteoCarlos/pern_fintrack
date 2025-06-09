@@ -23,20 +23,17 @@ type FetchError = {
 type FetchResult<T> = FetchSuccess<T> | FetchError;
 //----------------------
 // Estado que representa los diferentes tipos de KPIs dataset a obtener de la API
-
 type ApiRespDataType = {
   SavingGoals: BalancePocketRespType | null;
   MonthlyTotalAmountByType: FinancialDataRespType | null;
-  MovementExpenseTransactionsByType: LastMovementRespType | null;
+  MovementExpenseTransactions: LastMovementRespType | null;
   MovementDebtTransactions: LastMovementRespType | null;
-  MovementIncomeTransactionsByType: LastMovementRespType | null;
+  MovementIncomeTransactions: LastMovementRespType | null;
   MovementPocketTransactions: LastMovementRespType | null;
 };
-
 // Las claves válidas que puede tener ApiRespDataType
 //KPIKeyType es un union type de las claves del objeto ApiRespDataType.
 type KPIKeyType = keyof ApiRespDataType;
-
 // Tipo para representar cada endpoint de donde obtener datos KPI
 type EndpointItemType<K extends KPIKeyType> = {
   key: K;
@@ -130,16 +127,16 @@ export async function overviewFetchAll(
         endpoint.key === 'MonthlyTotalAmountByType' &&
         isFinancialDataRespType(data)
       ) {
-        console.log('pasando por MonthlyTotalAmountByType');
+        console.log('going to MonthlyTotalAmountByType');
         results[endpoint.key] = { status: 'success', data };
       } else if (
-        (endpoint.key === 'MovementExpenseTransactionsByType' ||
+        (endpoint.key === 'MovementExpenseTransactions' ||
           endpoint.key === 'MovementDebtTransactions' ||
           endpoint.key === 'MovementPocketTransactions' ||
-          endpoint.key === 'MovementIncomeTransactionsByType') &&
+          endpoint.key === 'MovementIncomeTransactions') &&
         isLastMovementRespType(data)
       ) {
-        console.log('pasando por MovementTransactionsByType');
+        console.log('going to MovementTransactions');
         results[endpoint.key] = { status: 'success', data };
       }
     } else {

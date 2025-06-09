@@ -20,7 +20,7 @@ const ProtectedRoute = () => {
     // preserving the location user tried to access
     return <Navigate to='/auth' state={{ from: location }} replace />;
   }
-  
+
   return (
     <>
       <Outlet />

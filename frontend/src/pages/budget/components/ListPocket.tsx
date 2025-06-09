@@ -1,5 +1,6 @@
 //ListPocket.tsx
 import { Link } from 'react-router-dom';
+// import { Link, NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import { StatusSquare } from '../../../general_components/boxComponents';
 import {
   DEFAULT_CURRENCY,
@@ -21,6 +22,11 @@ import { useFetch } from '../../../hooks/useFetch.tsx';
 const defaultPocket: PocketsToRenderType[] = [];
 
 function ListPocket() {
+
+  // const originRoute = useLocation().pathname;
+  // const navigateTo: NavigateFunction = useNavigate();
+
+
   //DATA FETCHING
   //List Pocket - get accounts by type:pocket_saving
 
@@ -55,7 +61,7 @@ function ListPocket() {
       : defaultPocket;
 
   return (
-    <article className='list__main__container '>
+    <article className='list__main__container'>
       {pocketList.map((pocket, indx) => {
         const { pocketName, description, saved, goal, currency, pocket_id } =
           pocket;

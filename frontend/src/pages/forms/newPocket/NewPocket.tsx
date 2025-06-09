@@ -54,12 +54,10 @@ const initialFormData: FormNumberInputType = {
 //-------------------------
 function NewPocket() {
   const location = useLocation();
+  
   //get userId from stores
   const user: string = import.meta.env.VITE_USER_ID;
-  //where to get saved
-  // const saved = 'alguito'; //Need to define what this is.
   //---states------
-
   const [pocketData, setPocketData] =
     useState<PocketDataType>(initialNewPocketData);
 
@@ -124,7 +122,7 @@ function NewPocket() {
 
     // Form validation
     const newValidationMessages = { ...validationData(pocketData) };
-    console.log('mensajes de validacion:', { newValidationMessages });
+    // console.log('mensajes de validacion:', { newValidationMessages });
 
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
@@ -151,8 +149,8 @@ function NewPocket() {
         console.log('Data from New Pocket request:', data);
       }
 
-      console.log('New pocket data to POST:', { payload });
-      console.log('check this:', formData, formDataNumber);
+      // console.log('New pocket data to POST:', { payload });
+      // console.log('check this:', formData, formDataNumber);
 
       //---------------------------------------------------
       //resetting form values

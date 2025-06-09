@@ -95,7 +95,7 @@ export const updateAccountBalance = async (
   const updatedAccountResult = await pool.query(insertBalanceQuery);
   return updatedAccountResult.rows[0];
 };
-
+//transfer movement renamed
 export function transformMovementType(
   movementName,
   sourceAccountTypeName,
@@ -245,8 +245,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
       // investment: getInvestmentConfig(req.body),
       // pocket: getPocketConfig(req.body),
     }[movementName];
-
-
 
     const {
       sourceAccountName,
