@@ -383,13 +383,13 @@ export const createDebtorAccount = async (req, res, next) => {
     }
     //data from debt new profile form - frontend fintrack
     const {
-      account_type,
+      account_type,//refers to debtor account
       lastname: debtor_lastname,
       name: debtor_name,
       amount: value,
       selected_account_name,
-      selected_account_type,
-      transaction_type, //here type in the ui frontend input form, is transaction type name (lending/borrowing), meanwhile in other input to create other accounts, it refers to type of account (bank, pocket_saving, ecc).  Check fintrack frontend.
+      selected_account_type,//refers to bank account type
+      transaction_type, //here, transaction_type in the ui frontend input form, is transaction type name (lending/borrowing), meanwhile in other input to create other accounts, it refers to type of account (bank, pocket_saving, ecc).  Check fintrack frontend.
     } = req.body;
     const debtor_transaction_type = transaction_type.trim().toLowerCase();
     const account_type_name = account_type ?? 'debtor';
@@ -397,6 +397,8 @@ export const createDebtorAccount = async (req, res, next) => {
     const debtor_transaction_type_name =
       debtorTypeTransactionInput[debtor_transaction_type];
     //----------------------------------------------------
+//=============================
+    //development mode
     //check coherence of type account requested
     // const typeAccountRequested = req.originalUrl.split('/').pop().split('?')[0];
     // const checkTypeCoherence = typeAccountRequested === account_type_name;
@@ -409,9 +411,10 @@ export const createDebtorAccount = async (req, res, next) => {
     //   '🚀 ~ createDebtorAccount ~ debtor_transaction_type_name:',
     //   debtor_transaction_type_name
     // );
+    //=============================
     //-----------------------
     //NEW ACCOUNT BASIC DATA
-    // Asumimos USD por defecto
+    // Asumimos USD por defecto // let's assume usd by default
     const { currency, date, transactionActualDate } = req.body;
     const currency_code = currency ? currency : 'usd';
     const account_name = `${debtor_lastname}, ${debtor_name}`;
@@ -432,7 +435,7 @@ export const createDebtorAccount = async (req, res, next) => {
     if (!account_type_name || !currency_code || !account_name) {
       const message =
         'Currency_code, account name and account type name fields are required';
-      //theses fields are required, although, not originally considered in the ui frontend.
+      //theses fields are required, although, not originally considered in the ui input form frontend.
       console.warn(pc.blueBright(message));
       return res.status(400).json({ status: 400, message });
     }
@@ -442,7 +445,6 @@ export const createDebtorAccount = async (req, res, next) => {
     const accountTypeResult = await pool.query(accountTypeQuery);
     const accountTypeArr = accountTypeResult.rows;
     // console.log(
-
     //   'selected_account_type01',
     //   { selected_account_type }
     // );
@@ -462,7 +464,7 @@ export const createDebtorAccount = async (req, res, next) => {
     //for selected account
     const selectedAccountTypeIdReqObj = accountTypeArr.filter(
       (type) =>
-        type.account_type_name == selected_account_type.trim().toLowerCase()
+        type.account_type_name.trim().toLowerCase() == selected_account_type.trim().toLowerCase()
     )[0];
 
     // console.log("🚀 ~ createDebtorAccount ~ selectedAccountTypeIdReqObj:", selectedAccountTypeIdReqObj)
@@ -503,8 +505,7 @@ export const createDebtorAccount = async (req, res, next) => {
     );
 
     // console.log('selectedAccountExist',{selectedAccountExist})
-
-    //---------------------------------------------------
+    //-----------------------------------------------------------
     //get currency id from currency_code requested
     //necessary for multi currency app
     const currencyQuery = `SELECT * FROM currencies`;
@@ -513,10 +514,42 @@ export const createDebtorAccount = async (req, res, next) => {
     const currencyIdReq = currencyArr.filter(
       (currency) => currency.currency_code == currency_code
     )[0].currency_id;
-
     // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
+    //====================================================================
+    //NEW VERSION:get selected account as the counter account checkAndInsertAccount WOUld change to get the selected account info
+    const counterAccountInfo = await checkAndInsertAccount(
+      userId,
+      selected_account_name,
+      selected_account_type
+    );
+    console.log(
+      '🚀 ~ createDebtorAccount ~ counterAccountInfo:',
+      counterAccountInfo.account.account_balance
+    );
 
-    //----------------------------------------
+    //=======this could be a helper function ==========================
+    //---check for enough funds on source account
+          //rules in which overdraft due to transfer between accounts are restricted.
+          //overdraft not allowed: bank to category_budget, bank to investment, bank to debtor , others: investment to investment, bank to bank, bank or investment to pocket, or pocket to any
+      
+          //allowed overdraft : slack to any account, income_source to any account, debtor to debtor,  debtor to bank, debtor to any acc
+          //only transfers acceptable:
+          //not possible transfer: category_budget to any,other than bank to category_budget, any to income_source. Any transaction between debt and category_budget nor income_source
+
+          const checkForFunds = debtor_transaction_type_name==='lend' && Number(value) >0
+      
+          if (
+                checkForFunds && (counterAccountInfo.account.account_balance < parseFloat(value) )
+          ) {
+            const message = `Not enough funds to transfer ${currency_code} ${parseFloat(value)} from account ${counterAccountInfo.account.account_name} (${currency_code} ${counterAccountInfo.account.account_balance})`;
+            console.warn(pc.magentaBright(message));
+            return res.status(400).json({
+              status: 400,
+              message,
+            });
+          }
+    //==============================================
+    //----------------------------------------------
     //--DEBTOR ACCOUNT --------
     //---debtor_initial_balance
     const transactionAmount =
@@ -570,16 +603,16 @@ export const createDebtorAccount = async (req, res, next) => {
       account_type_name,
     };
     //--------------------------------------------------------
-    //DETERMINE THE TRANSACTION TYPE FOR NEW DEBTOR ACCOUNT AND FOR COUNTER ACCOUNT (SLACK)
-    //aunque el tipo de transaccion ya viene desde el frontend, lend or borrow
+    //DETERMINE THE TRANSACTION TYPE ID FOR NEW DEBTOR ACCOUNT AND FOR COUNTER ACCOUNT (SLACK)
+     //--------------------------------------------------------
+    //aunque el tipo de transaccion ya viene desde el frontend, y ya se uso: lend or borrow
     const transactionTypeDescriptionObj = determineTransactionType(
       transactionAmount,
       account_type_name
     );
-
     const { transactionType, counterTransactionType } =
       transactionTypeDescriptionObj;
-
+ //--------------------------------------------------------
     //get the transaction type id's
     const transactionTypeDescriptionIds = await getTransactionTypeId(
       transactionTypeDescriptionObj.transactionType,
@@ -612,21 +645,19 @@ export const createDebtorAccount = async (req, res, next) => {
     //OLD VERSION:check whether slack account exists if not create it with start amount and balance = 0
     // const counterAccountInfo = await checkAndInsertAccount(userId, 'slack');
     //slack account or selected account, is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation
-
+//--------------------------------------
     //NEW VERSION:get selected account as the counter account checkAndInsertAccount WOUld change to get the selected account info
-
-    const counterAccountInfo = await checkAndInsertAccount(
-      userId,
-      selected_account_name,
-      selected_account_type
-    );
+    // const counterAccountInfo = await checkAndInsertAccount(
+    //   userId,
+    //   selected_account_name,
+    //   selected_account_type
+    // );
     // console.log(
     //   '🚀 ~ createDebtorAccount ~ counterAccountInfo:',typeof
     //   counterAccountInfo.account.account_balance
     // );
-    //-------------------------------------
+   //--------------------------------------------------------
     const counterAccountTransactionAmount = -Number(transactionAmount);
-
     const newCounterAccountBalance =
       Number(counterAccountInfo.account.account_balance) +
       counterAccountTransactionAmount;
@@ -651,17 +682,14 @@ export const createDebtorAccount = async (req, res, next) => {
     };
 
     //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
-
     // console.log('updateCounterAccountInfo iput ',       newCounterAccountBalance,
     //   slackCounterAccountInfo.account_id,
     //   transaction_actual_date)
-
     const updatedCounterAccountInfo = await updateAccountBalance(
       newCounterAccountBalance,
       slackCounterAccountInfo.account_id,
       transaction_actual_date
     );
-
     // console.log(
     //   '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
     //   updatedCounterAccountInfo

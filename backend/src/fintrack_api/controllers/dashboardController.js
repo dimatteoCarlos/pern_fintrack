@@ -241,7 +241,6 @@ GROUP BY  ct.currency_code
       },
     };
     //------queries
-
     if (
       accountType == 'bank' ||
       accountType == 'investment' ||
@@ -461,8 +460,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
     // return RESPONSE(error, next)
   }
 };
-
-//**********************************************************************************/
+//******************************************************************/
 //GET ALL USER TRACKER MOVEMENT TRANSACTIONS BY MOVEMENT_TYPE_NAME WITH A PRE-FIXED CORRESPONDING ACCOUNT TYPE
 //endpoint: http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=${mov_type}&user=${user}
 //usage: to show all transaction by movement name with corresponding accounts.

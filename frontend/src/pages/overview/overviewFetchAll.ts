@@ -5,6 +5,7 @@ import {
   FinancialDataRespType,
   LastMovementRespType,
 } from '../../types/responseApiTypes';
+import { ApiRespDataType } from './Overview';
 // import { FinancialResultType } from './CalculateMonthlyAverage';
 
 //--------------------
@@ -23,14 +24,15 @@ type FetchError = {
 type FetchResult<T> = FetchSuccess<T> | FetchError;
 //----------------------
 // Estado que representa los diferentes tipos de KPIs dataset a obtener de la API
-type ApiRespDataType = {
-  SavingGoals: BalancePocketRespType | null;
-  MonthlyTotalAmountByType: FinancialDataRespType | null;
-  MovementExpenseTransactions: LastMovementRespType | null;
-  MovementDebtTransactions: LastMovementRespType | null;
-  MovementIncomeTransactions: LastMovementRespType | null;
-  MovementPocketTransactions: LastMovementRespType | null;
-};
+// type ApiRespDataType = {
+//   SavingGoals: BalancePocketRespType | null;
+//   MonthlyTotalAmountByType: FinancialDataRespType | null;
+//   MovementExpenseTransactions: LastMovementRespType | null;
+//   MovementDebtTransactions: LastMovementRespType | null;
+//   MovementIncomeTransactions: LastMovementRespType | null;
+//   MovementPocketTransactions: LastMovementRespType | null;
+//     MovementInvestmentTransactions: LastMovementRespType | null;
+// };
 // Las claves válidas que puede tener ApiRespDataType
 //KPIKeyType es un union type de las claves del objeto ApiRespDataType.
 type KPIKeyType = keyof ApiRespDataType;
@@ -45,7 +47,7 @@ type EndpointItemType<K extends KPIKeyType> = {
 //type guard Evalúa si ese valor tiene al menos la estructura mínima esperada del tipo FinancialDataRespType.
 // TypeScript cambia el tipo de data al tipo FinancialDataRespType dentro del if donde se use.Esto se conoce como type narrowing.
 
-//: data is FinancialDataRespType, Indica que si la función retorna true, TypeScript redefinirá el tipo de data como FinancialDataRespType en el ámbito donde se use.
+//ex. : data is FinancialDataRespType, Indica que si la función retorna true, TypeScript redefinirá el tipo de data como FinancialDataRespType en el ámbito donde se use.
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isFinancialDataRespType(data: any): data is FinancialDataRespType {
@@ -132,8 +134,9 @@ export async function overviewFetchAll(
       } else if (
         (endpoint.key === 'MovementExpenseTransactions' ||
           endpoint.key === 'MovementDebtTransactions' ||
-          endpoint.key === 'MovementPocketTransactions' ||
-          endpoint.key === 'MovementIncomeTransactions') &&
+          endpoint.key === 'MovementIncomeTransactions') ||
+          endpoint.key === 'MovementPocketTransactions'||
+          endpoint.key === 'MovementInvestmentTransactions' &&
         isLastMovementRespType(data)
       ) {
         console.log('going to MovementTransactions');

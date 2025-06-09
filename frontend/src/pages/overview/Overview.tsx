@@ -41,13 +41,14 @@ export type CreateNewAccountPropType = {
 const userId = import.meta.env.VITE_USER_ID;
 
 //---type of api response
-type ApiRespDataType = {
+export type ApiRespDataType = {
   SavingGoals: BalancePocketRespType | null;
   MonthlyTotalAmountByType: FinancialDataRespType | null;
   MovementExpenseTransactions: LastMovementRespType | null;
   MovementDebtTransactions: LastMovementRespType | null;
   MovementIncomeTransactions: LastMovementRespType | null;
   MovementPocketTransactions: LastMovementRespType | null;
+  MovementInvestmentTransactions: LastMovementRespType | null;
 };
 //---endpoint config------------------
 type KPIEndpointType = {
@@ -64,6 +65,7 @@ type KPIDataStateType = {
   LastMovements: LastMovementType[] | null;
   LastIncomeMovements: LastMovementType[] | null;
   LastPocketMovements: LastMovementType[] | null;
+  LastInvestmentMovements: LastMovementType[] | null;
 };
 //----------------------------------------------
 //data to be fetched
@@ -100,6 +102,11 @@ const overviewKPIendpoints: KPIEndpointType[] = [
     url: `${dashboardMovementTransactions}?start=&end=&movement=pocket&user=${userId}`,
     type: {} as LastMovementRespType,
   },
+    {
+    key: 'MovementInvestmentTransactions',
+    url: `${dashboardMovementTransactions}?start=&end=&movement=investment&user=${userId}`,
+    type: {} as LastMovementRespType,
+  },
 ];
 //--------------------------
 // type CreateNewAccountProps = {
@@ -120,6 +127,7 @@ function Overview() {
     LastMovements: null,
     LastIncomeMovements: null,
     LastPocketMovements: null,
+    LastInvestmentMovements: null,
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -273,7 +281,37 @@ function Overview() {
           : null;
 
         console.log('recvisar result pocket6', result);
+//---
+        const movementInvestmentTransactionsData =
+          result.MovementInvestmentTransactions.status === 'success'
+            ? result.MovementInvestmentTransactions?.data?.data
+            : null;
 
+        const movementInvestmentTransactions = movementInvestmentTransactionsData
+          ? Array.from(
+              { length: movementInvestmentTransactionsData.length },
+              (_, i) => {
+                const {
+                  account_name,
+                  amount,
+                  description,
+                  transaction_actual_date,
+                  currency_code,
+                } = movementInvestmentTransactionsData[i];
+
+                const obj = {
+                  accountName: account_name,
+                  record: amount, //data? or title?
+                  description: description,
+                  date: transaction_actual_date,
+                  currency: currency_code,
+                };
+                return { ...obj };
+              }
+            )
+          : null;
+
+        console.log('recvisar result pocket6', result);
         //-------------
         setKpiData({
           SavingGoals: savingGoalsData,
@@ -282,6 +320,7 @@ function Overview() {
           LastMovements: debtTransactions,
           LastIncomeMovements: movementIncomeTransactions,
           LastPocketMovements: movementPocketTransactions,
+          LastInvestmentMovements: movementInvestmentTransactions,
         });
       } catch (err) {
         setError('Failed to load overview data');
@@ -358,6 +397,13 @@ function Overview() {
           data={kpiData.LastPocketMovements}
           title='Last Movements (pocket)'
         />
+
+        <LastMovements
+          data={kpiData.LastInvestmentMovements}
+          title='Last Movements (investment)'
+        />
+
+
       </div>
     </section>
   );

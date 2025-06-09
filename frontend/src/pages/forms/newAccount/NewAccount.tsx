@@ -60,7 +60,6 @@ export type TypeOptionsType = {
 };
 
 const formDataNumber = { keyName: 'amount', title: 'value' };
-
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
 };
@@ -104,7 +103,6 @@ function NewAccount() {
   const optionsTypeAccounts = ACCOUNT_TYPE_DEFAULT;
   // console.log('arreglo:', optionsTypeAccounts);
   //POST: NEW ACCOUNT DATA
-
   const { data, isLoading, error, requestFn } = useFetchLoad<
     CreateBasicAccountApiResponseType,
     AccountDataType
@@ -146,6 +144,7 @@ function NewAccount() {
           ...acc,
           type: selectedOption?.label,
         }));
+          setIsDisabledValue(false);
       }
     } else {
       console.log(`No option selected for ${'account type'}`);
@@ -154,6 +153,8 @@ function NewAccount() {
         ...acc,
         type: undefined,
       }));
+
+       setIsDisabledValue(false);
     }
   }
   //---------

@@ -1,4 +1,4 @@
-import { numberFormatCurrency } from '../../../helpers/functions';
+import {  numberFormatCurrency } from '../../../helpers/functions';
 
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import { Link } from 'react-router-dom';
@@ -15,7 +15,7 @@ const defaultCurrency = DEFAULT_CURRENCY;
 //-------
 
 function SavingGoals({ data }: { data: BalancePocketRespType | null }) {
-  console.log(data);
+  // console.log(data);
 
   const defaultValues = {
     total_balance: 0,
@@ -71,7 +71,7 @@ function SavingGoals({ data }: { data: BalancePocketRespType | null }) {
           <div className='tile__title'>
             {/* 0,000.00 */}
             {goal.amount}
-            {/* {currencyFormat(defaultCurrency, goal.amount, formatNumberCountry)} */}
+            {/* {currencyFormat(defaultCurrency, Number(goal.amount), formatNumberCountry)} */}
           </div>
           <div className='tile__status__container flx-row-sb'>
             <StatusSquare

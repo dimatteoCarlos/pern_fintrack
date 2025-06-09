@@ -1,6 +1,6 @@
 //ListPocket.tsx
-import { Link } from 'react-router-dom';
-// import { Link, NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
+// import { Link } from 'react-router-dom';
+import { Link, NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import { StatusSquare } from '../../../general_components/boxComponents';
 import {
   DEFAULT_CURRENCY,
@@ -21,11 +21,14 @@ import { useFetch } from '../../../hooks/useFetch.tsx';
 
 const defaultPocket: PocketsToRenderType[] = [];
 
-function ListPocket() {
-
+function ListPocket({previousRoute}:{previousRoute:string}) {
+console.log('originRoute', previousRoute)
   // const originRoute = useLocation().pathname;
   // const navigateTo: NavigateFunction = useNavigate();
-
+  //   //functions
+  // const goToPreviousPage = (previousRoute: string) => {
+  //   navigateTo(previousRoute);
+  // };
 
   //DATA FETCHING
   //List Pocket - get accounts by type:pocket_saving

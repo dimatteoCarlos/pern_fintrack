@@ -68,7 +68,6 @@ function AccountBalance({
     useState<AccountToRenderType[]>(ACCOUNT_DEFAULT);
 
   //DATA FETCHING
-  //Creo que los data fetching deberian hacerse desde la pagina principal y pasar los props a los componentes.
   //por ahora pasar userId por params, pero deberia manejarse en el backend con auth
   //bank accounts balance
   const urlBankAccounts = `${url_get_accounts_by_type}/?type=bank&user=${user}`;
@@ -87,7 +86,7 @@ function AccountBalance({
         !!bankAccountsData.data.accountList?.length
           ? bankAccountsData.data?.accountList?.map((acc, indx) => ({
               nameAccount: acc.account_name,
-              concept: 'balance', //it is important to know the data structure from backend
+              concept: 'balance', 
               balance: acc.account_balance,
               type: acc.account_type_name,
               id: acc.account_id ?? `${acc.account_name + '_' + indx}`,
@@ -111,7 +110,7 @@ function AccountBalance({
 
   return (
     <>
-      {/*EXPENSE ACCOUNTS  */}
+      {/*BANK ACCOUNTS  */}
       <div className='presentation__card__title__container flx-row-sb'>
         <CardTitle>Account Balance</CardTitle>
         <Link className='flx-col-center icon ' to={'edit'}></Link>

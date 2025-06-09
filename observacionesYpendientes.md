@@ -1,7 +1,7 @@
 ======================
 LISTO
-error> something went wrong with the movement_types table listo
-deshabilitar value en account creation  del tipo income source y el msg valid. listo
+error> something went wrong with the movement_types table LISTO
+deshabilitar value en account creation  del tipo income source y el msg valid. LISTO
 ======================
 LISTO
 era un error de bad typeying
@@ -12,23 +12,26 @@ transferBetweenAccounts
 🚀 ~ sourceAccountInfo: undefined
 =================
 LISTO
-se CAMBIO el endpoint a movement trnsactions, y se adecuaron los tipos del setKpiData y el ApiRespDataType esperado en overviewFetchAll relacionado con el type safeGuard.
-else if (
-        (endpoint.key === 'MovementExpenseTransactions' ||
-          endpoint.key === 'MovementDebtTransactions' ||
-          endpoint.key === 'MovementPocketTransactions' ||
-          endpoint.key === 'MovementIncomeTransactions') &&
-        isLastMovementRespType(data)
-      ) {
-        console.log('going to MovementTransactions');
-        results[endpoint.key] = { status: 'success', data };
-      }
+se CAMBIO el endpoint a movement trnsactions, y se adecuaron los tipos del setKpiData y el ApiRespDataType esperado en overviewFetchAll relacionado con el type safeGuard. ubicado en el archivo overviewFetchAll.
 
-INcome movement tracker no se refleja en overview
-error de typing income vs incom
-MovementIncomeTransactions
-  url: `${dashboardMovementTransactions}?start=&end=&movement=income&user=${userId}`,
- kpiData.LastIncomeMovements: null,
+INcome movement tracker no se refleja en overview. LISTO
+era un error de typing income vs incom
+
+=================
+OJO
+PARA UN TRACKING COMPLETO SE DEBERIA CONSIDEERAR CUENTAS DE AJUSTES POSITIVO Y NETGABTIVO , PARA CUENTAS DE AHORRO QUE GENERANI INTERESES, PERDIDAS Y GANANCIAS EN CUENTAS DE INVERSION,DEPOSITOS Y RETIROS DE CUENTAS BANCARIAS,POR EJEMPLO TENER UNA CUENTA CASH PARA REFLEJAR DEPOSITOS Y RETIROS DE CUENTAS BANK. 
+
+EL NET WORTH MOSTRADO, ES REALMENTE UN OPERATIVE PROFIT, NO ES EL NET WORTH REAL SEGUN LA DEFINICION EN CONTABILIDAD, YA QUE ESTE SE CALCULA CONSIDERANDO POR EJEMPLO LOS DEBTS (RECEIVABLES O PAYAIBLAES), LOS SALDOS EN INVESTMENT, ASI COMO ACTIVOS Y PASIVOS NO REGISTRADOS O TRACKEADO S AQUI. 
+
+efecto NET WORTH CALCULATION
+accion> verificar con usuario cliente
+
+SI NETWORTH SE DEFINE COMO INCOME - EXPENSES. (OPERATIVE PROFIT)
+el saldo de las cuentas bank, investmen, etc que se abrieron con un monto
+mayhor que 0, no interviene en la ecuacion. (ACTIVOS CORRIENTES)
+Tal vez el concepto aqui seria que forma parte de el patrimonio. mas bien.
+las cuentas bank que se abren con saldo positivo, se desconoce de donde viene el saldo,
+ por lo que se les asocia una cuenta slack, . PUDIERA ASOCIARSE UNA CUENTA CASH, PARA LLEVAR EL CONTROL DE LO QUE SE DEPOSITA/RETIRA DE AFUERA., bueno seria lo mismo que slack, pero con un nombre entendible.
 =================
 PENDIENTE
 LA FECHA DE DESIRED DATE, DEBERIA BLOQUEARSE PARA FECHAS ANTERIORES A LA FECHA ACTUAL NOW.
@@ -48,8 +51,17 @@ DE POCKET NEW POCKET.
           >
 
 =================
-PENDIENTE
-AGREAGAR LAST MOVEMENTS de INVESTMENts
+LISTO
+AGREAGAR LAST MOVEMENTS de INVESTMENts LISTO.
+=================
+LISTO
+AHORA NO SE FREFLEJA N LOS MONTOS NI LAS TRANSFERENCIA PARA INESTINVESTMENT
+se ajusto el state     setIsDisabledValue(false);
+=================
+LISTO
+ACTIVAR EL VALUE PARA CUENDO SE CREA UNA CUENTA BANK, Y DESACTIVARLO PARA CUENTAS INVESTMENT O INCOME
+AL DESACTIVARLO PARA INCOME O INVESTMENT, SE QUEDA DESACTIVADO PARA BANK.
+
 =================
 TODAS LAS DETAIL PAGES ESTAN PENDIENTES
 definir el disenio y lo sobre todos los datos
@@ -60,21 +72,13 @@ LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TABLAS DE BBDD.
 estrategias de borrado de informacion defnir.
 =================
 PENDIENTE
-BOTON DE REGRESO DE POCKET DETAIL
+BOTON DE REGRESO DE POCKET DETAIL y todas las demas p detail page.
 desde ListPocket
 =================
 PENDIENTE
 LS F LAS FECHAS DE LAS TRANSACCIONES tracker NO DEBERIAN SER AFUTURO,
 =================
-efecto NET WORTH CALCULATION
-accion> verificar con usuario cliente
 
-SI NETWORTH SE DEFINE COMO INCOME - EXPENSES.
-el saldo de las cuentas bank, investmen, etc que se abrieron con un monto
-mayhor que 0, no interviene en la ecuacion.
-Tal vez el concepto aqui seria que forma parte de el patrimonio. mas bien.
-las cuentas bank que se abren con saldo positivo, se desconoce de donde viene el saldo,
- por lo que se les asocia una cuenta slack, 
 =================
 PENDIENTE
 * el usuario id userId , debe ser verificado antes de entrar al tracker de fintrack.
@@ -87,12 +91,12 @@ por ejemplo> [400] No accounts available of type pocket_saving.. dashboardAccoun
 Error while getting account balances
 =================
 LISTO
-when creating an account it is not rendered at overview listo
-incluir los movimientos d investment, poceket, en el overviwwe, listo
-revisar el monthly avg saving. listo
+incluir los movimientos d investment, No se reflejan en la lista de overview, PENDIENTE
+when creating an account it is not rendered at overview LISTO
+revisar el monthly avg saving. LISTO
 =================
 LISTO
-RESULTA QUE SI SE QUIERE SALDAR UNA DEUDA CON UN DEBTOR, SE HACE DESDE TRACKER HACIENDOLE UN LEND A ESE DEBTOR. listo
+RESULTA QUE SI SE QUIERE SALDAR UNA DEUDA CON UN DEBTOR, SE HACE DESDE TRACKER HACIENDOLE UN LEND A ESE DEBTOR. LISTO
 
 los movimientos debt, se pueden hacer desde tracker y cuando se abre un nuevo debtor profile, por lo que se debe renderizar no solo el tracker sino tambien la apertura de la d cuenta del debtor como un movimiento DEBT. LISTO
 ================================
@@ -108,56 +112,65 @@ RESULTA QUE EL SERVIDOR TEINE UNA FECHA DISTINTA A DONDE ESTA EL USUARIO. QUE IM
 como resolveer lo de la fecha del serevidor, como obtenerla.
 ===========================
 LISTO
-en debt creation borrowind no funciona?listo.
+en debt creation borrowind no funciona?LISTO.
 ===========================
-listo
-Al parecer no hay restriccion de saldo, para prestar u a un debtor desde debtor creation, colocar la limitacion de fundos. Verificar backend. LISTO
+LISTO
+HAY QUE ARREGLAR LA RESTRICCION DE FONDOS, CUANDO SE CREA UN PROFILE DEBTOR. en el backend.
+Al parecer no hay restriccion de saldo, para prestar u a un debtor desde debtor creation, colocar la limitacion de funds. Verificar backend. LISTO
 hay que arreglar es donde mostrar el error de restriccion de fondos. en debts. frontend.
 ===========================
-PENDIENTE
-HAY QUE ARREGLAR LA RESTRICCION DE FONDOS, CUANDO SE CREA UN PROFILE DEBTOR.
-===========================
-listo
-tampoco se reflejan los expenses na en las listas de summaries
 
+===========================
+LISTO
+tampoco se reflejan los expenses na en las listas de summaries
 =======================
+sugerencia design
 CAMBIAR LEND BORROW BANK INVESTMENT POCKET DEL FRONTEND TRACKER DE TRANSFER Y DEBTS, POR ICONOS, Y AGREGARLES TOOLTIPS - ESTO ES DISENO, HAY QUE BUSCAR LAS FIGURAS REPRESENTATIVAS DE ESOS CONCEPTOS.
 =======================
-meter account type id en transactions para no hacer join, revisar, almomento de mostrar los movimientos SERIA REDUNDANTE . LISTO.
-
+meter account type id en transactions para no hacer join, revisar, almomento de mostrar los movimientos
+SERIA REDUNDANTE . NO SE HIZO.
+=========================
+MISCELANEOS
 UTILIZAR LOS ID EN LOS QUERYIES Y NO LOS NAME. HABRIA QUE CAMBAIAR BASTANTES QUEERIES. DEJARLO PARA VERSION DEFINITIVA.
 
 LIMPIAR CONSOLE.LOGS.
 
 como hacer validation en linea osea no esperar el submit
 
+hacer el debounces en los notes input textarea
+
 no resetear los datos, si iaparece un error del servidor, pero como se hace, manualmente el usuario>? despues de somter l el formulario?
 
 lend y borrow se registran al reves en la description de las transacciones. al hacer el tracker de debt. verificar esto.
 
-ningun debt se muestra en overview, ni los opening, ni los tracker listo.
+ningun debt se muestra en overview, ni los opening, ni los tracker LISTO
 
 account opening de categorias no se muetra,m y esta bien asi. porque no hay desembolsos.
 
-el tracker de expense tampoco se muestra en overview . listo
+el tracker de expense tampoco se muestra en overview . LISTO
 
-yo eliminaria value en income account opening. listo.
+yo eliminaria value en income account opening. LISTO.
 
- income sigue apareciendo negativo en overview. listo
+ income sigue apareciendo negativo en overview. LISTO
 
 acortar duracion de mensajes de warning error al to user, y quitar el mensaje de arriba, revisar el mensaje que aparece en el top de los forms
 
 aparece doblemensaje de error en e tracker.
 
-estilos de bigBoxResult, los estilos en linea colocarlos en un css. listo para algunos, revisar todos.
+estilos de bigBoxResult, los estilos en linea colocarlos en un css. LISTO para algunos, revisar todos.
 
-MINIMIZAR LOS CONSOLE.LOG DEL BACKEND. RETARDAN LAS BUSQUEDAS.
+MINIMIZAR LOS CONSOLE.LOG DEL BACKEND. RETARDAn EL RENDERIZADO EN FRONTEND.
 
 HACER UNA VERSION DEFINITIVA,. DONDE SE OPTIMIZAN LOS QUERIES PG CON INDEX. y hacer vistas donde haga falta. PROBAR.
 
 LAS TABLAS DE TRANSACTION S SE PUEDE SIMPLIFICAR ASOCIANDOLAS A UNA TABLA DE ENTRIES DE CADA TRANSACTION
 
-===========================
+HACER QUE APAREZCA "NO OPCION" EN LOS SELECTOR ACCOUNT"S, CUANDO NO HAY OPCIONES O NO HAY DATA. EN LOS DROPDOWN SELECTORS.
+
+QUE SE QUIERE COLOCAR EN EL BOTON SEE MORE DE OVERVIEW?
+
+VERICFICAR QUE SE PUEDE EDITAR Y QUE NO. SU INTERCONEXION EN LA BASE DE DATOS. Y DONDE EN EL FRONTEND. SIF FUERA UNA WEB, S LO HARIA EN UNA PAGINA ADMIN, MOSTRANDO LA LISTA DE CUENTAS POR TIPO. A SELECCIONAR.
+=======================
 "movement_type_id" "movement_type_name"
 1 "expense"
 2 "income"

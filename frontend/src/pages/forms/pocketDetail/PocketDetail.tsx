@@ -18,12 +18,7 @@ import {
 // import { StatusSquare } from '../../../general_components/boxComponents.tsx';
 
 function PocketDetail() {
-
   // const location = useLocation();
-
-
-
-
   //temporary data
   const pocketInfo = {
     name: 'pocket name',
