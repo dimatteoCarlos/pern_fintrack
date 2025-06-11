@@ -33,7 +33,6 @@ import { AxiosRequestConfig } from 'axios';
 const defaultCurrency = DEFAULT_CURRENCY;
 // const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // console.log('', { formatNumberCountry });
-
 //---- data config---------
 type AccountDataType = {
   name: string;
@@ -70,7 +69,6 @@ function NewAccount() {
   // const user = useUserStore((state: UserStoreType) => state.userData.userId);
   const user = import.meta.env.VITE_USER_ID;
   // console.log('🚀 ~ NewAccount ~ user:', user);
-
   //---states------
   const [accountData, setAccountData] = useState<AccountDataType>(
     initialNewAccountData

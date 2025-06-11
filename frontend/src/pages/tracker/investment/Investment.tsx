@@ -1,3 +1,5 @@
+//***THIS WAS SUBSTITUtedD BY TRANSFER */
+//*****OLD VERSION */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetch } from '../../../hooks/useFetch.tsx';
 import {
@@ -252,7 +254,7 @@ function Investment() {
       { formattedNumber },
       typeof formattedNumber
     );
-    //----------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     //validation of entered data
     const newValidationMessages = { ...validationData(investmentData) };
     if (Object.values(newValidationMessages).length > 0) {
@@ -331,7 +333,6 @@ function Investment() {
     }
   }
   //---------------------------------------------
-
   //-------Top Card elements
   const topCardElements = {
     titles: { title1: 'amount', title2: 'debit account' },

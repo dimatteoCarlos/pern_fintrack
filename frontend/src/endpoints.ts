@@ -81,8 +81,9 @@ export const url_movement_transaction_record: string =
   BASE_URL + '/transaction/transfer-between-accounts';
 
 //ENDPOINTS FOR BUDGET PAGE
+// dashboardAccountSummaryList
 //accouny list summary by account type and acc name
-//http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=category_budget&user=
+//example:http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=category_budget&user=
 export const url_summary_balance_ByType: string =
   BASE_URL + '/dashboard/balance/summary/'; //?type=expense&user=
 //=================================================

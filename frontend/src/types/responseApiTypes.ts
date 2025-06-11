@@ -391,5 +391,6 @@ export interface PocketListType {
   total_balance: number; //| null;
   total_remaining?: number; //| null;
   total_target: number;
+  desired_date:Date;
   note: string;
 }

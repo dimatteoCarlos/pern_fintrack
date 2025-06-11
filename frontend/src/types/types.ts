@@ -193,6 +193,7 @@ export type PocketsToRenderType = {
   currency: CurrencyType;
   status?: number;
   pocket_id: number;
+  desired_date:Date
 };
 //----------------------------------
 export type StatusType = boolean;

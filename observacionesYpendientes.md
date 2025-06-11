@@ -1,3 +1,37 @@
+TODAS LAS DETAIL PAGES ESTAN PENDIENTES
+definir el disenio y lo sobre todos los datos
+DONDE SE METERAN LA PARTE DE EDICION
+EN LOS PAGE DETAIL? O SE HARA UN A LISTA ADMIN?
+definir los campos que se pueden editar
+LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TABLAS DE BBDD.
+estrategias de borrado de informacion defnir.
+=================
+PENDIENTE
+BOTON DE REGRESO DE POCKET DETAIL . LISTO
+CATEOGRY DETAL
+DEBTOR DETAIL
+ACCOUNT DETAIL
+INVESTMENT DETAIL NO EXISTE.
+
+
+=================
+CATEGORY
+HACER UN RESUMEN POR SUBCATEGORIA DE CATOGORY
+ahorita se puede hacer un resumen por category_nature
+ 
+ahorita no puedes hacer un resumen por subcategoria, pues, para eso se debe tracker los montos por subcategoria, es decir, debe etructurarse las cuentas por subcategoria.
+CATEGORY NATURE - SUBCAT 1, SUBCAT2, SUBCAT3
+
+OSEA, LAS CUENTAS SERIAN ALGO ASI>
+SUBCAT1.CATEGORY_X.NATURE_x
+Y EL PPTO Y LOS GASTOS SE LLEVARIAN POR SUBCATEGORY, Y AL MOMENTO DE MOSTRARLOS SERIAN AGRUPACIONES DE 
+BALANCES DE LAS SUBCATEGORIAS PERTENECIENTES A U A UNA CATEGORY_NATURE O A UNA CATEGORY TOTAL.
+
+O
+CATE_1.NATURE_1.SUBCAT_1.
+======================
+OJO EN NINGUNA PARTE SE REFLEJA EL BALANCE TOTAL DE INVESTMENT
+PODRIA AGREGARSE UN TOTAL INVESTMENT, O SE LE COLOCA ENCIMA AL TITULOS DE LOS INVESTMENT BALANCE. 
 ======================
 LISTO
 error> something went wrong with the movement_types table LISTO
@@ -13,7 +47,6 @@ transferBetweenAccounts
 =================
 LISTO
 se CAMBIO el endpoint a movement trnsactions, y se adecuaron los tipos del setKpiData y el ApiRespDataType esperado en overviewFetchAll relacionado con el type safeGuard. ubicado en el archivo overviewFetchAll.
-
 INcome movement tracker no se refleja en overview. LISTO
 era un error de typing income vs incom
 
@@ -56,29 +89,19 @@ AGREAGAR LAST MOVEMENTS de INVESTMENts LISTO.
 =================
 LISTO
 AHORA NO SE FREFLEJA N LOS MONTOS NI LAS TRANSFERENCIA PARA INESTINVESTMENT
-se ajusto el state     setIsDisabledValue(false);
+
 =================
 LISTO
 ACTIVAR EL VALUE PARA CUENDO SE CREA UNA CUENTA BANK, Y DESACTIVARLO PARA CUENTAS INVESTMENT O INCOME
 AL DESACTIVARLO PARA INCOME O INVESTMENT, SE QUEDA DESACTIVADO PARA BANK.
+se ajusto el state     setIsDisabledValue(false);
 
-=================
-TODAS LAS DETAIL PAGES ESTAN PENDIENTES
-definir el disenio y lo sobre todos los datos
-DONDE SE METERAN LA PARTE DE EDICION
-EN LOS PAGE DETAIL? O SE HARA UN A LISTA ADMIN?
-definir los campos que se pueden editar
-LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TABLAS DE BBDD.
-estrategias de borrado de informacion defnir.
-=================
-PENDIENTE
-BOTON DE REGRESO DE POCKET DETAIL y todas las demas p detail page.
-desde ListPocket
 =================
 PENDIENTE
 LS F LAS FECHAS DE LAS TRANSACCIONES tracker NO DEBERIAN SER AFUTURO,
 =================
-
+PENDIENTE
+deshabilitar el save button en new account, cuando isLoading, y asi con loos demas forms  and so on.
 =================
 PENDIENTE
 * el usuario id userId , debe ser verificado antes de entrar al tracker de fintrack.
@@ -107,7 +130,7 @@ como ser efectivo.
 como navegar el laberitno de la vida o el poder
 
 ===========================
-pendiente
+PENDIENTE
 RESULTA QUE EL SERVIDOR TEINE UNA FECHA DISTINTA A DONDE ESTA EL USUARIO. QUE IMPLICACIONES TENDRIA ESO?
 como resolveer lo de la fecha del serevidor, como obtenerla.
 ===========================
@@ -131,8 +154,7 @@ meter account type id en transactions para no hacer join, revisar, almomento de 
 SERIA REDUNDANTE . NO SE HIZO.
 =========================
 MISCELANEOS
-UTILIZAR LOS ID EN LOS QUERYIES Y NO LOS NAME. HABRIA QUE CAMBAIAR BASTANTES QUEERIES. DEJARLO PARA VERSION DEFINITIVA.
-
+UTILIZAR LOS ID EN LOS QUERYIES Y NO LOS NAME. HABRIA QUE CAMBAIAR BASTANTES QUEERIES. DEJARLO PARA VERSION DEFINITIVA. REALMENTE VALE LA PENA?. 
 LIMPIAR CONSOLE.LOGS.
 
 como hacer validation en linea osea no esperar el submit
@@ -158,6 +180,8 @@ acortar duracion de mensajes de warning error al to user, y quitar el mensaje de
 aparece doblemensaje de error en e tracker.
 
 estilos de bigBoxResult, los estilos en linea colocarlos en un css. LISTO para algunos, revisar todos.
+
+HACER QUE LOS SUMMARY LIST SE MUEVAN CON SCROLL MIENTRA LO DEMAS SE QUEDA FIJO.  HABERLO DICHO CUANODO ESTABA HACIENDO EL DISENIO, VERDAD. AHORITA MAS CONCENTRADO EN EL BACKEND Y TERMINAR LO QUE FALTA EN FUNCION DEL ALCANCE ORIGINAL. DESPUES VEREMOS.
 
 MINIMIZAR LOS CONSOLE.LOG DEL BACKEND. RETARDAn EL RENDERIZADO EN FRONTEND.
 

@@ -1,4 +1,4 @@
-import { Link  } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
@@ -15,12 +15,27 @@ import {
   ACCOUNT_TYPE_DEFAULT,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
+import { PocketsToRenderType } from '../../../types/types.ts';
 // import { StatusSquare } from '../../../general_components/boxComponents.tsx';
 
+type LocationStateType = {
+  pocketData: PocketsToRenderType;
+  previousRoute: string;
+};
+
 function PocketDetail() {
-  // const location = useLocation();
+  const location = useLocation();
+  
+  // const {pocketData, previousRoute}: {
+  //   pocketData: PocketsToRenderType;
+  //   previousRoute: string;
+  // } = location.state 
+
+  const {pocketData, previousRoute}:LocationStateType = location.state 
+
+  //------------------------
   //temporary data
-  const pocketInfo = {
+  const pocketInfoDefault = {
     name: 'pocket name',
     note: 'Description',
     date: new Date(),
@@ -28,13 +43,13 @@ function PocketDetail() {
     amount: '0',
   };
   //summary data
-  const summaryData = {
+  const summaryDataDefault = {
     title: 'target amount',
     amount: 1112.11,
     subtitle1: '$built',
     subtitle2: 'status',
   };
-
+  //------------------------
   const accountOptions = ACCOUNT_TYPE_DEFAULT; //define the logic to get the options from backend
   //Account Options
   const accountSelectionProp = {
@@ -43,11 +58,19 @@ function PocketDetail() {
     variant: VARIANT_FORM, //stablishes the custom styles to use in selection dropdown component
   };
 
-  const initialPocketDetail = {
-    pocketInfo,
-  };
+  // const initialPocketDetail = {
+  //   pocketData ?? pocketInfo,
+  // };
+  //==============================
+//statespocketName
 
-  const [pocketDetail, setPocketDetail] = useState(initialPocketDetail);
+  const [pocketDetail, setPocketDetail] = useState({pocketInfo:{
+    name:pocketData.pocketName,
+note:pocketData.description,
+date:pocketData.desired_date,
+account:"",
+amount:0,
+  }});
   const [isReset, setIsReset] = useState<boolean>(false);
 
   //--functions---
@@ -91,18 +114,18 @@ function PocketDetail() {
         <TopWhiteSpace variant={'dark'} />
         <div className='page__content'>
           <div className='main__title--container'>
-            <Link  to='budget' relative='path' className='iconLeftArrow'>
-            {/* <Link  to={location.state.previousRoute} relative='path' className='iconLeftArrow'> */}
+            {/* <Link  to='budget' relative='path' className='iconLeftArrow'> */}
+            <Link  to={previousRoute} relative='path' className='iconLeftArrow'>
               <LeftArrowLightSvg />
             </Link>
-            <div className='form__title'>{pocketInfo.name}</div>
+            <div className='form__title'>{pocketDetail.pocketInfo.name}</div>
             <Link to='edit' className='flx-col-center icon3dots'>
               <Dots3LightSvg />
             </Link>
           </div>
         </div>
 
-        <SummaryDetailBox summaryData={summaryData}></SummaryDetailBox>
+        <SummaryDetailBox summaryData={summaryDataDefault}></SummaryDetailBox>
 
         <form className='form__box'>
           <div className='form__container'>
