@@ -70,11 +70,11 @@ const initialFormData: FormNumberInputType = {
 
 //--RadioOption selection
 // for account types
-const inputRadioOptionsAccountType = [
-  { value: 'bank', label: 'bank' },
-  { value: 'investment', label: 'investment' },
-  { value: 'pocket_saving', label: 'pocket' },
-];
+// const inputRadioOptionsAccountType = [
+//   { value: 'bank', label: 'bank' },
+//   { value: 'investment', label: 'investment' },
+//   { value: 'pocket_saving', label: 'pocket' },
+// ];
 
 //for debt transaction type
 const inputRadioOptionsDebtTransactionType = [
@@ -94,7 +94,7 @@ function Debts(): JSX.Element {
   //deal here with user id and authentication
   const user = import.meta.env.VITE_USER_ID;
 
-  //-----------------------------------------------------
+  //--------------------------------------------------
 
   //---states--------
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
@@ -291,26 +291,26 @@ function Debts(): JSX.Element {
 
   //--------
   //RadioInput for account type selection
-  function handleAccountTypeChange(newAccountType: string) {
-    //reset dropdown selected values
-    setDataTrack((prev) => ({
-      ...prev,
-      account: '', //reset dropdown selected values
-      accountType: newAccountType,
-      // destination: '',
-    }));
+  // function handleAccountTypeChange(newAccountType: string) {
+  //   //reset dropdown selected values
+  //   setDataTrack((prev) => ({
+  //     ...prev,
+  //     account: '', //reset dropdown selected values
+  //     accountType: newAccountType,
+  //     // destination: '',
+  //   }));
 
-    //reset error messages
-    setValidationMessages((prev) => ({
-      ...prev,
-      account: '',
-      accountType: '',
-    }));
+  //   //reset error messages
+  //   setValidationMessages((prev) => ({
+  //     ...prev,
+  //     account: '',
+  //     accountType: '',
+  //   }));
 
-    //force reset dropdown selected value for account in the DropdownSelect compoenent
-    setIsResetAccount(false);
-    setTimeout(() => setIsResetAccount(true), 100);
-  }
+  //   //force reset dropdown selected value for account in the DropdownSelect compoenent
+  //   setIsResetAccount(false);
+  //   setTimeout(() => setIsResetAccount(true), 100);
+  // }
   //-----------------------------------------------
   //--submit form
   async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
@@ -451,6 +451,8 @@ function Debts(): JSX.Element {
           // selectedValue={movementInputData.account}
           //radio input prop
 
+          //transaction type selection radio
+          /*
           radioInputProps={{
             radioOptionSelected: datatrack.type ?? initialTrackerData.type!,
             inputRadioOptions: inputRadioOptionsDebtTransactionType,
@@ -458,6 +460,7 @@ function Debts(): JSX.Element {
             title: '',
             // setRadioOptionSelected: setOriginAccountType,
           }}
+          */
           //---------
           // customSelectHandler={accountSelectHandler}
         />
@@ -468,7 +471,7 @@ function Debts(): JSX.Element {
         <div className='state__card--bottom'>
           <div className='account card--title card--title--top'>
             Account
-            <RadioInput
+            {/* <RadioInput
               radioOptionSelected={
                 datatrack.accountType ?? initialTrackerData.accountType!
               }
@@ -478,7 +481,20 @@ function Debts(): JSX.Element {
               labelId='account'
 
               // disabfled={radioInputProps.disabled}
+            /> */}
+
+            <RadioInput
+              radioOptionSelected={
+                datatrack.type ?? initialTrackerData.type!
+              }
+              inputRadioOptions={inputRadioOptionsDebtTransactionType}
+              setRadioOptionSelected={handleTransactionTypeChange}
+              title={''}
+              labelId='transaction'
+              // labelId='account'
+              // disabfled={radioInputProps.disabled}
             />
+
           </div>
           <div className='validation__errMsg'>
             {validationMessages['destination']}
