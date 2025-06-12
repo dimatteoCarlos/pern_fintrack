@@ -172,10 +172,10 @@ async function initializeDatabase() {
               console.log('skip users table');
               return false;
             }
-            // await pool.query({
-            //   text: `TRUNCATE TABLE ${item.tblName}  RESTART IDENTITY CASCADE`,
-            // });
-            await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
+            await pool.query({
+              text: `TRUNCATE TABLE ${item.tblName}  RESTART IDENTITY CASCADE`,
+            });
+            // await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
             console.log(indx, item.tblName, 'truncated');
           } catch (error) {
             console.error('error truncating the table', `${item.tblName}`);

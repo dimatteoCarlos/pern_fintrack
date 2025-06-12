@@ -59,7 +59,7 @@ export type DebtorRespType = {
     debt_receivable: number | null;
     debt_payable: number | null;
     debtors: number | null;
-    creditors: number | null;
+    lenders: number | null;
     debtors_without_debt: number | null;
         currency_code: CurrencyType;
   };

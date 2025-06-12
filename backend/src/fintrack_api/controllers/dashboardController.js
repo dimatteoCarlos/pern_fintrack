@@ -226,7 +226,7 @@ GROUP BY  ct.currency_code
         text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_debt_balance, CAST(SUM(CASE WHEN ua.account_balance > 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_receivable,  CAST(SUM(CASE WHEN ua.account_balance < 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_payable, 
 
         CAST(COUNT(CASE WHEN ua.account_balance>0 THEN 1 ELSE NULL END) AS FLOAT) AS debtors, 
-        CAST(COUNT(*) FILTER (WHERE ua.account_balance<0) AS FLOAT) AS creditors, 
+        CAST(COUNT(*) FILTER (WHERE ua.account_balance<0) AS FLOAT) AS lenders, 
         CAST(COUNT(*) FILTER (WHERE ua.account_balance=0) AS FLOAT) AS debtors_without_Debt, ct.currency_code
 
         FROM user_accounts ua

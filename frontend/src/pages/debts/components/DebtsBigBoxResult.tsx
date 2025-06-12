@@ -29,7 +29,7 @@ export function DebtsBigBoxResult({
   const payable = bigScreenInfo[3].title;
   const payableAmount = bigScreenInfo[3].amount;
 
-  const creditors = bigScreenInfo[4].title;
+  const lenders = bigScreenInfo[4].title;
   const creditorCount = bigScreenInfo[4].amount;
 
   return (
@@ -69,7 +69,7 @@ export function DebtsBigBoxResult({
             )}
           </div>
 
-          <div className='displayScreen--concept light'>{creditors}:</div>
+          <div className='displayScreen--concept light'>{lenders}:</div>
           <div className='displayScreen--result light'>{creditorCount}</div>
         </div>
       </div>

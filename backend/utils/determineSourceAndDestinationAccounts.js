@@ -13,13 +13,13 @@ export function determineSourceAndDestinationAccounts(
   if (!isAccountOpening) {
     destination_account_id =
 (      newAccountInfo.transaction_type_name === 'deposit' ||
-      newAccountInfo.transaction_type_name === 'lend')
+      newAccountInfo.transaction_type_name === 'borrow')
         ? newAccountInfo.account_id
         : counterAccountInfo.account.account_id;
 
     source_account_id =
       newAccountInfo.transaction_type_name === 'withdraw' ||
-      newAccountInfo.transaction_type_name === 'borrow'
+      newAccountInfo.transaction_type_name === 'lend'
         ? newAccountInfo.account_id
         : counterAccountInfo.account.account_id;
   }

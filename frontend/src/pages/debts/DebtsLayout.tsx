@@ -36,7 +36,7 @@ function DebtsLayout() {
     debt_receivable,
     debt_payable,
     debtors,
-    creditors,
+    lenders,
     // debtors_without_debt,
     currency,
   } = useMemo(() => {
@@ -44,7 +44,7 @@ function DebtsLayout() {
       total_debt_balance: apiData?.data.total_debt_balance ?? 0,
 
       debt_payable: apiData?.data.debt_payable ?? 0,
-      creditors: apiData?.data.creditors ?? 0,
+      lenders: apiData?.data.lenders ?? 0,
 
       debtors: apiData?.data.debtors ?? 0,
       debt_receivable: apiData?.data.debt_receivable ?? 0,
@@ -58,7 +58,7 @@ function DebtsLayout() {
     apiData?.data.debt_payable,
     apiData?.data.debt_receivable,
     apiData?.data.debtors,
-    apiData?.data.creditors,
+    apiData?.data.lenders,
     apiData?.data.debtors_without_debt,
     apiData?.data.currency_code,
   ]);
@@ -82,8 +82,8 @@ function DebtsLayout() {
     },
 
     {
-      title: 'creditors',
-      amount: creditors,
+      title: 'lenders',
+      amount: lenders,
     },
   ];
 

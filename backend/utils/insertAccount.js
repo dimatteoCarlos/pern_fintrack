@@ -19,8 +19,9 @@ export const insertAccount = async (
   currency_id,
   account_starting_amount,
   account_balance,
-  account_start_date
-  ) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+  account_start_date,
+  updated_at
+  ) VALUES($1,$2,$3,$4,$5,$6,$7, $8) RETURNING *`,
     values: [
       userId,
       account_name,
@@ -29,6 +30,7 @@ export const insertAccount = async (
       account_starting_amount,
       account_balance, //initial balance
       account_start_date,
+      new Date()
     ],
   };
   try {
