@@ -2,7 +2,7 @@ import pc from 'picocolors';
 import { pool } from '../src/db/configDB.js';
 // import { handlePostgresError } from './errorHandling.js';
 
-//---------------------------------------------------//this check is restricted to bank account type
+////this check is restricted to bank account type
 export const checkAndInsertAccount = async (
   userId,
   accountName = 'slack',
@@ -12,13 +12,13 @@ export const checkAndInsertAccount = async (
     const chekAccountResult = await pool.query(
       `SELECT ua.* FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
-      WHERE ua.account_name = $1 AND act.account_type_name=$2 
+      WHERE ua.user_id =$1 AND ua.account_name = $2 AND act.account_type_name=$3 
       `,
-      [accountName, accountType]
+      [userId,accountName, accountType]
     );
     if (chekAccountResult.rows.length > 0) {
       const accountId = chekAccountResult.rows[0].account_id;
-      console.log(`${accountName} account already exists with id ${accountId}`);
+      console.log('from checkAndINserAccount', `${accountName} account already exists with id ${accountId}`);
       return { exists: true, account: chekAccountResult.rows[0] };
     } else {
       //old version creates a slack account

@@ -10,7 +10,7 @@ export const getTransactionTypeId = async (
   const transactionTypeDescriptionIdsResults = await pool.query({
     text: `SELECT
       MAX(transaction_type_id) FILTER (WHERE transaction_type_name = $1) AS transaction_type_id, 
-      MAX(transaction_type_id) FILTER (WHERE transaction_type_name = $2) AS counterTransaction_type_id
+      MAX(transaction_type_id) FILTER (WHERE transaction_type_name = $2) AS countertransaction_type_id
       FROM transaction_types
       `,
     values: [transactionTypeName, counterTransactionTypeName],

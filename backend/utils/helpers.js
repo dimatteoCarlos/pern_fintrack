@@ -1,6 +1,5 @@
 //determine transaction type from sign of amount and account_type_name.
-//applicable to account creation movements
-
+//applicable only to account creation transactions
 //this function considers category_budget_account with various transaction types possible.
 export const determineTransactionType = (
   transaction_amount,
@@ -23,13 +22,13 @@ export const determineTransactionType = (
       counterTransactionType = 'deposit';
     }
   } else {
-    //for debtor accounts. lend means debtor is receiving money from user and amount is positive
+    //for debtor accounts.
     if (account_type_name === 'debtor' && transaction_amount > 0) {
-      transactionType = 'lend';
-      counterTransactionType = 'borrow';
-    } else if (transaction_amount < 0) {
       transactionType = 'borrow';
       counterTransactionType = 'lend';
+    } else if (transaction_amount < 0) {
+      transactionType = 'lend';
+      counterTransactionType = 'borrow';
     }
   }
   return { transactionType, counterTransactionType };

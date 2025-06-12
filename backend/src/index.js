@@ -123,9 +123,9 @@ async function initializeDatabase() {
     );
     //------------------------------
     // Create tables as per status of initialization
-    // if (initCheck.rows.length === 0 || !initCheck.rows[0].tables_created) {
-    //   console.log(pc.cyan('Initializing app for the first time....'));
-    // --
+    if (initCheck.rows.length === 0 || !initCheck.rows[0].tables_created) {
+      console.log(pc.cyan('Initializing app for the first time....'));
+  //----------
 
     //Transaction pg
     await pool.query('BEGIN');
@@ -158,9 +158,10 @@ async function initializeDatabase() {
       await pool.query('ROLLBACK');
       throw error;
     }
-    // } else {
-    //   console.log(pc.yellow('Application already initialized. Skipping.'));
-    // }
+    //----------
+    } else {
+      console.log(pc.yellow('Application already initialized. Skipping tables creation.'));
+    }
     //--------------------------------------------------
     //truncate or drop all tables manually
     if (false) {

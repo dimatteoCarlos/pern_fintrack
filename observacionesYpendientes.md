@@ -1,3 +1,12 @@
+user = c109eb15-4139-43b4-b081-8fb9860588af
+
+PENDIENTE
+lend y borrow se registran al reves en la description de las transacciones. al hacer el tracker de debt. verificar esto.VERIFICADO, darlo PRIORIDAD.
+===========================
+LISTO
+y al hacer la creacion de debt account createDebtor. 
+VERIFICAR EN TODAS LAS TRANFERENCIAS ENTRE CUENTAS, TANTO TRACKER COM CREATE ACCOUNTS.
+===========================
 TODAS LAS DETAIL PAGES ESTAN PENDIENTES
 definir el disenio y lo sobre todos los datos
 DONDE SE METERAN LA PARTE DE EDICION
@@ -12,8 +21,23 @@ CATEOGRY DETAL
 DEBTOR DETAIL
 ACCOUNT DETAIL
 INVESTMENT DETAIL NO EXISTE.
+=================
 
+PENDIENTE
+LS F LAS FECHAS DE LAS TRANSACCIONES tracker NO DEBERIAN SER AFUTURO,
+=================
+PENDIENTE
+deshabilitar el save button en new account, cuando isLoading, y asi con loos demas forms  and so on.
+=================
+PENDIENTE
+* el usuario id userId , debe ser verificado antes de entrar al tracker de fintrack.
+TRANCADO CON EL USER AUTHENTICATION. SOBRE TODO DONDE GUARDAR LAS CLAVES O ACCESS TOKEN Y REFRESH TOKEN
 
+=================
+PENDIENTE
+* en el caso que no haya datos para renderizar, deberia ser un warning y no un error.
+por ejemplo> [400] No accounts available of type pocket_saving.. dashboardAccountSummaryList
+Error while getting account balances
 =================
 CATEGORY
 HACER UN RESUMEN POR SUBCATEGORIA DE CATOGORY
@@ -82,8 +106,12 @@ DE POCKET NEW POCKET.
             btnFunctionArg={originRoute}
             btnPreviousRoute={originRoute}
           >
-
+===========================
+PENDIENTE
+RESULTA QUE EL SERVIDOR TEINE UNA FECHA DISTINTA A DONDE ESTA EL USUARIO. QUE IMPLICACIONES TENDRIA ESO?
+como resolveer lo de la fecha del serevidor, como obtenerla.
 =================
+
 LISTO
 AGREAGAR LAST MOVEMENTS de INVESTMENts LISTO.
 =================
@@ -96,22 +124,6 @@ ACTIVAR EL VALUE PARA CUENDO SE CREA UNA CUENTA BANK, Y DESACTIVARLO PARA CUENTA
 AL DESACTIVARLO PARA INCOME O INVESTMENT, SE QUEDA DESACTIVADO PARA BANK.
 se ajusto el state     setIsDisabledValue(false);
 
-=================
-PENDIENTE
-LS F LAS FECHAS DE LAS TRANSACCIONES tracker NO DEBERIAN SER AFUTURO,
-=================
-PENDIENTE
-deshabilitar el save button en new account, cuando isLoading, y asi con loos demas forms  and so on.
-=================
-PENDIENTE
-* el usuario id userId , debe ser verificado antes de entrar al tracker de fintrack.
-TRANCADO CON EL USER AUTHENTICATION. SOBRE TODO DONDE GUARDAR LAS CLAVES O ACCESS TOKEN Y REFRESH TOKEN
-
-=================
-PENDIENTE
-* en el caso que no haya datos para renderizar, deberia ser un warning y no un error.
-por ejemplo> [400] No accounts available of type pocket_saving.. dashboardAccountSummaryList
-Error while getting account balances
 =================
 LISTO
 incluir los movimientos d investment, No se reflejan en la lista de overview, PENDIENTE
@@ -129,10 +141,7 @@ como aprovechar las oportunidades.
 como ser efectivo.
 como navegar el laberitno de la vida o el poder
 
-===========================
-PENDIENTE
-RESULTA QUE EL SERVIDOR TEINE UNA FECHA DISTINTA A DONDE ESTA EL USUARIO. QUE IMPLICACIONES TENDRIA ESO?
-como resolveer lo de la fecha del serevidor, como obtenerla.
+
 ===========================
 LISTO
 en debt creation borrowind no funciona?LISTO.
@@ -143,7 +152,6 @@ Al parecer no hay restriccion de saldo, para prestar u a un debtor desde debtor 
 hay que arreglar es donde mostrar el error de restriccion de fondos. en debts. frontend.
 ===========================
 
-===========================
 LISTO
 tampoco se reflejan los expenses na en las listas de summaries
 =======================
@@ -163,7 +171,6 @@ hacer el debounces en los notes input textarea
 
 no resetear los datos, si iaparece un error del servidor, pero como se hace, manualmente el usuario>? despues de somter l el formulario?
 
-lend y borrow se registran al reves en la description de las transacciones. al hacer el tracker de debt. verificar esto.
 
 ningun debt se muestra en overview, ni los opening, ni los tracker LISTO
 

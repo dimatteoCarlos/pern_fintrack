@@ -35,13 +35,13 @@ function PocketDetail() {
 
   //------------------------
   //temporary data
-  const pocketInfoDefault = {
-    name: 'pocket name',
-    note: 'Description',
-    date: new Date(),
-    account: '',
-    amount: '0',
-  };
+  // const pocketInfoDefault = {
+  //   name: 'pocket name',
+  //   note: 'Description',
+  //   date: new Date(),
+  //   account: '',
+  //   amount: '0',
+  // };
   //summary data
   const summaryDataDefault = {
     title: 'target amount',
@@ -78,13 +78,13 @@ amount:0,
     e.preventDefault();
     setPocketDetail((prevState) => ({
       ...prevState,
-      pocketInfo: { ...pocketInfo, [e.target.name]: e.target.value },
+      pocketInfo: { ...pocketDetail.pocketInfo, [e.target.name]: e.target.value },
     }));
   }
 
   function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
-    setPocketDetail(initialPocketDetail);
+    // setPocketDetail(initialPocketDetail);
   }
 
   function accountSelectHandler(
@@ -95,7 +95,7 @@ amount:0,
   ) {
     setPocketDetail((prev) => ({
       ...prev,
-      pocketInfo: { ...pocketInfo,
+      pocketInfo: { ...pocketDetail.pocketInfo,
          account: selectedOption!.value },
     }));
     console.log('selectedOption', selectedOption);
@@ -104,7 +104,7 @@ amount:0,
   function changeDesiredDate(selectedDate: Date) {
     setPocketDetail((prevState) => ({
       ...prevState,
-      pocketInfo: { ...pocketInfo, date: selectedDate },
+      pocketInfo: { ...pocketDetail.pocketInfo, date: selectedDate },
     }));
   }
 
