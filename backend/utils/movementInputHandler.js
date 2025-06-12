@@ -25,8 +25,8 @@ export const getDebtConfig = (body) => {
     destinationAccountTypeName: isLend ? 'debtor' : body.accountType ,
     sourceAccountName: isLend ? body.account : body.debtor,
     sourceAccountTypeName: isLend ? body.accountType  : 'debtor',
-    sourceAccountTransactionType: 'borrow',
-    destinationAccountTransactionType: 'lend',
+    sourceAccountTransactionType: 'lend',
+    destinationAccountTransactionType: 'borrow',
   };
 };
 //===========================================
