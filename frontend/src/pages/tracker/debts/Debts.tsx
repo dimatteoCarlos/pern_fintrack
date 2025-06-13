@@ -326,8 +326,7 @@ function Debts(): JSX.Element {
     // );
     //----entered datatrack validation messages --------
     const newValidationMessages = validationData(datatrack);
-
-    console.log('values', Object.values(newValidationMessages));
+    // console.log('values', Object.values(newValidationMessages));
 
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
@@ -416,7 +415,7 @@ function Debts(): JSX.Element {
       timer = setTimeout(() => {
         setMessageToUser(null);
         setShowMessage(false);
-      }, 5000);
+      }, 6000);
     }
 
     return () => clearTimeout(timer);
@@ -427,7 +426,6 @@ function Debts(): JSX.Element {
     // updateDataCurrency(currency);
     // multi currency option?
     // setDataTrack((prev) => ({ ...prev, currency: currency }));
-    //it seems that this is not necessary? why?
     setDataTrack((prev) => ({ ...prev, type: type }));
   }, [type]);
   // }, [currency, type, updateDataCurrency]);
