@@ -403,7 +403,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
         sourceAccountTypeName === 'investment' ||
         sourceAccountTypeName === 'pocket_saving')
     ) {
-      const message = `Not enough funds to transfer ${currencyCode} ${numericAmount} from account ${sourceAccountName} (${currencyCode} ${sourceAccountBalance})`;
+      const message = `Not enough funds ${currencyCode} ${numericAmount} from "${sourceAccountName}" (${currencyCode} ${sourceAccountBalance})`;
       console.warn(pc.magentaBright(message));
       return res.status(400).json({
         status: 400,
@@ -423,7 +423,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   '  typeof'
     //   // balanceMultiplierFn(sourceAccountTransactionType)
     // );
-
     const sourceAccountId = sourceAccountInfo.account_id;
     // console.log('tad:', transaction_actual_date);
 

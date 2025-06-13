@@ -1,8 +1,9 @@
 user = c109eb15-4139-43b4-b081-8fb9860588af
 
-LISTO HAY QUE PROBAR.
-lend y borrow se registran al reves en la description de las transacciones. al hacer el tracker de debt. verificar esto.VERIFICADO, darlo PRIORIDAD. 
+LISTO .
+lend y borrow se registran al reves en la description de las transacciones. al hacer el tracker de debt. 
 ----------
+
 investment creada con deposito inicial se muestra en los movements, pero no muestra LA description tr es deposit
 ---------------
 disable save in new profile, new cat,

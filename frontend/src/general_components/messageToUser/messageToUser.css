@@ -1,14 +1,14 @@
 /*MessageToUser component styles*/
-.fade-message {
+.fade-message1 {
   opacity: 0;
   animation: fadeInOut 3s ease-in-out forwards;
 
 }
 
-.fade-message {
+.fade-message1 {
   position: absolute;
   top: 5%;
-  left: 50%;
+  left: 10%;
 }
 
 @keyframes fadeInOut {
