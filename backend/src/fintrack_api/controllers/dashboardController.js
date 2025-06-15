@@ -1,23 +1,3 @@
-//total asset balance: total bank + total investment accounts
-//total liquidity: bank
-//total investment: investment
-//total expense vs budget
-//total debtors balance
-//total payable balance
-//total receivable balance
-//total income
-//total budget
-//total target -> saving goal in pockets
-
-//*********** */
-//por cada uno de los anteriores, mostrar la lista de cuentas que componen los balances y despues mostrar cuenta detallada, con sus movimientos.
-
-//monthly average por cada uno
-
-//balance per period
-//manejo del currency: se debe definir el manejo de multiples monedas, por ahora todo se asumira en usd.
-
-//------
 
 //get: //http://localhost:5000/api/fintrack/dashboard/balance
 import {

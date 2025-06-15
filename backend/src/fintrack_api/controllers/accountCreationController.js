@@ -5,7 +5,7 @@ import {
   handlePostgresError,
 } from '../../../utils/errorHandling.js';
 import { pool } from '../../db/configDB.js';
-import { determineTransactionType } from '../../../utils/helpers.js';
+import { determineTransactionType, formatDateToDDMMYYYY } from '../../../utils/helpers.js';
 import { recordTransaction } from '../../../utils/recordTransaction.js';
 import { checkAndInsertAccount } from '../../../utils/checkAndInsertAccount.js';
 import {
@@ -23,7 +23,7 @@ import { prepareTransactionOption } from '../../../utils/prepareTransactionOptio
 //use this only for bank, income_source and investment accounts
 export const createBasicAccount = async (req, res, next) => {
   //basic_account_data:  userId,account_type_name,currency_code,amount,account_start_date,account_starting_amount
-  //account types: bank, income_sorce, investment. Also, cash and slack attribute accounts
+  //account types: bank, income_sorce, investment.Example, cash and slack accounts can be created as bank type account.
   //movement_type_name:'account-opening', movement_type_id: 8, transaction_type_name:deposit,
   console.log(pc.blueBright('createBasicAccount'));
   console.log(
@@ -69,19 +69,18 @@ export const createBasicAccount = async (req, res, next) => {
 
     if (account_type_name) {
       const checkTypeCoherence = typeAccountRequested === account_type_name;
-      //aqui typeAccountRequested es como una confirmacion del tipo de cuenta
+      //here under dev mode typeAccountRequested is just to confirm
       if (!checkTypeCoherence || !typeAccountRequested) {
         const message = `Check coherence between account type requested on url: ${typeAccountRequested.toUpperCase()} vs account type entered: ${account_type_name.toUpperCase()}`;
         console.warn('Warning:', pc.cyanBright(message));
         throw new Error(message);
       }
     }
-    //---
+    //----------------------------------------------------
     const transaction_actual_date =
       !transactionActualDate || transactionActualDate == ''
         ? new Date()
         : transactionActualDate;
-    //revisar el frontend, creo que envia date en vez de transactionActualDate, como la fecha de transaction
 
     const account_start_date =
       date && date !== ''
@@ -99,14 +98,14 @@ export const createBasicAccount = async (req, res, next) => {
     console.log(pc.bgCyan('userId', userId));
     //-----------------------
     //date validation
-    //validar que la fecha no sea mayor que el proximo dia habil? o que no sobrepase el lunes de la prox semana? o no sea mayor que el dia de hoy? o puede ser futura pero en el mismo mes actual? o libre para realizar simulaciones, aunque esto en caso de tener que hacer conversiones monetarias habria que preverlo?
+    // hay establecer regla para la fecha> validar que la fecha no sea mayor que el proximo dia habil? o que no sobrepase el lunes de la prox semana? o no sea mayor que el dia de hoy? o puede ser futura pero en el mismo mes actual? o libre para realizar simulaciones, aunque esto en caso de tener que hacer conversiones monetarias habria que preverlo?
     // const accountStartDateNormalized =
     //   validateAndNormalizeDate(account_start_date);
     // console.log(
     //   '🚀 ~ createAccount ~ accountStartDateNormalized:',
     //   accountStartDateNormalized
     // );
-    //---
+    //-----------------------
     //currency and account_type data, are better defined by frontend
     //check input data
     if (!account_type_name || !currency_code || !newAccountName) {
@@ -115,12 +114,14 @@ export const createBasicAccount = async (req, res, next) => {
       console.warn(pc.blueBright(message));
       return res.status(400).json({ status: 400, message });
     }
+
     //get all account types and then get the account type id requested
     // const { rows: [accountType] } = await pool.query('SELECT account_type_id FROM account_types WHERE account_type_name = $1', [account_type_name]);
     const accountTypeQuery = `SELECT * FROM account_types`;
     const accountTypeResult = await pool.query(accountTypeQuery);
     const accountTypeArr = accountTypeResult.rows;
     // console.log('🚀 ~ createAccount ~ accountTypeArr:', accountTypeArr,  accountTypeArr[0]);
+
     const accountTypeIdReqObj = accountTypeArr.filter(
       (type) => type.account_type_name == account_type_name.trim()
     )[0];
@@ -145,15 +146,15 @@ export const createBasicAccount = async (req, res, next) => {
     // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
     //---------------------------------------
     await client.query('BEGIN');
-    //NEW ACCOUNT AND COUNTER TRANSACTION ACCOUNT (SLACK)
+    //NEW ACCOUNT TO CREATE AND COUNTER TRANSACTION ACCOUNT (SLACK)
     // ----------------------------
     // New Account logic
     // ----------------------------
     //---- UPDATE COUNTER ACCOUNT BALANCE (SLACK accountInfo) OLD VERSION ------
-    //check whether slack account exists if not create it with start amount and balance = 0
+    //check whether slack account exists if not, create it with start amount and balance = 0
     //slack account or counter account, is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation WHEN CREATING THE ACCOUNTS
 
-    const newaccount_starting_amount = amount ? parseFloat(amount) : 0.0;
+    const newaccount_starting_amount = amount ? Math.abs(parseFloat(amount)) : 0.0;
     const newAccountBalance = newaccount_starting_amount; //>=0
     //-------------------------------------------------------
     //-------NEW ACCOUNT AND COUNTER (SLACK) ACCOUNT INFO PREP---------------
@@ -172,11 +173,11 @@ export const createBasicAccount = async (req, res, next) => {
       transactionType = 'deposit';
       counterTransactionType = 'withdraw';
     }
-    console.log(
-      'las transacciones con:',
-      transactionType,
-      counterTransactionType
-    );
+    // console.log(
+    //   'TRANSACTIONS TYPE:',
+    //   transactionType,
+    //   counterTransactionType
+    // );
 
     //-------COUNTER (SLACK) ACCOUNT INFO -------------------------------------
     const counterAccountInfo = await checkAndInsertAccount(userId, 'slack');
@@ -193,7 +194,7 @@ export const createBasicAccount = async (req, res, next) => {
     const { transaction_type_id, countertransaction_type_id } =
       transactionTypeDescriptionIds;
 
-    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account ${counterAccountInfo.account.account_name} of type: bank with number: ${counterAccountInfo.account.account_id}. Amount:${counterAccountTransactionAmount} ${currency_code}. Account reference: ${newAccountName}). Date: ${transaction_actual_date}`;
+    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account ${counterAccountInfo.account.account_name} (bank, ID: ${counterAccountInfo.account.account_id}). Amount:${counterAccountTransactionAmount} ${currency_code}. Reference: ${newAccountName}). Date: ${formatDateToDDMMYYYY(transaction_actual_date)}`;
 
     const slackCounterAccountInfo = {
       user_id: userId,
@@ -237,7 +238,7 @@ export const createBasicAccount = async (req, res, next) => {
     );
     const account_id = account_basic_data.account_id;
 
-    const transactionDescription = `Transaction: ${transactionType}. Account: ${newAccountName}. Type: ${account_type_name}. Initial-(${transactionType}). Amount: ${newaccount_starting_amount} ${currency_code}. Date: ${transaction_actual_date}`;
+    const transactionDescription = `Transaction: ${transactionType}. Account: ${newAccountName}. Type: ${account_type_name}. Initial-(${transactionType}). Amount: ${newaccount_starting_amount} ${currency_code}. Date: ${formatDateToDDMMYYYY(transaction_actual_date)}`;
 
     const message = `${newAccountName} account of type ${account_type_name} with number ${account_id} was successfully created `;
     console.log('🚀 ~ createAccount ~ message:', message);
@@ -266,9 +267,8 @@ export const createBasicAccount = async (req, res, next) => {
     // );
 
     //-------------------------------------------------------
-    //------- RECORD TRANSACTION INTO transactions table ----
+    //------ RECORD TRANSACTION INTO transactions table ----
     //--- determine which account serves as a SOURCE OR DESTINATION account
-    //--- hacerlo general para poderlo re usar en otro tipo de transacciones
     let destination_account_id = newAccountInfo.account_id,
       source_account_id = newAccountInfo.account_id;
 
@@ -276,7 +276,7 @@ export const createBasicAccount = async (req, res, next) => {
       destination_account_id = newAccountInfo.account_id;
       source_account_id = counterAccountInfo.account.account_id;
     }
-    console.log('id de cuentas', destination_account_id, source_account_id);
+    console.log('id:', destination_account_id, source_account_id);
 
     //------MOVEMENT TYPE ASSOCIATED TO CREATE A NEW ACCOUNT ---
     const movement_type_id = 8; //account opening

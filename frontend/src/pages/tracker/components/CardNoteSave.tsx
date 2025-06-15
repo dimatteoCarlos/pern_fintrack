@@ -10,6 +10,7 @@ type CardNoteSavePropType = {
   validationMessages: {
     [key: string]: string;
   };
+  isDisabled :boolean
 };
 
 const CardNoteSave = ({
@@ -18,6 +19,7 @@ const CardNoteSave = ({
   dataHandler,
   inputNote,
   onSaveHandler,
+  isDisabled
 }: CardNoteSavePropType) => {
   return (
     <>
@@ -36,20 +38,9 @@ const CardNoteSave = ({
             inputNote={inputNote}
             title={title}
           />
-          {/* <div className='card__screen  ' style={{ flex: 0.95 }}>
-              <textarea
-                className='input__note__description'
-                placeholder='Description'
-                onChange={updateTrackerData}
-                name='note'
-                rows={3}
-                maxLength={150}
-                value={expenseData.note}
-              />
-            </div> */}
-        </div>
+         </div>
 
-        <FormPlusBtn onClickHandler={onSaveHandler} />
+        <FormPlusBtn onClickHandler={onSaveHandler} isDisabled={isDisabled}/>
       </div>
     </>
   );

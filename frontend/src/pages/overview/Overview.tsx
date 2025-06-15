@@ -5,12 +5,10 @@ import LastMovements, {
   LastMovementType,
 } from './components/LastMovements.tsx';
 import InvestmentAccountBalance from './components/InvestmentAccBalance';
-import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 
 import {
   url_get_total_account_balance_by_type,
   url_monthly_TotalAmount_ByType,
-  // dashboardMovementTransactionsByType,
   dashboardMovementTransactions,
 } from '../../endpoints.ts';
 
@@ -22,15 +20,16 @@ import {
 } from '../../types/responseApiTypes.ts';
 
 import { overviewFetchAll } from './overviewFetchAll.ts';
-import { useEffect, useState } from 'react';
 import {
   calculateMonthlyAverage,
   ResultType,
   // FinancialResultType,
 } from './CalculateMonthlyAverage.ts';
+import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 // import { CurrencyType } from '../../types/types.ts';
 
-import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
+import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 export type CreateNewAccountPropType = {
   originRoute: string;
@@ -134,7 +133,7 @@ function Overview() {
   const [error, setError] = useState<string | null>(null);
   //------------------
 
-  //------------------
+  //functions
   function createNewAccount(originRoute: string) {
     navigateTo(originRoute + '/new_account', {
       state: { previousRoute: originRoute },
@@ -280,7 +279,6 @@ function Overview() {
             )
           : null;
 
-        console.log('recvisar result pocket6', result);
 //---
         const movementInvestmentTransactionsData =
           result.MovementInvestmentTransactions.status === 'success'
@@ -310,8 +308,6 @@ function Overview() {
               }
             )
           : null;
-
-        console.log('recvisar result pocket6', result);
         //-------------
         setKpiData({
           SavingGoals: savingGoalsData,
@@ -322,10 +318,11 @@ function Overview() {
           LastPocketMovements: movementPocketTransactions,
           LastInvestmentMovements: movementInvestmentTransactions,
         });
-      } catch (err) {
-        setError('Failed to load overview data');
-        // console.log('pocket', kpiData.LastPocketMovements);
+      } catch (err:unknown) {
         console.error('Overview fetch error:', err);
+        if(err instanceof Error){
+          setError(err.message)
+        }else {setError(String(err))}
       } finally {
         setIsLoading(false);
       }
@@ -335,9 +332,7 @@ function Overview() {
   }, []);
 
   // console.log('data state kpi', kpiData);
-
   //-----
-
   if (error) return <div className='error-message'>{error}</div>;
 
   return (
@@ -364,8 +359,8 @@ function Overview() {
 
         {
           <AccountBalance
-            createNewAccount={createNewAccount}
-            originRoute={originRoute}
+            // createNewAccount={createNewAccount}
+            previousRoute={originRoute}
           />
         }
 

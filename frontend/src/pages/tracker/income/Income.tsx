@@ -404,6 +404,7 @@ function Income() {
             dataHandler={updateTrackerData}
             inputNote={incomeData.note}
             onSaveHandler={onSaveHandler}
+            isDisabled={isLoading || isLoadingBankAccounts || loadingSources}
           />
         </div>
       </form>

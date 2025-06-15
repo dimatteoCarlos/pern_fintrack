@@ -36,3 +36,22 @@
   cursor: not-allowed;
 }
 /*--------------*/
+/* Plusvg */
+.plus__btn {
+  border: none;
+  transition: all 0.2s ease;
+  transform: translateY(0);
+}
+
+.plus__btn:active {
+  transform: translateY(2px);
+  transition: transform 0.1s ease-out; /* Una transición más rápida para el "click" */
+}
+
+.plus__btn:disabled,
+.plus__btn:disabled:hover {
+  /* background-color: #ccc; */
+  color: var(--dark);
+  /* opacity: 0.7; */
+  cursor: not-allowed;
+}

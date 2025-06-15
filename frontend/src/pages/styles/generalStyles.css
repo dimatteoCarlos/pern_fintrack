@@ -237,7 +237,7 @@ input[type='number'] {
   font-size: 0.7rem;
   font-style: italic;
   font-weight: normal;
-  width: 50%;
+  /* width: 50%; */
 }
 /*target amount*/
 .form__title1 .validation__errMsg {

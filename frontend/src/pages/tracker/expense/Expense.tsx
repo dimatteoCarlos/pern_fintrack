@@ -216,12 +216,10 @@ function Expense(): JSX.Element {
   );
   //---
   const [showMessage, setShowMessage] = useState(false);
-
   //--------------------------------------------
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
-
   //---------------------------------------------
   //Handle states related to the data submit form
   useEffect(() => {
@@ -430,6 +428,7 @@ function Expense(): JSX.Element {
             dataHandler={updateTrackerData}
             inputNote={expenseData.note}
             onSaveHandler={onSaveHandler}
+            isDisabled={isLoading || isLoadingBankAccounts || isLoadingCategoryBudgetAccounts}
           />
 
           {/* end of BOTTOM CARD */}

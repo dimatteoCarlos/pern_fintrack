@@ -5,7 +5,6 @@ import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge';
- 
 import {
   ACCOUNT_DEFAULT,
   DEFAULT_CURRENCY,
@@ -20,13 +19,15 @@ import { capitalize, formatDate, numberFormatCurrency,  } from '../../../helpers
 // import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
 // import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn';
 import '../styles/forms-styles.css';
-import { AccountListType } from '../../../types/responseApiTypes';
-
+import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
+import { url_get_account_by_id } from '../../../endpoints';
+import { useFetch } from '../../../hooks/useFetch';
+// import { url_get_accounts_by_type } from '../../../endpoints';
 // import { url_get_accounts_by_type } from '../../../endpoints';
 // import { useFetch } from '../../../hooks/useFetch';
 // import { AccountByTypeResponseType, AccountListType  } from '../../../types/responseApiTypes';
 
-//  const user = import.meta.env.VITE_USER_ID;
+const user = import.meta.env.VITE_USER_ID;
 type LocationStateType ={
 previousRoute:string; detailedData:AccountListType;
 }
@@ -37,30 +38,29 @@ const initialAccountDetail = ACCOUNT_DEFAULT[0]
 // const initialLastMovements = DEFAULT_LAST_MOVEMENTS;
 //---------------
 function AccountDetail() {
-
-  const location = useLocation()
-  const {id} = useParams()
-  console.log('location', location, id)
+  const location = useLocation() 
+   const state = location.state as LocationStateType | null;
+const detailedData = state?.detailedData;
+const previousRouteFromState = state?.previousRoute ?? "/";
+  const {accountId} = useParams()
+  console.log('location',  accountId, detailedData)
   //data from endpoint request for info account, and for last movements
   //Define the endpoint to get the Last movements and calculate the accountInfo required. set the logic, so as lastMovement be null set it to default
   //--states
   const [accountDetail, setAccountDetail] = useState<AccountListType>(initialAccountDetail);
-
-   const [previousRoute, setPreviousRoute] = useState<string>("/"); 
+  const [previousRoute, setPreviousRoute] = useState<string>("/"); 
   //  const [previousRoute, setPreviousRoute] = useState<string>("/fintrack/overview"); 
 
-//este no es el url el endopoint debe ser busdcar por account_id
-//  const urlBankAccounts = `${url_get_accounts_by_type}/?type=bank&user=${user}`;
+ const urlBankAccountById = `${url_get_account_by_id}/${accountId}?&user=${user}`;
 
-    // const {
-    //   apiData: bankAccountsData,
-    //   isLoading,
-    //   error,
-    // } = useFetch<AccountByTypeResponseType>(
-    //   location.state?.detailedData?urlBankAccounts
-    //   :
-    //   ''
-    // );
+    const {
+      apiData: bankAccountsData,
+      isLoading,
+      error,
+    } = useFetch<AccountByTypeResponseType>(
+      detailedData?"":urlBankAccountById
+    );
+
   //--functions---
   // function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
   //   console.log('submit btn clicked');
@@ -92,26 +92,29 @@ function AccountDetail() {
   // }
 //----------------------------------
 useEffect(()=>{
-const {previousRoute, detailedData} =location.state as LocationStateType
+
 if(detailedData){
+  //verficar la estructura de detailedData, tal vez con type safeguard
 setAccountDetail(detailedData)
-if(previousRoute){setPreviousRoute(previousRoute)}
+    if (previousRouteFromState) {
+      setPreviousRoute(previousRouteFromState);
 }
-return ()=>{
-
 }
-},[location.state, id])
+},[detailedData, previousRouteFromState])
 
-// useEffect(() => {
+useEffect(() => {
+
 // const {}=bankAccountsData.data?.accountList
 
-  // if(bankAccountsData){setAccountDetail(bankAccountsData.data.accountList)}
-
-  // return () => {
+  if(!detailedData && bankAccountsData?.data?.accountList?.length ){
     
-  // }
-// }, [bankAccountsData])
+    const account = bankAccountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
+    if(account)setAccountDetail(account)}
 
+  return () => {
+    
+  }
+}, [bankAccountsData, detailedData,accountId,])
 
 //==============================================
   return (
@@ -186,6 +189,9 @@ return ()=>{
             <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
           </div> */}
         </form>
+        
+        {isLoading && <p>Loading...</p>}
+        {error && <p>Error fetching account: {error}</p>}
       </div>
     </section>
   );

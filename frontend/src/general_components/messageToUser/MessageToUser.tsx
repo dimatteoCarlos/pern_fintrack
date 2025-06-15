@@ -20,18 +20,22 @@ export const MessageToUser = ({
     variant === 'tracker'
       ? { success: 'darkgreen', failure: 'red' }
       : { success: 'lightgreen', failure: 'orange' };
+  const topStyles =
+    variant === 'tracker'
+      ? '3%'
+      : '70%';
   return (
     <>
       {isLoading && <div style={{ color: 'lightblue' }}>Loading...</div>}
          {/* {error && ( */}
       {error && (
-        <div className='error-message'>
+        <div className='error-message1'>
           <span
-            className='validation__errMsg '
+            className='validation__errMsg1 '
             style={{
               color: colorStyles.failure,
               position:'absolute',
-              top:'3%',
+             top:`${topStyles}`,
               right:'10px',
               width:'80%',
               height:'1.5rem',
@@ -55,7 +59,7 @@ export const MessageToUser = ({
             style={{
               color: colorStyles.success,
               position:'absolute',
-              top:'3%',
+              top:`${topStyles}`,
               right:'2rem',
               width:'60%',
               height:'1.5rem',

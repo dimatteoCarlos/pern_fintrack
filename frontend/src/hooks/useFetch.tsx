@@ -17,6 +17,9 @@ export function useFetch<R>(url: string): FetchResponseType<R> {
   });
 
   useEffect(() => {
+
+     if (!url) return ;
+
     const fetchData = async () => {
       setState((prev) => ({
         ...prev,

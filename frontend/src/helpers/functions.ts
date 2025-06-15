@@ -169,10 +169,10 @@ export function showDate(date: Date, countryFormat = DATE_TIME_FORMAT_DEFAULT) {
   return formattedDate;
 }
 
-// const formatDate = (dateInput: Date | string | number): string => {
-//   const date = new Date(dateInput);
-//   return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
-// };
+export const formatDate = (dateInput: Date | string | number): string => {
+  const date = new Date(dateInput);
+  return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
+};
 //-------------------------
 export function isDateValid(
   dateStr: Date | string | number | undefined | null

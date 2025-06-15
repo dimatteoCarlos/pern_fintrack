@@ -8,6 +8,7 @@ type RadioInputPropsType<T = string> = {
   setRadioOptionSelected: (radioOptionSelected: T) => void;
   title?: string;
   labelId: string;
+  disabled:boolean;
 };
 
 const RadioInput = ({
@@ -16,6 +17,7 @@ const RadioInput = ({
   setRadioOptionSelected,
   title = '',
   labelId,
+  disabled=false
 }: RadioInputPropsType) => {
   //vitorpace
   const onChangeHandleRadio = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,6 +42,7 @@ const RadioInput = ({
                 type='radio'
                 id={`option-${labelId}-${index}`}
                 value={option.value}
+                disabled={disabled}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   onChangeHandleRadio(e)
                 }
@@ -49,6 +52,7 @@ const RadioInput = ({
               <label
                 htmlFor={`option-${labelId}-${index}`}
                 className='radio-input__label'
+              
               >
                 {option.label}
               </label>

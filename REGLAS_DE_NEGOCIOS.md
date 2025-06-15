@@ -47,3 +47,12 @@ Aquí tienes un resumen estructurado de las reglas de transferencia que menciona
 ### **Ejemplo de flujo prohibido:**  
 `CATEGORY_BUDGET` → `POCKET` ❌  
 
+5. principios de diseño:
+
+Inmutabilidad: Los registros de transacciones no deben modificarse, solo revertirse con transacciones inversas.
+
+Trazabilidad: Cada movimiento debe poder reconstruir su estado exacto en cualquier momento histórico.
+
+Consistencia: Las operaciones deben mantener invariantes como: ∑(transacciones) = balance_actual.
+
+Atomicidad: Cada transferencia debe completarse totalmente o fallar completamente.

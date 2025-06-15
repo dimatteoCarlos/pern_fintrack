@@ -192,7 +192,7 @@ function NewCategory() {
 
   //-----------------------
   return (
-    <section className='page__container'>
+    <section className='account__page__container page__container'>
       <TopWhiteSpace variant={'dark'} />
       <div className='page__content'>
         <div className='main__title--container'>
@@ -225,9 +225,9 @@ function NewCategory() {
               <label htmlFor='subcategory' className='label form__title'>
                 {'Subcategory'}&nbsp;
               </label>
-              <span className='validation__errMsg'>
+              <div className='validation__errMsg'>
                 {validationMessages['subcategory']}
-              </span>
+              </div>
 
               <input
                 type='text'
@@ -297,7 +297,7 @@ function NewCategory() {
           </div>
           {/* save */}
           <div className='submit__btn__container'>
-            <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
+            <FormSubmitBtn onClickHandler={onSubmitForm}disabled={isLoading}>save</FormSubmitBtn>
           </div>
         </form>
         <MessageToUser

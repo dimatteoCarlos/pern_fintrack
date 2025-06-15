@@ -1,75 +1,36 @@
 import { Link } from 'react-router-dom';
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
-import { CreateNewAccountPropType } from '../Overview';
 import { url_get_accounts_by_type } from '../../../endpoints';
 import { useFetch } from '../../../hooks/useFetch';
-import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
-import OpenAddEditBtn from '../../../general_components/OpenAddEditBtn';
-import { CurrencyType } from '../../../types/types';
-import { AccountByTypeResponseType } from '../../../types/responseApiTypes';
+import { ACCOUNT_DEFAULT, CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
+// import { CurrencyType } from '../../../types/types';
+import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
 import { useEffect, useState } from 'react';
+// import { CreateNewAccountPropType } from '../Overview';
+// import CoinSpinner from '../../../loader/coin/CoinSpinner';
+// import OpenAddEditBtn from '../../../general_components/OpenAddEditBtn';
+// export type AccountToRenderType = Omit<AccountListType,'account_type_id' > & {concept:string}
 
-type AccountToRenderType = {
-  nameAccount: string;
-  concept: string;
-  balance: number;
-  account_type?: string;
-  type?: string;
-  currency?: CurrencyType;
-  id?: number;
-  date?: Date; //starting_point
-};
+export type AccountPropType={previousRoute:string}
 
 //temporary values------------
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
+const concept = 'balance'
 
-const ACCOUNT_DEFAULT: AccountToRenderType[] = [
-  {
-    nameAccount: 'acc name_1',
-    concept: 'balance',
-    balance: 0.932546,
-    id: 2001,
-    currency: 'cop',
-    type: 'type1',
-  },
-  {
-    nameAccount: 'acc name',
-    concept: 'balance',
-    balance: 9999999.99,
-    id: 2002,
-    type: 'type2',
-  },
-  {
-    nameAccount: 'acc name',
-    concept: 'balance', //field
-    balance: 987654.365,
-    id: 2003,
-    type: 'type2',
-    currency: 'eur',
-  },
-  {
-    nameAccount: 'acc name',
-    concept: 'balance',
-    balance: 123456.02,
-    id: 2004,
-    type: 'usd',
-  },
-];
-
+//-----------
 function AccountBalance({
-  createNewAccount,
-  originRoute,
-}: CreateNewAccountPropType): JSX.Element {
+  // createNewAccount,
+  previousRoute,
+}:AccountPropType): JSX.Element {
   const user = import.meta.env.VITE_USER_ID;
-  //STATES---------------------
+
+  //--STATES---------------------
   const [bankAccountsToRender, setBankAccountsToRender] =
-    useState<AccountToRenderType[]>(ACCOUNT_DEFAULT);
+    useState<AccountListType[]>(ACCOUNT_DEFAULT);
 
   //DATA FETCHING
-  //por ahora pasar userId por params, pero deberia manejarse en el backend con auth
-  //bank accounts balance
   const urlBankAccounts = `${url_get_accounts_by_type}/?type=bank&user=${user}`;
   const {
     apiData: bankAccountsData,
@@ -79,18 +40,21 @@ function AccountBalance({
 
   useEffect(() => {
     function updateBankAccounts() {
-      const newBankAccounts: AccountToRenderType[] =
+      const newBankAccounts: AccountListType[] =
         bankAccountsData &&
         !isLoading &&
         !error &&
         !!bankAccountsData.data.accountList?.length
           ? bankAccountsData.data?.accountList?.map((acc, indx) => ({
-              nameAccount: acc.account_name,
-              concept: 'balance', 
-              balance: acc.account_balance,
-              type: acc.account_type_name,
-              id: acc.account_id ?? `${acc.account_name + '_' + indx}`,
-              currency: acc.currency_code ?? defaultCurrency,
+              account_name: acc.account_name,
+              concept: {concept}, 
+              account_balance: acc.account_balance,
+              account_type_name: acc.account_type_name,
+              account_id: acc.account_id ?? indx,
+              currency_code: acc.currency_code ?? defaultCurrency,
+              account_start_date: acc.account_start_date ?? acc.created_at,
+              account_type_id:acc.account_type_id ,
+
             }))
           : ACCOUNT_DEFAULT;
 
@@ -100,18 +64,18 @@ function AccountBalance({
     updateBankAccounts();
   }, [bankAccountsData, isLoading, error]);
 
-  // const { data, isLoading, error } =
-  //   useFetch<ExpenseAccountsType>(url_accounts);
+
   console.log('accounts:', bankAccountsData, error, isLoading);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <span style={{color:'cyan', width:'100%', textAlign:'center'}}>Loading...</span>;
   }
-
+//------------------------------
   return (
     <>
       {/*BANK ACCOUNTS  */}
       <div className='presentation__card__title__container flx-row-sb'>
+     
         <CardTitle>Account Balance</CardTitle>
         <Link className='flx-col-center icon ' to={'edit'}></Link>
       </div>
@@ -120,22 +84,23 @@ function AccountBalance({
       <article className='goals__account'>
         {/* Account Balance  */}
         {bankAccountsToRender.map((account) => {
-          const { nameAccount, balance, type, id, currency } = account;
+          const { account_name, account_balance, account_type_name, account_id, currency_code } = account;
           {
             return (
               <Link
-                to={`/overview/accounts/:${id}`}
+                to={`accounts/${account_id}`}
+                state = {{previousRoute, detailedData:account}}
                 className='tile__container tile__container--account flx-col-sb'
-                key={`account-${id}`}
+                key={`account-${account_id}`}
               >
                 <div className='tile__subtitle tile__subtitle--account'>
-                  {nameAccount} ({type})
+                  {account_name} ({account_type_name})
                 </div>
                 <div className='tile__title tile__title--account'>
                   {/* {concept}{' '} */}
                   {currencyFormat(
-                    currency ?? defaultCurrency,
-                    balance,
+                    currency_code ?? defaultCurrency,
+                    account_balance,
                     formatNumberCountry
                   )}
                 </div>
@@ -145,7 +110,7 @@ function AccountBalance({
         })}
       </article>
 
-      {
+      {/* {
         <OpenAddEditBtn
           btnFunction={createNewAccount}
           btnFunctionArg={originRoute}
@@ -153,7 +118,7 @@ function AccountBalance({
         >
           <div className='open__btn__label'>Add Account</div>
         </OpenAddEditBtn>
-      }
+      } */}
     </>
   );
 }

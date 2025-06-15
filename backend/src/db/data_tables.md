@@ -32,3 +32,46 @@ transaction_types
 3	"other"
 4	"want"
 
+//--------------------
+select table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+//--------------------
+"table_name"
+"transactions"
+"users"
+"income_source_accounts"
+"category_budget_accounts"
+"app_initialization"
+"user_roles"
+"transaction_types"
+"movement_types"
+"category_nature_types"
+"debtor_accounts"
+"refresh_tokens"
+"account_types"
+"currencies"
+"user_accounts"
+"pocket_saving_accounts"
+//--------------------
+ SELECT column_name, data_type, is_nullable, column_default
+        FROM information_schema.columns
+        WHERE table_name = 'transactions'
+        ORDER BY ordinal_position
+   
+"column_name"	"data_type"	"is_nullable"	"column_default"
+"transaction_id"	"integer"	"NO"	"nextval('transactions_transaction_id_seq'::regclass)"
+"user_id"	"uuid"	"NO"	
+"description"	"text"	"YES"	
+"amount"	"numeric"	"NO"	
+"movement_type_id"	"integer"	"NO"	
+"transaction_type_id"	"integer"	"NO"	
+"currency_id"	"integer"	"NO"	
+"account_id"	"integer"	"NO"	
+"source_account_id"	"integer"	"YES"	
+"destination_account_id"	"integer"	"YES"	
+"status"	"character varying"	"NO"	
+"transaction_actual_date"	"timestamp without time zone"	"YES"	"CURRENT_TIMESTAMP"
+"created_at"	"timestamp without time zone"	"YES"	"CURRENT_TIMESTAMP"
+"updated_at"	"timestamp without time zone"	"NO"	"CURRENT_TIMESTAMP"
+//--------------------

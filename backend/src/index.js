@@ -23,7 +23,7 @@ import pc from 'picocolors';
 import { mainTables, createTables } from './db/createTables.js';
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
-import { verifyToken } from './middlewares/authMiddleware.js';
+// import { verifyToken } from './middlewares/authMiddleware.js';
 import { cleanRevokedTokens } from '../utils/authUtils/authFn.js';
 
 // import passport from 'passport';
@@ -168,14 +168,14 @@ async function initializeDatabase() {
       await Promise.allSettled(
         mainTables.map(async (item, indx) => {
           try {
-            if (item.tblName == 'users') {
+            if (item.tblName == 'users' || item.tblName!=='transactions_') {
               console.log('skip users table');
               return false;
             }
             await pool.query({
               text: `TRUNCATE TABLE ${item.tblName}  RESTART IDENTITY CASCADE`,
             });
-            // await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
+            await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
             console.log(indx, item.tblName, 'truncated');
           } catch (error) {
             console.error('error truncating the table', `${item.tblName}`);

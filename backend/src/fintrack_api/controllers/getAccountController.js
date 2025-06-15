@@ -296,116 +296,143 @@ export const getAccounts = async (req, res, next) => {
   }
 };
 //******************************************************************
-//endpoint: http://localhost:5000/api/fintrack/account/all-accounts/?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c
+//get account info by account_id
+//endpoint: http://localhost:5000/api/fintrack/account/11?&user=c109eb15-4139-43b4-b081-8fb9860588af
 export const getAccountById = async (req, res, next) => {
-  console.log(pc[backendColor]('getAccountByType'));
-
+  console.log(pc[backendColor]('getAccountById'));
+    console.log(
+    'body:',
+    req.body,
+    'params:',
+    req.params,
+    'query:',
+    req.query,
+    'path:',
+    req.path,
+    'originalUrl:',
+    req.originalUrl
+  );
+  // const client = await pool.connect();
   try {
-    const { user: userId } = req.query;
-    const { accountId } = req.params;
-
-    const { accountTypeName } = req.body; //Not necessary
-
-    //======================================================
-    const accountTypeNameResult = await pool.query({
-      text: `SELECT act.account_type_name
-    FROM account_types act
-  JOIN user_accounts ua ON act.account_type_id = ua.account_type_id
-    WHERE ua.account_id= $1`,
-      values: [accountId],
-    });
-
-    //decidir si se queda esta opcion
-    const account_type_name =
-      !accountTypeName || accountTypeName == ''
-        ? accountTypeNameResult.rows[0].account_type_name
-        : accountTypeName;
-
-    //======================================================
-
-    if (!userId || !accountId) {
-      const message = `User ID and account ID are required.Try again.`;
+   const userId = req.body.user ?? req.query.user;
+    if (!userId) {
+      const message = 'User ID is required';
+      console.warn(pc.blueBright(message));
+      return res.status(400).json({ status: 400, message });
+    }
+    const {accountId } = req.params;
+      if (!accountId) {
+      const message = `Account ID is required.`;
       console.warn(pc[backendColor](message));
       return res.status(400).json({ status: 400, message });
     }
-    //type: bank = investment = income_source
+    //======================================================
+    //--get account info
+    const accountResult = await pool.query({
+      text: `SELECT act.account_type_name , ua.*
+        FROM user_accounts ua
+        JOIN account_types act ON act.account_type_id = ua.account_type_id
+        WHERE ua.account_id= $1`,
+      values: [accountId],
+    });
 
+    console.log('result', accountResult.rows[0])
+
+     if (!accountResult || accountResult.rows.length===0) {
+      const message = `Account does not exist`;
+      console.warn(pc[backendColor](message));
+      return res.status(400).json({ status: 400, message });
+    }
+
+    //--check account_type_name
+    console.log('account type', accountResult.rows[0].account_type_name)
+      const { accountTypeName } = req.body;
+      const accountTypeMismatch = accountResult.rows[0].account_type_name !== accountTypeName.trim().toLowerCase()
+
+      if (accountTypeMismatch) {
+        const message = `Entered account type mismatch.`;
+      console.warn(pc[backendColor](message));
+    }
+     const account_type_name =
+      !accountTypeName || accountTypeName == '' || accountTypeMismatch
+      ? accountResult.rows[0].account_type_name
+      : accountTypeName.trim().toLowerCase();
+      
+      //======================================================
+    //--get account info by account id and account type (redundant?)
+    //--bank account type
     const accountTypeQuery = {
-      //type:1 bank
-      bank: {
-        typeQuery: {
-          text: `SELECT ua.*,  ct.currency_code, act.*
-          FROM user_accounts ua
-          JOIN currencies ct ON ua.currency_id = ct.currency_id
-          JOIN account_types act ON ua.account_type_id = act.account_type_id
-          WHERE ua.user_id = $1
-          AND act.account_type_name = $2
-       AND ua.account_id = $3 AND ua.account_name != $4
-       `,
-          values: [userId, account_type_name, accountId, 'slack'],
-        },
-      },
-
+      // bank: {
+        //   typeQuery: {
+          //     text: `SELECT ua.*,  ct.currency_code, act.*
+          //     FROM user_accounts ua
+      //     JOIN currencies ct ON ua.currency_id = ct.currency_id
+      //     JOIN account_types act ON ua.account_type_id = act.account_type_id
+      //     WHERE ua.user_id = $1
+      //     AND act.account_type_name = $2
+      //     AND ua.account_id = $3
+      //  `,
+      //     values: [userId, account_type_name, accountId ],
+      //   },
+      // },
+      //investment
+      // investment: {
+      //   typeQuery: {
+      //      text: `SELECT ua.*,  ct.currency_code, act.*
+      //     FROM user_accounts ua
+      //     JOIN currencies ct ON ua.currency_id = ct.currency_id
+      //     JOIN account_types act ON ua.account_type_id = act.account_type_id
+      //     WHERE ua.user_id = $1
+      //     AND act.account_type_name = $2
+      //     AND ua.account_id = $3
+      //  `,
+      //     values: [userId, account_type_name, accountId ],
+      //   },
+      // },
+      // income_source: {
+      //   typeQuery: {
+      //      text: `SELECT ua.*,  ct.currency_code, act.*
+      //     FROM user_accounts ua
+      //     JOIN currencies ct ON ua.currency_id = ct.currency_id
+      //     JOIN account_types act ON ua.account_type_id = act.account_type_id
+      //     WHERE ua.user_id = $1
+      //     AND act.account_type_name = $2
+      //     AND ua.account_id = $3
+      //     `,
+      //     values: [userId, account_type_name, accountId ],
+      //   },
+      // },
+      
       //category_budget
       category_budget: {
         typeQuery: {
-          text: `SELECT ua.*, 
-   act.*,cba.*
-   ct.currency_code, cnt.category_nature_type_name
-   FROM user_accounts ua
-   JOIN account_types act ON ua.account_type_id = act.account_type_id
-   JOIN currencies ct ON ua.currency_id = ct.currency_id
-   JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
-   JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
-   WHERE ua.user_id =$1
-    AND act.account_type_name = $2
-       AND ua.account_id = $3 AND ua.account_name != $4
-       `,
+          text: `SELECT ua.*, act.*,cba.*, ct.currency_code, cnt.category_nature_type_name
+          FROM user_accounts ua
+          JOIN account_types act ON ua.account_type_id = act.account_type_id
+          JOIN currencies ct ON ua.currency_id = ct.currency_id
+          JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
+          JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
+          WHERE ua.user_id =$1
+          AND act.account_type_name = $2
+          AND ua.account_id = $3 AND ua.account_name != $4
+          `,
           values: [userId, account_type_name, accountId, 'slack'],
-        },
-      },
-
-      income_source: {
-        typeQuery: {
-          text: `SELECT ua.*, ct.currency_code, act.*,  
-FROM user_accounts ua
-JOIN account_types act ON ua.account_type_id = act.account_type_id
-JOIN currencies ct ON ua.currency_id = ct.currency_id
-  WHERE ua.user_id =$1
-  AND act.account_type_name = $2 AND ua.account_name != $3
-  AND ua.account_id = $4
-      `,
-          values: [userId, account_type_name, 'slack', accountId],
-        },
-      },
-      //investment
-      investment: {
-        typeQuery: {
-          text: `SELECT ua.*, act.*, ct.currency_code, cb.*
-FROM user_accounts ua
-JOIN account_types act ON ua.account_type_id = act.account_type_id
-JOIN currencies ct ON ua.currency_id = ct.currency_id
-  WHERE ua.user_id =$1
-  AND act.account_type_name = $2 AND ua.account_name != $3
-  AND ua.account_id = $4
-      `,
-          values: [userId, account_type_name, 'slack', accountId],
         },
       },
 
       //pocket_saving
       pocket_saving: {
         typeQuery: {
-          text: `SELECT ua.*, act.account_type_name, ct.currency_code, ps.*, 
-FROM user_accounts ua
-JOIN account_types act ON ua.account_type_id = act.account_type_id
-JOIN currencies ct ON ua.currency_id = ct.currency_id
-JOIN pocket_saving_accounts ps ON ua.account_id = ps.account_id
-  WHERE ua.user_id =$1
-  AND act.account_type_name = $2 AND ua.account_name != $3
-  AND ua.account_id = $4
+          text: `SELECT ua.*, act.account_type_name, ct.currency_code, ps.* 
+          FROM user_accounts ua
+          JOIN account_types act ON ua.account_type_id = act.account_type_id
+          JOIN currencies ct ON ua.currency_id = ct.currency_id
+          JOIN pocket_saving_accounts ps ON ua.account_id = ps.account_id
+            WHERE ua.user_id =$1
+            AND ua.account_id = $2
+            AND act.account_type_name = $3 AND ua.account_name != $4
   `,
-          values: [userId, account_type_name, 'slack', accountId],
+          values: [userId, accountId, account_type_name, 'slack'],
         },
       },
 
@@ -414,15 +441,15 @@ JOIN pocket_saving_accounts ps ON ua.account_id = ps.account_id
         typeQuery: {
           text: `SELECT ua.*, act.account_type_name, ct.currency_code,
           da.*
-FROM user_accounts ua
-JOIN account_types act ON ua.account_type_id = act.account_type_id
-JOIN currencies ct ON ua.currency_id = ct.currency_id
-JOIN debtor_accounts da ON ua.account_id = da.account_id
-  WHERE ua.user_id =$1
-  AND act.account_type_name = $2 AND ua.account_name != $3
-  AND ua.account_id = $4
+          FROM user_accounts ua
+          JOIN account_types act ON ua.account_type_id = act.account_type_id
+          JOIN currencies ct ON ua.currency_id = ct.currency_id
+          JOIN debtor_accounts da ON ua.account_id = da.account_id
+            WHERE ua.user_id =$1
+            AND ua.account_id = $2
+            AND act.account_type_name = $3 AND ua.account_name != $4
   `,
-          values: [userId, account_type_name, 'slack', accountId],
+          values: [userId, accountId, account_type_name, 'slack'],
         },
       },
     };
@@ -430,7 +457,10 @@ JOIN debtor_accounts da ON ua.account_id = da.account_id
     //check account type on ddbb
     //es necesario chequear si el usuario tiene ese tipo de cuentas?
 
-    const accountListResult = await pool.query(
+    const accountListResult = 
+    account_type_name === 'bank'||'investment'||'source_income'
+    ? accountResult
+    : await pool.query(
       accountTypeQuery[account_type_name].typeQuery
     );
 
@@ -449,6 +479,7 @@ JOIN debtor_accounts da ON ua.account_id = da.account_id
     console.log('success:', pc[backendColor](message));
 
     res.status(200).json({ status: 200, message, data });
+
   } catch (error) {
     if (error instanceof Error) {
       console.error(pc.red('Error while getting accounts by account ID'));
@@ -458,7 +489,7 @@ JOIN debtor_accounts da ON ua.account_id = da.account_id
       }
     } else {
       console.error(
-        pc.red('Error during transfer'),
+        pc.red('Error during getting accounts by ID'),
         pc[errorColor]('Unknown error occurred')
       );
     }

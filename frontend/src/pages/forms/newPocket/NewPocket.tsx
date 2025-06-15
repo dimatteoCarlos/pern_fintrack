@@ -181,7 +181,7 @@ function NewPocket() {
     //resetting message to user
     const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
       setMessageToUser(null);
-    }, 1000);
+    }, 5000);
 
     return () => {
       if (timer) clearTimeout(timer);
@@ -282,9 +282,12 @@ function NewPocket() {
               />
             </div>
           </div>
+
           {/* save button */}
-          <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
+          <FormSubmitBtn onClickHandler={onSubmitForm}  disabled={isLoading}>save</FormSubmitBtn>
+
         </form>
+
         <MessageToUser
           isLoading={isLoading}
           error={error}

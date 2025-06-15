@@ -17,6 +17,8 @@ type RadioInputPropsType = {
 
   setRadioOptionSelected: (option: string) => void;
 
+disabled:boolean;
+
   title?: string;
 
   // disabled?: boolean;
@@ -145,6 +147,7 @@ const TopCard = <T extends Record<string, unknown>>({
               setRadioOptionSelected={radioInputProps.setRadioOptionSelected}
               title={radioInputProps.title}
               labelId={title2.trim()}
+              disabled={radioInputProps.disabled}
               // disabled={radioInputProps.disabled}
             />
           )}

@@ -1,62 +1,29 @@
 user = c109eb15-4139-43b4-b081-8fb9860588af
 
-LISTO .
-lend y borrow se registran al reves en la description de las transacciones. al hacer el tracker de debt. 
-----------
+PENDIENTESf
 
-investment creada con deposito inicial se muestra en los movements, pero no muestra LA description tr es deposit
----------------
-disable save in new profile, new cat,
-en new pocket, fecha futuro. se queda abierto el datepicker despues de darla a sae
----------------
-se mustra como account-opening. initial borrow y me parece bien
+modificar transactions table para registrar el balance nuevo de la cuenta.
+la regla de negocio de registra account_id, corresonde al tipo de transaccion rgistrodo,
+ por ejemplo si es un deposito, esntonces account_id done se hizo el deposito, la contraparte withdraw, se refleja donde se hizo el withdraw y si es nuevo con monto 0, seria account-oening, pero si hubo transaction con monto distinto de 0, entonces se refleja movimiento account opening, pero trancsactiontype el tipo de trnsaccion correspondiente. cnuevo saldo on su respectio 
+ 
+ENDPOINTS
+GET informacion de cuenta segun su account_id LISTO.
+GET los movimientos de una determinada cuenta segun su account_id.
+buscar archivo trbyid.md
 
-arreglar el %Profit NaN
-***********************
-debt tracker - 
-arreglar mensajes
-borrow debtor a un investment - no se refleja como investment
-si se refleja como debtor - ojo cual era la regla de negocios. para investment dest.
-osea las cuentas investment pueden ser (deposit/w, borrow/l, )
-de debt a tracker , tambpoco se refleja como pocket movments, EL MONTOO SAVED SI, PERO NO EL AVG.
-EL ORDEN DE MOVEMENTS DEBERIA SER EN FECHA DESC.
---------------------------
-MEJOR CONTROL
-ES MAS FACIL PARA ESTA VERSION, QUE DEBTS SEA SOLO CON BANK ACCOUNTS,
-y colocar lend y borrow en la cuenta del usuario. 
-crar referencia mas complex para transacction entre cuentas.
+ent r en tracker transfer, al presionar el boton de seleccion de tio de cuenta para la cuenta de bottom card, se desabilita el raio los radio input, y pareceria que se hace submit. LISTO
 
-------------------------------------
-MENSAJES EN TRACKER.
 
-===========================
-exportar movimientos o transacciones, con boton
-descargar en pdf.
-descargar en excel.
-exportar .csv , google sheet
-agregar cuentas de ajuste positivo y negativo, a donde? en accounting, para bank e investment.
-edicion para pocket y budget, en cuenta a desired date y target, y budget.
-eliminacion de cuentas.
-add money se puede s hacer con ajuste positivo, que so depositos externos / retiros con ajuste netgativo.
-simplificar al descripcion en overview y colocar un dropdown para mostrar el completo description.
-===========================
-PENDIENTE
-Arreglar mensajes largos (no fund) ui de tracker
-arreglar mensaje de no funds.
+mejorar la descrioption de rtransaction received, para que apareczca el nombre de la cuenta obejeto del movimiento. hacer una helper o util function.
+
 
 ===========================
 PENDIENTE
-updated_at no se actualiza automaticamente en tracker
-y al hacer la creacion de debt account createDebtor. 
-VERIFICAR EN TODAS LAS TRANFERENCIAS ENTRE CUENTAS, TANTO TRACKER COM CREATE ACCOUNTS.
-===========================
-PENDIENTES
-se crea una cuenta slack cuando se crea una cuenta bank. para equilibrio.
-pero si hay un error, no deberia crearse.
+AL HACER UN TRACKER BORROW A CUENTA DBTOR EX SB NO SE VE LA DESCRIPTION EN OVERVIEW
 
-===========================
-PENDIENTE
-APLICAR DEBOUNCE A TEXTAREAS  
+si no se hace la seleccion de la cuenta, no se muestra la validacion en DEBTS tracker.
+eberia aparecer un loading, 
+deisabled boton mas en tracer e when loading
 ===========================
 TODAS LAS DETAIL PAGES ESTAN PENDIENTES
 definir el disenio y lo sobre todos los datos
@@ -73,13 +40,71 @@ DEBTOR DETAIL
 ACCOUNT DETAIL
 INVESTMENT DETAIL NO EXISTE.
 =================
+LISTO .
+lend y borrow se registran al reves en la description de las transacciones. al hacer el tracker de debt. 
+----------
 
+investment creada con deposito inicial se muestra en los movements, pero no muestra LA description tr es deposit
+---------------
+disable save in new profile, new cat, i y s plusvg btn en tracker 
+en new pocket, fecha futuro. se queda abierto el datepicker despues de darla a sae
+---------------
+se mustra como account-opening. initial borrow y me parece bien
+
+arreglar el %Profit NaN
+***********************
+debt tracker - 
+arreglar mensajes
+borrow debtor a un investment - no se refleja como investment
+si se refleja como debtor - ojo cual era la regla de negocios. para investment dest.
+osea las cuentas investment pueden ser (deposit/w, borrow/l, )
+de debt a tracker , tambpoco se refleja como pocket movments, EL MONTOO SAVED SI, PERO NO EL AVG.
+EL ORDEN DE MOVEMENTS DEBERIA SER EN FECHA DESC.
+--------------------------
+MEJOR CONTROL
+ES MAS FACIL PARA ESTA VERSION, QUE DEBTS SEA SOLO CON BANK ACCOUNTS, LISTO YA SE CAMBIO
+y colocar lend y borrow al lado de la cuenta del usuario. LISTO
+crar referencia mas complex para transacction entre cuentas.
+
+------------------------------------
+MENSAJES EN TRACKER.
+
+===========================
+PENDIENTES
+exportar movimientos o transacciones, con boton
+descargar en pdf.
+descargar en excel.
+exportar .csv , google sheet
+agregar cuentas de ajuste positivo y negativo, a donde? en accounting, para bank e investment.
+edicion para pocket y budget, en cuenta a desired date y target, y budget.
+eliminacion de cuentas.
+add money se puede s hacer con ajuste positivo, que so depositos externos / retiros con ajuste netgativo.
+simplificar al descripcion en overview y colocar un dropdown para mostrar el completo description.
+===========================
+PENDIENTE
+Arreglar mensajes largos (no fund) ui de tracker . MAS O MENOS
+arreglar mensaje de no funds. MAS O MENOS UNA LA
+
+===========================
+PENDIENTE
+updated_at no se actualiza automaticamente en tracker
+y al hacer la creacion de debt account createDebtor. 
+VERIFICAR EN TODAS LAS TRANFERENCIAS ENTRE CUENTAS, TANTO TRACKER COM CREATE ACCOUNTS.
+===========================
+PENDIENTES
+se crea una cuenta slack cuando se crea una cuenta bank. para equilibrio.
+pero si hay un error, no deberia crearse.
+
+===========================
+PENDIENTE
+APLICAR DEBOUNCE A TEXTAREAS  
+===========================
 PENDIENTE
 LS F LAS FECHAS DE LAS TRANSACCIONES tracker NO DEBERIAN SER AFUTURO,
 acutalizar los updated_at en bbdd tables.
 =================
-PENDIENTE
-deshabilitar el save button en new account, cuando isLoading, y asi con loos demas forms  and so on.
+listo
+deshabilitar el save button en new account, cuando isLoading, y asi con loos demas new forms  and so on.
 =================
 PENDIENTE
 * el usuario id userId , debe ser verificado antes de entrar al tracker de fintrack.

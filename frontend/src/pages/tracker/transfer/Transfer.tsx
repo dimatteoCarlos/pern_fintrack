@@ -646,6 +646,7 @@ function Transfer(): JSX.Element {
           setIsResetDropdown={setIsResetOriginAccount}
           // selectedValue={movementInputData.account}
           //radio input prop
+          customSelectHandler={originAcountSelectHandler}
 
           radioInputProps={{
             radioOptionSelected:
@@ -654,10 +655,10 @@ function Transfer(): JSX.Element {
             inputRadioOptions: inputRadioOptionsAccountType,
             setRadioOptionSelected: handleOriginAccountTypeChange,
             title: '',
+            disabled:isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts 
             // setRadioOptionSelected: setOriginAccountType,
           }}
           //---------
-          customSelectHandler={originAcountSelectHandler}
         />
 
         {/* end of TOP CARD */}
@@ -676,6 +677,7 @@ function Transfer(): JSX.Element {
               setRadioOptionSelected={handleDestinationAccountTypeChange}
               title={''}
               labelId='destination'
+              disabled=  {isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts }
 
               // disabfled={radioInputProps.disabled}
             />
@@ -698,6 +700,8 @@ function Transfer(): JSX.Element {
             dataHandler={updateTrackerData}
             inputNote={movementInputData.note}
             onSaveHandler={onSaveHandler}
+          isDisabled=  {isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts }
+            
           />
 
           {/* end of BOTTOM CARD */}

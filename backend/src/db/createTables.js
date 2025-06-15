@@ -18,10 +18,10 @@ import pc from 'picocolors';
 // };
 
 export const mainTables = [
-  // {
-  //   tblName: 'users',
-  //   table: `CREATE TABLE IF NOT EXISTS users(user_id UUID PRIMARY KEY NOT NULL, username VARCHAR(50) UNIQUE NOT NULL, email VARCHAR(50) UNIQUE NOT NULL, user_firstname VARCHAR(25) NOT NULL,  user_lastname VARCHAR(25)  NOT NULL, user_contact VARCHAR(25), password_hashed VARCHAR(255), currency_id INT REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,google_id VARCHAR(255) UNIQUE, display_name VARCHAR(255), auth_method VARCHAR(50) DEFAULT 'password',created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,user_role_id INT  REFERENCES user_roles(user_role_id) ON DELETE SET NULL ON UPDATE CASCADE) `,
-  // },
+  {
+    tblName: 'users',
+    table: `CREATE TABLE IF NOT EXISTS users(user_id UUID PRIMARY KEY NOT NULL, username VARCHAR(50) UNIQUE NOT NULL, email VARCHAR(50) UNIQUE NOT NULL, user_firstname VARCHAR(25) NOT NULL,  user_lastname VARCHAR(25)  NOT NULL, user_contact VARCHAR(25), password_hashed VARCHAR(255), currency_id INT REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,google_id VARCHAR(255) UNIQUE, display_name VARCHAR(255), auth_method VARCHAR(50) DEFAULT 'password',created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,user_role_id INT  REFERENCES user_roles(user_role_id) ON DELETE SET NULL ON UPDATE CASCADE) `,
+  },
 
   {
     table: `
@@ -190,6 +190,7 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
       transaction_type_id INTEGER NOT NULL,
       currency_id INTEGER NOT NULL, 
       account_id INTEGER NOT NULL,
+      account_balance_after_tr DECIMAL(15,2) NOT NULL DEFAULT 0.00,
       source_account_id INT  ,
       destination_account_id INT  , 
       status VARCHAR(50) NOT NULL, 

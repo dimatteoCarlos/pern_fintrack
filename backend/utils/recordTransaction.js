@@ -18,6 +18,7 @@ export async function recordTransaction(options) {
       transaction_type_id,
       destination_account_id,
       transaction_actual_date,
+      account_balance_after_tr
     } = options;
     // console.log('🚀 ~ recordTransaction ~ options:', options);
 
@@ -25,7 +26,8 @@ export async function recordTransaction(options) {
     // await client.pool.query('BEGIN');
 
     const transactionResult = await pool.query({
-      text: `INSERT INTO transactions(user_id, description, movement_type_id, status, amount,currency_id, account_id, source_account_id,transaction_type_id,destination_account_id, transaction_actual_date) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      text: `INSERT INTO transactions(user_id, description, movement_type_id, status, amount,currency_id, account_id, source_account_id,transaction_type_id,destination_account_id, transaction_actual_date, account_balance_after_tr)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
       values: [
         userId,
         description,
@@ -38,6 +40,7 @@ export async function recordTransaction(options) {
         transaction_type_id,
         destination_account_id,
         transaction_actual_date,
+        account_balance_after_tr
       ],
     });
     // console.log(transactionResult.rows[0]);
@@ -71,4 +74,9 @@ export async function recordTransaction(options) {
 				"transaction_actual_date": "2025-01-01T04:00:00.000Z",
 				"created_at": "2025-03-19T20:12:05.094Z"
 			}
+
+
+
+        return `${note ? note + '. ' : ''}${action} ${amount} ${currency} ${transactionType === 'deposit' ? 'received from' : 'to'} account "${sourceAccountName}" (${sourceAccountType}) ${transactionType === 'deposit' ? 'credited to' : 'debited from'} "${destinationAccountName}" (${destinationAccountType}). Date: ${new Date(date).toLocaleDateString()}`;
+}
 */

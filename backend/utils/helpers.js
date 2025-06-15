@@ -182,6 +182,15 @@ export const formatDateToDDMMYYYY = (isoDate) => {
   const year = date.getUTCFullYear();
   return `${day}-${month}-${year}`;
 };
+// Formateador de fecha (DD/MM/YYYY HH:MM)
+export const formatDate = (date) => 
+    new Date(date).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
 
 // El frontend puede validar que la fecha ingresada por el usuario esté en el formato dd-mm-yyyy
 export const isValidDate = (dateString) => {

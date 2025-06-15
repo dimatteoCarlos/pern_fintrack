@@ -345,7 +345,7 @@ function NewAccount() {
           <span
             className='validation__errMsg'
             style={{
-              color: 'var(--error,  #d32f2f)',
+              color: 'var(--error, #d32f2f)',
               borderRadius: '4px',
               margin: '1rem 0',
               fontSize: '1rem',

@@ -16,6 +16,7 @@ import {
   // getPocketConfig,
 } from '../../../utils/movementInputHandler.js';
 import { recordTransaction } from '../../../utils/recordTransaction.js';
+import { formatDate, formatDateToDDMMYYYY } from '../../../utils/helpers.js';
 
 //endpoint: put:/api/fintrack/transaction/transfer-between-accounts?user=UUID&&movement=expense
 //=================================================
@@ -164,6 +165,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
         // return res.status(500).json({ status: 500, message });
       }
     };
+    // console.log({checkAndInsertAccount})
     //-------------------------------------------
     //-------------------------------------------
     if (!movementName) {
@@ -171,7 +173,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
       console.warn(pc.magentaBright(message));
       return res.status(400).json({ status: 400, message });
     }
-
     if (
       ![
         'expense',
@@ -288,8 +289,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
       console.log('🚀 ~ transferBetweenAccounts ~ message:', message);
 
       throw new Error({ status: 400, message });
-      // console.warn(pc.magentaBright(message));
-      // return res.status(400).json({ status: 400, message });
     }
 
     const movement_type_id = movement_type_idResult[0].movement_type_id;
@@ -338,13 +337,13 @@ export const transferBetweenAccounts = async (req, res, next) => {
       !transactionActualDate || transactionActualDate === ''
         ? new Date()
         : new Date(Date.parse(transactionActualDate));
-    // : Date.parse(transactionActualDate);
+
+    // Date.parse(transactionActualDate), Parses a string containing a date, and returns the number of milliseconds between that date and midnight
     // console.log(
     //   transaction_actual_date,
     //   '🚀 ~ transferBetweenAccounts ~ transactionActualDate:',
     //   transactionActualDate
     // );
-
     //-------account info------------------------------------
     //source and destination account info
     const sourceAccountInfo = await getAccountInfo(
@@ -382,7 +381,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   sourceAccountTypeid
     // );
     //-------------------------
-    //-------------------------
     //---begin transaction-----
     await client.query('BEGIN');
 
@@ -412,7 +410,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
     }
     //==============================================
     //pg transaction to insert data in user_accounts
-
     const newSourceAccountBalance =
       parseFloat(sourceAccountBalance) - numericAmount;
     // parseFloat(sourceAccountBalance) + numericAmount * transactionSign;
@@ -442,8 +439,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const destinationAccountBalance = destinationAccountInfo.account_balance;
     const newDestinationAccountBalance =
       parseFloat(destinationAccountBalance) + numericAmount;
-    // parseFloat(destinationAccountBalance) - numericAmount * transactionSign;
-    // balanceMultiplierFn(destinationAccountTransactionType);
 
     const destinationAccountId = destinationAccountInfo.account_id;
 
@@ -461,7 +456,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
     //----Register transfer/receive transaction-----------
     //----Source transaction-----------------------------
-    const transactionDescription = `${note}. Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount} ${currencyCode} from account "${sourceAccountName}" of type: "${sourceAccountTypeName}" to "${destinationAccountName}". Type ${destinationAccountTypeName}. Date: ${transaction_actual_date.toLocaleString()}`;
+    const transactionDescription = `${note ? note + '.' : ''}Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount} ${currencyCode} from account "${sourceAccountName}" (${sourceAccountTypeName}) credited to "${destinationAccountName}" (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
 
     //revisar formato de fecha
     // console.log(
@@ -488,12 +483,15 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destination_account_id: destinationAccountId,
       transaction_actual_date,
       account_id: sourceAccountId,
+      balance:newSourceAccountBalance
     };
+
+// Transaction: Deposit of 3.00 USD received from the account "Nueva Cuenta" (Type: Bank Account), credited to "Food_Must" under the budget category "Category_Budget".
 
     await recordTransaction(sourceTransactionOption);
     //=========================================================
     //-----------destination transaction---------------------
-    const transactionDescriptionReceived = `${note}.Transaction: ${destinationAccountTransactionType}.Received ${numericAmount} ${currencyCode} from account "${sourceAccountName}" .Type: "${sourceAccountTypeName}" account, to "${destinationAccountName}". Type "${destinationAccountTypeName}". Date: ${transaction_actual_date.toLocaleString()}`; //revisar formato de fecha
+    const transactionDescriptionReceived = `${note ? note + '.' : ''}Transaction: ${destinationAccountTransactionType}. Received ${numericAmount} ${currencyCode} from account "${sourceAccountName}" (${sourceAccountTypeName}), credited to "${destinationAccountName} (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
 
     // console.log(
     //   userId,
@@ -521,6 +519,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destination_account_id: destinationAccountId,
       account_id: destinationAccountId,
       transaction_actual_date,
+      balance:newDestinationAccountBalance
     };
     // destinationTransactionOption.movement_type_id;
 

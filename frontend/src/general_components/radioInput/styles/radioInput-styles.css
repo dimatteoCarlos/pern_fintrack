@@ -90,3 +90,9 @@
   cursor: pointer;
   /* text-transform: capitalize; */
 }
+
+input[type="radio"]:disabled + label,
+input[type="checkbox"]:disabled + label {
+  color: #999999; /* Un color de texto más claro para el label */
+  cursor: not-allowed;
+}

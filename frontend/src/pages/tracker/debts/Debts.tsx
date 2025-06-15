@@ -430,7 +430,6 @@ function Debts(): JSX.Element {
   }, [type]);
   // }, [currency, type, updateDataCurrency]);
   //--------------------------
-
   return (
     <>
       <form className='debts' style={{ color: 'inherit' }}>
@@ -478,7 +477,7 @@ function Debts(): JSX.Element {
               title={''}
               labelId='account'
 
-              // disabfled={radioInputProps.disabled}
+              // disabled={radioInputProps.disabled}
             /> */}
 
             <RadioInput
@@ -490,7 +489,7 @@ function Debts(): JSX.Element {
               title={''}
               labelId='transaction'
               // labelId='account'
-              // disabfled={radioInputProps.disabled}
+              disabled={isLoading || isLoadingAccounts || isLoadingDebtors}
             />
 
           </div>
@@ -532,6 +531,7 @@ function Debts(): JSX.Element {
             dataHandler={updateTrackerData}
             inputNote={datatrack.note}
             onSaveHandler={onSaveHandler}
+            isDisabled = {isLoading || isLoadingAccounts || isLoadingDebtors}
           />
         </div>
       </form>

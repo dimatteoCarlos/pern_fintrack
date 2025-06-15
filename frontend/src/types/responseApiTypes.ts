@@ -101,7 +101,6 @@ interface TransactionInfoType extends TransactionDataType {
   transaction_id: number;
   created_at: string;
   amount: number;
-  // Note: amount is string here (different from TransactionData)
 }
 
 // Account basic data structure
@@ -114,7 +113,7 @@ export interface AccountBasicDataType {
   currency_code: CurrencyType;
   account_balance: number;
   account_starting_amount?: number;
-  account_start_date?: string | Date;
+  account_start_date: string | Date;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -219,7 +218,8 @@ export type AccountByTypeResponseType = {
 
 export type AccountListType = Omit<
   AccountBasicDataType,
-  'currency_id' | 'created_at' | 'updated_at'
+  'currency_id'| 'updated_at'
+  //  | 'created_at' 
 >;
 
 //category_budget type

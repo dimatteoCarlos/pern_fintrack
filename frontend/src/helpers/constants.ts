@@ -1,5 +1,7 @@
+import { AccountListType } from '../types/responseApiTypes';
 import {
   AccountingListType,
+  CurrencyType,
   DropdownOptionType,
   PocketsToRenderType,
   VariantType,
@@ -10,7 +12,7 @@ export const PAGE_LOC_NUM = 3;
 
 //-------------------------
 export const CURRENCY_OPTIONS = { usd: 'en-US', cop: 'cop-CO', eur: 'en-US' };
-export const DEFAULT_CURRENCY = 'usd';
+export const DEFAULT_CURRENCY:CurrencyType = 'usd';
 export const DATE_TIME_FORMAT_DEFAULT = 'es-ES';
 export const VARIANT_DEFAULT: VariantType = 'tracker';
 export const VARIANT_FORM: VariantType = 'form';
@@ -81,6 +83,33 @@ export const ACCOUNT_TYPE_DEFAULT: DropdownOptionType[] = [
   },
 ];
 
+//overview/
+//account balance
+
+export const ACCOUNT_DEFAULT:AccountListType[] = [
+  {
+    account_name: 'acc name_1',
+    // concept: 'balance',
+    account_balance: 0.932546,
+    account_id: 2001,
+    currency_code: 'cop',
+    account_type_name: 'type1',
+    account_type_id: 1,
+     account_start_date:new Date()
+  },
+  {
+    account_name: 'acc name_2',
+    // concept: 'balance',
+    account_balance: 32546,
+    account_id: 1001,
+    currency_code: 'cop',
+    account_type_name: 'type1',
+        account_type_id: 2,
+     account_start_date:new Date()
+  },
+  
+];
+
 //pages/debts/ListPocket.tsx
 //just a DEMO
 export const DEFAULT_POCKET_LIST: PocketsToRenderType[] = [
@@ -92,6 +121,7 @@ export const DEFAULT_POCKET_LIST: PocketsToRenderType[] = [
     status: Math.floor((Math.random() - 0.5) * 100),
     pocket_id: 4,
     currency: 'usd',
+    desired_date:new Date()
   },
   {
     pocketName: 'Name Pocket 02',
@@ -100,23 +130,24 @@ export const DEFAULT_POCKET_LIST: PocketsToRenderType[] = [
     goal: 100,
     currency: 'cop',
     pocket_id: 4,
+      desired_date:new Date()
   },
-  {
-    pocketName: 'Name Pocket 03',
-    description: 'Description 03',
-    saved: 500,
-    goal: 98,
-    currency: 'eur',
-    pocket_id: 4,
-  },
-  {
-    pocketName: 'Name Pocket 04',
-    description: 'Description 04',
-    saved: Math.random() * 100,
-    goal: Math.random() * 100,
-    currency: 'eur',
-    pocket_id: 4,
-  },
+  // {
+  //   pocketName: 'Name Pocket 03',
+  //   description: 'Description 03',
+  //   saved: 500,
+  //   goal: 98,
+  //   currency: 'eur',
+  //   pocket_id: 4,
+  // },
+  // {
+  //   pocketName: 'Name Pocket 04',
+  //   description: 'Description 04',
+  //   saved: Math.random() * 100,
+  //   goal: Math.random() * 100,
+  //   currency: 'eur',
+  //   pocket_id: 4,
+  // },
 ];
 
 //account detail
