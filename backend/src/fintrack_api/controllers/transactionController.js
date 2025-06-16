@@ -257,7 +257,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountTransactionType,
     } = config;
 
-        console.log('🚀 ~ transferBetweenAccounts ~ config:', config, sourceAccountTypeName);
+        // console.log('🚀 ~ transferBetweenAccounts ~ config:', config, sourceAccountTypeName);
 
     //adjust the movement type name
     const movement_type_name = transformMovementType(
@@ -268,10 +268,10 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
     //====================================================
     // get the movement type ID
-    console.log(
-      '🚀 ~ transferBetweenAccounts ~ movement_type_name:',
-      movement_type_name
-    );
+    // console.log(
+    //   '🚀 ~ transferBetweenAccounts ~ movement_type_name:',
+    //   movement_type_name
+    // );
 
     const movement_type_idResult = movement_types.filter(
       (mov) => mov.movement_type_name === movement_type_name
@@ -287,7 +287,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
       const message = `movement type id of ${movement_type_name} was not found. Try again with valid movement type!`;
       console.warn(pc.magentaBright(message));
       console.log('🚀 ~ transferBetweenAccounts ~ message:', message);
-
       throw new Error({ status: 400, message });
     }
 
@@ -356,12 +355,12 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountTypeName,
       userId
     );
-    // console.log(
-    //   '🚀 ~ transferBetweenAccounts ~ destinationAccountInfo:',
-    //   destinationAccountInfo
-    // );
+    console.log(
+      '🚀 ~ transferBetweenAccounts ~ destinationAccountInfo:',
+      destinationAccountInfo
+    );
 
-    console.log('🚀 ~ sourceAccountInfo:', sourceAccountInfo);
+    // console.log('🚀 ~ sourceAccountInfo:', sourceAccountInfo);
 
     if (!sourceAccountInfo || !destinationAccountInfo) {
       // message: `Account  ${sourceAccountName} and type ${sourceAccountTypeName} not found`, // for individual message
@@ -371,7 +370,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
         message,
       });
     }
-
     //----source account
     const sourceAccountTypeid = accountTypes.filter(
       (type) => type.account_type_name === sourceAccountTypeName
@@ -428,12 +426,12 @@ export const transferBetweenAccounts = async (req, res, next) => {
       sourceAccountId,
       transaction_actual_date
     );
-    // console.log(
-    //   '🚀 ~ updatedSourceAccountInfo:',
-    //   updatedSourceAccountInfo,
-    //   'type of:',
-    //   typeof sourceAccountBalance
-    // );
+    console.log(
+      '🚀 ~ updatedSourceAccountInfo:',
+      updatedSourceAccountInfo,updatedSourceAccountInfo.account_balance,
+      'type of:',
+      typeof updatedSourceAccountInfo.account_balance
+    );
     //-----------------------------------------------
     //---Update the balance in the destination account
     const destinationAccountBalance = destinationAccountInfo.account_balance;
@@ -447,12 +445,12 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountId,
       transaction_actual_date
     );
-    // console.log(
-    //   '🚀 ~ updatedDestinationAccountInfo:',
-    //   updatedDestinationAccountInfo,
-    //   'type of:',
-    //   typeof destinationAccountBalance
-    // );
+    console.log(
+      '🚀 ~ updatedDestinationAccountInfo:',
+      updatedDestinationAccountInfo,updatedDestinationAccountInfo.account_balance,
+      'type of:',
+      typeof updatedDestinationAccountInfo.account_balance
+    );
 
     //----Register transfer/receive transaction-----------
     //----Source transaction-----------------------------
@@ -477,13 +475,13 @@ export const transferBetweenAccounts = async (req, res, next) => {
       movement_type_id,
       transaction_type_id: sourceTransactionTypeId, //withdraw or lend
       status: 'complete',
-      amount: -numericAmount,
+      amount: -(numericAmount),
       currency_id: currencyIdReq,
       source_account_id: sourceAccountId,
       destination_account_id: destinationAccountId,
       transaction_actual_date,
       account_id: sourceAccountId,
-      balance:newSourceAccountBalance
+      account_balance:parseFloat(updatedSourceAccountInfo.account_balance)
     };
 
 // Transaction: Deposit of 3.00 USD received from the account "Nueva Cuenta" (Type: Bank Account), credited to "Food_Must" under the budget category "Category_Budget".
@@ -491,7 +489,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     await recordTransaction(sourceTransactionOption);
     //=========================================================
     //-----------destination transaction---------------------
-    const transactionDescriptionReceived = `${note ? note + '.' : ''}Transaction: ${destinationAccountTransactionType}. Received ${numericAmount} ${currencyCode} from account "${sourceAccountName}" (${sourceAccountTypeName}), credited to "${destinationAccountName} (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
+    const transactionDescriptionReceived = `${note ? note + '.' : ''}Transaction: ${destinationAccountTransactionType}. Received ${numericAmount} ${currencyCode} in account "${destinationAccountName} (${destinationAccountTypeName}), from "${sourceAccountName}" (${sourceAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
 
     // console.log(
     //   userId,
@@ -519,7 +517,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destination_account_id: destinationAccountId,
       account_id: destinationAccountId,
       transaction_actual_date,
-      balance:newDestinationAccountBalance
+      account_balance:parseFloat(updatedDestinationAccountInfo.account_balance)
     };
     // destinationTransactionOption.movement_type_id;
 
@@ -538,7 +536,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
         },
         balance_updated: {
           amount_transaction: sourceTransactionOption.amount,
-          new_balance: newSourceAccountBalance,
+          account_balance: sourceTransactionOption.account_balance,//newSourceAccountBalance,
         },
         transaction_info: {
           transaction_type: sourceAccountTransactionType,
@@ -557,7 +555,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
         },
         balance_updated: {
           amount_transaction: destinationTransactionOption.amount,
-          new_balance: newDestinationAccountBalance,
+          account_balance: destinationTransactionOption.account_balance,//newDestinationAccountBalance,
         },
         transaction_info: {
           transaction_type: destinationAccountTransactionType,
@@ -570,6 +568,8 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
     const message = 'Transaction successfully completed.';
     console.log(pc.magentaBright(message));
+    console.log('data',data,'')
+
     return res.status(200).json({ status: 200, message, data });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -593,3 +593,4 @@ export const transferBetweenAccounts = async (req, res, next) => {
     client.release();
   }
 };
+//end of transactionController

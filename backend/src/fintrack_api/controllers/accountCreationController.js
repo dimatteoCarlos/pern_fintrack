@@ -209,7 +209,7 @@ export const createBasicAccount = async (req, res, next) => {
       account_name: counterAccountInfo.account.account_name,
       account_type_name: 'bank',
       account_type_id: counterAccountInfo.account.account_type_id,
-      balance: parseFloat(newCounterAccountBalance),
+      account_balance: parseFloat(newCounterAccountBalance),
     };
 
     //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
@@ -257,7 +257,7 @@ export const createBasicAccount = async (req, res, next) => {
       account_name:newAccountName,
       account_type_name,
       account_type_id: account_basic_data.account_type_id,
-      balance: newAccountBalance,
+      account_balance: newAccountBalance,
     };
     // console.log(
     //   'slackCounter:',
@@ -338,7 +338,7 @@ export const createBasicAccount = async (req, res, next) => {
           transaction_data: counterTransactionOption,
           transaction_info: counterTransactionInfo,
           transaction_type_name: slackCounterAccountInfo.transaction_type_name,
-          balance: slackCounterAccountInfo.balance,
+          account_balance: slackCounterAccountInfo.account_balance,
           account_type_name: slackCounterAccountInfo.account_type_name,
         },
       },

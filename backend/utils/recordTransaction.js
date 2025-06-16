@@ -18,7 +18,7 @@ export async function recordTransaction(options) {
       transaction_type_id,
       destination_account_id,
       transaction_actual_date,
-      account_balance_after_tr
+      account_balance
     } = options;
     // console.log('🚀 ~ recordTransaction ~ options:', options);
 
@@ -40,7 +40,7 @@ export async function recordTransaction(options) {
         transaction_type_id,
         destination_account_id,
         transaction_actual_date,
-        account_balance_after_tr
+        account_balance
       ],
     });
     // console.log(transactionResult.rows[0]);
