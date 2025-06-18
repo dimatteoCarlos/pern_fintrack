@@ -6,7 +6,7 @@ import {
   handlePostgresError,
 } from '../../../utils/errorHandling.js';
 import { pool } from '../../db/configDB.js';
-import { determineTransactionType } from '../../../utils/helpers.js';
+import { determineTransactionType, formatDate } from '../../../utils/helpers.js';
 import { recordTransaction } from '../../../utils/recordTransaction.js';
 import { checkAndInsertAccount } from '../../../utils/checkAndInsertAccount.js';
 import { verifyAccountExistence } from '../../../utils/verifyAccountExistence.js';
@@ -199,7 +199,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const { transaction_type_id, countertransaction_type_id } =
       transactionTypeDescriptionIds;
 
-    const transactionDescription = `Transaction: ${transactionType}. Account: ${account_name}. Type: ${account_type_name}. Initial-(${transactionType}). Amount: ${transactionAmount} ${currency_code}. Date:${transaction_actual_date}`;
+    const transactionDescription = `Transaction: ${transactionType}. Account: ${account_name} (${account_type_name}). Initial-(${transactionType}). Amount: ${transactionAmount} ${currency_code}. Date:${formatDate(transaction_actual_date)}`;
 
     //------ CATEGORY_BUDGET NEW ACCOUNT INFO --------------
     const newAccountInfo = {
@@ -215,7 +215,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       account_name,
       account_type_name,
       account_type_id: account_basic_data.account_type_id,
-      balance: parseFloat(account_balance),
+      account_balance: parseFloat(account_balance),
     };
     //------- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT)------
     //check whether slack account exists if not create it with start amount and balance = 0
@@ -227,7 +227,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
 
     const counterAccountTransactionAmount = -transactionAmount;
 
-    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} of type: bank, with number: ${counterAccountInfo.account.account_id}. Amount:${currency_code} ${counterAccountTransactionAmount}. Account reference: ${account_name}). Date:${transaction_actual_date}`;
+    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} (bank), with number: ${counterAccountInfo.account.account_id}. Amount:${currency_code} ${counterAccountTransactionAmount}. Account reference: ${account_name}). Date:${formatDate(transaction_actual_date)}`;
     //-------------------------------------------------------------
     //-------------SLACK COUNTER ACCOUNT INFO ------
     const slackCounterAccountInfo = {
@@ -243,7 +243,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       account_name: counterAccountInfo.account.account_name,
       account_type_name: 'bank',
       account_type_id: counterAccountInfo.account.account_type_id,
-      balance: parseFloat(newCounterAccountBalance),
+      account_balance: parseFloat(newCounterAccountBalance),
     };
 
     //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
