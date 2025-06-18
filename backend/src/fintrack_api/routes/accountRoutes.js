@@ -13,6 +13,7 @@ import {
   getAccountById,
 } from '../controllers/getAccountController.js';
 import { createCategoryBudgetAccount } from '../controllers/accountCategoryCreationcontroller.js';
+import { getTransactionsForAccountById } from '../controllers/getTransactionsForAccountById.js';
 
 // import { createCategoryBudgetAccount } from '../controllers/accountCategoryCreationController.js';
 
@@ -21,7 +22,7 @@ import { createCategoryBudgetAccount } from '../controllers/accountCategoryCreat
 // router.post('/new_account/bank',verifyUser ,createBasicAccount);
 const router = express.Router();
 
-//CREATE ACCOUNTS BY TYPE
+//CREATE ACCOUNTS BY ACCOUNT TYPE
 router.post('/new_account/bank', createBasicAccount); //bank
 router.post('/new_account/income_source', createBasicAccount);
 router.post('/new_account/investment', createBasicAccount);
@@ -38,11 +39,9 @@ router.post('/new_account/category_budget', createCategoryBudgetAccount);
 //debtor: debtor_accounts
 
 //GET USER ACCOUNT INFO BY TYPE, BY ID, ALL ACC.
-
 router.get('/allAccounts', getAccounts);
 router.get('/type', getAllAccountsByType);
 router.get('/:accountId', getAccountById);
-
+router.get('/transactions/:accountId', getTransactionsForAccountById);
 //----------------------------------------------
-
 export default router;
