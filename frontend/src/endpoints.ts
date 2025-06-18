@@ -55,6 +55,10 @@ export const url_create_debtor_account: string =
 //--endpoint: http://localhost:5000/api/fintrack/account/11?&user=c109eb15-4139-43b4-b081-8fb9860588af
 export const url_get_account_by_id: string = BASE_URL + '/account';
 
+//---GET ACCOUNT TRANSACTIONS BY ACCOUNT ID
+//--endpoint: http://localhost:5000/api/fintrack/account/transactions/:account_id/?start=&end=&user=c109eb15-4139-43b4-b081-8fb9860588af
+export const url_get_transactions_by_account_id: string = BASE_URL + '/account/transactions';
+
 //----GET ALL ACCOUNTS INFO OF A SPECIFIC ACCOUNT TYPE
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${bank}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}

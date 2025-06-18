@@ -37,3 +37,8 @@ router.get('/movements/account_type/', dashboardMovementTransactionsByType);
 router.get('/movements/search/', dashboardMovementTransactionsSearch);
 
 export default router;
+
+//-------------------------------------------------------------------------------------
+//GET TRACKER MOVEMENT TRANSACTIONS BY ACCOUNT ID
+router.get('/')
+

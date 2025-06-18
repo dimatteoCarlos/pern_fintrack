@@ -61,7 +61,7 @@ type KPIDataStateType = {
   SavingGoals: BalancePocketRespType | null; //??
   MonthlyMovementKPI: ResultType | null;
   LastExpenseMovements: LastMovementType[] | null;
-  LastMovements: LastMovementType[] | null;
+  LastDebtMovements: LastMovementType[] | null;
   LastIncomeMovements: LastMovementType[] | null;
   LastPocketMovements: LastMovementType[] | null;
   LastInvestmentMovements: LastMovementType[] | null;
@@ -123,7 +123,7 @@ function Overview() {
     SavingGoals: null,
     MonthlyMovementKPI: null,
     LastExpenseMovements: null,
-    LastMovements: null,
+    LastDebtMovements: null,
     LastIncomeMovements: null,
     LastPocketMovements: null,
     LastInvestmentMovements: null,
@@ -195,13 +195,13 @@ function Overview() {
           : null;
 
         //---
-        const debtTransactionsData =
+        const movementDebtTransactionsData =
           result.MovementDebtTransactions.status === 'success'
             ? result.MovementDebtTransactions?.data?.data
             : null;
 
-        const debtTransactions = debtTransactionsData
-          ? debtTransactionsData?.map((debt) => {
+        const movementDebtTransactions = movementDebtTransactionsData
+          ? movementDebtTransactionsData?.map((debt) => {
               const {
                 account_name,
                 amount,
@@ -313,7 +313,7 @@ function Overview() {
           SavingGoals: savingGoalsData,
           MonthlyMovementKPI: totalAndMonthlyAmount,
           LastExpenseMovements: movementExpenseTransactions,
-          LastMovements: debtTransactions,
+          LastDebtMovements: movementDebtTransactions,
           LastIncomeMovements: movementIncomeTransactions,
           LastPocketMovements: movementPocketTransactions,
           LastInvestmentMovements: movementInvestmentTransactions,
@@ -377,7 +377,7 @@ function Overview() {
         />
 
         <LastMovements
-          data={kpiData.LastMovements}
+          data={kpiData.LastDebtMovements}
           title='Last Movements (debts)'
         />
 

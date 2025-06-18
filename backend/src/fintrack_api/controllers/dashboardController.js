@@ -589,7 +589,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
 
             --JOIN income_source_accounts isc ON ua.account_id = isc.account_id
 
-          WHERE tr.user_id = $1
+          WHERE ua.user_id = $1
             AND (act.account_type_name = $2) AND ua.account_name != $3
             AND mt.movement_type_name = $4
             AND( tr.amount<0)
@@ -732,7 +732,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
-        WHERE tr.user_id = $1
+        WHERE ua.user_id = $1
          ORDER BY tr.transaction_actual_date DESC, tr.transaction_type_id ASC `,
         values: [userId],
       };
@@ -1029,3 +1029,4 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
     next(createError(code, message));
   }
 };
+

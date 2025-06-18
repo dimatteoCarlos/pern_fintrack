@@ -94,7 +94,7 @@ function AccountBalance({
                 key={`account-${account_id}`}
               >
                 <div className='tile__subtitle tile__subtitle--account'>
-                  {account_name} ({account_type_name})
+                  {account_name} ({account_type_name})x
                 </div>
                 <div className='tile__title tile__title--account'>
                   {/* {concept}{' '} */}

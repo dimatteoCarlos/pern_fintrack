@@ -18,6 +18,6 @@ export function prepareTransactionOption(
     movement_type_id,
     status: 'complete',
     transaction_actual_date: accountInfo.transaction_actual_date,
-    account_balance_after_tr:accountInfo.balance
+    account_balance:accountInfo.account_balance 
   };
 }

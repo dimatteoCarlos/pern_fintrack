@@ -13,21 +13,21 @@ const errorColor = 'red';
 
 //common functions
 
-const RESPONSE = (res, status, message, data = null) => {
-  const backendColor =
-    status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
-  console.log(pc[backendColor](`[${status}] ${message}`));
-  res.status(status).json({ status, message, data });
-};
+// const RESPONSE = (res, status, message, data = null) => {
+//   const backendColor =
+//     status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
+//   console.log(pc[backendColor](`[${status}] ${message}`));
+//   res.status(status).json({ status, message, data });
+// };
 
-const ERR_RESP = (status, message, controllerName = null) => {
-  const backendColor =
-    status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
-  console.log(pc[backendColor](`[${status}] ${message}. ${controllerName}`));
-  const error = new Error(message);
-  error.status = 400;
-  throw error;
-};
+// const ERR_RESP = (status, message, controllerName = null) => {
+//   const backendColor =
+//     status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
+//   console.log(pc[backendColor](`[${status}] ${message}. ${controllerName}`));
+//   const error = new Error(message);
+//   error.status = 400;
+//   throw error;
+// };
 
 //get all accounts info by account type: id, name, type, currency and balance, by user id and account_type but slack account.
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${bank}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
@@ -297,7 +297,8 @@ export const getAccounts = async (req, res, next) => {
 };
 //******************************************************************
 //get account info by account_id
-//endpoint: http://localhost:5000/api/fintrack/account/11?&user=c109eb15-4139-43b4-b081-8fb9860588af
+//endpoint example: http://localhost:5000/api/fintrack/account/11?&user=c109eb15-4139-43b4-b081-8fb9860588af
+//******************************************************************
 export const getAccountById = async (req, res, next) => {
   console.log(pc[backendColor]('getAccountById'));
     console.log(

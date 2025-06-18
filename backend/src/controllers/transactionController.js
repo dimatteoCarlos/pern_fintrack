@@ -472,6 +472,7 @@ export const getDashboardInformation = async (req, res, next) => {
     const start_date = new Date(year, 0, 1); //January 1st of the year
     const end_date = new Date(year, 11, 31, 23, 59, 59); //December 31st of the year
     //-----------
+    //here tr.user_id is used, but is violating 3FN since user_id should be only in user_accounts table. 
     const groupByMonthQuery = {
       text: `SELECT EXTRACT(MONTH FROM tr.created_at) AS month_index, CAST(SUM(tr.amount) AS DECIMAL) AS total_amount, tr.movement_type_id, mt.movement_type_name FROM transactions tr  JOIN movement_types AS mt ON tr.movement_type_id = mt.movement_type_id  WHERE tr.user_id = $1 AND created_at BETWEEN $2 and $3 GROUP BY month_index, tr.movement_type_id, mt.movement_type_name`,
       values: [userId, start_date, end_date],

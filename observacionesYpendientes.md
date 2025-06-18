@@ -1,36 +1,41 @@
 user = c109eb15-4139-43b4-b081-8fb9860588af
 
-PENDIENTESf
+PENDIENTEs
 
-modificar transactions table para registrar el balance nuevo de la cuenta.
-la regla de negocio de registra account_id, corresonde al tipo de transaccion rgistrodo,
- por ejemplo si es un deposito, esntonces account_id done se hizo el deposito, la contraparte withdraw, se refleja donde se hizo el withdraw y si es nuevo con monto 0, seria account-oening, pero si hubo transaction con monto distinto de 0, entonces se refleja movimiento account opening, pero trancsactiontype el tipo de trnsaccion correspondiente. cnuevo saldo on su respectio 
+modificar transactions table para registrar el balance nuevo de la cuenta. LISTO
+MODIFICAR transaction controllers and createion controller to consider record balance . LISTO
  
 ENDPOINTS
 GET informacion de cuenta segun su account_id LISTO.
-GET los movimientos de una determinada cuenta segun su account_id.
+GET los movimientos de una determinada cuenta segun su account_id. PENIENTE
 buscar archivo trbyid.md
 
 ent r en tracker transfer, al presionar el boton de seleccion de tio de cuenta para la cuenta de bottom card, se desabilita el raio los radio input, y pareceria que se hace submit. LISTO
 
-
-mejorar la descrioption de rtransaction received, para que apareczca el nombre de la cuenta obejeto del movimiento. hacer una helper o util function.
+asegurar el criterio para el start account amount sea coherente en todas las cuentas a crear.
 
 
 ===========================
 PENDIENTE
 AL HACER UN TRACKER BORROW A CUENTA DBTOR EX SB NO SE VE LA DESCRIPTION EN OVERVIEW
-
 si no se hace la seleccion de la cuenta, no se muestra la validacion en DEBTS tracker.
 eberia aparecer un loading, 
-deisabled boton mas en tracer e when loading
+investment creada con deposito inicial se muestra en los movements, pero no muestra LA description tr es deposit
+cuando se crea una cuenta pocket o una investment no se refleja en el overview
+bajar mas el mensaje e de error de createPocket
+cuando se hace un borrow desde tracker a c una cuenta debtor, no se refleja la descriptcion en overview
+cuando se crea una cuenta pocekt no se refleja en los movimientos en overview
+cuando se crea una cuenta c expense o category obj la descripcion no se refleja en los movimientos en overview
+hacer una helper o util function. PARA estandarizar la descripcion de las transacciones.
+
 ===========================
+
 TODAS LAS DETAIL PAGES ESTAN PENDIENTES
 definir el disenio y lo sobre todos los datos
 DONDE SE METERAN LA PARTE DE EDICION
 EN LOS PAGE DETAIL? O SE HARA UN A LISTA ADMIN?
 definir los campos que se pueden editar
-LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TABLAS DE BBDD.
+en el proceso de LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TABLAS DE BBDD.
 estrategias de borrado de informacion defnir.
 =================
 PENDIENTE
@@ -43,8 +48,11 @@ INVESTMENT DETAIL NO EXISTE.
 LISTO .
 lend y borrow se registran al reves en la description de las transacciones. al hacer el tracker de debt. 
 ----------
+======================
+OJO EN NINGUNA PARTE SE REFLEJA EL BALANCE TOTAL DE INVESTMENT
+PODRIA AGREGARSE UN TOTAL INVESTMENT, O SE LE COLOCA ENCIMA AL TITULOS DE LOS INVESTMENT BALANCE. 
+======================
 
-investment creada con deposito inicial se muestra en los movements, pero no muestra LA description tr es deposit
 ---------------
 disable save in new profile, new cat, i y s plusvg btn en tracker 
 en new pocket, fecha futuro. se queda abierto el datepicker despues de darla a sae
@@ -130,10 +138,7 @@ BALANCES DE LAS SUBCATEGORIAS PERTENECIENTES A U A UNA CATEGORY_NATURE O A UNA C
 
 O
 CATE_1.NATURE_1.SUBCAT_1.
-======================
-OJO EN NINGUNA PARTE SE REFLEJA EL BALANCE TOTAL DE INVESTMENT
-PODRIA AGREGARSE UN TOTAL INVESTMENT, O SE LE COLOCA ENCIMA AL TITULOS DE LOS INVESTMENT BALANCE. 
-======================
+
 LISTO
 error> something went wrong with the movement_types table LISTO
 deshabilitar value en account creation  del tipo income source y el msg valid. LISTO
@@ -183,6 +188,15 @@ DE POCKET NEW POCKET.
             btnFunctionArg={originRoute}
             btnPreviousRoute={originRoute}
           >
+
+ /date validation
+    // hay establecer regla para la fecha> validar que la fecha no sea mayor que el proximo dia habil? o que no sobrepase el lunes de la prox semana? o no sea mayor que el dia de hoy? o puede ser futura pero en el mismo mes actual? o libre para realizar simulaciones, aunque esto en caso de tener que hacer conversiones monetarias habria que preverlo?
+    // const accountStartDateNormalized =
+    //   validateAndNormalizeDate(account_start_date);
+    // console.log(
+    //   '🚀 ~ createAccount ~ accountStartDateNormalized:',
+    //   accountStartDateNormalized
+    // );         
 ===========================
 PENDIENTE
 RESULTA QUE EL SERVIDOR TEINE UNA FECHA DISTINTA A DONDE ESTA EL USUARIO. QUE IMPLICACIONES TENDRIA ESO?

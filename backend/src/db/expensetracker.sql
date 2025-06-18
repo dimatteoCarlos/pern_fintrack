@@ -62,7 +62,7 @@ SELECT * FROM transactions WHERE user_id=$1 AND created_at BETWEEN $2 AND $3
 SELECT  tr.movement_type_id as id_type, mt.movement_type_name as name_type, SUM(tr.amount) AS totalAmount
 FROM transactions tr
 JOIN movement_types AS mt ON tr.movement_type_id = mt.movement_type_id
-WHERE tr.user_id='430e5635-d1e6-4f53-a104-5575c6e60c81'
+WHERE tr.user_id='430e5635-d1e6-4f53-a104-5575c6e60c81' //redundante
 GROUP BY tr.movement_type_id, mt.movement_type_name
 
 --get the total amount of type tr, from transactions by a specific user_id between specific dates  grouped by month and movement_type_id

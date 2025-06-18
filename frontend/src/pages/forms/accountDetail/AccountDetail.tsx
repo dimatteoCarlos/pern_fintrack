@@ -22,9 +22,9 @@ import '../styles/forms-styles.css';
 import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
 import { url_get_account_by_id } from '../../../endpoints';
 import { useFetch } from '../../../hooks/useFetch';
+//import ListContent from '../../../general_components/listContent/ListContent';
 // import { url_get_accounts_by_type } from '../../../endpoints';
 // import { url_get_accounts_by_type } from '../../../endpoints';
-// import { useFetch } from '../../../hooks/useFetch';
 // import { AccountByTypeResponseType, AccountListType  } from '../../../types/responseApiTypes';
 
 const user = import.meta.env.VITE_USER_ID;
@@ -39,20 +39,20 @@ const initialAccountDetail = ACCOUNT_DEFAULT[0]
 //---------------
 function AccountDetail() {
   const location = useLocation() 
-   const state = location.state as LocationStateType | null;
-const detailedData = state?.detailedData;
-const previousRouteFromState = state?.previousRoute ?? "/";
+  const state = location.state as LocationStateType | null;
+  const detailedData = state?.detailedData;
+  const previousRouteFromState = state?.previousRoute ?? "/";
   const {accountId} = useParams()
   console.log('location',  accountId, detailedData)
   //data from endpoint request for info account, and for last movements
   //Define the endpoint to get the Last movements and calculate the accountInfo required. set the logic, so as lastMovement be null set it to default
   //--states
   const [accountDetail, setAccountDetail] = useState<AccountListType>(initialAccountDetail);
-  const [previousRoute, setPreviousRoute] = useState<string>("/"); 
-  //  const [previousRoute, setPreviousRoute] = useState<string>("/fintrack/overview"); 
-
- const urlBankAccountById = `${url_get_account_by_id}/${accountId}?&user=${user}`;
-
+  // const [previousRoute, setPreviousRoute] = useState<string>("/"); 
+    const [previousRoute, setPreviousRoute] = useState<string>("/fintrack/overview"); 
+    const urlBankAccountById = `${url_get_account_by_id}/${accountId}?&user=${user}`;
+  //-------------------------------------
+  //Fetch Data
     const {
       apiData: bankAccountsData,
       isLoading,
@@ -60,7 +60,10 @@ const previousRouteFromState = state?.previousRoute ?? "/";
     } = useFetch<AccountByTypeResponseType>(
       detailedData?"":urlBankAccountById
     );
+ //-------------------------------------
 
+
+ //-------------------------------------
   //--functions---
   // function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
   //   console.log('submit btn clicked');
@@ -92,29 +95,24 @@ const previousRouteFromState = state?.previousRoute ?? "/";
   // }
 //----------------------------------
 useEffect(()=>{
-
 if(detailedData){
   //verficar la estructura de detailedData, tal vez con type safeguard
-setAccountDetail(detailedData)
+    setAccountDetail(detailedData)
     if (previousRouteFromState) {
       setPreviousRoute(previousRouteFromState);
-}
-}
-},[detailedData, previousRouteFromState])
+      }
+    }
+  },[detailedData, previousRouteFromState])
 
 useEffect(() => {
-
 // const {}=bankAccountsData.data?.accountList
-
   if(!detailedData && bankAccountsData?.data?.accountList?.length ){
-    
     const account = bankAccountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
     if(account)setAccountDetail(account)}
 
-  return () => {
-    
-  }
 }, [bankAccountsData, detailedData,accountId,])
+//----------------------------------
+
 
 //==============================================
   return (
