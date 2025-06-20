@@ -38,6 +38,16 @@ body {
   margin: 0;
 }
 
+.p, .paragraph {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    font-size: inherit;
+    text-align:justify; 
+    white-space: normal;
+  }
+
+
 .flx-col-center {
   display: flex;
   flex-direction: column;

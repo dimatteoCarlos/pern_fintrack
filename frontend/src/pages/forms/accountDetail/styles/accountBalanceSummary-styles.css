@@ -1,0 +1,45 @@
+/*accountBalanceSummary-styles.css*/
+
+/*Balance Summary Styles*/
+.balance-summary__container{
+  display: flex;
+  justify-content: space-around;
+  background-color: #2a2a2a;
+  padding: .51rem;
+  border-radius:1rem;
+  border: 1px solid var(--creme) ;
+  margin-bottom: 1rem;
+}
+
+.balance-summary__item{
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 0.25rem;
+padding: 0.5rem;
+text-align: center;
+justify-content: center;
+}
+
+.balance-summary__label{
+font-size: 1rem;
+font-weight: 400;
+color: var(--light)
+}
+
+.balance-summary__item.border-left{
+border-left: 1px dashed var(--light);
+}
+
+.balance-summary__value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--creme);
+}
+
+.balance-summary__date{
+font-size: 0.8rem;
+color: #a0a0a0;
+}
+
+

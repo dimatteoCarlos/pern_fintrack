@@ -8,34 +8,36 @@ import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBad
 import {
   ACCOUNT_DEFAULT,
   DEFAULT_CURRENCY,
-  // DEFAULT_LAST_MOVEMENTS,
   VARIANT_FORM,
+  DEFAULT_ACCOUNT_TRANSACTIONS,
 } from '../../../helpers/constants';
-import { capitalize, formatDate, numberFormatCurrency,  } from '../../../helpers/functions';
+import { capitalize,  numberFormatCurrency, formatDateToDDMMYYYY } from '../../../helpers/functions';
+import '../styles/forms-styles.css';
+import { AccountByTypeResponseType, AccountListType, TransactionsAccountApiResponseType,  AccountTransactionType, AccountSummaryBalanceType } from '../../../types/responseApiTypes';
+import { url_get_account_by_id, url_get_transactions_by_account_id } from '../../../endpoints';
+import { useFetch } from '../../../hooks/useFetch';
+import './styles/accountDetailTransactions-styles.css'
+import AccountBalanceSummary from './AccountBalanceSummary';
+import AccountTransactionsList from './AccountTransactionsList';
 // import ListContent from '../../../general_components/listContent/ListContent';
 // import FormDatepicker from '../../../general_components/datepicker/Datepicker';
 // import { StatusSquare } from '../../../components/boxComponents.tsx';
 // import SummaryDetailBox from '../../../components/summaryDetailBox/SummaryDetailBox.tsx';
 // import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
 // import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn';
-import '../styles/forms-styles.css';
-import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
-import { url_get_account_by_id } from '../../../endpoints';
-import { useFetch } from '../../../hooks/useFetch';
-//import ListContent from '../../../general_components/listContent/ListContent';
-// import { url_get_accounts_by_type } from '../../../endpoints';
-// import { url_get_accounts_by_type } from '../../../endpoints';
 // import { AccountByTypeResponseType, AccountListType  } from '../../../types/responseApiTypes';
 
 const user = import.meta.env.VITE_USER_ID;
+
 type LocationStateType ={
 previousRoute:string; detailedData:AccountListType;
 }
-//temporary datas
+//temporary data (used if API data is not available or for initial state)
+//account main data
 const initialAccountDetail = ACCOUNT_DEFAULT[0]
 
-//Last Movements
-// const initialLastMovements = DEFAULT_LAST_MOVEMENTS;
+const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
+console.log('initialAccountTransactions', initialAccountTransactionsData)
 //---------------
 function AccountDetail() {
   const location = useLocation() 
@@ -44,15 +46,21 @@ function AccountDetail() {
   const previousRouteFromState = state?.previousRoute ?? "/";
   const {accountId} = useParams()
   console.log('location',  accountId, detailedData)
-  //data from endpoint request for info account, and for last movements
-  //Define the endpoint to get the Last movements and calculate the accountInfo required. set the logic, so as lastMovement be null set it to default
-  //--states
-  const [accountDetail, setAccountDetail] = useState<AccountListType>(initialAccountDetail);
-  // const [previousRoute, setPreviousRoute] = useState<string>("/"); 
+
+  //data from endpoint request for info account, and for api transactions by accountId
+ //--states
+ //--state for account detail global info
+    const [accountDetail, setAccountDetail] = useState<AccountListType>(initialAccountDetail);
     const [previousRoute, setPreviousRoute] = useState<string>("/fintrack/overview"); 
+ //--state for account transactions data
+    const [transactions, setTransactions]=useState<AccountTransactionType[]>(initialAccountTransactionsData.transactions)
+
+    const [summaryAccountBalance, setSummaryAccountBalance]=useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary)
+
+    //-------------------------------------
+    //--Fetch Data
+    //--account detail global info
     const urlBankAccountById = `${url_get_account_by_id}/${accountId}?&user=${user}`;
-  //-------------------------------------
-  //Fetch Data
     const {
       apiData: bankAccountsData,
       isLoading,
@@ -60,43 +68,48 @@ function AccountDetail() {
     } = useFetch<AccountByTypeResponseType>(
       detailedData?"":urlBankAccountById
     );
- //-------------------------------------
+    //--account transaction api response
+    //--how to handle dates period
+    //Although the getTransactionsForAccountById backend, deals with the last 30 days transactions, here, it wil get the transactions for current month, and a specified number of months period
+    //in the future, include a dynamic filter or date picker range dates
+    //period dates considering previous number of months and current month transactions
+    const tdy = new Date()
+    const numberOfMonths=2
+    const firstDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth()-numberOfMonths+1,1)
+    const lastDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth()+1,0)
 
+    //--YYYY-MM-DD
+    const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0]
+    const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0]
 
- //-------------------------------------
-  //--functions---
-  // function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
-  //   console.log('submit btn clicked');
-  //   e.preventDefault();
-  //   setAccountDetail(initialAccountDetail);
-  // }
+    //-----
+    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?user=${user}&start=${apiStartDate}&end=${apiEndDate}`;
 
-  // function updateCurrency(currency: string) {
-  //   setAccountDetail((prevState) => ({
-  //     ...prevState,
-  //     accountInfo: { ...accountInfo, currency },
-  //   }));
-  // }
+    const {
+      apiData: transactionAccountApiResponse,//{status, message, data}
+      isLoading:isLoadingTransactions,
+      error:errorTransactions,
+    } = useFetch<TransactionsAccountApiResponseType>(
+      urlTransactionsAccountById
+    );
 
-  // function inputLastMovementHandler(e: React.ChangeEvent<HTMLInputElement>) {
-  //   e.preventDefault();
-  //   console.log(accountDetail);
-  //   setAccountDetail((prevState) => ({
-  //     ...prevState,
-  //     lastMovements: { ...lastMovements, [e.target.name]: e.target.value },
-  //   }));
-  // }
+//-------------------------------------
+//extraer tranasactions de  transactionAccountApiResponse
+//definir un estado para c/u de las variables transactions , un estado para initialBalance: BalanceInfo,  otro para finalBalance: BalanceInfo,  periodStartDate: string;   periodEndDate: string; , 
+//considerar un use effect para estos estados 
 
-  // function changeStartingPoint(selectedDate: Date) {
-  //   setAccountDetail((prevState) => ({
-  //     ...prevState,
-  //     accountInfo: { ...accountInfo, date: selectedDate },
-  //   }));
-  // }
-//----------------------------------
+//--------------------------------------
+useEffect(() => {
+  if(transactionAccountApiResponse?.data.transactions){
+    setTransactions(transactionAccountApiResponse?.data.transactions)
+    setSummaryAccountBalance(transactionAccountApiResponse?.data.summary)
+  }
+  //else keep the initial values
+}, [transactionAccountApiResponse])
+
+//--------------------------------------
 useEffect(()=>{
 if(detailedData){
-  //verficar la estructura de detailedData, tal vez con type safeguard
     setAccountDetail(detailedData)
     if (previousRouteFromState) {
       setPreviousRoute(previousRouteFromState);
@@ -105,9 +118,9 @@ if(detailedData){
   },[detailedData, previousRouteFromState])
 
 useEffect(() => {
-// const {}=bankAccountsData.data?.accountList
   if(!detailedData && bankAccountsData?.data?.accountList?.length ){
-    const account = bankAccountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
+    // const account = bankAccountsData.data.accountList[0]
+     const account = bankAccountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
     if(account)setAccountDetail(account)}
 
 }, [bankAccountsData, detailedData,accountId,])
@@ -154,13 +167,8 @@ useEffect(() => {
                   className='form__datepicker__container'
                   style={{ textAlign: 'center', color:'white' }}
                 >
-                  {formatDate(new Date(accountDetail.account_start_date ))}
-                  {/* {showDate(new Date(accountDetail.account_start_date ))} */}
-                  {/* <FormDatepicker
-                    variant={VARIANT_FORM}
-                    changeDate={changeStartingPoint}
-                    date={accountDetail.accountInfo.date}
-                  /> */}
+                  {formatDateToDDMMYYYY((accountDetail.account_start_date))}
+                
                 </div>
               </div>
 
@@ -177,19 +185,28 @@ useEffect(() => {
             </div>
           </div>
 
-          <div className='presentation__card__title__container'>
+          {/* --- TRANSACTION STATEMENT SECTION --- */}
+        <div className="account-transactions__container "
+        style={{margin:'1rem 0'}}
+        >
+        <div className="period-info">
+          <span className="period-info__label"></span>
+          <span className="period-info__dates  ">{formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}{'  '}  /  {'  '} {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}</span>
+        </div>
+
+         <AccountBalanceSummary summaryAccountBalance={summaryAccountBalance}/>
+
+          <div className='presentation__card__title__container '>
             <CardTitle>{'Last Movements'}</CardTitle>
           </div>
 
-          {/* <ListContent listOfItems={lastMovements} /> */}
-
-          {/* <div className='submit__btn__container'>
-            <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
-          </div> */}
+         <AccountTransactionsList transactions={transactions} />
+          </div>
+          {/* --- END TRANSACTION STATEMENT SECTION --- */}
         </form>
         
-        {isLoading && <p>Loading...</p>}
-        {error && <p>Error fetching account: {error}</p>}
+        {(isLoading || isLoadingTransactions) && <p>Loading...</p>}
+        {(error|| errorTransactions) && <p>Error fetching account info: {error??errorTransactions}</p>}
       </div>
     </section>
   );

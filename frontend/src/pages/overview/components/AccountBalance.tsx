@@ -60,10 +60,9 @@ function AccountBalance({
 
       setBankAccountsToRender(newBankAccounts);
     }
-    //---
+  //---
     updateBankAccounts();
   }, [bankAccountsData, isLoading, error]);
-
 
   console.log('accounts:', bankAccountsData, error, isLoading);
 
@@ -75,7 +74,6 @@ function AccountBalance({
     <>
       {/*BANK ACCOUNTS  */}
       <div className='presentation__card__title__container flx-row-sb'>
-     
         <CardTitle>Account Balance</CardTitle>
         <Link className='flx-col-center icon ' to={'edit'}></Link>
       </div>
@@ -88,13 +86,13 @@ function AccountBalance({
           {
             return (
               <Link
-                to={`accounts/${account_id}`}
+                to={`accounts/${account_id}`} //AccountDetail.tsx
                 state = {{previousRoute, detailedData:account}}
                 className='tile__container tile__container--account flx-col-sb'
                 key={`account-${account_id}`}
               >
                 <div className='tile__subtitle tile__subtitle--account'>
-                  {account_name} ({account_type_name})x
+                  {account_name} ({account_type_name})
                 </div>
                 <div className='tile__title tile__title--account'>
                   {/* {concept}{' '} */}

@@ -1,6 +1,5 @@
 import { CurrencyType, StatusType } from '../types/types';
 import { DATE_TIME_FORMAT_DEFAULT } from './constants';
-
 //-------------------------
 export function currencyFormat(
   chosenCurrency = 'USD',
@@ -13,7 +12,6 @@ export function currencyFormat(
   });
   return formatFn.format(number);
 }
-
 //--------------------
 export function digitRound(n = Number.MIN_VALUE, digit = 2) {
   return Math.round(n * Math.pow(10, digit)) / Math.pow(10, digit);
@@ -169,10 +167,10 @@ export function showDate(date: Date, countryFormat = DATE_TIME_FORMAT_DEFAULT) {
   return formattedDate;
 }
 
-export const formatDate = (dateInput: Date | string | number): string => {
-  const date = new Date(dateInput);
-  return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
-};
+// export const formatDate = (dateInput: Date | string | number): string => {
+//   const date = new Date(dateInput);
+//   return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
+// };
 //-------------------------
 export function isDateValid(
   dateStr: Date | string | number | undefined | null
@@ -190,11 +188,30 @@ export function isDateValid(
   return !isNaN(date.getTime());
 }
 
+// La API devuelve las fechas en formato ISO 8601, y el frontend las convierte al formato dd-mm-yyyy para mostrarlas al usuario
+
+// Función para convertir de ISO 8601 a dd-mm-yyyy en el frontend
+export const formatDateToDDMMYYYY = (isoDate:Date | string) => {
+  const date = new Date(isoDate);
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Los meses son base 0
+  const year = date.getUTCFullYear();
+  return `${day}-${month}-${year}`;
+};
+// Formateador de fecha (DD/MM/YYYY HH:MM)
+export const formatDate = (date:Date | string ) => 
+    new Date(date).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
 //-----------------------
 export function capitalize(word: string) {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
-
 //----------------
 export const truncateText = (
   textContent: string = '',
@@ -205,9 +222,7 @@ export const truncateText = (
     return textContent;
   }
 };
-
 //-------------------------
-
 export function validationData(stateToValidate: {
   [key: string]: string | number | Date | undefined | null;
 }): {
@@ -237,9 +252,7 @@ export function validationData(stateToValidate: {
   }
   return errorValidationMessages;
 } //fn
-
-//-------------------------
-
+//----------------------------------------
 //-----check number format----------------
 //used in input number format validation
 
@@ -334,9 +347,7 @@ export function checkNumberFormatValue(value: string): {
   };
 }
 //------------------------------------
-
 // ^(0([.,]\d+)?|[1-9]\d{0,2}(,\d{3})_(\.\d_)?|[1-9]\d{0,2}(\.\d{3})_(,\d_)?|[1-9]\d*([.,]\d*)?|[.,]\d+|\d+[.,])$
-
 //------------------------------------
 //is necessary to adapt the alert to the business rule to use
 export const statusFn = (

@@ -1,0 +1,23 @@
+/*accountDetailTransactions-styles.css*/
+
+.period-info{
+  text-align: center;
+  width: 100%;
+  color:var(--creme);
+  font-size: 0.95rem;
+  padding: 0 1rem 1rem 0;
+}
+
+.period-info__label{
+  font-weight: 600;
+  margin-right: 0.rem;
+}
+
+.period-info__dates{
+  font-weight: 400;
+}
+/**********************/
+
+
+
+

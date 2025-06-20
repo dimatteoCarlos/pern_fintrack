@@ -102,7 +102,7 @@ console.log('originRoute', previousRoute)
                   )}
                   &nbsp;
                 </span>
-                {/* {'definir regla de negocio, ejemplo: diferencia entre los montos saved y goal'} */}
+        
                 <StatusSquare alert={(saved - goal) < 0 ? 'alert' : ''} />
               </div>
             </div>

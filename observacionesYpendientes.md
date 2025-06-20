@@ -1,20 +1,39 @@
 user = c109eb15-4139-43b4-b081-8fb9860588af
+https://www.youtube.com/watch?v=zcPj4eEnhyM
 
 PENDIENTEs
-
+renderizar el periodo, y el balance inicial y final de la cuenta LISTO.
+renderizar las ultimas transacciones de una cuenta por account_id, en overview account_detail
+MEJORAR LA DESCRIPCION DE LA TRANSACCION. 
+------------------------------
 modificar transactions table para registrar el balance nuevo de la cuenta. LISTO
 MODIFICAR transaction controllers and createion controller to consider record balance . LISTO
  
 ENDPOINTS
 GET informacion de cuenta segun su account_id LISTO.
-GET los movimientos de una determinada cuenta segun su account_id. PENIENTE
-buscar archivo trbyid.md
+GET las transacciones de una determinada cuenta segun su account_id. LISTO.
 
-ent r en tracker transfer, al presionar el boton de seleccion de tio de cuenta para la cuenta de bottom card, se desabilita el raio los radio input, y pareceria que se hace submit. LISTO
+enter en tracker transfer, al presionar el boton de seleccion de tipo de cuenta para la cuenta de bottom card, se desabilita el radio de los radio input, y pareceria que se hace submit. LISTO
 
-asegurar el criterio para el start account amount sea coherente en todas las cuentas a crear.
+===========================
+asegurar el criterio del signo para el start account amount sea coherente en todas las cuentas a crear.
+===========================
 
-
+TODAS LAS DETAIL PAGES ESTAN PENDIENTES
+definir el disenio y lo sobre todos los datos
+DONDE SE METERAN LA PARTE DE EDICION
+EN LOS PAGE DETAIL? O SE HARA UN A LISTA ADMIN?
+definir los campos que se pueden editar
+en el proceso de LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TABLAS DE BBDD.
+estrategias de borrado de informacion defnir.
+No hay un INCOME account detail 
+=================
+PENDIENTE
+BOTON DE REGRESO DE POCKET DETAIL . LISTO
+CATEOGRY DETAL
+DEBTOR DETAIL
+ACCOUNT DETAIL
+INVESTMENT DETAIL NO EXISTE.
 ===========================
 PENDIENTE
 AL HACER UN TRACKER BORROW A CUENTA DBTOR EX SB NO SE VE LA DESCRIPTION EN OVERVIEW
@@ -28,22 +47,7 @@ cuando se crea una cuenta pocekt no se refleja en los movimientos en overview
 cuando se crea una cuenta c expense o category obj la descripcion no se refleja en los movimientos en overview
 hacer una helper o util function. PARA estandarizar la descripcion de las transacciones.
 
-===========================
 
-TODAS LAS DETAIL PAGES ESTAN PENDIENTES
-definir el disenio y lo sobre todos los datos
-DONDE SE METERAN LA PARTE DE EDICION
-EN LOS PAGE DETAIL? O SE HARA UN A LISTA ADMIN?
-definir los campos que se pueden editar
-en el proceso de LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TABLAS DE BBDD.
-estrategias de borrado de informacion defnir.
-=================
-PENDIENTE
-BOTON DE REGRESO DE POCKET DETAIL . LISTO
-CATEOGRY DETAL
-DEBTOR DETAIL
-ACCOUNT DETAIL
-INVESTMENT DETAIL NO EXISTE.
 =================
 LISTO .
 lend y borrow se registran al reves en la description de las transacciones. al hacer el tracker de debt. 
@@ -67,13 +71,13 @@ borrow debtor a un investment - no se refleja como investment
 si se refleja como debtor - ojo cual era la regla de negocios. para investment dest.
 osea las cuentas investment pueden ser (deposit/w, borrow/l, )
 de debt a tracker , tambpoco se refleja como pocket movments, EL MONTOO SAVED SI, PERO NO EL AVG.
+
 EL ORDEN DE MOVEMENTS DEBERIA SER EN FECHA DESC.
---------------------------
+-----------------------------------
 MEJOR CONTROL
 ES MAS FACIL PARA ESTA VERSION, QUE DEBTS SEA SOLO CON BANK ACCOUNTS, LISTO YA SE CAMBIO
 y colocar lend y borrow al lado de la cuenta del usuario. LISTO
 crar referencia mas complex para transacction entre cuentas.
-
 ------------------------------------
 MENSAJES EN TRACKER.
 

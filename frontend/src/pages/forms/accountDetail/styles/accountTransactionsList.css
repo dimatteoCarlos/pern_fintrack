@@ -1,0 +1,69 @@
+/*accountTransactionsList.css*/
+
+/* Estilos para cada item de transacción (BoxContainer) */
+.transaction-item {
+  /* BoxContainer already has border-bottom: 1px solid var(--light); */
+  /* We will adjust it to be dashed and more subtle */
+  border-bottom: 1px dashed var(--creme) !important; /* Overrides BoxContainer's solid border */
+ /* opacity: .7; /* Makes the line more subtle */
+  padding: 0.8rem 0.5rem !important; /* Adjust padding for BoxContainer */
+}
+
+.transaction-item:last-child {
+  border-bottom: none !important; /* No line after the last transaction */
+}
+
+/* Estilos para el encabezado de cada transacción (BoxRow) */
+.transaction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline; /* Aligns items at their baseline */
+  margin-bottom: 0.4rem;
+}
+
+.transaction-movement-type {
+  /* box__title default styles apply */
+  font-size: 1rem;
+  font-weight: 600;
+  color:white;
+  flex: 1; /* Allows it to take available space */
+}
+
+.transaction-amount {
+  /* box__title default styles apply */
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-left: 1rem; /* Space before the amount */
+  color: var(--creme);
+}
+
+.transaction-date {
+  /* box__subtitle default styles apply */
+  font-size: 0.85rem;
+  color: #a0a0a0;
+  margin-left: 0.8rem; /* Space before the date */
+}
+
+/* Descripción de la transacción (BoxRow) */
+.transaction-description {
+  /* box__subtitle default styles apply, complemented by inline style in component */
+  color: var(--creme);
+  margin-bottom: 0.4rem;
+  line-height: 1.4;
+  white-space: pre-wrap; /* Preserves line breaks if any in the description */
+}
+
+/* Balance después de la transacción (BoxRow) */
+.transaction-balance-after {
+  /* box__subtitle default styles apply */
+  color: #bdb1b1; /* A color similar to your .tile__subtitle */
+  font-weight: 400;
+}
+
+/* No hay transacciones */
+.no-transactions {
+  text-align: center;
+  color: var(--creme);
+  padding: 1rem;
+  font-style: italic;
+}

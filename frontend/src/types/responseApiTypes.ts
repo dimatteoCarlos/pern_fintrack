@@ -394,3 +394,55 @@ export interface PocketListType {
   desired_date:Date;
   note: string;
 }
+//--------------------------------
+//get transactions for account by id
+//ACCOUNT DETAIL TRANSACTIONS BY ACCOUNT ID
+type AccountBalanceInfoType = {
+  amount: number;
+  date: string; // ISO 8601 date string
+  currency: string;
+};
+
+export type AccountSummaryBalanceType = {
+  initialBalance: AccountBalanceInfoType;
+  finalBalance: AccountBalanceInfoType;
+  periodStartDate: string; // YYYY-MM-DD
+  periodEndDate: string; // YYYY-MM-DD
+};
+
+export type AccountTransactionType = {
+  transaction_id: number;
+  user_id: string;
+  description: string;
+  amount: number; // string representation of number
+  movement_type_id: number;
+  transaction_type_id: number;
+  currency_id: number;
+  account_id: number;
+  account_balance_after_tr: number;
+  source_account_id: number;
+  destination_account_id: number;
+  status: string;
+  transaction_actual_date: string; // ISO 8601 date string
+  created_at: string; // ISO 8601 date string
+  updated_at: string; // ISO 8601 date string
+  movement_type_name: string;
+  currency_code: string;
+  account_name: string;
+  account_starting_amount: number;
+  account_start_date: string; // ISO 8601 date string
+};
+
+type AccountTransactionDataType = {
+  totalTransactions: number;
+  summary: AccountSummaryBalanceType;
+  transactions: AccountTransactionType[];
+};
+
+export type TransactionsAccountApiResponseType = {
+  status: number;
+  message: string;
+  data: AccountTransactionDataType;
+};
+
+//----------------------

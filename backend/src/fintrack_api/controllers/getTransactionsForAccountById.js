@@ -1,12 +1,18 @@
+// ==============================
+// Module: getTransactionsForAccountById
+// Path: /fintrack/controllers/getTransactionsForAccountById.js
+// Purpose: Handles transactions by account id queries for the account detail
+// Depends on:
+// ==============================
+
 import pc from 'picocolors';
 import {
   createError,
   handlePostgresError,
 } from '../../../utils/errorHandling.js';
 import { pool } from '../../db/configDB.js';
-import dotenv from 'dotenv';
-import { respondError, respondSuccess } from '../../../utils/responseHelpers.js';
-dotenv.config();
+// import dotenv from 'dotenv';
+// dotenv.config();
 
 export const getTransactionsForAccountById = async (req, res, next)=>{
   const backendColor = 'greenBright';
@@ -33,7 +39,7 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     }
   };
   // --- End Helper Functions ---
-  //controller function 
+  //controller module 
   try {
   const userId = req.body.user || req.query.user;
     if (!userId) {
@@ -75,14 +81,14 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     const startDate = new Date(start || daysAgoDate)
     const endDate = new Date(end || today.toISOString().split('T')[0])
 
-    //----------------------------------------------------------
+    //----------------------------------------------------------------
     //--main query for transactions by account_id and user_id getting account_balance_after_tr
     //--rule: there must exist at least one transaction (account-opening). It should not be possible for an account to exist without a single recorded transaction
 
     const TRANSACTIONS_BY_ACCOUNT_QUERY = {
       text:`
       SELECT 
-        tr.*, mt.movement_type_name, cr.currency_code, ua.account_name, ua.account_starting_amount, ua.account_start_date
+        tr.*, mt.movement_type_name, cr.currency_code, ua.account_name, CAST(ua.account_starting_amount AS FLOAT), ua.account_start_date
       FROM 
         transactions tr
       JOIN
@@ -109,7 +115,7 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
 
 //get the initial balance before the first transaction in the period
 const ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY={
-  text:`SELECT tr.account_balance_after_tr,cu.currency_code, ua.account_starting_amount, tr.transaction_actual_date, tr.created_at
+  text:`SELECT CAST(tr.account_balance_after_tr AS FLOAT) as account_balance_after_tr,cu.currency_code, ua.account_starting_amount, tr.transaction_actual_date, tr.created_at
   FROM transactions tr
   JOIN user_accounts ua ON tr.account_id = ua.account_id
   JOIN currencies cu ON ua.currency_id =  cu.currency_id 
@@ -117,7 +123,7 @@ const ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY={
     AND ua.user_id = $2
     AND (tr.transaction_actual_date < $3 OR tr.created_at < $3)
   ORDER BY 
-  -- tr.transaction_actual_date DESC  ,
+  tr.transaction_actual_date DESC  ,
   tr.created_at DESC
   LIMIT 1  
   `,
@@ -128,7 +134,6 @@ const ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY={
 }
 
 const initialBalanceResult= await queryFn(ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY.text,ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY.values)
-
 console.log('initialBalanceResult',initialBalanceResult, startDate, endDate )
 
 //since transactions are ordered by transaction date DESCENDENT, THE first element in the array is the last transaction
@@ -154,7 +159,7 @@ const finalBalance ={amount: parseFloat(lastTransaction.account_balance_after_tr
 
   console.log('starting account amount', {initialBalance} , {finalBalance}, {lastTransaction})
 
- const successMsg = `${transactions.length} transaction(s) found for account ${accountId}. Period between ${startDate.toISOString().split('T')[0]} and ${endDate.toISOString().split('T')[0]}.`;
+ const successMsg = `${transactions.length} transaction(s) found for account id ${accountId}. Period between ${startDate.toISOString().split('T')[0]} and ${endDate.toISOString().split('T')[0]}.`;
    
   const data = {
       totalTransactions: transactions.length,
@@ -189,6 +194,5 @@ const finalBalance ={amount: parseFloat(lastTransaction.account_balance_after_tr
     const { code, message } = handlePostgresError(error);
     next(createError(code, message));
 }
-
 }
 
