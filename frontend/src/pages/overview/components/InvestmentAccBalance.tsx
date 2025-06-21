@@ -1,216 +1,143 @@
+//InvestmentAccBalance.tsx
+import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { url_get_accounts_by_type } from '../../../endpoints';
 import { StatusSquare } from '../../../general_components/boxComponents';
 import { CardTitle } from '../../../general_components/CardTitle';
-import {
-  currencyFormat,
-  numberFormatCurrency,
-} from '../../../helpers/functions';
+import {currencyFormat} from '../../../helpers/functions';
 import { useFetch } from '../../../hooks/useFetch';
+import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
 
-import { CreateNewAccountPropType } from '../Overview';
-import OpenAddEditBtn from '../../../general_components/OpenAddEditBtn';
-import { AccountByTypeResponseType } from '../../../types/responseApiTypes';
-import { useEffect, useState } from 'react';
-// import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
-import { CurrencyType } from '../../../types/types';
-import { DEFAULT_CURRENCY } from '../../../helpers/constants';
+import { ACCOUNT_DEFAULT , CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 
-export type InvestmentAccountToRenderType = {
-  id?: string | number;
-  title1: string;
-  subtitle1: string;
-  title2: string;
-  balance: number;
-  capital: number;
-  balanceType: string;
-  type: string;
-  currency: CurrencyType;
-};
-//--TEMPORARY VALUES
-// const defaultCurrency = DEFAULT_CURRENCY;
-// const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
+type AccountPropType={previousRoute:string}
 
-//Investment account temporary data
-const DEFAULT_INVESTMENT_ACC: InvestmentAccountToRenderType[] = [
-  {
-    title1: 'acc name',
-    subtitle1: 'capital invested',
-    title2: 'factual balance',
-    capital: 500123,
-    balance: 450012.0,
-    balanceType: '% Loss',
-    type: 'type',
-    currency: 'eur',
-  },
-  {
-    title1: 'acc name',
-    subtitle1: 'capital invested',
-    capital: 100000,
-    balance: 111111,
-    title2: 'factual balance',
-    balanceType: '% Profit',
-    currency: 'cop',
-    type: 'type',
-  },
-  {
-    title1: 'acc name',
-    subtitle1: 'capital invested',
-    capital: 2750000,
-    balance: 3100000,
-    title2: 'factual balance',
-    balanceType: '% Profit',
-    currency: 'usd',
-    type: 'type',
-  },
-  {
-    title1: 'acc name',
-    subtitle1: 'capital invested',
-    capital: 987654.55,
-    balance: 870101.0,
-    title2: 'factual balance',
-    balanceType: '% Loss',
-    currency: 'cop',
-    type: 'type',
-  },
-];
+//temporary values------------
+const defaultCurrency = DEFAULT_CURRENCY;
+const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
+const subtitle = 'Capital Invested'
+const concept = 'Factual Balance'
 
-//PENDIENTE DEFINIR REGLA DE NEGOCIO PARA VALORAR EL STATUS SQUARE Y PASAR EL ALERT
-//questions: does status have some conditional or variable style? semaforo? cual es la regla de negocio?
-//seems that balanceType has at least two possible values: loss / profit or earned
-//capital could be the amount of the investment or not needed?
-//factual balance is datum or calculated?
-//DE DONDE SE TOMA EL CAPITAL INVESTED?
 //-------------------------------------
 function InvestmentAccountBalance({
-  createNewAccount,
-  originRoute,
-}: CreateNewAccountPropType) {
+  previousRoute,
+}: AccountPropType) {
   const user = import.meta.env.VITE_USER_ID;
-  //STATES---------------------
-  const [investmentAccountsToRender, setInvestmentAccountsToRender] = useState<
-    InvestmentAccountToRenderType[]
-  >(DEFAULT_INVESTMENT_ACC);
+
+ //--STATES---------------------
+  const [investmentAccountsToRender, setInvestmentAccountsToRender] = useState<AccountListType[]>(ACCOUNT_DEFAULT)
 
   //DATA FETCHING
   const urlInvestmentAccounts = `${url_get_accounts_by_type}/?type=investment&user=${user}`;
+
   const { apiData, isLoading, error } = useFetch<AccountByTypeResponseType>(
     urlInvestmentAccounts
   );
   // console.log('Investment_accounts:', data, error, isLoading);
-
-  //-------------------------------------
-
+  //------------------------------
   useEffect(() => {
     function updateInvestmentAccounts() {
-      const newInvestmentAccounts: InvestmentAccountToRenderType[] =
+      const newInvestmentAccounts:AccountListType[] =
         apiData && !isLoading && !error && !!apiData.data.accountList?.length
-          ? apiData.data?.accountList?.map((acc, indx) => {
-              const isProfit =
-                acc.account_balance >= (acc.account_starting_amount ?? 0);
-              const balanceType = isProfit ? '% Profit' : '% Loss';
-              return {
-                id: acc?.account_id ?? `${acc.account_name + '_' + indx}`,
-                title1: acc.account_name,
-                subtitle1: 'capital invested',
-                title2: 'factual balance',
-                balance: acc.account_balance,
-                capital: acc.account_starting_amount ?? 0,
-                balanceType: balanceType,
-                type: acc.account_type_name,
-                currency: acc.currency_code || DEFAULT_CURRENCY,
-              };
-            })
-          : DEFAULT_INVESTMENT_ACC;
-
+          ? apiData.data?.accountList?.map((acc, indx) => 
+             ({
+          account_id: acc.account_id ?? indx,
+          account_name: acc.account_name,
+         concept: {concept}, 
+          account_balance: acc.account_balance,
+          account_type_name: acc.account_type_name,
+          currency_code: acc.currency_code ?? defaultCurrency,
+          account_start_date: acc.account_start_date ?? acc.created_at,
+          account_type_id:acc.account_type_id ,
+           }))
+           : ACCOUNT_DEFAULT;
       setInvestmentAccountsToRender(newInvestmentAccounts);
     }
-    //---
+  //---
     updateInvestmentAccounts();
   }, [apiData, isLoading, error]);
 
-  //-------------------------------------
+    console.log('accounts:', apiData, error, isLoading);
 
+    // if (isLoading) {
+    // return <span style={{color:'cyan', width:'100%', textAlign:'center'}}>Loading...</span>;  }
+  //-------------------------------------
   return (
     <>
-      {/*GOALS INVESTMENT  */}
+      {/*ACCOUNTS  */}
       <div className='presentation__card__title__container flx-row-sb'>
         <CardTitle>Investment</CardTitle>
+        <Link className='flx-col-center icon ' to={'edit'}></Link>
       </div>
 
       <article className='goals__investment'>
         {/* Account Factual Balance  */}
-
-        {investmentAccountsToRender!.map((investment, indx) => {
-          const {
-            title1,
-            subtitle1,
-            title2,
-            balanceType,
-            balance,
-            capital,
-            type,
-            currency,
-          } = investment;
-
-          // console.log('🚀 ~ {investment.map ~ capital:', capital);
-
+        {investmentAccountsToRender!.map((account) => {
+        const { account_name, account_balance, account_type_name,account_id, currency_code,account_starting_amount } = account;
+        // console.log('🚀 ~ {investment.map ~ capital:', capital);
+         const capital = account_starting_amount ?? 0;
+         const balance = account_balance;
+         let balanceType, percentage;
+            if(capital !==0){
+            if (balance > capital) {
+              balanceType = '% Profit';
+              percentage = ((balance - capital) / capital) * 100;
+            } else if (balance < capital) {
+              balanceType = '% Loss';
+              percentage = ((capital - balance) / capital) * 100; 
+            } else {
+              balanceType = '% Profit'; // Si es igual, es 0% de ganancia
+              percentage = 0;
+            }}else{balanceType = '% Profit'; 
+              percentage = 0;}
+          
+          console.log(balance, capital, percentage)
+          //-----------------------------------------
           {
             return (
+            <Link
+              to={`accounts/${account_id}`} //AccountDetail.tsx
+              state = {{previousRoute, detailedData:account}}
+              className='tile__container tile__container--account flx-col-sb'
+              key={`account-${account_id}`}
+              >
               <div
                 className='tile__container tile__container--investment flx-row-sb'
-                key={`account-${indx}`}
               >
-                <div className='tile__container__col tile__container__col--investment col--investment--left'>
-                  <div className='tile__title tile__title--account'>
-                    {title1} ({type})
-                  </div>
-                  <div className='tile__subtitle tile__subtitle--account'>
-                    {subtitle1} :
-                    <span className='tile__title tile__title--account'>
-                      {currencyFormat(
-                        currency,
-                        capital
-                        // ,
-                        // formatNumberCountry
-                      )}
-                    </span>
-                  </div>
+              <div className='tile__container__col tile__container__col--investment col--investment--left'>
+                <div className='tile__title tile__title--account'>
+                  {account_name} ({account_type_name})
                 </div>
 
-                <div className='tile__container__col tile__container__col--investment col--investment--right'>
-                  <div className='tile__title  tile__title--account'>
-                    <span style={{ fontWeight: 'normal' }}>{title2}:</span>{' '}
-                    {numberFormatCurrency(balance, 0, currency)}
-                  </div>
-                  <div className='tile__status--investment--right '>
-                    <StatusSquare
+                <div className='tile__subtitle tile__subtitle--account'> {subtitle}:<span className='tile__title tile__title--account'>
+                  {currencyFormat(currency_code ?? defaultCurrency,account_balance,formatNumberCountry)}</span>
+                </div>
+              </div>
+
+              <div className='tile__container__col tile__container__col--investment col--investment--right'>
+                <div className='tile__title  tile__title--account'>
+                 <span style={{ fontWeight: 'normal' }}>{concept}:</span>{' '}
+                  {currencyFormat(currency_code ?? defaultCurrency,account_balance,formatNumberCountry)}
+                </div>
+                
+                <div className='tile__status--investment--right '>
+                 <StatusSquare
                       alert={balanceType == '% Loss' ? 'alert' : ''}
-                    ></StatusSquare>
-                    <div className='tile__subtitle subtitle__status__investment--right '>
-                      <span style={{ color: 'black', fontSize: '0.875rem' }}>
-                        {balanceType}{' '}
-                        {Math.floor(
-                          Math.abs(((balance - capital) * 100) / capital)
-                        )}
+                 />
+                  <div className='tile__subtitle subtitle__status__investment--right '>
+                    <span style={{ color: 'black', fontSize: '0.875rem' }}>
+                      {balanceType}{' '}
+                      {Math.floor(Math.abs(percentage))}
                       </span>
                     </div>
                   </div>
+                  </div>
                 </div>
-              </div>
+              </Link>
             );
           }
         })}
       </article>
-
-      {
-        <OpenAddEditBtn
-          btnFunction={createNewAccount}
-          btnFunctionArg={originRoute}
-          btnPreviousRoute={originRoute}
-        >
-          <div className='open__btn__label'>Add Account</div>
-        </OpenAddEditBtn>
-      }
     </>
   );
 }

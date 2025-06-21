@@ -19,13 +19,6 @@ import { useFetch } from '../../../hooks/useFetch';
 import './styles/accountDetailTransactions-styles.css'
 import AccountBalanceSummary from './AccountBalanceSummary';
 import AccountTransactionsList from './AccountTransactionsList';
-// import ListContent from '../../../general_components/listContent/ListContent';
-// import FormDatepicker from '../../../general_components/datepicker/Datepicker';
-// import { StatusSquare } from '../../../components/boxComponents.tsx';
-// import SummaryDetailBox from '../../../components/summaryDetailBox/SummaryDetailBox.tsx';
-// import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
-// import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn';
-// import { AccountByTypeResponseType, AccountListType  } from '../../../types/responseApiTypes';
 
 const user = import.meta.env.VITE_USER_ID;
 
@@ -94,11 +87,6 @@ function AccountDetail() {
     );
 
 //-------------------------------------
-//extraer tranasactions de  transactionAccountApiResponse
-//definir un estado para c/u de las variables transactions , un estado para initialBalance: BalanceInfo,  otro para finalBalance: BalanceInfo,  periodStartDate: string;   periodEndDate: string; , 
-//considerar un use effect para estos estados 
-
-//--------------------------------------
 useEffect(() => {
   if(transactionAccountApiResponse?.data.transactions){
     setTransactions(transactionAccountApiResponse?.data.transactions)
@@ -125,7 +113,6 @@ useEffect(() => {
 
 }, [bankAccountsData, detailedData,accountId,])
 //----------------------------------
-
 
 //==============================================
   return (
@@ -178,19 +165,17 @@ useEffect(() => {
                 <CurrencyBadge
                   variant={VARIANT_FORM}
                   currency={accountDetail.currency_code??DEFAULT_CURRENCY}
-                  // updateOutsideCurrencyData={updateCurrency}
-                  // apparently there's a currency datum associated to each account
                 />
               </div>
             </div>
           </div>
 
-          {/* --- TRANSACTION STATEMENT SECTION --- */}
+        {/* --- TRANSACTION STATEMENT SECTION --- */}
         <div className="account-transactions__container "
         style={{margin:'1rem 0'}}
         >
         <div className="period-info">
-          <span className="period-info__label"></span>
+          <div className="period-info__label">Period</div>
           <span className="period-info__dates  ">{formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}{'  '}  /  {'  '} {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}</span>
         </div>
 

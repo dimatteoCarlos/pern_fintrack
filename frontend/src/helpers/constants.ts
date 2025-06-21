@@ -95,7 +95,8 @@ export const ACCOUNT_DEFAULT:AccountListType[] = [
     currency_code: 'cop',
     account_type_name: 'type1',
     account_type_id: 1,
-     account_start_date:new Date()
+    account_starting_amount:0,
+    account_start_date:new Date(),
   },
   {
     account_name: 'acc name_2',
@@ -105,6 +106,7 @@ export const ACCOUNT_DEFAULT:AccountListType[] = [
     currency_code: 'cop',
     account_type_name: 'type1',
         account_type_id: 2,
+        account_starting_amount:0,
      account_start_date:new Date()
   },
   

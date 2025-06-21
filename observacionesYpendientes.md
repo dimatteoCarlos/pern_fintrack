@@ -1,11 +1,9 @@
 user = c109eb15-4139-43b4-b081-8fb9860588af
 https://www.youtube.com/watch?v=zcPj4eEnhyM
-
-PENDIENTEs
+=======================
+LISTO.
 renderizar el periodo, y el balance inicial y final de la cuenta LISTO.
-renderizar las ultimas transacciones de una cuenta por account_id, en overview account_detail
-MEJORAR LA DESCRIPCION DE LA TRANSACCION. 
-------------------------------
+renderizar las ultimas transacciones de una cuenta por account_id, en overview account_detail.LISTO
 modificar transactions table para registrar el balance nuevo de la cuenta. LISTO
 MODIFICAR transaction controllers and createion controller to consider record balance . LISTO
  
@@ -14,9 +12,23 @@ GET informacion de cuenta segun su account_id LISTO.
 GET las transacciones de una determinada cuenta segun su account_id. LISTO.
 
 enter en tracker transfer, al presionar el boton de seleccion de tipo de cuenta para la cuenta de bottom card, se desabilita el radio de los radio input, y pareceria que se hace submit. LISTO
+------------------------------
+PENDIENTE
+MEJORAR LA DESCRIPCION DE LA TRANSACCION. Hablar con el cliente,pra incorporar sus preferencias. 
+
+EN la DESCRIPCION DE LA CREACION DE UNA CUENTA INVESTMENT, NO SE VE LA HORA QEN QUE SE HACE LA TRANSACTION.
 
 ===========================
-asegurar el criterio del signo para el start account amount sea coherente en todas las cuentas a crear.
+asegurar el criterio del signo para el start account amount sea coherente en todas las cuentas a crear. OBSERVACION
+===========================
+PENDIENTE
+AHORA RESULTA QUE ADD ACCOUNT PARA CREAR UNA CUENTA NUEVA NO FUNCIONA.
+TAMPOCO RECONOCE LOS MOVEMENTS POCKET SAVING, INCOME, ETC.
+
+CUANDO SE ABRE UNA CUENTA, DEBTOR, CON UN PRESTAMO INICIAL DESDE UNA CUANTA BANK EXISTENTE, COMO DEBE REGISTRARSE ELM MOVIMIENTO, COMO ACCOUNT-OPENING, O M COMO DEBT?
+
+EL ACCOUNT OPENING DEBERIA APARECER EN LA CUENTA QUE SE ABRIO, Y LA CUENTA BANK I HIZO UN LEND, DEBERIA APARECER COMO UN DEBT,. AUNQUE , NO SE HIZO DESDE EL TRACKER DE MOVEMENTS PUEH. 
+
 ===========================
 
 TODAS LAS DETAIL PAGES ESTAN PENDIENTES
@@ -257,6 +269,14 @@ meter account type id en transactions para no hacer join, revisar, almomento de 
 SERIA REDUNDANTE . NO SE HIZO.
 =========================
 MISCELANEOS
+EN INVESTMENT ACCOUNT BALANCE
+//PENDIENTE DEFINIR REGLA DE NEGOCIO PARA VALORAR EL STATUS SQUARE Y PASAR EL ALERT
+//questions: does status have some conditional or variable style? semaforo? cual es la regla de negocio?
+//seems that balanceType has at least two possible values: loss / profit or earned
+//capital could be the amount of the investment or not needed?
+//factual balance is datum or calculated?
+//DE DONDE SE TOMA EL CAPITAL INVESTED?
+
 UTILIZAR LOS ID EN LOS QUERYIES Y NO LOS NAME. HABRIA QUE CAMBAIAR BASTANTES QUEERIES. DEJARLO PARA VERSION DEFINITIVA. REALMENTE VALE LA PENA?. 
 LIMPIAR CONSOLE.LOGS.
 

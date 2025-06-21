@@ -1,3 +1,4 @@
+//AccountBalance.tsx
 import { Link } from 'react-router-dom';
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
@@ -7,10 +8,7 @@ import { ACCOUNT_DEFAULT, CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../he
 // import { CurrencyType } from '../../../types/types';
 import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
 import { useEffect, useState } from 'react';
-// import { CreateNewAccountPropType } from '../Overview';
 // import CoinSpinner from '../../../loader/coin/CoinSpinner';
-// import OpenAddEditBtn from '../../../general_components/OpenAddEditBtn';
-// export type AccountToRenderType = Omit<AccountListType,'account_type_id' > & {concept:string}
 
 export type AccountPropType={previousRoute:string}
 
@@ -21,7 +19,6 @@ const concept = 'balance'
 
 //-----------
 function AccountBalance({
-  // createNewAccount,
   previousRoute,
 }:AccountPropType): JSX.Element {
   const user = import.meta.env.VITE_USER_ID;
@@ -46,11 +43,11 @@ function AccountBalance({
         !error &&
         !!bankAccountsData.data.accountList?.length
           ? bankAccountsData.data?.accountList?.map((acc, indx) => ({
+            account_id: acc.account_id ?? indx,
               account_name: acc.account_name,
               concept: {concept}, 
               account_balance: acc.account_balance,
               account_type_name: acc.account_type_name,
-              account_id: acc.account_id ?? indx,
               currency_code: acc.currency_code ?? defaultCurrency,
               account_start_date: acc.account_start_date ?? acc.created_at,
               account_type_id:acc.account_type_id ,
@@ -94,6 +91,7 @@ function AccountBalance({
                 <div className='tile__subtitle tile__subtitle--account'>
                   {account_name} ({account_type_name})
                 </div>
+
                 <div className='tile__title tile__title--account'>
                   {/* {concept}{' '} */}
                   {currencyFormat(
@@ -108,15 +106,6 @@ function AccountBalance({
         })}
       </article>
 
-      {/* {
-        <OpenAddEditBtn
-          btnFunction={createNewAccount}
-          btnFunctionArg={originRoute}
-          btnPreviousRoute={originRoute}
-        >
-          <div className='open__btn__label'>Add Account</div>
-        </OpenAddEditBtn>
-      } */}
     </>
   );
 }

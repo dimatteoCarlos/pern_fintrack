@@ -1,25 +1,10 @@
-
-
-
-//  import {
-//    CURRENCY_OPTIONS,
-//    DATE_TIME_FORMAT_DEFAULT,
-//    DEFAULT_CURRENCY,
-//  } from '../../helpers/constants';
-//  import {
-//    capitalize,
-//    currencyFormat,
-//    isDateValid,
-  //  truncateText,
-//  } from '../../helpers/functions';
-//  import { LastMovementType } from '../../pages/overview/components/LastMovements';
-//  import { BoxContainer, BoxRow } from '../boxComponents';
+//AccountTransactionsList.tsx
 
 import { BoxContainer, BoxRow } from "../../../general_components/boxComponents";
 import { CURRENCY_OPTIONS, DATE_TIME_FORMAT_DEFAULT, DEFAULT_CURRENCY } from "../../../helpers/constants";
 import { capitalize, currencyFormat,  isDateValid,  } from "../../../helpers/functions";
 import { AccountTransactionType } from "../../../types/responseApiTypes";
-import './styles/accountTransactionsList.css'
+import './styles/accountTransactionsList-styles.css'
  
  // Configuración por defecto / default config
  const defaultCurrency = DEFAULT_CURRENCY;
@@ -61,7 +46,7 @@ import './styles/accountTransactionsList.css'
               <BoxRow>
                 <div className='flx-row-sb'>
                   <div className='box__subtitle '
-                  style={{fontSize: '0.75rem',fontWeight: '200',lineHeight: '1rem',letterSpacing: '1px', textAlign:'justify'}}>
+                  style={{fontSize: '0.75rem',fontWeight: '200',lineHeight: '1rem',letterSpacing: '1px'}}>
                 <div className='paragraph'>{(capitalize(description).split(/(Date:.*)/)[0]).trim()}</div>
                     <div className='paragraph'>{capitalize(description).split(/(Date:.*)/).filter(Boolean)[1].split('GMT')[0]}</div>
 
@@ -69,7 +54,6 @@ import './styles/accountTransactionsList.css'
                   </div>
               </BoxRow>
             </BoxRow>
-            {/* <div className="transaction-separator"></div> */}
 
             {/* Balance after transacción */}
                 <BoxRow>

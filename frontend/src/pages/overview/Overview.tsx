@@ -30,6 +30,7 @@ import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import OpenAddEditBtn from '../../general_components/OpenAddEditBtn.tsx';
 
 export type CreateNewAccountPropType = {
   originRoute: string;
@@ -359,18 +360,25 @@ function Overview() {
 
         {
           <AccountBalance
-            // createNewAccount={createNewAccount}
             previousRoute={originRoute}
           />
         }
 
         {
           <InvestmentAccountBalance
-            createNewAccount={createNewAccount}
-            originRoute={originRoute}
+          previousRoute={originRoute}
           />
         }
 
+        {
+        <OpenAddEditBtn   
+          btnFunction={createNewAccount}
+          btnFunctionArg={originRoute}
+          btnPreviousRoute={originRoute}
+        >
+          <div className='open__btn__label'>Add Account</div>
+        </OpenAddEditBtn>
+      }
         <LastMovements
           data={kpiData.LastExpenseMovements}
           title='Last Movements (expense)'
