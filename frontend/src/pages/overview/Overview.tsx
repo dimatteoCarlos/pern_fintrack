@@ -133,7 +133,6 @@ function Overview() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   //------------------
-
   //functions
   function createNewAccount(originRoute: string) {
     navigateTo(originRoute + '/new_account', {
@@ -361,12 +360,14 @@ function Overview() {
         {
           <AccountBalance
             previousRoute={originRoute}
+            accountType={'bank'}
           />
         }
 
         {
           <InvestmentAccountBalance
           previousRoute={originRoute}
+          accountType={'investment'}
           />
         }
 
@@ -379,6 +380,7 @@ function Overview() {
           <div className='open__btn__label'>Add Account</div>
         </OpenAddEditBtn>
       }
+      
         <LastMovements
           data={kpiData.LastExpenseMovements}
           title='Last Movements (expense)'

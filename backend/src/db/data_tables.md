@@ -53,25 +53,3 @@ WHERE table_schema = 'public'
 "currencies"
 "user_accounts"
 "pocket_saving_accounts"
-//--------------------
- SELECT column_name, data_type, is_nullable, column_default
-        FROM information_schema.columns
-        WHERE table_name = 'transactions'
-        ORDER BY ordinal_position
-   
-"column_name"	"data_type"	"is_nullable"	"column_default"
-"transaction_id"	"integer"	"NO"	"nextval('transactions_transaction_id_seq'::regclass)"
-"user_id"	"uuid"	"NO"	
-"description"	"text"	"YES"	
-"amount"	"numeric"	"NO"	
-"movement_type_id"	"integer"	"NO"	
-"transaction_type_id"	"integer"	"NO"	
-"currency_id"	"integer"	"NO"	
-"account_id"	"integer"	"NO"	
-"source_account_id"	"integer"	"YES"	
-"destination_account_id"	"integer"	"YES"	
-"status"	"character varying"	"NO"	
-"transaction_actual_date"	"timestamp without time zone"	"YES"	"CURRENT_TIMESTAMP"
-"created_at"	"timestamp without time zone"	"YES"	"CURRENT_TIMESTAMP"
-"updated_at"	"timestamp without time zone"	"NO"	"CURRENT_TIMESTAMP"
-//--------------------

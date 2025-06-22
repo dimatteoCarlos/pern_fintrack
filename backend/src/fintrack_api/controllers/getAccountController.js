@@ -297,7 +297,7 @@ export const getAccounts = async (req, res, next) => {
 };
 //******************************************************************
 //get account info by account_id
-//endpoint example: http://localhost:5000/api/fintrack/account/11?&user=c109eb15-4139-43b4-b081-8fb9860588af
+//endpoint example: http://localhost:5000/api/fintrack/account/${accountId}?&user=c109eb15-4139-43b4-b081-8fb9860588af
 //******************************************************************
 export const getAccountById = async (req, res, next) => {
   console.log(pc[backendColor]('getAccountById'));
@@ -345,15 +345,18 @@ export const getAccountById = async (req, res, next) => {
       return res.status(400).json({ status: 400, message });
     }
 
-    //--check account_type_name
+    //--check account_type_name developer mode
     console.log('account type', accountResult.rows[0].account_type_name)
-      const { accountTypeName } = req.body;
-      const accountTypeMismatch = accountResult.rows[0].account_type_name !== accountTypeName.trim().toLowerCase()
+
+      const { accountTypeName } = req.body.accountTypeName ?? '';
+
+      const accountTypeMismatch = accountResult.rows[0].account_type_name !== String(accountTypeName).trim().toLowerCase()
 
       if (accountTypeMismatch) {
         const message = `Entered account type mismatch.`;
       console.warn(pc[backendColor](message));
-    }
+      } 
+
      const account_type_name =
       !accountTypeName || accountTypeName == '' || accountTypeMismatch
       ? accountResult.rows[0].account_type_name

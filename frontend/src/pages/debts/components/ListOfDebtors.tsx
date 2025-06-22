@@ -8,6 +8,7 @@ import {
   DebtorListSummaryType,
   DebtorListType,
 } from '../../../types/responseApiTypes';
+import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 
 export type DebtsToRenderType = DebtorListType[];
 
@@ -18,7 +19,7 @@ const defaultDebts: DebtsToRenderType = [
     account_id: 9999999,
     currency_code: 'usd',
     total_debt_balance: 0,
-    debt_receivable: 0,
+    debt_receivable: 1,
     debt_payable: 0,
     debtor: 1,
     creditor: 0,
@@ -32,11 +33,18 @@ const defaultDebts: DebtsToRenderType = [
   //   type: 'lender',
   // },
 ];
+type AccountPropType={previousRoute:string, accountType:string}
+//temporary values------------
+const defaultCurrency = DEFAULT_CURRENCY;
+const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
+  const user = import.meta.env.VITE_USER_ID;
 
-function ListOfDebtors() {
+//-----------
+function ListOfDebtors({previousRoute, accountType}:AccountPropType) {
+  
   //DATA FETCHING
   const { apiData, isLoading, error } = useFetch<DebtorListSummaryType>(
-    `${url_summary_balance_ByType}?type=debtor&user=${USER_ID}`
+    `${url_summary_balance_ByType}?type=${accountType}&user=${USER_ID??user}`
   );
   // console.log('apiData:', apiData);
 
@@ -92,18 +100,21 @@ function ListOfDebtors() {
             // debtor: debtorInd,
             // creditor: creditorInd,
           } = debtor;
+
           const transactionType =
-            debt_payable + debt_receivable < 0 ? 'lender' : 'debtor';
+            (debt_payable + debt_receivable) < 0 ? 'lender' : 'debtor';
 
           return (
             <BoxContainer key={indx}>
               <BoxRow>
-                <Link to={`debts/debtors/:${account_id}`}>
+                <Link to={`debtors/${account_id}`}
+                 state = {{previousRoute, debtorDetailedData:debtor}}
+                >
                   <div className='debtor box__title hover'>{account_name}</div>
                 </Link>
                 <div className='box__title'>
                   {' '}
-                  {currencyFormat(currency_code, total_debt_balance, 'en-US')}
+                  {currencyFormat(currency_code??defaultCurrency, total_debt_balance, formatNumberCountry)}
                 </div>
               </BoxRow>
 

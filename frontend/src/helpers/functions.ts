@@ -13,6 +13,41 @@ export function currencyFormat(
   return formatFn.format(number);
 }
 //--------------------
+export function getCurrencySymbol(chosenCurrency = 'USD') {
+  try {
+    // Creamos un formateador de números específicamente para extraer el símbolo.
+    // Usamos 'narrowSymbol' para obtener la forma más corta del símbolo (ej. $ en lugar de US$).
+    const formatter = new Intl.NumberFormat(undefined, { // 'undefined' usa la configuración regional por defecto del navegador/servidor
+      style: 'currency',
+      currency: chosenCurrency,
+      currencyDisplay: 'narrowSymbol',
+      minimumFractionDigits: 0, // Asegura que no haya decimales al formatear el 0
+      maximumFractionDigits: 0,
+    });
+
+    // Formateamos un número 0 y luego usamos una expresión regular
+    // para quitar los dígitos, comas, puntos y espacios, dejando solo el símbolo.
+    const formattedZero = formatter.format(0);
+    const symbol = formattedZero.replace(/[\d.,\s]/g, '');
+
+    // Si el símbolo resultante es una cadena vacía o es el mismo código de moneda
+    // (lo que ocurre si no hay un símbolo único para esa moneda en esa configuración regional),
+    // devolvemos el código de la moneda original como un fallback.
+    if (symbol === '' || symbol.toUpperCase() === chosenCurrency.toUpperCase()) {
+      return chosenCurrency;
+    }
+
+    return symbol;
+
+  } catch (error) {
+    // En caso de que la moneda no sea válida o haya algún otro error,
+    // devolvemos el código de la moneda como fallback.
+    console.error(`Error al obtener el símbolo para ${chosenCurrency}:`, error);
+    return chosenCurrency;
+  }
+}
+
+//--------------------
 export function digitRound(n = Number.MIN_VALUE, digit = 2) {
   return Math.round(n * Math.pow(10, digit)) / Math.pow(10, digit);
 }

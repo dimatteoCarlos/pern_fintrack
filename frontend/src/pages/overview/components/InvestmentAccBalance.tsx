@@ -10,7 +10,7 @@ import { AccountByTypeResponseType, AccountListType } from '../../../types/respo
 
 import { ACCOUNT_DEFAULT , CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 
-type AccountPropType={previousRoute:string}
+type AccountPropType={previousRoute:string, accountType:string}
 
 //temporary values------------
 const defaultCurrency = DEFAULT_CURRENCY;
@@ -20,7 +20,7 @@ const concept = 'Factual Balance'
 
 //-------------------------------------
 function InvestmentAccountBalance({
-  previousRoute,
+  previousRoute,accountType
 }: AccountPropType) {
   const user = import.meta.env.VITE_USER_ID;
 
@@ -28,7 +28,7 @@ function InvestmentAccountBalance({
   const [investmentAccountsToRender, setInvestmentAccountsToRender] = useState<AccountListType[]>(ACCOUNT_DEFAULT)
 
   //DATA FETCHING
-  const urlInvestmentAccounts = `${url_get_accounts_by_type}/?type=investment&user=${user}`;
+  const urlInvestmentAccounts = `${url_get_accounts_by_type}/?type=${accountType}&user=${user}`;
 
   const { apiData, isLoading, error } = useFetch<AccountByTypeResponseType>(
     urlInvestmentAccounts
@@ -43,7 +43,7 @@ function InvestmentAccountBalance({
              ({
           account_id: acc.account_id ?? indx,
           account_name: acc.account_name,
-         concept: {concept}, 
+          concept: {concept}, 
           account_balance: acc.account_balance,
           account_type_name: acc.account_type_name,
           currency_code: acc.currency_code ?? defaultCurrency,
@@ -127,7 +127,7 @@ function InvestmentAccountBalance({
                   <div className='tile__subtitle subtitle__status__investment--right '>
                     <span style={{ color: 'black', fontSize: '0.875rem' }}>
                       {balanceType}{' '}
-                      {Math.floor(Math.abs(percentage))}
+                      {Math.floor((percentage))}
                       </span>
                     </div>
                   </div>

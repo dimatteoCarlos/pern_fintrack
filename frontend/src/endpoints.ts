@@ -52,8 +52,13 @@ export const url_create_debtor_account: string =
   BASE_URL + '/account/new_account/debtor';
 
 //---GET ACCOUNT INFO BY ACCOUNT ID
+//--for Overview page
 //--endpoint: http://localhost:5000/api/fintrack/account/11?&user=c109eb15-4139-43b4-b081-8fb9860588af
 export const url_get_account_by_id: string = BASE_URL + '/account';
+
+//--for debts page
+//--endpoint: http://localhost:5000/api/fintrack/debts/debtor/${account_id)?&user=c109eb15-4139-43b4-b081-8fb9860588af
+export const url_get_debtor_by_id: string = BASE_URL + '/debts/debtor/';
 
 //---GET ACCOUNT TRANSACTIONS BY ACCOUNT ID
 //--endpoint: http://localhost:5000/api/fintrack/account/transactions/:account_id/?start=&end=&user=c109eb15-4139-43b4-b081-8fb9860588af

@@ -1,5 +1,24 @@
 user = c109eb15-4139-43b4-b081-8fb9860588af
 https://www.youtube.com/watch?v=zcPj4eEnhyM
+===========================
+PENDIENTE
+ACCOUNT DETAIL. LISTO.
+INVESTMENT DETAIL NO EXISTE. LISTO.
+BOTON DE REGRESO DE POCKET DETAIL . LISTO.
+DEBTOR DETAIL
+
+CATEOGRY DETAL
+definir el disenio y lo sobre todos los datos
+DONDE SE METERAN LA PARTE DE EDICION
+EN LOS PAGE DETAIL? O SE HARA UN A LISTA ADMIN?
+definir los campos que se pueden editar
+en el proceso de LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TABLAS DE BBDD.
+estrategias de borrado de informacion defnir.
+No hay un INCOME account detail 
+
+INCOME DETAIL NO EXISTE. PENDIENTE.
+
+
 =======================
 LISTO.
 renderizar el periodo, y el balance inicial y final de la cuenta LISTO.
@@ -15,8 +34,13 @@ enter en tracker transfer, al presionar el boton de seleccion de tipo de cuenta 
 ------------------------------
 PENDIENTE
 MEJORAR LA DESCRIPCION DE LA TRANSACCION. Hablar con el cliente,pra incorporar sus preferencias. 
-
+ERROR ACCOUNT STARTING AMOUNT CUANDO NO HAY TRANSACTIONES
 EN la DESCRIPCION DE LA CREACION DE UNA CUENTA INVESTMENT, NO SE VE LA HORA QEN QUE SE HACE LA TRANSACTION.
+
+LA TRANSFERENCIA DESDE INVESTMENT A POCKET, NO SE REFLEJA BIEN EN EL BALANCE DE INVESTMENT, SALEN 2, Y AUMENTA 1, ESO NO SE ENTIENDE TRANSFER DESDE INVESTMENT A POCKET.
+
+
+
 
 ===========================
 asegurar el criterio del signo para el start account amount sea coherente en todas las cuentas a crear. OBSERVACION
@@ -29,23 +53,9 @@ CUANDO SE ABRE UNA CUENTA, DEBTOR, CON UN PRESTAMO INICIAL DESDE UNA CUANTA BANK
 
 EL ACCOUNT OPENING DEBERIA APARECER EN LA CUENTA QUE SE ABRIO, Y LA CUENTA BANK I HIZO UN LEND, DEBERIA APARECER COMO UN DEBT,. AUNQUE , NO SE HIZO DESDE EL TRACKER DE MOVEMENTS PUEH. 
 
-===========================
 
-TODAS LAS DETAIL PAGES ESTAN PENDIENTES
-definir el disenio y lo sobre todos los datos
-DONDE SE METERAN LA PARTE DE EDICION
-EN LOS PAGE DETAIL? O SE HARA UN A LISTA ADMIN?
-definir los campos que se pueden editar
-en el proceso de LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TABLAS DE BBDD.
-estrategias de borrado de informacion defnir.
-No hay un INCOME account detail 
 =================
-PENDIENTE
-BOTON DE REGRESO DE POCKET DETAIL . LISTO
-CATEOGRY DETAL
-DEBTOR DETAIL
-ACCOUNT DETAIL
-INVESTMENT DETAIL NO EXISTE.
+
 ===========================
 PENDIENTE
 AL HACER UN TRACKER BORROW A CUENTA DBTOR EX SB NO SE VE LA DESCRIPTION EN OVERVIEW

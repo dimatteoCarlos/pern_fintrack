@@ -29,7 +29,11 @@ function Debtors() {
           
           <CardTitle>Summary</CardTitle>
 
-          <ListOfDebtors></ListOfDebtors>
+          <ListOfDebtors
+            previousRoute={originRoute}
+            accountType={'debtor'}
+          
+          ></ListOfDebtors>
         </div>
       </section>
     </>

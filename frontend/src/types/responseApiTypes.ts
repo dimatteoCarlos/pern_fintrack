@@ -366,7 +366,7 @@ export interface DebtorListSummaryType {
   data?: DebtorListType[] | null;
 }
 
-export interface DebtorListType {
+export type DebtorListType ={
   account_name: string;
   account_id: number; //| null;
   currency_code: CurrencyType;

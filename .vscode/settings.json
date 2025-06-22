@@ -1,4 +1,4 @@
 {
-  "files.autoSave": "off",
-  "files.autoSaveDelay": 4000
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 2000
 }

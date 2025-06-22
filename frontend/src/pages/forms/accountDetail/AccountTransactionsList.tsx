@@ -70,7 +70,7 @@ import './styles/accountTransactionsList-styles.css'
            );
          })
         :(
-            <p className="no-transactions">No transactions found for this period</p>)
+            <p className="no-transactions">No transactions found</p>)
             }
        </div>
      </>

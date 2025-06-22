@@ -42,8 +42,10 @@ export function DebtsBigBoxResult({
           {currencyFormat(defaultCurrency, totalAmount, formatNumberCountry)}
         </div>
       </div>
+
       {/***/}
       <div className='debtIndicatorContainer '>
+        
         <div className='debtInfo '>
           <div className='displayScreen--concept light'>{receivable}:</div>
           <div className='displayScreen--result light'>
@@ -58,6 +60,7 @@ export function DebtsBigBoxResult({
           <div className='displayScreen--result light'>{debtorCount}</div>
         </div>
         {}
+        
         <div className='debtInfo '>
           <div className='displayScreen--concept light'>{payable}:</div>
 

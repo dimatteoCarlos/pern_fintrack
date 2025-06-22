@@ -5,12 +5,11 @@ import { CardTitle } from '../../../general_components/CardTitle';
 import { url_get_accounts_by_type } from '../../../endpoints';
 import { useFetch } from '../../../hooks/useFetch';
 import { ACCOUNT_DEFAULT, CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
-// import { CurrencyType } from '../../../types/types';
 import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
 import { useEffect, useState } from 'react';
-// import CoinSpinner from '../../../loader/coin/CoinSpinner';
 
-export type AccountPropType={previousRoute:string}
+
+export type AccountPropType={previousRoute:string, accountType:string}
 
 //temporary values------------
 const defaultCurrency = DEFAULT_CURRENCY;
@@ -19,30 +18,31 @@ const concept = 'balance'
 
 //-----------
 function AccountBalance({
-  previousRoute,
+  previousRoute,accountType,
 }:AccountPropType): JSX.Element {
   const user = import.meta.env.VITE_USER_ID;
 
   //--STATES---------------------
-  const [bankAccountsToRender, setBankAccountsToRender] =
+  const [accountsToRender, setAccountsToRender] =
     useState<AccountListType[]>(ACCOUNT_DEFAULT);
 
   //DATA FETCHING
-  const urlBankAccounts = `${url_get_accounts_by_type}/?type=bank&user=${user}`;
+  const urlGetAccounts = `${url_get_accounts_by_type}/?type=${accountType}&user=${user}`;
+
   const {
-    apiData: bankAccountsData,
+    apiData: accountsData,
     isLoading,
     error,
-  } = useFetch<AccountByTypeResponseType>(urlBankAccounts);
-
+  } = useFetch<AccountByTypeResponseType>(urlGetAccounts);
+  //------------------------------
   useEffect(() => {
-    function updateBankAccounts() {
+    function updateAccounts() {
       const newBankAccounts: AccountListType[] =
-        bankAccountsData &&
+        accountsData &&
         !isLoading &&
         !error &&
-        !!bankAccountsData.data.accountList?.length
-          ? bankAccountsData.data?.accountList?.map((acc, indx) => ({
+        !!accountsData.data.accountList?.length
+          ? accountsData.data?.accountList?.map((acc, indx) => ({
             account_id: acc.account_id ?? indx,
               account_name: acc.account_name,
               concept: {concept}, 
@@ -51,17 +51,15 @@ function AccountBalance({
               currency_code: acc.currency_code ?? defaultCurrency,
               account_start_date: acc.account_start_date ?? acc.created_at,
               account_type_id:acc.account_type_id ,
-
             }))
           : ACCOUNT_DEFAULT;
-
-      setBankAccountsToRender(newBankAccounts);
+      setAccountsToRender(newBankAccounts);
     }
   //---
-    updateBankAccounts();
-  }, [bankAccountsData, isLoading, error]);
+    updateAccounts();
+  }, [accountsData, isLoading, error]);
 
-  console.log('accounts:', bankAccountsData, error, isLoading);
+  console.log('accounts:', accountsData, error, isLoading);
 
   if (isLoading) {
     return <span style={{color:'cyan', width:'100%', textAlign:'center'}}>Loading...</span>;
@@ -78,7 +76,7 @@ function AccountBalance({
       {/* cambiar el nombre de goals__account por bank o expense account*/}
       <article className='goals__account'>
         {/* Account Balance  */}
-        {bankAccountsToRender.map((account) => {
+        {accountsToRender.map((account) => {
           const { account_name, account_balance, account_type_name, account_id, currency_code } = account;
           {
             return (

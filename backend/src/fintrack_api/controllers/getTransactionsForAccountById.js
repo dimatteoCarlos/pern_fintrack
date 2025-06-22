@@ -1,7 +1,7 @@
 // ==============================
 // Module: getTransactionsForAccountById
 // Path: /fintrack/controllers/getTransactionsForAccountById.js
-// Purpose: Handles transactions by account id queries for the account detail
+// Purpose: Handles tr`ansactions by account id queries for the account detail
 // Depends on:
 // ==============================
 
@@ -57,14 +57,15 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     //======================================================
     //check the user id and the account id relation
     const ACCOUNT_USER_QUERY ={
-      text:`SELECT 1 FROM user_accounts ua WHERE account_id = $1 AND user_id =$2 LIMIT 1`,
+      text:`SELECT  account_starting_amount, currency_id 
+      FROM user_accounts ua WHERE account_id = $1 AND user_id =$2 LIMIT 1`,
       values: [accountId, userId]
     }
     
-    const userIdaccountIdResult = await queryFn(ACCOUNT_USER_QUERY.text, ACCOUNT_USER_QUERY.values)
-    // console.log(userIdaccountIdResult.length)
+    const accountInfoNeededResult = await queryFn(ACCOUNT_USER_QUERY.text, ACCOUNT_USER_QUERY.values)
+    console.log(accountInfoNeededResult.length)
 
-    if (userIdaccountIdResult.length === 0) {
+    if (accountInfoNeededResult.length === 0) {
       const message = 'The specified account does not belong to the user.';
       console.warn(pc[backendColor](message));
       return RESPONSE(res, 403, message);//access forbidden
@@ -72,15 +73,27 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     //----------------------------------------------------------
     //date period
     const today = new Date()
-    today.setDate(today.getDate())
+    today.setHours(23,59,59,999) //end of today
+   
     const _daysAgo = new Date(today)
-    _daysAgo.setDate(today.getDate()-31)//mejorar determine the number of days in the month
-    const daysAgoDate=_daysAgo.toISOString().split('T')[0]
+    _daysAgo.setDate(today.getDate()-30)
+    _daysAgo.setHours(0,0,0,0) //start of the day
     
+    //mejorar determine the number of days in the month
+    // const daysAgoDate=_daysAgo.toISOString().split('T')[0]
+    const daysAgoDate=_daysAgo.toISOString()
     const {start, end } = req.query;
     const startDate = new Date(start || daysAgoDate)
-    const endDate = new Date(end || today.toISOString().split('T')[0])
+    const endDate = new Date(end || today.toISOString())
+    // .split('T')[0])
 
+    // Date validation - check if a helper exists
+    if (isNaN(startDate.getTime())) {
+      return RESPONSE(res, 400, 'Invalid start date format. Use YYYY-MM-DD.');
+    }
+    if (isNaN(endDate.getTime())) {
+      return RESPONSE(res, 400, 'Invalid end date format. Use YYYY-MM-DD.');
+    }
     //----------------------------------------------------------------
     //--main query for transactions by account_id and user_id getting account_balance_after_tr
     //--rule: there must exist at least one transaction (account-opening). It should not be possible for an account to exist without a single recorded transaction
@@ -109,9 +122,38 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     }
 
     const transactions = await queryFn(TRANSACTIONS_BY_ACCOUNT_QUERY.text, TRANSACTIONS_BY_ACCOUNT_QUERY.values)
-    // console.log('transactions',transactions)
 
-//get the initial and final balances in the period start - end dates
+    console.log('transactions',transactions)
+//QUE HACER SI NO HAY TRANSACTIONS??
+if(transactions.length===0){
+  const CURRENCY_QUERY =  {
+        text: `SELECT currency_code FROM currencies WHERE currency_id = $1`,
+        values: [accountInfoNeededResult[0].currency_id]
+      };
+      const currencyResult = await queryFn(CURRENCY_QUERY.text, CURRENCY_QUERY.values);
+
+      const data = {
+        totalTransactions: 0,
+        summary: {
+          initialBalance: {
+            amount: parseFloat(accountInfoNeededResult[0].account_starting_amount),
+            currency: currencyResult[0].currency_code,
+            date: startDate.toISOString().split('T')[0]
+          },
+          finalBalance: {
+            amount: parseFloat(accountInfoNeededResult[0].account_starting_amount),
+            currency: currencyResult[0].currency_code,
+            date: endDate.toISOString().split('T')[0]
+          },
+          periodStartDate: startDate.toISOString().split('T')[0],
+          periodEndDate: endDate.toISOString().split('T')[0],
+        },
+        transactions: []
+      };
+
+      return RESPONSE(res, 200, 'No transactions found', data);
+    }
+    //get the initial and final balances in the period start - end dates
 
 //get the initial balance before the first transaction in the period
 const ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY={
@@ -127,17 +169,14 @@ const ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY={
   tr.created_at DESC
   LIMIT 1  
   `,
-  values:[accountId, userId
-     , startDate
-
-  ]
+  values:[accountId, userId, startDate]
 }
-
 const initialBalanceResult= await queryFn(ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY.text,ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY.values)
+
 console.log('initialBalanceResult',initialBalanceResult, startDate, endDate )
 
 //since transactions are ordered by transaction date DESCENDENT, THE first element in the array is the last transaction
-
+//CHECK THE USE OF FIRST TRANSACTION
 const firstTransaction = transactions[transactions.length-1]
 // console.log(transactions[firstTransaction].account_starting_amount)
 
@@ -145,6 +184,7 @@ const lastTransaction = transactions[0]
 console.log('first', firstTransaction.account_starting_amount,'last', lastTransaction)
 
 let initialBalance = {amount:0, currency:'usd',date:new Date()}
+
 if(initialBalanceResult.length>0){
   initialBalance = {amount:parseFloat(initialBalanceResult[0].account_balance_after_tr), currency:initialBalanceResult[0].currency_code, date:initialBalanceResult[0].transaction_actual_date || initialBalanceResult[0].created_at}
 }
@@ -171,7 +211,7 @@ const finalBalance ={amount: parseFloat(lastTransaction.account_balance_after_tr
       },
       transactions
     }
-
+  // const successMsg = `${transactions.length} transaction(s) found for account id ${accountId}.`;
   //==========================================================
   console.log('data')
     return RESPONSE(res, 200, successMsg, data)
@@ -184,6 +224,7 @@ const finalBalance ={amount: parseFloat(lastTransaction.account_balance_after_tr
         if (process.env.NODE_ENV === 'development') {
         console.warn(error.stack);
       }
+
     } else {
       console.error(
         pc.red('Error during getting transactions by account ID'),
