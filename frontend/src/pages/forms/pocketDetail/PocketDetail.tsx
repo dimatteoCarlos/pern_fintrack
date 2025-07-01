@@ -1,190 +1,192 @@
-import { Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
-
-import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
-import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
-import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
-
-import SummaryDetailBox from '../../../general_components/summaryDetailBox/SummaryDetailBox.tsx';
-import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
-import '../styles/forms-styles.css';
 import {
-  ACCOUNT_TYPE_DEFAULT,
+
+  DEFAULT_ACCOUNT_TRANSACTIONS,
+  DEFAULT_CURRENCY,
+  DEFAULT_POCKET_ACCOUNT_LIST,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
-import { PocketsToRenderType } from '../../../types/types.ts';
-// import { StatusSquare } from '../../../general_components/boxComponents.tsx';
-
+import {  PocketSavingAccountsResponseType,PocketSavingAccountListType, AccountSummaryBalanceType, AccountTransactionType,  PocketListType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+import { url_get_account_by_id, url_get_transactions_by_account_id } from '../../../endpoints.ts';
+import { useFetch } from '../../../hooks/useFetch.tsx';
+import { capitalize, formatDateToDDMMYYYY  } from '../../../helpers/functions.ts';
+import '../styles/forms-styles.css';
+import SummaryPocketDetailBox from './summaryPocketDetailBox/SummaryPocketDetailBox.tsx';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
+import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
+import { CardTitle } from '../../../general_components/CardTitle.tsx';
+import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
+//---
+const user = import.meta.env.VITE_USER_ID;
 type LocationStateType = {
-  pocketData: PocketsToRenderType;
+  pocketData: PocketListType;
   previousRoute: string;
 };
 
+//data initializing
+const initialPocketDetail = DEFAULT_POCKET_ACCOUNT_LIST[0]
+const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
+//----------------------------
 function PocketDetail() {
   const location = useLocation();
-  
-  // const {pocketData, previousRoute}: {
-  //   pocketData: PocketsToRenderType;
-  //   previousRoute: string;
-  // } = location.state 
+  const state = location.state as LocationStateType | null;
 
-  const {pocketData, previousRoute}:LocationStateType = location.state 
+  const previousRouteFromState = state?.previousRoute ?? "/fintrack/budget";
+  const {pocketId:accountId} = useParams()
+//------------------------
+//data from endpoint request for info account, and for api transactions by pocket account id
+ //--states
+ //--state for account detail global info
+ const [accountDetail, setAccountDetail] = useState<PocketSavingAccountListType>((initialPocketDetail));
+ const [previousRoute, setPreviousRoute] = useState<string>("/fintrack/overview"); 
+  // const [bubleInfo, setBubleInfo] = useState<PocketListType>(initialBubleInfo); 
+//----------
+ //--state for account transactions data
+  const [transactions, setTransactions]=useState<AccountTransactionType[]>(initialAccountTransactionsData.transactions)
 
-  //------------------------
-  //temporary data
-  // const pocketInfoDefault = {
-  //   name: 'pocket name',
-  //   note: 'Description',
-  //   date: new Date(),
-  //   account: '',
-  //   amount: '0',
-  // };
-  //summary data
-  const summaryDataDefault = {
-    title: 'target amount',
-    amount: 1112.11,
-    subtitle1: '$built',
-    subtitle2: 'status',
-  };
-  //------------------------
-  const accountOptions = ACCOUNT_TYPE_DEFAULT; //define the logic to get the options from backend
-  //Account Options
-  const accountSelectionProp = {
-    title: 'account',
-    options: accountOptions,
-    variant: VARIANT_FORM, //stablishes the custom styles to use in selection dropdown component
-  };
+  const [summaryAccountBalance, setSummaryAccountBalance]=useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary)
+ //-------------------------------------
+ //--Fetch Data
+    //--account detail global info
+    const urlAccountById = `${url_get_account_by_id}/${accountId}?&user=${user}`;
+    const {
+      apiData: accountsData,
+      isLoading,
+      error,
+    } = useFetch<PocketSavingAccountsResponseType >(
+      urlAccountById
+    );
+//--------------------------------
+//period dates considering previous number of months and current month transactions
+    const tdy = new Date()
+    const numberOfMonths=2
+    const firstDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth()-numberOfMonths+1,1)
+    const lastDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth()+1,0)
 
-  // const initialPocketDetail = {
-  //   pocketData ?? pocketInfo,
-  // };
-  //==============================
-//statespocketName
+    //--YYYY-MM-DD
+    const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0]
+    const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0]
 
-  const [pocketDetail, setPocketDetail] = useState({pocketInfo:{
-    name:pocketData.pocketName,
-note:pocketData.description,
-date:pocketData.desired_date,
-account:"",
-amount:0,
-  }});
-  const [isReset, setIsReset] = useState<boolean>(false);
+ //--Fetch Data
+    //--account detail transactions
+    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?user=${user}&start=${apiStartDate}&end=${apiEndDate}`;
 
-  //--functions---
-  function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
-    e.preventDefault();
-    setPocketDetail((prevState) => ({
-      ...prevState,
-      pocketInfo: { ...pocketDetail.pocketInfo, [e.target.name]: e.target.value },
-    }));
+    const {
+      apiData: transactionAccountApiResponse,//{status, message, data}
+      isLoading:isLoadingTransactions,
+      error:errorTransactions,
+    } = useFetch<TransactionsAccountApiResponseType>(
+      urlTransactionsAccountById
+    );
+
+//-------------------------------------
+useEffect(() => {
+  if(transactionAccountApiResponse?.data.transactions){
+    setTransactions(transactionAccountApiResponse?.data.transactions)
+    setSummaryAccountBalance(transactionAccountApiResponse?.data.summary)
   }
+  //else keep the initial values
+}, [transactionAccountApiResponse])
 
-  function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    // setPocketDetail(initialPocketDetail);
-  }
+//-------------------------------------
+useEffect(() => {
+if(previousRouteFromState)(setPreviousRoute(previousRouteFromState))
 
-  function accountSelectHandler(
-    selectedOption: {
-      value: string; //check any
-      label: string;
-    } | null
-  ) {
-    setPocketDetail((prev) => ({
-      ...prev,
-      pocketInfo: { ...pocketDetail.pocketInfo,
-         account: selectedOption!.value },
-    }));
-    console.log('selectedOption', selectedOption);
-  }
+  if(accountsData?.data?.accountList.length ){
+    const account = accountsData?.data?.accountList[0]
 
-  function changeDesiredDate(selectedDate: Date) {
-    setPocketDetail((prevState) => ({
-      ...prevState,
-      pocketInfo: { ...pocketDetail.pocketInfo, date: selectedDate },
-    }));
-  }
+    if(account){setAccountDetail(account)}}
 
+}, [accountsData, accountId,previousRouteFromState])
+ 
+//====================================
   return (
     <>
       <section className='page__container'>
         <TopWhiteSpace variant={'dark'} />
         <div className='page__content'>
           <div className='main__title--container'>
-            {/* <Link  to='budget' relative='path' className='iconLeftArrow'> */}
             <Link  to={previousRoute} relative='path' className='iconLeftArrow'>
               <LeftArrowLightSvg />
             </Link>
-            <div className='form__title'>{pocketDetail.pocketInfo.name}</div>
+            <div className='form__title'>{capitalize(accountDetail?.account_name).toUpperCase()}</div>
             <Link to='edit' className='flx-col-center icon3dots'>
               <Dots3LightSvg />
             </Link>
           </div>
         </div>
 
-        <SummaryDetailBox summaryData={summaryDataDefault}></SummaryDetailBox>
+        <SummaryPocketDetailBox bubleInfo={accountDetail}></SummaryPocketDetailBox>
 
-        <form className='form__box'>
+        <article className='form__box'>
           <div className='form__container'>
+
             <div className='input__box'>
-              <label className='label form__title'>{'note'}</label>
-              <input
-                type='text'
-                className={`input__container`}
-                placeholder={`${'description'}`}
-                onChange={inputHandler}
-                name={'note'}
-                value={pocketDetail.pocketInfo['note']}
-              />
+              <label className='label form__title'>{'Note'}</label>
+              <div className="input__container"
+                style={{ padding: '0.5rem' }}>{(accountDetail?.note)}
+                </div>
+            </div>
+           
+            <div className='input__box'>
+              <label className='label form__title'>{'Desired Date'}</label>
+              <div className="input__container"
+                style={{ padding: '0.5rem' }}>{formatDateToDDMMYYYY(accountDetail.desired_date)}
+                </div>
             </div>
 
-            {/* datepicker */}
+            <div className='account__dateAndCurrency'>
+              <div className='account__date'>
+                <label className='label form__title'>{'Starting Point'}</label>
+                <div
+                  className='form__datepicker__container'
+                  style={{ textAlign: 'center', color:'white' }}
+                >
+                  {formatDateToDDMMYYYY((accountDetail.account_start_date))}
+                </div>
+              </div>
 
-            <label className='label '>{'Desired Date'}</label>
+              <div className='account__currency'>
+                <div className='label form__title'>{'Currency'}</div>
 
-            <div className='form__datepicker__container'>
-              <FormDatepicker
-                changeDate={changeDesiredDate}
-                date={pocketDetail.pocketInfo.date}
-                variant={'form'}
-              ></FormDatepicker>
+                <CurrencyBadge
+                  variant={VARIANT_FORM}
+                  currency={accountDetail.currency_code??DEFAULT_CURRENCY}
+                />
+              </div>
             </div>
           </div>
+ 
 
-          <div className='input__box'>
-            <label className='label form__title'>{'Add Money'}</label>
+        {/* --- TRANSACTION STATEMENT SECTION --- */}
+        <div className="account-transactions__container "
+        style={{margin:'1rem 0'}}
+        >
+        <div className="period-info">
+          <div className="period-info__label">Period</div>
+          <span className="period-info__dates  ">{formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}{'  '}  /  {'  '} {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}</span>
+        </div>
 
-            <DropDownSelection
-              dropDownOptions={accountSelectionProp}
-              updateOptionHandler={accountSelectHandler}
-              isReset={isReset}
-              setIsReset={setIsReset}
-            />
-
-            <div className='inputAmountAndPlusSign'>
-              <input
-                type='text'
-                className={`input__container input__container--amount`}
-                placeholder={`0,00`}
-                name={'amount'}
-                onChange={inputHandler}
-                value={pocketDetail.pocketInfo.amount}
-                style={{ fontSize: '1.25rem', padding: '0 0.75rem' }}
-              />
-
-              <Link to='' className='flx-col-center iconPlusSign'>
-                <PlusSignSvg />
-              </Link>
-            </div>
+         <AccountBalanceSummary summaryAccountBalance={summaryAccountBalance}/>
+        
+          <div className='presentation__card__title__container '>
+            <CardTitle>{'Last Movements'}</CardTitle>
           </div>
 
-          <div className='submit__btn__container'>
-            <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
-          </div>
-        </form>
+         <AccountTransactionsList transactions={transactions} /> 
+        </div>
+          {/* --- END TRANSACTION STATEMENT SECTION --- */}
+
+            {/* <ListContent listOfItems={lastMovements} /> */}        
+          </article>
+
+      {(isLoading || isLoadingTransactions) && <p>Loading...</p>}
+        {(error|| errorTransactions) && <p>Error fetching account info: {error??errorTransactions}</p>}
+
       </section>
     </>
   );
