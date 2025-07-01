@@ -7,7 +7,7 @@ import {
   capitalize,
   currencyFormat,
   isDateValid,
-  truncateText,
+  // truncateText,
 } from '../../helpers/functions';
 import { LastMovementType } from '../../pages/overview/components/LastMovements';
 import { BoxContainer, BoxRow } from '../boxComponents';
@@ -18,6 +18,7 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 
 //-----------------
 function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
+
   const formatDate = (dateInput: Date | string | number): string => {
     const date = new Date(dateInput);
     return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
@@ -28,7 +29,7 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
       <div className='list__main__container'>
         {listOfItems.map((item, indx) => {
           const { accountName, record, description, date, currency } = item;
-
+console.log('item',item)
           return (
             <BoxContainer key={indx}>
               <BoxRow>
@@ -51,7 +52,8 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
                       }}
                     >
                       {' '}
-                      {truncateText(capitalize(description), 150)}
+                      {/* {truncateText(capitalize(description), 150)} */}
+                      {(capitalize(description))}
                     </div>
                   </div>
                 </BoxRow>
