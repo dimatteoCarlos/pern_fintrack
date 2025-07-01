@@ -160,7 +160,7 @@ async function initializeDatabase() {
     }
     //----------
     } else {
-      console.log(pc.yellow('Application already initialized. Skipping tables creation.'));
+      console.log(pc.yellow('Application already initialized. Skipping catalog tables creation.'));
     }
     //--------------------------------------------------
     //truncate or drop all tables manually
@@ -168,12 +168,12 @@ async function initializeDatabase() {
       await Promise.allSettled(
         mainTables.map(async (item, indx) => {
           try {
-            if (item.tblName == 'users' || item.tblName!=='transactions_') {
+            if (item.tblName == 'users' || item.tblName=='transactions') {
               console.log('skip users table');
               return false;
             }
             await pool.query({
-              text: `TRUNCATE TABLE ${item.tblName}  RESTART IDENTITY CASCADE`,
+              text: `TRUNCATE TABLE ${item.tblName} RESTART IDENTITY CASCADE`,
             });
             await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
             console.log(indx, item.tblName, 'truncated');
@@ -191,11 +191,11 @@ async function initializeDatabase() {
             `Table ${mainTables[indx].tblName} failed to truncate:`,
             results.reason
           );
-        }
+        }F
       });
     }
     //=====================================
-    //create tables manually
+    //create tables
     if (false) {
       await Promise.allSettled(
         mainTables.map(async (item, ind) => {

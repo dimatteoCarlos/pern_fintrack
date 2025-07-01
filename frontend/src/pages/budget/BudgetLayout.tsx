@@ -12,13 +12,6 @@ import CoinSpinner from '../../loader/coin/CoinSpinner';
 function BudgetLayout() {
   //temporary values------------
 
-  // const CURRENCY_OPTIONS = { usd: 'en-US', cop: 'cop-CO', eur: 'en-US' };
-  // const defaultCurrency = 'usd';
-  // const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-
-  // const resultAmount = 0;
-  // const remaining = 0;
-
   const userId = import.meta.env.VITE_USER_ID;
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 

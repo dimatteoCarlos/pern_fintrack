@@ -39,8 +39,10 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     }
   };
   // --- End Helper Functions ---
+
   //controller module 
   try {
+    //validation of input data
   const userId = req.body.user || req.query.user;
     if (!userId) {
       const message = 'User ID is required.'
@@ -55,18 +57,20 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
       return RESPONSE(res, 400, message);
     }
     //======================================================
-    //check the user id and the account id relation
-    const ACCOUNT_USER_QUERY ={
-      text:`SELECT  account_starting_amount, currency_id 
-      FROM user_accounts ua WHERE account_id = $1 AND user_id =$2 LIMIT 1`,
+    //check the user id and the account id relationship
+    const ACCOUNT_INFO_QUERY ={
+      text:`SELECT ua.account_starting_amount, ua.account_start_date, cr.currency_code, ua.currency_id 
+             FROM user_accounts ua
+             JOIN currencies cr ON ua.currency_id = cr.currency_id
+             WHERE ua.account_id = $1 AND ua.user_id = $2 LIMIT 1`,
       values: [accountId, userId]
     }
     
-    const accountInfoNeededResult = await queryFn(ACCOUNT_USER_QUERY.text, ACCOUNT_USER_QUERY.values)
+    const accountInfoNeededResult = await queryFn(ACCOUNT_INFO_QUERY.text, ACCOUNT_INFO_QUERY.values)
     console.log(accountInfoNeededResult.length)
 
     if (accountInfoNeededResult.length === 0) {
-      const message = 'The specified account does not belong to the user.';
+      const message = 'The specified account does not belong to the user or does not exist.';
       console.warn(pc[backendColor](message));
       return RESPONSE(res, 403, message);//access forbidden
     }
@@ -79,7 +83,6 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     _daysAgo.setDate(today.getDate()-30)
     _daysAgo.setHours(0,0,0,0) //start of the day
     
-    //mejorar determine the number of days in the month
     // const daysAgoDate=_daysAgo.toISOString().split('T')[0]
     const daysAgoDate=_daysAgo.toISOString()
     const {start, end } = req.query;
@@ -96,7 +99,7 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     }
     //----------------------------------------------------------------
     //--main query for transactions by account_id and user_id getting account_balance_after_tr
-    //--rule: there must exist at least one transaction (account-opening). It should not be possible for an account to exist without a single recorded transaction
+    //--rule: there must exist at least one transaction (account-opening). It should not be possible for an account to exist without this single recorded transaction
 
     const TRANSACTIONS_BY_ACCOUNT_QUERY = {
       text:`
@@ -122,100 +125,65 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     }
 
     const transactions = await queryFn(TRANSACTIONS_BY_ACCOUNT_QUERY.text, TRANSACTIONS_BY_ACCOUNT_QUERY.values)
+// Función para formatear fechas consistentemente
+    const formatDate = (date) => date.toISOString().split('T')[0];
 
-    console.log('transactions',transactions)
-//QUE HACER SI NO HAY TRANSACTIONS??
-if(transactions.length===0){
-  const CURRENCY_QUERY =  {
-        text: `SELECT currency_code FROM currencies WHERE currency_id = $1`,
-        values: [accountInfoNeededResult[0].currency_id]
-      };
-      const currencyResult = await queryFn(CURRENCY_QUERY.text, CURRENCY_QUERY.values);
-
+    //NO  TRANSACTIONS
+    if (transactions.length === 0) {
       const data = {
         totalTransactions: 0,
         summary: {
           initialBalance: {
+            // amount: 0,
             amount: parseFloat(accountInfoNeededResult[0].account_starting_amount),
-            currency: currencyResult[0].currency_code,
-            date: startDate.toISOString().split('T')[0]
+            currency: accountInfoNeededResult[0].currency_code,
+            date: formatDate(startDate)
           },
           finalBalance: {
+            // amount: 0,
             amount: parseFloat(accountInfoNeededResult[0].account_starting_amount),
-            currency: currencyResult[0].currency_code,
-            date: endDate.toISOString().split('T')[0]
+            currency: accountInfoNeededResult[0].currency_code,
+            date: formatDate(endDate)
           },
-          periodStartDate: startDate.toISOString().split('T')[0],
-          periodEndDate: endDate.toISOString().split('T')[0],
+          periodStartDate: formatDate(startDate),
+          periodEndDate: formatDate(endDate),
         },
         transactions: []
       };
-
-      return RESPONSE(res, 200, 'No transactions found', data);
+      return RESPONSE(res, 200, 'No transactions found for the selected period', data);
     }
-    //get the initial and final balances in the period start - end dates
+    console.log('transactions',transactions)
+ 
+ 
+   //Funciones para obtener balances usando accountInfoNeededResult ==========
+    const getInitialBalance = () => {
+      const oldestTransaction = transactions[transactions.length - 1];
+      return {
+        amount: parseFloat(oldestTransaction.account_balance_before_tr || accountInfoNeededResult[0].account_starting_amount),
+        currency: oldestTransaction.currency_code,
+        date: formatDate(startDate)
+      };
+    };
 
-//get the initial balance before the first transaction in the period
-const ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY={
-  text:`SELECT CAST(tr.account_balance_after_tr AS FLOAT) as account_balance_after_tr,cu.currency_code, ua.account_starting_amount, tr.transaction_actual_date, tr.created_at
-  FROM transactions tr
-  JOIN user_accounts ua ON tr.account_id = ua.account_id
-  JOIN currencies cu ON ua.currency_id =  cu.currency_id 
-  WHERE tr.account_id = $1
-    AND ua.user_id = $2
-    AND (tr.transaction_actual_date < $3 OR tr.created_at < $3)
-  ORDER BY 
-  tr.transaction_actual_date DESC  ,
-  tr.created_at DESC
-  LIMIT 1  
-  `,
-  values:[accountId, userId, startDate]
-}
-const initialBalanceResult= await queryFn(ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY.text,ACCOUNT_BALANCE_BEFORE_PERIOD_QUERY.values)
+    const getFinalBalance = () => ({
+      amount: parseFloat(transactions[0].account_balance_after_tr),
+      currency: transactions[0].currency_code,
+      date: formatDate(new Date(transactions[0].transaction_actual_date || transactions[0].created_at))
+    });
 
-console.log('initialBalanceResult',initialBalanceResult, startDate, endDate )
-
-//since transactions are ordered by transaction date DESCENDENT, THE first element in the array is the last transaction
-//CHECK THE USE OF FIRST TRANSACTION
-const firstTransaction = transactions[transactions.length-1]
-// console.log(transactions[firstTransaction].account_starting_amount)
-
-const lastTransaction = transactions[0]
-console.log('first', firstTransaction.account_starting_amount,'last', lastTransaction)
-
-let initialBalance = {amount:0, currency:'usd',date:new Date()}
-
-if(initialBalanceResult.length>0){
-  initialBalance = {amount:parseFloat(initialBalanceResult[0].account_balance_after_tr), currency:initialBalanceResult[0].currency_code, date:initialBalanceResult[0].transaction_actual_date || initialBalanceResult[0].created_at}
-}
-else{
-//if no transaction before period, get the account's opening balance
-initialBalance= {amount:parseFloat(firstTransaction.account_starting_amount),date:firstTransaction.account_start_date, currency:firstTransaction.currency_code}
-}
-console.log("🚀 ~ getTransactionsForAccountById ~ initialBalance:", initialBalance)
-
-const finalBalance ={amount: parseFloat(lastTransaction.account_balance_after_tr), currency:lastTransaction.currency_code, date:lastTransaction.transaction_actual_date
-}
-
-  console.log('starting account amount', {initialBalance} , {finalBalance}, {lastTransaction})
-
- const successMsg = `${transactions.length} transaction(s) found for account id ${accountId}. Period between ${startDate.toISOString().split('T')[0]} and ${endDate.toISOString().split('T')[0]}.`;
-   
-  const data = {
+    // Construir respuesta final
+    const data = {
       totalTransactions: transactions.length,
       summary: {
-        initialBalance,
-        finalBalance,
-        periodStartDate: startDate.toISOString().split('T')[0],
-        periodEndDate: endDate.toISOString().split('T')[0],
+        initialBalance: getInitialBalance(),
+        finalBalance: getFinalBalance(),
+        periodStartDate: formatDate(startDate),
+        periodEndDate: formatDate(endDate),
       },
       transactions
-    }
-  // const successMsg = `${transactions.length} transaction(s) found for account id ${accountId}.`;
-  //==========================================================
-  console.log('data')
-    return RESPONSE(res, 200, successMsg, data)
+    };
 
+    return RESPONSE(res, 200, `${transactions.length} transaction(s) found`, data);
   } catch (error) {
     const generalmessage = `Error while getting transactions for account id ${req.params.accountId}`
      console.error(pc.red(generalmessage), error);

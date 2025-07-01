@@ -24,14 +24,7 @@ const defaultDebts: DebtsToRenderType = [
     debtor: 1,
     creditor: 0,
   },
-  // {
-  //   debtor_name: 'name',
-  //   debtor_id: 1,
-  //   total_amount_borrowed: 0,
-  //   total_amount_lent: 0,
-  //   net_amount: 0,
-  //   type: 'lender',
-  // },
+
 ];
 type AccountPropType={previousRoute:string, accountType:string}
 //temporary values------------

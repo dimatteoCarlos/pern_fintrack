@@ -89,16 +89,17 @@ export async function overviewFetchAll(
   endpoints: EndpointItemType<KPIKeyType>[]
 ): Promise<{ [K in KPIKeyType]: FetchResult<ApiRespDataType[K]> }> {
   const promises = endpoints.map((endpoint) => axios.get(endpoint.url));
-  console.log('🚀 ~ promises:', promises);
+  // console.log('🚀 ~ promises:', promises);
 
   // Espera a que todas las promesas terminen, sean exitosas o no
   const settledResults = await Promise.allSettled(promises);
-  console.log('🚀 ~ settledResults:', settledResults); //[status, value.data.data.monthlyAmounts[{amount, ...},...]]
+  // console.log('🚀 ~ settledResults:', settledResults);
+   //[status, value.data.data.monthlyAmounts[{amount, ...},...]]
 
-  console.log(
-    'Endpoint keys:',
-    endpoints.map((e) => e?.key)
-  );
+  // console.log(
+  //   'Endpoint keys:',
+  //   endpoints.map((e) => e?.key)
+  // );
 
   // Objeto donde se guardarán los resultados, uno por clave (SavingGoals, etc.)
   const results = {} as {
@@ -114,10 +115,10 @@ export async function overviewFetchAll(
     // console.log(endpoints[i]);
 
     const result = settledResults[i]; // Obtenemos {status, value:{data:{data:{accounts, total_target, ...}, message, status}...}. o value.data.data.monthlyAmounts
-    console.log('🚀 ~ result:', result);
+    // console.log('🚀 ~ result:', result);
 
     // Si la promesa fue exitosa
-    console.log('🚀 ~ endpoint:', endpoint);
+    // console.log('🚀 ~ endpoint:', endpoint);
 
     if (result.status === 'fulfilled') {
       const data = result.value.data;
@@ -147,9 +148,9 @@ export async function overviewFetchAll(
         status: 'error',
         error: result.reason as AxiosError,
       };
-      console.error('❌ Error response:', result.reason);
+      // console.error('❌ Error response:', result.reason);
     }
   }
-  console.log('📊 Final results object:', results);
+  // console.log('📊 Final results object:', results);
   return results;
 }

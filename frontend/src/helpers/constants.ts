@@ -1,20 +1,22 @@
-import { AccountListType, TransactionsAccountApiResponseType } from '../types/responseApiTypes';
+import { AccountListType, PocketListType, PocketSavingAccountListType, TransactionsAccountApiResponseType } from '../types/responseApiTypes';
 import {
   AccountingListType,
   CurrencyType,
   DropdownOptionType,
-  PocketsToRenderType,
   VariantType,
 } from '../types/types';
 
 //------------------------
 export const PAGE_LOC_NUM = 3;
-
 //-------------------------
 export const CURRENCY_OPTIONS = { usd: 'en-US', cop: 'cop-CO', eur: 'en-US' };
+
 export const DEFAULT_CURRENCY:CurrencyType = 'usd';
+
 export const DATE_TIME_FORMAT_DEFAULT = 'es-ES';
+
 export const VARIANT_DEFAULT: VariantType = 'tracker';
+
 export const VARIANT_FORM: VariantType = 'form';
 
 //tracker/expense
@@ -88,12 +90,12 @@ export const ACCOUNT_TYPE_DEFAULT: DropdownOptionType[] = [
 
 export const ACCOUNT_DEFAULT:AccountListType[] = [
   {
-    account_name: 'acc name_1',
+    account_name: 'acc name_example',
     // concept: 'balance',
-    account_balance: 0.932546,
+    account_balance: 2546,
     account_id: 2001,
     currency_code: 'cop',
-    account_type_name: 'type1',
+    account_type_name: 'type example',
     account_type_id: 1,
     account_starting_amount:0,
     account_start_date:new Date(),
@@ -112,47 +114,46 @@ export const ACCOUNT_DEFAULT:AccountListType[] = [
   
 ];
 
-//pages/debts/ListPocket.tsx
+//pages/budget/ListPocket.tsx
 //just a DEMO
-export const DEFAULT_POCKET_LIST: PocketsToRenderType[] = [
-  {
-    pocketName: 'Name Pocket 01',
-    description: 'Description 01',
-    saved: Math.random() * 100,
-    goal: Math.random() * 100,
-    status: Math.floor((Math.random() - 0.5) * 100),
-    pocket_id: 4,
-    currency: 'usd',
-    desired_date:new Date()
-  },
-  {
-    pocketName: 'Name Pocket 02',
-    description: 'Description 02',
-    saved: 99,
-    goal: 100,
-    currency: 'cop',
-    pocket_id: 4,
-      desired_date:new Date()
-  },
-  // {
-  //   pocketName: 'Name Pocket 03',
-  //   description: 'Description 03',
-  //   saved: 500,
-  //   goal: 98,
-  //   currency: 'eur',
-  //   pocket_id: 4,
-  // },
-  // {
-  //   pocketName: 'Name Pocket 04',
-  //   description: 'Description 04',
-  //   saved: Math.random() * 100,
-  //   goal: Math.random() * 100,
-  //   currency: 'eur',
-  //   pocket_id: 4,
-  // },
-];
+export const DEFAULT_POCKET_LIST: PocketListType[] = [{
+  account_id: 1,
+    account_name: 'pocket name example',
+    note: 'note example',
+    balance: 100,
+    target: 50,
+    currency_code:DEFAULT_CURRENCY,
+    desired_date:new Date(),
+    account_start_date:new Date(),
+          },
+    {
+    account_name: 'pocket name example',
+    note: 'note example',
+    balance: 0,
+    target:140,
+    currency_code:DEFAULT_CURRENCY,
+    account_id: 1,
+    desired_date:new Date(),    account_start_date:new Date()
+          }
+        ];
 
-//account detail
+   export const DEFAULT_POCKET_ACCOUNT_LIST  :   PocketSavingAccountListType[]=[{
+  account_id: 1,
+    account_name: 'pocket name example',
+    note: 'note example',
+    account_balance: 100,
+    target: 50,
+    currency_code:DEFAULT_CURRENCY,
+    desired_date:new Date(),
+    account_start_date:new Date(),
+    account_type_id:4,
+    account_type_name:'pocket_saving',
+    user_id:'user id'
+          },
+    
+        ];
+
+//account detail transactions
 export const DEFAULT_ACCOUNT_TRANSACTIONS:TransactionsAccountApiResponseType= {
   "status": 200,
   "message": "This is a sample. 5 transaction(s) found for account id SAMPLE. Period between startDate and endDate.",
@@ -190,7 +191,7 @@ export const DEFAULT_ACCOUNT_TRANSACTIONS:TransactionsAccountApiResponseType= {
         "transaction_actual_date": "2025-06-16T00:55:12.445Z",
         "created_at": "2025-06-16T04:55:13.424Z",
         "updated_at": "2025-06-16T04:55:13.424Z",
-        "movement_type_name": "expense",
+        "movement_type_name": "example",
         "currency_code": "usd",
         "account_name": "Nueva Cuenta",
         "account_starting_amount": 1010.55,

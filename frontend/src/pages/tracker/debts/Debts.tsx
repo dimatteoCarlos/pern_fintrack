@@ -441,10 +441,10 @@ function Debts(): JSX.Element {
           trackerName={trackerState}
           currency={currency}
           updateCurrency={updateDataCurrency}
-          // selectedValue={datatrack.debtor}
           setSelectState={setDataTrack}
           isReset={isReset}
           setIsReset={setIsReset}
+          // selectedValue={datatrack.debtor}
           // selectedValue={movementInputData.account}
           //radio input prop
 
@@ -494,7 +494,8 @@ function Debts(): JSX.Element {
 
           </div>
           <div className='validation__errMsg'>
-            {validationMessages['destination']}
+            {validationMessages['account']}
+
           </div>
           <DropDownSelection
             dropDownOptions={accountOptionsToRender}

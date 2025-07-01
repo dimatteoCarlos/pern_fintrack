@@ -70,8 +70,8 @@ export type DebtorRespType = {
 // Complete API response structure
 export interface CreateBasicAccountApiResponseType {
   status: number;
-  data: ResponseDataType;
   message: string;
+  data: ResponseDataType;
 }
 
 // Main response data structure
@@ -104,7 +104,7 @@ interface TransactionInfoType extends TransactionDataType {
 }
 
 // Account basic data structure
-export interface AccountBasicDataType {
+export type  AccountBasicDataType ={
   account_id: number;
   account_name: string;
   account_type_id: number;
@@ -221,7 +221,7 @@ export type AccountListType = Omit<
   'currency_id'| 'updated_at'
   //  | 'created_at' 
 >;
-
+//--
 //category_budget type
 export type CategoryBudgetAccountsResponseType = {
   status: number;
@@ -242,6 +242,40 @@ type CategoryBudgetAccountListType = Omit<
   account_starting_amount: number;
   account_start_date: Date | string;
 };
+//--
+//pocket_saving type
+export type PocketSavingAccountsResponseType = {
+  status: number;
+  message: string;
+  data: {
+    rows: number;
+    accountList: PocketSavingAccountListType[];
+  };
+};
+
+export type PocketSavingAccountListType = {
+account_id: number;
+    account_name: string;
+    account_type_id: number;
+    account_type_name: string;
+    currency_id?: number;
+    currency_code: CurrencyType;
+    account_balance: number;
+    account_starting_amount?: number;
+    account_start_date: string | Date;
+    created_at?: Date;
+    updated_at?: Date;
+  target: number;
+  note: string;
+  desired_date: Date | string;
+  user_id:string;
+ 
+
+  // account_starting_amount: number;
+  // account_start_date: Date | string;
+};
+
+
 
 //MOVEMENT TRANSFER BETWEEN ACCOUNTS
 export type MovementTransactionResponseType = {
@@ -378,21 +412,23 @@ export type DebtorListType ={
 }
 
 //POCKET LIST SUMMARY
-export interface PocketListSummaryType {
+export type PocketListSummaryType = {
   status: number;
   message: string;
   data?: PocketListType[] | null;
 }
 
-export interface PocketListType {
+export type PocketListType ={
   account_name: string;
   account_id: number; //| null;
   currency_code: CurrencyType;
-  total_balance: number; //| null;
-  total_remaining?: number; //| null;
-  total_target: number;
+  balance: number; //| null;
+
+  remaining?: number; //| null;
+  target: number;
   desired_date:Date;
   note: string;
+  account_start_date:Date | string;
 }
 //--------------------------------
 //get transactions for account by id
@@ -433,7 +469,7 @@ export type AccountTransactionType = {
   account_start_date: string; // ISO 8601 date string
 };
 
-type AccountTransactionDataType = {
+export type AccountTransactionDataType = {
   totalTransactions: number;
   summary: AccountSummaryBalanceType;
   transactions: AccountTransactionType[];

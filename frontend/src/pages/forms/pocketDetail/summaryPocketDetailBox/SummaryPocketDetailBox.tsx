@@ -22,7 +22,7 @@ function SummaryPocketDetailBox({ bubleInfo }:SummaryDetailPropType ) {
    } = bubleInfo;
   const remaining = (target - account_balance)
 
- console.log('bubleInfo', bubleInfo,'target', target, 'account_balance', account_balance, currency_code)
+//  console.log('bubleInfo', bubleInfo,'target', target, 'account_balance', account_balance, currency_code)
  
   return (
     <>

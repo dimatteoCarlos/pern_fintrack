@@ -3,35 +3,29 @@ import { useEffect, useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
-import ListContent from '../../../general_components/listContent/ListContent.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
-import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
-import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
-
-import SummaryDetailBox from '../../../general_components/summaryDetailBox/SummaryDetailBox.tsx';
-import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
-
-// import { StatusSquare } from '../../../general_components/boxComponents.tsx';
 import '../styles/forms-styles.css';
 import {
   DEFAULT_ACCOUNT_TRANSACTIONS,
   DEFAULT_CURRENCY,
-  DEFAULT_LAST_MOVEMENTS,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
-import { AccountByTypeResponseType, AccountListType, AccountSummaryBalanceType, AccountTransactionType, DebtorListType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+import { AccountByTypeResponseType, AccountListType, AccountSummaryBalanceType, AccountTransactionDataType, AccountTransactionType, DebtorListType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { url_get_account_by_id, url_get_transactions_by_account_id  } from '../../../endpoints.ts';
 import { useFetch } from '../../../hooks/useFetch.tsx';
 import { capitalize, formatDateToDDMMYYYY, numberFormatCurrency } from '../../../helpers/functions.ts';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
-//
+import SummaryDebtorDetailBox from './summaryDebtorDetailBox/SummaryDebtorDetailBox.tsx';
+
+//---------------
 const user = import.meta.env.VITE_USER_ID;
 
 type LocationStateType ={
-previousRoute:string; debtorDetailedData:DebtorListType;
+  previousRoute:string; debtorDetailedData:DebtorListType;
 }
+
 //--functions
   function getBubleInfoFromAccountDetail(accountDetail:AccountListType):DebtorListType{
     return {
@@ -44,20 +38,21 @@ previousRoute:string; debtorDetailedData:DebtorListType;
     creditor: accountDetail.account_balance<0?1:0,
     debtor: accountDetail.account_balance>=0?1:0,
 }}
-  // let initialAccountDetail:AccountListType,x
+  // let initialAccountDetail:AccountListType
   const initialAccountDetail:AccountListType = {
   account_name: 'Lastname, name example',
   account_id:1000, //| null;
   currency_code: 'usd',
   account_balance: 10, //| null;
-   account_type_name: 'que pasa NO actualiza el estado',
+   account_type_name: 'debtor',
    account_type_id: 3,
    account_starting_amount:0,
    account_start_date:new Date(),
   };
 
-  const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
-  console.log('initialAccountTransactions', initialAccountTransactionsData)
+  const initialAccountTransactionsData: AccountTransactionDataType = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
+
+   // console.log('initialAccountTransactions', initialAccountTransactionsData)
 
 //---------------------------
 function DebtorDetail() {
@@ -65,10 +60,9 @@ const location = useLocation()
   const state = location.state as LocationStateType | null;
   const debtorDetailedData = state?.debtorDetailedData;
   const previousRouteFromState = state?.previousRoute ?? "/fintrack/debts/debtors"
-
-   const { debtorId:accountId} = useParams()
-  console.log('location',  accountId,'useParams', useParams(), {debtorDetailedData})
-
+  const { debtorId:accountId} = useParams()
+  // console.log('location',  accountId,'useParams', useParams(), {debtorDetailedData})
+//------------------------
   //initial state values
   // initialBubleInfo:DebtorListType
   const initialBubleInfo:DebtorListType=debtorDetailedData??getBubleInfoFromAccountDetail(initialAccountDetail)
@@ -87,8 +81,10 @@ const location = useLocation()
 //-------------------------------------
 //--Fetch Data
 //--account detail global info
-console.log('urlDesg', url_get_account_by_id, accountId, user)
+// console.log('urlDesg', url_get_account_by_id, accountId, user)
+
   const urlAccountById = `${url_get_account_by_id}/${accountId}?&user=${user}`;
+  
     const {
       apiData: accountsData,
       isLoading,
@@ -97,7 +93,7 @@ console.log('urlDesg', url_get_account_by_id, accountId, user)
      urlAccountById
     );
 
-  console.log('accountsData', {accountsData},'url',  urlAccountById)
+  console.log('accountsData', accountsData,'url',  urlAccountById)
   //--account transaction api response
   //--how to handle dates period
 const tdy = new Date()
@@ -119,7 +115,6 @@ const tdy = new Date()
     } = useFetch<TransactionsAccountApiResponseType>(
       urlTransactionsAccountById
     );
-
 //-------------------------------------
 //--    
 useEffect(()=>{
@@ -128,12 +123,11 @@ useEffect(()=>{
      const account = accountsData.data.accountList[0]
     //  const account = accountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
     if(account){setAccountDetail(account)
+      
     setBubleInfo(getBubleInfoFromAccountDetail(accountsData?.data?.accountList[0]) )
     }
   }
-    // setAccountDetail(accountsData?.data?.accountList[0]);
-    // setBubleInfo(getBubleInfoFromAccountDetail(accountsData?.data?.accountList[0]) 
-  
+    
   },[accountsData?.data?.accountList, previousRouteFromState])
 
 //-------------------------------------
@@ -146,9 +140,6 @@ useEffect(() => {
 }, [transactionAccountApiResponse])
 
 //--------------------------------------
-
-
-
 
 console.log('account detail', accountDetail)
   return (
@@ -168,7 +159,7 @@ console.log('account detail', accountDetail)
             </Link>
           </div>
 
-          <SummaryDetailBox bubleInfo={bubleInfo}></SummaryDetailBox>
+          <SummaryDebtorDetailBox bubleInfo={bubleInfo}></SummaryDebtorDetailBox>
 
           <article className='form__box'>
             <div className='form__container'>
@@ -227,15 +218,10 @@ console.log('account detail', accountDetail)
             <CardTitle>{'Last Movements'}</CardTitle>
           </div>
 
-
-
          <AccountTransactionsList transactions={transactions} />
-          </div>
+        </div>
           {/* --- END TRANSACTION STATEMENT SECTION --- */}
 
-            {/* <ListContent listOfItems={lastMovements} /> */}
-
-            
           </article>
 
           

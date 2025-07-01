@@ -67,7 +67,7 @@ type KPIDataStateType = {
   LastPocketMovements: LastMovementType[] | null;
   LastInvestmentMovements: LastMovementType[] | null;
 };
-//----------------------------------------------
+//-----------------------------------------
 //data to be fetched
 const overviewKPIendpoints: KPIEndpointType[] = [
   {
@@ -308,6 +308,7 @@ function Overview() {
               }
             )
           : null;
+
         //-------------
         setKpiData({
           SavingGoals: savingGoalsData,
@@ -327,7 +328,7 @@ function Overview() {
         setIsLoading(false);
       }
     };
-
+//---
     fetchOverviewData();
   }, []);
 
@@ -407,8 +408,6 @@ function Overview() {
           data={kpiData.LastInvestmentMovements}
           title='Last Movements (investment)'
         />
-
-
       </div>
     </section>
   );

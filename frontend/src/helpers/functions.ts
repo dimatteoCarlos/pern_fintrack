@@ -154,13 +154,14 @@ export function isValidCurrencyCode(currency: string): boolean {
 //-----------------------
 // Función para formatear números con soporte opcional de moneda y decimales
 export function numberFormatCurrency(
-  x: number | string,
+  x: number | string=0,
   decimals: number = 2, // Argumento opcional para el número de decimales (predeterminado: 2)
   currency?: string, // Argumento opcional para la moneda
   formatNumberCountry: string = 'en-US'
 ): string {
   // Convertir la entrada a número. Si no es válido, devolver una cadena vacía.
-  const enteredNumber = parseFloat(x.toString());
+  const enteredNumber = parseFloat(String(x));
+  // const enteredNumber = parseFloat(x.toString());
 
   // Verificar si el valor es un número válido
   if (isNaN(enteredNumber)) {
@@ -321,7 +322,8 @@ export function checkNumberFormatValue(value: string): {
     const valueNumber = !isNaN(parseFloat(value)) ? parseFloat(value) : 0;
 
     return {
-      formatMessage: 'decimal point as std', //'point as decimal, no th separators with optional point as decimal sep ',
+      formatMessage: ""//'decimal point format', //'point as decimal, no th separators with optional point as decimal sep '
+       ,
       valueNumber: valueNumber.toString(),
       valueToSave: valueNumber,
       isError: false,

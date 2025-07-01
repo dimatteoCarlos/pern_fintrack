@@ -13,12 +13,12 @@ const errorColor = 'red';
 
 //common functions
 
-// const RESPONSE = (res, status, message, data = null) => {
-//   const backendColor =
-//     status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
-//   console.log(pc[backendColor](`[${status}] ${message}`));
-//   res.status(status).json({ status, message, data });
-// };
+const RESPONSE = (res, status, message, data = null) => {
+  const backendColor =
+    status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
+  console.log(pc[backendColor](`[${status}] ${message}`));
+  res.status(status).json({ status, message, data });
+};
 
 // const ERR_RESP = (status, message, controllerName = null) => {
 //   const backendColor =
@@ -297,8 +297,8 @@ export const getAccounts = async (req, res, next) => {
 };
 //******************************************************************
 //get account info by account_id
-//endpoint example: http://localhost:5000/api/fintrack/account/${accountId}?&user=c109eb15-4139-43b4-b081-8fb9860588af
-//******************************************************************
+//endpoint example: http://localhost:5000/api/fintrack/account/${accountId}?&user=${user}
+//**************************************
 export const getAccountById = async (req, res, next) => {
   console.log(pc[backendColor]('getAccountById'));
     console.log(
@@ -313,7 +313,7 @@ export const getAccountById = async (req, res, next) => {
     'originalUrl:',
     req.originalUrl
   );
-  // const client = await pool.connect();
+
   try {
    const userId = req.body.user ?? req.query.user;
     if (!userId) {
@@ -321,6 +321,7 @@ export const getAccountById = async (req, res, next) => {
       console.warn(pc.blueBright(message));
       return res.status(400).json({ status: 400, message });
     }
+
     const {accountId } = req.params;
       if (!accountId) {
       const message = `Account ID is required.`;
@@ -328,7 +329,7 @@ export const getAccountById = async (req, res, next) => {
       return res.status(400).json({ status: 400, message });
     }
     //======================================================
-    //--get account info
+    //--get account basic info and its type name
     const accountResult = await pool.query({
       text: `SELECT act.account_type_name , ua.*
         FROM user_accounts ua
@@ -348,6 +349,7 @@ export const getAccountById = async (req, res, next) => {
     //--check account_type_name developer mode
     console.log('account type', accountResult.rows[0].account_type_name)
 
+    /*
       const { accountTypeName } = req.body.accountTypeName ?? '';
 
       const accountTypeMismatch = accountResult.rows[0].account_type_name !== String(accountTypeName).trim().toLowerCase()
@@ -357,57 +359,26 @@ export const getAccountById = async (req, res, next) => {
       console.warn(pc[backendColor](message));
       } 
 
-     const account_type_name =
-      !accountTypeName || accountTypeName == '' || accountTypeMismatch
+      const account_type_name =
+      !req.body.accountTypeName || req.body.accountTypeName == '' 
+      //|| accountTypeMismatch
       ? accountResult.rows[0].account_type_name
-      : accountTypeName.trim().toLowerCase();
-      
-      //======================================================
-    //--get account info by account id and account type (redundant?)
+      : req.body.accountTypeName.trim().toLowerCase();
+*/
+     const account_type_name =accountResult.rows[0].account_type_name
+
+     //is it redundant?
+    if(!['pocket_saving','category_budget', 'bank', 'investment', 'income_source','debtor'].includes(account_type_name)){
+    const message = `${account_type_name} is not included in the account types`
+    console.warn(message)
+     return RESPONSE(res, 400, message);
+    }
+   //====================================
+    //--get account info by account id and account type (catgory_budget, debtor or pocket_saving)
     //--bank account type
-    const accountTypeQuery = {
-      // bank: {
-        //   typeQuery: {
-          //     text: `SELECT ua.*,  ct.currency_code, act.*
-          //     FROM user_accounts ua
-      //     JOIN currencies ct ON ua.currency_id = ct.currency_id
-      //     JOIN account_types act ON ua.account_type_id = act.account_type_id
-      //     WHERE ua.user_id = $1
-      //     AND act.account_type_name = $2
-      //     AND ua.account_id = $3
-      //  `,
-      //     values: [userId, account_type_name, accountId ],
-      //   },
-      // },
-      //investment
-      // investment: {
-      //   typeQuery: {
-      //      text: `SELECT ua.*,  ct.currency_code, act.*
-      //     FROM user_accounts ua
-      //     JOIN currencies ct ON ua.currency_id = ct.currency_id
-      //     JOIN account_types act ON ua.account_type_id = act.account_type_id
-      //     WHERE ua.user_id = $1
-      //     AND act.account_type_name = $2
-      //     AND ua.account_id = $3
-      //  `,
-      //     values: [userId, account_type_name, accountId ],
-      //   },
-      // },
-      // income_source: {
-      //   typeQuery: {
-      //      text: `SELECT ua.*,  ct.currency_code, act.*
-      //     FROM user_accounts ua
-      //     JOIN currencies ct ON ua.currency_id = ct.currency_id
-      //     JOIN account_types act ON ua.account_type_id = act.account_type_id
-      //     WHERE ua.user_id = $1
-      //     AND act.account_type_name = $2
-      //     AND ua.account_id = $3
-      //     `,
-      //     values: [userId, account_type_name, accountId ],
-      //   },
-      // },
-      
-      //category_budget
+    
+ const accountTypeQuery = {
+   //category_budget
       category_budget: {
         typeQuery: {
           text: `SELECT ua.*, act.*,cba.*, ct.currency_code, cnt.category_nature_type_name
@@ -456,15 +427,56 @@ export const getAccountById = async (req, res, next) => {
           values: [userId, accountId, account_type_name, 'slack'],
         },
       },
+      // bank: {
+        //   typeQuery: {
+          //     text: `SELECT ua.*,  ct.currency_code, act.*
+          //     FROM user_accounts ua
+      //     JOIN currencies ct ON ua.currency_id = ct.currency_id
+      //     JOIN account_types act ON ua.account_type_id = act.account_type_id
+      //     WHERE ua.user_id = $1
+      //     AND act.account_type_name = $2
+      //     AND ua.account_id = $3
+      //  `,
+      //     values: [userId, account_type_name, accountId ],
+      //   },
+      // },
+      //investment
+      // investment: {
+      //   typeQuery: {
+      //      text: `SELECT ua.*,  ct.currency_code, act.*
+      //     FROM user_accounts ua
+      //     JOIN currencies ct ON ua.currency_id = ct.currency_id
+      //     JOIN account_types act ON ua.account_type_id = act.account_type_id
+      //     WHERE ua.user_id = $1
+      //     AND act.account_type_name = $2
+      //     AND ua.account_id = $3
+      //  `,
+      //     values: [userId, account_type_name, accountId ],
+      //   },
+      // },
+      // income_source: {
+      //   typeQuery: {
+      //      text: `SELECT ua.*,  ct.currency_code, act.*
+      //     FROM user_accounts ua
+      //     JOIN currencies ct ON ua.currency_id = ct.currency_id
+      //     JOIN account_types act ON ua.account_type_id = act.account_type_id
+      //     WHERE ua.user_id = $1
+      //     AND act.account_type_name = $2
+      //     AND ua.account_id = $3
+      //     `,
+      //     values: [userId, account_type_name, accountId ],
+      //   },
+      // },
     };
 
     //check account type on ddbb
     //es necesario chequear si el usuario tiene ese tipo de cuentas?
 
-    const accountListResult = 
-    account_type_name === 'bank'||'investment'||'source_income'
+    const accountListResult = ['bank','investment','source_income'].includes(account_type_name)
+
     ? accountResult
-    : await pool.query(
+    :
+      await pool.query(
       accountTypeQuery[account_type_name].typeQuery
     );
 

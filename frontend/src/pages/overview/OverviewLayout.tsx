@@ -66,19 +66,21 @@ function OverviewLayout() {
   //remeber income account balance is negative (withdraws) and expense accoutn balance is positive (deposits)
   const { netWorth, totalIncome, totalExpense } = useMemo(() => {
     const totalIncome =
-      (Number(incomeBalanceApiData?.data?.total_balance) ?? 0) * -1;
+      Math.abs(Number(incomeBalanceApiData?.data?.total_balance) ?? 0) ;
 
     const totalExpense = expenseBalanceApiData?.data?.total_balance ?? 0;
-    return { totalIncome, totalExpense, netWorth: totalIncome - totalExpense };
+    const netWorth= (totalIncome - totalExpense)==0?0:totalIncome-totalExpense
+
+    return { totalIncome, totalExpense, netWorth };
   }, [
     incomeBalanceApiData?.data?.total_balance,
     expenseBalanceApiData?.data?.total_balance,
   ]);
 
   const bigScreenInfo = [
-    { title: 'net worth', amount: netWorth },
-    { title: 'income', amount: totalIncome },
-    { title: 'expenses', amount: totalExpense },
+    { title: 'net worth', amount: isNaN(netWorth)?0:netWorth },
+    { title: 'income', amount: isNaN(totalIncome)?0:totalIncome },
+    { title: 'expenses', amount: isNaN(totalIncome)?0:totalExpense },
   ];
 
   return (
@@ -96,6 +98,7 @@ function OverviewLayout() {
           <CoinSpinner />
         </div>
       )}
+
       <BigBoxResult bigScreenInfo={bigScreenInfo} />
 
       {(incomeBalanceError || expenseBalanceError) && (
@@ -109,7 +112,7 @@ function OverviewLayout() {
           }}
         >
           {/* Error: */}
-          {errorMessage}
+           {errorMessage}
         </p>
       )}
       <Overview />

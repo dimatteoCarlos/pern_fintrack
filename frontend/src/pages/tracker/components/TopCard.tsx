@@ -139,6 +139,7 @@ const TopCard = <T extends Record<string, unknown>>({
 
         <div className='account card--title '>
           {capitalize(title2).trim()}
+          
 
           {radioInputProps && (
             <RadioInput
@@ -153,9 +154,9 @@ const TopCard = <T extends Record<string, unknown>>({
           )}
         </div>
 
-        <div className='validation__errMsg '>
+        <span className='validation__errMsg '>
           {validationMessages[`${title2.toLowerCase().trim()}`]}
-        </div>
+        </span>
 
         <DropDownSelection
           dropDownOptions={topCardOptions}

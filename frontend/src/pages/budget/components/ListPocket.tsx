@@ -17,9 +17,8 @@ import {
   PocketListType,
 } from '../../../types/responseApiTypes.ts';
 import { useFetch } from '../../../hooks/useFetch.tsx';
-//------------------------------------------
 
-//==============================================
+//============================================
 function ListPocket({previousRoute}:{previousRoute:string}) {
 console.log('originRoute', previousRoute)
  //DATA FETCHING
@@ -34,6 +33,8 @@ console.log('originRoute', previousRoute)
       ? apiData?.data
       : DEFAULT_POCKET_LIST;
 
+      console.log('apidata', pocketList)
+
   return (
     <article className='list__main__container '>
       {pocketList.map((pocket, indx) => {
@@ -41,8 +42,8 @@ console.log('originRoute', previousRoute)
           pocket;
         return (
           <Link
-          to={`pockets/:${account_id}`}
-          state={{pocketData:pocket, previousRoute}}
+          to={`pockets/${account_id}`}
+          state={{ previousRoute}}
             className='card__tile__pocket line__container'
             key={`pockect-${indx}-${account_id}`}
           >

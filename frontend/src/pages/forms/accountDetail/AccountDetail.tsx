@@ -26,12 +26,12 @@ const user = import.meta.env.VITE_USER_ID;
 type LocationStateType ={
 previousRoute:string; detailedData:AccountListType;
 }
-//temporary data (used if API data is not available or for initial state)
+//dummy data (used if API data is not available or for initial state)
 //account main data
 const initialAccountDetail = ACCOUNT_DEFAULT[0]
 
 const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
-console.log('initialAccountTransactions', initialAccountTransactionsData)
+// console.log('initialAccountTransactions', initialAccountTransactionsData)
 //---------------
 function AccountDetail() {
   const location = useLocation() 
@@ -40,7 +40,7 @@ function AccountDetail() {
   const previousRouteFromState = state?.previousRoute ?? "/";
   const {accountId} = useParams()
   console.log('location',  accountId, detailedData)
-
+//--------------------------------------------------
   //data from endpoint request for info account, and for api transactions by accountId
  //--states
  //--state for account detail global info
@@ -50,8 +50,7 @@ function AccountDetail() {
     const [transactions, setTransactions]=useState<AccountTransactionType[]>(initialAccountTransactionsData.transactions)
 
     const [summaryAccountBalance, setSummaryAccountBalance]=useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary)
-
-    //-------------------------------------
+ //-------------------------------------
     //--Fetch Data
     //--account detail global info
     const urlAccountById = `${url_get_account_by_id}/${accountId}?&user=${user}`;

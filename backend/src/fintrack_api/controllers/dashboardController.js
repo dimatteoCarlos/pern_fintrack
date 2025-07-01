@@ -292,7 +292,7 @@ GROUP BY  ct.currency_code
 //========================================================
 //get the total balance for 'category_budget', 'debtor' and 'pocket_saving'. Considering also goals, budget, target,
 //get: //http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=&user=
-//========================================================
+//=====================================
 export const dashboardAccountSummaryList = async (req, res, next) => {
   const backendColor = 'yellow';
   const errorColor = 'red';
@@ -356,14 +356,14 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
       //for pocket_saving and debtor account,  is like listing the account balance of each account.grouping by currency.
 
       pocket_saving: {
-        text: `SELECT ua.account_name, ua.account_id, CAST((ua.account_balance) AS FLOAT ) AS total_balance, CAST((st.target) AS FLOAT ) AS total_target,  ct.currency_code, st.note, st.desired_date
+        text: `SELECT ua.account_name, ua.account_id,ua.account_start_date, CAST((ua.account_balance) AS FLOAT ) AS balance, CAST((st.target) AS FLOAT ) AS target,  ct.currency_code, st.note, st.desired_date
           FROM user_accounts ua
             JOIN account_types act ON ua.account_type_id = act.account_type_id
             JOIN pocket_saving_accounts st ON ua.account_id = st.account_id
             JOIN currencies ct ON ua.currency_id = ct.currency_id
           WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
           -- GROUP BY ua.account_name, ct.currency_code, ua.account_id, st.target, st.note, 
-          ORDER BY total_balance DESC, ua.account_name ASC
+          ORDER BY balance DESC, ua.account_name ASC
 `,
         values: [userId, accountType, 'slack'],
       },

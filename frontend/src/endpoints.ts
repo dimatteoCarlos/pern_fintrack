@@ -53,7 +53,8 @@ export const url_create_debtor_account: string =
 
 //---GET ACCOUNT INFO BY ACCOUNT ID
 //--for Overview page
-//--endpoint: http://localhost:5000/api/fintrack/account/11?&user=c109eb15-4139-43b4-b081-8fb9860588af
+//--endpoint: http://localhost:5000/api/fintrack/account/11?&user=${user}
+//api response type data:PocketListSummaryType
 export const url_get_account_by_id: string = BASE_URL + '/account';
 
 //--for debts page

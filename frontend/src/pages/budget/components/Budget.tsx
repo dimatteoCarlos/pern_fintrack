@@ -46,8 +46,7 @@ function Budget() {
           </OpenAddEditBtn>
 
           <CardTitle>Pockets</CardTitle>
-
-          <ListPocket previousRoute={originRoute}/>
+        <ListPocket previousRoute={originRoute}/>
 
           <OpenAddEditBtn
             btnFunction={createNewPocket}
