@@ -29,7 +29,7 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
       <div className='list__main__container'>
         {listOfItems.map((item, indx) => {
           const { accountName, record, description, date, currency } = item;
-console.log('item',item)
+        console.log('item',item)
           return (
             <BoxContainer key={indx}>
               <BoxRow>

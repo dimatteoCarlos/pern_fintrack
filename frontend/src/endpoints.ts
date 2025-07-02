@@ -129,8 +129,8 @@ export const dashboardMovementTransactionsByType: string =
   BASE_URL + '/dashboard/movements/account_type/';
 //-----------------------------------------------------------
 // controller:dashboardMovementTransactions
-// insomnia:fintrack dashboard movement transaction by MOVEMENT NAME
-// endpoint:dashboardMovementTransactionsByType
+// insomnia: fintrack dashboardMovementTransactions
+// endpoint:dashboardMovementTransactions
 //example:http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=pocket&user=${user}
 //http://localhost:5000/api/fintrack/dashboard/movements/movement/?start=&end=&movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
 export const dashboardMovementTransactions: string =

@@ -191,10 +191,10 @@ async function initializeDatabase() {
             `Table ${mainTables[indx].tblName} failed to truncate:`,
             results.reason
           );
-        }F
+        }
       });
     }
-    //=====================================
+    //====================================
     //create tables
     if (false) {
       await Promise.allSettled(
