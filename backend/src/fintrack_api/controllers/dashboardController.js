@@ -591,11 +591,11 @@ export const dashboardMovementTransactions = async (req, res, next) => {
 
           WHERE ua.user_id = $1
             AND (act.account_type_name = $2) AND ua.account_name != $3
-            AND mt.movement_type_name = $4
-            AND( tr.amount<0)
+            AND( mt.movement_type_name = $4  OR mt.movement_type_name=$5)
+
           ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
           `,
-        values: [userId, accountTypeMap.income, 'slack', movement_type_name],
+        values: [userId, accountTypeMap.income, 'slack', movement_type_name, 'account-opening'],
       };
       break;
 
