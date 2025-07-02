@@ -502,7 +502,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   const startDate = new Date(start || daysAgo);
   const endDate = new Date(end || today.toISOString().split('T')[0]);
 
-  console.log('f', startDate, endDate);
+  // console.log('f', startDate, endDate);
 
   //later add a function to validate type and movement against the types
   //!account_type_name ||
@@ -647,7 +647,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           JOIN pocket_saving_accounts psa ON ua.account_id = psa.account_id
             WHERE ua.user_id = $1
               AND (act.account_type_name = $2) AND ua.account_name != $3
-               AND mt.movement_type_name = $4
+               AND( mt.movement_type_name = $4  OR mt.movement_type_name=$7)
                   AND (tr.transaction_actual_date BETWEEN $5 AND $6 OR tr.created_at BETWEEN $5 AND $6  )
             ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
           `,
@@ -658,6 +658,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           'pocket',
           startDate,
           endDate,
+          'account-opening'
         ],
       };
       break;
@@ -713,7 +714,6 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
           JOIN transaction_types tp ON tp.transaction_type_id = tr.transaction_type_id
-
           WHERE ua.user_id = $1
             AND ua.account_name != $2
             AND (mt.movement_type_name = $3 )
