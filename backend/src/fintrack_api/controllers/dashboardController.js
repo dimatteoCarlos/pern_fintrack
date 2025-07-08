@@ -472,7 +472,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     'account-opening': '',
   };
 
-  //------------------------------
+  //----------------------------
   const queryFn = async (text, values) => {
     try {
       const result = await pool.query(text, values);
@@ -521,6 +521,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       'account-opening',
       'transfer',
       'receive',
+      'pnl'
     ].includes(movement_type_name)
   ) {
     const message = `movement name " ${movement_type_name} " is not included`;
@@ -552,7 +553,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
             JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
             JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
 
-               WHERE ua.user_id = $1
+            WHERE ua.user_id = $1
                AND (act.account_type_name = $2) AND ua.account_name != $3
                AND mt.movement_type_name = $4
                AND tr.destination_account_id IS NOT NULL 
@@ -613,10 +614,13 @@ export const dashboardMovementTransactions = async (req, res, next) => {
             JOIN currencies ct ON ua.currency_id = ct.currency_id
             JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
          
-               WHERE ua.user_id = $1
+          WHERE ua.user_id = $1
 
           AND (act.account_type_name = $2) AND ua.account_name != $3
-          AND (mt.movement_type_name = $5 OR mt.movement_type_name = $4)
+          AND (mt.movement_type_name = $5
+           OR mt.movement_type_name = $4
+           OR mt.movement_type_name = $6
+           )
           
             ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
           `,
@@ -626,6 +630,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           'slack',
           'investment',
           'account-opening',
+          'pnl'
         ],
       };
       break;
@@ -701,6 +706,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     case 'account-opening':
     case 'transfer':
     case 'receive':
+    case 'pnl':
       // case transfer:
       tableName = 'transactions'; //all account types but slack
       queryModel = {
@@ -749,7 +755,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   //-------------------------------
   try {
     const movements = await queryFn(queryModel.text, queryModel.values);
-    console.log('🚀 ~ dashboardMovementTransactions ~ result:', movements);
+    //console.log('🚀 ~ dashboardMovementTransactions ~ result:', movements);
 
     if (movements?.length === 0) {
       const message = `No info encountered for movement: ${movement_type_name} and type: ${accountTypeMap[movement_type_name]}`;

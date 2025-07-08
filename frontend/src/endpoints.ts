@@ -67,14 +67,15 @@ export const url_get_transactions_by_account_id: string = BASE_URL + '/account/t
 
 //----GET ALL ACCOUNTS INFO OF A SPECIFIC ACCOUNT TYPE
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
-//endpoint: http://localhost:5000/api/fintrack/account/type/?type=${bank}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
-//ex:for expense tracker, types used are: bank or category_budget,
+//controller:getAllAccountsByType
+//endpoint: http://localhost:5000/api/fintrack/account/type/?type=${account_type_name}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
+//Example:for expense tracker, types used are: bank or category_budget,
 export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
 
 //get user accounts info by account prefixed type_name bank and investment except slack account
 //for accounting and overview components
 //http://localhost:5000/api/fintrack/account/type/?type=bankAndInvestment
-//for expense tracker, types used are: bank and category_budget,
+//example for expense tracker, types used are: bank and category_budget,
 export const url_get_accounting_accounts: string =
   BASE_URL + '/account/type/?type= bank_and_investment';
 

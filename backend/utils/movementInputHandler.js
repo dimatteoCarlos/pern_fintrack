@@ -40,7 +40,7 @@ export const getTransferConfig = (body) => {
     body.destinationAccountType === 'pocket'
       ? 'pocket_saving'
       : body.destinationAccountType;
-      //set movement type to saving or pocket
+      //set movement type to pocket_saving
 
   return {
     destinationAccountName: body.destination,
@@ -50,6 +50,22 @@ export const getTransferConfig = (body) => {
     sourceAccountTypeName: originAccountType,
     sourceAccountTransactionType: 'withdraw',
   };
+};
+
+export const getPnLConfig = (body) => {
+const isProfit =   body.type === 'deposit';
+const accountType=body.accountType
+//??body.accountType==''?'bank':body.accountType
+
+return {
+  destinationAccountTransactionType: 'deposit',
+  destinationAccountName: isProfit ? body.account : 'slack',
+  destinationAccountTypeName: isProfit ? accountType : 'bank',
+
+  sourceAccountTransactionType: 'withdraw',
+  sourceAccountName: isProfit ? 'slack' : body.account,
+  sourceAccountTypeName: isProfit ? 'bank' : accountType,
+}
 };
 //===================================================
 //---config strategy for old version

@@ -7,6 +7,7 @@ import {
 import Expense from './pages/tracker/expense/Expense.tsx';
 import Income from './pages/tracker/income/Income.tsx';
 // import Investment from './pages/tracker/investment/Investment.tsx';
+import PnL from './pages/tracker/profitNloss/PnL.tsx';
 import Debts from './pages/tracker/debts/Debts.tsx';
 
 import Budget from './pages/budget/components/Budget.tsx';
@@ -80,10 +81,10 @@ function App() {
                   path: '/fintrack/tracker/transfer',
                   element: <Transfer />,
                 },
-                // {
-                //   path: '/fintrack/tracker/investment',
-                //   element: <Investment />,
-                // },
+                {
+                  path: '/fintrack/tracker/pnl',
+                  element: <PnL/>,
+                },
                 { path: '/fintrack/tracker/debts', element: <Debts /> },
               ],
             },

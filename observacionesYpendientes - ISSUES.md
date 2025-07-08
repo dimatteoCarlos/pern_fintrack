@@ -2,20 +2,54 @@ user = c109eb15-4139-43b4-b081-8fb9860588af
 https://www.youtube.com/watch?v=zcPj4eEnhyM
 ===========================
 PENDIENTE
+
+base de dats con time zone. listo
+
+arreglar query de list of movement para account detail, para account-opening and bank, income, investment type accounts. listo
+
+fintrack incluir pnl, y su backend, listo.
+
+ARREGLAR EN EL FRONTEND DE PNL, QUE EL BODY IN ENVIE EL TIPO DE CUENTA CORRECTMENTE EN EL A CASO DE INVESTMENT ACCOUNT. listo.
+
+mostrar los balances de las cuentas dentro de las opciones de los dropdown. Listo.
+
+ahora ocurre que al realiczar un tracker c de cualquier cuenta o movimiento que muetstre el balance de la cuenta en las opciones del dropdown, entonces, se va a tener que hace un refetch para actualizar las balances de las cuentas dentro de las opciones del dropdown,. LISTO.
+
+??????????????????????????????????????????
+CON REACT QUERY SE PUEDE HACER, PERO ESTOY USANDO ESTADOS, ASI QUE, SERA QUE SE HAGA CON UN REFETCH , UNA NUEVA PETICION, UN REFRESCAMEINTO DE LA PAGINA, o cambiar la url en forma inocua, para que el sideEffect del useFetch re-renderingm y, aplicarlo en todas las paginas del tracker, a menos que se simplifique con un componente reutilizable. 
+???????????????????????????????????????
+usar toastify para mensajes al usuario , error y success.
+net worth considerando assests-
 ACCOUNT DETAIL. LISTO.
 INVESTMENT DETAIL NO EXISTE. LISTO.
 BOTON DE REGRESO DE POCKET DETAIL . LISTO.
 DEBTOR DETAIL .LISTO
 
-CATEOGRY DETAL
-POCKET DETAIL
+POCKET DETAIL. listo
+CATEOGRY DETAL. PENDIENTE.
 
-REVISAR CREACION DE CUENTAS
-INCLUIR DPOSITO Y RETIRO A CUENTAS DE BANK,INVETMENT EN ACCOUNTING
+REVISAR CREACION DE CUENTAS. PENDIENTE
 
-LA TRANSFERENCIA DESDE INVESTMENT A POCKET, NO SE REFLEJA BIEN EN EL BALANCE DE INVESTMENT, SALEN 2, Y AUMENTA 1, ESO NO SE ENTIENDE TRANSFER DESDE INVESTMENT A POCKET.
+INCLUIR DPOSITO Y RETIRO A CUENTAS DE BANK Y INVESTMENT EN UN TRACKER PROFIT N LOSSES PnL. LISTO
 
-definir el disenio y lo sobre todos los datos
+PARA LAS TRANASCCIONES PnL, IDENTIFICAR L EL REGISTRO DE LA TRANSACCION CON EL TIPO DE TRANSACCION COMO PROFIT ADJUSTEMNT O LOSS ADJUSTMENT, INSTEAD OF DEPOSIT OR WITHDRAW. UNA OPCION ES USAR PnL con el tipo de transaction deposito / withdraw. PENDIENTE
+
+LA TRANSFERENCIA DESDE INVESTMENT A POCKET, NO SE REFLEJA BIEN EN EL BALANCE DE INVESTMENT, SALEN 2, Y AUMENTA 1, ESO NO SE ENTIENDE TRANSFER DESDE INVESTMENT A POCKET. LISTO.
+
+entender probabilidad con crystall ball
+stimacion / risks / etc.
+---------------------------------------
+
+incluir toastify
+estrategia para edicion >
+validacion 
+cambiar validacion para que no se borre cuando hay errores. PENDIENTE
+mostrar error an d success messages to the user. PENDIENTE MEJORAR CON TOASTIFY.
+manejo y administracion de usuarios mediante authentication
+
+--------------------------------
+PENDIENTE
+definir el disenio y sobre todos los datos
 DONDE SE METERAN LA PARTE DE EDICION
 EN LOS PAGE DETAIL? O SE HARA UN A LISTA ADMIN?
 definir los campos que se pueden editar
@@ -23,34 +57,41 @@ en el proceso de LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TAB
 estrategias de borrado de informacion defnir.
 No hay un INCOME account detail 
 
-INCOME DETAIL NO EXISTE. PENDIENTE.
+INCOME DETAIL NO EXISTE. PENDIENTE. NO ESTA CONSIDERADO. COMO DETAIL, SINO COMO LAST MOVEMENT DE BANK ACCOUNT BALANCE.
 
 ======================
 BUGS POR ARREGLAR 
-AL CRAR CUENTAS INCOME NO SE REFLEJAN EN LOS MOVIMIENTOS
-AL CREAR CUENTAS POCKET NO SE REFLEJAN EN LOS MOVIMIENTOS COMO ACCOUNT OPENING.
-CUENDO SE CREAR UNA CUENTA DEBTOR, APARECE PERO SIN DESCRIPCION DE LA TRANSACCION.
-AL CREAR UNA T CTA INVESTMENT, SI SE REFLEJA EN LOS MOVIMIENTOS PERO NO APARECE LA ESCRIPCION DE LA TRANASACCION
+AL CRAR CUENTAS INCOME NO SE REFLEJAN EN LOS MOVIMIENTOS. LISTO.
+
+AL CREAR CUENTAS POCKET NO SE REFLEJAN EN LOS MOVIMIENTOS COMO ACCOUNT OPENING.LISTO 
+
+CUENDO SE CREAR UNA CUENTA DEBTOR, APARECE PERO SIN DESCRIPCION DE LA TRANSACCION. LISTO
+
+AL CREAR UNA T CTA INVESTMENT, SI SE REFLEJA EN LOS MOVIMIENTOS PERO NO APARECE LA ESCRIPCION DE LA TRANASACCION. LISTO.
 
 ====================
-si no hay cuentas creadas empezar con un mensaje modal con detalles de cuentas creadas y cuentas faltantes, o decir que no se tienen las cuentas necesarias y  e ir a crearlas
+si no hay cuentas creadas empezar con un mensaje modal con detalles de cuentas creadas y cuentas faltantes, o decir que no se tienen las cuentas necesarias y  e ir a crearlas. BUENO AQUI COLOCQUE NO OPTIONS COMO PLACEHOLDER DENTRO DE LOS DROPDOWNS CUANTO NO HAY CUENTAS CREADAS. NO HAY MENSAJE AL USAURIO PARA CREACION DE CUENTAS NI REDIRECCION, POR AHORA.
 =======================
 dashboardTotalBalanceAccountByType
 cuando no consigue cuentas por tipo mestra el error 400 y error while getting account by type
 400. No available accounts of type category_budget
 
-loso error message que se muestran al cleinte, sale solo el status code
+loso error message que se muestran al cleinte, sale solo el status code. PENDIENTE MEJORAR ERROR HANDLING.
 
-cuando son cero, aparecen con el signo negativo en el summary de overview
+cuando son cero, aparecen con el signo negativo en el summary de overview. LISTO.
 =======================
 LISTO.
 renderizar el periodo, y el balance inicial y final de la cuenta LISTO.
+
 renderizar las ultimas transacciones de una cuenta por account_id, en overview account_detail.LISTO
+
 modificar transactions table para registrar el balance nuevo de la cuenta. LISTO
+
 MODIFICAR transaction controllers and createion controller to consider record balance . LISTO
  
 ENDPOINTS
 GET informacion de cuenta segun su account_id LISTO.
+
 GET las transacciones de una determinada cuenta segun su account_id. LISTO.
 
 enter en tracker transfer, al presionar el boton de seleccion de tipo de cuenta para la cuenta de bottom card, se desabilita el radio de los radio input, y pareceria que se hace submit. LISTO
@@ -58,34 +99,45 @@ enter en tracker transfer, al presionar el boton de seleccion de tipo de cuenta 
 PENDIENTE
 MEJORAR LA DESCRIPCION DE LA TRANSACCION. Hablar con el cliente,pra incorporar sus preferencias. 
 ERROR ACCOUNT STARTING AMOUNT CUANDO NO HAY TRANSACTIONES
-EN la DESCRIPCION DE LA CREACION DE UNA CUENTA INVESTMENT, NO SE VE LA HORA QEN QUE SE HACE LA TRANSACTION.
+
+EN la DESCRIPCION DE LA CREACION DE UNA CUENTA INVESTMENT, NO SE VE LA HORA EN QUE SE HACE LA TRANSACTION.LISTO.
 
 ===========================
 asegurar el criterio del signo para el start account amount sea coherente en todas las cuentas a crear. OBSERVACION
 ===========================
 PENDIENTE
-AHORA RESULTA QUE ADD ACCOUNT PARA CREAR UNA CUENTA NUEVA NO FUNCIONA.
-TAMPOCO RECONOCE LOS MOVEMENTS POCKET SAVING, INCOME, ETC.
+AHORA RESULTA QUE ADD ACCOUNT PARA CREAR UNA CUENTA NUEVA NO FUNCIONA. LISTO.
 
-CUANDO SE ABRE UNA CUENTA, DEBTOR, CON UN PRESTAMO INICIAL DESDE UNA CUANTA BANK EXISTENTE, COMO DEBE REGISTRARSE ELM MOVIMIENTO, COMO ACCOUNT-OPENING, O M COMO DEBT?
+TAMPOCO RECONOCE LOS MOVEMENTS POCKET SAVING, INCOME, ETC. LISTO.
+
+CUANDO SE ABRE UNA CUENTA, DEBTOR, CON UN PRESTAMO INICIAL DESDE UNA CUANTA BANK EXISTENTE, COMO DEBE REGISTRARSE ELM MOVIMIENTO, COMO ACCOUNT-OPENING, O M COMO DEBT?. LISTO.
 
 CREO QUE HAY QUE ABSTRAERSE DE LOS MOVIMIETNTOS Y PENSAR EN EL TIPO DE TRANSACCIONES MAS BIEN.
 
-EL ACCOUNT OPENING DEBERIA APARECER EN LA CUENTA QUE SE ABRIO, Y LA CUENTA BANK I HIZO UN LEND, DEBERIA APARECER COMO UN DEBT,. AUNQUE , NO SE HIZO DESDE EL TRACKER DE MOVEMENTS PUEH. 
+EL ACCOUNT OPENING DEBERIA APARECER EN LA CUENTA QUE SE ABRIO, Y LA CUENTA BANK I HIZO UN LEND, DEBERIA APARECER COMO UN DEBT,. AUNQUE , NO SE HIZO DESDE EL TRACKER DE MOVEMENTS PUEH.. LISTO Y REVISAR OTRA VEZ. 
 =================
 
 ===========================
 PENDIENTE
-AL HACER UN TRACKER BORROW A CUENTA DBTOR EX SB NO SE VE LA DESCRIPTION EN OVERVIEW
+AL HACER UN TRACKER BORROW A CUENTA DBTOR EX SB NO SE VE LA DESCRIPTION EN OVERVIEW. LISTO.
+
 si no se hace la seleccion de la cuenta, no se muestra la validacion en DEBTS tracker.
-eberia aparecer un loading, 
-investment creada con deposito inicial se muestra en los movements, pero no muestra LA description tr es deposit
-cuando se crea una cuenta pocket o una investment no se refleja en el overview
-bajar mas el mensaje e de error de createPocket
-cuando se hace un borrow desde tracker a c una cuenta debtor, no se refleja la descriptcion en overview
-cuando se crea una cuenta pocekt no se refleja en los movimientos en overview
-cuando se crea una cuenta c expense o category obj la descripcion no se refleja en los movimientos en overview
-hacer una helper o util function. PARA estandarizar la descripcion de las transacciones.
+
+Deberia aparecer un loading, 
+
+investment creada con deposito inicial se muestra en los movements, pero no muestra LA description tr es deposit. LISTO
+
+cuando se crea una cuenta pocket o una investment no se refleja en el overview. LISTO.
+
+bajar mas el mensaje e de error de createPocket. PENDIENTE
+
+cuando se hace un borrow desde tracker a c una cuenta debtor, no se refleja la descriptcion en overview. LISTO.
+
+cuando se crea una cuenta pocekt no se refleja en los movimientos en overview. LISTO.
+
+cuando se crea una cuenta c expense o category obj la descripcion no se refleja en los movimientos en overview. OLISTO.
+
+hacer una helper o util function. PARA estandarizar la descripcion de las transacciones.PENDIENTE.
 
 
 =================
@@ -93,10 +145,11 @@ LISTO .
 lend y borrow se registran al reves en la description de las transacciones. al hacer el tracker de debt. 
 ----------
 ======================
-OJO EN NINGUNA PARTE SE REFLEJA EL BALANCE TOTAL DE INVESTMENT
-PODRIA AGREGARSE UN TOTAL INVESTMENT, O SE LE COLOCA ENCIMA AL TITULOS DE LOS INVESTMENT BALANCE. 
-======================
+OJO EN NINGUNA PARTE SE REFLEJA EL BALANCE TOTAL DE INVESTMENT. PENDIENTE REVISAR CON CLIENTE YA QUE NO SE CONSIDERO EN EL ORIGINAL.
 
+PODRIA AGREGARSE UN TOTAL INVESTMENT, O SE LE COLOCA ENCIMA AL TITULOS DE LOS INVESTMENT BALANCE.????? 
+======================
+LA NUEVA FORMA DE MANEJAR E INTRODUCIR LAS CATEGORIAS Y SUBCATEGORIAS, ESTA PENDIENTE IMPLEMENTARLA,. PENDIENTE.
 ---------------
 disable save in new profile, new cat, i y s plusvg btn en tracker 
 en new pocket, fecha futuro. se queda abierto el datepicker despues de darla a sae
@@ -127,11 +180,14 @@ exportar movimientos o transacciones, con boton
 descargar en pdf.
 descargar en excel.
 exportar .csv , google sheet
-agregar cuentas de ajuste positivo y negativo, a donde? en accounting, para bank e investment.
+agregar cuentas de ajuste positivo y negativo, a donde? en accounting, para bank e investment. LISTO SE CONSIDERO UN P MOVIMIENTO TRACKER PnL.
+
 edicion para pocket y budget, en cuenta a desired date y target, y budget.
-eliminacion de cuentas.
-add money se puede s hacer con ajuste positivo, que so depositos externos / retiros con ajuste netgativo.
-simplificar al descripcion en overview y colocar un dropdown para mostrar el completo description.
+eliminacion de cuentas. PENDIENTE EDICION.
+
+add money se puede s hacer con ajuste positivo, que so depositos externos / retiros con ajuste netgativo. NO, YA SE HIZO CON PNL EN EL TRACKER.
+
+simplificar al descripcion en overview y colocar un dropdown para mostrar el completo description. NO SE QUE ES EESTO.
 ===========================
 PENDIENTE
 Arreglar mensajes largos (no fund) ui de tracker . MAS O MENOS
@@ -183,7 +239,7 @@ BALANCES DE LAS SUBCATEGORIAS PERTENECIENTES A U A UNA CATEGORY_NATURE O A UNA C
 O
 CATE_1.NATURE_1.SUBCAT_1.
 
-LISTO
+*********************
 error> something went wrong with the movement_types table LISTO
 deshabilitar value en account creation  del tipo income source y el msg valid. LISTO
 ======================
@@ -219,20 +275,7 @@ las cuentas bank que se abren con saldo positivo, se desconoce de donde viene el
 PENDIENTE
 LA FECHA DE DESIRED DATE, DEBERIA BLOQUEARSE PARA FECHAS ANTERIORES A LA FECHA ACTUAL NOW.
 DE POCKET NEW POCKET.
-  const originRoute = useLocation().pathname;
-  const navigateTo: NavigateFunction = useNavigate();
-  const createNewPocket = (originRoute: string) => {
-    navigateTo(originRoute + '/new_pocket', {
-      state: { previousRoute: originRoute },
-    });
-  };
-
-        <OpenAddEditBtn
-            btnFunction={createNewCategory}
-            btnFunctionArg={originRoute}
-            btnPreviousRoute={originRoute}
-          >
-
+  
  /date validation
     // hay establecer regla para la fecha> validar que la fecha no sea mayor que el proximo dia habil? o que no sobrepase el lunes de la prox semana? o no sea mayor que el dia de hoy? o puede ser futura pero en el mismo mes actual? o libre para realizar simulaciones, aunque esto en caso de tener que hacer conversiones monetarias habria que preverlo?
     // const accountStartDateNormalized =
@@ -242,9 +285,9 @@ DE POCKET NEW POCKET.
     //   accountStartDateNormalized
     // );         
 ===========================
-PENDIENTE
+LISTO
 RESULTA QUE EL SERVIDOR TEINE UNA FECHA DISTINTA A DONDE ESTA EL USUARIO. QUE IMPLICACIONES TENDRIA ESO?
-como resolveer lo de la fecha del serevidor, como obtenerla.
+como resolveer lo de la fecha del serevidor, como obtenerla. SE COLOCSARON TIME ZONE EN LA BBDD. LISTO.
 =================
 
 LISTO

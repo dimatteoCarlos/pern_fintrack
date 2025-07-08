@@ -1,4 +1,4 @@
-import InvestmentSvg from '../../../assets/trackerNavbarSvg/InvestmentSvg.svg';
+import AdjustSvg from '../../../assets/trackerNavbarSvg/AdjustSvg.svg';
 import { NavLink } from 'react-router-dom';
 
 function TrackerInvestmentButton() {
@@ -11,10 +11,10 @@ function TrackerInvestmentButton() {
   return (
     <>
       <div className='trackerStateButton__container'>
-        <NavLink to='investment' className={classNavLink}>
-          <InvestmentSvg />
+        <NavLink to='pnl' className={classNavLink}>
+          <AdjustSvg />
         </NavLink>
-        <div className='trackerStateButton__state--title'>{'Investment'}</div>
+        <div className='trackerStateButton__state--title'>{'PnL'}</div>
       </div>
     </>
   );

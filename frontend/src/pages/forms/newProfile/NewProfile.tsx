@@ -138,7 +138,7 @@ function NewProfile() {
 
   //--for drop down selection
   const accountSelectionProp = {
-    title: 'Available Account',
+    title: 'Select Account',
     options: optionAccounts,
     variant: VARIANT_FORM, //this stablishes the custom styles to use in selection dropdown component
   };

@@ -5,8 +5,10 @@ dotenv.config();
 
 const uri = {
   connectionString: process.env.DATABASE_URI,
-  ssl: { rejectUnauthorized: false }, //Never use this in production. alternative: mkcert
+  //,  ssl: { rejectUnauthorized: false }, //Never use this in production. alternative: mkcert
+
   connectionTimeoutMillis: 10000, // Tiempo de espera para la conexión (5 segundos)
+
   idleTimeoutMillis: 30000, // Tiempo de espera para conexiones inactivas (30 segundos)
 };
 
@@ -25,6 +27,7 @@ export async function checkConnection() {
     throw error;
   }
 }
+
 // pool.on('error', (err) => {
 // console.error('Unexpected error on idle client', err);
 // Termina la aplicación si hay un error grave

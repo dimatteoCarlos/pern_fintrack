@@ -89,12 +89,37 @@ function Expense(): JSX.Element {
   // const user = 'e71a1b29-8838-4398-b481-bd149bceb01f';
 
   // el user se deberia pasar via cookie o header al backend
-  //-----------------------------------------------------
+  
+  //---states-------------
+  const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
+  const [isReset, setIsReset] = useState<boolean>(false);
+
+  const [validationMessages, setValidationMessages] = useState<{
+    [key: string]: string;
+  }>({});
+
+  const [expenseData, setExpenseData] =
+    useState<ExpenseInputDataType>(initialExpenseData);
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [reloadTrigger, setReloadTrigger] = useState(0)
+
+  //---
+  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
+    null
+  );
+  const [showMessage, setShowMessage] = useState(false);
+  //--------------------------------------------
+  const setAvailableBudget = useBalanceStore(
+    (state) => state.setAvailableBudget
+  );
+
+  //-------------------------------------------
   //url_get_accounts_by_type
   //DATA FETCHING
   //GET: AVAILABLE ACCOUNTS OF TYPE BANK
   const fetchUrl = user
-    ? `${url_get_accounts_by_type}/?type=bank&user=${user}`
+    ? `${url_get_accounts_by_type}/?type=bank&user=${user}&reload=${reloadTrigger}`
     : // <Navigate to='/auth' />
       undefined; //esto es forzar un error de user ID required
   //definir que hacer si no hay user id
@@ -124,13 +149,14 @@ function Expense(): JSX.Element {
     return accountList.length
       ? accountList.map((acc) => ({
           value: acc.account_name,
-          label: acc.account_name,
+          label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`,
+          // label: acc.account_name,
         }))
       : ACCOUNT_OPTIONS_DEFAULT;
   }, [BankAccountsResponse?.data.accountList, fetchedErrorBankAccounts]);
 
   const accountOptions = {
-    title: 'Available Account',
+    title: 'Select Account',
     options: optionsExpenseAccounts,
     variant: 'tracker' as VariantType,
   };
@@ -153,8 +179,6 @@ function Expense(): JSX.Element {
   //   fetchedErrorCategoryBudgetAccounts,
   // });
 
-
-
   const optionsExpenseCategories = useMemo(() => {
     const categoryList =
       CategoryBudgetAccountsResponse?.data?.accountList || [];
@@ -166,7 +190,6 @@ function Expense(): JSX.Element {
     // if (isLoadingCategoryBudgetAccounts || fetchedErrorCategoryBudgetAccounts) {
     //   return CATEGORY_OPTIONS_DEFAULT;
     // }
-
     return categoryList.map((cat) => ({
       value: cat.account_name,
       label: cat.account_name,
@@ -198,28 +221,29 @@ function Expense(): JSX.Element {
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
 
-  //---states-------------
-  const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
-  const [isReset, setIsReset] = useState<boolean>(false);
+  // //---states-------------
+  // const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
+  // const [isReset, setIsReset] = useState<boolean>(false);
 
-  const [validationMessages, setValidationMessages] = useState<{
-    [key: string]: string;
-  }>({});
+  // const [validationMessages, setValidationMessages] = useState<{
+  //   [key: string]: string;
+  // }>({});
 
-  const [expenseData, setExpenseData] =
-    useState<ExpenseInputDataType>(initialExpenseData);
+  // const [expenseData, setExpenseData] =
+  //   useState<ExpenseInputDataType>(initialExpenseData);
 
-  const [formData, setFormData] = useState(initialFormData);
+  // const [formData, setFormData] = useState(initialFormData);
+  // const [reloadTrigger, setReloadTrigger] = useState(0)
 
-  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
-    null
-  );
-  //---
-  const [showMessage, setShowMessage] = useState(false);
-  //--------------------------------------------
-  const setAvailableBudget = useBalanceStore(
-    (state) => state.setAvailableBudget
-  );
+  // //---
+  // const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
+  //   null
+  // );
+  // const [showMessage, setShowMessage] = useState(false);
+  // //--------------------------------------------
+  // const setAvailableBudget = useBalanceStore(
+  //   (state) => state.setAvailableBudget
+  // );
   //---------------------------------------------
   //Handle states related to the data submit form
   useEffect(() => {
@@ -353,6 +377,7 @@ function Expense(): JSX.Element {
       //reset the state and the selected options on select component
       setCurrency(defaultCurrency);
       setExpenseData(initialExpenseData);
+      setReloadTrigger(prev=>prev+1)
       setIsReset(true); //admitir que category sea undefined - must admit undefined category
       setValidationMessages({});
       setFormData(initialFormData);
@@ -376,8 +401,7 @@ function Expense(): JSX.Element {
       console.error('Submission error:', error);
     }
   }
-  //---------------------------------------------,
-
+  //------------------------------------------,
   //-------Top Card elements -----------------------
   const topCardElements = {
     titles: { title1: 'amount', title2: 'account' },

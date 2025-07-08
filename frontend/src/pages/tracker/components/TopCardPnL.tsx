@@ -3,6 +3,7 @@ import DropDownSelection from '../../../general_components/dropdownSelection/Dro
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation';
 import RadioInput from '../../../general_components/radioInput/RadioInput';
 import { capitalize } from '../../../helpers/functions';
+import { AccountListType } from '../../../types/responseApiTypes';
 // import { AccountListType } from '../../../types/responseApiTypes';
 import {
   CurrencyType,
@@ -81,27 +82,48 @@ const TopCard = <T extends Record<string, unknown>>({
     titles: { title2 }, //account label or title
     titles: { label2 }, //account label or title
     value, //amount input value
+    accountsListInfo
   } = topCardElements;
 
   // console.log('🚀 ~ title2:', title2.trim().toLowerCase());
-
-  //selection handler
+  //------------------------
+  //selection handler fn
   function stateSelectHandler(selectedOption: DropdownOptionType | null) {
-    // get the account_id of the selected account_name. it supposes thet account_name is unique too.
-    setSelectState((prev) => ({
-      ...prev,
-      [title2.trim().toLowerCase()]: selectedOption?.value,
-      // ['origin_account']: selectedOption?.value,
-    }));
+   // get the account_id of the selected account_name. it supposes thet account_name is unique too.
+  //declare function  
+  function getAccountSelectedInfo (accountNameSelected:string):AccountListType | {
+    account_type_name: string;
+}{
+  const accounts= (accountsListInfo?.filter((account)=>account.account_name.toLowerCase().trim() == accountNameSelected.toLowerCase().trim()))
+
+  if(accounts && accounts.length>1){console.warn(`There are more than one account with the name ${accountNameSelected} `) ;return accounts[0]}
+
+  if(!accounts || accounts.length===0){console.warn(`No account were found with the name ${accountNameSelected}`);return {account_type_name:''//'account type not found'
+    }}
+
+  return accounts[0]
+}
+    
+  if(selectedOption){
+      const typeNameOfSelectedAccount = getAccountSelectedInfo(selectedOption.value).account_type_name
+
+      setSelectState((prev) => ({
+        ...prev,
+        accountType: typeNameOfSelectedAccount,
+      }));
+  }
+
+  setSelectState((prev) => ({
+    ...prev,
+    [title2.trim().toLowerCase()]: selectedOption?.value,
+  }));
+
   }
 
   //usage of customSelectHandler if it exists
   const finalSelectHandler = customSelectHandler || stateSelectHandler;
 
   // console.log('isResetDropdown', { isResetDropdown });
-  // console.log('title2', title2.trim().length, 'origin'.length);
-
-  // console.log('selected value from TopCard:', selectedValue);
   //-------------------------------------------
   return (
     <>

@@ -118,6 +118,7 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
       WHERE
         tr.account_id = $1 AND ua.user_id = $2 AND (tr.transaction_actual_date BETWEEN $3 AND $4 OR
        tr.created_at BETWEEN $3 AND $4)
+       
        ORDER BY 
        tr.transaction_actual_date DESC , tr.created_at DESC 
        ` ,

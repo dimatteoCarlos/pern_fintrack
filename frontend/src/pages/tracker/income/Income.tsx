@@ -93,11 +93,35 @@ function Income() {
   // console.log('userID', userID);
 
   const user = import.meta.env.VITE_USER_ID;
+  //--------------------------------------
+    //---states------
+  const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
+  const [incomeData, setIncomeData] =
+    useState<IncomeInputDataType>(initialIncomeData);
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [validationMessages, setValidationMessages] = useState<{
+    [key: string]: string;
+  }>({});
+  const [isReset, setIsReset] = useState<boolean>(false);
+
+  const [reloadTrigger, setReloadTrigger] = useState(0)
+
+  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
+    null
+  );
+  const [showMessage, setShowMessage] = useState(false);
+
+  //----
+  const setAvailableBudget = useBalanceStore(
+    (state) => state.setAvailableBudget
+  );
+
   //---- Income account Options -----------
   //DATA FETCHING
   //GET: AVAILABLE ACCOUNTS OF TYPE BANK
   const fetchUrl = user
-    ? `${url_get_accounts_by_type}/?type=bank&user=${user}`
+    ? `${url_get_accounts_by_type}/?type=bank&user=${user}&reload=${reloadTrigger}`
     : // <Navigate to='/auth' />
       undefined; //esto ees forzar un error de user ID required
   //definir que hacer si no hay user id
@@ -119,7 +143,7 @@ function Income() {
       !isLoadingBankAccounts
         ? BankAccountsResponse?.data.accountList?.map((acc) => ({
             value: acc.account_name,
-            label: acc.account_name,
+            label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`
           }))
         : INCOME_OPTIONS_DEFAULT,
     [
@@ -130,7 +154,7 @@ function Income() {
   );
 
   const accountOptions = {
-    title: 'Available Account',
+    title: 'Select Account',
     options: optionsIncomeAccounts,
     variant: VARIANT_DEFAULT,
   };
@@ -173,28 +197,6 @@ function Income() {
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
-
-  //---states------
-  const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
-  const [incomeData, setIncomeData] =
-    useState<IncomeInputDataType>(initialIncomeData);
-
-  const [formData, setFormData] = useState(initialFormData);
-  const [validationMessages, setValidationMessages] = useState<{
-    [key: string]: string;
-  }>({});
-  const [isReset, setIsReset] = useState<boolean>(false);
-
-  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
-    null
-  );
-  const [showMessage, setShowMessage] = useState(false);
-
-  //----
-  const setAvailableBudget = useBalanceStore(
-    (state) => state.setAvailableBudget
-  );
-
   //---------------------------------------------
   //Handle states related to the data submit form
   useEffect(() => {
@@ -246,7 +248,7 @@ function Income() {
     const { name, value } = e.target;
 
     if (name === 'amount') {
-      const { formatMessage, valueNumber, isError, valueToSave } =
+      const { formatMessage,  isError, valueToSave } =
         checkNumberFormatValue(value);
 
       // Update numeric state value in the form. Actualizar el estado numerico en el
@@ -255,7 +257,8 @@ function Income() {
         ...formData,
         [name]: value,
       });
-      console.log({ formatMessage, valueNumber, isError, valueToSave });
+
+      // console.log({ formatMessage, valueNumber, isError, valueToSave });
 
       setValidationMessages((prev) => ({
         ...prev,
@@ -271,6 +274,7 @@ function Income() {
       }
       setIncomeData((prev) => ({ ...prev, [name]: valueToSave }));
       return;
+      
     } else {
       setIncomeData((prev) => ({ ...prev, [name]: value }));
     }
@@ -295,7 +299,7 @@ function Income() {
     }
     //------------------------
     //POST ENDPOINT FOR MOVEMENT TRANSACTION HERE
-    console.log('Income data state to Post:', incomeData);
+    // console.log('Income data state to Post:', incomeData);
     //------------------------
     //update balance account of bank account and income_source accounts in: user_accounts table.
 
@@ -327,6 +331,8 @@ function Income() {
       }
 
       //reset values after posting the info   -- This could be a function -- need to set initial parameters for all 4 tracker/states in just one function./it seems that all are the same
+
+      setReloadTrigger(prev=>prev+1)
       setCurrency(defaultCurrency);
       setIncomeData(initialIncomeData);
 

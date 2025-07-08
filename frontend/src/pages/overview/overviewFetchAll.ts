@@ -44,7 +44,7 @@ type EndpointItemType<K extends KPIKeyType> = {
   //  como referencia para tipar el resultado
 };
 
-//type guard Evalúa si ese valor tiene al menos la estructura mínima esperada del tipo FinancialDataRespType.
+//type guard Evalúa si ese valor tiene al menos la estructura mínima esperada del tipo que devuelve la api, por ejemplo FinancialDataRespType.
 // TypeScript cambia el tipo de data al tipo FinancialDataRespType dentro del if donde se use.Esto se conoce como type narrowing.
 
 //ex. : data is FinancialDataRespType, Indica que si la función retorna true, TypeScript redefinirá el tipo de data como FinancialDataRespType en el ámbito donde se use.
@@ -137,7 +137,10 @@ export async function overviewFetchAll(
           endpoint.key === 'MovementDebtTransactions' ||
           endpoint.key === 'MovementIncomeTransactions') ||
           endpoint.key === 'MovementPocketTransactions'||
-          endpoint.key === 'MovementInvestmentTransactions' &&
+          endpoint.key === 'MovementInvestmentTransactions'
+          || 
+          endpoint.key === 'MovementPnLTransactions'
+          &&
         isLastMovementRespType(data)
       ) {
         console.log('going to MovementTransactions');

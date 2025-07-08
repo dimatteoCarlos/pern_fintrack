@@ -20,7 +20,7 @@ import pc from 'picocolors';
 export const mainTables = [
   {
     tblName: 'users',
-    table: `CREATE TABLE IF NOT EXISTS users(user_id UUID PRIMARY KEY NOT NULL, username VARCHAR(50) UNIQUE NOT NULL, email VARCHAR(50) UNIQUE NOT NULL, user_firstname VARCHAR(25) NOT NULL,  user_lastname VARCHAR(25)  NOT NULL, user_contact VARCHAR(25), password_hashed VARCHAR(255), currency_id INT REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,google_id VARCHAR(255) UNIQUE, display_name VARCHAR(255), auth_method VARCHAR(50) DEFAULT 'password',created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,user_role_id INT  REFERENCES user_roles(user_role_id) ON DELETE SET NULL ON UPDATE CASCADE) `,
+    table: `CREATE TABLE IF NOT EXISTS users(user_id UUID PRIMARY KEY NOT NULL, username VARCHAR(50) UNIQUE NOT NULL, email VARCHAR(50) UNIQUE NOT NULL, user_firstname VARCHAR(25) NOT NULL,  user_lastname VARCHAR(25)  NOT NULL, user_contact VARCHAR(25), password_hashed VARCHAR(255), currency_id INT REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,google_id VARCHAR(255) UNIQUE, display_name VARCHAR(255), auth_method VARCHAR(50) DEFAULT 'password',created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,user_role_id INT  REFERENCES user_roles(user_role_id) ON DELETE SET NULL ON UPDATE CASCADE) `,
   },
 
   {
@@ -44,9 +44,9 @@ account_type_id INT  REFERENCES account_types(account_type_id) ON DELETE SET NUL
 currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE, 
  account_starting_amount DECIMAL(15,2) NOT NULL,
  account_balance DECIMAL(15,2) NOT NULL DEFAULT 0.00,
-    account_start_date TIMESTAMP NOT NULL, 
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    account_start_date TIMESTAMPTZ NOT NULL, 
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 )`,
   },
 
@@ -55,24 +55,24 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
   // {
   //   tblName: 'bank_accounts',
   //   table:
-  //     'CREATE TABLE IF NOT EXISTS bank_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMP NOT NULL )',
+  //     'CREATE TABLE IF NOT EXISTS bank_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL )',
   // },
 
   // {
   //   tblName: 'investment_accounts',
   //   table:
-  //     'CREATE TABLE IF NOT EXISTS investment_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMP NOT NULL)',
+  //     'CREATE TABLE IF NOT EXISTS investment_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL)',
   // },
 
   {
     tblName: 'income_source_accounts',
     table:
-      'CREATE TABLE IF NOT EXISTS income_source_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMP NOT NULL)',
+      'CREATE TABLE IF NOT EXISTS income_source_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), account_starting_amount DECIMAL (15,2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL)',
   },
 
   {
     tblName: `category_budget_accounts`,
-    table: `CREATE TABLE IF NOT EXISTS category_budget_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), category_name VARCHAR(50) NOT NULL,category_nature_type_id INT REFERENCES category_nature_types(category_nature_type_id), subcategory VARCHAR(25), budget DECIMAL(15, 2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMP NOT NULL)`,
+    table: `CREATE TABLE IF NOT EXISTS category_budget_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), category_name VARCHAR(50) NOT NULL,category_nature_type_id INT REFERENCES category_nature_types(category_nature_type_id), subcategory VARCHAR(25), budget DECIMAL(15, 2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL)`,
   },
 
   {
@@ -84,14 +84,14 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
          debtor_name VARCHAR(25),
          debtor_lastname VARCHAR(25),
          selected_account_name VARCHAR(50),
-          selected_account_id INT,account_start_date TIMESTAMP NOT NULL)`,
+          selected_account_id INT,account_start_date TIMESTAMPTZ NOT NULL)`,
   },
 
   {
     tblName: `pocket_saving_accounts`,
     table: `CREATE TABLE IF NOT EXISTS pocket_saving_accounts (account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), target DECIMAL(15, 2),
     note  VARCHAR(155), 
-    desired_date TIMESTAMP NOT NULL,account_start_date TIMESTAMP NOT NULL)`,
+    desired_date TIMESTAMPTZ NOT NULL,account_start_date TIMESTAMPTZ NOT NULL)`,
   },
 
   // -----
@@ -106,9 +106,9 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
     amount DECIMAL(15,2) NOT NULL,
     description VARCHAR(255),
     transaction_type_id INT, 
-    actual_transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    actual_transaction_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 )`,
 
   },
@@ -116,7 +116,7 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
 
   // {
   //   tblName: 'movement_types',
-  //   table: `CREATE TABLE IF NOT EXISTS movement_types (movement_type_id SERIAL PRIMARY KEY NOT NULL, movement_type_name VARCHAR(15) NOT NULL CHECK (movement_type_name IN ('expense', 'income', 'investment', 'debt', 'pocket', 'transfer', 'receive','account-opening')))`,
+  //   table: `CREATE TABLE IF NOT EXISTS movement_types (movement_type_id SERIAL PRIMARY KEY NOT NULL, movement_type_name VARCHAR(15) NOT NULL CHECK (movement_type_name IN ('expense', 'income', 'investment', 'debt', 'pocket', 'transfer', 'receive','account-opening', 'pnl')))`,
   // },
 
   // {
@@ -194,24 +194,24 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
       source_account_id INT  ,
       destination_account_id INT  , 
       status VARCHAR(50) NOT NULL, 
-      transaction_actual_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      transaction_actual_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`,
   },
 
   {
-    tblName: 'refresh_tokens',
+   tblName: 'refresh_tokens',
     table: `
       CREATE TABLE IF NOT EXISTS refresh_tokens (
       token_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
       token TEXT NOT NULL UNIQUE,
-      expiration_date TIMESTAMP NOT NULL,
+      expiration_date TIMESTAMPTZ NOT NULL,
       revoked BOOLEAN DEFAULT FALSE,
       user_agent TEXT,
       ip_address TEXT, 
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
 `,
   },

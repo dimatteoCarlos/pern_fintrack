@@ -49,6 +49,7 @@ export type ApiRespDataType = {
   MovementIncomeTransactions: LastMovementRespType | null;
   MovementPocketTransactions: LastMovementRespType | null;
   MovementInvestmentTransactions: LastMovementRespType | null;
+  MovementPnLTransactions: LastMovementRespType | null;
 };
 //---endpoint config------------------
 type KPIEndpointType = {
@@ -66,6 +67,7 @@ type KPIDataStateType = {
   LastIncomeMovements: LastMovementType[] | null;
   LastPocketMovements: LastMovementType[] | null;
   LastInvestmentMovements: LastMovementType[] | null;
+  LastPnLMovements: LastMovementType[] | null;
 };
 //-----------------------------------------
 //data to be fetched
@@ -107,13 +109,18 @@ const overviewKPIendpoints: KPIEndpointType[] = [
     url: `${dashboardMovementTransactions}?start=&end=&movement=investment&user=${userId}`,
     type: {} as LastMovementRespType,
   },
+    {
+    key: 'MovementPnLTransactions',
+    url: `${dashboardMovementTransactions}?start=&end=&movement=pnl&user=${userId}`,
+    type: {} as LastMovementRespType,
+  },
 ];
-//--------------------------
+//-----------------------------------------------
 // type CreateNewAccountProps = {
 //   originRoute: string;
 //   onCreateAccount: (route: string) => void;
 // };
-//----------------------------------------------------
+//------------------------------------------------
 function Overview() {
   const navigateTo: NavigateFunction = useNavigate();
   const location = useLocation();
@@ -128,6 +135,7 @@ function Overview() {
     LastIncomeMovements: null,
     LastPocketMovements: null,
     LastInvestmentMovements: null,
+    LastPnLMovements: null,
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -308,6 +316,36 @@ function Overview() {
               }
             )
           : null;
+//---
+        const movementPnLTransactionsData =
+          result.MovementPnLTransactions.status === 'success'
+            ? result.MovementPnLTransactions?.data?.data
+            : null;
+
+        const movementPnLTransactions = movementPnLTransactionsData
+          ? Array.from(
+              { length: movementPnLTransactionsData.length },
+              (_, i) => {
+                const {
+                  account_name,
+                  amount,
+                  description,
+                  transaction_actual_date,
+                  currency_code,
+                } = movementPnLTransactionsData[i];
+
+                const obj = {
+                  accountName: account_name,
+                  record: amount, //data? or title?
+                  description: description,
+                  date: transaction_actual_date,
+                  currency: currency_code,
+                };
+                return { ...obj };
+              }
+            )
+          : null;
+
 
         //-------------
         setKpiData({
@@ -318,6 +356,7 @@ function Overview() {
           LastIncomeMovements: movementIncomeTransactions,
           LastPocketMovements: movementPocketTransactions,
           LastInvestmentMovements: movementInvestmentTransactions,
+          LastPnLMovements: movementPnLTransactions,
         });
       } catch (err:unknown) {
         console.error('Overview fetch error:', err);
@@ -407,6 +446,11 @@ function Overview() {
         <LastMovements
           data={kpiData.LastInvestmentMovements}
           title='Last Movements (investment)'
+        />
+
+        <LastMovements
+          data={kpiData.LastPnLMovements}
+          title='Last Movements (PnL)'
         />
       </div>
     </section>

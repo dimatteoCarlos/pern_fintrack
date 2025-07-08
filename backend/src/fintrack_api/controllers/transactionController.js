@@ -12,6 +12,7 @@ import {
   getIncomeConfig,
   getDebtConfig,
   getTransferConfig,
+  getPnLConfig,
   // getInvestmentConfig,
   // getPocketConfig,
 } from '../../../utils/movementInputHandler.js';
@@ -111,7 +112,6 @@ export function transformMovementType(
   }
   return movementName;
 }
-
 //------------------
 //controller: transferBetweenAccounts
 //------------------
@@ -122,23 +122,22 @@ export const transferBetweenAccounts = async (req, res, next) => {
   const client = await pool.connect();
 
   try {
-    // const { user: userId, movement: movementName } = req.query;
-    const { movement } = req.query;
-    const movementName = movement === 'debts' ? 'debt' : movement; //debt movement is called as debts in frontend
-    console.log({ movementName });
-
-    const userId =
-      req.body.user === '' || !req.body.user ? req.query.user : req.body.user;
+    const userId = req.body.user === '' || !req.body.user ? req.query.user : req.body.user;
 
     if (!userId) {
       const message = 'User ID is required';
       console.warn(pc.magentaBright(message));
       return res.status(400).json({ status: 400, message });
     }
+
+    const { movement } = req.query;
+    const movementName = movement === 'debts' ? 'debt' : movement; //debt movement is called as debts in frontend
+    console.log({ movementName });
+
     //-------------------------------------------------
     //In original design OLD VERSION: Debts and Investment Movements needed a compensation account, in this case named "slack", to serve as a counter part of the transaction.
     //-------------------------------------------------
-    const checkAndInsertAccount = async (req, res) => {
+    const checkAndInsertSlackAccount = async (req, res, next, userId) => {
       try {
         const chekAccountResult = await pool.query(
           'SELECT * FROM user_accounts WHERE account_name = $1',
@@ -165,9 +164,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
         // return res.status(500).json({ status: 500, message });
       }
     };
-    // console.log({checkAndInsertAccount})
-    //-------------------------------------------
-    //-------------------------------------------
+    // console.log({checkAndInsertSlackAccount})
+    //---------------------------------
+    //-------------------------------------------------
     if (!movementName) {
       const message = 'movement name is required';
       console.warn(pc.magentaBright(message));
@@ -180,7 +179,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
         'investment',
         'debt',
         'pocket',
-        'transfer',
+        'transfer','pnl'
       ].includes(movementName)
     ) {
       const message = `movement name " ${movementName} " is not correct`;
@@ -190,14 +189,14 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //--------------------
     //--this is for the old version where debt and investment movements do not consider an explicit counter account
 
-    // if (
-    //   movementName !== 'expense' &&
-    //   movementName !== 'income' &&
-    //   movementName !== 'transfer'
-    // ) {
-    //   checkAndInsertAccount(req, res, next, userId);
-    // }
-    //la nueva version no requiere gestionar el slack
+    if (
+      // movementName !== 'expense' &&
+      // movementName !== 'income' &&
+      // movementName !== 'transfer'
+      movementName === 'pnl'
+    ) {
+      checkAndInsertSlackAccount(req, res, next, userId);
+    }
     //======================================================
     //------------------
     //--get the movement types, get the movement type id and check --------------
@@ -230,18 +229,20 @@ export const transferBetweenAccounts = async (req, res, next) => {
       note,
       amount,
       currency: currencyCode,
-      type: transactionTypeName, //for old versions of investment or for debt in new version
+      type: transactionTypeName, //for pnl or for debt in new version
+      accountType
     } = req.body; //common fields to all tracker movements.
-    // console.log('tipo de transaccion', transactionTypeName);
+    console.log('type', transactionTypeName);
     console.log('body', req.body);
     //-----------------
-    //From original design, Not all tracker movements have the same input data structure, so, get the data structure configuration strategy based on movementName
+    //From the original design, Not all tracker movements input data form have the same input data structure, so, get the data structure configuration strategy based on movementName
     
     const config = {
       expense: getExpenseConfig(req.body),
       income: getIncomeConfig(req.body),
       transfer: getTransferConfig(req.body),
       debt: getDebtConfig(req.body),
+      pnl: getPnLConfig(req.body),
       //old version
       // investment: getInvestmentConfig(req.body),
       // pocket: getPocketConfig(req.body),
@@ -293,7 +294,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const movement_type_id = movement_type_idResult[0].movement_type_id;
     //=====================================================
 
-    //======= transaction and account types from db.
+    //==== transaction and account types from db.
     const transactionsTypes = await getTransactionTypes();
     const sourceTransactionTypeId = transactionsTypes.filter(
       (type) => type.transaction_type_name === sourceAccountTransactionType
@@ -310,7 +311,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   'destinationTransactionTypeId',
     //   destinationTransactionTypeId
     // );
-
     const accountTypes = await getAccountTypes();
     //==============================================
     //-------check common input data ----------------
@@ -330,20 +330,20 @@ export const transferBetweenAccounts = async (req, res, next) => {
       });
     }
     //validate input date
-    const { date: transactionActualDate } = req.body; //OJO revisar COMO LO ENVIA EL FRONTEND
+    const { date: transactionActualDate } = req.body; //
 
     const transaction_actual_date =
       !transactionActualDate || transactionActualDate === ''
         ? new Date()
         : new Date(Date.parse(transactionActualDate));
 
-    // Date.parse(transactionActualDate), Parses a string containing a date, and returns the number of milliseconds between that date and midnight
+    //Date.parse(transactionActualDate), Parses a string containing a date, and returns the number of milliseconds between that date and midnight
     // console.log(
     //   transaction_actual_date,
     //   '🚀 ~ transferBetweenAccounts ~ transactionActualDate:',
     //   transactionActualDate
     // );
-    //-------account info------------------------------------
+    //-------account info----------------
     //source and destination account info
     const sourceAccountInfo = await getAccountInfo(
       sourceAccountName,
@@ -395,7 +395,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
     if (
       sourceAccountBalance < numericAmount &&
-      (sourceAccountTypeName === 'bank' ||
+      ((sourceAccountTypeName === 'bank' && sourceAccountName!=='slack') ||
         sourceAccountTypeName === 'investment' ||
         sourceAccountTypeName === 'pocket_saving')
     ) {

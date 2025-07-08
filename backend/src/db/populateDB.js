@@ -124,7 +124,7 @@ export async function tblUserRoles() {
       await pool.query(createQuery);
     }
 
-    //is it already populated
+    //is it already populated?
     const isPopulated = await isTablePopulated(tblName, minCount);
     if (isPopulated) {
       console.log(pc.cyan(`${tblName} table is already populated.`));
@@ -294,6 +294,7 @@ export async function tblMovementTypes() {
     { movement_type_id: 6, movement_type_name: 'transfer' },
     { movement_type_id: 7, movement_type_name: 'receive' },
     { movement_type_id: 8, movement_type_name: 'account-opening' },
+    { movement_type_id: 9, movement_type_name: 'pnl' },
   ];
   const tblName = 'movement_types';
   const minCount = movementTypeValues.length;
@@ -309,7 +310,7 @@ export async function tblMovementTypes() {
       console.log(pc.yellow`${tblName} table does not exist. Creating it...'`);
       const createQuery = `CREATE TABLE movement_types (
         movement_type_id INT PRIMARY KEY NOT NULL,
-        movement_type_name VARCHAR(50) NOT NULL CHECK(movement_type_name IN ('expense','income','investment','debt','pocket','transfer','receive','account-opening'))
+        movement_type_name VARCHAR(50) NOT NULL CHECK(movement_type_name IN ('expense','income','investment','debt','pocket','transfer','receive','account-opening','pnl'))
 )`;
       await pool.query(createQuery);
     }

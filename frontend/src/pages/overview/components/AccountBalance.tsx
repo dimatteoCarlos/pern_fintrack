@@ -7,8 +7,7 @@ import { useFetch } from '../../../hooks/useFetch';
 import { ACCOUNT_DEFAULT, CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
 import { useEffect, useState } from 'react';
-
-
+//---------------------------------------------
 export type AccountPropType={previousRoute:string, accountType:string}
 
 //temporary values------------
@@ -28,7 +27,6 @@ function AccountBalance({
 
   //DATA FETCHING
   const urlGetAccounts = `${url_get_accounts_by_type}/?type=${accountType}&user=${user}`;
-
   const {
     apiData: accountsData,
     isLoading,

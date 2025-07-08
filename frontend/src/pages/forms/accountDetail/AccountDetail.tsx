@@ -138,9 +138,11 @@ useEffect(() => {
       <TopWhiteSpace variant={'dark'} />
       <div className='page__content'>
         <div className='main__title--container'>
+
           <Link to={previousRoute} relative='path' className='iconLeftArrow'>
             <LeftArrowLightSvg />
           </Link>
+          
           <div className='form__title'>{capitalize(accountDetail?.account_name).toUpperCase()}</div>
           
           <Link to='edit' className='flx-col-center icon3dots'>

@@ -108,8 +108,8 @@ function DropDownSelection({
   dropDownOptions,
   updateOptionHandler,
   isReset,
-  // setIsReset,
   isResetDropdown,
+  // setIsReset,
   // setIsResetDropdown,
 }: DropdownSelectPropType) {
   const { title, options, variant } = dropDownOptions;

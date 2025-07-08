@@ -168,15 +168,16 @@ async function initializeDatabase() {
       await Promise.allSettled(
         mainTables.map(async (item, indx) => {
           try {
-            if (item.tblName == 'users' || item.tblName=='transactions') {
+            if (item.tblName == 'users1' || item.tblName=='transactions1') {
               console.log('skip users table');
               return false;
             }
             await pool.query({
               text: `TRUNCATE TABLE ${item.tblName} RESTART IDENTITY CASCADE`,
             });
+                console.log(indx, item.tblName, 'truncated');
             await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
-            console.log(indx, item.tblName, 'truncated');
+            console.log(indx, item.tblName, 'drop');
           } catch (error) {
             console.error('error truncating the table', `${item.tblName}`);
           }

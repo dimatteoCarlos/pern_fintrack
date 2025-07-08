@@ -1,3 +1,5 @@
+import { AccountListType } from "./responseApiTypes";
+
 //accounting
 export type AccountingListType = {
   title: string;
@@ -221,7 +223,8 @@ export type TopCardSelectStateType =
   | ExpenseInputDataType
   | IncomeInputDataType
   | InvestmentInputDataType
-  | DebtsTrackerInputDataType;
+  | DebtsTrackerInputDataType
+  | BasicTrackerMovementInputDataType;
 
 export type ExpenseInputDataType = {
   amount: number | '';
@@ -265,13 +268,30 @@ export type DebtsTrackerInputDataType = {
 
 export type MovementTransactionType = TransactionType | DebtsTransactionType;
 
-export type BaseTrackerType = {
+export type BasicTrackerMovementInputDataType = {
   amount: number | '';
   currency: CurrencyType;
   date?: Date;
   note: string;
+  account: string;
+  accountType: string | undefined;
+  type?: MovementTransactionType;
+  accountId?:string;
 };
 
-//------------------------------------
+export type TopCardElementsType = {
+    titles: { title1: string; title2: string , label2?:string};
+    value: string;
+    selectOptions: {
+      title: string;
+      options: {
+        value: string;
+        label: string;
+      }[];
+      variant: VariantType;
+    };
+    accountsListInfo?:AccountListType[];
+  };
 
+//------------------------------------
 export type UserRolesType = 'user' | 'admin' | 'super_admin';
