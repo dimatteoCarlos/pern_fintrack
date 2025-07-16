@@ -1,6 +1,6 @@
 import DebtsBigBoxResult from './components/DebtsBigBoxResult.tsx';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
-import Debtors from './components/Debtors.tsx';
+import Debtors from './Debtors.tsx';
 import './styles/debts-styles.css';
 import { DEFAULT_CURRENCY } from '../../helpers/constants.ts';
 import { url_get_total_account_balance_by_type } from '../../endpoints.ts';
@@ -9,9 +9,8 @@ import { useFetch } from '../../hooks/useFetch.tsx';
 import { DebtorRespType } from '../../types/responseApiTypes.ts';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 
-//temporary values------------
+//default values------------
 const defaultCurrency = DEFAULT_CURRENCY;
-
 //--------------------------------------
 
 function DebtsLayout() {
@@ -30,7 +29,7 @@ function DebtsLayout() {
       return () => clearTimeout(timer);
     }
   }, [error]);
-  //--------------------------------------
+  //-----------------------------------
   const {
     total_debt_balance,
     debt_receivable,
