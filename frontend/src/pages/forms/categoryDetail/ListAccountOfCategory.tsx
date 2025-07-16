@@ -53,7 +53,7 @@ console.log('originRoute', previousRoute)
         console.log('ramain', remain)
 
         const statusAlert = remain <= 0;
-        //pendiente, realizar una funcion uq que haga el summary para cada cuenta mijo, y lo pase al a pagina siguiente, activar la en el App, y usar la misma AccountDetail.tsx
+
 //----------------------------------
         return (
           <div className='box__container .flx-row-sb' key={indx}>
