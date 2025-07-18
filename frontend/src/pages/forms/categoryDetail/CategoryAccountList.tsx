@@ -4,7 +4,6 @@ import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpa
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
-
 import { url_get_accounts_by_category,  USER_ID } from '../../../endpoints.ts';
 import { CategoryBudgetAccountsResponseType } from '../../../types/responseApiTypes.ts';
 import { useFetch } from '../../../hooks/useFetch.tsx';
@@ -14,7 +13,6 @@ import SummaryDetailBox from './summaryDetailBox/SummaryDetailBox.tsx';
 import ListAccountOfCategory from './ListAccountOfCategory.tsx';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 //=================================
-
 function CategoryAccountList() {
 console.log('componente', 'CategoryAccountList')
 //get the info from location state
@@ -30,11 +28,10 @@ console.log('category',categoryName)
 
 const state = location.state ?? {}
 
-const {categorySummaryDetailed=null, previousRoute:budgetPageAddress = `/fintrack/budget/category/${categoryName}`} = state as {
-  categorySummaryDetailed?:CategorySummaryInfoType | null; previousRoute?:string ;
+const {categorySummaryDetailed=null, previousRoute:budgetPageAddress = `/fintrack/budget`} = state as {
+  categorySummaryDetailed?:CategorySummaryInfoType | null; previousRoute:string ;
 }
 // console.log('location', location)
-
 // console.log("🚀 ~ CategoryAccountList ~ location:",
 //   //location,
 //   //  categorySummaryDetailed,
@@ -58,10 +55,10 @@ const urlAccountsByCategoryName =`${url_get_accounts_by_category}/${categoryName
 
    const categoryAccounts =useMemo(() => {return categoryAccountsExists ? apiData?.data.accountList : [];}, [categoryAccountsExists,apiData])
 
- //console.log("🚀 ~ CategoryAccountList ~ categoryAccounts:", categoryAccounts)
-//===========================
-//--functions
-//--build category summary info
+  //console.log("🚀 ~ CategoryAccountList ~ categoryAccounts:", categoryAccounts)
+  //=====================================
+  //--functions
+  //--build category summary info
 const calculateCategorySummaryInfo=useCallback( (
   accounts :typeof categoryAccounts,
   categoryName:string,
@@ -131,7 +128,7 @@ const calculateCategorySummaryInfo=useCallback( (
         <div className='page__content'>
           <div className='main__title--container'>
 
-            <Link to={budgetPageAddress!}
+            <Link to={budgetPageAddress}
             relative='path' className='iconLeftArrow'>
               <LeftArrowLightSvg />
             </Link>
@@ -148,8 +145,9 @@ const calculateCategorySummaryInfo=useCallback( (
   
         <CardTitle>{`${capitalize(categoryName!)} Accounts`}</CardTitle>  
 
-        <ListAccountOfCategory previousRoute={budgetPageAddress}
+        <ListAccountOfCategory previousRoute={`${budgetPageAddress}/category/${categoryName}`}
         accounts={categoryAccounts}
+        //categoryName={categoryName}
   /> 
         {isLoading && <p>Loading...</p>}
         {error && <p>Error loading data: {error}</p>}
