@@ -9,11 +9,11 @@ import {
   // divide,
 } from '../../../helpers/functions.ts';
 import {
-  // CategoryBudgetListType,
-  CategoryBudgetType,
-  CurrencyType,
+  // // CategoryBudgetListType,
+  // CategoryBudgetType,
+  // CurrencyType,
 } from '../../../types/types.ts';
-import { useFetch } from '../../../hooks/useFetch.tsx';
+
 import {
   // url_budget,
   url_summary_balance_ByType,
@@ -22,135 +22,150 @@ import {
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
-// import { Link } from 'react-router-dom';
+import { useFetch } from '../../../hooks/useFetch.tsx';
+import { Link } from 'react-router-dom';
 import {
   CategoryListSummaryType,
   CategoryListType,
 } from '../../../types/responseApiTypes.ts';
 //-----------------------------
-export type CategoryToRenderType = CategoryBudgetType & {
-  currency?: CurrencyType;
+export type CategoryToRenderType = CategoryListType & {
+  // currency_code?: CurrencyType;
   total_budget: number;
 };
 
+type ListCategoryProp=
+{  previousRoute:string}
+
 const defaultCategoryBudget: CategoryToRenderType[] = [];
 
-function ListCategory() {
+//============================================
+function ListCategory({previousRoute}:ListCategoryProp) {
+  console.log('originRoute', previousRoute)
+
   //List Category
-
   // en el backend: generar la data segun estructura de los datos a renderizar, es decir,
-  //agrupar para cada caategoria, expenses y  budgets, y cualquier otra; la sumatoria de los expense se refleja en el spent, y la sumatoria de los budget de cada categoria seria el budget por categoria o por subcategoria? hay que definir esto, no e tengo claro el manejo de las subcategorias. ,  y el status refleja el estado de lo disponible en el presupuesto,  seria el resultado de la resta entre el expense-budget  de cada categoria, ..
+  //agrupar para cada categoria, expenses y  budgets, y cualquier otra; la sumatoria de los expense se refleja en el total_balance, y la sumatoria de los budget de cada categoria seria el budget por categoria o por subcategoria? hay que definir esto, no tengo claro el manejo de las subcategorias. ,  y el status refleja el estado de lo disponible en el presupuesto,  seria el resultado de la resta entre el expense-budget  de cada categoria, ..
 
+//++++++++++++++++++++++++++++++++++++
   //DATA FETCHING
+  //List of each category with summary info
   // CategoryListSummaryType
   const { apiData, isLoading, error } = useFetch<CategoryListSummaryType>(
     `${url_summary_balance_ByType}?type=category_budget&user=${USER_ID}`
   );
   // console.log(apiData);
-
-  //-------
+  //--------------------
   const budgetList: CategoryToRenderType[] =
     apiData?.data && !isLoading && !error && apiData.data.length > 0
       ? apiData.data.map((catBudget: CategoryListType) => {
           const {
             category_name,
-            total_balance: spent,
-            total_remaining: remaining,
-            currency_code: currency,
+            total_balance,
+            total_remaining,
+            currency_code,
+            
           } = catBudget;
 
           return {
-            total_budget: spent + remaining,
             category_name,
-            spent,
-            remaining,
-            currency,
+            total_balance,
+            total_budget: total_balance + total_remaining,
+            total_remaining,
+            currency_code,
           };
         })
       : defaultCategoryBudget;
+//++++++++++++++++++++++++++++++++++++     
+//functions
+//--------------------------------------------
+ return (
+  <>
+    {/*LIST CATEGORY  */}
+    <article className='list__main__container '>
+      {budgetList.map((category, indx) => {
+        const {
+          category_name,
+          total_balance,
+          total_budget: budget,
+          currency_code,
+        } = category;
 
-  //functions
+        // const { total_remaining } = category;
+        // console.log('total_remaining', total_remaining);
 
-  return (
-<>
-  {/*LIST CATEGORY  */}
-  <article className='list__main__container '>
-    {budgetList.map((category, indx) => {
-      const {
-        category_name,
-        spent,
-        total_budget: budget,
-        currency,
-      } = category;
+        const remain = Math.round(-total_balance + budget);
 
-      // const { remaining } = category;
-      const remain = Math.round(-spent + budget);
-      // console.log('remaining', remaining);
+        const statusAlert = remain <= 0;
 
-      const statusAlert = remain <= 0;
-
-      return (
-        <div className='box__container .flx-row-sb' key={indx}>
-          <BoxRow>
-            {/* <Link to={`/budget/categories/:${category_id}`}> */}
-            <div className='box__title box__title--category__name hover '>
-              {category_name}{' '}
-            </div>
-            {/* </Link> */}
-
-            <div
-              className='box__title--spent  '
-              style={{
-                width: 'max-content',
-                display: 'flex',
-                justifyContent: 'space-between',
-                textAlign: 'right',
-                borderBottom: '0.5px dashed var(--creme)',
-              }}
-            >
-              spent: {currencyFormat(currency, spent, 'en-US')}&nbsp;
-              <span style={{ fontSize: '0.75rem' }}>
-                (
-                {budget === 0
-                  ? ''
-                  : ((spent / budget) * 100).toFixed(1) + '%'}
-                )
-              </span>
-            </div>
-          </BoxRow>
-
-          <BoxRow>
+        return (
+          <div className='box__container .flx-row-sb' key={indx}>
             <BoxRow>
-              <div className='flx-row-sb'>
-                <StatusSquare alert={statusAlert ? 'alert' : ''} />
-                <div className='box__subtitle'>
-                  &nbsp;
-                  {numberFormatCurrency(
-                    remain,
-                    0,
-                    currency ?? DEFAULT_CURRENCY,
-                    'en-US'
-                  )}
-                  &nbsp;
-                  <span style={{ fontSize: '0.75rem' }}>
-                    (
-                    {budget === 0
-                      ? ''
-                      : ((1 - spent / budget) * 100).toFixed(1) + '%'}
-                    )
-                  </span>
-                </div>
+              <Link to={`category/${category_name}`}
+              state = {{ categorySummaryDetailed:{...category, remain,statusAlert}, previousRoute}}
+              >
+              {/* <Link to={`category/${category_name}`}
+              state = {{previousRoute, categorySummaryDetailed:category, remain,statusAlert}}
+              > */}
+              <div className='box__title box__title--category__name hover '>
+                {category_name}{' '}
+              </div>
+              </Link>
+
+              <div
+                className='box__title--spent'
+                style={{
+                  width: 'max-content',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  textAlign: 'right',
+                  borderBottom: '0.5px dashed var(--creme)',
+                }}
+              >
+                Spent: {currencyFormat(currency_code, total_balance, 'en-US')}&nbsp;
+                <span style={{ fontSize: '0.75rem' }}>
+                  (
+                  {budget === 0
+                    ? ''
+                    : ((total_balance / budget) * 100).toFixed(1) + '%'}
+                  )
+                </span>
               </div>
             </BoxRow>
-            <div className='box__subtitle'>
-              budget: {currencyFormat(currency, budget, 'en-US')}{' '}
-            </div>
-          </BoxRow>
-        </div>
-      );
-    })}
-  </article>
-</>
+
+            <BoxRow>
+              <BoxRow>
+                <div className='flx-row-sb'>
+                  <StatusSquare alert={statusAlert ? 'alert' : ''} />
+                  <div className='box__subtitle'>
+                    &nbsp;
+                    {numberFormatCurrency(
+                      remain,
+                      0,
+                      currency_code ?? DEFAULT_CURRENCY,
+                      'en-US'
+                    )}
+                    &nbsp;
+                    <span style={{ fontSize: '0.75rem' }}>
+                      (
+                      {budget === 0
+                        ? ''
+                        : ((1 - total_balance / budget) * 100).toFixed(1) + '%'}
+                      )
+                    </span>
+                  </div>
+                </div>
+              </BoxRow>
+              
+              <div className='box__subtitle'>
+                budget: {currencyFormat(currency_code, budget, 'en-US')}{' '}
+              </div>
+            </BoxRow>
+          </div>
+        );
+      })}
+    </article>
+  </>
   );
 }
 

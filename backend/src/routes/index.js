@@ -12,7 +12,9 @@ router.use('/auth', authDetectClienttype,authRoutes);
 
 
 router.use('/user', userRoutes);
+
 router.use('/account', accountRoutes);
+
 router.use('/transaction', transactionRoutes);
 
 export default router;

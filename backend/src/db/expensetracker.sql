@@ -1,3 +1,5 @@
+--THIS QUERIES WHERE USED AS A REFERENCES, NOT ALL OF THEM WWERE USED OR EXACTLY AS THEY ARE PRESENTED HERE  
+
 -- "Get all users' info, except for passwords and account IDs."
 SELECT username, email, user_firstname,user_role_name,  currency_code FROM users 
 JOIN currencies ON users.currency_id = currencies.currency_id
@@ -164,6 +166,7 @@ JOIN user_accounts ua ON tr.account_id = ua.account_id
   -- total month expenses by category name, and currency, the 12 months of a specific year
   WITH months AS (SELECT generate_series(1,12) AS month),
 categories AS (
+  
     SELECT 
         EXTRACT(MONTH FROM tr.transaction_actual_date) AS month,
         cba.category_name,
@@ -190,7 +193,7 @@ SELECT
 FROM months m
 LEFT JOIN categories cat ON m.month = cat.month
 ORDER BY m.month ASC, cat.category_name, cat.currency_code
----------------------------------------------------------------------
+-------------------------------------------------------------------
 -- get monthly expenses by category name and currency
 WITH
 categories AS (
@@ -217,6 +220,7 @@ SELECT
     COALESCE(cat.category_name, 'no activity'),
 	COALESCE(cat.month_total_amount, 0) AS month_total_amount,
     cat.currency_code
+financial_data
 FROM categories cat
 -- LEFT JOIN categories cat ON m.month = cat.month
 ORDER BY cat.month_index ASC, cat.category_name, cat.currency_code
@@ -269,10 +273,6 @@ WITH financial_data AS (
 -- get the summary list of category budget account expenses,grouped by category name separated by currencies.
 
 
-
-
-
-
 -- select mt.movement_type_name,  COUNT(*) from transactions tr
 -- join movement_types mt ON tr.movement_type_id = mt.movement_type_id
 -- GROUP BY mt.movement_type_id, mt.movement_type_name
@@ -310,6 +310,13 @@ WHERE table_name = 'movement_types' AND constraint_type = 'CHECK';
 -- ALTER TABLE transactions
 -- RENAME COLUMN create_at TO created_at;
 
+--category_budget_accounts list by category_name
+select ua.*, cba.*, cur.currency_code, cnt.category_nature_type_name from user_accounts ua
+join category_budget_accounts cba on cba.account_id = ua.account_id
+join category_nature_types cnt on cnt.category_nature_type_id = cba.category_nature_type_id
+join currencies cur on cur.currency_id = ua.currency_id
+where cba.category_name = 'transportation' --OR cba.category_name = 'housing'
+ORDER BY cba.category_name asc, cnt.category_nature_type_id asc
 
 
 

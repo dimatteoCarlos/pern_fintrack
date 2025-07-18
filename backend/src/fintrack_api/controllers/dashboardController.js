@@ -1,5 +1,11 @@
+// dashboardTotalBalanceAccounts
+// dashboardTotalBalanceAccountByType
+// dashboardAccountSummaryList
 
-//get: //http://localhost:5000/api/fintrack/dashboard/balance
+// dashboardMovementTransactions
+// dashboardMovementTransactionsSearch
+// dashboardMovementTransactionsByType
+
 import {
   createError,
   handlePostgresError,
@@ -93,9 +99,9 @@ ORDER BY account_type_name ASC
 //========================================================
 //--- dashboardTotalBalanceAccountByType -----------------
 //get the total balance for a specific type account
-//used:TrackerLayout, OverviewLayout.tsx
+//used in:TrackerLayout, OverviewLayout.tsx
 //========================================================
-//get: //http://localhost:5000/api/fintrack/dashboard/balance/type
+//get enpoint: //http://localhost:5000/api/fintrack/dashboard/balance/type
 //get the sum total balance of a specified account type
 
 /* example of output: 
@@ -166,10 +172,10 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     const TOTAL_BALANCE_QUERY = {
       text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance, CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
       FROM user_accounts ua
-JOIN account_types act ON ua.account_type_id = act.account_type_id
-JOIN currencies ct ON ua.currency_id = ct.currency_id
-WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
-GROUP BY ct.currency_code
+      JOIN account_types act ON ua.account_type_id = act.account_type_id
+      JOIN currencies ct ON ua.currency_id = ct.currency_id
+      WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+      GROUP BY ct.currency_code
 `,
       values: [userId, accountType, 'slack'],
     };
@@ -177,14 +183,14 @@ GROUP BY ct.currency_code
     //-----------
     const TOTAL_BALANCE_AND_GOAL_BY_TYPE = {
       category_budget: {
-        text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,  CAST(SUM(st.budget) AS FLOAT ) AS total_budget,
-        (CAST(SUM(st.budget) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining,CAST(COUNT(*) AS INTEGER) AS accounts,
-        ct.currency_code FROM user_accounts ua
-JOIN account_types act ON ua.account_type_id = act.account_type_id
-JOIN currencies ct ON ua.currency_id = ct.currency_id
-JOIN category_budget_accounts st ON ua.account_id = st.account_id
-WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
-GROUP BY  ct.currency_code
+    text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,  CAST(SUM(st.budget) AS FLOAT ) AS total_budget,
+    (CAST(SUM(st.budget) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining,CAST(COUNT(*) AS INTEGER) AS accounts,
+    ct.currency_code FROM user_accounts ua
+    JOIN account_types act ON ua.account_type_id = act.account_type_id
+    JOIN currencies ct ON ua.currency_id = ct.currency_id
+    JOIN category_budget_accounts st ON ua.account_id = st.account_id
+    WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+    GROUP BY  ct.currency_code
 `,
         values: [userId, accountType, 'slack'],
       },
@@ -289,9 +295,11 @@ GROUP BY  ct.currency_code
     // return RESPONSE(error, next)
   }
 };
-//========================================================
+//===================================================
 //get the total balance for 'category_budget', 'debtor' and 'pocket_saving'. Considering also goals, budget, target,
+
 //get: //http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=&user=
+
 //=====================================
 export const dashboardAccountSummaryList = async (req, res, next) => {
   const backendColor = 'yellow';
@@ -415,10 +423,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
 
       return RESPONSE(res, 200, successMsg, data);
     }
-    //--------------------------------------
-
-    //-------------------------------------
-
+    //-----------------------------------
     //in case accountType does not exist
     const message = `No available accounts of type ${accountType} for summary list`;
     return RESPONSE(res, 400, message);
@@ -448,7 +453,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
 // http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=investment&user=51ba...
 // http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=pocket&user=51ba7...
 
-//------------------------------------------------
+//--------------------------------------
 export const dashboardMovementTransactions = async (req, res, next) => {
   const backendColor = 'yellow';
   const errorColor = 'red';
@@ -484,7 +489,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       );
     }
   };
-  //---------------------------------------
+  //-------------------------------------
   const { movement } = req.query;
   const movement_type_name = movement === 'debts' ? 'debt' : movement;
   const userId = req.body.user ?? req.query.user;
@@ -794,7 +799,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   }
 };
 //------------------------------------------------
-//************************************************/
+//**************************************/
 //GET: TRACKER MOVEMENT TRANSACTIONS. BY USER, PERIOD (default:last 30 days) AND  a SEARCH PARAM
 //endpoint: http://localhost:5000/api/fintrack/dashboard/movements/search/?start=sd&end=ed&search=searchParam&user=${user}
 

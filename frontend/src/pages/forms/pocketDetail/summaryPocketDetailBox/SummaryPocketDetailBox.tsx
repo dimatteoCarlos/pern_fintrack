@@ -41,7 +41,7 @@ function SummaryPocketDetailBox({ bubleInfo }:SummaryDetailPropType ) {
           <div className='summary__data--status '>
             {/* status: */}
             <StatusSquare alert={remaining >0 ? 'alert' : ''}/>
-            <div className='summary__data--subtitle2'>%{(target !==0 ? Math.abs(remaining/(target)*100):0).toFixed(1)}</div>
+            <div className='summary__data--subtitle2'>{(target !==0 ? Math.abs(remaining/(target)*100):0).toFixed(1)}%</div>
           </div>
         </div>
       </div>

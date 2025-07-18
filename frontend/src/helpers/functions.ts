@@ -245,11 +245,23 @@ export const formatDate = (date:Date | string ) =>
     });
 
 //-----------------------
-export function capitalize(word: string) {
-  return word.charAt(0).toUpperCase() + word.slice(1);
+export function capitalize1(text: string): string {
+  // 1. Convertimos todo a minúsculas
+  const lower = text.toLowerCase();
+
+  // 2. Capitalizamos la primera letra del texto y después de cada punto + espacio
+  const capitalized = lower.replace(/(^\w)|(\.\w)/g, match => match.toUpperCase());
+
+  return capitalized;
+}
+
+
+export function capitalize(word: string | undefined) {
+
+  return word? word.charAt(0).toUpperCase() + word.slice(1):'';
 }
 //----------------
-export const truncateText = (
+export const truncateText = ( 
   textContent: string = '',
   maxLength: number = 255
 ) => {
@@ -282,7 +294,7 @@ export function validationData(stateToValidate: {
       value == undefined
     ) {
       errorValidationMessages[key] = `* Please provide the ${capitalize(key)}`;
-      console.log('key from string validation', key)
+      console.log('provide key from string validation', key)
       continue;
     }
   }

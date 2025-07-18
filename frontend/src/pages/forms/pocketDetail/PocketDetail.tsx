@@ -4,7 +4,6 @@ import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpa
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import {
-
   DEFAULT_ACCOUNT_TRANSACTIONS,
   DEFAULT_CURRENCY,
   DEFAULT_POCKET_ACCOUNT_LIST,
@@ -103,7 +102,7 @@ if(previousRouteFromState)(setPreviousRoute(previousRouteFromState))
 
 }, [accountsData, accountId,previousRouteFromState])
  
-//====================================
+//=============================
   return (
     <>
       <section className='page__container'>
@@ -114,6 +113,7 @@ if(previousRouteFromState)(setPreviousRoute(previousRouteFromState))
               <LeftArrowLightSvg />
             </Link>
             <div className='form__title'>{capitalize(accountDetail?.account_name).toUpperCase()}</div>
+            
             <Link to='edit' className='flx-col-center icon3dots'>
               <Dots3LightSvg />
             </Link>

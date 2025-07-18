@@ -21,11 +21,14 @@ export type CategoryToRenderType = CategoryListType & {
 };
 
 type ListAccountOfCategoryProp=
-{previousRoute:string, accounts:CategoryBudgetAccountListType[]}
-
-//============================================
-function ListAccountOfCategory({previousRoute, accounts}:ListAccountOfCategoryProp) {
-// console.log('originRoute', previousRoute)
+{previousRoute:string, accounts:CategoryBudgetAccountListType[],
+//categoryName:string
+}
+//========================================
+function ListAccountOfCategory({previousRoute, accounts,
+//   categoryName
+}:ListAccountOfCategoryProp) {
+console.log('from ListAccountOfCatgoryProp', previousRoute)
 // --------------------------------
  return (
   <>
@@ -51,7 +54,9 @@ function ListAccountOfCategory({previousRoute, accounts}:ListAccountOfCategoryPr
 
             <BoxRow>
               <Link to={`account/${account_id}`}
-              state = {{ categorySummaryDetailed:{...account, remain, statusAlert}, previousRoute}}
+              state = {{ accountDetailed:{...account, remain, statusAlert}, previousRoute,
+              // categoryName
+            }}
               >
               <div className='box__title box__title--category__name hover '>
                 {account_name}{' '}

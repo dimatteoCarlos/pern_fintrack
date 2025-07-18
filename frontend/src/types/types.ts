@@ -295,3 +295,16 @@ export type TopCardElementsType = {
 
 //------------------------------------
 export type UserRolesType = 'user' | 'admin' | 'super_admin';
+
+//--Budget Category Detail
+//--CategoryAccountList.tsx
+
+export type CategorySummaryInfoType = {
+    total_balance: number;
+    total_budget: number;
+    remain: number;
+    total_remaining?:number;
+    statusAlert: boolean;
+    currency_code: CurrencyType;
+    category_name?: string;
+}

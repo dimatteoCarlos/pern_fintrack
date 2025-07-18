@@ -1,9 +1,72 @@
-user = c109eb15-4139-43b4-b081-8fb9860588af
+user = 397ec169-a453-45ce-bf5f-71b3b820b0ee
+
 https://www.youtube.com/watch?v=zcPj4eEnhyM
 ===========================
-PENDIENTE
+ISSUES
+============================
+CATEOGRY DETAIL. PENDIENTE.
+EN EL BACKEND
+determinar en que router se colocaran los controladores para obtener las cuentas por nombre de categoria.
+Resp. app.use('/api/fintrack', fintrack_routes);,
+router.use('/account', accountRoutes), 
+router.get('/category/:categoryName', getAccountsByCategory); listo.
+http://localhost:5000/api/fintrack/account/category/:${categoryName}/?user=${userId}
 
-base de dats con time zone. listo
+realizar el query pra obtener la informacion de las cuentas asociadas a la categoryName. listo.
+
+tambien se escribio el query para obtener la sumatoria de los parametros de balance, budget y remaining, de la categoryName,  pero se decidio hacerlo en el frontend.
+
+escribir el controlador getAccountByCategory.
+R. esta dentro de getAccountController.listo
+
+---
+
+ y realizar la totalizacion de los parametros total balance, total budget, total remaining, tomada de la informacion de las cuentas asociadas a dicha categoria.
+
+probar con insomnia. listo
+
+---------------------
+EN L FRONTEND
+las rutas en el frontend sirven para mostrar el elemento o componente a mostrar.
+
+definir el enpoint, y la ruta>
+la ruta puede hacer algo asi, fintrack/budget/category/:cateogory_name
+
+        {
+          path: '/fintrack/budget/category/:categoryName',
+          element: <CategoryAccountList/>,
+        },
+
+---
+
+obtner la ruta previa,en el prop enviado por la page anterior, para el link de regreso.
+
+hacer los peticions al backend, para obtener incormacion de las cuentas,
+
+realizar la totalizacion de los parametros.
+
+enviar la totalizarion de los parametros kpi a CategoryAccountList
+
+manejo de error, en caso que las cuentas no existan, o errores en la totalizacion de los parametros.
+
+obtener la ruta actual para enviarla a la proxima page , y definir como estado del link, la informacion de la cuenta.
+
+renderizar, con un compoenente CategoryAccountList, o  las cueentas asociadas a la cateogry, con su respectivo link 'category/:CaegoryName/accountId, tmbien enviarle la ruta actula como ruta previa.
+
+armar el renderizado de CategoryAccountList,, con la buble inform category arriba, y la lista de cuentas con sus link y estado respectivo.
+
+luego, hacer el componente de AccountDetail, mostrando el detalle de la cuenta seleccionada.
+como igual como se hizo con accountDetail o pocektDetail, etc.
+
+============================
+pendiente
+usar toastify para mensajes al usuario , error y success. PENDIENTE.
+
+net worth considerando assests (bank+investment)-cuentas por pagar. PENDIENTE
+
+?SE CONSIDERA QUE LOS POCKET SAVING, ESTAN REPARTIDOS  EN LAS CUENTAS DE BANCO Y DE INVESTMENT.??
+
+base de datO con time zone. listo
 
 arreglar query de list of movement para account detail, para account-opening and bank, income, investment type accounts. listo
 
@@ -13,24 +76,22 @@ ARREGLAR EN EL FRONTEND DE PNL, QUE EL BODY IN ENVIE EL TIPO DE CUENTA CORRECTME
 
 mostrar los balances de las cuentas dentro de las opciones de los dropdown. Listo.
 
-ahora ocurre que al realiczar un tracker c de cualquier cuenta o movimiento que muetstre el balance de la cuenta en las opciones del dropdown, entonces, se va a tener que hace un refetch para actualizar las balances de las cuentas dentro de las opciones del dropdown,. LISTO.
+ahora ocurre que al realiczar un tracker c de cualquier cuenta o movimiento que muetstre el balance de la cuenta en las opciones del dropdown, entonces, se va a tener que hace un refetch para actualizar las balances de las cuentas dentro de las opciones del dropdow. se utilizo un artificio, para que la url se actualice despues de submit , y asi con el useEffect del hook useFetch, se renderiza y actualiza las opciones del dropdown accounts.  LISTO.
 
 ??????????????????????????????????????????
 CON REACT QUERY SE PUEDE HACER, PERO ESTOY USANDO ESTADOS, ASI QUE, SERA QUE SE HAGA CON UN REFETCH , UNA NUEVA PETICION, UN REFRESCAMEINTO DE LA PAGINA, o cambiar la url en forma inocua, para que el sideEffect del useFetch re-renderingm y, aplicarlo en todas las paginas del tracker, a menos que se simplifique con un componente reutilizable. 
 ???????????????????????????????????????
-usar toastify para mensajes al usuario , error y success.
-net worth considerando assests-
+
+REVISAR CREACION DE CUENTAS. PENDIENTE
+
 ACCOUNT DETAIL. LISTO.
 INVESTMENT DETAIL NO EXISTE. LISTO.
 BOTON DE REGRESO DE POCKET DETAIL . LISTO.
 DEBTOR DETAIL .LISTO
 
 POCKET DETAIL. listo
-CATEOGRY DETAL. PENDIENTE.
 
-REVISAR CREACION DE CUENTAS. PENDIENTE
-
-INCLUIR DPOSITO Y RETIRO A CUENTAS DE BANK Y INVESTMENT EN UN TRACKER PROFIT N LOSSES PnL. LISTO
+INCLUIR DPOSITO Y RETIRO A CUENTAS DE BANK Y INVESTMENT EN TRACKER PROFIT N LOSSES PnL. LISTO
 
 PARA LAS TRANASCCIONES PnL, IDENTIFICAR L EL REGISTRO DE LA TRANSACCION CON EL TIPO DE TRANSACCION COMO PROFIT ADJUSTEMNT O LOSS ADJUSTMENT, INSTEAD OF DEPOSIT OR WITHDRAW. UNA OPCION ES USAR PnL con el tipo de transaction deposito / withdraw. PENDIENTE
 
@@ -40,12 +101,11 @@ entender probabilidad con crystall ball
 stimacion / risks / etc.
 ---------------------------------------
 
-incluir toastify
-estrategia para edicion >
+estrategia para edicion > PENDIENTE
 validacion 
 cambiar validacion para que no se borre cuando hay errores. PENDIENTE
-mostrar error an d success messages to the user. PENDIENTE MEJORAR CON TOASTIFY.
-manejo y administracion de usuarios mediante authentication
+
+manejo y administracion de usuarios mediante authentication PENDIENTE
 
 --------------------------------
 PENDIENTE
@@ -57,7 +117,7 @@ en el proceso de LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TAB
 estrategias de borrado de informacion defnir.
 No hay un INCOME account detail 
 
-INCOME DETAIL NO EXISTE. PENDIENTE. NO ESTA CONSIDERADO. COMO DETAIL, SINO COMO LAST MOVEMENT DE BANK ACCOUNT BALANCE.
+INCOME DETAIL NO EXISTE. PENDIENTE. NO ESTA CONSIDERADO COMO DETAIL, SINO COMO LAST MOVEMENT DE BANK ACCOUNT BALANCE.
 
 ======================
 BUGS POR ARREGLAR 
@@ -105,7 +165,7 @@ EN la DESCRIPCION DE LA CREACION DE UNA CUENTA INVESTMENT, NO SE VE LA HORA EN Q
 ===========================
 asegurar el criterio del signo para el start account amount sea coherente en todas las cuentas a crear. OBSERVACION
 ===========================
-PENDIENTE
+
 AHORA RESULTA QUE ADD ACCOUNT PARA CREAR UNA CUENTA NUEVA NO FUNCIONA. LISTO.
 
 TAMPOCO RECONOCE LOS MOVEMENTS POCKET SAVING, INCOME, ETC. LISTO.
@@ -119,26 +179,23 @@ EL ACCOUNT OPENING DEBERIA APARECER EN LA CUENTA QUE SE ABRIO, Y LA CUENTA BANK 
 
 ===========================
 PENDIENTE
-AL HACER UN TRACKER BORROW A CUENTA DBTOR EX SB NO SE VE LA DESCRIPTION EN OVERVIEW. LISTO.
+AL HACER UN TRACKER BORROW A CUENTA DBTOR NO SE VE LA DESCRIPTION EN OVERVIEW. LISTO.
 
-si no se hace la seleccion de la cuenta, no se muestra la validacion en DEBTS tracker.
+si no se hace la seleccion de la cuenta, no se muestra la validacion en DEBTS tracker.LISTO
 
-Deberia aparecer un loading, 
+Deberia aparecer un loading, ?
 
 investment creada con deposito inicial se muestra en los movements, pero no muestra LA description tr es deposit. LISTO
 
 cuando se crea una cuenta pocket o una investment no se refleja en el overview. LISTO.
 
-bajar mas el mensaje e de error de createPocket. PENDIENTE
-
 cuando se hace un borrow desde tracker a c una cuenta debtor, no se refleja la descriptcion en overview. LISTO.
 
 cuando se crea una cuenta pocekt no se refleja en los movimientos en overview. LISTO.
 
-cuando se crea una cuenta c expense o category obj la descripcion no se refleja en los movimientos en overview. OLISTO.
+cuando se crea una cuenta c expense o category obj la descripcion no se refleja en los movimientos en overview. LISTO.
 
 hacer una helper o util function. PARA estandarizar la descripcion de las transacciones.PENDIENTE.
-
 
 =================
 LISTO .
@@ -165,7 +222,7 @@ si se refleja como debtor - ojo cual era la regla de negocios. para investment d
 osea las cuentas investment pueden ser (deposit/w, borrow/l, )
 de debt a tracker , tambpoco se refleja como pocket movments, EL MONTOO SAVED SI, PERO NO EL AVG.
 
-EL ORDEN DE MOVEMENTS DEBERIA SER EN FECHA DESC.
+EL ORDEN DE MOVEMENTS DEBERIA SER POR FECHA 
 -----------------------------------
 MEJOR CONTROL
 ES MAS FACIL PARA ESTA VERSION, QUE DEBTS SEA SOLO CON BANK ACCOUNTS, LISTO YA SE CAMBIO
@@ -180,23 +237,22 @@ exportar movimientos o transacciones, con boton
 descargar en pdf.
 descargar en excel.
 exportar .csv , google sheet
-agregar cuentas de ajuste positivo y negativo, a donde? en accounting, para bank e investment. LISTO SE CONSIDERO UN P MOVIMIENTO TRACKER PnL.
+
+agregar cuentas de ajuste positivo y negativo, a donde? en accounting, para bank e investment. LISTO SE CONSIDERO UN PAGE MOVIMIENTO TRACKER PnL.
 
 edicion para pocket y budget, en cuenta a desired date y target, y budget.
 eliminacion de cuentas. PENDIENTE EDICION.
 
 add money se puede s hacer con ajuste positivo, que so depositos externos / retiros con ajuste netgativo. NO, YA SE HIZO CON PNL EN EL TRACKER.
 
-simplificar al descripcion en overview y colocar un dropdown para mostrar el completo description. NO SE QUE ES EESTO.
 ===========================
 PENDIENTE
 Arreglar mensajes largos (no fund) ui de tracker . MAS O MENOS
 arreglar mensaje de no funds. MAS O MENOS UNA LA
 
 ===========================
-PENDIENTE
-updated_at no se actualiza automaticamente en tracker
-y al hacer la creacion de debt account createDebtor. 
+LISTO
+updated_at no se actualiza automaticamente en tracker y al hacer la creacion de debt account createDebtor. 
 VERIFICAR EN TODAS LAS TRANFERENCIAS ENTRE CUENTAS, TANTO TRACKER COM CREATE ACCOUNTS.
 ===========================
 PENDIENTES
@@ -258,7 +314,6 @@ era un error de typing income vs incom
 
 =================
 OJO
-PARA UN TRACKING COMPLETO SE DEBERIA CONSIDEERAR CUENTAS DE AJUSTES POSITIVO Y NETGABTIVO , PARA CUENTAS DE AHORRO QUE GENERANI INTERESES, PERDIDAS Y GANANCIAS EN CUENTAS DE INVERSION,DEPOSITOS Y RETIROS DE CUENTAS BANCARIAS,POR EJEMPLO TENER UNA CUENTA CASH PARA REFLEJAR DEPOSITOS Y RETIROS DE CUENTAS BANK. 
 
 EL NET WORTH MOSTRADO, ES REALMENTE UN OPERATIVE PROFIT, NO ES EL NET WORTH REAL SEGUN LA DEFINICION EN CONTABILIDAD, YA QUE ESTE SE CALCULA CONSIDERANDO POR EJEMPLO LOS DEBTS (RECEIVABLES O PAYAIBLAES), LOS SALDOS EN INVESTMENT, ASI COMO ACTIVOS Y PASIVOS NO REGISTRADOS O TRACKEADO S AQUI. 
 

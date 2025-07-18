@@ -40,5 +40,5 @@ export default router;
 
 //-------------------------------------------------------------------------------------
 //GET TRACKER MOVEMENT TRANSACTIONS BY ACCOUNT ID
-router.get('/')
+// router.get('/')
 

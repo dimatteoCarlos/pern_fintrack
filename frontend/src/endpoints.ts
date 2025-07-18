@@ -16,55 +16,62 @@ export const url_refrestoken: string =
 
 //http://localhost:5000/api/fintrack
 export const BASE_URL: string = import.meta.env.VITE_API_URL_APP;
-// export const url_debtors = BASE_URL + '/' + 'debtors';
-// export const url_debtors_debt = BASE_URL + '/' + 'debtors/debt';
-// export const url_categories = BASE_URL + '/' + 'categories';
-// export const url_investment = BASE_URL + '/' + 'investment';
-// export const url_sources = BASE_URL + '/' + 'sources';
-// export const url_budget = BASE_URL + '/' + 'budget';
-//  //expense and income accounts are TREATED the same WAY
-// export const url_accounts = BASE_URL + '/' + 'accounts';
-// export const url_investment_acc = BASE_URL + '/' + 'investment-accounts'; //not implemented yet
 
 //account_types list
 //http://localhost:5000/api/fintrack/account/type/list
 export const url_account_type_list: string = BASE_URL + '/account/type/list';
 
 //CREATE NEW ACCOUNT
+//for Overview page
 //create a new account for types: bank, investment and income_source
 //http://localhost:5000/api/fintrack/account/new_account/account_type
 export const url_create_basic_account: string =
   BASE_URL + '/account/new_account'; //account_type is dynamic
+
+ 
+//ENDPOINTS FOR BUDGET PAGE
+// dashboardAccountSummaryList
+//accouny list summary by account type and acc name
+//example:http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=category_budget&user=
+export const url_summary_balance_ByType: string =
+  BASE_URL + '/dashboard/balance/summary/'; //?type=expense&user=
 
 //create a category_budget account
 //http://localhost:5000/api/fintrack/account/new_account/category_budget
 export const url_create_category_budget_account: string =
   BASE_URL + '/account/new_account/category_budget';
 
+//get accounts info  by categoryName
+//--endpoint: http://localhost:5000/api/fintrack/budget/category/:categoryName?&user=${user}
+//api response type data:
+export const url_get_accounts_by_category: string = BASE_URL + '/account/category'; 
+
 //create a pocket_saving account
 //http://localhost:5000/api/fintrack/account/new_account/pocket_saving
 export const url_create_pocket_saving_account: string =
   BASE_URL + '/account/new_account/pocket_saving';
 
+//FOR DEBTS PAGE
 //create a debtor account
 //http://localhost:5000/api/fintrack/account/new_account/debtor
 export const url_create_debtor_account: string =
   BASE_URL + '/account/new_account/debtor';
 
+//--for debts page
 //---GET ACCOUNT INFO BY ACCOUNT ID
-//--for Overview page
+//--endpoint: http://localhost:5000/api/fintrack/debts/debtor/${account_id)?&user=c109eb15-4139-43b4-b081-8fb9860588af
+export const url_get_debtor_by_id: string = BASE_URL + '/debts/debtor/';
+
+//--FOR OVERVIEW PAGE
+//---GET ACCOUNT INFO BY ACCOUNT ID
 //--endpoint: http://localhost:5000/api/fintrack/account/11?&user=${user}
 //api response type data:PocketListSummaryType
 export const url_get_account_by_id: string = BASE_URL + '/account';
 
-//--for debts page
-//--endpoint: http://localhost:5000/api/fintrack/debts/debtor/${account_id)?&user=c109eb15-4139-43b4-b081-8fb9860588af
-export const url_get_debtor_by_id: string = BASE_URL + '/debts/debtor/';
-
 //---GET ACCOUNT TRANSACTIONS BY ACCOUNT ID
 //--endpoint: http://localhost:5000/api/fintrack/account/transactions/:account_id/?start=&end=&user=c109eb15-4139-43b4-b081-8fb9860588af
 export const url_get_transactions_by_account_id: string = BASE_URL + '/account/transactions';
-
+//----------------------------------------
 //----GET ALL ACCOUNTS INFO OF A SPECIFIC ACCOUNT TYPE
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
 //controller:getAllAccountsByType
@@ -77,7 +84,7 @@ export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
 //http://localhost:5000/api/fintrack/account/type/?type=bankAndInvestment
 //example for expense tracker, types used are: bank and category_budget,
 export const url_get_accounting_accounts: string =
-  BASE_URL + '/account/type/?type= bank_and_investment';
+  BASE_URL + '/account/type/?type=bank_and_investment';
 
 //get the sum of balance of all accounts of one account type
 //example: total balance is the sum of all bank accounts balance
@@ -95,12 +102,6 @@ export const url_get_total_account_balance_by_type: string =
 export const url_movement_transaction_record: string =
   BASE_URL + '/transaction/transfer-between-accounts';
 
-//ENDPOINTS FOR BUDGET PAGE
-// dashboardAccountSummaryList
-//accouny list summary by account type and acc name
-//example:http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=category_budget&user=
-export const url_summary_balance_ByType: string =
-  BASE_URL + '/dashboard/balance/summary/'; //?type=expense&user=
 //=================================================
 //endpoints for OVERVIEWLAYOUT page
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type
@@ -144,3 +145,6 @@ export const dashboardMovementTransactions: string =
 // dashboardMovementTransactionsSearch
 export const url_get_transactions_by_search: string =
   BASE_URL + '/dashboard/movements/search/';
+
+  
+

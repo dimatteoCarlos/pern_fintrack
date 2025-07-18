@@ -1,4 +1,5 @@
 //ListPocket.tsx
+//parent:
 import { Link, } from 'react-router-dom';
 import { StatusSquare } from '../../../general_components/boxComponents';
 import {
@@ -21,25 +22,27 @@ import { useFetch } from '../../../hooks/useFetch.tsx';
 //============================================
 function ListPocket({previousRoute}:{previousRoute:string}) {
 console.log('originRoute', previousRoute)
+
  //DATA FETCHING
  //List Pocket - get accounts by type:pocket_saving
   const { apiData, isLoading, error } = useFetch<PocketListSummaryType>(
     `${url_summary_balance_ByType}?type=pocket_saving&user=${USER_ID}`
   );
-
   // console.log('🚀 ~ ListPocket ~ apiData:', apiData);
+  //----------
   const pocketList: PocketListType[] =
     apiData?.data && !isLoading && !error && apiData?.data.length
       ? apiData?.data
       : DEFAULT_POCKET_LIST;
 
       console.log('apidata', pocketList)
-
+//--------------------------------------------
   return (
     <article className='list__main__container '>
       {pocketList.map((pocket, indx) => {
         const { account_name, note, balance, target, currency_code, account_id,desired_date } =
           pocket;
+          
         return (
           <Link
           to={`pockets/${account_id}`}

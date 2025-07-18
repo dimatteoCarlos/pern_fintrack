@@ -4,16 +4,17 @@ import { url_get_total_account_balance_by_type } from '../../endpoints';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader';
 import { useFetch } from '../../hooks/useFetch';
 import { BalanceCategoryRespType } from '../../types/responseApiTypes';
-import Budget from './components/Budget';
+import Budget from './Budget';
 import BudgetBigBoxResult from './components/BudgetBigBoxResult';
 import './styles/budget-styles.css';
 import CoinSpinner from '../../loader/coin/CoinSpinner';
 
 function BudgetLayout() {
   //temporary values------------
-
   const userId = import.meta.env.VITE_USER_ID;
+  
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
 
   const budgetUrl = `${url_get_total_account_balance_by_type}?type=category_budget&user=${userId}`;
 

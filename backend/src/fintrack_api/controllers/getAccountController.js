@@ -1,3 +1,5 @@
+//getAllAccountsByType, getAccounts, getAccountById, getAccountsByCategory
+
 import pc from 'picocolors';
 import {
   createError,
@@ -31,7 +33,7 @@ const RESPONSE = (res, status, message, data = null) => {
 
 //get all accounts info by account type: id, name, type, currency and balance, by user id and account_type but slack account.
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${bank}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
-//type can be: bank, category_budget, income_source, investment, debtor, bankAndInvestement
+//type can be: bank, category_budget, income_source, investment, debtor, bank_and_investment
 
 export const getAllAccountsByType = async (req, res, next) => {
   console.log(pc[backendColor]('getAllAccountsByType'));
@@ -40,9 +42,9 @@ export const getAllAccountsByType = async (req, res, next) => {
   try {
     const { type } = req.query;
     const userId = req.body.user ?? req.query.user;
-    const accountType = type.trim().toLowerCase();
+    const accountType = type.trim();
 
-    console.log(userId, accountType, controllerName);
+    console.log(userId, accountType.length, controllerName);
 
     if (!accountType || !userId) {
       const message = `User ID and account type are required.Try again!.`;
@@ -170,12 +172,12 @@ JOIN debtor_accounts ps ON ua.account_id = ps.account_id
         typeQuery: {
           text: `SELECT ua.account_id, ua.account_name, CAST(ua.account_balance AS FLOAT), ct.currency_code, act.account_type_id, act.account_type_name,
           CAST(ua.account_starting_amount AS FLOAT),  ua.account_start_date
-       FROM user_accounts ua
-       JOIN account_types act ON ua.account_type_id = act.account_type_id
-       JOIN currencies ct ON ua.currency_id = ct.currency_id
-       WHERE ua.user_id = $1
-       AND( act.account_type_name = $2 OR act.account_type_name=$3) AND ua.account_name != $4
-     ORDER BY ua.account_type_id ASC, ua.account_name ASC, ua.account_balance DESC
+          FROM user_accounts ua
+          JOIN account_types act ON ua.account_type_id = act.account_type_id
+          JOIN currencies ct ON ua.currency_id = ct.currency_id
+          WHERE ua.user_id = $1
+          AND( act.account_type_name = $2 OR act.account_type_name=$3) AND ua.account_name != $4
+        ORDER BY ua.account_type_id ASC, ua.account_name ASC, ua.account_balance DESC
        `,
           values: [userId, 'bank', 'investment', 'slack'],
         },
@@ -330,7 +332,7 @@ export const getAccountById = async (req, res, next) => {
     }
     //======================================================
     //--get account basic info and its type name
-    const accountResult = await pool.query({
+    const accountsResult = await pool.query({
       text: `SELECT act.account_type_name , ua.*
         FROM user_accounts ua
         JOIN account_types act ON act.account_type_id = ua.account_type_id
@@ -338,21 +340,21 @@ export const getAccountById = async (req, res, next) => {
       values: [accountId],
     });
 
-    console.log('result', accountResult.rows[0])
+    console.log('result', accountsResult.rows[0])
 
-     if (!accountResult || accountResult.rows.length===0) {
+     if (!accountsResult || accountsResult.rows.length===0) {
       const message = `Account does not exist`;
       console.warn(pc[backendColor](message));
       return res.status(400).json({ status: 400, message });
     }
 
     //--check account_type_name developer mode
-    console.log('account type', accountResult.rows[0].account_type_name)
+    console.log('account type', accountsResult.rows[0].account_type_name)
 
     /*
       const { accountTypeName } = req.body.accountTypeName ?? '';
 
-      const accountTypeMismatch = accountResult.rows[0].account_type_name !== String(accountTypeName).trim().toLowerCase()
+      const accountTypeMismatch = accountsResult.rows[0].account_type_name !== String(accountTypeName).trim().toLowerCase()
 
       if (accountTypeMismatch) {
         const message = `Entered account type mismatch.`;
@@ -362,10 +364,10 @@ export const getAccountById = async (req, res, next) => {
       const account_type_name =
       !req.body.accountTypeName || req.body.accountTypeName == '' 
       //|| accountTypeMismatch
-      ? accountResult.rows[0].account_type_name
+      ? accountsResult.rows[0].account_type_name
       : req.body.accountTypeName.trim().toLowerCase();
 */
-     const account_type_name =accountResult.rows[0].account_type_name
+     const account_type_name =accountsResult.rows[0].account_type_name
 
      //is it redundant?
     if(!['pocket_saving','category_budget', 'bank', 'investment', 'income_source','debtor'].includes(account_type_name)){
@@ -474,7 +476,7 @@ export const getAccountById = async (req, res, next) => {
 
     const accountListResult = ['bank','investment','source_income'].includes(account_type_name)
 
-    ? accountResult
+    ? accountsResult
     :
       await pool.query(
       accountTypeQuery[account_type_name].typeQuery
@@ -514,3 +516,173 @@ export const getAccountById = async (req, res, next) => {
     next(createError(code, message));
   }
 };
+
+//*****************************
+//get accounts of a category by category_name
+//endpoint example: http://localhost:5000/api/fintrack/budget/category/${category_name}?&user=${user}
+
+//example of route:http://localhost:5173/fintrack/budget/category/${category_name}
+//*************************************
+export const getAccountsByCategory= async (req, res, next) => {
+  console.log(pc[backendColor]('getAccountsByCategory'));
+    console.log(
+    'body:',
+    req.body,
+    'params:',
+    req.params,
+    'query:',
+    req.query,
+    'path:',
+    req.path,
+    'originalUrl:',
+    req.originalUrl
+  );
+
+  try {
+   const userId = req.body.user ?? req.query.user;
+   
+    if (!userId) {
+      const message = 'User ID is required';
+      console.warn(pc.blueBright(message));
+      return res.status(400).json({ status: 400, message });
+    }
+    const {categoryName } = req.params;
+
+    if (!categoryName) {
+      const message = `Category name is required.`;
+      console.warn(pc[backendColor](message));
+      return res.status(400).json({ status: 400, message });
+      }
+   //======================================================
+    //--get accounts info by category name
+
+    const accountsResult = await pool.query({
+      text: `SELECT ua.*, CAST(ua.account_balance AS FLOAT), CAST(ua.Account_starting_amount AS FLOAT), cba.*,CAST(cba.budget AS FLOAT),
+       cur.currency_code, cnt.category_nature_type_name
+       FROM user_accounts ua
+
+      JOIN category_budget_accounts cba ON cba.account_id = ua.account_id
+      JOIN category_nature_types cnt ON cnt.category_nature_type_id = cba.category_nature_type_id
+      JOIN currencies cur ON cur.currency_id = ua.currency_id
+
+      WHERE cba.category_name = $1 AND ua.user_id = $2
+      
+      ORDER BY cba.category_name asc, cnt.category_nature_type_id asc`,
+      values: [categoryName, userId],
+    });
+
+    console.log('result', accountsResult.rows[0])
+
+     if (!accountsResult || accountsResult.rows.length===0) {
+      const message = `No accounts of cateogry ${categoryName} were found`;
+      console.warn(pc[backendColor](message));
+      return res.status(400).json({ status: 400, message });
+    }
+
+    console.log('accounts', accountsResult.rows[0])
+ 
+    
+    const accountListResult = accountsResult
+    
+    if (accountListResult.rows.length === 0) {
+      const message = `No accounts available`;
+      console.warn(pc[backendColor](message));
+      return res.status(400).json({ status: 400, message });
+      }
+      
+      const accountList = accountListResult.rows;
+      //devolver el nombre de la cuenta, (balance actual), currency_code
+      
+      const data = { rows: accountList.length, accountList };
+      
+      const message = `${categoryName} account list successfully completed `;
+      console.log('success:', pc[backendColor](message));
+      
+      res.status(200).json({ status: 200, message, data });
+
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(pc.red('Error while getting accounts by category name'));
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log(error.stack);
+      }
+    } else {
+      console.error(
+        pc.red('Error during getting accounts by category name'),
+        pc[errorColor]('Unknown error occurred')
+      );
+    }
+    // Manejo de errores de PostgreSQL
+    const { code, message } = handlePostgresError(error);
+    next(createError(code, message));
+  }
+};
+
+/*
+example response of getAccountByCategory
+{
+	"status": 200,
+	"message": "housing account list successfully completed ",
+	"data": {
+		"rows": 3,
+		"accountList": [
+			{
+				"account_id": 11,
+				"user_id": "397ec169-a453-45ce-bf5f-71b3b820b0ee",
+				"account_name": "housing_must",
+				"account_type_id": 5,
+				"currency_id": null,
+				"account_starting_amount": "0.00",
+				"account_balance": "133.30",
+				"account_start_date": "2025-07-05T17:17:48.123Z",
+				"created_at": "2025-07-05T17:17:48.138Z",
+				"updated_at": "2025-07-08T17:26:14.073Z",
+				"category_name": "housing",
+				"category_nature_type_id": 1,
+				"subcategory": "cleaning",
+				"budget": "500.00",
+				"currency_code": "usd",
+				"category_nature_type_name": "must"
+			},
+			{
+				"account_id": 20,
+				"user_id": "397ec169-a453-45ce-bf5f-71b3b820b0ee",
+				"account_name": "housing_need",
+				"account_type_id": 5,
+				"currency_id": null,
+				"account_starting_amount": "0.00",
+				"account_balance": "0.00",
+				"account_start_date": "2025-07-09T17:35:11.247Z",
+				"created_at": "2025-07-09T17:35:11.875Z",
+				"updated_at": "2025-07-09T17:35:11.874Z",
+				"category_name": "housing",
+				"category_nature_type_id": 2,
+				"subcategory": "subcategory of housing",
+				"budget": "654.00",
+				"currency_code": "usd",
+				"category_nature_type_name": "need"
+			},
+			{
+				"account_id": 22,
+				"user_id": "397ec169-a453-45ce-bf5f-71b3b820b0ee",
+				"account_name": "housing_want",
+				"account_type_id": 5,
+				"currency_id": null,
+				"account_starting_amount": "0.00",
+				"account_balance": "0.00",
+				"account_start_date": "2025-07-09T17:39:16.840Z",
+				"created_at": "2025-07-09T17:39:17.557Z",
+				"updated_at": "2025-07-09T17:39:17.557Z",
+				"category_name": "housing",
+				"category_nature_type_id": 4,
+				"subcategory": "housing subcategory",
+				"budget": "768.00",
+				"currency_code": "usd",
+				"category_nature_type_name": "want"
+			}
+		]
+	}
+}
+
+*/

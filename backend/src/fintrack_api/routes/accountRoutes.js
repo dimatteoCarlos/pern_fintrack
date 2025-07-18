@@ -1,18 +1,23 @@
+
+
 import express from 'express';
 //controllers
 import {
   createBasicAccount,
   createDebtorAccount,
   createPocketAccount,
-  // createCategoryBudgetAccount,
+  //createCategoryBudgetAccount,
 } from '../controllers/accountCreationController.js';
 
 import {
   getAccounts,
   getAllAccountsByType,
   getAccountById,
+  getAccountsByCategory,
 } from '../controllers/getAccountController.js';
+
 import { createCategoryBudgetAccount } from '../controllers/accountCategoryCreationcontroller.js';
+
 import { getTransactionsForAccountById } from '../controllers/getTransactionsForAccountById.js';
 
 // import { createCategoryBudgetAccount } from '../controllers/accountCategoryCreationController.js';
@@ -41,7 +46,15 @@ router.post('/new_account/category_budget', createCategoryBudgetAccount);
 //GET USER ACCOUNT INFO BY TYPE, BY ID, ALL ACC.
 router.get('/allAccounts', getAccounts);
 router.get('/type', getAllAccountsByType);
+
 router.get('/:accountId', getAccountById);
+
 router.get('/transactions/:accountId', getTransactionsForAccountById);
-//----------------------------------------------
+
+//GET USER ACCOUNT LIST INFO BY CATEGORY NAME
+// get all category budget account type info associated to a category Name
+//route: /api/fintrack/account/category/
+router.get('/category/:categoryName', getAccountsByCategory);
+
+//-------------------------------------
 export default router;

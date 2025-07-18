@@ -75,7 +75,7 @@ export interface CreateBasicAccountApiResponseType {
 }
 
 // Main response data structure
-interface ResponseDataType {
+type ResponseDataType ={
   user_id: string;
   account_basic_data: AccountBasicDataType;
   new_account_data: NewAccountDataType;
@@ -206,7 +206,7 @@ type PocketSavingAccountType = {
 };
 
 //GET ACCOUNT BY TYPE. RESPONSE TYPE
-//bank type
+//BANK TYPE
 export type AccountByTypeResponseType = {
   status: number;
   message: string;
@@ -222,7 +222,7 @@ export type AccountListType = Omit<
   //  | 'created_at' 
 >;
 //--
-//category_budget type
+//CATEGORY_BUDGET TYPE
 export type CategoryBudgetAccountsResponseType = {
   status: number;
   message: string;
@@ -232,15 +232,20 @@ export type CategoryBudgetAccountsResponseType = {
   };
 };
 
-type CategoryBudgetAccountListType = Omit<
-  AccountBasicDataType,
-  'currency_id' | 'created_at' | 'updated_at'
-> & {
+// type CategoryBudgetAccountListType = Omit<
+//   AccountBasicDataType,
+//   'currency_id' | 'created_at' | 'updated_at'
+// > & {
+export type CategoryBudgetAccountListType = 
+  AccountBasicDataType & {
   budget: number;
   subcategory?: string;
+  category_name: string;
   category_nature_type_name: string;
-  account_starting_amount: number;
+  category_nature_type_id?: number;
   account_start_date: Date | string;
+  user_id?:string;
+  //account_starting_amount: number;
 };
 //--
 //pocket_saving type
@@ -274,8 +279,6 @@ account_id: number;
   // account_starting_amount: number;
   // account_start_date: Date | string;
 };
-
-
 
 //MOVEMENT TRANSFER BETWEEN ACCOUNTS
 export type MovementTransactionResponseType = {
@@ -381,12 +384,12 @@ export type MovementTransactionDataType = {
 };
 
 //CATEGORY LIST SUMMARY
-export interface CategoryListSummaryType {
+export type CategoryListSummaryType= {
   status: number;
   message: string;
   data?: CategoryListType[] | null;
 }
-export interface CategoryListType {
+export type CategoryListType={
   category_name: string;
   currency_code: CurrencyType;
   total_balance: number;

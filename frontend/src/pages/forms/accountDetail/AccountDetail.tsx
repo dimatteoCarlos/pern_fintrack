@@ -62,7 +62,7 @@ function AccountDetail() {
     } = useFetch<AccountByTypeResponseType>(
       detailedData?"":urlAccountById
     );
-
+//---------------------------------------
     //--account transaction api response
     //--how to handle dates period
     //Although the getTransactionsForAccountById backend, deals with the last 30 days transactions, here, it wil get the transactions for current month, and a specified number of months period
@@ -116,7 +116,7 @@ useEffect(() => {
 }, [accountsData, detailedData,accountId,])
 //----------------------------------
 
-//==============================================
+//===========================================
 
   // if (error) return <div className='error-message'>{error}</div>;
   //           {isLoading && (

@@ -23,12 +23,6 @@ function Budget() {
     });
   };
 
-  // const listPocket = (originRoute: string) => {
-  //   navigateTo(originRoute + '/pockets', {
-  //     state: { previousRoute: originRoute },
-  //   });
-  // };
-
   return (
     <>
       <section className='content__presentation'>

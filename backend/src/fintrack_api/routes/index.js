@@ -11,8 +11,11 @@ import listRoutes from './listRoutes.js';
 const router = express.Router();
 
 router.use('/account', accountRoutes); //create and read(get) accounts
+
 router.use('/transaction', transactionRoutes);
+
 router.use('/dashboard', dashboardRoutes);
+
 router.use('/account/type', listRoutes); //for catalog table data
 
 //MULTICURRENCY

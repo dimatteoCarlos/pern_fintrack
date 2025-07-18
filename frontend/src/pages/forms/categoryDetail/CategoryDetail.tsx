@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
@@ -6,90 +6,176 @@ import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import ListContent from '../../../general_components/listContent/ListContent.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
-import SummaryDetailBox from '../../../general_components/summaryDetailBox/SummaryDetailBox.tsx';
-
+// import SummaryDetailBox from '../../../general_components/summaryDetailBox/SummaryDetailBox.tsx';
 import '../styles/forms-styles.css';
-import { DEFAULT_CATEGORY_LIST } from '../../../helpers/constants.ts';
+import { DEFAULT_ACCOUNT_TRANSACTIONS, DEFAULT_CATEGORY_LIST, DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
+import { closestIndexTo } from 'date-fns';
+import SummaryDetailBox from './summaryDetailBox/SummaryDetailBox.tsx';
+import { CategoryBudgetAccountListType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+import { CurrencyType } from '../../../types/types.ts';
+import { url_get_transactions_by_account_id } from '../../../endpoints.ts';
+import { useFetch } from '../../../hooks/useFetch.tsx';
+import { capitalize, formatDateToDDMMYYYY, numberFormatCurrency } from '../../../helpers/functions.ts';
+import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
+import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
+//---
+const user = import.meta.env.VITE_USER_ID;
+//----------------------------
+//--Account category detailed w/o edition. Not useState usage.
+//----------------------------
+type ListOfCategoryAccountsRouteStateType ={
+    accountDetailed?: CategoryBudgetAccountListType & {
+    remain: number;
+    statusAlert: boolean;
+    } | null;
 
+  previousRoute: string;
+}
 function CategoryDetail() {
-  const [activeCategory, setActiveCategory] = useState('');
-  // const [categoryDetail, setCategoryDetail] = useState(null);
 
-  //temporary data
-  // const categoryInfo = {
-  //   name: 'Category',
-  //   account: '',
-  //   amount: '0',
-  // };
+  const {accountId:rawAccountId, categoryName}=useParams<{
+  accountId?: string;
+  categoryName?: string;
+}>()
 
-  //summary data
-  const summaryData = {
-    title: 'budget',
-    amount: 2222.11,
+const accountId = (rawAccountId || '').trim();
+
+if (!accountId) {
+throw new Error("Invalid account ID parameter");
+}
+
+  const location =useLocation()
+  const state = location.state??{};
+
+  const {accountDetailed=null, previousRoute=categoryName?`/fintrack/budget/category/${categoryName}`:'/fintrack/budget'}= (state as Partial<ListOfCategoryAccountsRouteStateType>) ?? {}
+    
+  console.log("🚀 ~ CategoryDetail ~ accountDetailed:", accountId,previousRoute, accountDetailed)
+//---
+
+console.log('adc', accountDetailed)
+//summary data
+  const summaryData =accountDetailed? {
+    title: 'Budget',
+    amount: Number(accountDetailed.budget),
     subtitle1: 'Spent',
-    subtitle2: 'status',
-  };
+    amount1:+accountDetailed.account_balance,
+    status: accountDetailed.statusAlert as boolean,
+    amount2:(+accountDetailed.remain),
+    currency_code: accountDetailed.currency_code,
+     }
+     :{
+    title: 'Budget',
+    amount: 0,
+    subtitle1: 'Spent',
+    amount1:0,
+    status: false,
+    amount2:0,
+    currency_code:'usd' as CurrencyType
+     }
+     ;
 
-  //Last Movements
-  const listData = DEFAULT_CATEGORY_LIST;
+//--------------------------------
+//period dates considering previous number of months and current month transactions
+    const tdy = new Date()
+    const numberOfMonths=2
+    const firstDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth()-numberOfMonths+1,1)
+    const lastDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth()+1,0)
 
-  const tileLabels = [
-    { labelText: 'Must', className: 'label--text' },
-    { labelText: 'Need', className: 'label--text' },
-    { labelText: 'Want', className: 'label--text' },
-    { labelText: 'Other', className: 'label--text' },
-    // { labelText: 'New One', className: 'label--text' },
-  ];
+    //--YYYY-MM-DD
+    const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0]
+    const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0]
+//--------------------------------
+//--Fetch Data
+    //--account detail transactions
+    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?user=${user}&start=${apiStartDate}&end=${apiEndDate}`;
 
-  // const initialCategoryDetail = {
-  //   summaryData,
-  //   listData,
-  //   nature: '',
-  // };
+    const {
+      apiData: transactionAccountApiResponse,//{status, message, data}
+      isLoading:isLoadingTransactions,
+      error:errorTransactions,
+    } = useFetch<TransactionsAccountApiResponseType>(
+      urlTransactionsAccountById
+    );
 
-  // const initialCategoryDetail=[
+    const transactions = transactionAccountApiResponse?transactionAccountApiResponse?.data.transactions:DEFAULT_ACCOUNT_TRANSACTIONS['data'];
 
-  // ]
-  //Es necesario definir la estructura de la informacion o datos contemplados en detalles de categoria
+    const summaryAccountBalance =  transactionAccountApiResponse?
+(transactionAccountApiResponse?.data.summary):DEFAULT_ACCOUNT_TRANSACTIONS['data']['summary']
 
-  //--functions---
 
-  function natureHandler(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    // console.log('natureHandler', e.currentTarget.id);
-    const activeNature = !!e.currentTarget.id ? e.currentTarget.id : '';
-    setActiveCategory(activeNature);
-    // setCategoryData((prev) => ({ ...prev, nature: activeNature }));
-  }
 
-  function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
-    console.log('submit btn clicked');
-    e.preventDefault();
-    setActiveCategory('');
-    //Definir la informacion de categoryDetail.
-    // setcategoryDetail(initialcategoryDetail);
-  }
+//-------------------------------------
 
+
+//======================================
   return (
     <>
       <section className='page__container'>
         <TopWhiteSpace variant={'dark'} />
         <div className='page__content'>
           <div className='main__title--container'>
-            <Link to='/budget' relative='path' className='iconLeftArrow'>
+            <Link to={previousRoute} relative='path' className='iconLeftArrow'>
               <LeftArrowLightSvg />
             </Link>
-            <div className='form__title'>{'Category'}</div>
+
+            <div className='form__title'>{capitalize(accountDetailed?.account_name)}</div>
             {/* <div className='form__title'>{categoryInfo.name}</div> */}
+
             <Link to='edit' className='flx-col-center icon3dots'>
               <Dots3LightSvg />
             </Link>
           </div>
         </div>
 
-        <SummaryDetailBox summaryData={summaryData}></SummaryDetailBox>
+        <SummaryDetailBox bubleInfo={summaryData}></SummaryDetailBox>
 
-        <form className='form__box'>
+      <article className='form__box'>
+          <div className='form__container'>
+
+                       <div className='input__box'>
+                            <label className='label form__title'>{`Current Balance`}</label>
+            
+                            <div className="input__container"
+                            style={{ padding: '0.5rem' }}>{numberFormatCurrency(accountDetailed?.account_balance)}
+                            </div>
+                          </div>
+                      
+            {/* INCLUIR EN EL BACKEND ACCOUNT TYPE ANAME  */}
+                        <div className='input__box'>
+                          <label className='label form__title'>{'Account Type'}</label>
+            
+                          <p className='input__container' style={{ padding: '0.5rem' }}>
+                            {capitalize(accountDetailed.account_type_name!)}
+                          </p>
+                        </div>
+
+            <div className='account__dateAndCurrency'>
+              <div className='account__date'>
+                <label className='label form__title'>{'Starting Point'}</label>
+                <div
+                  className='form__datepicker__container'
+                  style={{ textAlign: 'center', color:'white' }}
+                >
+                  {formatDateToDDMMYYYY((accountDetailed.account_start_date))}
+                </div>
+              </div>
+
+              <div className='account__currency'>
+                <div className='label form__title'>{'Currency'}</div>
+
+                <CurrencyBadge
+                  variant={VARIANT_FORM}
+                  currency={accountDetailed?.currency_code??DEFAULT_CURRENCY}
+                />
+              </div>
+            </div>
+          </div>
+ 
+
+
+{/* {
+        <article className='form__box'>
           <CardTitle>{'Subcategory'}</CardTitle>
           <ListContent listOfItems={listData} />
 
@@ -121,7 +207,33 @@ function CategoryDetail() {
           <div className='submit__btn__container'>
             <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
           </div>
-        </form>
+        </article> } */}
+
+{/* --- TRANSACTION STATEMENT SECTION --- */}
+        <div className="account-transactions__container "
+        style={{margin:'1rem 0'}}
+        >
+        <div className="period-info">
+          <div className="period-info__label">Period</div>
+          <span className="period-info__dates  ">{formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}{'  '}  /  {'  '} {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}</span>
+        </div>
+
+         <AccountBalanceSummary summaryAccountBalance={summaryAccountBalance}/>
+        
+          <div className='presentation__card__title__container '>
+            <CardTitle>{'Last Movements'}</CardTitle>
+          </div>
+
+         <AccountTransactionsList transactions={transactions} /> 
+        </div>
+          {/* --- END TRANSACTION STATEMENT SECTION --- */}
+
+            {/* <ListContent listOfItems={lastMovements} /> */}        
+        </article>
+
+      {/* {(isLoading || isLoadingTransactions) && <p>Loading...</p>}
+        {(error|| errorTransactions) && <p>Error fetching account info: {error??errorTransactions}</p>} */}
+
       </section>
     </>
   );
