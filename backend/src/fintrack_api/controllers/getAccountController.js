@@ -383,7 +383,7 @@ export const getAccountById = async (req, res, next) => {
    //category_budget
       category_budget: {
         typeQuery: {
-          text: `SELECT ua.*, act.*,cba.*, ct.currency_code, cnt.category_nature_type_name
+          text: `SELECT ua.*, act.*, cba.*, ct.currency_code, cnt.category_nature_type_name
           FROM user_accounts ua
           JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON ua.currency_id = ct.currency_id
@@ -558,12 +558,12 @@ export const getAccountsByCategory= async (req, res, next) => {
 
     const accountsResult = await pool.query({
       text: `SELECT ua.*, CAST(ua.account_balance AS FLOAT), CAST(ua.Account_starting_amount AS FLOAT), cba.*,CAST(cba.budget AS FLOAT),
-       cur.currency_code, cnt.category_nature_type_name
-       FROM user_accounts ua
-
+       cur.currency_code,act.account_type_name ,cnt.category_nature_type_name
+      FROM user_accounts ua
       JOIN category_budget_accounts cba ON cba.account_id = ua.account_id
       JOIN category_nature_types cnt ON cnt.category_nature_type_id = cba.category_nature_type_id
       JOIN currencies cur ON cur.currency_id = ua.currency_id
+      JOIN account_types act ON act.account_type_id= ua.account_type_id
 
       WHERE cba.category_name = $1 AND ua.user_id = $2
       
