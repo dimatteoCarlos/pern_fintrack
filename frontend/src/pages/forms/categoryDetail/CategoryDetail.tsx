@@ -146,7 +146,7 @@ console.log('adc', accountDetailed)
                           <label className='label form__title'>{'Account Type'}</label>
             
                           <p className='input__container' style={{ padding: '0.5rem' }}>
-                            {capitalize(accountDetailed.account_type_name!)}
+                            {(accountDetailed.account_type_name!)}
                           </p>
                         </div>
 
