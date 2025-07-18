@@ -1,15 +1,9 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
-import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
-import ListContent from '../../../general_components/listContent/ListContent.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
-import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
-// import SummaryDetailBox from '../../../general_components/summaryDetailBox/SummaryDetailBox.tsx';
 import '../styles/forms-styles.css';
-import { DEFAULT_ACCOUNT_TRANSACTIONS, DEFAULT_CATEGORY_LIST, DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
-import { closestIndexTo } from 'date-fns';
+import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
 import SummaryDetailBox from './summaryDetailBox/SummaryDetailBox.tsx';
 import { CategoryBudgetAccountListType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { CurrencyType } from '../../../types/types.ts';
@@ -19,6 +13,7 @@ import { capitalize, formatDateToDDMMYYYY, numberFormatCurrency } from '../../..
 import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
+import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 //---
 const user = import.meta.env.VITE_USER_ID;
 //----------------------------
@@ -32,8 +27,8 @@ type ListOfCategoryAccountsRouteStateType ={
 
   previousRoute: string;
 }
+//=====================================
 function CategoryDetail() {
-
   const {accountId:rawAccountId, categoryName}=useParams<{
   accountId?: string;
   categoryName?: string;
@@ -98,15 +93,15 @@ console.log('adc', accountDetailed)
       urlTransactionsAccountById
     );
 
-    const transactions = transactionAccountApiResponse?transactionAccountApiResponse?.data.transactions:DEFAULT_ACCOUNT_TRANSACTIONS['data'];
+    const transactions = transactionAccountApiResponse?.data.transactions??[];
 
-    const summaryAccountBalance =  transactionAccountApiResponse?
-(transactionAccountApiResponse?.data.summary):DEFAULT_ACCOUNT_TRANSACTIONS['data']['summary']
-
-
-
+    const summaryAccountBalance = (transactionAccountApiResponse?.data.summary)??{
+  initialBalance: { amount: 0, date: '', currency: '' },
+  finalBalance: { amount: 0, date: '', currency: '' },
+  periodStartDate: '',
+  periodEndDate: ''
+};
 //-------------------------------------
-
 
 //======================================
   return (
@@ -133,22 +128,22 @@ console.log('adc', accountDetailed)
       <article className='form__box'>
           <div className='form__container'>
 
-                       <div className='input__box'>
-                            <label className='label form__title'>{`Current Balance`}</label>
-            
-                            <div className="input__container"
-                            style={{ padding: '0.5rem' }}>{numberFormatCurrency(accountDetailed?.account_balance)}
-                            </div>
-                          </div>
+            <div className='input__box'>
+                <label className='label form__title'>{`Current Balance`}</label>
+
+                <div className="input__container"
+                style={{ padding: '0.5rem' }}>{numberFormatCurrency(accountDetailed?.account_balance)}
+                </div>
+              </div>
                       
             {/* INCLUIR EN EL BACKEND ACCOUNT TYPE ANAME  */}
-                        <div className='input__box'>
-                          <label className='label form__title'>{'Account Type'}</label>
-            
-                          <p className='input__container' style={{ padding: '0.5rem' }}>
-                            {(accountDetailed.account_type_name!)}
-                          </p>
-                        </div>
+            <div className='input__box'>
+              <label className='label form__title'>{'Account Type'}</label>
+
+              <p className='input__container' style={{ padding: '0.5rem' }}>
+                {(accountDetailed?.account_type_name)}
+              </p>
+            </div>
 
             <div className='account__dateAndCurrency'>
               <div className='account__date'>
@@ -157,7 +152,7 @@ console.log('adc', accountDetailed)
                   className='form__datepicker__container'
                   style={{ textAlign: 'center', color:'white' }}
                 >
-                  {formatDateToDDMMYYYY((accountDetailed.account_start_date))}
+                  {formatDateToDDMMYYYY((accountDetailed?.account_start_date))}
                 </div>
               </div>
 
@@ -172,43 +167,6 @@ console.log('adc', accountDetailed)
             </div>
           </div>
  
-
-
-{/* {
-        <article className='form__box'>
-          <CardTitle>{'Subcategory'}</CardTitle>
-          <ListContent listOfItems={listData} />
-
-          <CardTitle>{'Category Nature'}</CardTitle>
-
-          <div className='nature__tiles'>
-            {tileLabels.map((label, indx) => {
-              return (
-                <button
-                  className='nature__btn tile__button'
-                  onClick={natureHandler}
-                  key={`${indx}-tile`}
-                  id={`${label.labelText.toLowerCase()}`}
-                  style={
-                    activeCategory == label.labelText.toLowerCase()
-                      ? {
-                          backgroundColor: 'var(--creme)',
-                          color: 'var(--dark)',
-                        }
-                      : {}
-                  }
-                >
-                  {label.labelText}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className='submit__btn__container'>
-            <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
-          </div>
-        </article> } */}
-
 {/* --- TRANSACTION STATEMENT SECTION --- */}
         <div className="account-transactions__container "
         style={{margin:'1rem 0'}}
@@ -224,15 +182,16 @@ console.log('adc', accountDetailed)
             <CardTitle>{'Last Movements'}</CardTitle>
           </div>
 
-         <AccountTransactionsList transactions={transactions} /> 
+      { transactions.length === 0 && <p>No existen transacciones en esta cuenta</p>}
+
+      { transactions.length > 0 &&     <AccountTransactionsList transactions={transactions} />
+      }
         </div>
-          {/* --- END TRANSACTION STATEMENT SECTION --- */}
-
-            {/* <ListContent listOfItems={lastMovements} /> */}        
         </article>
+  {/* --- END TRANSACTION STATEMENT SECTION --- */}
 
-      {/* {(isLoading || isLoadingTransactions) && <p>Loading...</p>}
-        {(error|| errorTransactions) && <p>Error fetching account info: {error??errorTransactions}</p>} */}
+      {( isLoadingTransactions) && <p>Loading...</p>}
+        {( errorTransactions) && <p>Error fetching account info: {errorTransactions}</p>}
 
       </section>
     </>
