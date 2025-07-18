@@ -15,13 +15,12 @@ type SummaryDetailPropType = {
     subtitle1: string;
     amount1: number;
     status: string | boolean;
-    amount2?:number;
-    currency_code?:CurrencyType;
+    amount2:number;
+    currency_code:CurrencyType;
      };
 };
 
 function SummaryDetailBox({ bubleInfo }:SummaryDetailPropType ) {
-
   const { 
     title,
     amount,
