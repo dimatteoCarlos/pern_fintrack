@@ -5,14 +5,8 @@ import {
 import {
   currencyFormat,
   numberFormatCurrency,
-  // numberFormat,
-  // divide,
+
 } from '../../../helpers/functions.ts';
-import {
-  // // CategoryBudgetListType,
-  // CategoryBudgetType,
-  // CurrencyType,
-} from '../../../types/types.ts';
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
@@ -23,16 +17,15 @@ import {
 } from '../../../types/responseApiTypes.ts';
 //-----------------------------
 export type CategoryToRenderType = CategoryListType & {
-  // currency_code?: CurrencyType;
   total_budget: number;
 };
 
 type ListAccountOfCategoryProp=
-{  previousRoute:string, accounts:CategoryBudgetAccountListType[]}
+{previousRoute:string, accounts:CategoryBudgetAccountListType[]}
 
 //============================================
 function ListAccountOfCategory({previousRoute, accounts}:ListAccountOfCategoryProp) {
-console.log('originRoute', previousRoute)
+// console.log('originRoute', previousRoute)
 // --------------------------------
  return (
   <>
@@ -50,10 +43,8 @@ console.log('originRoute', previousRoute)
         //console.log('account', account)
 
         const remain = Math.round(-total_balance + budget);
-        console.log('ramain', remain)
-
+        // console.log('ramain', remain)
         const statusAlert = remain <= 0;
-
 //----------------------------------
         return (
           <div className='box__container .flx-row-sb' key={indx}>
