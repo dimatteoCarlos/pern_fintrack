@@ -31,14 +31,16 @@ import Overview from './pages/overview/Overview.tsx';
 import AccountDetail from './pages/forms/accountDetail/AccountDetail.tsx';
 import DebtorDetail from './pages/forms/debtorDetail/DebtorDetail.tsx';
 import PocketDetail from './pages/forms/pocketDetail/PocketDetail.tsx';
-// import CategoryDetail from './pages/forms/categoryDetail/CategoryDetail.tsx';
-
 //--------------------------------
 // import AuthPage from './pages/auth/AuthPage.tsx';
 import ErrorPage from './pages/error/ErrorPage.tsx';
 import Transfer from './pages/tracker/transfer/Transfer.tsx';
 import CategoryAccountList from './pages/forms/categoryDetail/CategoryAccountList.tsx';
 import CategoryDetail from './pages/forms/categoryDetail/CategoryDetail.tsx';
+//---------------------
+import { Slide, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+//-----------------------
 // import NotFoundPage from './pages/error/NotFoundPage.tsx';
 function App() {
   const router = createBrowserRouter([
@@ -172,9 +174,21 @@ function App() {
 
   ]);
 
+
   return (
     <>
       <RouterProvider router={router} />
+      <ToastContainer 
+      position = "bottom-center" autoClose={3000}
+      hideProgressBar = {false} newestOnTop={false}
+      closeOnClick={false}
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme="dark"
+      transition={Slide}//flip, bounce, zoom, slide
+      />
     </>
   );
 }
