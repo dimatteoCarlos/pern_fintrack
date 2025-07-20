@@ -93,7 +93,7 @@ const location = useLocation()
      urlAccountById
     );
 
-  console.log('accountsData', accountsData,'url',  urlAccountById)
+  // console.log('accountsData', accountsData,'url',  urlAccountById)
   //--account transaction api response
   //--how to handle dates period
 const tdy = new Date()
@@ -141,7 +141,7 @@ useEffect(() => {
 
 //--------------------------------------
 
-console.log('account detail', accountDetail)
+// console.log('account detail', accountDetail)
   return (
     <>
       <section className='page__container'>

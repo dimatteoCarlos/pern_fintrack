@@ -1,4 +1,4 @@
-
+//backend\src\fintrack_api\routes\accountRoutes.js
 
 import express from 'express';
 //controllers
@@ -6,7 +6,6 @@ import {
   createBasicAccount,
   createDebtorAccount,
   createPocketAccount,
-  //createCategoryBudgetAccount,
 } from '../controllers/accountCreationController.js';
 
 import {
@@ -20,11 +19,9 @@ import { createCategoryBudgetAccount } from '../controllers/accountCategoryCreat
 
 import { getTransactionsForAccountById } from '../controllers/getTransactionsForAccountById.js';
 
-// import { createCategoryBudgetAccount } from '../controllers/accountCategoryCreationController.js';
-
-// const select = true;
 // import { verifyHeaderAuth, verifyUser } from '../middlewares/authMiddleware.js';
 // router.post('/new_account/bank',verifyUser ,createBasicAccount);
+
 const router = express.Router();
 
 //CREATE ACCOUNTS BY ACCOUNT TYPE
@@ -46,14 +43,12 @@ router.post('/new_account/category_budget', createCategoryBudgetAccount);
 //GET USER ACCOUNT INFO BY TYPE, BY ID, ALL ACC.
 router.get('/allAccounts', getAccounts);
 router.get('/type', getAllAccountsByType);
-
 router.get('/:accountId', getAccountById);
-
 router.get('/transactions/:accountId', getTransactionsForAccountById);
 
 //GET USER ACCOUNT LIST INFO BY CATEGORY NAME
 // get all category budget account type info associated to a category Name
-//route: /api/fintrack/account/category/
+//route: /api/fintrack/category/
 router.get('/category/:categoryName', getAccountsByCategory);
 
 //-------------------------------------

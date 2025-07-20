@@ -31,13 +31,13 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
   const { startDate, endDate } = req.query;
   const userId = req.body.user ?? req.query.user; //uuid
 
-  console.log(
-    '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
-    userId,
-    req.query,
-    req.body
-    // movement_type
-  );
+  // console.log(
+  //   '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
+  //   userId,
+  //   req.query,
+  //   req.body
+  //   // movement_type
+  // );
 
   if (!userId) {
     return RESPONSE(res, 400, 'User ID and account type are required');

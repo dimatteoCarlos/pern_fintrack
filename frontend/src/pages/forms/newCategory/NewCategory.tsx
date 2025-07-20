@@ -120,7 +120,7 @@ function NewCategory() {
   //---------
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
-    console.log('onSubmitForm');
+    // console.log('onSubmitForm');
     //--data form validation
     const newValidationMessages = validationData(categoryData);
     // const newValidationMessages = { ...validationData(categoryData) };// console.log('mensajes:', { newValidationMessages });
@@ -175,7 +175,7 @@ function NewCategory() {
         message:data.message || 'Category budget account successfully created!',
         status:data.status
      } );
-      console.log('Received data:', data);
+      // console.log('Received data:', data);
     } else if (!isLoading && error) {
       setMessageToUser({message:error, status:data?.status});
     }

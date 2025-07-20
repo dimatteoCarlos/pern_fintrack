@@ -132,7 +132,7 @@ function Debts(): JSX.Element {
   } = useFetch<AccountByTypeResponseType>(fetchDebtorUrl as string);
 
   //apply debounce
-  console.log('debtors datatrack:', debtorsResponse);
+  // console.log('debtors datatrack:', debtorsResponse);
   //define what to do when error
   const debtors = useMemo(
     () =>
@@ -253,7 +253,7 @@ function Debts(): JSX.Element {
   //--------------------------------------
   //--submit form
   async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
-    console.log('On Save Handler');
+    // console.log('On Save Handler');
     e.preventDefault();
 
     //-------------------------

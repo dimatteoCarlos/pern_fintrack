@@ -39,7 +39,7 @@ function AccountDetail() {
   const detailedData = state?.detailedData;
   const previousRouteFromState = state?.previousRoute ?? "/";
   const {accountId} = useParams()
-  console.log('location',  accountId, detailedData)
+  // console.log('location',  accountId, detailedData)
 //--------------------------------------------------
   //data from endpoint request for info account, and for api transactions by accountId
  //--states

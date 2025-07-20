@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import CardSeparator from '../components/CardSeparator.tsx';
 import {
   validationData,
-  numberFormat,
+  //numberFormat,
   checkNumberFormatValue,
 } from '../../../helpers/functions.ts';
 import { useFetch } from '../../../hooks/useFetch.tsx';
@@ -281,15 +281,15 @@ function Income() {
   }
   //------------------------
   async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
-    console.log('On Save Handler');
+    // console.log('On Save Handler');
     e.preventDefault();
     //-------------------------
-    const formattedNumber = numberFormat(incomeData.amount || 0);
-    console.log(
-      'formatted amount as a string:',
-      { formattedNumber },
-      typeof formattedNumber
-    );
+    // const formattedNumber = numberFormat(incomeData.amount || 0);
+    // console.log(
+    //   'formatted amount as a string:',
+    //   { formattedNumber },
+    //   typeof formattedNumber
+    // );
     //-------entered datatrack validation messages --------
     //validation of entered data
     const newValidationMessages = validationData(incomeData);

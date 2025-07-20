@@ -1,5 +1,5 @@
 //backend/src/index.js
-// import express, { Express, Request, Response, NextFunction } from 'express';
+//import express, { Express, Request, Response, NextFunction } from 'express';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -98,15 +98,15 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: '404', message: 'Route link was not found' });
 });
 
-//---function declration---------------
+//---function declaration---------------
 //Database initialization.  Función para inicializar la base de datos
 async function initializeDatabase() {
   try {
     console.log(pc.cyanBright('Verificando existencia de datos en tablas ...'));
 
-    //---------------------
-    // Verify initialization status
-    //verify if app_initialization table exists
+  //---------------------
+  // Verify initialization status
+  //verify if app_initialization table exists
     const exists = await tableExists('app_initialization');
     if (!exists) {
       const createQuery = ` CREATE TABLE IF NOT EXISTS app_initialization (
@@ -126,11 +126,10 @@ async function initializeDatabase() {
     if (initCheck.rows.length === 0 || !initCheck.rows[0].tables_created) {
       console.log(pc.cyan('Initializing app for the first time....'));
   //----------
-
     //Transaction pg
     await pool.query('BEGIN');
     try {
-      // Initialize tables with catalogued field attributes
+      // Initialize tables with cataloged field attributes
       await tblAccountTypes();
       await tblCurrencies();
       await tblCategoryNatureTypes();
@@ -153,6 +152,8 @@ async function initializeDatabase() {
         `
       );
 
+     await pool.query('COMMIT');
+
       console.log(pc.green('Application initialized successfully'));
     } catch (error) {
       await pool.query('ROLLBACK');
@@ -168,7 +169,7 @@ async function initializeDatabase() {
       await Promise.allSettled(
         mainTables.map(async (item, indx) => {
           try {
-            if (item.tblName == 'users1' || item.tblName=='transactions1') {
+            if (item.tblName == 'users' || item.tblName=='transactions1') {
               console.log('skip users table');
               return false;
             }
@@ -240,7 +241,7 @@ async function initializeDatabase() {
 //=================================================================
 // Server starts here.
 //=======================
-// Inicializar la base de datos y luego iniciar el servidor
+// Inicializar la base de datos y luego iniciar el servidor // Data Base and Server initialization 
 //------------------
 //Initiate
 console.log('Hola Mundo');
@@ -269,7 +270,7 @@ pool.on('error', (err) => {
 });
 //----------------------
 //message error handling
-// app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
+//app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
 app.use((err, req, response, next) => {
   console.error(('error handled response ', err));
   const errorStatus = err.status || 500;

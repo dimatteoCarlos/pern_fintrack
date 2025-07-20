@@ -30,7 +30,8 @@ export const MessageToUser = ({
  //-- Apply toast notification just to variant form , not for tracker
  // ---------------------------------- 
      useEffect(()=>{
-      if(!error && messageToUser && variant=='form'){
+      // if(!error && messageToUser && variant=='form'){
+      if(messageToUser && variant=='form'){
 const msg = typeof messageToUser === 'string' ? messageToUser :messageToUser.message;
 const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 200
 
@@ -38,14 +39,7 @@ const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 2
       }
      }, [error, messageToUser, variant])
  //----------------------------------     
-  useEffect(()=>{
-    if(error && messageToUser && variant=='form'){
-const msg = typeof messageToUser === 'string' ? messageToUser :messageToUser.message;
-const status =typeof messageToUser === 'string'? 500 : messageToUser.status ?? 500
 
- if(variant=='form'){showToastByStatus(msg, status)}
-      }
-     }, [error, messageToUser, variant])
  //----------------------------------     
   return (
     <>

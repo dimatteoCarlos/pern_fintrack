@@ -1,4 +1,4 @@
-// Middleware de validación para el registro
+// Middleware de validación para el registro / register validation
 import { body, validationResult } from 'express-validator';
 import { createError } from '../../utils/errorHandling.js';
 export const validateSignUp = [

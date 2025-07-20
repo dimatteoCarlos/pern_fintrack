@@ -7,7 +7,7 @@ import listRoutes from './listRoutes.js';
 
 //---multicurrency----
 // import dashboardMulticurrencyRoutes from './dashboardMulticurrencyRoutes.js';
-
+//------------------------
 const router = express.Router();
 
 router.use('/account', accountRoutes); //create and read(get) accounts
@@ -16,7 +16,7 @@ router.use('/transaction', transactionRoutes);
 
 router.use('/dashboard', dashboardRoutes);
 
-router.use('/account/type', listRoutes); //for catalog table data
+router.use('/account/type', listRoutes); //for cataloged table data
 
 //MULTICURRENCY
 // router.use('/dashboard/multicurrency', dashboardMulticurrencyRoutes);

@@ -186,7 +186,7 @@ function NewProfile() {
   //FORM SUBMISSION ---
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
-    console.log('onSubmitForm');
+    // console.log('onSubmitForm');
 
     //--data form validation
     const newValidationMessages = validationData(profileData);
@@ -222,7 +222,7 @@ function NewProfile() {
 
       //---------------------------------------------
       //POST the new profile data into database
-      console.log('data to POST:', { profileData });
+      // console.log('data to POST:', { profileData });
 
       //resetting form values
       setIsReset(true);

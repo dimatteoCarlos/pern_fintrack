@@ -163,6 +163,6 @@ export const verifyHeaderAuth = (req, res, next) => {
     next();
   } catch (error) {
     console.log(error);
-    res.status(401).json({ message: 'Authentication fialed' });
+    res.status(401).json({ message: 'Authentication failed' });
   }
 };

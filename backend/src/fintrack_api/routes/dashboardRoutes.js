@@ -14,6 +14,7 @@ const router = express.Router();
 
 //GET TOTAL BALANCE OF ALL ACCOUNTS BUT SLACK
 router.get('/balance/', dashboardTotalBalanceAccounts);
+
 //GET TOTAL BALANCE, TOTAL BUDGET, TOTAL TARGET, TOTAL DEBTORS AND MORE
 router.get('/balance/type/', dashboardTotalBalanceAccountByType);
 
@@ -39,6 +40,5 @@ router.get('/movements/search/', dashboardMovementTransactionsSearch);
 export default router;
 
 //-------------------------------------------------------------------------------------
-//GET TRACKER MOVEMENT TRANSACTIONS BY ACCOUNT ID
-// router.get('/')
+
 

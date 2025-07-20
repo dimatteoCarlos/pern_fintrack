@@ -28,7 +28,7 @@ type ListAccountOfCategoryProp=
 function ListAccountOfCategory({previousRoute, accounts,
 //   categoryName
 }:ListAccountOfCategoryProp) {
-console.log('from ListAccountOfCatgoryProp', previousRoute)
+// console.log('from ListAccountOfCatgoryProp', previousRoute)
 // --------------------------------
  return (
   <>

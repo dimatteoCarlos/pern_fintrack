@@ -4,7 +4,7 @@ import { Link, } from 'react-router-dom';
 import { StatusSquare } from '../../../general_components/boxComponents';
 import {
   DEFAULT_CURRENCY,
-  DEFAULT_POCKET_LIST,
+  // DEFAULT_POCKET_LIST,
 } from '../../../helpers/constants';
 import {
   currencyFormat,
@@ -21,7 +21,8 @@ import { useFetch } from '../../../hooks/useFetch.tsx';
 
 //============================================
 function ListPocket({previousRoute}:{previousRoute:string}) {
-console.log('originRoute', previousRoute)
+  // console.log('component', 'ListPocket')
+// console.log('originRoute', previousRoute)
 
  //DATA FETCHING
  //List Pocket - get accounts by type:pocket_saving
@@ -33,9 +34,9 @@ console.log('originRoute', previousRoute)
   const pocketList: PocketListType[] =
     apiData?.data && !isLoading && !error && apiData?.data.length
       ? apiData?.data
-      : DEFAULT_POCKET_LIST;
+      : []//DEFAULT_POCKET_LIST;
 
-      console.log('apidata', pocketList)
+      // console.log('apidata', pocketList)
 //--------------------------------------------
   return (
     <article className='list__main__container '>

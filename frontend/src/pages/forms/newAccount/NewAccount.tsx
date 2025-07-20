@@ -171,7 +171,7 @@ function NewAccount() {
     e.preventDefault();
     //--data form validation
     const newValidationMessages = { ...validationData(accountData) };
-    console.log('mensajes:', { newValidationMessages });
+    console.log('message validation:', { newValidationMessages });
 
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
@@ -187,7 +187,7 @@ function NewAccount() {
       //final URL, url is dynamic depending on type variable
       const finalUrl = `${url_create_basic_account}/${type}`;
 
-      console.log('🚀 ~ onSubmitForm ~ finalUrl:', finalUrl);
+      // console.log('🚀 ~ onSubmitForm ~ finalUrl:', finalUrl);
       await requestFn(payload, {
         url: finalUrl,
       } as AxiosRequestConfig);

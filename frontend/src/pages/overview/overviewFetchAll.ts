@@ -51,7 +51,7 @@ type EndpointItemType<K extends KPIKeyType> = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isFinancialDataRespType(data: any): data is FinancialDataRespType {
-  console.log('data', data);
+  // console.log('data', data);
   return (
     data &&
     typeof data.status == 'number' &&
@@ -62,7 +62,7 @@ function isFinancialDataRespType(data: any): data is FinancialDataRespType {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isLastMovementRespType(data: any): data is LastMovementRespType {
-  console.log('data', data, 'data.data', data.data);
+  // console.log('data', data, 'data.data', data.data);
   return (
     data &&
     typeof data.status == 'number' &&
@@ -122,7 +122,7 @@ export async function overviewFetchAll(
 
     if (result.status === 'fulfilled') {
       const data = result.value.data;
-      console.log('🚀 ~ data overviewFetchAll:', i, data);
+      // console.log('🚀 ~ data overviewFetchAll:', i, data);
 
       if (endpoint.key === 'SavingGoals' && isBalancePocketRespType(data)) {
         results[endpoint.key] = { status: 'success', data };
@@ -130,7 +130,6 @@ export async function overviewFetchAll(
         endpoint.key === 'MonthlyTotalAmountByType' &&
         isFinancialDataRespType(data)
       ) {
-        console.log('going to MonthlyTotalAmountByType');
         results[endpoint.key] = { status: 'success', data };
       } else if (
         (endpoint.key === 'MovementExpenseTransactions' ||
@@ -143,7 +142,7 @@ export async function overviewFetchAll(
           &&
         isLastMovementRespType(data)
       ) {
-        console.log('going to MovementTransactions');
+
         results[endpoint.key] = { status: 'success', data };
       }
     } else {

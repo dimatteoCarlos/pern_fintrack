@@ -4,7 +4,31 @@ https://www.youtube.com/watch?v=zcPj4eEnhyM
 ===========================
 ISSUES
 ============================
-CATEOGRY DETAIL. PENDIENTE.
+
+ordenar por fecha descendente los movimientos pnl, y todos losdemas,  mostrados en overview. PENDIENTE 
+
+error en http://localhost:5173/fintrack/budget/category/housing/account/9
+
+listo. Calculo de networth
+
+pendiente. calculo de valores de investment account como capital invertido vs factual balance.
+pendiente
+
+usar toastify para mensajes al usuario , error y success. LISTO.
+
+net worth considerando assests (bank+investment)-cuentas por pagar. PENDIENTE
+
+TAMBIEN SE DEBE ACLARAR, QUE ES LO QUE LLAMAN SAVING GOALS, AQUI STA TOMADO COMO LOS TARGET DE LOS POCKETS SOLAMENTE.
+
+?SE CONSIDERA QUE LOS POCKET SAVING, ESTAN REPARTIDOS  EN LAS CUENTAS DE BANCO Y DE INVESTMENT.??
+
+
+  //List Category LISTO
+  // en el backend: generar la data segun estructura de los datos a renderizar, es decir,
+  //agrupar para cada categoria, expenses y  budgets, y cualquier otra; la sumatoria de los expense se refleja en el total_balance, y la sumatoria de los budget de cada categoria seria el budget por categoria o por subcategoria? hay que definir esto, no tengo claro el manejo de las subcategorias. ,  y el status refleja el estado de lo disponible en el presupuesto,  seria el resultado de la resta entre el expense-budget  de cada categoria, ..z
+
+============================
+CATEOGRY DETAIL. LISTO.
 EN EL BACKEND
 determinar en que router se colocaran los controladores para obtener las cuentas por nombre de categoria.
 Resp. app.use('/api/fintrack', fintrack_routes);,
@@ -14,14 +38,14 @@ http://localhost:5000/api/fintrack/account/category/:${categoryName}/?user=${use
 
 realizar el query pra obtener la informacion de las cuentas asociadas a la categoryName. listo.
 
-tambien se escribio el query para obtener la sumatoria de los parametros de balance, budget y remaining, de la categoryName,  pero se decidio hacerlo en el frontend.
+tambien se escribio el query para obtener la sumatoria de los parametros de balance, budget y remaining, de la categoryName,  pero se decidio hacerlo en el frontend.No se uso, en cambio, se uoso una funcion definida como calculate...  
 
 escribir el controlador getAccountByCategory.
-R. esta dentro de getAccountController.listo
+R. esta dentro de getAccountController. se hizo la modifiacion para considerar account_type_name.listo
 
 ---
 
- y realizar la totalizacion de los parametros total balance, total budget, total remaining, tomada de la informacion de las cuentas asociadas a dicha categoria.
+ y realizar la totalizacion de los parametros total balance, total budget, total remaining, tomada de la informacion de las cuentas asociadas a dicha categoria. listo.
 
 probar con insomnia. listo
 
@@ -29,7 +53,7 @@ probar con insomnia. listo
 EN L FRONTEND
 las rutas en el frontend sirven para mostrar el elemento o componente a mostrar.
 
-definir el enpoint, y la ruta>
+definir el enpoint, y la ruta> LISTO
 la ruta puede hacer algo asi, fintrack/budget/category/:cateogory_name
 
         {
@@ -39,33 +63,26 @@ la ruta puede hacer algo asi, fintrack/budget/category/:cateogory_name
 
 ---
 
-obtner la ruta previa,en el prop enviado por la page anterior, para el link de regreso.
+obtner la ruta previa,en el prop enviado por la page anterior, para el link de regreso. listo
 
-hacer los peticions al backend, para obtener incormacion de las cuentas,
+hacer los peticions al backend, para obtener incormacion de las cuentas,listo
 
-realizar la totalizacion de los parametros.
+realizar la totalizacion de los parametros summary.listo
 
-enviar la totalizarion de los parametros kpi a CategoryAccountList
+enviar la totalizarion de los parametros kpi a CategoryAccountList. se us a un componente ui llamado summary...listo
 
-manejo de error, en caso que las cuentas no existan, o errores en la totalizacion de los parametros.
+manejo de error, en caso que las cuentas no existan, o errores en la totalizacion de los parametros. POR MEJORAR.
 
-obtener la ruta actual para enviarla a la proxima page , y definir como estado del link, la informacion de la cuenta.
+obtener la ruta actual para enviarla a la proxima page , y definir como estado del link, la informacion de la cuenta. listo.
 
-renderizar, con un compoenente CategoryAccountList, o  las cueentas asociadas a la cateogry, con su respectivo link 'category/:CaegoryName/accountId, tmbien enviarle la ruta actula como ruta previa.
+renderizar, con un compoenente CategoryAccountList, o  las cueentas asociadas a la cateogry, con su respectivo link 'category/:CaegoryName/accountId, tmbien enviarle la ruta actual como ruta previa. LISTO.
 
-armar el renderizado de CategoryAccountList,, con la buble inform category arriba, y la lista de cuentas con sus link y estado respectivo.
+armar el renderizado de CategoryAccountList,, con la buble inform category arriba, y la lista de cuentas con sus link y estado respectivo.LISTO.
 
 luego, hacer el componente de AccountDetail, mostrando el detalle de la cuenta seleccionada.
-como igual como se hizo con accountDetail o pocektDetail, etc.
+como igual como se hizo con accountDetail o pocektDetail, etc. SE CREO CategoryDetail. LISTO.
 
 ============================
-pendiente
-usar toastify para mensajes al usuario , error y success. PENDIENTE.
-
-net worth considerando assests (bank+investment)-cuentas por pagar. PENDIENTE
-
-?SE CONSIDERA QUE LOS POCKET SAVING, ESTAN REPARTIDOS  EN LAS CUENTAS DE BANCO Y DE INVESTMENT.??
-
 base de datO con time zone. listo
 
 arreglar query de list of movement para account detail, para account-opening and bank, income, investment type accounts. listo

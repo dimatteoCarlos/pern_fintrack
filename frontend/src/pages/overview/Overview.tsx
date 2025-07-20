@@ -31,12 +31,11 @@ import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import OpenAddEditBtn from '../../general_components/OpenAddEditBtn.tsx';
-
+//---------------------------------
 export type CreateNewAccountPropType = {
   originRoute: string;
   createNewAccount(originRoute: string): void;
 };
-
 //---------------------------------
 const userId = import.meta.env.VITE_USER_ID;
 
@@ -120,7 +119,7 @@ const overviewKPIendpoints: KPIEndpointType[] = [
 //   originRoute: string;
 //   onCreateAccount: (route: string) => void;
 // };
-//------------------------------------------------
+//---------------------------------------------
 function Overview() {
   const navigateTo: NavigateFunction = useNavigate();
   const location = useLocation();

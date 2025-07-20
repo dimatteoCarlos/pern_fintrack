@@ -132,7 +132,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
     const { movement } = req.query;
     const movementName = movement === 'debts' ? 'debt' : movement; //debt movement is called as debts in frontend
-    console.log({ movementName });
+    // console.log({ movementName });
 
     //-------------------------------------------------
     //In original design OLD VERSION: Debts and Investment Movements needed a compensation account, in this case named "slack", to serve as a counter part of the transaction.
@@ -232,8 +232,8 @@ export const transferBetweenAccounts = async (req, res, next) => {
       type: transactionTypeName, //for pnl or for debt in new version
       accountType
     } = req.body; //common fields to all tracker movements.
-    console.log('type', transactionTypeName);
-    console.log('body', req.body);
+    // console.log('type', transactionTypeName);
+    // console.log('body', req.body);
     //-----------------
     //From the original design, Not all tracker movements input data form have the same input data structure, so, get the data structure configuration strategy based on movementName
     
@@ -355,10 +355,10 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountTypeName,
       userId
     );
-    console.log(
-      '🚀 ~ transferBetweenAccounts ~ destinationAccountInfo:',
-      destinationAccountInfo
-    );
+    // console.log(
+    //   '🚀 ~ transferBetweenAccounts ~ destinationAccountInfo:',
+    //   destinationAccountInfo
+    // );
 
     // console.log('🚀 ~ sourceAccountInfo:', sourceAccountInfo);
 
@@ -426,12 +426,12 @@ export const transferBetweenAccounts = async (req, res, next) => {
       sourceAccountId,
       transaction_actual_date
     );
-    console.log(
-      '🚀 ~ updatedSourceAccountInfo:',
-      updatedSourceAccountInfo,updatedSourceAccountInfo.account_balance,
-      'type of:',
-      typeof updatedSourceAccountInfo.account_balance
-    );
+    // console.log(
+    //   '🚀 ~ updatedSourceAccountInfo:',
+    //   updatedSourceAccountInfo,updatedSourceAccountInfo.account_balance,
+    //   'type of:',
+    //   typeof updatedSourceAccountInfo.account_balance
+    // );
     //-----------------------------------------------
     //---Update the balance in the destination account
     const destinationAccountBalance = destinationAccountInfo.account_balance;
@@ -445,12 +445,12 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountId,
       transaction_actual_date
     );
-    console.log(
-      '🚀 ~ updatedDestinationAccountInfo:',
-      updatedDestinationAccountInfo,updatedDestinationAccountInfo.account_balance,
-      'type of:',
-      typeof updatedDestinationAccountInfo.account_balance
-    );
+    // console.log(
+    //   '🚀 ~ updatedDestinationAccountInfo:',
+    //   updatedDestinationAccountInfo,updatedDestinationAccountInfo.account_balance,
+    //   'type of:',
+    //   typeof updatedDestinationAccountInfo.account_balance
+    // );
 
     //----Register transfer/receive transaction-----------
     //----Source transaction-----------------------------
@@ -567,7 +567,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
     const message = 'Transaction successfully completed.';
     console.log(pc.magentaBright(message));
-    console.log('data',data,'')
+    // console.log('data',data,'')
 
     return res.status(200).json({ status: 200, message, data });
   } catch (error) {

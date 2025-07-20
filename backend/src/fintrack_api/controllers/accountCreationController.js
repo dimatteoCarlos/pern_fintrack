@@ -646,7 +646,7 @@ export const createDebtorAccount = async (req, res, next) => {
       Number(counterAccountInfo.account.account_balance) +
       counterAccountTransactionAmount;
 
-    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} (${selected_account_type}), with number: ${counterAccountInfo.account.account_id}. Amount: ${counterAccountTransactionAmount} ${currencyCode}. Account reference: ${newAccountName}). Date: ${formatDate(transaction_actual_date)}`;
+    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} (${selected_account_type}), number: ${counterAccountInfo.account.account_id}. Amount: ${counterAccountTransactionAmount} ${currencyCode}. Account reference: ${newAccountName}. Date: ${formatDate(transaction_actual_date)}`;
     //--------------------------------------------------------
     //--COUNTER ACCOUNT INFO (SLACK OR SELECTED ACCOUNT ------
     const slackCounterAccountInfo = {
@@ -980,7 +980,7 @@ export const createPocketAccount = async (req, res, next) => {
 
     const counterAccountTransactionAmount = -transactionAmount;
 
-    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name}(bank), with number: ${counterAccountInfo.account.account_id}. Amount:${counterAccountTransactionAmount} ${currency_code}. Account reference: ${newAccountInfo.account_name})`;
+    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name}(bank), number: ${counterAccountInfo.account.account_id}. Amount:${counterAccountTransactionAmount} ${currency_code}. Account reference: ${newAccountInfo.account_name}`;
     //----------------------------------------------------
     //-------------SLACK COUNTER ACCOUNT INFO ------
     const slackCounterAccountInfo = {

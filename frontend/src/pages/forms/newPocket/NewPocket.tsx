@@ -118,7 +118,7 @@ function NewPocket() {
   //FORM SUBMISSION ---
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
-    console.log('onSubmitForm');
+    // console.log('onSubmitForm');
 
     // Form validation
     const newValidationMessages = { ...validationData(pocketData) };
@@ -173,7 +173,7 @@ function NewPocket() {
       setMessageToUser(
         data.message || 'Pocket saving account successfully created!'
       );
-      console.log('Received data:', data);
+      // console.log('Received data:', data);
     } else if (!isLoading && error) {
       setMessageToUser(error);
     }

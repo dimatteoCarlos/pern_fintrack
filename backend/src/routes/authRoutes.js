@@ -14,12 +14,10 @@ router.post('/sign-up', signUpUser);
 // Ruta para el inicio de sesión: //api/auth/sign-in
 router.post('/sign-in', signInUser);
 
-
 //api/auth/refresh-token
 router.post('/refresh-token', authRefreshToken);
 //api/auth/sign-out
 router.post('/sign-out', signOutUser);
-
 
 // Ruta de Google OAuth: redirige a Google para la autenticación
 // router.get(

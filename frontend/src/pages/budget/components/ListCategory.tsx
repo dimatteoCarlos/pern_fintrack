@@ -41,11 +41,8 @@ const defaultCategoryBudget: CategoryToRenderType[] = [];
 
 //============================================
 function ListCategory({previousRoute}:ListCategoryProp) {
-  console.log('originRoute', previousRoute)
-
-  //List Category
-  // en el backend: generar la data segun estructura de los datos a renderizar, es decir,
-  //agrupar para cada categoria, expenses y  budgets, y cualquier otra; la sumatoria de los expense se refleja en el total_balance, y la sumatoria de los budget de cada categoria seria el budget por categoria o por subcategoria? hay que definir esto, no tengo claro el manejo de las subcategorias. ,  y el status refleja el estado de lo disponible en el presupuesto,  seria el resultado de la resta entre el expense-budget  de cada categoria, ..
+    console.log('component', 'ListCategory')
+  // console.log('originRoute', previousRoute)
 
 //++++++++++++++++++++++++++++++++++++
   //DATA FETCHING

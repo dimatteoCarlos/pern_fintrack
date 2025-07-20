@@ -44,7 +44,7 @@ export const getAllAccountsByType = async (req, res, next) => {
     const userId = req.body.user ?? req.query.user;
     const accountType = type.trim();
 
-    console.log(userId, accountType.length, controllerName);
+    // console.log(userId, accountType.length, controllerName);
 
     if (!accountType || !userId) {
       const message = `User ID and account type are required.Try again!.`;
@@ -525,18 +525,18 @@ export const getAccountById = async (req, res, next) => {
 //*************************************
 export const getAccountsByCategory= async (req, res, next) => {
   console.log(pc[backendColor]('getAccountsByCategory'));
-    console.log(
-    'body:',
-    req.body,
-    'params:',
-    req.params,
-    'query:',
-    req.query,
-    'path:',
-    req.path,
-    'originalUrl:',
-    req.originalUrl
-  );
+  //   console.log(
+  //   'body:',
+  //   req.body,
+  //   'params:',
+  //   req.params,
+  //   'query:',
+  //   req.query,
+  //   'path:',
+  //   req.path,
+  //   'originalUrl:',
+  //   req.originalUrl
+  // );
 
   try {
    const userId = req.body.user ?? req.query.user;
@@ -571,7 +571,7 @@ export const getAccountsByCategory= async (req, res, next) => {
       values: [categoryName, userId],
     });
 
-    console.log('result', accountsResult.rows[0])
+    // console.log('result', accountsResult.rows[0])
 
      if (!accountsResult || accountsResult.rows.length===0) {
       const message = `No accounts of cateogry ${categoryName} were found`;
@@ -579,9 +579,8 @@ export const getAccountsByCategory= async (req, res, next) => {
       return res.status(400).json({ status: 400, message });
     }
 
-    console.log('accounts', accountsResult.rows[0])
+    // console.log('accounts', accountsResult.rows[0])
  
-    
     const accountListResult = accountsResult
     
     if (accountListResult.rows.length === 0) {

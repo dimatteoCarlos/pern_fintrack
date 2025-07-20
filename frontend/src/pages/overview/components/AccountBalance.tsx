@@ -4,7 +4,9 @@ import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
 import { url_get_accounts_by_type } from '../../../endpoints';
 import { useFetch } from '../../../hooks/useFetch';
-import { ACCOUNT_DEFAULT, CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
+import { 
+ // ACCOUNT_DEFAULT  ,
+   CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
 import { useEffect, useState } from 'react';
 //---------------------------------------------
@@ -23,7 +25,10 @@ function AccountBalance({
 
   //--STATES---------------------
   const [accountsToRender, setAccountsToRender] =
-    useState<AccountListType[]>(ACCOUNT_DEFAULT);
+    useState<AccountListType[]>(
+     // ACCOUNT_DEFAULT
+[]
+    );
 
   //DATA FETCHING
   const urlGetAccounts = `${url_get_accounts_by_type}/?type=${accountType}&user=${user}`;
@@ -50,7 +55,10 @@ function AccountBalance({
               account_start_date: acc.account_start_date ?? acc.created_at,
               account_type_id:acc.account_type_id ,
             }))
-          : ACCOUNT_DEFAULT;
+          : 
+          []
+          // ACCOUNT_DEFAULT
+          ;
       setAccountsToRender(newBankAccounts);
     }
   //---

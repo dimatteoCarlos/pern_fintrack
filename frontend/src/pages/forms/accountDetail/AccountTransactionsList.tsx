@@ -44,14 +44,21 @@ import './styles/accountTransactionsList-styles.css'
             {/* Description */}
             <BoxRow>
               <BoxRow>
-                <div className='flx-row-sb'>
-                  <div className='box__subtitle '
-                  style={{fontSize: '0.75rem',fontWeight: '200',lineHeight: '1rem',letterSpacing: '1px'}}>
-                <div className='paragraph'>{(capitalize(description).split(/(Date:.*)/)[0]).trim()}</div>
-                    <div className='paragraph'>{capitalize(description).split(/(Date:.*)/).filter(Boolean)[1].split('GMT')[0]}</div>
+                
+          {description && (
+            <div className='box__subtitle' style={{ fontSize: '0.75rem', fontWeight: '200', lineHeight: '1rem', letterSpacing: '1px' }}>
 
-                  </div>
-                  </div>
+            <div className='paragraph'>
+              {capitalize(description.split('Date:')[0] || '').trim()}
+            </div>
+
+            <div className='paragraph'>
+              Date: {(description.split('Date:')[1] || '').split('GMT')[0].trim()}
+            </div>
+      </div>
+)}
+
+
               </BoxRow>
             </BoxRow>
 

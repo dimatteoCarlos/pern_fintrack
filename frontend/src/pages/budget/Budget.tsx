@@ -8,7 +8,7 @@ function Budget() {
   const originRoute = useLocation().pathname;
   const navigateTo: NavigateFunction = useNavigate();
 
-  // console.log(originRoute);
+  console.log('Budget');
 
   //functions
   const createNewCategory = (originRoute: string) => {

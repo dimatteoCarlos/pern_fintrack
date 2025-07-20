@@ -2,9 +2,11 @@
 
 ## Objective
 
-**FinTrack** is an application designed to provide a comprehensive and personalized solution for tracking and managing your personal finances. Its main purpose is to offer users effective tools to monitor their expenses, income, investments, debts, income sources, and account balances, as well as facilitate the tracking of savings goals and long-term investment projections. 🎯📊💡
+**FinTrack** is a personal finance application built as a "double-entry accounting system", offering a comprehensive and intuitive solution for managing your money. Its primary goal is to provide users with effective tools to track expenses, income, investments, debts, income sources, and account balances.
 
-The app evaluates various investment scenarios and enables users to analyze the achievement of financial objectives, such as wealth growth, through detailed financial engineering calculations and projections based on real data. 📈🔍💰
+As a double-entry accounting system, it automatically reflects the updated balances of all related accounts as soon as a transaction is recorded, ensuring that your financial overview is always accurate and up to date.
+
+FinTrack also helps users monitor savings goals and investments. 🎯📊💡
 
 ## Key Features
 
@@ -15,8 +17,8 @@ The app evaluates various investment scenarios and enables users to analyze the 
 
 2. **Investment and Debt Management**:
 
-   - Track current investments and performance projections.
-   - Record debts and plan repayments.
+   - Track current investments.
+   - Debts records classified in debtors or lenders. 
 
 3. **Account Balance**:
 
@@ -28,7 +30,7 @@ The app evaluates various investment scenarios and enables users to analyze the 
    - Set up personalized savings goals.
    - Monitor progress toward achieving goals.
 
-5. **Investment Projections**:
+5. **Investment Projections** (not included in this version):
 
    - Evaluate investment scenarios based on historical data and future estimates.
    - Analyze long-term financial objectives.

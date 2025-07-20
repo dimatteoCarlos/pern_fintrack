@@ -45,10 +45,10 @@ throw new Error("Invalid account ID parameter");
 
   const {accountDetailed=null, previousRoute=categoryName?`/fintrack/budget/category/${categoryName}`:'/fintrack/budget'}= (state as Partial<ListOfCategoryAccountsRouteStateType>) ?? {}
     
-  console.log("🚀 ~ CategoryDetail ~ accountDetailed:", accountId,previousRoute, accountDetailed)
+  // console.log("🚀 ~ CategoryDetail ~ :", accountId,previousRoute, accountDetailed)
 //---
 
-console.log('adc', accountDetailed)
+// console.log('adc', accountDetailed)
 //summary data
   const summaryData =accountDetailed? {
     title: 'Budget',
@@ -95,6 +95,8 @@ console.log('adc', accountDetailed)
 
     const transactions = transactionAccountApiResponse?.data.transactions??[];
 
+    console.log('transactions', transactions)
+    
     const summaryAccountBalance = (transactionAccountApiResponse?.data.summary)??{
   initialBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },
   finalBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },

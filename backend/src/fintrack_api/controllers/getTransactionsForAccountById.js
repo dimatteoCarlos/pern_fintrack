@@ -67,7 +67,7 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     }
     
     const accountInfoNeededResult = await queryFn(ACCOUNT_INFO_QUERY.text, ACCOUNT_INFO_QUERY.values)
-    console.log(accountInfoNeededResult.length)
+    // console.log(accountInfoNeededResult.length)
 
     if (accountInfoNeededResult.length === 0) {
       const message = 'The specified account does not belong to the user or does not exist.';
@@ -153,7 +153,7 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
       };
       return RESPONSE(res, 200, 'No transactions found for the selected period', data);
     }
-    console.log('transactions',transactions)
+    // console.log('transactions',transactions)
  
  
    //Funciones para obtener balances usando accountInfoNeededResult ==========

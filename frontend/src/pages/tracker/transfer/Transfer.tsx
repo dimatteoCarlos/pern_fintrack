@@ -526,7 +526,7 @@ function Transfer(): JSX.Element {
   //-----------------------------------------------
   //--submit form
   async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
-    console.log('On Save Handler');
+    // console.log('On Save Handler');
     e.preventDefault();
 
     // const formattedNumber = numberFormat(movementInputData.amount || 0);

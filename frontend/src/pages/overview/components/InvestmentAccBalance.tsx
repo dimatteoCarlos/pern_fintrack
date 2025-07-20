@@ -8,7 +8,9 @@ import {currencyFormat} from '../../../helpers/functions';
 import { useFetch } from '../../../hooks/useFetch';
 import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
 
-import { ACCOUNT_DEFAULT , CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
+import { 
+  //ACCOUNT_DEFAULT ,
+   CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 
 type AccountPropType={previousRoute:string, accountType:string}
 
@@ -25,7 +27,10 @@ function InvestmentAccountBalance({
   const user = import.meta.env.VITE_USER_ID;
 
  //--STATES---------------------
-  const [investmentAccountsToRender, setInvestmentAccountsToRender] = useState<AccountListType[]>(ACCOUNT_DEFAULT)
+  const [investmentAccountsToRender, setInvestmentAccountsToRender] = useState<AccountListType[]>(
+    //ACCOUNT_DEFAULT
+[]
+  )
 
   //DATA FETCHING
   const urlInvestmentAccounts = `${url_get_accounts_by_type}/?type=${accountType}&user=${user}`;
@@ -50,7 +55,9 @@ function InvestmentAccountBalance({
           account_start_date: acc.account_start_date ?? acc.created_at,
           account_type_id:acc.account_type_id ,
            }))
-           : ACCOUNT_DEFAULT;
+           : []
+           //ACCOUNT_DEFAULT
+           ;
       setInvestmentAccountsToRender(newInvestmentAccounts);
     }
   //---

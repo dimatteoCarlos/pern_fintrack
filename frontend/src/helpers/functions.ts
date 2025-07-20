@@ -427,7 +427,7 @@ const statusToastMap = (status: number): StatusToastConfig => {
   if (status >= 200 && status < 300) return { type: 'success', color: '#28a745' }; // verde
   if (status >= 400 && status < 500) return { type: 'error', color: '#dc3545' };   // rojo
   if (status >= 500) return { type: 'warning', color: '#ffc107' };                 // amarillo
-  return { type: 'default', color: '#17a2b8' };                                     // info
+  return { type: 'default', color: '#17a2b8' }; // info
 };
 
 export const showToastByStatus = (

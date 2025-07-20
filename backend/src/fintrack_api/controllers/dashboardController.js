@@ -66,7 +66,8 @@ ORDER BY account_type_name ASC
       const message = `No available accounts for this user`;
       console.warn(pc[errorColor](message));
       // return RESPONSE(res, 400, message);
-      ERR_RESP(400, message, controllerName);
+      // ERR_RESP(400, message, controllerName);
+      RESPONSE(res, 400, message,)
     }
 
     const accountTotalBalance = accountTotalBalanceResult.rows;
@@ -74,7 +75,7 @@ ORDER BY account_type_name ASC
       rows: accountTotalBalanceResult.rows.length,
       accountTotalBalance,
     };
-    console.log(data);
+    // console.log(data);
     return RESPONSE(res, 200, successMsg, data);
   } catch (error) {
     console.error(pc.red('Error while getting account balance'), error);
@@ -130,22 +131,22 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     const { type } = req.query; //bank| investment | income_source | category_budget | debtor | pocket_saving
     const userId = req.body.user ?? req.query.user;
 
-    console.log(
-      '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
-      userId,
-      req.query,
-      'Body',
-      req.body,
-      'type',
-      type
-    );
+    // console.log(
+    //   '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
+    //   userId,
+    //   req.query,
+    //   'Body',
+    //   req.body,
+    //   'type',
+    //   type
+    // );
 
     const accountType = type;
 
     if (!accountType || !userId) {
       const message = 'User ID and account TYPE are required';
-      ERR_RESP(400, message, controllerName);
-      // return RESPONSE(res, 400, 'User ID and account TYPE are required');
+      // ERR_RESP(400, message, controllerName);
+      return RESPONSE(res, 400, message);
     }
 
     if (
@@ -239,11 +240,12 @@ GROUP BY  ct.currency_code
 
       if (accountTotalBalanceResult.rows.length === 0) {
         const message = `No available accounts of type ${accountType} from total balance account by type`;
-        ERR_RESP(res, 400, message, controllerName);
+        // ERR_RESP(res, 400, message, controllerName);
+        return RESPONSE(res, 400, message);
       }
 
       const data = accountTotalBalanceResult.rows[0];
-      console.log('datos', data);
+      // console.log('datos', data);
 
       return RESPONSE(res, 200, successMsg, data);
     }
@@ -260,12 +262,12 @@ GROUP BY  ct.currency_code
 
       if (accountTotalBalanceResult.rows.length === 0) {
         const message = `No available accounts of type ${accountType}`;
-        ERR_RESP(res, 400, message);
-        // return RESPONSE(res, 400, message);
+        // ERR_RESP(res, 400, message);
+        return RESPONSE(res, 400, message);
       }
 
       const data = accountTotalBalanceResult.rows[0];
-      console.log('datos', data);
+      // console.log('datos', data);
 
       return RESPONSE(res, 200, successMsg, data);
     }
@@ -316,13 +318,13 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
     const userId = req.body.user ?? req.query.user;
     const accountType = req.body.type ?? req.query.type;
 
-    console.log(
-      '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
-      userId,
-      req.query,
-      req.body,
-      type
-    );
+    // console.log(
+    //   '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
+    //   userId,
+    //   req.query,
+    //   req.body,
+    //   type
+    // );
 
     if (!accountType || !userId) {
       return RESPONSE(res, 400, 'User ID and account TYPE are required');
@@ -331,8 +333,8 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
     if (!['category_budget', 'debtor', 'pocket_saving'].includes(accountType)) {
       const message = `Invalid account type for summary list "${accountType}" check endpoint queries.`;
       console.warn(pc.red(message));
-      ERR_RESP(400, message, controllerName);
-      // return RESPONSE(res, 400, message);
+      // ERR_RESP(400, message, controllerName);
+      return RESPONSE(res, 400, message);
     }
 
     const successMsg = `Summary list of accounts type ${accountType} was successfully calculated`;
@@ -414,12 +416,12 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
 
       if (accountSummaryResult.rows.length === 0) {
         const message = `No accounts available of type ${accountType}.`;
-        ERR_RESP(400, message, controllerName);
-        // return RESPONSE(res, 400, message);
+        // ERR_RESP(400, message, controllerName);
+        return RESPONSE(res, 400, message);
       }
 
       const data = accountSummaryResult.rows;
-      console.log(data);
+      // console.log(data);
 
       return RESPONSE(res, 200, successMsg, data);
     }
@@ -493,7 +495,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   const { movement } = req.query;
   const movement_type_name = movement === 'debts' ? 'debt' : movement;
   const userId = req.body.user ?? req.query.user;
-  console.log('params:', req.body, req.query);
+  // console.log('params:', req.body, req.query);
   //---------------------------------------
   //date period input
   //take care of ddbb server date
@@ -537,7 +539,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   //account types are related to the movement type, and db table name, in order to track movement transactions
   let tableName;
   let queryModel;
-  console.log('mov:', movement_type_name);
+  // console.log('mov:', movement_type_name);
 
   switch (movement_type_name) {
     case 'expense':
@@ -728,7 +730,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           WHERE ua.user_id = $1
             AND ua.account_name != $2
             AND (mt.movement_type_name = $3 )
-          ORDER BY tr.transaction_actual_date DESC,ua.account_balance DESC, ua.account_name ASC
+          ORDER BY tr.transaction_actual_date DESC,tr.created_at DESC,tr.updated_at DESC,ua.account_balance DESC, ua.account_name ASC
           `,
         values: [userId, 'slack', movement_type_name],
       };
