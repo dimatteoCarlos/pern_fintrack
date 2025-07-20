@@ -6,6 +6,7 @@ export function currencyFormat(
   number = 0,
   countryFormat = 'en-US'
 ) {
+  // console.log('currency', chosenCurrency)
   const formatFn = new Intl.NumberFormat(countryFormat, {
     style: 'currency',
     currency: chosenCurrency,
@@ -227,7 +228,8 @@ export function isDateValid(
 // La API devuelve las fechas en formato ISO 8601, y el frontend las convierte al formato dd-mm-yyyy para mostrarlas al usuario
 
 // Función para convertir de ISO 8601 a dd-mm-yyyy en el frontend
-export const formatDateToDDMMYYYY = (isoDate:Date | string) => {
+export const formatDateToDDMMYYYY = (isoDate:Date | string | undefined | null) => {
+  if(!isoDate){return "not a valid date"}
   const date = new Date(isoDate);
   const day = String(date.getUTCDate()).padStart(2, '0');
   const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Los meses son base 0
@@ -245,18 +247,20 @@ export const formatDate = (date:Date | string ) =>
     });
 
 //-----------------------
-export function capitalize1(text: string): string {
+export function capitalize(text: string| undefined): string {
+   if(!text){return ""}
   // 1. Convertimos todo a minúsculas
   const lower = text.toLowerCase();
 
   // 2. Capitalizamos la primera letra del texto y después de cada punto + espacio
-  const capitalized = lower.replace(/(^\w)|(\.\w)/g, match => match.toUpperCase());
+  const capitalized = lower.replace(/(^\w)|(\. \w)|(\.\w)/g, match => match.toUpperCase());
 
   return capitalized;
 }
 
 
-export function capitalize(word: string | undefined) {
+export function capitalize1(word: string | undefined) {
+    if(!word){return ""}
 
   return word? word.charAt(0).toUpperCase() + word.slice(1):'';
 }
@@ -410,3 +414,36 @@ export const statusFn = (
   const type = diff >= 0;
   return type;
 };
+//-------------------------------
+//--customize toast message notifictions
+import {toast, ToastOptions, TypeOptions} from 'react-toastify'
+
+type StatusToastConfig = {
+  color:string;
+  type:TypeOptions;
+}
+//mapping status code to type and color
+const statusToastMap = (status: number): StatusToastConfig => {
+  if (status >= 200 && status < 300) return { type: 'success', color: '#28a745' }; // verde
+  if (status >= 400 && status < 500) return { type: 'error', color: '#dc3545' };   // rojo
+  if (status >= 500) return { type: 'warning', color: '#ffc107' };                 // amarillo
+  return { type: 'default', color: '#17a2b8' };                                     // info
+};
+
+export const showToastByStatus = (
+  message: string,
+  status: number,
+  options?: ToastOptions
+) => {
+  const { type, color } = statusToastMap(status);
+
+  toast(message, {
+    type,
+    style: { backgroundColor: color, color: '#fff' },
+    icon: false,
+    ...options,
+  });
+};
+
+
+
