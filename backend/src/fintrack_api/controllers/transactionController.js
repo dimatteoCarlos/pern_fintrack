@@ -456,7 +456,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //----Source transaction-----------------------------
     const transactionDescription = `${note ? note + '.' : ''}Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount} ${currencyCode} from account "${sourceAccountName}" (${sourceAccountTypeName}) credited to "${destinationAccountName}" (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
 
-    //revisar formato de fecha
     // console.log(
     //   userId,
     //   transactionDescription,
