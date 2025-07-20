@@ -443,13 +443,7 @@ const accountsListInfo =
         </div>
       </form>
 
-      <MessageToUser
-        isLoading={isLoading || isLoadingAccountDataApiResponse}
-        //probar que muestra como error o si muestra algo
-        error={error || fetchedErrorAccountDataApiResponse}
-        messageToUser={messageToUser}
-        variant='tracker'
-      />
+
 
       {showMessage && !isLoading && (
         <div className='fade-message'>
@@ -457,7 +451,7 @@ const accountsListInfo =
             isLoading={false}
             error={error}
             messageToUser={messageToUser}
-            variant='form'
+      variant='tracker'
           />
         </div>
       )}
