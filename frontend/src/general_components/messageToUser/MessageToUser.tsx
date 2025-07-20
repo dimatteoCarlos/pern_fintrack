@@ -1,11 +1,13 @@
-import { capitalize } from '../../helpers/functions';
+//MessageToUser.tsx
+import { useEffect } from 'react';
+import { capitalize, showToastByStatus } from '../../helpers/functions';
 import { VariantType } from '../../types/types';
 import './messageToUser.css'
 
 type MessageToUserPropType = {
   isLoading: boolean;
   error: string | Error | null
-  messageToUser: string | null | undefined;
+  messageToUser:{message:string, status?:number} | string | null | undefined;
   variant?: VariantType;
 };
 
@@ -24,11 +26,33 @@ export const MessageToUser = ({
     variant === 'tracker'
       ? '3%'
       : '70%';
+
+ //-- Apply toast notification just to variant form , not for tracker
+ // ---------------------------------- 
+     useEffect(()=>{
+      if(!error && messageToUser && variant=='form'){
+const msg = typeof messageToUser === 'string' ? messageToUser :messageToUser.message;
+const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 200
+
+ if(variant=='form'){showToastByStatus(msg, status)}
+      }
+     }, [error, messageToUser, variant])
+ //----------------------------------     
+  useEffect(()=>{
+    if(error && messageToUser && variant=='form'){
+const msg = typeof messageToUser === 'string' ? messageToUser :messageToUser.message;
+const status =typeof messageToUser === 'string'? 500 : messageToUser.status ?? 500
+
+ if(variant=='form'){showToastByStatus(msg, status)}
+      }
+     }, [error, messageToUser, variant])
+ //----------------------------------     
   return (
     <>
       {isLoading && <div style={{ color: 'lightblue' }}>Loading...</div>}
+
          {/* {error && ( */}
-      {error && (
+      {error && variant!=='form' && (
         <div className='error-message1'>
           <span
             className='validation__errMsg1 '
@@ -48,12 +72,14 @@ export const MessageToUser = ({
             }}
           >
             {/* Error: {error} */}
-            {messageToUser}
+            {typeof messageToUser=='string'?messageToUser:messageToUser?.message}
+
+
           </span>
         </div>
       )}
 
-      {!error && messageToUser && (
+      {!error && messageToUser && variant!=='form' && (
         <div className='success-message'>
           <span
             style={{
@@ -71,7 +97,8 @@ export const MessageToUser = ({
               zIndex:'1'
             }}
           >
-            {capitalize(messageToUser)}
+            {capitalize(typeof messageToUser=='string'?messageToUser:messageToUser.message)}
+
           </span>
         </div>
       )}
