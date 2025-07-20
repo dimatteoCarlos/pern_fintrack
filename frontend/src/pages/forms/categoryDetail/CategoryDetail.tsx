@@ -9,7 +9,7 @@ import { CategoryBudgetAccountListType, TransactionsAccountApiResponseType } fro
 import { CurrencyType } from '../../../types/types.ts';
 import { url_get_transactions_by_account_id } from '../../../endpoints.ts';
 import { useFetch } from '../../../hooks/useFetch.tsx';
-import { capitalize, formatDateToDDMMYYYY, numberFormatCurrency } from '../../../helpers/functions.ts';
+import { capitalize, currencyFormat, formatDateToDDMMYYYY  } from '../../../helpers/functions.ts';
 import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
@@ -96,8 +96,8 @@ console.log('adc', accountDetailed)
     const transactions = transactionAccountApiResponse?.data.transactions??[];
 
     const summaryAccountBalance = (transactionAccountApiResponse?.data.summary)??{
-  initialBalance: { amount: 0, date: '', currency: '' },
-  finalBalance: { amount: 0, date: '', currency: '' },
+  initialBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },
+  finalBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },
   periodStartDate: '',
   periodEndDate: ''
 };
@@ -115,8 +115,7 @@ console.log('adc', accountDetailed)
             </Link>
 
             <div className='form__title'>{capitalize(accountDetailed?.account_name)}</div>
-            {/* <div className='form__title'>{categoryInfo.name}</div> */}
-
+            
             <Link to='edit' className='flx-col-center icon3dots'>
               <Dots3LightSvg />
             </Link>
@@ -132,7 +131,7 @@ console.log('adc', accountDetailed)
                 <label className='label form__title'>{`Current Balance`}</label>
 
                 <div className="input__container"
-                style={{ padding: '0.5rem' }}>{numberFormatCurrency(accountDetailed?.account_balance)}
+                style={{ padding: '0.5rem' }}>{currencyFormat(accountDetailed?.currency_code, accountDetailed?.account_balance)}
                 </div>
               </div>
                       
