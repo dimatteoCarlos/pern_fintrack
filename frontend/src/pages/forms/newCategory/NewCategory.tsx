@@ -22,10 +22,10 @@ import { MessageToUser } from '../../../general_components/messageToUser/Message
 
 //----Category Nature Tiles---------------
 const tileTitle = 'Category Nature';
-//-------data config----------------------------------
+//-------data config------------------------------
 type CategoryDataType = {
   category: string;
-  subcategory: string;
+  //subcategory?: string;
   amount: number | '';
   nature: string;
   currency?: CurrencyType;
@@ -38,13 +38,13 @@ type CategoryBudgetPayloadType = {
   budget: number | string;
   date: Date | string;
   nature: string;
-  subcategory?: string;
+  //subcategory?: string;
   user: string;
 };
 
 const initialNewCategoryData: CategoryDataType = {
   category: '',
-  subcategory: '',
+  //subcategory: 'not defined',
   amount: '',
   nature: '',
 };
@@ -61,7 +61,7 @@ function NewCategory() {
   const user: string = import.meta.env.VITE_USER_ID;
   // console.log(' usuario frontend:', user);
 
-  //---states------
+  //---states--------------------------
   const [formData, setFormData] =
     useState<FormNumberInputType>(initialFormData);
 
@@ -75,10 +75,9 @@ function NewCategory() {
     [key: string]: string;
   }>({});
 
-  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
+  const [messageToUser, setMessageToUser] = useState<{message:string, status?:number} | string | null | undefined>(
     null
   );
-
   //endpoint: http://localhost:5000/api/fintrack/account/new_account/category_budget
   //------------------------------------------------
   //DATA FETCHING POST
@@ -148,7 +147,7 @@ function NewCategory() {
         budget: formData.amount || categoryData.amount,
         date: new Date().toISOString(), // ISO format
         nature: categoryData.nature,
-        subcategory: categoryData.subcategory || undefined,
+        //subcategory: categoryData.subcategory || undefined,
         user,
       };
 
@@ -172,18 +171,19 @@ function NewCategory() {
   useEffect(() => {
     if (data && !isLoading && !error) {
       //success response
-      setMessageToUser(
-        data.message || 'Category budget account successfully created!'
-      );
-      // console.log('Received data:', data);
+      setMessageToUser({
+        message:data.message || 'Category budget account successfully created!',
+        status:data.status
+     } );
+      console.log('Received data:', data);
     } else if (!isLoading && error) {
-      setMessageToUser(error);
+      setMessageToUser({message:error, status:data?.status});
     }
 
     //resetting message to user
     const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
       setMessageToUser(null);
-    }, 10000);
+    }, 5000);
 
     return () => {
       if (timer) clearTimeout(timer);
@@ -220,8 +220,8 @@ function NewCategory() {
                 value={categoryData.category}
               />
             </div>
-
-            <div className='input__box'>
+        {/* SUBCATEGORY */}
+            {/* <div className='input__box'>
               <label htmlFor='subcategory' className='label form__title'>
                 {'Subcategory'}&nbsp;
               </label>
@@ -237,7 +237,7 @@ function NewCategory() {
                 onChange={inputHandler}
                 value={categoryData.subcategory}
               />
-            </div>
+            </div> */}
 
             {/* functionalitiy logic and data structure for this add button of subcategories is PENDING */}
 
