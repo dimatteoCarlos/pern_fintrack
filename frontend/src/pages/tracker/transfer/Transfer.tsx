@@ -122,7 +122,6 @@ function Transfer(): JSX.Element {
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
   );
-  const [showMessage, setShowMessage] = useState(false);
 
   //--available balance was former named available budget from figma design which is the name used here ---------
   const setAvailableBudget = useBalanceStore(
@@ -370,11 +369,9 @@ function Transfer(): JSX.Element {
           ? 'Movement completed successfully!'
           : error ?? 'An error occurred during submission'
       );
-      setShowMessage(true);
 
       timer = setTimeout(() => {
         setMessageToUser(null);
-        setShowMessage(false);
       }, 8000);
     }
 
@@ -604,7 +601,7 @@ function Transfer(): JSX.Element {
     } catch (error) {
       console.error('Submission error:', error);
       setMessageToUser('Error processing transaction');
-      setShowMessage(true);
+  
     }
   }
   //---------------------------------------------,
@@ -697,28 +694,15 @@ function Transfer(): JSX.Element {
         </div>
       </form>
 
-      <MessageToUser
-        isLoading={
-          isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts
-        }
-        //probar que muestra como error o si muestra algo
-        error={
-          error || fetchedErrorOriginAccounts || fetchedErrorDestinationAccounts
-        }
-        messageToUser={messageToUser}
-        variant='tracker'
-      />
-
-      {showMessage && !isLoading && (
-        <div className='fade-message'>
+              <div className='fade-message'>
           <MessageToUser
             isLoading={false}
             error={error}
             messageToUser={messageToUser}
-            variant='form'
+            variant='tracker'
           />
         </div>
-      )}
+      
     </>
   );
 }
