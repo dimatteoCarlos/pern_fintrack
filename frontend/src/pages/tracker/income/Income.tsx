@@ -110,7 +110,7 @@ function Income() {
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
   );
-  const [showMessage, setShowMessage] = useState(false);
+  // const [showMessage, setShowMessage] = useState(false);
 
   //----
   const setAvailableBudget = useBalanceStore(
@@ -209,11 +209,11 @@ function Income() {
           ? 'Movement completed successfully!'
           : error ?? 'An error occurred during submission'
       );
-      setShowMessage(true);
+      // setShowMessage(true);
 
       timer = setTimeout(() => {
         setMessageToUser(null);
-        setShowMessage(false);
+        // setShowMessage(false);
       }, 8000);
     }
 
@@ -415,21 +415,21 @@ function Income() {
         </div>
       </form>
 
-      <MessageToUser
+      {/* <MessageToUser
         isLoading={isLoading || isLoadingBankAccounts || loadingSources}
         //probar que muestra como error o si muestra algo
         error={error || fetchedErrorBankAccounts || errorSources}
         messageToUser={messageToUser}
         variant='tracker'
-      />
+      /> */}
 
-      {showMessage && !isLoading && (
+      {messageToUser && !isLoading && (
         <div className='fade-message'>
           <MessageToUser
             isLoading={false}
             error={error}
             messageToUser={messageToUser}
-            variant='form'
+            variant='tracker'
           />
         </div>
       )}
