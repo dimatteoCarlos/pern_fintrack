@@ -132,7 +132,7 @@ function Debts(): JSX.Element {
   } = useFetch<AccountByTypeResponseType>(fetchDebtorUrl as string);
 
   //apply debounce
-  // console.log('debtors datatrack:', debtorsResponse);
+  console.log('debtors datatrack:', debtorsResponse);
   //define what to do when error
   const debtors = useMemo(
     () =>
@@ -232,24 +232,7 @@ function Debts(): JSX.Element {
       setDataTrack((prev) => ({ ...prev, [name]: value }));
     }
   }
-  //-----for old version toggle button
-  // const toggleType = useCallback(
-  //   (e: React.MouseEvent<HTMLButtonElement>) => {
-  //     e.preventDefault();
-
-  //     setType((prev: DebtsTransactionType) =>
-  //       prev === 'lend' ? 'borrow' : 'lend'
-  //     );
-  //   },
-  //   []
-  //   // [type]
-  // );
-
-  //---change date in datepicker
-  // function changeDateFn(selectedDate: Date): void {
-  //   setDataTrack((prev) => ({ ...prev, date: selectedDate }));
-  // }
-
+  
   //---for new version with radio input transaction type selection
   //RadioInput for transaction type selection
   function handleTransactionTypeChange(newType: DebtsTransactionType) {
@@ -258,15 +241,7 @@ function Debts(): JSX.Element {
 
   //for DropdownSelection of counter balance account
   function accountSelectHandler(selectedOption: DropdownOptionType | null) {
-    // const selectedAccount = accountsResponse?.data?.accountList.find(
-    //   (acc) => acc.account_name === selectedOption?.value
-    // );
-
-    // console.log(
-    //   '🚀 ~ accountSelectHandler ~ selectedAccount:',
-    //   selectedAccount?.account_balance,
-    // );
-
+    
     setDataTrack((prev) => ({
       ...prev,
       ['account']: selectedOption?.value || '',
@@ -275,41 +250,13 @@ function Debts(): JSX.Element {
     setValidationMessages((prev) => ({ ...prev, account: '' }));
   }
 
-  //--------
-  //RadioInput for account type selection
-  // function handleAccountTypeChange(newAccountType: string) {
-  //   //reset dropdown selected values
-  //   setDataTrack((prev) => ({
-  //     ...prev,
-  //     account: '', //reset dropdown selected values
-  //     accountType: newAccountType,
-  //     // destination: '',
-  //   }));
-
-  //   //reset error messages
-  //   setValidationMessages((prev) => ({
-  //     ...prev,
-  //     account: '',
-  //     accountType: '',
-  //   }));
-
-  //   //force reset dropdown selected value for account in the DropdownSelect compoenent
-  //   setIsResetAccount(false);
-  //   setTimeout(() => setIsResetAccount(true), 100);
-  // }
-  //-----------------------------------------------
+  //--------------------------------------
   //--submit form
   async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
     console.log('On Save Handler');
     e.preventDefault();
 
     //-------------------------
-    // const formattedNumber = numberFormat(datatrack.amount || 0);
-    // console.log(
-    //   'formatted amount as a string:',
-    //   { formattedNumber },
-    //   typeof formattedNumber
-    // );
     //----entered datatrack validation messages --------
     const newValidationMessages = validationData(datatrack);
     // console.log('values', Object.values(newValidationMessages));
@@ -321,9 +268,6 @@ function Debts(): JSX.Element {
 
     //----------------------------
     //ENDPOINT HERE FOR POSTING
-    //update balance account of debtor account and counter part slack account in: user_accounts table.
-    //record both transaction descriptions: transfer and receive transactions with the correspondent account info.
-    // there should be also a debtor_accounts table, updated with specific debtor data
     //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=debts
     //user id is sent via req.body but can be sent via query param ttoo
     try {
@@ -395,14 +339,14 @@ function Debts(): JSX.Element {
       setMessageToUser(
         success
           ? 'Movement completed successfully!'
-          : error ?? 'An error occurred during submission'
+          : error ?? 'An error occurred during data submission'
       );
       setShowMessage(true);
 
       timer = setTimeout(() => {
         setMessageToUser(null);
         setShowMessage(false);
-      }, 6000);
+      }, 3000);
     }
 
     return () => clearTimeout(timer);
@@ -410,12 +354,9 @@ function Debts(): JSX.Element {
 
   //-----useEffect--------
   useEffect(() => {
-    // updateDataCurrency(currency);
-    // multi currency option?
-    // setDataTrack((prev) => ({ ...prev, currency: currency }));
     setDataTrack((prev) => ({ ...prev, type: type }));
   }, [type]);
-  // }, [currency, type, updateDataCurrency]);
+
   //--------------------------
   return (
     <>
@@ -431,22 +372,7 @@ function Debts(): JSX.Element {
           setSelectState={setDataTrack}
           isReset={isReset}
           setIsReset={setIsReset}
-          // selectedValue={datatrack.debtor}
-          // selectedValue={movementInputData.account}
-          //radio input prop
-
-          //transaction type selection radio
-          /*
-          radioInputProps={{
-            radioOptionSelected: datatrack.type ?? initialTrackerData.type!,
-            inputRadioOptions: inputRadioOptionsDebtTransactionType,
-            setRadioOptionSelected: handleTransactionTypeChange,
-            title: '',
-            // setRadioOptionSelected: setOriginAccountType,
-          }}
-          */
-          //---------
-          // customSelectHandler={accountSelectHandler}
+          
         />
 
         <CardSeparator />
@@ -455,18 +381,7 @@ function Debts(): JSX.Element {
         <div className='state__card--bottom'>
           <div className='account card--title card--title--top'>
            {datatrack.type==='lend'?'From:':'To:'}
-            {/* <RadioInput
-              radioOptionSelected={
-                datatrack.accountType ?? initialTrackerData.accountType!
-              }
-              inputRadioOptions={inputRadioOptionsAccountType}
-              setRadioOptionSelected={handleAccountTypeChange}
-              title={''}
-              labelId='account'
-
-              // disabled={radioInputProps.disabled}
-            /> */}
-
+            
             <RadioInput
               radioOptionSelected=
               {
@@ -495,27 +410,6 @@ function Debts(): JSX.Element {
             isResetDropdown={isResetAccount}
           />
 
-          {/* <div className='card__typeDate__container'> */}
-          {/*            <div className='card__typeDate--type'>
-              <div className='card--title'>Type</div>
-              <button className='card__screen--type' onClick={toggleType}>
-                <div className='screen--concept'>{type}</div>
-              </button>
-            </div>*/}
-
-          {/* <div className='card__typeDate--date'>
-              <div className='card--title'>Date</div>
-              <div className='card__screen--date'>
-                <Datepicker
-                  changeDate={changeDateFn}
-                  date={datatrack.date ?? new Date()}
-                  variant='tracker'
-                  isReset={isReset}
-                ></Datepicker>
-              </div>
-            </div> */}
-          {/* </div> */}
-
           <CardNoteSave
             title={'note'}
             validationMessages={validationMessages}
@@ -531,7 +425,9 @@ function Debts(): JSX.Element {
         <div className='fade-message'>
           <MessageToUser
             isLoading={isLoading || isLoadingAccounts || isLoadingDebtors}
+
             error={error || fetchedErrorDebtors}
+            
             messageToUser={messageToUser}
             variant='tracker'
           />
