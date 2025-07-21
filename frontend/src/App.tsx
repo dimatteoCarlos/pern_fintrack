@@ -11,7 +11,6 @@ import Income from './pages/tracker/income/Income.tsx';
 import PnL from './pages/tracker/profitNloss/PnL.tsx';
 import Debts from './pages/tracker/debts/Debts.tsx';
 // import Investment from './pages/tracker/investment/Investment.tsx';
-
 import Budget from './pages/budget/Budget.tsx';
 import Debtors from './pages/debts/Debtors.tsx';
 
@@ -174,13 +173,13 @@ function App() {
 
   ]);
 
-
   return (
     <>
       <RouterProvider router={router} />
+
       <ToastContainer 
       position = "bottom-center" autoClose={3000}
-      hideProgressBar = {false} newestOnTop={false}
+      hideProgressBar = {false} newestOnTop={true}
       closeOnClick={false}
       rtl={false}
       pauseOnFocusLoss

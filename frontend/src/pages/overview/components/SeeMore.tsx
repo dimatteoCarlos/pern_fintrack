@@ -2,8 +2,11 @@ import { Link } from 'react-router-dom';
 import LeftArrowDarkSvg from '../../../assets/LeftArrowDarkSvg.svg';
 
 type ChildrenPropType = { children?: React.ReactNode; previousRoute: string };
-//--------------------------------------------------------
-export function SeeMore({ children, previousRoute }: ChildrenPropType) {
+//-----------------------------------
+export function SeeMore({ children, 
+  // previousRoute
+
+ }: ChildrenPropType) {
   function onClickHandler() {
     console.log(
       'Message:',

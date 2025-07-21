@@ -302,19 +302,19 @@ export const getAccounts = async (req, res, next) => {
 //endpoint example: http://localhost:5000/api/fintrack/account/${accountId}?&user=${user}
 //**************************************
 export const getAccountById = async (req, res, next) => {
-  console.log(pc[backendColor]('getAccountById'));
-    console.log(
-    'body:',
-    req.body,
-    'params:',
-    req.params,
-    'query:',
-    req.query,
-    'path:',
-    req.path,
-    'originalUrl:',
-    req.originalUrl
-  );
+  // console.log(pc[backendColor]('getAccountById'));
+  //   console.log(
+  //   'body:',
+  //   req.body,
+  //   'params:',
+  //   req.params,
+  //   'query:',
+  //   req.query,
+  //   'path:',
+  //   req.path,
+  //   'originalUrl:',
+  //   req.originalUrl
+  // );
 
   try {
    const userId = req.body.user ?? req.query.user;
@@ -330,7 +330,7 @@ export const getAccountById = async (req, res, next) => {
       console.warn(pc[backendColor](message));
       return res.status(400).json({ status: 400, message });
     }
-    //======================================================
+    //==========================================
     //--get account basic info and its type name
     const accountsResult = await pool.query({
       text: `SELECT act.account_type_name , ua.*
@@ -339,8 +339,7 @@ export const getAccountById = async (req, res, next) => {
         WHERE ua.account_id= $1`,
       values: [accountId],
     });
-
-    console.log('result', accountsResult.rows[0])
+    // console.log('result', accountsResult.rows[0])
 
      if (!accountsResult || accountsResult.rows.length===0) {
       const message = `Account does not exist`;
@@ -369,7 +368,6 @@ export const getAccountById = async (req, res, next) => {
 */
      const account_type_name =accountsResult.rows[0].account_type_name
 
-     //is it redundant?
     if(!['pocket_saving','category_budget', 'bank', 'investment', 'income_source','debtor'].includes(account_type_name)){
     const message = `${account_type_name} is not included in the account types`
     console.warn(message)
@@ -392,6 +390,7 @@ export const getAccountById = async (req, res, next) => {
           WHERE ua.user_id =$1
           AND act.account_type_name = $2
           AND ua.account_id = $3 AND ua.account_name != $4
+          ORDER BY ua.created_at DESC, ua.updated_at DESC, 
           `,
           values: [userId, account_type_name, accountId, 'slack'],
         },

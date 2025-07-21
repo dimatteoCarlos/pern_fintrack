@@ -140,8 +140,8 @@ function Debts(): JSX.Element {
       !isLoadingDebtors &&
       debtorsResponse?.data.accountList.length
         ? debtorsResponse.data.accountList.map((debtor) => ({
-          label:`${debtor.account_name} (${debtor.currency_code} ${debtor.account_balance}) (${debtor.account_balance>=0? 'Debtor':'Lender'})`
-            // value: `${debtor.account_name}`,
+          label:`${debtor.account_name} (${debtor.currency_code} ${debtor.account_balance}) (${debtor.account_balance>=0? 'Debtor':'Lender'})`,
+            value: `${debtor.account_name}`,
            // label: debtor.account_name,
           })
         )

@@ -2,12 +2,12 @@ BUSINESS RULES
 
 When creating a new account of type: bank, investment, pocket_saving, category_budget, the initial or a starting amount balance will always be 0 or positive (deposit transaction)
 When creating a new account of type: income_source, the initial or a starting amount balance will always be 0 (initial-account-opening)
-When creating a new account of type: debtor, the initial or a starting amount balance will be the input amount value and the  sigh will depend on the tye transaction type lend (-) or borrow (+) . initial-lend/borrow
+When creating a new account of type: debtor, the initial or a starting amount balance will be the input amount value and the  sigh will depend on the transaction type lend (-) or borrow (+). initial-lend/borrow
 ---
-Here is a structured summary of the transfer rules you mentioned, categorized into **allowed**, **restricted**, and **overdraft-permitted**:
+Here is a structured summary of the transfer rules mentioned, categorized into **allowed**, **restricted**, and **overdraft-permitted**:
 
 ### **🔒 Transfers WITHOUT Overdraft (Balance ≥ 0 Required)**
-1. **From `BANK` → `DEBTOR`** (strictly no overdraft)
+1. **From `BANK` → `DEBTOR`** (strictly BANK should not overdraft)
 2. **Between same-type accounts**:
    - `INVESTMENT` ↔ `INVESTMENT`
    - `BANK` ↔ `BANK`

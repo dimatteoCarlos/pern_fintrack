@@ -204,7 +204,7 @@ const accountsListInfo =
   //   return () => clearTimeout(timer);
   // }, [data, error, isLoading]);
 
-  //----functions--------
+  //----functions-----------
   const updateDataCurrency = useCallback((currency: CurrencyType) => {
     setCurrency(currency);
     setFormInputData((prev) => ({ ...prev, currency: currency }));
@@ -216,7 +216,7 @@ const accountsListInfo =
   ) {
     e.preventDefault();
     const { name, value } = e.target;
-    //---------------
+    //--------------------
     if (name === 'amount') {
       const { formatMessage, 
        // valueNumber,
@@ -284,6 +284,7 @@ const accountsListInfo =
     //---entered datatrack validation messages -------
     //validation of entered data
     const newValidationMessages = { ...validationData(formInputData) };
+    
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
       console.log("🚀 ~ onSaveHandler ~ newValidationMessages:", newValidationMessages)
@@ -442,8 +443,6 @@ const accountsListInfo =
           />
         </div>
       </form>
-
-
 
       {showMessage && !isLoading && (
         <div className='fade-message'>

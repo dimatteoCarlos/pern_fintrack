@@ -5,11 +5,11 @@ import { CardTitle } from '../../../general_components/CardTitle';
 import { url_get_accounts_by_type } from '../../../endpoints';
 import { useFetch } from '../../../hooks/useFetch';
 import { 
- // ACCOUNT_DEFAULT  ,
+ // ACCOUNT_DEFAULT
    CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
 import { useEffect, useState } from 'react';
-//---------------------------------------------
+//---------------------------------------
 export type AccountPropType={previousRoute:string, accountType:string}
 
 //temporary values------------
@@ -29,7 +29,7 @@ function AccountBalance({
      // ACCOUNT_DEFAULT
 []
     );
-
+    
   //DATA FETCHING
   const urlGetAccounts = `${url_get_accounts_by_type}/?type=${accountType}&user=${user}`;
   const {
@@ -79,7 +79,6 @@ function AccountBalance({
         <Link className='flx-col-center icon ' to={'edit'}></Link>
       </div>
 
-      {/* cambiar el nombre de goals__account por bank o expense account*/}
       <article className='goals__account'>
         {/* Account Balance  */}
         {accountsToRender.map((account) => {

@@ -48,7 +48,7 @@ throw new Error("Invalid account ID parameter");
   // console.log("🚀 ~ CategoryDetail ~ :", accountId,previousRoute, accountDetailed)
 //---
 
-// console.log('adc', accountDetailed)
+// console.log('ad', accountDetailed)
 //summary data
   const summaryData =accountDetailed? {
     title: 'Budget',
@@ -137,7 +137,6 @@ throw new Error("Invalid account ID parameter");
                 </div>
               </div>
                       
-            {/* INCLUIR EN EL BACKEND ACCOUNT TYPE ANAME  */}
             <div className='input__box'>
               <label className='label form__title'>{'Account Type'}</label>
 
