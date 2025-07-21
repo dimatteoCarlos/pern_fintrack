@@ -102,7 +102,7 @@ function Expense(): JSX.Element {
     useState<ExpenseInputDataType>(initialExpenseData);
 
   const [formData, setFormData] = useState(initialFormData);
-  const [reloadTrigger, setReloadTrigger] = useState(0)
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   //---
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
@@ -137,9 +137,6 @@ function Expense(): JSX.Element {
   //   fetchedErrorBankAccounts,
   // });
 
-  // console.log('🚀 ~ Expense ~ BankAccountsResponse:', BankAccountsResponse);
-  // console.log('BANK resp', BankAccountsResponse, fetchedErrorBankAccounts);
-
   const optionsExpenseAccounts = useMemo(() => {
     if (fetchedErrorBankAccounts) {
       return ACCOUNT_OPTIONS_DEFAULT;
@@ -161,16 +158,15 @@ function Expense(): JSX.Element {
     variant: 'tracker' as VariantType,
   };
   //--------
-  //category options
+  //CATEGORY OPTIONS
   //GET: ACCOUNTS OF TYPE CATEGORY_BUDGET AVAILABLE
   //DATA FETCHING
-
   const {
     apiData: CategoryBudgetAccountsResponse,
     isLoading: isLoadingCategoryBudgetAccounts,
     error: fetchedErrorCategoryBudgetAccounts,
   } = useFetch<CategoryBudgetAccountsResponseType>(
-    `${url_get_accounts_by_type}/?type=category_budget&user=${user}`
+    `${url_get_accounts_by_type}/?type=category_budget&user=${user}&reload=${reloadTrigger}`
   );
 
   // console.log('catBudgetResp', {
@@ -192,7 +188,9 @@ function Expense(): JSX.Element {
     // }
     return categoryList.map((cat) => ({
       value: cat.account_name,
-      label: cat.account_name,
+      label: `${cat.account_name} (${cat.currency_code} ${cat.account_balance})`,
+// label: cat.account_name,
+
     }));
   }, [
     CategoryBudgetAccountsResponse?.data?.accountList,
@@ -381,7 +379,6 @@ function Expense(): JSX.Element {
       setIsReset(true); //admitir que category sea undefined - must admit undefined category
       setValidationMessages({});
       setFormData(initialFormData);
-
       setTimeout(() => setIsReset(false), 300);
 
       //-------------------------------
@@ -402,13 +399,13 @@ function Expense(): JSX.Element {
     }
   }
   //------------------------------------------,
-  //-------Top Card elements -----------------------
+  //-------Top Card elements ------------------------------------------
   const topCardElements = {
     titles: { title1: 'amount', title2: 'account' },
     value: formData.amount,
     selectOptions: accountOptions,
   };
-  //-------------------------------------------------
+  //-----------------------------------------
   return (
     <>
     {!isLoading &&
