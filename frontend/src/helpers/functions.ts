@@ -33,7 +33,7 @@ export function getCurrencySymbol(chosenCurrency = 'USD') {
 
     // Si el símbolo resultante es una cadena vacía o es el mismo código de moneda
     // (lo que ocurre si no hay un símbolo único para esa moneda en esa configuración regional),
-    // devolvemos el código de la moneda original como un fallback.
+    // se devuelve el código de la moneda original como un fallback.
     if (symbol === '' || symbol.toUpperCase() === chosenCurrency.toUpperCase()) {
       return chosenCurrency;
     }
@@ -285,15 +285,28 @@ export function validationData(stateToValidate: {
   for (const key in stateToValidate) {
     const value = stateToValidate[key];
 
-    if (typeof value === 'number' && value < 0) {
-      errorValidationMessages[key] = `* ${capitalize(
-        key
-      )} negative values are not allowed`;
+    if (key === 'amount') {
+      const error = validateAmount(String(value));
+      if (error) errorValidationMessages[key] = error;
       continue;
     }
-    //zero is allowed
+
+    // Validación adicional para cero
+      if (typeof value === 'number' && value === 0) {
+        errorValidationMessages[key] = '* Amount must be greater than zero';
+        continue;
+      }
+
+    if (typeof value === 'number' && value <= 0) {
+      errorValidationMessages[key] = `* ${capitalize(
+        key
+      )} value must be greater than cero`;
+      continue;
+    }
+
+  // Validación para valores vacíos/nulos
     if (
-      (typeof value == 'string' && value == '') ||
+      (typeof value == 'string' && !value.trim()) ||
       value == null ||
       value == undefined
     ) {
@@ -305,13 +318,49 @@ export function validationData(stateToValidate: {
   return errorValidationMessages;
 } //fn
 //----------------------------------------
+// ✅ AGREGADO: función helper reutilizable para validar el campo 'amount'
+export function validateAmount(value: string): string | null | undefined {
+  if (value === '' || value === undefined) return 'Amount is required';
+
+  const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+  
+  if (isNaN(numValue)) {
+    return '* Please enter a valid number';
+  }
+
+  if (numValue <= 0) {
+    return '* Amount must be greater than zero';
+  }
+
+  return null; // ✅ No error
+}
+
+//----------------------------------------
+export function validateField(name: string, value: string 
+  //| number | null | undefined): string | null
+ ) {
+if (name === 'amount') {
+    return validateAmount(value);
+  }
+
+
+  if (value === '' || value == null) {
+    return `* Please provide the ${capitalize(name)}`;
+  }
+  if (typeof value === 'number' && value <= 0) {
+    return `* ${capitalize(name)} negative values are not allowed`;
+  }
+  return null;
+}
+
+//----------------------------------------
 //-----check number format----------------
 //used in input number format validation
 
 export function checkNumberFormatValue(value: string): {
   formatMessage: string;
   valueNumber: string;
-  valueToSave: number;
+  valueToSave: number | null;
   isError: boolean;
 } {
   const notMatching = /([^0-9.,])/g; // Pattern for invalid characters
@@ -323,13 +372,12 @@ export function checkNumberFormatValue(value: string): {
   //valueToSave is the number used to update the number type state value
   //no matching character
   if (notMatching.test(value)) {
-    const invalidCharacters = value.match(notMatching)?.slice(0, 4);
-
+    const invalidCharacters = value.match(notMatching)?.slice(0, 4);//get only a max of 3 not valid characters to show error message
     return {
       formatMessage: `not valid number: ${invalidCharacters}`,
       isError: true,
       valueNumber: value.toString(),
-      valueToSave: 0,
+      valueToSave: null,
     };
   }
 
@@ -396,7 +444,7 @@ export function checkNumberFormatValue(value: string): {
     formatMessage: `format number not valid`,
     isError: true,
     valueNumber: '',
-    valueToSave: 0,
+    valueToSave: null,
   };
 }
 //------------------------------------
@@ -444,6 +492,8 @@ export const showToastByStatus = (
     ...options,
   });
 };
+//====================================
+
 
 
 
