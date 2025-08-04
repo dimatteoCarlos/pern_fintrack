@@ -1,31 +1,35 @@
 import FormPlusBtn from '../../../general_components/formSubmitBtn/FormPlusBtn';
 import { capitalize } from '../../../helpers/functions';
+import { ValidationMessagesType } from '../../../validations/utils/functions';
 import CardNote from './CardNote';
 
-type CardNoteSavePropType = {
+type CardNoteSavePropType<TFormDataType extends Record<string, unknown>> = {
   inputNote: string;
   dataHandler: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   title: string;
   onSaveHandler: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  validationMessages: {
-    [key: string]: string;
-  };
+  // validationMessages: {
+  //   [key: string]: string;
+  // };
+ validationMessages: ValidationMessagesType<TFormDataType>;
   isDisabled :boolean
+  showError?: boolean;
 };
 
-const CardNoteSave = ({
+const CardNoteSave =<TFormDataType extends Record<string, unknown>> ({
   title,
   validationMessages,
   dataHandler,
   inputNote,
   onSaveHandler,
-  isDisabled
-}: CardNoteSavePropType) => {
+  isDisabled,
+  showError
+}: CardNoteSavePropType<TFormDataType>) => {
   return (
     <>
       <div className='card--title'>
         {capitalize(title)}
-        <span className='validation__errMsg'>{validationMessages[title]}</span>
+        <span className='validation__errMsg'>{`${showError && validationMessages?.[title]?validationMessages?.[title]:""}`}</span>
       </div>
 
       <div
