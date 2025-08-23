@@ -594,5 +594,5 @@ export const transferBetweenAccounts = async (req, res, next) => {
   } finally {
     client.release();
   }
-};cls
+}
 //end of transactionController
