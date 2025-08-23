@@ -303,7 +303,8 @@ const destinationAccountOptions = useMemo(
   };
   //---
   //DATA POST FETCHING
-  const { data, isLoading, error:errorPost, requestFn } = useFetchLoad<
+  // const { data, isLoading, error:errorPost, requestFn } = useFetchLoad<
+  const {  isLoading, error:errorPost, requestFn } = useFetchLoad<
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
