@@ -1,6 +1,7 @@
+//src\pages\tracker\components\CardNoteSave.tsx
 import FormPlusBtn from '../../../general_components/formSubmitBtn/FormPlusBtn';
 import { capitalize } from '../../../helpers/functions';
-import { ValidationMessagesType } from '../../../validations/utils/functions';
+import { ValidationMessagesType } from '../../../validations/utils/zod_validation';
 import CardNote from './CardNote';
 
 type CardNoteSavePropType<TFormDataType extends Record<string, unknown>> = {
@@ -14,8 +15,9 @@ type CardNoteSavePropType<TFormDataType extends Record<string, unknown>> = {
  validationMessages: ValidationMessagesType<TFormDataType>;
   isDisabled :boolean
   showError?: boolean;
-};
 
+};
+//ExpenseInputDataType
 const CardNoteSave =<TFormDataType extends Record<string, unknown>> ({
   title,
   validationMessages,
@@ -23,7 +25,8 @@ const CardNoteSave =<TFormDataType extends Record<string, unknown>> ({
   inputNote,
   onSaveHandler,
   isDisabled,
-  showError
+  showError,
+
 }: CardNoteSavePropType<TFormDataType>) => {
   return (
     <>
