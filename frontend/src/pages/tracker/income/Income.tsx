@@ -172,8 +172,8 @@ function Income():JSX.Element {
       !isLoadingBankAccounts
         ? BankAccountsResponse?.data.accountList?.map((acc) => ({
             value: acc.account_name,
-            // label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code.toLowerCase()} ${acc.account_balance})`
-            label: `${acc.account_name}`
+            label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code.toLowerCase()} ${acc.account_balance})`
+            // label: `${acc.account_name}`
           }))
         : ACCOUNT_OPTIONS_DEFAULT,
     [
@@ -211,8 +211,8 @@ function Income():JSX.Element {
       !errorSources && sources?.data.accountList.length
         ? sources?.data.accountList?.map((acc) => ({
             value: acc.account_name,
-            //label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${Math.abs(acc.account_balance)})`,
-            label: acc.account_name,
+            label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${Math.abs(acc.account_balance)})`,
+            // label: acc.account_name,
           }))
         : SOURCE_OPTIONS_DEFAULT,
     variant: VARIANT_DEFAULT as VariantType,
