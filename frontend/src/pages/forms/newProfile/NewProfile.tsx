@@ -12,7 +12,6 @@ import {
   // ExpenseAccountsType,
 } from '../../../types/types.ts';
 import {
-  // url_accounts,
   url_create_debtor_account,
   url_get_accounts_by_type,
 } from '../../../endpoints.ts';
@@ -34,11 +33,8 @@ import { MessageToUser } from '../../../general_components/messageToUser/Message
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 // import ProtectedRoute from '../../auth/ProtectedRoute.tsx';
 
-//-----temporarily 'till decide how to handle currencies
+//-----defaul 'till decide how to handle multi currencies
 const defaultCurrency = DEFAULT_CURRENCY;
-// const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-// console.log('', { formatNumberCountry });
-
 //----Type definitions, initialization and constants ------
 type ProfileInputDataType = {
   name: string;
@@ -108,7 +104,7 @@ function NewProfile() {
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
   );
-  //-----------------------------------------
+  //----------------
   //DATA FETCHING for option selection
   //GET: AVAILABLE ACCOUNTS OF TYPE BANK
   const fetchUrl = user
@@ -143,7 +139,7 @@ function NewProfile() {
     variant: VARIANT_FORM, //this stablishes the custom styles to use in selection dropdown component
   };
 
-  //----------------------------------------
+  //---------------------
   //DATA FETCHING POST
   ////OBTAIN THE REQUESTFN FROM userFetchLoad
   //endpoint: http://localhost:5000/api/fintrack/account/new_account/debtor
@@ -151,55 +147,67 @@ function NewProfile() {
     CreateDebtorAccountApiResponseType,
     ProfilePayloadType
   >({ url: url_create_debtor_account, method: 'POST' });
-  //------------------------------------------
-  //---functions------------------------------
+//---functions------------
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
     setProfileData((prev) => ({ ...prev, [name]: value }));
   }
-
+//---
   function typeSelectHandler(selectedOption: DropdownOptionType | null) {
-    if (selectedOption) {
-      // console.log('selectedOption desde typeSelectHandler', { selectedOption });
-
-      setProfileData((prev: ProfileInputDataType) => ({
+    const newValue = selectedOption === null ? '' : selectedOption?.value || '';
+      setProfileData((prev) => ({
         ...prev,
-        type: selectedOption.label,
-        // type: selectedOption.value,
+        type: newValue,
+      }));
+
+    //Immediate validation / Validación inmediata 
+    if (selectedOption === null) {
+      setValidationMessages(prev => ({
+        ...prev,
+        type: '* Please provide the Type'
       }));
     } else {
-      console.log(`No option selected for ${'type'}`);
-    }
+      setValidationMessages(prev => ({
+        ...prev,
+        type: ''
+      }));
+    }   
   }
-
-  //---
+//---
   function accountSelectHandler(selectedOption: DropdownOptionType | null) {
-    const newValue = selectedOption?.value || '';
+   const newValue = selectedOption === null ? '' : selectedOption?.value || '';
     setProfileData((prev) => ({
       ...prev,
       account: newValue,
     }));
-  }
 
-  //--------------------
-  //FORM SUBMISSION ---
+// Immediate Validation Validación inmediata
+  if (selectedOption === null) {
+    setValidationMessages(prev => ({
+      ...prev,
+      account: '* Please provide the Account'
+    }));
+  } else {
+    setValidationMessages(prev => ({
+      ...prev,
+      account: ''
+    }));
+  }
+ }
+//--------------------
+//FORM SUBMISSION ---
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     // console.log('onSubmitForm');
-
     //--data form validation
     const newValidationMessages = validationData(profileData);
-
     // console.log('mensajes:', { newValidationMessages });
-
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
-
       return;
     }
-    //-------------------------------------------------------
-
+    //-----------------
     try {
       const payload: ProfilePayloadType = {
         account_type,
@@ -213,14 +221,15 @@ function NewProfile() {
         selected_account_type,
         user,
       };
-
       const data = await requestFn(payload);
+      if(data.error){
+        //setValidationMessages({});
+      return}
 
       if (import.meta.env.VITE_ENVIRONMENT === 'development') {
         console.log('Data from New Debtor request:', data);
       }
-
-      //---------------------------------------------
+      //--------------------
       //POST the new profile data into database
       // console.log('data to POST:', { profileData });
 
