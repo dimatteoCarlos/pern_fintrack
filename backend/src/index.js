@@ -198,7 +198,7 @@ async function initializeDatabase() {
     }
     //====================================
     //create tables
-    if (false) {
+    if (!false) {
       await Promise.allSettled(
         mainTables.map(async (item, ind) => {
           try {

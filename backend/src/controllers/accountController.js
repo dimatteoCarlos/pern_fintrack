@@ -198,10 +198,8 @@ export const createAccount = async (req, res, next) => {
       error.message || 'something went wrong'
     );
     // Handle PostgreSQL error
-    const { code, message } = handlePostgresError(error); //perhaps this should go in index main file
+    const { code, message } = handlePostgresError(error); 
 
-    // Send response to frontend
-    // next(error);
     return next(createError(code, message));
   } finally {
     client.release(); //always release the client back to the pool
