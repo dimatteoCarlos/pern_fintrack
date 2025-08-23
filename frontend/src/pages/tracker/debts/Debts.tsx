@@ -1,33 +1,35 @@
 //pages/tracker/debts/debts.tsx
-//here a customized input data validation procedure was implemented. it considers validation of the current field and whole form data validation when submitting.
-// ===========================================
+//here a customized input data validation procedure was implemented. it considers validation of the current field in real time and whole form data validation when submitting.
+// =======================================
 // IMPORT DEPENDENCIES
-// ===========================================
+// ==========================================
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios, { AxiosRequestConfig } from 'axios';
 
-// HELPERS FUNCTIONS
-import { capitalize, checkNumberFormatValue, validateAmount, validationData } from '../../../helpers/functions.ts';
-import useInputNumberHandler from '../../../hooks/useInputNumberHandler.tsx';
+// HELPERS FUNCTIONS 
+import { capitalize } from '../../../helpers/functions.ts';
+import { checkNumberFormatValue,validateAmount, validationData  } from '../../../validations/utils/custom_validation.ts';
 
-//DATA FETCHING
+//DATA FETCHING CUSTOM HOOKS
 import { useLocation } from 'react-router-dom';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import { useFetch } from '../../../hooks/useFetch.ts';
+import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
+import useBalanceStore from '../../../stores/useBalanceStore.ts';
 
 // ENDPOINTS
-import { useFetch } from '../../../hooks/useFetch.tsx';
 import {
   url_get_accounts_by_type,
   url_get_total_account_balance_by_type,
   url_movement_transaction_record,
 } from '../../../endpoints.ts';
+
 // CONSTANTS
 import {
   DEBTOR_OPTIONS_DEFAULT,
   DEFAULT_CURRENCY,
   PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
-//import TopCard from '../components/TopCard.tsx';
 
 // UI COMPONENTS
 import CardNoteSave from '../components/CardNoteSave.tsx';
@@ -36,7 +38,6 @@ import RadioInput from '../../../general_components/radioInput/RadioInput.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import TopCardZod from '../components/TopCardZod.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
-import useBalanceStore from '../../../stores/useBalanceStore.ts';
 
 // TYPES
 import {
@@ -56,9 +57,9 @@ import {
   VariantType,
   } from '../../../types/types.ts';
 
-// ===========================================
+// =========================================
 // CONSTANTS & INITIAL VALUES
-// ===========================================
+// =========================================
 const VARIANT_DEFAULT: VariantType = 'tracker';
 const defaultCurrency: CurrencyType = DEFAULT_CURRENCY;
 // Initial tracker data structure
@@ -125,9 +126,9 @@ function Debts(): JSX.Element {
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
-  // ===========================================
+  // =========================
   // API DATA FETCHING
-  // ===========================================
+  // ==========================
   // Fetch debtors data
   const fetchDebtorUrl = user
     ? `${url_get_accounts_by_type}/?type=debtor&user=${user}&${reloadTrigger}`
@@ -157,7 +158,7 @@ function Debts(): JSX.Element {
   );
 //----------------------------------
   const debtorOptions = {
-    title: debtorsResponse?.data.accountList.length ? 'Select Debtor/Lender' : 'No Debtor/Lender found', //'No info. available',
+    title: debtorsResponse?.data.accountList.length ? 'Select Debtor/Lender' : "", //'No info. available',
     options: debtors,
     variant: VARIANT_DEFAULT as VariantType,
   };
@@ -197,32 +198,11 @@ function Debts(): JSX.Element {
   }, [accountsResponse?.data.accountList, fetchedErrorAccounts]);
 
   const accountOptionsToRender = {
-    title: accountsResponse?.data?.accountList?.length? 'Select account' : 'No accounts available',
+    title: accountsResponse?.data?.accountList?.length? 'Select account' : '',//'No accounts available',
     options: optionsAccounts,
     variant: VARIANT_DEFAULT as VariantType,
   };
-  // Process debtors data for dropdown
-  //  const debtors = useMemo(
-  //   () =>
-  //     !fetchedErrorDebtors &&
-  //     !isLoadingDebtors &&
-  //     debtorsResponse?.data.accountList.length
-  //       ? debtorsResponse.data.accountList.map((debtor) => ({
-  //         label:`${debtor.account_name} (${debtor.currency_code} ${debtor.account_balance}) (${debtor.account_balance>=0? 'Debtor':'Lender'})`,
-  //           value: `${debtor.account_name}`,
-  //          // label: debtor.account_name,
-  //         })
-  //       )
-  //       : DEBTOR_OPTIONS_DEFAULT,
-  //   [debtorsResponse?.data.accountList, fetchedErrorDebtors, isLoadingDebtors]
-  // );
-//----------------------------------
-  // const debtorOptions = {
-  //   title: debtorsResponse?.data.accountList.length ? 'Select Debtor/Lender' : 'No Debtor/Lender found', //'No info. available',
-  //   options: debtors,
-  //   variant: VARIANT_DEFAULT as VariantType,
-  // };
-    // ===========================================
+  // ===========================================
   // API REQUEST CONFIGURATION
   // ===========================================
   //OBTAIN THE REQUESTFN FROM userFetchLoad
@@ -270,15 +250,15 @@ function Debts(): JSX.Element {
     if (name === 'amount') {
       //update amount value with value input entered, set validation message for amount either format message or error format message, set amount state value with valueToSave, in case of error valueToSave is ""?.
       inputNumberHandlerFn(name, value);
-          // Activar validaciones cuando se introduce un valor en amount
-    if (value !== '') {
-      setShowValidation(prev => ({
-        ...prev,
-        debtor: true,
-        account: true,
-        note: true
-      }));
-    }
+      // Activar validaciones cuando se introduce un valor en amount
+      if (value !== '') {
+        setShowValidation(prev => ({
+          ...prev,
+          debtor: true,
+          account: true,
+          note: true
+        }));
+      }
 
     //inmediate validation of amount
       if(isAmountError){
@@ -327,8 +307,8 @@ function Debts(): JSX.Element {
     }));
     setValidationMessages((prev) => ({ ...prev, account: '' }));
   }
-  //--------------------------------------
-  // Form submission handler
+ //--------------------------------------
+ // Form submission handler
  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
     // console.log('On Save Handler');
     e.preventDefault();
@@ -376,15 +356,20 @@ function Debts(): JSX.Element {
 
       const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
 
-      const data = await requestFn(payload, {
+      const {data, error} = await requestFn(payload, {
         url: postUrl,
       } as AxiosRequestConfig);
 
-      if(error){
-      setMessageToUser(error)
-      // console.log(error, 'desde sumit')
-      return
-      }
+      // if(error){
+      // setMessageToUser(error)
+      // // console.log(error, 'desde sumit')
+      // return
+      // }
+          if (error ) {
+      const errorMsg = error ?? "unexpected error"
+      console.log('response?.error?', errorMsg)
+      throw new Error(errorMsg);
+    }
     
       if (import.meta.env.VITE_ENVIRONMENT === 'development') {
         console.log('Data from record transaction request:', data);
@@ -399,15 +384,21 @@ function Debts(): JSX.Element {
       } = await axios.get<BalanceBankRespType>(
         `${url_get_total_account_balance_by_type}/?type=bank&user=${user}`
       );
-
+      
       if (typeof total_balance === 'number') {
         setAvailableBudget(total_balance);
-      }
+      }else{ setMessageToUser('Check total_balance')}
+
+      setMessageToUser('Transaction recorded successfully!');
+      setTimeout(() => setMessageToUser(null), 3000);
       //----------------------------------
     } catch (error) {
-      console.error('Submission error:', error);
-      setMessageToUser('Error processing transaction debt');
+      // console.error('Submission error:', error);
+      // setMessageToUser('Error processing transaction debt');
       // setShowMessage(true);
+      console.error('Submission error (Zod):', error);
+      setMessageToUser(error instanceof Error ? error.message : 'An unexpected error occurred during submission.');
+      setTimeout(() => setMessageToUser(null), 5000);
     }
   }
   // ===========================================
@@ -420,7 +411,7 @@ function Debts(): JSX.Element {
   // setShowMessage(true);
   //--success
       setMessageToUser('Movement completed successfully!');
-     
+
   //if success, reset the state and the selected options on select component
         setIsReset(true);
         setValidationMessages({});
@@ -457,6 +448,7 @@ return ()=>{if(timer)clearTimeout(timer)
   }
 }, [data, error, isLoading,updateDataCurrency,isAmountError]
 )
+
 //error messages rendering control
 const [showValidation, setShowValidation] = useState({
   amount: false,
@@ -470,11 +462,11 @@ const [showValidation, setShowValidation] = useState({
   }, [type]);
 //--- side effect for error messages
 useEffect(() => {
-  // Mostrar validación para debtor solo si amount tiene valor
+  // Mostrar validación para debtor solo si amount tiene valor / show debtor validation after amount is entered
   if (datatrack.debtor === '' && (formData.amount !== '' || validationMessages.amount || showValidation.debtor)) {
     setValidationMessages(prev => ({
       ...prev,
-      debtor: '* Please select a debtor/lender'
+      debtor: `* Please select the ${datatrack.type ==='lend'?'Debtor':'Lender'}`
     }));
     setShowValidation(prev => ({...prev, debtor: true}));
   } else {
@@ -484,10 +476,10 @@ useEffect(() => {
       return newMessages;
     });
   }
-}, [datatrack.debtor, formData.amount, showValidation.debtor, validationMessages.amount]);
-
+}, [datatrack.debtor,datatrack.type, formData.amount, showValidation.debtor, validationMessages.amount]);
+//---
 useEffect(() => {
-  // Mostrar validación para account solo si amount tiene valor
+  // show account validation messages after amount has been entered
   if (datatrack.account === "" && (formData.amount !== '' || showValidation.account)) {
     setValidationMessages(prev => ({
       ...prev,
@@ -504,7 +496,7 @@ useEffect(() => {
 }, [datatrack.account, formData.amount, showValidation.account]);
 
 useEffect(() => {
-  // Mostrar validación para note solo si amount tiene valor
+  // show note validation message only if amount is entered
   if (datatrack.note === '' && (formData.amount !== '' || showValidation.note)) {
     setValidationMessages(prev => ({
       ...prev,
@@ -520,19 +512,19 @@ useEffect(() => {
   }
 }, [datatrack.note, formData.amount, showValidation.note]);
 
-  // ===========================================
+  // ==================================
   // UI CONFIGURATION
-  // ===========================================
-  //------- Top Card elements ------------
-  const debtorAccountLabel = datatrack.type ==='lend'?'debtor':'lender'
+  // =====================
+  //------- Top Card elements ---
+    const debtorAccountLabel = datatrack.type ==='lend'?'debtor':'lender'
   const topCardElements:TopCardElementsType = {
     titles: { title1: 'amount', title2: 'debtor', label2:debtorAccountLabel },
     value: formData.amount,
     selectOptions: debtorOptions,
   };
- // ===========================================
+ // =======================
   // COMPONENT RENDER
-  // ===========================================
+  // ======================
   return (
     <>
       <form className='debts' style={{ color: 'inherit' }}>
