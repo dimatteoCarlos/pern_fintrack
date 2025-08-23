@@ -115,22 +115,28 @@ export type InvestmentAccountType = {
 
 //transfer (between investment, bank and pocket_saving account types)
 export type MovementInputDataType = {
-  amount: number | '';
+  amount:string;
   origin: string;
   currency: CurrencyType;
-  destination: string | undefined;
-  originAccountId?: number;
-  destinationAccountId?: number;
-  note: string;
-  originAccountType: string | undefined;
-  destinationAccountType: string | undefined;
+  destination: string //| undefined
+ ;
+ note: string;
 
-  type?: MovementTransactionType;
-  date?: Date;
+ originAccountType: TransferAccountType;
+  destinationAccountType: TransferAccountType;
+
+ originAccountId?: number;
+ destinationAccountId?: number;
+
+ type?: MovementTransactionType;
+ date?: Date;
 };
 
-export type MovementTransaction = 'deposit' | 'withdraw';
+export type TransferAccountType=
+  'bank' | 'investment' | 'pocket';
 
+export type MovementTransaction = 'deposit' | 'withdraw';
+//---
 export type MovementAccountType = {
   id: number;
   name: string;
@@ -216,9 +222,7 @@ export type FormNumberInputType = { [key: string]: string };
 export type VariantType = 'tracker' | 'form' | 'light' | 'dark';
 
 export type DropdownOptionType = { value: string; label: string };
-
 //tracker input mask data type
-
 export type TopCardSelectStateType =
   | ExpenseInputDataType
   | IncomeInputDataType
@@ -227,23 +231,23 @@ export type TopCardSelectStateType =
   | BasicTrackerMovementInputDataType;
 
 export type ExpenseInputDataType = {
-  amount: number | '';
+  amount:string;
   account: string;
   category: string | undefined; //ojo
   note: string;
   currency: string;
-  date?: Date;
-  type?: MovementTransactionType;
+  // date?: Date;
+  // type?: MovementTransactionType;
 };
 
 export type IncomeInputDataType = {
-  amount: number | '';
+  amount: string;
   account: string;
-  source: string | undefined;
+  source: string ;//| undefined;
   note: string;
   currency: CurrencyType;
-  date?: Date;
-  type?: MovementTransactionType;
+  // date?: string;
+  // type?: MovementTransactionType;
 };
 
 export type InvestmentInputDataType = {
@@ -269,13 +273,13 @@ export type DebtsTrackerInputDataType = {
 export type MovementTransactionType = TransactionType | DebtsTransactionType;
 
 export type BasicTrackerMovementInputDataType = {
-  amount: number | '';
+  amount:string;
   currency: CurrencyType;
-  date?: Date;
-  note: string;
   account: string;
   accountType: string | undefined;
+  note: string;
   type?: MovementTransactionType;
+  date?: Date;
   accountId?:string;
 };
 
@@ -308,3 +312,6 @@ export type CategorySummaryInfoType = {
     currency_code: CurrencyType;
     category_name?: string;
 }
+
+// export type ValidationMessagesType<T> = Partial<Record<keyof T, string>>;
+
