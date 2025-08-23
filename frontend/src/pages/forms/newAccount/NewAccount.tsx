@@ -162,7 +162,7 @@ function NewAccount() {
   //---------
   function changeStartingPoint(selectedDate: Date) {
     setAccountData((acc) => ({ ...acc, date: selectedDate }));
-    console.log('selected starting point:', selectedDate);
+    // console.log('selected starting point:', selectedDate);
   }
   //---------
   function updateDataCurrency(currency: CurrencyType) {
@@ -196,9 +196,9 @@ function NewAccount() {
         url: finalUrl,
       } as AxiosRequestConfig);
 
-      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-        console.log('Data from New Account request:', data);
-      }
+      // if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+      //   console.log('Data from New Account request:', data);
+      // }
       //resetting form values
       setIsReset(true);
       setAccountData(initialNewAccountData);
@@ -206,13 +206,16 @@ function NewAccount() {
       setValidationMessages({});
       setFormData(initialFormData);
       setIsDisabledValue(false);
+      setMessageToUser(null)
 
       //delay isReset so dropdown type selection updates to null
       setTimeout(() => {
         setIsReset(false);
       }, 1000);
     } catch (error) {
-      console.error('Submission error:', error);
+      const messageError='Submission error'
+      console.error(messageError, error);
+      setMessageToUser(messageError)
     }
   }
   //----------------------------------------

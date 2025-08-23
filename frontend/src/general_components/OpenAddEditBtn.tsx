@@ -1,4 +1,4 @@
-//-------Add / Edit Button-----------C
+//-------Add / Edit Button-----------
 
 import { ReactNode } from 'react';
 
@@ -13,16 +13,16 @@ function OpenAddEditBtn({
   children,
   btnFunction,
   btnFunctionArg,
-  btnPreviousRoute,
+  // btnPreviousRoute,
 }: OpenAddEditBtnPropType): JSX.Element {
   function onClickHandler() {
     btnFunction(btnFunctionArg);
 
-    console.log(
-      'Add new or Edit Item (category, pocket, debtor, account, ecc.)',
-      btnFunctionArg,
-      { btnPreviousRoute }
-    );
+    // console.log(
+    //   'Add new or Edit Item (category, pocket, debtor, account, ecc.)',
+    //   btnFunctionArg,
+    //   { btnPreviousRoute }
+    // );
   }
 
   return (

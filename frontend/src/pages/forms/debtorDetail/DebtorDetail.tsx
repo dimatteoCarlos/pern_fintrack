@@ -154,9 +154,13 @@ useEffect(() => {
             <div className='form__title'>
               {capitalize(bubleInfo.account_name)}
             </div>
-            <Link to='edit' className='flx-col-center icon3dots'>
+            {/* <Link to='edit' className='flx-col-center icon3dots'>
               <Dots3LightSvg />
-            </Link>
+            </Link> */}
+           <div id='edit' className='flx-col-center icon3dots'>
+          <Dots3LightSvg />
+          </div>
+          
           </div>
 
           <SummaryDebtorDetailBox bubleInfo={bubleInfo}></SummaryDebtorDetailBox>

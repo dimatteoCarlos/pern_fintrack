@@ -87,11 +87,11 @@ export function calculateMonthlyAverage(
       if (data.monthCounter > 0) {
         data.monthlyAverage = data.totalAmount / data.monthCounter;
         // result[movementType]![currencyCode]!['totalAmount']/ data.monthCounter
-        console.log('result', result);
+        // console.log('result', result);
       }
     }
   }
-  console.log('result', result);
+  // console.log('result', result);
   return result;
 }
 

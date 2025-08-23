@@ -135,9 +135,14 @@ const calculateCategorySummaryInfo=useCallback( (
             
             <div className='form__title'>{capitalize(categoryName!)}</div>
 
-            <Link to='edit' className='flx-col-center icon3dots'>
+            {/* <Link to='edit' className='flx-col-center icon3dots'>
               <Dots3LightSvg />
-            </Link>
+            </Link> */}
+
+          <div id='edit' className='flx-col-center icon3dots'>
+          <Dots3LightSvg />
+          </div>
+
           </div>
         </div>
 

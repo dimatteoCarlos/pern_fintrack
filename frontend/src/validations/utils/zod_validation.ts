@@ -23,11 +23,11 @@ export function validateForm<T extends Record<string, unknown>>(
  //Validacion del esquema de forma 'segura', `safeParse` no lanza un error si la validación falla, sino que devuelve un objeto.
  const result = schema.safeParse(data);
 //verifica el resultado de la validacion
-  console.log('result', result)
+  // console.log('result', result)
   
  if (result.success) {
     // Si la validación es exitosa, no hay errores, así que devuelve un objeto vacío.
-    console.log('result desde validatefn')
+    // console.log('result desde validatefn')
     return {
       errors: {},
       data: result.data,
@@ -46,10 +46,10 @@ export function validateForm<T extends Record<string, unknown>>(
       if (fieldName && typeof fieldName === 'string') {
       // Asigna el mensaje de error de Zod (issue.message) al campo correspondiente.
         errors[fieldName as keyof T] = issue.message;
-        console.log('ValidateForm Errors', errors[fieldName as keyof T])
+        // console.log('ValidateForm Errors', errors[fieldName as keyof T])
       }
     });
-    console.log('formatted Errors', errors)
+    // console.log('formatted Errors', errors)
     // Devuelve el objeto con los errores formateados.
     return {errors, data:null };
   }

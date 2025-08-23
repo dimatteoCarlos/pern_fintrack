@@ -114,9 +114,14 @@ if(previousRouteFromState)(setPreviousRoute(previousRouteFromState))
             </Link>
             <div className='form__title'>{capitalize(accountDetail?.account_name).toUpperCase()}</div>
             
-            <Link to='edit' className='flx-col-center icon3dots'>
+            {/* <Link to='edit' className='flx-col-center icon3dots'>
               <Dots3LightSvg />
-            </Link>
+            </Link> */}
+
+          <div id='edit' className='flx-col-center icon3dots'>
+          <Dots3LightSvg />
+          </div>
+
           </div>
         </div>
 

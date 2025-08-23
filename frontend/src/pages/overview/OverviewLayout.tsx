@@ -139,10 +139,7 @@ function OverviewLayout() {
 
      const totalDebtorBalance =
       (Number(debtorBalanceApiData?.data?.total_debt_balance) ?? 0) ;
-
-    const operatingProfit= (totalIncome - totalExpense)==0?0:totalIncome-totalExpense;
-
-    console.log("🚀 ~ operatingProfit:", operatingProfit)
+    // console.log("🚀 ~ operatingProfit:", (totalIncome - totalExpense)==0?0:totalIncome-totalExpense;)
 
     const netWorthRaw= (
       +totalBankBalance+

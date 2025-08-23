@@ -117,22 +117,6 @@ useEffect(() => {
 //----------------------------------
 
 //===========================================
-
-  // if (error) return <div className='error-message'>{error}</div>;
-  //           {isLoading && (
-  //                 <div
-  //                   className='loader__container'
-  //                   style={{
-  //                     position: 'absolute',
-  //                     left: '50%',
-  //                     top: '50%',
-  //                     zIndex: '1',
-  //                   }}
-  //                 >
-  //                   <CoinSpinner />
-  //                 </div>
-  //               )}
-
   return (
     <section className='page__container'>
       <TopWhiteSpace variant={'dark'} />
@@ -145,9 +129,15 @@ useEffect(() => {
           
           <div className='form__title'>{capitalize(accountDetail?.account_name).toUpperCase()}</div>
           
-          <Link to='edit' className='flx-col-center icon3dots'>
+          {/* <Link to='edit' className='flx-col-center icon3dots'>
             <Dots3LightSvg />
-          </Link>
+          </Link> */}
+          <div id='edit' className='flx-col-center icon3dots'>
+          <Dots3LightSvg />
+          </div>
+
+
+
         </div>
 
         <form className='form__box'>
@@ -221,7 +211,7 @@ useEffect(() => {
 }
 
 export default AccountDetail;
-
+//------------------------------------
 // {
 // 	"status": 200,
 // 	"message": "5 transaction(s) found for account id 23. Period between 2025-05-21 and 2025-06-21.",
