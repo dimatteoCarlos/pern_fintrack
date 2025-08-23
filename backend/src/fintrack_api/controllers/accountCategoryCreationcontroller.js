@@ -1,5 +1,5 @@
-//accountController.js
-
+// backend\src\fintrack_api\controllers\accountCategoryCreationcontroller.js
+//
 import pc from 'picocolors';
 import {
   createError,
@@ -16,8 +16,7 @@ import { getTransactionTypeId } from '../../../utils/getTransactionTypeId.js';
 import { determineSourceAndDestinationAccounts } from '../../../utils/determineSourceAndDestinationAccounts.js';
 import { prepareTransactionOption } from '../../../utils/prepareTransactionOption.js';
 //import { validateAndNormalizeDate } from '../../../utils/helpers.js';
-//------------------------------------------------------------------
-//-------------------------------------------------------------------
+//-----------------
 //endpoint: POST: http://localhost:5000/api/fintrack/account/new_account/category_budget?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c
 //rules
 //basic_account_data:
@@ -58,11 +57,11 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       budget,
       sourceAccountId,
     } = req.body;
-
+//BUILD ACCOUNT NAME FOR CATEGORY BUDGET
     const account_type_name = 'category_budget';
     const account_name =
       account_type_name === 'category_budget'
-        ? req.body.name + '_' + req.body.nature
+        ? req.body.name + '/' + req.body.subcategory + '/' + req.body.nature
         : req.body.name;
 
     const category_nature_budget = budget ? parseFloat(budget) : 0.0;
@@ -112,33 +111,61 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       (currency) => currency.currency_code === currency_code
     )[0].currency_id;
     // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
-    //----- CHECK CATEGORY_BUDGET + NATURE ACCOUNT EXISTENCE ----------------
-    // check existence of category and nature existence
-    const categoryAndNatureQuery = {
+    //---------------------------------------
+    //----- CHECK CATEGORY_BUDGET+ SUBCATEGORY + NATURE, ACCOUNT EXISTENCE ----------------
+    // check existence of category AND subcategory and nature,name existence
+    const categoryAndSubcategoryAndNatureQuery = {
       text: `SELECT cba.* FROM category_budget_accounts cba
     JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
-    WHERE cba.category_name = $1 AND cnt.category_nature_type_name=$2`,
-      values: [category_name, nature_type_name_req],
-    };
-    const categoryAndNatureExistsResult = await pool.query(
-      categoryAndNatureQuery
-    );
-    const categoryAndNatureExists =
-      categoryAndNatureExistsResult.rows.length > 0;
 
-    if (categoryAndNatureExists) {
+    WHERE cba.category_name = $1 AND cnt.category_nature_type_name=$2
+    AND cba.subcategory=$3
+    `,
+      values: [category_name, nature_type_name_req, subcategory.trim()],
+    };
+    const categoryAndSubcategoryAndNatureExistsResult = await pool.query(
+      categoryAndSubcategoryAndNatureQuery
+    );
+    const categoryAndSubcategoryAndNatureExists =
+      categoryAndSubcategoryAndNatureExistsResult.rows.length > 0;
+
+    if (categoryAndSubcategoryAndNatureExists) {
       await client.query('ROLLBACK');
-      const message = `Can not create a new account since, category ${category_name} with nature ${nature_type_name_req} account already exists. Try again`;
+      const message = `Can not create a new account since, category ${category_name} with subcategory ${subcategory} and nature ${nature_type_name_req} account already exists. Try again`;
       console.warn('🚀 ~ createAccount ~ message:', message);
       throw new Error(message);
     }
-    //----
+    //---------------------------------------
     const category_nature_type_id_reqResult = await pool.query({
       text: `SELECT category_nature_type_id FROM category_nature_types WHERE category_nature_type_name = $1`,
       values: [nature_type_name_req],
     });
     const category_nature_type_id_req =
       category_nature_type_id_reqResult.rows[0].category_nature_type_id;
+    //---------------------------------------
+
+    //---------------------------------------
+    //----- CHECK CATEGORY_BUDGET + NATURE ACCOUNT EXISTENCE ----------------
+    // check existence of category and nature existence
+    // const categoryAndNatureQuery = {
+    //   text: `SELECT cba.* FROM category_budget_accounts cba
+    // JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
+    // WHERE cba.category_name = $1 AND cnt.category_nature_type_name=$2`,
+    //   values: [category_name, nature_type_name_req],
+    // };
+    // const categoryAndNatureExistsResult = await pool.query(
+    //   categoryAndNatureQuery
+    // );
+    // const categoryAndNatureExists =
+    //   categoryAndNatureExistsResult.rows.length > 0;
+
+    // if (categoryAndNatureExists) {
+    //   await client.query('ROLLBACK');
+    //   const message = `Can not create a new account since, category ${category_name} with nature ${nature_type_name_req} account already exists. Try again`;
+    //   console.warn('🚀 ~ createAccount ~ message:', message);
+    //   throw new Error(message);
+    // }
+   
     //--------------------------------------
     //----- INSERT NEW CATEGORY_BUDGET BASIC ACCOUNT into user_accounts table --------
     //initial amount spent in the balance (expense from other accounts) could be considered
@@ -159,7 +186,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     );
     const account_id = account_basic_data.account_id;
     //--------
-    //INSERT CATEGORY_BUDGET_NATURE ACCOUNT into category_budget_accounts table
+    //INSERT CATEGORY_BUDGET_SUBCATEGORY_NATURE ACCOUNT into category_budget_accounts table
     const category_budget_accountQuery = {
       text: `INSERT INTO category_budget_accounts(account_id, category_name,category_nature_type_id,subcategory,budget,account_start_date ) VALUES($1,$2,$3,$4,$5,$6) RETURNING *`,
       values: [
@@ -179,7 +206,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       nature_type_name: nature_type_name_req,
       currency_code,
     };
-    //------------------------------------------------------------
+    //--------------------
     //DETERMINE THE TRANSACTION TYPE FOR NEW CATEGORY_BUDGET ACCOUNT AND FOR COUNTER ACCOUNT (SLACK)
     const transactionTypeDescriptionObj = determineTransactionType(
       transactionAmount,
@@ -201,7 +228,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
 
     const transactionDescription = `Transaction: ${transactionType}. Account: ${account_name} (${account_type_name}). Initial-(${transactionType}). Amount: ${transactionAmount} ${currency_code}.  Date:${formatDate(transaction_actual_date)}`;
 
-    //------ CATEGORY_BUDGET NEW ACCOUNT INFO --------------
+    //------ CATEGORY_BUDGET NEW ACCOUNT INFO ----
     const newAccountInfo = {
       user_id: userId,
       description: transactionDescription,
@@ -228,8 +255,8 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const counterAccountTransactionAmount = -transactionAmount;
 
     const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} (bank), number: ${counterAccountInfo.account.account_id}. Amount:${currency_code} ${counterAccountTransactionAmount}. Account reference: ${account_name}). Date:${formatDate(transaction_actual_date)}`;
-    //-------------------------------------------------------------
-    //-------------SLACK COUNTER ACCOUNT INFO ------
+    //-----------------------------
+    //----SLACK COUNTER ACCOUNT INFO ------
     const slackCounterAccountInfo = {
       user_id: userId,
       description: counterTransactionDescription,
