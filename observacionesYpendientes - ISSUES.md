@@ -1,5 +1,7 @@
  Tópicos Pendientes y Consultas
- 0.New Pocket deberia validar como requerido el Target Amount
+
+0. como hacer deployment, como verificar componentes no usados o rotos, 
+
 1. Funcionalidad y Lógica de Negocio
 Cálculo de Net Worth: Aclarar con el cliente la definición de Net Worth y si su cálculo debe incluir activos (bancos, inversiones) y pasivos (deudas).
 
@@ -16,7 +18,7 @@ Balance de Inversiones: Aclarar el cálculo del balance total de las inversiones
 Página de Detalle de Ingresos: Definir si se debe crear una página de detalle para las cuentas de income.
 
 2. Backend y Seguridad
-Error en Income Tracker: Corregir el error que impide encontrar las cuentas de origen o destino.
+
 
 Cálculo de Inversiones: Calcular los valores de las cuentas de inversión, comparando el capital invertido con el balance real.
 
@@ -40,6 +42,10 @@ Indicador de Carga: Agregar un indicador de loading en los formularios.
 Descripción de Transacciones: Estandarizar y mejorar las descripciones de las transacciones.
 
 ✅ Actividades Resueltas (LISTO)
+New Pocket deberia validar como requerido el Target Amount. listo
+
+Error en Income Tracker: Corregir el error que impide encontrar las cuentas de origen o destino.listo
+
 Validar números y valores en los trackers. listo.
 
 Hacer validación en tiempo real para dropdowns. listo.

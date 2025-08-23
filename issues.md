@@ -15,7 +15,7 @@ Clarify the calculation of the total investment balance.
 Define if a detail page should be created for income accounts.
 
 2. Backend and Security
-Correct the income tracker error where source or destination accounts are not found.
+
 
 Calculate the values of investment accounts (invested capital vs. factual balance).
 
@@ -39,6 +39,8 @@ Add loading indicators to forms.
 Improve and standardize transaction descriptions.
 
 ✅ Resolved Issues (LISTO)
+Correct the income tracker error where source or destination accounts are not found. listo.
+
 Fixing the validation of numbers and values across all trackers. listo.
 
 Implementing real-time validation for selection dropdowns. listo.
