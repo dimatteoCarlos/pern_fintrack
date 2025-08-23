@@ -107,8 +107,7 @@ function Income():JSX.Element {
   // 🔄 Local States
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
 
-   const [isReset, setIsReset] = useState<boolean>(false);
-
+  const [isReset, setIsReset] = useState<boolean>(false);
   const [isResetDropdown, setIsResetDropdown] = useState<boolean>(false);
 
   const [reloadTrigger, setReloadTrigger] = useState(0)
@@ -149,7 +148,7 @@ function Income():JSX.Element {
 
 //---- Income account Options -----------
   //DATA FETCHING
-    //Endpoints: url_get_accounts_by_type, url_get_total_account_balance_by_type
+  //Endpoints: url_get_accounts_by_type, url_get_total_account_balance_by_type
   const fetchUrl = user
   ? `${url_get_accounts_by_type}/?type=bank&user=${user}&reload=${reloadTrigger}`
     : // <Navigate to='/auth' />
@@ -160,8 +159,8 @@ function Income():JSX.Element {
     error: fetchedErrorBankAccounts,
   } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
 
-  // console.log('🚀 ~ Income ~ BankAccountsResponse:', BankAccountsResponse);
-  // console.log('BANK resp', BankAccountsResponse, fetchedErrorBankAccounts);
+// console.log('🚀 ~ Income ~ BankAccountsResponse:', BankAccountsResponse);
+// console.log('BANK resp', BankAccountsResponse, fetchedErrorBankAccounts);
 
 //Data Transformations
 // 🧠 Memoization: Account Options
@@ -173,8 +172,8 @@ function Income():JSX.Element {
       !isLoadingBankAccounts
         ? BankAccountsResponse?.data.accountList?.map((acc) => ({
             value: acc.account_name,
-            label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code.toLowerCase()} ${acc.account_balance})`
-            // label: `${acc.account_name}`
+            // label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code.toLowerCase()} ${acc.account_balance})`
+            label: `${acc.account_name}`
           }))
         : ACCOUNT_OPTIONS_DEFAULT,
     [
@@ -189,6 +188,7 @@ function Income():JSX.Element {
     options: optionsIncomeAccounts,
     variant: VARIANT_DEFAULT,
   };
+    // console.log("🚀 ~ Income ~ optionsIncomeAccounts:", optionsIncomeAccounts)
 //--- DATA FETCHING
 // Prepare data and url for Fetching income_source account type
   const fetchSourceUrl = user
@@ -211,7 +211,7 @@ function Income():JSX.Element {
       !errorSources && sources?.data.accountList.length
         ? sources?.data.accountList?.map((acc) => ({
             value: acc.account_name,
-            //  label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${Math.abs(acc.account_balance)})`,
+            //label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${Math.abs(acc.account_balance)})`,
             label: acc.account_name,
           }))
         : SOURCE_OPTIONS_DEFAULT,
@@ -267,6 +267,7 @@ function Income():JSX.Element {
     //--data validation messages --
     activateAllValidations()
     const {fieldErrors,dataValidated}=validateAll() 
+    // console.log('validated', dataValidated)
 
     if(Object.keys(fieldErrors).length>0){
       setValidationMessages(fieldErrors)
@@ -274,15 +275,13 @@ function Income():JSX.Element {
       setTimeout(()=>{setMessageToUser(null)},4000)
       return
     }
-
   //------------------------
-  //POST ENDPOINT FOR MOVEMENT TRANSACTION HERE
-  
-    //update balance account of bank account and income_source accounts in: user_accounts table.
+//POST ENDPOINT FOR MOVEMENT TRANSACTION
+//update balance account of bank account and income_source accounts in: user_accounts table.
 
-    //record both transaction descriptions: transfer and receive transactions with the correspondent account info.
+//record both transaction descriptions: transfer and receive transactions with the correspondent account info.
 
-    //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=income
+//endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=income
 
     try {
     if (!dataValidated) {
@@ -296,14 +295,7 @@ function Income():JSX.Element {
       };
       //--send the post request
       const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
-      // console.log(
-      //   '🚀 ~ onSubmitForm ~ finalUrl:',
-      //   finalUrl,
-      //   'date:',
-      //   payload.date,
-      //   ' payload:',
-      //   payload
-      // );
+
       const response = await requestFn(payload, {
         url: postUrl,
       } as AxiosRequestConfig);
@@ -390,7 +382,7 @@ function Income():JSX.Element {
           isResetDropdown={isResetDropdown}
           setIsReset={setIsReset}
           setIsResetDropdown={setIsResetDropdown}
-          customSelectHandler={handleSourceChange}
+          customSelectHandler={handleAccountChange}
         />
   {/* end of TOP CARD */}
         <CardSeparator />
@@ -405,7 +397,7 @@ function Income():JSX.Element {
 
           <DropDownSelection
             dropDownOptions={sourceOptions}
-            updateOptionHandler={handleAccountChange}
+            updateOptionHandler={handleSourceChange}
             isReset={isReset}
             setIsReset={setIsReset}
           />
