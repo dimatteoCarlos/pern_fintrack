@@ -163,13 +163,13 @@ async function initializeDatabase() {
     } else {
       console.log(pc.yellow('Application already initialized. Skipping catalog tables creation.'));
     }
-    //--------------------------------------------------
+    //-----------------------------------
     //truncate or drop all tables manually
     if (false) {
       await Promise.allSettled(
         mainTables.map(async (item, indx) => {
           try {
-            if (item.tblName == 'users' || item.tblName=='transactions1') {
+            if (item.tblName == 'users' || item.tblName=='transactionsX') {
               console.log('skip users table');
               return false;
             }
@@ -198,7 +198,7 @@ async function initializeDatabase() {
     }
     //====================================
     //create tables
-    if (false) {
+    if (!false) {
       await Promise.allSettled(
         mainTables.map(async (item, ind) => {
           try {
@@ -238,8 +238,8 @@ async function initializeDatabase() {
   }
 }
 //---
-//=================================================================
-// Server starts here.
+//=========================
+// Server starts
 //=======================
 // Inicializar la base de datos y luego iniciar el servidor // Data Base and Server initialization 
 //------------------
