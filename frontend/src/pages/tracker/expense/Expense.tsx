@@ -1,22 +1,23 @@
 //src/pages/tracker/expense/Expense.tsx
+// ⚛️ React Hooks
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios, { AxiosRequestConfig } from 'axios';
 import { useLocation } from 'react-router-dom';
 
-//UI Components
-// import TopCard from '../components/TopCard.tsx';
+// 🎨 UI Components
 import TopCardZod from '../components/TopCardZod.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 
-//hooks and utils
-import { useFetch } from '../../../hooks/useFetch.tsx';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
+// 🪝 Custom Hooks y utils
+import { useFetch } from '../../../hooks/useFetch.ts';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import useBalanceStore from '../../../stores/useBalanceStore.ts';
+import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.ts';
 //---
-//Endpoints and contants 
+// 🌐Endpoints and constants 
  import {
   url_get_accounts_by_type,
   url_get_total_account_balance_by_type,
@@ -26,11 +27,10 @@ import {
   ACCOUNT_OPTIONS_DEFAULT,
   CATEGORY_OPTIONS_DEFAULT,
   DEFAULT_CURRENCY,
-  // CURRENCY_OPTIONS,
   PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
 
-//import types
+// 📝 Data Type Import
 import {
   AccountByTypeResponseType,
   BalanceBankRespType,
@@ -44,39 +44,27 @@ import {
   VariantType,
   MovementTransactionType,
   TopCardElementsType,
-  ValidationMessagesType,
+  // ValidationMessagesType,
 } from '../../../types/types.ts';
+//----------------------------------------
+// 🛡️ Zod - Schema and data type validations 
+import {validateForm  } from '../../../validations/utils/zod_validation.ts';
+import { expenseSchema} from '../../../validations/zod_schemas/trackerMovementSchema.ts';
+import { ExpenseValidatedDataType, ValidationMessagesType } from '../../../validations/types.ts';
 
-//----------------------------------------------
-//ZOD IMPORTS
-import {validateForm  } from '../../../validations/utils/validation_functions.ts';
-import { expenseSchema} from '../../../validations/schemas/expenseSchema.ts';
-import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.tsx';
-// import { createDropdownFieldHandler } from '../../../validations/utils/createDropdownFieldHandler.ts';
-//----------------------------------------------------
-// import { createDropdownFieldHandler } from '../../../validations/utils/createDropdownFieldHandler.ts';
-// import { createZodFieldHandler } from '../../../validations/utils/createDropdownFieldHandler.ts';
-// //----------------------------------------------
+//----------------------------------------
 // import { useAuthStore } from '../../../auth/stores/useAuthStore.ts';
 //-------------------------------------
-//type definitions
-export type ExpenseValidatedDataType ={
-  amount: number;
-  account: string;
-  category: string;
-  note: string;
-  currency: CurrencyType;
-  // date?: Date;
-  // type?: MovementTransactionType;
-}; 
+// 📝data type definitions
 export type ShowValidationType={
   amount: boolean;
   account: boolean;
   category: boolean;
   note: boolean;
 } 
-//===================================
-//-----Initial configuration
+//========================================
+// ⚙️ Initial Configuration and default values
+//========================================
 const defaultCurrency = DEFAULT_CURRENCY;
 const initialExpenseData: ExpenseInputDataType = {
   amount: "", //string for input
@@ -87,16 +75,18 @@ const initialExpenseData: ExpenseInputDataType = {
 };
 const VARIANT_DEFAULT: VariantType = 'tracker';
 
-//------------------------------------
+// ==============================================
+// ⚛️Main Component: Expense
+// ==============================================
 //----Expense Tracker Movement -------
 function Expense(): JSX.Element {
-  //rules: only bank accounts type are used to make expenses.
+  //rules: only bank accounts type are used to do operations.(eg. expenses)
   //select option accounts renders are all existing bank accounts, except, the slack account which is not shown.
 
- //auth and route config 
+  // 🗺️ Router and User configuration
   const router = useLocation();
   const trackerState = router.pathname.split('/')[PAGE_LOC_NUM];
-  const typeMovement: MovementTransactionType = trackerState.toLowerCase() //as MovementTransactionType;
+  const typeMovement: MovementTransactionType = trackerState.toLowerCase(); 
   // console.log('movement:', typeMovement);
   //---authentication
   //deal here with user id and authentication
@@ -104,42 +94,37 @@ function Expense(): JSX.Element {
   //   userData: state.userData,
   //   isAuthenticated: state.isAuthenticated,
   // }));
-  
-  // console.log('userData state:', userData);
+    // console.log('userData state:', userData);
   //userId
   // const user = userData?.userId;
   // console.log('userID', userID);
   const user = import.meta.env.VITE_USER_ID;
 
-  //---states-------------
-  //---local states ------
+  // 🔄 Local States
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
   const [isReset, setIsReset] = useState<boolean>(false);
   const [isResetDropdown, setIsResetDropdown] = useState<boolean>(false);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   const [expenseData, setExpenseData] =
     useState<ExpenseInputDataType>(initialExpenseData);
+    const [messageToUser, setMessageToUser] = useState<string | null | undefined>(null);
+    const [validationMessages, setValidationMessages] = useState<
+    ValidationMessagesType<typeof initialExpenseData>>({});
 
-  const [reloadTrigger, setReloadTrigger] = useState(0);
+    const [showValidation, setShowValidation] = useState<ShowValidationType>({
+        amount: false,
+        account: false,
+        category: false,
+        note: false
+    });
 
-  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(null);
-  const [validationMessages, setValidationMessages] = useState<
-  ValidationMessagesType<typeof initialExpenseData>>({});
-
-//error messages rendering control
-const [showValidation, setShowValidation] = useState<ShowValidationType>({
-    amount: false,
-    account: false,
-    category: false,
-    note: false
-});
-
-//---zustand global state---------------------
-  const setAvailableBudget = useBalanceStore(
+  // 🌳 Global State (Zustand)-------------
+ const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
-//---------------------------------------
-//--DATA FETCHING------------------------
+  //--DATA FETCHING------------------------
+ // 📡 Data Fetching: Bank Accounts 
   //Endpoints: url_get_accounts_by_type, url_get_total_account_balance_by_type
   //GET: AVAILABLE ACCOUNTS OF TYPE BANK
   const fetchUrl = user
@@ -160,6 +145,7 @@ const [showValidation, setShowValidation] = useState<ShowValidationType>({
   // });
 
 //---data transformation
+// 🧠 Memoization: Account Options
   const optionsExpenseAccounts = useMemo(() => {
     if (fetchedErrorBankAccounts) {
       return ACCOUNT_OPTIONS_DEFAULT;
@@ -170,7 +156,6 @@ const [showValidation, setShowValidation] = useState<ShowValidationType>({
       ? accountList.map((acc) => ({
           value: acc.account_name,
           label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`,
-          // label: acc.account_name,
         }))
       : ACCOUNT_OPTIONS_DEFAULT;
   }, [BankAccountsResponse?.data.accountList, fetchedErrorBankAccounts]);
@@ -183,7 +168,7 @@ const [showValidation, setShowValidation] = useState<ShowValidationType>({
   //--------
   //CATEGORY OPTIONS
   //GET: ACCOUNTS OF TYPE CATEGORY_BUDGET AVAILABLE
-  //DATA FETCHING
+ // 📡 Data Fetching: Category budget Accounts 
   const {
     apiData: CategoryBudgetAccountsResponse,
     isLoading: isLoadingCategoryBudgetAccounts,
@@ -191,20 +176,19 @@ const [showValidation, setShowValidation] = useState<ShowValidationType>({
   } = useFetch<CategoryBudgetAccountsResponseType>(
     `${url_get_accounts_by_type}/?type=category_budget&user=${user}&reload=${reloadTrigger}`
   );
-
   // console.log('catBudgetResp', {
   //   CategoryBudgetAccountsResponse,
   //   isLoadingCategoryBudgetAccounts,
   //   fetchedErrorCategoryBudgetAccounts,
   // });
-
+//Category Data Transformation - 
+  // 🧠 Memoización: category dropdown options
   const optionsExpenseCategories = useMemo(() => {
     const categoryList =
       CategoryBudgetAccountsResponse?.data?.accountList || [];
     if (fetchedErrorCategoryBudgetAccounts) {
       return CATEGORY_OPTIONS_DEFAULT;
     }
-
    return categoryList.map((cat) => ({
       value: cat.account_name,
       label: `${cat.account_name} (${cat.currency_code} ${cat.account_balance})`,
@@ -215,72 +199,56 @@ const [showValidation, setShowValidation] = useState<ShowValidationType>({
     CategoryBudgetAccountsResponse?.data?.accountList,
     fetchedErrorCategoryBudgetAccounts,
   ]);
-
   //-------------------------------------
   const categoryOptions = {
     title: optionsExpenseCategories
-      ? //  && !fetchedErrorCategoryBudgetAccounts
-        'Category / Subategory'
+      ? 'Category / Subategory'
       : '',
     options: optionsExpenseCategories ?? CATEGORY_OPTIONS_DEFAULT,
     variant: VARIANT_DEFAULT as VariantType,
   };
   //-------------------------------------
   //OBTAIN THE REQUESTFN FROM userFetchLoad
+    // 📡 Post Request logic
   type PayloadType = ExpenseValidatedDataType & {
     user: string; type?:string;
     };
-  //FOR DATA POST FETCHING
+
   const { data, isLoading, error, requestFn } = useFetchLoad<
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
 
-//-------------------------------------
 //----functions--------
-// const resetForm = () => {
-//   setCurrency(DEFAULT_CURRENCY);
-//   setExpenseData(initialExpenseData);
-//   setReloadTrigger(prev => prev + 1);
-//   setIsReset(true);
-//   setIsResetDropdown(true);
-//   setValidationMessages({});
-//   setShowValidation({
-//     amount: false,
-//     account: false,
-//     category: false,
-//     note: false
-//   });
-// };
-// --- Handlers -------
+  // ============================================
+  // ✍️ Event Handlers
+  // ============================================
   function updateDataCurrency(currency: CurrencyType) {
     setCurrency(currency);
     setExpenseData((prev) => ({ ...prev, currency: currency }));
   }
-//--personalized field handler for category
+//--custom field handler for category
   function categorySelectHandler(selectedOption: DropdownOptionType | null) {
-
     setExpenseData((prev) => ({
       ...prev,
-      ['category']: selectedOption?.value || '',//mmm
+      ['category']: selectedOption?.value || '',//update field
     }));
 
-     // Only validate if we're showing validation for category
+   // Only validate if showing validation for category
     if (showValidation.category) {
       setValidationMessages((prev) => ({ 
         ...prev, 
         category: selectedOption?.value ? '' : '* Please select a category' 
       }));
     }
- //  setValidationMessages((prev) => ({ ...prev, category: '' }));
     console.log(
       'desde categorySelectHandler:',
       selectedOption,
       selectedOption?.value
     );
   }
+//---
 //custom field handler for account
-
   function accountSelectHandler(selectedOption: DropdownOptionType | null) {
 
     setExpenseData((prev) => ({
@@ -295,31 +263,13 @@ const [showValidation, setShowValidation] = useState<ShowValidationType>({
         account: selectedOption?.value ? '' : '* Please select an account' 
       }));
     }
- //  setValidationMessages((prev) => ({ ...prev, account: '' }));
-  
-  }
-//------------------------------------------
-//field handler with zod validation
-// const accountSelectHandler = createDropdownFieldHandler(
-//   expenseSchema,
-//   'account',
-//   setExpenseData,
-//   setValidationMessages
-// );
-  
-// const handleCategoryChange = createDropdownFieldHandler(
-//   expenseSchema,
-//   'category',
-//   setExpenseData,
-//   setValidationMessages
-// );
-  
+   }
  //==========================
  //--validation functions and logic ---------------
 //EXTRACT FUNCTION for validation and update logic, which will be debounced. 
 // Real Time Validation.
 // useCallback to make the function stable if its dependencies don't change.
-
+  // ✍️ Event Handlers
  const processValidationAndUpdateFn = useCallback((name: string, value: string) => {
 // Data object for Zod. Zod waits an object with all input data fields to validate them
 // Always validate if showValidation is true for this field
@@ -330,6 +280,7 @@ if (showValidation[name as keyof ShowValidationType])
       [name]:value, // Value input is taken to validate it
   };
   const {errors:fieldErrors, data:dataValidated} = validateForm(expenseSchema, currentDataForValidation);
+
   console.log('fieldErrors', fieldErrors, dataValidated);
 
 //update just the message of the current field (name) and if it should show
@@ -344,18 +295,19 @@ if (showValidation[name as keyof ShowValidationType])
     }
   }
    }, [expenseData,showValidation]); 
-
-  // Apply the debounce to the `processValidationAndUpdate` function
+//---
+// Apply the debounce to the `processValidationAndUpdate` function
   const debouncedProcessValidationAndUpdateFn = useDebouncedCallback(processValidationAndUpdateFn, 500);  
 //---
 // updateTrackerData_Zod: It only updates the immediate state and calls the debounced function.
   function updateTrackerData_Zod(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     e.preventDefault();
     const { name, value } = e.target;
+
 //validate in real time field
     setExpenseData((prev) => ({ ...prev, [name]: value }));
 
-  // inmediate validation for amount
+// inmediate validation for amount
   if (name === 'amount') {
     setShowValidation(prev => ({ ...prev, amount: true }));
     debouncedProcessValidationAndUpdateFn(name, value);
@@ -386,10 +338,11 @@ if (showValidation[name as keyof ShowValidationType])
       category: true,
       note: true
     });
-//validate the whole input form data
+
+    //validate the whole input form data
     const {errors:fullFormErrors, data:dataValidated} = validateForm(expenseSchema, expenseData );
 
-    // console.log("🚀 ~ onSaveHandler_zod ~ fullFormErrors:", fullFormErrors, )
+    // console.log("🚀 ~ onSaveHandler_zod ~ fullFormErrors:", fullFormErrors,)
 
   if (fullFormErrors && Object.keys(fullFormErrors).length > 0) {
       setValidationMessages(fullFormErrors);
@@ -435,10 +388,12 @@ if (showValidation[name as keyof ShowValidationType])
         url: finalUrl,
       } as AxiosRequestConfig);
 
-     // Verificar si hay error en la respuesta (aunque status sea 200)
-     console.log('response from requestFN', error, 'error', error, 'isLoading', isLoading)
+     // Check wether is error / Verificar si hay error en la respuesta (aunque status sea 200)
+    //  console.log('response from requestFN', error, 'error', error, 'isLoading', isLoading)
 
-    if (response.error || error) {
+    if (response.error 
+     // || error
+    ) {
       const errorMsg = response.error ?? error ?? undefined
       console.log('response?.error?', errorMsg)
       throw new Error(errorMsg);
@@ -461,7 +416,7 @@ if (showValidation[name as keyof ShowValidationType])
       if (typeof total_balance === 'number') {
         setAvailableBudget(total_balance);
       }
-    //------------------------------------  
+    //----------------------------------  
      setMessageToUser('Transaction recorded successfully!');
       setTimeout(() => setMessageToUser(null), 3000);
     } catch (error) {
@@ -471,7 +426,7 @@ if (showValidation[name as keyof ShowValidationType])
     }
   }
   //-------------------------------------
-  // --- Side Effects ---
+  // ⏳--- Side Effects 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
 
@@ -482,6 +437,7 @@ if (showValidation[name as keyof ShowValidationType])
           ? 'Movement completed successfully!'
           : error ?? 'An error occurred during submission'
       );
+
   //reset only in case of success
     if (success) {
       setCurrency(DEFAULT_CURRENCY);
@@ -549,7 +505,6 @@ useEffect(() => {
   }
 }, [expenseData, showValidation.account]
 );
-
 // ===========================================
 // Efecto específico para amount
 // ===========================================
@@ -585,7 +540,7 @@ useEffect(() => {
 }, [expenseData.amount, expenseData.category, showValidation.category]);
   
  //------------------------------------
- //rendering compoennts
+ //rendering components
  //-------Top Card elements ----------
   const topCardElements:TopCardElementsType = {
     titles: { title1: 'amount', title2: 'account' },
@@ -647,7 +602,7 @@ useEffect(() => {
       {/* end of BOTTOM CARD */}
         </div>
       </form>
- {/* } */}
+
       {messageToUser  && (
         <div className='fade-message'>
           <MessageToUser
