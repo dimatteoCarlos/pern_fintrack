@@ -1,3 +1,4 @@
+//src/helpers/functions.ts
 import { CurrencyType, StatusType } from '../types/types';
 import { DATE_TIME_FORMAT_DEFAULT } from './constants';
 //-------------------------
@@ -37,7 +38,6 @@ export function getCurrencySymbol(chosenCurrency = 'USD') {
     if (symbol === '' || symbol.toUpperCase() === chosenCurrency.toUpperCase()) {
       return chosenCurrency;
     }
-
     return symbol;
 
   } catch (error) {
@@ -258,7 +258,6 @@ export function capitalize(text: string| undefined): string {
   return capitalized;
 }
 
-
 export function capitalize1(word: string | undefined) {
     if(!word){return ""}
 
@@ -274,182 +273,8 @@ export const truncateText = (
     return textContent;
   }
 };
+
 //-------------------------
-export function validationData(stateToValidate: {
-  [key: string]: string | number | Date | undefined | null;
-}): {
-  [key: string]: string;
-} {
-  const errorValidationMessages: { [key: string]: string } = {};
-
-  for (const key in stateToValidate) {
-    const value = stateToValidate[key];
-
-    if (key === 'amount') {
-      const error = validateAmount(String(value));
-      if (error) errorValidationMessages[key] = error;
-      continue;
-    }
-
-    // Validación adicional para cero
-      if (typeof value === 'number' && value === 0) {
-        errorValidationMessages[key] = '* Amount must be greater than zero';
-        continue;
-      }
-
-    if (typeof value === 'number' && value <= 0) {
-      errorValidationMessages[key] = `* ${capitalize(
-        key
-      )} value must be greater than cero`;
-      continue;
-    }
-
-  // Validación para valores vacíos/nulos
-    if (
-      (typeof value == 'string' && !value.trim()) ||
-      value == null ||
-      value == undefined
-    ) {
-      errorValidationMessages[key] = `* Please provide the ${capitalize(key)}`;
-      console.log('provide key from string validation', key)
-      continue;
-    }
-  }
-  return errorValidationMessages;
-} //fn
-//----------------------------------------
-// ✅ AGREGADO: función helper reutilizable para validar el campo 'amount'
-export function validateAmount(value: string): string | null | undefined {
-  if (value === '' || value === undefined) return 'Amount is required';
-
-  const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
-  
-  if (isNaN(numValue)) {
-    return '* Please enter a valid number';
-  }
-
-  if (numValue <= 0) {
-    return '* Amount must be greater than zero';
-  }
-
-  return null; // ✅ No error
-}
-
-//----------------------------------------
-export function validateField(name: string, value: string 
-  //| number | null | undefined): string | null
- ) {
-if (name === 'amount') {
-    return validateAmount(value);
-  }
-
-
-  if (value === '' || value == null) {
-    return `* Please provide the ${capitalize(name)}`;
-  }
-  if (typeof value === 'number' && value <= 0) {
-    return `* ${capitalize(name)} negative values are not allowed`;
-  }
-  return null;
-}
-
-//----------------------------------------
-//-----check number format----------------
-//used in input number format validation
-
-export function checkNumberFormatValue(value: string): {
-  formatMessage: string;
-  valueNumber: string;
-  valueToSave: number | null;
-  isError: boolean;
-} {
-  const notMatching = /([^0-9.,])/g; // Pattern for invalid characters
-  const onlyDotDecimalSep = /^\d*(\.\d*)?$/g; //Normal US numeric Format
-  const onlyCommaDecimalSep = /^\d*(,\d*)$/g; // Only comma as decimal separator. ES numeric format
-  const commaSepFormat = /^(\d{1,3})(,\d{3})*(\.\d*)?$/g; //Comma as thousand separator, point as decimal separator. US format
-  const dotSepFormat = /^(\d{1,3})(\.\d{3})*(,\d*)?$/g; //Dots as thousands separator, comma as decimal separator. UK format
-
-  //valueToSave is the number used to update the number type state value
-  //no matching character
-  if (notMatching.test(value)) {
-    const invalidCharacters = value.match(notMatching)?.slice(0, 4);//get only a max of 3 not valid characters to show error message
-    return {
-      formatMessage: `not valid number: ${invalidCharacters}`,
-      isError: true,
-      valueNumber: value.toString(),
-      valueToSave: null,
-    };
-  }
-
-  //normal number: point as decimal
-  if (onlyDotDecimalSep.test(value)) {
-    const valueNumber = !isNaN(parseFloat(value)) ? parseFloat(value) : 0;
-
-    return {
-      formatMessage: ""//'decimal point format', //'point as decimal, no th separators with optional point as decimal sep '
-       ,
-      valueNumber: valueNumber.toString(),
-      valueToSave: valueNumber,
-      isError: false,
-    };
-  }
-
-  //only comma as decimal
-  if (onlyCommaDecimalSep.test(value)) {
-    const valueNumber = !isNaN(parseFloat(value.replace(',', '.')))
-      ? parseFloat(value.replace(',', '.'))
-      : 0;
-
-    return {
-      formatMessage: 'comma as decimal-sep.',
-      valueNumber: valueNumber.toString(),
-      valueToSave: valueNumber,
-      isError: false,
-    };
-  }
-
-  //comma separator, decimal dot
-  if (commaSepFormat.test(value)) {
-    const valueNumber = !isNaN(parseFloat(value.replace(/,/g, '')))
-      ? parseFloat(value.replace(/,/g, ''))
-      : 0;
-
-    return {
-      formatMessage: 'comma as th-sep, point decimal',
-      valueToSave: valueNumber,
-      valueNumber: value.toString(),
-      isError: false,
-    };
-  }
-
-  //dot as thousand separator, comma as decimal separator
-  if (dotSepFormat.test(value)) {
-    const valueNumber = !isNaN(
-      parseFloat(value.replace(/\./g, '').replace(',', '.'))
-    )
-      ? parseFloat(
-          parseFloat(value.replace(/\./g, '').replace(',', '.')).toFixed(2)
-        ) //seems that toFixed method does not work here - check
-      : 0;
-
-    return {
-      formatMessage: 'dot as th-sep, comma as decimal',
-      valueToSave: valueNumber,
-      valueNumber: value.toString(),
-      isError: false,
-    };
-  }
-  //----
-  return {
-    formatMessage: `format number not valid`,
-    isError: true,
-    valueNumber: '',
-    valueToSave: null,
-  };
-}
-//------------------------------------
-// ^(0([.,]\d+)?|[1-9]\d{0,2}(,\d{3})_(\.\d_)?|[1-9]\d{0,2}(\.\d{3})_(,\d_)?|[1-9]\d*([.,]\d*)?|[.,]\d+|\d+[.,])$
-//------------------------------------
 //is necessary to adapt the alert to the business rule to use
 export const statusFn = (
   budget: number = 100,
@@ -472,7 +297,7 @@ type StatusToastConfig = {
 }
 //mapping status code to type and color
 const statusToastMap = (status: number): StatusToastConfig => {
-  if (status >= 200 && status < 300) return { type: 'success', color: '#28a745' }; // verde
+  if (status >= 200 && status < 300) return { type: 'success', color: '#289e43ff' }; // verde
   if (status >= 400 && status < 500) return { type: 'error', color: '#dc3545' };   // rojo
   if (status >= 500) return { type: 'warning', color: '#ffc107' };                 // amarillo
   return { type: 'default', color: '#17a2b8' }; // info
@@ -492,8 +317,3 @@ export const showToastByStatus = (
     ...options,
   });
 };
-//====================================
-
-
-
-
