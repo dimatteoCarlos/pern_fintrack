@@ -348,7 +348,7 @@ export const getAccountById = async (req, res, next) => {
     }
 
     //--check account_type_name developer mode
-    console.log('account type', accountsResult.rows[0].account_type_name)
+    // console.log('account type', accountsResult.rows[0].account_type_name)
 
     /*
       const { accountTypeName } = req.body.accountTypeName ?? '';

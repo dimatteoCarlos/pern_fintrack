@@ -1,8 +1,9 @@
 //MessageToUser.tsx
 import { useEffect } from 'react';
-import { capitalize, showToastByStatus } from '../../helpers/functions';
+import { capitalize,  } from '../../helpers/functions';
 import { VariantType } from '../../types/types';
 import './messageToUser.css'
+import { showToastByStatus } from '../../helpers/showToastByStatus';
 
 type MessageToUserPropType = {
   isLoading: boolean;
@@ -44,8 +45,7 @@ const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 2
   return (
     <>
       {isLoading && <div style={{ color: 'lightblue' }}>Loading...</div>}
-
-         {/* {error && ( */}
+      {/* {error && ( */}
       {error && variant!=='form' && (
         <div className='error-message1'>
           <span
@@ -67,8 +67,6 @@ const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 2
           >
             {/* Error: {error} */}
             {typeof messageToUser=='string'?messageToUser:messageToUser?.message}
-
-
           </span>
         </div>
       )}

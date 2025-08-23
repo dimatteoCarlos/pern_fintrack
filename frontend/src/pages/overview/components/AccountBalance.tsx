@@ -1,9 +1,9 @@
-//AccountBalance.tsx
+//frontend\src\pages\overview\components\AccountBalance.tsx
 import { Link } from 'react-router-dom';
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
 import { url_get_accounts_by_type } from '../../../endpoints';
-import { useFetch } from '../../../hooks/useFetch';
+import { useFetch } from '../../../hooks/useFetch.ts';
 import { 
  // ACCOUNT_DEFAULT
    CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
@@ -65,7 +65,7 @@ function AccountBalance({
     updateAccounts();
   }, [accountsData, isLoading, error]);
 
-  console.log('accounts:', accountsData, error, isLoading);
+  // console.log('accounts:', accountsData, error, isLoading);
 
   if (isLoading) {
     return <span style={{color:'cyan', width:'100%', textAlign:'center'}}>Loading...</span>;

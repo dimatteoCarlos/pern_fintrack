@@ -22,7 +22,7 @@ import {
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
-import { useFetch } from '../../../hooks/useFetch.tsx';
+import { useFetch } from '../../../hooks/useFetch.ts';
 import { Link } from 'react-router-dom';
 import {
   CategoryListSummaryType,

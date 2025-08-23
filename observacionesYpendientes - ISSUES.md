@@ -4,28 +4,51 @@ https://www.youtube.com/watch?v=zcPj4eEnhyM
 ===========================
 ISSUES
 ============================
+INCOME TRACKER PRESENTA UN ERROR DE CUENTAS DE ORIGEN O DESTINO NO ENTONCTARADAS, PENDIENTE.
 
-ordenar por fecha descendente los movimientos pnl, y todos losdemas,  mostrados en overview. PENDIENTE 
+MENSAJES DE TOAST, RESETEAR DESPUES DE SUBMIT PENDIENTE
+
+LIMPIAR VARIABLES DE DATOS S DESPUES DE SUMBIT PENDIENTE.
+
+Arreglar validacion de numeros, montos, target,  budget, amount, value ,  tracker.
+SE UTILIZARON F VARIOS ENFOQUES DE VALIDACION Y RENDERIZADO. LISTO.
+EXPENSE  LISTO.
+INCOME  LISTO.
+DEBTS  LISTO.
+TRANSFER LISTO,
+PNL LISTO, 
+
+ACTUALIZAR LA VALIDACION D PARAMETROS EN FORMULARIOS PARA CREACION CUENTAS PENDINTE LISTO ACEPTA ZERO
+
+ Hacer validacion en tiempor real para selection dropdown, como se hizo en Debts.LISTO
+
+Debts. Se uso validacion personalizada, puntual para validacion en real time, y validacion al someter el formulario. LISTO.
+
+DEBTS, parece que hay una inversion entre lend y borrow, n en la description de los movimientos. Revisado, toma en cuenta la transaccion considerando el movimiento de la cuenta, no la del usuario.ademas ORdena por fechas. LISTO.
+
+pendiente. calculo de valores de investment account como capital invertido vs factual balance.
+
+ordenar por fecha descendente los movimientos pnl, y todos losdemas,  mostrados en overview. listo. 
 
 error en http://localhost:5173/fintrack/budget/category/housing/account/9
 
 listo. Calculo de networth
 
-pendiente. calculo de valores de investment account como capital invertido vs factual balance.
-pendiente
-
-usar toastify para mensajes al usuario , error y success. LISTO.
+usar toastify para mensajes al usuario , error y success EN LA CREAION DE UENTAS. LISTO.
 
 net worth considerando assests (bank+investment)-cuentas por pagar. PENDIENTE
 
 TAMBIEN SE DEBE ACLARAR, QUE ES LO QUE LLAMAN SAVING GOALS, AQUI STA TOMADO COMO LOS TARGET DE LOS POCKETS SOLAMENTE.
 
-?SE CONSIDERA QUE LOS POCKET SAVING, ESTAN REPARTIDOS  EN LAS CUENTAS DE BANCO Y DE INVESTMENT.??
+//---OPCIONES DE MANEJO DE POCKET SAVINGS
+LOS MONTOS DE POCKET SAVING ESTAN APARTE, Y NO EN LAS CUENTAS DE BANCO NI DE INVERSION. SON CUENTAS SEPARADAS.
 
+//-----
+OTRA OPCION ES CONSIDERAR QUE LOS MONTOS DE LOS POCKET SAVING, ESTAN REPARTIDOS  EN LAS CUENTAS DE BANCO Y DE INVESTMENT, PARA LO UAL SE DEBE ENTONCES REALIZAR LOS RESPECTIVOS CALCULOS PARA EL RENDERIZADO, O PARA NO TOMAR EN CUENTA LOS MONTOS DE LOS POCEKT UBICADOS EN CUENTAS.?? 
 
-  //List Category LISTO
-  // en el backend: generar la data segun estructura de los datos a renderizar, es decir,
-  //agrupar para cada categoria, expenses y  budgets, y cualquier otra; la sumatoria de los expense se refleja en el total_balance, y la sumatoria de los budget de cada categoria seria el budget por categoria o por subcategoria? hay que definir esto, no tengo claro el manejo de las subcategorias. ,  y el status refleja el estado de lo disponible en el presupuesto,  seria el resultado de la resta entre el expense-budget  de cada categoria, ..z
+//List Category LISTO
+// en el backend: generar la data segun estructura de los datos a renderizar, es decir,
+//agrupar para cada categoria, expenses y  budgets, y cualquier otra; la sumatoria de los expense se refleja en el total_balance, y la sumatoria de los budget de cada categoria seria el budget por categoria o por subcategoria? hay que definir esto, no ESTA claro el manejo de las subcategorias. ,  y el status refleja el estado de lo disponible en el presupuesto,  seria el resultado de la resta entre el expense-budget  de cada categoria,
 
 ============================
 CATEOGRY DETAIL. LISTO.
@@ -118,34 +141,40 @@ entender probabilidad con crystall ball
 stimacion / risks / etc.
 ---------------------------------------
 
-estrategia para edicion > PENDIENTE
+
 validacion 
-cambiar validacion para que no se borre cuando hay errores. PENDIENTE
+cambiar validacion para que no se borre cuando hay errores. LISTO
 
 manejo y administracion de usuarios mediante authentication PENDIENTE
 
---------------------------------
+=====================================
 PENDIENTE
-definir el disenio y sobre todos los datos
+EDICION
+
+VERICFICAR QUE SE PUEDE EDITAR Y QUE NO. SU INTERCONEXION EN LA BASE DE DATOS. Y DONDE EN EL FRONTEND. SIF FUERA UNA WEB, S LO HARIA EN UNA PAGINA ADMIN, MOSTRANDO LA LISTA DE CUENTAS POR TIPO. A SELECCIONAR.
+
 DONDE SE METERAN LA PARTE DE EDICION
 EN LOS PAGE DETAIL? O SE HARA UN A LISTA ADMIN?
+estrategia para edicion > PENDIENTE
 definir los campos que se pueden editar
 en el proceso de LA EDICION SE DEBE CONSIDERAR LAS INTERRELACIONES ENTRE LAS TABLAS DE BBDD.
 estrategias de borrado de informacion defnir.
+edicion para pocket y budget, en cuenta a desired date y target, y budget.
+eliminacion de cuentas. PENDIENTE EDICION.
+------------------
 No hay un INCOME account detail 
-
-INCOME DETAIL NO EXISTE. PENDIENTE. NO ESTA CONSIDERADO COMO DETAIL, SINO COMO LAST MOVEMENT DE BANK ACCOUNT BALANCE.
+INCOME DETAIL NO EXISTE. PENDIENTE.
+ NO ESTA CONSIDERADO COMO DETAIL, SINO COMO LAST MOVEMENT DE BANK ACCOUNT BALANCE.
 
 ======================
 BUGS POR ARREGLAR 
-AL CRAR CUENTAS INCOME NO SE REFLEJAN EN LOS MOVIMIENTOS. LISTO.
+AL CREAR CUENTAS INCOME NO SE REFLEJAN EN LOS MOVIMIENTOS. LISTO.
 
 AL CREAR CUENTAS POCKET NO SE REFLEJAN EN LOS MOVIMIENTOS COMO ACCOUNT OPENING.LISTO 
 
 CUENDO SE CREAR UNA CUENTA DEBTOR, APARECE PERO SIN DESCRIPCION DE LA TRANSACCION. LISTO
 
 AL CREAR UNA T CTA INVESTMENT, SI SE REFLEJA EN LOS MOVIMIENTOS PERO NO APARECE LA ESCRIPCION DE LA TRANASACCION. LISTO.
-
 ====================
 si no hay cuentas creadas empezar con un mensaje modal con detalles de cuentas creadas y cuentas faltantes, o decir que no se tienen las cuentas necesarias y  e ir a crearlas. BUENO AQUI COLOCQUE NO OPTIONS COMO PLACEHOLDER DENTRO DE LOS DROPDOWNS CUANTO NO HAY CUENTAS CREADAS. NO HAY MENSAJE AL USAURIO PARA CREACION DE CUENTAS NI REDIRECCION, POR AHORA.
 =======================
@@ -182,7 +211,6 @@ EN la DESCRIPCION DE LA CREACION DE UNA CUENTA INVESTMENT, NO SE VE LA HORA EN Q
 ===========================
 asegurar el criterio del signo para el start account amount sea coherente en todas las cuentas a crear. OBSERVACION
 ===========================
-
 AHORA RESULTA QUE ADD ACCOUNT PARA CREAR UNA CUENTA NUEVA NO FUNCIONA. LISTO.
 
 TAMPOCO RECONOCE LOS MOVEMENTS POCKET SAVING, INCOME, ETC. LISTO.
@@ -195,7 +223,7 @@ EL ACCOUNT OPENING DEBERIA APARECER EN LA CUENTA QUE SE ABRIO, Y LA CUENTA BANK 
 =================
 
 ===========================
-PENDIENTE
+
 AL HACER UN TRACKER BORROW A CUENTA DBTOR NO SE VE LA DESCRIPTION EN OVERVIEW. LISTO.
 
 si no se hace la seleccion de la cuenta, no se muestra la validacion en DEBTS tracker.LISTO
@@ -237,7 +265,7 @@ arreglar mensajes
 borrow debtor a un investment - no se refleja como investment
 si se refleja como debtor - ojo cual era la regla de negocios. para investment dest.
 osea las cuentas investment pueden ser (deposit/w, borrow/l, )
-de debt a tracker , tambpoco se refleja como pocket movments, EL MONTOO SAVED SI, PERO NO EL AVG.
+de debt a tracker , tambpoco se refleja como pocket movments, EL MONTO SAVED SI, PERO NO EL AVG.
 
 EL ORDEN DE MOVEMENTS DEBERIA SER POR FECHA 
 -----------------------------------
@@ -257,13 +285,12 @@ exportar .csv , google sheet
 
 agregar cuentas de ajuste positivo y negativo, a donde? en accounting, para bank e investment. LISTO SE CONSIDERO UN PAGE MOVIMIENTO TRACKER PnL.
 
-edicion para pocket y budget, en cuenta a desired date y target, y budget.
-eliminacion de cuentas. PENDIENTE EDICION.
+
 
 add money se puede s hacer con ajuste positivo, que so depositos externos / retiros con ajuste netgativo. NO, YA SE HIZO CON PNL EN EL TRACKER.
 
 ===========================
-PENDIENTE
+LISTO
 Arreglar mensajes largos (no fund) ui de tracker . MAS O MENOS
 arreglar mensaje de no funds. MAS O MENOS UNA LA
 
@@ -277,14 +304,14 @@ se crea una cuenta slack cuando se crea una cuenta bank. para equilibrio.
 pero si hay un error, no deberia crearse.
 
 ===========================
-PENDIENTE
+LISTO
 APLICAR DEBOUNCE A TEXTAREAS  
 ===========================
 PENDIENTE
 LS F LAS FECHAS DE LAS TRANSACCIONES tracker NO DEBERIAN SER AFUTURO,
 acutalizar los updated_at en bbdd tables.
 =================
-listo
+LISTO
 deshabilitar el save button en new account, cuando isLoading, y asi con loos demas new forms  and so on.
 =================
 PENDIENTE
@@ -292,7 +319,7 @@ PENDIENTE
 TRANCADO CON EL USER AUTHENTICATION. SOBRE TODO DONDE GUARDAR LAS CLAVES O ACCESS TOKEN Y REFRESH TOKEN
 
 =================
-PENDIENTE
+LISTO
 * en el caso que no haya datos para renderizar, deberia ser un warning y no un error.
 por ejemplo> [400] No accounts available of type pocket_saving.. dashboardAccountSummaryList
 Error while getting account balances
@@ -413,7 +440,7 @@ SERIA REDUNDANTE . NO SE HIZO.
 =========================
 MISCELANEOS
 EN INVESTMENT ACCOUNT BALANCE
-//PENDIENTE DEFINIR REGLA DE NEGOCIO PARA VALORAR EL STATUS SQUARE Y PASAR EL ALERT
+//PENDIENTE DEFINIR REGLA DE NEGOCIO PARA VALORAR EL STATUS SQUARE Y PASAR EL ALERT LISTO
 //questions: does status have some conditional or variable style? semaforo? cual es la regla de negocio?
 //seems that balanceType has at least two possible values: loss / profit or earned
 //capital could be the amount of the investment or not needed?
@@ -427,8 +454,7 @@ como hacer validation en linea osea no esperar el submit
 
 hacer el debounces en los notes input textarea
 
-no resetear los datos, si iaparece un error del servidor, pero como se hace, manualmente el usuario>? despues de somter l el formulario?
-
+no resetear los datos, si iaparece un error del servidor, pero como se hace, manualmente el usuario>? despues de somter l el formulario? LISTO
 
 ningun debt se muestra en overview, ni los opening, ni los tracker LISTO
 
@@ -442,23 +468,23 @@ yo eliminaria value en income account opening. LISTO.
 
 acortar duracion de mensajes de warning error al to user, y quitar el mensaje de arriba, revisar el mensaje que aparece en el top de los forms
 
-aparece doblemensaje de error en e tracker.
+aparece doblemensaje de error en e tracker.LISTO
 
 estilos de bigBoxResult, los estilos en linea colocarlos en un css. LISTO para algunos, revisar todos.
 
 HACER QUE LOS SUMMARY LIST SE MUEVAN CON SCROLL MIENTRA LO DEMAS SE QUEDA FIJO.  HABERLO DICHO CUANODO ESTABA HACIENDO EL DISENIO, VERDAD. AHORITA MAS CONCENTRADO EN EL BACKEND Y TERMINAR LO QUE FALTA EN FUNCION DEL ALCANCE ORIGINAL. DESPUES VEREMOS.
 
-MINIMIZAR LOS CONSOLE.LOG DEL BACKEND. RETARDAn EL RENDERIZADO EN FRONTEND.
+MINIMIZAR LOS CONSOLE.LOG DEL BACKEND. RETARDAn EL RENDERIZADO EN FRONTEND.LISTO
 
 HACER UNA VERSION DEFINITIVA,. DONDE SE OPTIMIZAN LOS QUERIES PG CON INDEX. y hacer vistas donde haga falta. PROBAR.
 
 LAS TABLAS DE TRANSACTION S SE PUEDE SIMPLIFICAR ASOCIANDOLAS A UNA TABLA DE ENTRIES DE CADA TRANSACTION
 
-HACER QUE APAREZCA "NO OPCION" EN LOS SELECTOR ACCOUNT"S, CUANDO NO HAY OPCIONES O NO HAY DATA. EN LOS DROPDOWN SELECTORS.
+HACER QUE APAREZCA "NO OPCION" EN LOS SELECTOR ACCOUNT"S, CUANDO NO HAY OPCIONES O NO HAY DATA. EN LOS DROPDOWN SELECTORS.LISTO
 
 QUE SE QUIERE COLOCAR EN EL BOTON SEE MORE DE OVERVIEW?
 
-VERICFICAR QUE SE PUEDE EDITAR Y QUE NO. SU INTERCONEXION EN LA BASE DE DATOS. Y DONDE EN EL FRONTEND. SIF FUERA UNA WEB, S LO HARIA EN UNA PAGINA ADMIN, MOSTRANDO LA LISTA DE CUENTAS POR TIPO. A SELECCIONAR.
+
 =======================
 "movement_type_id" "movement_type_name"
 1 "expense"

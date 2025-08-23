@@ -17,7 +17,7 @@ import {
   PocketListSummaryType,
   PocketListType,
 } from '../../../types/responseApiTypes.ts';
-import { useFetch } from '../../../hooks/useFetch.tsx';
+import { useFetch } from '../../../hooks/useFetch.ts';
 
 //============================================
 function ListPocket({previousRoute}:{previousRoute:string}) {

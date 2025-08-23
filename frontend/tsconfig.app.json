@@ -36,5 +36,5 @@
   "include": [
     "src", // Asegúrate de incluir la carpeta src
     "src/types/svg.d.ts" // Incluye el archivo de definiciones si está en una carpeta específica
-, "src/pages/forms/categoryDetail/CategoryAccountList.tsx"  ]
+, "src/pages/forms/categoryDetail/CategoryAccountList.tsx", "transporatr.md/createDropdownFieldHandler.ts", "transporatr.md/Transfer copy.tsx", "transporatr.md/useFormPnLManager copy.ts"  ]
 }

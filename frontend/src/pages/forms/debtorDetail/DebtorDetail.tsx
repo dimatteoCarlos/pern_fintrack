@@ -12,7 +12,7 @@ import {
 } from '../../../helpers/constants.ts';
 import { AccountByTypeResponseType, AccountListType, AccountSummaryBalanceType, AccountTransactionDataType, AccountTransactionType, DebtorListType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { url_get_account_by_id, url_get_transactions_by_account_id  } from '../../../endpoints.ts';
-import { useFetch } from '../../../hooks/useFetch.tsx';
+import { useFetch } from '../../../hooks/useFetch.ts';
 import { capitalize, formatDateToDDMMYYYY, numberFormatCurrency } from '../../../helpers/functions.ts';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';

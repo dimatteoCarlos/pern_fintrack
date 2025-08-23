@@ -3,17 +3,17 @@ import LeftArrowSvg from '../../assets/LeftArrowSvg.svg';
 import { Link, useLocation } from 'react-router-dom';
 import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { url_get_accounting_accounts } from '../../endpoints.ts';
-// import { AccountingListType } from '../../types/types.ts';
-// import { CurrencyType } from '../../types/types.ts';
 import './styles/accounting-styles.css';
 import { useMemo } from 'react';
-import { useFetch } from '../../hooks/useFetch.tsx';
+import { useFetch } from '../../hooks/useFetch.ts';
 import { AccountByTypeResponseType } from '../../types/responseApiTypes.ts';
 import { capitalize } from '../../helpers/functions.ts';
-import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 import { ACCOUNTING_DEFAULT } from '../../helpers/constants.ts';
+import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
+// import { AccountingListType } from '../../types/types.ts';
+// import { CurrencyType } from '../../types/types.ts';
 // import { AccountByTypeResponseType } from '../../types/responseApiTypes.ts';
-// import { useFetch } from '../../hooks/useFetch.tsx';
+// import { useFetch } from '../../hooks/useFetch.ts';
 // import { useMemo } from 'react';
 
 // const ACCOUNTING_DEFAULT: AccountingListType[] = [];
@@ -57,11 +57,10 @@ function Accounting() {
             <div className='accounting__header--icon'>
               <LeftArrowSvg />
             </div>
-
             <div className='accounting__title'>{'Accounting'}</div>
           </Link>
-          {isLoading && <CoinSpinner />}
 
+          {isLoading && <CoinSpinner />}
 
           {!isLoading && accounting.map((balance, indx) => (
             <AccountingBox {...balance} key={`account-${indx}`} />

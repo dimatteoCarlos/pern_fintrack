@@ -1,6 +1,6 @@
 import { BoxContainer, BoxRow } from './boxComponents';
 import { currencyFormat } from '../../../helpers/functions';
-import { useFetch } from '../../../hooks/useFetch';
+import { useFetch } from '../../../hooks/useFetch.ts';
 import { url_summary_balance_ByType, USER_ID } from '../../../endpoints';
 import { StatusSquare } from '../../../general_components/boxComponents';
 import { Link } from 'react-router-dom';
@@ -34,8 +34,7 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 
 //-----------
 function ListOfDebtors({previousRoute, accountType}:AccountPropType) {
-  
-  //DATA FETCHING
+//DATA FETCHING
   const { apiData, isLoading, error } = useFetch<DebtorListSummaryType>(
     `${url_summary_balance_ByType}?type=${accountType}&user=${USER_ID??user}`
   );

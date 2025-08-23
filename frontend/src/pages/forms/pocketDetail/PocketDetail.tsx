@@ -11,7 +11,7 @@ import {
 } from '../../../helpers/constants.ts';
 import {  PocketSavingAccountsResponseType,PocketSavingAccountListType, AccountSummaryBalanceType, AccountTransactionType,  PocketListType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { url_get_account_by_id, url_get_transactions_by_account_id } from '../../../endpoints.ts';
-import { useFetch } from '../../../hooks/useFetch.tsx';
+import { useFetch } from '../../../hooks/useFetch.ts';
 import { capitalize, formatDateToDDMMYYYY  } from '../../../helpers/functions.ts';
 import '../styles/forms-styles.css';
 import SummaryPocketDetailBox from './summaryPocketDetailBox/SummaryPocketDetailBox.tsx';

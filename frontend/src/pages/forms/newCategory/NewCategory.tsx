@@ -1,19 +1,16 @@
 //NewCategory.tsx
-
-
 import { useEffect, useState } from 'react';
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-
 import { Link } from 'react-router-dom';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
-import { validationData } from '../../../helpers/functions.ts';
+import { validationData } from '../../../validations/utils/custom_validation.ts';
 import '../styles/forms-styles.css';
-import useInputNumberHandler from '../../../hooks/useInputNumberHandler.tsx';
+import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
 import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
 import { TILE_LABELS, VARIANT_FORM } from '../../../helpers/constants.ts';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { url_create_category_budget_account } from '../../../endpoints.ts';
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
@@ -25,7 +22,7 @@ const tileTitle = 'Category Nature';
 //-------data config------------------------------
 type CategoryDataType = {
   category: string;
-  //subcategory?: string;
+  subcategory?: string;
   amount: number | '';
   nature: string;
   currency?: CurrencyType;
@@ -38,13 +35,13 @@ type CategoryBudgetPayloadType = {
   budget: number | string;
   date: Date | string;
   nature: string;
-  //subcategory?: string;
+  subcategory?: string;
   user: string;
 };
 
 const initialNewCategoryData: CategoryDataType = {
   category: '',
-  //subcategory: 'not defined',
+  subcategory: '',
   amount: '',
   nature: '',
 };
@@ -147,7 +144,7 @@ function NewCategory() {
         budget: formData.amount || categoryData.amount,
         date: new Date().toISOString(), // ISO format
         nature: categoryData.nature,
-        //subcategory: categoryData.subcategory || undefined,
+        subcategory: categoryData.subcategory || undefined,
         user,
       };
 
@@ -166,7 +163,6 @@ function NewCategory() {
       console.error('Error when posting data:', error);
     }
   }
-
   //-----------------------
   useEffect(() => {
     if (data && !isLoading && !error) {
@@ -221,7 +217,7 @@ function NewCategory() {
               />
             </div>
         {/* SUBCATEGORY */}
-            {/* <div className='input__box'>
+            <div className='input__box'>
               <label htmlFor='subcategory' className='label form__title'>
                 {'Subcategory'}&nbsp;
               </label>
@@ -237,7 +233,7 @@ function NewCategory() {
                 onChange={inputHandler}
                 value={categoryData.subcategory}
               />
-            </div> */}
+            </div>
 
             {/* functionalitiy logic and data structure for this add button of subcategories is PENDING */}
 

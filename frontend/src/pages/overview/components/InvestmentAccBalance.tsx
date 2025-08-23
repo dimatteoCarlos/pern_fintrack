@@ -1,11 +1,11 @@
-//InvestmentAccBalance.tsx
+// frontend\src\pages\overview\components\InvestmentAccBalance.tsx
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { url_get_accounts_by_type } from '../../../endpoints';
 import { StatusSquare } from '../../../general_components/boxComponents';
 import { CardTitle } from '../../../general_components/CardTitle';
 import {currencyFormat} from '../../../helpers/functions';
-import { useFetch } from '../../../hooks/useFetch';
+import { useFetch } from '../../../hooks/useFetch.ts';
 import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
 
 import { 
@@ -64,7 +64,7 @@ function InvestmentAccountBalance({
     updateInvestmentAccounts();
   }, [apiData, isLoading, error]);
 
-    console.log('accounts:', apiData, error, isLoading);
+    // console.log('accounts:', apiData, error, isLoading);
 
     // if (isLoading) {
     // return <span style={{color:'cyan', width:'100%', textAlign:'center'}}>Loading...</span>;  }
@@ -98,7 +98,7 @@ function InvestmentAccountBalance({
             }}else{balanceType = '% Profit'; 
               percentage = 0;}
           
-          console.log(balance, capital, percentage)
+          // console.log(balance, capital, percentage)
           //-----------------------------------------
           {
             return (

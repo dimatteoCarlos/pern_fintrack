@@ -5,7 +5,7 @@ import { Link, useLocation } from 'react-router-dom';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import '../styles/forms-styles.css';
-import { useFetch } from '../../../hooks/useFetch.tsx';
+import { useFetch } from '../../../hooks/useFetch.ts';
 import {
   CurrencyType,
   DropdownOptionType,
@@ -18,12 +18,12 @@ import {
 } from '../../../endpoints.ts';
 import {
   ACCOUNT_OPTIONS_DEFAULT,
-  // CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   TYPEDEBTS_OPTIONS_DEFAULT,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
-import { capitalize, validationData } from '../../../helpers/functions.ts';
+import { capitalize, } from '../../../helpers/functions.ts';
+import { validationData } from '../../../validations/utils/custom_validation.ts';
 import { FormNumberInputType } from '../../../types/types.ts';
 import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
 import {
@@ -31,7 +31,7 @@ import {
   CreateDebtorAccountApiResponseType,
 } from '../../../types/responseApiTypes.ts';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 // import ProtectedRoute from '../../auth/ProtectedRoute.tsx';
 
 //-----temporarily 'till decide how to handle currencies
@@ -108,7 +108,7 @@ function NewProfile() {
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
   );
-  //------------------------------------------------
+  //-----------------------------------------
   //DATA FETCHING for option selection
   //GET: AVAILABLE ACCOUNTS OF TYPE BANK
   const fetchUrl = user
@@ -143,7 +143,7 @@ function NewProfile() {
     variant: VARIANT_FORM, //this stablishes the custom styles to use in selection dropdown component
   };
 
-  //----------------------------------------------
+  //----------------------------------------
   //DATA FETCHING POST
   ////OBTAIN THE REQUESTFN FROM userFetchLoad
   //endpoint: http://localhost:5000/api/fintrack/account/new_account/debtor

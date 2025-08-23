@@ -11,14 +11,14 @@
   },
   "dependencies": {
     "@types/react-datepicker": "7.0.0",
-    "axios": "^1.8.4",
-    "date-fns": "3.6.0",
+    "axios": "1.8.4",
     "react": "18.3.1",
     "react-datepicker": "7.3.0",
     "react-dom": "18.3.1",
-    "react-router-dom": "^7.6.2",
+    "react-router-dom": "7.6.2",
     "react-select": "5.8.0",
     "react-toastify": "11.0.5",
+    "zod": "4.0.10",
     "zustand": "5.0.3"
   },
   "devDependencies": {
@@ -34,7 +34,7 @@
     "vite": "^5.4.19",
     "vite-plugin-svgr": "^4.3.0"
   },
-  "description": "**FinTrack** is an application designed to provide a comprehensive and personalized solution for tracking and managing your personal finances. Its main purpose is to offer users effective tools to monitor their expenses, income, investments, debts, income sources, and account balances, as well as facilitate the tracking of savings goals and long-term investment projections. 🎯📊💡",
+  "description": "**FinTrack** is a personal finance application built as a 'double-entry accounting system', offering a comprehensive and intuitive solution for managing your money. Its primary goal is to provide users with effective tools to track expenses, income, investments, debts, income sources, and account balances.. 🎯📊💡",
   "main": "index.js",
   "keywords": [],
   "author": "",

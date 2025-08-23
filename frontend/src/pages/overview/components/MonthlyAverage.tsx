@@ -49,7 +49,7 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
     movement: MovementType,
     data: ResultType | null
   ): DataToRenderType[] => {
-    console.log(movement, data);
+    // console.log(movement, data);
 
     if (
       data === null ||
@@ -84,10 +84,12 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
   const expense = convertMovementData('expense', data);
   const income = convertMovementData('income', data);
   const saving = convertMovementData('saving', data);
-  console.log('🚀 ~ MonthlyAverage ~ expense:', expense);
-  console.log('🚀 ~ MonthlyAverage ~ income:', income[0].amount);
-  console.log('🚀 ~ MonthlyAverage ~ saving:', saving[0].amount);
-  //HACER ESTE RESPONSIVE lt 428 una cell , despuesd e633 3 cells
+
+  // console.log('🚀 ~ MonthlyAverage ~ expense:', expense);
+  // console.log('🚀 ~ MonthlyAverage ~ income:', income[0].amount);
+  // console.log('🚀 ~ MonthlyAverage ~ saving:', saving[0].amount);
+
+  //HACER ESTE RESPONSIVE lt 428 una cell , despues de 633 3 cells
   const renderCardFinancialData = (items: DataToRenderType[]) => (
     <div className='monthly__card tile__container tile__container__col tile__container__col--goalInfo '>
       {items.map((item, indx) => (
@@ -99,7 +101,7 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
           </div>
           <div className='tile__status__container flx-row-start '>
             <StatusSquare
-              alert={0.5 - Math.random() < 0 ? 'alert' : ''} // Valores temporales hay que definir la funcion a aplicar
+              alert={0.5 - Math.random() < 0 ? 'alert' : ''} // temporary values needs to define rule to apply
             />
             <span className='tile__subtitle tile__status--goal'>
               {item.status}

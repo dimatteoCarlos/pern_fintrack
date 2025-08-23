@@ -8,7 +8,7 @@ import SummaryDetailBox from './summaryDetailBox/SummaryDetailBox.tsx';
 import { CategoryBudgetAccountListType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { CurrencyType } from '../../../types/types.ts';
 import { url_get_transactions_by_account_id } from '../../../endpoints.ts';
-import { useFetch } from '../../../hooks/useFetch.tsx';
+import { useFetch } from '../../../hooks/useFetch.ts';
 import { capitalize, currencyFormat, formatDateToDDMMYYYY  } from '../../../helpers/functions.ts';
 import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';

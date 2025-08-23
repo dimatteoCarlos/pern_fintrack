@@ -3,7 +3,7 @@ import TrackerNavbar from '../../general_components/trackerNavbar/TrackerNavbar'
 import { Outlet } from 'react-router-dom';
 import { currencyFormat } from '../../helpers/functions';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../helpers/constants';
-import { useFetch } from '../../hooks/useFetch';
+import { useFetch } from '../../hooks/useFetch.ts';
 import { BalanceBankRespType } from '../../types/responseApiTypes';
 import { url_get_total_account_balance_by_type } from '../../endpoints';
 import CoinSpinner from '../../loader/coin/CoinSpinner';

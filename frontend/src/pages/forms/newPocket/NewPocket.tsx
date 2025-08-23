@@ -4,14 +4,14 @@ import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { Link, useLocation } from 'react-router-dom';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
-import { validationData } from '../../../helpers/functions.ts';
+import { validationData } from '../../../validations/utils/custom_validation.ts';
 import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
 import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
 import '../styles/forms-styles.css';
-import useInputNumberHandler from '../../../hooks/useInputNumberHandler.tsx';
+import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
 import { CreatePocketSavingAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { url_create_pocket_saving_account } from '../../../endpoints.ts';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 //----Type definitions and constants ----------

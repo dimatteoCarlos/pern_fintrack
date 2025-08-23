@@ -1,3 +1,4 @@
+// frontend\src\general_components\dropdownSelection\DropDownSelection.tsx
 import Select, {
   components,
   DropdownIndicatorProps,
@@ -18,9 +19,12 @@ export type DropdownSelectPropType = {
     options: DropdownOptionType[];
     variant: VariantType;
   };
+
   updateOptionHandler: (selectedOption: DropdownOptionType | null) => void;
+
   setIsReset: (value: boolean) => void;
   isReset: boolean;
+
   setIsResetDropdown?: (value: boolean) => void;
   isResetDropdown?: boolean;
 };
@@ -41,7 +45,7 @@ const createDropdownIndicator =
       </components.DropdownIndicator>
     );
 
-// ✅ 2. Styles function based on `variant`
+// ✅ Styles function based on `variant`
 const createStyles = (
   variant: VariantType
 ): StylesConfig<DropdownOptionType, false, GroupBase<DropdownOptionType>> => ({
@@ -76,6 +80,7 @@ const createStyles = (
     backgroundColor: variant === 'tracker' ? 'white' : 'var(--dark)',
     color: variant === 'tracker' ? 'var(--dark)' : 'var(--light)',
   }),
+  
   singleValue: (base) => ({
     ...base,
     color: variant === 'tracker' ? 'var(--dark)' : 'var(--creme)',
@@ -109,8 +114,8 @@ function DropDownSelection({
   updateOptionHandler,
   isReset,
   isResetDropdown,
-  // setIsReset,
-  // setIsResetDropdown,
+  setIsReset,setIsResetDropdown, 
+
 }: DropdownSelectPropType) {
   const { title, options, variant } = dropDownOptions;
   // console.log('dropSel:', { title, options, variant });
@@ -122,16 +127,16 @@ function DropDownSelection({
   useEffect(() => {
     if ((isReset || isResetDropdown) && selectRef.current) {
       selectRef.current.clearValue();
-      //setIsReset(false); //Parent does this
-      // setIsResetDropdown(false);
+      setIsReset(false); //Parent does this
+     if(setIsResetDropdown){ setIsResetDropdown(false);}
     }
-  }, [isReset, isResetDropdown]);
+  }, [isReset, isResetDropdown,setIsResetDropdown, setIsReset]);
 
   const handleChange = (
     newValue: SingleValue<DropdownOptionType> | MultiValue<DropdownOptionType>
   ) => {
     updateOptionHandler(newValue as SingleValue<DropdownOptionType>);
-  };
+      };
 
   return (
     <Select

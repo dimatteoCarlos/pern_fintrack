@@ -5,7 +5,7 @@ import './styles/debts-styles.css';
 import { DEFAULT_CURRENCY } from '../../helpers/constants.ts';
 import { url_get_total_account_balance_by_type } from '../../endpoints.ts';
 import { useEffect, useMemo, useState } from 'react';
-import { useFetch } from '../../hooks/useFetch.tsx';
+import { useFetch } from '../../hooks/useFetch.ts';
 import { DebtorRespType } from '../../types/responseApiTypes.ts';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 

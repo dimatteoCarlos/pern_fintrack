@@ -6,7 +6,7 @@ import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { url_get_accounts_by_category,  USER_ID } from '../../../endpoints.ts';
 import { CategoryBudgetAccountsResponseType } from '../../../types/responseApiTypes.ts';
-import { useFetch } from '../../../hooks/useFetch.tsx';
+import { useFetch } from '../../../hooks/useFetch.ts';
 import { CategorySummaryInfoType, CurrencyType } from '../../../types/types.ts';
 import { capitalize } from '../../../helpers/functions.ts';
 import SummaryDetailBox from './summaryDetailBox/SummaryDetailBox.tsx';

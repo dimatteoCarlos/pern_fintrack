@@ -1,4 +1,5 @@
-import useInputNumberHandler from '../../hooks/useInputNumberHandler';
+
+import useInputNumberHandler from '../../hooks/useInputNumberHandler.ts';
 import { FormNumberInputType } from '../../types/types';
 
 type InputNumberFormHandlerPropType<T> = {
@@ -38,6 +39,7 @@ function InputNumberFormHandler<T>({
     const { name, value } = e.target;
     inputNumberHandlerFn(name, value);
   }
+  
   return (
     <>
       <input

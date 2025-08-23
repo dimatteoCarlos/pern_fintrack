@@ -15,7 +15,7 @@ import { capitalize,  numberFormatCurrency, formatDateToDDMMYYYY } from '../../.
 import '../styles/forms-styles.css';
 import { AccountByTypeResponseType, AccountListType, TransactionsAccountApiResponseType,  AccountTransactionType, AccountSummaryBalanceType } from '../../../types/responseApiTypes';
 import { url_get_account_by_id, url_get_transactions_by_account_id } from '../../../endpoints';
-import { useFetch } from '../../../hooks/useFetch';
+import { useFetch } from '../../../hooks/useFetch.ts';
 import './styles/accountDetailTransactions-styles.css'
 import AccountBalanceSummary from './AccountBalanceSummary';
 import AccountTransactionsList from './AccountTransactionsList';

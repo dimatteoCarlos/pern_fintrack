@@ -5,7 +5,7 @@ import { getCurrencySymbol, numberFormatCurrency } from "../../../../helpers/fun
 import { PocketSavingAccountListType } from "../../../../types/responseApiTypes";
 import './styles/summaryDetailBox-style.css'
 
-//temporary values------------
+//default values------------
 const defaultCurrency = DEFAULT_CURRENCY;
 //----------------------------
 type SummaryDetailPropType = {

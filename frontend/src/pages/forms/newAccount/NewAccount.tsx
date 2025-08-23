@@ -1,3 +1,4 @@
+//src/pages/forms/newAccount/NewAccount.tsx
 import React, { useEffect, useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { Link, useLocation } from 'react-router-dom';
@@ -18,21 +19,23 @@ import {
   DropdownOptionType,
   VariantType,
 } from '../../../types/types.ts';
-import { capitalize, validationData } from '../../../helpers/functions.ts';
+import { capitalize, } from '../../../helpers/functions.ts';
+import { validationData } from '../../../validations/utils/custom_validation.ts';
+
 import { FormNumberInputType } from '../../../types/types.ts';
 import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
 // import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { url_create_basic_account } from '../../../endpoints.ts';
 import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { AxiosRequestConfig } from 'axios';
 
+
 //------------------------
-//-----temporarily 'till decide how to handle currencies
+//-----handle currency
 const defaultCurrency = DEFAULT_CURRENCY;
-// const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-// console.log('', { formatNumberCountry });
+
 //---- data config---------
 type AccountDataType = {
   name: string;
@@ -69,6 +72,7 @@ function NewAccount() {
   // const user = useUserStore((state: UserStoreType) => state.userData.userId);
   const user = import.meta.env.VITE_USER_ID;
   // console.log('🚀 ~ NewAccount ~ user:', user);
+
   //---states------
   const [accountData, setAccountData] = useState<AccountDataType>(
     initialNewAccountData
@@ -92,7 +96,7 @@ function NewAccount() {
   );
 
   //endpoint: http://localhost:5000/api/fintrack/account/${type}
-  //--------------------------------------------
+  //-------------------------------------
   //DATA FETCHING
   //OPTION SELECTION: ACCOUNT TYPE
   //account types from account_types table
@@ -100,6 +104,7 @@ function NewAccount() {
   const title = 'type';
   const optionsTypeAccounts = ACCOUNT_TYPE_DEFAULT;
   // console.log('arreglo:', optionsTypeAccounts);
+
   //POST: NEW ACCOUNT DATA
   const { data, isLoading, error, requestFn } = useFetchLoad<
     CreateBasicAccountApiResponseType,
@@ -145,8 +150,7 @@ function NewAccount() {
           setIsDisabledValue(false);
       }
     } else {
-      console.log(`No option selected for ${'account type'}`);
-
+      // console.log(`No option selected for ${'account type'}`);
       setAccountData((acc: AccountDataType) => ({
         ...acc,
         type: undefined,
@@ -167,18 +171,18 @@ function NewAccount() {
   }
   //--------------------------------------
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
-    console.log('On submit Form');
+    // console.log('On submit Form');
     e.preventDefault();
     //--data form validation
     const newValidationMessages = { ...validationData(accountData) };
-    console.log('message validation:', { newValidationMessages });
+    // console.log('message validation:', { newValidationMessages });
 
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
       return;
     }
-    //-------------------------------------------------------
-    //POST TO THE ENDPOINT FOR ACCOUNT DATA HERE
+    //-------------------------------------
+    //POST TO THE ENDPOINT FOR ACCOUNT DATA 
     try {
       const { name, type, currency, amount, date } = accountData;
       const payload = { name, type, currency, amount, date, user };
@@ -225,7 +229,7 @@ function NewAccount() {
       }, 4000);
     } else if (error) {
       setMessageToUser(error);
-      timer = setTimeout(() => setMessageToUser(null), 3000);
+      timer = setTimeout(() => setMessageToUser(null), 4000);
     }
     return () => {
       if (timer) clearTimeout(timer);
