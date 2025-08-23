@@ -1,5 +1,7 @@
 //controller:transferBetweenAccounts.js
-//functions:getAccountTypeId,getAccountInfo,getAccountTypes,getTransactionTypes,balanceMultiplierFn,updateAccountBalance,
+// Functions: Handles financial transfers between accounts with balance updates and transaction recording
+
+//functions defined here:getAccountTypeId,getAccountInfo, getAccountTypes,getTransactionTypes, balanceMultiplierFn,updateAccountBalance,
 //
 import pc from 'picocolors';
 import { pool } from '../../db/configDB.js';
@@ -113,6 +115,7 @@ export function transformMovementType(
   return movementName;
 }
 //------------------
+// Main Controller Function
 //controller: transferBetweenAccounts
 //------------------
 export const transferBetweenAccounts = async (req, res, next) => {
@@ -135,7 +138,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     // console.log({ movementName });
 
     //-------------------------------------------------
-    //In original design OLD VERSION: Debts and Investment Movements needed a compensation account, in this case named "slack", to serve as a counter part of the transaction.
+    //PnL Movements need a compensation account, in this case named "slack", to serve as a counter part of the transaction.
     //-------------------------------------------------
     const checkAndInsertSlackAccount = async (req, res, next, userId) => {
       try {
@@ -187,13 +190,10 @@ export const transferBetweenAccounts = async (req, res, next) => {
       return res.status(400).json({ status: 400, message });
     }
     //--------------------
-    //--this is for the old version where debt and investment movements do not consider an explicit counter account
+    //--this is for pnl movements which does not consider an explicit counter account
 
     if (
-      // movementName !== 'expense' &&
-      // movementName !== 'income' &&
-      // movementName !== 'transfer'
-      movementName === 'pnl'
+        movementName === 'pnl'
     ) {
       checkAndInsertSlackAccount(req, res, next, userId);
     }
@@ -220,7 +220,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
     //---------------------------------------
     //VALIDATION
-    //since frontend input data form are controlled by selection options, then, data should be considered already validated from frontend. Also, frontend, for selection option gets the data through this api
+    //since frontend input data form are controlled by selection options, then, data should be considered already validated from frontend. Also, frontend,  gets the data through this api, for selection options
 
     //example:expense
     //movementName: expense, sourceAccountTypeName: 'bank', destinationAccountTypeName:'category_budget', sourceAccountTransactionType:withdraw, destinationAccountTransactionType:deposit,
@@ -230,10 +230,10 @@ export const transferBetweenAccounts = async (req, res, next) => {
       amount,
       currency: currencyCode,
       type: transactionTypeName, //for pnl or for debt in new version
-      accountType
+      accountType, date
     } = req.body; //common fields to all tracker movements.
-    // console.log('type', transactionTypeName);
-    // console.log('body', req.body);
+    console.log('type', transactionTypeName);
+    console.log('body', req.body);
     //-----------------
     //From the original design, Not all tracker movements input data form have the same input data structure, so, get the data structure configuration strategy based on movementName
     
@@ -243,9 +243,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       transfer: getTransferConfig(req.body),
       debt: getDebtConfig(req.body),
       pnl: getPnLConfig(req.body),
-      //old version
-      // investment: getInvestmentConfig(req.body),
-      // pocket: getPocketConfig(req.body),
+
     }[movementName];
 
     const {
@@ -282,18 +280,17 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   '🚀 ~ transferBetweenAccounts ~ movement_type_idResult:',
     //   movement_type_idResult
     // );
-    // throw new Error
 
-    if (!movement_type_idResult) {
-      const message = `movement type id of ${movement_type_name} was not found. Try again with valid movement type!`;
+    if (!movement_type_idResult ||movement_type_idResult.length===0) {
+      const message = `movement type id of ${movement_type_name} was not found. Try again with a valid movement type!`;
       console.warn(pc.magentaBright(message));
       console.log('🚀 ~ transferBetweenAccounts ~ message:', message);
-      throw new Error({ status: 400, message });
+      const err = new Error(message);
+      err.status=400;
+      throw err;
     }
-
     const movement_type_id = movement_type_idResult[0].movement_type_id;
     //=====================================================
-
     //==== transaction and account types from db.
     const transactionsTypes = await getTransactionTypes();
     const sourceTransactionTypeId = transactionsTypes.filter(
@@ -324,10 +321,15 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //validate currency
     const currencyIdReq = await getCurrencyId(currencyCode);
     if (!currencyIdReq) {
-      throw new Error({
-        status: 404,
-        message: `Currency ${currencyCode} not found`,
-      });
+      console.log('error est en', currencyCode, )
+      const message= `Currency ${currencyCode} not found`
+      const err = new Error(message)
+      err.status=400
+      throw err;
+      // throw new Error({
+      //   status: 404,
+      //   message: `Currency ${currencyCode} not found`,
+      // });
     }
     //validate input date
     const { date: transactionActualDate } = req.body; //
@@ -576,8 +578,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
     if (error instanceof Error) {
       console.error(
         pc.red('Error during transfer'),
-        pc.magentaBright(error.stack || error.message)
-      );
+        pc.magentaBright(error.stack || error.message), error
+   );
+
     } else {
       console.error(
         pc.red('Error during transfer'),
