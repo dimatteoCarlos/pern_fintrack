@@ -1,3 +1,4 @@
+// src/pages/tracker/components/TopCardZod.tsx
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation';
@@ -8,43 +9,44 @@ import {
   CurrencyType,
   DropdownOptionType,
   TopCardElementsType,
-  // VariantType,
-  // TopCardElementsType
 } from '../../../types/types';
 
-//-------------------------------
+import { ValidationMessagesType } from '../../../validations/utils/zod_validation';
+//------------------------------------
+
+//------------------------------------
 type RadioInputPropsType = {
   radioOptionSelected: string;
-
   inputRadioOptions: { value: string; label: string }[];
-
   setRadioOptionSelected: (option: string) => void;
-
   disabled:boolean;
-
   title?: string;
 
 };
+//---------------------------------
+type TopCardPropType<TFormDataType  extends Record<string, unknown>> = {
+  topCardElements: TopCardElementsType;
+  // validationMessages: { [key: string]: string };
+  validationMessages: ValidationMessagesType<TFormDataType>;
 
-type TopCardPropType<T extends Record<string, unknown>> = {
-  topCardElements: TopCardElementsType
-
-  validationMessages: { [key: string]: string };
+  setValidationMessages: React.Dispatch<React.SetStateAction<ValidationMessagesType<TFormDataType>>>;
 
   updateTrackerData: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
-
   trackerName: string;
-  updateCurrency: (x: CurrencyType) => void;
+
   currency: CurrencyType;
+  updateCurrency: (x: CurrencyType) => void;
 
   // selectedValue?: string;
-  setSelectState: React.Dispatch<React.SetStateAction<T>>; //generic type
+  setSelectState: React.Dispatch<React.SetStateAction<TFormDataType>>; 
 
+  //general reset
   isReset: boolean;
   setIsReset: React.Dispatch<React.SetStateAction<boolean>>;
-  //-----
+
+  //select dropdown reset
   isResetDropdown?: boolean;
   setIsResetDropdown?: React.Dispatch<React.SetStateAction<boolean>>;
 
@@ -52,56 +54,87 @@ type TopCardPropType<T extends Record<string, unknown>> = {
 
   //--handle special case of Transfer
   customSelectHandler?: (selectedOption: DropdownOptionType | null) => void;
+  //---
 };
 
-//----Component
-const TopCard = <T extends Record<string, unknown>>({
+//----Component------------------------
+const TopCardZod = <TFormDataType  extends Record<string, unknown>>({
   topCardElements,
   validationMessages,
+  setValidationMessages,//could be undefined
   updateTrackerData,
   trackerName,
   currency,
   updateCurrency,
-  // selectedValue,
+
   setSelectState,
   isReset,
-  setIsReset,
-  //-------
   isResetDropdown,
   setIsResetDropdown,
+  //-------
+  setIsReset,
   //-------
   radioInputProps,
   //-------
   customSelectHandler,
-}: TopCardPropType<T>): JSX.Element => {
+  //--------------
+ }: TopCardPropType<TFormDataType >): JSX.Element => {
   const {
     selectOptions: topCardOptions,
     selectOptions: { variant },
-    titles: { title1 }, //amount label or title
-    titles: { title2 }, //account label or title
+    titles: { title1 }, //amount 
+    titles: { title2 }, //account
     titles: { label2 }, //account label or title
-    value, //amount input value
+    value, //formData.amount
   } = topCardElements;
 
-  // console.log('🚀 ~ title2:', title2.trim().toLowerCase());
+    const accountFieldName = title2.trim().toLowerCase() as keyof TFormDataType;
+//---
+const errorMessage = validationMessages[accountFieldName] || ''
+//(topCardElements.value as string).trim() !== '';//new
 
+//---show error message
+const shouldShowError = !!validationMessages[accountFieldName]
+// && (topCardElements.value as string).trim() !== ''
+;
+//---
+// console.log('desde topcardzod', validationMessages.amount, errorMessage,shouldShowError,(topCardElements.value as string).trim() !== '' )
+ 
   //selection handler
   function stateSelectHandler(selectedOption: DropdownOptionType | null) {
-    // get the account_id of the selected account_name. it supposes thet account_name is unique too.
-    setSelectState((prev) => ({
+  // should get the account_id of the selected account_name. it supposes that account_name is unique too.
+    setSelectState((prev) => (
+      {
       ...prev,
-      [title2.trim().toLowerCase()]: selectedOption?.value,
-      // ['origin_account']: selectedOption?.value,
-    }));
+  [accountFieldName]: selectedOption?.value || '',
+      }));
+
+    console.log('title2', title2.trim(),'label', selectedOption?.label,'value', selectedOption?.value );
+
+    //if setValidationMessages is used, then clean the correspondent validation message
+    //aqui sin validar con zod, a se asigna el valor, y se asume que es valido, y entonces, se v borra el mensaje de error asociado al campo que se selecciono.
+
+    console.log('validation msgs',     validationMessages,' antes TopCardZod')
+        
+    if (setValidationMessages) {
+      setValidationMessages((prev) => {
+        const newMessages = { ...prev };
+        if (newMessages[accountFieldName]
+           //!== undefined
+        )
+           {
+          delete newMessages[accountFieldName];
+        }
+        return newMessages;
+      });
+    }
+      console.log('validation msgs',     validationMessages,' despues TopCardZod')
   }
-
-  //usage of customSelectHandler if it exists
+  //************************************/
+ //usage of customSelectHandler if it exists
   const finalSelectHandler = customSelectHandler || stateSelectHandler;
-
-  // console.log('isResetDropdown', { isResetDropdown });
-  // console.log('title2', title2.trim().length, 'origin'.length);
-
-  // console.log('selected value from TopCard:', selectedValue);
+  //  console.log('isResetDropdown', { isResetDropdown });
+   // console.log('selected value from TopCard:', selectedValue);
   //-------------------------------------------
   return (
     <>
@@ -130,38 +163,41 @@ const TopCard = <T extends Record<string, unknown>>({
         </div>
 
         <div className='account card--title '>
-          {capitalize(label2??title2).trim()}
+         {capitalize(label2??title2).trim()}
           
-
-          {radioInputProps && (
+         {radioInputProps && (
             <RadioInput
               radioOptionSelected={radioInputProps.radioOptionSelected}
+
               inputRadioOptions={radioInputProps.inputRadioOptions}
+
               setRadioOptionSelected={radioInputProps.setRadioOptionSelected}
+
               title={radioInputProps.title}
               labelId={title2.trim()}
               disabled={radioInputProps.disabled}
-              // disabled={radioInputProps.disabled}
+
             />
           )}
         </div>
 
+      {/*show validation message for account field  */}
         <span className='validation__errMsg '>
-          {validationMessages[`${title2.toLowerCase().trim()}`]}
+          {shouldShowError ? errorMessage : ''}
+          {/* {validationMessages[`${title2.toLowerCase().trim()}`]} */}
         </span>
 
-        <DropDownSelection
-          dropDownOptions={topCardOptions}
-          updateOptionHandler={finalSelectHandler}
-          setIsReset={setIsReset}
-          isReset={isReset}
-          setIsResetDropdown={setIsResetDropdown}
-          isResetDropdown={isResetDropdown}
-          // isReset={isReset || isResetDropdown }
-        />
+      <DropDownSelection
+        dropDownOptions={topCardOptions}
+        updateOptionHandler={finalSelectHandler}
+        isReset={isReset}
+        isResetDropdown={isResetDropdown}
+        setIsReset={setIsReset}
+        setIsResetDropdown={setIsResetDropdown}
+          />
       </div>
     </>
   );
 };
 
-export default TopCard;
+export default TopCardZod;
