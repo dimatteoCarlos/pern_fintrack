@@ -36,7 +36,7 @@ import CardNoteSave from '../components/CardNoteSave.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import RadioInput from '../../../general_components/radioInput/RadioInput.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
-import TopCardZod from '../components/TopCardZod.tsx';
+import TopCardZod from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
 
 // TYPES
@@ -336,9 +336,9 @@ function Debts(): JSX.Element {
   setDataTrack(prev=>({...prev, amount:amountChecked?.valueToSave as number}))
 
   //===================================
-    //-------------------------
-    //----entered datatrack validation messages --------
-    // Form validation
+  //-------------------------
+  //----entered datatrack validation messages --------
+  // Form validation
     const newValidationMessages = validationData(datatrack);
     // console.log('newValidationMessages values', Object.values(newValidationMessages), isAmountError);
 
@@ -346,10 +346,10 @@ function Debts(): JSX.Element {
       setValidationMessages(newValidationMessages);
       return;
     }
-    //----------------------------
-    //API REQUEST. ENDPOINT HERE FOR POSTING
-    //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=debts
-    //user id is sent via req.body but can be sent via query param too
+  //----------------------------
+  //API REQUEST. ENDPOINT HERE FOR POSTING
+  //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=debts
+  //user id is sent via req.body but can be sent via query param too
     try {
       const payload = { ...datatrack,
          user } as PayloadType;
@@ -360,12 +360,7 @@ function Debts(): JSX.Element {
         url: postUrl,
       } as AxiosRequestConfig);
 
-      // if(error){
-      // setMessageToUser(error)
-      // // console.log(error, 'desde sumit')
-      // return
-      // }
-          if (error ) {
+      if (error ) {
       const errorMsg = error ?? "unexpected error"
       console.log('response?.error?', errorMsg)
       throw new Error(errorMsg);
@@ -376,7 +371,7 @@ function Debts(): JSX.Element {
       }
 
       //-------------------------------
-      //update GLOBLA BALANCE. total available in bank accounts. it's global state
+      //update GLOBAL BALANCE. total available in bank accounts. it's global state
       const {
         data: {
           data: { total_balance },
