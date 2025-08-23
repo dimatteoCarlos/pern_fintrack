@@ -5,7 +5,7 @@ import axios, { AxiosRequestConfig } from 'axios';
 import { useLocation } from 'react-router-dom';
 
 // 🎨 UI Components
-import TopCardZod from '../components/TopCardZod.tsx';
+import TopCardZod from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
