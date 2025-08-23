@@ -1,84 +1,93 @@
 //src/pages/tracker/income/Income.tsx
-import { useEffect, useMemo, useState } from 'react';
-import CardSeparator from '../components/CardSeparator.tsx';
-import {
-  validationData,
-  //numberFormat,
-  checkNumberFormatValue,
-} from '../../../helpers/functions.ts';
-import { useFetch } from '../../../hooks/useFetch.tsx';
-import {
-  CurrencyType,
-  DropdownOptionType,
-  FormNumberInputType,
-  IncomeInputDataType,
-  VariantType,
-  // TopCardSelectStateType,
-  // IncomeAccountsType,
-  // SourcesType,
-  // SourceType,
-} from '../../../types/types.ts';
+// =======================================
+// 📦 Import Section
+// =======================================
+// ⚛️ React Hooks
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import axios, { AxiosRequestConfig } from 'axios';
+import { useLocation } from 'react-router-dom';
+
+// 🪝 Custom Hooks y utils
+import { useFetch } from '../../../hooks/useFetch.ts';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import useBalanceStore from '../../../stores/useBalanceStore.ts';
+import useFormManager from '../../../hooks/useFormManager.ts';
+//-------------------------------------
+// import { useAuthStore } from '../../../auth/stores/useAuthStore.ts';
+//-------------------------------------
+// 🌐Endpoints and constants 
 import {
   url_get_accounts_by_type,
   url_get_total_account_balance_by_type,
   url_movement_transaction_record,
-  // url_accounts,
-  // url_sources,
 } from '../../../endpoints.ts';
 
-import { useLocation } from 'react-router-dom';
 import {
   DEFAULT_CURRENCY,
+  ACCOUNT_OPTIONS_DEFAULT,
   SOURCE_OPTIONS_DEFAULT,
-  INCOME_OPTIONS_DEFAULT,
   PAGE_LOC_NUM,
-  // CURRENCY_OPTIONS,
 } from '../../../helpers/constants.ts';
-import TopCard from '../components/TopCard.tsx';
-import CardNoteSave from '../components/CardNoteSave.tsx';
-import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
-import {
+
+//📝 Data Type Import
+import type {
   AccountByTypeResponseType,
   BalanceBankRespType,
   MovementTransactionResponseType,
 } from '../../../types/responseApiTypes.ts';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.tsx';
-import useBalanceStore from '../../../stores/useBalanceStore.ts';
-import axios, { AxiosRequestConfig } from 'axios';
-import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 
-//-----temporarily data 'till decide how to handle currencies
-const defaultCurrency: CurrencyType = DEFAULT_CURRENCY;
-// const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-// console.log('🚀 ~ Income ~ formatNumberCountry:', formatNumberCountry);
-//input income data state variables
-// type IncomeInputDataType = {
-//   amount: number;
-//   account: string;
-//   source: string;
-//   note: string;
-//   currency: string;
-// };
+import type {
+  CurrencyType,
+  IncomeInputDataType,
+  VariantType,
+  MovementTransactionType,
+  // TopCardElementsType,
+} from '../../../types/types.ts';
+
+// 🛡️ Zod - Schema and data type validation 
+import { incomeSchema} from '../../../validations/zod_schemas/trackerMovementSchema.ts';
+import { IncomeValidatedDataType } from '../../../validations/types.ts';
+
+// 🎨 UI Components
+import TopCardZod from '../components/TopCard.tsx';
+import CardSeparator from '../components/CardSeparator.tsx';
+import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
+import CardNoteSave from '../components/CardNoteSave.tsx';
+import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+//-------------------------------------
+// 📝data type definitions
+export type ShowValidationType={
+  amount: boolean;
+  account: boolean;
+  source: boolean;
+  note: boolean;
+} 
+//==============================================
+// ⚙️ Initial Configuration and default values
+//==============================================
+const defaultCurrency = DEFAULT_CURRENCY;
+
 const initialIncomeData: IncomeInputDataType = {
-  amount: 0,
+  amount: "", //string for input
   account: '',
   source: '',
   note: '',
-  currency: defaultCurrency,
+  currency: DEFAULT_CURRENCY,
 };
-
 const VARIANT_DEFAULT: VariantType = 'tracker';
-//------------------------------
-const initialFormData: FormNumberInputType = { amount: '' };
-//------------------------------
+//==============================================
+// ⚛️Main Component: Income
+//==============================================
 //----Income Tracker Movement -------
-function Income() {
-  //rules: only bank accounts type are used to receive income
-  //select option accounts rendered are all existing bank accounts, but the slack account which is not shown
+function Income():JSX.Element {
+  //rules: only bank accounts type are used to receive income amounts.
+  //select option accounts rendered are all existing bank accounts,except the slack account which is not shown.
+
+  // 🗺️ Router and User configuration
   const { pathname } = useLocation();
   const trackerState = pathname.split('/')[PAGE_LOC_NUM];
 
-  const typeMovement = trackerState.toLowerCase();
+  const typeMovement : MovementTransactionType= trackerState.toLowerCase();
   // console.log('movement:', typeMovement);
   //--------------------------------------
   //deal here with user id and authentication
@@ -93,41 +102,59 @@ function Income() {
   // console.log('userID', userID);
 
   const user = import.meta.env.VITE_USER_ID;
-  //--------------------------------------
-    //---states------
+  //---------------
+  //---states------
+  // 🔄 Local States
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
-  const [incomeData, setIncomeData] =
-    useState<IncomeInputDataType>(initialIncomeData);
 
-  const [formData, setFormData] = useState(initialFormData);
-  const [validationMessages, setValidationMessages] = useState<{
-    [key: string]: string;
-  }>({});
-  const [isReset, setIsReset] = useState<boolean>(false);
+   const [isReset, setIsReset] = useState<boolean>(false);
+
+  const [isResetDropdown, setIsResetDropdown] = useState<boolean>(false);
 
   const [reloadTrigger, setReloadTrigger] = useState(0)
-
-  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
+  const [messageToUser, setMessageToUser] = useState<string | null >(
     null
   );
-  // const [showMessage, setShowMessage] = useState(false);
-
-  //----
+//------------
+// 🌳 Global State (Zustand)
+// update zustand balance / Conecta con el store de Zustand para actualizar el balance disponible.
+//----
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
+//----
+// 📝 Hook `useFormManager`
+// Centralize the logic of form handling and validation / Centraliza la lógica del formulario, validación y manejadores de eventos.
+  const {
+    formData: incomeData,
+    showValidation,
+    validationMessages,
+    handlers: {
+      updateField,
+      debouncedValidateField,
+      createDropdownHandler,
+      createTextareaHandler,
+      updateCurrency,
+      handleApiError,
+    },
+    validateAll,
+    resetForm,
+    activateAllValidations,
+    setters: {
+      setShowValidation,
+      setValidationMessages,
+      setFormData,
+    }
+  } = useFormManager<IncomeInputDataType, IncomeValidatedDataType>(incomeSchema, initialIncomeData);
 
-  //---- Income account Options -----------
+//---- Income account Options -----------
   //DATA FETCHING
-  //GET: AVAILABLE ACCOUNTS OF TYPE BANK
+    //Endpoints: url_get_accounts_by_type, url_get_total_account_balance_by_type
   const fetchUrl = user
-    ? `${url_get_accounts_by_type}/?type=bank&user=${user}&reload=${reloadTrigger}`
+  ? `${url_get_accounts_by_type}/?type=bank&user=${user}&reload=${reloadTrigger}`
     : // <Navigate to='/auth' />
       undefined; //esto ees forzar un error de user ID required
-  //definir que hacer si no hay user id
-  // console.log('🚀 ~ Income ~ fetchUrl:', fetchUrl);
-
-  const {
+   const {
     apiData: BankAccountsResponse,
     isLoading: isLoadingBankAccounts,
     error: fetchedErrorBankAccounts,
@@ -136,6 +163,9 @@ function Income() {
   // console.log('🚀 ~ Income ~ BankAccountsResponse:', BankAccountsResponse);
   // console.log('BANK resp', BankAccountsResponse, fetchedErrorBankAccounts);
 
+//Data Transformations
+// 🧠 Memoization: Account Options
+// `useMemo` is used to create the account dropdown options, avoiding unnecessary recalculations.
   const optionsIncomeAccounts = useMemo(
     () =>
       BankAccountsResponse?.data?.accountList?.length &&
@@ -143,9 +173,10 @@ function Income() {
       !isLoadingBankAccounts
         ? BankAccountsResponse?.data.accountList?.map((acc) => ({
             value: acc.account_name,
-            label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`
+            label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code.toLowerCase()} ${acc.account_balance})`
+            // label: `${acc.account_name}`
           }))
-        : INCOME_OPTIONS_DEFAULT,
+        : ACCOUNT_OPTIONS_DEFAULT,
     [
       BankAccountsResponse?.data.accountList,
       fetchedErrorBankAccounts,
@@ -158,149 +189,95 @@ function Income() {
     options: optionsIncomeAccounts,
     variant: VARIANT_DEFAULT,
   };
-
-  //--------
-  //income sources - are these sources attached to a specific bank accounts?
-  //DATA FETCHING
+//--- DATA FETCHING
+// Prepare data and url for Fetching income_source account type
   const fetchSourceUrl = user
-    ? `${url_get_accounts_by_type}/?type=income_source&user=${user}`
+    ? `${url_get_accounts_by_type}/?type=income_source&user=${user}&${reloadTrigger}`
     : // <Navigate to='/auth' />
-      undefined; //esto ees forzar un error de user ID required
-  //definir que hacer si no hay user id
+      undefined; //force a user ID required error
   // console.log('🚀 ~ Income ~ fetchSourceUrl:', fetchSourceUrl);
 
   const {
     apiData: sources,
     error: errorSources,
-    isLoading: loadingSources,
+    isLoading: isLoadingSources,
   } = useFetch<AccountByTypeResponseType>(fetchSourceUrl as string);
-
-  const sourceOptions = {
-    title:
-      sources && !loadingSources ? 'Source of income' : 'No Source available',
+//Data Transformations
+// 🧠 Memoization: Account Options
+// `useMemo` is used to create the account dropdown options, avoiding unnecessary recalculations.
+  const sourceOptions = useMemo(()=>({
+    title: sources && !isLoadingSources ? 'Source of income' : '',
     options:
       !errorSources && sources?.data.accountList.length
-        ? sources?.data.accountList?.map((src) => ({
-            value: src.account_name,
-            label: src.account_name,
+        ? sources?.data.accountList?.map((acc) => ({
+            value: acc.account_name,
+            //  label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${Math.abs(acc.account_balance)})`,
+            label: acc.account_name,
           }))
         : SOURCE_OPTIONS_DEFAULT,
     variant: VARIANT_DEFAULT as VariantType,
-  };
-  //---------------------------------------------
+  }),[errorSources, isLoadingSources,sources]);
+  //--------------------------------
   //OBTAIN THE REQUESTFN FROM userFetchLoad
   //extend the type of input data with user id
-  type PayloadType = IncomeInputDataType & { user: string };
-  //---------------------------
+  type PayloadType = IncomeValidatedDataType & { user: string ; type?: string;
+  };
+  //----
   //DATA POST FETCHING
   const { data, isLoading, error, requestFn } = useFetchLoad<
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
-  //---------------------------------------------
-  //Handle states related to the data submit form
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
+  //===============================
+  // ✍️ Event Handlers
+  // ==============================
+  const handleCurrencyChange = useCallback((newCurrency: CurrencyType) => {
+    setCurrency(newCurrency);
+    updateCurrency(newCurrency);
+  }, [updateCurrency]);
 
-    if ((data || error) && !isLoading) {
-      const success = data && !error;
-      setMessageToUser(
-        success
-          ? 'Movement completed successfully!'
-          : error ?? 'An error occurred during submission'
-      );
-      // setShowMessage(true);
+  const handleSourceChange = createDropdownHandler('source');
+  const handleAccountChange = createDropdownHandler('account');
+  const handleNoteChange = createTextareaHandler('note');
 
-      timer = setTimeout(() => {
-        setMessageToUser(null);
-        // setShowMessage(false);
-      }, 8000);
-    }
+  //Handler of field 'amount'. Activates all field validation when entering amount.
+  const handleAmountChange = useCallback((evt:React.ChangeEvent<HTMLInputElement  | HTMLTextAreaElement>)=>{
+    const {name, value } = evt.target
+    updateField(name as keyof IncomeInputDataType, value )
+    debouncedValidateField('amount', value)
 
-    return () => clearTimeout(timer);
-  }, [data, error, isLoading]);
-
-  //
-  //----functions--------
-  function updateDataCurrency(currency: CurrencyType) {
-    setCurrency(currency);
-    setIncomeData((prev) => ({ ...prev, currency: currency }));
-    // console.log('updateDataCurrency:', currency);
-  }
-
-  function sourceSelectHandler(selectedOption: DropdownOptionType | null) {
-    setIncomeData((prev) => ({
-      ...prev,
-      ['source']: selectedOption?.value, //could be undefined
-    }));
-
-    // console.log(
-    //   'desde incomeSelectHandler:',
-    //   selectedOption,
-    //   selectedOption?.value
-    // );
-  }
-  //---------------------------------------
-  function updateTrackerData(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) {
-    e.preventDefault();
-    const { name, value } = e.target;
-
-    if (name === 'amount') {
-      const { formatMessage,  isError, valueToSave } =
-        checkNumberFormatValue(value);
-
-      // Update numeric state value in the form. Actualizar el estado numerico en el
-      // formulario
-      setFormData({
-        ...formData,
-        [name]: value,
+    if (value) {
+      setShowValidation({
+        amount: true,
+        account: true,
+        source: true,
+        note: true,
+        currency: true
       });
-
-      // console.log({ formatMessage, valueNumber, isError, valueToSave });
-
-      setValidationMessages((prev) => ({
-        ...prev,
-        [name]: ` * Format: ${formatMessage}`,
-      }));
-
-      if (isError) {
-        console.log('Number Format Error occurred');
-        setValidationMessages((prev) => ({
-          ...prev,
-          [name]: ` * Error: ${formatMessage}`,
-        }));
-      }
-      setIncomeData((prev) => ({ ...prev, [name]: valueToSave }));
-      return;
-      
-    } else {
-      setIncomeData((prev) => ({ ...prev, [name]: value }));
     }
-  }
-  //------------------------
+  },[updateField,debouncedValidateField, setShowValidation ])
+    
+ //================================
+ // Handler of saving button. Validation, API request and Resetting.
   async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
     // console.log('On Save Handler');
     e.preventDefault();
-    //-------------------------
-    // const formattedNumber = numberFormat(incomeData.amount || 0);
-    // console.log(
-    //   'formatted amount as a string:',
-    //   { formattedNumber },
-    //   typeof formattedNumber
-    // );
-    //-------entered datatrack validation messages --------
-    //validation of entered data
-    const newValidationMessages = validationData(incomeData);
-    if (Object.values(newValidationMessages).length > 0) {
-      setValidationMessages(newValidationMessages);
-      return;
+    setMessageToUser('Processing transaction...')
+    
+    //--data validation messages --
+    activateAllValidations()
+    const {fieldErrors,dataValidated}=validateAll() 
+
+    if(Object.keys(fieldErrors).length>0){
+      setValidationMessages(fieldErrors)
+      setMessageToUser('Please correct the highlithed errors')
+      setTimeout(()=>{setMessageToUser(null)},4000)
+      return
     }
-    //------------------------
-    //POST ENDPOINT FOR MOVEMENT TRANSACTION HERE
-    // console.log('Income data state to Post:', incomeData);
-    //------------------------
+
+  //------------------------
+  //POST ENDPOINT FOR MOVEMENT TRANSACTION HERE
+  
     //update balance account of bank account and income_source accounts in: user_accounts table.
 
     //record both transaction descriptions: transfer and receive transactions with the correspondent account info.
@@ -308,42 +285,38 @@ function Income() {
     //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=income
 
     try {
+    if (!dataValidated) {
+        throw new Error('Validation failed. Please check your inputs.');
+     }
+    //--sending data to server -----------------
       const payload: PayloadType = {
-        ...incomeData,
-        user,
+        ...dataValidated,
+       user,
+        type: typeMovement,
       };
+      //--send the post request
       const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
       // console.log(
       //   '🚀 ~ onSubmitForm ~ finalUrl:',
       //   finalUrl,
       //   'date:',
       //   payload.date,
-      //   'este es el payload:',
+      //   ' payload:',
       //   payload
       // );
-
-      const data = await requestFn(payload, {
+      const response = await requestFn(payload, {
         url: postUrl,
       } as AxiosRequestConfig);
 
       if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-        console.log('Data from record transaction request:', data);
+        console.log('Data from record transaction request:', data, response.data);
       }
 
-      //reset values after posting the info   -- This could be a function -- need to set initial parameters for all 4 tracker/states in just one function./it seems that all are the same
+      if (response?.error ) {
+        throw new Error(response?.error || error || 'An unexpected error occurred during submission.');
+      }
 
-      setReloadTrigger(prev=>prev+1)
-      setCurrency(defaultCurrency);
-      setIncomeData(initialIncomeData);
-
-      setIsReset(true);
-      setValidationMessages({});
-      setFormData(initialFormData);
-
-      setTimeout(() => {
-        setIsReset(false);
-      }, 1500);
-      //-------------------------------
+     //-------------------------------
       //update total available budget global state
       const {
         data: {
@@ -355,19 +328,48 @@ function Income() {
 
       if (typeof total_balance === 'number') {
         setAvailableBudget(total_balance);
-      }
-    } catch (error) {
+      } 
+  //----------------------------------  
+       setMessageToUser('Transaction recorded successfully!');      
+ //---------------------------------- //reset values after posting the info   
+ resetForm();
+      setCurrency(DEFAULT_CURRENCY);
+      setReloadTrigger(prev => prev + 1);
+      setIsReset(true);
+      setIsResetDropdown(true);
+      setTimeout(() => setMessageToUser(null), 3000);
+
+      // setTimeout(() => {
+      //   setIsReset(false);
+      // }, 1500);
+      
+    } catch (err) {
       console.error('Submission error:', error);
+      const errorMessage = handleApiError(err);
+      setMessageToUser(errorMessage);
+      setTimeout(() => setMessageToUser(null), 5000);
     }
   }
-
-  //---------------------------------------------
-
-  //---------------------------------------------
+//-----------------------------------------
+// ⏳--- Side Effects--/--Efectos secundarios
+//-----------------------------------------
+// `useEffect` para resetear los estados de la UI (`isReset`, `isResetDropdown`) después de un tiempo.
+  useEffect(() => {
+    if (isReset || isResetDropdown) {
+      const timer = setTimeout(() => {
+        setIsReset(false);
+        setIsResetDropdown(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isReset, isResetDropdown]);
+//-----------------------------------------
+// 📄 Rendering UI Components /Renderizado del componente
+// Define UI structure / Define la estructura de la UI
   //-------Top Card elements
   const topCardElements = {
     titles: { title1: 'amount', title2: 'account' },
-    value: formData.amount,
+    value: incomeData.amount,
     selectOptions: accountOptions,
   };
   //--------------------------
@@ -375,18 +377,22 @@ function Income() {
     <>
       <form className='income' style={{ color: 'inherit' }}>
         {/* TOP CARD START */}
-        <TopCard
+         <TopCardZod
           topCardElements={topCardElements}
           validationMessages={validationMessages}
-          updateTrackerData={updateTrackerData}
+          setValidationMessages={setValidationMessages}
+          updateTrackerData={handleAmountChange}
           trackerName={trackerState}
           currency={currency}
-          updateCurrency={updateDataCurrency}
-          // selectedValue={incomeData.account}
-          setSelectState={setIncomeData}
+          updateCurrency={handleCurrencyChange}
+          setSelectState={setFormData}
           isReset={isReset}
+          isResetDropdown={isResetDropdown}
           setIsReset={setIsReset}
+          setIsResetDropdown={setIsResetDropdown}
+          customSelectHandler={handleSourceChange}
         />
+  {/* end of TOP CARD */}
         <CardSeparator />
         {/* BOTTOM CARD START */}
         <div className='state__card--bottom '>
@@ -399,7 +405,7 @@ function Income() {
 
           <DropDownSelection
             dropDownOptions={sourceOptions}
-            updateOptionHandler={sourceSelectHandler}
+            updateOptionHandler={handleAccountChange}
             isReset={isReset}
             setIsReset={setIsReset}
           />
@@ -407,27 +413,20 @@ function Income() {
           <CardNoteSave
             title={'note'}
             validationMessages={validationMessages}
-            dataHandler={updateTrackerData}
+            dataHandler={handleNoteChange}
             inputNote={incomeData.note}
             onSaveHandler={onSaveHandler}
-            isDisabled={isLoading || isLoadingBankAccounts || loadingSources}
+            isDisabled={isLoading || isLoadingBankAccounts || isLoadingSources}
+            showError={showValidation.note}
           />
         </div>
       </form>
 
-      {/* <MessageToUser
-        isLoading={isLoading || isLoadingBankAccounts || loadingSources}
-        //probar que muestra como error o si muestra algo
-        error={error || fetchedErrorBankAccounts || errorSources}
-        messageToUser={messageToUser}
-        variant='tracker'
-      /> */}
-
-      {messageToUser && !isLoading && (
+      {messageToUser && (
         <div className='fade-message'>
           <MessageToUser
-            isLoading={false}
-            error={error}
+            isLoading={isLoading || isLoadingBankAccounts || isLoadingSources }
+            error={error || errorSources || fetchedErrorBankAccounts}
             messageToUser={messageToUser}
             variant='tracker'
           />
