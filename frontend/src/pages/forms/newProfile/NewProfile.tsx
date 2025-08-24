@@ -125,9 +125,10 @@ function NewProfile() {
     const accountList = BankAccountsResponse?.data?.accountList ?? [];
 
     return accountList.length
-      ? accountList.map((acc) => ({
-          value: acc.account_name,
-          label: acc.account_name,
+     ? accountList.map((acc) => ({
+        value: acc.account_name,
+        label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`,
+          // label: acc.account_name,
         }))
       : ACCOUNT_OPTIONS_DEFAULT;
   }, [BankAccountsResponse?.data.accountList, fetchedErrorBankAccounts]);

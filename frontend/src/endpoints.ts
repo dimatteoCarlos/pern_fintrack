@@ -1,7 +1,6 @@
-//temporary user id
+//temporary user id - while developing
 export const USER_ID: string = import.meta.env.VITE_USER_ID;
 //http://localhost:5000/api/
-
 //authentication
 // http://localhost:5000/api/auth/
 //sign-up
@@ -13,21 +12,20 @@ export const url_signout: string = 'http://localhost:5000/api/auth/sign-out';
 //refresh-token
 export const url_refrestoken: string =
   'http://localhost:5000/api/auth/refresh-token';
-
+//----------------------------
 //http://localhost:5000/api/fintrack
 export const BASE_URL: string = import.meta.env.VITE_API_URL_APP;
 
 //account_types list
 //http://localhost:5000/api/fintrack/account/type/list
 export const url_account_type_list: string = BASE_URL + '/account/type/list';
-
+//-----------------------------------
 //CREATE NEW ACCOUNT
 //for Overview page
 //create a new account for types: bank, investment and income_source
 //http://localhost:5000/api/fintrack/account/new_account/account_type
 export const url_create_basic_account: string =
   BASE_URL + '/account/new_account'; //account_type is dynamic
-
  
 //ENDPOINTS FOR BUDGET PAGE
 // dashboardAccountSummaryList
@@ -129,7 +127,7 @@ export const url_monthly_TotalAmount_ByType: string =
 
 export const dashboardMovementTransactionsByType: string =
   BASE_URL + '/dashboard/movements/account_type/';
-//-----------------------------------------------------------
+//------------------------------------------------------
 // controller:dashboardMovementTransactions
 // insomnia: fintrack dashboardMovementTransactions
 // endpoint:dashboardMovementTransactions
@@ -138,7 +136,7 @@ export const dashboardMovementTransactionsByType: string =
 export const dashboardMovementTransactions: string =
   BASE_URL + '/dashboard/movements/movement/';
 
-//-----------------------------------------------------------
+//---------------------------------------
 //fintrack dashboard movements
 //this is more general since it can search
 //get.http://localhost:5000/api/fintrack/dashboard/movements/search/?start=&end=&search=opening&user=eacef623-6fb0-4168-a27f-fa135de093e1

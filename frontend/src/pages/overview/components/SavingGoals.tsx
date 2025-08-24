@@ -1,7 +1,6 @@
 import {  numberFormatCurrency } from '../../../helpers/functions';
-
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom';
 import { CardTitle } from '../../../general_components/CardTitle';
 import { StatusSquare } from '../../../general_components/boxComponents';
 import { BalancePocketRespType } from '../../../types/responseApiTypes';
@@ -54,9 +53,12 @@ function SavingGoals({ data }: { data: BalancePocketRespType | null }) {
       <div className='presentation__card__title__container main flx-row-sb'>
         <CardTitle>Saving Goals</CardTitle>
         <div className='presentation__card--title'></div>
-        <Link className='flx-col-center icon ' to={'edit'}>
+        <div className='flx-col-center icon ' id={'edit'}>
           <Dots3LightSvg />{' '}
-        </Link>
+        </div>
+        {/* <Link className='flx-col-center icon ' to={'edit'}>
+          <Dots3LightSvg />{' '}
+        </Link> */}
       </div>
 
       {/* SAVING GOALS component  */}
@@ -87,7 +89,6 @@ function SavingGoals({ data }: { data: BalancePocketRespType | null }) {
 
       {/* GOALS INDICATORS  */}
       {/* Goal info  row card  w first 2 cards */}
-
       <div className='tiles__container flx-row-sb '>
         <div className='tile__container tile__container__col tile__container__col--goalInfo'>
           <div className='tile__subtitle'>{saved.title}</div>

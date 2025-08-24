@@ -177,8 +177,8 @@ async function initializeDatabase() {
               text: `TRUNCATE TABLE ${item.tblName} RESTART IDENTITY CASCADE`,
             });
                 console.log(indx, item.tblName, 'truncated');
-            await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
-            console.log(indx, item.tblName, 'drop');
+            // await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
+            // console.log(indx, item.tblName, 'drop');
           } catch (error) {
             console.error('error truncating the table', `${item.tblName}`);
           }
@@ -198,7 +198,7 @@ async function initializeDatabase() {
     }
     //====================================
     //create tables
-    if (!false) {
+    if (false) {
       await Promise.allSettled(
         mainTables.map(async (item, ind) => {
           try {

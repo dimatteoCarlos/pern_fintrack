@@ -276,27 +276,27 @@ export const TILE_LABELS = [
 //AccountBalance
 
 export const ACCOUNTING_DEFAULT: AccountingListType[] = [
-  { title: 'Account_1', amount: 9999999999.99, currency: 'usd', type: 'bank' },
-  { title: 'Account_2', amount: 9999999999.999, currency: 'eur', type: 'bank' },
-  { title: 'Account_3', amount: 2000000, currency: 'cop', type: 'bank' },
-  {
-    title: 'Account_4 (investment)',
-    amount: 9999999999.99,
-    currency: 'usd',
-    type: 'bank',
-  },
-  {
-    title: 'Acc_5.com (investment)',
-    amount: 9999999999.99,
-    currency: 'cop',
-    type: 'bank',
-  },
-  {
-    title: 'Account_6 (investment)',
-    amount: 9999999999.99,
-    currency: 'usd',
-    type: 'bank',
-  },
+  // { title: 'Account_1', amount: 9999999999.99, currency: 'usd', type: 'bank' },
+  // { title: 'Account_2', amount: 9999999999.999, currency: 'eur', type: 'bank' },
+  // { title: 'Account_3', amount: 2000000, currency: 'cop', type: 'bank' },
+  // {
+  //   title: 'Account_4 (investment)',
+  //   amount: 9999999999.99,
+  //   currency: 'usd',
+  //   type: 'bank',
+  // },
+  // {
+  //   title: 'Acc_5.com (investment)',
+  //   amount: 9999999999.99,
+  //   currency: 'cop',
+  //   type: 'bank',
+  // },
+  // {
+  //   title: 'Account_6 (investment)',
+  //   amount: 9999999999.99,
+  //   currency: 'usd',
+  //   type: 'bank',
+  // },
 ];
 
 //InvestmentAccBalance
