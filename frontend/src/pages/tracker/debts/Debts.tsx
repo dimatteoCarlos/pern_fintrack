@@ -4,14 +4,15 @@
 // IMPORT DEPENDENCIES
 // ==========================================
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios, { AxiosRequestConfig } from 'axios';
 
 // HELPERS FUNCTIONS 
 import { capitalize } from '../../../helpers/functions.ts';
 import { checkNumberFormatValue,validateAmount, validationData  } from '../../../validations/utils/custom_validation.ts';
 
-//DATA FETCHING CUSTOM HOOKS
-import { useLocation } from 'react-router-dom';
+//DATA FETCHING AND CUSTOM HOOKS
+
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
@@ -97,9 +98,9 @@ function Debts(): JSX.Element {
   // console.log('movement:', typeMovement);
   //deal here with user id and authentication
   const user = import.meta.env.VITE_USER_ID;
-  // ===========================================
+  // =======================================
   // STATE MANAGEMENT
-  // ===========================================
+  // =======================================
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
   const [type, setType] = useState<DebtsTransactionType>('lend');
 
@@ -149,6 +150,7 @@ function Debts(): JSX.Element {
       debtorsResponse?.data.accountList.length
         ? debtorsResponse.data.accountList.map((debtor) => ({
           label:`${debtor.account_name} (${debtor.currency_code} ${debtor.account_balance}) (${debtor.account_balance>=0? 'Debtor':'Lender'})`,
+            // value: `${debtor.account_id}`,
             value: `${debtor.account_name}`,
            // label: debtor.account_name,
           })
@@ -177,11 +179,11 @@ function Debts(): JSX.Element {
     error: fetchedErrorAccounts,
   } = useFetch<AccountByTypeResponseType>(fetchAccountUrl as string);
 
-  // console.log('🚀 ~ Debts ~ accountsResponse:', accountsResponse);
-  // ===========================================
-  // DATA TRANSFORMATION
-  // ===========================================
-  // Process accounts data for dropdown
+// console.log('🚀 ~ Debts ~ accountsResponse:', accountsResponse);
+// ===========================================
+// DATA TRANSFORMATION
+// ===========================================
+// Process accounts data for dropdown
   const optionsAccounts = useMemo(() => {
     if (fetchedErrorAccounts) {
       return [];
@@ -290,16 +292,15 @@ function Debts(): JSX.Element {
 
       return updatedErrorMessages}
       )
-//--- 
     }
   }
-  // Transaction type handler
+// Transaction type handler
 //RadioInput for transaction type selection
   function handleTransactionTypeChange(newType: DebtsTransactionType) {
     setDataTrack((prev) => ({ ...prev, type: newType }));
   }
 
-// Account selection handler
+  // Account selection handler
   function accountSelectHandler(selectedOption: DropdownOptionType | null) {
     setDataTrack((prev) => ({
       ...prev,
@@ -327,18 +328,15 @@ function Debts(): JSX.Element {
 
  if(amountChecked.isError && !amountChecked.valueToSave){
   setValidationMessages(prev =>({...prev, amount:amountChecked.formatMessage}));
-  setDataTrack(prev=>({...prev, amount:0}))
+  setDataTrack(prev=>({...prev, amount:''})) //string type
   return
  }
 //----------------
   setValidationMessages(prev =>({...prev, amount:""}));
-
   setDataTrack(prev=>({...prev, amount:amountChecked?.valueToSave as number}))
-
-  //===================================
-  //-------------------------
-  //----entered datatrack validation messages --------
-  // Form validation
+//-----------------------------------------
+//----entered datatrack validation messages --------
+// Form validation
     const newValidationMessages = validationData(datatrack);
     // console.log('newValidationMessages values', Object.values(newValidationMessages), isAmountError);
 
@@ -346,10 +344,10 @@ function Debts(): JSX.Element {
       setValidationMessages(newValidationMessages);
       return;
     }
-  //----------------------------
-  //API REQUEST. ENDPOINT HERE FOR POSTING
-  //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=debts
-  //user id is sent via req.body but can be sent via query param too
+//----------------------------
+//API REQUEST. ENDPOINT HERE FOR POSTING
+//endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=debts
+//user id is sent via req.body but can be sent via query param too
     try {
       const payload = { ...datatrack,
          user } as PayloadType;
@@ -369,9 +367,8 @@ function Debts(): JSX.Element {
       if (import.meta.env.VITE_ENVIRONMENT === 'development') {
         console.log('Data from record transaction request:', data);
       }
-
-      //-------------------------------
-      //update GLOBAL BALANCE. total available in bank accounts. it's global state
+  //-------------------------------
+  //update GLOBAL BALANCE. total available in bank accounts. it's global state
       const {
         data: {
           data: { total_balance },
@@ -426,7 +423,6 @@ function Debts(): JSX.Element {
           account: false,
           note: false
         });   
-
 }
 else if(!isLoading && (error || isAmountError)){
 setMessageToUser(error ?? (isAmountError? "Enter a valid amount":""))
@@ -506,10 +502,9 @@ useEffect(() => {
     });
   }
 }, [datatrack.note, formData.amount, showValidation.note]);
-
-  // ==================================
-  // UI CONFIGURATION
-  // =====================
+// ==================================
+// UI CONFIGURATION
+// =====================
   //------- Top Card elements ---
     const debtorAccountLabel = datatrack.type ==='lend'?'debtor':'lender'
   const topCardElements:TopCardElementsType = {
@@ -517,9 +512,9 @@ useEffect(() => {
     value: formData.amount,
     selectOptions: debtorOptions,
   };
- // =======================
-  // COMPONENT RENDER
-  // ======================
+// ======================
+// COMPONENT RENDER
+// ======================
   return (
     <>
       <form className='debts' style={{ color: 'inherit' }}>
