@@ -79,7 +79,9 @@ const initialFormData: FormNumberInputType = {
 const selected_account_type = 'bank',
   account_type = 'debtor';
 
-//-----------------------
+//========================
+//MAIN COMPONENTE NEW PROFILE
+//========================
 function NewProfile() {
   const location = useLocation();
   //get userId from stores
@@ -90,7 +92,6 @@ function NewProfile() {
   const [profileData, setProfileData] = useState<ProfileInputDataType>(
     initialNewProfileData
   );
-  // const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
 
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
@@ -104,11 +105,13 @@ function NewProfile() {
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
   );
+
+  const [reloadTrigger, setReloadTrigger] = useState(0)
   //----------------
   //DATA FETCHING for option selection
   //GET: AVAILABLE ACCOUNTS OF TYPE BANK
   const fetchUrl = user
-    ? `${url_get_accounts_by_type}/?type=bank&user=${user}`
+    ? `${url_get_accounts_by_type}/?type=bank&user=${user}&${reloadTrigger}`
     : // <Navigate to='/auth' />
       undefined; //forzar un error de user en el backend / force an error inthe backend
 
@@ -139,8 +142,7 @@ function NewProfile() {
     options: optionAccounts,
     variant: VARIANT_FORM, //this stablishes the custom styles to use in selection dropdown component
   };
-
-  //---------------------
+//---------------------
   //DATA FETCHING POST
   ////OBTAIN THE REQUESTFN FROM userFetchLoad
   //endpoint: http://localhost:5000/api/fintrack/account/new_account/debtor
@@ -239,14 +241,14 @@ function NewProfile() {
       setValidationMessages({});
       setProfileData(initialNewProfileData);
       setFormData(initialFormData);
-      // after a delay, change isReset to false
+      setReloadTrigger(prev=>prev+1)
+     // after a delay, change isReset to false
       setTimeout(() => setIsReset(false), 300);
     } catch (error) {
       console.log('Error when posting data:', error);
     }
   }
-
-  //-----------------------
+//-----------------------
   useEffect(() => {
     if (data && !isLoading && !error) {
       //success response
