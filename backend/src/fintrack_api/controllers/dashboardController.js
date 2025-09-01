@@ -14,7 +14,6 @@ import pc from 'picocolors';
 import { pool } from '../../db/configDB.js';
 
 //common functions
-
 const RESPONSE = (res, status, message, data = null) => {
   const backendColor =
     status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
@@ -311,7 +310,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
     res.status(status).json({ status, message, data });
   };
   const controllerName = 'dashboardAccountSummaryList';
-  console.log(pc[backendColor]('dashboardAccountSummaryList'));
+  console.log(pc[backendColor](controllerName));
 
   try {
     const { type } = req.query;
@@ -397,8 +396,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
         values: [userId, accountType, 'slack'],
       },
     };
-    //revisar debtor By pocket saving
-    //------queries
+//------queries
     if (
       accountType == 'category_budget' ||
       accountType == 'debtor' ||
@@ -416,7 +414,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
 
       if (accountSummaryResult.rows.length === 0) {
         const message = `No accounts available of type ${accountType}.`;
-        // ERR_RESP(400, message, controllerName);
+      // ERR_RESP(400, message, controllerName);
         return RESPONSE(res, 400, message);
       }
 
@@ -447,7 +445,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
     // return RESPONSE(error, next)
   }
 };
-//******************************************************************/
+//********************************************/
 //GET ALL USER TRACKER MOVEMENT TRANSACTIONS BY MOVEMENT_TYPE_NAME WITH A PRE-FIXED CORRESPONDING ACCOUNT TYPE
 //endpoint: http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=${mov_type}&user=${user}
 //usage: to show all transaction by movement name with corresponding accounts.
@@ -508,7 +506,6 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   const { start, end } = req.query;
   const startDate = new Date(start || daysAgo);
   const endDate = new Date(end || today.toISOString().split('T')[0]);
-
   // console.log('f', startDate, endDate);
 
   //later add a function to validate type and movement against the types
@@ -534,7 +531,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     const message = `movement name " ${movement_type_name} " is not included`;
     console.warn(pc.magentaBright(message));
     return RESPONSE(res, 400, message);
-    // return res.status(400).json({ status: 400, message });
+  // return res.status(400).json({ status: 400, message });
   }
   //account types are related to the movement type, and db table name, in order to track movement transactions
   let tableName;
@@ -610,34 +607,28 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     case 'investment':
       tableName = 'investment_accounts'; //investment can be source/destination account
       queryModel = {
-        text: `SELECT mt.movement_type_name,ua.account_id, ua.account_name, ua.account_balance,
-          ct.currency_code, act.account_type_id, act.account_type_name,
-            ua.account_starting_amount, ua.account_start_date, 
-            tr.description, tr.transaction_actual_date, tr.amount
+        text: `
+        SELECT 
+          ua.account_id, ua.account_name, ua.account_balance,
+          ct.currency_code,
+          act.account_type_id, act.account_type_name,
+          ua.account_starting_amount, ua.account_start_date, 
+          tr.description, tr.transaction_actual_date, tr.amount
 
           FROM transactions tr 
             JOIN user_accounts ua ON tr.account_id = ua.account_id
             JOIN account_types act ON ua.account_type_id = act.account_type_id
             JOIN currencies ct ON ua.currency_id = ct.currency_id
-            JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
-         
-          WHERE ua.user_id = $1
 
-          AND (act.account_type_name = $2) AND ua.account_name != $3
-          AND (mt.movement_type_name = $5
-           OR mt.movement_type_name = $4
-           OR mt.movement_type_name = $6
-           )
-          
-            ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
+          WHERE ua.user_id = $1
+            AND (act.account_type_name = $2) AND ua.account_name != $3
+
+          ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
           `,
         values: [
           userId,
           accountTypeMap.investment,
           'slack',
-          'investment',
-          'account-opening',
-          'pnl'
         ],
       };
       break;
@@ -678,7 +669,8 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     case 'debt':
       tableName = 'debtor_accounts'; //debtor account source/destination account
       queryModel = {
-        text: `SELECT  mt.movement_type_name,ua.account_id, ua.account_name, ua.account_balance,
+        text: `SELECT  mt.movement_type_name,
+        ua.account_id, ua.account_name, ua.account_balance,
         ct.currency_code, act.account_type_id, act.account_type_name,
 
         dbt.debtor_name,dbt.debtor_lastname, dbt.value,         
@@ -686,7 +678,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           tp.transaction_type_name, tr.description, 
           tr.transaction_actual_date, tr.amount
 
-          FROM transactions tr 
+        FROM transactions tr 
           JOIN user_accounts ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON ua.currency_id = ct.currency_id
@@ -697,7 +689,8 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           AND (act.account_type_name = $2) AND ua.account_name != $3
           AND (mt.movement_type_name = $4  OR (tp.transaction_type_name = $5 OR tp.transaction_type_name = $6))
 
-            ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
+          ORDER BY tr.transaction_actual_date DESC, 
+          tr.created_at DESC
           `,
         values: [
           userId,
@@ -729,8 +722,11 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           JOIN transaction_types tp ON tp.transaction_type_id = tr.transaction_type_id
           WHERE ua.user_id = $1
             AND ua.account_name != $2
-            AND (mt.movement_type_name = $3 )
-          ORDER BY tr.transaction_actual_date DESC,tr.created_at DESC,tr.updated_at DESC,ua.account_balance DESC, ua.account_name ASC
+            AND (mt.movement_type_name = $3)
+
+          ORDER BY tr.transaction_actual_date DESC,
+          tr.created_at DESC,tr.updated_at DESC,
+          ua.account_balance DESC, ua.account_name ASC
           `,
         values: [userId, 'slack', movement_type_name],
       };
