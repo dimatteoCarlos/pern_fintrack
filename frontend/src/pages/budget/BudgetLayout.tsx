@@ -11,7 +11,7 @@ import CoinSpinner from '../../loader/coin/CoinSpinner';
 
 function BudgetLayout() {
 
-  console.log('')
+  // console.log('')
   //temporary values------------
   const userId = import.meta.env.VITE_USER_ID;
   

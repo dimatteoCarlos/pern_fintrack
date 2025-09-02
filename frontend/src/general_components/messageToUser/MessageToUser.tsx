@@ -1,5 +1,5 @@
-//MessageToUser.tsx
-import { useEffect } from 'react';
+//src/general_components/messageToUser/MessageToUser.tsx
+import { useEffect, useRef } from 'react';
 import { capitalize,  } from '../../helpers/functions';
 import { VariantType } from '../../types/types';
 import './messageToUser.css'
@@ -10,6 +10,7 @@ type MessageToUserPropType = {
   error: string | Error | null
   messageToUser:{message:string, status?:number} | string | null | undefined;
   variant?: VariantType;
+  showToast?: boolean;
 };
 
 export const MessageToUser = ({
@@ -18,43 +19,55 @@ export const MessageToUser = ({
   messageToUser,
   // variant,
   variant = 'form',
+    showToast = true,
+
 }: MessageToUserPropType): JSX.Element => {
+  const lastMessageRef =useRef<string>('')
   const colorStyles =
     variant === 'tracker'
       ? { success: 'darkgreen', failure: 'red' }
       : { success: 'lightgreen', failure: 'orange' };
   const topStyles =
     variant === 'tracker'
-      ? '3%'
+      ? '2%'
       : '70%';
 
- //-- Apply toast notification just to variant form , not for tracker
- // ---------------------------------- 
-     useEffect(()=>{
-      // if(!error && messageToUser && variant=='form'){
-      if(messageToUser && variant=='form'){
-const msg = typeof messageToUser === 'string' ? messageToUser :messageToUser.message;
-const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 200
+// Toast notification logic - only for form variant and when showToast is true, not for tracker
+// ---------------------------------- 
+useEffect(()=>{
+if(messageToUser && variant=='form' && showToast){
+  const msg = typeof messageToUser === 'string' ? messageToUser :messageToUser.message;
+  
+  const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 200
 
- if(variant=='form'){showToastByStatus(msg, status)}
-      }
-     }, [error, messageToUser, variant])
- //----------------------------------     
+    console.log('📨 Showing toast:', { msg, status, variant });
 
+  if(variant=='form'){showToastByStatus(msg, status)}
+
+// Prevent duplicate toasts for the same message
+if (msg !== lastMessageRef.current) {
+    showToastByStatus(msg, status);
+    lastMessageRef.current = msg;
+  }
+}
+}, [showToast, messageToUser, variant])
+ //----------------------------------  
+// For non-form variants or when toast is disabled, show inline messages
+const shouldShowInlineMessage = variant !== 'form' || !showToast;
  //----------------------------------     
   return (
     <>
       {isLoading && <div style={{ color: 'lightblue' }}>Loading...</div>}
-      {/* {error && ( */}
-      {error && variant!=='form' && (
+
+      {error && shouldShowInlineMessage && (
         <div className='error-message1'>
           <span
             className='validation__errMsg1 '
             style={{
               color: colorStyles.failure,
               position:'absolute',
-             top:`${topStyles}`,
-              right:'10px',
+              top:`${topStyles}`,
+              right:'2rem',
               width:'80%',
               height:'1.5rem',
               textAlign:'right',
@@ -65,13 +78,12 @@ const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 2
               zIndex:'1'
             }}
           >
-            {/* Error: {error} */}
-            {typeof messageToUser=='string'?messageToUser:messageToUser?.message}
+          {typeof error=='string'?error:error?.message}
           </span>
         </div>
       )}
 
-      {!error && messageToUser && variant!=='form' && (
+      {!error && messageToUser && shouldShowInlineMessage && (
         <div className='success-message'>
           <span
             style={{
@@ -89,7 +101,7 @@ const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 2
               zIndex:'1'
             }}
           >
-            {capitalize(typeof messageToUser=='string'?messageToUser:messageToUser.message)}
+            {capitalize(typeof messageToUser ==='string'?messageToUser:messageToUser.message)}
 
           </span>
         </div>

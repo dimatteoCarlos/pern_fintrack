@@ -127,15 +127,15 @@ export const createBasicAccount = async (req, res, next) => {
     )[0];
     const accountTypeIdReq = accountTypeIdReqObj.account_type_id;
     console.log('🚀 ~ createAccount ~ account_type_id:', accountTypeIdReq);
-    //------------------------------------------------------------
+    //--------------------------------
     //verify account existence in user_accounts by userId and account name
     const accountExist = await verifyAccountExistence(
       userId,
       newAccountName,
       account_type_name
     );
-    console.log('🚀 ~ createBasicAccount ~ accountExist:', accountExist);
-    //-----------------------------------------------------
+    // console.log('🚀 ~ createBasicAccount ~ accountExist:', accountExist);
+    //---------------------------------
     //get currency id from currency_code requested
     const currencyQuery = `SELECT * FROM currencies`;
     const currencyResult = await pool.query(currencyQuery);
@@ -155,7 +155,7 @@ export const createBasicAccount = async (req, res, next) => {
     //slack account or counter account, is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation WHEN CREATING THE ACCOUNTS
 
     const newaccount_starting_amount = amount ? Math.abs(parseFloat(amount)) : 0.0;
-    //---------------------------------------------------------------------------
+    //-------------------------------
     //-------NEW ACCOUNT AND COUNTER (SLACK) ACCOUNT INFO PREP-------------------
     //DETERMINE TRANSACTION TYPE NAME FOR EACH ACCOUNT
     let transactionType = 'account-opening';
@@ -213,7 +213,7 @@ export const createBasicAccount = async (req, res, next) => {
     };
 
     //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
-    //------------------------------------------------------
+    //--------------------------------------
     const updatedCounterAccountInfo = isTransfer
       ? await updateAccountBalance(
           newCounterAccountBalance,
@@ -221,12 +221,12 @@ export const createBasicAccount = async (req, res, next) => {
           transaction_actual_date
         )
       : null;
-    // console.log(
-    //   '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
-    //   updatedCounterAccountInfo
-    // );
+    console.log(
+      '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
+      updatedCounterAccountInfo
+    );
 
-    //------------ INSERT NEW ACCOUNT ----------------------
+    //----- INSERT NEW ACCOUNT -------
     const { account_basic_data } = await insertAccount(
       userId,
       newAccountName,
@@ -349,8 +349,8 @@ export const createBasicAccount = async (req, res, next) => {
     //handle pg errors
     const { code, message } = handlePostgresError(error);
     console.error(
-      pc.red('when creating account:'),
-      message || 'something wrong'
+      pc.red(`Error creating new account:`),
+      message
     );
     return next(createError(code, message));
   } finally {
@@ -756,8 +756,8 @@ export const createDebtorAccount = async (req, res, next) => {
     //handle pg errors
     const { code, message } = handlePostgresError(error);
     console.error(
-      pc.red('when creating debtor account:'),
-      message || 'something went wrong'
+      pc.red('Error creating new debtor account:'),
+      message 
     );
     return next(createError(code, message));
   } finally {
@@ -766,9 +766,9 @@ export const createDebtorAccount = async (req, res, next) => {
 };
 //end of createDebtorAccount
 
-//-------------------------------------------------
-//--------- CREATEPOCKET ACCOUNT---------
-//-------------------------------------------------
+//---------------------------------------------
+//--------- CREATE POCKET ACCOUNT---------
+//---------------------------------------------
 //POST: http://localhost:5000/api/fintrack/account/new_account/pocket_saving?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c
 
 export const createPocketAccount = async (req, res, next) => {
@@ -1076,8 +1076,8 @@ export const createPocketAccount = async (req, res, next) => {
     //handle pg errors
     const { code, message } = handlePostgresError(error);
     console.error(
-      pc.red('when creating account:'),
-      message || 'something wrong'
+      pc.red('Error creating pocket account:'),
+      message 
     );
     return next(createError(code, message));
   } finally {

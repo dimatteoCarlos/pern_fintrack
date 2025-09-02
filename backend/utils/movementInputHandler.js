@@ -1,70 +1,101 @@
+//backend/utils/movementInputHandler.js
+
+//Strategies according to type movement tracker.
+// Note: use id if available, if not use name
+//let's assume that if account_id exists, it exists for both accounts, source and destination.
+//===============================
 export const getExpenseConfig = (body) => ({
-  sourceAccountName: body.account,
-  destinationAccountName: body.category,
+  useId:!!body.acountId,
+  sourceAccountName: body.account_id || body.account,
   sourceAccountTypeName: 'bank',
+  sourceAccountTransactionType: 'withdraw',
+
+  destinationAccountName:body.category_account_id || body.category,
   destinationAccountTypeName: 'category_budget',
-  sourceAccountTransactionType: 'withdraw',
   destinationAccountTransactionType: 'deposit',
 });
-//===================================================
+//===============================
 export const getIncomeConfig = (body) => ({
-  sourceAccountName: body.source,
-  destinationAccountName: body.account,
-  sourceAccountTypeName: 'income_source',
-  destinationAccountTypeName: 'bank',
+  useId:!!body.acountId,
+
+  sourceAccountName: body.source_account_id || body.source,
   sourceAccountTransactionType: 'withdraw',
+  sourceAccountTypeName: 'income_source',
+
+  destinationAccountName: body.account_id || body.account,
+  destinationAccountTypeName: 'bank',
   destinationAccountTransactionType: 'deposit',
 });
-//===================================================
+//=================================
 export const getDebtConfig = (body) => {
-  const isLend = body.type === 'lend';
-  // console.log('is lend', isLend, body.debtor, {body});
+  const { type, debtor, debtor_id, account, account_id, accountType } = body;
+
+  const useId = !!account_id
+
+  const isLend = type === 'lend';
+
+  const accountIdentifier = account_id || account;
+
+  const debtorIdentifier = debtor_id || debtor;
 
   return {
-    destinationAccountName: isLend ? body.debtor : body.account,
-    destinationAccountTypeName: isLend ? 'debtor' : body.accountType ,
-    sourceAccountName: isLend ? body.account : body.debtor,
-    sourceAccountTypeName: isLend ? body.accountType  : 'debtor',
+    useId, 
+
+    sourceAccountName: isLend ? accountIdentifier : debtorIdentifier,
+    sourceAccountTypeName: isLend ? accountType  : 'debtor',
     sourceAccountTransactionType: 'lend',
+    // sourceAccountTransactionType: type === 'lend' ? 'withdraw' : 'deposit',
+
+    destinationAccountName: isLend ? debtorIdentifier : accountIdentifier,
+    destinationAccountTypeName: isLend ? 'debtor' : accountType ,
     destinationAccountTransactionType: 'borrow',
+    // destinationAccountTransactionType: type === 'lend' ? 'deposit' : 'withdraw',
   };
 };
-//===========================================
+//===============================
 export const getTransferConfig = (body) => {
+//set pocket type to pocket_saving
   const originAccountType =
-    body.originAccountType === 'pocket'
-      ? 'pocket_saving'
-      : body.originAccountType;
-
+  body.originAccountType === 'pocket'
+  ? 'pocket_saving'
+  : body.originAccountType;
+  
   const destinationAccountType =
-    body.destinationAccountType === 'pocket'
-      ? 'pocket_saving'
-      : body.destinationAccountType;
-      //set movement type to pocket_saving
-
+  body.destinationAccountType === 'pocket'
+  ? 'pocket_saving'
+  : body.destinationAccountType;
+    
   return {
-    destinationAccountName: body.destination,
+    useId:!!body.origin_account_id,
+
+    destinationAccountName:body.destination_account_id || body.destination,
+
     destinationAccountTypeName: destinationAccountType,
+
     destinationAccountTransactionType: 'deposit',
-    sourceAccountName: body.origin,
+//---
+    sourceAccountName: body.origin_account_id ||  body.origin,
     sourceAccountTypeName: originAccountType,
     sourceAccountTransactionType: 'withdraw',
   };
 };
-
+//=================================
 export const getPnLConfig = (body) => {
-const isProfit =   body.type === 'deposit';
+const isProfit = body.type === 'deposit';
 const accountType=body.accountType
 //??body.accountType==''?'bank':body.accountType
 
 return {
-  destinationAccountTransactionType: 'deposit',
-  destinationAccountName: isProfit ? body.account : 'slack',
-  destinationAccountTypeName: isProfit ? accountType : 'bank',
+    useId:false,//!!body.origin_account_id,
 
-  sourceAccountTransactionType: 'withdraw',
-  sourceAccountName: isProfit ? 'slack' : body.account,
-  sourceAccountTypeName: isProfit ? 'bank' : accountType,
+    sourceAccountName: isProfit ? 'slack' : body.account,
+    sourceAccountTransactionType: 'withdraw',
+    sourceAccountTypeName: isProfit ? 'bank' : accountType,
+
+    destinationAccountName: isProfit ? body.account : 'slack',
+    destinationAccountTransactionType: 'deposit',
+    destinationAccountTypeName: isProfit ? accountType : 'bank',
+
 }
 };
 //===================================================

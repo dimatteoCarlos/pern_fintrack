@@ -39,7 +39,6 @@ export function useFetchLoad<R, D = unknown>({
         withCredentials: true,
         ...(overrideConfig || {}), //overrideConfig must come last to overwrite dynamically the url or anything in the initial config, even method
       };
-
       // console.log(
       //   'desde useFetch config:',
       //   config,
@@ -48,7 +47,6 @@ export function useFetchLoad<R, D = unknown>({
       //   'url inicial:',
       //   initialUrl
       // );
-
       const response: AxiosResponse<R> = await axios(config);
 
       if (response.status >= 200 && response.status < 300) {
@@ -71,7 +69,6 @@ export function useFetchLoad<R, D = unknown>({
         else if (err instanceof Error) {
           errorMessage = err.message;
         }
-
         // Cualquier otro caso error para uso inmediato.
         else {
           errorMessage = 'Unexpected error occurred';

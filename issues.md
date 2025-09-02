@@ -1,110 +1,113 @@
- Pending Issues and Unresolved Queries
+
+🚧 Pending Issues and Unresolved Queries
 1. Functionality and Business Logic
-Clarify the concept of Net Worth with the client and confirm if its calculation should include assets (bank, investments) and liabilities (debts).
+Editing and Deleting: Establish a strategy for editing and deleting data, defining which fields are editable and how to handle their interrelationships in the database.
 
-Define the handling of Pocket Savings and whether their amounts are separate accounts or distributed among bank and investment accounts.
+Net Worth Calculation: Clarify with the client the definition of Net Worth and whether its calculation should include assets (bank, investments) and liabilities (debts).
 
-Implement a new structure for managing categories and subcategories.
+Pocket Savings Management: Define whether Pocket Savings amounts are separate accounts or distributed among other accounts.
 
-Determine the strategy for editing and deleting data, including which fields are editable and how to handle database interrelations.
+Category Structure: Implement a new structure to handle categories and subcategories.
 
-Implement the export of movements and transactions in PDF, Excel, and .csv formats.
+Investment Balance: Clarify the calculation for the total investment balance.
 
-Clarify the calculation of the total investment balance.
+Data Export: Enable the export of movements in formats like PDF, Excel, and .csv.
 
-Define if a detail page should be created for income accounts.
+Income Detail Page: Define if a detail page should be created for income accounts.
+
 
 2. Backend and Security
+Income Tracker Error: Correct the error that prevents the income tracker from finding source or destination accounts.
 
+Investment Calculation: Calculate the values of investment accounts, comparing invested capital with the factual balance.
 
-Calculate the values of investment accounts (invested capital vs. factual balance).
+User Authentication: Implement user authentication and verify the userId before allowing access to the main functions.
 
-Implement user authentication and verify the userId before allowing access.
+Slack Account: Define if a slack account should be created for balance when a bank account is created with an initial amount.
 
-Determine if a slack account should be created for balance when a bank account is created.
 
 3. Frontend and UI/UX
-Improve error handling so that messages to the user are clearer.
+Error Handling: Improve error messages to be clearer to the user.
 
-Fix the % Profit calculation that shows NaN.
+% Profit Calculation: Fix the calculation that displays NaN.
 
-Establish a rule to block future dates in the date picker for transactions and pocket creation.
+Date Validation: Block future dates in the date selector for transactions and pocket creation.
 
-Review the account starting amount error when there are no transactions.
+Starting Amount Error: Review the account starting amount error when there are no transactions.
 
-Implement the reset of toast messages and clearing of variables after form submission.
+Forms: Implement the resetting of toast messages and clearing of variables after form submission.
 
-Add loading indicators to forms.
+Loading Indicator: Add a loading indicator to forms.
 
-Improve and standardize transaction descriptions.
+Transaction Descriptions: Standardize and improve transaction descriptions.
 
-✅ Resolved Issues (LISTO)
-Correct the income tracker error where source or destination accounts are not found. listo.
 
-Fixing the validation of numbers and values across all trackers. listo.
+✅ Resolved Activities (LISTO)
+Validate numbers and values in the trackers. listo.
 
-Implementing real-time validation for selection dropdowns. listo.
+Perform real-time validation for dropdowns. listo.
 
-Correcting the lend and borrow logic and ordering movements by date. listo.
+Correct the lend and borrow logic and order movements by date. listo.
 
-Completing the net worth calculation. listo.
+Complete the net worth calculation. listo.
 
-Using toastify for user messages. listo.
+Use toastify for user messages. listo.
 
-Implementing the category list. listo.
+Implement the category list. listo.
 
-Creating the endpoints and controllers for fetching accounts by category on the backend. listo.
+Create backend endpoints and controllers. listo.
 
-Implementing the frontend routes and components for category and account views. listo.
+Implement frontend routes and components. listo.
 
-Adjusting the database for time zone handling and fixing movement queries. listo.
+Adjust the database for time zones and queries. listo.
 
-Including PnL in the fintrack and its backend. listo.
+Include PnL in the fintrack. listo.
 
-Fixing the PnL frontend to send the correct account type in the body. listo.
+Fix the PnL frontend. listo.
 
-Displaying account balances in the dropdowns. listo.
+Display account balances in dropdowns. listo.
 
-Implementing a refetch to update account balances after a form submission. listo.
+Implement refetch to update balances. listo.
 
-Fixing bugs in creating Income, Pocket, Debtor, and Investment accounts. listo.
+Fix bugs when creating accounts. listo.
 
-Implementing Account Detail, Investment Detail, Debtor Detail, and Pocket Detail. listo.
+Implement account detail pages. listo.
 
-Including deposits and withdrawals to Bank and Investment accounts in the PnL tracker. listo.
+Include deposits and withdrawals in the PnL tracker. listo.
 
-Correcting validation so form data is not erased. listo.
+Correct validation so data isn't erased. listo.
 
-Fixing transaction description errors. listo.
+Fix transaction description errors. listo.
 
-Adjusting debt tracker logic to only work with bank accounts. listo.
+Adjust debt logic to use only bank accounts. listo.
 
-Ensuring consistency in the sign criterion for the start account amount. listo.
+Ensure sign consistency for the starting amount. listo.
 
-Fixing the updated_at issue. listo.
+Fix the updated_at issue. listo.
 
-Applying debounce to textareas. listo.
+Apply debounce to textareas. listo.
 
-Disabling the save button on forms during loading. listo.
+Disable the save button during loading. listo.
 
-Correcting error messages in the tracker and summary for zero values. listo.
+Correct error messages and zero-value summaries. listo.
 
-Fixing transfers between bank and category budget accounts. listo.
+Fix the inter-account transfer error. listo.
 
-Adjusting endpoints and type handling in overview. listo.
+Adjust endpoints and type handling in overview. listo.
 
-Including investment movements in the overview list. listo.
+Include investment movements in the overview. listo.
 
-Reviewing the monthly avg saving calculation. listo.
+Review the monthly avg saving calculation. listo.
 
-Fixing the borrow functionality in debt creation. listo.
+Fix the borrow functionality in debt creation. listo.
 
-Fixing the fund restriction when creating a debtor profile. listo.
+Fix fund restrictions. listo.
 
-Fixing expenses that were not reflected in summaries. listo.
+Fix expenses not reflecting in summaries. listo.
 
-Standardizing the styles of bigBoxResult. listo.
+Standardize styles. listo.
 
-Minimizing backend console.logs. listo.
+Minimize backend console.logs. listo.
 
-Adding the "no option" placeholder to account selectors. listo.
+Add the "no option" placeholder to selectors, in case there is no data available as options to select . listo.
+

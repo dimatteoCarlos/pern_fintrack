@@ -138,8 +138,8 @@ interface CounterAccountDataType {
 
 //CREATE CATEGORY BUDGET ACCOUNT
 export type CreateCategoryBudgetAccountApiResponseType = {
-  status: number;
   data: CategoryBudgetResponseDataType;
+  status: number;
   message: string;
 };
 

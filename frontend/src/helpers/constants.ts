@@ -56,11 +56,7 @@ export const INVESTMENT_ACCOUNT_OPTIONS_DEFAULT = [
 ];
 
 //tracker/debts
-export const DEBTOR_OPTIONS_DEFAULT = [
-  // { value: 'debtor_01', label: 'debtor_01' },
-  // { value: 'debtor_02', label: 'debtor_02' },
-  // { value: 'debtor_03', label: 'debtor_03' },
-];
+export const DEBTOR_OPTIONS_DEFAULT:DropdownOptionType[] = [];
 
 export const DEFAULT_DEBTOR_TYPE = 'lending';
 

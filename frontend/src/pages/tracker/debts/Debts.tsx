@@ -6,41 +6,45 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios, { AxiosRequestConfig } from 'axios';
-
+// =====================
 // HELPERS FUNCTIONS 
+// =====================
 import { capitalize } from '../../../helpers/functions.ts';
 import { checkNumberFormatValue,validateAmount, validationData  } from '../../../validations/utils/custom_validation.ts';
-
+// =====================
 //DATA FETCHING AND CUSTOM HOOKS
-
+// =====================
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
 import useBalanceStore from '../../../stores/useBalanceStore.ts';
-
+// =====================
 // ENDPOINTS
+// // =====================
 import {
   url_get_accounts_by_type,
   url_get_total_account_balance_by_type,
   url_movement_transaction_record,
 } from '../../../endpoints.ts';
-
-// CONSTANTS
+// =====================
+// CONSTANTS// =====================
 import {
   DEBTOR_OPTIONS_DEFAULT,
   DEFAULT_CURRENCY,
   PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
-
+// =====================
 // UI COMPONENTS
+//=====================
 import CardNoteSave from '../components/CardNoteSave.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import RadioInput from '../../../general_components/radioInput/RadioInput.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import TopCardZod from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
-
+// =====================
 // TYPES
+// =====================
 import {
   AccountByTypeResponseType,
   AccountListType,
@@ -65,7 +69,7 @@ const VARIANT_DEFAULT: VariantType = 'tracker';
 const defaultCurrency: CurrencyType = DEFAULT_CURRENCY;
 // Initial tracker data structure
 const initialTrackerData: DebtsTrackerInputDataType = {
-  amount: 0,
+  amount: '',
   debtor: '',
   currency: defaultCurrency,
   type: 'lend',
@@ -98,9 +102,9 @@ function Debts(): JSX.Element {
   // console.log('movement:', typeMovement);
   //deal here with user id and authentication
   const user = import.meta.env.VITE_USER_ID;
-  // =======================================
+  // =========================
   // STATE MANAGEMENT
-  // =======================================
+  // =========================
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
   const [type, setType] = useState<DebtsTransactionType>('lend');
 
@@ -127,10 +131,14 @@ function Debts(): JSX.Element {
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
-  // =========================
-  // API DATA FETCHING
+  //map states account_name-account_id
+  const [accountIdMap, setAccountIdMap]=useState<{[accountName:string]:string}>({})
+  const [debtorIdMap, setDebtorIdMap]=useState<{[accountName:string]:string}>({})
+
   // ==========================
+  // API DATA FETCHING
   // Fetch debtors data
+  // ==========================
   const fetchDebtorUrl = user
     ? `${url_get_accounts_by_type}/?type=debtor&user=${user}&${reloadTrigger}`
     : undefined;  //this forces a user required error
@@ -142,22 +150,29 @@ function Debts(): JSX.Element {
     isLoading: isLoadingDebtors,
   } = useFetch<AccountByTypeResponseType>(fetchDebtorUrl as string);
 
-  //should apply debounce with note
-   const debtors = useMemo(
-    () =>
-      !fetchedErrorDebtors &&
-      !isLoadingDebtors &&
-      debtorsResponse?.data.accountList.length
-        ? debtorsResponse.data.accountList.map((debtor) => ({
+   const debtors = useMemo(() =>{
+
+       if (fetchedErrorDebtors || isLoadingDebtors ||!debtorsResponse?.data.accountList.length) return DEBTOR_OPTIONS_DEFAULT;
+
+       const newIdMap:{[accountName:string]:string} = {};
+      
+      const options = debtorsResponse?.data.accountList
+        .map((debtor) => {
+        newIdMap[debtor.account_name] = String(debtor.account_id);
+
+          return {
           label:`${debtor.account_name} (${debtor.currency_code} ${debtor.account_balance}) (${debtor.account_balance>=0? 'Debtor':'Lender'})`,
-            // value: `${debtor.account_id}`,
-            value: `${debtor.account_name}`,
-           // label: debtor.account_name,
-          })
-        )
-        : DEBTOR_OPTIONS_DEFAULT,
-    [debtorsResponse?.data.accountList, fetchedErrorDebtors, isLoadingDebtors]
-  );
+          value: `${debtor.account_name}`,
+          } 
+          }
+        );
+      setDebtorIdMap(newIdMap);
+      return options
+      
+    }, [debtorsResponse?.data.accountList, 
+      fetchedErrorDebtors, isLoadingDebtors]
+    );
+ 
 //----------------------------------
   const debtorOptions = {
     title: debtorsResponse?.data.accountList.length ? 'Select Debtor/Lender' : "", //'No info. available',
@@ -166,7 +181,7 @@ function Debts(): JSX.Element {
   };
   //------------------------------------------
   // Fetch counter accounts
-  //GET: ACCOUNTS OF TYPE DESTINATION AVAILABLE
+  //GET: ACCOUNTS OF TYPE BANK AVAILABLE
   //DATA FETCHING
   const fetchAccountUrl = user
     ? `${url_get_accounts_by_type}/?type=${datatrack.accountType}&user=${user}&${reloadTrigger}`
@@ -180,23 +195,31 @@ function Debts(): JSX.Element {
   } = useFetch<AccountByTypeResponseType>(fetchAccountUrl as string);
 
 // console.log('🚀 ~ Debts ~ accountsResponse:', accountsResponse);
-// ===========================================
+// =====================
 // DATA TRANSFORMATION
-// ===========================================
+// =====================
 // Process accounts data for dropdown
   const optionsAccounts = useMemo(() => {
     if (fetchedErrorAccounts) {
       return [];
     }
     const optionsAccountList = accountsResponse?.data.accountList ?? [];
+    const idMap:{[accountName:string]:string} = {};
 
-    return optionsAccountList.length
-      ? optionsAccountList.map((acc: AccountListType) => ({
-          value: acc.account_name,
-          // label: acc.account_name,
+    const options =  optionsAccountList.length
+    ?
+     optionsAccountList.map((acc: AccountListType) => {
+        idMap[acc.account_name] = acc.account_id.toString();
+
+         return {      
           label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`,
-        }))
-      : [];
+          value: acc.account_name,
+         }
+        })
+      :[]
+    
+      setAccountIdMap(idMap)  ;
+      return options;
   }, [accountsResponse?.data.accountList, fetchedErrorAccounts]);
 
   const accountOptionsToRender = {
@@ -204,23 +227,23 @@ function Debts(): JSX.Element {
     options: optionsAccounts,
     variant: VARIANT_DEFAULT as VariantType,
   };
-  // ===========================================
+  // ===========================
   // API REQUEST CONFIGURATION
-  // ===========================================
+  // ===========================
   //OBTAIN THE REQUESTFN FROM userFetchLoad
   //extend the type of input data with user id
-  type PayloadType = DebtsTrackerInputDataType & { user: string };
+  type PayloadType = DebtsTrackerInputDataType & { user: string , debtor_id?:string; account_id?:string;}
 
   //DATA POST FETCHING
   const { data, isLoading, error:postError, requestFn } = useFetchLoad<
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
-  //-----------------------------------------
+  //----------------------------
   const error = fetchedErrorDebtors || fetchedErrorAccounts || postError
-    // ===========================================
+  // ==========================
   // EVENT HANDLERS
-  // ===========================================
+  // ==========================
   //---functions ------
   // Currency update handler
   const updateDataCurrency = useCallback(
@@ -229,7 +252,6 @@ function Debts(): JSX.Element {
       setDataTrack((prev) => ({ ...prev, currency: currency }));
     },
     []
-    // [currency]
   );
   // Input number handler
   const { inputNumberHandlerFn,  } = useInputNumberHandler(
@@ -308,8 +330,8 @@ function Debts(): JSX.Element {
     }));
     setValidationMessages((prev) => ({ ...prev, account: '' }));
   }
- //--------------------------------------
- // Form submission handler
+ //--------------------------------------// =====================
+ // Form submission handler// =====================
  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
     // console.log('On Save Handler');
     e.preventDefault();
@@ -334,8 +356,8 @@ function Debts(): JSX.Element {
 //----------------
   setValidationMessages(prev =>({...prev, amount:""}));
   setDataTrack(prev=>({...prev, amount:amountChecked?.valueToSave as number}))
-//-----------------------------------------
-//----entered datatrack validation messages --------
+//------------------------
+//----entered datatrack validation messages --------------------------
 // Form validation
     const newValidationMessages = validationData(datatrack);
     // console.log('newValidationMessages values', Object.values(newValidationMessages), isAmountError);
@@ -349,8 +371,17 @@ function Debts(): JSX.Element {
 //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=debts
 //user id is sent via req.body but can be sent via query param too
     try {
+  const debtorId = debtorIdMap[datatrack.debtor];
+  const accountId = accountIdMap[datatrack.account];
+
+  console.log('accounts id', debtorId, accountId)
+
       const payload = { ...datatrack,
-         user } as PayloadType;
+          user,
+          debtor_id: debtorId, 
+          account_id: accountId 
+        } as PayloadType;
+      console.log("🚀 ~ onSaveHandler ~ payload:", payload)
 
       const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
 
@@ -453,7 +484,7 @@ const [showValidation, setShowValidation] = useState({
   }, [type]);
 //--- side effect for error messages
 useEffect(() => {
-  // Mostrar validación para debtor solo si amount tiene valor / show debtor validation after amount is entered
+  // Mostrar validación para debtor solo si amount tiene valor / show debtor validation only if amount is entered
   if (datatrack.debtor === '' && (formData.amount !== '' || validationMessages.amount || showValidation.debtor)) {
     setValidationMessages(prev => ({
       ...prev,
@@ -502,9 +533,9 @@ useEffect(() => {
     });
   }
 }, [datatrack.note, formData.amount, showValidation.note]);
-// ==================================
+// ====================
 // UI CONFIGURATION
-// =====================
+// ====================
   //------- Top Card elements ---
     const debtorAccountLabel = datatrack.type ==='lend'?'debtor':'lender'
   const topCardElements:TopCardElementsType = {

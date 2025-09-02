@@ -28,8 +28,9 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
   console.log(pc.blueBright('createCategoryBudgetAccount'));
   // console.log(req.body, req.params, req.query);
   const client = await pool.connect();
-  //-----------------------------------------------------------------
+  //----------------------------------------
   try {
+
     //implement verifyUser middleware and then get userId from res.user
     //account basic data
     // const { user: userId } = req.query;
@@ -92,8 +93,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       (type) => type.account_type_name == account_type_name.trim()
     )[0];
     const accountTypeIdReq = accountTypeIdReqObj.account_type_id;
-    //----CATEGORY BUDGET ACCOUNT --------------------------
-
+    //----CATEGORY BUDGET ACCOUNT ------
     //----------------------------------
     //verify account existence in user_accounts by userId and account name
     const accountExist = await verifyAccountExistence(
@@ -371,8 +371,8 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     await client.query('ROLLBACK');
     const { code, message } = handlePostgresError(error); //handle pg errors
     console.error(
-      pc.red('when creating category budget account:'),
-      message || 'something wrong'
+      pc.red('Error creating category budget account:'),
+      message || 'something went wrong'
     );
     return next(createError(code, message));
   } finally {

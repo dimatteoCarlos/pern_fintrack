@@ -23,7 +23,7 @@ export const accountTypeList = async (req, res, next) => {
     return res.status(200).json(accountTypeResult.rows);
   } catch (error) {
     console.error(
-      pc.red('when getting account type list'),
+      pc.red('Error getting account type list'),
       error.message || 'something went wrong'
     );
     //handle pg errors

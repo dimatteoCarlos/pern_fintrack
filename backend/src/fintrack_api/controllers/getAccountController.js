@@ -22,22 +22,13 @@ const RESPONSE = (res, status, message, data = null) => {
   res.status(status).json({ status, message, data });
 };
 
-// const ERR_RESP = (status, message, controllerName = null) => {
-//   const backendColor =
-//     status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
-//   console.log(pc[backendColor](`[${status}] ${message}. ${controllerName}`));
-//   const error = new Error(message);
-//   error.status = 400;
-//   throw error;
-// };
-
 //get all accounts info by account type: id, name, type, currency and balance, by user id and account_type but slack account.
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${bank}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
 //type can be: bank, category_budget, income_source, investment, debtor, bank_and_investment
 
 export const getAllAccountsByType = async (req, res, next) => {
-  console.log(pc[backendColor]('getAllAccountsByType'));
   const controllerName = 'getAllAccountsByType';
+  console.log(pc[backendColor](controllerName));
 
   try {
     const { type } = req.query;

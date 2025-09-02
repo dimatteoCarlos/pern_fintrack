@@ -141,6 +141,7 @@ export const formatDateToISO = (dateString) => {
 //la api recibe la fecha en formato ISO 8601, la valida y la convierte a UTC. api to db
 // Función para validar y normalizar fechas
 //option 1
+
 export const validateAndNormalizeDate = (dateString) => {
   const date = new Date(dateString);
   if (isNaN(date.getTime())) {
@@ -326,8 +327,6 @@ export function numberToWords(num) {
   }
   return result.trim();
 }
-
-
 
 // Ejemplos de uso:
 // console.log(numberToWords(0)); // "Zero"

@@ -1,7 +1,9 @@
 import pc from 'picocolors';
 import { pool } from '../src/db/configDB.js';
 // import { handlePostgresError } from './errorHandling.js';
-//-----------------------------------------------------------------------------
+//-------------------------
+//VERIFY EXISTENCE OF ACCOUNT BY ACCOUNT_NAME AND ACCOUNT TYPE
+//------------------------
 export const verifyAccountExistence = async (
   userId,
   account_name,
@@ -14,6 +16,7 @@ export const verifyAccountExistence = async (
            LIMIT 1`,
     values: [userId, `%${account_name}%`, `%${account_type_name}%`],
   };
+
   try {
     const accountExistResult = await pool.query(accountExistQuery);
     const accountExist = accountExistResult.rows.length > 0;

@@ -14,6 +14,8 @@ import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { url_create_category_budget_account } from '../../../endpoints.ts';
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+import { normalizeError } from '../../../helpers/uiErrorHandling.ts';
+// import { normalizeError } from '../../../helpers/uiErrorHandling.ts';
 // import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
 // import { useLocation } from 'react-router-dom';
 
@@ -79,11 +81,19 @@ function NewCategory() {
   //------------------------------------------------
   //DATA FETCHING POST
   //POST: NEW ACCOUNT DATA
-  const { data, isLoading, error, requestFn } = useFetchLoad<
+  const { isLoading, error, requestFn } = useFetchLoad<
     CreateCategoryBudgetAccountApiResponseType,
     CategoryBudgetPayloadType
   >({ url: url_create_category_budget_account, method: 'POST' });
-  //--------------------------------------
+
+/*
+Errores HTTP (400, 500) → Vienen en responseData con su status y message
+
+Errores de red → Vienen en requestError
+
+Errores inesperados → Van al catch
+*/
+//--------------------------------------
   //functions
   const { inputNumberHandlerFn } = useInputNumberHandler(
     setFormData,
@@ -115,13 +125,14 @@ function NewCategory() {
     setCategoryData((prev) => ({ ...prev, nature: activeNature }));
   }
   //---------
+  //on submit form
+  //---------
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
-    // console.log('onSubmitForm');
+      console.log('🟢 onSubmitForm called');
     //--data form validation
     const newValidationMessages = validationData(categoryData);
-    // const newValidationMessages = { ...validationData(categoryData) };// console.log('mensajes:', { newValidationMessages });
-
+ 
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
       return;
@@ -148,43 +159,69 @@ function NewCategory() {
         user,
       };
 
-      const data = await requestFn(payload);
+// ✅ requestFn devuelve { data: ResponseType | null, error: string | null }
+     const {data: responseData, error: requestError }= await requestFn(payload);
 
-      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-        console.log('Data from New Category request:', data);
+     console.log('📦 Response received:', { responseData, requestError }); 
+// Los errores del servidor (400, 500) vienen en data.status
+     if (requestError) {
+    console.log('🔴 Network error:', requestError);  
+      // Error del request (network, etc.).Error de red/axios
+      setMessageToUser({
+        message: requestError,
+        status: 500
+      });
+      return;
+    }
+     if (responseData) {
+     console.log('📊 Server response status:', responseData.status);  
+ // ✅ VERIFICAR STATUS CODE AQUÍ MISMO
+      if (responseData.status >= 200 && responseData.status < 300) {
+        // SUCCESS
+        setMessageToUser({
+          message: responseData.message || 'Category created successfully!',
+          status: responseData.status
+        });
+
+        // Reset when success
+        setActiveNature(initialNewCategoryData.nature);
+        setValidationMessages({});
+        setFormData(initialFormData);
+        setCategoryData(initialNewCategoryData);
+      } else {
+  console.log('❌ Server error - setting message');
+
+        // ❌ ERROR DEL SERVIDOR (400, 500) - Viene en responseData
+        setMessageToUser({
+          message: responseData.message || 'Server error',
+          status: responseData.status
+        });
       }
-      //-------------------------------------------
-      //resetting form values
-      setActiveNature(initialNewCategoryData.nature);
-      setValidationMessages({});
-      setFormData(initialFormData);
-      setCategoryData(initialNewCategoryData);
-    } catch (error) {
-      console.error('Error when posting data:', error);
+    }
+
+   if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+      console.log('Data from New Category request:', responseData);
+      }
+    
+   } catch (error) {
+    console.log('🔥 Unexpected error:', error);
+     //For unexpected errors only
+         const { message, status } = normalizeError(error);
+     setMessageToUser({ message, status });
     }
   }
   //-----------------------
+  // Clear message after 5 seconds
   useEffect(() => {
-    if (data && !isLoading && !error) {
-      //success response
-      setMessageToUser({
-        message:data.message || 'Category budget account successfully created!',
-        status:data.status
-     } );
-      // console.log('Received data:', data);
-    } else if (!isLoading && error) {
-      setMessageToUser({message:error, status:data?.status});
+    if (messageToUser) {
+      const timer = setTimeout(() => {
+        setMessageToUser(null);
+      }, 5000);
+      return () => clearTimeout(timer);
     }
-
-    //resetting message to user
-    const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
-      setMessageToUser(null);
-    }, 5000);
-
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [data, error, isLoading]);
+  }, [messageToUser]);
+  //-----------------------
+  
 
   //-----------------------
   return (
@@ -300,6 +337,7 @@ function NewCategory() {
           isLoading={isLoading}
           error={error}
           messageToUser={messageToUser}
+          variant="form"
         />
       </div>
     </section>

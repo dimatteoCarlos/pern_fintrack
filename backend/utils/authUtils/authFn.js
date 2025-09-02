@@ -103,8 +103,6 @@ export async function cleanRevokedTokens() {
 //table diagnostic
 export async function verifyTableStructure() {
   try {
-
-
     const result = await pool.query(`
       SELECT column_name, data_type 
       FROM information_schema.columns 

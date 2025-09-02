@@ -19,10 +19,10 @@ import {
   // getPocketConfig,
 } from '../../../utils/movementInputHandler.js';
 import { recordTransaction } from '../../../utils/recordTransaction.js';
-import { formatDate, formatDateToDDMMYYYY } from '../../../utils/helpers.js';
+import { formatDate } from '../../../utils/helpers.js';
 
 //endpoint: put:/api/fintrack/transaction/transfer-between-accounts?user=UUID&&movement=expense
-//=================================================
+//===========================================
 //FUNCTIONS DECLARATION
 //get the currency_id by the currency_code
 
@@ -47,19 +47,33 @@ export const getAccountTypeId = async (accountTypeName) => {
   return accountTypeResult.rows[0]?.account_type_id;
 };
 
-//get the account info by user_id, account_name and account_type_name
-export const getAccountInfo = async (accountName, accountTypeName, userId) => {
-  const accountQuery = `SELECT ua.* FROM user_accounts ua
-  JOIN account_types act ON ua.account_type_id = act.account_type_id
-  WHERE ua.user_id = $1 AND ua.account_name = $2 AND act.account_type_name = $3`;
+//get the account info by user_id, account_id or account_name and account_type_name
+export const getAccountInfo = async (useId = false,accountIdentifier, accountTypeName, userId) => {
+
+  let accountQuery;
+  let queryValues;
+  
+  if (useId) {
+   // Search by account_id /Buscar por account_id
+    accountQuery = `SELECT ua.* FROM user_accounts ua
+      JOIN account_types act ON ua.account_type_id = act.account_type_id
+      WHERE ua.user_id = $1 AND ua.account_id = $2 AND act.account_type_name = $3`;
+    queryValues = [userId, (accountIdentifier), accountTypeName];
+  } else{
+      //Search by account_name /Buscar por account_name
+      accountQuery = `SELECT ua.* FROM user_accounts ua
+      JOIN account_types act ON ua.account_type_id = act.account_type_id
+      WHERE ua.user_id = $1 AND ua.account_name = $2 AND act.account_type_name = $3`;
+        queryValues = [userId, (accountIdentifier), accountTypeName];
+    }
 
   const accountInfoResult = await pool.query({
     text: accountQuery,
-    values: [userId, accountName, accountTypeName],
+    values: queryValues,
   });
   return accountInfoResult.rows[0];
 };
-
+//---
 //get the array of ACCOUNT type objects
 export const getAccountTypes = async () => {
   const accountTypeQuery = `SELECT * FROM account_types`;
@@ -105,26 +119,37 @@ export function transformMovementType(
   sourceAccountTypeName,
   destinationAccountTypeName
 ) {
-  if (movementName === 'transfer') {
-    if (sourceAccountTypeName !== destinationAccountTypeName) {
-      if (destinationAccountTypeName === 'pocket_saving') return 'pocket';
 
-      if (destinationAccountTypeName === 'investment') return 'investment';
+  if (movementName === 'transfer'){
+    if (destinationAccountTypeName === 'pocket_saving') return 'pocket';
+
+    if (sourceAccountTypeName === 'pocket_saving') return 'pocket';
     }
-  }
-  return movementName;
+  
+//original  
+  // if (movementName === 'transfer') {
+  //   if (sourceAccountTypeName !== destinationAccountTypeName) {
+  //     if (destinationAccountTypeName === 'pocket_saving') return 'pocket';
+
+  //     if (destinationAccountTypeName === 'investment') return 'investment';
+  //   }
+  // }
+//---------------
+ return movementName;
 }
-//------------------
-// Main Controller Function
-//controller: transferBetweenAccounts
-//------------------
+//=====================================
+// MAIN CONTROLLER FUNCTION
+//CONTROLLER: transferBetweenAccounts
+//=====================================
 export const transferBetweenAccounts = async (req, res, next) => {
   console.log(pc.magentaBright('transferBetweenAccounts'));
-  //Previously create a named slack account bank type. In the cases where a source or destination account are not known, a bank type account named "slack" is used as a counterpart of the transaction.
 
   const client = await pool.connect();
-
+  
   try {
+    // ================================
+    // DATA EXTRACTION and VALIDATION
+    // ================================
     const userId = req.body.user === '' || !req.body.user ? req.query.user : req.body.user;
 
     if (!userId) {
@@ -132,14 +157,55 @@ export const transferBetweenAccounts = async (req, res, next) => {
       console.warn(pc.magentaBright(message));
       return res.status(400).json({ status: 400, message });
     }
-
     const { movement } = req.query;
     const movementName = movement === 'debts' ? 'debt' : movement; //debt movement is called as debts in frontend
     // console.log({ movementName });
+    //-------------------------------
+    if (!movementName) {
+      const message = 'movement name is required';
+      console.warn(pc.magentaBright(message));
+      return res.status(400).json({ status: 400, message });
+    }
 
-    //-------------------------------------------------
+    if (
+      ![
+        'expense',
+        'income',
+        'investment',
+        'debt',
+        'pocket',
+        'transfer',
+        'pnl'
+      ].includes(movementName)
+    ) {
+      const message = `movement name " ${movementName} " is not correct`;
+      console.warn(pc.magentaBright(message));
+      return res.status(400).json({ status: 400, message });
+    }
+    //================================
+    //--get the movement types, get the movement type id and check 
+    const movement_typesResults = await pool.query(
+      `SELECT * FROM movement_types`
+    );
+    const movement_typesResultsExist = movement_typesResults.rows.length > 0;
+    // console.log('movement_types', movement_typesResultsExist)
+
+    if (!movement_typesResultsExist) {
+      const message = 'something went wrong with the movement_types table';
+      console.warn(pc.magentaBright(message));
+      return res.status(400).json({ status: 400, message });
+    }
+    const movement_types = movement_typesResults.rows;
+    // console.log(
+    //   '🚀 ~ transferBetweenAccounts ~ movement_types:',
+    //   movement_types
+    // );
+    //----------------------------------
+    //==================================
+    //PnL movement preparation
+    //==================================
     //PnL Movements need a compensation account, in this case named "slack", to serve as a counter part of the transaction.
-    //-------------------------------------------------
+    //--function for slack account --
     const checkAndInsertSlackAccount = async (req, res, next, userId) => {
       try {
         const chekAccountResult = await pool.query(
@@ -162,65 +228,22 @@ export const transferBetweenAccounts = async (req, res, next) => {
           );
         }
       } catch (error) {
-        const message = 'error creating slack account';
+        const message = 'Error creating slack account';
         console.error(message, error);
         // return res.status(500).json({ status: 500, message });
       }
     };
     // console.log({checkAndInsertSlackAccount})
-    //---------------------------------
-    //-------------------------------------------------
-    if (!movementName) {
-      const message = 'movement name is required';
-      console.warn(pc.magentaBright(message));
-      return res.status(400).json({ status: 400, message });
-    }
-    if (
-      ![
-        'expense',
-        'income',
-        'investment',
-        'debt',
-        'pocket',
-        'transfer','pnl'
-      ].includes(movementName)
-    ) {
-      const message = `movement name " ${movementName} " is not correct`;
-      console.warn(pc.magentaBright(message));
-      return res.status(400).json({ status: 400, message });
-    }
-    //--------------------
+    //-------------------------------
     //--this is for pnl movements which does not consider an explicit counter account
-
     if (
         movementName === 'pnl'
     ) {
       checkAndInsertSlackAccount(req, res, next, userId);
     }
-    //======================================================
-    //------------------
-    //--get the movement types, get the movement type id and check --------------
-    const movement_typesResults = await pool.query(
-      `SELECT * FROM movement_types`
-    );
-    const movement_typesResultsExist = movement_typesResults.rows.length > 0;
-
-    // console.log('movement_types', movement_typesResultsExist)
-
-    if (!movement_typesResultsExist) {
-      const message = 'something went wrong with the movement_types table';
-      console.warn(pc.magentaBright(message));
-      return res.status(400).json({ status: 400, message });
-    }
-    const movement_types = movement_typesResults.rows;
-    // console.log(
-    //   '🚀 ~ transferBetweenAccounts ~ movement_types:',
-    //   movement_types
-    // );
-
     //---------------------------------------
     //VALIDATION
-    //since frontend input data form are controlled by selection options, then, data should be considered already validated from frontend. Also, frontend,  gets the data through this api, for selection options
+    //since frontend input data form are controlled by selection options, then, data should be considered already validated from frontend. Also, frontend,  gets the data through this api, for rendering the selection options
 
     //example:expense
     //movementName: expense, sourceAccountTypeName: 'bank', destinationAccountTypeName:'category_budget', sourceAccountTransactionType:withdraw, destinationAccountTransactionType:deposit,
@@ -230,13 +253,16 @@ export const transferBetweenAccounts = async (req, res, next) => {
       amount,
       currency: currencyCode,
       type: transactionTypeName, //for pnl or for debt in new version
-      accountType, date
+      accountType,
+       date
     } = req.body; //common fields to all tracker movements.
-    console.log('type', transactionTypeName);
+
+    // console.log('type', transactionTypeName);
     console.log('body', req.body);
+
     //-----------------
     //From the original design, Not all tracker movements input data form have the same input data structure, so, get the data structure configuration strategy based on movementName
-    
+
     const config = {
       expense: getExpenseConfig(req.body),
       income: getIncomeConfig(req.body),
@@ -247,6 +273,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     }[movementName];
 
     const {
+      useId,
       sourceAccountName,
       sourceAccountTypeName,
       sourceAccountTransactionType,
@@ -256,7 +283,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountTransactionType,
     } = config;
 
-        // console.log('🚀 ~ transferBetweenAccounts ~ config:', config, sourceAccountTypeName);
+    // console.log('🚀 ~ transferBetweenAccounts ~ config:', config, sourceAccountTypeName);
 
     //adjust the movement type name
     const movement_type_name = transformMovementType(
@@ -265,7 +292,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountTypeName
     );
 
-    //====================================================
+    //=================================
     // get the movement type ID
     // console.log(
     //   '🚀 ~ transferBetweenAccounts ~ movement_type_name:',
@@ -275,12 +302,10 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const movement_type_idResult = movement_types.filter(
       (mov) => mov.movement_type_name === movement_type_name
     );
-
     // console.log(
     //   '🚀 ~ transferBetweenAccounts ~ movement_type_idResult:',
     //   movement_type_idResult
     // );
-
     if (!movement_type_idResult ||movement_type_idResult.length===0) {
       const message = `movement type id of ${movement_type_name} was not found. Try again with a valid movement type!`;
       console.warn(pc.magentaBright(message));
@@ -290,8 +315,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
       throw err;
     }
     const movement_type_id = movement_type_idResult[0].movement_type_id;
-    //=====================================================
-    //==== transaction and account types from db.
+    //===============================
+    //transaction and account types from db
+    //==============================
     const transactionsTypes = await getTransactionTypes();
     const sourceTransactionTypeId = transactionsTypes.filter(
       (type) => type.transaction_type_name === sourceAccountTransactionType
@@ -309,11 +335,11 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   destinationTransactionTypeId
     // );
     const accountTypes = await getAccountTypes();
-    //==============================================
-    //-------check common input data ----------------
+    //===================================
+    //---check common input data ----
     //validate amount
     const numericAmount = amount ? parseFloat(amount) : 0.0;
-    if (numericAmount < 0) {
+    if (numericAmount <= 0) {
       const message = 'Amount must be >= 0. Tray again!';
       console.warn(pc.redBright(message));
       return res.status(400).json({ status: 400, message });
@@ -321,18 +347,17 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //validate currency
     const currencyIdReq = await getCurrencyId(currencyCode);
     if (!currencyIdReq) {
-      console.log('error est en', currencyCode, )
+      // console.log('error en', currencyCode, )
       const message= `Currency ${currencyCode} not found`
       const err = new Error(message)
       err.status=400
       throw err;
-      // throw new Error({
-      //   status: 404,
-      //   message: `Currency ${currencyCode} not found`,
-      // });
+
     }
     //validate input date
     const { date: transactionActualDate } = req.body; //
+    
+    console.log("🚀 ~ transferBetweenAccounts ~ transactionActualDate:", transactionActualDate)
 
     const transaction_actual_date =
       !transactionActualDate || transactionActualDate === ''
@@ -340,19 +365,25 @@ export const transferBetweenAccounts = async (req, res, next) => {
         : new Date(Date.parse(transactionActualDate));
 
     //Date.parse(transactionActualDate), Parses a string containing a date, and returns the number of milliseconds between that date and midnight
-    // console.log(
-    //   transaction_actual_date,
-    //   '🚀 ~ transferBetweenAccounts ~ transactionActualDate:',
-    //   transactionActualDate
-    // );
+    console.log(
+      transaction_actual_date,
+      '🚀 ~ transferBetweenAccounts ~ transactionActualDate:',
+      transactionActualDate
+    );
     //-------account info----------------
+    // console.log('accountInfo',  useId,
+    //   sourceAccountName, parseInt(sourceAccountName),
+    //   sourceAccountTypeName,
+    //   userId)
+
     //source and destination account info
     const sourceAccountInfo = await getAccountInfo(
+      useId,
       sourceAccountName,
       sourceAccountTypeName,
       userId
     );
-    const destinationAccountInfo = await getAccountInfo(
+    const destinationAccountInfo = await getAccountInfo(useId,
       destinationAccountName,
       destinationAccountTypeName,
       userId
@@ -361,12 +392,19 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   '🚀 ~ transferBetweenAccounts ~ destinationAccountInfo:',
     //   destinationAccountInfo
     // );
-
     // console.log('🚀 ~ sourceAccountInfo:', sourceAccountInfo);
-
-    if (!sourceAccountInfo || !destinationAccountInfo) {
+//---
+    if (!sourceAccountInfo ) {
       // message: `Account  ${sourceAccountName} and type ${sourceAccountTypeName} not found`, // for individual message
-      const message = `Destination or Source account not found`;
+      const message = `Source account ${sourceAccountInfo.account_name} not found`;
+      return res.status(400).json({
+        status: 404,
+        message,
+      });
+    }
+
+    if (!destinationAccountInfo ) {
+      const message = `Destination account ${destinationAccountInfo.account_name} not found`;
       return res.status(400).json({
         status: 404,
         message,
@@ -388,27 +426,28 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const sourceAccountBalance = sourceAccountInfo.account_balance;
 
     //---check for enough funds on source account
-    //rules in which overdraft due to transfer between accounts are restricted.
-    //overdraft not allowed: bank to category_budget, bank to investment, bank to debtor , others: investment to investment, bank to bank, bank or investment to pocket, or pocket to any
+    //rules about overdraft due to transfer between accounts are restricted.
+    //OVERDRAFT IS NOT ALLOWED: bank to category_budget, bank to investment, bank to debtor , others: investment to investment, bank to bank, bank or investment to pocket, or pocket to any
 
-    //allowed overdraft : slack to any account, income_source to any account, debtor to debtor,  debtor to bank, debtor to any acc
-    //only transfers acceptable:
-    //not possible transfer: category_budget to any,other than bank to category_budget, any to income_source. Any transaction between debt and category_budget nor income_source
+    //OVERDRAFT IS ALLOWED: slack to any account, income_source to any account, debtor to debtor,  debtor to bank, debtor to any account
+
+   //NOT TRANSFERS ALLOWED BETWEEN: category_budget to any account, other than bank to category_budget, any account to income_source. Any transaction between debt and category_budget nor income_source
 
     if (
       sourceAccountBalance < numericAmount &&
-      ((sourceAccountTypeName === 'bank' && sourceAccountName!=='slack') ||
+      ((sourceAccountTypeName === 'bank' && sourceAccountInfo.account_name!=='slack') ||
         sourceAccountTypeName === 'investment' ||
         sourceAccountTypeName === 'pocket_saving')
     ) {
-      const message = `Not enough funds ${currencyCode} ${numericAmount} from "${sourceAccountName}" (${currencyCode} ${sourceAccountBalance})`;
+      //${currencyCode} ${numericAmount} 
+      const message = `Not enough funds in "${sourceAccountInfo.account_name.toUpperCase()}" (${currencyCode} ${sourceAccountBalance})`;
       console.warn(pc.magentaBright(message));
       return res.status(400).json({
         status: 400,
         message,
       });
     }
-    //==============================================
+    //==================================
     //pg transaction to insert data in user_accounts
     const newSourceAccountBalance =
       parseFloat(sourceAccountBalance) - numericAmount;
@@ -420,6 +459,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   '  typeof'
     //   // balanceMultiplierFn(sourceAccountTransactionType)
     // );
+
     const sourceAccountId = sourceAccountInfo.account_id;
     // console.log('tad:', transaction_actual_date);
 
@@ -434,7 +474,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   'type of:',
     //   typeof updatedSourceAccountInfo.account_balance
     // );
-    //-----------------------------------------------
+    //-------------------------------------------
     //---Update the balance in the destination account
     const destinationAccountBalance = destinationAccountInfo.account_balance;
     const newDestinationAccountBalance =
@@ -454,9 +494,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   typeof updatedDestinationAccountInfo.account_balance
     // );
 
-    //----Register transfer/receive transaction-----------
-    //----Source transaction-----------------------------
-    const transactionDescription = `${note ? note + '.' : ''}Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount} ${currencyCode} from account "${sourceAccountName}" (${sourceAccountTypeName}) credited to "${destinationAccountName}" (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
+    //---Register transfer/receive transaction---
+    //----Source transaction-----------
+    const transactionDescription = `${note ? note + '.' : ''}Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount} ${currencyCode} from account "${sourceAccountInfo.account_name} #${sourceAccountInfo.account_id}" (${sourceAccountTypeName}) credited to "${destinationAccountInfo.account_name} # ${destinationAccountInfo.account_id}" (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
 
     // console.log(
     //   userId,
@@ -490,7 +530,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     await recordTransaction(sourceTransactionOption);
     //=========================================================
     //-----------destination transaction---------------------
-    const transactionDescriptionReceived = `${note ? note + '.' : ''}Transaction: ${destinationAccountTransactionType}. Received ${numericAmount} ${currencyCode} in account "${destinationAccountName} (${destinationAccountTypeName}), from "${sourceAccountName}" (${sourceAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
+    const transactionDescriptionReceived = `${note ? note + '.' : ''}Transaction: ${destinationAccountTransactionType}. Received ${numericAmount} ${currencyCode} in account "${destinationAccountInfo.account_name} (${destinationAccountTypeName}), from "${sourceAccountInfo.account_name}" (${sourceAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
 
     // console.log(
     //   userId,
@@ -530,7 +570,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       movement: { movement_type_name, movement_type_id },
       source: {
         account_info: {
-          account_name: sourceAccountName,
+          account_name: sourceAccountInfo.account_name,
           account_type: sourceAccountTypeName,
           amount: numericAmount,
           currency: currencyCode,
@@ -549,7 +589,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
       destination: {
         account_info: {
-          account_name: destinationAccountName,
+          account_name: destinationAccountInfo.account_name,
           account_type: destinationAccountTypeName,
           amount: numericAmount,
           currency: currencyCode,

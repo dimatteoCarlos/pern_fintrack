@@ -241,11 +241,11 @@ function Expense(): JSX.Element {
         category: selectedOption?.value ? '' : '* Please select a category' 
       }));
     }
-    console.log(
-      'desde categorySelectHandler:',
-      selectedOption,
-      selectedOption?.value
-    );
+    // console.log(
+    //   'desde categorySelectHandler:',
+    //   selectedOption,
+    //   selectedOption?.value
+    // );
   }
 //---
 //custom field handler for account
@@ -279,9 +279,11 @@ if (showValidation[name as keyof ShowValidationType])
     ...expenseData ,
       [name]:value, // Value input is taken to validate it
   };
-  const {errors:fieldErrors, data:dataValidated} = validateForm(expenseSchema, currentDataForValidation);
+  const {errors:fieldErrors, } = validateForm(expenseSchema, currentDataForValidation);
 
-  console.log('fieldErrors', fieldErrors, dataValidated);
+  // const { data:dataValidated} = validateForm(expenseSchema, currentDataForValidation);
+
+  // console.log('fieldErrors', fieldErrors, dataValidated);
 
 //update just the message of the current field (name) and if it should show
     if (fieldErrors[name as keyof ExpenseInputDataType]) {

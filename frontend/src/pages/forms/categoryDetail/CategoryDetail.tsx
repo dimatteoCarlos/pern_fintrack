@@ -94,9 +94,7 @@ throw new Error("Invalid account ID parameter");
     );
 
     const transactions = transactionAccountApiResponse?.data.transactions??[];
-
-    console.log('transactions', transactions)
-    
+    // console.log('transactions', transactions)
     const summaryAccountBalance = (transactionAccountApiResponse?.data.summary)??{
   initialBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },
   finalBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },

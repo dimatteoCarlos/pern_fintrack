@@ -14,7 +14,7 @@ import ListAccountOfCategory from './ListAccountOfCategory.tsx';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 //=================================
 function CategoryAccountList() {
-console.log('CategoryAccountList')
+// console.log('CategoryAccountList')
 //get the info from location state
 const location = useLocation()
 const {categoryName} =useParams()

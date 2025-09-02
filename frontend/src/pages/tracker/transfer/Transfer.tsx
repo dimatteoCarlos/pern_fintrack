@@ -140,9 +140,10 @@ function Transfer(): JSX.Element {
   const [isResetDestinationAccount, setIsResetDestinationAccount] =
   useState<boolean>(true);
 
-//---
+//----------
 // 🌳 Global State (Zustand store) to update available balance 
-//--available balance was former named available budget from figma design which is the name used here ---------
+//--available balance was former named available budget from figma design which is the name used here
+// ---------
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
@@ -432,7 +433,7 @@ if(accountName){
         user,
         type: typeMovement,
           };
-
+          
       //  console.log('compare', dataValidated, payload)   
           
        const finalUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
@@ -448,30 +449,28 @@ if(accountName){
         if (response?.error ) {
         throw new Error(response?.error || error || 'An unexpected error occurred during submission.');
       }
+//-------------------------------------
+// update total available budget global state
+    const {
+      data: {
+        data: { total_balance },
+      },
+    } = await axios.get<BalanceBankRespType>(
+      `${url_get_total_account_balance_by_type}/?type=bank&user=${user}`
+    );
 
-      //-------------------------------
-      //update total available budget global state
-      const {
-        data: {
-          data: { total_balance },
-        },
-      } = await axios.get<BalanceBankRespType>(
-        `${url_get_total_account_balance_by_type}/?type=bank&user=${user}`
-      );
-
-      if (typeof total_balance === 'number') {
-        setAvailableBudget(total_balance);
-      } 
-
-    //----------------------------------  
-       setMessageToUser('Transaction recorded successfully!');       
-  //----------------------------------
+    if (typeof total_balance === 'number') {
+      setAvailableBudget(total_balance);
+    } 
+//-----------------------------  
+    setMessageToUser('Transaction recorded successfully!');       
+//-------------------------------
 //reset the state and the selected options on select component
-      resetForm();
-      setReloadTrigger(prev => prev + 1);
-      setIsReset(true);
-      // setMessageToUser('Transfer completed successfully!');
-      setTimeout(() => setMessageToUser(null), 3000);
+    resetForm();
+    setReloadTrigger(prev => prev + 1);
+    setIsReset(true);
+    // setMessageToUser('Transfer completed successfully!');
+    setTimeout(() => setMessageToUser(null), 3000);
           
       } catch (error) {
    console.error('Submission error:', error);

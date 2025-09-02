@@ -86,14 +86,13 @@ const overviewKPIendpoints: KPIEndpointType[] = [
     url: `${dashboardMovementTransactions}?start=&end=&movement=expense&transaction_type=&account_type=category_budget&user=${userId}`,
     type: {} as LastMovementRespType,
   },
-
   {
     key: 'MovementDebtTransactions',
     url: `${dashboardMovementTransactions}?start=&end=&movement=debt&user=${userId}`,
     // url: `${url_get_transactions_by_search}?start=&end=&search=debt&user=${userId}`,
     type: {} as LastMovementRespType,
   },
-  {
+    {
     key: 'MovementIncomeTransactions',
     url: `${dashboardMovementTransactions}?start=&end=&movement=income&user=${userId}`,
     type: {} as LastMovementRespType,
@@ -114,12 +113,9 @@ const overviewKPIendpoints: KPIEndpointType[] = [
     type: {} as LastMovementRespType,
   },
 ];
-//-----------------------------------------------
-// type CreateNewAccountProps = {
-//   originRoute: string;
-//   onCreateAccount: (route: string) => void;
-// };
-//---------------------------------------------
+//=======================
+//MAIN COMPONENT OVERVIEW
+//=======================
 function Overview() {
   const navigateTo: NavigateFunction = useNavigate();
   const location = useLocation();

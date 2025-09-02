@@ -41,7 +41,7 @@ const defaultCategoryBudget: CategoryToRenderType[] = [];
 
 //============================================
 function ListCategory({previousRoute}:ListCategoryProp) {
-    console.log('component', 'ListCategory')
+    // console.log('component', 'ListCategory')
   // console.log('originRoute', previousRoute)
 
 //++++++++++++++++++++++++++++++++++++

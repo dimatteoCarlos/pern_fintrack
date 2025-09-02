@@ -193,7 +193,6 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
         if (process.env.NODE_ENV === 'development') {
         console.warn(error.stack);
       }
-
     } else {
       console.error(
         pc.red('Error during getting transactions by account ID'),

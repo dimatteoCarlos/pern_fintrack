@@ -120,7 +120,7 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
             tr.movement_type_id,
             tr.transaction_type_id,
             cba.category_name,
-            ua.account_name,
+            ua.account_id,
             ct.currency_code
         )
 		
@@ -128,7 +128,7 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
         ORDER BY month_index ASC, type, name, currency_code
 `;
 
-      const result = await pool.query(queryText, [
+     const result = await pool.query(queryText, [
         userId,
         dateRange.start,
         dateRange.end,

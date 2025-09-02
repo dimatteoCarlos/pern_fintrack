@@ -1,15 +1,48 @@
- Tópicos Pendientes y Consultas
+ TÓPICOS PENDIENTES Y CONSULTAS
 
-0. como hacer deployment, como verificar componentes no usados o rotos, 
+0. GENERAL
+   como hacer deployment, como verificar componentes no usados o rotos, 
 
-1. Funcionalidad y Lógica de Negocio
+  Reflejar los nombres y apellidos de los debtors, con primera letra en mayuscula.
+
+ BUGS:
+   PnL tracker,
+   despues de hacer submit exitoso, al recargarse la pagina, aparece el mensaje de error de validacion de Select Account, el cual no deberia aparecer, sino hasta que haya sido introducido un valor an amount, o en algunos de los otros campos o se haya introducido cualquier caracter.
+
+  new account creation and debtor profile creation
+
+  7. arreglar los colores de los toast de acuerdo con e tipo de error o mensaje. En creacion de cuentas, perfiles, etc. 
+
+  El orden de las transacciones debe ser primero el retiro o withdraw y despues received o deposit.
+
+  9. DEBTS. Revisar la presentacion de los miovimientos debts en el overview, no se entiende el orden que se muestran los movimientos, deberian ser del ultimo al primero , es decir descentiendte en fecha y hora.
+
+  10. EXPENSE. si se crea una cuenta con mas de 25 caraceteres, se muestra un error warning, pero igualmete se crea con categoria en blanco.
+
+1. FUNCIONALIDAD Y LÓGICA DE NEGOCIO
+
+New Pocket deberia validar como requerido el Target Amount. 
+
+Implantar eliminacion de cuentas.
+
+Considerar en accounting, listar todas las cuentas, inclueyendo income, expense, debtors, investment, banck, pocket, para luego usarlo como centro de edicion de du cuentas.
+
 Cálculo de Net Worth: Aclarar con el cliente la definición de Net Worth y si su cálculo debe incluir activos (bancos, inversiones) y pasivos (deudas).
 
 Manejo de Pocket Savings: Definir si los montos de Pocket Savings son cuentas separadas o están distribuidos en otras cuentas.
 
-Estructura de Categorías: Implementar una nueva estructura para manejar categorías y subcategorías.
+Estructura de Creacion de Categorías y Subcategorias: Implementar una nueva estructura para manejar categorías y subcategorías.
+-- ==================
+EDICIÓN Y ELIMINACIÓN: Establecer una estrategia para editar y eliminar datos, y definir los campos editables y sus interrelaciones en la base de datos.
 
-Edición y Eliminación: Establecer una estrategia para editar y eliminar datos, y definir los campos editables y sus interrelaciones en la base de datos.
+Implantar transacciones de reverso para las cuentas expense e income source, de manera de poder realizar reversos manuales entre cuantas, en caso de error de usuario.
+
+Implanatar edicion de cuentas, datos solamente, no transacciones. Edicion siimlple.
+-- ==================
+
+  Ajustar los formularios del frontend, para que envien acount_id al backend, pqara que este realice las busquedas de las cuentas no por nombre sino por id de las cuentas. En progreso.
+
+  modificar el backend para que en las transacciones se haga la busqueda por account_id y no por nombre account_name. Se modifico considerando ambas opciones, priorizando las busqueda por account id, en transaction between accounts. Listo
 
 Exportación de Datos: Habilitar la exportación de movimientos en formatos como PDF, Excel y .csv.
 
@@ -17,21 +50,22 @@ Balance de Inversiones: Aclarar el cálculo del balance total de las inversiones
 
 Página de Detalle de Ingresos: Definir si se debe crear una página de detalle para las cuentas de income.
 
-2. Backend y Seguridad
-
-
-Cálculo de Inversiones: Calcular los valores de las cuentas de inversión, comparando el capital invertido con el balance real.
+2. BACKEND Y SEGURIDAD
 
 Autenticación de Usuarios: Implementar la autenticación de usuarios y verificar el userId antes de permitir el acceso a las funciones principales.
 
-Cuenta Slack: Definir si se debe crear una cuenta slack para el balance al crear una cuenta bancaria con un monto inicial.
+Cálculo de Inversiones: Calcular los valores de las cuentas de inversión, comparando el capital invertido con el balance real.
 
-3. Frontend y UI/UX
+Establecer la regla de negocio, para el manejo de fechas y coherencias entre fechas. Por ejemplo, al realizar una transaccion entre cuentas, no puede ser de cuentas con fechas en el futuro, o realizar transacciones en fechas anteriores a la creacion de las cuentas. 
+
+3. FRONTEND Y UI/UX
+En detailed account page/view, colocar la flecha de regreso y los 3 puntos de edicion, separados del titulo. css page__content, ...position abosolute?..
+
 Manejo de Errores: Mejorar los mensajes de error para que sean más claros para el usuario.
 
 Cálculo de % Profit: Corregir el cálculo que muestra NaN.
 
-Validación de Fechas: Bloquear fechas futuras en el selector de fechas para las transacciones y la creación de pockets.
+Validación de Fechas: Bloquear fechas futuras en el selector de fechas para las transacciones y la creación de pockets. y determinar regla de negocios para las fechas en las transacciones entre cuentas.
 
 Error de Monto Inicial: Revisar el error del monto inicial de la cuenta cuando no hay transacciones.
 
@@ -41,190 +75,97 @@ Indicador de Carga: Agregar un indicador de loading en los formularios.
 
 Descripción de Transacciones: Estandarizar y mejorar las descripciones de las transacciones.
 
-✅ Actividades Resueltas (LISTO)
-New Pocket deberia validar como requerido el Target Amount. listo
 
-Error en Income Tracker: Corregir el error que impide encontrar las cuentas de origen o destino.listo
+✅ ACTIVIDADES RESUELTAS (LISTO)
 
-Validar números y valores en los trackers. listo.
+  Debts tracker,
+  1. si en amount se intoduce valores invalidos, y todos los ca demas campos tienen valores validos, al corregir el valor de amount, se somete inmediatemente la traansaccion. Deberia esperar a que el usuario vuelva a someter los datos.Aunque, la transaccion no se graba. Listo.
 
-Hacer validación en tiempo real para dropdowns. listo.
+  2. si se introducen valores validos en todos los campos, y no se introduce nada en Amount, y se presiona el boton de submit, el formulario se somte como valido, y no ddeberia ser, deberia indicar que el valor a de amount no ha sido o introducido.Aunque, la transaccion no se graba.Listo.
 
-Corregir la lógica de lend y borrow y ordenar los movimientos por fecha. listo.
+  3. TRANSFER. Al hacer transfer desde cuentas a cuantas Pocket, no se reflejan el movimiento en los detalles de las cuentas individuales.Pero si se reflejan en el overview de movimientos.ItP ok.PtP ok. Listo.
 
-Completar el cálculo del net worth. listo.
+  4. Revisar todo el proceso de transfer. No se reflejan los movimientos en overview. listo
 
-Usar toastify para mensajes al usuario. listo.
+  5. Los account detail no se estan actualizando, al realizar las transacciones o movimientos. Expense Ok. Income ok. Transfer ok. pocket ok. debts ok. LISTO.
 
-Implementar la lista de categorías. listo.
+  6. When creating a new profile of debtor, bank accounts do not update the balance, no se actualizan los balances de las cuentas que se muestran, puede ser debido a que hay que hacer un refetch, como se hizo en tracker. Listo
 
-Crear endpoints y controladores en el backend. listo.
+  8. TRANSFER from investment account, no se reflejan en el movimiento de investments en el overview. Listo
 
-Implementar rutas y componentes del frontend. listo.
+     
 
-Ajustar la base de datos para zonas horarias y queries. listo.
+  -- 
 
-Incluir PnL en el fintrack. listo.
+  Cuenta Slack: Definir si se debe crear una cuenta slack para el balance al crear una cuenta bancaria con un monto inicial. Se implemento una unica cuenta slack para el balance. Listo.
 
-Corregir el frontend de PnL. listo.
+  Error en Income Tracker: Corregir el error que impide encontrar las cuentas de origen o destino.listo
 
-Mostrar balances de cuentas en los dropdowns. listo.
+  Validar números y valores en los trackers. listo.
 
-Implementar refetch para actualizar balances. listo.
+  Hacer validación en tiempo real para dropdowns. listo.
 
-Corregir bugs al crear cuentas. listo.
+  Corregir la lógica de lend y borrow y ordenar los movimientos por fecha. listo.
 
-Implementar páginas de detalle de cuentas. listo.
+  Completar el cálculo del net worth. listo.
 
-Incluir depósitos y retiros en el PnL tracker. listo.
+  Usar toastify para mensajes al usuario. listo.
 
-Corregir la validación para que no se borren datos. listo.
+  Implementar la lista de categorías. listo.
 
-Arreglar errores de descripción de transacciones. listo.
+  Crear endpoints y controladores en el backend. listo.
 
-Ajustar la lógica de debts para usar solo cuentas bancarias. listo.
+  Implementar rutas y componentes del frontend. listo.
 
-Asegurar la consistencia del signo en el monto inicial. listo.
+  Ajustar la base de datos para zonas horarias y queries. listo.
 
-Corregir el problema de updated_at. listo.
+  Incluir PnL en el fintrack. listo.
 
-Aplicar debounce a los textareas. listo.
+  Corregir el frontend de PnL. listo.
 
-Deshabilitar el botón de guardar durante la carga. listo.
+  Mostrar balances de cuentas en los dropdowns. listo.
 
-Corregir mensajes de error y summary de valores cero. listo.
+  Implementar refetch para actualizar balances. listo.
 
-Solucionar el error de transferencia entre cuentas. listo.
+  Corregir bugs al crear cuentas. listo.
 
-Ajustar endpoints y manejo de tipos en overview. listo.
+  Implementar páginas de detalle de cuentas. listo.
 
-Incluir movimientos de inversiones en el overview. listo.
+  Incluir depósitos y retiros en el PnL tracker. listo.
 
-Revisar el cálculo del monthly avg saving. listo.
+  Corregir la validación para que no se borren datos. listo.
 
-Corregir la funcionalidad borrow en la creación de deudas. listo.
+  Arreglar errores de descripción de transacciones. listo.
 
-Arreglar la restricción de fondos. listo.
+  Ajustar la lógica de debts para usar solo cuentas bancarias. listo.
 
-Corregir que los expenses no se reflejaban en los resúmenes. listo.
+  Asegurar la consistencia del signo en el monto inicial. listo.
 
-Estandarizar los estilos. listo.
+  Corregir el problema de updated_at. listo.
 
-Minimizar los console.log del backend. listo.
+  Aplicar debounce a los textareas. listo.
 
-Añadir el placeholder "no opción" en los selectores. listo.
+  Deshabilitar el botón de guardar durante la carga. listo.
 
+  Corregir mensajes de error y summary de valores cero. listo.
 
-pero en ingles , enumera tiambien los tareas listas
+  Solucionar el error de transferencia entre cuentas. listo.
 
+  Ajustar endpoints y manejo de tipos en overview. listo.
 
+  Incluir movimientos de inversiones en el overview. listo.
 
-🚧 Pending Issues and Unresolved Queries
-1. Functionality and Business Logic
-Net Worth Calculation: Clarify with the client the definition of Net Worth and whether its calculation should include assets (bank, investments) and liabilities (debts).
+  Revisar el cálculo del monthly avg saving. listo.
 
-Pocket Savings Management: Define whether Pocket Savings amounts are separate accounts or distributed among other accounts.
+  Corregir la funcionalidad borrow en la creación de deudas. listo.
 
-Category Structure: Implement a new structure to handle categories and subcategories.
+  Arreglar la restricción de fondos. listo.
 
-Editing and Deleting: Establish a strategy for editing and deleting data, defining which fields are editable and how to handle their interrelationships in the database.
+  Corregir que los expenses no se reflejaban en los resúmenes. listo.
 
-Data Export: Enable the export of movements in formats like PDF, Excel, and .csv.
+  Estandarizar los estilos. listo.
 
-Investment Balance: Clarify the calculation for the total investment balance.
+  Minimizar los console.log del backend. listo.
 
-Income Detail Page: Define if a detail page should be created for income accounts.
-
-2. Backend and Security
-Income Tracker Error: Correct the error that prevents the income tracker from finding source or destination accounts.
-
-Investment Calculation: Calculate the values of investment accounts, comparing invested capital with the factual balance.
-
-User Authentication: Implement user authentication and verify the userId before allowing access to the main functions.
-
-Slack Account: Define if a slack account should be created for balance when a bank account is created with an initial amount.
-
-3. Frontend and UI/UX
-Error Handling: Improve error messages to be clearer to the user.
-
-% Profit Calculation: Fix the calculation that displays NaN.
-
-Date Validation: Block future dates in the date selector for transactions and pocket creation.
-
-Starting Amount Error: Review the account starting amount error when there are no transactions.
-
-Forms: Implement the resetting of toast messages and clearing of variables after form submission.
-
-Loading Indicator: Add a loading indicator to forms.
-
-Transaction Descriptions: Standardize and improve transaction descriptions.
-
-✅ Resolved Activities (LISTO)
-Validate numbers and values in the trackers. listo.
-
-Perform real-time validation for dropdowns. listo.
-
-Correct the lend and borrow logic and order movements by date. listo.
-
-Complete the net worth calculation. listo.
-
-Use toastify for user messages. listo.
-
-Implement the category list. listo.
-
-Create backend endpoints and controllers. listo.
-
-Implement frontend routes and components. listo.
-
-Adjust the database for time zones and queries. listo.
-
-Include PnL in the fintrack. listo.
-
-Fix the PnL frontend. listo.
-
-Display account balances in dropdowns. listo.
-
-Implement refetch to update balances. listo.
-
-Fix bugs when creating accounts. listo.
-
-Implement account detail pages. listo.
-
-Include deposits and withdrawals in the PnL tracker. listo.
-
-Correct validation so data isn't erased. listo.
-
-Fix transaction description errors. listo.
-
-Adjust debt logic to use only bank accounts. listo.
-
-Ensure sign consistency for the starting amount. listo.
-
-Fix the updated_at issue. listo.
-
-Apply debounce to textareas. listo.
-
-Disable the save button during loading. listo.
-
-Correct error messages and zero-value summaries. listo.
-
-Fix the inter-account transfer error. listo.
-
-Adjust endpoints and type handling in overview. listo.
-
-Include investment movements in the overview. listo.
-
-Review the monthly avg saving calculation. listo.
-
-Fix the borrow functionality in debt creation. listo.
-
-Fix fund restrictions. listo.
-
-Fix expenses not reflecting in summaries. listo.
-
-Standardize styles. listo.
-
-Minimize backend console.logs. listo.
-
-Add the "no option" placeholder to selectors. listo.
+  Añadir el placeholder "no opción" en los selectores. listo.
 

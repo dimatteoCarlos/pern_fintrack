@@ -12,7 +12,6 @@ import {
 } from '../../../types/types';
 
 import { ValidationMessagesType } from '../../../validations/utils/zod_validation';
-//------------------------------------
 
 //------------------------------------
 type RadioInputPropsType = {
@@ -21,7 +20,6 @@ type RadioInputPropsType = {
   setRadioOptionSelected: (option: string) => void;
   disabled:boolean;
   title?: string;
-
 };
 //---------------------------------
 type TopCardPropType<TFormDataType  extends Record<string, unknown>> = {
@@ -54,7 +52,7 @@ type TopCardPropType<TFormDataType  extends Record<string, unknown>> = {
 
   //--handle special case of Transfer
   customSelectHandler?: (selectedOption: DropdownOptionType | null) => void;
-  //---
+//---
 };
 
 //----Component------------------------
@@ -109,26 +107,21 @@ const shouldShowError = !!validationMessages[accountFieldName]
   [accountFieldName]: selectedOption?.value || '',
       }));
 
-    console.log('title2', title2.trim(),'label', selectedOption?.label,'value', selectedOption?.value );
+    // console.log('title2', title2.trim(),'label', selectedOption?.label,'value', selectedOption?.value );
 
     //if setValidationMessages is used, then clean the correspondent validation message
-    //aqui sin validar con zod, a se asigna el valor, y se asume que es valido, y entonces, se v borra el mensaje de error asociado al campo que se selecciono.
-
-    console.log('validation msgs',     validationMessages,' antes TopCardZod')
+    //aqui sin validar con zod,  se asigna el valor, y se asume que es valido, y entonces, se  borra el mensaje de error asociado al campo que se selecciono.
         
     if (setValidationMessages) {
       setValidationMessages((prev) => {
         const newMessages = { ...prev };
-        if (newMessages[accountFieldName]
-           //!== undefined
-        )
+        if (newMessages[accountFieldName])
            {
           delete newMessages[accountFieldName];
         }
         return newMessages;
       });
     }
-      console.log('validation msgs',     validationMessages,' despues TopCardZod')
   }
   //************************************/
  //usage of customSelectHandler if it exists
