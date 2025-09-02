@@ -15,9 +15,9 @@ import type {  DropdownOptionType } from '../types/types';
 import { ValidationMessagesType } from '../validations/types';
 import { PnLValidationSchema, validateAllFn } from '../validations/validationPnL/validationPnL';
 
-// =========================================
+// ======================================
 // MAIN HOOK IMPLEMENTATION
-// =========================================
+// ======================================
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const useFormManagerPnL = <FormInputType extends Record<string, unknown>, FormValidatedType extends Record<string, any>>(initialData: FormInputType,initialValidatedData:FormValidatedType) => {
 // ====================
@@ -26,6 +26,7 @@ export const useFormManagerPnL = <FormInputType extends Record<string, unknown>,
 type  FormFieldKeyType = keyof FormInputType & string;
 
 type ShowValidationType=Record<FormFieldKeyType & string, boolean> 
+
 // =====================
 // STATE DEFINITIONS
 // =====================
@@ -39,14 +40,14 @@ const [showValidation, setShowValidation] = useState<ShowValidationType>(
   Object.fromEntries((Object.keys(initialData) as Array<FormFieldKeyType>).map((key)=>[key, false])) as Record<FormFieldKeyType, boolean>
 );
 
-//------------------------------------------
+//--------------------------------------
 // --- Functions (Factory Pattern) --- / Funciones (Patrón Fábrica) ---
 const activateAllValidations = useCallback((isActive:boolean) => {
     setShowValidation(
       Object.fromEntries(Object.keys(initialData).map(key => [key, isActive])) as Record<FormFieldKeyType, boolean>
     );
   }, [initialData]);
-//------------------------------------------
+//----------------------------------------
 // Handler for input numeric data (amount)
   const createInputNumberHandler = (fieldName: keyof FormInputType) => {
   return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

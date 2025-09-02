@@ -57,7 +57,6 @@ import CardNoteSave from '../components/CardNoteSave.tsx';
 import RadioInput from '../../../general_components/radioInput/RadioInput.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 //-------------------------------------
-
 // 📝data type configuration 
 export type ShowValidationType={
     amount: boolean;
@@ -93,7 +92,7 @@ const VARIANT_DEFAULT: VariantType = 'tracker';
 //--RadioOption selection for account types
 const inputRadioOptionsAccountType:{value:TransferAccountType, label:string}[] = [
   { value: 'bank', label: 'Bank' },
-  { value: 'investment', label: 'Investment' },
+  { value: 'investment', label: 'Invest' },
   { value: 'pocket', label: 'Pocket' },
 ];
 
@@ -246,7 +245,7 @@ function Transfer(): JSX.Element {
     optionsOriginAccounts,
   ]);
 
-  //----accoutn options for drpdown of origine
+  //----account options for drpdown of origine
   const originAccountOptionsToRender = {
     title: originAccountsResponse?.data?.accountList.length
       ? 'Select Account'
@@ -381,8 +380,7 @@ if(accountName){
       destinationAccountType: newType as 'bank' | 'investment' | 'pocket',
       destination: '', // Reset destination when type changes
       destinationAccountId:undefined //Reset account ID
-    
-    }));
+        }));
 
     //Reset Validation
     setValidationMessages(prev => ({ ...prev, destination: '' }));
@@ -433,11 +431,8 @@ if(accountName){
         user,
         type: typeMovement,
           };
-          
       //  console.log('compare', dataValidated, payload)   
-          
        const finalUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
-          
         const response = await requestFn(payload, {
           url: finalUrl,
         } as AxiosRequestConfig);
@@ -491,10 +486,10 @@ if(accountName){
       return () => clearTimeout(timer);
     }
   }, [isReset]);
-//----------------------------------
+//------------------------------
 // 📄 Rendering UI Components
-//--------------------------------
-//-------Top Card elements--------- ----------------------------------
+//------------------------------
+//-------Top Card elements------ 
   const topCardElements = {
     titles: { title1: 'amount', title2: 'origin', label2:'From: ' }, //title1 and title2, deben coincidir con el key de validation messages / these titles must match to validation messages keys
     value: formData.amount,

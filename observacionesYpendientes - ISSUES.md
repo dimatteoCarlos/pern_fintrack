@@ -3,21 +3,28 @@
 0. GENERAL
    como hacer deployment, como verificar componentes no usados o rotos, 
 
-  Reflejar los nombres y apellidos de los debtors, con primera letra en mayuscula.
+   -- ==================
+  EDICIÓN Y ELIMINACIÓN: Establecer una estrategia para editar y eliminar datos, y definir los campos editables y sus interrelaciones en la base de datos.
+
+  Implantar transacciones de reverso para las cuentas expense e income source, de manera de poder realizar reversos manuales entre cuantas, en caso de error de usuario.
+
+  Implanatar edicion de cuentas, datos solamente, no transacciones. Edicion siimlple.
+-- ==================
 
  BUGS:
-   PnL tracker,
-   despues de hacer submit exitoso, al recargarse la pagina, aparece el mensaje de error de validacion de Select Account, el cual no deberia aparecer, sino hasta que haya sido introducido un valor an amount, o en algunos de los otros campos o se haya introducido cualquier caracter.
-
-  new account creation and debtor profile creation
-
-  7. arreglar los colores de los toast de acuerdo con e tipo de error o mensaje. En creacion de cuentas, perfiles, etc. 
 
   El orden de las transacciones debe ser primero el retiro o withdraw y despues received o deposit.
 
-  9. DEBTS. Revisar la presentacion de los miovimientos debts en el overview, no se entiende el orden que se muestran los movimientos, deberian ser del ultimo al primero , es decir descentiendte en fecha y hora.
+  9. DEBTS. Revisar la presentacion de los miovimientos debts en el overview, , deberian ser del ultimo al primero , es decir descendentes en fecha y hora.
 
-  10. EXPENSE. si se crea una cuenta con mas de 25 caraceteres, se muestra un error warning, pero igualmete se crea con categoria en blanco.
+    Reflejar los nombres y apellidos de los debtors, con primera letra en mayuscula.
+
+  10. EXPENSE. si se crea una cuenta con mas de 25 caraceteres, se muestra un error warning, pero igualmete se crea con categoria en blanco. errores de pg.
+
+  
+  11. arreglar los colores de los toast de acuerdo con e tipo de error o mensaje. En creacion de cuentas, perfiles, etc. 
+
+  porque se muestran arios toast renderizados, con la misma informacion?
 
 1. FUNCIONALIDAD Y LÓGICA DE NEGOCIO
 
@@ -32,13 +39,7 @@ Cálculo de Net Worth: Aclarar con el cliente la definición de Net Worth y si s
 Manejo de Pocket Savings: Definir si los montos de Pocket Savings son cuentas separadas o están distribuidos en otras cuentas.
 
 Estructura de Creacion de Categorías y Subcategorias: Implementar una nueva estructura para manejar categorías y subcategorías.
--- ==================
-EDICIÓN Y ELIMINACIÓN: Establecer una estrategia para editar y eliminar datos, y definir los campos editables y sus interrelaciones en la base de datos.
 
-Implantar transacciones de reverso para las cuentas expense e income source, de manera de poder realizar reversos manuales entre cuantas, en caso de error de usuario.
-
-Implanatar edicion de cuentas, datos solamente, no transacciones. Edicion siimlple.
--- ==================
 
   Ajustar los formularios del frontend, para que envien acount_id al backend, pqara que este realice las busquedas de las cuentas no por nombre sino por id de las cuentas. En progreso.
 
@@ -89,15 +90,16 @@ Descripción de Transacciones: Estandarizar y mejorar las descripciones de las t
 
   5. Los account detail no se estan actualizando, al realizar las transacciones o movimientos. Expense Ok. Income ok. Transfer ok. pocket ok. debts ok. LISTO.
 
-  6. When creating a new profile of debtor, bank accounts do not update the balance, no se actualizan los balances de las cuentas que se muestran, puede ser debido a que hay que hacer un refetch, como se hizo en tracker. Listo
+  6. When creating a new profile of debtor, bank accounts do not update the balances, no se actualizan los balances de las cuentas que se muestran, puede ser debido a que hay que hacer un refetch, como se hizo en tracker. Listo
+
+  7.   PnL tracker,
+   despues de hacer submit exitoso, al recargarse la pagina, aparece el mensaje de error de validacion de Select Account, el cual no deberia aparecer, sino hasta que haya sido introducido un valor an amount, o en algunos de los otros campos o se haya introducido cualquier caracter. Se incluyo un sid effect para mostrar mensajes de validacion en forma condicion y con base a un nuevo state hasUserInteracted. Listo  
+
 
   8. TRANSFER from investment account, no se reflejan en el movimiento de investments en el overview. Listo
-
-     
-
   -- 
 
-  Cuenta Slack: Definir si se debe crear una cuenta slack para el balance al crear una cuenta bancaria con un monto inicial. Se implemento una unica cuenta slack para el balance. Listo.
+  Cuenta Slack: Definir si se debe crear una cuenta slack para cada cuenta bancaria con un monto inicial. Se implemento una unica cuenta slack para el balance de todo el sistema. Listo.
 
   Error en Income Tracker: Corregir el error que impide encontrar las cuentas de origen o destino.listo
 

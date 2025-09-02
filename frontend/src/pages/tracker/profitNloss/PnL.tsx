@@ -38,12 +38,10 @@ import { useFormManagerPnL } from '../../../hooks/useFormManagerPnL.ts';
 import { BasicTrackerMovementValidatedDataType } from '../../../validations/types.ts';
 import TopCardZod from '../components/TopCard.tsx';
 
-
 //------------------------------
 // Constants
 const VARIANT_DEFAULT: VariantType = 'tracker';
 const defaultCurrency: CurrencyType = DEFAULT_CURRENCY;
-
 
 // Initial form input data structure
 const initialData: BasicTrackerMovementInputDataType = {
@@ -181,7 +179,6 @@ const accountsToSelect = useMemo(
     accountDataApiResponse?.data?.accountList?.length    
       ? accountDataApiResponse?.data.accountList?.map((account)=>({...account}))
       :[], [accountDataApiResponse?.data.accountList, fetchedErrorAccountDataApiResponse, isLoadingAccountDataApiResponse])
-  
 // console.log('accountsToSelect',accountsToSelect)
 // console.log('accountsListInfo', accountsListInfo, )
 // ======================
@@ -287,7 +284,7 @@ handleAmountChange(e)
      
 // Evaluate all fields using hook's validation system   
  const { isValid, messages, validatedData } = validateAllPnL();
-console.log('isValid',isValid)
+// console.log('isValid',isValid)
 
  if(!isValid){
   setValidationMessages(messages)
@@ -366,46 +363,43 @@ try {
     setShowMessage(true);
   }
 }
-  // ======================
-  // UI CONFIGURATION
-  // ======================
-  // Props for TopCardZod component
-  //-------Top Card elements--
-  const topCardElements:TopCardElementsType = {
-    titles: { title1: 'amount', title2: 'account' },
-    value: formInputData.amount,
-    selectOptions: optionsAccountsToSelect,
-    accountsListInfo
-    };
-  // ======================
-  // EFFECTS
-  // ======================
-  //Handle states related to the data submit form
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
+// ======================
+// UI CONFIGURATION
+// ======================
+// Props for TopCardZod component
+//-------Top Card elements--
+const topCardElements:TopCardElementsType = {
+  titles: { title1: 'amount', title2: 'account' },
+  value: formInputData.amount,
+  selectOptions: optionsAccountsToSelect,
+  accountsListInfo
+};
+// =====================
+// EFFECTS
+// =====================
+//Handle states related to the data submit form
+useEffect(() => {
+let timer: ReturnType<typeof setTimeout>;
 
-    if ((data || error) && !isLoading) {
-      const success = data && !error;
-      setMessageToUser(
-        success
-          ? 'Movement completed successfully!'
-          : error ?? 'An error occurred during submission'
-      );
-      setShowMessage(true);
+if ((data || error) && !isLoading) {
+  const success = data && !error;
+  setMessageToUser(
+    success
+      ? 'Movement completed successfully!'
+      : error ?? 'An error occurred during submission'
+  );
+  setShowMessage(true);
 
-      timer = setTimeout(() => {
-        setMessageToUser(null);
-        setShowMessage(false);
-      }, 8000);
-    }
-
-    return () => clearTimeout(timer);
-  }, [data, error, isLoading]);
-  //---
+  timer = setTimeout(() => {
+    setMessageToUser(null);
+    setShowMessage(false);
+  }, 8000);
+}
+return () => clearTimeout(timer);
+}, [data, error, isLoading]);
+//---
 useEffect(()=>{
 //show errors upon user interaction
-console.log('intracted', hasUserInteracted)
-
  if(!hasUserInteracted) {setValidationMessages(prev=>{
     const newMessages={...prev};
     delete newMessages.account;
@@ -432,7 +426,6 @@ if(formInputData.note === "" && (formInputData.amount !== '' || formInputData.ac
     activateAllValidations(true)
   }
 },[formInputData.account,formInputData.note, formInputData.amount, hasUserInteracted,setValidationMessages, activateAllValidations])
-
 // ======================
 // RENDER
 // ======================

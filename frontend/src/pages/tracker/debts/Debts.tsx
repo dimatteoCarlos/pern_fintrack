@@ -516,7 +516,7 @@ useEffect(() => {
     });
   }
 }, [datatrack.account, formData.amount, showValidation.account]);
-
+//---
 useEffect(() => {
   // show note validation message only if amount is entered
   if (datatrack.note === '' && (formData.amount !== '' || showValidation.note)) {
@@ -536,7 +536,7 @@ useEffect(() => {
 // ====================
 // UI CONFIGURATION
 // ====================
-  //------- Top Card elements ---
+//-- Top Card elements ---
     const debtorAccountLabel = datatrack.type ==='lend'?'debtor':'lender'
   const topCardElements:TopCardElementsType = {
     titles: { title1: 'amount', title2: 'debtor', label2:debtorAccountLabel },
