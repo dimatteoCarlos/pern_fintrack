@@ -44,20 +44,9 @@ import TopCardZod from '../components/TopCard.tsx';
 const VARIANT_DEFAULT: VariantType = 'tracker';
 const defaultCurrency: CurrencyType = DEFAULT_CURRENCY;
 
-//---Profit and Loss adjustment ---------
-//rule: external deposit/withdraw transfers come from slack bank account, not rendered or visible.
-// ======================
-// ROUTE & USER CONFIGURATION
-// ======================
-function PnL() {
-//----Account Options--------------------
-  const { pathname } = useLocation();
-  const trackerState = pathname.split('/')[PAGE_LOC_NUM];
-  const typeMovement = trackerState.toLowerCase();
-  // console.log('movement:', typeMovement);//pnl
-  
+
 // Initial form input data structure
-const initialData: BasicTrackerMovementInputDataType = useMemo(()=>({
+const initialData: BasicTrackerMovementInputDataType = {
   amount: '',
   account: '',
   currency: defaultCurrency,
@@ -65,10 +54,11 @@ const initialData: BasicTrackerMovementInputDataType = useMemo(()=>({
   date: new Date(), //default
   note: '',
   accountType:"",
-}), []);
+}
+;
 
 // Initial form data structure
-const initialValidatedData: BasicTrackerMovementValidatedDataType =useMemo (()=>( {
+const initialValidatedData: BasicTrackerMovementValidatedDataType = {
   amount: 0,
   account: '',
   currency: defaultCurrency,
@@ -76,32 +66,43 @@ const initialValidatedData: BasicTrackerMovementValidatedDataType =useMemo (()=>
   date: new Date(), //default
   note: '',
   accountType:"",
-}),[]);
+}
+;
+//---Profit and Loss adjustment ---------
+//rule: external deposit/withdraw transfers come from slack bank account, not rendered or visible.
+// ======================
+// ROUTE & USER CONFIGURATION
+// ======================
+function PnL() {
+//----Account Options----------------
+  const { pathname } = useLocation();
+  const trackerState = pathname.split('/')[PAGE_LOC_NUM];
+  const typeMovement = trackerState.toLowerCase();
+// console.log('movement:', typeMovement);//pnl
+// const { userData } = useAuthStore((state) => ({
+//   userData: state.userData,
+//   isAuthenticated: state.isAuthenticated,
+// }));
 
-  // const { userData } = useAuthStore((state) => ({
-  //   userData: state.userData,
-  //   isAuthenticated: state.isAuthenticated,
-  // }));
+// console.log('userData state:', userData);
+//userId
+// const user = userData?.userId;
+// console.log('userID', userID);
 
-  // console.log('userData state:', userData);
-  //userId
-  // const user = userData?.userId;
-  // console.log('userID', userID);
-
-  //deal here with user id and authentication
+//deal here with user id and authentication
   const user = import.meta.env.VITE_USER_ID;
 
-  // ======================
-  // FORM MANAGEMENT HOOK
-  // ======================
-  // Centralized form state and validation management
+// ======================
+// FORM MANAGEMENT HOOK
+// ======================
+// Centralized form state and validation management
 const {
  // States
     formInputData,
     formValidatedData,
     validationMessages,
     showValidation,
-    
+  
     // Handlers
     createInputNumberHandler,
     createDropdownHandler,
@@ -114,7 +115,6 @@ const {
     setFormValidatedData,
     setFormInputData,
     setValidationMessages,
-    // setShowValidation,
     resetForm,
 } = useFormManagerPnL<BasicTrackerMovementInputDataType, BasicTrackerMovementValidatedDataType>(initialData, initialValidatedData);
 
@@ -122,24 +122,22 @@ const {
 // COMPONENT STATE
 // ======================
 // UI and feedback states
-  // const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
-
-  // const [transactionType, setTransactionType] = useState<TransactionType>('deposit');
-
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>('');
   
   const [showMessage, setShowMessage] = useState(false);
 
   const [isReset, setIsReset] = useState<boolean>(false);
   const [reloadTrigger, setReloadTrigger] = useState<number>(0);
-    // Global budget state
+  // Global budget state
   const setAvailableBudget = useBalanceStore((state) => state.setAvailableBudget);
-  
+
+//user interaction state
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
 // ======================
 // API DATA FETCHING - Accounts
 // ======================
 // Fetch available bank and investment accounts
-//---Account bank and/or investment options----
+//--Account bank and/or investment options
   const fetchUrl = user
     ? `${url_get_accounts_by_type}/?type=bank_and_investment&user=${user}&reload=${reloadTrigger}`
     : // <Navigate to='/auth' />
@@ -178,15 +176,14 @@ const accountsToSelect = useMemo(
 //-----------------------------
 // Full accounts info 
   const accountsListInfo =useMemo( ()=>
-      !isLoadingAccountDataApiResponse &&
-      !fetchedErrorAccountDataApiResponse &&
-      accountDataApiResponse?.data?.accountList?.length    
-        ? accountDataApiResponse?.data.accountList?.map((account)=>({...account}))
-        :[], [accountDataApiResponse?.data.accountList, fetchedErrorAccountDataApiResponse, isLoadingAccountDataApiResponse])
+    !isLoadingAccountDataApiResponse &&
+    !fetchedErrorAccountDataApiResponse &&
+    accountDataApiResponse?.data?.accountList?.length    
+      ? accountDataApiResponse?.data.accountList?.map((account)=>({...account}))
+      :[], [accountDataApiResponse?.data.accountList, fetchedErrorAccountDataApiResponse, isLoadingAccountDataApiResponse])
   
-  // console.log('accountsToSelect',accountsToSelect)
-  // console.log('accountsListInfo', accountsListInfo, )
-//------------------------------------
+// console.log('accountsToSelect',accountsToSelect)
+// console.log('accountsListInfo', accountsListInfo, )
 // ======================
 // API REQUEST CONFIGURATION
 // ======================
@@ -201,7 +198,6 @@ const accountsToSelect = useMemo(
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
 // console.log('data', data)
-
 //-------------------------
 //HANDLERS
 //-------------------------
@@ -212,12 +208,13 @@ const handleAmountChange = createInputNumberHandler('amount');
 const handleAccountSelect = useCallback(
   (selectedOption:DropdownOptionType | null) => {
     const accountName = selectedOption?.value ||'';
+    setHasUserInteracted(true);
 
-    // Use the dropdown handler from hook for validation
-    const handler = createDropdownHandler('account')
+// Use the dropdown handler from hook for validation
+   const handler = createDropdownHandler('account')
     handler(selectedOption)
 
-    //set accountType based on selection
+//set accountType based on selection
     const selectedAccount = accountsListInfo.find(acc => acc.account_name === accountName)
 
     if (selectedAccount) {
@@ -230,78 +227,74 @@ const handleAccountSelect = useCallback(
       ...prev,
       accountType: selectedAccount.account_type_name,
     }));
-
   }
   },
-  [createDropdownHandler, accountsListInfo, setFormInputData,setFormValidatedData],
+  [createDropdownHandler, accountsListInfo, setFormInputData,setFormValidatedData,],
 )
 
 // Handler for currency changes
-// const handleCurrencyChange=createFieldHandler<CurrencyType>('currency');
 const updateDataCurrency = useCallback((currency: CurrencyType) => {
-  console.log('currency dede updateD...', currency)
     setFormInputData((prev) => ({ ...prev, currency }));
     setFormValidatedData((prev) => ({ ...prev, currency }));
   }, [setFormInputData,setFormValidatedData]);
 
 // Handler for transaction type toggle
-// const handleTypeChange=createFieldHandler<TransactionType>('type');
- const toggleTransactionType = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-      const newType = formInputData.type === 'deposit' ? 'withdraw' : 'deposit';
+const toggleTransactionType = useCallback(
+  (e: React.MouseEvent<HTMLButtonElement>) => {
+  e.preventDefault();
+    const newType = formInputData.type === 'deposit' ? 'withdraw' : 'deposit';
 
-    setFormInputData(prev => ({
-      ...prev,
-      type: newType
-    }));
+  setFormInputData(prev => ({
+    ...prev,
+    type: newType
+  }));
 
-    setFormValidatedData(prev => ({
-      ...prev,
-      type: newType
-    }));
-  },
-  [formInputData.type,setFormInputData, setFormValidatedData]
+  setFormValidatedData(prev => ({
+    ...prev,
+    type: newType
+  }));
+},
+[formInputData.type,setFormInputData, setFormValidatedData]
 );
 
 // Handler for date changes
 // const handleDateChange=createFieldHandler<Date>('date');
-  const changeDate = useCallback((selectedDate: Date) => {
-    setFormInputData(prev => ({ ...prev, date: selectedDate }));
+const changeDate = useCallback((selectedDate: Date) => {
+  setFormInputData(prev => ({ ...prev, date: selectedDate }));
 
-    setFormValidatedData(prev => ({ ...prev, date: selectedDate }));
-  }, [setFormInputData,setFormValidatedData]);
+setFormValidatedData(prev => ({ ...prev, date: selectedDate }));
+}, [setFormInputData,setFormValidatedData]);
 
 //note handler
 const handleNoteChange=(
 createTextareaHandler('note'));
-
 //-------------------------------
 // Unified handler for TopCardZod input changes
 const handleTopCardChange = (e:React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>)=>{
   const {name}=e.target
-
   if(name === 'amount'){
 handleAmountChange(e)
   }
 }
-
 // ======================
 // SUBMIT HANDLING
 // ======================
-  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
+ async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
     console.log('On Save Handler');
     e.preventDefault();
+    setShowMessage(true); 
     setMessageToUser('Processing transaction...')
      
 // Evaluate all fields using hook's validation system   
  const { isValid, messages, validatedData } = validateAllPnL();
+console.log('isValid',isValid)
 
  if(!isValid){
   setValidationMessages(messages)
- // Force showing all validation messages
+// Force showing all validation messages
   activateAllValidations(true)
   setMessageToUser('Please correct the highlighted fields');
+
   setTimeout(() => setMessageToUser(null), 4000);
   return
  }
@@ -317,28 +310,28 @@ handleAmountChange(e)
 
 try {
 // Prepare payload with validated data
-    const payload: PayloadType = {
-      ...formValidatedData!,
-      user,
-        date: validatedData?.date || new Date(),
-        // currency: formValidatedData?.currency || defaultCurrency,
-    };
-    const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
+  const payload: PayloadType = {
+    ...formValidatedData!,
+    user,
+      date: validatedData?.date || new Date(),
+      // currency: formValidatedData?.currency || defaultCurrency,
+  };
+  const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
 
-  //Submit to server
-    const response = await requestFn(payload, {
-      url: postUrl,
-    } as AxiosRequestConfig);
+//Submit to server
+  const response = await requestFn(payload, {
+    url: postUrl,
+  } as AxiosRequestConfig);
 
-    if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-      console.log('Data from record transaction request:', response);
-    }
+  if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+    console.log('Data from record transaction request:', response);
+  }
 
-      if (response?.error ) {
-      throw new Error(response?.error || error || 'An unexpected error occurred during submission.');
-    }
-  //---
-  //update total available global budget state
+    if (response?.error ) {
+    throw new Error(response?.error || error || 'An unexpected error occurred during submission.');
+  }
+//---
+//update total available global budget state
     const {
       data: {
         data: { total_balance },
@@ -355,12 +348,13 @@ try {
     setMessageToUser('Transaction completed successfully!');
     setShowMessage(true);    
 
-// Reset form only on successful submission---------
+// Reset form only on successful submission 
     resetForm()
+    setHasUserInteracted(false)
     setReloadTrigger(prev=>prev+1)
     setIsReset(true);
     
-    // after a delay, change isReset to false
+// after a delay, change isReset to false
     setTimeout(() => {
       setIsReset(false);
     }, 100);
@@ -386,8 +380,7 @@ try {
   // ======================
   // EFFECTS
   // ======================
- 
- //Handle states related to the data submit form
+  //Handle states related to the data submit form
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
 
@@ -408,6 +401,37 @@ try {
 
     return () => clearTimeout(timer);
   }, [data, error, isLoading]);
+  //---
+useEffect(()=>{
+//show errors upon user interaction
+console.log('intracted', hasUserInteracted)
+
+ if(!hasUserInteracted) {setValidationMessages(prev=>{
+    const newMessages={...prev};
+    delete newMessages.account;
+    delete newMessages.note;
+    delete newMessages.amount;
+    return newMessages;
+  });
+}
+  // console.log('formInputData.account', !!formInputData.account)
+//---
+if(formInputData.account === ""  && (formInputData.amount !== '' || formInputData.note !==''))
+{
+  setValidationMessages(prev=>({
+    ...prev, account:"* Please select an Account"
+  }));
+  activateAllValidations(true)
+}
+//---
+if(formInputData.note === "" && (formInputData.amount !== '' || formInputData.account !=='') )
+  {
+    setValidationMessages(prev=>({
+      ...prev, note:"* Please insert a Note"
+    }));
+    activateAllValidations(true)
+  }
+},[formInputData.account,formInputData.note, formInputData.amount, hasUserInteracted,setValidationMessages, activateAllValidations])
 
 // ======================
 // RENDER
@@ -464,7 +488,7 @@ try {
           <CardNoteSave
             title={'note'}
             validationMessages={validationMessages}
-            dataHandler={handleNoteChange}
+            dataHandler={(e:React.ChangeEvent<HTMLTextAreaElement>)=>{setHasUserInteracted?.(true);handleNoteChange(e)}}
             inputNote={formInputData.note}
             onSaveHandler={onSaveHandler}
             isDisabled={isLoading}
