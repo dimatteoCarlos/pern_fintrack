@@ -146,10 +146,10 @@ function Transfer(): JSX.Element {
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
-
+// ---------
  // 📝 Hook `useFormManager`, initialization.
   const {
-    formData,//: formData,
+    formData,
     showValidation,
     validationMessages,
     handlers: {
@@ -206,7 +206,6 @@ function Transfer(): JSX.Element {
       return ACCOUNT_OPTIONS_DEFAULT;
     }
     const originAccountList = originAccountsResponse?.data?.accountList ?? [];
-
     // console.log(
     //   '🚀 ~ optionsOriginAccounts ~ originAccountList:',
     //   originAccountList
@@ -224,7 +223,7 @@ function Transfer(): JSX.Element {
   //filtering origin account list
   const filteredOriginOptions = useMemo(() => {
     if (!formData.destinationAccountId) {
-      return optionsOriginAccounts;
+      return optionsOriginAccounts;//revisar essto
     }
     const originAccountList = originAccountsResponse?.data?.accountList ?? [];
 
@@ -245,7 +244,7 @@ function Transfer(): JSX.Element {
     optionsOriginAccounts,
   ]);
 
-  //----account options for drpdown of origine
+  //----account options for dropdown of origin
   const originAccountOptionsToRender = {
     title: originAccountsResponse?.data?.accountList.length
       ? 'Select Account'
