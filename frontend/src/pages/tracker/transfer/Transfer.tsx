@@ -69,6 +69,9 @@ export type ShowValidationType={
     // originAccountId?: boolean;
     // destinationAccountId?: boolean;
 } 
+
+type RadioOptionType<T extends string> = {value:T, label:string}
+
 //=====================================
 // ⚙️ Initial Configuration and default values
 //====================================
@@ -90,12 +93,19 @@ const initialMovementData: MovementInputDataType = {
 const VARIANT_DEFAULT: VariantType = 'tracker';
 
 //--RadioOption selection for account types
-const inputRadioOptionsAccountType:{value:TransferAccountType, label:string}[] = [
+const inputRadioOptionsAccountTopCard:RadioOptionType<TransferAccountType>[] = [
   { value: 'bank', label: 'Bank' },
   { value: 'investment', label: 'Invest' },
   { value: 'pocket', label: 'Pocket' },
+  { value: 'category_budget', label: 'Rev.Expense' },
 ];
 
+const inputRadioOptionsAccountBottomCard:RadioOptionType<TransferAccountType>[] = [
+  { value: 'bank', label: 'Bank' },
+  { value: 'investment', label: 'Invest' },
+  { value: 'pocket', label: 'Pocket' },
+  { value: 'income_source', label: 'Rev. Income' },
+];
 //==============================
 // ⚛️Main Component: Transfer
 //==============================
@@ -138,7 +148,6 @@ function Transfer(): JSX.Element {
   useState<boolean>(true);
   const [isResetDestinationAccount, setIsResetDestinationAccount] =
   useState<boolean>(true);
-
 //----------
 // 🌳 Global State (Zustand store) to update available balance 
 //--available balance was former named available budget from figma design which is the name used here
@@ -172,7 +181,6 @@ function Transfer(): JSX.Element {
  transferSchema, 
     initialMovementData
   );
-
 //--- DATA FETCHING------
 // Prepare data and url for Fetching origin accounts
   const originAccountTypeFromDb =
@@ -186,7 +194,7 @@ function Transfer(): JSX.Element {
       : // <Navigate to='/auth' />
         undefined;
 
-  //GET: AVAILABLE ACCOUNTS BY TYPE for Origin account
+//GET: AVAILABLE ACCOUNTS BY TYPE for Origin account
   const {
     apiData: originAccountsResponse,
     isLoading: isLoadingOriginAccounts,
@@ -219,11 +227,11 @@ function Transfer(): JSX.Element {
         }))
       : ACCOUNT_OPTIONS_DEFAULT;
   }, [originAccountsResponse?.data.accountList, fetchedErrorOriginAccounts]);
-  //-------------------------------------
-  //filtering origin account list
+//-------------------------------------
+//filtering origin account list
   const filteredOriginOptions = useMemo(() => {
     if (!formData.destinationAccountId) {
-      return optionsOriginAccounts;//revisar essto
+      return optionsOriginAccounts;
     }
     const originAccountList = originAccountsResponse?.data?.accountList ?? [];
 
@@ -244,7 +252,7 @@ function Transfer(): JSX.Element {
     optionsOriginAccounts,
   ]);
 
-  //----account options for dropdown of origin
+//----account options for dropdown of origin
   const originAccountOptionsToRender = {
     title: originAccountsResponse?.data?.accountList.length
       ? 'Select Account'
@@ -254,14 +262,14 @@ function Transfer(): JSX.Element {
   };
 
 //-------------------------------------
-  //DATA FETCHING
-  // Prepare data and url for Fetching destination accounts
+//DATA FETCHING
+// Prepare data and url for Fetching destination accounts
   const destinationAccTypeDb =
     formData.destinationAccountType === 'pocket'
       ? 'pocket_saving'
       : formData.destinationAccountType;
 
-  //GET: AVAILABLE ACCOUNTS BY TYPE for Destionation account
+//GET: AVAILABLE ACCOUNTS BY TYPE for Destination account
   const fetchDestinationAccountUrl =
     user && destinationAccTypeDb
       ? `${url_get_accounts_by_type}/?type=${destinationAccTypeDb}&user=${user}&${reloadTrigger}`
@@ -276,7 +284,7 @@ function Transfer(): JSX.Element {
     error: fetchedErrorDestinationAccounts,
   } = useFetch<AccountByTypeResponseType>(fetchDestinationAccountUrl as string);
 
- //Data Transformations
+//Data Transformations
 //🧠 Memoization: Account Options
   // console.log('destinationAccountsResponse', {
   //   destinationAccountsResponse,
@@ -293,15 +301,15 @@ const destinationAccountOptions = useMemo(
     variant:VARIANT_DEFAULT
   }), [destinationAccountsResponse ,formData.originAccountId])
 
-  //-------------------------------------
-  //OBTAIN THE REQUESTFN FROM userFetchLoad
+//-------------------------------------
+//OBTAIN THE REQUESTFN FROM userFetchLoad
   type PayloadType = MovementValidatedDataType & {
     user: string;
     type?: string;
     // transaction_actual_date: string | Date;
   };
   //---
-  //DATA POST FETCHING
+//DATA POST FETCHING
   // const { data, isLoading, error:errorPost, requestFn } = useFetchLoad<
   const {  isLoading, error:errorPost, requestFn } = useFetchLoad<
     MovementTransactionResponseType,
@@ -323,7 +331,7 @@ const handleAmountChange=createNumberHandler('amount');
   const handleOriginChange = useCallback((selectedOption: DropdownOptionType | null) => {
   const accountName = selectedOption?.value || '';
   
-  // Find data completed account for Origin
+// Find data completed account for Origin
   const selectedAccount = originAccountsResponse?.data?.accountList?.find(
     acc => acc.account_name === accountName
   );
@@ -359,7 +367,7 @@ if(accountName){
  const handleOriginAccountTypeChange = useCallback((newType: string) => {
     setFormData(prev => ({
       ...prev,
-      originAccountType: newType as TransferAccountType,
+      originAccountType: newType as Exclude<TransferAccountType, 'income_source'>,
       origin: '', // Reset origin when type changes
       originAccountId: undefined // Reset ID
     }));
@@ -376,20 +384,20 @@ if(accountName){
  const handleDestinationAccountTypeChange = useCallback((newType: string) => {
     setFormData(prev => ({
       ...prev,
-      destinationAccountType: newType as 'bank' | 'investment' | 'pocket',
+      destinationAccountType: newType as Exclude<TransferAccountType,'category_budget'>,
       destination: '', // Reset destination when type changes
       destinationAccountId:undefined //Reset account ID
         }));
 
-    //Reset Validation
+  //Reset Validation
     setValidationMessages(prev => ({ ...prev, destination: '' }));
-    //force reset of dropdown
+  //force reset of dropdown
     setIsResetDestinationAccount(false);//first deactivate
     setTimeout(()=>setIsResetDestinationAccount(true),10) //Then activate for following rendering
   }, [setFormData, setValidationMessages]); 
  
-  //-------------------------------------
-  //--Handler submit form
+//-------------------------------------
+//--Handler submit form
   async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
   // console.log('On Save Handler');
     e.preventDefault();
@@ -397,7 +405,7 @@ if(accountName){
   //--data validation messages --
     activateAllValidations()
     const {fieldErrors,dataValidated}=validateAll() 
-
+    console.log(fieldErrors, 'fieldErrors desde onSaveHandler') 
     if (formData.origin === formData.destination) {
       fieldErrors.destination = 'Origin and destination must be different';
     }
@@ -408,12 +416,12 @@ if(accountName){
       setTimeout(() => setMessageToUser(null), 4000);
       return;
     }
-  //---------------------------------------
-  //POST ENDPOINT FOR MOVEMENT TRANSACTION HERE
-  //update balance account of bank account and category budget account in: user_accounts table.
-  //record both transaction descriptions: transfer and receive transactions with the correspondent account info.
-  //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=expense
-  //user id is sent via req.body
+//---------------------------------------
+//POST ENDPOINT FOR MOVEMENT TRANSACTION HERE
+//update balance account of bank account and category budget account in: user_accounts table.
+//record both transaction descriptions: transfer and receive transactions with the correspondent account info.
+//endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=expense
+//user id is sent via req.body
       try {
         if (!dataValidated) {
         throw new Error('Validation failed. Please check your inputs.');
@@ -496,7 +504,7 @@ if(accountName){
   };
 
   // console.log('validation messages', validationMessages, data);
-  //-------------------------------------
+  //-----------------------------------
   return (
     <>
       <form className='transfer' style={{ color: 'inherit' }}>
@@ -521,33 +529,40 @@ if(accountName){
             radioOptionSelected:
               formData.originAccountType ??
               initialMovementData.originAccountType!,
-            inputRadioOptions: inputRadioOptionsAccountType,
+            inputRadioOptions: inputRadioOptionsAccountTopCard,
             setRadioOptionSelected: handleOriginAccountTypeChange,
             title: '',
             disabled:isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts 
             
           }}
-          //---------
         />
         {/* end of TOP CARD */}
+
         <CardSeparator />
+
         {/*start of BOTTOM CARD */}
 
         <div className='state__card--bottom'>
           <div className='account card--title card--title--top'>
-            {'To : '}
+          <span className="account-label">To:</span> 
+          {/* <div className="radio-input-container"> */}
+           <div className="radio-input__options">
             <RadioInput
               radioOptionSelected={
                 formData.destinationAccountType ??
                 initialMovementData.destinationAccountType!
               }
-              inputRadioOptions={inputRadioOptionsAccountType}
+              inputRadioOptions={inputRadioOptionsAccountBottomCard}
               setRadioOptionSelected={handleDestinationAccountTypeChange}
               title={''}
               labelId='destination'
               disabled=  {isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts }
             />
-          </div>
+           </div> 
+          {/* </div> */}
+ 
+        </div>
+
           <div className='validation__errMsg'>
             {validationMessages['destination']}
           </div>
