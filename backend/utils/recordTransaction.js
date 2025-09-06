@@ -14,7 +14,7 @@ export async function recordTransaction(option) {
       amount,
       currency_id,
       account_id,
-      
+
       source_account_id,
       transaction_type_id,
       destination_account_id,
@@ -76,8 +76,6 @@ export async function recordTransaction(option) {
 				"created_at": "2025-03-19T20:12:05.094Z"
 			}
 
-
-
-        return `${note ? note + '. ' : ''}${action} ${amount} ${currency} ${transactionType === 'deposit' ? 'received from' : 'to'} account "${sourceAccountName}" (${sourceAccountType}) ${transactionType === 'deposit' ? 'credited to' : 'debited from'} "${destinationAccountName}" (${destinationAccountType}). Date: ${new Date(date).toLocaleDateString()}`;
+       return `${note ? note + '. ' : ''}${action} ${amount} ${currency} ${transactionType === 'deposit' ? 'received from' : 'to'} account "${sourceAccountName}" (${sourceAccountType}) ${transactionType === 'deposit' ? 'credited to' : 'debited from'} "${destinationAccountName}" (${destinationAccountType}). Date: ${new Date(date).toLocaleDateString()}`;
 }
 */

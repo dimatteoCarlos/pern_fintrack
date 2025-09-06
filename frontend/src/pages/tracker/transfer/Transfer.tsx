@@ -323,29 +323,29 @@ const destinationAccountOptions = useMemo(
 // =================================
 const handleAmountChange=createNumberHandler('amount');
 
-  const handleCurrencyChange = useCallback((newCurrency: CurrencyType) => {
-    updateCurrency(newCurrency);
-  }, [updateCurrency]);
+const handleCurrencyChange = useCallback((newCurrency: CurrencyType) => {
+  updateCurrency(newCurrency);
+}, [updateCurrency]);
 //-------
 // const handleOriginChange = createDropdownHandler('origin');
-  const handleOriginChange = useCallback((selectedOption: DropdownOptionType | null) => {
-  const accountName = selectedOption?.value || '';
-  
+const handleOriginChange = useCallback((selectedOption: DropdownOptionType | null) => {
+const accountName = selectedOption?.value || '';
+
 // Find data completed account for Origin
-  const selectedAccount = originAccountsResponse?.data?.accountList?.find(
-    acc => acc.account_name === accountName
-  );
+const selectedAccount = originAccountsResponse?.data?.accountList?.find(
+  acc => acc.account_name === accountName
+);
 
-  setFormData(prev => ({
-    ...prev,
-    origin: accountName,
-    originAccountId: selectedAccount?.account_id
-  }));
+setFormData(prev => ({
+  ...prev,
+  origin: accountName,
+  originAccountId: selectedAccount?.account_id
+}));
 
-  //Validation and cleaning of validation messages 
-  if (accountName) {
-    setValidationMessages(prev => ({ ...prev, origin: '' }));
-  }
+//Validation and cleaning of validation messages 
+if (accountName) {
+  setValidationMessages(prev => ({ ...prev, origin: '' }));
+}
 }, [originAccountsResponse?.data?.accountList, setFormData, setValidationMessages]);
 
 //--------------------------------
@@ -361,7 +361,7 @@ if(accountName){
  },[destinationAccountsResponse?.data?.accountList, setFormData, setValidationMessages]);
 
 //-------------------------------
-  const handleNoteChange = createTextareaHandler('note');
+const handleNoteChange = createTextareaHandler('note');
 
 //Radio Input Handlers
  const handleOriginAccountTypeChange = useCallback((newType: string) => {
@@ -373,12 +373,12 @@ if(accountName){
     }));
     
 // Reset validation
-    setValidationMessages(prev => ({ ...prev, origin: '' }));
+setValidationMessages(prev => ({ ...prev, origin: '' }));
 // force reset of dropdown
-  setIsResetOriginAccount(false); // first deactivate
-  setTimeout(() => setIsResetOriginAccount(true), 10); //Then activate for following render
+setIsResetOriginAccount(false); // first deactivate
+setTimeout(() => setIsResetOriginAccount(true), 10); //Then activate for following render
 
-  }, [setFormData, setValidationMessages]);
+}, [setFormData, setValidationMessages]);
 
  //---
  const handleDestinationAccountTypeChange = useCallback((newType: string) => {
@@ -422,65 +422,65 @@ if(accountName){
 //record both transaction descriptions: transfer and receive transactions with the correspondent account info.
 //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=expense
 //user id is sent via req.body
-      try {
-        if (!dataValidated) {
-        throw new Error('Validation failed. Please check your inputs.');
-     } 
+try {
+    if (!dataValidated) {
+    throw new Error('Validation failed. Please check your inputs.');
+  } 
 
-       const payload: PayloadType = {
-        amount: Number(formData.amount),
-        origin: formData.origin,
-        destination: formData.destination,
-        note: formData.note,
-        currency: formData.currency,
-        originAccountType: formData.originAccountType,
-        destinationAccountType: formData.destinationAccountType,
-        user,
-        type: typeMovement,
-          };
-      //  console.log('compare', dataValidated, payload)   
-       const finalUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
-        const response = await requestFn(payload, {
-          url: finalUrl,
-        } as AxiosRequestConfig);
-        
-        if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-          console.log('Data from record transaction request:', response);
-        }
-
-        if (response?.error ) {
-        throw new Error(response?.error || error || 'An unexpected error occurred during submission.');
-      }
-//-------------------------------------
-// update total available budget global state
-    const {
-      data: {
-        data: { total_balance },
-      },
-    } = await axios.get<BalanceBankRespType>(
-      `${url_get_total_account_balance_by_type}/?type=bank&user=${user}`
-    );
-
-    if (typeof total_balance === 'number') {
-      setAvailableBudget(total_balance);
-    } 
-//-----------------------------  
-    setMessageToUser('Transaction recorded successfully!');       
-//-------------------------------
-//reset the state and the selected options on select component
-    resetForm();
-    setReloadTrigger(prev => prev + 1);
-    setIsReset(true);
-    // setMessageToUser('Transfer completed successfully!');
-    setTimeout(() => setMessageToUser(null), 3000);
-          
-      } catch (error) {
-   console.error('Submission error:', error);
-      const errorMessage = handleApiError(error);
-      setMessageToUser(errorMessage);
-      setTimeout(() => setMessageToUser(null), 5000);
-      }
+    const payload: PayloadType = {
+    amount: Number(formData.amount),
+    origin: formData.origin,
+    destination: formData.destination,
+    note: formData.note,
+    currency: formData.currency,
+    originAccountType: formData.originAccountType,
+    destinationAccountType: formData.destinationAccountType,
+    user,
+    type: typeMovement,
+      };
+  //  console.log('compare', dataValidated, payload)   
+    const finalUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
+    const response = await requestFn(payload, {
+      url: finalUrl,
+    } as AxiosRequestConfig);
+    
+    if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+      console.log('Data from record transaction request:', response);
     }
+
+    if (response?.error ) {
+    throw new Error(response?.error || error || 'An unexpected error occurred during submission.');
+  }
+//-------------------------------------
+  // update total available budget global state
+  const {
+    data: {
+      data: { total_balance },
+    },
+  } = await axios.get<BalanceBankRespType>(
+    `${url_get_total_account_balance_by_type}/?type=bank&user=${user}`
+  );
+
+  if (typeof total_balance === 'number') {
+    setAvailableBudget(total_balance);
+  } 
+  //-----------------------------  
+  setMessageToUser('Transaction recorded successfully!');       
+  //-------------------------------
+  //reset the state and the selected options on select component
+  resetForm();
+  setReloadTrigger(prev => prev + 1);
+  setIsReset(true);
+  // setMessageToUser('Transfer completed successfully!');
+  setTimeout(() => setMessageToUser(null), 3000);
+        
+    } catch (error) {
+  console.error('Submission error:', error);
+    const errorMessage = handleApiError(error);
+    setMessageToUser(errorMessage);
+    setTimeout(() => setMessageToUser(null), 5000);
+    }
+  }
 //--------------------------------
 // ⏳--- Side Effects--/--Efectos secundarios
   useEffect(() => {
@@ -506,98 +506,98 @@ if(accountName){
   // console.log('validation messages', validationMessages, data);
   //-----------------------------------
   return (
-    <>
-      <form className='transfer' style={{ color: 'inherit' }}>
-        {/* start of TOP CARD */}
-        <TopCardZod
-          topCardElements={topCardElements}
-          validationMessages={validationMessages}
-          setValidationMessages={setValidationMessages}
-          updateTrackerData={handleAmountChange}
-          trackerName={trackerState}
-          currency={formData.currency}
-          updateCurrency={handleCurrencyChange}
-          setSelectState={setFormData}
+  <>
+    <form className='transfer' style={{ color: 'inherit' }}>
+      {/* start of TOP CARD */}
+      <TopCardZod
+        topCardElements={topCardElements}
+        validationMessages={validationMessages}
+        setValidationMessages={setValidationMessages}
+        updateTrackerData={handleAmountChange}
+        trackerName={trackerState}
+        currency={formData.currency}
+        updateCurrency={handleCurrencyChange}
+        setSelectState={setFormData}
+        isReset={isReset}
+        setIsReset={setIsReset}
+        //specific reset for dropdown 
+        isResetDropdown={isResetOriginAccount}
+        setIsResetDropdown={setIsResetOriginAccount}
+        customSelectHandler={handleOriginChange}
+
+        radioInputProps={{
+          radioOptionSelected:
+            formData.originAccountType ??
+            initialMovementData.originAccountType!,
+          inputRadioOptions: inputRadioOptionsAccountTopCard,
+          setRadioOptionSelected: handleOriginAccountTypeChange,
+          title: '',
+          disabled:isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts 
+          
+        }}
+      />
+      {/* end of TOP CARD */}
+
+      <CardSeparator />
+
+      {/*start of BOTTOM CARD */}
+
+      <div className='state__card--bottom'>
+        <div className='account card--title card--title--top'>
+        <span className="account-label">To:</span> 
+        {/* <div className="radio-input-container"> */}
+          <div className="radio-input__options">
+          <RadioInput
+            radioOptionSelected={
+              formData.destinationAccountType ??
+              initialMovementData.destinationAccountType!
+            }
+            inputRadioOptions={inputRadioOptionsAccountBottomCard}
+            setRadioOptionSelected={handleDestinationAccountTypeChange}
+            title={''}
+            labelId='destination'
+            disabled=  {isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts }
+          />
+          </div> 
+        {/* </div> */}
+
+      </div>
+
+        <div className='validation__errMsg'>
+          {validationMessages['destination']}
+        </div>
+        <DropDownSelection
+          dropDownOptions={destinationAccountOptions }
+          updateOptionHandler={handleDestinationChange}
           isReset={isReset}
           setIsReset={setIsReset}
-          //specific reset for dropdown 
-          isResetDropdown={isResetOriginAccount}
-          setIsResetDropdown={setIsResetOriginAccount}
-          customSelectHandler={handleOriginChange}
-
-          radioInputProps={{
-            radioOptionSelected:
-              formData.originAccountType ??
-              initialMovementData.originAccountType!,
-            inputRadioOptions: inputRadioOptionsAccountTopCard,
-            setRadioOptionSelected: handleOriginAccountTypeChange,
-            title: '',
-            disabled:isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts 
-            
-          }}
+          setIsResetDropdown={setIsResetDestinationAccount}
+          isResetDropdown={isResetDestinationAccount}
         />
-        {/* end of TOP CARD */}
 
-        <CardSeparator />
+        <CardNoteSave
+          title={'note'}
+          validationMessages={validationMessages}
+          dataHandler={handleNoteChange}
+          inputNote={formData.note}
+          onSaveHandler={onSaveHandler}
+        isDisabled=  {isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts }
+        showError={showValidation.note}
+        />
+    {/* end of BOTTOM CARD */}
+      </div>
+    </form>
 
-        {/*start of BOTTOM CARD */}
-
-        <div className='state__card--bottom'>
-          <div className='account card--title card--title--top'>
-          <span className="account-label">To:</span> 
-          {/* <div className="radio-input-container"> */}
-           <div className="radio-input__options">
-            <RadioInput
-              radioOptionSelected={
-                formData.destinationAccountType ??
-                initialMovementData.destinationAccountType!
-              }
-              inputRadioOptions={inputRadioOptionsAccountBottomCard}
-              setRadioOptionSelected={handleDestinationAccountTypeChange}
-              title={''}
-              labelId='destination'
-              disabled=  {isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts }
-            />
-           </div> 
-          {/* </div> */}
- 
-        </div>
-
-          <div className='validation__errMsg'>
-            {validationMessages['destination']}
-          </div>
-          <DropDownSelection
-            dropDownOptions={destinationAccountOptions }
-            updateOptionHandler={handleDestinationChange}
-            isReset={isReset}
-            setIsReset={setIsReset}
-            setIsResetDropdown={setIsResetDestinationAccount}
-            isResetDropdown={isResetDestinationAccount}
-          />
-
-          <CardNoteSave
-            title={'note'}
-            validationMessages={validationMessages}
-            dataHandler={handleNoteChange}
-            inputNote={formData.note}
-            onSaveHandler={onSaveHandler}
-          isDisabled=  {isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts }
-          showError={showValidation.note}
-          />
-      {/* end of BOTTOM CARD */}
-        </div>
-      </form>
-
-        <div className='fade-message'>
-          <MessageToUser
-            isLoading={false}
-            error={error}
-            messageToUser={messageToUser}
-            variant='tracker'
-          />
-        </div>
-      
-    </>
+      <div className='fade-message'>
+        <MessageToUser
+          isLoading={false}
+          error={error}
+          messageToUser={messageToUser}
+          variant='tracker'
+        />
+      </div>
+    
+  </>
   );
 }
 

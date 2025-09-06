@@ -508,7 +508,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   const daysAgo = _daysAgo.toISOString().split('T')[0];
 
   const { start, end } = req.query;
-  
+
   const startDate = new Date(start || daysAgo);
   startDate.setHours(0,0,0,0) //start of the day
   const endDate = new Date(end || today.toISOString().split('T')[0]);
@@ -616,7 +616,8 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           act.account_type_id,
           act.account_type_name,
          
-          ua.account_starting_amount, ua.account_start_date, 
+          ua.account_starting_amount,
+          ua.account_start_date, 
 
           tr.transaction_id, tr.description,
           tr.amount, tr.transaction_actual_date
@@ -624,11 +625,12 @@ export const dashboardMovementTransactions = async (req, res, next) => {
         FROM transactions tr 
             JOIN user_accounts ua ON
               (
-                (tr.amount > 0 AND ua.account_id = tr.destination_account_id) OR
+                (tr.amount > 0 AND ua.account_id = tr.destination_account_id)
+                 OR
                 (tr.amount < 0 AND ua.account_id = tr.source_account_id)
               )
               
-            JOIN account_types act ON ua.account_type_id = act.account_type_id
+            JOIN account_types act ON ua.account_type_id = act.account_type_idgrinding noise
 
             WHERE ua.user_id = $1
               AND (act.account_type_name = $2)

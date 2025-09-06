@@ -80,7 +80,7 @@ export const getTransferConfig = (body) => {
     sourceAccountTransactionType: 'withdraw',
   };
 };
-//=====================================
+//=================================
 export const getPnLConfig = (body) => {
 const isProfit = body.type === 'deposit';
 const accountType=body.accountType
@@ -99,8 +99,8 @@ return {
 
 }
 };
-//========================================
-//----------------------------------------
+//==================================
+//----------------------------------
 //transaction_types:
 // "transaction_type_id"	"transaction_type_name"
 // 1	"withdraw"
