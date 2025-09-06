@@ -109,8 +109,8 @@ const shouldShowError = !!validationMessages[accountFieldName]
 
     // console.log('title2', title2.trim(),'label', selectedOption?.label,'value', selectedOption?.value );
 
-    //if setValidationMessages is used, then clean the correspondent validation message
-    //aqui sin validar con zod,  se asigna el valor, y se asume que es valido, y entonces, se  borra el mensaje de error asociado al campo que se selecciono.
+  //if setValidationMessages is used, then clean the correspondent validation message
+  //aqui sin validar con zod,  se asigna el valor, y se asume que es valido, y entonces, se  borra el mensaje de error asociado al campo que se selecciono.
         
     if (setValidationMessages) {
       setValidationMessages((prev) => {
@@ -123,12 +123,12 @@ const shouldShowError = !!validationMessages[accountFieldName]
       });
     }
   }
-  //************************************/
- //usage of customSelectHandler if it exists
+//**********************************/
+//usage of customSelectHandler if it exists
   const finalSelectHandler = customSelectHandler || stateSelectHandler;
   //  console.log('isResetDropdown', { isResetDropdown });
    // console.log('selected value from TopCard:', selectedValue);
-  //-------------------------------------------
+//-----------------------------------
   return (
     <>
       <div className='state__card--top  '>
@@ -156,7 +156,7 @@ const shouldShowError = !!validationMessages[accountFieldName]
         </div>
 
         <div className='account card--title '>
-         {capitalize(label2??title2).trim()}
+         <span className ='account-label'>{capitalize(label2??title2).trim()}</span>
           
          {radioInputProps && (
             <RadioInput

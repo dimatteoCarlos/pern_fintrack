@@ -121,7 +121,7 @@ function Overview() {
   const location = useLocation();
   const originRoute = location.pathname;
   // console.log({ originRoute });
-  //states----
+//states----
   const [kpiData, setKpiData] = useState<KPIDataStateType>({
     SavingGoals: null,
     MonthlyMovementKPI: null,
@@ -340,9 +340,7 @@ function Overview() {
               }
             )
           : null;
-
-
-        //-------------
+//-------------
         setKpiData({
           SavingGoals: savingGoalsData,
           MonthlyMovementKPI: totalAndMonthlyAmount,

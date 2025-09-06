@@ -3,28 +3,35 @@
 0. GENERAL
    como hacer deployment, como verificar componentes no usados o rotos, 
 
-   -- ==================
+   en expense movement, la cuenta source registrada en la transaction debe ser distinta del id de la cuenta category.
+   
+    revisar signos de los montos, de las transferencias de reverse expense y reverse income.Listo
+    
+    y verificar si se incluye en la bbdd de transacciones. deshabilitar la opcion de reverse que no se este usando, evluar si pueden ser simultaneas?. listo Expense Reverse
+
+   arreglar style media query de transfer para To:.
+   reducri tamano de fuente de rom y to, en el media query. Listo
+-- ==================
   EDICIÓN Y ELIMINACIÓN: Establecer una estrategia para editar y eliminar datos, y definir los campos editables y sus interrelaciones en la base de datos.
 
   Implantar transacciones de reverso para las cuentas expense e income source, de manera de poder realizar reversos manuales entre cuantas, en caso de error de usuario.
 
-  Implanatar edicion de cuentas, datos solamente, no transacciones. Edicion siimlple.
+  Implantar edicion de cuentas, datos solamente, no transacciones. Edicion simlple.
 -- ==================
-
  BUGS:
 
   El orden de las transacciones debe ser primero el retiro o withdraw y despues received o deposit.
 
   9. DEBTS. Revisar la presentacion de los miovimientos debts en el overview, , deberian ser del ultimo al primero , es decir descendentes en fecha y hora.
 
-    Reflejar los nombres y apellidos de los debtors, con primera letra en mayuscula.
+  Reflejar los nombres y apellidos de los debtors, con primera letra en mayuscula.
 
-  10. EXPENSE. si se crea una cuenta con mas de 25 caraceteres, se muestra un error warning, pero igualmete se crea con categoria en blanco. errores de pg.
+  10. EXPENSE. si se crea una cuenta con mas de 25 caraceteres, se muestra un error warning, pero igualmente se crea con categoria en blanco. errores de pg.
 
   
   11. arreglar los colores de los toast de acuerdo con e tipo de error o mensaje. En creacion de cuentas, perfiles, etc. 
 
-  porque se muestran arios toast renderizados, con la misma informacion?
+  porque se muestran varios toast renderizados, con la misma informacion?
 
 1. FUNCIONALIDAD Y LÓGICA DE NEGOCIO
 
@@ -52,6 +59,13 @@ Balance de Inversiones: Aclarar el cálculo del balance total de las inversiones
 Página de Detalle de Ingresos: Definir si se debe crear una página de detalle para las cuentas de income.
 
 2. BACKEND Y SEGURIDAD
+
+la hora de transaction-atual-ate enel controller transfer between accounts, tiene 4 horas adicionales con respecto al momento que se hace la transaction?. 
+
+como guardar los montos numericos en la bbdd como number o decimal, y no como string, o porque se recuperan como strings?. los campos account_starting_amount: '0.00',
+  account_balance: '75.00',
+
+
 
 Autenticación de Usuarios: Implementar la autenticación de usuarios y verificar el userId antes de permitir el acceso a las funciones principales.
 

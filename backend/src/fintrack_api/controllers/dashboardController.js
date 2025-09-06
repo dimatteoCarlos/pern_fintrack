@@ -48,14 +48,14 @@ export const dashboardTotalBalanceAccounts = async (req, res, next) => {
 
     const successMsg = `Total balance accounts were successfully calculated`;
 
-    const TOTAL_BALANCE_QUERY = {
-      text: `SELECT act.account_type_name, CAST(SUM(ua.account_balance) AS FLOAT) as total_balance, ct.currency_code FROM user_accounts ua
-JOIN account_types act ON ua.account_type_id = act.account_type_id
-JOIN currencies ct ON ua.currency_id = ct.currency_id
-WHERE user_id = $1 AND ua.account_name!=$2
-GROUP BY act.account_type_name, ct.currency_code
-ORDER BY account_type_name ASC
-`,
+  const TOTAL_BALANCE_QUERY = {
+    text: `SELECT act.account_type_name, CAST(SUM(ua.account_balance) AS FLOAT) as total_balance, ct.currency_code FROM user_accounts ua
+      JOIN account_types act ON ua.account_type_id = act.account_type_id
+      JOIN currencies ct ON ua.currency_id = ct.currency_id
+      WHERE user_id = $1 AND ua.account_name!=$2
+      GROUP BY act.account_type_name, ct.currency_code
+      ORDER BY account_type_name ASC
+  `,
       values: [userId, 'slack'],
     };
 
@@ -95,12 +95,12 @@ ORDER BY account_type_name ASC
     next(createError(code, message));
   }
 };
-//------------------------------------------
-//========================================================
-//--- dashboardTotalBalanceAccountByType -----------------
-//get the total balance for a specific type account
+//--------------------------------------
+//======================================
+//-- dashboardTotalBalanceAccountByType
+//-- get the total balance for a specific type account
 //used in:TrackerLayout, OverviewLayout.tsx
-//========================================================
+//======================================
 //get enpoint: //http://localhost:5000/api/fintrack/dashboard/balance/type
 //get the sum total balance of a specified account type
 
@@ -117,7 +117,7 @@ ORDER BY account_type_name ASC
 		}
 	]
 }
-  */
+*/
 //--------------
 export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
   const backendColor = 'cyan';
@@ -165,37 +165,39 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
 
     const successMsg = `Total balance account of account type ${accountType} successfully calculated`;
 
-    //********************************************/
-    //---queries definition
-    // TOTAL_BALANCE_QUERY  is used for bank, investment and income_source type account
+//*********************************/
+//---queries definition
+// TOTAL_BALANCE_QUERY  is used for bank, investment and income_source type account
 
-    const TOTAL_BALANCE_QUERY = {
-      text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance, CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
+  const TOTAL_BALANCE_QUERY = {
+    text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance, CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
       FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
       JOIN currencies ct ON ua.currency_id = ct.currency_id
       WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
       GROUP BY ct.currency_code
 `,
-      values: [userId, accountType, 'slack'],
+    values: [userId, accountType, 'slack'],
     };
 
     //-----------
-    const TOTAL_BALANCE_AND_GOAL_BY_TYPE = {
-      category_budget: {
-    text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,  CAST(SUM(st.budget) AS FLOAT ) AS total_budget,
-    (CAST(SUM(st.budget) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining,CAST(COUNT(*) AS INTEGER) AS accounts,
-    ct.currency_code FROM user_accounts ua
-    JOIN account_types act ON ua.account_type_id = act.account_type_id
-    JOIN currencies ct ON ua.currency_id = ct.currency_id
-    JOIN category_budget_accounts st ON ua.account_id = st.account_id
-    WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
-    GROUP BY  ct.currency_code
+  const TOTAL_BALANCE_AND_GOAL_BY_TYPE = {
+  category_budget: {
+    text: `
+      SELECT
+       CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,  CAST(SUM(st.budget) AS FLOAT ) AS total_budget,
+      (CAST(SUM(st.budget) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining,CAST(COUNT(*) AS INTEGER) AS accounts,
+      ct.currency_code FROM user_accounts ua
+        JOIN account_types act ON ua.account_type_id = act.account_type_id
+        JOIN currencies ct ON ua.currency_id = ct.currency_id
+        JOIN category_budget_accounts st ON ua.account_id = st.account_id
+      WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+      GROUP BY ct.currency_code
 `,
-        values: [userId, accountType, 'slack'],
-      },
-      //-----------
-      pocket_saving: {
+  values: [userId, accountType, 'slack'],
+    },
+//-----------
+    pocket_saving: {
         text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance, CAST(SUM(st.target) AS FLOAT ) AS total_target,
          (CAST(SUM(st.target) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining,CAST(COUNT(*) AS INTEGER) AS accounts,  ct.currency_code
         FROM user_accounts ua
@@ -208,20 +210,21 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
         values: [userId, accountType, 'slack'],
       },
 
-      debtor: {
-        text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_debt_balance, CAST(SUM(CASE WHEN ua.account_balance > 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_receivable,  CAST(SUM(CASE WHEN ua.account_balance < 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_payable, 
+    debtor: {
+      text: `
+      SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_debt_balance, CAST(SUM(CASE WHEN ua.account_balance > 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_receivable,  CAST(SUM(CASE WHEN ua.account_balance < 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_payable, 
 
         CAST(COUNT(CASE WHEN ua.account_balance>0 THEN 1 ELSE NULL END) AS FLOAT) AS debtors, 
         CAST(COUNT(*) FILTER (WHERE ua.account_balance<0) AS FLOAT) AS lenders, 
         CAST(COUNT(*) FILTER (WHERE ua.account_balance=0) AS FLOAT) AS debtors_without_Debt, ct.currency_code
 
-        FROM user_accounts ua
-JOIN account_types act ON ua.account_type_id = act.account_type_id
-JOIN debtor_accounts st ON ua.account_id = st.account_id
-JOIN currencies ct ON ua.currency_id = ct.currency_id
+      FROM user_accounts ua
+        JOIN account_types act ON ua.account_type_id = act.account_type_id
+        JOIN debtor_accounts st ON ua.account_id = st.account_id
+        JOIN currencies ct ON ua.currency_id = ct.currency_id
 
-WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
-GROUP BY  ct.currency_code
+        WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+        GROUP BY  ct.currency_code
 `,
         values: [userId, accountType, 'slack'],
       },
@@ -270,9 +273,8 @@ GROUP BY  ct.currency_code
 
       return RESPONSE(res, 200, successMsg, data);
     }
-    //----------------------------------------------
-
-    //in case accountType does not exist
+//----------------------------------------------
+//in case accountType does not exist
     const message = `None accounts of type ${accountType} were found`;
     throw new error(message);
     // return RESPONSE(res, 400, message);
@@ -499,14 +501,26 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   //take care of ddbb server date
   const today = new Date();
   today.setDate(today.getDate() + 1);
+  today.setHours(23, 59, 59, 999);
+
   const _daysAgo = new Date(today);
   _daysAgo.setDate(today.getDate() - 31); // 30 days period by default
   const daysAgo = _daysAgo.toISOString().split('T')[0];
 
   const { start, end } = req.query;
+  
   const startDate = new Date(start || daysAgo);
+  startDate.setHours(0,0,0,0) //start of the day
   const endDate = new Date(end || today.toISOString().split('T')[0]);
-  // console.log('f', startDate, endDate);
+
+  endDate.setHours(23,59,59,999)
+  console.log('f', startDate, endDate);
+
+  console.log('Fechas usadas:', {
+  start: startDate.toISOString(),
+  end: endDate.toISOString(),
+
+});
 
   //later add a function to validate type and movement against the types
   //!account_type_name ||
@@ -543,36 +557,48 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       tableName = 'category_budget_accounts'; //destination account
       //category_budget
       queryModel = {
-        text: `SELECT  mt.movement_type_name,ua.account_id, ua.account_name, ua.account_balance, cba.budget,
-        ct.currency_code, act.account_type_id, act.account_type_name,
-        cba.category_name, cba.subcategory, cnt.category_nature_type_name,
-        ua.account_starting_amount, ua.account_start_date, 
-             tr.description, tr.transaction_actual_date, tr.amount
+        text: `
+        SELECT
+          ua.account_id,
+          ua.account_name,
+          ua.account_balance,
 
-          FROM transactions tr 
-            JOIN user_accounts ua ON tr.destination_account_id = ua.account_id
+          act.account_type_id,
+          act.account_type_name,
+         
+          ua.account_starting_amount, ua.account_start_date, 
+
+          tr.transaction_id, tr.description,
+          tr.amount, tr.transaction_actual_date
+
+        FROM transactions tr 
+            JOIN user_accounts ua ON
+              (
+                (tr.amount > 0 AND ua.account_id = tr.destination_account_id) OR
+                (tr.amount < 0 AND ua.account_id = tr.source_account_id)
+              )
+              
             JOIN account_types act ON ua.account_type_id = act.account_type_id
-            JOIN currencies ct ON ua.currency_id = ct.currency_id
-            JOIN movement_types mt  ON tr.movement_type_id = mt.movement_type_id
-            JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
-            JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
 
             WHERE ua.user_id = $1
-               AND (act.account_type_name = $2) AND ua.account_name != $3
-               AND mt.movement_type_name = $4
-               AND tr.destination_account_id IS NOT NULL 
-               AND( tr.amount>0)
-               AND (tr.transaction_actual_date BETWEEN $5 AND $6 OR tr.created_at BETWEEN $5 AND $6  )
+              AND (act.account_type_name = $2)
+              AND ua.account_name != $3
+              AND tr.amount !=0
 
-            ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
+            AND (
+              (tr.transaction_actual_date BETWEEN $4 AND $5)
+              )  
+
+            ORDER BY tr.transaction_actual_date DESC
           `,
         values: [
           userId,
           accountTypeMap.expense,
-          'slack',
-          movement_type_name,
-          startDate,
-          endDate,
+          'slack'
+           ,
+      //PostgreSQL espera strings en formato ISO.     
+          startDate.toISOString(),
+          endDate.toISOString(),
         ],
       };
       break;
@@ -581,27 +607,72 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       tableName = 'income_source_accounts'; //as source account
 
       queryModel = {
-        text: `SELECT mt.movement_type_name,ua.account_id, ua.account_name, ua.account_balance,
-          ct.currency_code, act.account_type_id, act.account_type_name,
-           ua.account_starting_amount, ua.account_start_date, 
-          tr.description, tr.transaction_actual_date, ABS(tr.amount) as amount
+        text: `
+        SELECT
+          ua.account_id,
+          ua.account_name,
+          ua.account_balance,
 
-          FROM transactions tr 
-            JOIN user_accounts ua ON tr.account_id = ua.account_id
+          act.account_type_id,
+          act.account_type_name,
+         
+          ua.account_starting_amount, ua.account_start_date, 
+
+          tr.transaction_id, tr.description,
+          tr.amount, tr.transaction_actual_date
+
+        FROM transactions tr 
+            JOIN user_accounts ua ON
+              (
+                (tr.amount > 0 AND ua.account_id = tr.destination_account_id) OR
+                (tr.amount < 0 AND ua.account_id = tr.source_account_id)
+              )
+              
             JOIN account_types act ON ua.account_type_id = act.account_type_id
-            JOIN currencies ct ON ua.currency_id = ct.currency_id
-            JOIN movement_types mt  ON tr.movement_type_id = mt.movement_type_id
 
-            --JOIN income_source_accounts isc ON ua.account_id = isc.account_id
+            WHERE ua.user_id = $1
+              AND (act.account_type_name = $2)
+              AND ua.account_name != $3
+              AND tr.amount !=0
 
-          WHERE ua.user_id = $1
-            AND (act.account_type_name = $2) AND ua.account_name != $3
-            AND( mt.movement_type_name = $4  OR mt.movement_type_name=$5)
+            AND (
+              (tr.transaction_actual_date BETWEEN $4 AND $5)
+              )  
 
-          ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
+            ORDER BY tr.transaction_actual_date DESC
           `,
-        values: [userId, accountTypeMap.income, 'slack', movement_type_name, 'account-opening'],
+        values: [
+          userId,
+          accountTypeMap.income,
+          'slack'
+           ,
+      //PostgreSQL espera strings en formato ISO.     
+          startDate.toISOString(),
+          endDate.toISOString(),
+        ],
       };
+      // queryModel = {
+      //   text: `SELECT mt.movement_type_name,ua.account_id, ua.account_name, ua.account_balance,
+      //     ct.currency_code, act.account_type_id, act.account_type_name,
+      //      ua.account_starting_amount, ua.account_start_date, 
+      //     tr.description, tr.transaction_actual_date, ABS(tr.amount) as amount
+
+      //     FROM transactions tr 
+      //       JOIN user_accounts ua ON tr.account_id = ua.account_id
+      //       JOIN account_types act ON ua.account_type_id = act.account_type_id
+      //       JOIN currencies ct ON ua.currency_id = ct.currency_id
+      //       JOIN movement_types mt  ON tr.movement_type_id = mt.movement_type_id
+
+      //       --JOIN income_source_accounts isc ON ua.account_id = isc.account_id
+
+      //     WHERE ua.user_id = $1
+      //       AND (act.account_type_name = $2) AND ua.account_name != $3
+      //       AND( mt.movement_type_name = $4  OR mt.movement_type_name=$5)
+
+      //     ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
+      //     `,
+      //   values: [userId, accountTypeMap.income, 'slack', movement_type_name, 'account-opening'],
+      // };
       break;
 
     case 'investment':
@@ -659,8 +730,8 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           accountTypeMap.pocket,
           'slack',
           'pocket',
-          startDate,
-          endDate,
+          startDate.toISOString(),
+          endDate.toISOString(),
           'account-opening'
         ],
       };
@@ -870,8 +941,8 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
   `,
       values: [
         userId,
-        startDate,
-        endDate,
+        startDatetoISOString(),
+        endDatetoISOString(),
         search,
         search === 'slack' ? '' : 'slack',
       ],
@@ -967,20 +1038,20 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
       text: `
   SELECT mt.movement_type_name, ct.currency_code, ua.*, tr.*, trt.transaction_type_name,act.account_type_name,
   CAST ( ua.account_starting_amount AS FLOAT),  CAST (tr.amount AS FLOAT),CAST(ua.account_balance AS FLOAT)
-  FROM transactions tr
-          JOIN user_accounts ua ON tr.account_id = ua.account_id
-          JOIN account_types act ON ua.account_type_id = act.account_type_id
-          JOIN currencies ct ON ua.currency_id = ct.currency_id
-          JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
-          JOIN transaction_types trt ON tr.transaction_type_id = trt.transaction_type_id
-  WHERE ua.user_id = $1 
+    FROM transactions tr
+      JOIN user_accounts ua ON tr.account_id = ua.account_id
+      JOIN account_types act ON ua.account_type_id = act.account_type_id
+      JOIN currencies ct ON ua.currency_id = ct.currency_id
+      JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
+      JOIN transaction_types trt ON tr.transaction_type_id = trt.transaction_type_id
+    WHERE ua.user_id = $1 
 
     AND (tr.transaction_actual_date BETWEEN $2 AND $3 OR tr.created_at BETWEEN $2 AND $3 AND ua.account_name !=$4)
 
     AND (mt.movement_type_name = $6 OR mt.movement_type_name = $8 )
     AND (trt.transaction_type_name = $5 OR act.account_type_name = $7)
 
-  ORDER BY tr.transaction_actual_date DESC, tr.created_at DESC
+    ORDER BY tr.transaction_actual_date DESC, tr.created_at DESC
   `,
       values: [
         userId,

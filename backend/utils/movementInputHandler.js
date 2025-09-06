@@ -1,7 +1,7 @@
 //backend/utils/movementInputHandler.js
 
 //Strategies according to type movement tracker.
-// Note: use id if available, if not use name
+//Note: use id if available, if not use name
 //let's assume that if account_id exists, it exists for both accounts, source and destination.
 //===============================
 export const getExpenseConfig = (body) => ({
@@ -37,7 +37,7 @@ export const getDebtConfig = (body) => {
   const accountIdentifier = account_id || account;
 
   const debtorIdentifier = debtor_id || debtor;
-
+//---------  
   return {
     useId, 
 
@@ -49,9 +49,10 @@ export const getDebtConfig = (body) => {
     destinationAccountName: isLend ? debtorIdentifier : accountIdentifier,
     destinationAccountTypeName: isLend ? 'debtor' : accountType ,
     destinationAccountTransactionType: 'borrow',
-    // destinationAccountTransactionType: type === 'lend' ? 'deposit' : 'withdraw',
+// destinationAccountTransactionType: type === 'lend' ? 'deposit' : 'withdraw',
   };
 };
+
 //===============================
 export const getTransferConfig = (body) => {
 //set pocket type to pocket_saving
@@ -64,63 +65,42 @@ export const getTransferConfig = (body) => {
   body.destinationAccountType === 'pocket'
   ? 'pocket_saving'
   : body.destinationAccountType;
-    
+//---------    
   return {
     useId:!!body.origin_account_id,
 
-    destinationAccountName:body.destination_account_id || body.destination,
+    destinationAccountName: body.destination_account_id || body.destination,
 
     destinationAccountTypeName: destinationAccountType,
 
     destinationAccountTransactionType: 'deposit',
-//---
+//--------
     sourceAccountName: body.origin_account_id ||  body.origin,
     sourceAccountTypeName: originAccountType,
     sourceAccountTransactionType: 'withdraw',
   };
 };
-//=================================
+//=====================================
 export const getPnLConfig = (body) => {
 const isProfit = body.type === 'deposit';
 const accountType=body.accountType
 //??body.accountType==''?'bank':body.accountType
 
 return {
-    useId:false,//!!body.origin_account_id,
+  useId:false,//!!body.origin_account_id,
 
-    sourceAccountName: isProfit ? 'slack' : body.account,
-    sourceAccountTransactionType: 'withdraw',
-    sourceAccountTypeName: isProfit ? 'bank' : accountType,
+  sourceAccountName: isProfit ? 'slack' : body.account,
+  sourceAccountTransactionType: 'withdraw',
+  sourceAccountTypeName: isProfit ? 'bank' : accountType,
 
-    destinationAccountName: isProfit ? body.account : 'slack',
-    destinationAccountTransactionType: 'deposit',
-    destinationAccountTypeName: isProfit ? accountType : 'bank',
+  destinationAccountName: isProfit ? body.account : 'slack',
+  destinationAccountTransactionType: 'deposit',
+  destinationAccountTypeName: isProfit ? accountType : 'bank',
 
 }
 };
-//===================================================
-//---config strategy for old version
-
-// export const getInvestmentConfig = (body) => ({
-//   destinationAccountName: body.type === 'deposit' ? body.account : 'slack',
-//   sourceAccountName: body.type === 'deposit' ? 'slack' : body.account,
-//   sourceAccountTypeName: body.type === 'deposit' ? 'bank' : 'investment',
-//   destinationAccountTypeName: body.type === 'deposit' ? 'investment' : 'bank',
-//   sourceAccountTransactionType: 'withdraw',
-//   destinationAccountTransactionType: 'deposit',
-// });
-
-// export const getPocketConfig = (body) => ({
-//   destinationAccountName: body.type === 'deposit' ? body.account : 'slack',
-//   sourceAccountName: body.type === 'deposit' ? 'slack' : body.account,
-//   //los tipos de cuentas se deben determinar segun las cuentas seleccionadas.
-//   sourceAccountTypeName: body.type === 'deposit' ? 'bank' : 'pocket_saving',
-//   destinationAccountTypeName:
-//     body.type === 'deposit' ? 'pocket_saving' : 'bank',
-//   sourceAccountTransactionType: 'withdraw',
-//   destinationAccountTransactionType: 'deposit',
-// });
-//--------------------------------------------------
+//========================================
+//----------------------------------------
 //transaction_types:
 // "transaction_type_id"	"transaction_type_name"
 // 1	"withdraw"

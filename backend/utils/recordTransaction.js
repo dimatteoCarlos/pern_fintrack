@@ -4,7 +4,7 @@ import pc from 'picocolors';
 import { pool } from '../src/db/configDB.js';
 import { handlePostgresError } from './errorHandling.js';
 
-export async function recordTransaction(options) {
+export async function recordTransaction(option) {
   try {
     const {
       userId,
@@ -14,12 +14,13 @@ export async function recordTransaction(options) {
       amount,
       currency_id,
       account_id,
+      
       source_account_id,
       transaction_type_id,
       destination_account_id,
       transaction_actual_date,
       account_balance
-    } = options;
+    } = option;
     // console.log('🚀 ~ recordTransaction ~ options:', options);
 
     //start the transaction
