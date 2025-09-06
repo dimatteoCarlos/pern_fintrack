@@ -451,7 +451,7 @@ const {
 
 //---Update the balance in the source account
     const sourceAccountBalance = parseFloat(sourceAccountInfo.account_balance);
-
+//---check for enough funds on source account
   if (
     sourceAccountBalance < numericAmount &&
     (
