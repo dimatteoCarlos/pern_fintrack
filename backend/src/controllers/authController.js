@@ -14,22 +14,20 @@ import { getCurrencyId } from '../fintrack_api/controllers/transactionController
 import { sendSuccessResponse } from '../../utils/authUtils/sendSuccessResponse.js';
 
 // src/utils/responseUtils.js
-//---
-//--sign-up or register
+//===========================
+//--SIGN-UP FOR USER REGISTER
+//===========================
 export const signUpUser = async (req, res, next) => {
-  // console.log('sign-up entered');
+// console.log('sign-up entered');
   await pool.query('BEGIN');
   try {
     const { username, user_firstname, user_lastname, email, currency } =
       req.body;
-
     const currency_code = currency ?? 'usd';
-
     // console.log(req.body);
 
-    //-----
+    //--Detect client device type
     // const isMobile = req.headers['user-agent']?.toLowerCase().includes('mobile')
-
     const clientDevice = req.clientDeviceType; //web | mobile | bot |unknown
     const clientTypeAccess = req.clientTypeAccess; //mobile-app | mobile-browser|tablet-app...
     console.log(
@@ -38,7 +36,7 @@ export const signUpUser = async (req, res, next) => {
       clientTypeAccess
     );
 
-    //----
+    //--Required fields validation
     if (
       !(
         username &&
@@ -55,11 +53,13 @@ export const signUpUser = async (req, res, next) => {
         )
       );
     }
-    //----
+    //---Check existence of entered fields in the data base
     const usernameExists = await pool.query(
       'SELECT 1 FROM users WHERE username=$1 FOR UPDATE',
       [username]
     );
+
+    //FOR UPDATE is used within a transaction, it locks the selected rows, preventing other concurrent transactions from modifying or locking those same rows until the current transaction either commits or rolls back
 
     if (usernameExists.rowCount > 0) {
       return next(createError(409, 'Username already exists.Try Sign in'));
@@ -75,20 +75,20 @@ export const signUpUser = async (req, res, next) => {
         createError(409, 'Email already exists. Login with sign in button')
       );
     }
-    //---
+    //---Get password hash
     let hashedPassword = await hashed(req.body.password);
     req.body.password = undefined;
 
+    //--Generate user id and get currency id 
     const newUserId = uuidv4();
     //currency_id = 1. currency_code= 'usd'
     const currencyId = !currency ? 1 : await getCurrencyId(currency);
     console.log('🚀 ~ signUpUser ~ currencyId:', currencyId);
-
     // console.log('hashedPwd:', hashedPassword.length);
     // console.log('testUUID:', newUserId);
     //consider adding: google_id, display_name, auth_method, user_contact, user_role_id is 1 by default.
 
-    //---
+    //---Insert new user into data base
     const userData = await pool.query({
       text: `INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id) VALUES ($1, $2, $3,$4,$5, $6, $7, $8) RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id;`,
       values: [
@@ -104,7 +104,8 @@ export const signUpUser = async (req, res, next) => {
     });
     // console.log('pwd:', userData.rows);
     hashedPassword = undefined;
-    //Allowed Access Device
+
+    //Validation of allowed Access Device
     const allowedDevices = ['mobile', 'web'];
     if (!allowedDevices.includes(clientDevice)) {
       return next(
@@ -112,15 +113,21 @@ export const signUpUser = async (req, res, next) => {
       );
     }
 
-    //--create tokens if devices acces is allowed
+    //--Create jwt tokens if device access is allowed
     const newUser = userData.rows[0];
+    //here user role is assumed, but role should be taken from role id or must be gotten from the data base
 
-    const accessToken = createToken(newUser.user_id, 'user');
+    console.log('check', {newUser})
+
+    const accessToken = createToken(newUser.user_id, newUser.user_role_name);
+
     const refreshToken = createRefreshToken(newUser.user_id);
+
     //Calculate refresh token expiration date
     const refreshTokenExpiry = new Date();
     refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 7);
-    //Store refresh token in refresh_tokens table
+
+    //Store refresh token in refresh_tokens db table
     // const insertedRefreshTokenResult = await pool.query(
     await pool.query(
       `INSERT INTO refresh_tokens(user_id, token, expiration_date, user_agent, ip_address) VALUES($1,$2,$3,$4,$5) RETURNING token_id`,
@@ -132,38 +139,45 @@ export const signUpUser = async (req, res, next) => {
         req.ip,
       ]
     );
-
     console.log('🚀 ~ signUpUser ~ newUser:', newUser);
     // delete newUser.password; delete newUser.password_hashed; delete newUser.user_role_name
 
     // Response handling
     const data = {
       user: { ...newUser, currency: currency_code },
-      userAccess: clientDevice,
+      userAccessDevice: clientDevice,
     };
 
-    if (clientDevice.trim().toLowerCase() === 'mobile') {
+    //Send the response according to access device type
+    if (clientDevice&& clientDevice.trim().toLowerCase() === 'mobile') {
+    //send tokens via header
+     res.setHeader('Authorization', `Bearer ${accessToken}`);
+      res.setHeader('Refresh-Token', refreshToken);
+      res.setHeader('Access-Control-Expose-Headers', 'Authorization, Refresh-Token');
+
       sendSuccessResponse(
         res,
         201,
         `User successfully subscribed. Username: ${newUser.username}, email: ${newUser.email}, accessed: ${clientDevice}`,
         data,
-        accessToken,
-        refreshToken
+        // accessToken,
+        // refreshToken
       );
     } else {
       res.cookie('accessToken', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 60 * 60 * 1000,
-      }); //1h
+         sameSite: 'strict'
+      }); 
+
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 1 * 60 * 60 * 1000,
+        maxAge:  1.25 * 60 * 60 * 1000,
         // maxAge: 7*24 * 60 * 60 * 1000,
+        sameSite: 'strict'
       });
-      /*maxAge:  8* 60 * 60 * 1000, */
 
       sendSuccessResponse(
         res,
@@ -172,6 +186,7 @@ export const signUpUser = async (req, res, next) => {
         data
       );
     }
+
     await pool.query('COMMIT');
   } catch (error) {
     await pool.query('ROLLBACK');
@@ -179,12 +194,15 @@ export const signUpUser = async (req, res, next) => {
     next(createError(500, error.message || 'internal signup user error'));
   }
 };
-
+//===================================
+//FUNCTION FOR USER SIGN IN (LOG IN SESSION)
+//===================================
 export const signInUser = async (req, res, next) => {
   const { username, email } = req.body;
   console.log('signInUser');
   console.log('req.body', req.body);
 
+  //Client device detection
   const clientDevice = req.clientDeviceType; //web | mobile | bot |unknown
   const clientTypeAccess = req.clientTypeAccess; //mobile-app | mobile-browser|tablet-app...
   console.log(
@@ -192,6 +210,7 @@ export const signInUser = async (req, res, next) => {
     clientDevice,
     clientTypeAccess
   );
+
   await pool.query('BEGIN');
   try {
     //----
@@ -200,10 +219,14 @@ export const signInUser = async (req, res, next) => {
         createError(400, 'username, email and password, are required')
       );
     }
+
     //get user data from db
     const userData = await pool
       .query({
-        text: `SELECT u.username, u.email, u.password_hashed, u.user_id ,u.user_firstname, u.user_lastname, u.user_role_id, ur.user_role_name, ct.currency_code as currency FROM users u
+        text: `SELECT u.username, u.email, u.password_hashed, u.user_id ,u.user_firstname, u.user_lastname, u.user_role_id,
+        ur.user_role_name,
+        ct.currency_code as currency FROM users u
+
         JOIN user_roles ur ON u.user_role_id = ur.user_role_id
         JOIN currencies ct ON u.currency_id = ct.currency_id
         WHERE (u.username = $1 AND u.email = $2) OR u.username = $1 OR u.email = $2`,
@@ -212,12 +235,14 @@ export const signInUser = async (req, res, next) => {
       .then((res) => res.rows);
 
     console.log('userdata:', userData);
-//------------------
+
+//---User validation existence in db
     if (!userData[0]) {
       // 400 (Bad Request) user exists but invalid.
       return next(createError(400, 'User not found'));
     }
 
+    //Validation of multiple users with the same information
     if (userData.length > 1) {
       console.warn(
         'Accounts info:',
@@ -227,10 +252,11 @@ export const signInUser = async (req, res, next) => {
         createError(400, 'more than one user account found. Address to admin.')
       ); //then what to do in this case?
     }
+
     const user = userData[0];
 
+    //cross-verification of username/email
     if (userData.length > 0) {
-      //cross-verification
       if (
         (username === user.username && user.email !== email) ||
         (username !== user.username && user.email === email)
@@ -239,6 +265,8 @@ export const signInUser = async (req, res, next) => {
         return next(createError(400, 'username/email mismatch'));
       }
     }
+
+    //Check password
     // console.log(req.body.password, userData[0].password_hashed);
     const isPasswordCorrect = await isRight(
       req.body.password,
@@ -251,7 +279,8 @@ export const signInUser = async (req, res, next) => {
       return next(createError(401, 'Invalid password'));
     }
     // console.log(user.user_id, user.user_role_name)
-    //------------------------------
+
+    //--Validate if access device is allowed
     //Allowed Acces
     const allowedDevices = ['mobile', 'web'];
     if (!allowedDevices.includes(clientDevice)) {
@@ -260,15 +289,17 @@ export const signInUser = async (req, res, next) => {
       );
     }
 
-    // Generate tokens with user role
-    const accessToken = createToken(user.user_id, user.user_role_name);
-    const refreshToken = createRefreshToken(user.user_id);
-
     // Calculate the expiration date for the refresh token (e.g., 7 days from now)
     const refreshTokenExpirationDate = new Date();
     refreshTokenExpirationDate.setDate(
       refreshTokenExpirationDate.getDate() + 7
     );
+
+    //****MODIFICAR LA FN DE CREAR TOKENS PARA INCLUIR LA FECHA DE EXPIRACION DE LOS TOKENS ******/
+
+  // Generate JWT tokens with user role
+    const accessToken = createToken(user.user_id, user.user_role_name);
+    const refreshToken = createRefreshToken(user.user_id);
 
     // Store the refresh token in the database
     await pool.query(
@@ -282,15 +313,17 @@ export const signInUser = async (req, res, next) => {
       ]
     );
     // console.log( accessToken, refreshToken);
+    //Clear sensitive data
     req.body.password = undefined;
     user.password_hashed = undefined;
 
     //Response Handling
     const data = {
       user: { ...user },
-      userAccess: clientDevice,
+      userAccessDevice: clientDevice,
     };
 
+    //Send response according access device type
     if (clientDevice && clientDevice.trim().toLowerCase() === 'mobile') {
       sendSuccessResponse(
         res,
@@ -310,12 +343,14 @@ export const signInUser = async (req, res, next) => {
         maxAge: 60 * 60 * 1000,
         sameSite: 'strict',
       });
+
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV == 'production',
-        maxAge: (24 * 60 * 60 * 1000) / 24,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
         sameSite: 'strict',
       });
+
       sendSuccessResponse(
         res,
         200,
@@ -340,14 +375,18 @@ export const signInUser = async (req, res, next) => {
       'data:',
       data
     );
+
   } catch (error) {
     await pool.query('ROLLBACK');
     console.log('auth error:', error);
     next(createError(500, error.message || 'internal sign-in user error'));
   }
 };
-//------------------------------------
+
+// =================================
+// FUNCTION TO CLOSE THE USER SESSION (SIGN OUT or LOGOUT)
 // Sign-out with token revocation
+// =================================
 export const signOutUser = async (req, res, next) => {
   const refreshTokenFromClient =
     req.body.refreshToken || req.cookies.refreshToken;
@@ -358,7 +397,7 @@ export const signOutUser = async (req, res, next) => {
   // }
 
   try {
-    //delete the refresh token from the database if provided
+    //delete (REVOKE) the refresh token from the database if provided
 
     if (refreshTokenFromClient) {
       const result = await pool.query(
@@ -393,32 +432,38 @@ export const signOutUser = async (req, res, next) => {
       //   [refreshTokenFromClient]
       // );
     }
-    // clear the cookies on the client-side (for web)
+
+    //Clearing the cookies on the client-side (for web)
     if (req.clientDeviceType !== 'mobile') {
       res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
 
-      //double check
+    //Double check
       res.cookie('accessToken', '', {
-        expires: new Date(0),
+        expires: new Date(0),//✅ Fecha en el pasado = eliminar cookie
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
       });
       res.cookie('refreshToken', '', {
         expires: new Date(0),
         httpOnly: true,
-        secure: true,
+        secure:process.env.NODE_ENV === 'production'
       });
     }
+
     sendSuccessResponse(res, 200, 'Logged out successfully.');
   } catch (error) {
     console.log(pc.red('auth error:', error));
     next(createError(500, error.message || 'Logout failed'));
   }
 };
-//--Verify auth status for web access. Requested from frontend
+
+//================================
+// VERIFY AUTH STATUS FOR WEB ACCESS. REQUESTED FROM FRONTEND
+//================================
 export const verifyAuthStatus = async (req, res) => {
   const token = req.cookies.accessToken; //for web access
+
   if (!token)
     return res.status(401).json({ status: 401, message: 'Token not provided' });
 
