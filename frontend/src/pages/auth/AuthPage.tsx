@@ -5,16 +5,18 @@ import AuthUI from './AuthUI';
 import useAuth from '../../auth/hooks/useAuth';
 import Logo from '../../assets/logo.svg';
 
-//--MAIN COMPONENT
+//--MAIN COMPONENT AUTHENTICACION ACCESS PAGE
 export default function AuthPage() {
   //--MODAL STATES
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
+
   const [initialAuthMode, setInitialAuthMode] = useState<'signin' | 'signup'>(
     'signin'
   );
-  //CUSTOM HOOKS FOR SIGNIN AND SIGNUP
+
+//CUSTOM HOOKS FOR SIGNIN AND SIGNUP
   // Execute the useAuth hook to get authentication state and actions
   const {
     // isAuthenticated,
@@ -32,7 +34,7 @@ export default function AuthPage() {
   } = useAuth();
 
   //------------------------------------
-  //FUNCTIONS EVENT HANDLERS
+//FUNCTIONS EVENT HANDLERS
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
@@ -63,11 +65,8 @@ export default function AuthPage() {
     //-------------------
     setShowAuthModal(false);
   };
-
-  //---------------------------------
-
-  //------------------------------------
-  // Effect to show sign-in modal on load if triggered by ProtectedRoute
+//------------------------------
+// Effect to show sign-in modal on load if triggered by ProtectedRoute
   useEffect(() => {
     if (showSignInModalOnLoad) {
       setShowAuthModal(true);
@@ -75,7 +74,7 @@ export default function AuthPage() {
     }
   }, [showSignInModalOnLoad, setShowSignInModalOnLoad]);
 
-  //------------------------------------
+  //---------------------------------
   return (
     <div className={styles.authPageContainer}>
       {/* {navbar} */}
@@ -97,8 +96,8 @@ export default function AuthPage() {
 
         <ul
           className={`${styles.navList} ${
-            isMenuOpen ? styles.navMenuActive : ''
-          }`}
+            isMenuOpen ? styles.navMenuActive : ''}
+            `}
         >
           <li className={styles.navItem} onClick={openSigninModalHandler}>
             Sign in
