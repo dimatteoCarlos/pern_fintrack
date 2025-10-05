@@ -1,23 +1,29 @@
 //src/pages/tracker/expense/Expense.tsx
-// ⚛️ React Hooks
+// ⚛️ REACT HOOKS AND react router dom
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import axios, { AxiosRequestConfig } from 'axios';
-import { useLocation } from 'react-router-dom';
+import { AxiosRequestConfig } from 'axios';
+import { useLocation,useNavigate  } from 'react-router-dom';
 
-// 🎨 UI Components
+// 🔑 AUTHENTICATION HOOK
+import useAuth from '../../../auth/hooks/useAuth.ts'; 
+
+// 🪝 CUSTOM HOOKS Y UTILS
+import { useFetch } from '../../../hooks/useFetch.ts';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.ts';
+
+// ZUSTAND STORES
+import useBalanceStore from '../../../stores/useBalanceStore.ts';
+//---
+// 🎨 UI COMPONENTS
 import TopCardZod from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
-
-// 🪝 Custom Hooks y utils
-import { useFetch } from '../../../hooks/useFetch.ts';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
-import useBalanceStore from '../../../stores/useBalanceStore.ts';
-import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.ts';
+import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 //---
-// 🌐Endpoints and constants 
+// 🌐ENDPOINTS AND CONSTANTS 
  import {
   url_get_accounts_by_type,
   url_get_total_account_balance_by_type,
@@ -29,8 +35,8 @@ import {
   DEFAULT_CURRENCY,
   PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
-
-// 📝 Data Type Import
+//---
+// 📝 DATA TYPE IMPORTS
 import {
   AccountByTypeResponseType,
   BalanceBankRespType,
@@ -47,15 +53,13 @@ import {
   // ValidationMessagesType,
 } from '../../../types/types.ts';
 //----------------------------------------
-// 🛡️ Zod - Schema and data type validations 
+// 🛡️ ZOD - SCHEMA AND DATA TYPE VALIDATIONS
 import {validateForm  } from '../../../validations/utils/zod_validation.ts';
 import { expenseSchema} from '../../../validations/zod_schemas/trackerMovementSchema.ts';
 import { ExpenseValidatedDataType, ValidationMessagesType } from '../../../validations/types.ts';
-
-//----------------------------------------
-// import { useAuthStore } from '../../../auth/stores/useAuthStore.ts';
+import { handleError } from '../../../helpers/handleError.ts';
 //-------------------------------------
-// 📝data type definitions
+// 📝DATA TYPE DEFINITIONS
 export type ShowValidationType={
   amount: boolean;
   account: boolean;
@@ -63,7 +67,7 @@ export type ShowValidationType={
   note: boolean;
 } 
 //========================================
-// ⚙️ Initial Configuration and default values
+// ⚙️ INITIAL CONFIGURATION AND DEFAULT VALUES
 //========================================
 const defaultCurrency = DEFAULT_CURRENCY;
 const initialExpenseData: ExpenseInputDataType = {
@@ -75,74 +79,78 @@ const initialExpenseData: ExpenseInputDataType = {
 };
 const VARIANT_DEFAULT: VariantType = 'tracker';
 
-// ==============================================
-// ⚛️Main Component: Expense
-// ==============================================
+// ====================================
+//  ⚛️MAIN COMPONENT: EXPENSE
+// ===================================
 //----Expense Tracker Movement -------
 function Expense(): JSX.Element {
-  //rules: only bank accounts type are used to do operations.(eg. expenses)
-  //select option accounts renders are all existing bank accounts, except, the slack account which is not shown.
+ //rules: only bank accounts type are used to do operations.(eg. expenses)
+ //select option accounts renders are all existing bank accounts, except, the slack account which is not shown.
+//---
+// 🗺️ ROUTER AND NAVIGATION CONFIGURATION
+const router = useLocation();
+const trackerState = router.pathname.split('/')[PAGE_LOC_NUM];
+const typeMovement: MovementTransactionType = trackerState.toLowerCase(); 
+const navigateTo=useNavigate()
+//---
+// 🛡️ AUTHENTICATION STATE
+const { isAuthenticated, isCheckingAuth , } = useAuth();
 
-  // 🗺️ Router and User configuration
-  const router = useLocation();
-  const trackerState = router.pathname.split('/')[PAGE_LOC_NUM];
-  const typeMovement: MovementTransactionType = trackerState.toLowerCase(); 
-  // console.log('movement:', typeMovement);
-  //---authentication
-  //deal here with user id and authentication
-  // const { userData } = useAuthStore((state) => ({
-  //   userData: state.userData,
-  //   isAuthenticated: state.isAuthenticated,
-  // }));
-    // console.log('userData state:', userData);
-  //userId
-  // const user = userData?.userId;
-  // console.log('userID', userID);
-  const user = import.meta.env.VITE_USER_ID;
-
-  // 🔄 Local States
+// 🔄 LOCAL STATES
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
   const [isReset, setIsReset] = useState<boolean>(false);
   const [isResetDropdown, setIsResetDropdown] = useState<boolean>(false);
   const [reloadTrigger, setReloadTrigger] = useState(0);
 
   const [expenseData, setExpenseData] =
-    useState<ExpenseInputDataType>(initialExpenseData);
-    const [messageToUser, setMessageToUser] = useState<string | null | undefined>(null);
-    const [validationMessages, setValidationMessages] = useState<
-    ValidationMessagesType<typeof initialExpenseData>>({});
+  useState<ExpenseInputDataType>(initialExpenseData);
+  // const [localError, setLocalError] = useState<string | null>(null); 
 
-    const [showValidation, setShowValidation] = useState<ShowValidationType>({
-        amount: false,
-        account: false,
-        category: false,
-        note: false
-    });
+// Message States
+  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(null);
+  const [validationMessages, setValidationMessages] = useState<
+  ValidationMessagesType<typeof initialExpenseData>>({});
 
-  // 🌳 Global State (Zustand)-------------
- const setAvailableBudget = useBalanceStore(
-    (state) => state.setAvailableBudget
+  const [showValidation, setShowValidation] = useState<ShowValidationType>({
+    amount: false,
+    account: false,
+    category: false,
+    note: false
+  });
+
+// 🌳 Global State (Zustand)-------------
+const setAvailableBudget = useBalanceStore((state) => state.setAvailableBudget); 
+//---
+  const balanceBankResponse = useFetch<BalanceBankRespType>(
+  `${url_get_total_account_balance_by_type}/?type=bank&reload=${reloadTrigger}`
   );
-  //--DATA FETCHING------------------------
- // 📡 Data Fetching: Bank Accounts 
-  //Endpoints: url_get_accounts_by_type, url_get_total_account_balance_by_type
-  //GET: AVAILABLE ACCOUNTS OF TYPE BANK
-  const fetchUrl = user
-    ? `${url_get_accounts_by_type}/?type=bank&user=${user}&reload=${reloadTrigger}`
-    : // <Navigate to='/auth' />
-      undefined; //force an error of user ID required
-  // console.log('🚀 ~ Expense ~ fetchUrl:', fetchUrl);
+  console.log("🚀 ~ Expense ~ balanceBankResponse:", balanceBankResponse)
+  const total_balance = balanceBankResponse.apiData?.data.total_balance
+   if (typeof total_balance === 'number') {
+     setAvailableBudget(total_balance);
+   }
+// ===========================================
+//--- DATA FETCHING------------------
+// 📡 Data Fetching: Bank Accounts 
+//Endpoints: url_get_accounts_by_type, url_get_total_account_balance_by_type
+
+//GET: AVAILABLE ACCOUNTS OF TYPE BANK
+  const fetchUrl = `${url_get_accounts_by_type}/?type=bank&reload=${reloadTrigger}`
+//console.log('🚀 ~ Expense ~ fetchUrl:', fetchUrl);
 
   const {
     apiData: BankAccountsResponse,
     isLoading: isLoadingBankAccounts,
     error: fetchedErrorBankAccounts,
+    ...rest
   } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
-  // console.log({
-  //   BankAccountsResponse,
-  //   isLoadingBankAccounts,
-  //   fetchedErrorBankAccounts,
-  // });
+
+  console.log('',{
+    BankAccountsResponse,
+    isLoadingBankAccounts,
+    fetchedErrorBankAccounts,
+    rest
+  });
 
 //---data transformation
 // 🧠 Memoization: Account Options
@@ -165,22 +173,23 @@ function Expense(): JSX.Element {
     options: optionsExpenseAccounts,
     variant: 'tracker' as VariantType,
   };
-  //--------
-  //CATEGORY OPTIONS
-  //GET: ACCOUNTS OF TYPE CATEGORY_BUDGET AVAILABLE
- // 📡 Data Fetching: Category budget Accounts 
+//--------
+//CATEGORY OPTIONS
+//GET: ACCOUNTS OF TYPE CATEGORY_BUDGET AVAILABLE
+// 📡 Data Fetching: Category budget Accounts 
   const {
     apiData: CategoryBudgetAccountsResponse,
     isLoading: isLoadingCategoryBudgetAccounts,
     error: fetchedErrorCategoryBudgetAccounts,
   } = useFetch<CategoryBudgetAccountsResponseType>(
-    `${url_get_accounts_by_type}/?type=category_budget&user=${user}&reload=${reloadTrigger}`
+    `${url_get_accounts_by_type}/?type=category_budget&reload=${reloadTrigger}`
   );
   // console.log('catBudgetResp', {
   //   CategoryBudgetAccountsResponse,
   //   isLoadingCategoryBudgetAccounts,
   //   fetchedErrorCategoryBudgetAccounts,
   // });
+
 //Category Data Transformation - 
   // 🧠 Memoización: category dropdown options
   const optionsExpenseCategories = useMemo(() => {
@@ -193,7 +202,6 @@ function Expense(): JSX.Element {
       value: cat.account_name,
       label: `${cat.account_name} (${cat.currency_code} ${cat.account_balance})`,
 // label: cat.account_name,
-
     }));
   }, [
     CategoryBudgetAccountsResponse?.data?.accountList,
@@ -211,18 +219,18 @@ function Expense(): JSX.Element {
   //OBTAIN THE REQUESTFN FROM userFetchLoad
     // 📡 Post Request logic
   type PayloadType = ExpenseValidatedDataType & {
-    user: string; type?:string;
+    type?:string;
     };
+    const { data, isLoading, error:postError, requestFn } = useFetchLoad<
 
-  const { data, isLoading, error, requestFn } = useFetchLoad<
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
 
-//----functions--------
-  // ============================================
-  // ✍️ Event Handlers
-  // ============================================
+//---- FUNCTIONS --------
+// ===============================
+// ✍️ Event Handlers
+// ===============================
   function updateDataCurrency(currency: CurrencyType) {
     setCurrency(currency);
     setExpenseData((prev) => ({ ...prev, currency: currency }));
@@ -256,7 +264,7 @@ function Expense(): JSX.Element {
       ['account']: selectedOption?.value || '',
     }));
 
-     // Only validates if showing validation msg for account
+// Only validates if showing validation msg for account
     if (showValidation.account) {
       setValidationMessages((prev) => ({ 
         ...prev, 
@@ -264,12 +272,13 @@ function Expense(): JSX.Element {
       }));
     }
    }
- //==========================
- //--validation functions and logic ---------------
-//EXTRACT FUNCTION for validation and update logic, which will be debounced. 
+//===================================
+//-- VALIDATION FUNCTIONS AND LOGIC ---
+//Extract function for validation and update logic, which will be debounced. 
 // Real Time Validation.
 // useCallback to make the function stable if its dependencies don't change.
-  // ✍️ Event Handlers
+
+// ✍️ EVENT HANDLERS
  const processValidationAndUpdateFn = useCallback((name: string, value: string) => {
 // Data object for Zod. Zod waits an object with all input data fields to validate them
 // Always validate if showValidation is true for this field
@@ -286,7 +295,7 @@ if (showValidation[name as keyof ShowValidationType])
   // console.log('fieldErrors', fieldErrors, dataValidated);
 
 //update just the message of the current field (name) and if it should show
-    if (fieldErrors[name as keyof ExpenseInputDataType]) {
+   if (fieldErrors[name as keyof ExpenseInputDataType]) {
       setValidationMessages((prev) => ({ ...prev, [name]: fieldErrors[name as keyof ExpenseInputDataType] }));
     } else {
       setValidationMessages((prev) => {
@@ -314,7 +323,7 @@ if (showValidation[name as keyof ShowValidationType])
     setShowValidation(prev => ({ ...prev, amount: true }));
     debouncedProcessValidationAndUpdateFn(name, value);
     
-  // show validation message for other fields when amount value is entered.
+// show validation message for other fields when amount value is entered.
     if (value && !showValidation.account) {
       setShowValidation(prev => ({
         ...prev,
@@ -327,13 +336,19 @@ if (showValidation[name as keyof ShowValidationType])
     debouncedProcessValidationAndUpdateFn(name, value);
   }
 }
+//---
+function showMessage(message: string, duration = 4000) {
+  setMessageToUser(message);
+  setTimeout(() => setMessageToUser(null), duration);
+}
+
 //-------------------------------------
 //Handler for form submit
   async function onSaveHandler_zod(e: React.MouseEvent<HTMLButtonElement>) {
     console.log('On Save Handler');
     e.preventDefault();
 
-    // Show all validation messages when submitting
+  // Show all validation messages when submitting
     setShowValidation({
       amount: true,
       account: true,
@@ -344,7 +359,7 @@ if (showValidation[name as keyof ShowValidationType])
     //validate the whole input form data
     const {errors:fullFormErrors, data:dataValidated} = validateForm(expenseSchema, expenseData );
 
-    // console.log("🚀 ~ onSaveHandler_zod ~ fullFormErrors:", fullFormErrors,)
+  // console.log("🚀 ~ onSaveHandler_zod ~ fullFormErrors:", fullFormErrors,)
 
   if (fullFormErrors && Object.keys(fullFormErrors).length > 0) {
       setValidationMessages(fullFormErrors);
@@ -354,93 +369,101 @@ if (showValidation[name as keyof ShowValidationType])
     }
   //check if validated data exists
   if (!dataValidated) {
-    setMessageToUser('Validation failed. Please check your inputs.');
+    showMessage('Validation failed. Please check your inputs.');
     return;
   }
- 
-    setMessageToUser('Processing transaction...');
+  showMessage('Processing transaction...', 2000);
 
-  //--sending data to server -----------------
-    //POST ENDPOINT FOR MOVEMENT TRANSACTION HERE
-    //update balance account of bank account and category budget account in: user_accounts table.
+//--sending data to server -----------------
+//POST ENDPOINT FOR MOVEMENT TRANSACTION HERE
+//update balance account of bank account and category budget account in: user_accounts table.
 
-    //record both transaction descriptions: transfer and receive transactions with the correspondent account info.
+//record both transaction descriptions: transfer and receive transactions with the correspondent account info.
 
-    //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=expense
-    //user id is sent via req.body
+//endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=expense
 
-    try {
-      //create a payload with validated data
-      const payload: PayloadType = {
-        ...dataValidated as ExpenseValidatedDataType  & { user: string; type?: string }
-         ,
-        user,type: typeMovement
-      };
-      //send the request
-      const finalUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
-      // console.log(
-      //   '🚀 ~ onSubmitForm ~ finalUrl:',
-      //   finalUrl,
-      //   'date:',
-      //   payload.date,
-      //   'este es el payload:',
-      //   payload
-      // );
-      const response = await requestFn(payload, {
-        url: finalUrl,
-      } as AxiosRequestConfig);
+  try {
+    //create a payload with validated data
+    const payload: PayloadType = {
+      ...dataValidated as ExpenseValidatedDataType  & { type?: string }
+        ,
+      type: typeMovement
+    };
 
-     // Check wether is error / Verificar si hay error en la respuesta (aunque status sea 200)
-    //  console.log('response from requestFN', error, 'error', error, 'isLoading', isLoading)
+    //send the request
+    const finalUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
+    // console.log(
+    //   '🚀 ~ onSubmitForm ~ finalUrl:',
+    //   finalUrl,
+    //   'date:',
+    //   payload.date,
+    //   'este es el payload:',
+    //   payload
+    // );
 
-    if (response.error 
-     // || error
-    ) {
-      const errorMsg = response.error ?? error ?? undefined
-      console.log('response?.error?', errorMsg)
-      throw new Error(errorMsg);
-    }
+    const response = await requestFn(payload, {
+      url: finalUrl,
+    } as AxiosRequestConfig);
 
-      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-        console.log('Data from record transaction request:', response);
-      }
-      
-    //-------------------------------
-    //update total available balance global state
-      const {
-        data: {
-          data: { total_balance },
-        },
-      } = await axios.get<BalanceBankRespType>(
-        `${url_get_total_account_balance_by_type}/?type=bank&user=${user}`
-      );
-
-      if (typeof total_balance === 'number') {
-        setAvailableBudget(total_balance);
-      }
-    //----------------------------------  
-     setMessageToUser('Transaction recorded successfully!');
-      setTimeout(() => setMessageToUser(null), 3000);
-    } catch (error) {
-      console.error('Submission error (Zod):', error);
-      setMessageToUser(error instanceof Error ? error.message : 'An unexpected error occurred during submission.');
-      setTimeout(() => setMessageToUser(null), 5000);
-    }
+  if (response.error) {
+    const errorMsg = response.error
+    console.log('response?.error?', errorMsg)
+    throw new Error(errorMsg);
   }
-  //-------------------------------------
-  // ⏳--- Side Effects 
+
+  if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+    console.log('Data from record transaction request:', response);
+  }
+//-------------------------------- 
+ showMessage('Transaction recorded successfully!', 3000);
+  } catch (error) {
+      const { message, status, isAuthError } = handleError(error);
+      if (isAuthError) {
+        return;
+          }
+  console.error(`Error (${status}): ${message}`);
+        showMessage(`Error (${status}): ${message}` );
+      }
+}
+//-----------------------------------
+// ⏳--- SIDE EFFECTS 
+//-----------------------------------
+//---------
+// AUTHENTICATION AND REDIRECTION EFFECT
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (isCheckingAuth) {
+      setMessageToUser('Verifying session status. Please wait...');
+    } else if (!isAuthenticated) {
+      // Use existing messageToUser state for feedback before redirecting
+      setMessageToUser('Session not active or expired. Redirecting to the sign-in page in 3 seconds...');
+      
+      timer = setTimeout(() => {
+        navigateTo('/auth', { replace: true });
+      }, 3000); 
+
+    } else {
+      // If authenticated, clear the message (only if it was set by the auth check)
+      if (messageToUser?.includes('Verifying') || messageToUser?.includes('Session not active')) {
+         setMessageToUser(null);
+      }
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer); // Cleanup timer
+    };
+  }, [isAuthenticated, isCheckingAuth, navigateTo, messageToUser]);
+
+//-----------------
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
-
-    if ((data || error) && !isLoading) {
-      const success = data && !error;
+    if ((data ) && !isLoading) {
+      const success = data;
       setMessageToUser(
-        success
-          ? 'Movement completed successfully!'
-          : error ?? 'An error occurred during submission'
+ 'Movement completed successfully!'
+          
       );
-
-  //reset only in case of success
+//reset only in case of success
     if (success) {
       setCurrency(DEFAULT_CURRENCY);
       setExpenseData(initialExpenseData);
@@ -462,18 +485,22 @@ if (showValidation[name as keyof ShowValidationType])
       }, 4000);
     }
     return () => clearTimeout(timer);
-  }, [data, error, isLoading]);
-//-------------------------------------------------
-  ///SHOW VALIDATION MSG SIDE EFFECTS
-  // Effect to handle note validation when amount is entered
+  }, [data,  isLoading]);
+//---
+// Data Fetching Effect to control when useFetch re-execute 
+  useEffect(() => {
+    if (!isAuthenticated || isCheckingAuth) return; 
+  }, [isAuthenticated, isCheckingAuth, reloadTrigger]);
+//-------------------------------------------
+//SHOW VALIDATION MSG SIDE EFFECTS
+// Effect to handle note validation when amount is entered
 useEffect(() => {
   if (expenseData.amount !== '' && !showValidation.note) {
     setShowValidation(prev => ({
       ...prev,
       note: true
     }));
-    
-    // Validate note field immediately when activated
+  // Validate note field immediately when activated
     if (expenseData.note === '') {
       setValidationMessages(prev => ({
         ...prev,
@@ -508,7 +535,7 @@ useEffect(() => {
 }, [expenseData, showValidation.account]
 );
 // ===========================================
-// Efecto específico para amount
+// Specific effect for amount
 // ===========================================
 useEffect(() => {
   if (expenseData.amount !== '' && !showValidation.amount) {
@@ -516,7 +543,7 @@ useEffect(() => {
     // La validación real se hará en processValidationAndUpdateFn
   }
 }, [expenseData.amount,showValidation.amount]);
-//---------------------------------------------------
+//------------------------------------------
 // Effect to handle category validation when amount is entered
 useEffect(() => {
   if (expenseData.amount !== '' && !showValidation.category) {
@@ -541,19 +568,51 @@ useEffect(() => {
   }
 }, [expenseData.amount, expenseData.category, showValidation.category]);
   
- //------------------------------------
- //rendering components
- //-------Top Card elements ----------
+//------------------------------------
+//RENDERING COMPONENTS
+//-------Top Card elements ----------
   const topCardElements:TopCardElementsType = {
     titles: { title1: 'amount', title2: 'account' },
     value: expenseData.amount as string,
     selectOptions: accountOptions,
   };
-  //-----------------------------------------
+// ----------------------------------------
+// 🧱 RENDER LOGIC
+// ----------------------------------------
+// Separate UI of "checking" and "not authenticated"
+if (isCheckingAuth) {
+  return (
+    <div className='expense loading-screen' style={{ color: 'inherit' }}>
+      <MessageToUser
+        isLoading={true} 
+        messageToUser={messageToUser}
+        variant='tracker'
+        error={ postError || fetchedErrorCategoryBudgetAccounts || fetchedErrorBankAccounts }
+      />
+      <CoinSpinner />
+    </div>
+  );
+}
+
+if (!isAuthenticated) {
+  return (
+    <div className='expense loading-screen' style={{ color: 'inherit' }}>
+      <MessageToUser
+        isLoading={false} // MODIFICACIÓN: no estamos "checking", estamos en estado no-auth
+        messageToUser={messageToUser ?? 'Session not active or expired. Redirecting to sign-in...'} // MODIFICACIÓN: fallback mensaje
+        variant='tracker'
+        error={ postError || fetchedErrorCategoryBudgetAccounts || fetchedErrorBankAccounts }
+      />
+    </div>
+  );
+}
+
+// ----------------------------------------
+// If authenticated and not checking, render the form:
   return (
   <>
   {/*  {!isLoadingBankAccounts && !isLoadingCategoryBudgetAccounts  &&!isLoading && */}
-  <form className='expense' style={{ color: 'inherit' }}>
+    <form className='expense' style={{ color: 'inherit' }}>
     {/* TOP CARD */}
     <TopCardZod<typeof initialExpenseData>
       topCardElements={topCardElements}
@@ -569,7 +628,6 @@ useEffect(() => {
       setIsReset={setIsReset}
       setIsResetDropdown={setIsResetDropdown} 
       customSelectHandler={accountSelectHandler}
-
     />
     {/* end of TOP CARD */}
 
@@ -610,7 +668,7 @@ useEffect(() => {
           <MessageToUser
             // isLoading={false}
              isLoading={isLoading || isLoadingBankAccounts || isLoadingCategoryBudgetAccounts}
-            error={error || fetchedErrorCategoryBudgetAccounts
+            error={ postError || fetchedErrorCategoryBudgetAccounts
               ||
             fetchedErrorBankAccounts
             }  
