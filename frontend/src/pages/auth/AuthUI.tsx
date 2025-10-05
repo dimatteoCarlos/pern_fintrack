@@ -22,8 +22,8 @@ type AuthUIPropsType = {
 
 //INITIAL STATES VALUES
 const INITIAL_CREDENTIALS_STATE: CredentialsType = {
-  username: 'user02',
-  email: 'user01@user02.com',
+  username: 'usuario01',
+  email: 'user01@email.com',
   user_firstname: 'nombre usuario 01',
   user_lastname: 'usuario apellido',
   password: '100',
@@ -102,12 +102,12 @@ function AuthUI({
     timer = setTimeout(() => {
       setShowMessageToUser(false);
       setShowError(false);
-    }, 10000);
+    }, 5000);
 
     if (error && !isLoading) setShowError(true);
     timer = setTimeout(() => {
       setShowError(false);
-    }, 10000);
+    }, 5000);
 
     return () => {
       if (timer) clearTimeout(timer);
@@ -137,7 +137,7 @@ function AuthUI({
       <h2 className={styles['auth-container__title']}>
         {isSignIn ? 'Sign In' : 'Sign Up'}
       </h2>
-{/* //------------------------------------------ */}
+{/* //------------------------- */}
       <form
         className={`auth-form  ${
           isSignIn ? 'auth-form--signin' : 'auth-form--signup'
