@@ -1,24 +1,24 @@
 // src/auth/hooks/useAuth.ts
-
-// Import  Zustand store
+// IMPORT  ZUSTAND STORE
 import { useAuthStore } from '../stores/useAuthStore.ts';
-// For making POST requests to the backend
-import useFetchPost from '../../hooks/useFetchPost';
-// For programmatic navigation
-import { url_signin, url_signup } from '../../endpoints';
+import { AxiosRequestConfig } from 
+'axios';
+// FOR PROGRAMMATIC NAVIGATION
 import { useNavigate } from 'react-router-dom';
-//API endpoint URLs
+import { url_signin, url_signout, url_signup } from '../../endpoints';
+import { useNavigationHelper } from '../utils/navigationHelper.ts';
+//API ENDPOINT URLS
 import {
-  // AuthResponseType,
-  SignInResponseType,
   SignInCredentialsType,
   SignUpCredentialsType,
-  SignUpResponseType,
   UserDataType,
   UserResponseDataType,
 } from '../types/authTypes.ts';
-
-// Helper: Mapea respuesta del backend al tipo que usás en el store
+//---------------------------------------------------------------
+import { useEffect } from 'react'
+import { authFetch } from '../utils/authFetch.ts';
+//----------------------------------
+// Helper: Mapea respuesta del backend al tipo que se usa en el store
 const mapUserResponseToUserData = (
   user: UserResponseDataType
 ): UserDataType => ({
@@ -29,254 +29,211 @@ const mapUserResponseToUserData = (
   email: user.email,
 });
 
-// const getAccessTokenFromCookies = (): string | null => {
-//   const match = document.cookie.match(/(?:^|;\s*)accessToken=([^;]*)/);
-//   return match ? decodeURIComponent(match[1]) : null;
-// };
-
-// const clearAccessTokenFromCookies = () => {
-//   document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-// };
-
 // CUSTOM HOOK FOR AUTHENTICATION MANAGEMENT
 const useAuth = () => {
   // Access state and actions from the auth store
   const {
-    isAuthenticated,
-    userData,
     isLoading,
     setIsLoading,
     error,
+    setError,
+    isAuthenticated,
     setIsAuthenticated,
+    userData,
     setUserData,
     clearError,
-    setError,
     successMessage,
     setSuccessMessage,
     clearSuccessMessage,
     showSignInModalOnLoad,
     setShowSignInModalOnLoad,
+    isCheckingAuth, 
+    setIsCheckingAuth, 
+    
   } = useAuthStore();
 
-  // Get the navigate function from React Router
+// Get the navigate function from React Router
   const navigateTo = useNavigate();
 
-  // Use the custom useFetchPost hook for making API calls
-  const { request: signupRequest } = useFetchPost<
-    SignUpCredentialsType, //payload or input with user info T
-    SignUpResponseType //data response from backend R
-  >();
+// 🚨 1. INICIALIZACIÓN DEL NAVIGATION HELPER 🚨
+  // Este hook se encarga de que la función 'navigate' esté disponible globalmente.
+  useNavigationHelper();  
+// 🚨 2. LÓGICA DE HIDRATACIÓN DE SESIÓN (PERSISTENCIA) 🚨
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+    const accessToken = sessionStorage.getItem('accessToken');
+      if (accessToken) {
+      try {
+        // 🚨 RUTA ACORDADA: Usamos una ruta protegida real para validar el token.
+        const VALIDATION_URL = '/fintrack/tracker/expense'; 
 
-  const { request: signinRequest } = useFetchPost<
-    SignInCredentialsType, //payload or input with user info
-    SignInResponseType
-  >();
+        // authFetch se encarga de 401, refresh, y si falla, el logout y toast.authenticatedFetch
+        const response = await authenticatedFetch(VALIDATION_URL, { method: 'GET' }); 
+        
+        if (response.status === 200) {
+            // Si llega aquí, la sesión es válida o fue renovada.
+            setIsAuthenticated(true);
+            console.log('response' , response)
+            // Opcional: Si el endpoint devuelve datos de usuario, llame a setUserData(data.user)
+          }
+      } catch (err) {
+          // Si falla, authFetch ya realizó el cleanup y la redirección.
+          console.warn('Fallo al validar token de persistencia o refresh. Sesión borrada.');
+      }
+    }
+    
+    // 🚨 3. FINALIZAR LA COMPROBACIÓN 🚨
+      setIsCheckingAuth(false); 
+    };
 
-  // Asynchronous function to handle user sign-in
-
+  // Disparar la comprobación inicial
+  checkAuthStatus();
+  }, [setIsAuthenticated, setIsCheckingAuth]);   
+  
+//----------------------------
+// Asynchronous function to handle user sign-in
   const handleSignIn = async (credentials: SignInCredentialsType) => {
     clearError();
     clearSuccessMessage();
     setIsLoading(true);
 
-    try {
-      const result = await signinRequest(url_signin, credentials);
-      setIsLoading(false);
+  try {
+// ✅ USE FETCH DIRECTLY WITH CREDENTIALS
+    const response = await fetch(url_signin, {
+      method:'POST',
+      credentials:'include',
+      headers:{
+      'Content-Type':'application/json',
+            },
+      body:JSON.stringify(credentials)
+    })  
 
-      const signInApiData = result.apiData;
+    //El .catch() solo se encarga de devolver un objeto vacío ({}) en caso de que response.json() falle, para evitar un error
 
-      if (result?.status !== 200 || !signInApiData?.data?.user) {
-        setError(result?.error || 'Sign in failed.');
-        return false;
+    if(!response.ok){
+      const errorData = await response.json().catch(() => ({}));
+      console.error('sign in error',Error(errorData.message || `HTTP error! status: ${response.status}`))
+
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json()
+
+// ✅ SAVE ONLY ACCESS TOKEN (refreshToken goes in cookie automatically)
+   if (data.accessToken) {
+        sessionStorage.setItem('accessToken', data.accessToken);
       }
-      // 1. Log general de datos recibidos
-      console.log('Datos de respuesta del servidor:', {
-        user: signInApiData.data.user,
-        userAccess: signInApiData.data.userAccess,
-        tokens: { // Solo mostrar si existen, no el contenido
-          hasAccessToken: !!signInApiData.accessToken,
-          hasRefreshToken: !!signInApiData.refreshToken
-        }
-      });
 
-      // Procesamiento común para todos los usuarios (mobile y web)
-      const userResponse = signInApiData.data.user;
-      const userDataForStore = mapUserResponseToUserData(userResponse);
-      setUserData(userDataForStore);
+// ✅ UPDATE STATES
+    const userDataForStore = mapUserResponseToUserData(data.user);
+    setUserData(userDataForStore)
+    setIsAuthenticated(true)
+    setSuccessMessage(data.message || 'Sign in successful!')
+    setIsLoading(false);
 
+    navigateTo('/fintrack');
+    return true;
 
-      // Manejo específico para mobile
-      if (signInApiData?.data?.userAccess === 'mobile') {
-        const accessToken = signInApiData?.accessToken;
-        const refreshToken = signInApiData?.refreshToken;
-
-        if (!accessToken || !refreshToken) {
-          setError('Missing authentication tokens for mobile user');
-          return false;
-        }
-
-        sessionStorage.setItem('accessToken', accessToken);
-        sessionStorage.setItem('refreshToken', refreshToken);
-      }
-      // Para usuarios web, se asume que los tokens vienen en cookies
-
-      // 3. Log de éxito SOLO si todo está correcto (aquí sabemos que es exitoso)
-      console.log('Authentication successful', {
-        user: userDataForStore,
-        accessType: signInApiData.data.userAccess,
-        isMobile: signInApiData.data.userAccess === 'mobile',
-      });
-
-      setIsAuthenticated(true);
-      setSuccessMessage('Sign in successful!');
-
-      // Redirección común para todos los usuarios
-      navigateTo('/fintrack');
-      return true;
     } catch (err: unknown) {
       setIsLoading(false);
       const errorMessage =
         err instanceof Error
           ? err.message
-          : 'Something went wrong while logging in. Try again.';
+          : 'Login failed';
       setError(errorMessage);
       return false;
     }
   };
-  //----------------
-  // Asynchronous function to handle user sign-up
+
+//----------------
+// Asynchronous function to handle user sign-up
   const handleSignUp = async (userData: SignUpCredentialsType) => {
     // Clear any previous errors or success messages
     clearError();
     clearSuccessMessage();
     setIsLoading(true);
+
     try {
-      // Attempt to sign up the user by calling the backend API
-      const result = await signupRequest(url_signup, userData);
-      console.log(
-        '🚀 ~ handleSignUp ~ result:',
-        result,
-        'result.data',
-        result.apiData,
-        'result.data.data:',
-        result?.apiData?.data
-      );
+// ✅ USE FETCH DIRECTLY WITH CREDENTIALS  
+// Attempt to sign up the user by calling the backend API
+const response = await fetch(url_signup,{
+  method:'POST',
+  credentials:'include',//sent cookies
+  headers:{
+    'Content-Type':'application/json'
+  },
+  body:JSON.stringify(userData)
+})
+if(!response.ok){
+  const errorData = await response.json().catch(()=>({}))
+   throw new Error(errorData.message || `HTTP error! status:${response.status}`)
+}
 
-      const signUpApiData = result.apiData;
+const data=await response.json()
 
+// ✅ SAVE ONLY ACCESS TOKEN (refreshToken goes in cookie automatically)
+if(data.accessToken){sessionStorage.setItem('accessToken', data.accessToken)}
+
+// ✅ UPDATE STATES
+  const userDataForStore = mapUserResponseToUserData(data.user)
+  setUserData(userDataForStore)
+  setIsAuthenticated(true)
+  setSuccessMessage(data.message||'Sign up successful!')
       setIsLoading(false);
-      // // Check if the sign-up was successful (we received data potentially with a token and user)
-
-      console.log(
-        'signUpApiData?.data?.user',
-        signUpApiData?.data.user,
-        signUpApiData?.data.userAccess
-      );
-
-      if (result?.status === 201 && signUpApiData?.data?.user) {
-        //mobile verification
-
-        if (
-          signUpApiData?.data?.userAccess == 'mobile' &&
-          signUpApiData?.accessToken &&
-          signUpApiData?.refreshToken
-        ) {
-          console.log('acessToken', signUpApiData.accessToken);
-          console.log('refreshToken', signUpApiData.refreshToken);
-          sessionStorage.setItem('accessToken', signUpApiData?.accessToken);
-          sessionStorage.setItem('refreshToken', signUpApiData?.refreshToken);
-        }
-
-        // Update the authentication state in the Zustand store
-        const userResponse = signUpApiData.data.user;
-        const userDataForStore = mapUserResponseToUserData(userResponse);
-        setUserData(userDataForStore);
-        setIsAuthenticated(true);
-
-        // Set a success message for the user
-        setSuccessMessage(
-          signUpApiData.message ||
-            `Hey, sign-up went fine — you can move forward!. Your access: ${signUpApiData?.data?.userAccess}`
-        );
-
-        // Navigate the user to the main application page
-        navigateTo('/fintrack');
-        return true; // Indicate successful sign-up
-      } else if (result?.error) {
-        setError(
-          result.error || 'Nope, sign-up didnt go through. Please try again.'
-        );
-        return false; // Default return if no data or error
-      }
-    } catch (err) {
+  navigateTo('/fintrack');
+  return true;
+    } catch (err: unknown) {
       setIsLoading(false);
-      setError('Unexpected error occurred. Try again.');
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Registration failed';
+      setError(errorMessage);
       return false;
     }
   };
-  //-------------------------------------
+  //---------------------------------
   // Asynchronous function to handle user sign-out
   const handleSignOut = async () => {
-    sessionStorage.removeItem('accessToken');
-    setUserData(null);
-    setError(null);
-    setIsAuthenticated(false);
-    setSuccessMessage('Sign out successful!');
+   try {
+    // ✅ FETCH FOR LOGOUT
+    await fetch(url_signout, {
+      method:'POST',
+      credentials:'include',
+    })
+    } catch (error) {
+      console.log('Logout API call failed')
+    }finally{
+// ✅ SAFETY CLEANING
+      sessionStorage.removeItem('accessToken');
+      setIsAuthenticated(false);
+      setUserData(null);
+
+      setError(null);
+      setSuccessMessage('Sign out successful!');
+      setIsLoading(false);
     // Navigate the user back to the authentication page
-    navigateTo('/auth');
-  };
-  //extract token from cookies (web)
-  // Function to retrieve the 'accessToken' value from the browser's cookies
-
-  // const getAccessTokenFromCookies = (): string | null => {
-  //   const match = document.cookie.match(/(?:^|;\s*)accessToken=([^;]*)/);
-  //   return match ? decodeURIComponent(match[1]) : null;
-  // };
-  /*
-  const getAccessTokenFromCookies = (): string | null => {
-    // Define the name of the cookie we're looking for
-    const name = 'accessToken=';
-
-    // Decode the cookie string to handle special characters (e.g., %20 for space)
-    // decodifica una cadena que ha sido codificada como URI (por ejemplo, usando encodeURIComponent()).
-    const decodedCookie = decodeURIComponent(document.cookie);
-
-    // Split the cookies into an array, each item is "key=value"
-    const cookieArray = decodedCookie.split(';');
-
-    // Loop through the cookies
-    for (let i = 0; i < cookieArray.length; i++) {
-      // Get the current cookie string
-      const c = cookieArray[i].trimStart();
-
-      // Check if the cookie starts with "accessToken="
-      if (c.startsWith(name)) {
-        // Return the value part of the cookie (after 'accessToken=')
-        return c.substring(name.length, c.length).trim();
-      }
+      navigateTo('/auth');
     }
-
-    // If not found, return null
-    return null;
-  };
-  */
-
-  // Función para eliminar el token de las cookies (para logout en web)
-  // const clearAccessTokenFromCookies = () => {
-  //   document.cookie =
-  //     'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-  // };
-  // For web context, we simply clear the token from sessionStorage and reset the state
-  // document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
-  // const response = await fetch('/api/auth/sign-out', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   body: JSON.stringify({ refreshToken }),
-  // });
-
-  // Return the authentication state and action functions
+};
+//---------------------------
+// function to use in components
+const authenticatedFetch = async (url: string, options: AxiosRequestConfig = {}) => {
+  try {
+    const response = await authFetch(url, options)
+    return response
+  } catch (error) {
+    // Solo relanzamos si no es el error especial de logout forzado, ya que authFetch ya manejó la UI y la redirección.
+    if (error instanceof Error && error.message === 'REFRESH_FAILED_LOGOUT_FORCED') {
+    // No hacer nada, la limpieza ya fue hecha.
+    throw error; 
+    }
+    console.log('Auth fetch error:', error)
+    throw error;
+  }
+};
+//------------------------------------
+// Return the authentication state and action functions
   return {
     isAuthenticated,
     userData,
@@ -290,6 +247,10 @@ const useAuth = () => {
     clearSuccessMessage,
     showSignInModalOnLoad,
     setShowSignInModalOnLoad,
+    isCheckingAuth,
+    setIsCheckingAuth,
+    authenticatedFetch
+
   };
 };
 
