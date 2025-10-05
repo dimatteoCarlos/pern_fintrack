@@ -4,16 +4,18 @@
 // =======================================
 // ⚛️ React Hooks
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import axios, { AxiosRequestConfig } from 'axios';
-import { useLocation } from 'react-router-dom';
+import { AxiosRequestConfig } from 'axios';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 // 🪝 Custom Hooks y utils
 import { useFetch } from '../../../hooks/useFetch.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
-import useBalanceStore from '../../../stores/useBalanceStore.ts';
+
+// form input validation manager
 import useFormManager from '../../../hooks/useFormManager.ts';
-//-------------------------------------
-// import { useAuthStore } from '../../../auth/stores/useAuthStore.ts';
+
+// Zustand store
+import useBalanceStore from '../../../stores/useBalanceStore.ts';
 //-------------------------------------
 // 🌐Endpoints and constants 
 import {
@@ -29,7 +31,7 @@ import {
   PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
 
-//📝 Data Type Import
+//📝 Data Type Configuration
 import type {
   AccountByTypeResponseType,
   BalanceBankRespType,
@@ -41,7 +43,6 @@ import type {
   IncomeInputDataType,
   VariantType,
   MovementTransactionType,
-  // TopCardElementsType,
 } from '../../../types/types.ts';
 
 // 🛡️ Zod - Schema and data type validation 
@@ -54,6 +55,8 @@ import CardSeparator from '../components/CardSeparator.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
+import useAuth from '../../../auth/hooks/useAuth.ts';
 //-------------------------------------
 // 📝data type definitions
 export type ShowValidationType={
@@ -80,47 +83,38 @@ const VARIANT_DEFAULT: VariantType = 'tracker';
 //==============================================
 //----Income Tracker Movement -------
 function Income():JSX.Element {
-  //rules: only bank accounts type are used to receive income amounts.
-  //select option accounts rendered are all existing bank accounts,except the slack account which is not shown.
+//rules: only bank accounts type are used to receive income amounts.
+//select option accounts rendered are all existing bank accounts,except the slack account which is not shown.
 
-  // 🗺️ Router and User configuration
+// 🗺️ Router and User configuration
   const { pathname } = useLocation();
   const trackerState = pathname.split('/')[PAGE_LOC_NUM];
-
   const typeMovement : MovementTransactionType= trackerState.toLowerCase();
-  // console.log('movement:', typeMovement);
-  //--------------------------------------
-  //deal here with user id and authentication
-  // const { userData } = useAuthStore((state) => ({
-  //   userData: state.userData,
-  //   isAuthenticated: state.isAuthenticated,
-  // }));
-
-  // console.log('userData state:', userData);
-  //userId
-  // const user = userData?.userId;
-  // console.log('userID', userID);
-
-  const user = import.meta.env.VITE_USER_ID;
-  //---------------
-  //---states------
-  // 🔄 Local States
+  const navigateTo=useNavigate()
+// console.info('tracker state', trackerState)
+//-------------------------------
+// 🛡️ Authentication state
+ const {isAuthenticated, isCheckingAuth}=useAuth()
+// const user = import.meta.env.VITE_USER_ID;
+//---------------
+//---states------
+// 🔄 Local States
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
 
   const [isReset, setIsReset] = useState<boolean>(false);
   const [isResetDropdown, setIsResetDropdown] = useState<boolean>(false);
 
   const [reloadTrigger, setReloadTrigger] = useState(0)
+
   const [messageToUser, setMessageToUser] = useState<string | null >(
     null
   );
 //------------
 // 🌳 Global State (Zustand)
 // update zustand balance / Conecta con el store de Zustand para actualizar el balance disponible.
-//----
-  const setAvailableBudget = useBalanceStore(
-    (state) => state.setAvailableBudget
-  );
+const setAvailableBudget = useBalanceStore(
+  (state) => state.setAvailableBudget
+);
 //----
 // 📝 Hook `useFormManager`
 // Centralize the logic of form handling and validation / Centraliza la lógica del formulario, validación y manejadores de eventos.
@@ -146,19 +140,26 @@ function Income():JSX.Element {
     }
   } = useFormManager<IncomeInputDataType, IncomeValidatedDataType>(incomeSchema, initialIncomeData);
 
+//--- 📡 DATA FETCHING--------------
+//---GET: TOTAL BALANCE OF ACCOUNTS OF TYPE BANK
+// endpoint: url_get_total_account_balance_by_type
+ const balanceBankResponse=useFetch<BalanceBankRespType>( `${url_get_total_account_balance_by_type}/?type=bank&reload=${reloadTrigger}`);
+// console.log("🚀 ~ Income ~ balanceBankResponse:", balanceBankResponse)
+const total_balance = balanceBankResponse.apiData?.data.total_balance
+   if (typeof total_balance === 'number') {
+     setAvailableBudget(total_balance);
+   }  
 //---- Income account Options -----------
-  //DATA FETCHING
-  //Endpoints: url_get_accounts_by_type, url_get_total_account_balance_by_type
-  const fetchUrl = user
-  ? `${url_get_accounts_by_type}/?type=bank&user=${user}&reload=${reloadTrigger}`
-    : // <Navigate to='/auth' />
-      undefined; //esto ees forzar un error de user ID required
-   const {
+// 📡 Data Fetching:
+//GET: available accounts of type bank
+//Endpoints: url_get_accounts_by_type, 
+ const fetchUrl = `${url_get_accounts_by_type}/?type=bank&user=&reload=${reloadTrigger}`
+
+  const {
     apiData: BankAccountsResponse,
     isLoading: isLoadingBankAccounts,
     error: fetchedErrorBankAccounts,
   } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
-
 // console.log('🚀 ~ Income ~ BankAccountsResponse:', BankAccountsResponse);
 // console.log('BANK resp', BankAccountsResponse, fetchedErrorBankAccounts);
 
@@ -173,7 +174,6 @@ function Income():JSX.Element {
         ? BankAccountsResponse?.data.accountList?.map((acc) => ({
             value: acc.account_name,
             label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code.toLowerCase()} ${acc.account_balance})`
-            // label: `${acc.account_name}`
           }))
         : ACCOUNT_OPTIONS_DEFAULT,
     [
@@ -188,20 +188,17 @@ function Income():JSX.Element {
     options: optionsIncomeAccounts,
     variant: VARIANT_DEFAULT,
   };
-    // console.log("🚀 ~ Income ~ optionsIncomeAccounts:", optionsIncomeAccounts)
+// console.log("🚀 ~ Income ~ optionsIncomeAccounts:", optionsIncomeAccounts)
 //--- DATA FETCHING
 // Prepare data and url for Fetching income_source account type
-  const fetchSourceUrl = user
-    ? `${url_get_accounts_by_type}/?type=income_source&user=${user}&${reloadTrigger}`
-    : // <Navigate to='/auth' />
-      undefined; //force a user ID required error
-  // console.log('🚀 ~ Income ~ fetchSourceUrl:', fetchSourceUrl);
-
+ const fetchSourceUrl = `${url_get_accounts_by_type}/?type=income_source&${reloadTrigger}`
+ // console.log('🚀 ~ Income ~ fetchSourceUrl:', fetchSourceUrl);
   const {
     apiData: sources,
-    error: errorSources,
     isLoading: isLoadingSources,
+    error: errorSources,
   } = useFetch<AccountByTypeResponseType>(fetchSourceUrl as string);
+
 //Data Transformations
 // 🧠 Memoization: Account Options
 // `useMemo` is used to create the account dropdown options, avoiding unnecessary recalculations.
@@ -212,25 +209,25 @@ function Income():JSX.Element {
         ? sources?.data.accountList?.map((acc) => ({
             value: acc.account_name,
             label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${Math.abs(acc.account_balance)})`,
-            // label: acc.account_name,
           }))
         : SOURCE_OPTIONS_DEFAULT,
     variant: VARIANT_DEFAULT as VariantType,
   }),[errorSources, isLoadingSources,sources]);
-  //--------------------------------
-  //OBTAIN THE REQUESTFN FROM userFetchLoad
-  //extend the type of input data with user id
-  type PayloadType = IncomeValidatedDataType & { user: string ; type?: string;
+//--------------------------------
+//OBTAIN THE REQUESTFN FROM userFetchLoad
+// 📡 Post Request logic
+ type PayloadType = IncomeValidatedDataType & { user?: string ; type?: string;
   };
-  //----
-  //DATA POST FETCHING
-  const { data, isLoading, error, requestFn } = useFetchLoad<
+//----
+//DATA POST FETCHING
+  const { data, isLoading, error:postError, requestFn } = useFetchLoad<
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
-  //===============================
-  // ✍️ Event Handlers
-  // ==============================
+//---- FUNCTIONS --------
+//===============================
+// ✍️ Event Handlers
+// ==============================
   const handleCurrencyChange = useCallback((newCurrency: CurrencyType) => {
     setCurrency(newCurrency);
     updateCurrency(newCurrency);
@@ -240,9 +237,9 @@ function Income():JSX.Element {
   const handleAccountChange = createDropdownHandler('account');
   const handleNoteChange = createTextareaHandler('note');
 
-  //Handler of field 'amount'. Activates all field validation when entering amount.
-  const handleAmountChange = useCallback((evt:React.ChangeEvent<HTMLInputElement  | HTMLTextAreaElement>)=>{
-    const {name, value } = evt.target
+//Handler of field 'amount'. Activates all field validation when entering amount.
+ const handleAmountChange = useCallback((evt:React.ChangeEvent<HTMLInputElement  | HTMLTextAreaElement>)=>{
+   const {name, value } = evt.target
     updateField(name as keyof IncomeInputDataType, value )
     debouncedValidateField('amount', value)
 
@@ -256,95 +253,103 @@ function Income():JSX.Element {
       });
     }
   },[updateField,debouncedValidateField, setShowValidation ])
-    
- //================================
- // Handler of saving button. Validation, API request and Resetting.
+//================================
+// Handler of saving button. Validation, API request and Resetting.
   async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
-    // console.log('On Save Handler');
+// console.log('On Save Handler');
     e.preventDefault();
     setMessageToUser('Processing transaction...')
-    
-    //--data validation messages --
+//--data validation messages --
     activateAllValidations()
     const {fieldErrors,dataValidated}=validateAll() 
-    // console.log('validated', dataValidated)
-
+// console.log('validated', dataValidated)
     if(Object.keys(fieldErrors).length>0){
       setValidationMessages(fieldErrors)
       setMessageToUser('Please correct the highlithed errors')
       setTimeout(()=>{setMessageToUser(null)},4000)
       return
     }
-  //------------------------
+//------------------------
 //POST ENDPOINT FOR MOVEMENT TRANSACTION
+//--sending data to server -------------
 //update balance account of bank account and income_source accounts in: user_accounts table.
 
 //record both transaction descriptions: transfer and receive transactions with the correspondent account info.
 
 //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=income
 
-    try {
-    if (!dataValidated) {
+try {
+//create a payload with validated data
+   if (!dataValidated) {
         throw new Error('Validation failed. Please check your inputs.');
      }
-    //--sending data to server -----------------
-      const payload: PayloadType = {
-        ...dataValidated,
-       user,
+    const payload: PayloadType = {
+        ...dataValidated as IncomeValidatedDataType  & { type?: string },
         type: typeMovement,
       };
-      //--send the post request
-      const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
+//--send the post request
+   const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
 
-      const response = await requestFn(payload, {
-        url: postUrl,
-      } as AxiosRequestConfig);
+   const response = await requestFn(payload, {
+     url: postUrl,
+    } as AxiosRequestConfig);
 
-      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-        console.log('Data from record transaction request:', data, response.data);
-      }
+    if (response?.error ) {
+      throw new Error(response?.error || postError || 'An unexpected error occurred during submission.');
+    }
+    
+    if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+      console.log('Data from record transaction request:', data, response.data);
+    }
+//----------------------------------  
+    setMessageToUser('Transaction recorded successfully!');      
+ //----------------------------------
+ // reset values after posting the info   
+    resetForm();
+    setCurrency(DEFAULT_CURRENCY);
+    setReloadTrigger(prev => prev + 1);
+    setIsReset(true);
+    setIsResetDropdown(true);
+    setTimeout(() => setMessageToUser(null), 3000);
 
-      if (response?.error ) {
-        throw new Error(response?.error || error || 'An unexpected error occurred during submission.');
-      }
-
-     //-------------------------------
-      //update total available budget global state
-      const {
-        data: {
-          data: { total_balance },
-        },
-      } = await axios.get<BalanceBankRespType>(
-        `${url_get_total_account_balance_by_type}/?type=bank&user=${user}`
-      );
-
-      if (typeof total_balance === 'number') {
-        setAvailableBudget(total_balance);
-      } 
-  //----------------------------------  
-       setMessageToUser('Transaction recorded successfully!');      
- //---------------------------------- //reset values after posting the info   
- resetForm();
-      setCurrency(DEFAULT_CURRENCY);
-      setReloadTrigger(prev => prev + 1);
-      setIsReset(true);
-      setIsResetDropdown(true);
-      setTimeout(() => setMessageToUser(null), 3000);
-
-      // setTimeout(() => {
-      //   setIsReset(false);
-      // }, 1500);
+    // setTimeout(() => {
+    //   setIsReset(false);
+    // }, 1500);
       
     } catch (err) {
-      console.error('Submission error:', error);
+      console.error('Submission error:', postError);
       const errorMessage = handleApiError(err);
       setMessageToUser(errorMessage);
       setTimeout(() => setMessageToUser(null), 5000);
     }
   }
-//-----------------------------------------
+//------------------------------------
 // ⏳--- Side Effects--/--Efectos secundarios
-//-----------------------------------------
+//------------------------------------
+// AUTHENTICATION AND REDIRECTION EFFECT
+//Message to user and action, when auth is checking or not authenticated
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (isCheckingAuth) {
+      setMessageToUser('Verifying session status. Please wait...');
+    } else if (!isAuthenticated) {
+      // Use existing messageToUser state for feedback before redirecting
+      setMessageToUser('Session not active or expired. Redirecting to the sign-in page in 3 seconds...');
+      
+      timer = setTimeout(() => {
+        navigateTo('/auth', { replace: true });
+      }, 3000); 
+
+    } else {
+    // If authenticated, clear the message (only if it was set by the auth check)
+      if (messageToUser?.includes('Verifying') || messageToUser?.includes('Session not active')) {setMessageToUser(null);}
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer); // Cleanup timer
+    };
+  }, [isAuthenticated, isCheckingAuth, navigateTo, messageToUser]);
+//---------------------------------------
 // `useEffect` para resetear los estados de la UI (`isReset`, `isResetDropdown`) después de un tiempo.
   useEffect(() => {
     if (isReset || isResetDropdown) {
@@ -364,7 +369,39 @@ function Income():JSX.Element {
     value: incomeData.amount,
     selectOptions: accountOptions,
   };
-  //--------------------------
+// ----------------------------------------
+// 🧱 RENDER LOGIC
+// ----------------------------------------
+// Separate UI of "checking" and "not authenticated"
+if (isCheckingAuth) {
+  return (
+    <div className='expense loading-screen' style={{ color: 'inherit' }}>
+      <MessageToUser
+        isLoading={true} 
+        messageToUser={messageToUser}
+        variant='tracker'
+        error={ postError || errorSources || fetchedErrorBankAccounts }
+      />
+      <CoinSpinner />
+    </div>
+  );
+}
+
+if (!isAuthenticated) {
+  return (
+    <div className='expense loading-screen' style={{ color: 'inherit' }}>
+      <MessageToUser
+        isLoading={false} // MODIFICACIÓN: no estamos "checking", estamos en estado no-auth
+        messageToUser={messageToUser ?? 'Session not active or expired. Redirecting to sign-in...'} // MODIFICACIÓN: fallback mensaje
+        variant='tracker'
+        error={ postError || errorSources || fetchedErrorBankAccounts }
+      />
+    </div>
+  );
+}
+
+// ----------------------------------------
+// If authenticated and not checking, render the form:
   return (
     <>
       <form className='income' style={{ color: 'inherit' }}>
@@ -418,7 +455,7 @@ function Income():JSX.Element {
         <div className='fade-message'>
           <MessageToUser
             isLoading={isLoading || isLoadingBankAccounts || isLoadingSources }
-            error={error || errorSources || fetchedErrorBankAccounts}
+            error={postError || errorSources || fetchedErrorBankAccounts}
             messageToUser={messageToUser}
             variant='tracker'
           />
