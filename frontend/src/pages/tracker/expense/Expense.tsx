@@ -66,9 +66,9 @@ export type ShowValidationType={
   category: boolean;
   note: boolean;
 } 
-//========================================
+//======================================
 // ⚙️ INITIAL CONFIGURATION AND DEFAULT VALUES
-//========================================
+//======================================
 const defaultCurrency = DEFAULT_CURRENCY;
 const initialExpenseData: ExpenseInputDataType = {
   amount: "", //string for input
@@ -92,7 +92,7 @@ const router = useLocation();
 const trackerState = router.pathname.split('/')[PAGE_LOC_NUM];
 const typeMovement: MovementTransactionType = trackerState.toLowerCase(); 
 const navigateTo=useNavigate()
-console.info('tracker state', trackerState)
+// console.info('tracker state', trackerState)
 //---
 // 🛡️ AUTHENTICATION STATE
 const { isAuthenticated, isCheckingAuth , } = useAuth();
@@ -431,6 +431,7 @@ function showMessage(message: string, duration = 4000) {
 //-----------------------------------
 //---------
 // AUTHENTICATION AND REDIRECTION EFFECT
+//Message to user and action, when auth checking or not authenticated
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     if (isCheckingAuth) {
@@ -444,26 +445,21 @@ function showMessage(message: string, duration = 4000) {
       }, 3000); 
 
     } else {
-      // If authenticated, clear the message (only if it was set by the auth check)
-      if (messageToUser?.includes('Verifying') || messageToUser?.includes('Session not active')) {
-         setMessageToUser(null);
-      }
+    // If authenticated, clear the message (only if it was set by the auth check)
+      if (messageToUser?.includes('Verifying') || messageToUser?.includes('Session not active')) {setMessageToUser(null);}
     }
 
     return () => {
       if (timer) clearTimeout(timer); // Cleanup timer
     };
   }, [isAuthenticated, isCheckingAuth, navigateTo, messageToUser]);
-
 //-----------------
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if ((data ) && !isLoading) {
       const success = data;
       setMessageToUser(
- 'Movement completed successfully!'
-          
-      );
+    'Movement successfully completed!');
 //reset only in case of success
     if (success) {
       setCurrency(DEFAULT_CURRENCY);
@@ -519,7 +515,7 @@ useEffect(() => {
 
 // Effect to handle account validation when amount is entered
 useEffect(() => {
-  // Activar validación solo si hay amount y no está ya activa
+// Activate validation only if amount is entered /Activar validación solo si hay amount y no está ya activa
   if (expenseData.amount !== '' && !showValidation.account) {
     setShowValidation(prev => ({ ...prev, account: true }));
     
