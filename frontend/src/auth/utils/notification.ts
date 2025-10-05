@@ -15,5 +15,11 @@ export const notifySessionExpired = () => {
   });
 };
 
+// export const notifySuccess = (message: string , option?:object) => toast.success(message, option);
+
+// export const notifyError = (message: string , option?:object) => toast.error(message, option);
+
+// export const notifyWarning = (message: string , option?:object) => toast.warn(message, option);
+
 
 
