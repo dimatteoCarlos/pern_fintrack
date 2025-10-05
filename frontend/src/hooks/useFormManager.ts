@@ -3,13 +3,11 @@ import { useState, useCallback } from 'react';
 import { useDebouncedCallback } from './useDebouncedCallback';
 import type { ZodType } from 'zod';
 import { validateForm } from '../validations/utils/zod_validation';
-
 // ===========================
 // TYPE DEFINITIONS
 // ===========================
 import type {  DropdownOptionType, CurrencyType } from '../types/types';
 import { ValidationMessagesType } from '../validations/types';
-
 // ===========================
 // MAIN HOOK IMPLEMENTATION
 // ===========================
@@ -137,7 +135,7 @@ const useFormManager = <TInput extends Record<string, unknown>, TValidated exten
   }, [updateField, debouncedValidateField]);
   
  // FORM-WIDE VALIDATION (for submit)
- // ==================================
+ // ==============================
   const validateAll = useCallback(() => {
     const { errors: fieldErrors, data: dataValidated } = validateForm(schema, formData);
     return { fieldErrors, dataValidated };
