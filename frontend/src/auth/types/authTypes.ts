@@ -1,3 +1,4 @@
+//frontend/src/auth/types/authTypes.ts
 export type CredentialsType = {
   username: string;
   email: string;
@@ -6,7 +7,7 @@ export type CredentialsType = {
   password: string;
 };
 
-export interface SignInCredentialsType {
+export type SignInCredentialsType= {
   username: string;
   email: string;
   password: string;
@@ -98,6 +99,7 @@ export interface UserResponseDataType {
 //sign-in
 export interface SignInResponseType {
   message: string;
+  user: UserResponseDataType; userAccess?: string ;
   data: { user: UserResponseDataType; userAccess: string };
   accessToken?: string;
   refreshToken?: string;
