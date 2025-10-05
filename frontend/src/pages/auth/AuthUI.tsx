@@ -1,4 +1,4 @@
-//AuthUI.tsx
+//frontend/src/pages/auth/AuthUI.tsx
 import { useEffect, useState } from 'react';
 import styles from './styles/AuthUI.module.css';
 import GoogleLogo from '../../assets/auth/GoogleLogo';
