@@ -1,15 +1,21 @@
 //backend/src/index.js
 //import express, { Express, Request, Response, NextFunction } from 'express';
+// ====================
+// 📥 Imports
+// ====================
+//Main server modules
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
-import { pool, checkConnection } from './db/configDB.js';
 import useragent from 'express-useragent';
+import dotenv from 'dotenv';
+import pc from 'picocolors';
 // import '../utils/authUtils/cronJobs.js';
 
+//Database utils and conection
+import { pool, checkConnection } from './db/configDB.js';
 import {
   tableExists,
   tblAccountTypes,
@@ -19,38 +25,44 @@ import {
   tbltransactionTypes,
   tblUserRoles,
 } from './db/populateDB.js';
-import pc from 'picocolors';
 import { mainTables, createTables } from './db/createTables.js';
+
+//Api routes and authenticacion functions
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
-// import { verifyToken } from './middlewares/authMiddleware.js';
 import { cleanRevokedTokens } from '../utils/authUtils/authFn.js';
+import { verifyToken } from './middlewares/authMiddleware.js';
 
-// import passport from 'passport';
-// import './config/passport.js';
-
+//Environment variables configuration
 dotenv.config();
-const app = express();
-app.use(useragent.express());
-app.disable('x-powered-by');
 // const {
-//   DB_USER,
-//   DB_NAME,
-//   DB_PASSWORD,
-//   DB_PORT,
-//   // PORT,
+  //   DB_USER,
+  //   DB_NAME,
+  //   DB_PASSWORD,
+  //   DB_PORT,
+  //   // PORT,
 //   JWT_SECRET,
 //   NODE_ENV,
 // } = process.env;
 // console.log(DB_USER, DB_NAME, DB_PASSWORD, DB_PORT, JWT_SECRET, NODE_ENV);
 
+// ==================================
+// ⚙️ Express app configuration
+// ==================================
+//app config, global middlewares application. 
+//safety, request records and data handling
+const app = express();
 const PORT = parseInt(process.env.PORT ?? '5000');
 
-//Middlewares
+//Middlewares initialization
+app.use(useragent.express());
+app.disable('x-powered-by');
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true })); //
+app.use(express.urlencoded({ extended: true }));
+
+//CORS Configuration for access control
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -64,6 +76,7 @@ app.use(
         'http://localhost:1234',
         'http://localhost:5432',
       ];
+
       if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
         return callback(null, true);
       }
@@ -75,37 +88,39 @@ app.use(
       );
     },
     credentials: true, // Allow to send cookies
+    allowedHeaders: ['Content-Type', 'Authorization'] 
   })
 );
-// app.use(cors('*'));
 //allow cross origin sharing request
-app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }));
-app.use(cookieParser());
-// Inicializa el middleware de Passport en la aplicación Express.Operaciones que realiza:
-// Prepara el sistema de autenticación para su uso
-// Añade los métodos de Passport al objeto req (como req.login(), req.logout())
-//Establece las bases para el manejo de estrategias de autenticación
-// app.use(passport.initialize());
-
-//------------------
+// app.use(cors('*'));
+app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }));// Encabezado para recursos de origen cruzado
+app.use(cookieParser());//Enable cookies analysis
+// =====================
+// 🛣️ API routing
+// =====================
+//api main routes and associated controllers
+//----------------------
 //Middleware route handling or routes configuration
-app.use('/api', routes);
-app.use('/api/fintrack', fintrack_routes);
-// app.use('/api/fintrack', verifyToken, fintrack_routes);
-//------------------
+app.use('/api', routes);//main app routes
+
+app.use('/api/fintrack',
+   verifyToken,
+   fintrack_routes);
+//----------------------
 //response to undefined route request
+//not defined (404 Not Found) routes handler
 app.use('*', (req, res) => {
   res.status(404).json({ error: '404', message: 'Route link was not found' });
 });
-
-//---function declaration---------------
-//Database initialization.  Función para inicializar la base de datos
+//---function declaration------------
+// ==================================
+// 📊 Data base initialization
+// ==================================
 async function initializeDatabase() {
   try {
     console.log(pc.cyanBright('Verificando existencia de datos en tablas ...'));
-
   //---------------------
-  // Verify initialization status
+  //Verify initialization status
   //verify if app_initialization table exists
     const exists = await tableExists('app_initialization');
     if (!exists) {
@@ -117,12 +132,11 @@ async function initializeDatabase() {
     )`;
       await pool.query(createQuery);
     }
-
     const initCheck = await pool.query(
       `SELECT tables_created FROM app_initialization ORDER BY id DESC LIMIT 1`
     );
     //------------------------------
-    // Create tables as per status of initialization
+    // Create tables if data base is not initialized
     if (initCheck.rows.length === 0 || !initCheck.rows[0].tables_created) {
       console.log(pc.cyan('Initializing app for the first time....'));
   //----------
@@ -137,39 +151,36 @@ async function initializeDatabase() {
       await tbltransactionTypes();
       await tblMovementTypes();
 
-      //Create all the main tables
+      //Create the main tables
       await pool.query('SET CONSTRAINTS ALL DEFERRED');
       await createTables();
       await pool.query('SET CONSTRAINTS ALL IMMEDIATE');
       //Mark as initialized app
-      await pool.query(
-        `
+      await pool.query(`
         INSERT INTO app_initialization (tables_created) VALUES (TRUE)
         ON CONFLICT (id)
         DO UPDATE SET
           tables_created = EXCLUDED.tables_created,
           updated_at = NOW()
-        `
-      );
-
+        `);
      await pool.query('COMMIT');
 
-      console.log(pc.green('Application initialized successfully'));
+     console.log(pc.green('Application initialized successfully'));
     } catch (error) {
       await pool.query('ROLLBACK');
       throw error;
     }
     //----------
     } else {
-      console.log(pc.yellow('Application already initialized. Skipping catalog tables creation.'));
+      console.log(pc.yellow('Application already initialized. Skipping tables creation.'));
     }
-    //-----------------------------------
+    //-----------------------------
     //truncate or drop all tables manually
     if (false) {
       await Promise.allSettled(
         mainTables.map(async (item, indx) => {
           try {
-            if (item.tblName == 'users' || item.tblName=='transactionsX') {
+            if (item.tblName == 'users' || item.tblName=='transactionsm') {
               console.log('skip users table');
               return false;
             }
@@ -198,7 +209,7 @@ async function initializeDatabase() {
         }
       });
     }
-    //====================================
+    //=============================
     //create tables manually
     if (false) {
       await Promise.allSettled(
@@ -228,7 +239,7 @@ async function initializeDatabase() {
         });
       });
     }
-    //=========================
+    //=============================
     //---
     console.log(pc.greenBright('Base de datos inicializada correctamente.'));
   } catch (error) {
@@ -239,19 +250,19 @@ async function initializeDatabase() {
     throw error; // Relanzar el error para manejarlo en el nivel superior
   }
 }
-//---
-//=========================
-// Server starts
+//=======================
+// Server starting and Event Handlings
 //=======================
 // Inicializar la base de datos y luego iniciar el servidor // Data Base and Server initialization 
-//------------------
-//Initiate
+//----------------------
+//Initiate db, clear tokens and start server
 console.log('Hola Mundo');
+//Data base connection
 await checkConnection();
 await initializeDatabase()
   .then(async () => {
     try {
-      await cleanRevokedTokens(); // Ahora con await
+      await cleanRevokedTokens(); 
       app.listen(PORT, '0.0.0.0', () => {
         console.log(pc.yellowBright(`Server running on port ${PORT}`));
       });
@@ -265,14 +276,13 @@ await initializeDatabase()
     process.exit(1); // Salir del proceso si hay un error crítico
   });
 //=======================
+//error handler of db connection pool
 pool.on('error', (err) => {
   console.error(pc.redBright('Unexpected error on idle client', err));
-  // Termina la aplicación si hay un error grave
-  // process.exit(-1);
+// Termina la aplicación si hay un error grave  // process.exit(-1);
 });
 //----------------------
-//message error handling
-//app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
+//gobal errors handler for Express 
 app.use((err, req, response, next) => {
   console.error(('error handled response ', err));
   const errorStatus = err.status || 500;
@@ -280,15 +290,16 @@ app.use((err, req, response, next) => {
   response.status(errorStatus).json({
     message: errorMessage,
     status: errorStatus,
-    stack: process.env.NODE_ENV == 'development' ? err.stack : undefined, //modificado
+    stack: process.env.NODE_ENV == 'development' ? err.stack : undefined, 
   });
 });
-//--------------------------------
+//Handler for safe application termination (Ctrl+C)/Manejador para una terminación segura de la aplicación (Ctrl+C)
+
 process.on('SIGINT', () => {
   console.log(pc.cyan('Shutting down gracefully...'));
   pool.end(() => {
     console.log(pc.greenBright('Database pool closed.'));
-    // https://nodejs.org/api/process.html#process_process_exit_code
+  // https://nodejs.org/api/process.html#process_process_exit_code
     process.exit(0);
     // process.exitCode=0;
   });
