@@ -1,5 +1,7 @@
-import axios, { AxiosRequestConfig, AxiosResponse, Method } from 'axios';
+// src/hooks/useFetchLoad.ts
+import axios, { AxiosRequestConfig,  Method } from 'axios';
 import { useState } from 'react';
+import { authFetch } from '../auth/utils/authFetch';
 
 export type FetchResponseType<R, D = unknown> = {
   data: R | null;
@@ -13,7 +15,15 @@ type useFetchArgType = {
   method: Method;
   initialConfig?: AxiosRequestConfig;
 };
-
+/**
+ * 🎯 useFetchLoad - Hook para POST/PUT/DELETE requests con autenticación
+ * ✅ Ideal para forms, updates, y operaciones que modifican datos
+ * ✅ Retorna función que puede ser llamada cuando sea necesario
+ */
+//===================
+//useFetchLoad
+//===================
+//Hook for mutations
 export function useFetchLoad<R, D = unknown>({
   url: initialUrl,
   method = 'POST',
@@ -31,23 +41,26 @@ export function useFetchLoad<R, D = unknown>({
     let errorMessage: string | null = null;
 
     try {
-      const config: AxiosRequestConfig = {
+      // 🎯 Unificar configuración de Axios
+      const requestConfig: AxiosRequestConfig = {
         ...initialConfig,
         method,
         url: initialUrl,
         data: payload,
         withCredentials: true,
-        ...(overrideConfig || {}), //overrideConfig must come last to overwrite dynamically the url or anything in the initial config, even method
+        ...(overrideConfig || {}), //overrideConfig must come last to overwrite dynamically the url or anything in the initial requestConfig, even method. overrideConfig?.url || initialUrl,
       };
-      // console.log(
-      //   'desde useFetch config:',
-      //   config,
-      //   'overrideConfig',
-      //   overrideConfig,
-      //   'url inicial:',
-      //   initialUrl
-      // );
-      const response: AxiosResponse<R> = await axios(config);
+      console.log(
+        'desde useFetch requestConfig:',
+        requestConfig,
+        'overrideConfig',
+        overrideConfig,
+        'url inicial:',
+        initialUrl
+      );
+
+// ✅ USO DE authFetch PARA AUTENTICACIÓN
+      const response = await authFetch<R>(requestConfig.url!, requestConfig);
 
       if (response.status >= 200 && response.status < 300) {
         localData = response.data as R;
@@ -57,27 +70,24 @@ export function useFetchLoad<R, D = unknown>({
         throw new Error(`Unexpected status code: ${response.status}`);
       }
     } catch (err: unknown) {
-      if (err) {
-          errorMessage = 'Unexpected error occurred';
-
-        // Si es un error de Axios y tiene response.data.message
-
-        if (axios.isAxiosError(err) && err.response?.data?.message) {
-          errorMessage = err.response.data.message;
-        }
-        // Si es un Error estándar
-        else if (err instanceof Error) {
-          errorMessage = err.message;
-        }
-        // Cualquier otro caso error para uso inmediato.
-        else {
-          errorMessage = 'Unexpected error occurred';
-        }
-
-        console.error('Error:', errorMessage);
-        setData(null);
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+      errorMessage = err.response.data.message;
+      setError(errorMessage);       
+      }
+      // If it's a standard Error (e.g., thrown from authFetch or this function)
+      else if (err instanceof Error) {
+        errorMessage = err.message;
         setError(errorMessage);
       }
+      // Fallback for all other error types
+      else {
+       errorMessage = 'Unexpected error occurred';
+       setError(errorMessage);
+      }
+
+      console.error('Error:', errorMessage);
+      setData(null);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
