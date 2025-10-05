@@ -124,7 +124,7 @@ const setAvailableBudget = useBalanceStore((state) => state.setAvailableBudget);
   const balanceBankResponse = useFetch<BalanceBankRespType>(
   `${url_get_total_account_balance_by_type}/?type=bank&reload=${reloadTrigger}`
   );
-  console.log("🚀 ~ Expense ~ balanceBankResponse:", balanceBankResponse)
+  // console.log("🚀 ~ Expense ~ balanceBankResponse:", balanceBankResponse)
   const total_balance = balanceBankResponse.apiData?.data.total_balance
    if (typeof total_balance === 'number') {
      setAvailableBudget(total_balance);
@@ -142,15 +142,15 @@ const setAvailableBudget = useBalanceStore((state) => state.setAvailableBudget);
     apiData: BankAccountsResponse,
     isLoading: isLoadingBankAccounts,
     error: fetchedErrorBankAccounts,
-    ...rest
+    // ...rest
   } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
 
-  console.log('',{
-    BankAccountsResponse,
-    isLoadingBankAccounts,
-    fetchedErrorBankAccounts,
-    rest
-  });
+  // console.log('',{
+  //   BankAccountsResponse,
+  //   isLoadingBankAccounts,
+  //   fetchedErrorBankAccounts,
+  //   rest
+  // });
 
 //---data transformation
 // 🧠 Memoization: Account Options
@@ -345,7 +345,7 @@ function showMessage(message: string, duration = 4000) {
 //-------------------------------------
 //Handler for form submit
   async function onSaveHandler_zod(e: React.MouseEvent<HTMLButtonElement>) {
-    console.log('On Save Handler');
+    // console.log('On Save Handler');
     e.preventDefault();
 
   // Show all validation messages when submitting
@@ -421,8 +421,8 @@ function showMessage(message: string, duration = 4000) {
       if (isAuthError) {
         return;
           }
-  console.error(`Error (${status}): ${message}`);
-        showMessage(`Error (${status}): ${message}` );
+      console.error(`Error (${status}): ${message}`);
+      showMessage(`Error (${status}): ${message}` );
       }
 }
 //-----------------------------------
