@@ -92,6 +92,7 @@ const router = useLocation();
 const trackerState = router.pathname.split('/')[PAGE_LOC_NUM];
 const typeMovement: MovementTransactionType = trackerState.toLowerCase(); 
 const navigateTo=useNavigate()
+console.info('tracker state', trackerState)
 //---
 // 🛡️ AUTHENTICATION STATE
 const { isAuthenticated, isCheckingAuth , } = useAuth();
