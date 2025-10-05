@@ -14,7 +14,7 @@ import {
   UserDataType,
   UserResponseDataType,
 } from '../types/authTypes.ts';
-//---------------------------------------------------------------
+//-----------------------------------------------
 import { useEffect } from 'react'
 import { authFetch } from '../utils/authFetch.ts';
 //----------------------------------
@@ -81,7 +81,7 @@ const useAuth = () => {
           console.warn('Fallo al validar token de persistencia o refresh. Sesión borrada.');
       }
     }
-    
+  
     // 🚨 3. FINALIZAR LA COMPROBACIÓN 🚨
       setIsCheckingAuth(false); 
     };
