@@ -126,8 +126,7 @@ const { isAuthenticated, isCheckingAuth , } = useAuth();
 
 //--- 📡 DATA FETCHING--------------
 //---GET: TOTAL BALANCE OF ACCOUNTS OF TYPE BANK
-  const balanceBankResponse = useFetch<BalanceBankRespType>(
-  `${url_get_total_account_balance_by_type}/?type=bank&reload=${reloadTrigger}`
+  const balanceBankResponse = useFetch<BalanceBankRespType>(`${url_get_total_account_balance_by_type}/?type=bank&reload=${reloadTrigger}`
   );
   // console.log("🚀 ~ Expense ~ balanceBankResponse:", balanceBankResponse)
 
@@ -413,7 +412,7 @@ try {
 //-------------------------------
 // ⏳--- SIDE EFFECTS 
 //-------------------------------
-// ACTUALIZAR BALANCE GLOBAL
+// UPDATE GLOBAL BALANCE AFTER useFetch
  useEffect(() => {
 const total_balance = balanceBankResponse.apiData?.data?.total_balance;
 
@@ -425,8 +424,7 @@ setAvailableBudget(total_balance);
 // Dependencia: Solo re-ejecuta cuando la respuesta del fetch de balance cambia
  }, [balanceBankResponse.apiData, setAvailableBudget]); 
 
-
-
+//----------------
 // AUTHENTICATION AND REDIRECTION EFFECT
 //Message to user and action, when auth is checking or not authenticated
   useEffect(() => {
