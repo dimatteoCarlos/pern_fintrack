@@ -215,7 +215,8 @@ const {
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
-//---- FUNCTIONS --------
+
+//---- FUNCTIONS ----------------
 //===============================
 // ⚙️ Auxiliar: fetch new balance
 // ==============================
@@ -224,7 +225,7 @@ const fetchNewBalance = useCallback(async ()=>{
 //--- 📡 Data fetching--------------
 //---GET: total balance of accounts of type bank. endpoint: url_get_total_account_balance_by_type
 try {
-  const balanceBankResponse= await authFetch<BalanceBankRespType>( `${url_get_total_account_balance_by_type}/?type=bank&reload=${reloadTrigger}`);
+  const balanceBankResponse= await authFetch<BalanceBankRespType>( `${url_get_total_account_balance_by_type}?type=bank`);
     console.log("🚀 ~ Income ~ balanceBankResponse:", balanceBankResponse)
   
   const total_balance = balanceBankResponse.data?.data.total_balance
@@ -326,7 +327,7 @@ try {
       console.log('Data from record transaction request:', data, response.data);
     }
 //-------------------------------
-  setMessageToUser('Transaction recorded successfully!');    
+  setMessageToUser('Transaction successfully recorded!');    
 //----------------------------------
 // reset values after posting the info   
   resetForm();//from useFormManager
