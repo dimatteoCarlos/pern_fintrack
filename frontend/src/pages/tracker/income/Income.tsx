@@ -1,7 +1,7 @@
 //src/pages/tracker/income/Income.tsx
-// =======================================
+// ==========================
 // 📦 Import Section
-// =======================================
+// =======================
 // ⚛️ React Hooks
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AxiosRequestConfig } from 'axios';
@@ -57,6 +57,7 @@ import CardNoteSave from '../components/CardNoteSave.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 import useAuth from '../../../auth/hooks/useAuth.ts';
+import { authFetch } from '../../../auth/utils/authFetch.ts';
 //-------------------------------------
 // 📝data type definitions
 export type ShowValidationType={
@@ -65,9 +66,9 @@ export type ShowValidationType={
   source: boolean;
   note: boolean;
 } 
-//==============================================
+//=====================================
 // ⚙️ Initial Configuration and default values
-//==============================================
+//====================================
 const defaultCurrency = DEFAULT_CURRENCY;
 
 const initialIncomeData: IncomeInputDataType = {
@@ -78,9 +79,9 @@ const initialIncomeData: IncomeInputDataType = {
   currency: DEFAULT_CURRENCY,
 };
 const VARIANT_DEFAULT: VariantType = 'tracker';
-//==============================================
+//======================================
 // ⚛️Main Component: Income
-//==============================================
+//======================================
 //----Income Tracker Movement -------
 function Income():JSX.Element {
 //rules: only bank accounts type are used to receive income amounts.
@@ -139,30 +140,20 @@ const setAvailableBudget = useBalanceStore(
       setFormData,
     }
   } = useFormManager<IncomeInputDataType, IncomeValidatedDataType>(incomeSchema, initialIncomeData);
-
-//--- 📡 DATA FETCHING--------------
-//---GET: TOTAL BALANCE OF ACCOUNTS OF TYPE BANK
-// endpoint: url_get_total_account_balance_by_type
- const balanceBankResponse=useFetch<BalanceBankRespType>( `${url_get_total_account_balance_by_type}/?type=bank&reload=${reloadTrigger}`);
-// console.log("🚀 ~ Income ~ balanceBankResponse:", balanceBankResponse)
-const total_balance = balanceBankResponse.apiData?.data.total_balance
-   if (typeof total_balance === 'number') {
-     setAvailableBudget(total_balance);
-   }  
-//---- Income account Options -----------
+//---- Income account Options ------
 // 📡 Data Fetching:
 //GET: available accounts of type bank
 //Endpoints: url_get_accounts_by_type, 
  const fetchUrl = `${url_get_accounts_by_type}/?type=bank&user=&reload=${reloadTrigger}`
 
-  const {
+const {
     apiData: BankAccountsResponse,
     isLoading: isLoadingBankAccounts,
     error: fetchedErrorBankAccounts,
   } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
 // console.log('🚀 ~ Income ~ BankAccountsResponse:', BankAccountsResponse);
 // console.log('BANK resp', BankAccountsResponse, fetchedErrorBankAccounts);
-
+//---------------------------------
 //Data Transformations
 // 🧠 Memoization: Account Options
 // `useMemo` is used to create the account dropdown options, avoiding unnecessary recalculations.
@@ -189,7 +180,7 @@ const total_balance = balanceBankResponse.apiData?.data.total_balance
     variant: VARIANT_DEFAULT,
   };
 // console.log("🚀 ~ Income ~ optionsIncomeAccounts:", optionsIncomeAccounts)
-//--- DATA FETCHING
+//--- data fetching
 // Prepare data and url for Fetching income_source account type
  const fetchSourceUrl = `${url_get_accounts_by_type}/?type=income_source&${reloadTrigger}`
  // console.log('🚀 ~ Income ~ fetchSourceUrl:', fetchSourceUrl);
@@ -226,6 +217,30 @@ const total_balance = balanceBankResponse.apiData?.data.total_balance
   >({ url: url_movement_transaction_record, method: 'POST' });
 //---- FUNCTIONS --------
 //===============================
+// ⚙️ Auxiliar: fetch new balance
+// ==============================
+//this is an alternative to useEffect for updating total balance, as was used in Expense.tsx.
+const fetchNewBalance = useCallback(async ()=>{
+//--- 📡 Data fetching--------------
+//---GET: total balance of accounts of type bank. endpoint: url_get_total_account_balance_by_type
+try {
+  const balanceBankResponse= await authFetch<BalanceBankRespType>( `${url_get_total_account_balance_by_type}/?type=bank&reload=${reloadTrigger}`);
+    console.log("🚀 ~ Income ~ balanceBankResponse:", balanceBankResponse)
+  
+  const total_balance = balanceBankResponse.data?.data.total_balance
+  
+  if (typeof total_balance === 'number') {
+    return total_balance  
+    //  setAvailableBudget(total_balance);
+  }
+  return null  
+    } catch (error) {
+  console.error('Error fetching new balance:', error);
+    return null; 
+  }
+}, [ reloadTrigger])
+
+//===============================
 // ✍️ Event Handlers
 // ==============================
   const handleCurrencyChange = useCallback((newCurrency: CurrencyType) => {
@@ -255,7 +270,7 @@ const total_balance = balanceBankResponse.apiData?.data.total_balance
   },[updateField,debouncedValidateField, setShowValidation ])
 //================================
 // Handler of saving button. Validation, API request and Resetting.
-  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
+async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
 // console.log('On Save Handler');
     e.preventDefault();
     setMessageToUser('Processing transaction...')
@@ -265,7 +280,7 @@ const total_balance = balanceBankResponse.apiData?.data.total_balance
 // console.log('validated', dataValidated)
     if(Object.keys(fieldErrors).length>0){
       setValidationMessages(fieldErrors)
-      setMessageToUser('Please correct the highlithed errors')
+      setMessageToUser('Please correct the highlithed fields')
       setTimeout(()=>{setMessageToUser(null)},4000)
       return
     }
@@ -297,24 +312,33 @@ try {
     if (response?.error ) {
       throw new Error(response?.error || postError || 'An unexpected error occurred during submission.');
     }
+      
+    // ------------------------------
+    // ✅ Update total balance after success 
+    // -----------------------------
+    //1. Get the immediate new balance
+    const newTotalBalance = await fetchNewBalance()
+    //2. Update global state of Zustand store
+    if (typeof newTotalBalance === 'number') {setAvailableBudget(newTotalBalance); // 🔥 Éxito: Llamada segura dentro del handler
+    }
     
     if (import.meta.env.VITE_ENVIRONMENT === 'development') {
       console.log('Data from record transaction request:', data, response.data);
     }
-//----------------------------------  
-    setMessageToUser('Transaction recorded successfully!');      
- //----------------------------------
- // reset values after posting the info   
-    resetForm();
-    setCurrency(DEFAULT_CURRENCY);
-    setReloadTrigger(prev => prev + 1);
-    setIsReset(true);
-    setIsResetDropdown(true);
-    setTimeout(() => setMessageToUser(null), 3000);
+//-------------------------------
+  setMessageToUser('Transaction recorded successfully!');    
+//----------------------------------
+// reset values after posting the info   
+  resetForm();//from useFormManager
+  setCurrency(DEFAULT_CURRENCY);
+  setReloadTrigger(prev => prev + 1);
+  setIsReset(true);
+  setIsResetDropdown(true);
+  setTimeout(() => setMessageToUser(null), 3000);
 
-    // setTimeout(() => {
-    //   setIsReset(false);
-    // }, 1500);
+  // setTimeout(() => {
+  //   setIsReset(false);
+  // }, 1500);
       
     } catch (err) {
       console.error('Submission error:', postError);
@@ -369,9 +393,9 @@ try {
     value: incomeData.amount,
     selectOptions: accountOptions,
   };
-// ----------------------------------------
+// ---------------------------------------
 // 🧱 RENDER LOGIC
-// ----------------------------------------
+// ---------------------------------------
 // Separate UI of "checking" and "not authenticated"
 if (isCheckingAuth) {
   return (
