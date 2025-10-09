@@ -6,6 +6,9 @@ export function validationData<T extends Record<string, unknown>>(
 ): Record<keyof T, string> {
   const errorValidationMessages: Partial<Record<keyof T, string>> = {};
 
+  // Campos que NO deben aceptar 0
+  const nonZeroFields = ['amountX', 'target', 'budget'];
+
   for (const key in stateToValidate) {
     const value = stateToValidate[key];
     
@@ -18,9 +21,11 @@ export function validationData<T extends Record<string, unknown>>(
 // Validación adicional para números/additional validation for numbers
 //this accept zero as number input, used by new account creation
    if (typeof value === 'number') {
-    if (value <0) {
-      errorValidationMessages[key] = `* ${capitalize(key)} must be positive`;
-    }
+    if (nonZeroFields.includes(key) && value === 0) {
+      errorValidationMessages[key] = `* ${capitalize(key)} must be greater than zero`;
+    }else if (value < 0) {
+        errorValidationMessages[key] = `* ${capitalize(key)} must be positive`;
+      }
     continue;
   }
 }
