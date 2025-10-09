@@ -1,27 +1,30 @@
-//NewCategory.tsx
+//frontend/src/pages/forms/newCategory/NewCategory.tsx
 import { useEffect, useState } from 'react';
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 import '../styles/forms-styles.css';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
 import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
-import { TILE_LABELS, VARIANT_FORM } from '../../../helpers/constants.ts';
+import { DEFAULT_CURRENCY, TILE_LABELS, VARIANT_FORM } from '../../../helpers/constants.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { url_create_category_budget_account } from '../../../endpoints.ts';
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
-import { normalizeError } from '../../../helpers/uiErrorHandling.ts';
-// import { normalizeError } from '../../../helpers/uiErrorHandling.ts';
+import { normalizeError } from '../../../helpers/normalizeError.ts';
+import useAuth from '../../../auth/hooks/useAuth.ts';
+
 // import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
 // import { useLocation } from 'react-router-dom';
-
+//-------data config----------------------
+// === TYPE DEFINITIONS AND CONSTANTS ===
+const defaultCurrency = DEFAULT_CURRENCY;
 //----Category Nature Tiles---------------
 const tileTitle = 'Category Nature';
-//-------data config------------------------------
+
 type CategoryDataType = {
   category: string;
   subcategory?: string;
@@ -38,29 +41,30 @@ type CategoryBudgetPayloadType = {
   date: Date | string;
   nature: string;
   subcategory?: string;
-  user: string;
+  user?: string;
 };
 
+// === INITIAL STATE DATA ===
 const initialNewCategoryData: CategoryDataType = {
   category: '',
   subcategory: '',
   amount: '',
   nature: '',
+  currency: defaultCurrency,
 };
-
 const formDataNumber = { keyName: 'amount', title: 'budget' };
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
 };
 
-//------------------------
+// === COMPONENT DEFINITION ===
 function NewCategory() {
-  //get userId from stores
-  // const user = useUserStore((state: UserStoreType) => state.userData.userId);
-  const user: string = import.meta.env.VITE_USER_ID;
-  // console.log(' usuario frontend:', user);
+  const location = useLocation();
+  const navigateTo=useNavigate()
+//const user: string = import.meta.env.VITE_USER_ID;
+  const { isAuthenticated } = useAuth()
 
-  //---states--------------------------
+ // === STATE INITIALIZATION ===
   const [formData, setFormData] =
     useState<FormNumberInputType>(initialFormData);
 
@@ -77,24 +81,34 @@ function NewCategory() {
   const [messageToUser, setMessageToUser] = useState<{message:string, status?:number} | string | null | undefined>(
     null
   );
-  //endpoint: http://localhost:5000/api/fintrack/account/new_account/category_budget
-  //------------------------------------------------
-  //DATA FETCHING POST
-  //POST: NEW ACCOUNT DATA
-  const { isLoading, error, requestFn } = useFetchLoad<
-    CreateCategoryBudgetAccountApiResponseType,
-    CategoryBudgetPayloadType
-  >({ url: url_create_category_budget_account, method: 'POST' });
 
+//✅ CHECK IF USER IS AUTHENTICATED
+ useEffect(()=>{
+  if(!isAuthenticated){
+  setMessageToUser('Please log in to create an account')
+  setTimeout(()=>navigateTo('/auth'), 5000)
+    }
+ }, [isAuthenticated, navigateTo]);
+//------------------------------------
+// === DATA FETCHING HOOK (POST) ===
+//endpoint: http://localhost:5000/api/fintrack/account/new_account/category_budget
+// === HANDLERS & UTILITIES ===
+//DATA FETCHING POST
+//POST: NEW ACCOUNT DATA
+const { isLoading, error, requestFn,
+  //  ...rest 
+} = useFetchLoad<
+  CreateCategoryBudgetAccountApiResponseType,
+  CategoryBudgetPayloadType
+  >({ url: url_create_category_budget_account, method: 'POST' });
+//  console.log('more data', rest)
 /*
 Errores HTTP (400, 500) → Vienen en responseData con su status y message
-
 Errores de red → Vienen en requestError
-
 Errores inesperados → Van al catch
 */
-//--------------------------------------
-  //functions
+// === HANDLERS & UTILITIES ===
+//event handler hook for number input handling
   const { inputNumberHandlerFn } = useInputNumberHandler(
     setFormData,
     setValidationMessages,
@@ -104,19 +118,21 @@ Errores inesperados → Van al catch
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
+
     if (name === formDataNumber.keyName) {
+    console.log('formDataNumber.keyName', formDataNumber.keyName)     
       inputNumberHandlerFn(name, value);
     } else {
       setCategoryData((prev) => ({ ...prev, [name]: value }));
     }
   }
-  //--NEED TO RE DEFINE THIS FUNCTION
+  //--NEED TO RE DEFINE THIS FUNCTION IN THE FUTURE FOR SUBCATEGORY
   // function addHandler(e: React.MouseEvent<HTMLButtonElement>) {
   //   e.preventDefault();
   //   //adding function
   //   console.log('addHandler subcategory method PENDING to define');
   // }
-  //---------
+// Category Nature tile selector handler
   function natureHandler(e: React.MouseEvent<HTMLButtonElement>) {
     // console.log('natureHandler', e.currentTarget.id);
     e.preventDefault();
@@ -124,55 +140,56 @@ Errores inesperados → Van al catch
     setActiveNature(activeNature);
     setCategoryData((prev) => ({ ...prev, nature: activeNature }));
   }
-  //---------
-  //on submit form
-  //---------
-  async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
+
+// = FORM SUBMISSION LOGIC (onSubmitForm) ===
+ async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
-      console.log('🟢 onSubmitForm called');
-    //--data form validation
-    const newValidationMessages = validationData(categoryData);
- 
+ // console.log('🟢 onSubmitForm called');
+ // 🆕 CHECK USER AUTHENTICATION BEFORE SUBMIT
+    if (!isAuthenticated) {
+      setMessageToUser('Please log in to create an account');
+      return;
+    }
+ // ✅ DATA FORM VALIDATION
+   const newValidationMessages = { ...validationData(categoryData, { 
+    nonZeroFields: ['amount']}) };
+// console.log('mensajes de validacion:', { newValidationMessages });
+
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
       return;
     }
-    //----------------------------------------
-    //POST TO THE ENDPOINT FOR ACCOUNT DATA HERE
-    // new category data into database
-    // console.log(
-    //   'check this:',
-    //   formData,
-    //   formDataNumber,
-    //   formDataNumber.keyName,
-    //   categoryData.amount
-    // );
-    try {
-      const payload: CategoryBudgetPayloadType = {
-        name: categoryData.category.toLowerCase().trim(),
-        type: 'category_budget',
-        currency: 'usd', //by default
-        budget: formData.amount || categoryData.amount,
-        date: new Date().toISOString(), // ISO format
-        nature: categoryData.nature,
-        subcategory: categoryData.subcategory || undefined,
-        user,
-      };
+//------------------------------------
+//POST TO THE ENDPOINT FOR ACCOUNT DATA HERE
+// new category data into database
+//------------------------------------
+// Payload construction
+  try {
+    const payload: CategoryBudgetPayloadType = {
+      name: categoryData.category.toLowerCase().trim(),
+      type: 'category_budget',
+      currency: categoryData?.currency ?? defaultCurrency, //default
+      budget: formData.amount ?? categoryData.amount,
+      date: new Date().toISOString(), // ISO format
+      nature: categoryData.nature,
+      subcategory: categoryData.subcategory || undefined,
+      // user,
+    };
 
 // ✅ requestFn devuelve { data: ResponseType | null, error: string | null }
-     const {data: responseData, error: requestError }= await requestFn(payload);
-
-     console.log('📦 Response received:', { responseData, requestError }); 
-// Los errores del servidor (400, 500) vienen en data.status
-     if (requestError) {
+    const {data: responseData, error: requestError }= await requestFn(payload);
+    console.log('📦 Response received:', { responseData, requestError }); 
+//Los errores del servidor (4xx, 5xx) vienen en data.status
+    if (requestError) {
     console.log('🔴 Network error:', requestError);  
-      // Error del request (network, etc.).Error de red/axios
-      setMessageToUser({
-        message: requestError,
-        status: 500
+    // Error del request (network, etc.).Error de red/axios
+    setMessageToUser({
+      message: requestError,
+      status: 500
       });
       return;
     }
+// Manejar Respuesta del Servidor (Éxito o Error HTTP)    
      if (responseData) {
      console.log('📊 Server response status:', responseData.status);  
  // ✅ VERIFICAR STATUS CODE AQUÍ MISMO
@@ -182,16 +199,14 @@ Errores inesperados → Van al catch
           message: responseData.message || 'Category created successfully!',
           status: responseData.status
         });
-
-        // Reset when success
+  // RESET WHEN SUCCESS
         setActiveNature(initialNewCategoryData.nature);
         setValidationMessages({});
         setFormData(initialFormData);
         setCategoryData(initialNewCategoryData);
       } else {
-  console.log('❌ Server error - setting message');
-
-        // ❌ ERROR DEL SERVIDOR (400, 500) - Viene en responseData
+        console.log('❌ Server error - setting message');
+        // ❌ ERROR DEL SERVIDOR (4xx, 5xx) - Viene en responseData
         setMessageToUser({
           message: responseData.message || 'Server error',
           status: responseData.status
@@ -199,19 +214,19 @@ Errores inesperados → Van al catch
       }
     }
 
-   if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+   if (import.meta.env.VITE_ENVIRONMENT === 'developmentX') {
       console.log('Data from New Category request:', responseData);
       }
     
    } catch (error) {
     console.log('🔥 Unexpected error:', error);
      //For unexpected errors only
-         const { message, status } = normalizeError(error);
-     setMessageToUser({ message, status });
+    const { message, status } = normalizeError(error);
+    setMessageToUser({ message, status });
     }
   }
-  //-----------------------
-  // Clear message after 5 seconds
+// === EFFECTS (Message Cleanup) ===
+// Clear message after 5 seconds
   useEffect(() => {
     if (messageToUser) {
       const timer = setTimeout(() => {
@@ -220,20 +235,27 @@ Errores inesperados → Van al catch
       return () => clearTimeout(timer);
     }
   }, [messageToUser]);
-  //-----------------------
-  
-
-  //-----------------------
+//-----------------------
+// === RENDER (JSX) ===
   return (
     <section className='account__page__container page__container'>
       <TopWhiteSpace variant={'dark'} />
       <div className='page__content'>
         <div className='main__title--container'>
-          <Link to='..' relative='path' className='iconLeftArrow'>
+          <Link
+            to={location.state.previousRoute}
+            relative='path'
+            className='iconLeftArrow'
+          >
             <LeftArrowSvg />
           </Link>
+
+          {/* <Link to='..' relative='path' className='iconLeftArrow'>
+            <LeftArrowSvg />
+          </Link> */}
           <div className='form__title'>{'New Category'}</div>
         </div>
+        {/* Form Start */}      
         <form className='form__box'>
           <div className='container--categoryName form__container'>
             <div className='input__box'>
@@ -251,8 +273,10 @@ Errores inesperados → Van al catch
                 name={'category'}
                 onChange={inputHandler}
                 value={categoryData.category}
+                // disabled={isFormDisabled}
               />
             </div>
+
         {/* SUBCATEGORY */}
             <div className='input__box'>
               <label htmlFor='subcategory' className='label form__title'>
@@ -273,11 +297,11 @@ Errores inesperados → Van al catch
             </div>
 
             {/* functionalitiy logic and data structure for this add button of subcategories is PENDING */}
-
             {/* <button className={'input__container'} onClick={addHandler}>
               <PlusSignSvg />
             </button> */}
 
+          {/* Budget Amount Input */}
             <div className='input__box'>
               <LabelNumberValidation
                 formDataNumber={formDataNumber}
@@ -296,7 +320,7 @@ Errores inesperados → Van al catch
             </div>
           </div>
 
-          {/*later try refactoring it by converting it to a Component of tiles or badges */}
+          {/* Nature Selector Tiles */}
           <div className='container--nature'>
             <div className='form__title form__title--tiles'>
               {tileTitle}
@@ -328,11 +352,13 @@ Errores inesperados → Van al catch
               })}
             </div>
           </div>
-          {/* save */}
+          {/* Submit Button */}
           <div className='submit__btn__container'>
-            <FormSubmitBtn onClickHandler={onSubmitForm}disabled={isLoading}>save</FormSubmitBtn>
+          <FormSubmitBtn onClickHandler={onSubmitForm}disabled={isLoading}>save</FormSubmitBtn>
           </div>
         </form>
+        
+        {/* Message/Error Display Component */}
         <MessageToUser
           isLoading={isLoading}
           error={error}
