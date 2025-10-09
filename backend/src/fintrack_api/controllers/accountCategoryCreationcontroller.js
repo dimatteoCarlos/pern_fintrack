@@ -31,12 +31,9 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
   //----------------------------------------
   try {
 
-    //implement verifyUser middleware and then get userId from res.user
-    //account basic data
-    // const { user: userId } = req.query;
-    const { user: userId } = req.body;
+    const {userId}=req.user
+    // console.log(req);
 
-    console.log(req.body);
     if (!userId) {
       const message = 'User ID is required';
       console.warn('message:', message);
@@ -74,7 +71,6 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     }
     const account_starting_amount = amount ? parseFloat(amount) : 0.0;
     //initial amount received (expense from other accounts).It's not necessary according to frontend fintrack
-    // console.log('userId', userId);
     //----------------------------------
     //currency and account_type data, are defined and validated by frontend
     if (!account_type_name || !currency_code || !account_name) {
@@ -83,7 +79,6 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       console.warn(pc.blueBright(message));
       return res.status(400).json({ status: 400, message });
     }
-    // console.log('userId', userId);
     //----------------------------------
     //get all account types and then get the account type id requested
     const accountTypeQuery = `SELECT * FROM account_types`;
@@ -102,7 +97,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       account_type_name
     );
     console.log('🚀 ~ CATEGORY BUDGET ~ accountExist:', accountExist);
-    //-----------------------------------------------------
+    //----------------------------------
     //get currency id from currency_code requested
     const currencyQuery = `SELECT * FROM currencies`;
     const currencyResult = await pool.query(currencyQuery);
@@ -142,7 +137,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     });
     const category_nature_type_id_req =
       category_nature_type_id_reqResult.rows[0].category_nature_type_id;
-    //---------------------------------------
+    //-----------------------------
 
     //---------------------------------------
     //----- CHECK CATEGORY_BUDGET + NATURE ACCOUNT EXISTENCE ----------------
@@ -222,7 +217,6 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       transactionTypeDescriptionObj.counterTransactionType
     );
 
-    // console.log(('getTransactionTypeIds:', transactionTypeDescriptionIds));
     const { transaction_type_id, countertransaction_type_id } =
       transactionTypeDescriptionIds;
 
@@ -280,10 +274,10 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       transaction_actual_date
     );
 
-    console.log(
-      '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
-      updatedCounterAccountInfo
-    );
+    // console.log(
+    //   '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
+    //   updatedCounterAccountInfo
+    // );
 
     //--- determine which account serves as a SOURCE OR DESTINATION account
     //category_budget_account should always be a destination account
@@ -293,9 +287,9 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     //--------REGISTER NEW ACCOUNT TRANSACTION -------
     //Add deposit transaction
     //movement_type_name:account-opening, movement_type_id: 8,  transaction_type_name:deposit/account-opening, transaction_type_id: 2/5
-    //------------------------------------------------------------
-    //------- RECORD TRANSACTION INTO transactions table ----
-    //------------------------------------------------------------
+    //----------------------------------
+    //--- RECORD TRANSACTION INTO transactions table ----
+    //-------------------------------
     //--------Rules to register  a transaction
     //movement_type_name:account-opening, movement_type_id: 8,  transaction_type_name:account-opening/deposit, transaction_type_id: 5/2 although it could accept withdraw but is not recommended
 
