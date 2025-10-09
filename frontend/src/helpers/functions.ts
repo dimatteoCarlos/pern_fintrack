@@ -1,4 +1,5 @@
 //src/helpers/functions.ts
+//function related to ui data presentation
 import { CurrencyType, StatusType } from '../types/types';
 import { DATE_TIME_FORMAT_DEFAULT } from './constants';
 //-------------------------

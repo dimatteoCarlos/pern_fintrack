@@ -1,4 +1,4 @@
-// src/utils/logoutCleanup.ts
+//frontend/src/utils/logoutCleanup.ts
 import { useAuthStore } from "../stores/useAuthStore"
 import { navigationHelper } from "./navigationHelper";
 import { notifySessionExpired } from "./notification";

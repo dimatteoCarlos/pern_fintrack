@@ -37,7 +37,7 @@ export function useFetch<R>(url: string): FetchResponseType<R> {
       try {
       // ✅ USAGE OF authFetch
         const response = await authFetch<R>(url);
-        console.log("🚀 ~ fetchData ~ response:", response)
+        // console.log("🚀 ~ fetchData ~ response:", response)
       //const finalPayload = response.data.data
         setState({
           apiData: response.data,

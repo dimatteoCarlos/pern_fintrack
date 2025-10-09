@@ -12,7 +12,7 @@ layout style is stablished by the followind elements: --topSpaceHeight height:2.
   --creme: #e8e4da;
   --textColor: #141414;
 
-  --primary: #5b8c93; /*status square*/
+  --square: #5b8c93; /*status square*/
   --squareAlert: #c97474; /*status square alert*/
   --error: #fc0c0c;
   --warn: orange;
@@ -201,12 +201,11 @@ body {
 }
 
 /*StatusSquare*/
-.status__square {
-  /* height: 0.5rem;
-  width: 0.5rem; */
+.status__square{
+
   height: 0.75rem;
   width: 0.75rem;
-  background-color: var(--primary, #5b8c93);
+  background-color: var(--square, #5b8c93);
 
   border: none;
   border-radius: 0.125rem;

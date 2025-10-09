@@ -14,7 +14,6 @@ type FieldValidationSchema ={
     parsedValue: any;
   };
 }
-
 //custom validation schema by field
 export const PnLValidationSchema = {
 amount:{
@@ -31,7 +30,7 @@ amount:{
       }
 
     const numValue = typeof value === 'string' ? parseFloat(value): Number(value);
-    console.log("🚀 ~ numValue:", numValue)
+    // console.log("🚀 ~ numValue:", numValue)
 
     if(numValue !== undefined &&  !isNaN(numValue) && numValue<=0){
       return {
@@ -92,10 +91,9 @@ note:{
   //Success
   return {
     isValid:true, message:'', parsedValue:value.trim()
-  }
-  }
-},
-
+      }
+    }
+  },
 } as const;
 
 //========================================

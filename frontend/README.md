@@ -2,7 +2,9 @@
 
 ## Objective
 
-**FinTrack** is a personal finance application built as a "double-entry accounting system", offering a comprehensive and intuitive solution for managing your money. Its primary goal is to provide users with effective tools to track expenses, income, investments, debts, income sources, and account balances.
+**FinTrack** is a personal finance application built as a "double-entry accounting system", offering a comprehensive and intuitive solution for managing your money.
+
+Its primary goal is to provide users with effective tools to track expenses, incomes, investments, debts and bank accounts; keeping records of the interactions among the different accounts and maintaining all balances updated and reconciled.
 
 As a double-entry accounting system, it automatically reflects the updated balances of all related accounts as soon as a transaction is recorded, ensuring that your financial overview is always accurate and up to date.
 
@@ -398,3 +400,6 @@ graph TD
 ```
 
 ## I would use in the future either PnL.tsx for custom validated approach or Transfer.tsx for zod validation usage.
+this was already accomplished, considering different approachs in the sake of learning different techniques.
+
+Theoretically, all the operations of tracking could be performed just using "Transfer" function from tracker menu, with just little adjustments, without the need of the others tracker options.

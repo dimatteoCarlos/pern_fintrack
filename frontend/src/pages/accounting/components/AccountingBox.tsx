@@ -1,5 +1,5 @@
 //-------AccountingBox---------
-//Parent:
+//frontend/src/pages/accounting/components/AccountingBox.tsx
 
 import { numberFormatCurrency } from '../../../helpers/functions';
 import { CurrencyType } from '../../../types/types';

@@ -1,38 +1,33 @@
 //pages/tracker/debts/debts.tsx
-//here a customized input data validation procedure was implemented. it considers validation of the current field in real time and whole form data validation when submitting.
-// =======================================
-// IMPORT DEPENDENCIES
-// ==========================================
+//Customized input data validation procedure was implemented. No Zod. it considers validation of the current field in real time and whole form data validation when submitting.
+// ============================
+// 📦 IMPORT DEPENDENCIES
+// ============================
+// ⚛️ React Hooks
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AxiosRequestConfig } from 'axios';
 import { useLocation } from 'react-router-dom';
-import axios, { AxiosRequestConfig } from 'axios';
 // =====================
-// HELPERS FUNCTIONS 
-// =====================
-import { capitalize } from '../../../helpers/functions.ts';
-import { checkNumberFormatValue,validateAmount, validationData  } from '../../../validations/utils/custom_validation.ts';
-// =====================
-//DATA FETCHING AND CUSTOM HOOKS
+// CUSTOM HOOKS
 // =====================
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
+// Zustand store
 import useBalanceStore from '../../../stores/useBalanceStore.ts';
 // =====================
-// ENDPOINTS
-// // =====================
+// 🪝 HELPERS FUNCTIONS 
+// =====================
+import { capitalize } from '../../../helpers/functions.ts';
+import { checkNumberFormatValue,validateAmount, validationData  } from '../../../validations/utils/custom_validation.ts';
+import { fetchNewBalance } from '../../../auth/utils/fetchNewTotalBalance.ts';
+// =====================
+// 🌐 ENDPOINTS
+// =====================
 import {
   url_get_accounts_by_type,
-  url_get_total_account_balance_by_type,
   url_movement_transaction_record,
 } from '../../../endpoints.ts';
-// =====================
-// CONSTANTS// =====================
-import {
-  DEBTOR_OPTIONS_DEFAULT,
-  DEFAULT_CURRENCY,
-  PAGE_LOC_NUM,
-} from '../../../helpers/constants.ts';
 // =====================
 // UI COMPONENTS
 //=====================
@@ -43,12 +38,11 @@ import DropDownSelection from '../../../general_components/dropdownSelection/Dro
 import TopCardZod from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
 // =====================
-// TYPES
+// 📝 TYPES
 // =====================
 import {
   AccountByTypeResponseType,
   AccountListType,
-  BalanceBankRespType,
   MovementTransactionResponseType,
 } from '../../../types/responseApiTypes.ts';
 
@@ -60,11 +54,19 @@ import {
   FormNumberInputType,
   TopCardElementsType,
   VariantType,
-  } from '../../../types/types.ts';
+} from '../../../types/types.ts';
+// =====================
+// CONSTANTS
+// =====================
+import {
+  DEBTOR_OPTIONS_DEFAULT,
+  DEFAULT_CURRENCY,
+  PAGE_LOC_NUM,
+} from '../../../helpers/constants.ts';
 
-// =========================================
-// CONSTANTS & INITIAL VALUES
-// =========================================
+// ===================================
+// ⚙️ CONSTANTS & INITIAL VALUES
+// ===================================
 const VARIANT_DEFAULT: VariantType = 'tracker';
 const defaultCurrency: CurrencyType = DEFAULT_CURRENCY;
 // Initial tracker data structure
@@ -72,11 +74,11 @@ const initialTrackerData: DebtsTrackerInputDataType = {
   amount: '',
   debtor: '',
   currency: defaultCurrency,
-  type: 'lend',
-  date: new Date(),
+  type: 'lend',//default
+  date: new Date(),//default
   note: '',
   account: '',
-  accountType: 'bank',
+  accountType: 'bank',//default
 };
 
 const initialFormData: FormNumberInputType = {
@@ -88,23 +90,24 @@ const inputRadioOptionsDebtTransactionType = [
   { value: 'lend', label: 'lend' },
   { value: 'borrow', label: 'borrow' },
 ];
-
-// ===========================================
-// MAIN COMPONENT: Debts Tracker
-// ===========================================
+// =======================================
+// ⚛️ MAIN COMPONENT: Debts Tracker
+// =======================================
+//---- Debts Tracker Movement ------------
 function Debts(): JSX.Element {
-  //rules:lend/borrow is equivalent to a deposit/withdraw in deptor account. User must enter the type and counter account selection.
-  // ===========================================
-  // ROUTE & USER CONFIGURATION
-  // ===========================================
+//rules:lend/borrow is equivalent to a deposit/withdraw in deptor account. User must enter the type and counter account selection.
+// =====================================
+// 🗺️ ROUTE & USER CONFIGURATION
+// =====================================
   const trackerState = useLocation().pathname.split('/')[PAGE_LOC_NUM];
   const typeMovement = trackerState.toLowerCase();
-  // console.log('movement:', typeMovement);
-  //deal here with user id and authentication
-  const user = import.meta.env.VITE_USER_ID;
-  // =========================
-  // STATE MANAGEMENT
-  // =========================
+// console.info('tracker state', trackerState)
+//-------------------------------
+// const user = import.meta.env.VITE_USER_ID;
+// =========================
+// STATE MANAGEMENT
+// =========================
+// 🔄 Local States
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
   const [type, setType] = useState<DebtsTransactionType>('lend');
 
@@ -114,9 +117,12 @@ function Debts(): JSX.Element {
 
   const [isReset, setIsReset] = useState<boolean>(false);
 
+  const [isResetAccount, setIsResetAccount] = useState<boolean>(true);
+
   const [datatrack, setDataTrack] = useState<DebtsTrackerInputDataType>(
   initialTrackerData
   );
+
   const [formData, setFormData] =
     useState<FormNumberInputType>(initialFormData);
 
@@ -125,9 +131,9 @@ function Debts(): JSX.Element {
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
   );
-   const [isResetAccount, setIsResetAccount] = useState<boolean>(true);
   const [reloadTrigger, setReloadTrigger] = useState(0)
-  // Global state for balance
+
+// 🌳 Global State (Zustand)
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
@@ -135,14 +141,12 @@ function Debts(): JSX.Element {
   const [accountIdMap, setAccountIdMap]=useState<{[accountName:string]:string}>({})
   const [debtorIdMap, setDebtorIdMap]=useState<{[accountName:string]:string}>({})
 
-  // ==========================
-  // API DATA FETCHING
-  // Fetch debtors data
-  // ==========================
-  const fetchDebtorUrl = user
-    ? `${url_get_accounts_by_type}/?type=debtor&user=${user}&${reloadTrigger}`
-    : undefined;  //this forces a user required error
-    //<Navigate to = '/auth'/>
+// ==========================
+// 📡 API DATA FETCHING
+// Fetch debtors data
+// ==========================
+//---- Debtor account Options ------
+  const fetchDebtorUrl = `${url_get_accounts_by_type}/?type=debtor&reload=${reloadTrigger}`
 
   const {
     apiData: debtorsResponse,
@@ -151,7 +155,6 @@ function Debts(): JSX.Element {
   } = useFetch<AccountByTypeResponseType>(fetchDebtorUrl as string);
 
    const debtors = useMemo(() =>{
-
        if (fetchedErrorDebtors || isLoadingDebtors ||!debtorsResponse?.data.accountList.length) return DEBTOR_OPTIONS_DEFAULT;
 
        const newIdMap:{[accountName:string]:string} = {};
@@ -166,28 +169,24 @@ function Debts(): JSX.Element {
           } 
           }
         );
+
       setDebtorIdMap(newIdMap);
       return options
       
     }, [debtorsResponse?.data.accountList, 
       fetchedErrorDebtors, isLoadingDebtors]
     );
- 
-//----------------------------------
+ //----------------------------------
   const debtorOptions = {
     title: debtorsResponse?.data.accountList.length ? 'Select Debtor/Lender' : "", //'No info. available',
     options: debtors,
     variant: VARIANT_DEFAULT as VariantType,
   };
-  //------------------------------------------
-  // Fetch counter accounts
-  //GET: ACCOUNTS OF TYPE BANK AVAILABLE
-  //DATA FETCHING
-  const fetchAccountUrl = user
-    ? `${url_get_accounts_by_type}/?type=${datatrack.accountType}&user=${user}&${reloadTrigger}`
-    : // <Navigate to='/auth' />
-      undefined;
-
+//-------------------------------------
+// Fetch counter accounts
+//GET: ACCOUNTS OF TYPE BANK AVAILABLE
+//DATA FETCHING
+  const fetchAccountUrl =`${url_get_accounts_by_type}/?type=${datatrack.accountType}&reload=${reloadTrigger}`
   const {
     apiData: accountsResponse,
     isLoading: isLoadingAccounts,
@@ -207,10 +206,8 @@ function Debts(): JSX.Element {
     const idMap:{[accountName:string]:string} = {};
 
     const options =  optionsAccountList.length
-    ?
-     optionsAccountList.map((acc: AccountListType) => {
+    ? optionsAccountList.map((acc: AccountListType) => {
         idMap[acc.account_name] = acc.account_id.toString();
-
          return {      
           label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`,
           value: acc.account_name,
@@ -218,7 +215,7 @@ function Debts(): JSX.Element {
         })
       :[]
     
-      setAccountIdMap(idMap)  ;
+      setAccountIdMap(idMap);
       return options;
   }, [accountsResponse?.data.accountList, fetchedErrorAccounts]);
 
@@ -227,31 +224,31 @@ function Debts(): JSX.Element {
     options: optionsAccounts,
     variant: VARIANT_DEFAULT as VariantType,
   };
-  // ===========================
-  // API REQUEST CONFIGURATION
-  // ===========================
-  //OBTAIN THE REQUESTFN FROM userFetchLoad
-  //extend the type of input data with user id
-  type PayloadType = DebtsTrackerInputDataType & { user: string , debtor_id?:string; account_id?:string;}
-
-  //DATA POST FETCHING
+// ===========================
+// API REQUEST CONFIGURATION
+// ===========================
+//OBTAIN THE REQUESTFN FROM userFetchLoad
+// 📡 Post Request logic
+//extend the type of input data with user id
+  type PayloadType = DebtsTrackerInputDataType & { user?: string , debtor_id?:string; account_id?:string;}
+//----
+//DATA POST FETCHING
   const { data, isLoading, error:postError, requestFn } = useFetchLoad<
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
-  //----------------------------
+//----------------------------
   const error = fetchedErrorDebtors || fetchedErrorAccounts || postError
-  // ==========================
-  // EVENT HANDLERS
-  // ==========================
-  //---functions ------
-  // Currency update handler
+// ==========================
+// EVENT HANDLERS
+// ==========================
+//---- FUNCTIONS ------------
+// Currency update handler
   const updateDataCurrency = useCallback(
     (currency: CurrencyType) => {
       setCurrency(currency);
       setDataTrack((prev) => ({ ...prev, currency: currency }));
-    },
-    []
+    },[]
   );
   // Input number handler
   const { inputNumberHandlerFn,  } = useInputNumberHandler(
@@ -266,63 +263,58 @@ function Debts(): JSX.Element {
   function updateTrackerData(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) {
-    // console.log('updateTrackerData')
+  // console.log('updateTrackerData')
     e.preventDefault();
     const { name, value } = e.target;
     // console.log('target', e.target)
 
     if (name === 'amount') {
-      //update amount value with value input entered, set validation message for amount either format message or error format message, set amount state value with valueToSave, in case of error valueToSave is ""?.
-      inputNumberHandlerFn(name, value);
-      // Activar validaciones cuando se introduce un valor en amount
-      if (value !== '') {
-        setShowValidation(prev => ({
+//update amount value with value input entered, set validation message for amount either format message or error format message, set amount state value with valueToSave, in case of error valueToSave is ""?.
+    inputNumberHandlerFn(name, value);
+    // Activar validaciones cuando se introduce un valor en amount
+     if (value !== '') {
+       setShowValidation(prev => ({
           ...prev,
           debtor: true,
           account: true,
           note: true
         }));
       }
-
-    //inmediate validation of amount
-      if(isAmountError){
-      // console.log('validationsMessages',validationMessages)
+//inmediate validation of amount
+// console.log('validationsMessages',validationMessages)
+    if(isAmountError){
       return;
     }
-
     const errorValidationAmount = validateAmount(value);
-
     if(errorValidationAmount){
       setValidationMessages((prev)=>({...prev, [name]:errorValidationAmount}))
       setIsAmountError(true)
       return
     }
-      // inputNumberHandlerFn(name, value);
-      
     } else {
       setDataTrack((prev) => ({ ...prev, [name]: value }));
 
-     //---VALIDACIÓN PUNTUAL / LOCAL FIELD VALIDATION
-      setValidationMessages((prev)=>{
+//---VALIDACIÓN PUNTUAL / LOCAL FIELD VALIDATION
+     setValidationMessages((prev)=>{
       const updatedErrorMessages = {...prev}
 
       if(value ==='' || value ===null){
       updatedErrorMessages[name]=`* Please provide the ${capitalize(name)}`
       } 
-      else if(!isNaN(Number(value)) && Number(value)<=0){updatedErrorMessages[name]=`* ${capitalize(name)} negative or zero values are not allowed`}
+      else if(!isNaN(Number(value)) && Number(value)<=0){ updatedErrorMessages[name]=`* ${capitalize(name)} negative or zero values are not allowed`}
       else{delete updatedErrorMessages[name]}
 
-      return updatedErrorMessages}
-      )
+      return updatedErrorMessages
+      }
+    )
     }
   }
-// Transaction type handler
-//RadioInput for transaction type selection
+// TRANSACTION TYPE HANDLER
+//radioinput for transaction type selection
   function handleTransactionTypeChange(newType: DebtsTransactionType) {
     setDataTrack((prev) => ({ ...prev, type: newType }));
   }
-
-  // Account selection handler
+// Account selection handler
   function accountSelectHandler(selectedOption: DropdownOptionType | null) {
     setDataTrack((prev) => ({
       ...prev,
@@ -330,10 +322,11 @@ function Debts(): JSX.Element {
     }));
     setValidationMessages((prev) => ({ ...prev, account: '' }));
   }
- //--------------------------------------// =====================
- // Form submission handler// =====================
+ // =====================
+ // Form submission handler
+ // =====================
  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
-    // console.log('On Save Handler');
+// console.log('On Save Handler');
     e.preventDefault();
 //show all validation messages 
   setShowValidation({
@@ -344,7 +337,7 @@ function Debts(): JSX.Element {
   });    
 //Amount validation
  const amountString = formData.amount;
-//  console.log('amount on save',formData.amount, datatrack.amount, 'errorMsgs', validationMessages )
+// console.log('amount on save',formData.amount, datatrack.amount, 'errorMsgs', validationMessages )
  const amountChecked = checkNumberFormatValue(amountString)
 //  console.log(amountChecked)
 
@@ -360,82 +353,71 @@ function Debts(): JSX.Element {
 //----entered datatrack validation messages --------------------------
 // Form validation
     const newValidationMessages = validationData(datatrack);
-    // console.log('newValidationMessages values', Object.values(newValidationMessages), isAmountError);
+  // console.log('newValidationMessages values', Object.values(newValidationMessages), isAmountError);
 
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
       return;
     }
-//----------------------------
+//------------------------------------
 //API REQUEST. ENDPOINT HERE FOR POSTING
 //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=debts
 //user id is sent via req.body but can be sent via query param too
-    try {
+ try {
   const debtorId = debtorIdMap[datatrack.debtor];
   const accountId = accountIdMap[datatrack.account];
-
-  console.log('accounts id', debtorId, accountId)
-
+  // console.log('accounts id', debtorId, accountId)
       const payload = { ...datatrack,
-          user,
           debtor_id: debtorId, 
           account_id: accountId 
         } as PayloadType;
-      console.log("🚀 ~ onSaveHandler ~ payload:", payload)
-
+// console.log("🚀 ~ onSaveHandler ~ payload:", payload)
       const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
-
-      const {data, error} = await requestFn(payload, {
+//Submit to server    
+      const {data, error:postError} = await requestFn(payload, {
         url: postUrl,
       } as AxiosRequestConfig);
 
-      if (error ) {
-      const errorMsg = error ?? "unexpected error"
-      console.log('response?.error?', errorMsg)
+      if (postError ) {
+      const errorMsg = postError ?? "unexpected error"
+      // console.log('response?.error?', errorMsg)
       throw new Error(errorMsg);
     }
     
       if (import.meta.env.VITE_ENVIRONMENT === 'development') {
         console.log('Data from record transaction request:', data);
       }
-  //-------------------------------
-  //update GLOBAL BALANCE. total available in bank accounts. it's global state
-      const {
-        data: {
-          data: { total_balance },
-        },
-      } = await axios.get<BalanceBankRespType>(
-        `${url_get_total_account_balance_by_type}/?type=bank&user=${user}`
-      );
-      
-      if (typeof total_balance === 'number') {
-        setAvailableBudget(total_balance);
+// -------------------------------------
+// ✅ Update total balance after success 
+// -------------------------------------
+//update GLOBAL BALANCE of total available in bank accounts. it's a global state
+//1. Get the immediate new balance
+    const newTotalBalance =  await fetchNewBalance()
+    // console.log('newTotalBalance', newTotalBalance)
+     if (typeof newTotalBalance === 'number') {
+        setAvailableBudget(newTotalBalance);
       }else{ setMessageToUser('Check total_balance')}
 
-      setMessageToUser('Transaction recorded successfully!');
+      setMessageToUser('Debt transaction successfully recorded!');
       setTimeout(() => setMessageToUser(null), 3000);
       //----------------------------------
     } catch (error) {
-      // console.error('Submission error:', error);
-      // setMessageToUser('Error processing transaction debt');
-      // setShowMessage(true);
       console.error('Submission error (Zod):', error);
       setMessageToUser(error instanceof Error ? error.message : 'An unexpected error occurred during submission.');
       setTimeout(() => setMessageToUser(null), 5000);
     }
   }
-  // ===========================================
-  // SIDE EFFECTS
-  // ===========================================
-  //-----useEffect--------
-  useEffect(()=>{
+// =======================
+// ⏳--- SIDE EFFECTS
+// =======================
+useEffect(()=>{
   // if( !isLoading){setShowMessage(true);}
   if(data && !isLoading && !error && !isAmountError){
   // setShowMessage(true);
   //--success
       setMessageToUser('Movement completed successfully!');
 
-  //if success, reset the state and the selected options on select component
+//if success, reset the state and the selected options on select component
         setIsReset(true);
         setValidationMessages({});
         setFormData(initialFormData);
@@ -470,7 +452,6 @@ return ()=>{if(timer)clearTimeout(timer)
   }
 }, [data, error, isLoading,updateDataCurrency,isAmountError]
 )
-
 //error messages rendering control
 const [showValidation, setShowValidation] = useState({
   amount: false,
@@ -537,8 +518,8 @@ useEffect(() => {
 // UI CONFIGURATION
 // ====================
 //-- Top Card elements ---
-    const debtorAccountLabel = datatrack.type ==='lend'?'debtor':'lender'
-  const topCardElements:TopCardElementsType = {
+ const debtorAccountLabel = datatrack.type ==='lend'?'debtor':'lender'
+ const topCardElements:TopCardElementsType = {
     titles: { title1: 'amount', title2: 'debtor', label2:debtorAccountLabel },
     value: formData.amount,
     selectOptions: debtorOptions,

@@ -73,7 +73,7 @@ const useAuth = () => {
         if (response.status === 200) {
             // Si llega aquí, la sesión es válida o fue renovada.
             setIsAuthenticated(true);
-            console.log('response' , response)
+            // console.log('response' , response)
             // Opcional: Si el endpoint devuelve datos de usuario, llame a setUserData(data.user)
           }
       } catch (err) {
@@ -81,8 +81,7 @@ const useAuth = () => {
           console.warn('Fallo al validar token de persistencia o refresh. Sesión borrada.');
       }
     }
-  
-    // 🚨 3. FINALIZAR LA COMPROBACIÓN 🚨
+// 🚨 3. FINALIZAR LA COMPROBACIÓN 🚨
       setIsCheckingAuth(false); 
     };
 

@@ -1,18 +1,18 @@
-//frontend\src\pages\overview\components\AccountBalance.tsx
+// frontend/src/pages/overview/components/AccountBalance.tsx
 import { Link } from 'react-router-dom';
 import { currencyFormat } from '../../../helpers/functions';
 import { CardTitle } from '../../../general_components/CardTitle';
 import { url_get_accounts_by_type } from '../../../endpoints';
 import { useFetch } from '../../../hooks/useFetch.ts';
-import { 
- // ACCOUNT_DEFAULT
-   CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
+import {CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
 import { useEffect, useState } from 'react';
+import useAuth from '../../../auth/hooks/useAuth.ts'; 
+
 //---------------------------------------
 export type AccountPropType={previousRoute:string, accountType:string}
 
-//temporary values------------
+//--default values------------
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 const concept = 'balance'
@@ -21,22 +21,24 @@ const concept = 'balance'
 function AccountBalance({
   previousRoute,accountType,
 }:AccountPropType): JSX.Element {
-  const user = import.meta.env.VITE_USER_ID;
+  // const user = import.meta.env.VITE_USER_ID;
 
   //--STATES---------------------
   const [accountsToRender, setAccountsToRender] =
-    useState<AccountListType[]>(
-     // ACCOUNT_DEFAULT
-[]
-    );
+    useState<AccountListType[]>([]);
+  const { isAuthenticated, isCheckingAuth } = useAuth(); 
     
   //DATA FETCHING
-  const urlGetAccounts = `${url_get_accounts_by_type}/?type=${accountType}&user=${user}`;
+  const urlGetAccounts =
+  !isCheckingAuth && isAuthenticated
+  ? `${url_get_accounts_by_type}/?type=${accountType}`
+  :undefined // &user=${user}`;
+
   const {
     apiData: accountsData,
     isLoading,
     error,
-  } = useFetch<AccountByTypeResponseType>(urlGetAccounts);
+  } = useFetch<AccountByTypeResponseType>(urlGetAccounts as string);
   //------------------------------
   useEffect(() => {
     function updateAccounts() {
@@ -71,6 +73,9 @@ function AccountBalance({
     return <span style={{color:'cyan', width:'100%', textAlign:'center'}}>Loading...</span>;
   }
 //------------------------------
+ if (isCheckingAuth || isLoading) {
+    return <span className='loading__msg' style={{ color: '#fff' }}>Loading...</span>;
+  }
   return (
     <>
       {/*BANK ACCOUNTS  */}

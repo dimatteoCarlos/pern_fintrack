@@ -7,7 +7,7 @@
 // ⚛️ React and react-router-dom Hooks
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AxiosRequestConfig } from 'axios';
-import { useLocation , useNavigate} from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 // =====================
 // CUSTOM HOOKS
 // =====================
@@ -59,8 +59,8 @@ import {
   DEFAULT_CURRENCY,
   PAGE_LOC_NUM,
 } from '../../../helpers/constants.ts';
-import useAuth from '../../../auth/hooks/useAuth.ts';
 import { fetchNewBalance } from '../../../auth/utils/fetchNewTotalBalance.ts';
+// import useAuth from '../../../auth/hooks/useAuth.ts';
 
 // ===============================
 // ⚙️ CONSTANTS & INITIAL VALUES
@@ -100,11 +100,11 @@ function PnL():JSX.Element {
   const { pathname } = useLocation();
   const trackerState = pathname.split('/')[PAGE_LOC_NUM];
   const typeMovement = trackerState.toLowerCase();
-  const navigateTo=useNavigate()
+// const navigateTo=useNavigate()
 // console.info('tracker state', trackerState)
 //-------------------------------
 // 🛡️ AUTHENTICATION STATE
-const {isAuthenticated, isCheckingAuth}=useAuth()
+// const {isAuthenticated, isCheckingAuth}=useAuth()
 // const user = import.meta.env.VITE_USER_ID;
 // ======================
 // FORM MANAGEMENT HOOK
@@ -395,6 +395,7 @@ try {
 // =======================
 // AUTHENTICATION AND REDIRECTION EFFECT
 //Message to user and action, when auth is checking or not authenticated
+/*
 useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     if (isCheckingAuth) {
@@ -415,6 +416,7 @@ useEffect(() => {
       if (timer) clearTimeout(timer); // Cleanup timer
     };
   }, [isAuthenticated, isCheckingAuth, navigateTo, messageToUser]);
+  */
 //-----useEffect--------
 //Handle states related to the data submit form
 useEffect(() => {

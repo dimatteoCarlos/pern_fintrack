@@ -26,11 +26,11 @@ const requestConfig:AxiosRequestConfig ={
     ...(accessToken && {'Authorization':`Bearer ${accessToken}`})
   }
 }
-// ----------------------------------------
+// -------------------------------------
 try {
 // 3. 🎯 FIRST ATTEMP TO REQUEST FOR ACCESS
 const authFetchResponse = await axios<T>(url, requestConfig);
-console.log("🚀 ~ authFetch ~ FIRST ATTEMPT authFetchResponse:", authFetchResponse)
+// console.log("🚀 ~ authFetch ~ FIRST ATTEMPT authFetchResponse:", authFetchResponse)
 return authFetchResponse
 
 } catch (error) {
@@ -60,7 +60,7 @@ return authFetchResponse
 // 💾 UPDATE ACCESS TOKEN
   sessionStorage.setItem('accessToken',newAccessToken)
 
-  // 🔁 RETRY ORIGINAL REQUEST
+// 🔁 RETRY ORIGINAL REQUEST
 const retryConfig: AxiosRequestConfig = {
     ...requestConfig,
     headers: {
@@ -69,7 +69,7 @@ const retryConfig: AxiosRequestConfig = {
     },
   };
 
-  const retryAuthFetchResponse = await axios(url, retryConfig);
+const retryAuthFetchResponse = await axios(url, retryConfig);
   // console.log("🚀 ~ authFetch ~ retryAuthFetchResponse:", retryAuthFetchResponse)
   return retryAuthFetchResponse
 
@@ -86,15 +86,14 @@ const retryConfig: AxiosRequestConfig = {
   console.error('Error during token refresh attempt, forcing logout:', refreshError);
   logoutCleanup();
   throw new Error('REFRESH_FAILED_LOGOUT_FORCED');
-
   } 
-// 🚨BLOCK TO CAPTURE OTHER ERRORS (Non-401)🚨
+//🚨BLOCK TO CAPTURE OTHER ERRORS (Non-401)🚨
 }else {
 // 🚨RE-THROW THE ERROR, WHETHER IT'S THE SPECIAL LOGOUT ERROR OR A NORMAL NON-401 ERROR (e.g., 400/403)🚨
-    if (error instanceof Error && error.message === 'REFRESH_FAILED_LOGOUT_FORCED') {
-        //This prevents to show it as a normal error / Esto previene que se muestre como un error normal en useFetch/useFetchLoad.
-        console.error('🚨 Re-throw other errors', error) 
-        throw error;
+  if (error instanceof Error && error.message === 'REFRESH_FAILED_LOGOUT_FORCED') {
+    //This prevents to show it as a normal error / Esto previene que se muestre como un error normal en useFetch/useFetchLoad.
+    console.error('🚨 Re-throw other errors', error) 
+    throw error;
     }
     throw error;
  }

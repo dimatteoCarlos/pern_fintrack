@@ -1,3 +1,4 @@
+//src/pages/tracker/TrackerLayout.tsx
 import LogoMenuIcon from '../../general_components/header/LogoMenuIcon';
 import TrackerNavbar from '../../general_components/trackerNavbar/TrackerNavbar';
 import { Outlet } from 'react-router-dom';
@@ -11,15 +12,14 @@ import { MessageToUser } from '../../general_components/messageToUser/MessageToU
 import { useEffect, useState } from 'react';
 import './styles/tracker-style.css';
 import useBalanceStore from '../../stores/useBalanceStore';
+// import useAuth from '../../auth/hooks/useAuth.ts';
 
-//temporary values------------
+//default values------------
 const defaultCurrency = DEFAULT_CURRENCY;
 //------------------------------
 function TrackerLayout() {
   const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-  //---------------------------------
-
-  //------states---------------------
+//------states--------------
   const [messageToUser, setMessageToUser] = useState<string | null | Error>(
     null
   );
@@ -28,36 +28,27 @@ function TrackerLayout() {
   const setAvailableBudget = useBalanceStore(
     (state) => state.setAvailableBudget
   );
-
-  //-----------------------------------
-
-  //DATA FETCHING -------------------
-  const user = import.meta.env.VITE_USER_ID;
-  const userId = user;
-
-  // const userId = useAuthStore((state) => state.userData?.userId);
-
-  // console.log('🚀 ~ TrackerLayout ~ userId:', userId);
-
+  //--------------------
+  //DATA FETCHING
+  // -------------------
+  // const user = import.meta.env.VITE_USER_ID;
   const {
     apiData,
     isLoading,
     error,
     //  status
   } = useFetch<BalanceBankRespType>(
-    `${url_get_total_account_balance_by_type}/?type=bank&user=${userId}`
+    `${url_get_total_account_balance_by_type}/?type=bank`
   );
 
   // console.log(
   //   'http status code',
-  //   status,
   //   'data',
   //   apiData,
   //   isLoading,
   //   'error',
   //   error,
-  //   'user',
-  //   userId
+
   // );
 
   useEffect(() => {
@@ -79,7 +70,7 @@ function TrackerLayout() {
       }, 3000);
     } else if (error) {
       setMessageToUser(error);
-      timer = setTimeout(() => setMessageToUser(null), 3000);
+      timer = setTimeout(() => setMessageToUser(null), 4000);
     }
     return () => {
       if (timer) clearTimeout(timer);

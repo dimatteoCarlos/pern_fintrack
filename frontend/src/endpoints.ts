@@ -7,6 +7,7 @@ export const USER_ID: string = import.meta.env.VITE_USER_ID;
 export const url_signup: string = 'http://localhost:5000/api/auth/sign-up';
 //sign-in
 export const url_signin: string = 'http://localhost:5000/api/auth/sign-in';
+// export const url_signin: string = 'http://localhost:5000/api/auth/sign-in';
 //sign-out
 export const url_signout: string = 'http://localhost:5000/api/auth/sign-out';
 //refresh-token
@@ -100,12 +101,12 @@ export const url_get_total_account_balance_by_type: string =
 export const url_movement_transaction_record: string =
   BASE_URL + '/transaction/transfer-between-accounts';
 
-//=================================================
+//=======================================
 //endpoints for OVERVIEWLAYOUT page
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type
 // export const url_get_total_account_balance_by_type: string =
 //   BASE_URL + '/dashboard/balance/type';
-//==================================================
+//=======================================
 //ENDPOINTS for OVERVIEW page
 //controller:dashboardMonthlyTotalAmountByType
 //get.http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?user=
@@ -117,7 +118,7 @@ export const url_monthly_TotalAmount_ByType: string =
 //http://localhost:5000/api/fintrack/account/type/?type=
 // export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
 
-//======================================================
+//=======================================
 //LAST MOVEMENTS BY MOVEMENT TYPE
 //this includes transaction_type
 // controller:dashboardMovementTransactionsByType
@@ -127,7 +128,7 @@ export const url_monthly_TotalAmount_ByType: string =
 
 export const dashboardMovementTransactionsByType: string =
   BASE_URL + '/dashboard/movements/account_type/';
-//------------------------------------------------------
+//---------------------------------------------
 // controller:dashboardMovementTransactions
 // insomnia: fintrack dashboardMovementTransactions
 // endpoint:dashboardMovementTransactions

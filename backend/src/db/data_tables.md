@@ -9,6 +9,7 @@ movement_types
 6 "transfer"
 7 "receive"
 8 "account-opening"
+9 "pnl"
 
 transaction_types
 "transaction_type_id" "transaction_type_name"

@@ -4,7 +4,7 @@ import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpa
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
-import { url_get_accounts_by_category,  USER_ID } from '../../../endpoints.ts';
+import { url_get_accounts_by_category,   } from '../../../endpoints.ts';
 import { CategoryBudgetAccountsResponseType } from '../../../types/responseApiTypes.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import { CategorySummaryInfoType, CurrencyType } from '../../../types/types.ts';
@@ -19,18 +19,14 @@ function CategoryAccountList() {
 const location = useLocation()
 const {categoryName} =useParams()
 // console.log('category',categoryName)
-
 //check location state data from ListCategory
 // const {
-//   pathname:categoryAccountListPageAddress,
+//pathname:categoryAccountListPageAddress,
 //   state:{categorySummaryDetailed},
 //   state:{previousRoute:budgetPageAddress}}=location
-
 const state = location.state ?? {}
-
 const {categorySummaryDetailed=null, previousRoute:budgetPageAddress = `/fintrack/budget`} = state as {
-  categorySummaryDetailed?:CategorySummaryInfoType | null; previousRoute:string ;
-}
+  categorySummaryDetailed?:CategorySummaryInfoType | null; previousRoute:string ; }
 // console.log('location', location)
 // console.log("🚀 ~ CategoryAccountList ~ location:",
 //   //location,
@@ -42,16 +38,10 @@ const {categorySummaryDetailed=null, previousRoute:budgetPageAddress = `/fintrac
 const [categorySummaryInfo, setCategorySummaryInfo] = useState<CategorySummaryInfoType | null>(categorySummaryDetailed ?? null)
 
 //--Fetch Data to get accounts info associated to categoryName
-const urlAccountsByCategoryName =`${url_get_accounts_by_category}/${categoryName}?&user=${USER_ID}` 
-   const {
-      apiData,
-      isLoading,
-      error,
-    } = useFetch<CategoryBudgetAccountsResponseType>(
-      urlAccountsByCategoryName
-    );
+const urlAccountsByCategoryName =`${url_get_accounts_by_category}/${categoryName}` 
+ const {apiData, isLoading, error} = useFetch<CategoryBudgetAccountsResponseType>(urlAccountsByCategoryName);
 
-    const categoryAccountsExists = apiData && apiData.data.accountList.length>0
+ const categoryAccountsExists = apiData && apiData.data.accountList.length>0
 
    const categoryAccounts =useMemo(() => {return categoryAccountsExists ? apiData?.data.accountList : [];}, [categoryAccountsExists,apiData])
 

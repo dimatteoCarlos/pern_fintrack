@@ -1,18 +1,14 @@
 // ==============================
 // Module: getTransactionsForAccountById
 // Path: /fintrack/controllers/getTransactionsForAccountById.js
-// Purpose: Handles tr`ansactions by account id queries for the account detail
-// Depends on:
+// Purpose: Handles transactions by account id queries for the account detail
 // ==============================
-
 import pc from 'picocolors';
 import {
   createError,
   handlePostgresError,
 } from '../../../utils/errorHandling.js';
 import { pool } from '../../db/configDB.js';
-// import dotenv from 'dotenv';
-// dotenv.config();
 
 export const getTransactionsForAccountById = async (req, res, next)=>{
   const backendColor = 'greenBright';
@@ -20,7 +16,7 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
   const controllerName = 'getTransactionsForAccountById';
   console.log(pc[backendColor](controllerName));
 
-  // --- Helper Functions ---
+// --- Helper Functions ---
   const RESPONSE = (res, status, message, data = null) => {
     console.log(pc[backendColor](message));
     res.status(status).json({ status, message, data });
@@ -42,40 +38,45 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
 
   //controller module 
   try {
-    //validation of input data
-  const userId = req.body.user || req.query.user;
-    if (!userId) {
-      const message = 'User ID is required.'
-      console.warn(pc[backendColor](message));
-      return RESPONSE(res, 400, message)
-      }
-
-     const {accountId } = req.params;
-      if (!accountId) {
-      const message = `Account ID is required.`;
-      console.warn(pc[backendColor](message));
-      return RESPONSE(res, 400, message);
+  //validation of input data
+  const userId = req.user.userId ||(req.body.user || req.query.user);
+  if (!userId) {
+    const message = 'User ID is required.'
+    console.warn(pc[backendColor](message));
+    return RESPONSE(res, 400, message)
     }
-    //======================================================
-    //check the user id and the account id relationship
-    const ACCOUNT_INFO_QUERY ={
-      text:`SELECT ua.account_starting_amount, ua.account_start_date, cr.currency_code, ua.currency_id 
-             FROM user_accounts ua
-             JOIN currencies cr ON ua.currency_id = cr.currency_id
-             WHERE ua.account_id = $1 AND ua.user_id = $2 LIMIT 1`,
-      values: [accountId, userId]
+
+  const {accountId } = req.params;
+   if (!accountId) {
+    const message = `Account ID is required.`;
+    console.warn(pc[backendColor](message));
+    return RESPONSE(res, 400, message);
+  }
+//==================================
+//check the user id and the account id relationship
+  const ACCOUNT_INFO_QUERY ={
+    text:`
+    SELECT 
+      ua.account_starting_amount, ua.account_start_date, cr.currency_code, ua.currency_id 
+    FROM user_accounts ua
+    JOIN
+     currencies cr ON ua.currency_id = cr.currency_id
+    WHERE
+     ua.account_id = $1 AND ua.user_id = $2 LIMIT 1`,
+    values: [accountId, userId]
     }
     
-    const accountInfoNeededResult = await queryFn(ACCOUNT_INFO_QUERY.text, ACCOUNT_INFO_QUERY.values)
-    // console.log(accountInfoNeededResult.length)
+  const accountInfoNeededResult = await queryFn(ACCOUNT_INFO_QUERY.text, ACCOUNT_INFO_QUERY.values)
+  console.log('account info needed result',accountInfoNeededResult.length)
 
-    if (accountInfoNeededResult.length === 0) {
-      const message = 'The specified account does not belong to the user or does not exist.';
-      console.warn(pc[backendColor](message));
-      return RESPONSE(res, 403, message);//access forbidden
+  if (accountInfoNeededResult.length === 0) {
+    const message = 'The specified account does not belong to the user or does not exist.';
+    console.warn(pc[backendColor](message));
+    
+    return RESPONSE(res, 403, message);//access forbidden
     }
-    //----------------------------------------------------------
-    //date period
+//-------------------------------
+  //date period 
     const today = new Date()
     today.setHours(23,59,59,999) //end of today
    
@@ -97,10 +98,9 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     if (isNaN(endDate.getTime())) {
       return RESPONSE(res, 400, 'Invalid end date format. Use YYYY-MM-DD.');
     }
-    //----------------------------------------------------------------
+    //-------------------------------
     //--main query for transactions by account_id and user_id getting account_balance_after_tr
     //--rule: there must exist at least one transaction (account-opening). It should not be possible for an account to exist without this single recorded transaction
-
     const TRANSACTIONS_BY_ACCOUNT_QUERY = {
       text:`
       SELECT 
@@ -119,17 +119,18 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
         tr.account_id = $1 AND ua.user_id = $2 AND (tr.transaction_actual_date BETWEEN $3 AND $4 OR
        tr.created_at BETWEEN $3 AND $4)
        
-       ORDER BY 
+      ORDER BY 
        tr.transaction_actual_date DESC , tr.created_at DESC 
        ` ,
        values:[accountId, userId, startDate, endDate]
     }
 
-    const transactions = await queryFn(TRANSACTIONS_BY_ACCOUNT_QUERY.text, TRANSACTIONS_BY_ACCOUNT_QUERY.values)
+  const transactions = await queryFn(TRANSACTIONS_BY_ACCOUNT_QUERY.text, TRANSACTIONS_BY_ACCOUNT_QUERY.values)
+
 // Función para formatear fechas consistentemente
     const formatDate = (date) => date.toISOString().split('T')[0];
 
-    //NO  TRANSACTIONS
+    //NO TRANSACTIONS
     if (transactions.length === 0) {
       const data = {
         totalTransactions: 0,
@@ -151,46 +152,45 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
         },
         transactions: []
       };
-      return RESPONSE(res, 200, 'No transactions found for the selected period', data);
+    return RESPONSE(res, 200, 'No transactions found for the selected period', data);
     }
-    // console.log('transactions',transactions)
+  console.log('transactions',transactions)
  
- 
-   //Funciones para obtener balances usando accountInfoNeededResult ==========
-    const getInitialBalance = () => {
-      const oldestTransaction = transactions[transactions.length - 1];
-      return {
-        amount: parseFloat(oldestTransaction.account_balance_before_tr || accountInfoNeededResult[0].account_starting_amount),
-        currency: oldestTransaction.currency_code,
-        date: formatDate(startDate)
-      };
+//Funciones para obtener balances usando accountInfoNeededResult ================
+  const getInitialBalance = () => {
+    const oldestTransaction = transactions[transactions.length - 1];
+    return {
+      amount: parseFloat(oldestTransaction.account_balance_before_tr || accountInfoNeededResult[0].account_starting_amount),
+      currency: oldestTransaction.currency_code,
+      date: formatDate(startDate)
     };
+  };
 
-    const getFinalBalance = () => ({
-      amount: parseFloat(transactions[0].account_balance_after_tr),
-      currency: transactions[0].currency_code,
-      date: formatDate(new Date(transactions[0].transaction_actual_date || transactions[0].created_at))
-    });
+  const getFinalBalance = () => ({
+    amount: parseFloat(transactions[0].account_balance_after_tr),
+    currency: transactions[0].currency_code,
+    date: formatDate(new Date(transactions[0].transaction_actual_date || transactions[0].created_at))
+  });
 
-    // Construir respuesta final
-    const data = {
-      totalTransactions: transactions.length,
-      summary: {
-        initialBalance: getInitialBalance(),
-        finalBalance: getFinalBalance(),
-        periodStartDate: formatDate(startDate),
-        periodEndDate: formatDate(endDate),
-      },
-      transactions
-    };
+  // Construir respuesta final
+  const data = {
+    totalTransactions: transactions.length,
+    summary: {
+      initialBalance: getInitialBalance(),
+      finalBalance: getFinalBalance(),
+      periodStartDate: formatDate(startDate),
+      periodEndDate: formatDate(endDate),
+    },
+    transactions
+  };
 
-    return RESPONSE(res, 200, `${transactions.length} transaction(s) found`, data);
+  return RESPONSE(res, 200, `${transactions.length} transaction(s) found`, data);
   } catch (error) {
     const generalmessage = `Error while getting transactions for account id ${req.params.accountId}`
      console.error(pc.red(generalmessage), error);
 
-      if (error instanceof Error) {
-        if (process.env.NODE_ENV === 'development') {
+    if (error instanceof Error) {
+      if (process.env.NODE_ENV === 'development') {
         console.warn(error.stack);
       }
     } else {
@@ -202,6 +202,6 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     //  PostgreSQL error handling  
     const { code, message } = handlePostgresError(error);
     next(createError(code, message));
-}
+  } 
 }
 

@@ -1,45 +1,53 @@
+// frontend/src/pages/overview/Overview.tsx
+//HOOKS
+import { useEffect, useState } from 'react';
+//navigation
+import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
+import useAuth from '../../auth/hooks/useAuth.ts';
+
+// UI COMPONENTS
 import SavingGoals from './components/SavingGoals.tsx';
 import AccountBalance from './components/AccountBalance.tsx';
 import MonthlyAverage from './components/MonthlyAverage';
 import LastMovements, {
   LastMovementType,
 } from './components/LastMovements.tsx';
-import InvestmentAccountBalance from './components/InvestmentAccBalance';
+import InvestmentAccountBalance from './components/InvestmentAccBalance.tsx';
+import OpenAddEditBtn from '../../general_components/OpenAddEditBtn.tsx';
+import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 
+//ENPOINTS
 import {
   url_get_total_account_balance_by_type,
   url_monthly_TotalAmount_ByType,
   dashboardMovementTransactions,
 } from '../../endpoints.ts';
 
+//TYPES
 import {
   BalancePocketRespType,
   FinancialDataRespType,
   LastMovementRespType,
   // MovementTransactionDataType,
 } from '../../types/responseApiTypes.ts';
+// import { CurrencyType } from '../../types/types.ts';
 
+//FUNCTIONS
 import { overviewFetchAll } from './overviewFetchAll.ts';
 import {
   calculateMonthlyAverage,
   ResultType,
   // FinancialResultType,
 } from './CalculateMonthlyAverage.ts';
-import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
-// import { CurrencyType } from '../../types/types.ts';
 
-import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import OpenAddEditBtn from '../../general_components/OpenAddEditBtn.tsx';
 //---------------------------------
 export type CreateNewAccountPropType = {
   originRoute: string;
   createNewAccount(originRoute: string): void;
 };
 //---------------------------------
-const userId = import.meta.env.VITE_USER_ID;
-
-//---type of api response
+// const userId = import.meta.env.VITE_USER_ID;
+//---TYPE OF API RESPONSE
 export type ApiRespDataType = {
   SavingGoals: BalancePocketRespType | null;
   MonthlyTotalAmountByType: FinancialDataRespType | null;
@@ -50,7 +58,7 @@ export type ApiRespDataType = {
   MovementInvestmentTransactions: LastMovementRespType | null;
   MovementPnLTransactions: LastMovementRespType | null;
 };
-//---endpoint config------------------
+//---ENDPOINT CONFIG------------
 type KPIEndpointType = {
   key: keyof ApiRespDataType;
   url: string;
@@ -69,50 +77,50 @@ type KPIDataStateType = {
   LastPnLMovements: LastMovementType[] | null;
 };
 //-----------------------------------------
-//data to be fetched
+//CONFIG DATA TO BE FETCHED
 const overviewKPIendpoints: KPIEndpointType[] = [
   {
     key: 'SavingGoals',
-    url: `${url_get_total_account_balance_by_type}/?type=pocket_saving&user=${userId}`,
+    url: `${url_get_total_account_balance_by_type}/?type=pocket_saving`,
     type: {} as BalancePocketRespType,
   },
   {
     key: 'MonthlyTotalAmountByType',
-    url: `${url_monthly_TotalAmount_ByType}?type=expense&user=${userId}`,
+    url: `${url_monthly_TotalAmount_ByType}?type=expense`,
     type: {} as FinancialDataRespType,
   },
   {
     key: 'MovementExpenseTransactions',
-    url: `${dashboardMovementTransactions}?start=&end=&movement=expense&transaction_type=&account_type=category_budget&user=${userId}`,
+    url: `${dashboardMovementTransactions}?start=&end=&movement=expense&transaction_type=&account_type=category_budget`,
     type: {} as LastMovementRespType,
   },
   {
     key: 'MovementDebtTransactions',
-    url: `${dashboardMovementTransactions}?start=&end=&movement=debt&user=${userId}`,
-    // url: `${url_get_transactions_by_search}?start=&end=&search=debt&user=${userId}`,
+    url: `${dashboardMovementTransactions}?start=&end=&movement=debt`,
     type: {} as LastMovementRespType,
   },
     {
     key: 'MovementIncomeTransactions',
-    url: `${dashboardMovementTransactions}?start=&end=&movement=income&user=${userId}`,
+    url: `${dashboardMovementTransactions}?start=&end=&movement=income`,
     type: {} as LastMovementRespType,
   },
   {
     key: 'MovementPocketTransactions',
-    url: `${dashboardMovementTransactions}?start=&end=&movement=pocket&user=${userId}`,
+    url: `${dashboardMovementTransactions}?start=&end=&movement=pocket`,
     type: {} as LastMovementRespType,
   },
     {
     key: 'MovementInvestmentTransactions',
-    url: `${dashboardMovementTransactions}?start=&end=&movement=investment&user=${userId}`,
+    url: `${dashboardMovementTransactions}?start=&end=&movement=investment`,
     type: {} as LastMovementRespType,
   },
     {
     key: 'MovementPnLTransactions',
-    url: `${dashboardMovementTransactions}?start=&end=&movement=pnl&user=${userId}`,
+    url: `${dashboardMovementTransactions}?start=&end=&movement=pnl`,
     type: {} as LastMovementRespType,
   },
 ];
+
 //=======================
 //MAIN COMPONENT OVERVIEW
 //=======================
@@ -120,8 +128,8 @@ function Overview() {
   const navigateTo: NavigateFunction = useNavigate();
   const location = useLocation();
   const originRoute = location.pathname;
-  // console.log({ originRoute });
-//states----
+// console.log({ originRoute });
+//-- STATES----
   const [kpiData, setKpiData] = useState<KPIDataStateType>({
     SavingGoals: null,
     MonthlyMovementKPI: null,
@@ -135,16 +143,23 @@ function Overview() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  //------------------
+
+// AUTHENTICATION STATE
+  const {isAuthenticated, isCheckingAuth } = useAuth();
+//------------------
   //functions
   function createNewAccount(originRoute: string) {
     navigateTo(originRoute + '/new_account', {
       state: { previousRoute: originRoute },
     });
   }
-  //------------------
+
+//--start overviewFetchAll
   useEffect(() => {
-    const fetchOverviewData = async () => {
+  if (isCheckingAuth || !isAuthenticated) {
+    return
+  }
+   const fetchOverviewData = async () => {
       try {
         const result = await overviewFetchAll(overviewKPIendpoints);
         // console.log('🚀 ~ fetchOverviewData ~ result:', result);
@@ -152,194 +167,192 @@ function Overview() {
         if (!result) {
           throw new Error('No data received from API');
         }
-
-        const savingGoalsData =
-          result.SavingGoals.status === 'success'
-            ? result.SavingGoals.data
-            : null;
-        //---
-        const monthlyAmounts =
-          result.MonthlyTotalAmountByType.status === 'success'
-            ? result.MonthlyTotalAmountByType?.data?.data.monthlyAmounts
-            : null;
-
-        const totalAndMonthlyAmount = monthlyAmounts
-          ? calculateMonthlyAverage(monthlyAmounts)
+//----------------
+      const savingGoalsData =
+        result.SavingGoals.status === 'success'
+          ? result.SavingGoals.data
+          : null;
+      //---
+      const monthlyAmounts =
+        result.MonthlyTotalAmountByType.status === 'success'
+          ? result.MonthlyTotalAmountByType?.data?.data.monthlyAmounts
           : null;
 
-        //-------------------
-        const movementExpenseTransactionsData =
-          result.MovementExpenseTransactions.status === 'success'
-            ? result.MovementExpenseTransactions?.data?.data
-            : null;
+      const totalAndMonthlyAmount = monthlyAmounts
+        ? calculateMonthlyAverage(monthlyAmounts)
+        : null;
 
-        const movementExpenseTransactions = movementExpenseTransactionsData
-          ? Array.from(
-              { length: movementExpenseTransactionsData.length },
-              (_, i) => {
-                const {
-                  account_name,
-                  amount,
-                  description,
-                  transaction_actual_date,
-                  currency_code,
-                } = movementExpenseTransactionsData[i];
-
-                const obj = {
-                  accountName: account_name,
-                  record: amount, //data? or title?
-                  description: description,
-                  date: transaction_actual_date,
-                  currency: currency_code,
-                };
-                return { ...obj };
-              }
-            )
+      //-------------------
+      const movementExpenseTransactionsData =
+        result.MovementExpenseTransactions.status === 'success'
+          ? result.MovementExpenseTransactions?.data?.data
           : null;
 
-        //---
-        const movementDebtTransactionsData =
-          result.MovementDebtTransactions.status === 'success'
-            ? result.MovementDebtTransactions?.data?.data
-            : null;
-
-        const movementDebtTransactions = movementDebtTransactionsData
-          ? movementDebtTransactionsData?.map((debt) => {
+      const movementExpenseTransactions = movementExpenseTransactionsData
+        ? Array.from(
+            { length: movementExpenseTransactionsData.length },
+            (_, i) => {
               const {
                 account_name,
                 amount,
                 description,
                 transaction_actual_date,
                 currency_code,
-              } = debt;
+              } = movementExpenseTransactionsData[i];
 
-              return {
+              const obj = {
                 accountName: account_name,
-                record: amount, //data or title?
-                description: description, //data
+                record: amount, //data? or title?
+                description: description,
                 date: transaction_actual_date,
                 currency: currency_code,
               };
-            })
+              return { ...obj };
+            }
+          )
+        : null;
+//------------------------------------------
+      const movementDebtTransactionsData =
+        result.MovementDebtTransactions.status === 'success'
+          ? result.MovementDebtTransactions?.data?.data
           : null;
 
-        //---
-        const movementIncomeTransactionsData =
-          result.MovementIncomeTransactions.status === 'success'
-            ? result.MovementIncomeTransactions?.data?.data
-            : null;
+      const movementDebtTransactions = movementDebtTransactionsData
+        ? movementDebtTransactionsData?.map((debt) => {
+            const {
+              account_name,
+              amount,
+              description,
+              transaction_actual_date,
+              currency_code,
+            } = debt;
 
-        const movementIncomeTransactions = movementIncomeTransactionsData
-          ? Array.from(
-              { length: movementIncomeTransactionsData.length },
-              (_, i) => {
-                const {
-                  account_name,
-                  amount,
-                  description,
-                  transaction_actual_date,
-                  currency_code,
-                } = movementIncomeTransactionsData[i];
+            return {
+              accountName: account_name,
+              record: amount, //data or title?
+              description: description, //data
+              date: transaction_actual_date,
+              currency: currency_code,
+            };
+          })
+        : null;
 
-                const obj = {
-                  accountName: account_name,
-                  record: amount, //data? or title?
-                  description: description,
-                  date: transaction_actual_date,
-                  currency: currency_code,
-                };
-                return { ...obj };
-              }
-            )
-          : null;
-        //---
-        const movementPocketTransactionsData =
-          result.MovementPocketTransactions.status === 'success'
-            ? result.MovementPocketTransactions?.data?.data
-            : null;
-
-        const movementPocketTransactions = movementPocketTransactionsData
-          ? Array.from(
-              { length: movementPocketTransactionsData.length },
-              (_, i) => {
-                const {
-                  account_name,
-                  amount,
-                  description,
-                  transaction_actual_date,
-                  currency_code,
-                } = movementPocketTransactionsData[i];
-
-                const obj = {
-                  accountName: account_name,
-                  record: amount, //data? or title?
-                  description: description,
-                  date: transaction_actual_date,
-                  currency: currency_code,
-                };
-                return { ...obj };
-              }
-            )
+      //---
+      const movementIncomeTransactionsData =
+        result.MovementIncomeTransactions.status === 'success'
+          ? result.MovementIncomeTransactions?.data?.data
           : null;
 
-//---
-        const movementInvestmentTransactionsData =
-          result.MovementInvestmentTransactions.status === 'success'
-            ? result.MovementInvestmentTransactions?.data?.data
-            : null;
+      const movementIncomeTransactions = movementIncomeTransactionsData
+        ? Array.from(
+            { length: movementIncomeTransactionsData.length },
+            (_, i) => {
+              const {
+                account_name,
+                amount,
+                description,
+                transaction_actual_date,
+                currency_code,
+              } = movementIncomeTransactionsData[i];
 
-        const movementInvestmentTransactions = movementInvestmentTransactionsData
-          ? Array.from(
-              { length: movementInvestmentTransactionsData.length },
-              (_, i) => {
-                const {
-                  account_name,
-                  amount,
-                  description,
-                  transaction_actual_date,
-                  currency_code,
-                } = movementInvestmentTransactionsData[i];
-
-                const obj = {
-                  accountName: account_name,
-                  record: amount, //data? or title?
-                  description: description,
-                  date: transaction_actual_date,
-                  currency: currency_code,
-                };
-                return { ...obj };
-              }
-            )
+              const obj = {
+                accountName: account_name,
+                record: amount, //data? or title?
+                description: description,
+                date: transaction_actual_date,
+                currency: currency_code,
+              };
+              return { ...obj };
+            }
+          )
+        : null;
+      //---
+      const movementPocketTransactionsData =
+        result.MovementPocketTransactions.status === 'success'
+          ? result.MovementPocketTransactions?.data?.data
           : null;
-//---
-        const movementPnLTransactionsData =
-          result.MovementPnLTransactions.status === 'success'
-            ? result.MovementPnLTransactions?.data?.data
-            : null;
 
-        const movementPnLTransactions = movementPnLTransactionsData
-          ? Array.from(
-              { length: movementPnLTransactionsData.length },
-              (_, i) => {
-                const {
-                  account_name,
-                  amount,
-                  description,
-                  transaction_actual_date,
-                  currency_code,
-                } = movementPnLTransactionsData[i];
+      const movementPocketTransactions = movementPocketTransactionsData
+        ? Array.from(
+            { length: movementPocketTransactionsData.length },
+            (_, i) => {
+              const {
+                account_name,
+                amount,
+                description,
+                transaction_actual_date,
+                currency_code,
+              } = movementPocketTransactionsData[i];
 
-                const obj = {
-                  accountName: account_name,
-                  record: amount, //data? or title?
-                  description: description,
-                  date: transaction_actual_date,
-                  currency: currency_code,
-                };
-                return { ...obj };
-              }
-            )
+              const obj = {
+                accountName: account_name,
+                record: amount, //data? or title?
+                description: description,
+                date: transaction_actual_date,
+                currency: currency_code,
+              };
+              return { ...obj };
+            }
+          )
+        : null;
+//-------------------------------------------
+      const movementInvestmentTransactionsData =
+        result.MovementInvestmentTransactions.status === 'success'
+          ? result.MovementInvestmentTransactions?.data?.data
           : null;
+
+      const movementInvestmentTransactions = movementInvestmentTransactionsData
+        ? Array.from(
+            { length: movementInvestmentTransactionsData.length },
+            (_, i) => {
+              const {
+                account_name,
+                amount,
+                description,
+                transaction_actual_date,
+                currency_code,
+              } = movementInvestmentTransactionsData[i];
+
+              const obj = {
+                accountName: account_name,
+                record: amount, //data? or title?
+                description: description,
+                date: transaction_actual_date,
+                currency: currency_code,
+              };
+              return { ...obj };
+            }
+          )
+        : null;
+//-------------------------------------------
+      const movementPnLTransactionsData =
+        result.MovementPnLTransactions.status === 'success'
+          ? result.MovementPnLTransactions?.data?.data
+          : null;
+
+      const movementPnLTransactions = movementPnLTransactionsData
+        ? Array.from(
+            { length: movementPnLTransactionsData.length },
+            (_, i) => {
+              const {
+                account_name,
+                amount,
+                description,
+                transaction_actual_date,
+                currency_code,
+              } = movementPnLTransactionsData[i];
+
+              const obj = {
+                accountName: account_name,
+                record: amount, //data? or title?
+                description: description,
+                date: transaction_actual_date,
+                currency: currency_code,
+              };
+              return { ...obj };
+            }
+          )
+        : null;
 //-------------
         setKpiData({
           SavingGoals: savingGoalsData,
@@ -360,13 +373,18 @@ function Overview() {
         setIsLoading(false);
       }
     };
-//---
+//--------------------------------------
     fetchOverviewData();
-  }, []);
+  }, [isAuthenticated,isCheckingAuth]);
 
-  // console.log('data state kpi', kpiData);
-  //-----
+// console.log('data state kpi', kpiData);
+//--RENDER ----
   if (error) return <div className='error-message'>{error}</div>;
+
+//Rendering condition
+  if (isCheckingAuth) {
+  return <CoinSpinner />;
+}
 
   return (
     <section className='content__presentation'>

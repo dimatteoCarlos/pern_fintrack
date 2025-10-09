@@ -15,9 +15,9 @@ const useFormManager = <TInput extends Record<string, unknown>, TValidated exten
   schema: ZodType<TValidated>,
   initialData: TInput
 ) => {
-  // ===================
-  // STATE MANAGEMENT
-  // ===================
+// ===================
+// STATE MANAGEMENT
+// ===================
   const [formData, setFormData] = useState<TInput>(initialData);
 
   const [validationMessages, setValidationMessages] = useState<ValidationMessagesType<TInput>>({});
@@ -37,8 +37,8 @@ const useFormManager = <TInput extends Record<string, unknown>, TValidated exten
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   }, []);
 
-  // DEBOUNCED VALIDATION
-  // =======================
+// DEBOUNCED VALIDATION
+// =======================
   const validateField = useCallback(<TKey extends keyof TInput>(fieldName: TKey, value: TInput[TKey]) => {
     const currentDataForValidation = {
       ...formData,
@@ -51,15 +51,14 @@ const useFormManager = <TInput extends Record<string, unknown>, TValidated exten
   const debouncedUpdateField = useDebouncedCallback(updateField, 500);
 
   const debouncedValidateField = useDebouncedCallback(validateField, 800);
-  //---
-  //Handler of field 'amount', 'value', etc. Activates all field validation when entering the value.
-    // FIELD HANDLERS (REUSABLE)
-  // ==========================
+//---
+//Handler of field 'amount', 'value', etc. Activates all field validation when entering the value.
+// FIELD HANDLERS (REUSABLE)
+// ==========================
   const createNumberHandler = useCallback(
    ( fieldName:keyof TInput)=>{
     return (evt:React.ChangeEvent<HTMLInputElement  | HTMLTextAreaElement>)=>{
-    const {name, value } = evt.target
-    console.log('compare', fieldName, name)
+    const {value } = evt.target
     updateField(fieldName as keyof TInput, value as TInput[keyof TInput] )
     debouncedValidateField(fieldName, value)
 
@@ -80,10 +79,9 @@ const useFormManager = <TInput extends Record<string, unknown>, TValidated exten
     updateField('currency' as keyof TInput, currency as TInput['currency']);
   validateField('currency' as keyof TInput, currency as TInput['currency']);
   }, [updateField, validateField]);
-
-  // ===================
-  // FORM RESET LOGIC
-  // ===================
+// ===================
+// FORM RESET LOGIC
+// ===================
   const resetForm = useCallback(() => {
     setFormData(initialData);
     setValidationMessages({});
@@ -145,9 +143,9 @@ const useFormManager = <TInput extends Record<string, unknown>, TValidated exten
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred during submission.';
     return errorMessage;
   }, []);
-//---
-  // EXPOSED HOOK VALUES
-  // =====================
+// =====================
+// EXPOSED HOOK VALUES
+// =====================
   return {
     formData,
     showValidation,

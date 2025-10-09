@@ -1,7 +1,7 @@
 //src/pages/forms/newAccount/NewAccount.tsx
 import React, { useEffect, useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
@@ -25,13 +25,12 @@ import { validationData } from '../../../validations/utils/custom_validation.ts'
 import { FormNumberInputType } from '../../../types/types.ts';
 import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
-// import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { url_create_basic_account } from '../../../endpoints.ts';
 import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { AxiosRequestConfig } from 'axios';
-
-
+import useAuth from '../../../auth/hooks/useAuth';
+// import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
 //------------------------
 //-----handle currency
 const defaultCurrency = DEFAULT_CURRENCY;
@@ -68,12 +67,12 @@ const initialFormData: FormNumberInputType = {
 //-------------------------------
 function NewAccount() {
   const location = useLocation();
-  //get userId from stores
-  // const user = useUserStore((state: UserStoreType) => state.userData.userId);
-  const user = import.meta.env.VITE_USER_ID;
-  // console.log('🚀 ~ NewAccount ~ user:', user);
+  const navigateTo=useNavigate()
+ // const user = import.meta.env.VITE_USER_ID;
+ // console.log('🚀 ~ NewAccount ~ user:', user);
+  const { isAuthenticated } = useAuth();  
 
-  //---states------
+ //---states------
   const [accountData, setAccountData] = useState<AccountDataType>(
     initialNewAccountData
   );
@@ -94,6 +93,15 @@ function NewAccount() {
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null
   );
+
+ // 🆕 VERIFICAR AUTENTICACIÓN AL INICIO
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setMessageToUser('Please log in to create an account');
+ // 🆕 OPCIONAL: Redirigir al login después de un tiempo
+   setTimeout(() => navigateTo('/auth'), 5000);
+    }
+  }, [isAuthenticated, navigateTo]);
 
   //endpoint: http://localhost:5000/api/fintrack/account/${type}
   //-------------------------------------
@@ -122,7 +130,6 @@ function NewAccount() {
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
-
     setAccountData((prev) => ({ ...prev, [name]: value }));
   }
   //---
@@ -155,8 +162,7 @@ function NewAccount() {
         ...acc,
         type: undefined,
       }));
-
-       setIsDisabledValue(false);
+      setIsDisabledValue(false);
     }
   }
   //---------
@@ -169,11 +175,18 @@ function NewAccount() {
     setCurrency(currency);
     setAccountData((acc) => ({ ...acc, currency: currency }));
   }
-  //--------------------------------------
+  //--FORM SUBMISSION --------------------
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
-    // console.log('On submit Form');
     e.preventDefault();
-    //--data form validation
+    // console.log('On submit Form');
+
+ // 🆕 VERIFICAR AUTENTICACIÓN ANTES DE ENVIAR
+    if (!isAuthenticated) {
+      setMessageToUser('Please log in to create an account');
+      return;
+    }
+
+ // ✅ DATA FORM VALIDATION
     const newValidationMessages = { ...validationData(accountData) };
     // console.log('message validation:', { newValidationMessages });
 
@@ -185,30 +198,33 @@ function NewAccount() {
     //POST TO THE ENDPOINT FOR ACCOUNT DATA 
     try {
       const { name, type, currency, amount, date } = accountData;
-      const payload = { name, type, currency, amount, date, user };
-      // console.log('data to post:',{ ...accountData, user});
 
-      //final URL, url is dynamic depending on type variable
+      const payload = { name, type, currency, amount, date };
+    // console.log('data to post:',{ ...accountData});
+
+    //final URL, url is dynamic depending on type variable
       const finalUrl = `${url_create_basic_account}/${type}`;
 
-      // console.log('🚀 ~ onSubmitForm ~ finalUrl:', finalUrl);
+    // console.log('🚀 ~ onSubmitForm ~ finalUrl:', finalUrl);
+
       await requestFn(payload, {
         url: finalUrl,
       } as AxiosRequestConfig);
 
-      // if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+    // if (import.meta.env.VITE_ENVIRONMENT === 'development') {
       //   console.log('Data from New Account request:', data);
       // }
-      //resetting form values
+      
+    //resetting form values
       setIsReset(true);
-      setAccountData(initialNewAccountData);
-      setCurrency(defaultCurrency);
       setValidationMessages({});
       setFormData(initialFormData);
+      setAccountData(initialNewAccountData);
+      setCurrency(defaultCurrency);
       setIsDisabledValue(false);
       setMessageToUser(null)
 
-      //delay isReset so dropdown type selection updates to null
+    //delay isReset so dropdown type selection updates to null
       setTimeout(() => {
         setIsReset(false);
       }, 1000);
@@ -218,12 +234,12 @@ function NewAccount() {
       setMessageToUser(messageError)
     }
   }
-  //----------------------------------------
+  //-----------------------------------
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if (data && !isLoading && !error) {
       // Success response
-      setMessageToUser(data.message || 'Account created successfully!');
+      setMessageToUser(data.message || 'Account successfully  created!');
       // console.log('Received data:', data);
 
       //resetting message to user
@@ -239,14 +255,16 @@ function NewAccount() {
     };
   }, [data, isLoading, error]);
 
-  //----
+// 🆕 DESHABILITAR FORMULARIO SI NO ESTÁ AUTENTICADO
+  const isFormDisabled = !isAuthenticated;
+//----
   return (
     <section className='account__page__container page__container'>
       <TopWhiteSpace variant={'dark'} />
       <div className='account__page__content page__content'>
         <div className='main__title--container'>
           <Link
-            to={location.state.previousRoute}
+            to={location.state.previousRoute || '/dashboard'}
             relative='path'
             className='iconLeftArrow'
           >
@@ -254,6 +272,13 @@ function NewAccount() {
           </Link>
           <div className='form__title'>{'New Account'}</div>
         </div>
+
+    {/* 🆕 MENSAJE DE NO AUTENTICADO */}
+      {!isAuthenticated && (
+        <div className='error-message' style={{ margin: '1rem 0', padding: '1rem' }}>
+          Please log in to create a new account
+        </div>
+      )}
 
         <form className='form__box'>
           <div className=' form__container'>
@@ -272,8 +297,10 @@ function NewAccount() {
                 name='name'
                 onChange={inputHandler}
                 value={accountData.name}
+                disabled={isFormDisabled} // 🆕 DESHABILITAR SI NO AUTENTICADO
               />
             </div>
+
             <div className='input__box'>
               <label className='label form__title'>
                 Account Type &nbsp;
@@ -287,6 +314,7 @@ function NewAccount() {
                 updateOptionHandler={accountTypeSelectHandler}
                 isReset={isReset}
                 setIsReset={setIsReset}
+                //disabled={isFormDisabled} // 🆕 DESHABILITAR SI NO AUTENTICADO
               />
             </div>
 
@@ -299,6 +327,7 @@ function NewAccount() {
                     date={accountData.date}
                     variant={'form'}
                     isReset={isReset}
+                    // disabled={isFormDisabled} 
                   ></FormDatepicker>
                 </div>
               </div>
@@ -309,6 +338,7 @@ function NewAccount() {
                   variant={'form'}
                   updateOutsideCurrencyData={updateDataCurrency}
                   currency={currency}
+                  // disabled={isFormDisabled} 
                 />
               </div>
             </div>
@@ -329,6 +359,7 @@ function NewAccount() {
                   formData={formData}
                   setFormData={setFormData}
                   setStateData={setAccountData}
+                  // disabled={isFormDisabled} 
                 />
                 {/* <input
                 style={{ fontSize: '1.25rem', padding: '0 0.75rem' }}
@@ -338,7 +369,8 @@ function NewAccount() {
           </div>
 
           <div className='submit__btn__container'>
-            <FormSubmitBtn onClickHandler={onSubmitForm} disabled={isLoading}>
+            <FormSubmitBtn 
+            onClickHandler={onSubmitForm} disabled={isLoading || isFormDisabled}>
               save
             </FormSubmitBtn>
           </div>

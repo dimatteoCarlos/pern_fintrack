@@ -1,20 +1,22 @@
+//frontend/src/pages/forms/newProfile/NewProfile.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation , useNavigate} from 'react-router-dom';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import '../styles/forms-styles.css';
 import { useFetch } from '../../../hooks/useFetch.ts';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import {
+  url_create_debtor_account,
+  url_get_accounts_by_type,
+} from '../../../endpoints.ts';
 import {
   CurrencyType,
   DropdownOptionType,
   // ExpenseAccountsType,
 } from '../../../types/types.ts';
-import {
-  url_create_debtor_account,
-  url_get_accounts_by_type,
-} from '../../../endpoints.ts';
 import {
   ACCOUNT_OPTIONS_DEFAULT,
   DEFAULT_CURRENCY,
@@ -30,12 +32,11 @@ import {
   CreateDebtorAccountApiResponseType,
 } from '../../../types/responseApiTypes.ts';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import useAuth from '../../../auth/hooks/useAuth.ts';
 // import ProtectedRoute from '../../auth/ProtectedRoute.tsx';
-
-//-----defaul 'till decide how to handle multi currencies
+//-----default 'till decide how to handle multi currencies
 const defaultCurrency = DEFAULT_CURRENCY;
-//----Type definitions, initialization and constants ------
+//----TYPE DEFINITIONS, INITIALIZATION AND CONSTANTS ------
 type ProfileInputDataType = {
   name: string;
   lastname: string;
@@ -52,9 +53,9 @@ type ProfilePayloadType = {
   account_type: string;
   amount: number | '';
   currency?: CurrencyType;
-  user: string;
   selected_account_name: string;
   selected_account_type: string;
+  user?: string;
 };
 const initialNewProfileData: ProfileInputDataType = {
   name: '',
@@ -69,52 +70,50 @@ const typeSelectionProp = {
   options: TYPEDEBTS_OPTIONS_DEFAULT,
   variant: VARIANT_FORM, //set customStyle in selection dropdown component
 };
-
+// === INITIAL STATE DATA ===
 const formDataNumber = { keyName: 'amount', title: 'value' };
-
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
 };
-
 const selected_account_type = 'bank',
   account_type = 'debtor';
 
 //========================
-//MAIN COMPONENTE NEW PROFILE
+// === COMPONENT DEFINITION ===
 //========================
 function NewProfile() {
-  const location = useLocation();
-  //get userId from stores
-  // const user = useUserStore((state: UserStoreType) => state.userData.userId);
-  const user: string = import.meta.env.VITE_USER_ID;
+const location = useLocation();
+const navigateTo=useNavigate()
+//get userId from stores
+// const user = useUserStore((state: UserStoreType) => state.userData.userId);
+// const user: string = import.meta.env.VITE_USER_ID;
+const { isAuthenticated } = useAuth()
 
-  //-----states------
+// === STATE INITIALIZATION ===
+  const [formData, setFormData] =
+  useState<FormNumberInputType>(initialFormData);
   const [profileData, setProfileData] = useState<ProfileInputDataType>(
-    initialNewProfileData
-  );
-
+    initialNewProfileData);
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
   }>({});
-
   const [isReset, setIsReset] = useState<boolean>(false);
-
-  const [formData, setFormData] =
-    useState<FormNumberInputType>(initialFormData);
-
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
-    null
-  );
-
+    null  );
   const [reloadTrigger, setReloadTrigger] = useState(0)
-  //----------------
-  //DATA FETCHING for option selection
-  //GET: AVAILABLE ACCOUNTS OF TYPE BANK
-  const fetchUrl = user
-    ? `${url_get_accounts_by_type}/?type=bank&user=${user}&${reloadTrigger}`
-    : // <Navigate to='/auth' />
-      undefined; //forzar un error de user en el backend / force an error inthe backend
-
+  
+//✅ CHECK IF USER IS AUTHENTICATED
+ useEffect(()=>{
+  if(!isAuthenticated){
+  setMessageToUser('Please log in to create an account')
+  setTimeout(()=>navigateTo('/auth'), 5000)
+    }
+ }, [isAuthenticated, navigateTo]);
+//----------------------------------------------
+//DATA FETCHING for option selection
+//GET: AVAILABLE ACCOUNTS OF TYPE BANK
+//http://localhost:5000/api/fintrack/account/new_account/debtor
+  const fetchUrl = `${url_get_accounts_by_type}/?type=bank&${reloadTrigger}`
   const {
     apiData: BankAccountsResponse,
     isLoading: isLoadingBankAccounts,
@@ -125,7 +124,7 @@ function NewProfile() {
     if (fetchedErrorBankAccounts) {
       return ACCOUNT_OPTIONS_DEFAULT;
     }
-    const accountList = BankAccountsResponse?.data?.accountList ?? [];
+   const accountList = BankAccountsResponse?.data?.accountList ?? [];
 
     return accountList.length
      ? accountList.map((acc) => ({
@@ -210,7 +209,7 @@ function NewProfile() {
       setValidationMessages(newValidationMessages);
       return;
     }
-    //-----------------
+  //-----------------
     try {
       const payload: ProfilePayloadType = {
         account_type,
@@ -222,8 +221,7 @@ function NewProfile() {
         transaction_type: profileData.type,
         selected_account_name: profileData.account,
         selected_account_type,
-        user,
-      };
+         };
       const data = await requestFn(payload);
       if(data.error){
         //setValidationMessages({});

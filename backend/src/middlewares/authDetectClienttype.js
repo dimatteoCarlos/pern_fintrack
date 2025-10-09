@@ -6,6 +6,7 @@ export function authDetectClienttype(req, res, next) {
 
   const ua = req.useragent;
   console.log('User-Agent:', req.headers['user-agent']); // Log del User-Agent
+
   if (!ua) {
     console.warn('Useragent not found ');
     req.clientTypeAccess = 'unknown';
@@ -69,3 +70,16 @@ export function authDetectClienttype(req, res, next) {
 
   next();
 }
+
+//---
+// Agregar detección automática de tipo de cliente
+export const getTokenSource = (req) => {
+  if (req.headers.authorization?.startsWith('Bearer ')) {
+    return 'header';
+  }
+  if (req.cookies.accessToken) {
+    return 'cookie';
+  }
+  return 'none';
+};
+//---

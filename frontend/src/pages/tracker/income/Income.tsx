@@ -1,11 +1,12 @@
 //src/pages/tracker/income/Income.tsx
-// ==========================
+//Zod for input validation is used
+// =======================
 // 📦 Import Section
 // =======================
 // ⚛️ React Hooks
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AxiosRequestConfig } from 'axios';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation} from 'react-router-dom';
 
 // 🪝 Custom Hooks y utils
 import { useFetch } from '../../../hooks/useFetch.ts';
@@ -16,7 +17,7 @@ import useFormManager from '../../../hooks/useFormManager.ts';
 
 // Zustand store
 import useBalanceStore from '../../../stores/useBalanceStore.ts';
-//-------------------------------------
+//---------------------------
 // 🌐Endpoints and constants 
 import {
   url_get_accounts_by_type,
@@ -55,17 +56,18 @@ import CardSeparator from '../components/CardSeparator.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
-import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
-import useAuth from '../../../auth/hooks/useAuth.ts';
+//------------------------
+// 🛡️ authentication fetch
 import { authFetch } from '../../../auth/utils/authFetch.ts';
-//-------------------------------------
+//-------------------------
 // 📝data type definitions
 export type ShowValidationType={
   amount: boolean;
   account: boolean;
   source: boolean;
   note: boolean;
-} 
+}
+
 //=====================================
 // ⚙️ Initial Configuration and default values
 //====================================
@@ -91,13 +93,11 @@ function Income():JSX.Element {
   const { pathname } = useLocation();
   const trackerState = pathname.split('/')[PAGE_LOC_NUM];
   const typeMovement : MovementTransactionType= trackerState.toLowerCase();
-  const navigateTo=useNavigate()
 // console.info('tracker state', trackerState)
 //-------------------------------
-// 🛡️ Authentication state
- const {isAuthenticated, isCheckingAuth}=useAuth()
+// 🛡️ Authentication state or user id
 // const user = import.meta.env.VITE_USER_ID;
-//---------------
+//-------------------------------
 //---states------
 // 🔄 Local States
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
@@ -107,9 +107,7 @@ function Income():JSX.Element {
 
   const [reloadTrigger, setReloadTrigger] = useState(0)
 
-  const [messageToUser, setMessageToUser] = useState<string | null >(
-    null
-  );
+  const [messageToUser, setMessageToUser] = useState<string | null >(null);
 //------------
 // 🌳 Global State (Zustand)
 // update zustand balance / Conecta con el store de Zustand para actualizar el balance disponible.
@@ -131,9 +129,11 @@ const setAvailableBudget = useBalanceStore(
       updateCurrency,
       handleApiError,
     },
+
     validateAll,
     resetForm,
     activateAllValidations,
+
     setters: {
       setShowValidation,
       setValidationMessages,
@@ -144,17 +144,19 @@ const setAvailableBudget = useBalanceStore(
 // 📡 Data Fetching:
 //GET: available accounts of type bank
 //Endpoints: url_get_accounts_by_type, 
- const fetchUrl = `${url_get_accounts_by_type}/?type=bank&user=&reload=${reloadTrigger}`
+ const fetchUrl = `${url_get_accounts_by_type}?type=bank&reload=${reloadTrigger}`
 
 const {
     apiData: BankAccountsResponse,
     isLoading: isLoadingBankAccounts,
     error: fetchedErrorBankAccounts,
   } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
+
 // console.log('🚀 ~ Income ~ BankAccountsResponse:', BankAccountsResponse);
 // console.log('BANK resp', BankAccountsResponse, fetchedErrorBankAccounts);
+
 //---------------------------------
-//Data Transformations
+//--- Data Transformations
 // 🧠 Memoization: Account Options
 // `useMemo` is used to create the account dropdown options, avoiding unnecessary recalculations.
   const optionsIncomeAccounts = useMemo(
@@ -163,9 +165,9 @@ const {
       !fetchedErrorBankAccounts &&
       !isLoadingBankAccounts
         ? BankAccountsResponse?.data.accountList?.map((acc) => ({
-            value: acc.account_name,
-            label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code.toLowerCase()} ${acc.account_balance})`
-          }))
+          value: acc.account_name,
+          label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code.toLowerCase()} ${acc.account_balance})`
+        }))
         : ACCOUNT_OPTIONS_DEFAULT,
     [
       BankAccountsResponse?.data.accountList,
@@ -180,6 +182,7 @@ const {
     variant: VARIANT_DEFAULT,
   };
 // console.log("🚀 ~ Income ~ optionsIncomeAccounts:", optionsIncomeAccounts)
+//-------------------------------------
 //--- data fetching
 // Prepare data and url for Fetching income_source account type
  const fetchSourceUrl = `${url_get_accounts_by_type}/?type=income_source&${reloadTrigger}`
@@ -226,7 +229,7 @@ const fetchNewBalance = useCallback(async ()=>{
 //---GET: total balance of accounts of type bank. endpoint: url_get_total_account_balance_by_type
 try {
   const balanceBankResponse= await authFetch<BalanceBankRespType>( `${url_get_total_account_balance_by_type}?type=bank`);
-    console.log("🚀 ~ Income ~ balanceBankResponse:", balanceBankResponse)
+    // console.log("🚀 ~ Income ~ balanceBankResponse:", balanceBankResponse)
   
   const total_balance = balanceBankResponse.data?.data.total_balance
   
@@ -239,7 +242,7 @@ try {
   console.error('Error fetching new balance:', error);
     return null; 
   }
-}, [ reloadTrigger])
+}, [ ])
 
 //===============================
 // ✍️ Event Handlers
@@ -313,11 +316,10 @@ try {
     if (response?.error ) {
       throw new Error(response?.error || postError || 'An unexpected error occurred during submission.');
     }
-      
-    // ------------------------------
-    // ✅ Update total balance after success 
-    // -----------------------------
-    //1. Get the immediate new balance
+// -------------------------------------
+// ✅ Update total balance after success 
+// -------------------------------------
+//1. Get the immediate new balance
     const newTotalBalance = await fetchNewBalance()
     //2. Update global state of Zustand store
     if (typeof newTotalBalance === 'number') {setAvailableBudget(newTotalBalance); // 🔥 Éxito: Llamada segura dentro del handler
@@ -326,7 +328,7 @@ try {
     if (import.meta.env.VITE_ENVIRONMENT === 'development') {
       console.log('Data from record transaction request:', data, response.data);
     }
-//-------------------------------
+//---------------------------------
   setMessageToUser('Transaction successfully recorded!');    
 //----------------------------------
 // reset values after posting the info   
@@ -348,33 +350,9 @@ try {
       setTimeout(() => setMessageToUser(null), 5000);
     }
   }
-//------------------------------------
+//------------------------------------------
 // ⏳--- Side Effects--/--Efectos secundarios
-//------------------------------------
-// AUTHENTICATION AND REDIRECTION EFFECT
-//Message to user and action, when auth is checking or not authenticated
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (isCheckingAuth) {
-      setMessageToUser('Verifying session status. Please wait...');
-    } else if (!isAuthenticated) {
-      // Use existing messageToUser state for feedback before redirecting
-      setMessageToUser('Session not active or expired. Redirecting to the sign-in page in 3 seconds...');
-      
-      timer = setTimeout(() => {
-        navigateTo('/auth', { replace: true });
-      }, 3000); 
-
-    } else {
-    // If authenticated, clear the message (only if it was set by the auth check)
-      if (messageToUser?.includes('Verifying') || messageToUser?.includes('Session not active')) {setMessageToUser(null);}
-    }
-
-    return () => {
-      if (timer) clearTimeout(timer); // Cleanup timer
-    };
-  }, [isAuthenticated, isCheckingAuth, navigateTo, messageToUser]);
-//---------------------------------------
+//------------------------------------------
 // `useEffect` para resetear los estados de la UI (`isReset`, `isResetDropdown`) después de un tiempo.
   useEffect(() => {
     if (isReset || isResetDropdown) {
@@ -388,45 +366,13 @@ try {
 //-----------------------------------------
 // 📄 Rendering UI Components /Renderizado del componente
 // Define UI structure / Define la estructura de la UI
-  //-------Top Card elements
+//-------Top Card elements
   const topCardElements = {
     titles: { title1: 'amount', title2: 'account' },
     value: incomeData.amount,
     selectOptions: accountOptions,
   };
-// ---------------------------------------
-// 🧱 RENDER LOGIC
-// ---------------------------------------
-// Separate UI of "checking" and "not authenticated"
-if (isCheckingAuth) {
-  return (
-    <div className='expense loading-screen' style={{ color: 'inherit' }}>
-      <MessageToUser
-        isLoading={true} 
-        messageToUser={messageToUser}
-        variant='tracker'
-        error={ postError || errorSources || fetchedErrorBankAccounts }
-      />
-      <CoinSpinner />
-    </div>
-  );
-}
-
-if (!isAuthenticated) {
-  return (
-    <div className='expense loading-screen' style={{ color: 'inherit' }}>
-      <MessageToUser
-        isLoading={false} // MODIFICACIÓN: no estamos "checking", estamos en estado no-auth
-        messageToUser={messageToUser ?? 'Session not active or expired. Redirecting to sign-in...'} // MODIFICACIÓN: fallback mensaje
-        variant='tracker'
-        error={ postError || errorSources || fetchedErrorBankAccounts }
-      />
-    </div>
-  );
-}
-
-// ----------------------------------------
-// If authenticated and not checking, render the form:
+// -------------------------------
   return (
     <>
       <form className='income' style={{ color: 'inherit' }}>

@@ -54,7 +54,7 @@ export type ExpenseType = {
   account_type: string;
 };
 
-//---------------------------------------------
+//-------------------------------------
 //income
 export type IncomeAccountsType = {
   accounts?: IncomeAccountType[] | null;
@@ -176,8 +176,8 @@ export type DebtType = {
   net_amount: number;
   total_amount_borrowed: number;
   total_amount_lent: number;
-  transaction_count: number;
   currency?: string;
+  // transaction_count: number;
 };
 
 //budget

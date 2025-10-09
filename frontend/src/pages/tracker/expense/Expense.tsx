@@ -79,7 +79,8 @@ const initialExpenseData: ExpenseInputDataType = {
   currency: DEFAULT_CURRENCY,
 };
 const VARIANT_DEFAULT: VariantType = 'tracker';
-// ===============================  ⚛️MAIN COMPONENT: EXPENSE
+// =============================== 
+// ⚛️MAIN COMPONENT: EXPENSE
 // ===============================
 //----Expense Tracker Movement -----
 function Expense(): JSX.Element {
@@ -400,9 +401,7 @@ try {
   } catch (error) {
      const { message, status, isAuthError } = handleError(error);
      
-     if (isAuthError) {
-        return;
-       }
+     if (isAuthError) { return;}
 
      showMessage(`Error (${status}): ${message}` );
 

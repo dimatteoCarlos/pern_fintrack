@@ -50,14 +50,14 @@ export function useFetchLoad<R, D = unknown>({
         withCredentials: true,
         ...(overrideConfig || {}), //overrideConfig must come last to overwrite dynamically the url or anything in the initial requestConfig, even method. overrideConfig?.url || initialUrl,
       };
-      console.log(
-        'desde useFetch requestConfig:',
-        requestConfig,
-        'overrideConfig',
-        overrideConfig,
-        'url inicial:',
-        initialUrl
-      );
+      // console.log(
+      //   'desde useFetch requestConfig:',
+      //   requestConfig,
+      //   'overrideConfig',
+      //   overrideConfig,
+      //   'url inicial:',
+      //   initialUrl
+      // );
 
 // ✅ USO DE authFetch PARA AUTENTICACIÓN
       const response = await authFetch<R>(requestConfig.url!, requestConfig);

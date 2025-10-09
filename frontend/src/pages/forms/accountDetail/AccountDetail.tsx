@@ -96,8 +96,7 @@ useEffect(() => {
   }
   //else keep the initial values
 }, [transactionAccountApiResponse])
-
-//--------------------------------------
+//----------------------------------
 useEffect(()=>{
 if(detailedData){
     setAccountDetail(detailedData)
@@ -115,99 +114,96 @@ useEffect(() => {
 
 }, [accountsData, detailedData,accountId,])
 //----------------------------------
+return (
+  <section className='page__container'>
+    <TopWhiteSpace variant={'dark'} />
+    <div className='page__content'>
+      <div className='main__title--container'>
 
-//===========================================
-  return (
-    <section className='page__container'>
-      <TopWhiteSpace variant={'dark'} />
-      <div className='page__content'>
-        <div className='main__title--container'>
-
-          <Link to={previousRoute} relative='path' className='iconLeftArrow'>
-            <LeftArrowLightSvg />
-          </Link>
-          
-          <div className='form__title'>{capitalize(accountDetail?.account_name).toUpperCase()}</div>
-          
-          {/* <Link to='edit' className='flx-col-center icon3dots'>
-            <Dots3LightSvg />
-          </Link> */}
-          <div id='edit' className='flx-col-center icon3dots'>
-          <Dots3LightSvg />
-          </div>
-
-
-
-        </div>
-
-        <form className='form__box'>
-          <div className='form__container'>
-            <div className='input__box'>
-              <div className='label form__title'>{`Current Balance`}</div>
-
-              <div className='input__container' style={{ padding: '0.5rem' }}>
-                {numberFormatCurrency(accountDetail?.account_balance)}
-              </div>
-            </div>
-
-            <div className='input__box'>
-              <label className='label form__title'>{'Account Type'}</label>
-
-              <p className='input__container' style={{ padding: '0.5rem' }}>
-                {capitalize(accountDetail.account_type_name!.toLocaleString())}
-              </p>
-            </div>
-
-            <div className='account__dateAndCurrency'>
-              <div className='account__date'>
-                <label className='label form__title'>{'Starting Point'}</label>
-                <div
-                  className='form__datepicker__container'
-                  style={{ textAlign: 'center', color:'white' }}
-                >
-                  {formatDateToDDMMYYYY((accountDetail.account_start_date))}
-                
-                </div>
-              </div>
-
-              <div className='account__currency'>
-                <div className='label form__title'>{'Currency'}</div>
-
-                <CurrencyBadge
-                  variant={VARIANT_FORM}
-                  currency={accountDetail.currency_code??DEFAULT_CURRENCY}
-                />
-              </div>
-            </div>
-          </div>
-
-        {/* --- TRANSACTION STATEMENT SECTION --- */}
-        <div className="account-transactions__container "
-        style={{margin:'1rem 0'}}
-        >
-        <div className="period-info">
-          <div className="period-info__label">Period</div>
-          <span className="period-info__dates  ">{formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}{'  '}  /  {'  '} {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}</span>
-        </div>
-
-         <AccountBalanceSummary summaryAccountBalance={summaryAccountBalance}/>
-
-          <div className='presentation__card__title__container '>
-            <CardTitle>{'Last Movements'}</CardTitle>
-          </div>
-
-
-
-         <AccountTransactionsList transactions={transactions} />
-          </div>
-          {/* --- END TRANSACTION STATEMENT SECTION --- */}
-        </form>
+        <Link to={previousRoute} relative='path' className='iconLeftArrow'>
+          <LeftArrowLightSvg />
+        </Link>
         
-        {(isLoading || isLoadingTransactions) && <p>Loading...</p>}
-        {(error|| errorTransactions) && <p>Error fetching account info: {error??errorTransactions}</p>}
+        <div className='form__title'>{capitalize(accountDetail?.account_name).toUpperCase()}</div>
+        
+        {/* <Link to='edit' className='flx-col-center icon3dots'>
+          <Dots3LightSvg />
+        </Link> */}
+        <div id='edit' className='flx-col-center icon3dots'>
+        <Dots3LightSvg />
+        </div>
+
+
+
       </div>
-    </section>
-  );
+
+      <form className='form__box'>
+        <div className='form__container'>
+          <div className='input__box'>
+            <div className='label form__title'>{`Current Balance`}</div>
+
+            <div className='input__container' style={{ padding: '0.5rem' }}>
+              {numberFormatCurrency(accountDetail?.account_balance)}
+            </div>
+          </div>
+
+          <div className='input__box'>
+            <label className='label form__title'>{'Account Type'}</label>
+
+            <p className='input__container' style={{ padding: '0.5rem' }}>
+              {capitalize(accountDetail.account_type_name!.toLocaleString())}
+            </p>
+          </div>
+
+          <div className='account__dateAndCurrency'>
+            <div className='account__date'>
+              <label className='label form__title'>{'Starting Point'}</label>
+              <div
+                className='form__datepicker__container'
+                style={{ textAlign: 'center', color:'white' }}
+              >
+                {formatDateToDDMMYYYY((accountDetail.account_start_date))}
+              
+              </div>
+            </div>
+
+            <div className='account__currency'>
+              <div className='label form__title'>{'Currency'}</div>
+
+              <CurrencyBadge
+                variant={VARIANT_FORM}
+                currency={accountDetail.currency_code??DEFAULT_CURRENCY}
+              />
+            </div>
+          </div>
+        </div>
+
+      {/* --- TRANSACTION STATEMENT SECTION --- */}
+      <div className="account-transactions__container "
+      style={{margin:'1rem 0'}}
+      >
+      <div className="period-info">
+        <div className="period-info__label">Period</div>
+        <span className="period-info__dates  ">{formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}{'  '}  /  {'  '} {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}</span>
+      </div>
+
+        <AccountBalanceSummary summaryAccountBalance={summaryAccountBalance}/>
+
+        <div className='presentation__card__title__container '>
+          <CardTitle>{'Last Movements'}</CardTitle>
+        </div>
+
+        <AccountTransactionsList transactions={transactions} />
+        
+      </div>
+        {/* --- END TRANSACTION STATEMENT SECTION --- */}
+      </form>
+      
+      {(isLoading || isLoadingTransactions) && <p>Loading...</p>}
+      {(error|| errorTransactions) && <p>Error fetching account info: {error??errorTransactions}</p>}
+    </div>
+  </section>
+);
 }
 
 export default AccountDetail;

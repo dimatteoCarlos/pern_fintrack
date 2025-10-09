@@ -7,10 +7,9 @@ import ListPocket from './components/ListPocket';
 function Budget() {
   const originRoute = useLocation().pathname;
   const navigateTo: NavigateFunction = useNavigate();
+// console.log('Budget');
 
-  // console.log('Budget');
-
-  //functions
+//functions
   const createNewCategory = (originRoute: string) => {
     navigateTo(originRoute + '/new_category', {
       state: { previousRoute: originRoute },

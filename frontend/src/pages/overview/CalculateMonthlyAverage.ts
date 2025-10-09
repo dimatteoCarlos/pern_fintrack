@@ -1,7 +1,6 @@
 //monthlyAverage.ts
 //group by type of movement by month and by currency
 //input data structure
-
 import { MonthlyDataType } from '../../types/responseApiTypes';
 
 import { CurrencyType } from '../../types/types';
@@ -25,8 +24,7 @@ type MonthCurrencyTrackerType = {
     };
   };
 };
-
-//----------------------------------------------
+//------------------------------------------
 export function calculateMonthlyAverage(
   arrayData: MonthlyDataType[]
 ): ResultType {
@@ -75,9 +73,8 @@ export function calculateMonthlyAverage(
       result[movementType]![currencyCode]!.monthCounter++;
     }
   }
-
-  // console.log('item', item, 'result', result);
-  // Calcular promedios
+// console.log('item', item, 'result', result);
+// Calcular promedios
   for (const type in result) {
     const movementType = type as MovementType;
     for (const currency in result[movementType]) {
@@ -94,8 +91,7 @@ export function calculateMonthlyAverage(
   // console.log('result', result);
   return result;
 }
-
-//------------------------------------------------
+//-------------------------------------------
 // //example of ResultType data structure
 // type ResultType = {
 //     expense?: {
@@ -124,8 +120,7 @@ export function calculateMonthlyAverage(
 //         eur?: FinancialResultType | undefined;
 //     } | undefined;
 // }
-//------------------------------------------------
-
+//-------------------------------------------
 // //example of api response input data structure
 // const response: FinancialDataRespType = {
 //   status: 200,

@@ -84,21 +84,25 @@ type ResponseDataType ={
 // Base transaction data interface (reused in multiple places)
 export interface TransactionDataType {
   description: string;
-  transaction_type_id: number;
   amount: number;
+  movement_type_id: number;
+  transaction_type_id: number;
   currency_id: number;
   account_id: number;
   source_account_id?: number;
   destination_account_id?: number;
-  movement_type_id: number;
   status: string;
   transaction_actual_date: string | Date;
+  
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 // Extended transaction info (includes additional fields)
 interface TransactionInfoType extends TransactionDataType {
   transaction_id: number;
-  created_at: string;
+  // created_at: string;
+  created_at?: Date;
   amount: number;
 }
 

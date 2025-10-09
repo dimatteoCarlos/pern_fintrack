@@ -1,3 +1,4 @@
+//frontend/src/pages/accounting/Accounting.tsx
 import AccountingBox from './components/AccountingBox';
 import LeftArrowSvg from '../../assets/LeftArrowSvg.svg';
 import { Link, useLocation } from 'react-router-dom';
@@ -10,13 +11,6 @@ import { AccountByTypeResponseType } from '../../types/responseApiTypes.ts';
 import { capitalize } from '../../helpers/functions.ts';
 import { ACCOUNTING_DEFAULT } from '../../helpers/constants.ts';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
-// import { AccountingListType } from '../../types/types.ts';
-// import { CurrencyType } from '../../types/types.ts';
-// import { AccountByTypeResponseType } from '../../types/responseApiTypes.ts';
-// import { useFetch } from '../../hooks/useFetch.ts';
-// import { useMemo } from 'react';
-
-// const ACCOUNTING_DEFAULT: AccountingListType[] = [];
 
 function Accounting() {
   const location = useLocation();
@@ -25,13 +19,11 @@ function Accounting() {
   const user =
     import.meta.env.VITE_USER_ID || 'eacef623-6fb0-4168-a27f-fa135de093e1';
 
-  //DATA FETCHING -------------------------
+  //--DATA FETCHING -------------------------
   const { apiData, isLoading, error } = useFetch<AccountByTypeResponseType>(
     `${url_get_accounting_accounts}&user=${user}`
   );
   //--------------------------------------
-  // console.log('accounting url:', `${url_get_accounting_accounts}&user=${user}`);
-  
   const accounting = useMemo(() => {
     return !error && !isLoading && apiData?.data.accountList.length
       ? apiData.data.accountList.map((acc) => ({

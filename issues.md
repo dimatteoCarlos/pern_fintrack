@@ -1,3 +1,6 @@
+Authentication
+check authentication
+
 
 🚧 Pending Issues and Unresolved Queries
 1. Functionality and Business Logic

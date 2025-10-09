@@ -1,3 +1,5 @@
+//backend/src/fintrack_api/controllers/dashboardController.js
+
 // dashboardTotalBalanceAccounts
 // dashboardTotalBalanceAccountByType
 // dashboardAccountSummaryList

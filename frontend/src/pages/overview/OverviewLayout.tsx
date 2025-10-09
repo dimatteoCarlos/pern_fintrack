@@ -1,18 +1,19 @@
-//OverviewLayout.tsx
+// frontend/src/pages/overview/OverviewLayout.tsx
+import { useEffect, useMemo, useState } from 'react';
 import Overview from './Overview';
 import { BigBoxResult } from './components/BigBoxResult';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader';
 import { url_get_total_account_balance_by_type } from '../../endpoints';
 import { BalanceBankRespType, BalanceIncomeRespType, BalancePocketRespType, DebtorRespType } from '../../types/responseApiTypes';
 import { useFetch } from '../../hooks/useFetch.ts';
-import { useEffect, useMemo, useState } from 'react';
 import CoinSpinner from '../../loader/coin/CoinSpinner';
 import './styles/overview-styles.css';
 import { MessageToUser } from '../../general_components/messageToUser/MessageToUser';
 
+//==MAIN COMPONENT==
 function OverviewLayout() {
- //Saving Goals
-  const userId = import.meta.env.VITE_USER_ID;
+//Saving Goals
+// const userId = import.meta.env.VITE_USER_ID;
   //--states
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastErrorMessage, setLastErrorMessage] = useState<string | null>(null);
@@ -24,26 +25,24 @@ function OverviewLayout() {
     error: incomeBalanceError,
     // status: incomeBalanceStatus,
   } = useFetch<BalanceIncomeRespType>(
-    `${url_get_total_account_balance_by_type}/?type=income_source&user=${userId}`
+    `${url_get_total_account_balance_by_type}/?type=income_source`
   );
   // console.log(
   //   '🚀 ~ OverviewLayout ~ incomeBalanceApiData:',JSON.stringify({
-  //   // incomeBalanceApiData,
-  //   // incomeBalanceError,
+  //   incomeBalanceApiData,
+  //   incomeBalanceError,
   //   // incomeBalanceStatus
   //   })
   // );
-
-  const {
+ const {
     apiData: expenseBalanceApiData,
     isLoading: expenseBalanceIsLoading,
     error: expenseBalanceError,
     // status: expenseBalanceStatus,
   } = useFetch<BalanceIncomeRespType>(
-    `${url_get_total_account_balance_by_type}/?type=category_budget&user=${userId}`
+    `${url_get_total_account_balance_by_type}/?type=category_budget`
   );
-
-  // console.log(
+// console.log(
   //   '🚀 ~ OverviewLayout ~ expenseBalanceApiData:',JSON.stringify({
   //   // expenseBalanceApiData,
   //   // expenseBalanceError,
@@ -58,7 +57,7 @@ function OverviewLayout() {
     error: bankBalanceError,
     // status: bankBalanceStatus,
   } = useFetch<BalanceBankRespType>(
-    `${url_get_total_account_balance_by_type}/?type=bank&user=${userId}`
+    `${url_get_total_account_balance_by_type}/?type=bank`
   );
   //  console.log(
   //   '🚀 ~ OverviewLayout ~ bankBalanceApiData:',JSON.stringify({
@@ -75,7 +74,7 @@ function OverviewLayout() {
     error: investmentBalanceError,
     // status: investmentBalanceStatus,
   } = useFetch<BalanceBankRespType>(
-    `${url_get_total_account_balance_by_type}/?type=investment&user=${userId}`
+    `${url_get_total_account_balance_by_type}/?type=investment`
   );
   //  console.log(
   //   '🚀 ~ OverviewLayout ~ investmentBalanceApiData:',JSON.stringify({
@@ -84,16 +83,15 @@ function OverviewLayout() {
   //   // investmentBalanceError,
   //   investmentBalanceStatus,})
   // );
-  
 //--Pocket accounts total balance
-  const {
-    apiData: pocketBalanceApiData,
-    isLoading: pocketBalanceIsLoading,
-    error: pocketBalanceError,
-    // status: pocketBalanceStatus,
-  } = useFetch<BalancePocketRespType>(
-    `${url_get_total_account_balance_by_type}/?type=pocket_saving&user=${userId}`
-  );
+const {
+  apiData: pocketBalanceApiData,
+  isLoading: pocketBalanceIsLoading,
+  error: pocketBalanceError,
+  // status: pocketBalanceStatus,
+} = useFetch<BalancePocketRespType>(
+  `${url_get_total_account_balance_by_type}/?type=pocket_saving`
+);
   //  console.log(
   //   '🚀 ~ OverviewLayout ~ pocketBalanceApiData:',JSON.stringify({
   //   // pocketBalanceApiData,
@@ -102,15 +100,15 @@ function OverviewLayout() {
   //   // pocketBalanceStatus,})
   // );
 //--debtor accounts total balance
-  const {
-    apiData: debtorBalanceApiData,
-    isLoading: debtorBalanceIsLoading,
-    error: debtorBalanceError,
-    // status: debtorBalanceStatus,
-  } = useFetch<DebtorRespType>(
-    `${url_get_total_account_balance_by_type}/?type=debtor&user=${userId}`
-  );
-//    console.log(
+const {
+  apiData: debtorBalanceApiData,
+  isLoading: debtorBalanceIsLoading,
+  error: debtorBalanceError,
+  // status: debtorBalanceStatus,
+} = useFetch<DebtorRespType>(
+  `${url_get_total_account_balance_by_type}/?type=debtor`
+);
+// console.log(
 //     '🚀 ~ OverviewLayout ~ debtorBalanceApiData:',
 //  JSON.stringify({ 
 //     // debtorBalanceApiData,
@@ -118,43 +116,52 @@ function OverviewLayout() {
 //     // debtorBalanceError,
 //     debtorBalanceStatus,})
 //   );
-  //-------------------------
-  //remeber income account balance is negative (withdraws) and expense accoutn balance is positive (deposits)
-  const { netWorth, totalIncome, totalExpense } = useMemo(() => {
-    //--Parameters to render into bubble info
-    const totalIncome =
-      Math.abs(Number(incomeBalanceApiData?.data?.total_balance) ?? 0) ;
+//-------------------------
+//income account balance is negative (withdraws) and expense account balance is positive (deposits)
+const { netWorth, totalIncome, totalExpense } = useMemo(() => {
+//--Parameters to render into bubble info
+ const totalIncome =
+    Math.abs(Number(incomeBalanceApiData?.data?.total_balance) || 0) ;
 
-    const totalExpense = expenseBalanceApiData?.data?.total_balance ?? 0;
+ const totalExpense = expenseBalanceApiData?.data?.total_balance || 0;
 
-    //--Parameters to calculate net worth
-     const totalBankBalance =
-      (Number(bankBalanceApiData?.data?.total_balance) ?? 0) ;
+//--Parameters to calculate net worth
+//  const totalBankBalance =
+//   (Number(bankBalanceApiData?.data?.total_balance) ?? 0) ;
 
-     const totalPocketBalance =
-      (Number(pocketBalanceApiData?.data?.total_balance) ?? 0) ;
+const totalBankBalance = 
+  (Number(bankBalanceApiData?.data?.total_balance) || 0); 
 
-     const totalInvestmentBalance =
-      (Number(investmentBalanceApiData?.data?.total_balance) ?? 0) ;
+const totalPocketBalance =
+  (Number(pocketBalanceApiData?.data?.total_balance) || 0) ;
 
-     const totalDebtorBalance =
-      (Number(debtorBalanceApiData?.data?.total_debt_balance) ?? 0) ;
-    // console.log("🚀 ~ operatingProfit:", (totalIncome - totalExpense)==0?0:totalIncome-totalExpense;)
+const totalInvestmentBalance =
+  (Number(investmentBalanceApiData?.data?.total_balance) || 0) ;
 
-    const netWorthRaw= (
-      +totalBankBalance+
+const totalDebtorBalance =
+  (Number(debtorBalanceApiData?.data?.total_debt_balance) || 0) ;
+// console.log("🚀 ~ operatingProfit:", (totalIncome - totalExpense)==0?0:totalIncome-totalExpense;)
+
+const netWorthRaw= (
+    +totalBankBalance+
     totalPocketBalance+
     totalInvestmentBalance+
     totalDebtorBalance)
+    
+console.log("🚀 ~ OverviewLayout ~ netWorthRaw:", netWorthRaw, totalBankBalance,
+totalPocketBalance,
+totalInvestmentBalance,
+totalDebtorBalance)
 
-  const netWorth=netWorthRaw==0?0:netWorthRaw
-    return { totalIncome, totalExpense, netWorth };
+const netWorth=netWorthRaw==0?0:netWorthRaw
+
+return { totalIncome, totalExpense, netWorth };
   }, [
     incomeBalanceApiData?.data?.total_balance,
     expenseBalanceApiData?.data?.total_balance,bankBalanceApiData?.data?.total_balance, debtorBalanceApiData?.data?.total_debt_balance, investmentBalanceApiData?.data?.total_balance,pocketBalanceApiData?.data?.total_balance
   ]);
  
-  //---show error message
+//---show error message
   useEffect(() => {
     const error =
     bankBalanceError ||
@@ -164,28 +171,28 @@ function OverviewLayout() {
     pocketBalanceError ||
     debtorBalanceError;
 
-    if (error && error !== lastErrorMessage) {
-      setErrorMessage(error);
-       setLastErrorMessage(error);
+  if (error && error !== lastErrorMessage) {
+    setErrorMessage(error);
+      setLastErrorMessage(error);
 
-      const timer = setTimeout(() => {
-        setErrorMessage(null);
+    const timer = setTimeout(() => {
+      setErrorMessage(null);
 
-        //allows to show the same error later
-           setTimeout(() => {
-            setLastErrorMessage(null);
-          }, 1000);
+      //allows to show the same error later
+          setTimeout(() => {
+          setLastErrorMessage(null);
+        }, 1000);
 
-      }, 2000);
+    }, 2000);
 
-      return () => clearTimeout(timer);
+    return () => clearTimeout(timer);
     }
     }, [incomeBalanceError, expenseBalanceError,bankBalanceError,
     investmentBalanceError,
     pocketBalanceError,
     debtorBalanceError,lastErrorMessage]);
 
- //=====================================   
+ //==================================
   const bigScreenInfo = [
     { title: 'net worth', amount: isNaN(netWorth)?0:netWorth },
     { title: 'income', amount: isNaN(totalIncome)?0:totalIncome },
@@ -203,6 +210,7 @@ const isAnyLoading = bankBalanceIsLoading||
           <TitleHeader />{' '}
         </div>
       </div>
+
       {(isAnyLoading) && (
         <div
           className='loader__container'

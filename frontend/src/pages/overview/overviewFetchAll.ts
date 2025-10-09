@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import  { AxiosError } from 'axios';
 // import  { AxiosResponse } from 'axios';
 import {
   BalancePocketRespType,
@@ -6,8 +6,8 @@ import {
   LastMovementRespType,
 } from '../../types/responseApiTypes';
 import { ApiRespDataType } from './Overview';
+import { authFetch } from '../../auth/utils/authFetch';
 // import { FinancialResultType } from './CalculateMonthlyAverage';
-
 //--------------------
 // Define el tipo para una respuesta exitosa
 type FetchSuccess<T> = {
@@ -33,9 +33,11 @@ type FetchResult<T> = FetchSuccess<T> | FetchError;
 //   MovementPocketTransactions: LastMovementRespType | null;
 //     MovementInvestmentTransactions: LastMovementRespType | null;
 // };
+
 // Las claves válidas que puede tener ApiRespDataType
 //KPIKeyType es un union type de las claves del objeto ApiRespDataType.
 type KPIKeyType = keyof ApiRespDataType;
+
 // Tipo para representar cada endpoint de donde obtener datos KPI
 type EndpointItemType<K extends KPIKeyType> = {
   key: K;
@@ -43,12 +45,12 @@ type EndpointItemType<K extends KPIKeyType> = {
   type: ApiRespDataType[K]; // Solo se usa
   //  como referencia para tipar el resultado
 };
-
+/*
 //type guard Evalúa si ese valor tiene al menos la estructura mínima esperada del tipo que devuelve la api, por ejemplo FinancialDataRespType.
 // TypeScript cambia el tipo de data al tipo FinancialDataRespType dentro del if donde se use.Esto se conoce como type narrowing.
 
 //ex. : data is FinancialDataRespType, Indica que si la función retorna true, TypeScript redefinirá el tipo de data como FinancialDataRespType en el ámbito donde se use.
-
+*/
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isFinancialDataRespType(data: any): data is FinancialDataRespType {
   // console.log('data', data);
@@ -81,19 +83,20 @@ function isBalancePocketRespType(data: any): data is BalancePocketRespType {
     typeof data.data.total_balance === 'number'
   );
 }
-
 //-----------------------------
 // Función que recibe un array de endpoints y retorna los datos de todos
 //[K in KPIKeyType] es una mapped type de TypeScript.
 export async function overviewFetchAll(
   endpoints: EndpointItemType<KPIKeyType>[]
 ): Promise<{ [K in KPIKeyType]: FetchResult<ApiRespDataType[K]> }> {
-  const promises = endpoints.map((endpoint) => axios.get(endpoint.url));
-  // console.log('🚀 ~ promises:', promises);
+  // const promises = endpoints.map((endpoint) => axios.get(endpoint.url));
 
+  const promises = endpoints.map((endpoint) => authFetch<ApiRespDataType[KPIKeyType]>(endpoint.url));
+  // const promises = endpoints.map((endpoint) => axios.get(endpoint.url));
+  
   // Espera a que todas las promesas terminen, sean exitosas o no
   const settledResults = await Promise.allSettled(promises);
-  // console.log('🚀 ~ settledResults:', settledResults);
+  console.log('🚀 ~ settledResults:', settledResults);
    //[status, value.data.data.monthlyAmounts[{amount, ...},...]]
 
   // console.log(
@@ -115,14 +118,14 @@ export async function overviewFetchAll(
     // console.log(endpoints[i]);
 
     const result = settledResults[i]; // Obtenemos {status, value:{data:{data:{accounts, total_target, ...}, message, status}...}. o value.data.data.monthlyAmounts
-    // console.log('🚀 ~ result:', result);
+    console.log('🚀 ~ result:', result);
 
     // Si la promesa fue exitosa
     // console.log('🚀 ~ endpoint:', endpoint);
 
     if (result.status === 'fulfilled') {
       const data = result.value.data;
-      // console.log('🚀 ~ data overviewFetchAll:', i, data);
+      console.log('🚀 ~ data overviewFetchAll:', i, data);
 
       if (endpoint.key === 'SavingGoals' && isBalancePocketRespType(data)) {
         results[endpoint.key] = { status: 'success', data };
@@ -132,7 +135,7 @@ export async function overviewFetchAll(
       ) {
         results[endpoint.key] = { status: 'success', data };
       } else if (
-        (endpoint.key === 'MovementExpenseTransactions' ||
+        ( endpoint.key === 'MovementExpenseTransactions' ||
           endpoint.key === 'MovementDebtTransactions' ||
           endpoint.key === 'MovementIncomeTransactions') ||
           endpoint.key === 'MovementPocketTransactions'||
@@ -142,17 +145,16 @@ export async function overviewFetchAll(
           &&
         isLastMovementRespType(data)
       ) {
-
-        results[endpoint.key] = { status: 'success', data };
+        results[endpoint.key] = { status: 'success', data:data as LastMovementRespType };
       }
     } else {
       results[endpoint.key] = {
         status: 'error',
         error: result.reason as AxiosError,
-      };
-      // console.error('❌ Error response:', result.reason);
+         };
+      console.error('❌ Error response:', result.reason.response);
     }
   }
-  // console.log('📊 Final results object:', results);
+// console.log('📊 Final results object:', results);
   return results;
 }

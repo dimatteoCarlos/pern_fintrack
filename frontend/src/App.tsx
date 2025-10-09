@@ -64,7 +64,6 @@ function App() {
   // 🏠 MAIN APP ROUTES
   { 
     path: '/fintrack',
-    handle: { name: 'Budget Module' }, 
     element: <ProtectedRoute />,
     children: [
  // 🎯 MAIN LAYOUT WITH NESTED ROUTES
@@ -94,17 +93,11 @@ function App() {
             children: [
               { index: true, element: <Expense /> },
             ///fintrack/tracker/
-              { path: 'expense', element: <Expense /> },
-              { path: 'income', element: <Income /> },
-              {
-                path: 'transfer',
-                element: <Transfer />,
-              },
-              {
-                path: 'pnl',
-                element: <PnL/>,
-              },
-              { path: 'debts', element: <Debts /> },
+              {path: 'expense', element:<Expense /> },
+              {path: 'income', element: <Income /> },
+              {path: 'transfer',element: <Transfer />,},
+              {path: 'pnl',element: <PnL/>,},
+              {path: 'debts', element: <Debts /> },
             ],
           },
 
@@ -142,11 +135,11 @@ function App() {
         ],
       },
 
-    // 🧾 STANDALONE PAGES
+    // 🧾 STANDALONE PAGES (PROTECTED)
     // /fintrack
       { path: 'tracker/accounting', element: <Accounting /> },
 
-    // ✨ CREATION FORMS
+    // ✨ CREATION FORMS (PROTECTED)
       //page form new item
       { path: 'budget/new_category', element: <NewCategory /> },
 
@@ -159,7 +152,7 @@ function App() {
 
       { path: 'overview/new_account', element: <NewAccount /> },
 
-      // 🔍 DETAIL VIEW PAGES
+      // 🔍 DETAIL VIEW PAGES (PROTECTED)
       //show detailed item page
       {
         path: 'overview/accounts/:accountId',
@@ -203,7 +196,7 @@ function App() {
       draggable
       pauseOnHover
       // theme="dark"
-      // theme="dark"
+
       transition={Slide}//flip, bounce, zoom, slide
       />
     </>

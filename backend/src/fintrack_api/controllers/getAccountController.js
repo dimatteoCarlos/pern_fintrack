@@ -1,3 +1,4 @@
+// backend/src/fintrack_api/controllers/getAccountController.js
 //getAllAccountsByType, getAccounts, getAccountById, getAccountsByCategory
 
 import pc from 'picocolors';
@@ -32,10 +33,9 @@ export const getAllAccountsByType = async (req, res, next) => {
 
   try {
     const { type } = req.query;
-    const userId = req.body.user ?? req.query.user;
     const accountType = type.trim();
-
-    // console.log(userId, accountType.length, controllerName);
+    const userId = req.user.userId||(req.body.user ?? req.query.user);
+  // console.log(userId, req.user, controllerName);
 
     if (!accountType || !userId) {
       const message = `User ID and account type are required.Try again!.`;
@@ -60,7 +60,7 @@ export const getAllAccountsByType = async (req, res, next) => {
       // return res.status(400).json({ status: 400, message });
       // ERR_RESP(400, message, controllerName);
     }
-    //------------------------------------------
+    //---------------------------------
     const accountTypeQuery = {
       bank: {
         typeQuery: {
@@ -308,7 +308,7 @@ export const getAccountById = async (req, res, next) => {
   // );
 
   try {
-   const userId = req.body.user ?? req.query.user;
+   const userId = req.user.userId||(req.body.user ?? req.query.user);
     if (!userId) {
       const message = 'User ID is required';
       console.warn(pc.blueBright(message));
@@ -321,8 +321,8 @@ export const getAccountById = async (req, res, next) => {
       console.warn(pc[backendColor](message));
       return res.status(400).json({ status: 400, message });
     }
-    //==========================================
-    //--get account basic info and its type name
+//======================================
+//get account basic info and its type name
     const accountsResult = await pool.query({
       text: `SELECT act.account_type_name , ua.*
         FROM user_accounts ua
@@ -364,9 +364,9 @@ export const getAccountById = async (req, res, next) => {
     console.warn(message)
      return RESPONSE(res, 400, message);
     }
-   //====================================
-    //--get account info by account id and account type (catgory_budget, debtor or pocket_saving)
-    //--bank account type
+//====================================
+//--get account info by account id and account type (catgory_budget, debtor or pocket_saving)
+//--bank account type
     
  const accountTypeQuery = {
    //category_budget
@@ -512,7 +512,7 @@ export const getAccountById = async (req, res, next) => {
 //endpoint example: http://localhost:5000/api/fintrack/budget/category/${category_name}?&user=${user}
 
 //example of route:http://localhost:5173/fintrack/budget/category/${category_name}
-//*************************************
+
 export const getAccountsByCategory= async (req, res, next) => {
   console.log(pc[backendColor]('getAccountsByCategory'));
   //   console.log(
@@ -528,25 +528,24 @@ export const getAccountsByCategory= async (req, res, next) => {
   //   req.originalUrl
   // );
 
-  try {
-   const userId = req.body.user ?? req.query.user;
-   
-    if (!userId) {
-      const message = 'User ID is required';
-      console.warn(pc.blueBright(message));
-      return res.status(400).json({ status: 400, message });
+ try {
+  const userId = req.user.userId ||(req.body.user ?? req.query.user);
+  
+  if (!userId) {
+    const message = 'User ID is required';
+    console.warn(pc.blueBright(message));
+    return res.status(400).json({ status: 400, message });
+  }
+  const {categoryName } = req.params;
+
+  if (!categoryName) {
+    const message = `Category name is required.`;
+    console.warn(pc[backendColor](message));
+    return res.status(400).json({ status: 400, message });
     }
-    const {categoryName } = req.params;
-
-    if (!categoryName) {
-      const message = `Category name is required.`;
-      console.warn(pc[backendColor](message));
-      return res.status(400).json({ status: 400, message });
-      }
-   //======================================================
+   //=======================================
     //--get accounts info by category name
-
-    const accountsResult = await pool.query({
+   const accountsResult = await pool.query({
       text: `SELECT ua.*, CAST(ua.account_balance AS FLOAT), CAST(ua.Account_starting_amount AS FLOAT), cba.*,CAST(cba.budget AS FLOAT),
        cur.currency_code,act.account_type_name ,cnt.category_nature_type_name
       FROM user_accounts ua

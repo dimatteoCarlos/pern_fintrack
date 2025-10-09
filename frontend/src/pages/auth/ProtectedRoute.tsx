@@ -9,7 +9,7 @@ const ProtectedRoute = () => {
 
  const { isAuthenticated, isCheckingAuth, showSignInModalOnLoad,setShowSignInModalOnLoad } = useAuth();
 
-// 🚨 1. Lógica para establecer la bandera (MOVIDA A useEffect) 🚨
+// 🚨 1. Lógica para establecer la bandera (in useEffect) 🚨
  useEffect(() => {
     // Si la autenticación ha terminado de chequearse, no estamos autenticados,
     // y el modal AÚN NO se ha marcado para mostrarse.
