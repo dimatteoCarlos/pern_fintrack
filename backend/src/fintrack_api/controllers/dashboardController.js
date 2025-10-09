@@ -29,18 +29,17 @@ const ERR_RESP = (status, message, controllerName = null) => {
   error.status = 400;
   throw error;
 };
-
-//------------------------------------------
+//-------------------------------------
 // get: //http://localhost:5000/api/fintrack/dashboard/balance
 //get the total balance account for each group of account type, for all account types.
 export const dashboardTotalBalanceAccounts = async (req, res, next) => {
   let backendColor = 'green';
   const errorColor = 'red';
   const controllerName = 'dashboardTotalBalanceAccounts';
-  console.log(pc[backendColor]('dashboardTotalBalanceAccounts'));
+  console.log(pc[backendColor](controllerName));
 
   try {
-    const userId = req.body.user ?? req.query.user;
+    const userId =req.user.userId || (req.body.user ?? req.query.user);
 
     if (!userId) {
       return RESPONSE(res, 400, 'User ID is required');
@@ -66,7 +65,7 @@ export const dashboardTotalBalanceAccounts = async (req, res, next) => {
       console.warn(pc[errorColor](message));
       // return RESPONSE(res, 400, message);
       // ERR_RESP(400, message, controllerName);
-      RESPONSE(res, 400, message,)
+      RESPONSE(res, 404, message,)
     }
 
     const accountTotalBalance = accountTotalBalanceResult.rows;
@@ -95,12 +94,12 @@ export const dashboardTotalBalanceAccounts = async (req, res, next) => {
     next(createError(code, message));
   }
 };
-//--------------------------------------
-//======================================
+//----------------------------------
+//==================================
 //-- dashboardTotalBalanceAccountByType
 //-- get the total balance for a specific type account
 //used in:TrackerLayout, OverviewLayout.tsx
-//======================================
+//==================================
 //get enpoint: //http://localhost:5000/api/fintrack/dashboard/balance/type
 //get the sum total balance of a specified account type
 
@@ -122,28 +121,26 @@ export const dashboardTotalBalanceAccounts = async (req, res, next) => {
 export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
   const backendColor = 'cyan';
   const errorColor = 'red';
-
   const controllerName = 'dashboardTotalBalanceAccountByType';
   console.log(pc[backendColor](controllerName));
 
   try {
-    const { type } = req.query; //bank| investment | income_source | category_budget | debtor | pocket_saving
-    const userId = req.body.user ?? req.query.user;
-
-    // console.log(
-    //   '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
-    //   userId,
-    //   req.query,
-    //   'Body',
-    //   req.body,
-    //   'type',
-    //   type
-    // );
-
+   const { type } = req.query; //bank| investment | income_source | category_budget | debtor | pocket_saving
+   const userId = req.user.userId || (req.body.user ?? req.query.user);
+    console.log(
+      '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
+      userId,
+      req.query,
+      'Body',
+      req.body,
+      'type',
+      type
+    );
     const accountType = type;
 
     if (!accountType || !userId) {
       const message = 'User ID and account TYPE are required';
+      console.log('MESSAGE', message)
       // ERR_RESP(400, message, controllerName);
       return RESPONSE(res, 400, message);
     }
@@ -159,16 +156,15 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
       ].includes(accountType)
     ) {
       const message = `${accountType} is not a valid type account. Try again`;
+      console.log('MESSAGE', message)
       ERR_RESP(400, message, controllerName);
       // return RESPONSE(res, 400, message);
     }
 
     const successMsg = `Total balance account of account type ${accountType} successfully calculated`;
-
-//*********************************/
+//****************************/
 //---queries definition
 // TOTAL_BALANCE_QUERY  is used for bank, investment and income_source type account
-
   const TOTAL_BALANCE_QUERY = {
     text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance, CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
       FROM user_accounts ua
@@ -179,8 +175,7 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
 `,
     values: [userId, accountType, 'slack'],
     };
-
-    //-----------
+//-----------
   const TOTAL_BALANCE_AND_GOAL_BY_TYPE = {
   category_budget: {
     text: `
@@ -229,54 +224,54 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
         values: [userId, accountType, 'slack'],
       },
     };
-    //------queries
-    if (
-      accountType == 'bank' ||
-      accountType == 'investment' ||
-      accountType === 'income_source'
-    ) {
-      const query = TOTAL_BALANCE_QUERY;
-      // console.log('🚀 ~ dashboardTotalBalanceAccount ~ query:', query);
+//------queries
+  if (
+    accountType == 'bank' ||
+    accountType == 'investment' ||
+    accountType === 'income_source'
+  ) {
+    const query = TOTAL_BALANCE_QUERY;
+    // console.log('🚀 ~ dashboardTotalBalanceAccount ~ query:', query);
 
-      const accountTotalBalanceResult = await pool.query(query);
+    const accountTotalBalanceResult = await pool.query(query);
 
-      if (accountTotalBalanceResult.rows.length === 0) {
-        const message = `No available accounts of type ${accountType} from total balance account by type`;
-        // ERR_RESP(res, 400, message, controllerName);
-        return RESPONSE(res, 400, message);
-      }
-
-      const data = accountTotalBalanceResult.rows[0];
-      // console.log('datos', data);
-
-      return RESPONSE(res, 200, successMsg, data);
+    if (accountTotalBalanceResult.rows.length === 0) {
+      const message = `No accounts of type "${accountType}"`;
+      // ERR_RESP(res, 400, message, controllerName);
+      return RESPONSE(res, 400, message);
     }
-    //-------
-    //---total balance, target or limit
-    if (
-      accountType == 'category_budget' ||
-      accountType == 'debtor' ||
-      accountType == 'pocket_saving'
-    ) {
-      const query = TOTAL_BALANCE_AND_GOAL_BY_TYPE[accountType];
 
-      const accountTotalBalanceResult = await pool.query(query);
+    const data = accountTotalBalanceResult.rows[0];
+    // console.log('datos', data);
 
-      if (accountTotalBalanceResult.rows.length === 0) {
-        const message = `No available accounts of type ${accountType}`;
-        // ERR_RESP(res, 400, message);
-        return RESPONSE(res, 400, message);
-      }
+    return RESPONSE(res, 200, successMsg, data);
+  }
+  //------------------------------------
+  //---total balance, target or limit
+  if (
+    accountType == 'category_budget' ||
+    accountType == 'debtor' ||
+    accountType == 'pocket_saving'
+  ) {
+    const query = TOTAL_BALANCE_AND_GOAL_BY_TYPE[accountType];
 
-      const data = accountTotalBalanceResult.rows[0];
-      // console.log('datos', data);
+    const accountTotalBalanceResult = await pool.query(query);
 
-      return RESPONSE(res, 200, successMsg, data);
+    if (accountTotalBalanceResult.rows.length === 0) {
+      const message = `No available accounts of type ${accountType}`;
+      // ERR_RESP(res, 400, message);
+      return RESPONSE(res, 400, message);
     }
-//----------------------------------------------
+
+    const data = accountTotalBalanceResult.rows[0];
+    // console.log('datos', data);
+
+    return RESPONSE(res, 200, successMsg, data);
+  }
+//-----------------------------------------
 //in case accountType does not exist
-    const message = `None accounts of type ${accountType} were found`;
-    throw new error(message);
+  const message = `No accounts of type ${accountType} were found`;
+  throw new error(message);
     // return RESPONSE(res, 400, message);
   } catch (error) {
     if (error instanceof Error) {
@@ -298,34 +293,34 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     // return RESPONSE(error, next)
   }
 };
-//===================================================
+//======================================
 //get the total balance for 'category_budget', 'debtor' and 'pocket_saving'. Considering also goals, budget, target,
-
 //get: //http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=&user=
-
 //=====================================
 export const dashboardAccountSummaryList = async (req, res, next) => {
   const backendColor = 'yellow';
   const errorColor = 'red';
+//---functions declaration
   const RESPONSE = (res, status, message, data = null) => {
     console.log(pc[backendColor](message));
     res.status(status).json({ status, message, data });
   };
+//--  
   const controllerName = 'dashboardAccountSummaryList';
   console.log(pc[backendColor](controllerName));
 
   try {
     const { type } = req.query;
-    const userId = req.body.user ?? req.query.user;
+    const userId =req.user.userId || (req.body.user ?? req.query.user);
     const accountType = req.body.type ?? req.query.type;
 
-    // console.log(
-    //   '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
-    //   userId,
-    //   req.query,
-    //   req.body,
-    //   type
-    // );
+    console.log(
+      '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
+      userId,
+      req.query,
+      req.body,
+      type
+    );
 
     if (!accountType || !userId) {
       return RESPONSE(res, 400, 'User ID and account TYPE are required');
@@ -340,7 +335,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
 
     const successMsg = `Summary list of accounts type ${accountType} was successfully calculated`;
 
-    //***********************************************/
+//********************************/
     const SUMMARY_BALANCE_AND_GOAL_BY_TYPE = {
       category_budget: {
         text: `
@@ -447,14 +442,13 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
     // return RESPONSE(error, next)
   }
 };
-//********************************************/
+//**********************************/
 //GET ALL USER TRACKER MOVEMENT TRANSACTIONS BY MOVEMENT_TYPE_NAME WITH A PRE-FIXED CORRESPONDING ACCOUNT TYPE
 //endpoint: http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=${mov_type}&user=${user}
 //usage: to show all transaction by movement name with corresponding accounts.
 //examples:
 // http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=investment&user=51ba...
 // http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=pocket&user=51ba7...
-
 //--------------------------------------
 export const dashboardMovementTransactions = async (req, res, next) => {
   const backendColor = 'yellow';
@@ -465,7 +459,6 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     res.status(status).json({ status, message, data });
   };
   console.log(pc[backendColor]('dashboardMovementTransactions'));
-
   //------------------------------
   //pre-fixed account type for each movement type
   const accountTypeMap = {
@@ -487,16 +480,17 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     } catch (error) {
       console.error(
         'Database query error occurred',
-        process.env.NODE_ENV === 'development' ? console.log(error.stack) : ''
+        process.env.NODE_ENV === 'development' ? console.log(error.stack, error) : ''
       );
     }
   };
   //-------------------------------------
   const { movement } = req.query;
   const movement_type_name = movement === 'debts' ? 'debt' : movement;
-  const userId = req.body.user ?? req.query.user;
+  const userId =req.user.userId || (req.body.user ?? req.query.user);
   // console.log('params:', req.body, req.query);
-  //---------------------------------------
+  console.log('movement', movement, movement_type_name)
+//-----------------------------------
   //date period input
   //take care of ddbb server date
   const today = new Date();
@@ -519,16 +513,16 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   console.log('Fechas usadas:', {
   start: startDate.toISOString(),
   end: endDate.toISOString(),
-
 });
-
-  //later add a function to validate type and movement against the types
-  //!account_type_name ||
+//----------------------------------------
+//later add a function to validate type and movement against the types
+//!account_type_name ||
   if (!movement_type_name || !userId) {
     const message =
       'Missing required parameters: user, account type name, movement type name';
     return RESPONSE(res, 400, message);
   }
+
   if (
     ![
       'expense',
@@ -619,23 +613,23 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           ua.account_starting_amount,
           ua.account_start_date, 
 
-          tr.transaction_id, tr.description,
-          tr.amount, tr.transaction_actual_date
+          tr.transaction_id,
+          tr.description,
+          tr.amount,
+          tr.movement_type_id,
+          tr.transaction_actual_date
 
         FROM transactions tr 
-            JOIN user_accounts ua ON
-              (
-                (tr.amount > 0 AND ua.account_id = tr.destination_account_id)
-                 OR
-                (tr.amount < 0 AND ua.account_id = tr.source_account_id)
-              )
-              
-            JOIN account_types act ON ua.account_type_id = act.account_type_idgrinding noise
+          JOIN user_accounts ua ON
+            tr.account_id = ua.account_id
+                            
+          JOIN account_types act
+           ON ua.account_type_id = act.account_type_id
 
-            WHERE ua.user_id = $1
-              AND (act.account_type_name = $2)
-              AND ua.account_name != $3
-              AND tr.amount !=0
+          WHERE tr.user_id = $1
+           AND (act.account_type_name = $2)
+           AND ua.account_name != $3
+           AND tr.amount !=0
 
             AND (
               (tr.transaction_actual_date BETWEEN $4 AND $5)
@@ -828,20 +822,20 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       );
   }
   //-------------------------------
-  //-------------------------------
   try {
     const movements = await queryFn(queryModel.text, queryModel.values);
-    //console.log('🚀 ~ dashboardMovementTransactions ~ result:', movements);
+    console.log('🚀 ~ dashboardMovementTransactions ~ result:', movements);
 
-    if (movements?.length === 0) {
+    if (movements && movements?.length === 0) {
+      
       const message = `No info encountered for movement: ${movement_type_name} and type: ${accountTypeMap[movement_type_name]}`;
+      console.error('error', message)
       return RESPONSE(res, 400, message);
 
       // return res.status(404).json({
       //   message: `No info encountered for movement: ${movement_type_name} and type: ${accountTypeMap[movement_type_name]}`,
       // });
     }
-
     const message = `${movements.length} transaction(s) found. Period between ${
       startDate.toISOString().split('T')[0]
     } and ${endDate.toISOString().split('T')[0]}`;
@@ -883,26 +877,22 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
     res.status(status).json({ status, message, data });
   };
   console.log(pc[backendColor]('dashboardMovementTransactionsSearch'));
-  //------------------------------
+//---------------------------------------
   try {
-    //-------------------------------------------------
     const today = new Date();
     const _daysAgo = new Date(today);
     _daysAgo.setDate(today.getDate() - 30);
     const daysAgo = _daysAgo.toISOString().split('T')[0];
 
     const { start, end, search } = req.query;
-    const userId = req.user ?? req.query.user;
-
-    //-------------------------------------------------
-
-    if (!userId) {
+    const userId = req.user.id ?? req.query.user;
+//--------------------------------------
+  if (!userId) {
       const message = 'User Id is required';
       return RESPONSE(res, 400, message);
     }
-
-    const startDate = new Date(start || daysAgo);
-    const endDate = new Date(end || today.toISOString().split('T')[0]);
+  const startDate = new Date(start || daysAgo);
+  const endDate = new Date(end || today.toISOString().split('T')[0]);
 
     // console.log(
     //   '🚀 ~ dashboardMovementTransactionByPeriod ~ _daysAgo:',
@@ -915,8 +905,8 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
     //   end,
     //   endDate
     // );
-    //-------------------------------------------------
-    const movementsResult = await pool.query({
+//---------------------------------------
+  const movementsResult = await pool.query({
       text: `
   SELECT mt.movement_type_name, ct.currency_code,ua.*, tr.*, trt.transaction_type_name,
     CAST(tr.amount AS FLOAT), CAST(ua.account_balance AS FLOAT), CAST(ua.account_starting_amount AS FLOAT)
@@ -985,7 +975,7 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
     next(createError(code, message));
   }
 };
-//************************************************/
+//******************************************/
 //GET: TRACKER MOVEMENT TRANSACTIONS. BY USER, MOVEMENT_TYPE_NAME, ACCOUNT_TYPE_NAME, TRANSACTION_TYPE_NAME
 //endpoint: http://localhost:5000/api/fintrack/dashboard/movements/account_type/?start=sd&end=ed&movement=&account_type=&transaction_type=&user=${user}
 //examples:
@@ -1012,7 +1002,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
 
     //input data
     const { start, end, transaction_type, movement, account_type } = req.query;
-    const userId = req.user ?? req.query.user;
+    const userId = req.user.userId ?? req.query.user;
 
     if (!userId || !(movement || transaction_type || account_type)) {
       const message = 'User Id , movement and transaction_type are required';
@@ -1021,22 +1011,11 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
     const startDate = new Date(start || daysAgo);
     const endDate = new Date(end || today.toISOString().split('T')[0]);
 
-    // console.log(
-    //   '🚀 ~ dashboardMovementTransactionByPeriod ~ _daysAgo:',
-    //   req.query,
-    //   'daysAgo',
-    //   daysAgo,
-    //   's',
-    //   start,
-    //   'startDate',
-    //   startDate,
-    //   'e',
-    //   end,
-    //   'endDate:',
-    //   endDate
-    // );
+  // console.log(
+  //   '🚀 ~ dashboardMovementTransactionByPeriod ~ _daysAgo:',
+  //   req.query,   'daysAgo',   daysAgo,   'start',   start,   'startDate',   startDate,   'end',   end,   'endDate:',   endDate );
 
-    const movementsResult = await pool.query({
+  const movementsResult = await pool.query({
       text: `
   SELECT mt.movement_type_name, ct.currency_code, ua.*, tr.*, trt.transaction_type_name,act.account_type_name,
   CAST ( ua.account_starting_amount AS FLOAT),  CAST (tr.amount AS FLOAT),CAST(ua.account_balance AS FLOAT)
@@ -1093,9 +1072,9 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
   } catch (error) {
     if (error instanceof Error) {
       console.error(
-        pc.red(
-          `Error while getting movement transactions in the period between ${startDate} and ${endDate}` //variables should be out of try/catch scope
-          // `Error while getting movement transactions in the period`
+      pc.red(
+        `Error while getting movement transactions in the period between ${startDate} and ${endDate}` //variables should be out of try/catch scope
+        // `Error while getting movement transactions in the period`
         )
       );
       if (process.env.NODE_ENV === 'development') {
