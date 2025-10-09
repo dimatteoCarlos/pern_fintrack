@@ -55,7 +55,7 @@ const defaultCurrency = DEFAULT_CURRENCY;
 const initialNewPocketData: PocketDataType = {
   name: '',
   note: '',
-  target: 0,
+  amount: 0,//target
   desiredDate: new Date().toISOString(),
   currency: defaultCurrency,
 };
@@ -165,7 +165,7 @@ null );
         note: pocketData.note,
         type: 'pocket_saving',
         currency: pocketData.currency ?? defaultCurrency,//default
-        target: pocketData.target ?? initialNewPocketData.target,
+        target: pocketData.amount ?? initialNewPocketData.amount,
         desired_date: pocketData.desiredDate ?? new Date().toISOString(), // ISO format
         // user,
       };
