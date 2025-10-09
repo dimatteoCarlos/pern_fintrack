@@ -1,27 +1,42 @@
-//NewPocket.tsx
+//frontend/src/pages/forms/newPocket/NewPocket.tsx/NewPocket.tsx
+// 🎯 IMPORTS
 import { useEffect, useState } from 'react';
-import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
-import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import { Link, useLocation } from 'react-router-dom';
-import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
-import { validationData } from '../../../validations/utils/custom_validation.ts';
-import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
-import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../styles/forms-styles.css';
+
+// 🛠️ CUSTOM HOOKS & UTILITIES
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
-import { CreatePocketSavingAccountApiResponseType } from '../../../types/responseApiTypes.ts';
-import { url_create_pocket_saving_account } from '../../../endpoints.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
-import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import useAuth from '../../../auth/hooks/useAuth.ts';
+import { validationData } from '../../../validations/utils/custom_validation.ts';
+import { normalizeError } from '../../../helpers/normalizeError.ts';
+
+// 📦 COMPONENTS
+import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
+import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
+import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
-//----Type definitions and constants ----------
+
+// 🖼️ ASSETS
+import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
+
+// 🏷️ TYPES & CONSTANTS
+import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
+import { CreatePocketSavingAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+
+// 🏷️ ENPOINTS
+import { url_create_pocket_saving_account } from '../../../endpoints.ts';
+
+
+// 📋 TYPE DEFINITIONS
 type PocketDataType = {
   name: string;
   note: string;
   currency?: CurrencyType;
-  desiredDate: Date;
-  target: number | '';
-  // amount?: number | '';
+  desiredDate: Date | string;
+  amount: number | '';//target
+
 };
 
 type PocketSavingPayloadType = {
@@ -29,82 +44,89 @@ type PocketSavingPayloadType = {
   note: string;
   type: 'pocket_saving';
   target: number | '';
-  desired_date: Date;
+  desired_date: Date | string;
   currency?: CurrencyType;
-  user: string;
+  user?: string;
   // saved?: number;
 };
-const defaultCurrency = DEFAULT_CURRENCY;
 
+// ⚙️ CONSTANTS & INITIAL STATES
+const defaultCurrency = DEFAULT_CURRENCY;
 const initialNewPocketData: PocketDataType = {
   name: '',
   note: '',
-  // amount: 0,
   target: 0,
-  desiredDate: new Date(),
+  desiredDate: new Date().toISOString(),
   currency: defaultCurrency,
 };
 
 const formDataNumber = { keyName: 'target', title: 'target' };
-
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
 };
 
-//-------------------------
+// 🎯 COMPONENT DEFINITION
 function NewPocket() {
   const location = useLocation();
-  
-  //get userId from stores
-  const user: string = import.meta.env.VITE_USER_ID;
-  //---states------
-  const [pocketData, setPocketData] =
-    useState<PocketDataType>(initialNewPocketData);
+  const navigateTo=useNavigate()
+  const { isAuthenticated } = useAuth()
+//const user: string = import.meta.env.VITE_USER_ID;
 
-  // const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
+// 🏁 STATE MANAGEMENT
+const [formData, setFormData] =
+useState<FormNumberInputType>(initialFormData);
 
-  const [validationMessages, setValidationMessages] = useState<{
-    [key: string]: string;
-  }>({});
+const [pocketData, setPocketData] =
+useState<PocketDataType>(initialNewPocketData);
 
-  const [isReset, setIsReset] = useState<boolean>(false);
+const [validationMessages, setValidationMessages] = useState<{
+[key: string]: string;
+}>({});
 
-  const [formData, setFormData] =
-    useState<FormNumberInputType>(initialFormData);
+const [isReset, setIsReset] = useState<boolean>(false);
+const [messageToUser, setMessageToUser] = useState<{message:string, status?:number} |string | null | undefined>(
+null );
 
-  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
-    null
-  );
-
-  //------------------------------------------------
-  //DATA FETCHING POST
-  //POST: NEW ACCOUNT DATA
-  //endpoint: http://localhost:5000/api/fintrack/account/new_account/pocket_saving
-  const { data, isLoading, error, requestFn } = useFetchLoad<
-    CreatePocketSavingAccountApiResponseType,
+// 🌐 DATA FETCHING HOOK
+//POST: NEW ACCOUNT DATA
+//endpoint: http://localhost:5000/api/fintrack/account/new_account/pocket_saving
+  const { isLoading, error, requestFn,
+    //  ...rest
+       } = useFetchLoad<
+   CreatePocketSavingAccountApiResponseType,
     PocketSavingPayloadType
   >({ url: url_create_pocket_saving_account, method: 'POST' });
-
-  //--------------------------------------
-  //event handler hook for number input handling
-  const { inputNumberHandlerFn } = useInputNumberHandler(
-    setFormData,
-    setValidationMessages,
-    setPocketData
+//  console.log('more data from new pocket creation', rest)
+//-----------------------------------
+// 🎮 EVENT HANDLER HOOKS
+//event handler hook for number input handling
+ const { inputNumberHandlerFn } =      useInputNumberHandler(
+      setFormData,
+      setValidationMessages,
+      setPocketData
   );
+//-----si la ruta esta protegida esto no deberia hacer falta 
+// 🔐 AUTHENTICATION CHECK EFFECT
+ useEffect(()=>{
+  if(!isAuthenticated){
+  setMessageToUser('Please log in to create an account')
+  setTimeout(()=>navigateTo('/auth'), 5000)
+   }
+ }, [isAuthenticated, navigateTo]);
 
-  //functions---
-  // input handling
+//---------------------------------------
+// ✨ INPUT HANDLERS
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
-    if (name === formDataNumber.keyName) {
-      inputNumberHandlerFn(name, value);
-    } else {
-      setPocketData((prev) => ({ ...prev, [name]: value }));
-    }
-  }
 
+  if (name === formDataNumber.keyName) {
+ console.log('formDataNumber.keyName', formDataNumber.keyName,{formDataNumber}, value, )   
+    inputNumberHandlerFn(name, value);
+  } else {
+    setPocketData((prev) => ({ ...prev, [name]: value }));
+     }
+  }
   //---
   function changeDesiredDate(selectedDate: Date): void {
     setPocketData((data) => ({
@@ -113,188 +135,236 @@ function NewPocket() {
       // desiredDate: selectedDate.toDateString(),
     }));
   }
-
-  //--------------------
-  //FORM SUBMISSION ---
+  
+  // 📤 FORM SUBMISSION LOGIC (onSubmitForm)
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
-    // console.log('onSubmitForm');
+ // console.log('onSubmitForm');
 
-    // Form validation
-    const newValidationMessages = { ...validationData(pocketData) };
-    // console.log('mensajes de validacion:', { newValidationMessages });
+// 🔐 AUTHENTICATION CHECK. ANTES DE ENVIAR
+    if (!isAuthenticated) {
+      setMessageToUser('Please login to create an account');
+      return;
+    }
 
-    if (Object.values(newValidationMessages).length > 0) {
+ // ✅ DATA FORM VALIDATION
+   const newValidationMessages = { ...validationData(pocketData) };
+    console.log('mensajes de validacion:', { newValidationMessages });
+
+   if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
       return;
     }
-    //----------------------------------------------------
-    //POST the new pocket data into database
-    //  Prepare and send payload
-
+  
+// 🚀 API REQUEST EXECUTION
+//POST the new pocket data into database
+//Prepare and send payload
     try {
       const payload: PocketSavingPayloadType = {
         name: pocketData.name.toLowerCase().trim(),
         note: pocketData.note,
         type: 'pocket_saving',
-        currency: pocketData.currency ?? defaultCurrency, //by default
+        currency: pocketData.currency ?? defaultCurrency,//default
         target: pocketData.target ?? initialNewPocketData.target,
-        desired_date: pocketData.desiredDate ?? new Date(), // ISO format
-        user,
+        desired_date: pocketData.desiredDate ?? new Date().toISOString(), // ISO format
+        // user,
       };
 
-      const data = await requestFn(payload);
+// ✅ requestFn delivers { data: ResponseType | null, error: string | null }
+// const data = await requestFn(payload);
+  const {data: responseData, error: requestError }= await requestFn(payload);
+// console.log('📦 Response received:', { responseData, requestError }); 
 
-      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-        console.log('Data from New Pocket request:', data);
+// ✅ VALIDATION BEFORE SUBMITTING
+// ❌ REQUEST ERROR HANDLING
+   if (requestError) {
+    console.log('🔴 Network error:', requestError);  
+// Error del request (network, etc.).Error de red/axios
+    setMessageToUser({
+      message: requestError,
+      status: 500
+      });
+      return;
+    }
+
+//✅ HANDLING SERVER RESPONSE (SUCCESS OR ERROR)
+    if(responseData){
+// console.log('📊 Server response status:', responseData.status, responseData.message, responseData.data);
+// ✅ CHECK STATUS CODE
+    if(responseData.status >= 200 && responseData.status<300){
+    //SUCCESS
+    console.log('mensaje', { message:responseData.message || 'New Pocket account successfully created!', status:responseData.status
+    })
+
+    setMessageToUser(
+      { message:responseData.message || 'New Pocket account successfully created!', status:responseData.status
+    })
+
+// 🔄 RESET FORM ON SUCCESS
+    setIsReset(true);
+    setValidationMessages({});
+    setFormData(initialFormData);
+    setPocketData(initialNewPocketData);
+    setPocketData((prev) => ({ ...prev, desiredDate: new Date() }));
+    // setIsDisabledValue(false);
+    // setMessageToUser(null)
+    // setTimeout(() => setIsReset(false), 500); 
+      }else{
+console.error('❌ Server error - setting message')
+      setMessageToUser({message:responseData.message || "Server error when creating new Pocket account", status:responseData.status
+        })
+       }
       }
 
-      // console.log('New pocket data to POST:', { payload });
-      // console.log('check this:', formData, formDataNumber);
-
-      //---------------------------------------------------
-      //resetting form values
-      setIsReset(true);
-      setValidationMessages({});
-      setFormData(initialFormData);
-
-      setPocketData(initialNewPocketData);
-      // setPocketData((prev) => ({ ...prev, desiredDate: new Date() }));
-      setTimeout(() => setIsReset(false), 500);
+if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+    console.log('Data from New Pocket request:', responseData);
+  }
+   
     } catch (error) {
-      console.error('Error when posting data:', error);
+    // 🚨 UNEXPECTED ERROR HANDLING
+console.error('🔥 Unexpected error when submitting new Pocket accoung', error);
+    const { message, status } = normalizeError(error);
+    setMessageToUser({ message, status });
     }
   }
 
-  //-----------------------
+// 🧹 MESSAGE CLEANUP EFFECT
+// Clear message after 5 seconds
   useEffect(() => {
-    if (data && !isLoading && !error) {
-      //success response
-      setMessageToUser(
-        data.message || 'Pocket saving account successfully created!'
-      );
-      // console.log('Received data:', data);
-    } else if (!isLoading && error) {
-      setMessageToUser(error);
+    if (messageToUser) {
+     const timer = setTimeout(() => {
+        setMessageToUser(null);
+      }, 5000);
+      return () => clearTimeout(timer);
     }
+  }, [messageToUser]);
 
-    //resetting message to user
-    const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
-      setMessageToUser(null);
-    }, 5000);
-
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [data, error, isLoading]);
-
-  // //-----------------------
-
+// 🚫 FORM DISABLE STATE
+  const isFormDisabled = !isAuthenticated;
+//-----------------------
+// 🎨 RENDER COMPONENT
   return (
     <section className='newPocket__page page__container'>
       <TopWhiteSpace variant={'dark'} />
       <div className='page__content'>
-        <div className='main__title--container'>
-          <Link
-            to={location.state.previousRoute}
-            relative='path'
-            className='iconLeftArrow'
-          >
-            <LeftArrowSvg />
-          </Link>
-          <div className='form__title'>{'New Pocket'}</div>
-        </div>
-        {/*  */}
-        <form className='form__box'>
-          <div className='container--pocketName form__container'>
-            <div className='input__box'>
-              <label htmlFor='name' className='label form__title'>
-                {'Name'}&nbsp;
-                <span className='validation__errMsg'>
-                  {validationMessages['name']}
-                </span>
-              </label>
+    {/* 📱 HEADER SECTION */}
+    <div className='main__title--container'>
+    <Link to={location.state.previousRoute}
+      relative='path'
+      className='iconLeftArrow'>
+    <LeftArrowSvg />
+    </Link>
 
-              <input
-                type='text'
-                className={`input__container`}
-                placeholder={`${'purpose/name'}`}
-                onChange={inputHandler}
-                name={'name'}
-                value={pocketData['name']}
-              />
-            </div>
+    <div className='form__title'>{'New Pocket'}</div>
+    </div>
 
-            <div className='input__box'>
-              <label htmlFor='note' className='label form__title'>
-                {'Note'}&nbsp;
-                <span className='validation__errMsg'>
-                  {validationMessages['note']}
-                </span>
-              </label>
-              <input
-                type='text'
-                className={`input__container`}
-                placeholder={`${'description'}`}
-                onChange={inputHandler}
-                name={'note'}
-                value={pocketData['note']}
-              />
-            </div>{' '}
-            {/* Target Amount */}
-            <label htmlFor={formDataNumber.keyName} className='form__title1'>
-              {'Target Amount'}
-              <div
-                className='validation__errMsg'
-                style={{
-                  color: validationMessages[formDataNumber.keyName]
-                    ?.toLocaleLowerCase()
-                    .includes('format:')
-                    ? 'var(--lightSuccess'
-                    : 'var(--error',
-                }}
-              >
-                {validationMessages[formDataNumber.keyName]}
-              </div>
-            </label>
-            
-            <input
-              type='text'
-              className={`input__container`}
-              onChange={inputHandler}
-              name={formDataNumber.keyName}
-              placeholder={formDataNumber.keyName}
-              value={formData[formDataNumber.keyName]}
-            />
-            {/* datepicker */}
-            <label className='label '>
-              {'Desired Date'}&nbsp;
-              <span className='validation__errMsg'>
-                {validationMessages['date']}
-              </span>
-            </label>
-            <div className='form__datepicker__container'>
-              <FormDatepicker
-                changeDate={changeDesiredDate}
-                date={pocketData.desiredDate}
-                variant={'form'}
-                isReset={isReset}
-              />
-            </div>
-          </div>
+    {/* 🆕 MENSAJE DE NO AUTENTICADO
+    {!isAuthenticated && (
+    <div className='error-message' style={{ margin: '1rem 0', padding: '1rem' }}>
+      Please log in to create a new account
+    </div>
+      )}      */}
 
-          {/* save button */}
-          <FormSubmitBtn onClickHandler={onSubmitForm}  disabled={isLoading}>save</FormSubmitBtn>
+  {/* 📝 FORM SECTION */}
+  <form className='form__box'>
+    <div className='container--pocketName form__container'>
+  {/* 📛 NAME INPUT */}  
+    <div className='input__box'>
+      <label htmlFor='name' className='label form__title'>
+        {'Name'}&nbsp;
+        <span className='validation__errMsg'>
+          {validationMessages['name']}
+        </span>
+      </label>
 
-        </form>
+      <input
+        type='text'
+        className={`input__container`}
+        placeholder={`${'purpose/name'}`}
+        name={'name'}
+        onChange={inputHandler}
+        value={pocketData['name']}
+        disabled={isFormDisabled}
+      />
+    </div>
+  {/* 📝 NOTE INPUT */}
+    <div className='input__box'>
+      <label htmlFor='note' className='label form__title'>
+        {'Note'}&nbsp;
+       <span className='validation__errMsg'>
+          {validationMessages['note']}
+        </span>
+      </label>
 
-        <MessageToUser
-          isLoading={isLoading}
-          error={error}
-          messageToUser={messageToUser}
-        />
+      <input
+        type='text'
+        className={`input__container`}
+        placeholder={`${'description'}`}
+        onChange={inputHandler}
+        name={'note'}
+        value={pocketData['note']}
+      />
+    </div>
+
+    {/* 💰 TARGET AMOUNT INPUT */}
+    {/* Target Amount */}
+    <label htmlFor={formDataNumber.keyName} className='form__title1'>
+      {'Target Amount'}
+      <div
+        className='validation__errMsg'
+        style={{
+          color: validationMessages[formDataNumber.keyName]
+            ?.toLocaleLowerCase()
+            .includes('format:')
+            ? 'var(--lightSuccess'
+            : 'var(--error',
+        }}
+      >
+       {validationMessages[formDataNumber.keyName]}
       </div>
-    </section>
+    </label>
+    
+    <input
+      className={`input__container`}
+      type='text'
+      name={formDataNumber.keyName}
+      placeholder={formDataNumber.keyName}
+      value={formData[formDataNumber.keyName]}
+      onChange={inputHandler}
+    />
+
+     {/* 📅 DATE PICKER */}
+    <label className='label '>
+      {'Desired Date'}&nbsp;
+      <span className='validation__errMsg'>
+        {validationMessages['date']}
+      </span>
+    </label>
+
+    <div className='form__datepicker__container'>
+      <FormDatepicker
+        changeDate={changeDesiredDate}
+        date={new Date(pocketData.desiredDate) as Date} 
+        variant={'form'}
+        isReset={isReset}
+      />
+    </div>
+
+   </div> {/* END. container--pocketName form__container*/}
+
+   {/* 💾 SUBMIT BUTTON */}
+    <FormSubmitBtn onClickHandler={onSubmitForm}  disabled={isLoading || isFormDisabled}>save</FormSubmitBtn>
+  </form>
+
+  {/* 💬 USER MESSAGES */}
+  <MessageToUser
+    isLoading={isLoading}
+    error={error}
+    messageToUser={messageToUser}
+    variant="form"
+  />
+  </div>
+</section>
   );
 }
 
