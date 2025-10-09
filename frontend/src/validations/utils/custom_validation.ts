@@ -2,12 +2,16 @@ import { capitalize } from "../../helpers/functions";
 
 //src/helpers/functions.ts
 export function validationData<T extends Record<string, unknown>>(
-  stateToValidate: T
+  stateToValidate: T,
+  options?: {
+    nonZeroFields?: string[]; // Campos que NO deben ser 0
+    optionalFields?: string[]; // Campos opcionales
+  }
 ): Record<keyof T, string> {
   const errorValidationMessages: Partial<Record<keyof T, string>> = {};
 
   // Campos que NO deben aceptar 0
-  const nonZeroFields = ['amountX', 'target', 'budget'];
+  const nonZeroFields = options?.nonZeroFields || [];
 
   for (const key in stateToValidate) {
     const value = stateToValidate[key];
@@ -17,6 +21,7 @@ export function validationData<T extends Record<string, unknown>>(
       errorValidationMessages[key] = `* Please provide the ${capitalize(key)}`;
       continue;
     }
+// console.log('key', key)
 
 // Validación adicional para números/additional validation for numbers
 //this accept zero as number input, used by new account creation
