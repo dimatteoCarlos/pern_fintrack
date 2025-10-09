@@ -15,8 +15,7 @@ import {
   getDebtConfig,
   getTransferConfig,
   getPnLConfig,
-  // getInvestmentConfig,
-  // getPocketConfig,
+
 } from '../../../utils/movementInputHandler.js';
 import { recordTransaction } from '../../../utils/recordTransaction.js';
 import { formatDate } from '../../../utils/helpers.js';
@@ -149,8 +148,8 @@ export const transferBetweenAccounts = async (req, res, next) => {
 // ================================
 // DATA EXTRACTION and VALIDATION
 // ================================
-    const userId = req.body.user === '' || !req.body.user ? req.query.user : req.body.user;
-
+    // const userId = req.body.user === '' || !req.body.user ? req.query.user : req.body.user;
+    const userId = req.user.userId
     if (!userId) {
       const message = 'User ID is required';
       console.warn(pc.magentaBright(message));
@@ -221,11 +220,11 @@ export const transferBetweenAccounts = async (req, res, next) => {
             [userId, 'slack', 1, 1, 0, 0, new Date()]
           );
 
-          console.log(
-            'slack account created successfully',
-            'account:',
-            insertResult.rows[0]
-          );
+          // console.log(
+          //   'slack account created successfully',
+          //   'account:',
+          //   insertResult.rows[0]
+          // );
         }
       } catch (error) {
         const message = 'Error creating slack account';
@@ -258,9 +257,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
   } = req.body; //common fields to all tracker movements.
 //---
   // console.log('body', req.body);
-  console.log({'movementName':movementName},'type',transactionTypeName,
-  accountType,
-  date);
+  // console.log({'movementName':movementName},'type',transactionTypeName,
+  // accountType,
+  // date);
 //-----------------
 //From the original design, Not all tracker movements input data form have the same input data structure, so, get the data structure configuration strategy based on movementName
 
@@ -307,8 +306,8 @@ const {
     // );
     if (!movement_type_idResult ||movement_type_idResult.length===0) {
       const message = `movement type id of ${movement_type_name} was not found. Try again with a valid movement type!`;
-      console.warn(pc.magentaBright(message));
-      console.log('🚀 ~ transferBetweenAccounts ~ message:', message);
+      // console.warn(pc.magentaBright(message));
+      // console.log('🚀 ~ transferBetweenAccounts ~ message:', message);
       const err = new Error(message);
       err.status=400;
       throw err;
