@@ -5,38 +5,41 @@ import {
   hashed,
   isRight,
 } from '../../utils/authUtils/authFn.js';
-import jwt from 'jsonwebtoken';
 import { createError } from '../../utils/errorHandling.js';
 import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../db/configDB.js';
 import pc from 'picocolors';
 import { getCurrencyId } from '../fintrack_api/controllers/transactionController.js';
 import { sendSuccessResponse } from '../../utils/authUtils/sendSuccessResponse.js';
+import { setRefreshTokenCookie } from '../../utils/authUtils/cookieConfig.js';
+//=====================
+//FUNCTIONS DECLARATION
+//=====================
+//=================================
+//🎯 TOKEN ERROR HANDLING FUNCTION
+//=================================
+/*
+JWT LIB ERROR MESSAGES
+TokenExpiredError	Ocurre cuando un token ha pasado su fecha de vencimiento (exp claim)
 
-// src/utils/responseUtils.js
+JsonWebTokenError	Un error genérico que indica un problema con el token, como una firma inválida (el token fue alterado) o un formato incorrecto.
+
+NotBeforeError	Sucede si se intenta usar un token antes de su fecha de validez (nbf claim).
+*/
 //===========================
-//--SIGN-UP FOR USER REGISTER
+// 🎯 SIGN-UP FOR USER (REGISTER)
 //===========================
 export const signUpUser = async (req, res, next) => {
-// console.log('sign-up entered');
+  console.log(pc.blueBright('signUpUser'));
   await pool.query('BEGIN');
   try {
+// ✅ GET CREDENTIALS
     const { username, user_firstname, user_lastname, email, currency } =
       req.body;
     const currency_code = currency ?? 'usd';
     // console.log(req.body);
 
-    //--Detect client device type
-    // const isMobile = req.headers['user-agent']?.toLowerCase().includes('mobile')
-    const clientDevice = req.clientDeviceType; //web | mobile | bot |unknown
-    const clientTypeAccess = req.clientTypeAccess; //mobile-app | mobile-browser|tablet-app...
-    console.log(
-      '🚀 ~ signUpUser ~ clientTypeAccess:',
-      clientDevice,
-      clientTypeAccess
-    );
-
-    //--Required fields validation
+// ✅ REQUIRED FIELDS VALIDATION
     if (
       !(
         username &&
@@ -49,22 +52,22 @@ export const signUpUser = async (req, res, next) => {
       return next(
         createError(
           400,
-          'All fields are required. If currency was not provided, usd will be the default currency'
+          'All fields are required.'
         )
       );
     }
-    //---Check existence of entered fields in the data base
+
+// ✅ CHECK EXISTENCE OF USER/EMAIL
     const usernameExists = await pool.query(
       'SELECT 1 FROM users WHERE username=$1 FOR UPDATE',
       [username]
     );
-
-    //FOR UPDATE is used within a transaction, it locks the selected rows, preventing other concurrent transactions from modifying or locking those same rows until the current transaction either commits or rolls back
+    //FOR UPDATE: is used within a transaction, it locks the selected rows, preventing other concurrent transactions from modifying or locking those same rows until the current transaction either commits or rolls back
 
     if (usernameExists.rowCount > 0) {
       return next(createError(409, 'Username already exists.Try Sign in'));
     }
-    //---
+// ✅ CHECK IF EMAIL EXISTS
     const emailExists = await pool.query(
       'SELECT 1 FROM users WHERE email=$1 FOR UPDATE',
       [email]
@@ -75,20 +78,23 @@ export const signUpUser = async (req, res, next) => {
         createError(409, 'Email already exists. Login with sign in button')
       );
     }
-    //---Get password hash
+
+//  ✅ HASH OF PASSWORD
     let hashedPassword = await hashed(req.body.password);
     req.body.password = undefined;
 
-    //--Generate user id and get currency id 
+// ✅ USER CREATION
+// ✅ Generate user id and get currency id 
     const newUserId = uuidv4();
-    //currency_id = 1. currency_code= 'usd'
+    //In db tabl. currency_id = 1. currency_code= 'usd'
     const currencyId = !currency ? 1 : await getCurrencyId(currency);
     console.log('🚀 ~ signUpUser ~ currencyId:', currencyId);
     // console.log('hashedPwd:', hashedPassword.length);
     // console.log('testUUID:', newUserId);
-    //consider adding: google_id, display_name, auth_method, user_contact, user_role_id is 1 by default.
 
-    //---Insert new user into data base
+    //evalute to adding: google_id, display_name, auth_method, user_contact, user_role_id is 1 by default.
+
+// ✅ -Insert new user into data base
     const userData = await pool.query({
       text: `INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id) VALUES ($1, $2, $3,$4,$5, $6, $7, $8) RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id;`,
       values: [
@@ -104,31 +110,30 @@ export const signUpUser = async (req, res, next) => {
     });
     // console.log('pwd:', userData.rows);
     hashedPassword = undefined;
-
-    //Validation of allowed Access Device
-    const allowedDevices = ['mobile', 'web'];
-    if (!allowedDevices.includes(clientDevice)) {
-      return next(
-        createError(400, `Device ${clientDevice} access not allowed`)
-      );
-    }
-
-    //--Create jwt tokens if device access is allowed
     const newUser = userData.rows[0];
+
+// ✅ VALIDATION OF ALLOWED ACCESS DEVICE
+    // const allowedDevices = ['mobile', 'web'];
+    // if (!allowedDevices.includes(clientDevice)) {
+    //   return next(
+    //     createError(400, `Device ${clientDevice} access not allowed`)
+    //   );
+    // }
+//-------------------------------------
+// ✅ CREATE JWT TOKENS
     //here user role is assumed, but role should be taken from role id or must be gotten from the data base
-
-    console.log('check', {newUser})
-
-    const accessToken = createToken(newUser.user_id, newUser.user_role_name);
+    // console.log('check', {newUser})
+    const accessToken = createToken(newUser.user_id, newUser.user_role_name || 'user');
 
     const refreshToken = createRefreshToken(newUser.user_id);
 
-    //Calculate refresh token expiration date
+// ✅ STORE REFRESH TOKEN IN DB
+//Calculate refresh token expiration date
     const refreshTokenExpiry = new Date();
     refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 7);
 
-    //Store refresh token in refresh_tokens db table
-    // const insertedRefreshTokenResult = await pool.query(
+  //Store refresh token in refresh_tokens db table
+  // const insertedRefreshTokenResult = await pool.query(
     await pool.query(
       `INSERT INTO refresh_tokens(user_id, token, expiration_date, user_agent, ip_address) VALUES($1,$2,$3,$4,$5) RETURNING token_id`,
       [
@@ -140,90 +145,74 @@ export const signUpUser = async (req, res, next) => {
       ]
     );
     console.log('🚀 ~ signUpUser ~ newUser:', newUser);
-    // delete newUser.password; delete newUser.password_hashed; delete newUser.user_role_name
 
-    // Response handling
-    const data = {
-      user: { ...newUser, currency: currency_code },
-      userAccessDevice: clientDevice,
-    };
+// ✅ CLEAR SENSITIVE DATA
+    req.body.password = undefined;
+// user.password_hashed = undefined;
+// delete newUser.password; delete newUser.password_hashed; delete newUser.user_role_name
 
-    //Send the response according to access device type
-    if (clientDevice&& clientDevice.trim().toLowerCase() === 'mobile') {
-    //send tokens via header
-     res.setHeader('Authorization', `Bearer ${accessToken}`);
-      res.setHeader('Refresh-Token', refreshToken);
-      res.setHeader('Access-Control-Expose-Headers', 'Authorization, Refresh-Token');
+// ✅ REFRESH TOKEN
+setRefreshTokenCookie(res, refreshToken);
+// res.cookie('refreshToken', refreshToken, {
+//   httpOnly: true,
+//   secure: process.env.NODE_ENV === 'production',
+//   sameSite: 'Lax', // ✅ Funciona para web y mobile
+//   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+//   path: '/api'
+// });
 
-      sendSuccessResponse(
-        res,
-        201,
-        `User successfully subscribed. Username: ${newUser.username}, email: ${newUser.email}, accessed: ${clientDevice}`,
-        data,
-        // accessToken,
-        // refreshToken
-      );
-    } else {
-      res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 1000,
-         sameSite: 'strict'
-      }); 
+// ✅ RESPONSE HANDLING
+// const userResponseData  = {
+//   user: { ...newUser, currency: currency_code ,
+//   user_id: undefined,
+//   password_hashed: undefined},
+//   userAccessDevice: clientDevice,
+// };
 
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge:  1.25 * 60 * 60 * 1000,
-        // maxAge: 7*24 * 60 * 60 * 1000,
-        sameSite: 'strict'
-      });
+const userResponseData = {
+userId: newUser.user_id,
+username: newUser.username,
+email: newUser.email,
+user_firstname: newUser.user_firstname,
+user_lastname: newUser.user_lastname,
+currency: currency_code,
+role: newUser.user_role_name || 'user'
+}
 
-      sendSuccessResponse(
-        res,
-        201,
-        `User successfully subscribed via ${clientDevice}. Username: ${newUser.username}, email: ${newUser.email}`,
-        data
-      );
-    }
+  res.status(201).json({
+    message: 'User successfully registered',
+    accessToken: accessToken,
+    user: userResponseData,
+    expiresIn: 900 // 15 minutos
+  });
 
-    await pool.query('COMMIT');
+  await pool.query('COMMIT');
   } catch (error) {
     await pool.query('ROLLBACK');
-    console.log(pc.red('auth error:', error));
-    next(createError(500, error.message || 'internal signup user error'));
+    console.log(pc.red('Sign-up error:'), error);
+    next(createError(500, error.message || 'internal signup error'));
   }
 };
 //===================================
-//FUNCTION FOR USER SIGN IN (LOG IN SESSION)
+// 🎯 FUNCTION FOR USER SIGN IN (LOG IN SESSION)
 //===================================
 export const signInUser = async (req, res, next) => {
-  const { username, email } = req.body;
-  console.log('signInUser');
-  console.log('req.body', req.body);
+console.log(pc.greenBright('signInUser'));
+const { username, email } = req.body;
+// console.log('req.body', req.body);
 
-  //Client device detection
-  const clientDevice = req.clientDeviceType; //web | mobile | bot |unknown
-  const clientTypeAccess = req.clientTypeAccess; //mobile-app | mobile-browser|tablet-app...
-  console.log(
-    '🚀 ~ signUpUser ~ clientTypeAccess:',
-    clientDevice,
-    clientTypeAccess
-  );
-
-  await pool.query('BEGIN');
+await pool.query('BEGIN');
   try {
-    //----
+// ✅ VALIDATION
     if (!(username && email && req.body.password)) {
       return next(
         createError(400, 'username, email and password, are required')
       );
     }
-
-    //get user data from db
+// ✅ GET USER DATA FROM DB
     const userData = await pool
       .query({
-        text: `SELECT u.username, u.email, u.password_hashed, u.user_id ,u.user_firstname, u.user_lastname, u.user_role_id,
+        text: `SELECT u.username, u.email, u.password_hashed, u.user_id, u.user_firstname, u.user_lastname, u.user_role_id,
         ur.user_role_name,
         ct.currency_code as currency FROM users u
 
@@ -234,243 +223,193 @@ export const signInUser = async (req, res, next) => {
       })
       .then((res) => res.rows);
 
-    console.log('userdata:', userData);
+// console.log('userdata:', userData);
 
-//---User validation existence in db
+// ✅ USER VALIDATION EXISTENCE IN DB
     if (!userData[0]) {
-      // 400 (Bad Request) user exists but invalid.
-      return next(createError(400, 'User not found'));
+     return next(createError(404, 'User does not exist. Try sign up.'));
     }
-
-    //Validation of multiple users with the same information
+//Validation of multiple users with the same information
     if (userData.length > 1) {
       console.warn(
         'Accounts info:',
-        'There are more than one user with these information'
+        'There are more than one user with the same information'
       );
       return next(
-        createError(400, 'more than one user account found. Address to admin.')
+        createError(400, 'Multiple accounts found. Contact administrator.')
       ); //then what to do in this case?
     }
-
     const user = userData[0];
 
-    //cross-verification of username/email
+// ✅ CROSSED-VERIFICATION OF USERNAME/EMAIL
     if (userData.length > 0) {
       if (
         (username === user.username && user.email !== email) ||
         (username !== user.username && user.email === email)
       ) {
-        console.warn('username / email mismatch');
+        console.warn('username and email do not correspond');
         return next(createError(400, 'username/email mismatch'));
       }
     }
 
-    //Check password
-    // console.log(req.body.password, userData[0].password_hashed);
+// ✅ CHECK PASSWORD
+// console.log(req.body.password, userData[0].password_hashed);
     const isPasswordCorrect = await isRight(
       req.body.password,
       user.password_hashed
     );
-    // console.log("🚀 ~ signInUser ~ isPasswordCorrect:", isPasswordCorrect)
-
-    if (!isPasswordCorrect) {
-      console.warn('no authenticated:', 'wrong password');
-      return next(createError(401, 'Invalid password'));
+// console.log("🚀 ~ signInUser ~ isPasswordCorrect:", isPasswordCorrect)
+  if (!isPasswordCorrect) {
+    console.warn('no authenticated:', 'wrong password');
+    return next(createError(401, 'Invalid password'));
     }
-    // console.log(user.user_id, user.user_role_name)
+// console.log(user.user_id, user.user_role_name)
 
-    //--Validate if access device is allowed
-    //Allowed Acces
-    const allowedDevices = ['mobile', 'web'];
-    if (!allowedDevices.includes(clientDevice)) {
-      return next(
-        createError(400, `Device ${clientDevice} access not allowed`)
-      );
-    }
+// ✅ VALIDATE IF ACCESS DEVICE IS ALLOWED
+//Allowed Acces
+// const allowedDevices = ['mobile', 'web'];
+// if (!allowedDevices.includes(clientDevice)) {
+//   return next(
+//     createError(403, `Device ${clientDevice} access not allowed`)
+//   );
+// }
+ //-------------------------------- 
+// ✅ TOKENS GENERATION
+// Generate JWT tokens with user role
+  const accessToken = createToken(user.user_id, user.user_role_name);
+  const refreshToken = createRefreshToken(user.user_id);
 
-    // Calculate the expiration date for the refresh token (e.g., 7 days from now)
-    const refreshTokenExpirationDate = new Date();
-    refreshTokenExpirationDate.setDate(
-      refreshTokenExpirationDate.getDate() + 7
-    );
-
-    //****MODIFICAR LA FN DE CREAR TOKENS PARA INCLUIR LA FECHA DE EXPIRACION DE LOS TOKENS ******/
-
-  // Generate JWT tokens with user role
-    const accessToken = createToken(user.user_id, user.user_role_name);
-    const refreshToken = createRefreshToken(user.user_id);
-
-    // Store the refresh token in the database
-    await pool.query(
-      'INSERT INTO refresh_tokens (user_id, token, expiration_date, user_agent, ip_address) VALUES ($1, $2, $3, $4, $5) RETURNING token_id',
-      [
-        user.user_id,
-        refreshToken,
-        refreshTokenExpirationDate,
-        req.headers['user-agent'],
-        req.ip,
-      ]
-    );
-    // console.log( accessToken, refreshToken);
-    //Clear sensitive data
+// ✅ STORE REFRESH TOKEN IN DB
+// Calculate the expiration date for the refresh token (e.g., 7 days from now)
+// expiration date deben coincidir con los que se crearon 
+  const refreshTokenExpirationDate = new Date();
+  refreshTokenExpirationDate.setDate(refreshTokenExpirationDate.getDate() + 7);
+// Store the refresh token in the database
+ await pool.query(
+  'INSERT INTO refresh_tokens (user_id, token, expiration_date, user_agent, ip_address) VALUES ($1, $2, $3, $4, $5) RETURNING token_id',
+  [
+    user.user_id,
+    refreshToken,
+    refreshTokenExpirationDate,
+    req.headers['user-agent'],
+    req.ip,
+  ]
+  );
+// console.log( accessToken, refreshToken);
+// ✅ CLEAR SENSITIVE DATA
     req.body.password = undefined;
     user.password_hashed = undefined;
 
-    //Response Handling
-    const data = {
-      user: { ...user },
-      userAccessDevice: clientDevice,
-    };
+//✅ COOKIE for REFRESH TOKEN
+    setRefreshTokenCookie(res, refreshToken);
 
-    //Send response according access device type
-    if (clientDevice && clientDevice.trim().toLowerCase() === 'mobile') {
-      sendSuccessResponse(
-        res,
-        200,
-        `User ${
-          user.username || user.email
-        }, successfully logged in with ${clientDevice}`,
-        data,
-        accessToken,
-        refreshToken
-      );
-    } else if (clientDevice && clientDevice.trim().toLowerCase() === 'web') {
+// ✅ RESPONSE WITH accessToken
+// const userResponseData  = {
+//   user: { ...user },
+//   userAccessDevice: clientDevice,
+// };
 
-      res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 1000,
-        sameSite: 'strict',
-      });
+  const userResponseData = {
+    user_id: user.user_id,
+    username: user.username,
+    email: user.email,
+    user_firstname: user.user_firstname,
+    user_lastname: user.user_lastname,
+    user_role_name: user.user_role_name,
+    currency: user.currency
+  };
 
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV == 'production',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
-        sameSite: 'strict',
-      });
+  res.status(200).json({
+  message: 'Login successful',
+  accessToken: accessToken,
+  user: userResponseData,
+  expiresIn: 900 // 15 minutos
+  });
 
-      sendSuccessResponse(
-        res,
-        200,
-        `Login successful via ${clientDevice}`,
-        data
-      );
-      await pool.query('COMMIT');
-    } else {
-      await pool.query('ROLLBACK');
-      console.error(pc.red('Login error:'), error);
-      throw new Error('no mobile nor web site access');
-    }
-
-    console.log(
-      'User is logged in',
-      username,
-      email,
-      userData[0].user_id,
-      req.body.password,
-      userData[0].password_hashed,
-      user.role,
-      'data:',
-      data
-    );
-
-  } catch (error) {
+  // console.log(
+  //   'User is logged in',
+  //     username,
+  //     email,
+  //     userData[0].user_id,
+  //     req.body.password,
+  //     userData[0].password_hashed,
+  //     user.role,
+  //     'userResponseData:',
+  //     userResponseData
+  //   );
+  await pool.query('COMMIT');
+    } catch (error) {
     await pool.query('ROLLBACK');
-    console.log('auth error:', error);
+    console.log('Sign-in error:', error);
     next(createError(500, error.message || 'internal sign-in user error'));
   }
 };
-
 // =================================
-// FUNCTION TO CLOSE THE USER SESSION (SIGN OUT or LOGOUT)
+// 🎯 SIGN-OUT USER 
+// =================================
 // Sign-out with token revocation
-// =================================
 export const signOutUser = async (req, res, next) => {
+console.log(pc.yellow('signOutUser'));
+// console.log('req',req.cookies,  )
   const refreshTokenFromClient =
-    req.body.refreshToken || req.cookies.refreshToken;
-  const clientDevice = req.clientDeviceType; //web | mobile | bot |unknown
+req.cookies.refreshToken ||    req.body.refreshToken;
+// console.log({refreshTokenFromClient})
+// const clientDevice = req.clientDeviceType; //web | mobile | bot |unknown
 
-  // if (!refreshTokenFromClient) {
-  //   return next(createError(400, 'Refresh token is required for logout.'));
-  // }
-
-  try {
-    //delete (REVOKE) the refresh token from the database if provided
-
-    if (refreshTokenFromClient) {
+  try { 
+  let revokeSuccess = false
+  let revokeMessage = `No refresh token provided for revocation`
+  
+// ✅ REVOKING REFRESH TOKEN
+  if (refreshTokenFromClient) {
+   try{
       const result = await pool.query(
         `UPDATE refresh_tokens
          SET revoked = TRUE
          WHERE token = $1`,
         [refreshTokenFromClient]
       );
+      revokeSuccess = result.rowCount > 0;
+// console message for debugging
+      revokeMessage =revokeSuccess? 
+       'Refresh token successfully revoked' : 
+       'Refresh token not found for revocation';
+      console.log(pc.yellow(revokeMessage));
 
-      if (result.rowCount > 0) {
-        console.log(
-          pc.yellow(
-            `Refresh token "${refreshTokenFromClient.substring(
-              0,
-              10
-            )}..." revoked for logout.`
-          )
-        );
-      } else {
-        console.log(
-          pc.yellow(
-            `Refresh token "${refreshTokenFromClient.substring(
-              0,
-              10
-            )}..." not found on server during logout.`
-          )
-        );
-      }
-
-      // const result = await pool.query(
-      //   'DELETE FROM refresh_tokens WHERE token = $1',
-      //   [refreshTokenFromClient]
-      // );
+      } catch(revokeError){
+      console.error('Error revoking token:', revokeError);
+      revokeMessage = 'Error during token revocation';
     }
-
-    //Clearing the cookies on the client-side (for web)
-    if (req.clientDeviceType !== 'mobile') {
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
-
-    //Double check
-      res.cookie('accessToken', '', {
-        expires: new Date(0),//✅ Fecha en el pasado = eliminar cookie
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-      });
-      res.cookie('refreshToken', '', {
-        expires: new Date(0),
-        httpOnly: true,
-        secure:process.env.NODE_ENV === 'production'
-      });
-    }
-
-    sendSuccessResponse(res, 200, 'Logged out successfully.');
-  } catch (error) {
-    console.log(pc.red('auth error:', error));
-    next(createError(500, error.message || 'Logout failed'));
   }
-};
+// ✅ CLEARING OF COOKIES/HEADERS 
+    res.clearCookie('accessToken',{path:'/api'});
+    res.clearCookie('refreshToken',{path:'/api'});
 
-//================================
-// VERIFY AUTH STATUS FOR WEB ACCESS. REQUESTED FROM FRONTEND
-//================================
-export const verifyAuthStatus = async (req, res) => {
-  const token = req.cookies.accessToken; //for web access
+// ✅ RESPONSE HANDLING ()
+    if (revokeSuccess) {
+     sendSuccessResponse(res, 200, 'Logged out successfully. Token revoked.');
+      console.log('Logged out successfully. Token revoked.')
+      } else if (refreshTokenFromClient) {
+        // ❌ Token exists but revoking failed / Token proporcionado pero revocación falló
+        const message = 'Logged out with issues: ' + revokeMessage + '. Please login again to ensure security.'
 
-  if (!token)
-    return res.status(401).json({ status: 401, message: 'Token not provided' });
+        console.warn(message)
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err)
-      return res.status(401).json({ message: 'Token is invalid or expired' });
-
-    res.status(200).json({ message: 'Token is valid', userData: decoded });
-  });
-};
+        sendSuccessResponse(res, 200, message);
+        } else {
+          // ℹ️ No token but completed logout anyway / No había token para revocar, pero logout completado
+           const message ='Logged out successfully. No active session found to revoke.'
+          console.error(message)
+          sendSuccessResponse(res, 200,message);
+        }
+  } catch (error) {
+// ✅ 4. FALLBACK: Asegurar limpieza incluso en errores
+   console.error(pc.red('Error during logout:', error));
+    
+// Contingency cleaning / limpieza de emergencia
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    const message ='Logged out with some technical issues. Please login again to ensure complete security.'
+    sendSuccessResponse(res, 200, message);
+  }
+}
