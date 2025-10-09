@@ -1,7 +1,7 @@
 //frontend/src/pages/forms/newPocket/NewPocket.tsx/NewPocket.tsx
 // 🎯 IMPORTS
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, } from 'react-router-dom';
 import '../styles/forms-styles.css';
 
 // 🛠️ CUSTOM HOOKS & UTILITIES
@@ -28,15 +28,13 @@ import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 // 🏷️ ENPOINTS
 import { url_create_pocket_saving_account } from '../../../endpoints.ts';
 
-
 // 📋 TYPE DEFINITIONS
 type PocketDataType = {
   name: string;
   note: string;
   currency?: CurrencyType;
   desiredDate: Date | string;
-  amount: number | '';//target
-
+  amount?: number | '';
 };
 
 type PocketSavingPayloadType = {
@@ -55,21 +53,23 @@ const defaultCurrency = DEFAULT_CURRENCY;
 const initialNewPocketData: PocketDataType = {
   name: '',
   note: '',
-  amount: 0,//target
+  amount: '',  
   desiredDate: new Date().toISOString(),
   currency: defaultCurrency,
 };
 
-const formDataNumber = { keyName: 'target', title: 'target' };
+const formDataNumber = { keyName: 'amount', title: 'target' };
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
 };
-
+// =============================
 // 🎯 COMPONENT DEFINITION
+// =============================
 function NewPocket() {
-  const location = useLocation();
-  const navigateTo=useNavigate()
-  const { isAuthenticated } = useAuth()
+const location = useLocation();
+// const navigateTo=useNavigate()
+//-------------------------------------
+const { isAuthenticated, isCheckingAuth } = useAuth();
 //const user: string = import.meta.env.VITE_USER_ID;
 
 // 🏁 STATE MANAGEMENT
@@ -90,9 +90,9 @@ null );
 // 🌐 DATA FETCHING HOOK
 //POST: NEW ACCOUNT DATA
 //endpoint: http://localhost:5000/api/fintrack/account/new_account/pocket_saving
-  const { isLoading, error, requestFn,
+const { isLoading, error, requestFn,
     //  ...rest
-       } = useFetchLoad<
+      } = useFetchLoad<
    CreatePocketSavingAccountApiResponseType,
     PocketSavingPayloadType
   >({ url: url_create_pocket_saving_account, method: 'POST' });
@@ -105,14 +105,17 @@ null );
       setValidationMessages,
       setPocketData
   );
-//-----si la ruta esta protegida esto no deberia hacer falta 
-// 🔐 AUTHENTICATION CHECK EFFECT
- useEffect(()=>{
-  if(!isAuthenticated){
-  setMessageToUser('Please log in to create an account')
-  setTimeout(()=>navigateTo('/auth'), 5000)
-   }
- }, [isAuthenticated, navigateTo]);
+//-------------------------
+// 🧹 MESSAGE CLEANUP EFFECT
+// Clear message after 5 seconds
+  useEffect(() => {
+    if (messageToUser) {
+     const timer = setTimeout(() => {
+        setMessageToUser(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [messageToUser]);
 
 //---------------------------------------
 // ✨ INPUT HANDLERS
@@ -121,7 +124,7 @@ null );
     const { name, value } = e.target;
 
   if (name === formDataNumber.keyName) {
- console.log('formDataNumber.keyName', formDataNumber.keyName,{formDataNumber}, value, )   
+ console.log('formDataNumber.keyName', formDataNumber.keyName,formDataNumber)   
     inputNumberHandlerFn(name, value);
   } else {
     setPocketData((prev) => ({ ...prev, [name]: value }));
@@ -136,20 +139,22 @@ null );
     }));
   }
   
-  // 📤 FORM SUBMISSION LOGIC (onSubmitForm)
+// 📤 FORM SUBMISSION LOGIC (onSubmitForm)
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
  // console.log('onSubmitForm');
 
-// 🔐 AUTHENTICATION CHECK. ANTES DE ENVIAR
+// 🔐 AUTHENTICATION CHECK.BEFORE SUBMISSION
     if (!isAuthenticated) {
-      setMessageToUser('Please login to create an account');
+      setMessageToUser('Your session has expired. Please log in again.');
+      // navigateTo('/auth');
       return;
     }
 
  // ✅ DATA FORM VALIDATION
-   const newValidationMessages = { ...validationData(pocketData) };
-    console.log('mensajes de validacion:', { newValidationMessages });
+   const newValidationMessages = { ...validationData(pocketData, { 
+    nonZeroFields: ['amount']}) };
+// console.log('mensajes de validacion:', { newValidationMessages });
 
    if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
@@ -159,19 +164,18 @@ null );
 // 🚀 API REQUEST EXECUTION
 //POST the new pocket data into database
 //Prepare and send payload
-    try {
-      const payload: PocketSavingPayloadType = {
+   try {
+     const payload: PocketSavingPayloadType = {
         name: pocketData.name.toLowerCase().trim(),
         note: pocketData.note,
         type: 'pocket_saving',
         currency: pocketData.currency ?? defaultCurrency,//default
-        target: pocketData.amount ?? initialNewPocketData.amount,
+        target: pocketData.amount !== undefined && pocketData.amount !== '' ? pocketData.amount : '',
         desired_date: pocketData.desiredDate ?? new Date().toISOString(), // ISO format
         // user,
       };
 
 // ✅ requestFn delivers { data: ResponseType | null, error: string | null }
-// const data = await requestFn(payload);
   const {data: responseData, error: requestError }= await requestFn(payload);
 // console.log('📦 Response received:', { responseData, requestError }); 
 
@@ -188,7 +192,7 @@ null );
     }
 
 //✅ HANDLING SERVER RESPONSE (SUCCESS OR ERROR)
-    if(responseData){
+  if(responseData){
 // console.log('📊 Server response status:', responseData.status, responseData.message, responseData.data);
 // ✅ CHECK STATUS CODE
     if(responseData.status >= 200 && responseData.status<300){
@@ -219,8 +223,7 @@ console.error('❌ Server error - setting message')
 if (import.meta.env.VITE_ENVIRONMENT === 'development') {
     console.log('Data from New Pocket request:', responseData);
   }
-   
-    } catch (error) {
+ } catch (error) {
     // 🚨 UNEXPECTED ERROR HANDLING
 console.error('🔥 Unexpected error when submitting new Pocket accoung', error);
     const { message, status } = normalizeError(error);
@@ -228,19 +231,39 @@ console.error('🔥 Unexpected error when submitting new Pocket accoung', error)
     }
   }
 
-// 🧹 MESSAGE CLEANUP EFFECT
-// Clear message after 5 seconds
-  useEffect(() => {
-    if (messageToUser) {
-     const timer = setTimeout(() => {
-        setMessageToUser(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [messageToUser]);
 
 // 🚫 FORM DISABLE STATE
   const isFormDisabled = !isAuthenticated;
+
+//================================================
+// 🛡️ AUTHENTICATION GUARD - PREVENT RENDERING IF NOT AUTHENTICATED
+  if (isCheckingAuth) {
+    return (
+      <section className='newPocket__page page__container'>
+        <TopWhiteSpace variant={'dark'} />
+        <div className='page__content'>
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <div>Checking authentication...</div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // 🚫 REDIRECT IF NOT AUTHENTICATED - ADDITIONAL PROTECTION LAYER
+  if (!isAuthenticated) {
+    return (
+      <section className='newPocket__page page__container'>
+        <TopWhiteSpace variant={'dark'} />
+        <div className='page__content'>
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <h3>Authentication Required</h3>
+            <p>Please log in to create a new Pocket account.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }  
 //-----------------------
 // 🎨 RENDER COMPONENT
   return (
