@@ -70,21 +70,26 @@ export const url_get_account_by_id: string = BASE_URL + '/account';
 //---GET ACCOUNT TRANSACTIONS BY ACCOUNT ID
 //--endpoint: http://localhost:5000/api/fintrack/account/transactions/:account_id/?start=&end=&user=c109eb15-4139-43b4-b081-8fb9860588af
 export const url_get_transactions_by_account_id: string = BASE_URL + '/account/transactions';
-//----------------------------------------
+//-----------------------------------
 //----GET ALL ACCOUNTS INFO OF A SPECIFIC ACCOUNT TYPE
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
 //controller:getAllAccountsByType
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${account_type_name}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
 //Example:for expense tracker, types used are: bank or category_budget,
 export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
-
+//---------------------------------
 //get user accounts info by account prefixed type_name bank and investment except slack account
 //for accounting and overview components
 //http://localhost:5000/api/fintrack/account/type/?type=bankAndInvestment
-//example for expense tracker, types used are: bank and category_budget,
+//example for expense tracker, types used are: bank and investment,
 export const url_get_accounting_accounts: string =
   BASE_URL + '/account/type/?type=bank_and_investment';
-
+//----------------------------------
+// get all the available accounts, all types,  but slack acount
+//endpoint: http://localhost:5000/api/fintrack/account/allAccounts/?
+export const url_get_all_accounting_accounts: string =
+  BASE_URL + '/account/allAccounts/';
+//----------------------------------
 //get the sum of balance of all accounts of one account type
 //example: total balance is the sum of all bank accounts balance
 //for pocket and category budget also get the total goal or budget respectively
