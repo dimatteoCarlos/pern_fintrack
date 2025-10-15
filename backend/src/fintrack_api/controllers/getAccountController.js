@@ -161,8 +161,11 @@ JOIN debtor_accounts ps ON ua.account_id = ps.account_id
 
       bank_and_investment: {
         typeQuery: {
-          text: `SELECT ua.account_id, ua.account_name, CAST(ua.account_balance AS FLOAT), ct.currency_code, act.account_type_id, act.account_type_name,
-          CAST(ua.account_starting_amount AS FLOAT),  ua.account_start_date
+          text: `SELECT ua.account_id, ua.account_name,
+           CAST(ua.account_balance AS FLOAT),
+            ct.currency_code, act.account_type_id, act.account_type_name,
+          CAST(ua.account_starting_amount AS FLOAT),
+            ua.account_start_date
           FROM user_accounts ua
           JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON ua.currency_id = ct.currency_id
@@ -220,7 +223,7 @@ JOIN debtor_accounts ps ON ua.account_id = ps.account_id
   // const { code: sqlCode, message: sqlMsg } = handlePostgresError(error);
 };
 
-//***************************************************/
+//***********************************/
 // get all the available accounts, all types,  but slack acount
 //endpoint: http://localhost:5000/api/fintrack/account/allAccounts/?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c
 
@@ -229,7 +232,7 @@ export const getAccounts = async (req, res, next) => {
 
   try {
     // const { user: userId } = req.query;
-    const userId = req.body.user ?? req.query.user;
+    const userId = req.user.userId ?? req.body.user ;
 
     if (!userId) {
       const message = `User ID is required. Try again.`;
@@ -240,7 +243,9 @@ export const getAccounts = async (req, res, next) => {
     const accountTypeQuery = {
       all: {
         typeQuery: {
-          text: `SELECT ua.*,  ct.currency_code,  act.account_type_name, CAST(ua.account_balance AS FLOAT), CAST(ua.account_starting_amount AS FLOAT)   
+          text: `SELECT ua.*,  ct.currency_code,  act.account_type_name,
+           CAST(ua.account_balance AS FLOAT),
+           CAST(ua.account_starting_amount AS FLOAT)   
        FROM user_accounts ua
        JOIN account_types act ON ua.account_type_id = act.account_type_id
        JOIN currencies ct ON ua.currency_id = ct.currency_id
@@ -252,7 +257,7 @@ export const getAccounts = async (req, res, next) => {
         },
       },
     };
-    //check account type on ddbb
+    //CHECK ACCOUNT TYPE ON DDBB
     //es necesario chequear si el usuario tiene ese tipo de cuentas?
     const accountListResult = await pool.query(
       accountTypeQuery['all'].typeQuery
@@ -272,14 +277,14 @@ export const getAccounts = async (req, res, next) => {
     res.status(200).json({ status: 200, message, data });
   } catch (error) {
     if (error instanceof Error) {
-      console.error(pc.red('Error while getting accounts by account type'));
+      console.error(pc.red('Error while getting accounts'));
 
       if (process.env.NODE_ENV === 'development') {
         console.log(error.stack);
       }
     } else {
       console.error(
-        pc.red('Error during transfer'),
+        pc.red('Error during getting accounts'),
         pc[errorColor]('Unknown error occurred')
       );
     }
@@ -288,7 +293,7 @@ export const getAccounts = async (req, res, next) => {
     next(createError(code, message));
   }
 };
-//******************************************************************
+//*******************************************
 //get account info by account_id
 //endpoint example: http://localhost:5000/api/fintrack/account/${accountId}?&user=${user}
 //**************************************
