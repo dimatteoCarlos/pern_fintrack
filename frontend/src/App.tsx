@@ -31,7 +31,8 @@ import Debtors from './pages/debts/Debtors.tsx';
 // 👁️ OVERVIEW & ACCOUNTING PAGES
 import OverviewLayout from './pages/overview/OverviewLayout.tsx';
 import Overview from './pages/overview/Overview.tsx';
-import Accounting from './pages/accounting/Accounting.tsx';
+import AccountingDashboard from './pages/accountingDashboard/AccountingDashboard.tsx';
+// import Accounting from './pages/accounting/Accounting.tsx';
 
 // 📝 FORM PAGES - CREATION
 import NewCategory from './pages/forms/newCategory/NewCategory.tsx';
@@ -48,6 +49,7 @@ import CategoryDetail from './pages/forms/categoryDetail/CategoryDetail.tsx';
 
 // ❌ ERROR HANDLING
 import ErrorPage from './pages/error/ErrorPage.tsx';
+
 // import NotFoundPage from './pages/error/NotFoundPage.tsx';
 //----------------------------------
 function App() {
@@ -137,7 +139,8 @@ function App() {
 
     // 🧾 STANDALONE PAGES (PROTECTED)
     // /fintrack
-      { path: 'tracker/accounting', element: <Accounting /> },
+      // { path: 'tracker/accounting', element: <Accounting /> },
+      { path: 'tracker/accounting', element: <AccountingDashboard /> },
 
     // ✨ CREATION FORMS (PROTECTED)
       //page form new item
