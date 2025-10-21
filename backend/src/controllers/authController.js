@@ -183,7 +183,7 @@ role: newUser.user_role_name || 'user'
     message: 'User successfully registered',
     accessToken: accessToken,
     user: userResponseData,
-    expiresIn: 900 // 15 minutos
+    expiresIn: 3600 // 60 minutos
   });
 
   await pool.query('COMMIT');
@@ -277,13 +277,16 @@ await pool.query('BEGIN');
 // ✅ TOKENS GENERATION
 // Generate JWT tokens with user role
   const accessToken = createToken(user.user_id, user.user_role_name);
+
   const refreshToken = createRefreshToken(user.user_id);
 
 // ✅ STORE REFRESH TOKEN IN DB
 // Calculate the expiration date for the refresh token (e.g., 7 days from now)
 // expiration date deben coincidir con los que se crearon 
   const refreshTokenExpirationDate = new Date();
+
   refreshTokenExpirationDate.setDate(refreshTokenExpirationDate.getDate() + 7);
+
 // Store the refresh token in the database
  await pool.query(
   'INSERT INTO refresh_tokens (user_id, token, expiration_date, user_agent, ip_address) VALUES ($1, $2, $3, $4, $5) RETURNING token_id',
@@ -323,20 +326,20 @@ await pool.query('BEGIN');
   message: 'Login successful',
   accessToken: accessToken,
   user: userResponseData,
-  expiresIn: 900 // 15 minutos
+  expiresIn: 3600 // 15 minutos 15 m, 3600 1h
   });
 
-  // console.log(
-  //   'User is logged in',
-  //     username,
-  //     email,
-  //     userData[0].user_id,
-  //     req.body.password,
-  //     userData[0].password_hashed,
-  //     user.role,
-  //     'userResponseData:',
-  //     userResponseData
-  //   );
+  console.log(
+    'User is logged in',
+      username,
+      // email,
+      // userData[0].user_id,
+      // req.body.password,
+      // userData[0].password_hashed,
+      // user.role,
+      // 'userResponseData:',
+      // userResponseData
+    );
   await pool.query('COMMIT');
     } catch (error) {
     await pool.query('ROLLBACK');
