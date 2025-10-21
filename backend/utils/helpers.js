@@ -1,6 +1,25 @@
 //determine transaction type from sign of amount and account_type_name.
 //applicable only to account creation transactions
 //this function considers category_budget_account with various transaction types possible.
+/*
+determineTransactionType
+determineTransactionType_v1
+validateRequiredFields
+getAccountTypeId
+getCurrencyId
+filterCurrencyId
+handleTransactionRecording
+formatDateToISO
+validateAndNormalizeDate
+validateAndNormalizeDateFn
+formatDateToDDMMYYYY
+formatDate
+isValidDate
+convertToISO
+getMonthName
+numberToWords
+*/
+
 export const determineTransactionType = (
   transaction_amount,
   account_type_name
