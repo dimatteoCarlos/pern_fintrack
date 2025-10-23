@@ -62,7 +62,7 @@ export const getAccountInfo = async (useId = false,accountIdentifier, accountTyp
       accountQuery = `SELECT ua.* FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
       WHERE ua.user_id = $1 AND ua.account_name = $2 AND act.account_type_name = $3`;
-        queryValues = [userId, (accountIdentifier), accountTypeName];
+      queryValues = [userId, (accountIdentifier), accountTypeName];
     }
 
   const accountInfoResult = await pool.query({
@@ -103,7 +103,7 @@ export const updateAccountBalance = async (
   transactionActualDate
 ) => {
 
-  console.log('updateAccountBalance tad:', transactionActualDate);
+  console.log('updateAccountBalance Transaction Actual Date:', transactionActualDate);
 
 //assure first the existence of updatedAccountResult?
 
@@ -158,7 +158,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const { movement } = req.query;
     const movementName = movement === 'debts' ? 'debt' : movement; //debt movement is called as debts in frontend
     // console.log({ movementName });
-//----------------------------------------
+//-------------------------------------
     if (!movementName) {
       const message = 'movement name is required';
       console.warn(pc.magentaBright(message));
@@ -246,7 +246,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
 //example:expense
 //movementName: expense, sourceAccountTypeName: 'bank', destinationAccountTypeName:'category_budget', sourceAccountTransactionType:withdraw, destinationAccountTransactionType:deposit,
-//---------------------------------------
+//-----------------------------------
   const {
     note,
     amount,
