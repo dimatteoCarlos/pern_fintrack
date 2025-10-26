@@ -70,23 +70,11 @@
 .account-group {
   background: var(--dark-light);
   border-radius: 16px;
-  /* padding: 1.5rem; */
+  padding: 1.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.05);
-    /* border:11px solid red; */
+/* border:11px solid red; */
 }
-
-/* .account-group__header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid var(--creme);
-  text-align: center;
-
-} */
 
 .account-group__title {
   color: var(--creme);
@@ -97,11 +85,14 @@
   letter-spacing: 0.75px;
   padding: 0.5rem;
     /* border:11px solid red; */
-
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 .account-group__emoji {
   font-size: 1.5rem;
-  flex-shrink: 0;
+  /* flex-shrink: 0; */
   /* margin-bottom: 0.5rem; */
 }
 
@@ -111,17 +102,6 @@
   /* border: 10px solid blue; */
 
 }
-
-/* .account-group__count {
-  color: var(--light);
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border: 10px solid blue;
-
-} */
 
 .account-group__grid {
   display: grid;
@@ -136,7 +116,7 @@
   transition: all 0.3s ease;
   border-radius: 12px;
   overflow: hidden;
-  max-width: 412px;
+  max-width: 360px;
   width: 360px;
       /* border:11px solid red; */
 }
@@ -166,27 +146,26 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  opacity: 0;
+  opacity:1;
 }
 
-.account-card:hover .account-card__menu-btn {
-  opacity: 1;
-}
-
-.account-card__menu-btn:hover {
+.accountingBox__menu-btn:hover {
   background: var(--light);
   transform: scale(1.1);
 }
 
-.account-card__menu-btn:active {
+.accountingBox__menu-btn:active {
   transform: scale(0.95);
 }
-
+button{
+  border:none;
+}
 .icon3dots {
   padding: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  border:none;
 }
 
 /****************/
@@ -225,6 +204,7 @@
   line-height: 1.3;
   margin: 0;
   flex: 1;
+  padding-right: 2rem;
 }
 
 .accountingBox__type {
@@ -277,7 +257,7 @@
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
   color: var(--light);
-  border:1px solid red; 
+  /* border:1px solid red;  */
 }
 
 .accounting-empty__message {
@@ -287,12 +267,12 @@
 }
 
 /* 📱 RESPONSIVE DESIGN */
-@media (max-width: 1024px) {
+/* @media (max-width: 1024px) {
   .account-group__grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(412px,1fr));
     gap: 1rem;
   }
-}
+} */
 
 @media (max-width: 768px) {
   .accounting__container {
@@ -302,8 +282,7 @@
   
   .accounting__title {
     font-size: 1.5rem;
-    
-  }
+     }
   
   .account-group {
     padding: 1.25rem;
@@ -330,7 +309,7 @@
     opacity: 1; /* Always visible on mobile */
   }
 }
-
+/***********************/
 @media (max-width: 480px) {
   .accounting__layout {
     padding: 2rem 0 1rem 0;
