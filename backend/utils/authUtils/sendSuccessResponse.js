@@ -3,6 +3,8 @@ export const sendSuccessResponse = (
   statusCode,
   message,
   data,
+
+  //Check if necessary in production
   accessToken,
   refreshToken
 ) => {
@@ -10,6 +12,7 @@ export const sendSuccessResponse = (
     message,
     data: { ...data },
   };
+  //Check if necessary in production
   if (accessToken) {
     responseData.accessToken = accessToken;
   }
