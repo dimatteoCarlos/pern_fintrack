@@ -1,7 +1,11 @@
+//frontend/src/pages/forms/categoryDetail/ListAccountOfCategory.tsx
+//Parent:CategoryAccountList.tsx
+
 import {
   BoxRow,
   StatusSquare,
 } from '../../../general_components/boxComponents.tsx';
+
 import {
   currencyFormat,
   numberFormatCurrency,
@@ -24,9 +28,9 @@ type ListAccountOfCategoryProp=
 {previousRoute:string, accounts:CategoryBudgetAccountListType[],
 //categoryName:string
 }
-//========================================
-function ListAccountOfCategory({previousRoute, accounts,
-//   categoryName
+//===============================
+function ListAccountOfCategory({previousRoute, accounts
+// ,  categoryName
 }:ListAccountOfCategoryProp) {
 // console.log('from ListAccountOfCatgoryProp', previousRoute)
 // --------------------------------
@@ -42,24 +46,23 @@ function ListAccountOfCategory({previousRoute, accounts,
           currency_code,
           account_id,
         } = account;
-
-        //console.log('account', account)
+//console.log('account', account)
 
         const remain = Math.round(-total_balance + budget);
-        // console.log('ramain', remain)
+// console.log('ramain', remain)
         const statusAlert = remain <= 0;
-//----------------------------------
-        return (
+//-------------------------------
+       return (
           <div className='box__container .flx-row-sb' key={indx}>
 
-            <BoxRow>
-              <Link to={`account/${account_id}`}
-              state = {{ accountDetailed:{...account, remain, statusAlert}, previousRoute,
-              // categoryName
+           <BoxRow>
+             <Link to={`account/${account_id}`}
+                state = {{ detailedData:{...account, remain, statusAlert}, previousRoute,
+                // categoryName
             }}
               >
               <div className='box__title box__title--category__name hover '>
-                {account_name}{' '}
+                {account_name}{''}
               </div>
               </Link>
 
@@ -83,9 +86,9 @@ function ListAccountOfCategory({previousRoute, accounts,
                 </span>
               </div>
 
-            </BoxRow>
+           </BoxRow>
 
-            <BoxRow>
+           <BoxRow>
               <BoxRow>
                 <div className='flx-row-sb'>
                   <StatusSquare alert={statusAlert ? 'alert' : ''} />
