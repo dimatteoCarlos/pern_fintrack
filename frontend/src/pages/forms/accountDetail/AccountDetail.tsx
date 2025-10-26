@@ -35,9 +35,9 @@ const initialAccountDetail = ACCOUNT_DEFAULT[0]
 
 const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
 // console.log('initialAccountTransactions', initialAccountTransactionsData)
-//========================================
+//==============================
 //MAIN COMPONENT ACCOUNT DETAILED
-// ========================================
+// ==============================
 function AccountDetail() {
   const location = useLocation() 
   const {accountId} = useParams();
@@ -75,7 +75,7 @@ function AccountDetail() {
     detailedData ? "": accountId? urlAccountById:""
   );
 //-------------------------------------
-//--account transaction api response
+//--ACCOUNT TRANSACTION API RESPONSE
 //--how to handle dates period
 //Although the getTransactionsForAccountById backend, deals with the last 30 days transactions, here, it wil get the transactions for current month, and a specified number of months period
 //in the future, include a dynamic filter or date picker range dates
@@ -99,8 +99,7 @@ function AccountDetail() {
     } = useFetch<TransactionsAccountApiResponseType>(
       urlTransactionsAccountById
     );
-
-//-------------------------------------
+//------------------------------
 // UPDATE TRANSACTIONS WHEN DATA LOADS
 useEffect(() => {
   if(transactionAccountApiResponse?.data.transactions){
@@ -109,7 +108,7 @@ useEffect(() => {
   }
   //else keep the initial values
 }, [transactionAccountApiResponse])
-//----------------------------------
+//-------------------------------
 // UPDATE ACCOUNT DETAIL WHEN DATA LOADS
 useEffect(()=>{
 if(detailedData){
@@ -127,7 +126,7 @@ useEffect(() => {
     if(account)setAccountDetail(account)}
 
 }, [accountsData, detailedData,accountId,])
-//----------------------------------
+//-----------------------------
 return (
   <section className='page__container'>
     <TopWhiteSpace variant={'dark'} />
