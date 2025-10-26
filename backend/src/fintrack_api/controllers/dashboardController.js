@@ -15,7 +15,7 @@ import {
 import pc from 'picocolors';
 import { pool } from '../../db/configDB.js';
 
-//common functions
+//COMMON FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
   const backendColor =
     status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';
@@ -31,7 +31,7 @@ const ERR_RESP = (status, message, controllerName = null) => {
   error.status = 400;
   throw error;
 };
-//-------------------------------------
+//---------------------------------
 // get: //http://localhost:5000/api/fintrack/dashboard/balance
 //get the total balance account for each group of account type, for all account types.
 export const dashboardTotalBalanceAccounts = async (req, res, next) => {
@@ -96,8 +96,8 @@ export const dashboardTotalBalanceAccounts = async (req, res, next) => {
     next(createError(code, message));
   }
 };
-//----------------------------------
-//==================================
+//------------------------------
+//===============================
 //-- dashboardTotalBalanceAccountByType
 //-- get the total balance for a specific type account
 //used in:TrackerLayout, OverviewLayout.tsx
@@ -295,10 +295,10 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     // return RESPONSE(error, next)
   }
 };
-//======================================
+//================================
 //get the total balance for 'category_budget', 'debtor' and 'pocket_saving'. Considering also goals, budget, target,
 //get: //http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=&user=
-//=====================================
+//================================
 export const dashboardAccountSummaryList = async (req, res, next) => {
   const backendColor = 'yellow';
   const errorColor = 'red';
@@ -395,7 +395,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
         values: [userId, accountType, 'slack'],
       },
     };
-//------queries
+//------qweries
     if (
       accountType == 'category_budget' ||
       accountType == 'debtor' ||
@@ -422,7 +422,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
 
       return RESPONSE(res, 200, successMsg, data);
     }
-    //-----------------------------------
+    //-------------------------
     //in case accountType does not exist
     const message = `No available accounts of type ${accountType} for summary list`;
     return RESPONSE(res, 400, message);
@@ -865,7 +865,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     next(createError(code, message));
   }
 };
-//------------------------------------------------
+//----------------------------------------
 //**************************************/
 //GET: TRACKER MOVEMENT TRANSACTIONS. BY USER, PERIOD (default:last 30 days) AND  a SEARCH PARAM
 //endpoint: http://localhost:5000/api/fintrack/dashboard/movements/search/?start=sd&end=ed&search=searchParam&user=${user}
@@ -977,7 +977,7 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
     next(createError(code, message));
   }
 };
-//******************************************/
+//*******************************/
 //GET: TRACKER MOVEMENT TRANSACTIONS. BY USER, MOVEMENT_TYPE_NAME, ACCOUNT_TYPE_NAME, TRANSACTION_TYPE_NAME
 //endpoint: http://localhost:5000/api/fintrack/dashboard/movements/account_type/?start=sd&end=ed&movement=&account_type=&transaction_type=&user=${user}
 //examples:
