@@ -1,6 +1,6 @@
 //backend\src\fintrack_api\routes\accountRoutes.js
-//New Account Creation routes
 
+//New Account Creation routes
 import express from 'express';
 //controllers
 import {
@@ -14,12 +14,13 @@ import {
   getAllAccountsByType,
   getAccountById,
   getAccountsByCategory,
+  // getCategoryBudgetFullDataEndpoint,
 } from '../controllers/getAccountController.js';
 
 import { createCategoryBudgetAccount } from '../controllers/accountCategoryCreationcontroller.js';
 
 import { getTransactionsForAccountById } from '../controllers/getTransactionsForAccountById.js';
-import { verifyToken } from '../../middlewares/authMiddleware.js';
+// import { verifyToken } from '../../middlewares/authMiddleware.js';
 
 // import { verifyHeaderAuth, verifyUser } from '../middlewares/authMiddleware.js';
 // router.post('/new_account/bank',verifyUser ,createBasicAccount);
@@ -30,12 +31,15 @@ const router = express.Router();
 router.post('/new_account/bank',
    //verifyToken,
   createBasicAccount); //bank
+
 router.post('/new_account/income_source',
   // verifyToken,
 createBasicAccount);
+
 router.post('/new_account/investment', 
   // verifyToken,
   createBasicAccount);
+
 router.post('/new_account/debtor', 
   // verifyToken,
   createDebtorAccount);
@@ -55,26 +59,32 @@ router.post('/new_account/category_budget',
 //investment: investment_accounts
 //pocket_saving: pocket_saving_accounts
 //debtor: debtor_accounts
-
+//------------------------------
 //GET USER ACCOUNT INFO BY TYPE, BY ID, ALL ACC.
 router.get('/allAccounts',
   // verifyToken, 
   getAccounts);
+
 router.get('/type',
   // verifyToken, 
   getAllAccountsByType);
+
 router.get('/:accountId',
   // verifyToken,
    getAccountById);
+   
 router.get('/transactions/:accountId',
   // verifyToken, 
   getTransactionsForAccountById);
 
 //GET USER ACCOUNT LIST INFO BY CATEGORY NAME
 // get all category budget account type info associated to a category Name
+
 //route: /api/fintrack/category/
 router.get('/category/:categoryName',
   // verifyToken, 
   getAccountsByCategory);
-//-------------------------------------
+
+//  router.get('/:accountId/category-budget-full', getCategoryBudgetFullDataEndpoint); 
+//----------------------
 export default router;
