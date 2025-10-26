@@ -1,4 +1,4 @@
-//CategoryAccountList.tsx
+// frontend/src/pages/forms/categoryDetail/CategoryAccountList.tsx
 import { Link, useLocation, useParams } from 'react-router-dom';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
@@ -24,6 +24,7 @@ const {categoryName} =useParams()
 //pathname:categoryAccountListPageAddress,
 //   state:{categorySummaryDetailed},
 //   state:{previousRoute:budgetPageAddress}}=location
+
 const state = location.state ?? {}
 const {categorySummaryDetailed=null, previousRoute:budgetPageAddress = `/fintrack/budget`} = state as {
   categorySummaryDetailed?:CategorySummaryInfoType | null; previousRoute:string ; }
@@ -38,23 +39,24 @@ const {categorySummaryDetailed=null, previousRoute:budgetPageAddress = `/fintrac
 const [categorySummaryInfo, setCategorySummaryInfo] = useState<CategorySummaryInfoType | null>(categorySummaryDetailed ?? null)
 
 //--Fetch Data to get accounts info associated to categoryName
-const urlAccountsByCategoryName =`${url_get_accounts_by_category}/${categoryName}` 
+const urlAccountsByCategoryName =`${url_get_accounts_by_category}/${categoryName}`
+
  const {apiData, isLoading, error} = useFetch<CategoryBudgetAccountsResponseType>(urlAccountsByCategoryName);
 
  const categoryAccountsExists = apiData && apiData.data.accountList.length>0
 
-   const categoryAccounts =useMemo(() => {return categoryAccountsExists ? apiData?.data.accountList : [];}, [categoryAccountsExists,apiData])
+ const categoryAccounts =useMemo(() => {return categoryAccountsExists ? apiData?.data.accountList : [];}, [categoryAccountsExists,apiData])
 
-  //console.log("🚀 ~ CategoryAccountList ~ categoryAccounts:", categoryAccounts)
-  //=====================================
-  //--functions
-  //--build category summary info
-const calculateCategorySummaryInfo=useCallback( (
+//console.log("🚀 ~ CategoryAccountList ~ categoryAccounts:", categoryAccounts)
+//===============================
+//--functions
+//--build category summary info
+const calculateCategorySummaryInfo=useCallback((
   accounts :typeof categoryAccounts,
   categoryName:string,
   currency_code:CurrencyType = 'usd'
   )=>{
-    const summary:CategorySummaryInfoType ={
+   const summary:CategorySummaryInfoType ={
     category_name:categoryName,currency_code:'usd',
     total_balance:0,
     total_budget:0,
@@ -77,10 +79,10 @@ const calculateCategorySummaryInfo=useCallback( (
     return summary
   },[])
 
-  // const previousRoute = budgetPageAddress??`/fintrack/budget/${categoryName}`
+// const previousRoute = budgetPageAddress??`/fintrack/budget/${categoryName}`
 
-  //--if summary info of category is not coming from location.state, then it is built
-  
+//--if summary info of category is not coming from location.state, then it is built
+  //-----------------
   useEffect(() => {
     if(!categorySummaryDetailed && categoryAccountsExists){
       const summary = calculateCategorySummaryInfo(categoryAccounts,categoryName!,
