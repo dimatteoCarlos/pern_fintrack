@@ -10,7 +10,6 @@ const router = express.Router();
 router.use('/account',
     // verifyToken,
    accountRoutes); //create and read(get) accounts
-// router.use('/account', verifyToken, accountRoutes); //create and read(get) accounts
 
 router.use('/transaction',
  // verifyToken,
