@@ -127,7 +127,7 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
 
   const transactions = await queryFn(TRANSACTIONS_BY_ACCOUNT_QUERY.text, TRANSACTIONS_BY_ACCOUNT_QUERY.values)
 
-// Función para formatear fechas consistentemente
+// Función para formatear fechas consistentemente/consistent date format
     const formatDate = (date) => date.toISOString().split('T')[0];
 
     //NO TRANSACTIONS
@@ -154,7 +154,7 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
       };
     return RESPONSE(res, 200, 'No transactions found for the selected period', data);
     }
-  console.log('transactions',transactions)
+  // console.log('transactions',transactions)
  
 //Funciones para obtener balances usando accountInfoNeededResult ================
   const getInitialBalance = () => {
@@ -199,7 +199,7 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
         pc[errorColor]('Unknown error occurred')
       );
     }
-    //  PostgreSQL error handling  
+    // PostgreSQL error handling  
     const { code, message } = handlePostgresError(error);
     next(createError(code, message));
   } 
