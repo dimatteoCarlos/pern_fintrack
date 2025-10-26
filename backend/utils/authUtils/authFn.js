@@ -1,4 +1,5 @@
 // backend/utils/authUtils/authFn.js
+//hashed,isRight,createToken,createRefreshToken,cleanRevokedTokens,rotateRefreshToken
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -42,8 +43,8 @@ export const createToken = (id, role) => {
   }
 
 const expiresIn = process.env.NODE_ENV === 'development' 
-    ? '5m'  // ✅ 5 minutos in development
-    : '30m'; // ✅ 30 minutes in production
+    ? '1h'  // ✅ 5m 5 minutos in development
+    : '1h'; // ✅ 30m minutes in production
 
 // Consistencia: expiresIn en el token y maxAge en la cookie deben estar sincronizados
   return jwt.sign(
@@ -71,9 +72,9 @@ export const createRefreshToken = (id) => {
       'JWT_REFRESH_TOKEN_SECRET is not configured on environment variables.La clave secreta JWT no está configurada en las variables de entorno.'
     );
   }
-
+//refresh token expiration time
   const expiresIn = process.env.NODE_ENV === 'development'
-    ? '5m'  // ✅ 1 hora en desarrollo
+    ? '2h'  //'5m'// ✅ 1 hora en desarrollo
     : '7d'; // ✅ 7 días en producción
 
   return jwt.sign(
