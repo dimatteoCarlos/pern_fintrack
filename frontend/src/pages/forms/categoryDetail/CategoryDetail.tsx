@@ -38,7 +38,7 @@ function CategoryDetail() {
   const {accountId:rawAccountId, categoryName}=useParams<{
   accountId?: string;
   categoryName?: string;
-}>()
+  }>()
 
 const accountId = (rawAccountId || '').trim();
 
