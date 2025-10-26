@@ -1,33 +1,39 @@
+//frontend/src/pages\/orms/categoryDetail/CategoryDetail.tsx
 import { Link, useLocation, useParams } from 'react-router-dom';
+
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import '../styles/forms-styles.css';
-import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
-import SummaryDetailBox from './summaryDetailBox/SummaryDetailBox.tsx';
-import { CategoryBudgetAccountListType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
-import { CurrencyType } from '../../../types/types.ts';
-import { url_get_transactions_by_account_id } from '../../../endpoints.ts';
-import { useFetch } from '../../../hooks/useFetch.ts';
-import { capitalize, currencyFormat, formatDateToDDMMYYYY  } from '../../../helpers/functions.ts';
 import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
+import SummaryDetailBox from './summaryDetailBox/SummaryDetailBox.tsx';
+
+import { useFetch } from '../../../hooks/useFetch.ts';
+import { url_get_account_by_id, url_get_transactions_by_account_id } from '../../../endpoints.ts';
+
+import {  CategoryBudgetAccountsResponseType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+import { CurrencyType } from '../../../types/types.ts';
+
+import { capitalize, currencyFormat, formatDateToDDMMYYYY  } from '../../../helpers/functions.ts';
+
+import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
 //---
-const user = import.meta.env.VITE_USER_ID;
+// const user = import.meta.env.VITE_USER_ID;
 //----------------------------
 //--Account category detailed w/o edition. Not useState usage.
 //----------------------------
-type ListOfCategoryAccountsRouteStateType ={
-    accountDetailed?: CategoryBudgetAccountListType & {
-    remain: number;
-    statusAlert: boolean;
-    } | null;
+// type ListOfCategoryAccountsRouteStateType ={
+//     detailedData?: CategoryBudgetAccountListType & {
+//     remain: number;
+//     statusAlert: boolean;
+//     } | null;
 
-  previousRoute: string;
-}
-//=====================================
+//   previousRoute: string;
+// }
+//========================
 function CategoryDetail() {
   const {accountId:rawAccountId, categoryName}=useParams<{
   accountId?: string;
@@ -40,17 +46,46 @@ if (!accountId) {
 throw new Error("Invalid account ID parameter");
 }
 
+//-----------------------------
   const location =useLocation()
   const state = location.state??{};
+  // const state = location.state as Partial<ListOfCategoryAccountsRouteStateType> ?? {};
 
-  const {accountDetailed=null, previousRoute=categoryName?`/fintrack/budget/category/${categoryName}`:'/fintrack/budget'}= (state as Partial<ListOfCategoryAccountsRouteStateType>) ?? {}
-    
-  // console.log("🚀 ~ CategoryDetail ~ :", accountId,previousRoute, accountDetailed)
-//---
+  // const {detailedData:accountDetailed, previousRoute=categoryName?`/fintrack/budget/category/${categoryName}`:'/fintrack/budget'} = (state as Partial<ListOfCategoryAccountsRouteStateType>) ?? {}
 
-// console.log('ad', accountDetailed)
+  const {
+  detailedData: accountDetailedFromState, 
+  previousRoute: previousRouteFromState
+  } = state;
+
+  const previousRoute = previousRouteFromState ??
+   (categoryName 
+    ? `/fintrack/budget/category/${categoryName}`
+    : '/fintrack/budget'); //how to do it dynamically?
+
+  const isAccountDetailMissing = !accountDetailedFromState;
+
+// CONDITIONAL FETCH (FALLBACK)
+  const urlAccountByIdConditional = isAccountDetailMissing
+  ? `${url_get_account_by_id}/${accountId}`
+  :null
+
+  const {
+   apiData:accountsDataFromFetch, 
+   isLoading:isLoadingAccount,
+   error: errorAccount
+  } = useFetch<CategoryBudgetAccountsResponseType>(urlAccountByIdConditional)
+
+//Data transforming for rendering
+const accountDetailed =
+  accountDetailedFromState ||
+  accountsDataFromFetch?.data?.accountList 
+  
+// console.log("🚀 ~ CategoryDetail ~ accountDetailed:", accountDetailed)
+//-------------------------
 //summary data
-  const summaryData =accountDetailed? {
+  const summaryData =accountDetailed
+  ? {
     title: 'Budget',
     amount: Number(accountDetailed.budget),
     subtitle1: 'Spent',
@@ -59,7 +94,7 @@ throw new Error("Invalid account ID parameter");
     amount2:(+accountDetailed.remain),
     currency_code: accountDetailed.currency_code,
      }
-     :{
+  :{
     title: 'Budget',
     amount: 0,
     subtitle1: 'Spent',
@@ -69,9 +104,8 @@ throw new Error("Invalid account ID parameter");
     currency_code:'usd' as CurrencyType
      }
      ;
-
 //--------------------------------
-//period dates considering previous number of months and current month transactions
+//DATES PERIOD considering previous number of months and current month transactions
     const tdy = new Date()
     const numberOfMonths=2
     const firstDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth()-numberOfMonths+1,1)
@@ -83,7 +117,7 @@ throw new Error("Invalid account ID parameter");
 //--------------------------------
 //--Fetch Data
     //--account detail transactions
-    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?user=${user}&start=${apiStartDate}&end=${apiEndDate}`;
+    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
 
     const {
       apiData: transactionAccountApiResponse,//{status, message, data}
@@ -94,16 +128,14 @@ throw new Error("Invalid account ID parameter");
     );
 
     const transactions = transactionAccountApiResponse?.data.transactions??[];
-    // console.log('transactions', transactions)
-    const summaryAccountBalance = (transactionAccountApiResponse?.data.summary)??{
-  initialBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },
-  finalBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },
-  periodStartDate: '',
-  periodEndDate: ''
-};
-//-------------------------------------
 
-//======================================
+    const summaryAccountBalance = (transactionAccountApiResponse?.data.summary)??{
+      initialBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },
+      finalBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },
+      periodStartDate: '',
+      periodEndDate: ''
+};
+//===============================
   return (
     <>
       <section className='page__container'>
@@ -119,6 +151,7 @@ throw new Error("Invalid account ID parameter");
             {/* <Link to='edit' className='flx-col-center icon3dots'>
               <Dots3LightSvg />
             </Link> */}
+            
             <div id='edit' className='flx-col-center icon3dots'>
             <Dots3LightSvg />
             </div>
@@ -126,48 +159,47 @@ throw new Error("Invalid account ID parameter");
           </div>
         </div>
 
-        <SummaryDetailBox bubleInfo={summaryData}></SummaryDetailBox>
+      <SummaryDetailBox bubleInfo={summaryData}></SummaryDetailBox>
 
       <article className='form__box'>
-          <div className='form__container'>
+        <div className='form__container'>
+          <div className='input__box'>
+              <label className='label form__title'>{`Current Balance`}</label>
 
-            <div className='input__box'>
-                <label className='label form__title'>{`Current Balance`}</label>
-
-                <div className="input__container"
-                style={{ padding: '0.5rem' }}>{currencyFormat(accountDetailed?.currency_code, accountDetailed?.account_balance)}
-                </div>
+              <div className="input__container"
+              style={{ padding: '0.5rem' }}>{currencyFormat(accountDetailed?.currency_code, accountDetailed?.account_balance)}
               </div>
-                      
-            <div className='input__box'>
-              <label className='label form__title'>{'Account Type'}</label>
+          </div>
+                    
+          <div className='input__box'>
+            <label className='label form__title'>{'Account Type'}</label>
 
-              <p className='input__container' style={{ padding: '0.5rem' }}>
-                {(accountDetailed?.account_type_name)}
-              </p>
+            <p className='input__container' style={{ padding: '0.5rem' }}>
+              {(accountDetailed?.account_type_name)}
+            </p>
+          </div>
+
+          <div className='account__dateAndCurrency'>
+            <div className='account__date'>
+              <label className='label form__title'>{'Starting Point'}</label>
+              <div
+                className='form__datepicker__container'
+                style={{ textAlign: 'center', color:'white' }}
+              >
+                {formatDateToDDMMYYYY((accountDetailed?.account_start_date))}
+              </div>
             </div>
 
-            <div className='account__dateAndCurrency'>
-              <div className='account__date'>
-                <label className='label form__title'>{'Starting Point'}</label>
-                <div
-                  className='form__datepicker__container'
-                  style={{ textAlign: 'center', color:'white' }}
-                >
-                  {formatDateToDDMMYYYY((accountDetailed?.account_start_date))}
-                </div>
-              </div>
+            <div className='account__currency'>
+              <div className='label form__title'>{'Currency'}</div>
 
-              <div className='account__currency'>
-                <div className='label form__title'>{'Currency'}</div>
-
-                <CurrencyBadge
-                  variant={VARIANT_FORM}
-                  currency={accountDetailed?.currency_code??DEFAULT_CURRENCY}
-                />
-              </div>
+              <CurrencyBadge
+                variant={VARIANT_FORM}
+                currency={accountDetailed?.currency_code??DEFAULT_CURRENCY}
+              />
             </div>
           </div>
+        </div>
  
 {/* --- TRANSACTION STATEMENT SECTION --- */}
         <div className="account-transactions__container "
@@ -192,8 +224,8 @@ throw new Error("Invalid account ID parameter");
         </article>
   {/* --- END TRANSACTION STATEMENT SECTION --- */}
 
-      {( isLoadingTransactions) && <p>Loading...</p>}
-        {( errorTransactions) && <p>Error fetching account info: {errorTransactions}</p>}
+      {( isLoadingAccount ||isLoadingTransactions) && <p>Loading...</p>}
+        {( errorAccount || errorTransactions) && <p>Error fetching account info: {errorAccount??errorTransactions}</p>}
 
       </section>
     </>
