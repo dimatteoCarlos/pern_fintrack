@@ -1,10 +1,15 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useFetch } from '../../../hooks/useFetch.ts';
+
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge';
+import AccountBalanceSummary from './AccountBalanceSummary';
+import AccountTransactionsList from './AccountTransactionsList';
+
 import {
   ACCOUNT_DEFAULT,
   DEFAULT_CURRENCY,
@@ -15,13 +20,11 @@ import { capitalize,  numberFormatCurrency, formatDateToDDMMYYYY } from '../../.
 import '../styles/forms-styles.css';
 import { AccountByTypeResponseType, AccountListType, TransactionsAccountApiResponseType,  AccountTransactionType, AccountSummaryBalanceType } from '../../../types/responseApiTypes';
 import { url_get_account_by_id, url_get_transactions_by_account_id } from '../../../endpoints';
-import { useFetch } from '../../../hooks/useFetch.ts';
-import './styles/accountDetailTransactions-styles.css'
-import AccountBalanceSummary from './AccountBalanceSummary';
-import AccountTransactionsList from './AccountTransactionsList';
-// import CoinSpinner from '../../../loader/coin/CoinSpinner';
 
-const user = import.meta.env.VITE_USER_ID;
+import './styles/accountDetailTransactions-styles.css'
+
+// import CoinSpinner from '../../../loader/coin/CoinSpinner';
+// const user = import.meta.env.VITE_USER_ID;
 
 type LocationStateType ={
 previousRoute:string; detailedData:AccountListType;
@@ -32,42 +35,51 @@ const initialAccountDetail = ACCOUNT_DEFAULT[0]
 
 const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
 // console.log('initialAccountTransactions', initialAccountTransactionsData)
-//---------------
+//========================================
+//MAIN COMPONENT ACCOUNT DETAILED
+// ========================================
 function AccountDetail() {
   const location = useLocation() 
+  const {accountId} = useParams();
   const state = location.state as LocationStateType | null;
   const detailedData = state?.detailedData;
-  const previousRouteFromState = state?.previousRoute ?? "/";
-  const {accountId} = useParams()
-  // console.log('location',  accountId, detailedData)
-//--------------------------------------------------
-  //data from endpoint request for info account, and for api transactions by accountId
- //--states
- //--state for account detail global info
-    const [accountDetail, setAccountDetail] = useState<AccountListType>(initialAccountDetail);
-    const [previousRoute, setPreviousRoute] = useState<string>("/fintrack/overview"); 
- //--state for account transactions data
-    const [transactions, setTransactions]=useState<AccountTransactionType[]>(initialAccountTransactionsData.transactions)
 
-    const [summaryAccountBalance, setSummaryAccountBalance]=useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary)
- //-------------------------------------
-    //--Fetch Data
-    //--account detail global info
-    const urlAccountById = `${url_get_account_by_id}/${accountId}?&user=${user}`;
+//--------------------------------------
+//data from endpoint request for info account, and for api transactions by accountId
+//--STATES
+// const [previousRoute, setPreviousRoute] = useState<string>("/fintrack/overview"); 
+//✅ DYNAMIC BACK ROUTE
+  const previousRouteFromState = state?.previousRoute ||  "/fintrack/overview";
 
-    const {
-      apiData: accountsData,
-      isLoading,
-      error,
-    } = useFetch<AccountByTypeResponseType>(
-      detailedData?"":urlAccountById
-    );
-//---------------------------------------
-    //--account transaction api response
-    //--how to handle dates period
-    //Although the getTransactionsForAccountById backend, deals with the last 30 days transactions, here, it wil get the transactions for current month, and a specified number of months period
-    //in the future, include a dynamic filter or date picker range dates
-    //period dates considering previous number of months and current month transactions
+  const [previousRoute, setPreviousRoute] = useState<string>(previousRouteFromState); 
+
+// console.log('location',location,   accountId, {detailedData}, {previousRouteFromState}, )
+
+// ✅ INDEPENDENT DATA FETCHING
+  const [accountDetail, setAccountDetail] = useState<AccountListType>(initialAccountDetail);
+
+  //--state for account transactions data
+  const [transactions, setTransactions]=useState<AccountTransactionType[]>(initialAccountTransactionsData.transactions)
+  
+  const [summaryAccountBalance, setSummaryAccountBalance]=useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary)
+
+// API CALLS 
+//--Fetch Data
+//--account detail global info
+  const urlAccountById = `${url_get_account_by_id}/${accountId}`;
+  const {
+    apiData: accountsData,
+    isLoading,
+    error,
+  } = useFetch<AccountByTypeResponseType>(
+    detailedData ? "": accountId? urlAccountById:""
+  );
+//-------------------------------------
+//--account transaction api response
+//--how to handle dates period
+//Although the getTransactionsForAccountById backend, deals with the last 30 days transactions, here, it wil get the transactions for current month, and a specified number of months period
+//in the future, include a dynamic filter or date picker range dates
+//period dates considering previous number of months and current month transactions
     const tdy = new Date()
     const numberOfMonths=2
     const firstDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth()-numberOfMonths+1,1)
@@ -78,7 +90,7 @@ function AccountDetail() {
     const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0]
 
     //-----
-    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?user=${user}&start=${apiStartDate}&end=${apiEndDate}`;
+    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
 
     const {
       apiData: transactionAccountApiResponse,//{status, message, data}
@@ -89,6 +101,7 @@ function AccountDetail() {
     );
 
 //-------------------------------------
+// UPDATE TRANSACTIONS WHEN DATA LOADS
 useEffect(() => {
   if(transactionAccountApiResponse?.data.transactions){
     setTransactions(transactionAccountApiResponse?.data.transactions)
@@ -97,19 +110,20 @@ useEffect(() => {
   //else keep the initial values
 }, [transactionAccountApiResponse])
 //----------------------------------
+// UPDATE ACCOUNT DETAIL WHEN DATA LOADS
 useEffect(()=>{
 if(detailedData){
     setAccountDetail(detailedData)
-    if (previousRouteFromState) {
-      setPreviousRoute(previousRouteFromState);
-      }
+    // if (previousRouteFromState) {
+    setPreviousRoute(previousRouteFromState);
+      // }
     }
   },[detailedData, previousRouteFromState])
 
 useEffect(() => {
   if(!detailedData && accountsData?.data?.accountList?.length ){
     const account = accountsData.data.accountList[0]
-    //  const account = accountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
+  //  const account = accountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
     if(account)setAccountDetail(account)}
 
 }, [accountsData, detailedData,accountId,])
@@ -117,25 +131,25 @@ useEffect(() => {
 return (
   <section className='page__container'>
     <TopWhiteSpace variant={'dark'} />
+
     <div className='page__content'>
       <div className='main__title--container'>
-
         <Link to={previousRoute} relative='path' className='iconLeftArrow'>
           <LeftArrowLightSvg />
         </Link>
         
-        <div className='form__title'>{capitalize(accountDetail?.account_name).toUpperCase()}</div>
+        <div className='form__title'>
+         {accountDetail?capitalize(accountDetail.account_name).toUpperCase(): 'Loading...'}
+         </div>
         
         {/* <Link to='edit' className='flx-col-center icon3dots'>
           <Dots3LightSvg />
         </Link> */}
+        
         <div id='edit' className='flx-col-center icon3dots'>
         <Dots3LightSvg />
         </div>
-
-
-
-      </div>
+     </div>
 
       <form className='form__box'>
         <div className='form__container'>
@@ -178,7 +192,7 @@ return (
           </div>
         </div>
 
-      {/* --- TRANSACTION STATEMENT SECTION --- */}
+{/* --- TRANSACTION STATEMENT SECTION --- */}
       <div className="account-transactions__container "
       style={{margin:'1rem 0'}}
       >
