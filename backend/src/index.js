@@ -1,5 +1,5 @@
 //backend/src/index.js
-//import express, { Express, Request, Response, NextFunction } from 'express';
+
 // ====================
 // 📥 Imports
 // ====================
@@ -27,7 +27,7 @@ import {
 } from './db/populateDB.js';
 import { mainTables, createTables } from './db/createTables.js';
 
-//Api routes and authenticacion functions
+//API ROUTES AND AUTHENTICACION FUNCTIONS
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
 import { cleanRevokedTokens } from '../utils/authUtils/authFn.js';
@@ -113,9 +113,9 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: '404', message: 'Route link was not found' });
 });
 //---function declaration------------
-// ==================================
+// ===========================
 // 📊 Data base initialization
-// ==================================
+// ============================
 async function initializeDatabase() {
   try {
     console.log(pc.cyanBright('Verificando existencia de datos en tablas ...'));
