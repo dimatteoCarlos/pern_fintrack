@@ -20,7 +20,7 @@ import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
 //---
-const user = import.meta.env.VITE_USER_ID;
+// const user = import.meta.env.VITE_USER_ID;
 type LocationStateType = {
   pocketData: PocketListType;
   previousRoute: string;
@@ -33,6 +33,7 @@ const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
 function PocketDetail() {
   const location = useLocation();
   const state = location.state as LocationStateType | null;
+// console.log("🚀 ~ PocketDetail ~ state:", state)
 
   const previousRouteFromState = state?.previousRoute ?? "/fintrack/budget";
   const {pocketId:accountId} = useParams()
@@ -48,10 +49,10 @@ function PocketDetail() {
   const [transactions, setTransactions]=useState<AccountTransactionType[]>(initialAccountTransactionsData.transactions)
 
   const [summaryAccountBalance, setSummaryAccountBalance]=useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary)
- //-------------------------------------
+ //---------------------------
  //--Fetch Data
-    //--account detail global info
-    const urlAccountById = `${url_get_account_by_id}/${accountId}?&user=${user}`;
+//--account detail global info
+    const urlAccountById = `${url_get_account_by_id}/${accountId}`;
     const {
       apiData: accountsData,
       isLoading,
@@ -59,6 +60,8 @@ function PocketDetail() {
     } = useFetch<PocketSavingAccountsResponseType >(
       urlAccountById
     );
+
+// console.log('accountsData', accountsData)
 //--------------------------------
 //period dates considering previous number of months and current month transactions
     const tdy = new Date()
@@ -72,7 +75,7 @@ function PocketDetail() {
 
  //--Fetch Data
     //--account detail transactions
-    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?user=${user}&start=${apiStartDate}&end=${apiEndDate}`;
+    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
 
     const {
       apiData: transactionAccountApiResponse,//{status, message, data}
@@ -82,7 +85,7 @@ function PocketDetail() {
       urlTransactionsAccountById
     );
 
-//-------------------------------------
+//---------------------------
 useEffect(() => {
   if(transactionAccountApiResponse?.data.transactions){
     setTransactions(transactionAccountApiResponse?.data.transactions)
