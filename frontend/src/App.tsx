@@ -28,11 +28,11 @@ import BudgetLayout from './pages/budget/BudgetLayout.tsx';
 import Budget from './pages/budget/Budget.tsx';
 import DebtsLayout from './pages/debts/DebtsLayout.tsx';
 import Debtors from './pages/debts/Debtors.tsx';
+
 // 👁️ OVERVIEW & ACCOUNTING PAGES
 import OverviewLayout from './pages/overview/OverviewLayout.tsx';
 import Overview from './pages/overview/Overview.tsx';
 import AccountingDashboard from './pages/accountingDashboard/AccountingDashboard.tsx';
-// import Accounting from './pages/accounting/Accounting.tsx';
 
 // 📝 FORM PAGES - CREATION
 import NewCategory from './pages/forms/newCategory/NewCategory.tsx';
@@ -137,13 +137,12 @@ function App() {
         ],
       },
 
-    // 🧾 STANDALONE PAGES (PROTECTED)
-    // /fintrack
-      // { path: 'tracker/accounting', element: <Accounting /> },
-      { path: 'tracker/accounting', element: <AccountingDashboard /> },
+// 🧾 STANDALONE PAGES (PROTECTED)
+  // /fintrack
+    { path: 'tracker/accounting', element: <AccountingDashboard /> },
 
-    // ✨ CREATION FORMS (PROTECTED)
-      //page form new item
+  // ✨ACCOUNT CREATION FORMS (PROTECTED)
+    //page form new item
       { path: 'budget/new_category', element: <NewCategory /> },
 
       { path: 'budget/new_pocket', element: <NewPocket /> },
@@ -155,8 +154,8 @@ function App() {
 
       { path: 'overview/new_account', element: <NewAccount /> },
 
-      // 🔍 DETAIL VIEW PAGES (PROTECTED)
-      //show detailed item page
+  // 🔍 DETAIL VIEW PAGES (PROTECTED)
+    //show detail item page
       {
         path: 'overview/accounts/:accountId',
         element: <AccountDetail />,
@@ -180,6 +179,16 @@ function App() {
         path: 'budget/category/:categoryName/account/:accountId',
       element: <CategoryDetail />,
       },
+
+  //Accounting -> category detail view  
+    {
+        path: 'budget/account/:accountId',
+      element: <CategoryDetail />,
+      },
+
+// ✨ EDITION FORMS (PROTECTED)
+      //page form edit account
+      // { path: 'account/:accountId/edit', element: <EditAccount /> },
 
     ],
   },
