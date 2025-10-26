@@ -96,7 +96,7 @@ app.use(
 app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }));// Encabezado para recursos de origen cruzado
 app.use(cookieParser());//Enable cookies analysis
 // =====================
-// 🛣️ API routing
+// 🛣️ API ROUTING
 // =====================
 //api main routes and associated controllers
 //----------------------
@@ -114,7 +114,7 @@ app.use('*', (req, res) => {
 });
 //---function declaration------------
 // ===========================
-// 📊 Data base initialization
+// 📊 DATA BASE INITIALIZATION
 // ============================
 async function initializeDatabase() {
   try {
