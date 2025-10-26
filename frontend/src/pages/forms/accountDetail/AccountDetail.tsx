@@ -44,7 +44,7 @@ function AccountDetail() {
   const state = location.state as LocationStateType | null;
   const detailedData = state?.detailedData;
 
-//--------------------------------------
+//------------------------------
 //data from endpoint request for info account, and for api transactions by accountId
 //--STATES
 // const [previousRoute, setPreviousRoute] = useState<string>("/fintrack/overview"); 
