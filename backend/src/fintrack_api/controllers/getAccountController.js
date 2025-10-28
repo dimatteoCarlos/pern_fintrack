@@ -27,7 +27,7 @@ const RESPONSE = (res, status, message, data = null) => {
 const calculateBudgetMetrics = (balanceAccount, budgetAccount)=>{
   const remain = Math.round(parseFloat(budgetAccount) - parseFloat(balanceAccount))
   const statusAlert = remain <=0
-  console.log('balanceAccount', balanceAccount)   
+
   return {remain, statusAlert}
   }
 //-------  
@@ -671,23 +671,24 @@ export const getAccountById = async (req, res, next) => {
   return res.status(400).json({ status: 400, message });
   }
 //------------------------
-const data = { rows: accountListResult.rows.length, accountList:accountListResult.rows[0] };
+const data = { rows: accountListResult.rows.length, accountList:[accountListResult.rows[0] ]};
+// console.log("🚀 ~ getAccountById ~ data:", data)
 
 // 🧮 ENRICH CATEGORY ACCOUNT WITH BUDGET CALCULATIONS
 //budget remain and status alert for category_budget account type
 if(account_type_name.trim().toLowerCase() === 'category_budget'){
 const { remain, statusAlert } = calculateBudgetMetrics(
-    parseFloat(data.accountList.account_balance),
-    parseFloat(data.accountList.budget)
+    parseFloat(data.accountList[0].account_balance),
+    parseFloat(data.accountList[0].budget)
   );
 
-  data.accountList.remain = remain
-  data.accountList.statusAlert = statusAlert
+  data.accountList[0].remain = remain
+  data.accountList[0].statusAlert = statusAlert
 
-  console.log('verificar remain y statusAlert',data.accountList.remain, data.accountList.statusAlert, )
+  // console.log('remain and statusAlert',data.accountList[0].remain, data.accountList[0].statusAlert,'data', data )
 } 
-//--------------------------------------
-  const message = `Account successfully completed`;
+//----------------------------
+  const message = `Get account successfully!`;
   console.log('success:', pc[backendColor](message));
 
   res.status(200).json({ status: 200, message, data });
