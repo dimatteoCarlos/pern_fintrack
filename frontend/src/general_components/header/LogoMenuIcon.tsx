@@ -1,10 +1,12 @@
 //src/general_components/header/LogoMenuIcon.tsx
 import { Link, useLocation } from 'react-router-dom';
 import Logo from '../../assets/logo.svg';
+// import UserSquareIcon from '../../assets/UserSquareIcon.svg';
 import MenuIcon from '../../assets/MenuSvg.svg';
 import SignOutIcon from '../../assets/SignOutSvg.svg';
 import './logoMenuIcon.css';
 import useAuth from '../../auth/hooks/useAuth';
+
 function LogoMenuIcon() {
   const { pathname } = useLocation();
 
@@ -23,9 +25,17 @@ const handleSignOutClick = ()=>{
   return (
     <div className='header__logoAndIcon '>
       <Logo />
+
       <div className="menuBox"
-      style={{display:'flex', justifyContent:'space-around', width:'25%', }}
+      style={{display:'flex', justifyContent:'space-around', width:'30%', alignSelf:'baseline' }}
       >
+      {/* <button
+        className='iconContainer '
+        style={{opacity:`0.26`}}
+       >
+        <UserSquareIcon />
+      </button> */}
+
       <Link
         to='accounting'
         className='iconContainer'
