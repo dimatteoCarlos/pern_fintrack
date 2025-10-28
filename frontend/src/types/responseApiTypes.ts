@@ -5,7 +5,6 @@
 import { CurrencyType } from './types';
 
 //ACCOUNT BALANCE BY TYPE
-
 export type BalanceBankRespType = {
   status: number;
   message: string;
@@ -15,7 +14,7 @@ export type BalanceBankRespType = {
     currency_code: CurrencyType;
   };
 };
-
+//----
 export type BalanceIncomeRespType = {
   status: number;
   message: string;
@@ -25,7 +24,7 @@ export type BalanceIncomeRespType = {
     currency_code: CurrencyType;
   };
 };
-
+//----
 export type BalancePocketRespType = {
   status: number;
   message: string;
@@ -39,7 +38,7 @@ export type BalancePocketRespType = {
     note?: string | null;
   };
 };
-
+//----
 export type BalanceCategoryRespType = {
   status: number;
   message: string;
@@ -50,7 +49,7 @@ export type BalanceCategoryRespType = {
     currency_code: CurrencyType;
   };
 };
-
+//----
 export type DebtorRespType = {
   status: number;
   message: string;
@@ -64,7 +63,7 @@ export type DebtorRespType = {
     currency_code: CurrencyType;
   };
 };
-
+//---------------------------------
 //CREATE BASIC ACCOUNT RESPONSE TYPE FROM API
 // Complete API response structure
 export interface CreateBasicAccountApiResponseType {
@@ -140,6 +139,7 @@ interface CounterAccountDataType {
   account_type_name: string;
 }
 
+//-----------------------------
 //CREATE CATEGORY BUDGET ACCOUNT
 export type CreateCategoryBudgetAccountApiResponseType = {
   data: CategoryBudgetResponseDataType;
@@ -162,7 +162,7 @@ type CategoryBudgetAccountType = {
   nature_type_name: string;
   currency_code: CurrencyType;
 };
-
+//----------------------
 //CREATE DEBTOR ACCOUNT
 export type CreateDebtorAccountApiResponseType = {
   status: number;
@@ -185,9 +185,8 @@ type DebtorAccountType = {
   currency_code: CurrencyType;
   account_type_name: 'debtor';
 };
-
+//---------------------------
 //CREATE POCKET SAVING ACCOUNT
-
 export type CreatePocketSavingAccountApiResponseType = {
   status: number;
   data: PocketResponseDataType;
@@ -208,6 +207,7 @@ type PocketSavingAccountType = {
   // account_type_name: pocket_saving
 };
 
+//---------------------------------
 //GET ACCOUNT BY TYPE. RESPONSE TYPE
 //BANK TYPE
 export type AccountByTypeResponseType = {
@@ -235,10 +235,6 @@ export type CategoryBudgetAccountsResponseType = {
   };
 };
 
-// type CategoryBudgetAccountListType = Omit<
-//   AccountBasicDataType,
-//   'currency_id' | 'created_at' | 'updated_at'
-// > & {
 export type CategoryBudgetAccountListType = 
   AccountBasicDataType & {
   budget: number;
@@ -248,6 +244,8 @@ export type CategoryBudgetAccountListType =
   category_nature_type_id?: number;
   account_start_date: Date | string;
   user_id?:string;
+  remain?:number;
+  statusAlert?:boolean;
   //account_starting_amount: number;
 };
 //--
@@ -257,7 +255,7 @@ export type PocketSavingAccountsResponseType = {
   message: string;
   data: {
     rows: number;
-    accountList: PocketSavingAccountListType[];
+    accountList: PocketSavingAccountListType[]
   };
 };
 
@@ -277,12 +275,10 @@ account_id: number;
   note: string;
   desired_date: Date | string;
   user_id:string;
- 
-
-  // account_starting_amount: number;
-  // account_start_date: Date | string;
+// account_starting_amount: number;
+// account_start_date: Date | string;
 };
-
+//---------------------------------
 //MOVEMENT TRANSFER BETWEEN ACCOUNTS
 export type MovementTransactionResponseType = {
   status: number;
@@ -322,7 +318,7 @@ type RecordTransactionInfoType = {
   transaction_description: string;
   transaction_date: string | Date;
 };
-
+//-------------------------------------
 //MONTHLY TOTAL AMOUNT BY MOVEMENT TYPE AND CURRENCY
 
 export type FinancialDataRespType = {
@@ -350,7 +346,7 @@ export type MonthlyDataType = {
   currency_code: CurrencyType;
   type: 'expense' | 'income' | 'saving' | 'other';
 };
-
+//---------------------------------
 //MOVEMENT TRANSACTIONS BY TYPE
 //LAST MOVEMENTS LIST
 
@@ -385,7 +381,7 @@ export type MovementTransactionDataType = {
   transaction_type_name: string;
   account_type_name: string;
 };
-
+//----------------------
 //CATEGORY LIST SUMMARY
 export type CategoryListSummaryType= {
   status: number;
@@ -398,7 +394,7 @@ export type CategoryListType={
   total_balance: number;
   total_remaining: number;
 }
-
+//-------------------
 //DEBTOR LIST SUMMARY
 export interface DebtorListSummaryType {
   status: number;
@@ -416,7 +412,7 @@ export type DebtorListType ={
   debtor: number; //1/0
   creditor: number; //1/0
 }
-
+//------------------------
 //POCKET LIST SUMMARY
 export type PocketListSummaryType = {
   status: number;
@@ -486,5 +482,4 @@ export type TransactionsAccountApiResponseType = {
   message: string;
   data: AccountTransactionDataType;
 };
-
 //----------------------
