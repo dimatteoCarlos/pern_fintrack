@@ -67,7 +67,6 @@ export const getTransactionsForAccountById = async (req, res, next)=>{
     }
     
   const accountInfoNeededResult = await queryFn(ACCOUNT_INFO_QUERY.text, ACCOUNT_INFO_QUERY.values)
-  console.log('account info needed result',accountInfoNeededResult.length)
 
   if (accountInfoNeededResult.length === 0) {
     const message = 'The specified account does not belong to the user or does not exist.';
