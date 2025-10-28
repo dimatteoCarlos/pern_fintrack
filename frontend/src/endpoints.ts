@@ -45,6 +45,8 @@ export const url_create_category_budget_account: string =
 //api response type data:
 export const url_get_accounts_by_category: string = BASE_URL + '/account/category'; 
 
+//------
+
 //create a pocket_saving account
 //http://localhost:5000/api/fintrack/account/new_account/pocket_saving
 export const url_create_pocket_saving_account: string =
@@ -63,7 +65,7 @@ export const url_get_debtor_by_id: string = BASE_URL + '/debts/debtor/';
 
 //--FOR OVERVIEW PAGE
 //---GET ACCOUNT INFO BY ACCOUNT ID
-//--endpoint: http://localhost:5000/api/fintrack/account/11?&user=${user}
+//--endpoint example: http://localhost:5000/api/fintrack/account/11?&user=${user}
 //api response type data:PocketListSummaryType
 export const url_get_account_by_id: string = BASE_URL + '/account';
 
@@ -85,12 +87,12 @@ export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
 export const url_get_accounting_accounts: string =
   BASE_URL + '/account/type/?type=bank_and_investment';
 //----------------------------------
-// get all the available accounts, all types,  but slack acount
+// get all the available accounts, all types,  but slack account
 //endpoint: http://localhost:5000/api/fintrack/account/allAccounts/?
 export const url_get_all_accounting_accounts: string =
   BASE_URL + '/account/allAccounts/';
 //----------------------------------
-//get the sum of balance of all accounts of one account type
+//GET THE SUM OF BALANCE OF ALL ACCOUNTS OF ONE ACCOUNT TYPE
 //example: total balance is the sum of all bank accounts balance
 //for pocket and category budget also get the total goal or budget respectively
 //also, get the balance of income source accounts
@@ -101,7 +103,7 @@ export const url_get_all_accounting_accounts: string =
 export const url_get_total_account_balance_by_type: string =
   BASE_URL + '/dashboard/balance/type';
 
-//movement transaction record
+//MOVEMENT TRANSACTION RECORD
 //ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?user=eacef623-6fb0-4168-a27f-fa135de093e1&movement=expense
 export const url_movement_transaction_record: string =
   BASE_URL + '/transaction/transfer-between-accounts';
@@ -133,7 +135,7 @@ export const url_monthly_TotalAmount_ByType: string =
 
 export const dashboardMovementTransactionsByType: string =
   BASE_URL + '/dashboard/movements/account_type/';
-//---------------------------------------------
+//------------------------------
 // controller:dashboardMovementTransactions
 // insomnia: fintrack dashboardMovementTransactions
 // endpoint:dashboardMovementTransactions
@@ -141,14 +143,16 @@ export const dashboardMovementTransactionsByType: string =
 //http://localhost:5000/api/fintrack/dashboard/movements/movement/?start=&end=&movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
 export const dashboardMovementTransactions: string =
   BASE_URL + '/dashboard/movements/movement/';
-
-//---------------------------------------
+//--------------------------
 //fintrack dashboard movements
 //this is more general since it can search
 //get.http://localhost:5000/api/fintrack/dashboard/movements/search/?start=&end=&search=opening&user=eacef623-6fb0-4168-a27f-fa135de093e1
 // dashboardMovementTransactionsSearch
 export const url_get_transactions_by_search: string =
   BASE_URL + '/dashboard/movements/search/';
+
+//http://localhost:5000/api/fintrack/account/11
+export const url_get_category_budget_full_data = `${BASE_URL}/fintrack/account`;
 
   
 
