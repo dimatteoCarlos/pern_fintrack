@@ -148,10 +148,10 @@ const netWorthRaw= (
     totalInvestmentBalance+
     totalDebtorBalance)
     
-console.log("🚀 ~ OverviewLayout ~ netWorthRaw:", netWorthRaw, totalBankBalance,
-totalPocketBalance,
-totalInvestmentBalance,
-totalDebtorBalance)
+// console.log("🚀 ~ OverviewLayout ~ netWorthRaw:", netWorthRaw, totalBankBalance,
+// totalPocketBalance,
+// totalInvestmentBalance,
+// totalDebtorBalance)
 
 const netWorth=netWorthRaw==0?0:netWorthRaw
 
