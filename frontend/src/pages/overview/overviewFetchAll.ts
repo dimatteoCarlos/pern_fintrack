@@ -96,7 +96,7 @@ export async function overviewFetchAll(
   
   // Espera a que todas las promesas terminen, sean exitosas o no
   const settledResults = await Promise.allSettled(promises);
-  console.log('🚀 ~ settledResults:', settledResults);
+  // console.log('🚀 ~ settledResults:', settledResults);
    //[status, value.data.data.monthlyAmounts[{amount, ...},...]]
 
   // console.log(
@@ -118,14 +118,14 @@ export async function overviewFetchAll(
     // console.log(endpoints[i]);
 
     const result = settledResults[i]; // Obtenemos {status, value:{data:{data:{accounts, total_target, ...}, message, status}...}. o value.data.data.monthlyAmounts
-    console.log('🚀 ~ result:', result);
+    // console.log('🚀 ~ result:', result);
 
     // Si la promesa fue exitosa
     // console.log('🚀 ~ endpoint:', endpoint);
 
     if (result.status === 'fulfilled') {
       const data = result.value.data;
-      console.log('🚀 ~ data overviewFetchAll:', i, data);
+      // console.log('🚀 ~ data overviewFetchAll:', i, data);
 
       if (endpoint.key === 'SavingGoals' && isBalancePocketRespType(data)) {
         results[endpoint.key] = { status: 'success', data };
