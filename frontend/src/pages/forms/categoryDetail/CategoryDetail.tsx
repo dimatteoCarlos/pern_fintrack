@@ -20,19 +20,7 @@ import { CurrencyType } from '../../../types/types.ts';
 import { capitalize, currencyFormat, formatDateToDDMMYYYY  } from '../../../helpers/functions.ts';
 
 import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
-//---
-// const user = import.meta.env.VITE_USER_ID;
-//----------------------------
-//--Account category detailed w/o edition. Not useState usage.
-//----------------------------
-// type ListOfCategoryAccountsRouteStateType ={
-//     detailedData?: CategoryBudgetAccountListType & {
-//     remain: number;
-//     statusAlert: boolean;
-//     } | null;
 
-//   previousRoute: string;
-// }
 //========================
 function CategoryDetail() {
   const {accountId:rawAccountId, categoryName}=useParams<{
@@ -41,18 +29,12 @@ function CategoryDetail() {
   }>()
 
 const accountId = (rawAccountId || '').trim();
-
 if (!accountId) {
 throw new Error("Invalid account ID parameter");
 }
-
 //-----------------------------
   const location =useLocation()
   const state = location.state??{};
-  // const state = location.state as Partial<ListOfCategoryAccountsRouteStateType> ?? {};
-
-  // const {detailedData:accountDetailed, previousRoute=categoryName?`/fintrack/budget/category/${categoryName}`:'/fintrack/budget'} = (state as Partial<ListOfCategoryAccountsRouteStateType>) ?? {}
-
   const {
   detailedData: accountDetailedFromState, 
   previousRoute: previousRouteFromState
@@ -61,10 +43,10 @@ throw new Error("Invalid account ID parameter");
   const previousRoute = previousRouteFromState ??
    (categoryName 
     ? `/fintrack/budget/category/${categoryName}`
-    : '/fintrack/budget'); //how to do it dynamically?
+    : '/fintrack/budget'); 
 
   const isAccountDetailMissing = !accountDetailedFromState;
-
+//----------------------------------------
 // CONDITIONAL FETCH (FALLBACK)
   const urlAccountByIdConditional = isAccountDetailMissing
   ? `${url_get_account_by_id}/${accountId}`
@@ -79,7 +61,7 @@ throw new Error("Invalid account ID parameter");
 //Data transforming for rendering
 const accountDetailed =
   accountDetailedFromState ||
-  accountsDataFromFetch?.data?.accountList 
+  accountsDataFromFetch?.data?.accountList[0] 
   
 // console.log("🚀 ~ CategoryDetail ~ accountDetailed:", accountDetailed)
 //-------------------------
@@ -116,7 +98,7 @@ const accountDetailed =
     const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0]
 //--------------------------------
 //--Fetch Data
-    //--account detail transactions
+//--account detail transactions
     const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
 
     const {
@@ -222,8 +204,8 @@ const accountDetailed =
       }
         </div>
         </article>
-  {/* --- END TRANSACTION STATEMENT SECTION --- */}
 
+  {/* --- END TRANSACTION STATEMENT SECTION --- */}
       {( isLoadingAccount ||isLoadingTransactions) && <p>Loading...</p>}
         {( errorAccount || errorTransactions) && <p>Error fetching account info: {errorAccount??errorTransactions}</p>}
 
