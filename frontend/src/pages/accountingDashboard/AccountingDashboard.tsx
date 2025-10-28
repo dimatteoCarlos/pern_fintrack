@@ -6,7 +6,7 @@ import { useFetch } from '../../hooks/useFetch'
 import { INITIAL_PAGE_ADDRESS } from '../../helpers/constants'
 import {url_get_all_accounting_accounts,  } from '../../endpoints'
 
-import AccountingBox from '../accounting/components/AccountingBox'
+import AccountingBox from './AccountingBox'
 import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace'
 import LeftArrowSvg from '../../assets/LeftArrowSvg.svg';
 import Toast from '../../edition/components/toast/Toast'
@@ -18,6 +18,7 @@ import { capitalize } from '../../helpers/functions'
 
 import './styles/accountingDashboard-styles.css';
 import { isCategoryBudgetAccount } from '../../edition/utils/categoryBudgetCalculations'
+
 // import AccountingSkeleton from '../../edition/components/skeleton/AccountingSkeleton'
 
 //--------------------------------
