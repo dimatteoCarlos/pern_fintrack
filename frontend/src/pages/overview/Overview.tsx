@@ -16,7 +16,7 @@ import InvestmentAccountBalance from './components/InvestmentAccBalance.tsx';
 import OpenAddEditBtn from '../../general_components/OpenAddEditBtn.tsx';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 
-//ENPOINTS
+//ENDPOINTS
 import {
   url_get_total_account_balance_by_type,
   url_monthly_TotalAmount_ByType,
@@ -28,7 +28,6 @@ import {
   BalancePocketRespType,
   FinancialDataRespType,
   LastMovementRespType,
-  // MovementTransactionDataType,
 } from '../../types/responseApiTypes.ts';
 // import { CurrencyType } from '../../types/types.ts';
 
@@ -77,7 +76,7 @@ type KPIDataStateType = {
   LastPnLMovements: LastMovementType[] | null;
 };
 //-----------------------------------------
-//CONFIG DATA TO BE FETCHED
+//CONFIG of DATA TO BE FETCHED
 const overviewKPIendpoints: KPIEndpointType[] = [
   {
     key: 'SavingGoals',
@@ -147,7 +146,7 @@ function Overview() {
 // AUTHENTICATION STATE
   const {isAuthenticated, isCheckingAuth } = useAuth();
 //------------------
-  //functions
+//FUNCTIONS
   function createNewAccount(originRoute: string) {
     navigateTo(originRoute + '/new_account', {
       state: { previousRoute: originRoute },
@@ -324,7 +323,7 @@ function Overview() {
             }
           )
         : null;
-//-------------------------------------------
+//---------------
       const movementPnLTransactionsData =
         result.MovementPnLTransactions.status === 'success'
           ? result.MovementPnLTransactions?.data?.data
@@ -354,17 +353,18 @@ function Overview() {
           )
         : null;
 //-------------
-        setKpiData({
-          SavingGoals: savingGoalsData,
-          MonthlyMovementKPI: totalAndMonthlyAmount,
-          LastExpenseMovements: movementExpenseTransactions,
-          LastDebtMovements: movementDebtTransactions,
-          LastIncomeMovements: movementIncomeTransactions,
-          LastPocketMovements: movementPocketTransactions,
-          LastInvestmentMovements: movementInvestmentTransactions,
-          LastPnLMovements: movementPnLTransactions,
+  setKpiData({
+    SavingGoals: savingGoalsData,
+    MonthlyMovementKPI: totalAndMonthlyAmount,
+    LastExpenseMovements: movementExpenseTransactions,
+    LastDebtMovements: movementDebtTransactions,
+    LastIncomeMovements: movementIncomeTransactions,
+    LastPocketMovements: movementPocketTransactions,
+    LastInvestmentMovements: movementInvestmentTransactions,
+    LastPnLMovements: movementPnLTransactions,
         });
-      } catch (err:unknown) {
+      } catch (err:unknown)
+       {
         console.error('Overview fetch error:', err);
         if(err instanceof Error){
           setError(err.message)
@@ -374,7 +374,7 @@ function Overview() {
       }
     };
 //--------------------------------------
-    fetchOverviewData();
+   fetchOverviewData();
   }, [isAuthenticated,isCheckingAuth]);
 
 // console.log('data state kpi', kpiData);
