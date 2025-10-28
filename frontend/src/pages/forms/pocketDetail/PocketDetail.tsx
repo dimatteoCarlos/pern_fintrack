@@ -9,7 +9,7 @@ import {
   DEFAULT_POCKET_ACCOUNT_LIST,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
-import {  PocketSavingAccountsResponseType,PocketSavingAccountListType, AccountSummaryBalanceType, AccountTransactionType,  PocketListType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+import {  PocketSavingAccountsResponseType, AccountSummaryBalanceType, AccountTransactionType,  PocketListType, TransactionsAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { url_get_account_by_id, url_get_transactions_by_account_id } from '../../../endpoints.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import { capitalize, formatDateToDDMMYYYY  } from '../../../helpers/functions.ts';
@@ -20,46 +20,47 @@ import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
 //---
-// const user = import.meta.env.VITE_USER_ID;
 type LocationStateType = {
   pocketData: PocketListType;
   previousRoute: string;
 };
+//DATA INITIALIZING
+const initialPocketDetail =DEFAULT_POCKET_ACCOUNT_LIST[0]
 
-//data initializing
-const initialPocketDetail = DEFAULT_POCKET_ACCOUNT_LIST[0]
 const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
-//----------------------------
+//=============================
+// MAIN COMPONENT POCKET DETAIL
+//=============================
 function PocketDetail() {
   const location = useLocation();
   const state = location.state as LocationStateType | null;
-// console.log("🚀 ~ PocketDetail ~ state:", state)
 
   const previousRouteFromState = state?.previousRoute ?? "/fintrack/budget";
   const {pocketId:accountId} = useParams()
 //------------------------
 //data from endpoint request for info account, and for api transactions by pocket account id
- //--states
+
+//--STATES
  //--state for account detail global info
- const [accountDetail, setAccountDetail] = useState<PocketSavingAccountListType>((initialPocketDetail));
+ const [accountDetail, setAccountDetail] = useState((initialPocketDetail));
+
  const [previousRoute, setPreviousRoute] = useState<string>("/fintrack/overview"); 
-  // const [bubleInfo, setBubleInfo] = useState<PocketListType>(initialBubleInfo); 
 //----------
- //--state for account transactions data
+//--state for account transactions data
   const [transactions, setTransactions]=useState<AccountTransactionType[]>(initialAccountTransactionsData.transactions)
 
   const [summaryAccountBalance, setSummaryAccountBalance]=useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary)
- //---------------------------
- //--Fetch Data
+//---------------------------
+//--Fetch Data
 //--account detail global info
-    const urlAccountById = `${url_get_account_by_id}/${accountId}`;
-    const {
-      apiData: accountsData,
-      isLoading,
-      error,
-    } = useFetch<PocketSavingAccountsResponseType >(
-      urlAccountById
-    );
+  const urlAccountById = `${url_get_account_by_id}/${accountId}`;
+  const {
+    apiData: accountsData,
+    isLoading,
+    error,
+  } = useFetch<PocketSavingAccountsResponseType >(
+    urlAccountById
+  );
 
 // console.log('accountsData', accountsData)
 //--------------------------------
@@ -73,8 +74,8 @@ function PocketDetail() {
     const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0]
     const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0]
 
- //--Fetch Data
-    //--account detail transactions
+//--Fetch Data
+//--account detail transactions
     const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
 
     const {
@@ -84,7 +85,6 @@ function PocketDetail() {
     } = useFetch<TransactionsAccountApiResponseType>(
       urlTransactionsAccountById
     );
-
 //---------------------------
 useEffect(() => {
   if(transactionAccountApiResponse?.data.transactions){
@@ -94,14 +94,15 @@ useEffect(() => {
   //else keep the initial values
 }, [transactionAccountApiResponse])
 
-//-------------------------------------
+//--------------------------------
 useEffect(() => {
 if(previousRouteFromState)(setPreviousRoute(previousRouteFromState))
 
-  if(accountsData?.data?.accountList.length ){
-    const account = accountsData?.data?.accountList[0]
+if(accountsData?.data?.accountList ){
+  const account = accountsData?.data?.accountList[0]
 
-    if(account){setAccountDetail(account)}}
+  if(account){setAccountDetail(account)}
+}
 
 }, [accountsData, accountId,previousRouteFromState])
  
@@ -168,7 +169,6 @@ if(previousRouteFromState)(setPreviousRoute(previousRouteFromState))
               </div>
             </div>
           </div>
- 
 
         {/* --- TRANSACTION STATEMENT SECTION --- */}
         <div className="account-transactions__container "
