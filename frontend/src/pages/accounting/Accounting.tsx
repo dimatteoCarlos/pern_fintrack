@@ -4,13 +4,13 @@ import LeftArrowSvg from '../../assets/LeftArrowSvg.svg';
 import { Link, useLocation } from 'react-router-dom';
 import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { url_get_accounting_accounts } from '../../endpoints.ts';
-import './styles/accounting-styles.css';
 import { useMemo } from 'react';
 import { useFetch } from '../../hooks/useFetch.ts';
 import { AccountByTypeResponseType } from '../../types/responseApiTypes.ts';
 import { capitalize } from '../../helpers/functions.ts';
 import { ACCOUNTING_DEFAULT } from '../../helpers/constants.ts';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
+import './styles/accounting-styles.css';
 
 function Accounting() {
   const location = useLocation();
@@ -23,7 +23,7 @@ function Accounting() {
   const { apiData, isLoading, error } = useFetch<AccountByTypeResponseType>(
     `${url_get_accounting_accounts}&user=${user}`
   );
-  //--------------------------------------
+  //---------AccountListType----------
   const accounting = useMemo(() => {
     return !error && !isLoading && apiData?.data.accountList.length
       ? apiData.data.accountList.map((acc) => ({
