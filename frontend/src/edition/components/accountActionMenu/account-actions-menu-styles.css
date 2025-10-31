@@ -1,0 +1,115 @@
+/* frontend/src/edition/components/account-actions-menu-styles.css */
+/* 🎯 ACCOUNT ACTIONS MENU STYLES */
+/* 🎯 OVERLAY that covers all the screen */
+.account-actions-menu__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5); /* Fondo semi-transparente */
+  backdrop-filter: blur(2px);
+}
+/* 🎯 AUTHOMATICALLY CENTERED MODAL */
+.account-actions-menu {
+  position: fixed;
+  z-index: 1000;
+  /* background: var(--dark-light); */
+  background-color: black;
+  /* border: 1px solid rgba(255, 255, 255, 0.1); */
+  border: 3px solid var(--creme, white);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(40px);
+  min-width: 300px;
+  animation: menuSlideIn 0.2s ease-out;
+  overflow: hidden;
+}
+
+/* 🎯 MENU HEADER */
+.account-actions-menu__header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.account-actions-menu__account-name {
+  color: var(--light);
+  font-size: 1.5rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+/* 📋 MENU OPTIONS */
+.account-actions-menu__options {
+  padding: 0.5rem;
+}
+
+.account-actions-menu__option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--light);
+  
+  font-size: 0.875rem;
+  text-align: left;
+  /* border:1px solid red; */
+}
+
+.account-actions-menu__option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.account-actions-menu__option:active {
+  transform: scale(0.98);
+}
+
+/* 🗑️ DELETE OPTION STYLES */
+.account-actions-menu__option--delete {
+  color: #ef4444;
+}
+
+.account-actions-menu__option--delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* 🎨 ICONS AND TEXT */
+.account-actions-menu__icon {
+  font-size: 1.5rem;
+  width: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.account-actions-menu__text {
+  flex: 1;
+  font-weight: 500;
+  font-size: 1.5rem;
+}
+
+/* 🎬 ANIMATIONS */
+@keyframes menuSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
