@@ -46,7 +46,6 @@ export const url_create_category_budget_account: string =
 export const url_get_accounts_by_category: string = BASE_URL + '/account/category'; 
 
 //------
-
 //create a pocket_saving account
 //http://localhost:5000/api/fintrack/account/new_account/pocket_saving
 export const url_create_pocket_saving_account: string =
@@ -66,7 +65,7 @@ export const url_get_debtor_by_id: string = BASE_URL + '/debts/debtor/';
 //--FOR OVERVIEW PAGE
 //---GET ACCOUNT INFO BY ACCOUNT ID
 //--endpoint example: http://localhost:5000/api/fintrack/account/11?&user=${user}
-//api response type data:PocketListSummaryType
+
 export const url_get_account_by_id: string = BASE_URL + '/account';
 
 //---GET ACCOUNT TRANSACTIONS BY ACCOUNT ID
@@ -153,6 +152,11 @@ export const url_get_transactions_by_search: string =
 
 //http://localhost:5000/api/fintrack/account/11
 export const url_get_category_budget_full_data = `${BASE_URL}/fintrack/account`;
+//--------------------------
+//ACCOUNT EDITION ENDPOINT
+//http://localhost:5000/api/fintrack/account/edit/11//http://localhost:5000/api/fintrack/account/details/11
+export const url_get_account_by_id_edition : string = BASE_URL + '/fintrack/account/details/';
 
-  
-
+//http://localhost:5000/api/fintrack/account/edit/11
+export const url_patch_account_edit =   
+`${BASE_URL}/fintrack/account/edit`;
