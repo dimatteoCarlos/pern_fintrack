@@ -9,7 +9,7 @@ import dashboardRoutes from './dashboardRoutes.js';
 const router = express.Router();
 router.use('/account',
     // verifyToken,
-   accountRoutes); //create and read(get) accounts
+   accountRoutes); //create, edit and read(get) accounts
 
 router.use('/transaction',
  // verifyToken,
