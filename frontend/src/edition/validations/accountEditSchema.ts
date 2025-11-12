@@ -1,0 +1,198 @@
+//frontend/src/edition/validations/accountEditSchema.ts
+//Define which editable fields to render, for each account type.  
+// 🎯Basic structure for each field
+import { BaseAccountEditFormData, CategoryBudgetEditFormData, DebtorAccountEditFormData, PocketSavingEditFormData } from './editSchemas';
+import { AccountListType } from '../../types/responseApiTypes';
+// 🎯 1.MAPPING FIELDS TO RENDER
+//combine all possible FieldNames of all edition schemas
+export type FieldConfigType = {
+ fieldName: keyof (BaseAccountEditFormData & CategoryBudgetEditFormData & PocketSavingEditFormData & DebtorAccountEditFormData);
+    label: string;
+ inputType: 'text' | 'number' | 'textarea' | 'select' | 'date'; 
+ isEditable: boolean; // false = ReadOnly (at first, field could be editable though)
+ isRequired: boolean; // for Zod, it must be validated and not null
+ placeholder?: string;
+ options?: { value: string; label: string }[]; 
+ helpText?: string;
+// CRÍTICAL: Indicates if field changes trigger complex logic as recalculation /Indica si el cambio en este campo dispara lógica compleja (ej. recálculo)
+ isCritical?: boolean; 
+    // CRÍTICAL: build field from others / Indica que el campo se construye a partir de otros (ej. account_name de debtor)
+ isDerived?: boolean; 
+}
+// 🎯 2.MAIN CONFIGURATION: Mapping the Account Type to its Fields / Mapeo del Tipo de Cuenta a sus Campos
+export type AccountSchemaConfigType = {
+// 'string' covers all account types (bank, debtor, etc.)
+// [accountType: string]: FieldConfigType[];
+[key in AccountListType['account_type_name']]: FieldConfigType[];
+};
+
+// 🎯 3. DYNAMIC CONFIG MAP / EL MAPA DE CONFIGURACIÓN DINÁMICA
+export const basicAccountConfig:FieldConfigType[] = [
+// base for bank, investment and income_source
+  {
+   fieldName: 'account_name',
+   label: 'Account Name',
+   inputType: 'text',
+   isEditable: true,
+   isRequired: true,
+   placeholder: 'Account Name',
+    },
+  {
+   fieldName: 'note',
+   label: 'Note',
+   inputType: 'textarea',
+   isEditable: true,
+   isRequired: false,
+   placeholder: 'Add any relevant notes (max 150 chars)',
+  },
+ ]
+//====================================
+export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
+// 🏦 Basic Types / Tipos Simples (bank, investment, income_source)
+ bank: basicAccountConfig,
+ investment: [ // Reutiliza la configuración base
+     ...basicAccountConfig
+ ],
+ income_source: [ // Reutiliza la configuración base
+     ...basicAccountConfig
+ ],
+
+// 📊 Category Budget
+ category_budget: [
+   {   
+    fieldName: 'account_name',
+    label: 'Account Name',
+    inputType: 'text',
+    isEditable: false,//true
+    isRequired: false,
+    placeholder: 'Account Name',
+    isDerived: true, // Calculated Field from category/nature/subcategory
+    helpText: 'Name generated from Category, Nature and Subcategory.',
+     },
+   {   
+      fieldName: 'budget',
+      label: 'Monthly Budget Amount',
+      inputType: 'number',
+      isEditable: true,
+      isRequired: true,
+      placeholder: 'Amount',
+      helpText: 'Changing this will update the remaining amount.',
+      isCritical: true, //
+     },
+    {
+        fieldName: 'category_name',
+        label: 'Category Name',
+        inputType: 'text',
+        isEditable: true,
+        isRequired: true,
+        placeholder: 'e.g., Food',
+     },
+     {
+         fieldName: 'subcategory',
+         label: 'Subcategory',
+         inputType: 'text',
+         isEditable: true,
+         isRequired: false,
+         placeholder: 'Subcategory Name',
+     },
+     {
+         fieldName: 'nature_type_name', 
+         label: 'Nature of Expense',
+         inputType: 'select',
+         isEditable: true,
+         isRequired: true,
+         options: [
+             { value: 'must', label: 'Must Have' },
+             { value: 'need', label: 'Need' },
+             { value: 'want', label: 'Want' },
+             { value: 'other', label: 'Other' },
+         ],
+     },
+     {
+         fieldName: 'note',
+         label: 'Notes',
+         inputType: 'textarea',
+         isEditable: true,
+         isRequired: false,
+         placeholder: 'Max 150 chars',
+     },
+ ],
+ 
+// 💰 Pocket Saving
+ pocket_saving: [
+     {
+         fieldName: 'account_name',
+         label: 'Pocket Name',
+         inputType: 'text',
+         isEditable: true,
+         isRequired: true,
+         placeholder: 'e.g., Vacation Fund',
+     },
+     {
+         fieldName: 'target',
+         label: 'Savings Goal Amount',
+         inputType: 'number',
+         isEditable: true,
+         isRequired: true,
+        //  placeholder: '0.00',
+         helpText: 'Changing this will update the progress percentage.',
+         isCritical: true,
+     },
+     {
+         fieldName: 'desired_date',
+         label: 'Target Completion Date',
+         inputType: 'date',
+         isEditable: true,
+         isRequired: true,
+         helpText: 'Must be a future date.',
+         isCritical: true, 
+     },
+     {
+         fieldName: 'note',
+         label: 'Note',
+         inputType: 'textarea',
+         isEditable: true,
+         isRequired: true,
+         placeholder: 'Max 150 chars',
+     },
+ ],
+
+ // 👤 Debtor
+ debtor: [
+     {
+         fieldName: 'debtor_name',
+         label: 'Name',
+         inputType: 'text',
+         isEditable: true,
+         isRequired: true,
+         placeholder: 'e.g., John',
+         isCritical: true, // El cambio dispara la actualización de account_name
+        },
+         {
+         fieldName: 'debtor_lastname',
+         label: 'LastName',
+         inputType: 'text',
+         isEditable: true,
+         isRequired: true,
+         placeholder: 'e.g., Doe',
+         isCritical: true, // El cambio dispara la actualización de account_name
+     },
+     {
+         fieldName: 'account_name',
+         label: 'Account Name',
+         inputType: 'text',
+         isEditable: false, // Read-Only
+         isRequired: false,
+         isDerived: true, // Calculated field (Name + LastName)
+         helpText: 'Name generated from Debtor Name and Last Name.',
+     },
+     {
+         fieldName: 'note',
+         label: 'Notes',
+         inputType: 'textarea',
+         isEditable: true,
+         isRequired: false,
+         placeholder: 'Max 150 chars',
+     },
+ ],
+};
