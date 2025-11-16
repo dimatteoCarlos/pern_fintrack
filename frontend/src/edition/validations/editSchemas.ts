@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { noteSchema, numberSchema, requiredStringSchema } from "../../validations/zod_schemas/commonSchemas";
 import { ERROR_MESSAGES } from "../../validations/utils/constants";
+// 
 // import { AccountListType } from "../../types/responseApiTypes";
 
 // 🎯 1. BASIC EDITION SCHEMA FOR PATCH
@@ -45,7 +46,8 @@ export type  DebtorAccountEditFormData= z.infer<typeof debtorAccountEditSchema>
 // 🗺️ FINAL SCHEMA MAP: Map account type names (string keys) to their corresponding Zod schema
 export const accountTypeEditSchemas:
 // {[key in AccountListType['account_type_name']]: z.ZodTypeAny}
-{[key: string]: z.ZodTypeAny}
+// // {[key: string]: z.ZodTypeAny}
+Record<string, z.ZodObject<Record<string, z.ZodTypeAny>>>
 ={
 bank:baseAccountEditSchema,
 investment:baseAccountEditSchema,
@@ -54,6 +56,28 @@ pocket_saving:pocketSavingEditSchema,
 category_budget:categoryBudgetEditShema,
 debtor:debtorAccountEditSchema,
 }
+
+//forma simply y segura
+// export const accountTypeEditSchemas = {
+//   bank: baseAccountEditSchema,
+//   investment: baseAccountEditSchema,
+//   income_source: baseAccountEditSchema,
+//   pocket_saving: pocketSavingEditSchema,
+//   category_budget: categoryBudgetEditShema,
+//   debtor: debtorAccountEditSchema,
+// } as const; // 👈 magia
+
+// export const accountTypeEditSchemas = schemas;
+// export type AccountTypeEditMap = typeof accountTypeEditSchemas;
+//const schema = accountTypeEditSchemas[accountType ?? ''];
+// if (schema instanceof z.ZodObject) {
+//   const partial = schema.pick({ [field]: true });
+//   ...
+// }
+
+
+
+
 
 
 

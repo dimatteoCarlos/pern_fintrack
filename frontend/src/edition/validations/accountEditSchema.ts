@@ -59,140 +59,140 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
 
 // 📊 Category Budget
  category_budget: [
-   {   
-    fieldName: 'account_name',
-    label: 'Account Name',
+ {   
+  fieldName: 'account_name',
+  label: 'Account Name',
+  inputType: 'text',
+  isEditable: false,//true
+  isRequired: false,
+  placeholder: 'Account Name',
+  isDerived: true, // Calculated Field from category/nature/subcategory
+  helpText: 'Name generated from Category, Nature and Subcategory.',
+   },
+ {   
+    fieldName: 'budget',
+    label: 'Monthly Budget Amount',
+    inputType: 'number',
+    isEditable: true,
+    isRequired: true,
+    placeholder: 'Amount',
+    helpText: 'Changing this will update the remaining amount.',
+    isCritical: true, //
+   },
+  {
+    fieldName: 'category_name',
+    label: 'Category Name',
     inputType: 'text',
-    isEditable: false,//true
+    isEditable: true,
+    isRequired: true,
+    placeholder: 'e.g., Food',
+   },
+   {
+    fieldName: 'subcategory',
+    label: 'Subcategory',
+    inputType: 'text',
+    isEditable: true,
     isRequired: false,
-    placeholder: 'Account Name',
-    isDerived: true, // Calculated Field from category/nature/subcategory
-    helpText: 'Name generated from Category, Nature and Subcategory.',
-     },
-   {   
-      fieldName: 'budget',
-      label: 'Monthly Budget Amount',
-      inputType: 'number',
-      isEditable: true,
-      isRequired: true,
-      placeholder: 'Amount',
-      helpText: 'Changing this will update the remaining amount.',
-      isCritical: true, //
-     },
-    {
-        fieldName: 'category_name',
-        label: 'Category Name',
-        inputType: 'text',
-        isEditable: true,
-        isRequired: true,
-        placeholder: 'e.g., Food',
-     },
-     {
-         fieldName: 'subcategory',
-         label: 'Subcategory',
-         inputType: 'text',
-         isEditable: true,
-         isRequired: false,
-         placeholder: 'Subcategory Name',
-     },
-     {
-         fieldName: 'nature_type_name', 
-         label: 'Nature of Expense',
-         inputType: 'select',
-         isEditable: true,
-         isRequired: true,
-         options: [
-             { value: 'must', label: 'Must Have' },
-             { value: 'need', label: 'Need' },
-             { value: 'want', label: 'Want' },
-             { value: 'other', label: 'Other' },
-         ],
-     },
-     {
-         fieldName: 'note',
-         label: 'Notes',
-         inputType: 'textarea',
-         isEditable: true,
-         isRequired: false,
-         placeholder: 'Max 150 chars',
-     },
+    placeholder: 'Subcategory Name',
+   },
+   {
+    fieldName: 'nature_type_name', 
+    label: 'Nature of Expense',
+    inputType: 'select',
+    isEditable: true,
+    isRequired: true,
+    options: [
+        { value: 'must', label: 'Must Have' },
+        { value: 'need', label: 'Need' },
+        { value: 'want', label: 'Want' },
+        { value: 'other', label: 'Other' },
+    ],
+   },
+   {
+    fieldName: 'note',
+    label: 'Notes',
+    inputType: 'textarea',
+    isEditable: true,
+    isRequired: false,
+    placeholder: 'Max 150 chars',
+   },
  ],
  
 // 💰 Pocket Saving
  pocket_saving: [
      {
-         fieldName: 'account_name',
-         label: 'Pocket Name',
-         inputType: 'text',
-         isEditable: true,
-         isRequired: true,
-         placeholder: 'e.g., Vacation Fund',
+      fieldName: 'account_name',
+      label: 'Pocket Name',
+      inputType: 'text',
+      isEditable: true,
+      isRequired: true,
+      placeholder: 'e.g., Vacation Fund',
      },
      {
-         fieldName: 'target',
-         label: 'Savings Goal Amount',
-         inputType: 'number',
-         isEditable: true,
-         isRequired: true,
-        //  placeholder: '0.00',
-         helpText: 'Changing this will update the progress percentage.',
-         isCritical: true,
+      fieldName: 'target',
+      label: 'Savings Goal Amount',
+      inputType: 'number',
+      isEditable: true,
+      isRequired: true,
+     //  placeholder: '0.00',
+      helpText: 'Changing this will update the progress percentage.',
+      isCritical: true,
      },
      {
-         fieldName: 'desired_date',
-         label: 'Target Completion Date',
-         inputType: 'date',
-         isEditable: true,
-         isRequired: true,
-         helpText: 'Must be a future date.',
-         isCritical: true, 
+      fieldName: 'desired_date',
+      label: 'Target Completion Date',
+      inputType: 'date',
+      isEditable: true,
+      isRequired: true,
+      helpText: 'Must be a future date.',
+      isCritical: true, 
      },
      {
-         fieldName: 'note',
-         label: 'Note',
-         inputType: 'textarea',
-         isEditable: true,
-         isRequired: true,
-         placeholder: 'Max 150 chars',
+      fieldName: 'note',
+      label: 'Note',
+      inputType: 'textarea',
+      isEditable: true,
+      isRequired: true,
+      placeholder: 'Max 150 chars',
      },
- ],
+  ],
 
  // 👤 Debtor
  debtor: [
-     {
-         fieldName: 'debtor_name',
-         label: 'Name',
-         inputType: 'text',
-         isEditable: true,
-         isRequired: true,
-         placeholder: 'e.g., John',
-         isCritical: true, // El cambio dispara la actualización de account_name
-        },
-         {
-         fieldName: 'debtor_lastname',
-         label: 'LastName',
-         inputType: 'text',
-         isEditable: true,
-         isRequired: true,
-         placeholder: 'e.g., Doe',
-         isCritical: true, // El cambio dispara la actualización de account_name
-     },
-     {
-         fieldName: 'account_name',
-         label: 'Account Name',
-         inputType: 'text',
-         isEditable: false, // Read-Only
-         isRequired: false,
-         isDerived: true, // Calculated field (Name + LastName)
-         helpText: 'Name generated from Debtor Name and Last Name.',
-     },
-     {
-         fieldName: 'note',
-         label: 'Notes',
-         inputType: 'textarea',
-         isEditable: true,
-         isRequired: false,
-         placeholder: 'Max 150 chars',
-     },
+  {
+   fieldName: 'debtor_name',
+   label: 'Name',
+   inputType: 'text',
+   isEditable: true,
+   isRequired: true,
+   placeholder: 'e.g., John',
+   isCritical: true, // El cambio dispara la actualización de account_name
+    },
+  {
+  fieldName: 'debtor_lastname',
+  label: 'LastName',
+  inputType: 'text',
+  isEditable: true,
+  isRequired: true,
+  placeholder: 'e.g., Doe',
+  isCritical: true, // El cambio dispara la actualización de account_name
+ },
+ {
+  fieldName: 'account_name',
+  label: 'Account Name',
+  inputType: 'text',
+  isEditable: false, // Read-Only
+  isRequired: false,
+  isDerived: true, // Calculated field (Name + LastName)
+  helpText: 'Name generated from Debtor Name and Last Name.',
+ },
+ {
+  fieldName: 'note',
+  label: 'Notes',
+  inputType: 'textarea',
+  isEditable: true,
+  isRequired: false,
+  placeholder: 'Max 150 chars',
+ },
  ],
 };
