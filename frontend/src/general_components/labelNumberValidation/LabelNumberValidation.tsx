@@ -1,6 +1,8 @@
 import { capitalize } from '../../helpers/functions';
 import { VariantType } from '../../types/types';
-import { ValidationMessagesType } from '../../validations/utils/zod_validation';
+import { ValidationMessagesType } from '../../validations/types';
+// import { ValidationMessagesType } from '../../validations/utils/zod_validation';
+// import { ValidationMessagesType } from '../../../../validations/types';
 
 type LabelNumberValidationPropType<TFormDataType extends { [key: string]: unknown} > = {
   formDataNumber: { [key: string]: string };
@@ -21,8 +23,7 @@ function LabelNumberValidation<TFormDataType extends { [key: string]: unknown }>
   const validationMessage = validationMessages[validationKey] || '';  
 
   return (
-    // <label htmlFor={formDataNumber.keyName} className={labelClassName}>
-    
+   
     <div className={labelClassName}>
       {capitalize(formDataNumber.title)}&nbsp;
       <span
@@ -33,7 +34,7 @@ function LabelNumberValidation<TFormDataType extends { [key: string]: unknown }>
             : 'var(--error)',
         }}
       >
-        {validationMessages[formDataNumber.keyName as keyof TFormDataType]?.replace('Format:', '')}
+       {validationMessages[formDataNumber.keyName as keyof TFormDataType]?.replace('Format:', '')}
       </span>
     </div>
     
