@@ -16,6 +16,10 @@ import TopWhiteSpace from '../../../../general_components/topWhiteSpace/TopWhite
 import { MessageToUser } from '../../../../general_components/messageToUser/MessageToUser.tsx';
 import FormSubmitBtn from "../../../../general_components/formSubmitBtn/FormSubmitBtn.tsx";
 import UniversalDynamicInput from "./UniversalDynamicInput.tsx";
+import LeftArrowSvg from '../../../../assets/LeftArrowSvg.svg';
+
+import '../../../../pages/forms/styles/forms-styles.css'
+
 
 // ⚙️ TYPES AND LOGIC
 import { AccountByTypeResponseType, AccountListType } from '../../../../types/responseApiTypes';
@@ -39,6 +43,11 @@ import { debounce } from "../../../utils/debounce.ts";
 //   | CategoryBudgetEditFormData 
 //   | DebtorAccountEditFormData
   // | Record<string, unknown>;
+/*
+Cargar cuenta → Determinar tipo → Cargar configuración → 
+Inicializar formulario → Manejar cambios → Validar en tiempo real → 
+Validar al submit → Enviar → Actualizar store → Navegar
+*/
 
 type GenericEditFormData = {
   [key: string]: string | number | boolean | Date | null | undefined;
@@ -60,63 +69,63 @@ export function EditAccount(): JSX.Element {
  const { apiData, isLoading: isFetching, error: fetchError } = 
   useFetch<AccountByTypeResponseType>(fetchUrl);
 
-  const accountData = apiData?.data?.accountList[0]
- console.log('apiData', {accountData})
+ const accountData = apiData?.data?.accountList[0]
+ // console.log('apiData', {accountData})
   
 //3.📤 HOOK FOR EDIT MUTATION (PATCH)
- const mutationUrl = accountId ?`${url_patch_account_edit}${accountId}` : '';
+ const mutationUrl = accountId ?`${url_patch_account_edit}/${accountId}` : '';
 
- const {  isLoading: isSaving, error: saveError, requestFn } = 
+ const { data,  isLoading: isSaving, error: saveError, requestFn } = 
   useFetchLoad<AccountListType, GenericEditFormData>({
     url: mutationUrl,
     method: 'PATCH',
   });
+
+ console.log("🚀 ~ EditAccount ~ requestFn data:", data)
 
 //***/
 
 //4.⚙️ LOCAL STATES
  const [formData, setFormData] = useState<GenericEditFormData>({});
 
- // const [originalData, setOriginalData] = useState<GenericEditFormData>({});
-
  const [validationMessages, setValidationMessages] = useState<ValidationMessagesType<GenericEditFormData>>({});
  const [isReset] = useState(false);
- // const [isReset, setIsReset] = useState(false);
+
+const [userMessage, setUserMessage] = useState<{message: string, status: number} | undefined>(undefined);
   
 //5.⚙️ ZOD SCHEMA CONFIGURATION
  const accountType = accountData? accountData.account_type_name:null;
+  // console.log("🚀 ~ EditAccount ~ accountType:", accountType)
  
- console.log("🚀 ~ EditAccount ~ accountType:", accountType)
 //get access of type to the config map using union key 
  const accountFields = useMemo(() => {
   if (!accountType) return [];//que pasa si esto occure?
 
-  const fields = ACCOUNT_EDIT_SCHEMA_CONFIG[accountType as AccountListType['account_type_name']];
+  const fields = ACCOUNT_EDIT_SCHEMA_CONFIG[accountType as AccountListType['account_type_name']]  || [];
 
-  console.log("🚀 ~ EditAccount ~ fields:", fields)
-    if (!fields) {
+  // const schema = accountTypeEditSchemas[accountType] || null;
+
+  // console.log("🚀 ~ EditAccount ~ fields:", fields, schema)
+
+   if (!fields) {
    console.error(`Error: Account type '${accountType}' not found in ACCOUNT_EDIT_SCHEMA_CONFIG.`);
    return [];
   }
-  
-  return fields
+    return fields
     }, [accountType]);
 
- console.log("🚀 ~ EditAccount ~ accountFields:", accountFields)//que pasa si n[]
 //----
  const schema: ZodType<GenericEditFormData> | null = useMemo(() => 
   accountType ? accountTypeEditSchemas[accountType as AccountListType['account_type_name']] as ZodType<GenericEditFormData> : null
   , [accountType]);
-  
-  console.log("🚀 ~ EditAccount ~ schema:", schema)
-  
+  // console.log("🚀 ~ EditAccount ~ schema:", schema)
+    
 //6.🏗️ FORM INITIALIZATION WITH ACCOUNT INFO 
  useEffect(() => {
   if (accountData && accountFields.length > 0) {
    const initialData: GenericEditFormData = {} as GenericEditFormData;
-   const data = accountData; //data type is AccountDetailDataUnion
-   
-   console.log("🚀 ~ useEffect ~ data:", data)
+   const data = accountData; 
+   // console.log("🚀 ~ useEffect ~ data:", data)
    
    accountFields.forEach((field: FieldConfigType) => {
    // La clave para acceder a data (del API)
@@ -126,7 +135,6 @@ export function EditAccount(): JSX.Element {
    
    if (data && data[key as keyof typeof data] !== undefined) {
     initialData[formKey] = data[key];
-     // initialData[key] = data[key as keyof typeof data] as string | number | Date;//m
    }
   });
   setFormData(initialData);
@@ -139,11 +147,8 @@ const runFieldValidation = useCallback((fieldName: string, value: unknown) => {
  if (!schema) return;
 
  // Validate just the changed field (using .pick)
- // 🟢 FIX: Asegurar que es un ZodObject
-  // const zodObjectSchema = schema as z.ZodObject<Record<string,  z.ZodTypeAny>>;
-  // const partialSchema = zodObjectSchema.pick({[fieldName]: true } );
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// 🟢 FIX: Asegurar que es un ZodObject
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   const partialSchema = (schema as any).pick({ [fieldName]: true });
 
   const { errors } = validateForm(partialSchema, { [fieldName]: value });
@@ -154,8 +159,9 @@ const runFieldValidation = useCallback((fieldName: string, value: unknown) => {
   if (errors[fieldName]) {
    return { ...prev, [fieldName]: errors[fieldName] };
   } else {
-  // Elimina el mensaje de error si la validación pasa
+  // Elimina el mensaje de error si la validación pasa.
   // Patrón idiomático de destructuring para eliminar una propiedad de un objeto de forma inmutable.
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
    const { [key]: _, ...rest } = prev;
    return rest;
@@ -170,6 +176,7 @@ const runFieldValidation = useCallback((fieldName: string, value: unknown) => {
  const handleTextChange = useCallback((fieldName: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
  const value = e.target.value;
  setFormData(prev => ({ ...prev, [fieldName]: value }));
+ setUserMessage(undefined); //reset message
  if (fieldName === 'note' || e.target.type === 'text') {
   debouncedValidation(fieldName, value);
    } else {
@@ -210,6 +217,7 @@ const onSubmitForm = async (e: React.MouseEvent) => {
     
 if (Object.keys(errors).length > 0) {
   setValidationMessages(errors as ValidationMessagesType<GenericEditFormData>);
+  setUserMessage({ message: 'Please fix validation errors', status: 400 });
   return;//deberia mostrar los mensajes de error al usuario
 }
 if (!validatedData) return;//que mensaje se muestra
@@ -222,32 +230,31 @@ const payloadToSend = {
 };
 // 9.3. SEND API (PATCH)
  const result = await requestFn(payloadToSend as GenericEditFormData, {});
-
- console.log("🚀 ~ onSubmitForm ~ result despues de editar:", result)
+ // console.log("🚀 ~ onSubmitForm ~ result despues de editar:", result)
     
 if (result.data) {
  updateAccount(result.data);// update and syncronize with accounting dashboard
+  setUserMessage({ message: 'Account updated successfully!', status: 200 });
 
 setTimeout(() => {
  navigate('/fintrack/tracker/accounting'); //should be previous route
 }, 500); 
  }
   };
-
+//------------
 const isFormDisabled = isFetching || isSaving || !accountData || !schema;
-
 const finalError = fetchError || saveError;
 
-const messageToUser = accountData ? { message: 'Account updated successfully!', status: 200 } : undefined;
-  
+//-------------------------------------------  
 //10. RENDER
 return (
- <section className='form__layout'>
+ <>
+ <section className='page__container'>
  <TopWhiteSpace variant={'dark'} />
- <div className='form__container'>
-  <Link to={'/fintrack/tracker/accounting'} className='form__header'>
-   <div className='form__header--icon'>
-    {/* <LeftArrowSvg /> */}flecha
+ <div className='page__content'>
+  <Link to={'/fintrack/tracker/accounting'} className='form__header main__title--container '>
+   <div className='form__header--icon iconLeftArrow'>
+    { <LeftArrowSvg /> }
    </div>
    <div className='form__title'>
     {'Edit Account'}
@@ -263,9 +270,10 @@ return (
     )}
 
    {!!accountType && accountFields.length > 0 && (
-    <form className='form__body'>
+    <form className='form__box'>
      <div className='form__input__group'>
    {/* 🎨 DYNAMIC RENDERING OF FORM */}
+    <div className='form__container'>
      {accountFields.map((fieldConfig) => (
       <UniversalDynamicInput
         key={fieldConfig.fieldName}
@@ -280,25 +288,29 @@ return (
         isReset={isReset}
       />
      ))
-     }
+    }
      </div>
 
+   </div>
     <div className='submit__btn__container'>
       <FormSubmitBtn onClickHandler={onSubmitForm} disabled={isFormDisabled || !accountId}>
         Save Changes
       </FormSubmitBtn>
     </div>
-     </form>
+   </form>
    )}
-
+  </div>
+</section>
+<section className="Toastify">
   <MessageToUser
     isLoading={isSaving}
     error={finalError}
-    messageToUser={messageToUser}
+    messageToUser={userMessage}
     variant="form"
   />
- </div>
- </section>
+</section>
+ </>
+
   );
 }
 
