@@ -6,8 +6,8 @@ import './messageToUser.css'
 import { showToastByStatus } from '../../helpers/showToastByStatus';
 
 type MessageToUserPropType = {
-  isLoading: boolean;
-  error: string | Error | null
+  isLoading?: boolean;
+  error?: string | Error | null
   messageToUser:{message:string, status?:number} | string | null | undefined;
   variant?: VariantType;
   showToast?: boolean;
@@ -19,7 +19,7 @@ export const MessageToUser = ({
   messageToUser,
   // variant,
   variant = 'form',
-    showToast = true,
+  showToast = true,
 
 }: MessageToUserPropType): JSX.Element => {
   const lastMessageRef =useRef<string>('')
@@ -36,19 +36,24 @@ export const MessageToUser = ({
 // ---------------------------------- 
 useEffect(()=>{
 if(messageToUser && variant=='form' && showToast){
-  const msg = typeof messageToUser === 'string' ? messageToUser :messageToUser.message;
-  
-  const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 200
+ const msg = typeof messageToUser === 'string' ? messageToUser :messageToUser.message;
+ 
+ const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 200
 
-    console.log('📨 Showing toast:', { msg, status, variant });
+   console.log('📨 Showing toast:', { msg, status, variant });
 
-  if(variant=='form'){showToastByStatus(msg, status)}
+ // if(variant=='form'){showToastByStatus(msg, status)}
 
 // Prevent duplicate toasts for the same message
 if (msg !== lastMessageRef.current) {
     showToastByStatus(msg, status);
     lastMessageRef.current = msg;
   }
+
+//Clean reference if there is not message
+ if (!messageToUser) {
+   lastMessageRef.current = '';
+ }
 }
 }, [showToast, messageToUser, variant])
  //----------------------------------  
