@@ -1,6 +1,6 @@
 //frontend/src/pages/forms/newPocket/NewPocket.tsx/NewPocket.tsx
 // 🎯 IMPORTS
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, } from 'react-router-dom';
 import '../styles/forms-styles.css';
 
@@ -33,7 +33,7 @@ type PocketDataType = {
   name: string;
   note: string;
   currency?: CurrencyType;
-  desiredDate: Date | string;
+  desiredDate: Date ;
   amount?: number | '';
 };
 
@@ -54,7 +54,7 @@ const initialNewPocketData: PocketDataType = {
   name: '',
   note: '',
   amount: '',  
-  desiredDate: new Date().toISOString(),
+  desiredDate: new Date(),
   currency: defaultCurrency,
 };
 
@@ -67,21 +67,19 @@ const initialFormData: FormNumberInputType = {
 // =============================
 function NewPocket() {
 const location = useLocation();
-// const navigateTo=useNavigate()
+// console.log("🚀 ~ NewPocket ~ location:", location)
 //-------------------------------------
-const { isAuthenticated, isCheckingAuth } = useAuth();
-//const user: string = import.meta.env.VITE_USER_ID;
 
 // 🏁 STATE MANAGEMENT
+const { isAuthenticated, isCheckingAuth } = useAuth();
+
 const [formData, setFormData] =
 useState<FormNumberInputType>(initialFormData);
 
 const [pocketData, setPocketData] =
 useState<PocketDataType>(initialNewPocketData);
 
-const [validationMessages, setValidationMessages] = useState<{
-[key: string]: string;
-}>({});
+const [validationMessages, setValidationMessages] = useState<{[key: string]: string;}>({});
 
 const [isReset, setIsReset] = useState<boolean>(false);
 const [messageToUser, setMessageToUser] = useState<{message:string, status?:number} |string | null | undefined>(
@@ -91,28 +89,26 @@ null );
 //POST: NEW ACCOUNT DATA
 //endpoint: http://localhost:5000/api/fintrack/account/new_account/pocket_saving
 const { isLoading, error, requestFn,
-    //  ...rest
       } = useFetchLoad<
    CreatePocketSavingAccountApiResponseType,
     PocketSavingPayloadType
   >({ url: url_create_pocket_saving_account, method: 'POST' });
-//  console.log('more data from new pocket creation', rest)
 //-----------------------------------
 // 🎮 EVENT HANDLER HOOKS
 //event handler hook for number input handling
  const { inputNumberHandlerFn } =      useInputNumberHandler(
-      setFormData,
-      setValidationMessages,
-      setPocketData
+   setFormData,
+   setValidationMessages,
+   setPocketData
   );
 //-------------------------
-// 🧹 MESSAGE CLEANUPzz EFFECT
+// 🧹 MESSAGE CLEANUP EFFECT
 // Clear message after 5 seconds
   useEffect(() => {
     if (messageToUser) {
      const timer = setTimeout(() => {
         setMessageToUser(null);
-      }, 5000);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [messageToUser]);
@@ -123,7 +119,7 @@ const { isLoading, error, requestFn,
     e.preventDefault();
     const { name, value } = e.target;
 
-  if (name === formDataNumber.keyName) {
+ if (name === formDataNumber.keyName) {
  console.log('formDataNumber.keyName', formDataNumber.keyName,formDataNumber)   
     inputNumberHandlerFn(name, value);
   } else {
@@ -131,13 +127,12 @@ const { isLoading, error, requestFn,
      }
   }
   //---
-  function changeDesiredDate(selectedDate: Date): void {
-    setPocketData((data) => ({
-      ...data,
-      desiredDate: selectedDate,
-      // desiredDate: selectedDate.toDateString(),
-    }));
-  }
+ const changeDesiredDate = useCallback((selectedDate: Date): void => {
+  setPocketData((data) => ({
+    ...data,
+    desiredDate: selectedDate,
+  }));
+  }, []); 
   
 // 📤 FORM SUBMISSION LOGIC (onSubmitForm)
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
@@ -156,24 +151,24 @@ const { isLoading, error, requestFn,
     nonZeroFields: ['amount']}) };
 // console.log('mensajes de validacion:', { newValidationMessages });
 
-   if (Object.values(newValidationMessages).length > 0) {
-      setValidationMessages(newValidationMessages);
-      return;
-    }
+  if (Object.values(newValidationMessages).length > 0) {
+     setValidationMessages(newValidationMessages);
+     return;
+   }
   
 // 🚀 API REQUEST EXECUTION
 //POST the new pocket data into database
 //Prepare and send payload
    try {
-     const payload: PocketSavingPayloadType = {
-        name: pocketData.name.toLowerCase().trim(),
-        note: pocketData.note,
-        type: 'pocket_saving',
-        currency: pocketData.currency ?? defaultCurrency,//default
-        target: pocketData.amount !== undefined && pocketData.amount !== '' ? pocketData.amount : '',
-        desired_date: pocketData.desiredDate ?? new Date().toISOString(), // ISO format
-        // user,
-      };
+    const payload: PocketSavingPayloadType = {
+     name: pocketData.name.toLowerCase().trim(),
+     note: pocketData.note,
+     type: 'pocket_saving',
+     currency: pocketData.currency ?? defaultCurrency,//default
+     target: pocketData.amount !== undefined && pocketData.amount !== '' ? pocketData.amount : '',
+     desired_date: pocketData.desiredDate, // ISO format
+     // user,
+     };
 
 // ✅ requestFn delivers { data: ResponseType | null, error: string | null }
   const {data: responseData, error: requestError }= await requestFn(payload);
@@ -181,56 +176,55 @@ const { isLoading, error, requestFn,
 
 // ✅ VALIDATION BEFORE SUBMITTING
 // ❌ REQUEST ERROR HANDLING
-   if (requestError) {
-    console.log('🔴 Network error:', requestError);  
+ if (requestError) {
+  console.log('🔴 Network error:', requestError);  
 // Error del request (network, etc.).Error de red/axios
-    setMessageToUser({
-      message: requestError,
-      status: 500
-      });
-      return;
+  setMessageToUser({
+    message: requestError,
+    status: 500
+    });
+    return;
     }
 
 //✅ HANDLING SERVER RESPONSE (SUCCESS OR ERROR)
   if(responseData){
 // console.log('📊 Server response status:', responseData.status, responseData.message, responseData.data);
 // ✅ CHECK STATUS CODE
-    if(responseData.status >= 200 && responseData.status<300){
-    //SUCCESS
-    console.log('mensaje', { message:responseData.message || 'New Pocket account successfully created!', status:responseData.status
-    })
+ if(responseData.status >= 200 && responseData.status<300){
+ //SUCCESS
+ console.log('message', { message:responseData.message || 'New Pocket account successfully created!', status:responseData.status
+ })
 
-    setMessageToUser(
-      { message:responseData.message || 'New Pocket account successfully created!', status:responseData.status
-    })
+ setMessageToUser(
+   { message:responseData.message || 'New Pocket account successfully created!', status:responseData.status
+ })
 
 // 🔄 RESET FORM ON SUCCESS
-    setIsReset(true);
-    setValidationMessages({});
-    setFormData(initialFormData);
-    setPocketData(initialNewPocketData);
-    setPocketData((prev) => ({ ...prev, desiredDate: new Date() }));
-    // setIsDisabledValue(false);
-    // setMessageToUser(null)
-    // setTimeout(() => setIsReset(false), 500); 
-      }else{
-console.error('❌ Server error - setting message')
-      setMessageToUser({message:responseData.message || "Server error when creating new Pocket account", status:responseData.status
-        })
-       }
-      }
+ setIsReset(true);
+ setValidationMessages({});
+ setFormData(initialFormData);
+ setPocketData(initialNewPocketData);
+ // setIsDisabledValue(false);
+ setMessageToUser(null)
+ setTimeout(() => setIsReset(false), 1500); 
 
-if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-    console.log('Data from New Pocket request:', responseData);
-  }
+   }else{
+console.error('❌ Server error - setting message')
+setMessageToUser({message:responseData.message || "Server error when creating new Pocket account", status:responseData.status
+  })
+ } 
+}
+
+ if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+     console.log('Data from New Pocket request:', responseData);
+   }
  } catch (error) {
-    // 🚨 UNEXPECTED ERROR HANDLING
-console.error('🔥 Unexpected error when submitting new Pocket accoung', error);
-    const { message, status } = normalizeError(error);
-    setMessageToUser({ message, status });
+// 🚨 UNEXPECTED ERROR HANDLING
+ console.error('🔥 Unexpected error when submitting new Pocket accoung', error);
+ const { message, status } = normalizeError(error);
+ setMessageToUser({ message, status });
     }
   }
-
 
 // 🚫 FORM DISABLE STATE
   const isFormDisabled = !isAuthenticated;
@@ -365,12 +359,12 @@ console.error('🔥 Unexpected error when submitting new Pocket accoung', error)
     </label>
 
     <div className='form__datepicker__container'>
-      <FormDatepicker
-        changeDate={changeDesiredDate}
-        date={new Date(pocketData.desiredDate) as Date} 
-        variant={'form'}
-        isReset={isReset}
-      />
+     <FormDatepicker
+       changeDate={changeDesiredDate}
+       date={(pocketData.desiredDate)} 
+       variant={'form'}
+       isReset={isReset}
+     />
     </div>
 
    </div> {/* END. container--pocketName form__container*/}
