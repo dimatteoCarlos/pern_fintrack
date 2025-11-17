@@ -20,7 +20,7 @@ import AccountTransactionsList from '../accountDetail/AccountTransactionsList.ts
 import SummaryDebtorDetailBox from './summaryDebtorDetailBox/SummaryDebtorDetailBox.tsx';
 
 //---------------
-const user = import.meta.env.VITE_USER_ID;
+// const user = import.meta.env.VITE_USER_ID;
 
 type LocationStateType ={
   previousRoute:string; debtorDetailedData:DebtorListType;
@@ -83,7 +83,7 @@ const location = useLocation()
 //--account detail global info
 // console.log('urlDesg', url_get_account_by_id, accountId, user)
 
-  const urlAccountById = `${url_get_account_by_id}/${accountId}?&user=${user}`;
+  const urlAccountById = `${url_get_account_by_id}/${accountId}`;
   
     const {
       apiData: accountsData,
@@ -106,7 +106,7 @@ const tdy = new Date()
     const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0]
 
     //-----
-    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?user=${user}&start=${apiStartDate}&end=${apiEndDate}`;
+    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
 
     const {
       apiData: transactionAccountApiResponse,//{status, message, data}

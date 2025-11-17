@@ -5,18 +5,31 @@ import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpa
 import { Link, useLocation , useNavigate} from 'react-router-dom';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
+import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
+import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+
 import '../styles/forms-styles.css';
+
 import { useFetch } from '../../../hooks/useFetch.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import useAuth from '../../../auth/hooks/useAuth.ts';
+
+
 import {
   url_create_debtor_account,
   url_get_accounts_by_type,
 } from '../../../endpoints.ts';
+
 import {
   CurrencyType,
   DropdownOptionType,
-  // ExpenseAccountsType,
 } from '../../../types/types.ts';
+import {
+  AccountByTypeResponseType,
+  CreateDebtorAccountApiResponseType,
+} from '../../../types/responseApiTypes.ts';
+
+
 import {
   ACCOUNT_OPTIONS_DEFAULT,
   DEFAULT_CURRENCY,
@@ -24,15 +37,11 @@ import {
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
 import { capitalize, } from '../../../helpers/functions.ts';
+
 import { validationData } from '../../../validations/utils/custom_validation.ts';
-import { FormNumberInputType } from '../../../types/types.ts';
-import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
-import {
-  AccountByTypeResponseType,
-  CreateDebtorAccountApiResponseType,
-} from '../../../types/responseApiTypes.ts';
-import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
-import useAuth from '../../../auth/hooks/useAuth.ts';
+
+
+
 // import ProtectedRoute from '../../auth/ProtectedRoute.tsx';
 //-----default 'till decide how to handle multi currencies
 const defaultCurrency = DEFAULT_CURRENCY;
@@ -42,7 +51,7 @@ type ProfileInputDataType = {
   lastname: string;
   account: string;
   type: string;
-  amount: number | '';
+  amount: string | '';
   currency?: CurrencyType;
 };
 
@@ -71,8 +80,11 @@ const typeSelectionProp = {
   variant: VARIANT_FORM, //set customStyle in selection dropdown component
 };
 // === INITIAL STATE DATA ===
-const formDataNumber = { keyName: 'amount', title: 'value' };
-const initialFormData: FormNumberInputType = {
+const formDataNumber:{ keyName: keyof ProfileInputDataType, title: string }={
+  keyName: 'amount',
+  title: 'value'
+};
+const initialFormData: Partial<ProfileInputDataType> = {
   [formDataNumber.keyName]: '',
 };
 const selected_account_type = 'bank',
@@ -91,7 +103,7 @@ const { isAuthenticated } = useAuth()
 
 // === STATE INITIALIZATION ===
   const [formData, setFormData] =
-  useState<FormNumberInputType>(initialFormData);
+  useState<Partial<ProfileInputDataType>>(initialFormData);
   const [profileData, setProfileData] = useState<ProfileInputDataType>(
     initialNewProfileData);
   const [validationMessages, setValidationMessages] = useState<{
@@ -211,17 +223,22 @@ const { isAuthenticated } = useAuth()
     }
   //-----------------
     try {
-      const payload: ProfilePayloadType = {
-        account_type,
-        currency: defaultCurrency,
-        amount: profileData.amount ?? 0.0,
-        //---
-        lastname: profileData.lastname,
-        name: profileData.name,
-        transaction_type: profileData.type,
-        selected_account_name: profileData.account,
-        selected_account_type,
-         };
+
+     const finalAmount = profileData.amount === ''
+     ? 0 // Si es cadena vacía, pasa cadena vacía (compatible)
+     : Number(profileData.amount); // Si es string de número, conviértelo a number
+
+     const payload: ProfilePayloadType = {
+      account_type,
+      currency: defaultCurrency,
+      amount: finalAmount ,
+      //---
+      lastname: profileData.lastname,
+      name: profileData.name,
+      transaction_type: profileData.type,
+      selected_account_name: profileData.account,
+      selected_account_type,
+       };
       const data = await requestFn(payload);
       if(data.error){
         //setValidationMessages({});
@@ -271,136 +288,142 @@ const { isAuthenticated } = useAuth()
   // //-----------------------
 
   return (
-    <section className='profile__page__container page__container '>
-      <TopWhiteSpace variant={'dark'} />
-      <div className='profile__page__content page__content'>
-        <div className='main__title--container '>
-          <Link
-            to={location.state.previousRoute}
-            relative='path'
-            className='iconLeftArrow'
-          >
-            <LeftArrowLightSvg />
-          </Link>
-          <div className='form__title'>{'New Profile'}</div>
-        </div>
-        <form className='form__box'>
-          <div className='container--profileName form__container '>
-            <div className='input__box'>
-              <label htmlFor='name' className='label form__title'>
-                {'Name'}
-                <span className='validation__errMsg'>
-                  {validationMessages['name']}
-                </span>
-              </label>
+   <section className='profile__page__container page__container '>
+   <TopWhiteSpace variant={'dark'} />
+   <div className='profile__page__content page__content'>
+    <div className='main__title--container '>
+     <Link
+       to={location.state.previousRoute}
+       relative='path'
+       className='iconLeftArrow'
+     >
+       <LeftArrowLightSvg />
+     </Link>
+     <div className='form__title'>{'New Profile'}
+     </div>
+   </div>
+  <form className='form__box'>
+    <div className='container--profileName form__container '>
+     <div className='input__box'>
+      <label htmlFor='name' className='label form__title'>
+       {'Name'}
+       <span className='validation__errMsg'>
+        {validationMessages['name']}
+       </span>
+      </label>
 
-              <input
-                type='text'
-                className={`input__container`}
-                placeholder={`Name`}
-                name={'name'}
-                onChange={inputHandler}
-                value={profileData.name}
-              />
-            </div>
+      <input
+       type='text'
+       className={`input__container`}
+       placeholder={`Name`}
+       name={'name'}
+       id={'name'}
+       onChange={inputHandler}
+       value={profileData.name}
+      />
+     </div>
 
-            <div className='input__box'>
-              <label htmlFor='lastname' className='label form__title'>
-                {'Last Name'}
-                <span className='validation__errMsg'>
-                  {validationMessages['lastname']}
-                </span>
-              </label>
+     <div className='input__box'>
+      <label htmlFor='lastname' className='label form__title'>
+       {'Last Name'}
+       <span className='validation__errMsg'>
+         {validationMessages['lastname']}
+       </span>
+      </label>
 
-              <input
-                type='text'
-                className={`input__container`}
-                placeholder={`last name`}
-                name={'lastname'}
-                onChange={inputHandler}
-                value={profileData.lastname}
-              />
-            </div>
+      <input
+       type='text'
+       className={`input__container`}
+       placeholder={`last name`}
+       name={'lastname'}
+       id={'lastname'}
+       onChange={inputHandler}
+       value={profileData.lastname}
+      />
+    </div>
 
-            <div className='input__box'>
-              <label className='label form__title'>
-                Account &nbsp;
-                <span className='validation__errMsg'>
-                  {validationMessages['account']}
-                </span>
-              </label>
+     <div className='input__box'>
+      <label className='label form__title'>
+       Account &nbsp;
+       <span className='validation__errMsg'>
+         {validationMessages['account']}
+       </span>
+      </label>
 
-              {/* accounts*/}
-              <DropDownSelection
-                dropDownOptions={accountSelectionProp}
-                updateOptionHandler={accountSelectHandler}
-                // optionKeySelected='account'
-                isReset={isReset}
-                setIsReset={setIsReset}
-              />
+      {/* accounts*/}
+      <DropDownSelection
+        dropDownOptions={accountSelectionProp}
+        updateOptionHandler={accountSelectHandler}
+        // optionKeySelected='account'
+        isReset={isReset}
+        setIsReset={setIsReset}
+      />
 
-              <label
-                htmlFor={formDataNumber.keyName}
-                className='label form__title'
-              >
-                {capitalize(formDataNumber.title)}&nbsp;
-                <span
-                  className='validation__errMsg'
-                  style={{
-                    color: validationMessages[formDataNumber.keyName]
-                      ?.toLowerCase()
-                      .includes('format:')
-                      ? 'var(--lightSuccess)'
-                      : 'var(--error)',
-                  }}
-                >
-                  {validationMessages[formDataNumber.keyName]?.replace(
-                    'Format:',
-                    ''
-                  )}
-                </span>
-              </label>
+      <label
+        // htmlFor={formDataNumber.keyName}
+        className='label form__title'
+      >
+        {capitalize(formDataNumber.title)}&nbsp;
+        <span
+          className='validation__errMsg'
+          style={{
+            color: validationMessages[formDataNumber.keyName]
+              ?.toLowerCase()
+              .includes('format:')
+              ? 'var(--lightSuccess)'
+              : 'var(--error)',
+          }}
+        >
+          {validationMessages[formDataNumber.keyName]?.replace(
+            'Format:',
+            ''
+          )}
+        </span>
+      </label>
 
-              <InputNumberFormHandler
-                validationMessages={validationMessages}
-                setValidationMessages={setValidationMessages}
-                keyName={formDataNumber.keyName}
-                placeholderText={formDataNumber.title}
-                formData={formData}
-                setFormData={setFormData}
-                setStateData={setProfileData}
-              />
-              {/* style={{ fontSize: '1.25rem', padding: '0 0.75rem' }} */}
-            </div>
-            <div className='input__box'>
-              <label className='label form__title'>
-                {'Type'}
-                <span className='validation__errMsg'>
-                  {validationMessages['type']}
-                </span>
-              </label>
-              {/* action debtor type */}
-              <DropDownSelection
-                dropDownOptions={typeSelectionProp}
-                updateOptionHandler={typeSelectHandler}
-                isReset={isReset}
-                setIsReset={setIsReset}
-              />
-            </div>
-          </div>
-          {/* save */}
-          <div className='submit__btn__container'>
-            <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
-          </div>
-        </form>
-        <MessageToUser
-          isLoading={isLoading || isLoadingBankAccounts}
-          error={error || fetchedErrorBankAccounts}
-          messageToUser={messageToUser}
-          variant='form'
-        />
-      </div>
-    </section>
+      <InputNumberFormHandler
+        validationMessages={validationMessages}
+        setValidationMessages={setValidationMessages}
+        keyName={formDataNumber.keyName}
+        placeholderText={formDataNumber.title}
+        formData={formData}
+        setFormData={setFormData}
+        setStateData={setProfileData}
+      />
+       {/* style={{ fontSize: '1.25rem', padding: '0 0.75rem' }} */}
+     </div>
+
+     <div className='input__box'>
+       <label className='label form__title'>
+         {'Type'}
+         <span className='validation__errMsg'>
+           {validationMessages['type']}
+         </span>
+       </label>
+       {/* action debtor type */}
+       <DropDownSelection
+         dropDownOptions={typeSelectionProp}
+         updateOptionHandler={typeSelectHandler}
+         isReset={isReset}
+         setIsReset={setIsReset}
+       />
+     </div>
+    </div>
+    {/* save */}
+
+    <div className='submit__btn__container'>
+     <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
+   </div>
+  </form>
+
+  <MessageToUser
+    isLoading={isLoading || isLoadingBankAccounts}
+    error={error || fetchedErrorBankAccounts}
+    messageToUser={messageToUser}
+    variant='form'
+    />
+   </div>
+  </section>
   );
 }
 

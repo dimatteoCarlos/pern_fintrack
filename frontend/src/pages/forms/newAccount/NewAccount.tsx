@@ -1,34 +1,41 @@
 //src/pages/forms/newAccount/NewAccount.tsx
 import React, { useEffect, useState } from 'react';
-import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AxiosRequestConfig } from 'axios';
+
+import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
+import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
+import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
+
+
 import {
   ACCOUNT_TYPE_DEFAULT,
   DEFAULT_CURRENCY,
   VARIANT_FORM,
   // CURRENCY_OPTIONS,
 } from '../../../helpers/constants.ts';
+import { url_create_basic_account } from '../../../endpoints.ts';
+
 import '../styles/forms-styles.css';
+
 import {
   CurrencyType,
   DropdownOptionType,
+  FormNumberInputType,
   VariantType,
 } from '../../../types/types.ts';
+// import { FormNumberInputType } from '../../../types/types.ts';
+import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+
 import { capitalize, } from '../../../helpers/functions.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 
-import { FormNumberInputType } from '../../../types/types.ts';
-import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
-import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
-import { url_create_basic_account } from '../../../endpoints.ts';
-import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTypes.ts';
-import { AxiosRequestConfig } from 'axios';
 import useAuth from '../../../auth/hooks/useAuth';
 // import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
 //------------------------
@@ -40,16 +47,18 @@ type AccountDataType = {
   name: string;
   date: Date;
   type: string | undefined | null;
-  amount: number | string; //later verifyin and fixed input
+  amount: number | ""; //later verifyin and fixed input
   currency: string;
 };
-const initialNewAccountData = {
+
+const initialNewAccountData: AccountDataType = {
   name: '', //'Account Name',
   type: '', //'Account Type',
   date: new Date(), //'Starting Point'
   amount: '', // 'Value'
   currency: 'usd',
 };
+
 //Type Options
 export type TypeOptionsType = {
   title: string;
@@ -64,7 +73,9 @@ const formDataNumber = { keyName: 'amount', title: 'value' };
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
 };
-//-------------------------------
+//=============================
+//MAIN COMPONENTE NEW ACCOUNT
+//=============================
 function NewAccount() {
   const location = useLocation();
   const navigateTo=useNavigate()
@@ -99,7 +110,7 @@ function NewAccount() {
     if (!isAuthenticated) {
       setMessageToUser('Please log in to create an account');
  // 🆕 OPCIONAL: Redirigir al login después de un tiempo
-   setTimeout(() => navigateTo('/auth'), 5000);
+   setTimeout(() => navigateTo('/auth'), 3500);
     }
   }, [isAuthenticated, navigateTo]);
 
@@ -199,7 +210,7 @@ function NewAccount() {
     try {
       const { name, type, currency, amount, date } = accountData;
 
-      const payload = { name, type, currency, amount, date };
+      const payload: AccountDataType = { name, type, currency, amount, date } as AccountDataType;
     // console.log('data to post:',{ ...accountData});
 
     //final URL, url is dynamic depending on type variable
@@ -351,16 +362,16 @@ function NewAccount() {
                   variant={VARIANT_FORM}
                 />
 
-                <InputNumberFormHandler
-                  validationMessages={validationMessages}
-                  setValidationMessages={setValidationMessages}
-                  keyName={formDataNumber.keyName}
-                  placeholderText={formDataNumber.keyName}
-                  formData={formData}
-                  setFormData={setFormData}
-                  setStateData={setAccountData}
-                  // disabled={isFormDisabled} 
-                />
+        <InputNumberFormHandler
+          validationMessages={validationMessages}
+          setValidationMessages={setValidationMessages}
+          keyName={formDataNumber.keyName as keyof AccountDataType}
+          placeholderText={formDataNumber.keyName}
+          formData={formData}
+          setFormData={setFormData}
+          setStateData={setAccountData}
+          // disabled={isFormDisabled} 
+        />
                 {/* <input
                 style={{ fontSize: '1.25rem', padding: '0 0.75rem' }}
               /> FIGMA STYLE*/}

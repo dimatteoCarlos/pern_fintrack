@@ -1,21 +1,29 @@
 //frontend/src/pages/forms/newCategory/NewCategory.tsx
 import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
-import { validationData } from '../../../validations/utils/custom_validation.ts';
-import '../styles/forms-styles.css';
-import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
-import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
-import { DEFAULT_CURRENCY, TILE_LABELS, VARIANT_FORM } from '../../../helpers/constants.ts';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
-import { url_create_category_budget_account } from '../../../endpoints.ts';
-import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
-import { normalizeError } from '../../../helpers/normalizeError.ts';
+
+import { validationData } from '../../../validations/utils/custom_validation.ts';
+
+import '../styles/forms-styles.css';
+
 import useAuth from '../../../auth/hooks/useAuth.ts';
+import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
+import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+
+import { url_create_category_budget_account } from '../../../endpoints.ts';
+
+import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
+
+import { DEFAULT_CURRENCY, TILE_LABELS, VARIANT_FORM } from '../../../helpers/constants.ts';
+
+import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+import { normalizeError } from '../../../helpers/normalizeError.ts';
 
 // import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
 // import { useLocation } from 'react-router-dom';

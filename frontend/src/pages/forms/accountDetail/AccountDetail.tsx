@@ -42,43 +42,45 @@ function AccountDetail() {
   const location = useLocation() 
   const {accountId} = useParams();
   const state = location.state as LocationStateType | null;
-  const detailedData = state?.detailedData;
-
+  const accountDetailedFromState = state?.detailedData;
 //------------------------------
-//data from endpoint request for info account, and for api transactions by accountId
-//--STATES
-// const [previousRoute, setPreviousRoute] = useState<string>("/fintrack/overview"); 
 //✅ DYNAMIC BACK ROUTE
   const previousRouteFromState = state?.previousRoute ||  "/fintrack/overview";
+  const isAccountDetailMissing = !accountDetailedFromState;
 
+//--STATES
   const [previousRoute, setPreviousRoute] = useState<string>(previousRouteFromState); 
-
 // console.log('location',location,   accountId, {detailedData}, {previousRouteFromState}, )
 
-// ✅ INDEPENDENT DATA FETCHING
   const [accountDetail, setAccountDetail] = useState<AccountListType>(initialAccountDetail);
 
   //--state for account transactions data
   const [transactions, setTransactions]=useState<AccountTransactionType[]>(initialAccountTransactionsData.transactions)
   
   const [summaryAccountBalance, setSummaryAccountBalance]=useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary)
-
+//----------------------------------
 // API CALLS 
 //--Fetch Data
 //--account detail global info
-  const urlAccountById = `${url_get_account_by_id}/${accountId}`;
+  const urlAccountById = isAccountDetailMissing
+  ?`${url_get_account_by_id}/${accountId}`
+  :null
+
   const {
-    apiData: accountsData,
+    apiData: accountsDataFromFetch,
     isLoading,
     error,
   } = useFetch<AccountByTypeResponseType>(
-    detailedData ? "": accountId? urlAccountById:""
+    urlAccountById
   );
+
+//Data transforming for rendering
+const accountsData =
+  accountDetailedFromState ||
+  accountsDataFromFetch?.data?.accountList[0]
+
 //-------------------------------------
 //--ACCOUNT TRANSACTION API RESPONSE
-//--how to handle dates period
-//Although the getTransactionsForAccountById backend, deals with the last 30 days transactions, here, it wil get the transactions for current month, and a specified number of months period
-//in the future, include a dynamic filter or date picker range dates
 //period dates considering previous number of months and current month transactions
     const tdy = new Date()
     const numberOfMonths=2
@@ -111,21 +113,21 @@ useEffect(() => {
 //-------------------------------
 // UPDATE ACCOUNT DETAIL WHEN DATA LOADS
 useEffect(()=>{
-if(detailedData){
-    setAccountDetail(detailedData)
+if(accountsData){
+    setAccountDetail(accountsData)
     // if (previousRouteFromState) {
     setPreviousRoute(previousRouteFromState);
       // }
     }
-  },[detailedData, previousRouteFromState])
+  },[accountsData, previousRouteFromState])
 
 useEffect(() => {
-  if(!detailedData && accountsData?.data?.accountList?.length ){
-    const account = accountsData.data.accountList[0]
+  if(!accountsData && accountsData){
+    const account = accountsData
   //  const account = accountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
     if(account)setAccountDetail(account)}
 
-}, [accountsData, detailedData,accountId,])
+}, [accountsData, accountId])
 //-----------------------------
 return (
   <section className='page__container'>
@@ -209,7 +211,7 @@ return (
         <AccountTransactionsList transactions={transactions} />
         
       </div>
-        {/* --- END TRANSACTION STATEMENT SECTION --- */}
+{/* --- END TRANSACTION STATEMENT SECTION --- */}
       </form>
       
       {(isLoading || isLoadingTransactions) && <p>Loading...</p>}

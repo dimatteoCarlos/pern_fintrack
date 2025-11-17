@@ -22,17 +22,19 @@ import { capitalize, currencyFormat, formatDateToDDMMYYYY  } from '../../../help
 import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
 
 //========================
+// MAIN COMPONENT CATEGORY DETAIL
+//========================
 function CategoryDetail() {
   const {accountId:rawAccountId, categoryName}=useParams<{
   accountId?: string;
   categoryName?: string;
   }>()
-
+//CHECK ACCOUNT ID
 const accountId = (rawAccountId || '').trim();
 if (!accountId) {
 throw new Error("Invalid account ID parameter");
 }
-//-----------------------------
+//---DETAIL ACCOUNT DATA FETCHER
   const location =useLocation()
   const state = location.state??{};
   const {
@@ -46,7 +48,7 @@ throw new Error("Invalid account ID parameter");
     : '/fintrack/budget'); 
 
   const isAccountDetailMissing = !accountDetailedFromState;
-//----------------------------------------
+//---
 // CONDITIONAL FETCH (FALLBACK)
   const urlAccountByIdConditional = isAccountDetailMissing
   ? `${url_get_account_by_id}/${accountId}`
@@ -65,7 +67,7 @@ const accountDetailed =
   
 // console.log("🚀 ~ CategoryDetail ~ accountDetailed:", accountDetailed)
 //-------------------------
-//summary data
+//SUMMARY DATA
   const summaryData =accountDetailed
   ? {
     title: 'Budget',
@@ -97,7 +99,7 @@ const accountDetailed =
     const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0]
     const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0]
 //--------------------------------
-//--Fetch Data
+//--FETCH TRANSACTIONS DATA
 //--account detail transactions
     const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
 
@@ -137,7 +139,6 @@ const accountDetailed =
             <div id='edit' className='flx-col-center icon3dots'>
             <Dots3LightSvg />
             </div>
-
           </div>
         </div>
 
@@ -205,7 +206,7 @@ const accountDetailed =
         </div>
         </article>
 
-  {/* --- END TRANSACTION STATEMENT SECTION --- */}
+  {/* --- END OF TRANSACTION STATEMENT SECTION --- */}
       {( isLoadingAccount ||isLoadingTransactions) && <p>Loading...</p>}
         {( errorAccount || errorTransactions) && <p>Error fetching account info: {errorAccount??errorTransactions}</p>}
 
