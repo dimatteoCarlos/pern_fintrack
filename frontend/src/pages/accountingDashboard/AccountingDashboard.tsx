@@ -1,11 +1,11 @@
 // frontend/src/pages/accountingDashboard/AccountingDashboard.tsx
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState} from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useFetch } from '../../hooks/useFetch'
-
+//---
 import { INITIAL_PAGE_ADDRESS } from '../../helpers/constants'
 import {url_get_all_accounting_accounts,  } from '../../endpoints'
-
+//---
 import AccountingBox from './AccountingBox'
 import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace'
 import LeftArrowSvg from '../../assets/LeftArrowSvg.svg';
@@ -13,14 +13,13 @@ import Toast from '../../edition/components/toast/Toast'
 import AccountActionsMenu from '../../edition/components/accountActionMenu/AccountActionsMenu'
 //---
 import { AccountByTypeResponseType, AccountListType, CategoryBudgetAccountListType,  } from '../../types/responseApiTypes'
-
+//---
 import { capitalize } from '../../helpers/functions'
-
+//---
 import './styles/accountingDashboard-styles.css';
 import { isCategoryBudgetAccount } from '../../edition/utils/categoryBudgetCalculations'
-
+//---
 // import AccountingSkeleton from '../../edition/components/skeleton/AccountingSkeleton'
-
 //--------------------------------
 // ACCOUNT TYPE CONFIGURATION
 const ACCOUNT_TYPE_DATA = {
@@ -44,10 +43,9 @@ const ACCOUNT_TYPE_DETAIL_PAGE: { [key: string]: string } = {
   category_budget: `/fintrack/budget/account`,
 
 }
-
-type ToastMessageType='success' | 'error' | 'info' | 'warning';
-
+//---TYPE DEFINITIONS
 type AccountType = keyof typeof ACCOUNT_TYPE_DATA
+type ToastMessageType='success' | 'error' | 'info' | 'warning';
 
 //--- FUNCTIONS DECLARATION
 // 🎯 ACCOUNT GROUPING
@@ -67,24 +65,22 @@ const groupAccountsBytype = (accounts:AccountListType[]):Partial<Record<AccountT
       groups[accountType]=[...groups[accountType], account]
     }
   )
-
 //  if(groups['other']){ 
 //   console.log('check other accounts', groups['other'])
 //   }
-
   return groups
 }
-//===========================
+//============================
 // 🏦 MAIN COMPONENT ACCOUNTING DASHBOARD
 //============================
 const AccountingDashboard = () => {
-
   const location = useLocation()
   const navigateTo = useNavigate()
-
-  const originRoute=location.state?.originRoute || INITIAL_PAGE_ADDRESS //previous route to accounting
-  const previousRoute = location.pathname // this works as a previous route to account detail view
   
+  //previous route to accounting
+  const originRoute=location.state?.originRoute || INITIAL_PAGE_ADDRESS 
+
+  const previousRoute = location.pathname // this works as a previous route to account detail view, edit and delete
 // -----------------------------
 // console.log('location', {location},'previousRoute', {previousRoute},'state', location.state, 'originRoute', location.state?.originRoute)
 //  const user = import.meta.env.VITE_USER_ID ;
@@ -95,41 +91,39 @@ const { apiData, isLoading, error } = useFetch<AccountByTypeResponseType>(
 `${url_get_all_accounting_accounts}`
 ); 
 //-------------------------------
-//get full category budget account data 
+//GET FULL CATEGORY BUDGET ACCOUNT DATA 
 // const { apiData:apiDataCategory ,isLoading:isLoadingCategory ,error:errorCategory } = useFetch<AccountByTypeResponseType>(
 // `${url_get_category_budget_full_data}`
 // ); 
-
 // console.log('apiDataCategory',apiDataCategory )
-
 //=============================
 // 🆕 MENU STATE
 const [menuState, setMenuState] = useState<{
   isOpen:boolean; 
   account:AccountListType | null;
 }>({isOpen:false, account:null })
-
+//==========================  
+// FUNCTIONS DECLARATION
+//==========================
+//--------TOAST MANAGEMENT ----------
 // 🚨 TOAST STATE
   const [toast, setToast] = useState<{
     message: string;
     type: ToastMessageType;
     visible: boolean;
-  }>({ message: '', type: 'info', visible: false }); 
-  
-// FUNCTIONS DECLARATION
-//==========================
+  }>({ message: '', type: 'info', visible: false });
+
 // TOAST STATE MANAGEMENT FUNCTIONS
 // 🎯 SHOW TOAST MESSAGE FUNCTION
-  const showToast = (message: string, type: ToastMessageType="info") => {
+  const showToast = useCallback((message: string, type: ToastMessageType="info") => {
   setToast({ message, type, visible: true });
-  };
+  },[]);//
 
 // 🎯 HIDE TOAST MESSAGE FUNCTION
   const hideToast = () => {
-      setToast(prev => ({ ...prev, visible: false }));
-    };
-
-//----------------
+  setToast(prev => ({ ...prev, visible: false }));
+   };
+//---
 //SIDE EFFECTS
 // ⏰ AUTO-HIDE TOAST AFTER x SECONDS
  useEffect(() => {
@@ -140,7 +134,31 @@ const [menuState, setMenuState] = useState<{
    }
   }
  }, [toast.visible])
+//---
+ // Toast state messages / Definir los mensajes de estado
+  const groupResponseMessage = useMemo(() => ({
+    error: `Error loading accounts:`,
+    isLoading: `...loading`,
+    notFound: `No accounts found. Create first account! 🎯`
+  }), []); // Making groupResponseMessage a stable constant / Usamos useMemo para que esta constante sea estable
 
+//this side effects must not return anything, just void
+useEffect(() => {
+ // 📊 SHOW TOAST BY TYPE
+  if(error){
+  showToast(`${groupResponseMessage.error} ${error}`, 'error')
+  }
+
+  if(isLoading){
+  showToast(`${groupResponseMessage.isLoading}`, 'info')
+  }
+
+  if(!apiData?.data.accountList.length){
+  showToast(`${groupResponseMessage.notFound}`, 'warning')
+  }
+
+}, [isLoading, error, apiData, showToast, groupResponseMessage])
+//-----------------------------
 //============================
 // 🆕 ACCOUNT TYPE UTILITIES
 // 🎨 GET EMOJI AND NAME FOR ACCOUNT TYPE FUNCTION
@@ -154,30 +172,18 @@ const formatAccountTypeName = (accountType:AccountType):string=>{
 }
 
 // 📊 ACCOUNT GROUPING BY TYPE - FUNCTION
-const groupedAccounts = useMemo(()=>{
-  const groupResponseMessage = {error:`Error loading accounts:`, isLoading:`...loading`, notFound:`No accounts found. Create first account! 🎯`}
- 
-// 📊 SHOW TOAST BY TYPE
-  if(error){
-  showToast(`${groupResponseMessage.error} ${error}`, 'error')
-  return {}
-  }
-
-  if(isLoading){
-  showToast(`${groupResponseMessage.isLoading}`, 'info')
-  return {}
-  }
+ const groupedAccounts = useMemo(()=>{
 
   if(!apiData?.data.accountList.length){
-  showToast(`${groupResponseMessage.notFound}`, 'warning')
   return {}
   }
 
-  return groupAccountsBytype(apiData.data.accountList)
+  return groupAccountsBytype(apiData?.data?.accountList)
 
-}, [isLoading, error, apiData?.data.accountList])
+}, [apiData?.data.accountList])
 //=================================
 // 🎯 ACCOUNT ACTION HANDLERS
+//=================================
 // 🆕 OPEN MENU FUNCTION
 const handleMenuClick = (account:AccountListType, event:React.MouseEvent)=>{
   event.stopPropagation()
@@ -186,63 +192,67 @@ const handleMenuClick = (account:AccountListType, event:React.MouseEvent)=>{
   setMenuState({
     isOpen:true, account })
     showToast(`Menu opened for ${account.account_name}`, 'info');
-//---------
-// console.log('Menu clicked for account:', account.account_name, 'previousRoute:', previousRoute);
 //----------
+console.log('Menu clicked for account:', account.account_name, 'previousRoute:', previousRoute);
 }
+//----------
 // 🆕 CLOSE MENU FUNCTION
 const handleCloseMenu = ()=>{
-  setMenuState(prev =>({...prev, isOpen:false}))
+ setMenuState(prev =>({...prev, isOpen:false}))
 }
-
+//---------
 // 🏦 REGULAR ACCOUNT NAVIGATION HANDLER
 // 🎯 HANDLE VIEW DETAILS
-  const handleViewRegularAccountDetail = (account: AccountListType) => {
+ const handleViewRegularAccountDetail = (account: AccountListType) => {
    const baseRoute = ACCOUNT_TYPE_DETAIL_PAGE[account.account_type_name] || '/fintrack/overview/accounts'
 
    const detailRoute = `${baseRoute}/${account.account_id}`
-
   //  console.log('regular', {detailRoute}, {account}, {previousRoute})
   
    navigateTo(detailRoute, {state:{  previousRoute,
     detailedData: account 
   }})
 }
-//-------------------
+//---
 // 💰 CATEGORY BUDGET ACCOUNT NAVIGATION HANDLER
 const handleViewCategoryBudgetAccountDetail=(account:CategoryBudgetAccountListType)=>{
   const categoryDetailRoute = `${ACCOUNT_TYPE_DETAIL_PAGE[account.account_type_name]}/${account.account_id}`
-
 // console.log('categoryRoute', {categoryDetailRoute}, {account}, 'id', account.account_id, {previousRoute})
 
 // 🧭 NAVIGATE TO CATEGORY DETAIL 
-  navigateTo(categoryDetailRoute, {
+navigateTo(categoryDetailRoute, {
     state:{detailedData:null , previousRoute}
   })
 }
-//---
+//------------------------------------
 // 📋HANDLE VIEW ACCOUNT DETAILS WITH TYPE DETECTION
+//------------------------------------
 const handleViewDetails = (account: AccountListType) => {
-// handleViewRegularAccountDetail(account);
-
-// 🎯 DETECT CATEGORY BUDGET ACCOUNTS
+// 🎯 Detect Category Budget Accounts
  if (isCategoryBudgetAccount(account)) {
-   // console.log('isCategoryBudgetAccount',account)
+// console.log('isCategoryBudgetAccount',account)
   handleViewCategoryBudgetAccountDetail(account);
 
   } else {
     handleViewRegularAccountDetail(account);
   }
 };
+//----------------------------------
+// 📋HANDLE EDIT ACCOUNT✏️
+//----------------------------------
+const handleEditAccount = (account:AccountListType)=>{
+ handleCloseMenu()
+//Navigate the route of edition
+ const editRoute = `/fintrack/account/${account.account_id}/edit`;
 
-//---------------------------------
-// 🆕 HANDLE EDIT ACCOUNT CLICK
-//PENDIENTE definir desde donde hacer edit
-  // const handleEditAccount = (account: AccountListType) => {
-  //   const baseRoute = ACCOUNT_TYPE_DETAIL_PAGE[account.account_type_name] || '/fintrack/overview/accounts'
-  //   const editRoute = `${baseRoute}/${account.account_id}/edit`
-  //   navigateTo(editRoute)
-  // }
+ navigateTo(editRoute, {
+  state:{
+   accountData:account,
+   previousRoute:previousRoute,
+   originRoute:originRoute
+    }
+  })
+}
 
 // 🆕 HANDLE DELETE ACCOUNT CLICK
 // const handleDeleteAccount = (account:AccountListType)=>{
@@ -254,27 +264,27 @@ const handleViewDetails = (account: AccountListType) => {
 //=======================================
 // 📦 ACCOUNT GROUPS RENDER FUNCTION
 const renderAccountGroups = ()=>{
-  //LOADING
-  // if(isLoading){
-  //return <AccountingSkeleton/>;
-  //  return (
-  //   <div className="accounting-empty">
-  //     <div className="accounting-empty__emoji">⏳</div>
-  //     <h3 className="accounting-empty__title">Loading Accounts</h3>
-  //     <p className="accounting-empty__message">Please wait while we load your accounts...</p>
-  //   </div>
-  //     )
-  // }
+//LOADING
+// if(isLoading){
+//return <AccountingSkeleton/>;
+//  return (
+//   <div className="accounting-empty">
+//     <div className="accounting-empty__emoji">⏳</div>
+//     <h3 className="accounting-empty__title">Loading Accounts</h3>
+//     <p className="accounting-empty__message">Please wait while we load your accounts...</p>
+//   </div>
+//     )
+// }
 
 //NO ACCOUNTS INFO
   if(Object.keys(groupedAccounts).length===0 && !isLoading){
-    return(
-      <div className="accounting-empty">
-        <div className="accounting-empty__emoji">📁</div>
-        <h3 className="accounting-empty__title">No Accounts Found</h3>
-        <p className="accounting-empty__message">Get started by creating your first account to manage your finances.</p>
-      </div>
-    )
+  return(
+   <div className="accounting-empty">
+     <div className="accounting-empty__emoji">📁</div>
+     <h3 className="accounting-empty__title">No Accounts Found</h3>
+     <p className="accounting-empty__message">Get started by creating your first account to manage your finances.</p>
+   </div>
+  )
   }
 //------
   return Object.entries(groupedAccounts).map(
@@ -313,23 +323,27 @@ const renderAccountGroups = ()=>{
    }
   )
  }
-//----------------
-//SIDE EFFECTS
-// ⏰ AUTO-HIDE TOAST AFTER x SECONDS
- useEffect(() => {
-  if(toast.visible){
-   const timer = setTimeout(()=>{hideToast()}, 2000)
-   return () => {
-     clearTimeout(timer)
-   }
-  }
- }, [toast.visible])
- 
+// //----------------------------------
+// // 📋HANDLE EDIT ACCOUNT✏️
+// //----------------------------------
+// const handleEditAccount = (account:AccountListType)=>{
+//  handleCloseMenu()
+// //Navigate the route of edition
+//  const editRoute = `/fintrack/account/${account.account_id}/edit`;
+
+//  navigateTo(editRoute, {
+//   state:{
+//    accountData:account,
+//    previousRoute:previousRoute,
+//    originRoute:originRoute
+//     }
+//   })
+// }
 //=========================
 // 🎪 MAIN COMPONENT RENDER 
-  return (
-   <>
-    <section className='accounting__layout'>
+ return (
+  <>
+   <section className='accounting__layout'>
     <TopWhiteSpace variant={'dark'} />
 
     <div className='accounting__container'>
@@ -349,21 +363,23 @@ const renderAccountGroups = ()=>{
       type={toast.type}
       visible={toast.visible}
       onClose={hideToast}
-      duration={1500}
+      duration={2500}
     />  
 
- {/* 🆕 ACCOUNT ACTIONS MENU */}
-  {
-    menuState.isOpen && menuState.account && (
-    <AccountActionsMenu
-      account={menuState.account}
-      isOpen={menuState.isOpen}
-      onClose={handleCloseMenu}
-      onViewDetails={() => handleViewDetails(menuState.account!)}
-      // onEditAccount={() => handleEditAccount(menuState.account!)}
-      // onDeleteAccount={handleDeleteAccount}
-      previousRoute={previousRoute}
-    />
+{/*🆕 ACCOUNT ACTIONS MENU */}
+ {
+  menuState.isOpen && menuState.account && (
+<AccountActionsMenu
+   account={menuState.account}
+   isOpen={menuState.isOpen}
+   onClose={handleCloseMenu}
+// 👁‍🗨 onViewDetail
+   onViewDetails={() => handleViewDetails(menuState.account!)}
+// 🟢 onEditAccount
+  onEditAccount={() => handleEditAccount(menuState.account!)}
+//onDeleteAccount={handleDeleteAccount}
+  previousRoute={previousRoute}
+  />
     )
   }  
  </section>
