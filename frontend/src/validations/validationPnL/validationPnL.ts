@@ -1,6 +1,6 @@
 //frontend/src/validations/validationPnL.ts
 //=====================
-//This is used for an own custom validation form (no libraries)
+//This is used for own custom validation form (no libraries)
 import { checkNumberFormatValueForSchema } from "../zod_schemas/commonSchemas";
 
 // Definir una interfaz para la estructura común de todos los schemas

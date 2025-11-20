@@ -1,7 +1,7 @@
 // frontend/src/edition/pages/forms/editAccount/EditAccount.tsx
 import { ZodType } from "zod"
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 
 // 📚 HOOKS 
 import { useAccountStore } from '../../../../stores/useAccountStore';
@@ -20,7 +20,6 @@ import LeftArrowSvg from '../../../../assets/LeftArrowSvg.svg';
 
 import '../../../../pages/forms/styles/forms-styles.css'
 
-
 // ⚙️ TYPES AND LOGIC
 import { AccountByTypeResponseType, AccountListType } from '../../../../types/responseApiTypes';
 import { ValidationMessagesType } from '../../../../validations/types';
@@ -29,26 +28,13 @@ import { DropdownOptionType } from '../../../../types/types';
 //  VALIDATION PARAMS
 import { ACCOUNT_EDIT_SCHEMA_CONFIG, FieldConfigType } from '../../../validations/accountEditSchema';
 import { validateForm } from '../../../../validations/utils/zod_validation';
-import { accountTypeEditSchemas, //BaseAccountEditFormData, CategoryBudgetEditFormData, DebtorAccountEditFormData, PocketSavingEditFormData 
-
+import { accountTypeEditSchemas
 } from '../../../validations/editSchemas';
 
+// UTILS FUNCTION
 import { debounce } from "../../../utils/debounce.ts";
 
-// 🎯 Tipo de datos genérico para el formulario de edición (para estados locales)
-// type GenericEditFormData = BaseAccountEditFormData & PocketSavingEditFormData & CategoryBudgetEditFormData & DebtorAccountEditFormData & Record<string, unknown>;
-
-// type GenericEditFormData = BaseAccountEditFormData 
-//   | PocketSavingEditFormData
-//   | CategoryBudgetEditFormData 
-//   | DebtorAccountEditFormData
-  // | Record<string, unknown>;
-/*
-Cargar cuenta → Determinar tipo → Cargar configuración → 
-Inicializar formulario → Manejar cambios → Validar en tiempo real → 
-Validar al submit → Enviar → Actualizar store → Navegar
-*/
-
+// 🎯 Local State generic type data of edition Form /Tipo de datos genérico para el formulario de edición (para estados locales)
 type GenericEditFormData = {
   [key: string]: string | number | boolean | Date | null | undefined;
 };
@@ -57,8 +43,12 @@ type GenericEditFormData = {
 // 🏦 ACCOUNT EDITION PAGE 
 // ===================================
 export function EditAccount(): JSX.Element {
+
+//PREVIOUS ROUTE CONFIG
   const { accountId } = useParams<{ accountId: string }>(); 
-  const navigate = useNavigate();
+  const navigateTo = useNavigate();
+  const location = useLocation();
+  const previousRoute = location.state?.previousRoute || '/fintrack/tracker/accounting'; // fallback
   
 //1. 🎯 MANAGE STORE SYNC FOR GLOBAL STATES
   const { updateAccount } = useAccountStore(); 
@@ -68,6 +58,7 @@ export function EditAccount(): JSX.Element {
 
  const { apiData, isLoading: isFetching, error: fetchError } = 
   useFetch<AccountByTypeResponseType>(fetchUrl);
+//ojo el AccountByTypeResponseType deberia depender del accountTypeId o accountTypeName, 
 
  const accountData = apiData?.data?.accountList[0]
  // console.log('apiData', {accountData})
@@ -75,44 +66,38 @@ export function EditAccount(): JSX.Element {
 //3.📤 HOOK FOR EDIT MUTATION (PATCH)
  const mutationUrl = accountId ?`${url_patch_account_edit}/${accountId}` : '';
 
- const { data,  isLoading: isSaving, error: saveError, requestFn } = 
+ const {  isLoading: isSaving, error: saveError, requestFn } = 
   useFetchLoad<AccountListType, GenericEditFormData>({
     url: mutationUrl,
     method: 'PATCH',
   });
-
- console.log("🚀 ~ EditAccount ~ requestFn data:", data)
-
-//***/
+// console.log("🚀 ~ EditAccount ~ requestFn data:", data)
 
 //4.⚙️ LOCAL STATES
  const [formData, setFormData] = useState<GenericEditFormData>({});
 
  const [validationMessages, setValidationMessages] = useState<ValidationMessagesType<GenericEditFormData>>({});
+
  const [isReset] = useState(false);
 
 const [userMessage, setUserMessage] = useState<{message: string, status: number} | undefined>(undefined);
   
 //5.⚙️ ZOD SCHEMA CONFIGURATION
  const accountType = accountData? accountData.account_type_name:null;
-  // console.log("🚀 ~ EditAccount ~ accountType:", accountType)
- 
-//get access of type to the config map using union key 
+// console.log("🚀 ~ EditAccount ~ accountType:", accountType)
+//get access of type to the config map using union key
  const accountFields = useMemo(() => {
   if (!accountType) return [];//que pasa si esto occure?
 
   const fields = ACCOUNT_EDIT_SCHEMA_CONFIG[accountType as AccountListType['account_type_name']]  || [];
+  // console.log("🚀 ~ EditAccount ~ fields:", fields)
 
-  // const schema = accountTypeEditSchemas[accountType] || null;
-
-  // console.log("🚀 ~ EditAccount ~ fields:", fields, schema)
-
-   if (!fields) {
-   console.error(`Error: Account type '${accountType}' not found in ACCOUNT_EDIT_SCHEMA_CONFIG.`);
-   return [];
-  }
-    return fields
-    }, [accountType]);
+  if (!fields) {
+  console.error(`Error: Account type '${accountType}' not found in ACCOUNT_EDIT_SCHEMA_CONFIG.`);
+  return [];
+ }
+  return fields
+   }, [accountType]);
 
 //----
  const schema: ZodType<GenericEditFormData> | null = useMemo(() => 
@@ -120,26 +105,68 @@ const [userMessage, setUserMessage] = useState<{message: string, status: number}
   , [accountType]);
   // console.log("🚀 ~ EditAccount ~ schema:", schema)
     
-//6.🏗️ FORM INITIALIZATION WITH ACCOUNT INFO 
+//6.🏗️ FORM INITIALIZATION WITH EXISTENT ACCOUNT INFO 
  useEffect(() => {
   if (accountData && accountFields.length > 0) {
    const initialData: GenericEditFormData = {} as GenericEditFormData;
    const data = accountData; 
-   // console.log("🚀 ~ useEffect ~ data:", data)
+   // console.log("🚀 ~ useEffect ~ data:", data, {accountFields})
    
    accountFields.forEach((field: FieldConfigType) => {
    // La clave para acceder a data (del API)
    const key = field.fieldName as keyof typeof data; 
    // La clave para asignar a initialData (GenericEditFormData)
    const formKey = field.fieldName as keyof GenericEditFormData
-   
    if (data && data[key as keyof typeof data] !== undefined) {
-    initialData[formKey] = data[key];
-   }
-  });
-  setFormData(initialData);
-  // setOriginalData(initialData)
+    // 🟢 Convertir desired_date de string a Date
+if (field.fieldName === 'desired_date' && typeof data[key] === 'string') {
+  // 🟢 MEJOR PARSING para timestamp PostgreSQL
+  const dateString = data[key] as string;
+  let parsedDate: Date;
+  
+  // Intentar parsing para timestamp PostgreSQL "YYYY-MM-DD HH:MM:SS-TZ"
+  if (dateString.includes(' ')) {
+    // Formato timestamp: "2024-01-15 15:30:00-05"
+    const [datePart] = dateString.split(' ');
+    const [year, month, day] = datePart.split('-').map(Number);
+    parsedDate = new Date(year, month - 1, day);
+  } else {
+    // Formato simple: "YYYY-MM-DD"
+    parsedDate = new Date(dateString);
+  }
+  
+  // Validar que el parsing fue exitoso
+  if (!isNaN(parsedDate.getTime())) {
+    initialData[formKey] = parsedDate;
+  } else {
+    console.warn(`Failed to parse date: ${dateString}, using current date`);
+    initialData[formKey] = new Date('05-02-1966');
+  }
+  
+  // console.log('🔄 Date parsing:', {
+  //   original: dateString,
+  //   parsed: parsedDate,
+  //   successful: !isNaN(parsedDate.getTime())
+  // });
+
+} else {
+  initialData[formKey] = data[key];
  }
+  }
+ });
+ // console.log('',{initialData})
+ 
+ setFormData(initialData);
+
+// console.log('🔍 DIAGNÓSTICO desired_date:', {
+//   valorOriginalAPI: data?.desired_date,
+//   tipoOriginal: typeof data?.desired_date,
+//   stringParseado: data?.desired_date ? new Date(data.desired_date as string) : null,
+//   parsingExitoso: data?.desired_date ? !isNaN(new Date(data.desired_date as string).getTime()) : false,
+//   nuestroParsing: initialData.desired_date,
+//   nuestroParsingExitoso: initialData.desired_date ? !isNaN((initialData.desired_date as any).getTime()) : false
+// });
+  }
  }, [accountData, accountFields]);
 
 //7.✅ REAL TIME VALIDATION
@@ -153,7 +180,7 @@ const runFieldValidation = useCallback((fieldName: string, value: unknown) => {
 
   const { errors } = validateForm(partialSchema, { [fieldName]: value });
 
-// 🟢 FIX: Aserta la clave para el acceso dinámico
+// 🟢 KEY: Casting key for dynamic access 
  setValidationMessages(prev => {
   const key = fieldName as keyof GenericEditFormData;
   if (errors[fieldName]) {
@@ -168,22 +195,20 @@ const runFieldValidation = useCallback((fieldName: string, value: unknown) => {
    }
   });
   }, [schema]);
+//-----
+// 🟢 Debounce para la validación de texto/textarea
+  const debouncedValidation = useMemo(() => debounce(runFieldValidation, 500), [runFieldValidation]);
 
-  // 🟢 MEJORA 3: Debounce para la validación de texto/textarea
-  const debouncedValidation = useMemo(() => debounce(runFieldValidation, 300), [runFieldValidation]);
 //-----------------------------
 //8.🎮DYNAMIC CHANGE HANDLERS
  const handleTextChange = useCallback((fieldName: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
  const value = e.target.value;
  setFormData(prev => ({ ...prev, [fieldName]: value }));
- setUserMessage(undefined); //reset message
- if (fieldName === 'note' || e.target.type === 'text') {
+ setUserMessage(undefined);
   debouncedValidation(fieldName, value);
-   } else {
-// Validación inmediata para otros tipos de input (si es necesario)
-   runFieldValidation(fieldName, value);
-   }
- }, [debouncedValidation, runFieldValidation]);
+}, 
+  [debouncedValidation]
+);
 //---
 const handleDropdownChange = useCallback((fieldName: string) => (option: DropdownOptionType | null) => {
  const value = option ? option.value : '';
@@ -194,18 +219,25 @@ const handleDropdownChange = useCallback((fieldName: string) => (option: Dropdow
 }, [runFieldValidation]);
 //---------
 const handleDateChange = useCallback((fieldName: string) => (date: Date) => {
- const value = date.toISOString().split('T')[0];
- setFormData(prev => ({ ...prev, [fieldName]: value}));
- setValidationMessages(prev => ({ ...prev, [fieldName]: undefined }));
- // 🟢inmediate validation
- runFieldValidation(fieldName, value);
-}, [runFieldValidation]);
+ 
+ setFormData(prev => ({ ...prev, [fieldName]: date}));
 
+ setValidationMessages(prev => ({ ...prev, [fieldName]: undefined }));
+
+ // const value = date.toISOString().split('T')[0]; // "YYYY-MM-DD";
+
+ // 🟢inmediate validation
+ runFieldValidation(fieldName, date);
+
+// console.log('handleDateChange', fieldName, value, )
+
+}, [runFieldValidation]);
+//----------
 // 9.✅ VALIDATION AND SUBMIT
 const onSubmitForm = async (e: React.MouseEvent) => {
  e.preventDefault();
  if (!accountType) return;//deberia dar un mensaje
-
+// console.log('formData', formData)
 //handling null schema
  if (!schema) {
  console.error('Submission failed: Zod schema is not defined.');
@@ -228,20 +260,21 @@ const payloadToSend = {
   ...validatedData,
   type: accountType, //edtion controller need this
 };
+
 // 9.3. SEND API (PATCH)
  const result = await requestFn(payloadToSend as GenericEditFormData, {});
- // console.log("🚀 ~ onSubmitForm ~ result despues de editar:", result)
+// console.log("🚀 ~ onSubmitForm ~ result despues de editar:", result)
     
 if (result.data) {
  updateAccount(result.data);// update and syncronize with accounting dashboard
-  setUserMessage({ message: 'Account updated successfully!', status: 200 });
+ setUserMessage({ message: 'Account updated successfully!', status: 200 });
 
 setTimeout(() => {
- navigate('/fintrack/tracker/accounting'); //should be previous route
+ navigateTo('/fintrack/tracker/accounting'); //should be previous route
 }, 500); 
  }
   };
-//------------
+//-------------------------------------------
 const isFormDisabled = isFetching || isSaving || !accountData || !schema;
 const finalError = fetchError || saveError;
 
@@ -252,7 +285,8 @@ return (
  <section className='page__container'>
  <TopWhiteSpace variant={'dark'} />
  <div className='page__content'>
-  <Link to={'/fintrack/tracker/accounting'} className='form__header main__title--container '>
+
+  <Link to={previousRoute}className='form__header main__title--container '>
    <div className='form__header--icon iconLeftArrow'>
     { <LeftArrowSvg /> }
    </div>
@@ -261,35 +295,35 @@ return (
    </div>
   </Link>
 
-   {isFetching && <p>Loading account data...</p>}
+  {isFetching && <p style={{color:'yellow', opacity:'0.5'}}>Loading account data...</p>}
 
-   {fetchError && <p className='error-message'>Error loading data: {fetchError}</p>}
+  {fetchError && <p style={{color:'red'}} className='error-message'>Error loading data: {fetchError}</p>}
 
-   {accountType && accountFields.length === 0 && !isFetching && (
-    <p className='error-message'>Configuration not found for account type: {accountType}</p>
-    )}
+  {accountType && accountFields.length === 0 && !isFetching && (
+   <p className='error-message'>Configuration not found for account type: {accountType}</p>
+   )}
 
-   {!!accountType && accountFields.length > 0 && (
-    <form className='form__box'>
-     <div className='form__input__group'>
-   {/* 🎨 DYNAMIC RENDERING OF FORM */}
-    <div className='form__container'>
-     {accountFields.map((fieldConfig) => (
-      <UniversalDynamicInput
-        key={fieldConfig.fieldName}
-        fieldConfig={fieldConfig as FieldConfigType}
-        formData={formData}
-        setFormData={setFormData}
-        validationMessages={validationMessages}
-        handleDropdownChange={handleDropdownChange}
-        handleDateChange={handleDateChange}
-        // 🟢 MODIFICACIÓN: Uso de handleTextChange para todos los inputs de texto/número.
-        handleInputNumberChange={handleTextChange} 
-        isReset={isReset}
-      />
-     ))
-    }
-     </div>
+  {!!accountType && accountFields.length > 0 && (
+  <form className='form__box'>
+    <div className='form__input__group'>
+  {/* 🎨 DYNAMIC RENDERING OF FORM */}
+   <div className='form__container'>
+    {accountFields.map((fieldConfig) => (
+     <UniversalDynamicInput
+      key={fieldConfig.fieldName}
+      fieldConfig={fieldConfig as FieldConfigType}
+      formData={formData}
+      setFormData={setFormData}
+      validationMessages={validationMessages}
+      handleDropdownChange={handleDropdownChange}
+      handleDateChange={handleDateChange}
+      // 🟢 MODIFICACIÓN: Uso de handleTextChange para todos los inputs de texto/número.
+      handleInputNumberChange={handleTextChange} 
+      isReset={isReset}
+     />
+    ))
+   }
+    </div>
 
    </div>
     <div className='submit__btn__container'>

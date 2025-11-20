@@ -111,7 +111,7 @@ const inputRadioOptionsAccountBottomCard:RadioOptionType<TransferAccountType>[] 
   { value: 'income_source', label: 'Rev. Income' },
 ];
 //==============================
-// ⚛️Main Component: Transfer
+// ⚛️ MAIN COMPONENT: TRANSFER
 //==============================
 //--Transfer Tracker Movement between accounts--
 //-- account types allowed: investment, bank and  pocket_saving accounts -----

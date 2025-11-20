@@ -53,7 +53,7 @@ export function checkNumberFormatValueForSchema(value: string): {
     const matches = value.match(notMatching)
      const invalidChars = [...new Set(matches)].join(',').replace(' ','blank') || '';
        return {
-      formatMessage: `${ERROR_MESSAGES.INVALID_NUMBER}: ${invalidChars}`,
+      formatMessage: `${ERROR_MESSAGES.INVALID_NUMBER}:${invalidChars}`,
       isError: true,
       valueNumber: value,
       valueToSave: 0,
@@ -108,7 +108,7 @@ export function checkNumberFormatValueForSchema(value: string): {
     };
   }
 
-  // Formato no reconocido
+  // Format not valid /Formato no reconocido
   return {
     formatMessage: ERROR_MESSAGES.INVALID_FORMAT,
     isError: true,
@@ -119,7 +119,7 @@ export function checkNumberFormatValueForSchema(value: string): {
 //================================
 export const requiredStringSchema = z.string({error: (iss) => iss.input === undefined ? `Please enter a valid ${iss.path}` : `${iss.input} not allowed`}) 
 .min(1, {error:(iss)=>iss.input === ''?`* Please select the ${(iss.path)}`:ERROR_MESSAGES.FIELD_REQUIRED})
-// .min(1,ERROR_MESSAGES.FIELD_REQUIRED)
+
 //================================
 export const currencySchema = z.enum(['usd', 'cop', 'eur'], {
   error:(issue)=>{
@@ -130,12 +130,10 @@ export const currencySchema = z.enum(['usd', 'cop', 'eur'], {
   }
 }
 ) 
-//--------------------------------------
-export const noteSchema = z.string({error: (iss) => iss.input === undefined || '' ? `Pleas entered the ${iss.path}` : ``})
+//---------------------------------
+export const noteSchema = z.string({error: (iss) => iss.input === undefined || '' ? `Please entered the ${iss.path}` : ``})
 .min(1,{error:(issue)=>issue.input ===''?`* Please enter the ${issue.path}`:ERROR_MESSAGES.FIELD_REQUIRED})
 .max(150, {
   message: ERROR_MESSAGES.NOTE_MAX_LENGTH,
 });
-//---------------------------------------
-
-//------------------------------------
+//---------------------------------

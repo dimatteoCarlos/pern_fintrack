@@ -11,8 +11,7 @@ const ProtectedRoute = () => {
 
 // 🚨 1. Lógica para establecer la bandera (in useEffect) 🚨
  useEffect(() => {
-    // Si la autenticación ha terminado de chequearse, no estamos autenticados,
-    // y el modal AÚN NO se ha marcado para mostrarse.
+    // Si la autenticación ha terminado de chequearse, no esta autenticados y el modal AÚN NO se ha marcado para mostrarse.
     if (!isCheckingAuth && !isAuthenticated && !showSignInModalOnLoad) {
       // Establece la bandera SÓLO UNA VEZ para mostrar el modal en la página /auth.
       // Ya que esto ocurre en un useEffect, no causa un bucle.

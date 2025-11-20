@@ -191,7 +191,7 @@ if(data.accessToken){sessionStorage.setItem('accessToken', data.accessToken)}
       return false;
     }
   };
-  //---------------------------------
+  //-----------------------------
   // Asynchronous function to handle user sign-out
   const handleSignOut = async () => {
    try {

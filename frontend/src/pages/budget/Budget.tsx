@@ -1,4 +1,5 @@
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
+
 import { CardTitle } from '../../general_components/CardTitle';
 import OpenAddEditBtn from '../../general_components/OpenAddEditBtn';
 import ListCategory from './components/ListCategory';

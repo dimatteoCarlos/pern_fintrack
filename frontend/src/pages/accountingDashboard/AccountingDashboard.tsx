@@ -28,9 +28,9 @@ const ACCOUNT_TYPE_DATA = {
   debtor: { emoji: '👥', name: 'debtor' },
   pocket_saving: { emoji: '💰', name: 'pocket_saving' },
   category_budget: { emoji: '🛒', name: 'category_budget' },
-  // category_budget: { emoji: '📊', name: 'category_budget' },
   income_source: { emoji: '💼', name: 'income_source' },
   other: { emoji: '📁', name: 'other' },
+  // category_budget: { emoji: '📊', name: 'category_budget' },
 } ;
 
 // ROUTE CONFIGURATION
@@ -128,7 +128,7 @@ const [menuState, setMenuState] = useState<{
 // ⏰ AUTO-HIDE TOAST AFTER x SECONDS
  useEffect(() => {
   if(toast.visible){
-   const timer = setTimeout(()=>{hideToast()}, 3000)
+   const timer = setTimeout(()=>{hideToast()}, 2500)
    return () => {
      clearTimeout(timer)
    }
@@ -146,6 +146,7 @@ const [menuState, setMenuState] = useState<{
 useEffect(() => {
  // 📊 SHOW TOAST BY TYPE
   if(error){
+   console.log(error)
   showToast(`${groupResponseMessage.error} ${error}`, 'error')
   }
 
@@ -153,7 +154,7 @@ useEffect(() => {
   showToast(`${groupResponseMessage.isLoading}`, 'info')
   }
 
-  if(!apiData?.data.accountList.length){
+  if(apiData?.data.accountList.length===0){
   showToast(`${groupResponseMessage.notFound}`, 'warning')
   }
 
@@ -275,7 +276,7 @@ const renderAccountGroups = ()=>{
 //   </div>
 //     )
 // }
-
+//--------------------------------------
 //NO ACCOUNTS INFO
   if(Object.keys(groupedAccounts).length===0 && !isLoading){
   return(
@@ -323,24 +324,10 @@ const renderAccountGroups = ()=>{
    }
   )
  }
-// //----------------------------------
-// // 📋HANDLE EDIT ACCOUNT✏️
-// //----------------------------------
-// const handleEditAccount = (account:AccountListType)=>{
-//  handleCloseMenu()
-// //Navigate the route of edition
-//  const editRoute = `/fintrack/account/${account.account_id}/edit`;
 
-//  navigateTo(editRoute, {
-//   state:{
-//    accountData:account,
-//    previousRoute:previousRoute,
-//    originRoute:originRoute
-//     }
-//   })
-// }
 //=========================
 // 🎪 MAIN COMPONENT RENDER 
+//=========================
  return (
   <>
    <section className='accounting__layout'>
@@ -363,23 +350,23 @@ const renderAccountGroups = ()=>{
       type={toast.type}
       visible={toast.visible}
       onClose={hideToast}
-      duration={2500}
+      duration={1500}
     />  
 
 {/*🆕 ACCOUNT ACTIONS MENU */}
  {
-  menuState.isOpen && menuState.account && (
-<AccountActionsMenu
-   account={menuState.account}
-   isOpen={menuState.isOpen}
-   onClose={handleCloseMenu}
-// 👁‍🗨 onViewDetail
-   onViewDetails={() => handleViewDetails(menuState.account!)}
-// 🟢 onEditAccount
-  onEditAccount={() => handleEditAccount(menuState.account!)}
-//onDeleteAccount={handleDeleteAccount}
-  previousRoute={previousRoute}
-  />
+ menuState.isOpen && menuState.account && (
+ <AccountActionsMenu
+    account={menuState.account}
+    isOpen={menuState.isOpen}
+    onClose={handleCloseMenu}
+ // 👁‍🗨 onViewDetail
+    onViewDetails={() => handleViewDetails(menuState.account!)}
+ // 🟢 onEditAccount
+   onEditAccount={() => handleEditAccount(menuState.account!)}
+ //onDeleteAccount={handleDeleteAccount}
+   previousRoute={previousRoute}
+   />
     )
   }  
  </section>

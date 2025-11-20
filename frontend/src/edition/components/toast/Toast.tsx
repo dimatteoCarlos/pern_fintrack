@@ -1,4 +1,5 @@
 // frontend/src/general_components/toast/Toast.tsx
+//Customized own toast messages 
 import { useEffect } from "react";
 import "./toast-styles.css"
 
@@ -14,7 +15,7 @@ duration?: number;
 }
 
 // 🚨 TOAST COMPONENT
-function Toast({message, type, visible, onClose, duration=2000}:ToastPropsType){
+function Toast({message, type, visible, onClose, duration=3000}:ToastPropsType){
 // 🎯 TOAST EMOJI MAPPING
 const toastEmojis = {
     success: '✅',

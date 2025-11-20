@@ -352,13 +352,13 @@ function Debts(): JSX.Element {
 //------------------------
 //----entered datatrack validation messages --------------------------
 // Form validation
-    const newValidationMessages = validationData(datatrack);
-  // console.log('newValidationMessages values', Object.values(newValidationMessages), isAmountError);
+ const newValidationMessages = validationData(datatrack);
+// console.log('newValidationMessages values', Object.values(newValidationMessages), isAmountError);
 
-    if (Object.values(newValidationMessages).length > 0) {
-      setValidationMessages(newValidationMessages);
-      return;
-    }
+ if (Object.values(newValidationMessages).length > 0) {
+   setValidationMessages(newValidationMessages);
+   return;
+ }
 //------------------------------------
 //API REQUEST. ENDPOINT HERE FOR POSTING
 //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=debts

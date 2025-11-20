@@ -38,12 +38,13 @@ export const mainTables = [
   {
     tblName: 'user_accounts',
     table: `CREATE TABLE IF NOT EXISTS user_accounts (account_id SERIAL PRIMARY KEY NOT NULL, 
-user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
-account_name VARCHAR(50) NOT NULL,
-account_type_id INT  REFERENCES account_types(account_type_id) ON DELETE SET NULL ON UPDATE CASCADE, 
-currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE, 
- account_starting_amount DECIMAL(15,2) NOT NULL,
- account_balance DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    account_name VARCHAR(50) NOT NULL,
+    account_type_id INT  REFERENCES account_types(account_type_id) ON DELETE SET NULL ON UPDATE CASCADE, 
+    currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE, 
+    account_starting_amount DECIMAL(15,2) NOT NULL,
+    account_balance DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+    note VARCHAR(155) ,
     account_start_date TIMESTAMPTZ NOT NULL, 
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -72,25 +73,33 @@ currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT O
 
   {
     tblName: `category_budget_accounts`,
-    table: `CREATE TABLE IF NOT EXISTS category_budget_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), category_name VARCHAR(50) NOT NULL,category_nature_type_id INT REFERENCES category_nature_types(category_nature_type_id), subcategory VARCHAR(25), budget DECIMAL(15, 2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL)`,
+    table: `CREATE TABLE IF NOT EXISTS category_budget_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id),
+     category_name VARCHAR(50) NOT NULL,category_nature_type_id INT REFERENCES category_nature_types(category_nature_type_id),
+      subcategory VARCHAR(25),
+      budget DECIMAL(15, 2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL)`,
   },
 
   {
     tblName: `debtor_accounts`,
     table: `CREATE TABLE IF NOT EXISTS debtor_accounts (
-         account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), value DECIMAL(15, 2),
-         currency_id INT REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,
-         debtor_name VARCHAR(25),
-         debtor_lastname VARCHAR(25),
-         selected_account_id INT,
-         account_start_date TIMESTAMPTZ NOT NULL)`,
+     account_id INT PRIMARY KEY REFERENCES user_accounts(account_id),
+     value DECIMAL(15, 2),
+     currency_id INT REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,
+     debtor_name VARCHAR(25),
+     debtor_lastname VARCHAR(25),
+     selected_account_id INT,
+     selected_account_name VARCHAR(50),
+     account_start_date TIMESTAMPTZ NOT NULL
+     )`,
   },
 
   {
     tblName: `pocket_saving_accounts`,
     table: `CREATE TABLE IF NOT EXISTS pocket_saving_accounts (account_id INT PRIMARY KEY REFERENCES user_accounts(account_id), target DECIMAL(15, 2),
     note  VARCHAR(155), 
-    desired_date TIMESTAMPTZ NOT NULL,account_start_date TIMESTAMPTZ NOT NULL)`,
+    desired_date TIMESTAMPTZ NOT NULL,
+    account_start_date TIMESTAMPTZ NOT NULL
+    )`,
   },
 
   // -----

@@ -285,7 +285,6 @@ await pool.query('BEGIN');
 // Calculate the expiration date for the refresh token (e.g., 7 days from now)
 // expiration date deben coincidir con los que se crearon 
   const refreshTokenExpirationDate = new Date();
-
   refreshTokenExpirationDate.setDate(refreshTokenExpirationDate.getDate() + 7);
 
 // Store the refresh token in the database

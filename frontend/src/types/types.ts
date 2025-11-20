@@ -85,6 +85,7 @@ export type IncomeType = {
 };
 
 //sources
+/*
 export type SourcesType = {
   sources?: SourceType[] | null;
 };
@@ -96,7 +97,7 @@ export type SourceType = {
   currency?: string;
   balance?: number;
 };
-
+*/
 //investments
 export type InvestmentAccountsType = {
   accounts?: InvestmentAccountType[] | null;
@@ -147,7 +148,7 @@ export type MovementAccountType = {
 };
 
 //-------------------
-//debtors-tracker
+//debtor-tracker
 export type DebtorsListType = { debtors: DebtorDataType[] };
 export type DebtorDataType = {
   id: number;
@@ -163,7 +164,6 @@ export type DebtsTransactionType = string;
 
 export type DebtorNewProfileType = 'lending' | 'borrowing';
 
-//--------------------------------
 //--------------------------------
 //debts
 export type DebtsType = {
@@ -219,9 +219,13 @@ export type CURRENCY_OPTIONSTYPE = {
 //LabelInputNumberHandler
 export type FormNumberInputType = { [key: string]: string };
 
+// export type FormNumberInputType = Pick<ProfileInputDataType, 'amount'>;
+
+
 export type VariantType = 'tracker' | 'form' | 'light' | 'dark';
 
 export type DropdownOptionType = { value: string; label: string };
+
 //tracker input mask data type
 export type TopCardSelectStateType =
   | ExpenseInputDataType

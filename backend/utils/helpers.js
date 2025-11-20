@@ -19,7 +19,18 @@ convertToISO
 getMonthName
 numberToWords
 */
+//-----------------------
+export function capitalize(text) {
+   if(!text){return ""}
+  // 1. Convertimos todo a minúsculas
+  const lower = text.toLowerCase();
 
+  // 2. Capitalizamos la primera letra del texto y después de cada punto + espacio
+  const capitalized = lower.replace(/(^\w)|(\. \w)|(\.\w)/g, match => match.toUpperCase());
+
+  return capitalized;
+}
+//----------
 export const determineTransactionType = (
   transaction_amount,
   account_type_name

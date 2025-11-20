@@ -26,6 +26,8 @@ function AccountBalance({
   //--STATES---------------------
   const [accountsToRender, setAccountsToRender] =
     useState<AccountListType[]>([]);
+
+  //Check authentication  
   const { isAuthenticated, isCheckingAuth } = useAuth(); 
     
   //DATA FETCHING
@@ -41,8 +43,8 @@ function AccountBalance({
   } = useFetch<AccountByTypeResponseType>(urlGetAccounts as string);
   //------------------------------
   useEffect(() => {
-    function updateAccounts() {
-      const newBankAccounts: AccountListType[] =
+   function updateAccounts() {
+    const newBankAccounts: AccountListType[] =
         accountsData &&
         !isLoading &&
         !error &&
@@ -76,6 +78,7 @@ function AccountBalance({
  if (isCheckingAuth || isLoading) {
     return <span className='loading__msg' style={{ color: '#fff' }}>Loading...</span>;
   }
+//--------  
   return (
     <>
       {/*BANK ACCOUNTS  */}

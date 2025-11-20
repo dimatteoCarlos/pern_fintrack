@@ -25,7 +25,6 @@ export function AccountingBox({
     <div className="accountingBox__menu"
     style={{display:'flex',width:'100%'}}
     >
-
       <div className='accountingBox__title'>
       {title}
       </div>

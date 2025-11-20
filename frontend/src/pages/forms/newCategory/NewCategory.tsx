@@ -304,11 +304,6 @@ Errores inesperados → Van al catch
               />
             </div>
 
-            {/* functionalitiy logic and data structure for this add button of subcategories is PENDING */}
-            {/* <button className={'input__container'} onClick={addHandler}>
-              <PlusSignSvg />
-            </button> */}
-
           {/* Budget Amount Input */}
             <div className='input__box'>
               <LabelNumberValidation

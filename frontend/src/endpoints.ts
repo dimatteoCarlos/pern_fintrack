@@ -13,7 +13,7 @@ export const url_signout: string = 'http://localhost:5000/api/auth/sign-out';
 //refresh-token
 export const url_refrestoken: string =
   'http://localhost:5000/api/auth/refresh-token';
-//----------------------------
+//-----------------------
 //http://localhost:5000/api/fintrack
 export const BASE_URL: string = import.meta.env.VITE_API_URL_APP;
 
@@ -155,8 +155,8 @@ export const url_get_category_budget_full_data = `${BASE_URL}/fintrack/account`;
 //--------------------------
 //ACCOUNT EDITION ENDPOINT
 //http://localhost:5000/api/fintrack/account/edit/11//http://localhost:5000/api/fintrack/account/details/11
-export const url_get_account_by_id_edition : string = BASE_URL + '/fintrack/account/details/';
+export const url_get_account_details_by_id_for_edition : string = BASE_URL + '/account/details/';
 
 //http://localhost:5000/api/fintrack/account/edit/11
 export const url_patch_account_edit =   
-`${BASE_URL}/fintrack/account/edit`;
+BASE_URL+'/account/edit';

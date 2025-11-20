@@ -22,6 +22,6 @@ export const respondError = (
     status,
     message,
     errorDetails:
-      process.env.NODE_ENV === 'development' ? errorDetails : undefined,
+      process.env.NODE_ENV === 'developmentz' ? errorDetails : undefined,
   });
 };

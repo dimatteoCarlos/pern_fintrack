@@ -32,7 +32,7 @@ export const verifyAccountExistence = async (
     throw error;
   }
 };
-//--------------------------------------------------------------------------
+//----------------------------------
 //verify that the account exists and handle error if does not exist
 export const verifyAccountExists = async (
   userId,

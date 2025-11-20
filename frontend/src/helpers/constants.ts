@@ -9,6 +9,9 @@ import {
 //------------------------
 export const PAGE_LOC_NUM = 3;
 //-------------------------
+//-----------------------
+export const INITIAL_PAGE_ADDRESS = '/fintrack/tracker/expense'
+//-------------------------
 export const CURRENCY_OPTIONS = { usd: 'en-US', cop: 'cop-CO', eur: 'en-US' };
 
 export const DEFAULT_CURRENCY:CurrencyType = 'usd';
@@ -86,73 +89,88 @@ export const ACCOUNT_TYPE_DEFAULT: DropdownOptionType[] = [
 
 export const ACCOUNT_DEFAULT:AccountListType[] = [
   {
-    account_name: 'acc name_example',
+    account_name: '',
     // concept: 'balance',
-    account_balance: 2546,
-    account_id: 2001,
-    currency_code: 'cop',
-    account_type_name: 'type example',
-    account_type_id: 1,
+    account_balance: 0,
+    account_id: Infinity,
+    currency_code: DEFAULT_CURRENCY,
+    account_type_name: '',
+    account_type_id: 0,
     account_starting_amount:0,
-    account_start_date:new Date(),
+    account_start_date:'',
   },
-  {
-    account_name: 'acc name_2',
-    // concept: 'balance',
-    account_balance: 32546,
-    account_id: 1001,
-    currency_code: 'cop',
-    account_type_name: 'type1',
-        account_type_id: 2,
-        account_starting_amount:0,
-     account_start_date:new Date()
-  },
+
+  // {
+  //   account_name: 'acc name_example',
+  //   // concept: 'balance',
+  //   account_balance: 2546,
+  //   account_id: 2001,
+  //   currency_code: 'cop',
+  //   account_type_name: 'type example',
+  //   account_type_id: 1,
+  //   account_starting_amount:0,
+  //   account_start_date:new Date(),
+  // },
+  // {
+  //   account_name: 'acc name_2',
+  //   // concept: 'balance',
+  //   account_balance: 32546,
+  //   account_id: 1001,
+  //   currency_code: 'cop',
+  //   account_type_name: 'type1',
+  //       account_type_id: 2,
+  //       account_starting_amount:0,
+  //    account_start_date:new Date()
+  // },
   
 ];
 
 //pages/budget/ListPocket.tsx
 //just a DEMO
-export const DEFAULT_POCKET_LIST: PocketListType[] = [{
-  account_id: 1,
-    account_name: 'pocket name example',
-    note: 'note example',
-    balance: 100,
-    target: 50,
-    currency_code:DEFAULT_CURRENCY,
-    desired_date:new Date(),
-    account_start_date:new Date(),
-          },
-    {
-    account_name: 'pocket name example',
-    note: 'note example',
-    balance: 0,
-    target:140,
-    currency_code:DEFAULT_CURRENCY,
-    account_id: 1,
-    desired_date:new Date(),    account_start_date:new Date()
-          }
+export const DEFAULT_POCKET_LIST: PocketListType[] = [
+ {
+  account_id: Infinity,
+  account_name: '',
+  note: '',
+  balance: 0,
+  target: 0,
+  currency_code:DEFAULT_CURRENCY,
+  desired_date:new Date(),
+  account_start_date:new Date(),
+        },
+    // {
+    // account_name: 'pocket name example',
+    // note: 'note example',
+    // balance: 0,
+    // target:140,
+    // currency_code:DEFAULT_CURRENCY,
+    // account_id: 1,
+    // desired_date:new Date(),
+    //     account_start_date:new Date()
+    //       }
         ];
 
-   export const DEFAULT_POCKET_ACCOUNT_LIST  :   PocketSavingAccountListType[]=[{
-  account_id: 1,
-    account_name: 'pocket name example',
-    note: 'note example',
-    account_balance: 100,
-    target: 50,
+   export const DEFAULT_POCKET_ACCOUNT_LIST  :   PocketSavingAccountListType[]=[
+    {
+    account_id: Infinity,
+    account_name: '',
+    note: '',
+    account_balance: 0,
+    target: 0,
     currency_code:DEFAULT_CURRENCY,
     desired_date:new Date(),
     account_start_date:new Date(),
-    account_type_id:4,
+    account_type_id:Infinity,
     account_type_name:'pocket_saving',
-    user_id:'user id'
+    user_id:''
           },
-    
         ];
 
 //account detail transactions
 export const DEFAULT_ACCOUNT_TRANSACTIONS:TransactionsAccountApiResponseType= {
   "status": 200,
   "message": "This is a sample. 5 transaction(s) found for account id SAMPLE. Period between startDate and endDate.",
+ 
   "data": {
     "totalTransactions": 5,
     "summary": {
@@ -196,68 +214,69 @@ export const DEFAULT_ACCOUNT_TRANSACTIONS:TransactionsAccountApiResponseType= {
       ]
     }
   }
-  //debtor detail
-export const DEFAULT_LAST_MOVEMENTS = [
-  {
-    categoryName: 'Category Name_01',
-    record: 'Record',
-    description: 'Description',
-    date: new Date(),
-  },
 
-  {
-    categoryName: 'Category Name_02',
-    record: 'Record',
-    description: 'Description',
-    date: new Date().setDate(
-      new Date().getDate() - Math.floor(Math.random() * 31)
-    ),
-  },
-  {
-    categoryName: 'Category Name_05',
-    record: 'Record',
-    description: 'Description',
-    date: new Date().setDate(
-      new Date().getDate() - Math.floor(Math.random() * 31)
-    ),
-  },
-  {
-    categoryName: 'Category Name_06',
-    record: 'Record',
-    description: 'Description',
-    date: new Date().setDate(
-      new Date().getDate() - Math.floor(Math.random() * 31)
-    ),
-  },
+//debtor detail
+export const DEFAULT_LAST_MOVEMENTS = [
+  // {
+  //   categoryName: 'Category Name_01',
+  //   record: 'Record',
+  //   description: 'Description',
+  //   date: new Date(),
+  // },
+
+  // {
+  //   categoryName: 'Category Name_02',
+  //   record: 'Record',
+  //   description: 'Description',
+  //   date: new Date().setDate(
+  //     new Date().getDate() - Math.floor(Math.random() * 31)
+  //   ),
+  // },
+  // {
+  //   categoryName: 'Category Name_05',
+  //   record: 'Record',
+  //   description: 'Description',
+  //   date: new Date().setDate(
+  //     new Date().getDate() - Math.floor(Math.random() * 31)
+  //   ),
+  // },
+  // {
+  //   categoryName: 'Category Name_06',
+  //   record: 'Record',
+  //   description: 'Description',
+  //   date: new Date().setDate(
+  //     new Date().getDate() - Math.floor(Math.random() * 31)
+  //   ),
+  // },
 ];
 
 //Category Detail
 //Last Movements
 export const DEFAULT_CATEGORY_LIST = [
-  {
-    categoryName: 'subcategory name',
-    record: 'spent',
-    description: '% percentage',
-    date: new Date(),
-  },
-  {
-    categoryName: 'subcategory name',
-    record: 'spent',
-    description: '% percentage',
-    date: new Date(),
-  },
-  {
-    categoryName: 'subcategory name',
-    record: 'spent',
-    description: '% percentage',
-    date: new Date(),
-  },
-  {
-    categoryName: 'subcategory name',
-    record: 'spent',
-    description: '% percentage',
-    date: new Date(),
-  },
+  // {
+  //   categoryName: 'subcategory name',
+  //   record: 'spent',
+  //   description: '% percentage',
+  //   date: new Date(),
+  // },
+  // {
+  //   categoryName: 'subcategory name',
+  //   record: 'spent',
+  //   description: '% percentage',
+  //   date: new Date(),
+  // },
+  // {
+  //   categoryName: 'subcategory name',
+  //   record: 'spent',
+  //   description: '% percentage',
+  //   date: new Date(),
+  // },
+  // {
+  //   categoryName: 'subcategory name',
+  //   record: 'spent',
+  //   description: '% percentage',
+  //   date: new Date(),
+  // },
 ];
 
 //new category page

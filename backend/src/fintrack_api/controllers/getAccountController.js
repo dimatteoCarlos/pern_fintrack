@@ -178,6 +178,7 @@ export const getAllAccountsByType = async (req, res, next) => {
       // return res.status(400).json({ status: 400, message });
       return respondError(res, 400, message);
     }
+    
     if (
       ![
         'bank',
@@ -261,38 +262,53 @@ JOIN currencies ct ON ua.currency_id = ct.currency_id
         },
       },
 
-      pocket_saving: {
-        typeQuery: {
-          text: `SELECT ua.account_id, ua.account_name, CAST(ua.account_balance AS FLOAT), act.account_type_name, ct.currency_code, ps.target, ps.desired_date, ps.account_start_date, 
-            ua.account_starting_amount,  ua.account_start_date
+ pocket_saving: {
+  typeQuery: {
+   text: `
+   SELECT ua.account_id, ua.account_name,
+    CAST(ua.account_balance AS FLOAT),
+    act.account_type_name, ct.currency_code, ps.target, ps.desired_date,
+    ps.account_start_date, 
+    ua.account_starting_amount,
+    ua.account_start_date
 FROM user_accounts ua
 JOIN account_types act ON ua.account_type_id = act.account_type_id
 JOIN currencies ct ON ua.currency_id = ct.currency_id
 JOIN pocket_saving_accounts ps ON ua.account_id = ps.account_id
-  WHERE ua.user_id =$1
-  AND act.account_type_name = $2 AND ua.account_name != $3
-  ORDER BY ps.target DESC,  ABS(ua.account_balance) DESC
-      `,
-          values: [userId, accountType, 'slack'],
-        },
-      },
+WHERE ua.user_id =$1
+AND act.account_type_name = $2 AND ua.account_name != $3
+ORDER BY ps.target DESC,  ABS(ua.account_balance) DESC
+`,
+    values: [userId, accountType, 'slack'],
+  },
+ },
 
-      debtor: {
-        typeQuery: {
-          text: `SELECT ua.account_id, ua.account_name, CAST(ua.account_balance AS FLOAT), act.account_type_name, ct.currency_code,
-          ps. value as starting_value, ps.debtor_name, ps.debtor_lastname, ps.selected_account_name,  ps.account_start_date, 
-            ua.account_starting_amount,  ua.account_start_date
-FROM user_accounts ua
-JOIN account_types act ON ua.account_type_id = act.account_type_id
-JOIN currencies ct ON ua.currency_id = ct.currency_id
-JOIN debtor_accounts ps ON ua.account_id = ps.account_id
-  WHERE ua.user_id =$1
-  AND act.account_type_name = $2 AND ua.account_name != $3
-  ORDER BY  (ua.account_balance) ASC
-      `,
-          values: [userId, accountType, 'slack'],
-        },
-      },
+ debtor: {
+  typeQuery: {
+   text: `
+   SELECT ua.account_id,ua.account_name,
+    CAST(ua.account_balance AS FLOAT),
+    act.account_type_name, ct.currency_code,
+   dac.value as starting_value,
+   dac.debtor_name, dac.debtor_lastname,
+   dac.selected_account_id,
+   dac.account_start_date, 
+   ua.account_starting_amount,
+      ua.account_start_date
+   FROM user_accounts ua
+   JOIN account_types act
+    ON ua.account_type_id = act.account_type_id
+   JOIN currencies ct
+    ON ua.currency_id = ct.currency_id
+   JOIN debtor_accounts dac
+    ON ua.account_id = dac.account_id
+   WHERE ua.user_id =$1
+   AND act.account_type_name = $2 AND ua.account_name != $3
+   ORDER BY  (ua.account_balance) ASC
+`,
+    values: [userId, accountType, 'slack'],
+  },
+ },
 
       bank_and_investment: {
         typeQuery: {
@@ -461,15 +477,15 @@ export const getAccountById = async (req, res, next) => {
         FROM user_accounts ua
         JOIN account_types act ON 
         act.account_type_id = ua.account_type_id
-        WHERE ua.account_id= $1`,
-      values: [accountId],
+        WHERE ua.account_id= $1 AND ua.user_id = $2`,
+      values: [accountId, userId],
     });
     // console.log('result', accountsResult.rows[0])
 
      if (!accountsResult || accountsResult.rows.length===0) {
-      const message = `Account does not exist`;
+      const message = `Account does not exist or user mismatch.`;
       console.warn(pc[backendColor](message));
-      return res.status(400).json({ status: 400, message });
+      return res.status(404).json({ status: 404, message });//400
     }
 //------------------------------------
     //--check account_type_name developer mode
@@ -494,7 +510,7 @@ export const getAccountById = async (req, res, next) => {
 //-------------------------------------
    const account_type_name =accountsResult.rows[0].account_type_name
 //-------------------------------------
-// in case of a failur db?
+// in case of a failure db?
   if(!['pocket_saving','category_budget', 'bank', 'investment', 'income_source','debtor'].includes(account_type_name))
   {
    const message = `${account_type_name} is not included in the account types fintrack app`

@@ -42,7 +42,7 @@ export function useFetchLoad<R, D = unknown>({
 
     try {
       // 🎯 Unificar configuración de Axios
-      const requestConfig: AxiosRequestConfig = {
+     const requestConfig: AxiosRequestConfig = {
         ...initialConfig,
         method,
         url: initialUrl,
@@ -50,49 +50,41 @@ export function useFetchLoad<R, D = unknown>({
         withCredentials: true,
         ...(overrideConfig || {}), //overrideConfig must come last to overwrite dynamically the url or anything in the initial requestConfig, even method. overrideConfig?.url || initialUrl,
       };
-      // console.log(
-      //   'desde useFetch requestConfig:',
-      //   requestConfig,
-      //   'overrideConfig',
-      //   overrideConfig,
-      //   'url inicial:',
-      //   initialUrl
-      // );
 
 // ✅ USO DE authFetch PARA AUTENTICACIÓN
-      const response = await authFetch<R>(requestConfig.url!, requestConfig);
+  const response = await authFetch<R>(requestConfig.url!, requestConfig);
 
-      if (response.status >= 200 && response.status < 300) {
-        localData = response.data as R;
-        setData(localData);
-        // setData(response.data);
-      } else {
-        throw new Error(`Unexpected status code: ${response.status}`);
-      }
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.data?.message) {
-      errorMessage = err.response.data.message;
-      setError(errorMessage);       
-      }
-      // If it's a standard Error (e.g., thrown from authFetch or this function)
-      else if (err instanceof Error) {
-        errorMessage = err.message;
-        setError(errorMessage);
-      }
-      // Fallback for all other error types
-      else {
-       errorMessage = 'Unexpected error occurred';
-       setError(errorMessage);
-      }
-
-      console.error('Error:', errorMessage);
-      setData(null);
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
+  if (response.status >= 200 && response.status < 300) {
+    localData = response.data as R;
+    setData(localData);
+    // setData(response.data);
+  } else {
+    throw new Error(`Unexpected status code: ${response.status}`);
+  }
+   } catch (err: unknown) {
+    if (axios.isAxiosError(err) && err.response?.data?.message) {
+    errorMessage = err.response.data.message;
+    setError(errorMessage);       
     }
-    
-  return { data:localData,  error:errorMessage }; //inmediate return
+    // If it's a standard Error (e.g., thrown from authFetch or this function)
+    else if (err instanceof Error) {
+      errorMessage = err.message;
+      setError(errorMessage);
+    }
+    // Fallback for all other error types
+    else {
+      errorMessage = 'Unexpected error occurred';
+      setError(errorMessage);
+    }
+
+    console.error('Error:', errorMessage);
+    setData(null);
+    setError(errorMessage);
+  } finally {
+    setIsLoading(false);
+  }
+  
+return { data:localData,  error:errorMessage }; //inmediate return
   };
 
   return { data, isLoading, error, requestFn };

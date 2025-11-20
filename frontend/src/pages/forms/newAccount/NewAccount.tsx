@@ -12,12 +12,10 @@ import FormDatepicker from '../../../general_components/datepicker/Datepicker.ts
 import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
 
-
 import {
   ACCOUNT_TYPE_DEFAULT,
   DEFAULT_CURRENCY,
   VARIANT_FORM,
-  // CURRENCY_OPTIONS,
 } from '../../../helpers/constants.ts';
 import { url_create_basic_account } from '../../../endpoints.ts';
 
@@ -29,7 +27,7 @@ import {
   FormNumberInputType,
   VariantType,
 } from '../../../types/types.ts';
-// import { FormNumberInputType } from '../../../types/types.ts';
+
 import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 
 import { capitalize, } from '../../../helpers/functions.ts';
@@ -114,17 +112,16 @@ function NewAccount() {
     }
   }, [isAuthenticated, navigateTo]);
 
-  //endpoint: http://localhost:5000/api/fintrack/account/${type}
   //-------------------------------------
+  //endpoint: http://localhost:5000/api/fintrack/account/${type}
   //DATA FETCHING
   //OPTION SELECTION: ACCOUNT TYPE
   //account types from account_types table
 
   const title = 'type';
   const optionsTypeAccounts = ACCOUNT_TYPE_DEFAULT;
-  // console.log('arreglo:', optionsTypeAccounts);
 
-  //POST: NEW ACCOUNT DATA
+//POST: NEW ACCOUNT DATA
   const { data, isLoading, error, requestFn } = useFetchLoad<
     CreateBasicAccountApiResponseType,
     AccountDataType
@@ -179,7 +176,7 @@ function NewAccount() {
   //---------
   function changeStartingPoint(selectedDate: Date) {
     setAccountData((acc) => ({ ...acc, date: selectedDate }));
-    // console.log('selected starting point:', selectedDate);
+    console.log('selected starting point:', selectedDate);
   }
   //---------
   function updateDataCurrency(currency: CurrencyType) {
@@ -191,7 +188,7 @@ function NewAccount() {
     e.preventDefault();
     // console.log('On submit Form');
 
- // 🆕 VERIFICAR AUTENTICACIÓN ANTES DE ENVIAR
+ // 🆕 VERIFY AUTH BEFORE SENDING 
     if (!isAuthenticated) {
       setMessageToUser('Please log in to create an account');
       return;
@@ -222,9 +219,9 @@ function NewAccount() {
         url: finalUrl,
       } as AxiosRequestConfig);
 
-    // if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-      //   console.log('Data from New Account request:', data);
-      // }
+    if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+        console.log('Data from New Account request:', data);
+      }
       
     //resetting form values
       setIsReset(true);
@@ -284,7 +281,7 @@ function NewAccount() {
           <div className='form__title'>{'New Account'}</div>
         </div>
 
-    {/* 🆕 MENSAJE DE NO AUTENTICADO */}
+    {/* 🆕 MESSAGE FOR NOT AUTHENTICATED */}
       {!isAuthenticated && (
         <div className='error-message' style={{ margin: '1rem 0', padding: '1rem' }}>
           Please log in to create a new account
@@ -354,13 +351,13 @@ function NewAccount() {
               </div>
             </div>
 
-            {!isDisabledValue && (
-              <div className='input__box'>
-                <LabelNumberValidation
-                  formDataNumber={formDataNumber}
-                  validationMessages={validationMessages}
-                  variant={VARIANT_FORM}
-                />
+        {!isDisabledValue && (
+          <div className='input__box'>
+            <LabelNumberValidation
+              formDataNumber={formDataNumber}
+              validationMessages={validationMessages}
+              variant={VARIANT_FORM}
+            />
 
         <InputNumberFormHandler
           validationMessages={validationMessages}
@@ -425,8 +422,7 @@ function NewAccount() {
           </span>
         </div>
       )}
-      {/* )
-      } */}
+
     </section>
   );
 }

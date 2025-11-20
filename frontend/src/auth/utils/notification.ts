@@ -10,7 +10,7 @@ export const notifyWarning = (message: string) => toast.warn(message);
 export const notifySessionExpired = () => {
   toast.error('Your session has expired. Please, sign in again.', {
     toastId: 'session-expired', // Evita duplicar el mensaje
-    autoClose: 5000,
+    autoClose: 2000,
     closeOnClick: true,  
   });
 };

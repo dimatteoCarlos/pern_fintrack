@@ -1,16 +1,21 @@
 // frontend/src/pages/overview/OverviewLayout.tsx
 import { useEffect, useMemo, useState } from 'react';
-import Overview from './Overview';
-import { BigBoxResult } from './components/BigBoxResult';
-import { TitleHeader } from '../../general_components/titleHeader/TitleHeader';
-import { url_get_total_account_balance_by_type } from '../../endpoints';
-import { BalanceBankRespType, BalanceIncomeRespType, BalancePocketRespType, DebtorRespType } from '../../types/responseApiTypes';
-import { useFetch } from '../../hooks/useFetch.ts';
-import CoinSpinner from '../../loader/coin/CoinSpinner';
-import './styles/overview-styles.css';
-import { MessageToUser } from '../../general_components/messageToUser/MessageToUser';
 
+import Overview from './Overview.tsx';
+import { BigBoxResult } from './components/BigBoxResult.tsx';
+import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
+import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
+import './styles/overview-styles.css';
+import { MessageToUser } from '../../general_components/messageToUser/MessageToUser.tsx';
+
+import { url_get_total_account_balance_by_type } from '../../endpoints';
+
+import { BalanceBankRespType, BalanceIncomeRespType, BalancePocketRespType, DebtorRespType } from '../../types/responseApiTypes';
+
+import { useFetch } from '../../hooks/useFetch.ts';
+//==================
 //==MAIN COMPONENT==
+//==================
 function OverviewLayout() {
 //Saving Goals
 // const userId = import.meta.env.VITE_USER_ID;
@@ -28,11 +33,11 @@ function OverviewLayout() {
     `${url_get_total_account_balance_by_type}/?type=income_source`
   );
   // console.log(
-  //   '🚀 ~ OverviewLayout ~ incomeBalanceApiData:',JSON.stringify({
-  //   incomeBalanceApiData,
+    // '🚀 ~ OverviewLayout ~ incomeBalanceApiData:',JSON.stringify({
+    // incomeBalanceApiData,
   //   incomeBalanceError,
   //   // incomeBalanceStatus
-  //   })
+    // })
   // );
  const {
     apiData: expenseBalanceApiData,
@@ -121,7 +126,7 @@ const {
 const { netWorth, totalIncome, totalExpense } = useMemo(() => {
 //--Parameters to render into bubble info
  const totalIncome =
-    Math.abs(Number(incomeBalanceApiData?.data?.total_balance) || 0) ;
+  -(Number(incomeBalanceApiData?.data?.total_balance)) || 0 ;
 
  const totalExpense = expenseBalanceApiData?.data?.total_balance || 0;
 

@@ -144,7 +144,7 @@ if(accountsData?.data?.accountList ){
             <div className='input__box'>
               <label className='label form__title'>{'Desired Date'}</label>
               <div className="input__container"
-                style={{ padding: '0.5rem' }}>{formatDateToDDMMYYYY(accountDetail.desired_date)}
+                style={{ padding: '0.5rem' }}>{formatDateToDDMMYYYY(accountDetail?.desired_date)}
                 </div>
             </div>
 

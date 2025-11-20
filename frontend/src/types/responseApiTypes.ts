@@ -482,4 +482,16 @@ export type TransactionsAccountApiResponseType = {
   message: string;
   data: AccountTransactionDataType;
 };
+//------------------------------
+// 👤 DEBTOR ACCOUNT DETAIL TYPE
+//Combine the basic fields with the specific debtor edition fields
+export type DebtorAccountDetailType = AccountBasicDataType & {
+  debtor_name: string;
+  debtor_lastname: string;
+
+};
+
+
+
+
 //----------------------

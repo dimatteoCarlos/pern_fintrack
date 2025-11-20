@@ -1,17 +1,20 @@
 //src/helpers/functions.ts
 //function related to ui data presentation
+// getCurrencySymbol
 import { CurrencyType, StatusType } from '../types/types';
 import { DATE_TIME_FORMAT_DEFAULT } from './constants';
 //-------------------------
 export function currencyFormat(
   chosenCurrency = 'USD',
-  number = 0,
+  number = 0, 
   countryFormat = 'en-US'
 ) {
   // console.log('currency', chosenCurrency)
   const formatFn = new Intl.NumberFormat(countryFormat, {
     style: 'currency',
     currency: chosenCurrency,
+     minimumFractionDigits: 0, // Establece un mínimo de 0 decimales
+     maximumFractionDigits: 1
   });
   return formatFn.format(number);
 }

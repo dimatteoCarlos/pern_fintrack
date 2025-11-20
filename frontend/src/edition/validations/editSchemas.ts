@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { noteSchema, numberSchema, requiredStringSchema } from "../../validations/zod_schemas/commonSchemas";
 import { ERROR_MESSAGES } from "../../validations/utils/constants";
-// 
 // import { AccountListType } from "../../types/responseApiTypes";
 
 // 🎯 1. BASIC EDITION SCHEMA FOR PATCH
@@ -15,10 +14,19 @@ export type BaseAccountEditFormData=z.infer<typeof baseAccountEditSchema>;
 // 💰 2.POCKET SAVING SCHEMA
 export const pocketSavingEditSchema = baseAccountEditSchema.extend({
  target:z.string().pipe(numberSchema).optional(),
- desired_date:z.string().min(1, ERROR_MESSAGES.FIELD_REQUIRED).transform(str=>new Date(str))
- .refine((date)=>{const today = new Date();today.setHours(0, 0, 0, 0);return (date > today)}, {
-  message:ERROR_MESSAGES.INVALID_DATE_FUTURE, 
- }).optional(),
+
+//opcion para que acepte ambos tipos de fecha en string o en date.
+desired_date: z.union([
+z.string().transform(str => new Date(str)), // ← Si viene string, convertir a Date
+z.date() // ← Si ya viene Date, dejarlo igual
+])
+
+ // desired_date:z.string().min(1, ERROR_MESSAGES.FIELD_REQUIRED).transform(str=>new Date(str))
+ 
+.refine((date)=>{const today = new Date();today.setHours(0, 0, 0, 0);return (date > today)}, {
+ message:ERROR_MESSAGES.INVALID_DATE_FUTURE, 
+}).optional(),
+
  note: requiredStringSchema.optional(),
  })
 
@@ -29,7 +37,7 @@ export const categoryBudgetEditShema = baseAccountEditSchema.extend({
  budget:z.string().pipe(numberSchema).optional(),
  category_name:requiredStringSchema.optional(),
  subcategory:requiredStringSchema.optional(),
- nature_type_name:z.enum(['must', 'need', 'other', 'want']).optional(),
+ category_nature_type_name:z.enum(['must', 'need', 'other', 'want']).optional(),
 })
 export type CategoryBudgetEditFormData = z.infer<typeof categoryBudgetEditShema>
 
@@ -46,7 +54,7 @@ export type  DebtorAccountEditFormData= z.infer<typeof debtorAccountEditSchema>
 // 🗺️ FINAL SCHEMA MAP: Map account type names (string keys) to their corresponding Zod schema
 export const accountTypeEditSchemas:
 // {[key in AccountListType['account_type_name']]: z.ZodTypeAny}
-// // {[key: string]: z.ZodTypeAny}
+
 Record<string, z.ZodObject<Record<string, z.ZodTypeAny>>>
 ={
 bank:baseAccountEditSchema,
@@ -57,23 +65,7 @@ category_budget:categoryBudgetEditShema,
 debtor:debtorAccountEditSchema,
 }
 
-//forma simply y segura
-// export const accountTypeEditSchemas = {
-//   bank: baseAccountEditSchema,
-//   investment: baseAccountEditSchema,
-//   income_source: baseAccountEditSchema,
-//   pocket_saving: pocketSavingEditSchema,
-//   category_budget: categoryBudgetEditShema,
-//   debtor: debtorAccountEditSchema,
-// } as const; // 👈 magia
 
-// export const accountTypeEditSchemas = schemas;
-// export type AccountTypeEditMap = typeof accountTypeEditSchemas;
-//const schema = accountTypeEditSchemas[accountType ?? ''];
-// if (schema instanceof z.ZodObject) {
-//   const partial = schema.pick({ [field]: true });
-//   ...
-// }
 
 
 

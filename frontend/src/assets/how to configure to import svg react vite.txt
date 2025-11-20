@@ -1,0 +1,65 @@
+https://medium.com/@praizjosh/how-to-import-svg-files-as-react-components-in-vite-97d6e1f2c046
+
+npm install --save-dev vite-plugin-svgr
+
+Setup your vite.config.js file in your root directory this way.
+
+// vite.config.js
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import svgr from "vite-plugin-svgr";
+
+export default defineConfig({
+ // …
+ plugins: [ react(), svgr()],
+});
+
+
+The plugin’s guide suggests to add the “?react” suffix to each SVG import so the file is imported as a React component. E.g
+
+import Logo from "./logo.svg?react";
+
+import SVG files as React components without the “?react” suffix
+// vite.config.js
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import svgr from "vite-plugin-svgr";
+
+// https://vitejs.dev/config/
+export default defineConfig({
+// …
+ plugins: [
+  react(),
+  svgr({
+  // svgr options: https://react-svgr.com/docs/options/
+  svgrOptions: { exportType: "default", ref: true, svgo: false, titleProp: true },
+   include: "**/*.svg",
+  }),
+ ],
+});
+
+ust make sure your imported SVG file name is the same as the corresponding component. E.g.
+
+import Logo from "./logo.svg";
+
+const App = () => (
+  <div>
+    <Logo />
+  </div>
+)
+
+
+https://www.freecodecamp.org/news/how-to-import-svgs-in-react-and-vite/
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -24,7 +24,6 @@ import { url_get_account_by_id, url_get_transactions_by_account_id } from '../..
 import './styles/accountDetailTransactions-styles.css'
 
 // import CoinSpinner from '../../../loader/coin/CoinSpinner';
-// const user = import.meta.env.VITE_USER_ID;
 
 type LocationStateType ={
 previousRoute:string; detailedData:AccountListType;

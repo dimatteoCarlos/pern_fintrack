@@ -16,7 +16,7 @@ export const useAuthStore = create<AuthStoreStateType>((set) => ({
   setIsLoading: (isLoading: boolean) => set({ isLoading }),
   
 // Action to set the authentication status
-  isAuthenticated: false,//
+  isAuthenticated: true,//false
   setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
   
 // Action to set the user information

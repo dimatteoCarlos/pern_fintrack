@@ -13,7 +13,7 @@ export type FetchResponseType<R> = {
  * ✅ Ideal para fetching de datos al montar componentes
  * ✅ Usa authFetchTyped para autenticación automática
  */
-export function useFetch<R>(url: string): FetchResponseType<R> {
+export function useFetch<R>(url: string | null): FetchResponseType<R> {
 // console.warn('url from useFetch', url)
 
   const [state, setState] = useState<FetchResponseType<R>>({
@@ -24,7 +24,10 @@ export function useFetch<R>(url: string): FetchResponseType<R> {
   });
 
   useEffect(() => {
-     if (!url) return ;
+     if (!url) {
+      console.log('return url null')
+      return
+     } 
 
     const fetchData = async () => {
       setState((prev) => ({
@@ -34,11 +37,11 @@ export function useFetch<R>(url: string): FetchResponseType<R> {
         status: null,
       }));
 
-      try {
-      // ✅ USAGE OF authFetch
-        const response = await authFetch<R>(url);
-        // console.log("🚀 ~ fetchData ~ response:", response)
-      //const finalPayload = response.data.data
+    try {
+    // ✅ USAGE OF authFetch
+      const response = await authFetch<R>(url);
+      // console.log("🚀 ~ fetchData ~ response:", response)
+    //const finalPayload = response.data.data
         setState({
           apiData: response.data,
           isLoading: false,
@@ -66,16 +69,17 @@ export function useFetch<R>(url: string): FetchResponseType<R> {
       errorMessage = err.message;
     }
 //----------------------------
-// Si es un error de "No data found", no lo trates como un error de la aplicación.
+// Si es un error de "No data found", no tratarlo como un error de la aplicación.
     if (isDataNotFoundError) {
-          console.warn(`[useFetch] Expected Data Not Found (Status ${status}):`, errorMessage);
-          setState({
-            apiData: null, // Deja los datos como nulos, pero no es un error fatal
-            isLoading: false,
-            error: null, // IMPORTANTE: Establece el error como null
-            status,
-          });
-          return; // Termina la ejecución aquí
+      console.warn(`[useFetch] Expected Data Not Found (Status ${status}):`, errorMessage);
+      setState({
+        apiData: null, // Deja los datos como nulos, pero no es un error fatal
+        isLoading: false,
+        error: null, // IMPORTANTE: Establece el error como null
+        status,
+      });
+      
+      return; // Termina la ejecución aquí
     }
     //----------------------------
     console.error('[useFetch] Fetch error:', errorMessage, 'status' , status);

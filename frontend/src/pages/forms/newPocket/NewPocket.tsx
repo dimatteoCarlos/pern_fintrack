@@ -229,7 +229,7 @@ setMessageToUser({message:responseData.message || "Server error when creating ne
 // 🚫 FORM DISABLE STATE
   const isFormDisabled = !isAuthenticated;
 
-//================================================
+//==============================================
 // 🛡️ AUTHENTICATION GUARD - PREVENT RENDERING IF NOT AUTHENTICATED
   if (isCheckingAuth) {
     return (
@@ -258,6 +258,7 @@ setMessageToUser({message:responseData.message || "Server error when creating ne
       </section>
     );
   }  
+// console.log('desired_date',pocketData.desiredDate)
 //-----------------------
 // 🎨 RENDER COMPONENT
   return (
@@ -360,7 +361,7 @@ setMessageToUser({message:responseData.message || "Server error when creating ne
 
     <div className='form__datepicker__container'>
      <FormDatepicker
-       changeDate={changeDesiredDate}
+       changeDate={changeDesiredDate}//onChange
        date={(pocketData.desiredDate)} 
        variant={'form'}
        isReset={isReset}

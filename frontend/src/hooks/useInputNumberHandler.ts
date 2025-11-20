@@ -2,28 +2,27 @@
 import React, { useCallback  } from 'react';
 import { checkNumberFormatValue } from '../validations/utils/custom_validation';
 
-//update numeric state and validation messages
+//UPDATE NUMERIC STATE AND VALIDATION MESSAGES
 function useInputNumberHandler<T>(
   setFormData: React.Dispatch<React.SetStateAction<{ [key: string]: string }>>,
   setValidationMessages: React.Dispatch<
     React.SetStateAction<{
-      [key: string]: string;
+      [key: string]: string ;
     }>
   >,
   setStateData: React.Dispatch<React.SetStateAction<T>> ,
   //---
     setIsAmountError?:React.Dispatch<React.SetStateAction<boolean>>,
     setMessageToUser?:React.Dispatch<React.SetStateAction<string | null | undefined>>
-  //setFormData for numeric state
 ) {
   const inputNumberHandlerFn = useCallback(
     (name: string, value: string) => {
       const { formatMessage, isError, valueToSave,valueNumber } =
         checkNumberFormatValue(value);
-
+//UPDATE formDta with original string per display
       setFormData((formData) => ({
         ...formData,
-        [name]: value,
+        [name]: value,//always string for input
       }));
 
       setValidationMessages((prev) => ({
@@ -39,8 +38,8 @@ function useInputNumberHandler<T>(
       //   isError,
       //   valueToSave,
       // });
-
-      if((isError|| valueToSave===0) && setIsAmountError&&setMessageToUser
+//----------
+      if((isError|| valueToSave===0) && setIsAmountError && setMessageToUser
        ){
         setIsAmountError(true)
         setMessageToUser('Please enter a valid Amount');
@@ -53,7 +52,8 @@ function useInputNumberHandler<T>(
       setMessageToUser('');
        }
 
-      setStateData((prev) => ({ ...prev, [name]: valueToSave }));
+      setStateData((prev) => ({ ...prev, [name]: valueToSave //number 
+         }));
 
     return { formatMessage, isError, valueToSave,valueNumber };
     },

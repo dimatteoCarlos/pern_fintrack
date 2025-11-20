@@ -5,12 +5,13 @@ export const ERROR_MESSAGES = {
   FIELD_REQUIRED: 'This field is required.',
   INVALID_FORMAT: 'Format number not valid.',
   POSITIVE_NUMBER_REQUIRED: 'Value must be greater than zero.',
-  INVALID_NUMBER: "Please enter a valid number.",
+  INVALID_NUMBER: "Please correct invalid characters.",
   NOTE_MAX_LENGTH: "Note cannot exceed 150 characters.",
    
   INVALID_CHARS: (chars: string) => `Invalid chars: ${chars}.`,
 // Add other common messages as needed
   INVALID_DATE: 'Invalid date format.',
+  INVALID_DATE_FUTURE:'Date must be in the future',
   INVALID_SELECTION: 'Please select an option.',
 
 };
@@ -24,3 +25,5 @@ export const VALID_NUMBER_FORMATS_PATTERNS = [
 ];
 
 export const INVALID_CHARS_REGEX = /[^0-9.,]/g;
+
+export const invalidateAnyEslint = '//eslint-disable-next-line @typescript-eslint/no-explicit-any'

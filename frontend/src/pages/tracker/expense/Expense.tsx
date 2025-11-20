@@ -13,7 +13,7 @@ import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.ts';
 
 // ZUSTAND STORES
-import useBalanceStore from '../../../stores/useBalanceStore.ts';
+import {useBalanceStore} from '../../../stores/useBalanceStore.ts';
 //---
 // 🎨 UI COMPONENTS
 import TopCardZod from '../components/TopCard.tsx';

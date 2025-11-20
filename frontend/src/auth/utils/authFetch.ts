@@ -30,7 +30,9 @@ const requestConfig:AxiosRequestConfig ={
 try {
 // 3. 🎯 FIRST ATTEMP TO REQUEST FOR ACCESS
 const authFetchResponse = await axios<T>(url, requestConfig);
+
 // console.log("🚀 ~ authFetch ~ FIRST ATTEMPT authFetchResponse:", authFetchResponse)
+
 return authFetchResponse
 
 } catch (error) {
@@ -70,7 +72,7 @@ const retryConfig: AxiosRequestConfig = {
   };
 
 const retryAuthFetchResponse = await axios(url, retryConfig);
-  // console.log("🚀 ~ authFetch ~ retryAuthFetchResponse:", retryAuthFetchResponse)
+// console.log("🚀 ~ authFetch ~ retryAuthFetchResponse:", retryAuthFetchResponse)
   return retryAuthFetchResponse
 
 //🚨BLOCK FOR ERROR CAPTURING DURING REFRESH 🚨

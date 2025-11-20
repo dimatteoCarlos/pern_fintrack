@@ -1,8 +1,7 @@
+//frontend/src/general_components/labelNumberValidation/LabelNumberValidation.tsx
 import { capitalize } from '../../helpers/functions';
 import { VariantType } from '../../types/types';
 import { ValidationMessagesType } from '../../validations/types';
-// import { ValidationMessagesType } from '../../validations/utils/zod_validation';
-// import { ValidationMessagesType } from '../../../../validations/types';
 
 type LabelNumberValidationPropType<TFormDataType extends { [key: string]: unknown} > = {
   formDataNumber: { [key: string]: string };

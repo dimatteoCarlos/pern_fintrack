@@ -7,7 +7,7 @@
 // dashboardMovementTransactions
 // dashboardMovementTransactionsSearch
 // dashboardMovementTransactionsByType
-
+//----------------------------------
 import {
   createError,
   handlePostgresError,
@@ -168,10 +168,15 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
 //---queries definition
 // TOTAL_BALANCE_QUERY  is used for bank, investment and income_source type account
   const TOTAL_BALANCE_QUERY = {
-    text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance, CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
+   text: `
+   SELECT 
+    CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,
+    CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
       FROM user_accounts ua
-      JOIN account_types act ON ua.account_type_id = act.account_type_id
-      JOIN currencies ct ON ua.currency_id = ct.currency_id
+      JOIN account_types act
+       ON ua.account_type_id = act.account_type_id
+      JOIN currencies ct
+       ON ua.currency_id = ct.currency_id
       WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
       GROUP BY ct.currency_code
 `,
@@ -194,18 +199,21 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
   values: [userId, accountType, 'slack'],
     },
 //-----------
-    pocket_saving: {
-        text: `SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance, CAST(SUM(st.target) AS FLOAT ) AS total_target,
-         (CAST(SUM(st.target) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining,CAST(COUNT(*) AS INTEGER) AS accounts,  ct.currency_code
-        FROM user_accounts ua
-          JOIN account_types act ON ua.account_type_id = act.account_type_id
-          JOIN pocket_saving_accounts st ON ua.account_id = st.account_id
-          JOIN currencies ct ON ua.currency_id = ct.currency_id
-          WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
-          GROUP BY  ct.currency_code
-          `,
-        values: [userId, accountType, 'slack'],
-      },
+ pocket_saving: {
+  text: `SELECT 
+  CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,
+  CAST(SUM(st.target) AS FLOAT ) AS total_target,
+  (CAST(SUM(st.target) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining, 
+  CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
+  FROM user_accounts ua
+   JOIN account_types act ON ua.account_type_id = act.account_type_id
+   JOIN pocket_saving_accounts st ON ua.account_id = st.account_id
+   JOIN currencies ct ON ua.currency_id = ct.currency_id
+   WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
+   GROUP BY  ct.currency_code
+    `,
+  values: [userId, accountType, 'slack'],
+},
 
     debtor: {
       text: `
@@ -234,9 +242,7 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
   ) {
     const query = TOTAL_BALANCE_QUERY;
     // console.log('🚀 ~ dashboardTotalBalanceAccount ~ query:', query);
-
     const accountTotalBalanceResult = await pool.query(query);
-
     if (accountTotalBalanceResult.rows.length === 0) {
       const message = `No accounts of type "${accountType}"`;
       // ERR_RESP(res, 400, message, controllerName);
@@ -244,7 +250,7 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     }
 
     const data = accountTotalBalanceResult.rows[0];
-    // console.log('datos', data);
+    console.log('datos from dashboardTotalBalanceAccountByType', data);
 
     return RESPONSE(res, 200, successMsg, data);
   }

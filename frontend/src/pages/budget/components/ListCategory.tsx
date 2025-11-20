@@ -5,13 +5,9 @@ import {
 import {
   currencyFormat,
   numberFormatCurrency,
-  // numberFormat,
-  // divide,
 } from '../../../helpers/functions.ts';
 import {
-  // // CategoryBudgetListType,
-  // CategoryBudgetType,
-  // CurrencyType,
+
 } from '../../../types/types.ts';
 
 import {
@@ -39,8 +35,8 @@ const defaultCategoryBudget: CategoryToRenderType[] = [];
 
 //==================================
 function ListCategory({previousRoute}:ListCategoryProp) {
-console.log('component', 'ListCategory')
-// console.log('originRoute', previousRoute)
+// console.log('component', 'ListCategory')
+
 //++++++++++++++++++++++++++++++++++
 //DATA FETCHING
 //List of each category with summary info
@@ -87,7 +83,7 @@ const budgetList: CategoryToRenderType[] =
 
       const remain = Math.round(-total_balance + budget);
 
-console.log('remain', remain);
+// console.log('remain', remain);
 
       const statusAlert = remain <= 0;
 

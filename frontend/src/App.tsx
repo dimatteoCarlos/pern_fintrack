@@ -49,6 +49,8 @@ import CategoryDetail from './pages/forms/categoryDetail/CategoryDetail.tsx';
 
 // ❌ ERROR HANDLING
 import ErrorPage from './pages/error/ErrorPage.tsx';
+import EditAccount from './edition/pages/forms/editAccount/EditAccount.tsx';
+// import { EditAccount } from './edition/components/forms/EditAccount.tsx';
 
 // import NotFoundPage from './pages/error/NotFoundPage.tsx';
 //----------------------------------
@@ -180,39 +182,39 @@ function App() {
       element: <CategoryDetail />,
       },
 
-  //Accounting -> category detail view  
-    {
-        path: 'budget/account/:accountId',
-      element: <CategoryDetail />,
-      },
+//Accounting -> category detail view  
+  {
+      path: 'budget/account/:accountId',
+    element: <CategoryDetail />,
+    },
 
 // ✨ EDITION FORMS (PROTECTED)
-      //page form edit account
-      // { path: 'account/:accountId/edit', element: <EditAccount /> },
-
-    ],
-  },
-  ]);
+//Accounting -> edit account
+// { path: 'account/:accountId/edit', element: <ErrorPage /> },
+{ path: 'account/:accountId/edit', element: <EditAccount /> },
+],
+ },
+ ]);
 //--------------
-  return (
-    <>
-      <RouterProvider router={router} />
+return (
+<>
+  <RouterProvider router={router} />
 
-      {/* 🎭 TOAST NOTIFICATIONS */}
-      <ToastContainer 
-      position = "bottom-center" autoClose={3000}
-      hideProgressBar = {false} newestOnTop={true}
-      closeOnClick={false}
-      rtl={false}
-      pauseOnFocusLoss
-      draggable
-      pauseOnHover
-      // theme="dark"
+  {/* 🎭 TOAST NOTIFICATIONS */}
+  <ToastContainer 
+  position = "bottom-center" autoClose={2000}
+  hideProgressBar = {false} newestOnTop={true}
+  closeOnClick={false}
+  rtl={false}
+  pauseOnFocusLoss
+  draggable
+  pauseOnHover
+  // theme="dark"
 
-      transition={Slide}//flip, bounce, zoom, slide
-      />
-    </>
-  );
+  transition={Slide}//flip, bounce, zoom, slide
+  />
+</>
+);
 }
 
 export default App;

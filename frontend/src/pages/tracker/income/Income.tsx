@@ -90,7 +90,7 @@ function Income():JSX.Element {
 //select option accounts rendered are all existing bank accounts,except the slack account which is not shown.
 
 // 🗺️ Router and User configuration
-  const { pathname } = useLocation();
+ const { pathname } = useLocation();
   const trackerState = pathname.split('/')[PAGE_LOC_NUM];
   const typeMovement : MovementTransactionType= trackerState.toLowerCase();
 // console.info('tracker state', trackerState)
@@ -151,10 +151,6 @@ const {
     isLoading: isLoadingBankAccounts,
     error: fetchedErrorBankAccounts,
   } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
-
-// console.log('🚀 ~ Income ~ BankAccountsResponse:', BankAccountsResponse);
-// console.log('BANK resp', BankAccountsResponse, fetchedErrorBankAccounts);
-
 //---------------------------------
 //--- Data Transformations
 // 🧠 Memoization: Account Options
@@ -181,9 +177,8 @@ const {
     options: optionsIncomeAccounts,
     variant: VARIANT_DEFAULT,
   };
-// console.log("🚀 ~ Income ~ optionsIncomeAccounts:", optionsIncomeAccounts)
-//-------------------------------------
-//--- data fetching
+//--------------------------------
+//--- DATA FETCHING
 // Prepare data and url for Fetching income_source account type
  const fetchSourceUrl = `${url_get_accounts_by_type}/?type=income_source&${reloadTrigger}`
  // console.log('🚀 ~ Income ~ fetchSourceUrl:', fetchSourceUrl);
@@ -350,9 +345,9 @@ try {
       setTimeout(() => setMessageToUser(null), 5000);
     }
   }
-//------------------------------------------
+//--------------------------------
 // ⏳--- Side Effects--/--Efectos secundarios
-//------------------------------------------
+//----------------------------------
 // `useEffect` para resetear los estados de la UI (`isReset`, `isResetDropdown`) después de un tiempo.
   useEffect(() => {
     if (isReset || isResetDropdown) {
@@ -363,7 +358,7 @@ try {
       return () => clearTimeout(timer);
     }
   }, [isReset, isResetDropdown]);
-//-----------------------------------------
+//----------------------------------
 // 📄 Rendering UI Components /Renderizado del componente
 // Define UI structure / Define la estructura de la UI
 //-------Top Card elements

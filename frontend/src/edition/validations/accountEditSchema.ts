@@ -7,7 +7,7 @@ import { AccountListType } from '../../types/responseApiTypes';
 //combine all possible FieldNames of all edition schemas
 export type FieldConfigType = {
  fieldName: keyof (BaseAccountEditFormData & CategoryBudgetEditFormData & PocketSavingEditFormData & DebtorAccountEditFormData);
-    label: string;
+ label: string;
  inputType: 'text' | 'number' | 'textarea' | 'select' | 'date'; 
  isEditable: boolean; // false = ReadOnly (at first, field could be editable though)
  isRequired: boolean; // for Zod, it must be validated and not null
@@ -19,6 +19,7 @@ export type FieldConfigType = {
     // CRÍTICAL: build field from others / Indica que el campo se construye a partir de otros (ej. account_name de debtor)
  isDerived?: boolean; 
 }
+
 // 🎯 2.MAIN CONFIGURATION: Mapping the Account Type to its Fields / Mapeo del Tipo de Cuenta a sus Campos
 export type AccountSchemaConfigType = {
 // 'string' covers all account types (bank, debtor, etc.)
@@ -67,7 +68,7 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
   isRequired: false,
   placeholder: 'Account Name',
   isDerived: true, // Calculated Field from category/nature/subcategory
-  helpText: 'Name generated from Category, Nature and Subcategory.',
+  helpText: 'Generated from Category, Subcategory and Nature.',
    },
  {   
     fieldName: 'budget',
@@ -96,13 +97,13 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
     placeholder: 'Subcategory Name',
    },
    {
-    fieldName: 'nature_type_name', 
+    fieldName: 'category_nature_type_name', 
     label: 'Nature of Expense',
     inputType: 'select',
     isEditable: true,
     isRequired: true,
     options: [
-        { value: 'must', label: 'Must Have' },
+        { value: 'must', label: 'Must' },
         { value: 'need', label: 'Need' },
         { value: 'want', label: 'Want' },
         { value: 'other', label: 'Other' },
@@ -184,7 +185,7 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
   isEditable: false, // Read-Only
   isRequired: false,
   isDerived: true, // Calculated field (Name + LastName)
-  helpText: 'Name generated from Debtor Name and Last Name.',
+  helpText: 'Generated from Debtor Name and Lastname.',
  },
  {
   fieldName: 'note',

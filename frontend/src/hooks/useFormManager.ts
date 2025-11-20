@@ -37,8 +37,8 @@ const useFormManager = <TInput extends Record<string, unknown>, TValidated exten
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   }, []);
 
-// DEBOUNCED VALIDATION
-// =======================
+// DEBOUNCED ZOD VALIDATION
+// ========================
   const validateField = useCallback(<TKey extends keyof TInput>(fieldName: TKey, value: TInput[TKey]) => {
     const currentDataForValidation = {
       ...formData,
@@ -109,6 +109,7 @@ const useFormManager = <TInput extends Record<string, unknown>, TValidated exten
     };
   }, [updateField, validateField]);
 //-----
+  //HANDLER GENERIC
   const createInputHandler = useCallback((fieldName: keyof TInput) => {
     return (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
@@ -132,7 +133,7 @@ const useFormManager = <TInput extends Record<string, unknown>, TValidated exten
     };
   }, [updateField, debouncedValidateField]);
   
- // FORM-WIDE VALIDATION (for submit)
+ // TOTAL FORM-WIDE VALIDATION (for submit)
  // ==============================
   const validateAll = useCallback(() => {
     const { errors: fieldErrors, data: dataValidated } = validateForm(schema, formData);

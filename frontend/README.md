@@ -403,3 +403,19 @@ graph TD
 this was already accomplished, considering different approachs in the sake of learning different techniques.
 
 Theoretically, all the operations of tracking could be performed just using "Transfer" function from tracker menu, with just little adjustments, without the need of the others tracker options.
+
+## EDITION OF ACCOUNTS.
+VIEW DETAILS:
+Different approaches were applied for rendering detail info of the accounts, in order to compare and learn.
+
+The system employs a Hybrid Data Fetching Pattern 
+
+ The AccountingDashboard fetches account data and transfers it via navigation state. This state-based data serves as the primary, fastest source for the detail views. For generic accounts (AccountDetail), the full account object is passed, allowing for an immediate render.
+ 
+  Conversely, for specific accounts (CategoryDetail), the dashboard passes a null value. This action forces the detail component to initiate an API Fallback using useFetch to retrieve complex, dynamic data directly from the server, ensuring data validity. All detail components use the same consumption logic (StateData || FetchResult) to handle both the instant load from state and the slower, resilient fetch from the API when state data is absent (e.g., after a page refresh).
+
+  In PocketDetail, the account id is passed via parameters, and info account is always fetch using useFetch hook. 
+
+  
+EDIT:
+DELETE:
