@@ -154,9 +154,14 @@ export const url_get_transactions_by_search: string =
 export const url_get_category_budget_full_data = `${BASE_URL}/fintrack/account`;
 //--------------------------
 //ACCOUNT EDITION ENDPOINT
-//http://localhost:5000/api/fintrack/account/edit/11//http://localhost:5000/api/fintrack/account/details/11
+//http://localhost:5000/api/fintrack/account/edit/11
+//http://localhost:5000/api/fintrack/account/details/11
 export const url_get_account_details_by_id_for_edition : string = BASE_URL + '/account/details/';
 
 //http://localhost:5000/api/fintrack/account/edit/11
 export const url_patch_account_edit =   
 BASE_URL+'/account/edit';
+//--------------------------
+//ACCOUNT DELETION ENDPOINT
+//http://localhost:5000/api/fintrack/account/delete/11
+export const url_account_delete : string = BASE_URL + '/account/delete/';
