@@ -1,52 +1,66 @@
 import pc from 'picocolors';
 import { pool } from '../src/db/configDB.js';
+import { createError } from './errorHandling.js';
 // import { handlePostgresError } from './errorHandling.js';
 
-////this check is restricted to bank account type
-export const checkAndInsertAccount = async (
+//Checks for the existence of a specific account (e.g., 'slack') by name and type.this check is restricted to bank account types with basic account data.
+export const checkAndInsertAccount = async (clientOrPool,
   userId,
   accountName = 'slack',
   accountType = 'bank',
 ) => {
-  try {
-    const chekAccountResult = await pool.query(
-      `SELECT ua.* FROM user_accounts ua
-      JOIN account_types act ON ua.account_type_id = act.account_type_id
-      WHERE ua.user_id =$1 AND ua.account_name = $2 AND act.account_type_name=$3 
-      `,
-      [userId,accountName, accountType]
-    );
-    if (chekAccountResult.rows.length > 0) {
-      const accountId = chekAccountResult.rows[0].account_id;
-      console.log('from checkAndINserAccount', `${accountName} account already exists with id ${accountId}`);
-      return { exists: true, account: chekAccountResult.rows[0] };
-    } else {
-      //old version creates a slack account
-      //new version would create a new account named accountName, but, shoudl not be necessary nor recommendable
-      //  SE PUEDE OPTIMIZAR DESPUES DE REVISAR CON EL CLIENTE LO QUE REALMENTE NECESITA SEGUN REQUERIMIENTO ORIGINAL
-      const insertResult = await pool.query(
-        'INSERT INTO user_accounts (user_id,account_name,account_type_id,currency_id,account_starting_amount,account_balance,account_start_date) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
-        [
-          userId,
-          accountName,
-          1, //bank
-          1, //usd . would be an input for multicurrency
-          0, //amount
-          0, //balance
-          new Date(),
-        ]
-      );
-      // console.log(insertResult.rows[0]);
-      // console.log(`${accountName} account was created `);
+// 1. Determine the database client:
+// If the argument has a .connect method (it's the pool), acquire a client.
+  // Otherwise (it's already a client), use it directly.
+ const isPool = clientOrPool.connect; 
+ const dbClient=isPool?
+ await clientOrPool.connect():clientOrPool
 
-      return { exists: false, account: insertResult.rows[0] };
+  try {
+   const chekAccountResult = await dbClient.query(
+   `SELECT ua.* FROM user_accounts ua
+     JOIN account_types act ON ua.account_type_id = act.account_type_id
+     WHERE ua.user_id =$1
+      AND ua.account_name = $2
+      AND act.account_type_name=$3
+      AND ua.deleted_at IS NULL; 
+      `,
+   [userId,accountName, accountType]
+    );
+
+   if (chekAccountResult.rows.length > 0) {
+     const accountId = chekAccountResult.rows[0].account_id;
+     console.log(pc.green(`checkAndInserAccount: ${accountName} account already exists with id ${accountId}`));
+     return { exists: true, account: chekAccountResult.rows[0] };
+    } else {
+    // Account Not Found, Proceed to Insert
+    const insertResult = await dbClient.query(
+      'INSERT INTO user_accounts (user_id,account_name,account_type_id,currency_id,account_starting_amount,account_balance,account_start_date) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+      [
+        userId,
+        accountName,
+        1, //bank
+        1, //usd // Assuming 1 for usd/Default currency, adjust if dynamic currency is needed.
+        0, //amount
+        0, //balance
+        new Date(),
+      ]
+      );
+   const newAccountId = insertResult.rows[0].account_id;
+
+   console.log(pc.green(`${accountName} account created successfully with ID: ${newAccountId}`));
+    return { exists: false, account: insertResult.rows[0] };
     }
   } catch (error) {
     const message = `Error creating counter account ${accountName}`;
     console.error(message, error);
-    throw new Error(message);
-    // throw handlePostgresError(error);
-    // return res.status(500).json({ status: 500, message });
-  }
-};
-//-------------------------------------------
+    throw createError(500, message);
+
+  }finally {
+    // Release the client ONLY IF it was acquired by this function (it was the pool)
+    if (isPool) {
+      dbClient.release();
+       }
+   };
+}
+//-----------------------------------
