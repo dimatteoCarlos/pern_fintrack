@@ -4,20 +4,16 @@ import accountRoutes from './accountRoutes.js';
 import transactionRoutes from './transactionRoute.js';
 import dashboardRoutes from './dashboardRoutes.js';
 
-// import { verifyToken } from '../../middlewares/authMiddleware.js';
 //------------------------
 const router = express.Router();
 router.use('/account',
-    // verifyToken,
-   accountRoutes); //create, edit and read(get) accounts
+ accountRoutes); //create, edit and read(get) accounts
 
 router.use('/transaction',
- // verifyToken,
-   transactionRoutes);//movements between accounts
+ transactionRoutes);//movements between accounts
 
 router.use('/dashboard', 
-  // verifyToken,
-  dashboardRoutes);//overview info
+ dashboardRoutes);//overview info
 
 
 export default router;

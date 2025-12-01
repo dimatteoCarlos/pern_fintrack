@@ -184,7 +184,7 @@ role: newUser.user_role_name || 'user'
     message: 'User successfully registered',
     accessToken: accessToken,
     user: userResponseData,
-    expiresIn: 3600 // 60 minutos
+    expiresIn: 3600*24*24 // 60 minutos
   });
 
   await pool.query('COMMIT');

@@ -1,6 +1,7 @@
 //determine transaction type from sign of amount and account_type_name.
 //applicable only to account creation transactions
 //this function considers category_budget_account with various transaction types possible.
+
 /*
 determineTransactionType
 determineTransactionType_v1
@@ -9,6 +10,7 @@ getAccountTypeId
 getCurrencyId
 filterCurrencyId
 handleTransactionRecording
+
 formatDateToISO
 validateAndNormalizeDate
 validateAndNormalizeDateFn

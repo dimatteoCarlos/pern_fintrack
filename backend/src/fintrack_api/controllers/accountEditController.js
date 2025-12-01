@@ -71,6 +71,7 @@ try {
 //   // note:payload.note,
 // }, 
 //  }
+
  const specificFields ={}
         
 // 3. Set editable specific fields per account type
@@ -99,8 +100,8 @@ try {
 
    userAccountFields.account_name=`${capitalize(payload.category_name)}/${capitalize(payload.subcategory)}/${payload.nature_type_name}`
 
-console.log('category', payload)
-console.log('account', userAccountFields.account_name)
+// console.log('category', payload)
+// console.log('account', userAccountFields.account_name)
 
    break;
 //----

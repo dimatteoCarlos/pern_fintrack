@@ -176,7 +176,7 @@ function NewAccount() {
   //---------
   function changeStartingPoint(selectedDate: Date) {
     setAccountData((acc) => ({ ...acc, date: selectedDate }));
-    console.log('selected starting point:', selectedDate);
+    // console.log('selected starting point:', selectedDate);
   }
   //---------
   function updateDataCurrency(currency: CurrencyType) {

@@ -8,7 +8,7 @@
 //pocket_saving: pocket_saving_accounts
 //debtor: debtor_accounts
 //------------------------------
-import express from 'express';
+import express, { Router } from 'express';
 // 📚 ACCOUNT CREATION CONTROLLERS (basic (bank, investment, income), debtor, pocket)
 import {
   createBasicAccount,
@@ -30,11 +30,13 @@ import { createCategoryBudgetAccount } from '../controllers/accountCategoryCreat
 
 // 📚 TRANSACTIONS CONTROLLER
 import { getTransactionsForAccountById } from '../controllers/getTransactionsForAccountById.js';
-// import { verifyToken } from '../../middlewares/authMiddleware.js';
 
-// 📚 ACCOUNT EDITION CONTROLLER
+// 🛠️ ACCOUNT EDITION CONTROLLER
 import {patchAccountById} from '../controllers/accountEditController.js';
 
+// 🗑 ACCOUNT DELETE CONTROLLER
+import { verifyUser } from '../../middlewares/authMiddleware.js';
+import { executeAccountDeletion, generateImpactReport } from '../controllers/accountDeleteController.js';
 //----------------------------------
 // ROUTES
 //----------------------------------
@@ -66,21 +68,6 @@ router.post('/new_account/category_budget',
   //  verifyToken,
   createCategoryBudgetAccount);
 
-// ---------------------------------
-// 🛠️ ACCOUNT EDITION ROUTES
-// ---------------------------------
-//Route for getting account details info for edition form
-// GET /api/fintrack/account/details/:accountId
-router.get('/details/:accountId', 
-  getAccountById // RE-USED
-);
-
-// Route for partially update an existing account
-// PATCH /api/fintrack/account/edit/:accountId
-router.patch('/edit/:accountId',
-patchAccountById 
-);
-
 //------------------------------
 //GET USER ACCOUNT INFO BY TYPE, BY ID, ALL ACC.
 // ---------------------------------
@@ -97,10 +84,7 @@ router.get('/type',
 router.get('/:accountId',
   // verifyToken,
    getAccountById);
-
-// ---------------------------------
-// 📖 ACCOUNT READING (GET) ROUTES
-// ---------------------------------
+//-----
 router.get('/transactions/:accountId',
   // verifyToken, 
   getTransactionsForAccountById);
@@ -116,5 +100,45 @@ router.get('/category/:categoryName',
 
 //----------------------
 //  router.get('/:accountId/category-budget-full', getCategoryBudgetFullDataEndpoint); 
-//----------------------
+// ---------------------------------
+// 🛠️ ACCOUNT EDITION ROUTES (UPDATE)
+// ---------------------------------
+//Route for getting account details info for edition form
+// GET /api/fintrack/account/details/:accountId
+router.get('/details/:accountId', 
+  getAccountById // RE-USED
+);
+
+// Route for partially update an existing account
+// PATCH /api/fintrack/account/edit/:accountId
+router.patch('/edit/:accountId',
+patchAccountById 
+);
+
+// =================================
+// 🗑 ACCOUNT DELETION & RECONCILIATION ROUTE
+// 📝 Route for getting the impact report before deletion
+// Path: GET /api/fintrack/account/delete/report_of_affected_accounts/:targetAccountId
+//--------------------------------------
+router.get(
+ '/delete/report_of_affected_accounts/:targetAccountId',
+ verifyUser, // 🛡️ Authentication required
+ generateImpactReport
+);
+
+// ==================================
+// 💣 DELETE EXECUTION ENDPOINT (WRITE)
+// Purpose: Executes SOFT, HARD, or RTA deletion atomically.
+// Path: DELETE /api/fintrack/account/delete/:targetAccountId
+// Payload (RTA): Must contain deletionType, impactReport, and targetAccountName in the body.
+// ====================================
+// 📝 Route for final deletion (Soft or Atomic Hard Delete)
+// DELETE /api/fintrack/account/delete/:accountId
+router.delete('/delete/:targetAccountId',
+verifyUser, 
+executeAccountDeletion 
+);
+
+
+//------------------------------
 export default router;

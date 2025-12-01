@@ -102,7 +102,6 @@ export const updateAccountBalance = async (
   accountId,
   transactionActualDate
 ) => {
-
   console.log('updateAccountBalance Transaction Actual Date:', transactionActualDate);
 
 //assure first the existence of updatedAccountResult?

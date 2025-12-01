@@ -163,5 +163,8 @@ export const url_patch_account_edit =
 BASE_URL+'/account/edit';
 //--------------------------
 //ACCOUNT DELETION ENDPOINT
+// Endpoint: GET /api/fintrack/account/delete/report_of_affected_accounts/:targetAccountId
+export const url_report_of_affected_accounts : string = BASE_URL + '/account/delete/report_of_affected_accounts/';
+
 //http://localhost:5000/api/fintrack/account/delete/11
 export const url_account_delete : string = BASE_URL + '/account/delete/';

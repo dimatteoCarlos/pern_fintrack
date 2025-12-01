@@ -53,7 +53,8 @@ try {
 // ✅ 4.GET THE USER INFORMATION FROM THE USERS TABLE
     const userResult = await pool.query(
     `SELECT 
-        u.user_id, u.username, u.email, u.    user_role_id, ur.user_role_name 
+        u.user_id, u.username, u.email, u.user_role_id, 
+        ur.user_role_name 
      FROM  users u 
      JOIN user_roles ur 
      ON u.user_role_id = ur.user_role_id

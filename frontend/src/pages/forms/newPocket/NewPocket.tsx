@@ -81,14 +81,14 @@ useState<PocketDataType>(initialNewPocketData);
 
 const [validationMessages, setValidationMessages] = useState<{[key: string]: string;}>({});
 
-const [isReset, setIsReset] = useState<boolean>(false);
+// const [isReset, setIsReset] = useState<boolean>(false);
 const [messageToUser, setMessageToUser] = useState<{message:string, status?:number} |string | null | undefined>(
 null );
 
 // 🌐 DATA FETCHING HOOK
 //POST: NEW ACCOUNT DATA
 //endpoint: http://localhost:5000/api/fintrack/account/new_account/pocket_saving
-const { isLoading, error, requestFn,
+const {data, isLoading, error, requestFn,
       } = useFetchLoad<
    CreatePocketSavingAccountApiResponseType,
     PocketSavingPayloadType
@@ -96,7 +96,7 @@ const { isLoading, error, requestFn,
 //-----------------------------------
 // 🎮 EVENT HANDLER HOOKS
 //event handler hook for number input handling
- const { inputNumberHandlerFn } =      useInputNumberHandler(
+ const { inputNumberHandlerFn } = useInputNumberHandler(
    setFormData,
    setValidationMessages,
    setPocketData
@@ -105,13 +105,17 @@ const { isLoading, error, requestFn,
 // 🧹 MESSAGE CLEANUP EFFECT
 // Clear message after 5 seconds
   useEffect(() => {
-    if (messageToUser) {
-     const timer = setTimeout(() => {
-        setMessageToUser(null);
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [messageToUser]);
+   if (data && !isLoading && !error) {
+   //success response
+   setMessageToUser(
+   data.message || 'New Pocket account successfully created!'
+   );
+   // console.log('Received data:', data);
+   } else if (!isLoading && error) {
+   setMessageToUser(error);
+   }
+
+  }, [messageToUser,data, error, isLoading]);
 
 //---------------------------------------
 // ✨ INPUT HANDLERS
@@ -200,15 +204,14 @@ const { isLoading, error, requestFn,
  })
 
 // 🔄 RESET FORM ON SUCCESS
- setIsReset(true);
+ // setIsReset(true);
  setValidationMessages({});
  setFormData(initialFormData);
  setPocketData(initialNewPocketData);
  // setIsDisabledValue(false);
  setMessageToUser(null)
- setTimeout(() => setIsReset(false), 1500); 
-
-   }else{
+ // setTimeout(() => setIsReset(false), 1500); 
+ }else{
 console.error('❌ Server error - setting message')
 setMessageToUser({message:responseData.message || "Server error when creating new Pocket account", status:responseData.status
   })
@@ -228,7 +231,6 @@ setMessageToUser({message:responseData.message || "Server error when creating ne
 
 // 🚫 FORM DISABLE STATE
   const isFormDisabled = !isAuthenticated;
-
 //==============================================
 // 🛡️ AUTHENTICATION GUARD - PREVENT RENDERING IF NOT AUTHENTICATED
   if (isCheckingAuth) {
@@ -364,7 +366,7 @@ setMessageToUser({message:responseData.message || "Server error when creating ne
        changeDate={changeDesiredDate}//onChange
        date={(pocketData.desiredDate)} 
        variant={'form'}
-       isReset={isReset}
+       // isReset={isReset}
      />
     </div>
 

@@ -571,15 +571,15 @@ export const getAccountById = async (req, res, next) => {
   
   //pocket_saving
   pocket_saving: {
-    typeQuery: {
-      text: `SELECT ua.*, act.account_type_name, ct.currency_code, ps.* 
-      FROM user_accounts ua
-      JOIN account_types act ON ua.account_type_id = act.account_type_id
-      JOIN currencies ct ON ua.currency_id = ct.currency_id
-      JOIN pocket_saving_accounts ps ON ua.account_id = ps.account_id
-        WHERE ua.user_id =$1
-        AND ua.account_id = $2
-        AND act.account_type_name = $3 AND ua.account_name != $4
+   typeQuery: {
+    text: `SELECT ua.*, act.account_type_name, ct.currency_code, ps.* 
+    FROM user_accounts ua
+    JOIN account_types act ON ua.account_type_id = act.account_type_id
+    JOIN currencies ct ON ua.currency_id = ct.currency_id
+    JOIN pocket_saving_accounts ps ON ua.account_id = ps.account_id
+    WHERE ua.user_id =$1
+    AND ua.account_id = $2
+    AND act.account_type_name = $3 AND ua.account_name != $4
 `,
       values: [userId, accountId, account_type_name, 'slack'],
     },
@@ -897,6 +897,7 @@ export const getAccountsByCategory= async (req, res, next) => {
     const { code, message } = handlePostgresError(error);
     next(createError(code, message));
   }
+  
 };//End of getAccountsByCategory
 
 /*

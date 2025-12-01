@@ -95,7 +95,7 @@ export const createBasicAccount = async (req, res, next) => {
     console.log(pc.bgCyan('userId', userId));
     //-----------------------
     //date validation
-    // hay establecer regla para la fecha> validar que la fecha no sea mayor que el proximo dia habil? o que no sobrepase el lunes de la prox semana? o no sea mayor que el dia de hoy? o puede ser futura pero en el mismo mes actual? o libre para realizar simulaciones, aunque esto en caso de tener que hacer conversiones monetarias habria que preverlo?
+    // hay establecer regla para la fecha> validar que la fecha no sea mayor que el proximo dia habil? o que no sobrepase el lunes de la prox semana? o no sea mayor que el dia de hoy? o puede ser futura pero en el mismo mes actual? o libre para realizar simulaciones, aunque esto en caso de tener que hacer conversiones monetarias habria que preverlo? o verficiar que al momento de realizar una transaccion , las fechas de apertura de las cuentas coincidan con el periodo en que se hace la transaccion y esten vigentes. 
     // const accountStartDateNormalized =
     //   validateAndNormalizeDate(account_start_date);
     // console.log(
@@ -177,8 +177,10 @@ export const createBasicAccount = async (req, res, next) => {
     // );
 
     //---- COUNTER (SLACK) ACCOUNT INFO ---------
-    const counterAccountInfo = await checkAndInsertAccount(userId, 'slack');
+    const counterAccountInfo = await checkAndInsertAccount(client, userId, 'slack');
+
     const counterAccountTransactionAmount = -newaccount_starting_amount;//it will always be withdraw
+
     const newCounterAccountBalance =
       counterAccountInfo.account.account_balance - newaccount_starting_amount;
 
@@ -505,9 +507,10 @@ const client = await pool.connect();
     //   selected_account_type)
 
     const counterAccountInfo = await checkAndInsertAccount(
-      userId,
-      selected_account_name,
-      selected_account_type
+     client,
+     userId,
+     selected_account_name,
+     selected_account_type
     );
     const messageCounterAccountInfo = counterAccountInfo.exists?`${selected_account_name} exists`:`${selected_account_name} didn't exist and it was created`
     console.log(
@@ -964,7 +967,7 @@ export const createPocketAccount = async (req, res, next) => {
     //in the new version, adding money to the pocket is not possible when it is created.
     //se puede borrar todo lo relacionado con la creacion de la cuenta slack, pero despues de estar seguros si el usuario o cliente de la app le sirve
 
-    const counterAccountInfo = await checkAndInsertAccount(userId, 'slack');
+    const counterAccountInfo = await checkAndInsertAccount(client, userId, 'slack');
     const newCounterAccountBalance =
       counterAccountInfo.account.account_balance - transactionAmount;
 

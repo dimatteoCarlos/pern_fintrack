@@ -1,7 +1,6 @@
 import pc from 'picocolors';
 import { pool } from '../src/db/configDB.js';
-//-----------------------------------------------------------------------------
-
+//------------------------------
 export const updateAccountBalance = async (
   newBalance,
   accountId,

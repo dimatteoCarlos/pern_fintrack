@@ -1,8 +1,9 @@
 //frontend/src/pages/forms/newProfile/NewProfile.tsx
+// 🎯 IMPORTS
 import React, { useEffect, useMemo, useState } from 'react';
-import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
-import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { Link, useLocation , useNavigate} from 'react-router-dom';
+// 📦 COMPONENTS
+import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
@@ -10,16 +11,24 @@ import { MessageToUser } from '../../../general_components/messageToUser/Message
 
 import '../styles/forms-styles.css';
 
+// 🖼️ ASSETS
+import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
+
+// 🛠️ CUSTOM HOOKS & UTILITIES
 import { useFetch } from '../../../hooks/useFetch.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import useAuth from '../../../auth/hooks/useAuth.ts';
+//UTILITIES
+import { capitalize, } from '../../../helpers/functions.ts';
+import { validationData } from '../../../validations/utils/custom_validation.ts';
 
-
+// 🏷️ ENPOINTS
 import {
   url_create_debtor_account,
   url_get_accounts_by_type,
 } from '../../../endpoints.ts';
 
+// 🏷️ TYPES & CONSTANTS
 import {
   CurrencyType,
   DropdownOptionType,
@@ -28,24 +37,19 @@ import {
   AccountByTypeResponseType,
   CreateDebtorAccountApiResponseType,
 } from '../../../types/responseApiTypes.ts';
-
-
+//CONSTANTS
 import {
   ACCOUNT_OPTIONS_DEFAULT,
   DEFAULT_CURRENCY,
   TYPEDEBTS_OPTIONS_DEFAULT,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
-import { capitalize, } from '../../../helpers/functions.ts';
-
-import { validationData } from '../../../validations/utils/custom_validation.ts';
-
-
 
 // import ProtectedRoute from '../../auth/ProtectedRoute.tsx';
 //-----default 'till decide how to handle multi currencies
 const defaultCurrency = DEFAULT_CURRENCY;
-//----TYPE DEFINITIONS, INITIALIZATION AND CONSTANTS ------
+
+// 📋 --TYPE DEFINITIONS, INITIALIZATION AND CONSTANTS ------
 type ProfileInputDataType = {
   name: string;
   lastname: string;
@@ -66,6 +70,8 @@ type ProfilePayloadType = {
   selected_account_type: string;
   user?: string;
 };
+
+// ⚙️ INITIAL STATES
 const initialNewProfileData: ProfileInputDataType = {
   name: '',
   lastname: '',
@@ -87,31 +93,35 @@ const formDataNumber:{ keyName: keyof ProfileInputDataType, title: string }={
 const initialFormData: Partial<ProfileInputDataType> = {
   [formDataNumber.keyName]: '',
 };
+
 const selected_account_type = 'bank',
   account_type = 'debtor';
 
 //========================
-// === COMPONENT DEFINITION ===
+//🎯 COMPONENT DEFINITION ===
 //========================
 function NewProfile() {
 const location = useLocation();
 const navigateTo=useNavigate()
-//get userId from stores
-// const user = useUserStore((state: UserStoreType) => state.userData.userId);
-// const user: string = import.meta.env.VITE_USER_ID;
+
+// 🏁 STATE MANAGEMENT
 const { isAuthenticated } = useAuth()
 
 // === STATE INITIALIZATION ===
   const [formData, setFormData] =
   useState<Partial<ProfileInputDataType>>(initialFormData);
+
   const [profileData, setProfileData] = useState<ProfileInputDataType>(
     initialNewProfileData);
+
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
   }>({});
+
   const [isReset, setIsReset] = useState<boolean>(false);
-  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
-    null  );
+
+  const [messageToUser, setMessageToUser] = useState<string | null | undefined>( null  );
+
   const [reloadTrigger, setReloadTrigger] = useState(0)
   
 //✅ CHECK IF USER IS AUTHENTICATED
@@ -122,10 +132,11 @@ const { isAuthenticated } = useAuth()
     }
  }, [isAuthenticated, navigateTo]);
 //----------------------------------------------
-//DATA FETCHING for option selection
+// 🌐 DATA FETCHING for option selection
 //GET: AVAILABLE ACCOUNTS OF TYPE BANK
 //http://localhost:5000/api/fintrack/account/new_account/debtor
   const fetchUrl = `${url_get_accounts_by_type}/?type=bank&${reloadTrigger}`
+
   const {
     apiData: BankAccountsResponse,
     isLoading: isLoadingBankAccounts,
@@ -154,14 +165,16 @@ const { isAuthenticated } = useAuth()
     variant: VARIANT_FORM, //this stablishes the custom styles to use in selection dropdown component
   };
 //---------------------
+// 🚀 API REQUEST EXECUTION
   //DATA FETCHING POST
-  ////OBTAIN THE REQUESTFN FROM userFetchLoad
+  //OBTAIN THE REQUESTFN FROM userFetchLoad
   //endpoint: http://localhost:5000/api/fintrack/account/new_account/debtor
   const { data, isLoading, error, requestFn } = useFetchLoad<
     CreateDebtorAccountApiResponseType,
     ProfilePayloadType
   >({ url: url_create_debtor_account, method: 'POST' });
 //---functions------------
+// ✨ INPUT HANDLERS
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
@@ -210,7 +223,7 @@ const { isAuthenticated } = useAuth()
   }
  }
 //--------------------
-//FORM SUBMISSION ---
+// 📤 FORM SUBMISSION LOGIC (onSubmitForm)
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     // console.log('onSubmitForm');
@@ -223,7 +236,6 @@ const { isAuthenticated } = useAuth()
     }
   //-----------------
     try {
-
      const finalAmount = profileData.amount === ''
      ? 0 // Si es cadena vacía, pasa cadena vacía (compatible)
      : Number(profileData.amount); // Si es string de número, conviértelo a number
@@ -233,8 +245,8 @@ const { isAuthenticated } = useAuth()
       currency: defaultCurrency,
       amount: finalAmount ,
       //---
-      lastname: profileData.lastname,
-      name: profileData.name,
+      lastname: capitalize(profileData.lastname),
+      name: capitalize(profileData.name),
       transaction_type: profileData.type,
       selected_account_name: profileData.account,
       selected_account_type,
@@ -251,7 +263,7 @@ const { isAuthenticated } = useAuth()
       //POST the new profile data into database
       // console.log('data to POST:', { profileData });
 
-      //resetting form values
+  // 🔄 RESET FORM ON SUCCESS
       setIsReset(true);
       setValidationMessages({});
       setProfileData(initialNewProfileData);
@@ -268,7 +280,7 @@ const { isAuthenticated } = useAuth()
     if (data && !isLoading && !error) {
       //success response
       setMessageToUser(
-        data.message || 'Pocket saving account successfully created!'
+        data.message || 'New Profile account successfully created!'
       );
       // console.log('Received data:', data);
     } else if (!isLoading && error) {
@@ -285,8 +297,8 @@ const { isAuthenticated } = useAuth()
     };
   }, [data, error, isLoading]);
 
-  // //-----------------------
-
+ //-----------------------
+// 🎨 RENDERING COMPONENT
   return (
    <section className='profile__page__container page__container '>
    <TopWhiteSpace variant={'dark'} />
@@ -302,6 +314,8 @@ const { isAuthenticated } = useAuth()
      <div className='form__title'>{'New Profile'}
      </div>
    </div>
+
+    {/* 📝 FORM SECTION */} 
   <form className='form__box'>
     <div className='container--profileName form__container '>
      <div className='input__box'>
@@ -411,11 +425,13 @@ const { isAuthenticated } = useAuth()
     </div>
     {/* save */}
 
+  {/* 💾 SUBMIT BUTTON */}
     <div className='submit__btn__container'>
      <FormSubmitBtn onClickHandler={onSubmitForm}>save</FormSubmitBtn>
    </div>
   </form>
-
+  
+  {/* 💬 USER MESSAGES */}
   <MessageToUser
     isLoading={isLoading || isLoadingBankAccounts}
     error={error || fetchedErrorBankAccounts}

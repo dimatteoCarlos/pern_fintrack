@@ -10,7 +10,7 @@ export const getUserById = async (req, res, next) => {
   // const { id} = req.params;
   const { userId, userRole } = req.user;
 
-  // const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+  // const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   console.log('getUserbyid', 'userId:', userId);
 
   try {

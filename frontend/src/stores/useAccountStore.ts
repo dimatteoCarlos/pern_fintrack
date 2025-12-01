@@ -18,7 +18,7 @@ export const useAccountStore = create<AccountStoreState & AccountStoreActionsTyp
   allAccounts: [],
   setAllAccounts: (accounts: AccountListType[]): void => set({ allAccounts: accounts }),
 
-  // 🔄 IMPLEMENTACIÓN DE LA LÓGICA DE MUTACIÓN IN-PLACE
+// 🔄 IMPLEMENTACIÓN DE LA LÓGICA DE MUTACIÓN IN-PLACE
   updateAccount: (updatedAccount) => set((state) => ({
    allAccounts: state.allAccounts
     .map(account => 

@@ -4,16 +4,18 @@ import { pool } from '../src/db/configDB.js';
 //-------------------------
 //VERIFY EXISTENCE OF ACCOUNT BY ACCOUNT_NAME AND ACCOUNT TYPE
 //------------------------
+//adaptar a accountId y deleted_at
 export const verifyAccountExistence = async (
   userId,
   account_name,
   account_type_name = 'bank'
 ) => {
   const accountExistQuery = {
-    text: `SELECT 1 FROM user_accounts ua
-           JOIN account_types act ON ua.account_type_id = act.account_type_id
-           WHERE ua.user_id = $1 AND ua.account_name ILIKE $2 AND act.account_type_name ILIKE $3
-           LIMIT 1`,
+    text: `SELECT 1
+    FROM user_accounts ua
+    JOIN account_types act ON ua.account_type_id = act.account_type_id
+    WHERE ua.user_id = $1 AND ua.account_name ILIKE $2 AND act.account_type_name ILIKE $3
+    LIMIT 1`,
     values: [userId, `%${account_name}%`, `%${account_type_name}%`],
   };
 
@@ -41,9 +43,12 @@ export const verifyAccountExists = async (
 ) => {
   const accountExistQuery = {
     text: `SELECT 1, ua.account_id FROM user_accounts ua
-           JOIN account_types act ON ua.account_type_id = act.account_type_id
-           WHERE ua.user_id = $1 AND ua.account_name ILIKE $2 AND act.account_type_name ILIKE $3
-           LIMIT 1`,
+     JOIN account_types act
+      ON ua.account_type_id = act.account_type_id
+     WHERE ua.user_id = $1
+      AND ua.account_name ILIKE $2
+      AND act.account_type_name ILIKE $3
+     LIMIT 1`,
     values: [userId, `%${account_name}%`, `%${account_type_name}%`],
   };
   try {

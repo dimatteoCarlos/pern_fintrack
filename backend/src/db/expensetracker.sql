@@ -318,5 +318,48 @@ join currencies cur on cur.currency_id = ua.currency_id
 where cba.category_name = 'transportation' --OR cba.category_name = 'housing'
 ORDER BY cba.category_name asc, cnt.category_nature_type_id asc
 
+ ---------------------------------------
+ --  1. SQL Query for Simplified RTA Impact Calculation
+ -------------------------------------
+  
+ -- const reportQuery = `
+    WITH TargetTransactions AS (
+        SELECT
+            -- Identify the Affected Account (A) by finding the ID that is NOT the Target ($2).
+            CASE
+                WHEN tr.source_account_id = $2 THEN tr.destination_account_id
+                ELSE tr.source_account_id
+            END AS affected_account_id,
+            tr.amount
+        FROM 
+            transactions tr
+        WHERE 
+            tr.user_id = $1 
+            AND tr.account_id = $2 -- 🔑 CRUCIAL: Filter rows to only the Target's signed entries
+            AND tr.status = 'complete'
+            AND tr.source_account_id != tr.destination_account_id -- Ignore self-transfers (e.g., initial deposits)
+    )
+    SELECT
+        t.affected_account_id,
+        -- SUM of the Target's signed amounts is the required PnL adjustment for the Affected Account
+        SUM(t.amount) AS net_adjustment_amount,
+        ua.account_name AS affected_account_name,
+        ua.account_balance AS affected_current_balance,
+        ua.currency_id
+    FROM 
+        TargetTransactions t
+    JOIN
+        user_accounts ua ON ua.account_id = t.affected_account_id
+    GROUP BY
+        t.affected_account_id,
+        ua.account_name,
+        ua.account_balance,
+        ua.currency_id
+    HAVING 
+        SUM(t.amount) != 0; -- Only report accounts with a non-zero impact
+-- `;
+
+--const reportResult = await pool.query(reportQuery, [userId, targetAccountId]);
+
 
 

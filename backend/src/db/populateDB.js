@@ -104,7 +104,7 @@ export async function tblUserRoles() {
   const rolesValues = [
     { user_role_id: 1, user_role_name: 'user' },
     { user_role_id: 2, user_role_name: 'admin' },
-    { user_role_id: 3, user_role_name: 'superadmin' },
+    { user_role_id: 3, user_role_name: 'super_admin' },
   ];
   const tblName = 'user_roles';
   const minCount = rolesValues.length;
@@ -120,7 +120,7 @@ export async function tblUserRoles() {
       console.log(
         pc.cyan(`\" ${tblName}\" table does not exist. Creating it...`)
       );
-      const createQuery = `CREATE TABLE user_roles(user_role_id SERIAL PRIMARY KEY  NOT NULL, user_role_name VARCHAR(15) NOT NULL CHECK (user_role_name IN ('user', 'admin', 'superadmin') ) )`;
+      const createQuery = `CREATE TABLE user_roles(user_role_id SERIAL PRIMARY KEY  NOT NULL, user_role_name VARCHAR(15) NOT NULL CHECK (user_role_name IN ('user', 'admin', 'super_admin') ) )`;
       await pool.query(createQuery);
     }
 

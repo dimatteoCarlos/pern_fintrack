@@ -43,7 +43,7 @@ export const createToken = (id, role) => {
   }
 
 const expiresIn = process.env.NODE_ENV === 'development' 
-    ? '1h'  // ✅ 5m 5 minutos in development
+    ? '21d'  // ✅ 5m 5 minutos in development
     : '1h'; // ✅ 30m minutes in production
 
 // Consistencia: expiresIn en el token y maxAge en la cookie deben estar sincronizados
@@ -74,7 +74,7 @@ export const createRefreshToken = (id) => {
   }
 //refresh token expiration time
   const expiresIn = process.env.NODE_ENV === 'development'
-    ? '2h'  //'5m'// ✅ 1 hora en desarrollo
+    ? '24d'  //'5m'// ✅ 1 hora en desarrollo
     : '7d'; // ✅ 7 días en producción
 
   return jwt.sign(
@@ -136,7 +136,7 @@ export async function verifyTableStructure() {
 }
 //---
 export const rotateRefreshToken = async (oldToken, userId, req) => {
-  const client = await pool.connect();
+ const client = await pool.connect();
   try {
     await client.query('BEGIN');
 //FUNCTIONS DECLARATION

@@ -152,7 +152,7 @@ useEffect(() => {
             <LeftArrowLightSvg />
           </Link>
             <div className='form__title'>
-              {capitalize(bubleInfo.account_name)}
+              {String(bubleInfo.account_name).toUpperCase()}
             </div>
             {/* <Link to='edit' className='flx-col-center icon3dots'>
               <Dots3LightSvg />
@@ -174,7 +174,6 @@ useEffect(() => {
                 style={{ padding: '0.5rem' }}>{numberFormatCurrency(accountDetail?.account_balance)}
                 </div>
               </div>
-          
 
             <div className='input__box'>
               <label className='label form__title'>{'Account Type'}</label>

@@ -189,8 +189,8 @@ async function initializeDatabase() {
            });
             console.log(indx, item.tblName, 'truncated');
 
-           // await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
-           // console.log(indx, item.tblName, 'drop');
+           await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
+           console.log(indx, item.tblName, 'drop');
 
          } catch (error) {
            console.error('error truncating the table', `${item.tblName}`);

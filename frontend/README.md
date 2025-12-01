@@ -404,7 +404,7 @@ this was already accomplished, considering different approachs in the sake of le
 
 Theoretically, all the operations of tracking could be performed just using "Transfer" function from tracker menu, with just little adjustments, without the need of the others tracker options.
 
-## EDITION OF ACCOUNTS.
+## VIEW ACCOUNT DETAILS IN ACCOUNTING DASHBOARD
 VIEW DETAILS:
 Different approaches were applied for rendering detail info of the accounts, in order to compare and learn.
 
@@ -417,5 +417,88 @@ The system employs a Hybrid Data Fetching Pattern
   In PocketDetail, the account id is passed via parameters, and info account is always fetch using useFetch hook. 
 
   
-EDIT:
-DELETE:
+## EDITION.
+ACCOUNT EDITION PHILOSOPHY
+To maintain financial integrity and keep the application simple, the account editing module focuses on non-critical fields. Critical fields such as the account balance, account type, starting date, and initial amount are deliberately non-editable.
+
+If a change to this core data is required, the application enforces the use of auditable mechanisms supplied, such as:
+
+Creating new direct or reversal transactions (Transfers or PnL adjustments).
+
+Or Using the Atomic Hard Delete feature to safely remove an erroneous account and recreate it correctly.
+ 
+  
+## DELETION.
+It was very interesting to evaluate the different methods that could be applied to manage account deletion and maintain the system integrity.
+
+As a case of study, following is a comparative table of deletion methods evaluated.
+
+For this app, the method number 4, Retrospective Total Annulment (RTA) was chosen, following the criteria of deletion of account only for critical data correction or emergency use cases. 
+
+📖 ACCOUNT DELETION METHODS: DOUBLE-ENTRY Accounting Implications
+This document describes the various approaches to deleting accounts, classifying their impact on the integrity of the double-entry bookkeeping system and the balance of active accounts (account_balance).
+
+1. Soft Delete (Logical Deletion)
+The Soft Delete is the safest and least destructive approach. Instead of physical removal, the account row is simply marked with a deleted_at timestamp.
+
+Main Purpose: Archiving and Reversibility. It is used to inactivate unused accounts.
+
+Impact on Active Balance: The balance of active accounts remains unaltered (None).
+
+CASCADE Effect: None. All transaction history is retained.
+
+Advantage: The account is Fully Auditable and Reversible.
+
+Best Practice / Role: Standard for the End-User.
+
+2. Hard Delete Classic (Simple Physical Deletion)
+This method involves direct physical deletion (DELETE) without any compensating accounting logic.
+
+Main Purpose: Simple space release.
+
+Impact on Active Balance: Causes Immediate Corruption in double-entry bookkeeping. By deleting a transaction (e.g., an expense) without compensating for the cash outflow, the active balance is broken.
+
+CASCADE Effect: Total. The account and all associated transactions are deleted.
+
+Disadvantage: Unusable in Accounting. It destroys active balance integrity.
+
+Best Practice / Role: None (Only for testing/development).
+
+3. Hard Delete Atomic (Balance Preservation)
+This is the accepted best practice method for hard deletion in accounting systems. It combines physical deletion with an atomic settlement to maintain balance integrity.
+
+Main Purpose: Destroy Detailed History of the Target account, but MAINTAIN the current financial reality of active accounts.
+
+Impact on Active Balance: The active balance is Preserved (None). A single PnL/Slack transaction (neutralizing adjustment) is inserted immediately before the final DELETE to exactly neutralize the impact of the deleted transactions.
+
+CASCADE Effect: Total. The detailed history is replaced by the single PnL entry.
+
+Advantage: Safe and Atomic. It adheres to the Core Accounting Principle of preserving the final balance.
+
+Best Practice / Role: Accepted by Double-Entry Accounting. (Admin/Maintenance).
+
+4. Retrospective Total Annulment (RTA)
+This method focuses on the retroactive correction of balances, fulfilling the intent that the Target account's interactions "never existed."
+
+Main Purpose: Rewrite History and retroactively annul all effects of the Target account, deliberately altering the final balance.
+
+Impact on Active Balance: The active balance Changes (Corrected). The PnL/Slack entry reverses the net flow (e.g., increasing the Bank balance from $500 to $600 by annulling a $100 expense).
+
+CASCADE Effect: Total. The detailed history is deleted and replaced by the correcting PnL entry.
+
+Disadvantage: Destroys Historical Reality. The new balance was not the true financial state in the past.
+
+Best Practice / Role: Administrator/Audit (Emergency use for data correction).
+
+5. RTA with History Retention (RTA-RH)
+A complex, specialized variant of RTA that prioritizes the retention of all historical records, even after annulment.
+
+Main Purpose: Annul the effect on the balance while maintaining an immutable record of the original interaction for internal audit or compliance.
+
+Impact on Active Balance: The balance Changes (Corrected), similar to RTA.
+
+CASCADE Effect: None/Conditional. Transactions are retained but are marked (e.g., status='annulled').
+
+Disadvantage: High Risk of Double Counting. This creates extreme complexity in reporting, as the transaction history no longer sums up to the recorded balance.
+
+Best Practice / Role: Database Admin/Maintenance. (Only for specific legal retention requirements).
