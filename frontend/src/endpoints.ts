@@ -161,10 +161,26 @@ export const url_get_account_details_by_id_for_edition : string = BASE_URL + '/a
 //http://localhost:5000/api/fintrack/account/edit/11
 export const url_patch_account_edit =   
 BASE_URL+'/account/edit';
-//--------------------------
-//ACCOUNT DELETION ENDPOINT
-// Endpoint: GET /api/fintrack/account/delete/report_of_affected_accounts/:targetAccountId
-export const url_report_of_affected_accounts : string = BASE_URL + '/account/delete/report_of_affected_accounts/';
 
-//http://localhost:5000/api/fintrack/account/delete/11
-export const url_account_delete : string = BASE_URL + '/account/delete/';
+// ===================================
+//📝 GET IMPACT REPORT URL (RTA-specific)
+// ===================================
+/**
+ * Builds the URL for the GET request to retrieve the RTA impact report.
+ * Endpoint: GET /api/fintrack/account/delete/report_of_affected_accounts/:targetAccountId
+ * @param targetAccountId The ID of the account whose deletion impact is being assessed.
+ * @returns The full URL string.
+ */
+
+export const url_report_of_affected_accounts = (targetAccountId:string | number)=>(`${BASE_URL}/account/delete/report_of_affected_accounts/${targetAccountId}`);
+
+// ===================================
+//💣 EXECUTE DELETION URL (Used by RTA, HARD, and SOFT methods)
+// ===================================
+// Builds the URL for the DELETE request to execute the account deletion (RTA, HARD, or SOFT).
+//Endpoint: DELETE /fintrack/account/delete/:targetAccountId
+
+export const url_account_delete  =(targetAccountId:string | number)=>(`${BASE_URL}/account/delete/${targetAccountId}`);
+
+
+
