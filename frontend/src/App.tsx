@@ -47,10 +47,12 @@ import PocketDetail from './pages/forms/pocketDetail/PocketDetail.tsx';
 import CategoryAccountList from './pages/forms/categoryDetail/CategoryAccountList.tsx';
 import CategoryDetail from './pages/forms/categoryDetail/CategoryDetail.tsx';
 
+//🚀 ACTIONS FOR ACCOUNT EDITION/DELETION 
+import EditAccount from './editionAndDeletion/pages/editionAccount/EditAccount.tsx';
+
 // ❌ ERROR HANDLING
 import ErrorPage from './pages/error/ErrorPage.tsx';
-import EditAccount from './edition/pages/forms/editAccount/EditAccount.tsx';
-// import { EditAccount } from './edition/components/forms/EditAccount.tsx';
+import AccountDeletionPage from './editionAndDeletion/pages/deletionAccount/AccountDeletionPage.tsx';
 
 // import NotFoundPage from './pages/error/NotFoundPage.tsx';
 //----------------------------------
@@ -192,6 +194,11 @@ function App() {
 //Accounting -> edit account
 // { path: 'account/:accountId/edit', element: <ErrorPage /> },
 { path: 'account/:accountId/edit', element: <EditAccount /> },
+
+// 🚮 DELETION ACCOUNT PROCESS
+//Accounting -> delete account
+// { path: 'account/:accountId/edit', element: <ErrorPage /> },
+{ path: 'account/:accountId/delete', element: <AccountDeletionPage /> },
 ],
  },
  ]);
