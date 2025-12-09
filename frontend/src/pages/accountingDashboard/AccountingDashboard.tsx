@@ -9,15 +9,15 @@ import {url_get_all_accounting_accounts,  } from '../../endpoints'
 import AccountingBox from './AccountingBox'
 import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace'
 import LeftArrowSvg from '../../assets/LeftArrowSvg.svg';
-import Toast from '../../edition/components/toast/Toast'
-import AccountActionsMenu from '../../edition/components/accountActionMenu/AccountActionsMenu'
+import Toast from '../../editionAndDeletion/components/toast/Toast'
+import AccountActionsMenu from '../../editionAndDeletion/components/accountActionMenu/AccountActionsMenu'
 //---
 import { AccountByTypeResponseType, AccountListType, CategoryBudgetAccountListType,  } from '../../types/responseApiTypes'
 //---
 import { capitalize } from '../../helpers/functions'
 //---
 import './styles/accountingDashboard-styles.css';
-import { isCategoryBudgetAccount } from '../../edition/utils/categoryBudgetCalculations'
+import { isCategoryBudgetAccount } from '../../editionAndDeletion/utils/categoryBudgetCalculations'
 //---
 // import AccountingSkeleton from '../../edition/components/skeleton/AccountingSkeleton'
 //--------------------------------
@@ -192,7 +192,8 @@ const handleMenuClick = (account:AccountListType, event:React.MouseEvent)=>{
 
   setMenuState({
     isOpen:true, account })
-    showToast(`Menu opened for ${account.account_name}`, 'info');
+
+  showToast(`Menu opened for ${account.account_name}`, 'info');
 //----------
 console.log('Menu clicked for account:', account.account_name, 'previousRoute:', previousRoute);
 }
@@ -226,7 +227,7 @@ navigateTo(categoryDetailRoute, {
   })
 }
 //------------------------------------
-// 📋HANDLE VIEW ACCOUNT DETAILS WITH TYPE DETECTION
+// 📋HANDLE VIEW ACCOUNT DETAILS WITH ACCOUNT TYPE DETECTION
 //------------------------------------
 const handleViewDetails = (account: AccountListType) => {
 // 🎯 Detect Category Budget Accounts
@@ -239,10 +240,10 @@ const handleViewDetails = (account: AccountListType) => {
   }
 };
 //----------------------------------
-// 📋HANDLE EDIT ACCOUNT✏️
+// 📋 HANDLE EDIT ACCOUNT✏️
 //----------------------------------
 const handleEditAccount = (account:AccountListType)=>{
- handleCloseMenu()
+ // handleCloseMenu()
 //Navigate the route of edition
  const editRoute = `/fintrack/account/${account.account_id}/edit`;
 
@@ -254,15 +255,27 @@ const handleEditAccount = (account:AccountListType)=>{
     }
   })
 }
+//----------------------------------
+// 🚮 HANDLE DELETE ACCOUNT 🗑
+//----------------------------------
+const handleDeleteAccount = (account:AccountListType)=>{
+//Navigate to the route of account deletion page
+ const deleteAccountPage = `/fintrack/account/${account.account_id}/delete`; //RTA confirmation page
 
-// 🆕 HANDLE DELETE ACCOUNT CLICK
-// const handleDeleteAccount = (account:AccountListType)=>{
-// // 🆕 TODO: Implement delete account logic
-// showToast(`Delete functionality for ${account.account_name} will be implemented soon!`, 'warning');
-// console.log('Delete account:', account)
-// }
+ navigateTo(deleteAccountPage, {
+  state:{
+   accountData:account,
+   previousRoute:previousRoute,
+   originRoute:originRoute
+    }
+  })
 
-//=======================================
+  
+showToast(`Delete functionality for ${account.account_name} will be implemented soon!`, 'warning');
+console.log('Delete account:', account)
+}
+
+//====================================
 // 📦 ACCOUNT GROUPS RENDER FUNCTION
 const renderAccountGroups = ()=>{
 //LOADING
@@ -360,12 +373,19 @@ const renderAccountGroups = ()=>{
     account={menuState.account}
     isOpen={menuState.isOpen}
     onClose={handleCloseMenu}
+    previousRoute={previousRoute}
+
  // 👁‍🗨 onViewDetail
     onViewDetails={() => handleViewDetails(menuState.account!)}
- // 🟢 onEditAccount
+
+ // ✏️ onEditAccount
    onEditAccount={() => handleEditAccount(menuState.account!)}
- //onDeleteAccount={handleDeleteAccount}
-   previousRoute={previousRoute}
+
+ //🗑️ onDeleteAccount   
+   onDeleteAccount={(()=>{
+    if(menuState.account){
+     handleDeleteAccount(menuState.account)}})
+    }
    />
     )
   }  
