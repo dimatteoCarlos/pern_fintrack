@@ -50,9 +50,10 @@ import CategoryDetail from './pages/forms/categoryDetail/CategoryDetail.tsx';
 //🚀 ACTIONS FOR ACCOUNT EDITION/DELETION 
 import EditAccount from './editionAndDeletion/pages/editionAccount/EditAccount.tsx';
 
+import AccountDeletionPage from './editionAndDeletion/pages/deletionAccount/AccountDeletionPage.tsx';
+
 // ❌ ERROR HANDLING
 import ErrorPage from './pages/error/ErrorPage.tsx';
-import AccountDeletionPage from './editionAndDeletion/pages/deletionAccount/AccountDeletionPage.tsx';
 
 // import NotFoundPage from './pages/error/NotFoundPage.tsx';
 //----------------------------------
