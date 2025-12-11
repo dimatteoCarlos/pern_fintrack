@@ -123,6 +123,7 @@ if (cacheIds &&
 //=============================================
 const processRTAAnnulment = async (dbClient, userId, targetAccountId, impactReport, targetAccountName, transactionDate)=>{
  console.log(pc.yellow(`Executing RTA adjustments for ${impactReport.length} affected accounts...`));
+
 if(impactReport.length>0){
 // 1. Fetch Common IDs (Movement/Transaction Types)
 const { pnlMovementTypeId, depositTypeId, withdrawTypeId } = await getCommonIds(dbClient);
@@ -139,6 +140,7 @@ const balanceCalculations = impactReport.map(row => ({
 
 //3.b Calculate final balance of slack account
 let totalAffectedAccountAdjustement = 0
+
 for (const row of impactReport){
  totalAffectedAccountAdjustement+=row.affectedAccountNetAdjustmentAmount
 }
@@ -181,7 +183,7 @@ const annulmentData = {
  currencyId:affectedAccountCurrencyId,
  currencyCode:affectedAccountCurrencyCode,
 
- targetAccountName,
+ targetAccountName,//from frontend
  pnlMovementTypeId,
  depositTypeId,
  withdrawTypeId,
@@ -350,6 +352,7 @@ if (accountCheck.rows.length === 0) {
 // ------------------------------------------
 //validate deletion type
 if(deletionType===DELETION_TYPE_RTA){
+ 
 // 1. TRANSACTION_SETUP - Inicialización y validación 
  if (!isAdmin) {
   throw createError(messages.rtaUserPermissionDenied.status, messages.rtaUserPermissionDenied.messagefn());
