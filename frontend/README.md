@@ -433,12 +433,10 @@ It was very interesting to evaluate the different methods that could be applied 
 
 As a case of study, following is a comparative table of deletion methods evaluated.
 
-For this app, the method number 4, Retrospective Total Annulment (RTA) was chosen, following the criteria of deletion of account only for critical data correction or emergency use cases. 
-
 📖 ACCOUNT DELETION METHODS: DOUBLE-ENTRY Accounting Implications
-This document describes the various approaches to deleting accounts, classifying their impact on the integrity of the double-entry bookkeeping system and the balance of active accounts (account_balance).
+This document describes the various approaches reviewd for deleting accounts, classifying their impact on the integrity of the double-entry bookkeeping system and the balance of active accounts (account_balance).
 
-1. Soft Delete (Logical Deletion)
+1. SOFT DELETE (Logical Deletion)
 The Soft Delete is the safest and least destructive approach. Instead of physical removal, the account row is simply marked with a deleted_at timestamp.
 
 Main Purpose: Archiving and Reversibility. It is used to inactivate unused accounts.
@@ -451,7 +449,7 @@ Advantage: The account is Fully Auditable and Reversible.
 
 Best Practice / Role: Standard for the End-User.
 
-2. Hard Delete Classic (Simple Physical Deletion)
+2. HARD DELETE CLASSIC (Simple Physical Deletion)
 This method involves direct physical deletion (DELETE) without any compensating accounting logic.
 
 Main Purpose: Simple space release.
@@ -464,7 +462,7 @@ Disadvantage: Unusable in Accounting. It destroys active balance integrity.
 
 Best Practice / Role: None (Only for testing/development).
 
-3. Hard Delete Atomic (Balance Preservation)
+3. HARD DELETE ATOMIC (Balance Preservation)
 This is the accepted best practice method for hard deletion in accounting systems. It combines physical deletion with an atomic settlement to maintain balance integrity.
 
 Main Purpose: Destroy Detailed History of the Target account, but MAINTAIN the current financial reality of active accounts.
@@ -477,7 +475,7 @@ Advantage: Safe and Atomic. It adheres to the Core Accounting Principle of prese
 
 Best Practice / Role: Accepted by Double-Entry Accounting. (Admin/Maintenance).
 
-4. Retrospective Total Annulment (RTA)
+4. RETROSPECTIVE TOTAL ANNULMENT (RTA)
 This method focuses on the retroactive correction of balances, fulfilling the intent that the Target account's interactions "never existed."
 
 Main Purpose: Rewrite History and retroactively annul all effects of the Target account, deliberately altering the final balance.
@@ -490,7 +488,7 @@ Disadvantage: Destroys Historical Reality. The new balance was not the true fina
 
 Best Practice / Role: Administrator/Audit (Emergency use for data correction).
 
-5. RTA with History Retention (RTA-RH)
+5. RTA WITH HISTORY RETENTION (RTA-RH)
 A complex, specialized variant of RTA that prioritizes the retention of all historical records, even after annulment.
 
 Main Purpose: Annul the effect on the balance while maintaining an immutable record of the original interaction for internal audit or compliance.
@@ -502,3 +500,35 @@ CASCADE Effect: None/Conditional. Transactions are retained but are marked (e.g.
 Disadvantage: High Risk of Double Counting. This creates extreme complexity in reporting, as the transaction history no longer sums up to the recorded balance.
 
 Best Practice / Role: Database Admin/Maintenance. (Only for specific legal retention requirements).
+
+ACCOUNT DELETION METHOD APPLIED
+For this app, the method number 4, Retrospective Total Annulment (RTA) was chosen, following the criteria of deletion of account only for critical data correction or emergency use cases.
+
+ACCOUNT DELETION IMPLEMENTED
+Status: COMPLETE
+
+Feature: Account deletion developed using the "Total Retrospective Annulment" strategy.
+
+Strategy: Total Retrospective Annulment
+This method invalidates a bank account and associated transactions from its origin date, removing the account record from the system.
+
+Implementation Details:
+Account Annulment: Permanent erasure of the complete account record; "not a standard closure process".
+
+Retroactive Effect: Data removal impacts all operations from opening date to annulment time.
+
+Data Scope: Guarantees removal of linked records: balances, movements, commissions, personal data.
+
+Rationale:
+This approach addresses data privacy compliance requirements (e.g., "Right to be Forgotten" under GDPR ) and corrects account opening errors, providing a comprehensive erasure mechanism beyond typical standard closure processes.
+
+GDPR stands for the General Data Protection Regulation (RGPD in Spanish).
+It is the fundamental regulation of the European Union (EU) that establishes the rules on how organizations must process the personal data of citizens residing in the EU and the European Economic Area (EEA). It entered into force on May 25, 2018, and replaced previous directives.
+
+
+
+
+
+
+
+
