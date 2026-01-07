@@ -182,5 +182,11 @@ export const url_report_of_affected_accounts = (targetAccountId:string | number)
 
 export const url_account_delete  =(targetAccountId:string | number)=>(`${BASE_URL}/account/delete/${targetAccountId}`);
 
+// ===================================
+// CHANGE PASSWORD && UPDATE USER DATA
+// ===================================
 
+export const url_change_password = `${BASE_URL}/auth/change_password`;
+export const url_update_user = `${BASE_URL}/user/update_profile`;
+export const url_validate_session = `${BASE_URL}/user/validate_session`;
 
