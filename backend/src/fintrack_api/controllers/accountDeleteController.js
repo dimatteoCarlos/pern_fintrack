@@ -1,9 +1,9 @@
 //backend/src/fintrack_api/controllers/accountDeleteController.js
 import pc from 'picocolors'
-import { createError } from '../../../utils/errorHandling.js';
+import { createError } from '../../utils/errorHandling.js';
 
 // 📚 SERVICES & UTILITIES
-import { getAnnulmentImpactReport } from '../services/accountAnnulmentService.js';
+import { getAnnulmentImpactReport } from '../services/getAnnulmentImpactReport.js';
 import { deleteAccountService } from '../services/deleteAccountService.js'
 // ===================================
 // ⚙️ DELETION METHOD CONSTANTS
@@ -30,13 +30,14 @@ if (!userId) {
  return res.status(400).json({ status: 400, message });
   }
 
-const targetAccountId = req.params.targetAccountId;
-if (!targetAccountId) {
- return next(createError(400, 'Target Account ID is required.'));
+const targetAccountId = parseInt(req.params.targetAccountId, 10);
+
+if (!targetAccountId ||isNaN(targetAccountId)) {
+ return next(createError(400, 'Target Account ID is required and must be a valid number.'));
  } 
 
 try {
- console.log(pc.magenta(`Generating Retrospective Total target Annulment impact report for User ${userId} and Account ${targetAccountId}`));
+ console.log(pc.magenta(`Generating Retrospective Total Annulment impact report for User ${userId} and Account ${targetAccountId}`));
 
 // 2. CALL SERVICE
 // The service handles the SQL logic to calculate the net financial impact
@@ -47,7 +48,7 @@ return res.status(200).json({
  status: 200,
  message: 'RTA Impact Report generated successfully.',
  data: {
-  report: impactReport,
+  impactReport: impactReport,
   targetAccountId,
   affectedAccountsCount: impactReport.length,
   },
@@ -63,7 +64,8 @@ return res.status(200).json({
 // =============================================
 export const executeAccountDeletion = async (req, res, next) => {
 // 1. EXTRACT PARAMS & AUTH
- const userId = req.user;
+ const user = req.user;
+ const {userId}=user;
  const userRole = req.user.role; 
  const targetAccountId = req.params.targetAccountId;
 
@@ -94,6 +96,14 @@ try {
 // 3. CALL DELETION SERVICE
 // The service is responsible for handling all complex transaction logic (BEGIN/COMMIT/ROLLBACK) 
 // and data integrity for RTA, or executing the standard delete.
+console.log({userId,
+ targetAccountId,
+ userRole,
+ deletionType,
+ impactReport,
+ targetAccountName,
+})
+
 const serviceResult = await deleteAccountService(
  userId,
  targetAccountId,
