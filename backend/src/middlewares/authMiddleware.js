@@ -1,7 +1,7 @@
 // src/middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
 import { createError } from '../../utils/errorHandling.js';
-import { pool } from "../db/configDB.js"; // Import necessary for DB query
+import { pool } from "../db/configDB.js"; // 
 
 // import { getTokenSource } from './authDetectClientType.js';
 //constants
@@ -197,9 +197,6 @@ export const verifyUser = (req, res, next) => {
         }
     });
 };
-
-
-
 
 // ===========================
 // MIDDLEWARE DE VERIFICACIÓN DE PRIVILEGIOS DE ADMINISTRADOR
