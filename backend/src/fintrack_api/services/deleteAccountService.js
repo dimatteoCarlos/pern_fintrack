@@ -2,7 +2,7 @@
 
 import pc from 'picocolors'
 import { pool } from "../../db/configDB.js"
-import { createError ,handlePostgresError} from "../../../utils/errorHandling.js"
+import { createError ,handlePostgresError} from "../../utils/errorHandling.js"
 
 //Constants from controller
 // account deletion methods - not all implemented yet
@@ -10,9 +10,9 @@ import { createError ,handlePostgresError} from "../../../utils/errorHandling.js
 import { ADMIN_ACTION, DELETION_TYPE_HARD, DELETION_TYPE_SOFT, DELETION_TYPE_RTA,USER_ACTION } from "../controllers/accountDeleteController.js"
 
 // RTA Utilities
-import { checkAndInsertAccount } from '../../../utils/checkAndInsertAccount.js'
-import { updateAffectedAccountBalance } from '../../../utils/updateAffectedAccountBalance.js'
-import { recordAnnulmentTransaction } from '../../../utils/recordAnnulmentTransaction.js'
+import { checkAndInsertAccount } from '../../utils/checkAndInsertAccount.js'
+import { updateAffectedAccountBalance } from '../../utils/updateAffectedAccountBalance.js'
+import { recordAnnulmentTransaction } from '../../utils/recordAnnulmentTransaction.js'
 //=====================================
 // 📋 MESSAGES CONFIGURATION
 const messages ={
@@ -67,7 +67,9 @@ console.log('🔄 Fetching common IDs from database...');
 try {
 const queries = [
  clientDb.query("SELECT movement_type_id FROM movement_types WHERE movement_type_name = 'pnl'"),
+
  clientDb.query("SELECT transaction_type_id FROM transaction_types WHERE transaction_type_name = 'deposit'"),
+
  clientDb.query("SELECT transaction_type_id FROM transaction_types WHERE transaction_type_name = 'withdraw'"),
  ];
 
@@ -123,29 +125,38 @@ if (cacheIds &&
 //=============================================
 const processRTAAnnulment = async (dbClient, userId, targetAccountId, impactReport, targetAccountName, transactionDate)=>{
  console.log(pc.yellow(`Executing RTA adjustments for ${impactReport.length} affected accounts...`));
+ 
+// 2. Get/Create Slack Account
+const slackAccountInfo = await checkAndInsertAccount(dbClient, userId);
+
+const slackAccount = slackAccountInfo.account;
+
+let finalSlackBalance = slackAccount.account_balance;
 
 if(impactReport.length>0){
 // 1. Fetch Common IDs (Movement/Transaction Types)
 const { pnlMovementTypeId, depositTypeId, withdrawTypeId } = await getCommonIds(dbClient);
 
-// 2. Get/Create Slack Account
-const slackAccountInfo = await checkAndInsertAccount(dbClient, userId);
-const slackAccount = slackAccountInfo.account;
 
 // 3. Calculate all balance changes first (immutable phase)
 // 3.a Calculate all balances of affected accounts(immutable phase)
 const balanceCalculations = impactReport.map(row => ({
- ...row, newAffectedBalance:row.affectedAccountCurrentBalance + row.affectedAccountNetAdjustmentAmount
+ ...row,
+  newAffectedBalance:row.affectedAccountCurrentBalance + row.affectedAccountNetAdjustmentAmount
 }));
 
+console.log('balanceCalcultaions',balanceCalculations)
+
 //3.b Calculate final balance of slack account
-let totalAffectedAccountAdjustement = 0
+let totalAffectedAccountAdjustement = 0;
 
 for (const row of impactReport){
- totalAffectedAccountAdjustement+=row.affectedAccountNetAdjustmentAmount
+ totalAffectedAccountAdjustement+=row.affectedAccountNetAdjustmentAmount;
 }
 
-const finalSlackBalance = slackAccount.account_balance - totalAffectedAccountAdjustement
+finalSlackBalance = slackAccount.account_balance - totalAffectedAccountAdjustement;
+
+console.log("finalSlackBlaance:", finalSlackBalance);
 
 // 4. Process each affected account
 for(const calculation of balanceCalculations){
@@ -163,32 +174,32 @@ for(const calculation of balanceCalculations){
  } = calculation;
 
 // Update affected account balance
- await updateAffectedAccountBalance(dbClient, newAffectedBalance, affectedAccountId);
+ await updateAffectedAccountBalance(dbClient, newAffectedBalance, affectedAccountId, new Date());
 
-// Prepare annulment data
-const annulmentData = {
- userId,
- affectedAccountId,
- affectedAccountName,
+ // Prepare annulment data
+ const annulmentData = {
+  userId,
+  affectedAccountId,
+  affectedAccountName,
+   
+  affectedAccountCurrentBalance,
+  // affectedAccountCurrentBalance: calculation.affectedAccountCurrentBalance,
+  adjustmentAmount:affectedAccountNetAdjustmentAmount,
+  newAffectedBalance,
   
- affectedAccountCurrentBalance,
- // affectedAccountCurrentBalance: calculation.affectedAccountCurrentBalance,
- adjustmentAmount:affectedAccountNetAdjustmentAmount,
- newAffectedBalance,
- 
- slackAccountId: slackAccount.account_id,
- slackAccountCurrentBalance: slackAccount.account_balance,
- newSlackBalance:finalSlackBalance,
+  slackAccountId: slackAccount.account_id,
+  slackAccountCurrentBalance: slackAccount.account_balance,
+  newSlackBalance:finalSlackBalance,
 
- currencyId:affectedAccountCurrencyId,
- currencyCode:affectedAccountCurrencyCode,
+  currencyId:affectedAccountCurrencyId,
+  currencyCode:affectedAccountCurrencyCode,
 
- targetAccountName,//from frontend
- pnlMovementTypeId,
- depositTypeId,
- withdrawTypeId,
- transactionDate: transactionDate,
-}
+  targetAccountName,//from frontend
+  pnlMovementTypeId,
+  depositTypeId,
+  withdrawTypeId,
+  transactionDate: transactionDate,
+ }
 
 // Record annulment transaction
 await recordAnnulmentTransaction(dbClient, annulmentData);
@@ -198,8 +209,9 @@ await recordAnnulmentTransaction(dbClient, annulmentData);
 await updateAffectedAccountBalance(dbClient, finalSlackBalance, slackAccount.account_id);
 }else {
   console.log(pc.yellow('RTA: No net financial impact to correct. Proceeding to hard delete.'));
- }
 
+ }
+//--------------------------------------
 // 6. Execute Hard Delete (CASCADE)
 const deleteQuery = 'DELETE FROM user_accounts ua WHERE ua.account_id = $1 AND ua.user_id = $2';
 await dbClient.query(deleteQuery, [targetAccountId, userId]);
@@ -325,10 +337,10 @@ const processStandardDelete = async (dbClient, targetAccountId, deletionType, is
 // RTA executes a full atomic transaction to annul history before hard deletion.
 
 export const deleteAccountService = async ( 
- // FROM REQUEST OBJECT:
+// FROM REQUEST OBJECT:
  userId,
- userRole, 
  targetAccountId, 
+ userRole, 
  deletionType,
  // CONDITIONAL RTA PARAMETERS: 
  impactReport = [], // 🔑 Passed from controller for RTA execution
@@ -337,9 +349,12 @@ export const deleteAccountService = async (
 // =========================================
 // 🚀 RTA ANNULMENT EXECUTION (ATOMIC TRANSACTION)
 // =========================================
+console.log('Executing:', 'RTA ANNULMENT EXECUTION FROM :', )
 // let dbClient;
 let isAdmin = userRole ==='admin' || userRole === 'super_admin'|| userRole === 'user'; //override isAdmin
 // let isAdmin = true//test
+
+console.log('deleteAccountService', userId, )
 
 // 1. Initial Validation: Check if the Target Account exists
 const accountCheck = await pool.query('SELECT * FROM user_accounts ua WHERE ua.account_id = $1 AND ua.user_id = $2', [targetAccountId, userId]);
@@ -379,7 +394,7 @@ console.log(pc.yellow(`RTA: Processing ${impactReport.length} affected accounts`
 let rtaResult; 
 if (impactReport.length > 0) {
 const rtaData = await processRTAAnnulment(
-  dbClient, userId, targetAccountId, impactReport, targetAccountName,transactionDate
+  dbClient, userId, +targetAccountId, impactReport, targetAccountName,transactionDate
  );
 
  rtaResult = {
@@ -400,6 +415,7 @@ const rtaData = await processRTAAnnulment(
      adjustedAccounts: 0,
      finalSlackBalance: 0,
      actionType: 'RTA_ANNULMENT'
+
     };
    }
 
@@ -408,16 +424,21 @@ await dbClient.query('COMMIT');
 console.log(pc.green('RTA Transaction COMMIT successful.'));
 
 // 6. RTA_SUCCESS_RESPONSE - Respuesta exitosa estandarizada
+console.log("RTA_SUCCESS_RESPONSE msg:",messages.rtaSuccess.messagefn(targetAccountName, targetAccountId, impactReport.length) )
+
 return {
   status: messages.rtaSuccess.status,
-  message: messages.rtaSuccess.messagefn(targetAccountName, targetAccountId, impactReport.length),
+
+  message: messages.rtaSuccess.messagefn(targetAccountName, targetAccountId, 
+   impactReport.length),
+
   data: {
    deletedAccountId: targetAccountId,
-    action: rtaResult.actionType,
-    accountsCorrected: rtaResult.adjustedAccounts,
-    deletionType: DELETION_TYPE_RTA,
-    finalSlackBalance: rtaResult.finalSlackBalance,
-    timestamp: new Date().toISOString() 
+   action: rtaResult.actionType,
+   accountsCorrected: rtaResult.adjustedAccounts,
+   deletionType: DELETION_TYPE_RTA,
+   finalSlackBalance: rtaResult.finalSlackBalance,
+   timestamp: new Date().toISOString() 
   }
 };
 
