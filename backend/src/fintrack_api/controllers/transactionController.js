@@ -8,7 +8,7 @@ import { pool } from '../../db/configDB.js';
 import {
   createError,
   handlePostgresError,
-} from '../../../utils/errorHandling.js';
+} from '../../utils/errorHandling.js';
 import {
   getExpenseConfig,
   getIncomeConfig,
@@ -16,9 +16,9 @@ import {
   getTransferConfig,
   getPnLConfig,
 
-} from '../../../utils/movementInputHandler.js';
-import { recordTransaction } from '../../../utils/recordTransaction.js';
-import { formatDate } from '../../../utils/helpers.js';
+} from '../../utils/movementInputHandler.js';
+import { recordTransaction } from '../../utils/recordTransaction.js';
+import { formatDate } from '../../utils/helpers.js';
 
 //endpoint: put:/api/fintrack/transaction/transfer-between-accounts?user=UUID&&movement=expense
 //=============================

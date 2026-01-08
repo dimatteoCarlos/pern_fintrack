@@ -7,7 +7,7 @@ import pc from 'picocolors';
 import {
   createError,
   handlePostgresError,
-} from '../../../utils/errorHandling.js';
+} from '../../utils/errorHandling.js';
 import { pool } from '../../db/configDB.js';
 
 export const getTransactionsForAccountById = async (req, res, next)=>{

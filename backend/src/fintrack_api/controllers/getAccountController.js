@@ -5,10 +5,10 @@ import pc from 'picocolors';
 import {
   createError,
   handlePostgresError,
-} from '../../../utils/errorHandling.js';
+} from '../../utils/errorHandling.js';
 import { pool } from '../../db/configDB.js';
 import dotenv from 'dotenv';
-import { respondError, respondSuccess } from '../../../utils/responseHelpers.js';
+import { respondError, respondSuccess } from '../../utils/responseHelpers.js';
 dotenv.config();
 
 const backendColor = 'greenBright';

@@ -11,7 +11,7 @@
 import {
   createError,
   handlePostgresError,
-} from '../../../utils/errorHandling.js';
+} from '../../utils/errorHandling.js';
 import pc from 'picocolors';
 import { pool } from '../../db/configDB.js';
 
