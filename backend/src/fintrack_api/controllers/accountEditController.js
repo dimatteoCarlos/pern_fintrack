@@ -5,8 +5,8 @@ import { pool } from '../../db/configDB.js';
 import {
   createError,
   handlePostgresError,
-} from '../../../utils/errorHandling.js';
-import { capitalize } from '../../../utils/helpers.js';
+} from '../../utils/errorHandling.js';
+import { capitalize } from '../../utils/helpers.js';
 
 /**
  * 🎯 EDITION LOGIC: PARTIALLY UPDATES AN ACCOUNT
@@ -21,7 +21,7 @@ try {
  const userId = req.user.userId || (req.body.user ?? req.query.user);
  const { accountId } = req.params;
  const payload = req.body; 
- console.log("🚀 ~ patchAccountById ~ payload:", payload)
+ console.log("🚀 ~ patchAccountById ~ payload:", payload.account_name)
 
  if (!userId || !accountId) {
   return res.status(400).json({ status: 400, message: 'User ID and Account ID are required.' });
@@ -51,6 +51,7 @@ try {
   account_name: payload.account_name,
   note: payload.note,
  };
+   console.log("🚀 ~ patchAccountById ~ userAccountFields:", userAccountFields)
    
 //specific table fields by account type
 // const editableFields ={
@@ -91,6 +92,7 @@ try {
   case 'category_budget':
 
    if (payload.budget !== undefined) specificFields.budget = payload.budget;
+   console.log('budget:', payload['budget'])
 
    if (payload.category_name !== undefined) specificFields.category_name = payload.category_name;
    
@@ -98,7 +100,11 @@ try {
 
    // if (payload.nature_type_name !== undefined) specificFields.nature_type_name = payload.nature_type_name;
 
-   userAccountFields.account_name=`${capitalize(payload.category_name)}/${capitalize(payload.subcategory)}/${payload.nature_type_name}`
+   userAccountFields.account_name=`${capitalize(payload.category_name)}/${capitalize(payload.subcategory)}/${payload.category_nature_type_name}`
+
+   if(payload.account_name!==userAccountFields.account_name){
+    console.log(`Check the input account name`)
+   }
 
 // console.log('category', payload)
 // console.log('account', userAccountFields.account_name)
