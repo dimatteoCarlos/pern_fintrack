@@ -3,20 +3,20 @@ import pc from 'picocolors';
 import {
   createError,
   handlePostgresError,
-} from '../../../utils/errorHandling.js';
+} from '../../utils/errorHandling.js';
 import { pool } from '../../db/configDB.js';
-import { determineTransactionType, formatDate, formatDateToDDMMYYYY } from '../../../utils/helpers.js';
-import { recordTransaction } from '../../../utils/recordTransaction.js';
-import { checkAndInsertAccount } from '../../../utils/checkAndInsertAccount.js';
+import { determineTransactionType, formatDate, formatDateToDDMMYYYY } from '../../utils/helpers.js';
+import { recordTransaction } from '../../utils/recordTransaction.js';
+import { checkAndInsertAccount } from '../../utils/checkAndInsertAccount.js';
 import {
   verifyAccountExistence,
   verifyAccountExists,
-} from '../../../utils/verifyAccountExistence.js';
-import { updateAccountBalance } from '../../../utils/updateAccountBalance.js';
-import { insertAccount } from '../../../utils/insertAccount.js';
-import { getTransactionTypeId } from '../../../utils/getTransactionTypeId.js';
-import { determineSourceAndDestinationAccounts } from '../../../utils/determineSourceAndDestinationAccounts.js';
-import { prepareTransactionOption } from '../../../utils/prepareTransactionOption.js';
+} from '../../utils/verifyAccountExistence.js';
+import { updateAccountBalance } from '../../utils/updateAccountBalance.js';
+import { insertAccount } from '../../utils/insertAccount.js';
+import { getTransactionTypeId } from '../../utils/getTransactionTypeId.js';
+import { determineSourceAndDestinationAccounts } from '../../utils/determineSourceAndDestinationAccounts.js';
+import { prepareTransactionOption } from '../../utils/prepareTransactionOption.js';
 
 //--------------------------------
 //endpoint: post: /api/fintrack/account/new_account/account_type_name?user=UUID
