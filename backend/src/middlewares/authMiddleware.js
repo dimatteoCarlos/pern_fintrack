@@ -1,6 +1,6 @@
 // src/middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
-import { createError } from '../../utils/errorHandling.js';
+import { createError } from '../utils/errorHandling.js';
 import { pool } from "../db/configDB.js"; // 
 
 // import { getTokenSource } from './authDetectClientType.js';
