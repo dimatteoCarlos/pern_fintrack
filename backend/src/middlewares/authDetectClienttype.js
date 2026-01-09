@@ -1,5 +1,5 @@
 //src/middlewares/detectClienttype.js
-import { classifyAccessDevice } from '../../utils/classifyAccessDevice.js';
+import { classifyAccessDevice } from '../utils/classifyAccessDevice.js';
 
 export function authDetectClienttype(req, res, next) {
   //Después de aplicar el middleware useragent.express() en index.js, la información del User-Agent se adjunta al objeto req automaticamente.
