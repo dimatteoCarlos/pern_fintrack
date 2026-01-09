@@ -114,6 +114,9 @@ export type InvestmentAccountType = {
   balance: number;
 };
 
+//-------
+export type MovementTransactionType = TransactionType | DebtsTransactionType;
+
 //transfer (between investment, bank and pocket_saving account types)
 export type MovementInputDataType = {
   amount:string;
@@ -134,9 +137,9 @@ export type MovementInputDataType = {
 };
 
 export type TransferAccountType=
-  'bank' | 'investment' | 'pocket'| 'category_budget' | 'income_source' ;
+  'bank' | 'investment' | 'pocket'| 'pocket_saving' |'category_budget' | 'income_source' ;
 
-export type MovementTransaction = 'deposit' | 'withdraw';
+// export type MovementTransaction = 'deposit' | 'withdraw';
 //---
 export type MovementAccountType = {
   id: number;
@@ -274,7 +277,7 @@ export type DebtsTrackerInputDataType = {
   note: string;
 };
 
-export type MovementTransactionType = TransactionType | DebtsTransactionType;
+
 
 export type BasicTrackerMovementInputDataType = {
   amount:string;
@@ -319,3 +322,4 @@ export type CategorySummaryInfoType = {
 
 // export type ValidationMessagesType<T> = Partial<Record<keyof T, string>>;
 
+//eslint-disable-next-line @typescript-eslint/no-explicit-any

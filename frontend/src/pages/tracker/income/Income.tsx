@@ -51,7 +51,7 @@ import { incomeSchema} from '../../../validations/zod_schemas/trackerMovementSch
 import { IncomeValidatedDataType } from '../../../validations/types.ts';
 
 // 🎨 UI Components
-import TopCardZod from '../components/TopCard.tsx';
+import TopCard from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
@@ -372,7 +372,7 @@ try {
     <>
       <form className='income' style={{ color: 'inherit' }}>
         {/* TOP CARD START */}
-         <TopCardZod
+         <TopCard
           topCardElements={topCardElements}
           validationMessages={validationMessages}
           setValidationMessages={setValidationMessages}

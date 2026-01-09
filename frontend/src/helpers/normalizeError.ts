@@ -1,4 +1,5 @@
 //frontend/src/helpers/uiErrorHandling.ts
+//Parent:handleError.ts
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const normalizeError = (error: unknown): { message: string; status: number } => {
   let errorStatus = 500;

@@ -1,22 +1,62 @@
 //frontend/src/utils/logoutCleanup.ts
+import { LOCAL_STORAGE_KEY } from "../../helpers/constants";
 import { useAuthStore } from "../stores/useAuthStore"
 import { navigationHelper } from "./navigationHelper";
 import { notifySessionExpired } from "./notification";
 
+/**
+ * 🚨 GLOBAL CLEANUP FUNCTION 🚨
+ * Centralizes the removal of all session data and redirects the user.
+ * Used for manual logout or when a token refresh fails (out of React context).
+ * * @param shouldNotify If true, triggers a "Session Expired" toast and adds state to navigation.
+ */
 // 🚨 CLEANING FUNCTION 🚨
 //Used when refresh token failed. Out of react context.
-export const logoutCleanup = ()=>{
-console.log('🚨 Refresh Token failed. Performing global cleanup and redirect...');
-
-const {setIsAuthenticated, setUserData,clearError}=useAuthStore.getState()
-
-//✅ SAFETY TOKENS AND STATES CLEANING
+export const logoutCleanup = (shouldNotify:boolean = false)=>{
+// console.log('🚨 Performing global cleanup and redirect...');
+// 1. Get actions from Zustand store (directly from the state)
+const {setIsAuthenticated, setUserData,clearError,clearSuccessMessage}=useAuthStore.getState();
+//----------------------------------
+// ✅ SAFETY CLEANING: ACCESS TOKEN & SESSION STATE
+//----------------------------------
 //1. Tokens and states cleaning
 sessionStorage.removeItem('accessToken');
+// ✅ ZUSTAND RESET
+//2. Reset global store.
+// Reset global authentication states in RAM
 setIsAuthenticated(false);
-setUserData(null);
 clearError();
-//2. Nofitification and redirect
-notifySessionExpired()
-navigationHelper.navigate('/auth');
+clearSuccessMessage(); //no "Signed Up" messages remain
+// setUserData(null);
+
+// -------------------------------
+// ✅ LOCAL STORAGE CLEANING: CONDITIONAL PERSISTENCE
+// -------------------------------
+const isRemembered=localStorage.getItem(LOCAL_STORAGE_KEY.REMEMBER_ME)==='true';
+
+if(!isRemembered){
+//not remembered
+setUserData(null);
+// Explicitly remove keys from LocalStorage
+localStorage.removeItem(LOCAL_STORAGE_KEY.REMEMBER_ME ||'fintrack_remember_me');
+localStorage.removeItem(LOCAL_STORAGE_KEY.USER_DATA ||'fintrack_user_data');
+
+console.log('🚨 Full cleanup performed: All persistent data removed.');
+}else{
+ //be remembered
+ console.log('Persistence kept for next visit');
 }
+// ----------------------------------
+// ✅ MANAGE NOTIFICATION AND REDIRECT
+// ----------------------------------
+// 4. Manage Nofitification and redirect with state
+if(shouldNotify){
+// Trigger "Session Expired" toast notification
+ notifySessionExpired();
+// Redirect to auth page with 'expired' state so the UI knows to show a specific message
+navigationHelper.navigate('/auth', {state:{expired:true}});
+}else{
+// Normal logout: redirect without additional state or notifications
+ navigationHelper.navigate('/auth');
+ }
+};

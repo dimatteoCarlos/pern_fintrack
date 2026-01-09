@@ -35,7 +35,7 @@ import CardNoteSave from '../components/CardNoteSave.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import RadioInput from '../../../general_components/radioInput/RadioInput.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
-import TopCardZod from '../components/TopCard.tsx';
+import TopCard from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
 // =====================
 // 📝 TYPES
@@ -155,32 +155,31 @@ function Debts(): JSX.Element {
   } = useFetch<AccountByTypeResponseType>(fetchDebtorUrl as string);
 
    const debtors = useMemo(() =>{
-       if (fetchedErrorDebtors || isLoadingDebtors ||!debtorsResponse?.data.accountList.length) return DEBTOR_OPTIONS_DEFAULT;
+    if (fetchedErrorDebtors || isLoadingDebtors ||!debtorsResponse?.data.accountList.length) return DEBTOR_OPTIONS_DEFAULT;
 
-       const newIdMap:{[accountName:string]:string} = {};
+    const newIdMap:{[accountName:string]:string} = {};
       
-      const options = debtorsResponse?.data.accountList
-        .map((debtor) => {
-        newIdMap[debtor.account_name] = String(debtor.account_id);
+    const options = debtorsResponse?.data.accountList
+     .map((debtor) => {
+     newIdMap[debtor.account_name] = String(debtor.account_id);
 
-          return {
-          label:`${debtor.account_name} (${debtor.currency_code} ${debtor.account_balance}) (${debtor.account_balance>=0? 'Debtor':'Lender'})`,
-          value: `${debtor.account_name}`,
-          } 
-          }
-        );
+     return {
+     label:`${debtor.account_name} (${debtor.currency_code} ${debtor.account_balance}) (${debtor.account_balance>=0? 'Debtor':'Lender'})`,
+     value: `${debtor.account_name}`,
+     } }
+    );
 
-      setDebtorIdMap(newIdMap);
-      return options
+     setDebtorIdMap(newIdMap);
+     return options
       
     }, [debtorsResponse?.data.accountList, 
       fetchedErrorDebtors, isLoadingDebtors]
     );
  //----------------------------------
   const debtorOptions = {
-    title: debtorsResponse?.data.accountList.length ? 'Select Debtor/Lender' : "", //'No info. available',
-    options: debtors,
-    variant: VARIANT_DEFAULT as VariantType,
+   title: debtorsResponse?.data.accountList.length ? 'Select Debtor/Lender' : "", //'No info. available',
+   options: debtors,
+   variant: VARIANT_DEFAULT as VariantType,
   };
 //-------------------------------------
 // Fetch counter accounts
@@ -233,7 +232,7 @@ function Debts(): JSX.Element {
   type PayloadType = DebtsTrackerInputDataType & { user?: string , debtor_id?:string; account_id?:string;}
 //----
 //DATA POST FETCHING
-  const { data, isLoading, error:postError, requestFn } = useFetchLoad<
+  const { data, isLoading, error:postError, requestFn , resetFn} = useFetchLoad<
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
@@ -268,44 +267,47 @@ function Debts(): JSX.Element {
     const { name, value } = e.target;
     // console.log('target', e.target)
 
-    if (name === 'amount') {
+ if (name === 'amount') {
 //update amount value with value input entered, set validation message for amount either format message or error format message, set amount state value with valueToSave, in case of error valueToSave is ""?.
-    inputNumberHandlerFn(name, value);
-    // Activar validaciones cuando se introduce un valor en amount
-     if (value !== '') {
-       setShowValidation(prev => ({
-          ...prev,
-          debtor: true,
-          account: true,
-          note: true
-        }));
-      }
+ inputNumberHandlerFn(name, value);
+ // Activar validaciones cuando se introduce un valor en amount
+  if (value !== '') {
+   setShowValidation(prev => ({
+      ...prev,
+      debtor: true,
+      account: true,
+      note: true
+    }));
+   }
 //inmediate validation of amount
 // console.log('validationsMessages',validationMessages)
-    if(isAmountError){
-      return;
-    }
-    const errorValidationAmount = validateAmount(value);
-    if(errorValidationAmount){
-      setValidationMessages((prev)=>({...prev, [name]:errorValidationAmount}))
-      setIsAmountError(true)
-      return
-    }
+  if(isAmountError){
+    return;
+  }
+  const errorValidationAmount = validateAmount(value);
+
+  console.log("🚀 ~ updateTrackerData ~ errorValidationAmount:", errorValidationAmount)
+
+  if(errorValidationAmount){
+    setValidationMessages((prev)=>({...prev, [name]:errorValidationAmount}))
+    setIsAmountError(true)
+    return
+  }
     } else {
-      setDataTrack((prev) => ({ ...prev, [name]: value }));
+  setDataTrack((prev) => ({ ...prev, [name]: value }));
 
 //---VALIDACIÓN PUNTUAL / LOCAL FIELD VALIDATION
-     setValidationMessages((prev)=>{
-      const updatedErrorMessages = {...prev}
+ setValidationMessages((prev)=>{
+  const updatedErrorMessages = {...prev}
 
-      if(value ==='' || value ===null){
-      updatedErrorMessages[name]=`* Please provide the ${capitalize(name)}`
-      } 
-      else if(!isNaN(Number(value)) && Number(value)<=0){ updatedErrorMessages[name]=`* ${capitalize(name)} negative or zero values are not allowed`}
-      else{delete updatedErrorMessages[name]}
+  if(value ==='' || value ===null){
+  updatedErrorMessages[name]=`* Please provide the ${capitalize(name)}`
+  } 
+  else if(!isNaN(Number(value)) && Number(value)<=0){ updatedErrorMessages[name]=`* ${capitalize(name)} negative or zero values are not allowed`}
+  else{delete updatedErrorMessages[name]}
 
-      return updatedErrorMessages
-      }
+  return updatedErrorMessages
+  }
     )
     }
   }
@@ -327,7 +329,9 @@ function Debts(): JSX.Element {
  // =====================
  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
 // console.log('On Save Handler');
-    e.preventDefault();
+  e.preventDefault();
+  if (resetFn) resetFn();
+
 //show all validation messages 
   setShowValidation({
     amount: true,
@@ -367,39 +371,38 @@ function Debts(): JSX.Element {
   const debtorId = debtorIdMap[datatrack.debtor];
   const accountId = accountIdMap[datatrack.account];
   // console.log('accounts id', debtorId, accountId)
-      const payload = { ...datatrack,
-          debtor_id: debtorId, 
-          account_id: accountId 
-        } as PayloadType;
+   const payload = { ...datatrack,
+       debtor_id: debtorId, 
+       account_id: accountId 
+     } as PayloadType;
 // console.log("🚀 ~ onSaveHandler ~ payload:", payload)
-      const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
+   const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
 //Submit to server    
-      const {data, error:postError} = await requestFn(payload, {
-        url: postUrl,
-      } as AxiosRequestConfig);
+   const {data, error:postError} = await requestFn(payload, {
+     url: postUrl,
+   } as AxiosRequestConfig);
 
-      if (postError ) {
-      const errorMsg = postError ?? "unexpected error"
-      // console.log('response?.error?', errorMsg)
-      throw new Error(errorMsg);
+   if (postError ) {
+   const errorMsg = postError ?? "unexpected error"
+   // console.log('response?.error?', errorMsg)
+   throw new Error(errorMsg);
     }
-    
-      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-        console.log('Data from record transaction request:', data);
+    if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+     console.log('Data from record transaction request:', data);
       }
 // -------------------------------------
 // ✅ Update total balance after success 
 // -------------------------------------
 //update GLOBAL BALANCE of total available in bank accounts. it's a global state
 //1. Get the immediate new balance
-    const newTotalBalance =  await fetchNewBalance()
-    // console.log('newTotalBalance', newTotalBalance)
-     if (typeof newTotalBalance === 'number') {
-        setAvailableBudget(newTotalBalance);
-      }else{ setMessageToUser('Check total_balance')}
+  const newTotalBalance =  await fetchNewBalance()
+// console.log('newTotalBalance', newTotalBalance)
+  if (typeof newTotalBalance === 'number') {
+     setAvailableBudget(newTotalBalance);
+   }else{ setMessageToUser('Check total_balance')}
 
-      setMessageToUser('Debt transaction successfully recorded!');
-      setTimeout(() => setMessageToUser(null), 3000);
+   setMessageToUser('Debt transaction successfully recorded!');
+   setTimeout(() => setMessageToUser(null), 3000);
       //----------------------------------
     } catch (error) {
       console.error('Submission error (Zod):', error);
@@ -410,32 +413,33 @@ function Debts(): JSX.Element {
 // =======================
 // ⏳--- SIDE EFFECTS
 // =======================
-useEffect(()=>{
+ useEffect(()=>{
   // if( !isLoading){setShowMessage(true);}
   if(data && !isLoading && !error && !isAmountError){
   // setShowMessage(true);
   //--success
-      setMessageToUser('Movement completed successfully!');
+  setMessageToUser('Movement completed successfully!');
 
+  if (resetFn) resetFn();
 //if success, reset the state and the selected options on select component
-        setIsReset(true);
-        setValidationMessages({});
-        setFormData(initialFormData);
-        setReloadTrigger(prev=>prev+1)
-        setCurrency(defaultCurrency);
-        setDataTrack({
-          ...initialTrackerData,
-          date: new Date(),
-          currency: defaultCurrency,
-        });
-        setType('lend');
-        updateDataCurrency(defaultCurrency);
-        setShowValidation({
-          amount: false,
-          debtor: false,
-          account: false,
-          note: false
-        });   
+  setIsReset(true);
+  setValidationMessages({});
+  setFormData(initialFormData);
+  setReloadTrigger(prev=>prev+1)
+  setCurrency(defaultCurrency);
+  setDataTrack({
+    ...initialTrackerData,
+    date: new Date(),
+    currency: defaultCurrency,
+  });
+  setType('lend');
+  updateDataCurrency(defaultCurrency);
+  setShowValidation({
+   amount: false,
+   debtor: false,
+   account: false,
+   note: false
+  });   
 }
 else if(!isLoading && (error || isAmountError)){
 setMessageToUser(error ?? (isAmountError? "Enter a valid amount":""))
@@ -450,7 +454,7 @@ return ()=>{if(timer)clearTimeout(timer)
   setIsReset(false);
       }, 100);
   }
-}, [data, error, isLoading,updateDataCurrency,isAmountError]
+}, [data, error, isLoading,updateDataCurrency,isAmountError, resetFn]
 )
 //error messages rendering control
 const [showValidation, setShowValidation] = useState({
@@ -460,7 +464,7 @@ const [showValidation, setShowValidation] = useState({
   note: false
 });
 //-----useEffect--------
-  useEffect(() => {
+useEffect(() => {
     setDataTrack((prev) => ({ ...prev, type: type }));
   }, [type]);
 //--- side effect for error messages
@@ -501,16 +505,16 @@ useEffect(() => {
 useEffect(() => {
   // show note validation message only if amount is entered
   if (datatrack.note === '' && (formData.amount !== '' || showValidation.note)) {
-    setValidationMessages(prev => ({
-      ...prev,
-      note: '* Please write the note'
-    }));
-    setShowValidation(prev => ({...prev, note: true}));
+   setValidationMessages(prev => ({
+     ...prev,
+     note: '* Please write the note'
+   }));
+   setShowValidation(prev => ({...prev, note: true}));
   } else {
-    setValidationMessages(prev => {
-      const newMessages = {...prev};
-      delete newMessages.note;
-      return newMessages;
+   setValidationMessages(prev => {
+     const newMessages = {...prev};
+     delete newMessages.note;
+     return newMessages;
     });
   }
 }, [datatrack.note, formData.amount, showValidation.note]);
@@ -520,9 +524,9 @@ useEffect(() => {
 //-- Top Card elements ---
  const debtorAccountLabel = datatrack.type ==='lend'?'debtor':'lender'
  const topCardElements:TopCardElementsType = {
-    titles: { title1: 'amount', title2: 'debtor', label2:debtorAccountLabel },
-    value: formData.amount,
-    selectOptions: debtorOptions,
+  titles: { title1: 'amount', title2: 'debtor', label2:debtorAccountLabel },
+  value: formData.amount,
+  selectOptions: debtorOptions,
   };
 // ======================
 // COMPONENT RENDER
@@ -531,7 +535,7 @@ useEffect(() => {
     <>
       <form className='debts' style={{ color: 'inherit' }}>
         {/* TOP CARD */}
-        <TopCardZod
+        <TopCard
           topCardElements={topCardElements}
           validationMessages={validationMessages}
           setValidationMessages={setValidationMessages}

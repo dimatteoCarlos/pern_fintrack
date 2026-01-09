@@ -1,6 +1,8 @@
+//backend\src\routes\authRoutes.js
 import express from 'express';
-import { signUpUser, signInUser, signOutUser } from '../controllers/authController.js';
+import { signUpUser, signInUser, signOutUser, validateSession } from '../controllers/authController.js';
 import { authRefreshToken } from '../controllers/authRefreshToken.js';
+import { verifyToken } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -15,6 +17,7 @@ router.post('/refresh-token', authRefreshToken);
 
 //api/auth/sign-out
 router.post('/sign-out', signOutUser);
+
 //--------------------------------------
 // Ruta de Google OAuth: redirige a Google para la autenticación
 // router.get(
@@ -31,5 +34,9 @@ router.post('/sign-out', signOutUser);
 //     res.cookie('access_token', token, { httpOnly: true }).redirect('/');
 //   }
 // );
+//------------------------
+//validate session
+router.get('/validate-session', verifyToken, validateSession);
+
 
 export default router;

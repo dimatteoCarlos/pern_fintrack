@@ -1,13 +1,12 @@
-import { hashed, isRight } from '../../utils/authUtils/authFn.js';
-
-import { createError } from '../../utils/errorHandling.js';
+// backend/src/controllers/userController.js/
+//getUserById, updateUserById, changePassword
+import { hashed, isRight } from '../utils/authUtils/authFn.js';
+import { createError } from '../utils/errorHandling.js';
 import { pool } from '../db/configDB.js';
 
-//getUserbyId
+//getUserById
 //GET http://localhost:5000/api/user/f7c5abf9-89e5-4891-bfb8-6dfe3022f226
 export const getUserById = async (req, res, next) => {
-  /* */
-  // const { id} = req.params;
   const { userId, userRole } = req.user;
 
   // const isAdmin = userRole === 'admin' || userRole === 'super_admin';
@@ -15,14 +14,15 @@ export const getUserById = async (req, res, next) => {
 
   try {
     const userDataResult = await pool.query({
-      text: `SELECT u.user_id, u.username,
+    text: `SELECT u.user_id, u.username,
     u.email,
     u.user_firstname,
     u.user_lastname,
     u.user_contact,
-    currencies.currency_name as user_currency,
-     user_roles.user_role_name as user_role
-      FROM users u
+    currencies.currency_name,
+    currencies.currency_code as currency,
+    user_roles.user_role_name as user_role
+    FROM users u
     JOIN currencies ON currencies.currency_id = u.currency_id
     JOIN user_roles ON user_roles.user_role_id = u.user_role_id
     WHERE u.user_id = $1
@@ -123,10 +123,8 @@ export const updateUserById = async (req, res, next) => {
 //--------
 //changePassword
 //PUT http://localhost:5000/api/user/change-password
-
 export const changePassword = async (req, res, next) => {
   console.log('changePassword');
-
   try {
     const { userId } = req.user;
     let { currentPassword, newPassword, confirmPassword } = req.body;

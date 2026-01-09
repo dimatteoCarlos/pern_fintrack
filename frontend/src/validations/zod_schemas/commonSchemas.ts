@@ -5,7 +5,6 @@ import {ERROR_MESSAGES,
 // VALID_NUMBER_FORMATS_PATTERNS,
 //  INVALID_CHARS_REGEX,
 } from '../utils/constants.ts'
-// import { capitalize } from "../../helpers/functions.ts";
 
 //------------
 // Esquema de Zod para validar y transformar entradas numéricas / Zod schema to validate and transform numeric data
@@ -36,7 +35,7 @@ export const numberSchema = z.string()
   }));
 
 // Función auxiliar para normalización de números
-export function checkNumberFormatValueForSchema(value: string): {
+export function checkNumberFormatValueForSchema(rawValue: string): {
   formatMessage: string;
   valueNumber: string;
   valueToSave: number;
@@ -47,6 +46,8 @@ export function checkNumberFormatValueForSchema(value: string): {
   const onlyCommaDecimalSep = /^\d*(,\d*)$/;
   const commaSepFormat = /^(\d{1,3})(,\d{3})*(\.\d*)?$/;
   const dotSepFormat = /^(\d{1,3})(\.\d{3})*(,\d*)?$/;
+
+  const value = rawValue.trim();
 
   // Validar caracteres no permitidos
   if (notMatching.test(value)) {
@@ -124,7 +125,7 @@ export const requiredStringSchema = z.string({error: (iss) => iss.input === unde
 export const currencySchema = z.enum(['usd', 'cop', 'eur'], {
   error:(issue)=>{
  if(issue.code === 'invalid_value'){
-  return `Currency ${issue.input} was not found in ${issue.options?.join(', ') ?? 'available options'}`;
+  return `Currency ${issue.input} was not found in ${issue.options?.join(', ') ?? 'available options: usd, cop, eur'}`;
    }
     return "Invalid currency input"
   }

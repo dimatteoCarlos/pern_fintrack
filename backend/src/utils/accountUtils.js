@@ -1,7 +1,17 @@
 // backend/src/utils/accountUtils.js
+//getUserIdFromAccount, getSlackAccountId, getAccountTypeId
 import { pool } from "../db/configDB.js";
 import { createError } from "../../utils/errorHandling.js";
-import pc from 'picocolors';
+
+// Helper function to get account type ID
+export async function getAccountTypeId(accountTypeName) {
+  const accountTypeQuery = `SELECT * FROM account_types`;
+  const accountTypeResult = await pool.query(accountTypeQuery);
+  const accountType = accountTypeResult.rows.find(
+    (type) => type.account_type_name === accountTypeName.trim()
+  );
+  return accountType?.account_type_id;
+}
 
 // ⚙️ UTILITY: GET USER ID FROM TARGET ACCOUNT
 

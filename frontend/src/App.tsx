@@ -9,12 +9,14 @@ import { Slide, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // 🛡️ AUTHENTICATION & PROTECTION
-import ProtectedRoute from './pages/auth/ProtectedRoute.tsx';
-import AuthPage from './pages/auth/AuthPage.tsx';
+import ProtectedRoute from './auth/components/protectedRoute/ProtectedRoute.tsx';
+import AuthPage from './auth/components/authPage/AuthPage.tsx';
+
 
 // 🏗️ LAYOUT COMPONENTS & 
 import Layout from './pages/layout/Layout.tsx';
 import TrackerLayout from './pages/tracker/TrackerLayout.tsx';
+
 
 // 📊 TRACKER PAGES
 import Expense from './pages/tracker/expense/Expense.tsx';
@@ -50,11 +52,10 @@ import CategoryDetail from './pages/forms/categoryDetail/CategoryDetail.tsx';
 //🚀 ACTIONS FOR ACCOUNT EDITION/DELETION 
 import EditAccount from './editionAndDeletion/pages/editionAccount/EditAccount.tsx';
 
-import AccountDeletionPage from './editionAndDeletion/pages/deletionAccount/AccountDeletionPage.tsx';
+import {AccountDeletionPage} from './editionAndDeletion/pages/deletionAccount/AccountDeletionPage.tsx';
 
 // ❌ ERROR HANDLING
 import ErrorPage from './pages/error/ErrorPage.tsx';
-
 // import NotFoundPage from './pages/error/NotFoundPage.tsx';
 //----------------------------------
 function App() {

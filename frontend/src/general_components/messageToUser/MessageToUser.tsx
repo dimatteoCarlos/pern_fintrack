@@ -18,7 +18,7 @@ export const MessageToUser = ({
   error,
   messageToUser,
   // variant,
-  variant = 'form',
+  variant,// = 'form',
   showToast = true,
 
 }: MessageToUserPropType): JSX.Element => {
@@ -27,6 +27,7 @@ export const MessageToUser = ({
     variant === 'tracker'
       ? { success: 'darkgreen', failure: 'red' }
       : { success: 'lightgreen', failure: 'orange' };
+
   const topStyles =
     variant === 'tracker'
       ? '2%'
@@ -58,8 +59,10 @@ if (msg !== lastMessageRef.current) {
 }, [showToast, messageToUser, variant])
  //----------------------------------  
 // For non-form variants or when toast is disabled, show inline messages
-const shouldShowInlineMessage = variant !== 'form' || !showToast;
- //----------------------------------     
+const shouldShowInlineMessage = variant !== 'form' //|| !showToast;
+
+// console.log("🚀 ~ MessageToUser ~ shouldShowInlineMessage:", shouldShowInlineMessage)
+//-------------------------------     
   return (
     <>
       {isLoading && <div style={{ color: 'lightblue' }}>Loading...</div>}

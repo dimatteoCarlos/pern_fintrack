@@ -12,7 +12,7 @@ type AccountActionsMenuPropType = {
   isOpen:boolean;
   account:AccountListType;
   previousRoute? : string
-// ✅funcionts need no params
+// functions need no params
   onViewDetails: () => void;  
   onEditAccount: () => void;  
   onDeleteAccount: () => void;

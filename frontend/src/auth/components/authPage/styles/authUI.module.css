@@ -1,0 +1,230 @@
+/* src/components/auth/AuthUI.module.css */
+.borderTest {
+  border: 3px solid red;
+}
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem; /* 20px / 16px */
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem; /* 8px / 16px */
+  background-color: #f9f9f9;
+  width: 90%; /* 350px / 16px */
+  max-width: 22rem;
+  /* width: 21.875rem; */
+  margin: 1.25rem auto;
+}
+
+.auth-container__title {
+  font-size: 1.8rem; /* 1.8 * 16px = 28.8px */
+  margin-bottom: 1.25rem;
+  color: #333;
+}
+
+.auth-container__errorMsg {
+  color: #d32f2f;
+  margin-bottom: 0.625rem; /* 10px / 16px */
+  font-size: 0.9rem; /* 0.9 * 16px = 14.4px */
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 1.25rem;
+}
+
+.auth-form__field {
+  margin-bottom: 0.9375rem; /* 15px / 16px */
+}
+
+.auth-form__label {
+  display: block;
+  margin-bottom: 0.3125rem; /* 5px / 16px */
+  color: #555;
+  font-size: 0.95rem; /* 0.95 * 16px = 15.2px */
+}
+
+.auth-form__input {
+  width: 100%;
+  padding: 0.625rem; /* 10px / 16px */
+  border: 1px solid #ccc;
+  border-radius: 0.25rem; /* 4px / 16px */
+  font-size: 1rem; /* 1 * 16px = 16px */
+  background-color: rgba(0, 0, 0, 0.76);
+}
+.auth-form__input::placeholder {
+  color: var(--creme, yellow);
+}
+
+.auth-form__remember-me{
+ display: flex;
+ align-items: center;
+ gap:0.5rem;
+ margin-bottom: 1.25rem;
+ cursor: pointer;
+ user-select:none;
+ 
+ /* background-color: orange; */
+}
+
+/*--------------------------------*/
+/*
+Estilo por defecto del checkbox
+.auth-form__checkbox{
+ width: 1rem;
+ height:1rem;
+ cursor: 'pointer';
+ accent-color: rgb(16,163,127);
+
+} */
+.auth-form__checkbox {
+  /* Dimensions updated to 1.5rem */
+  width: 1.1rem;
+  height: 1.1rem;
+  
+  /* Use appearance none to bypass browser default styles and allow transparency */
+  appearance: none;
+  -webkit-appearance: none;
+  
+  /* Initial transparent background and custom border */
+  background-color: transparent;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  
+  /* Maintain pointer cursor (removed quotes as they are invalid in CSS) */
+  cursor: pointer;
+  
+  /* Define the accent color for the checked state */
+  accent-color: rgb(16, 163, 127);
+  
+  /* Layout to center the checkmark */
+  display: inline-grid;
+  place-content: center;
+  vertical-align: middle;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Styles when the checkbox is checked */
+.auth-form__checkbox:checked {
+  /* Switches background to your specific green */
+  background-color: rgb(16, 163, 127);
+  border-color: rgb(16, 163, 127);
+}
+
+/* Draws the white checkmark using clip-path when checked */
+.auth-form__checkbox:checked::before {
+  content: "";
+  width: .5rem;
+  height: .5rem;
+  background-color: white;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+/*--------------------------------*/
+.auth-form__label-checkbox{
+ font-size: 0.85rem;
+ color: #666;
+ cursor: pointer;
+}
+
+.auth-form__button {
+  background-color: #007bff;
+  background-color: rgb(16, 163, 127);
+  color: white;
+  padding: 0.75rem 0.9375rem; /* 12px / 16px   15px / 16px */
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.auth-form__button:hover {
+  background-color: #0056b3;
+  background-color: rgb(5, 122, 93);
+}
+
+.auth-form__button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.auth-actions__toggle-button {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-bottom: 0.625rem;
+  transition: color 0.3s ease;
+  padding: 0.5rem;
+}
+
+.auth-actions__toggle-button:hover {
+  color: #0056b3;
+}
+
+.separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #777;
+  margin-bottom: 0.9375rem;
+  width: 100%;
+}
+
+.separator::before,
+.separator::after {
+  content: '';
+  flex-grow: 1;
+  background-color: #ccc;
+  height: 1px;
+}
+
+.separator::before {
+  margin-right: 0.625rem;
+}
+
+.separator::after {
+  margin-left: 0.625rem;
+}
+
+.google-signin-button {
+  background-color: #fff;
+  color: #333;
+  padding: 0.625rem 0.9375rem;
+  border: 1px solid #ddd;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.3s ease;
+  width: 100%;
+  margin-bottom: 0.625rem;
+}
+
+.google-signin-button:hover {
+  border-color: #aaa;
+}
+
+.google-signin-button svg {
+  margin-right: 0.625rem;
+}
+
+.messageToUser__msg {
+  display: block;
+  margin-top: 0.625rem;
+  color: green;
+  font-size: 0.9rem;
+}

@@ -10,7 +10,9 @@ import {
 export const PAGE_LOC_NUM = 3;
 //-------------------------
 //-----------------------
+//useAuth.ts
 export const INITIAL_PAGE_ADDRESS = '/fintrack/tracker/expense'
+export const LOCAL_STORAGE_KEY = {REMEMBER_ME :'fintrack_remember_me',USER_DATA:'fintrack_user_data'};
 //-------------------------
 export const CURRENCY_OPTIONS = { usd: 'en-US', cop: 'cop-CO', eur: 'en-US' };
 
@@ -22,14 +24,17 @@ export const VARIANT_DEFAULT: VariantType = 'tracker';
 
 export const VARIANT_FORM: VariantType = 'form';
 
+//VALUES WERE USED FOR VISUAL MOCKS
 //tracker/expense
 export const ACCOUNT_OPTIONS_DEFAULT = [
-  // { value: 'acc.name_01', label: 'account name here' },
-  // { value: 'acc.name_02', label: 'acc.name_02' },
-  // { value: 'acc.name_03', label: 'acc.name_03' },
+  /*{ value: 'acc.name_01', label: 'account name here' },
+  { value: 'acc.name_02', label: 'acc.name_02' },
+  { value: 'acc.name_03', label: 'acc.name_03' },
+   */
 ];
 
 export const CATEGORY_OPTIONS_DEFAULT = [
+
   // { value: 'category_01', label: 'Category/SubCategory' },
   // { value: 'category_02', label: 'Category_02 / SubCategory 02' },
   // { value: 'category_03', label: 'Category_03 / SubCategory 03' },
@@ -37,6 +42,7 @@ export const CATEGORY_OPTIONS_DEFAULT = [
 
 //tracker/income
 export const INCOME_OPTIONS_DEFAULT = [
+
   // { value: 'account_01', label: 'Account_01' },
   // { value: 'account_02', label: 'Account_02' },
   // { value: 'account_03', label: 'Account_03' },
@@ -44,6 +50,7 @@ export const INCOME_OPTIONS_DEFAULT = [
 ];
 
 export const SOURCE_OPTIONS_DEFAULT = [
+
   // { value: 'source_01', label: 'source_01' },
   // { value: 'source_02', label: 'source_02' },
   // { value: 'source_03', label: 'source_03' },

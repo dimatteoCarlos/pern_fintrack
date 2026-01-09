@@ -16,7 +16,7 @@ import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.ts';
 import {useBalanceStore} from '../../../stores/useBalanceStore.ts';
 //---
 // 🎨 UI COMPONENTS
-import TopCardZod from '../components/TopCard.tsx';
+import TopCard from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
@@ -604,7 +604,7 @@ if (!isAuthenticated) {
   {/*  {!isLoadingBankAccounts && !isLoadingCategoryBudgetAccounts  &&!isLoading && */}
     <form className='expense' style={{ color: 'inherit' }}>
     {/* TOP CARD */}
-    <TopCardZod<typeof initialExpenseData>
+    <TopCard<typeof initialExpenseData>
       topCardElements={topCardElements}
       validationMessages={validationMessages}
       setValidationMessages={setValidationMessages}

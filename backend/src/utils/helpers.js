@@ -1,8 +1,12 @@
+//backend\src\utils\helpers.js
+
 //determine transaction type from sign of amount and account_type_name.
 //applicable only to account creation transactions
 //this function considers category_budget_account with various transaction types possible.
 
 /*
+transactionAccountHelpers:
+
 determineTransactionType
 determineTransactionType_v1
 validateRequiredFields
@@ -10,6 +14,8 @@ getAccountTypeId
 getCurrencyId
 filterCurrencyId
 handleTransactionRecording
+
+dataFormatHelpers:
 
 formatDateToISO
 validateAndNormalizeDate

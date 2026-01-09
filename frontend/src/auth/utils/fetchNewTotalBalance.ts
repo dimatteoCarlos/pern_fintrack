@@ -8,7 +8,7 @@ import { authFetch } from "./authFetch";
 */
 export async function fetchNewBalance():Promise<number | null> {
  try {
-   const url = `${url_get_total_account_balance_by_type}?type=bank`
+   const url = `${url_get_total_account_balance_by_type}?type=bank&t=${Date.now()}`
 
    const balanceBankResponse = await authFetch<BalanceBankRespType>(url)
 

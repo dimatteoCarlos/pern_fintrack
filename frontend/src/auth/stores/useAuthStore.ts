@@ -6,7 +6,6 @@ import { AuthStateType, UserDataType } from '../types/authTypes';
 
 // 1. Define the state structure for authentication
 interface AuthStoreStateType extends AuthStateType<UserDataType> {
-  userAccess: string | null;
   isCheckingAuth?: boolean; 
   setIsCheckingAuth:(isCheckingAuth: boolean) => void;
 } // Specify UserDataType as the generic type
@@ -15,7 +14,6 @@ interface AuthStoreStateType extends AuthStateType<UserDataType> {
 export const useAuthStore = create<AuthStoreStateType>()(persist(
  (set) => ({
  // Authentication States
-  userAccess: null,//verificar esto
   isLoading: false,
   setIsLoading: (isLoading: boolean) => set({ isLoading }),
   
@@ -62,7 +60,9 @@ export const useAuthStore = create<AuthStoreStateType>()(persist(
    userData:state.userData
    ?
   {user_firstname:state.userData.user_firstname,
-   user_lastname:state.userData.user_lastname
+   user_lastname:state.userData.user_lastname,
+   currency: state.userData.currency,
+   role: state.userData.role//check convinience in production
     }
    :null
     }

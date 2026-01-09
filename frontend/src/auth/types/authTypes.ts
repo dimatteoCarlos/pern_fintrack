@@ -16,15 +16,10 @@ export interface SignUpCredentialsType extends SignInCredentialsType {
   user_firstname: string;
   user_lastname: string;
 }
-//input type user info
-export type UserDataType = {
-  userId: string | null;
-  username: string;
-  email: string;
-  user_firstname?: string;
-  user_lastname?: string;
-};
 
+// ===============
+// 🏪 STORE TYPES
+// ===============
 //--useAuthStoreTypes
 export interface AuthStateType<U> {
   isAuthenticated: boolean;
@@ -45,6 +40,7 @@ export interface AuthStateType<U> {
 }
 
 //useAuthTypes response
+//R:check if it is usable
 export type UseAuthResponseType<U> = {
   isAuthenticated: boolean;
   userData: U | null;
@@ -60,56 +56,84 @@ export type UseAuthResponseType<U> = {
   showSignInModalOnLoad: boolean;
   setShowSignInModalOnLoad: (showSignInModalOnLoad: boolean) => void;
 };
-//backend data response type
-export type AuthResponseType = {
-  token?: string;
-  user: UserDataType;
-  message?: string;
-  error: string | null;
+
+//backend data response type. Common for all auth responses, as for Sign-in,Sign-up and refresh token
+export type AuthSuccessResponseType  = {
+  message: string;
+  accessToken: string;      // Siempre presente en login/register/refresh
+  user: UserResponseDataType;
+  expiresIn: number;     
 };
+// If SignIn and SignUp use the same structure then: 
+// export type SignInResponseType = AuthSuccessResponse;
+// export type SignUpResponseType = AuthSuccessResponse;
 
 //sign-out
+//R:check if it is usable
 export type SignOutResponseType = {
   message: string;
-  user: { [key: string]: string };
 };
 //------------
-
 //sign-up
-export interface SignUpResponseType {
+export type SignUpResponseType= {
   message: string;
-  data: DataRespType
   accessToken?: string;
-  refreshToken?: string;
+  user:UserResponseDataType;
+  expiresIn: number;
+  refreshToken?: string;//R:check if it's usable
+
+  // data: DataRespType;
 }
 export type DataRespType ={user: UserResponseDataType;
-  userAccess: string;}
-  
-export interface UserResponseDataType {
+  userAccess: string;}//R: checi if it's usable
+
+// =====================  
+// 👤 USER TYPES / TIPOS DE USUARIO
+// =====================  
+export type UserResponseDataType ={
   user_id: string;
   username: string;
   email: string;
   user_firstname: string;
   user_lastname: string;
-  currency_id?: number;
-  currency?: string;
-  user_role_id?: number;
+  role:string;
+  currency: string;
+  // currency_id?: number;
+  // user_role_id?: number;
 }
 
+//input type user info
+// export type UserDataType = Partial<UserResponseDataType>
+export type UserDataType = 
+{
+ user_id: string | null;
+ username: string;
+ email: string;
+ user_firstname?: string;
+ user_lastname?: string;
+ currency?: string;    
+ role?: string;  
+};
+//-------------------------------
 //sign-in
-export interface SignInResponseType {
-  message: string;
-  user: UserResponseDataType; userAccess?: string ;
-  data: { user: UserResponseDataType; userAccess: string };
-  accessToken?: string;
-  refreshToken?: string;
+export type SignInResponseType ={
+ message: string;
+ accessToken: string;
+ user: UserResponseDataType;
+ expiresIn: number;
+  
+ // userAccess?: string ;
+ // refreshToken?: string;
 }
 
 //authRefreshToken refresh-token
+//R: chek if it's usable
 export interface AuthRefreshTokenResponseType {
   message: string;
   user: RefreshTokenUserInfoType | { [key: string]: string };
+  expiresIn?: number; 
 }
+//R: chek if it's usable
 export interface RefreshTokenUserInfoType {
   user_id: string;
   username: string;
@@ -120,6 +144,16 @@ export interface RefreshTokenUserInfoType {
   refreshToken: string;
 }
 
+// Define the success response format for the frontend
+export interface SuccessResponseType<T> { // Make SuccessResponse generic
+  message: string;    // Success message
+  data?: T;         // Optional: Response data, now of type T
+  accessToken?: string; // Optional: Access token
+  refreshToken?: string; // Optional: Refresh token
+}
+// ===============
+// 🚨 ERROR TYPES
+// ===============
 //Error format backend response
 export type ErrorResponseType = {
   status: number;      //  HTTP status code
@@ -128,11 +162,4 @@ export type ErrorResponseType = {
   timestamp?: string;  // Timestamp of the error (opcional)
 }
 
-// Define the success response format for the frontend
-export interface SuccessResponseType<T> { // Make SuccessResponse generic
-  message: string;    // Success message
-  data?: T;         // Optional: Response data, now of type T
-  accessToken?: string; // Optional: Access token
-  refreshToken?: string; // Optional: Refresh token
-}
 

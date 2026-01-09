@@ -1,5 +1,4 @@
 //backend/src/index.js
-
 // ====================
 // 📥 Imports
 // ====================
@@ -30,8 +29,9 @@ import { mainTables, createTables } from './db/createTables.js';
 //API ROUTES AND AUTHENTICACION FUNCTIONS
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
-import { cleanRevokedTokens } from '../utils/authUtils/authFn.js';
+import { cleanRevokedTokens } from './utils/authUtils/authFn.js';
 import { verifyToken } from './middlewares/authMiddleware.js';
+
 
 //Environment variables configuration
 dotenv.config();
@@ -174,7 +174,7 @@ async function initializeDatabase() {
    } else {
      console.log(pc.yellow('Application already initialized. Skipping tables creation.'));
    }
-   //-----------------------------
+   //-------------------------------------
    //truncate or drop all tables manually
    if (false) {
      await Promise.allSettled(

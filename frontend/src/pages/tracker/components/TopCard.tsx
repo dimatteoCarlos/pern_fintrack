@@ -1,4 +1,4 @@
-// src/pages/tracker/components/TopCardZod.tsx
+// src/pages/tracker/components/TopCard.tsx
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation';
@@ -10,8 +10,7 @@ import {
   DropdownOptionType,
   TopCardElementsType,
 } from '../../../types/types';
-
-import { ValidationMessagesType } from '../../../validations/utils/zod_validation';
+import { ValidationMessagesType } from '../../../validations/types';
 
 //------------------------------------
 type RadioInputPropsType = {
@@ -56,7 +55,7 @@ type TopCardPropType<TFormDataType  extends Record<string, unknown>> = {
 };
 
 //----Component------------------------
-const TopCardZod = <TFormDataType  extends Record<string, unknown>>({
+const TopCard = <TFormDataType  extends Record<string, unknown>>({
   topCardElements,
   validationMessages,
   setValidationMessages,//could be undefined
@@ -193,4 +192,4 @@ const shouldShowError = !!validationMessages[accountFieldName]
   );
 };
 
-export default TopCardZod;
+export default TopCard;

@@ -42,9 +42,15 @@ export function validationData<T extends Record<string, unknown>>(
 export function validateAmount(value: string): string | null {
   if (value === '' || value === undefined) return 'Amount is required';
 
-  const numValue = typeof value === 'string' ? parseFloat(value): Number(value);
+  const result = checkNumberFormatValue(value);
   
-  if (isNaN(numValue)) {
+  if (result.isError) {
+    return `* ${result.formatMessage}`;
+  }
+
+  const numValue = result.valueToSave;
+
+  if (numValue === undefined || isNaN(numValue)) {
     return '* Please enter a valid number';
   }
 
@@ -97,10 +103,10 @@ export function checkNumberFormatValue(value: string): {
   isError: boolean;
 } {
   const notMatching = /([^0-9.,])/g; // Pattern for invalid characters
-  const onlyDotDecimalSep = /^\d*(\.\d*)?$/g; //Normal US numeric Format
-  const onlyCommaDecimalSep = /^\d*(,\d*)$/g; // Only comma as decimal separator. ES numeric format
-  const commaSepFormat = /^(\d{1,3})(,\d{3})*(\.\d*)?$/g; //Comma as thousand separator, point as decimal separator. US format
-  const dotSepFormat = /^(\d{1,3})(\.\d{3})*(,\d*)?$/g; //Dots as thousands separator, comma as decimal separator. UK format
+  const onlyDotDecimalSep = /^\d*(\.\d*)?$/; //Normal US numeric Format
+  const onlyCommaDecimalSep = /^\d*(,\d*)$/; // Only comma as decimal separator. ES numeric format
+  const commaSepFormat = /^(\d{1,3})(,\d{3})*(\.\d*)?$/; //Comma as thousand separator, point as decimal separator. US format
+  const dotSepFormat = /^(\d{1,3})(\.\d{3})*(,\d*)?$/; //Dots as thousands separator, comma as decimal separator. UK format
 
   //valueToSave is the number used to update the number type state value
   //no matching character

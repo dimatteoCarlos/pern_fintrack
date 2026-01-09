@@ -16,9 +16,9 @@ import { AccountByTypeResponseType, AccountListType, CategoryBudgetAccountListTy
 //---
 import { capitalize } from '../../helpers/functions'
 //---
-import './styles/accountingDashboard-styles.css';
 import { isCategoryBudgetAccount } from '../../editionAndDeletion/utils/categoryBudgetCalculations'
 //---
+import './styles/accountingDashboard-styles.css';
 // import AccountingSkeleton from '../../edition/components/skeleton/AccountingSkeleton'
 //--------------------------------
 // ACCOUNT TYPE CONFIGURATION
@@ -66,7 +66,7 @@ const groupAccountsBytype = (accounts:AccountListType[]):Partial<Record<AccountT
     }
   )
 //  if(groups['other']){ 
-//   console.log('check other accounts', groups['other'])
+//   console.log('check other accounts', groceriesgroups['other'])
 //   }
   return groups
 }
@@ -272,7 +272,7 @@ const handleDeleteAccount = (account:AccountListType)=>{
 
   
 showToast(`Delete functionality for ${account.account_name} will be implemented soon!`, 'warning');
-console.log('Delete account:', account)
+// console.log('Delete account:', account)
 }
 
 //====================================
@@ -294,8 +294,8 @@ const renderAccountGroups = ()=>{
   if(Object.keys(groupedAccounts).length===0 && !isLoading){
   return(
    <div className="accounting-empty">
-     <div className="accounting-empty__emoji">📁</div>
-     <h3 className="accounting-empty__title">No Accounts Found</h3>
+    <div className="accounting-empty__emoji">📁</div>
+    <h3 className="accounting-empty__title">No Accounts Found</h3>
      <p className="accounting-empty__message">Get started by creating your first account to manage your finances.</p>
    </div>
   )

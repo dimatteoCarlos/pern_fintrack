@@ -1,18 +1,18 @@
 //src/controllers/authcontroller.js
-//signUpUser,signInUser,signOutUser,
+//signUpUser,signInUser,signOutUser,validateSession
 import {
   createToken,
   createRefreshToken,
   hashed,
   isRight,
-} from '../../utils/authUtils/authFn.js';
-import { createError } from '../../utils/errorHandling.js';
+} from '../utils/authUtils/authFn.js';
+import { createError } from '../utils/errorHandling.js';
 import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../db/configDB.js';
 import pc from 'picocolors';
 import { getCurrencyId } from '../fintrack_api/controllers/transactionController.js';
-import { sendSuccessResponse } from '../../utils/authUtils/sendSuccessResponse.js';
-import { setRefreshTokenCookie } from '../../utils/authUtils/cookieConfig.js';
+import { sendSuccessResponse } from '../utils/authUtils/sendSuccessResponse.js';
+import { setRefreshTokenCookie } from '../utils/authUtils/cookieConfig.js';
 //=====================
 //FUNCTIONS DECLARATION
 //=====================
@@ -68,6 +68,7 @@ export const signUpUser = async (req, res, next) => {
     if (usernameExists.rowCount > 0) {
       return next(createError(409, 'Username already exists.Try Sign in'));
     }
+
 // ✅ CHECK IF EMAIL EXISTS
     const emailExists = await pool.query(
       'SELECT 1 FROM users WHERE email=$1 FOR UPDATE',
@@ -97,7 +98,8 @@ export const signUpUser = async (req, res, next) => {
 
 // ✅ -Insert new user into data base
     const userData = await pool.query({
-      text: `INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id) VALUES ($1, $2, $3,$4,$5, $6, $7, $8) RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id;`,
+      text: `INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id) VALUES ($1, $2, $3,$4,$5, $6, $7, $8) RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id,
+       ur.user_role_name;`,
       values: [
         newUserId,
         username,
@@ -171,7 +173,7 @@ setRefreshTokenCookie(res, refreshToken);
 // };
 
 const userResponseData = {
-userId: newUser.user_id,
+user_id: newUser.user_id,
 username: newUser.username,
 email: newUser.email,
 user_firstname: newUser.user_firstname,
@@ -184,7 +186,7 @@ role: newUser.user_role_name || 'user'
     message: 'User successfully registered',
     accessToken: accessToken,
     user: userResponseData,
-    expiresIn: 3600*24*24 // 60 minutos
+    expiresIn: 3600*1*1 // 60 minutos
   });
 
   await pool.query('COMMIT');
@@ -347,15 +349,16 @@ await pool.query('BEGIN');
     next(createError(500, error.message || 'internal sign-in user error'));
   }
 };
-// =================================
+
+// =================
 // 🎯 SIGN-OUT USER 
-// =================================
+// =================
 // Sign-out with token revocation
 export const signOutUser = async (req, res, next) => {
 console.log(pc.yellow('signOutUser'));
 // console.log('req',req.cookies,  )
   const refreshTokenFromClient =
-req.cookies.refreshToken ||    req.body.refreshToken;
+   req.cookies.refreshToken ||    req.body.refreshToken;
 // console.log({refreshTokenFromClient})
 // const clientDevice = req.clientDeviceType; //web | mobile | bot |unknown
 
@@ -416,3 +419,45 @@ req.cookies.refreshToken ||    req.body.refreshToken;
     sendSuccessResponse(res, 200, message);
   }
 }
+
+// =================
+// 🎯 VALIDATE USER SESSION
+// =================
+// backend/src/controllers/authController.js
+export const validateSession = async (req, res, next) => {
+  try {
+    // userId from verifyToken / El ID viene del middleware verifyToken
+    const { userId } = req.user; 
+    console.log("🚀 ~ validateSession ~ userId:", userId)
+    
+    const userDataResult = await pool.query({
+      text: `SELECT u.user_id, u.username, u.email, u.user_firstname, u.user_lastname, 
+      u.user_contact, ct.currency_code as currency, 
+      ur.user_role_name as role
+      FROM users u
+      JOIN currencies ct ON ct.currency_id = u.currency_id
+      JOIN user_roles ur ON ur.user_role_id = u.user_role_id
+      WHERE u.user_id = $1`,
+      values: [userId],
+    });
+
+    const userData = userDataResult.rows[0];
+
+    if (!userData) {
+      return next(createError(404, 'Session invalid: user not found'));
+    }
+
+    console.log(`✅ Session validated for user: ${userId} ${userData.user_firstname}`);
+
+    // console.log(`✅ Session validated for user: ${userData.user_firstname}`);
+
+    res.status(200).json({
+      message: 'Session validated successfully',
+      user: userData // Este objeto ya tiene user_id, role, currency, etc.
+    });
+    
+  } catch (error) {
+   console.error('❌Error validating session');
+   next(createError(500, 'Error validating session'));
+  }
+};

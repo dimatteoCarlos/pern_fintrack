@@ -1,0 +1,62 @@
+/* frontend/src/editionAndDeletion/pages/deletionAccount/UIComponents/proceedButtonUI/proceedButtonUI.cssproceedButtonUI.css*/
+
+/* ====================
+ PROCEED BUTTON UI STYLES
+====================== */
+:root {
+  --proceed-button-bg: #dc2626;
+  --proceed-button-hover: #b91c1c;
+  --proceed-button-disabled: #9ca3af;
+  --proceed-button-text: #ffffff;
+  --proceed-button-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --proceed-button-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --button-radius: 0.5rem;
+  --button-transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.proceed-button{
+ min-width:12.5rem;
+ background-color: var(--proceed-button-bg);
+ border:none;
+ border-radius: var(--button-radius);
+ padding: 0.75rem 1.5rem;
+ box-shadow: var(--proceed-button-shadow)
+ ;
+ cursor: pointer;
+ color:var(--proceed-button-text);
+ font-weight: 700;
+ font-size: 1rem;
+ transition: var(--button-transition);
+
+}
+
+.proceed-button:hover:not(:disabled){
+background-color: var(--proceed-button-hover);
+transform :translateY(-2px);
+box-shadow: var(--proceed-button-shadow-hover);
+}
+
+.proceed-button:active:not(:disabled){
+ transform:translateY(0);
+}
+
+.proceed-button:focus-visible{
+outline:2px solid var(--proceed-button-bg);
+outline-offset: 2px;
+}
+
+.proceed-button:disbled{
+ background-color: var(--proceed-button-disabled);
+ cursor:not-allowed;
+ opacity: 0.6;
+ transform:none;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .proceed-button {
+    padding: 0.625rem 1.5rem;
+    min-width: 100%;
+  }
+}
+

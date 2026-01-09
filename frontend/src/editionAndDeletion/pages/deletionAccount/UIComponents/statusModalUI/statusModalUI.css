@@ -1,0 +1,114 @@
+
+/* ============================================
+   STATUS MODAL UI STYLES
+============================================ */
+
+:root {
+  --status-success-bg: #d1fae5;
+  --status-success-text: #065f46;
+  --status-success-button: #059669;
+  --status-success-button-hover: #047857;
+  
+  --status-error-bg: #fee2e2;
+  --status-error-text: #991b1b;
+  --status-error-button: #dc2626;
+  --status-error-button-hover: #b91c1c;
+  
+  --status-spacing-6: 1.5rem;
+  --status-spacing-4: 1rem;
+  --status-spacing-3: 0.75rem;
+  --status-spacing-2: 0.5rem;
+  --status-radius-lg: 0.5rem;
+  --status-radius-xl: 0.75rem;
+  --status-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+    --modal-max-width: 32rem;
+}
+
+.status-modal-container {
+  text-align: center;
+  padding: var(--status-spacing-6);
+  border-radius: var(--status-radius-xl);
+  box-shadow: var(--status-shadow-2xl);
+  width: 100%;
+  max-width: var(--modal-max-width);
+  max-width: 400px;
+  margin: 0 auto;
+  animation: fadeInUp 0.3s ease-out;
+
+
+}
+
+.status-modal-container.success {
+  background-color: var(--status-success-bg);
+  color: var(--status-success-text);
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.status-modal-container.error {
+  background-color: var(--status-error-bg);
+  color: var(--status-error-text);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+ 
+}
+
+.status-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: var(--status-spacing-3);
+  line-height: 1.3;
+}
+
+.status-modal-message {
+  margin-bottom: var(--status-spacing-6);
+  line-height: 1.5;
+  font-size: 1rem;
+}
+
+.status-modal-button {
+  width: 100%;
+  padding: var(--status-spacing-2) var(--status-spacing-4);
+  border-radius: var(--status-radius-lg);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+  font-size: 1rem;
+}
+
+.status-modal-button.success {
+  background-color: var(--status-success-button);
+  color: white;
+}
+
+.status-modal-button.success:hover {
+  background-color: var(--status-success-button-hover);
+}
+
+.status-modal-button.error {
+  background-color: var(--status-error-button);
+  color: white;
+}
+
+.status-modal-button.error:hover {
+  background-color: var(--status-error-button-hover);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .status-modal-container {
+    padding: var(--status-spacing-4);
+    /* margin: 0 0.75rem; */
+    max-width: 100%;
+  }
+}

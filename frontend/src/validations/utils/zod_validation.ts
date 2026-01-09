@@ -24,11 +24,11 @@ export function validateForm<T extends Record<string, unknown>>(
  //Validacion del esquema de forma 'segura', `safeParse` no lanza un error si la validación falla, sino que devuelve un objeto.
  const result = schema.safeParse(data);
 //verifica el resultado de la validacion
-  // console.log('result', result)
+// console.log('result', result)
   
 if (result.success) {
  // Si la validación es exitosa, no hay errores, así que devuelve un objeto vacío.
- // console.log('result desde validatefn')
+ // console.log('result desde validatefn',result)
   return {
     errors: {},
     data: result.data,

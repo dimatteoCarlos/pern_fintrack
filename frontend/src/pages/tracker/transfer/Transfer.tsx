@@ -1,8 +1,8 @@
 //src/pages/tracker/expense/Transfer.tsx
 //zod validation and useFormManager were used.
-// =======================
-// 📦 Import Section
-// =======================
+// ============================
+// 📦 IMPORT DEPENDENCIES
+// ============================
 // ⚛️ React Hooks
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AxiosRequestConfig } from 'axios';
@@ -22,7 +22,7 @@ import useBalanceStore from '../../../stores/useBalanceStore.ts';
 import {
   url_get_accounts_by_type,
   url_movement_transaction_record,
-  // url_get_total_account_balance_by_type,
+  url_get_total_account_balance_by_type,
 } from '../../../endpoints.ts';
 
 import {
@@ -43,7 +43,7 @@ import type  {
 import  type {
   AccountByTypeResponseType,
   MovementTransactionResponseType,
-  // BalanceBankRespType,
+  BalanceBankRespType,
 } from '../../../types/responseApiTypes.ts';
 
 //-------------------------------------
@@ -52,7 +52,7 @@ import { transferSchema} from '../../../validations/zod_schemas/trackerMovementS
 import { MovementValidatedDataType } from '../../../validations/types.ts';
 
 // 🎨 UI Components
-import TopCardZod from '../components/TopCard.tsx';
+import TopCard from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
@@ -62,15 +62,15 @@ import { fetchNewBalance } from '../../../auth/utils/fetchNewTotalBalance.ts';
 //-------------------------------------
 // 📝data type configuration 
 export type ShowValidationType={
-    amount: boolean;
-    origin: boolean;
-    currency: boolean;
-    destination:  boolean;
-    note: boolean;
-    originAccountType: boolean;
-    destinationAccountType: boolean;
-    // originAccountId?: boolean;
-    // destinationAccountId?: boolean;
+ amount: boolean;
+ origin: boolean;
+ currency: boolean;
+ destination:  boolean;
+ note: boolean;
+ originAccountType: boolean;
+ destinationAccountType: boolean;
+ // originAccountId?: boolean;
+ // destinationAccountId?: boolean;
 } 
 
 type RadioOptionType<T extends string> = {value:T, label:string}
@@ -135,6 +135,8 @@ function Transfer(): JSX.Element {
   const [reloadTrigger, setReloadTrigger] = useState(0)
 
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(null);
+
+  const [showMessage, setShowMessage] = useState(false);
  
 //--set states for reseting dropdown selection of accounts
   const [isResetOriginAccount, setIsResetOriginAccount] =
@@ -166,15 +168,16 @@ function Transfer(): JSX.Element {
     activateAllValidations,
 
     setters: {
-      // setShowValidation,
-      setValidationMessages,
-      setFormData,
+     setValidationMessages,
+     setFormData,
     }
   } = useFormManager<MovementInputDataType, MovementValidatedDataType>(
  transferSchema, initialMovementData
   );
 //---- Account Options ------
-// 📡 DATA FETCHING ---------
+// ================================
+// 📡 API DATA FETCHING (REACTIVO)
+  // ================================
 // Prepare data and url for Fetching origin accounts
   const originAccountTypeFromDb =
     formData.originAccountType === 'pocket'
@@ -183,7 +186,7 @@ function Transfer(): JSX.Element {
 
   const fetchOriginAccountUrl =
     `${url_get_accounts_by_type}?type=${originAccountTypeFromDb}&reload=${reloadTrigger}`
-
+    
 //GET: AVAILABLE ACCOUNTS BY TYPE for Origin account
   const {
     apiData: originAccountsResponse,
@@ -272,6 +275,11 @@ function Transfer(): JSX.Element {
     error: fetchedErrorDestinationAccounts,
   } = useFetch<AccountByTypeResponseType>(fetchDestinationAccountUrl as string);
 
+  //Fetch of total balance (Zustand) reactive to trigger
+  const balanceBankResponse = useFetch<BalanceBankRespType>(
+    `${url_get_total_account_balance_by_type}/?type=bank&v=${reloadTrigger}`
+  );
+
 //Data Transformations
 //🧠 Memoization: Account Options
   // console.log('destinationAccountsResponse', {
@@ -300,13 +308,23 @@ const destinationAccountOptions = useMemo(
 //---
 //DATA POST FETCHING
 // const { data, isLoading, error:errorPost, requestFn } = useFetchLoad<
-  const {  isLoading, error:errorPost, requestFn } = useFetchLoad<
+  const {  isLoading, error:errorPost, requestFn, resetFn } = useFetchLoad<
     MovementTransactionResponseType,
     PayloadType
   >({ url: url_movement_transaction_record, method: 'POST' });
 
   const error = errorPost ||fetchedErrorDestinationAccounts||fetchedErrorOriginAccounts
-  
+
+// =================================
+// ⏳ SIDE EFFECTS (SINCRONIZACIÓN)
+// =================================
+  useEffect(() => {
+   const total_balance = balanceBankResponse.apiData?.data?.total_balance;
+   if (typeof total_balance === 'number') {
+     setAvailableBudget(total_balance);
+   }
+  }, [balanceBankResponse.apiData, setAvailableBudget]);
+
 //==================================
 // ✍️ Event Handlers
 // =================================
@@ -340,13 +358,13 @@ if (accountName) {
 //--------------------------------
 // const handleDestinationChange = createDropdownHandler('destination');
 const handleDestinationChange = useCallback((selectedOption:DropdownOptionType | null)=>{
-const accountName = selectedOption?.value ||'';
-const selectedAccount = destinationAccountsResponse?.data.accountList.find(acc=>acc.account_name === accountName)
-setFormData(prev=>({...prev, destination:accountName, //selectedAccount.account_name
-destinationAccountId:selectedAccount?.account_id}))
-if(accountName){
-  setValidationMessages(prev=>({...prev, destination:''}))
-}
+  const accountName = selectedOption?.value ||'';
+  const selectedAccount = destinationAccountsResponse?.data.accountList.find(acc=>acc.account_name === accountName)
+  setFormData(prev=>({...prev, destination:accountName, //selectedAccount.account_name
+  destinationAccountId:selectedAccount?.account_id}))
+  if(accountName){
+    setValidationMessages(prev=>({...prev, destination:''}))
+  }
  },[destinationAccountsResponse?.data?.accountList, setFormData, setValidationMessages]);
 
 //-------------------------------
@@ -354,11 +372,11 @@ const handleNoteChange = createTextareaHandler('note');
 //---
 //Radio Input Handlers
  const handleOriginAccountTypeChange = useCallback((newType: string) => {
-    setFormData(prev => ({
-      ...prev,
-      originAccountType: newType as Exclude<TransferAccountType, 'income_source'>,
-      origin: '', // Reset origin when type changes
-      originAccountId: undefined // Reset ID
+  setFormData(prev => ({
+   ...prev,
+   originAccountType: newType as Exclude<TransferAccountType, 'income_source'>,
+   origin: '', // Reset origin when type changes
+   originAccountId: undefined // Reset ID
     }));
 //----   
 // Reset validation
@@ -371,18 +389,18 @@ setTimeout(() => setIsResetOriginAccount(true), 10); //Then activate for followi
 
 //---
  const handleDestinationAccountTypeChange = useCallback((newType: string) => {
-    setFormData(prev => ({
-      ...prev,
-      destinationAccountType: newType as Exclude<TransferAccountType,'category_budget'>,
-      destination: '', // Reset destination when type changes
-      destinationAccountId:undefined //Reset account ID
-        }));
+  setFormData(prev => ({
+    ...prev,
+    destinationAccountType: newType as Exclude<TransferAccountType,'category_budget'>,
+    destination: '', // Reset destination when type changes
+    destinationAccountId:undefined //Reset account ID
+      }));
 
-  //Reset Validation
-    setValidationMessages(prev => ({ ...prev, destination: '' }));
-  //force reset of dropdown
-    setIsResetDestinationAccount(false);//first deactivate
-    setTimeout(()=>setIsResetDestinationAccount(true),10) //Then activate for following rendering
+//Reset Validation
+  setValidationMessages(prev => ({ ...prev, destination: '' }));
+//force reset of dropdown
+  setIsResetDestinationAccount(false);//first deactivate
+  setTimeout(()=>setIsResetDestinationAccount(true),10) //Then activate for following rendering
   }, [setFormData, setValidationMessages]); 
  
 //-------------------------------------
@@ -390,19 +408,24 @@ setTimeout(() => setIsResetOriginAccount(true), 10); //Then activate for followi
   async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
   // console.log('On Save Handler');
     e.preventDefault();
+    if (resetFn) resetFn();
+    setShowMessage(true);
     setMessageToUser('Processing transaction...')
   //--data validation messages --
     activateAllValidations()
     const {fieldErrors,dataValidated}=validateAll() 
 
     if (formData.origin === formData.destination) {
-      fieldErrors.destination = 'Origin and destination must be different';
+     fieldErrors.destination = 'Origin and destination must be different';
     }
 
     if (Object.keys(fieldErrors).length > 0) {
       setValidationMessages(fieldErrors);
       setMessageToUser('Please correct the fields');
-      setTimeout(() => setMessageToUser(null), 4000);
+      setTimeout(() => {
+       setShowMessage(false);
+       setMessageToUser(null)
+      }, 4000);
       return;
     }
 //---------------------------------------
@@ -414,73 +437,89 @@ setTimeout(() => setIsResetOriginAccount(true), 10); //Then activate for followi
 //endpoint ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=expense
 //user id is sent via req.body
 try {
-    if (!dataValidated) {
-    throw new Error('Validation failed. Please check your inputs.');
+  if (!dataValidated) {
+  throw new Error('Validation failed. Please check your inputs.');
   } 
+  const payload: PayloadType = {
+   ...dataValidated, 
+   type: typeMovement,
+    };
 
-    const payload: PayloadType = {
-    amount: Number(formData.amount),
-    origin: formData.origin,
-    destination: formData.destination,
-    note: formData.note,
-    currency: formData.currency,
-    originAccountType: formData.originAccountType,
-    destinationAccountType: formData.destinationAccountType,
-    type: typeMovement,
-      };
-  //  console.log('compare', dataValidated, payload)   
-    const finalUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
-    const response = await requestFn(payload, {
-      url: finalUrl,
-    } as AxiosRequestConfig);
-    
-    if (response?.error ) {
-      throw new Error(response?.error || error || 'An unexpected error occurred during submission.');
-    }
-    
-    if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-      console.log('Data from record transaction request:', response);
-    }
+  // const payload: PayloadType = {
+  // amount: Number(formData.amount),
+  // origin: formData.origin,
+  // destination: formData.destination,
+  // note: formData.note,
+  // currency: formData.currency,
+  // originAccountType: formData.originAccountType,
+  // destinationAccountType: formData.destinationAccountType,
+  // type: typeMovement,
+  //   };
+//  console.log('compare', dataValidated, payload)   
+  const finalUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
+  const response = await requestFn(payload, {
+    url: finalUrl,
+  } as AxiosRequestConfig);
+  
+  if (response?.error ) {
+    throw new Error(response?.error || error || 'An unexpected error occurred during submission.');
+  }
+  
+  if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+    console.log('Data from record transaction request:', response);
+  }
 // -------------------------------------
 // ✅ Update total balance after success 
 // -------------------------------------
 //1. Get the immediate new balance
   const newTotalBalance = await fetchNewBalance()
 //2. Update global state of Zustand store
-    if (typeof newTotalBalance === 'number') {setAvailableBudget(newTotalBalance); // 🔥 Éxito: Llamada segura dentro del handler
-    }
-    
-    if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-      console.log('Data from record transaction request:',  response.data);
-    }
+  if (typeof newTotalBalance === 'number') {setAvailableBudget(newTotalBalance);
+  // 🔥 Éxito: Llamada segura dentro del handler
+  }
+  
+  if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+    console.log('Data from record transaction request:',  response.data);
+  }
   //-----------------------------  
-  setMessageToUser('Transaction recorded successfully!');       
+  setMessageToUser('Transaction recorded successfully!');     
+  setShowMessage(true);
   //-------------------------------
   //reset the state and the selected options on select component
   resetForm();//from useFormManager
   setReloadTrigger(prev => prev + 1);
   setIsReset(true);
-  setTimeout(() => setMessageToUser(null), 3000);
+  setTimeout(() => {
+   setMessageToUser(null);
+   setShowMessage(false);
+   setIsReset(false);
+  }, 4000);
+
+  if (resetFn) resetFn();
+
   // setMessageToUser('Transfer completed successfully!');
   // setCurrency(DEFAULT_CURRENCY);
         
-    } catch (error) {
+  } catch (error) {
     console.error('Submission error:', error);
     const errorMessage = handleApiError(error);
     setMessageToUser(errorMessage);
-    setTimeout(() => setMessageToUser(null), 5000);
+    setTimeout(() => {
+     setMessageToUser(null);
+     setShowMessage(false);
+      }, 5000);
     }
   }
 //--------------------------------
 // ⏳--- Side Effects--/--Efectos secundarios
 //--------------------------------
   useEffect(() => {
-    if (isReset ) {
-      const timer = setTimeout(() => {
-        setIsReset(false);
-        setIsResetOriginAccount(false);
-        setIsResetDestinationAccount(false);
-      }, 500);
+   if (isReset ) {
+    const timer = setTimeout(() => {
+     setIsReset(false);
+     setIsResetOriginAccount(false);
+     setIsResetDestinationAccount(false);
+    }, 500);
       return () => clearTimeout(timer);
     }
   }, [isReset]);
@@ -500,7 +539,7 @@ try {
   <>
     <form className='transfer' style={{ color: 'inherit' }}>
       {/* start of TOP CARD */}
-      <TopCardZod
+      <TopCard
         topCardElements={topCardElements}
         validationMessages={validationMessages}
         setValidationMessages={setValidationMessages}
@@ -578,7 +617,7 @@ try {
       </div>
     </form>
 
-   {messageToUser  && (
+   {showMessage && messageToUser  && (
     <div className='fade-message'>
       <MessageToUser
         isLoading={false}

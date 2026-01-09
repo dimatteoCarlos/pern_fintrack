@@ -1,4 +1,5 @@
 //frontend/src/helpers/handleError.ts
+//Parent: Expense.tsx
 import { normalizeError } from "./normalizeError";
 
 export const handleError = (

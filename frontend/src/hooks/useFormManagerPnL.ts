@@ -13,7 +13,7 @@ import { useDebouncedCallback } from './useDebouncedCallback';
 // ======================
 import type {  DropdownOptionType } from '../types/types';
 import { ValidationMessagesType } from '../validations/types';
-import { PnLValidationSchema, validateAllFn } from '../validations/validationPnL/validationPnL';
+import { PnLValidationSchema, validateAllFn } from '../validations/validationPnL/validationPnL.ts';
 
 // ======================================
 // MAIN HOOK IMPLEMENTATION
@@ -39,7 +39,6 @@ const [validationMessages, setValidationMessages] = useState<ValidationMessagesT
 const [showValidation, setShowValidation] = useState<ShowValidationType>(
   Object.fromEntries((Object.keys(initialData) as Array<FormFieldKeyType>).map((key)=>[key, false])) as Record<FormFieldKeyType, boolean>
 );
-
 //--------------------------------------
 // --- Functions (Factory Pattern) --- / Funciones (Patrón Fábrica) ---
 const activateAllValidations = useCallback((isActive:boolean) => {
@@ -172,24 +171,31 @@ const createTextareaHandler = useCallback((fieldName: FormFieldKeyType) => {
         }
 }
 }, [])
-// ============================================
+// ===================================
 // FORM-WIDE VALIDATION (for submit)
-// =========================================
+// ===================================
 //Validate fields before submission
  const validateAllPnL = useCallback(()=>{
-const {isValid,fieldErrorMessages}= validateAllFn(formInputData,PnLValidationSchema)
+//----------------
+ const result = validateAllFn(formInputData, PnLValidationSchema);
+ if (!result) {
+  return { isValid: false, messages: {}, validatedData: null };
+ }
+ const {isValid,fieldErrorMessages, data}= result;
 
+//----------------
 //show all validation messages
-// setShowValidation(prev=>
-//   Object.fromEntries((Object.keys(prev) as Array<keyof ShowValidationType>).map((key)=>[key, true as boolean])) as Record<FormFieldKeyType, boolean>)
-    activateAllValidations(true)
-    return {
-    isValid,
-    messages: fieldErrorMessages,
-    validatedData: isValid ? (formValidatedData as FormValidatedType) : null
-  };
+ activateAllValidations(true);
 
-  },[formInputData, formValidatedData,activateAllValidations])
+// console.log('from useFormManagerPnl', {data}, {formValidatedData}, {}, {rest})
+
+ return {
+ isValid,
+ messages: fieldErrorMessages,
+ validatedData: isValid ? (data as FormValidatedType) : null
+ // validatedData: isValid ? (formValidatedData as FormValidatedType) : null
+  };
+  },[formInputData, activateAllValidations])
 
 // =============================
 // FORM RESET AFTER SUBMIT

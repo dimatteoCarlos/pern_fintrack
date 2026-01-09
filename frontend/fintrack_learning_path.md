@@ -1,4 +1,7 @@
-# 📊 Comparative Analysis of Development Approaches
+# Learning Strategy
+Apply different approaches to do the same function.
+
+## 📊 Comparative Analysis of Development Approaches
 
 This table contrasts the different methodologies implemented across the project for similar tasks (such as form handling, validation, and data management).
 

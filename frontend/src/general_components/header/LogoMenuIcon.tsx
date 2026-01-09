@@ -1,18 +1,19 @@
 //src/general_components/header/LogoMenuIcon.tsx
 import { Link, useLocation } from 'react-router-dom';
 import Logo from '../../assets/logo.svg';
-// import UserSquareIcon from '../../assets/UserSquareIcon.svg';
 import MenuIcon from '../../assets/MenuSvg.svg';
 import SignOutIcon from '../../assets/SignOutSvg.svg';
 import './logoMenuIcon.css';
 import useAuth from '../../auth/hooks/useAuth';
+import UserProfileBadge from '../../auth/components/userProfileBadge/UserProfileBadge';
+// import UserSquareIcon from '../../assets/UserSquareIcon.svg';
 
 function LogoMenuIcon() {
   const { pathname } = useLocation();
 
 //--auth states-------------
 const {handleSignOut, clearError,
-clearSuccessMessage} = useAuth()  
+clearSuccessMessage, isAuthenticated} = useAuth()  
 
 //handler for sign out click function button
 const handleSignOutClick = ()=>{
@@ -23,33 +24,37 @@ const handleSignOutClick = ()=>{
 }
 
   return (
-    <div className='header__logoAndIcon '>
+    <div className='header__logoAndIcon'>
       <Logo />
 
-      <div className="menuBox"
-      style={{display:'flex', justifyContent:'space-around', width:'30%', alignSelf:'baseline' }}
+      <div className="menuBox bordered"
+      style={{display:'flex', justifyContent:'space-around', width:'35%', alignSelf:'center' }}
       >
-      {/* <button
-        className='iconContainer '
-        style={{opacity:`0.26`}}
-       >
-        <UserSquareIcon />
-      </button> */}
-
       <Link
         to='accounting'
-        className='iconContainer'
+        className=''
         state={{ originRoute: pathname }}
       >
+         <div className="iconContainer bordered">
         <MenuIcon />
+         </div>
       </Link>
+
+      {isAuthenticated && 
+      <div className="iconContainer bordered">
+       <UserProfileBadge />
+      </div>
+      }
 
       <button
         onClick={handleSignOutClick}
-        className='iconContainer'
+        className=''
         style={{border:'none', }}
        >
-        <SignOutIcon />
+        <div className="iconContainer bordered">
+            <SignOutIcon />
+      </div>
+  
       </button>
       </div>
 

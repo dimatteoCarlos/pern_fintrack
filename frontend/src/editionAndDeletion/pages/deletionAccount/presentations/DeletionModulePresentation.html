@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTrack RTA: Ciclo de Vida del Módulo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #deff9a;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+
+        body { 
+            background-color: var(--bg-dark); 
+            color: var(--text-main); 
+            font-family: 'Urbanist', sans-serif; 
+            overflow-x: hidden;
+        }
+
+        /* Contenedor de Diapositivas Flexibles */
+        .slide { 
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            border-bottom: 2px solid #1e293b;
+            position: relative;
+            text-align: center;
+        }
+
+        .content-wrapper {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 { 
+            font-size: clamp(40px, 8vw, 80px); 
+            color: var(--primary); 
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        h2 { 
+            font-size: clamp(30px, 5vw, 48px); 
+            color: var(--primary); 
+            margin-bottom: 24px; 
+        }
+
+        p { 
+            font-size: clamp(18px, 2.5vw, 24px); 
+            color: var(--text-dim); 
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .tag { 
+            background: var(--primary); 
+            color: #000; 
+            padding: 6px 16px; 
+            border-radius: 99px; 
+            font-weight: 700; 
+            font-size: 14px; 
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        /* Grid Responsivo */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 30px; 
+            margin-top: 40px;
+            text-align: left;
+        }
+
+        .icon-box { 
+            background: rgba(30, 41, 59, 0.5); 
+            padding: 30px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(222, 255, 154, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .icon-box:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .icon-box i { 
+            font-size: 32px; 
+            color: var(--primary); 
+            margin-bottom: 15px; 
+            display: block;
+        }
+
+        .icon-box h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        /* Demo de Carga */
+        .loader-demo { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 20px; 
+            background: #000; 
+            padding: 24px 40px; 
+            border-radius: 16px; 
+            border: 1px solid var(--primary); 
+            margin-top: 20px;
+        }
+
+        .spinner { 
+            width: 40px; 
+            height: 40px; 
+            border: 4px solid rgba(222, 255, 154, 0.1); 
+            border-top-color: var(--primary); 
+            border-radius: 50%; 
+            animation: spin 1s linear infinite; 
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Footer de cada slide */
+        .slide-footer {
+            position: absolute;
+            bottom: 30px;
+            font-size: 14px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .slide { padding: 20px; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SLIDE 1: PORTADA -->
+<section class="slide">
+    <div class="content-wrapper">
+        <span class="tag">Módulo Account Deletion v2.0</span>
+        <h1>Ecosistema <span>RTA</span></h1>
+        <p>Integración de procesos asíncronos y visualización de impacto financiero.</p>
+    </div>
+    <div class="slide-footer">FINTRACK ARCHITECTURE 2024</div>
+</section>
+
+<!-- SLIDE 2: LOADING STATE -->
+<section class="slide">
+    <div class="content-wrapper">
+        <h2>01. Gestión de Espera</h2>
+        <p>Implementación de <strong>LoadingReportUI</strong> para una experiencia de usuario sin fricciones.</p>
+        
+        <div style="margin: 40px 0;">
+            <div class="loader-demo">
+                <div class="spinner"></div>
+                <span style="color: var(--primary); font-weight: 700; font-family: monospace;">{t('loadingReportText')}</span>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="icon-box">
+                <i class="fas fa-microchip"></i>
+                <h3>Asincronía Pura</h3>
+                <p style="font-size: 16px;">Sincronizado con el hook <code>useFetch</code> para manejar estados de carga globales.</p>
+            </div>
+            <div class="icon-box">
+                <i class="fas fa-vector-square"></i>
+                <h3>SVG Optimizado</h3>
+                <p style="font-size: 16px;">Animaciones fluidas por código, sin archivos de imagen pesados.</p>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">CARGA DE DATOS</div>
+</section>
+
+<!-- SLIDE 3: COMPONENTES -->
+<section class="slide">
+    <div class="content-wrapper">
+        <h2>02. Componentes UI Reutilizables</h2>
+        <p>Estructura modular basada en el sistema de diseño de FinTrack.</p>
+        
+        <div class="grid">
+            <div class="icon-box">
+                <i class="fas fa-chart-line"></i>
+                <h3>ImpactReportUI</h3>
+                <p style="font-size: 15px;">Muestra el balance neto y las cuentas afectadas antes de confirmar.</p>
+            </div>
+            <div class="icon-box">
+                <i class="fas fa-check-circle"></i>
+                <h3>StatusModalUI</h3>
+                <p style="font-size: 15px;">Feedback inmediato sobre el éxito de la operación (Anulación RTA).</p>
+            </div>
+            <div class="icon-box">
+                <i class="fas fa-info-circle"></i>
+                <h3>AccountDetailsUI</h3>
+                <p style="font-size: 15px;">Resumen persistente de la cuenta objetivo en la cabecera.</p>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">LIBRERÍA DE UI</div>
+</section>
+
+<!-- SLIDE 4: CONCLUSIÓN -->
+<section class="slide" style="background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);">
+    <div class="content-wrapper">
+        <i class="fas fa-shield-halved" style="font-size: 80px; color: var(--primary); margin-bottom: 30px;"></i>
+        <h2>Integridad Garantizada</h2>
+        <p>El flujo RTA asegura que la eliminación de cuentas críticas se realice bajo total supervisión del impacto contable.</p>
+        <div style="margin-top: 30px; font-weight: bold; color: var(--primary);">
+            Módulo Listo para Producción
+        </div>
+    </div>
+    <div class="slide-footer">FIN DEL RECORRIDO</div>
+</section>
+
+</body>
+</html>

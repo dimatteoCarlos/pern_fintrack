@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTA - Retrospective Total Annulment Deep Dive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Urbanist:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0b0f1a;
+            --accent: #d4ff70;
+            --secondary: #6366f1;
+            --text: #f1f5f9;
+            --dim: #64748b;
+            --card: #161b2a;
+            --nav-bg: rgba(11, 15, 26, 0.9);
+            --danger: #ff4d4d;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            font-family: 'Urbanist', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .top-nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 15px 40px;
+            background: var(--nav-bg);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 5px;
+            background: #000;
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .lang-btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--dim);
+            cursor: pointer;
+            font-weight: 700;
+            transition: 0.3s;
+            font-size: 13px;
+        }
+
+        .lang-btn.active {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .slide {
+            min-height: 100vh;
+            padding: 120px 20px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .container { max-width: 1100px; width: 100%; }
+
+        h1 { font-size: clamp(40px, 6vw, 64px); color: var(--accent); margin-bottom: 15px; line-height: 1.1; }
+        .method-tag { font-family: 'Fira Code', monospace; color: var(--secondary); font-size: 18px; margin-bottom: 30px; display: block; }
+        
+        h2 { font-size: 32px; color: var(--text); margin-bottom: 30px; display: flex; align-items: center; gap: 15px; }
+        h2 i { color: var(--accent); }
+
+        .desc-text { font-size: 19px; color: var(--dim); line-height: 1.6; margin-bottom: 40px; max-width: 800px; }
+
+        /* RTA Logic Box */
+        .rta-concept {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 40px;
+            border-radius: 24px;
+            border: 1px solid rgba(212, 255, 112, 0.2);
+            margin-bottom: 60px;
+        }
+        .rta-concept h3 { font-size: 24px; color: var(--accent); margin-bottom: 20px; }
+        .rta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .rta-step {
+            background: rgba(255,255,255,0.03);
+            padding: 20px;
+            border-radius: 15px;
+        }
+        .rta-step b { color: var(--secondary); display: block; margin-bottom: 8px; font-size: 14px; text-transform: uppercase; }
+
+        /* UI Components Grid */
+        .comp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+        .comp-card {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.4s ease;
+        }
+        .comp-card:hover { border-color: var(--accent); transform: translateY(-5px); }
+        .comp-card h4 { font-family: 'Fira Code', monospace; font-size: 19px; color: var(--accent); margin-bottom: 15px; }
+        
+        .interaction-list { list-style: none; margin-top: 20px; }
+        .interaction-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--dim);
+        }
+        .interaction-list li i { color: var(--accent); font-size: 12px; }
+
+        @media (max-width: 768px) {
+            .rta-concept { padding: 25px; }
+            h1 { font-size: 38px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="top-nav">
+    <div style="font-weight: 800; font-size: 22px; letter-spacing: -1px;">FINTRACK <span style="color: var(--accent);">PRO</span></div>
+    <div class="lang-switcher">
+        <button class="lang-btn active" onclick="setLang('es')">ES</button>
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+    </div>
+</nav>
+
+<!-- HERO: RTA METHOD -->
+<section class="slide">
+    <div class="container">
+        <span class="method-tag" data-t="m-tag">Metodología de Eliminación</span>
+        <h1 data-t="h-title">Retrospective Total Annulment (RTA)</h1>
+        <p class="desc-text" data-t="h-desc">Un sistema de borrado lógico diseñado para revertir el impacto financiero de una cuenta en toda la cadena histórica de transacciones.</p>
+        
+        <div class="rta-concept">
+            <h3 data-t="rta-what">¿Qué es RTA?</h3>
+            <div class="rta-grid">
+                <div class="rta-step">
+                    <b data-t="rta-s1-h">Retrospectiva</b>
+                    <p data-t="rta-s1-p">Analiza hacia atrás todas las transacciones vinculadas a la cuenta objetivo.</p>
+                </div>
+                <div class="rta-step">
+                    <b data-t="rta-s2-h">Total</b>
+                    <p data-t="rta-s2-p">No deja residuos; ajusta los balances de las cuentas contrapartes para neutralizar el impacto.</p>
+                </div>
+                <div class="rta-step">
+                    <b data-t="rta-s3-h">Anulación</b>
+                    <p data-t="rta-s3-p">En lugar de solo borrar, emite una señal de ajuste que garantiza que la contabilidad cuadre.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- UI COMPONENTS INTEGRATION -->
+<section class="slide">
+    <div class="container">
+        <h2 data-t="s2-title"><i class="fas fa-cubes"></i> Componentes de Soporte RTA</h2>
+        <div class="comp-grid">
+            
+            <!-- ReportErrorUI -->
+            <div class="comp-card">
+                <h4>ReportErrorUI</h4>
+                <p data-t="c1-p">Captura fallos críticos durante el cálculo del impacto RTA (ej. pérdida de conexión o ID inválido).</p>
+                <ul class="interaction-list">
+                    <li data-t="c1-l1"><i class="fas fa-circle"></i> Traduce códigos de error API</li>
+                    <li data-t="c1-l2"><i class="fas fa-circle"></i> Ofrece reintento de carga</li>
+                </ul>
+            </div>
+
+            <!-- ProceedButtonUI -->
+            <div class="comp-card">
+                <h4>ProceedButtonUI</h4>
+                <p data-t="c2-p">El disparador del borrado. Implementa seguridad reactiva para evitar ejecuciones múltiples.</p>
+                <ul class="interaction-list">
+                    <li data-t="c2-l1"><i class="fas fa-circle"></i> Estado 'disabled' en ejecución</li>
+                    <li data-t="c2-l2"><i class="fas fa-circle"></i> Feedback visual de carga</li>
+                </ul>
+            </div>
+
+            <!-- SuccessMessageUI -->
+            <div class="comp-card">
+                <h4>SuccessMessageUI</h4>
+                <p data-t="c3-p">Notificación post-borrado. Confirma que la base de datos ha sido purgada y ajustada.</p>
+                <ul class="interaction-list">
+                    <li data-t="c3-l1"><i class="fas fa-circle"></i> Feedback positivo animado</li>
+                    <li data-t="c3-l2"><i class="fas fa-circle"></i> Cierre automático temporizado</li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<script>
+    const translations = {
+        es: {
+            "m-tag": "Metodología de Eliminación",
+            "h-title": "Retrospective Total Annulment (RTA)",
+            "h-desc": "Un sistema de borrado lógico diseñado para revertir el impacto financiero de una cuenta en toda la cadena histórica de transacciones.",
+            "rta-what": "¿Qué es RTA?",
+            "rta-s1-h": "Retrospectiva",
+            "rta-s1-p": "Analiza hacia atrás todas las transacciones vinculadas a la cuenta objetivo.",
+            "rta-s2-h": "Total",
+            "rta-s2-p": "No deja residuos; ajusta los balances de las cuentas contrapartes para neutralizar el impacto.",
+            "rta-s3-h": "Anulación",
+            "rta-s3-p": "En lugar de solo borrar, emite una señal de ajuste que garantiza la integridad contable.",
+            "s2-title": "Componentes de Soporte RTA",
+            "c1-p": "Captura fallos críticos durante el cálculo del impacto RTA (ej. pérdida de conexión o ID inválido).",
+            "c1-l1": "Traduce códigos de error API",
+            "c1-l2": "Ofrece reintento de carga",
+            "c2-p": "El disparador del borrado. Implementa seguridad reactiva para evitar ejecuciones múltiples.",
+            "c2-l1": "Estado 'disabled' en ejecución",
+            "c2-l2": "Feedback visual de carga",
+            "c3-p": "Notificación post-borrado. Confirma que la base de datos ha sido purgada y ajustada.",
+            "c3-l1": "Feedback positivo animado",
+            "c3-l2": "Cierre automático temporizado"
+        },
+        en: {
+            "m-tag": "Deletion Methodology",
+            "h-title": "Retrospective Total Annulment (RTA)",
+            "h-desc": "A logical deletion system designed to revert the financial impact of an account across the entire historical transaction chain.",
+            "rta-what": "What is RTA?",
+            "rta-s1-h": "Retrospective",
+            "rta-s1-p": "Looks back at all transactions linked to the target account.",
+            "rta-s2-h": "Total",
+            "rta-s2-p": "Leaves no residue; adjusts counterparty account balances to neutralize impact.",
+            "rta-s3-h": "Annulment",
+            "rta-s3-p": "Instead of just deleting, it issues an adjustment signal to ensure accounting integrity.",
+            "s2-title": "RTA Support Components",
+            "c1-p": "Captures critical failures during RTA impact calculation (e.g., connection loss or invalid ID).",
+            "c1-l1": "Translates API error codes",
+            "c1-l2": "Offers retry functionality",
+            "c2-p": "The deletion trigger. Implements reactive safety to prevent multiple executions.",
+            "c2-l1": "Disabled state while executing",
+            "c2-l2": "Visual loading feedback",
+            "c3-p": "Post-deletion notification. Confirms the database has been purged and adjusted.",
+            "c3-l1": "Animated positive feedback",
+            "c3-l2": "Timed automatic closure"
+        }
+    };
+
+    function setLang(lang) {
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText.toLowerCase() === lang);
+        });
+
+        document.querySelectorAll('[data-t]').forEach(el => {
+            const key = el.getAttribute('data-t');
+            if(translations[lang][key]) {
+                el.innerHTML = translations[lang][key];
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
