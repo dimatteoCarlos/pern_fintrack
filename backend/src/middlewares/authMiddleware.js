@@ -1,4 +1,6 @@
 // src/middleware/authMiddleware.js
+// getAuthToken,clearAccessTokenFromCookie, verifyJWTToken, handleTokenError, verifyToken,verifyUser, verifyAdmin
+
 import jwt from 'jsonwebtoken';
 import { createError } from '../utils/errorHandling.js';
 import { pool } from "../db/configDB.js"; // 
