@@ -1,5 +1,6 @@
 //temporary user id - while developing
 export const USER_ID: string = import.meta.env.VITE_USER_ID;
+//api auth routes endpoints
 //http://localhost:5000/api/
 //authentication
 // http://localhost:5000/api/auth/
@@ -13,11 +14,24 @@ export const url_signout: string = 'http://localhost:5000/api/auth/sign-out';
 //refresh-token
 export const url_refrestoken: string =
   'http://localhost:5000/api/auth/refresh-token';
+
+export const url_validate_session = `http://localhost:5000/api/auth/validate-session`;
 //-----------------------
+//fintrack routes endpoints
 //http://localhost:5000/api/fintrack
 export const BASE_URL: string = import.meta.env.VITE_API_URL_APP;
 
-//account_types list
+// ===================================
+// CHANGE PASSWORD && UPDATE USER DATA
+// ===================================
+export const url_change_password = `http://localhost:5000/api/user/change-password`;
+
+export const url_update_user = `http://localhost:5000/api/user/update-profile`;
+
+// ===================================
+// FINTRACK FUNCTIONALITIES APP ENDPOINTS
+// ===================================
+//aCCOUNT_TYPES LIST
 //http://localhost:5000/api/fintrack/account/type/list
 export const url_account_type_list: string = BASE_URL + '/account/type/list';
 //-----------------------------------
@@ -182,11 +196,5 @@ export const url_report_of_affected_accounts = (targetAccountId:string | number)
 
 export const url_account_delete  =(targetAccountId:string | number)=>(`${BASE_URL}/account/delete/${targetAccountId}`);
 
-// ===================================
-// CHANGE PASSWORD && UPDATE USER DATA
-// ===================================
 
-export const url_change_password = `${BASE_URL}/auth/change_password`;
-export const url_update_user = `${BASE_URL}/user/update_profile`;
-export const url_validate_session = `${BASE_URL}/user/validate_session`;
 
