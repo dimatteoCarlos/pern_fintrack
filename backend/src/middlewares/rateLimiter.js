@@ -68,16 +68,16 @@ export const passwordChangeLimiter = rateLimit({
    res.status(429).json(
     createRateLimitResponse(
     'PasswordChangeRateLimitExceeded',
-    'Security: Too many password change attempts. Try again in 15 minutes.',
+    'Security: Too many password change attempts. Try again in 5 minutes.',
     passwordChangeLimiter.windowMs
     )
    )
   }
  });
 
-// ==========================================
+// =====================================
 // 🔐 AUTHENTICATION RATE LIMITER (for login/register)
-// ==========================================
+// ======================================
 // Limits: 5 login attempts per 15 minutes per IP
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -85,7 +85,7 @@ export const authLimiter = rateLimit({
   message: { 
     success: false,
     error: 'AuthRateLimitExceeded',
-    message: 'Too many authentication attempts. Please try again in 15 minutes.'
+    message: 'Too many authentication attempts. Please try again in 5 minutes.'
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -110,7 +110,7 @@ export const globalLimiter = rateLimit({
   max: 100, // Maximum 100 requests per window per IP
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: false,
+  skipSuccessfulRequests: true,
   keyGenerator: (req) => req.ip,
   
   handler: (req, res) => {
