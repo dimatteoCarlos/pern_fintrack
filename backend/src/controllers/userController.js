@@ -3,6 +3,8 @@
 import { hashed, isRight } from '../utils/authUtils/authFn.js';
 import { createError } from '../utils/errorHandling.js';
 import { pool } from '../db/configDB.js';
+import pc from 'picocolors';
+
 
 //getUserById
 //GET http://localhost:5000/api/user/f7c5abf9-89e5-4891-bfb8-6dfe3022f226
@@ -120,79 +122,237 @@ export const updateUserById = async (req, res, next) => {
     );
   }
 };
+
 //--------
-//changePassword
+// 🎯 UPDATE USER PROFILE CONTROLLER 
+export const updateProfile = async (req, res, next) => {
+console.log(pc.bgBlueBright('controller:', 
+ 'updateProfile')
+)
+
+// 🎯 GET CLIENT FOR TRANSACTION MANAGEMENT  
+ const client = await pool.connect();
+
+ try {
+// =====================================
+// 🔍 EXTRACT AND VALIDATE BASIC INPUTS
+// =====================================
+  const { userId } = req.user;
+  const updateData = req.validatedData;//req.body //Data Validated by zod.
+  
+  // ✅ VALIDATE DATA TO UPDATE
+  if(!updateData || Object.keys(updateData).length===0){
+
+   return res.status(400).json({
+    success:false,
+    error:'ValidationError',
+    message:'No valid fields provided for update'
+   })
+  }
+    
+  // ✅ TRANSACTION
+  await client.query('BEGIN');
+  //1. Check user existence
+  const userCheck = await client.query(
+   'SELECT 1 FROM users WHERE user_id =$1', [userId]
+  );
+  if(userCheck.rowCount===0){
+   await client.query('ROLLBACK');
+   return next(createError(404,'User not found'));
+  }
+  //2. Build a dynamic query with just provided fields.
+  // Reference: Also, in accountEdtiController the approach used by patchAccountById could be used.
+  const updates = [];
+  const values =[];
+  let paramCount =1;
+
+ //Process just provided fields from validatedData
+  //firstname 
+  if(updateData.firstname !==undefined){
+   updates.push(`user_firstname=$${paramCount}`);
+   values.push(updateData.firstname)
+   paramCount++;
+  }
+//lastname 
+  if(updateData.lastname !==undefined){
+   updates.push(`user_lastname=$${paramCount}`);
+   values.push(updateData.lastname)
+   paramCount++;
+  }
+//currency 
+  if(updateData.currency !==undefined){
+  //verify if currency exists
+  const currencyResult = await client.query(
+  'SELECT currency_id FROM currencies WHERE currency_code = $1',
+   [updateData.currency]
+  );
+    
+  if (currencyResult.rowCount === 0) {
+   await client.query('ROLLBACK');
+   return next(createError(400, `Currency '${updateData.currency}' is not supported`));
+  }
+    
+   updates.push(`currency_id = $${paramCount}`);
+   values.push(currencyResult.rows[0].currency_id);
+   paramCount++;
+  }
+//contact 
+  if(updateData.contact !==undefined){
+// contact can be null (to delete the contact)
+   updates.push(`user_contact=$${paramCount}`);
+   values.push(updateData.contact);
+   paramCount++;
+  }
+ 
+ //If there are no valid fields to update
+  if (updates.length === 0) {
+    await client.query('ROLLBACK');
+    return res.status(400).json({
+      success: false,
+      error: 'ValidationError',
+      message: 'No valid fields to update'
+    });
+  }
+
+ // Always update updated_at
+  updates.push(`updated_at = CURRENT_TIMESTAMP`);
+
+//2. UPDATE
+  values.push(userId);
+  const updateQuery = `
+   UPDATE users
+   SET ${updates.join(', ')}
+   WHERE user_id = $${paramCount}
+   RETURNING user_id, username, email, user_firstname, user_lastname, user_contact, currency_id
+  `;
+
+  const updatedUserResult = await client.query(updateQuery, values);
+
+  //4. Get the complete data for the response
+  const fullUserData = await client.query({
+   text: `
+   SELECT u.user_id, u.username, u.email,
+    u.user_firstname, u.user_lastname,
+    u.user_contact, c.currency_code as currency, c.currency_name,
+    ur.user_role_name as role
+   FROM users u
+   JOIN currencies c ON c.currency_id = u.currency_id
+   JOIN user_roles ur ON ur.user_role_id = u.user_role_id
+   WHERE u.user_id = $1`,
+    values: [userId] 
+  });
+
+  await client.query('COMMIT');
+  
+  //5. STANDARD RESPONSE
+  // return updated user info if dev env
+   res.status(200).json({
+    success: true,
+    message: 'Profile updated successfully',
+    user: fullUserData.rows[0],
+    });
+    
+} catch (error) {
+    await client.query('ROLLBACK');
+    console.error(`[UPDATE PROFILE ERROR] User: ${userId}, IP: ${req.ip}`, error);
+    next(createError(500, 'Internal server error'));
+  } finally {
+    client.release();
+  }
+};
+
+//=========================
+// 🎯 CHANGE USER PASSWORD
+//=========================
 //PUT http://localhost:5000/api/user/change-password
 export const changePassword = async (req, res, next) => {
-  console.log('changePassword');
+  console.log(pc.redBright('changePassword'));
+  const client = await pool.connect();
+
   try {
     const { userId } = req.user;
-    let { currentPassword, newPassword, confirmPassword } = req.body;
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    let { currentPassword, newPassword } = req.validatedData; //Validated by zod
+    await client.query('BEGIN');
+
+    if (!newPassword ) {
       return res
         .status(400)
-        .json({ status: 400, message: 'all fields are required' });
-    }
-    if (newPassword !== confirmPassword) {
-      return res
-        .status(401)
-        .json({ status: 400, message: 'new passwords do not match' });
+        .json({ status: 400, message: 'NEW PASSWORD WAS NOT RECEIVED' });
     }
 
-    const userExistsResult = await pool.query({
-      text: `
-    SELECT EXISTS (SELECT 1 FROM users WHERE user_id = $1)
-     `,
-      values: [userId],
-    });
-    const userExists = userExistsResult.rows[0].exists;
+    // if (newPassword !== confirmPassword) {
+    //   return res
+    //     .status(401)
+    //     .json({ status: 400, message: 'new passwords do not match' });
+    // }
 
-    if (!userExists) {
-      return next(createError(404, 'user not found'));
+    //1. GET USER AND CURRENT HASH
+    const userResult = await client.query(
+     `SELECT u.password_hashed 
+     FROM users u
+     WHERE u.user_id = $1
+     `, 
+     [userId]
+    );
+
+    if(userResult.rowCount === 0){
+     await client.query('ROLLBACK');
+     return next(createError(404, 'User not found'));
     }
-
-    const userInfo = await pool.query({
-      text: `SELECT password_hashed FROM users WHERE user_id = $1`,
-      values: [userId],
-    });
+    
+    //2. VERIFY CURRENT PASSWORD
 
     const isMatch = await isRight(
       currentPassword,
-      userInfo?.rows[0].password_hashed
+      userResult.rows[0].password_hashed
     );
     // console.log({ isMatch });
 
     if (!isMatch) {
-      return res
-        .status(401)
-        .json({ status: 401, message: 'Invalid current password' });
+     await client.query('ROLLBACK');
+     return res.status(401).json({ 
+       success: false,
+       error: 'InvalidCredentials',
+       message: 'Current password is incorrect'
+      });
     }
 
-    let hashedPassword = await hashed(newPassword);
-
-    await pool.query({
-      text: `UPDATE users SET password_hashed = $1 WHERE user_id = $2`,
-      values: [hashedPassword, userId],
+   //3. HASH NEW PASSWORD
+    let newHashedPassword = await hashed(newPassword);
+   
+   //4. UPDATE PASSWORD
+   await client.query({
+      text: `UPDATE users SET password_hashed = $1, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_id = $2`,
+      values: [newHashedPassword, userId],
     });
+    
+    await client.query('COMMMIT');
 
-    //cleanse passwords variables
-
-    delete req.user;
-    delete userInfo.rows;
+   //6. SCRUB SENSITIVE VARIABLES
+    // delete req.user;
+    req.validatedData = undefined;  
+    delete userResult.rows;
     (newPassword = undefined),
       (currentPassword = undefined),
       (confirmPassword = undefined),
-      (hashedPassword = undefined);
-
-    res
-      .status(200)
-      .json({ status: 200, message: 'password succssfully changed' });
+      (newHashedPassword = undefined);
+   
+   //7. STANDARD RESPONSE
+    res.status(200).json({ status: 200, success:true, message: 'Password changed successfully. Please sign in again with your new password.'});
   } catch (error) {
-    console.error(error);
+    await client.query('ROLLBACK');
+    console.error('changePassword error:', error);
+    //Handling for rate limiting
+    if(error.status === 429){
+     return next(error);//Passing the error to rate limiter
+    }
     next(
       createError(500, error.message || 'internal user password change error')
-    );
-  }
+    )
+  } finally {
+     client.release();
+    };
 };
 
-//---
+
