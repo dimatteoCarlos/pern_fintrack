@@ -1,6 +1,6 @@
 // src/utils/authFetch.ts
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { url_refrestoken, url_update_user } from "../../endpoints";
+import { url_change_password, url_refrestoken, url_update_user } from "../../endpoints";
 import { logoutCleanup } from './logoutCleanup';
 
 /**
@@ -38,12 +38,12 @@ export const authFetch = async <T>(
     return authFetchResponse;
 
   } catch (error) {
-    // 3️⃣ HANDLE 401 UNAUTHORIZED ERRORS
-    // Only attempt refresh if: it is a 401, NOT the profile update endpoint, and a valid Axios error
+   // 3️⃣ HANDLE 401 UNAUTHORIZED ERRORS
+   // Only attempt refresh if: it is a 401, NOT the profile update endpoint, and a valid Axios error
     if (
       axios.isAxiosError(error) && 
       error.response?.status === 401 && 
-      !url.includes(url_update_user)
+      !url.includes(url_update_user)  && !url.includes(url_change_password)
     ) {
 
       try {
@@ -84,7 +84,7 @@ export const authFetch = async <T>(
           hasCookie: document.cookie.includes('refreshToken')
         });
         
-        // 🟢 Trigger global cleanup and notify user
+    // 🟢 Trigger global cleanup and notify user
         logoutCleanup(true);
         throw refreshError; 
       }
