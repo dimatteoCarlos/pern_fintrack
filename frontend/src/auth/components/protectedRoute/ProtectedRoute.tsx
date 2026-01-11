@@ -1,4 +1,4 @@
-//src/pages/auth/ProtectedRoute.tsx
+// frontend\src\auth\components\protectedRoute\ProtectedRoute.tsx
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth.ts';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx'
@@ -22,10 +22,6 @@ const ProtectedRoute = () => {
   }, [isCheckingAuth, isAuthenticated, setShowSignInModalOnLoad, showSignInModalOnLoad]);
   */
 
-//===================
-if (!isAuthenticated && !isCheckingAuth) {
-  return <Navigate to='/auth' replace />; // Sin state
-}
 //===================
 //🚨 SHOW LOADING SPINNER WHILE CHECKING AUTH
  if (isCheckingAuth) {
