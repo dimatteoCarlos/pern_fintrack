@@ -98,6 +98,7 @@ export type UserResponseDataType ={
   user_lastname: string;
   role:string;
   currency: string;
+  contact?:string;
   // currency_id?: number;
   // user_role_id?: number;
 }
@@ -113,6 +114,7 @@ export type UserDataType =
  user_lastname?: string;
  currency?: string;    
  role?: string;  
+ contact?:string;
 };
 //-------------------------------
 //sign-in
@@ -151,15 +153,47 @@ export interface SuccessResponseType<T> { // Make SuccessResponse generic
   accessToken?: string; // Optional: Access token
   refreshToken?: string; // Optional: Refresh token
 }
+
+// ===============
+// 🚨 USER PROFILE UPDATE AND PASSWORD CHANGE
+// ===============
+export type PasswordChangeResponseType={
+ success:boolean;
+ message:string;
+ // user?:
+}
+export type ProfileUpdateResponseType ={
+ success:boolean;
+ message:string;
+ user?:UserResponseDataType;
+}
+
+export type UpdateProfileFormData ={
+  firstname?: string;
+  lastname?: string;
+  currency?: 'usd' | 'cop' | 'eur';
+  contact?: string | null;
+}
 // ===============
 // 🚨 ERROR TYPES
 // ===============
 //Error format backend response
 export type ErrorResponseType = {
-  status: number;      //  HTTP status code
+ status: number;      //  HTTP status code
+  error:string;
   message: string;    //  Descriptive error messager
-  errors?: unknown;         //  Detailed error information optional
+  details?:{
+   fieldErrors?:Record<string,string[]>;
+   formErrors?:string[];
+  }
+//  Detailed error information optional
   timestamp?: string;  // Timestamp of the error (opcional)
 }
+
+export type AuthErrorType = 
+  | { type: 'validation'; fieldErrors: Record<string, string[]>; }
+  | { type: 'rate_limit'; retryAfter: number; }
+  | { type: 'session_expired'; }
+  | { type: 'network'; message: string; };
 
 
