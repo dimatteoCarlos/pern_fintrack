@@ -3,24 +3,24 @@
 import { ZodType  } from 'zod';
 import { ValidationMessagesType } from '../types';
 
-//ValidationMessagesType:structure data type that validateForm will return when validation errors are found. T is form fields names.
+//ValidationMessagesType:structure data type that validateForm will return when validation errors are found. TFormData is form fields names.
 
-// export type ValidationMessagesType<T extends Record<string, unknown>> = {
-//   [K in keyof T]?: string;
+// export type ValidationMessagesType<TFormData extends Record<string, unknown>> = {
+//   [K in keyof TFormData]?: string;
 // };
 
-export type ValidationResultType<T extends Record<string, unknown>> = {
-  errors:ValidationMessagesType<T>;
-  data:T | null;
+export type ValidationResultType<TFormData extends Record<string, unknown>> = {
+  errors:ValidationMessagesType<TFormData>;
+  data:TFormData | null;
 };
 
 //-------------------------------------
 //Validate a data object against zod schema
 //Transform zod errors to render
-export function validateForm<T extends Record<string, unknown>>(
-  schema: ZodType<T>, // Recibe un esquema Zod (como expenseSchema)
+export function validateForm<TFormData extends Record<string, unknown>>(
+  schema: ZodType<TFormData>, // Recibe un esquema Zod (como expenseSchema)
   data: unknown // Recibe los datos del formulario (ej. expenseData)
-): ValidationResultType<T> {
+): ValidationResultType<TFormData> {
  //Validacion del esquema de forma 'segura', `safeParse` no lanza un error si la validación falla, sino que devuelve un objeto.
  const result = schema.safeParse(data);
 //verifica el resultado de la validacion
@@ -35,7 +35,7 @@ if (result.success) {
   };
   } else {
     // Si la validación falla, procesa los errores.
-    const errors: ValidationMessagesType<T> = {}; // Objeto para almacenar los errores formateados
+    const errors: ValidationMessagesType<TFormData> = {}; // Objeto para almacenar los errores formateados
 
     // Itera sobre cada "issue" (problema/error) que Zod encontró.
     result.error.issues.forEach((issue) => {
@@ -46,8 +46,8 @@ if (result.success) {
       // Asegura que `fieldName` sea un string válido.
       if (fieldName && typeof fieldName === 'string') {
       // Asigna el mensaje de error de Zod (issue.message) al campo correspondiente.
-        errors[fieldName as keyof T] = issue.message;
-        // console.log('ValidateForm Errors', errors[fieldName as keyof T])
+        errors[fieldName as keyof TFormData] = issue.message;
+        // console.log('ValidateForm Errors', errors[fieldName as keyof TFormData])
       }
     });
     // console.log('formatted Errors', errors)

@@ -9,7 +9,9 @@ import { useEffect } from 'react';
 import { useAuthStore } from '../stores/useAuthStore.ts';
 
 // AXIOS
-import { AxiosRequestConfig } from 
+import axios
+// { AxiosRequestConfig }
+ from 
 'axios';
 
 // FOR PROGRAMMATIC NAVIGATION
@@ -37,6 +39,8 @@ import { INITIAL_PAGE_ADDRESS, LOCAL_STORAGE_KEY } from '../../helpers/constants
 // TYPESCRIPT DEFINITIONS
 import {
  AuthSuccessResponseType,
+ PasswordChangeResponseType,
+ ProfileUpdateResponseType,
  SignInCredentialsType,
  SignInResponseType,
  SignUpCredentialsType,
@@ -44,6 +48,7 @@ import {
  UserResponseDataType,
 
 } from '../types/authTypes.ts';
+import { CurrencyType } from '../../types/types.ts';
 //----------------------------------
 // =================================
 // 🛠️ DATA TRANSFORMATION UTILITIES
@@ -340,36 +345,22 @@ return 'An unexpected error occurred';
  
 //----------------------------
 // 🚨 6. SIGN OUT (DELEGATED TO CLEANUP) 🚨
-//version using normal fetch
-  // Asynchronous function to handle user sign-out
-//   const handleSignOut = async () => {
-//    try {
-//     // ✅ FETCH FOR LOGOUT
-//     await fetch(url_signout, {
-//       method:'POST',
-//       credentials:'include',
-//     })
-//     } catch (error) {
-//       console.log('Logout API error')
-//     }finally{
-// // ✅ SAFETY CLEANING
-//    logoutCleanup(false);
-//     }
-// };
-//========
 //version using authFetch
 const handleSignOut = async()=>{
+
  try {
   await authFetch(url_signout, {method:'POST'});
+  // logoutCleanup(false);
 
  } catch (err:unknown) {
   console.log('⚠️ Logout API call failed, proceeding with client cleanup');
+
   }finally {
-   logoutCleanup(false);
+   logoutCleanup(false);//'manual' for voluntary logout
   }
 }
 //------------------------------
-// 7. CHANGE PASSWORD
+// 7. 🎯 PASSWORD CHANGE OPERATION
 //------------------------------
  /**
    * Changes user password with current password verification
@@ -388,31 +379,122 @@ const handleSignOut = async()=>{
     clearError();
     clearSuccessMessage();
     setIsLoading(true);
-    try {
-      const response = await authFetch<PasswordChangeResponseType>(url_change_password, {
-        method: 'POST',
-        data: { currentPassword, newPassword, confirmPassword }
-      });
 
-      setSuccessMessage(response.data.message || 'Password updated successfully!');
-      return true;
+    try {
+     const response = await authFetch<PasswordChangeResponseType>(url_change_password, {
+       method: 'POST',
+       data: { currentPassword, newPassword, confirmPassword }
+     });
+
+     console.log("🔐 handlePasswordChange ~ response:", response.data);
+
+     const { success, message } = response.data;
+
+  // ✅ VALIDATE RESPONSE STRUCTURE
+    if (success === undefined) {
+     throw new Error('Invalid server response format');
+    }
+    
+    if(success){
+  // ✅ PASSWORD CHANGE SUCCESSFUL
+    const successMessage = message || 'Password changed successfully. Please sign in again with your new password.';
+    setSuccessMessage(successMessage);
+
+  // 🚨 SECURITY: Invalidate current session after password change
+  // User should re-authenticate with new password
+   setTimeout(() => {
+    logoutCleanup(false); // Manual logout (not expired)
+   }, 3000); // Give user 3 seconds to read success message
+   return { success: true, message: successMessage, requiresReauth: true };
+
+   }else{
+   // ❌ SERVER RETURNED success: false
+    const errorMsg = message || 'Password change failed';
+    setError(errorMsg);
+
+    return { success: false, error: errorMsg };
+
+    }
 
    } catch (err: unknown) {
-      const errorMessage = extractErrorMessage(err) || 'Password update failed. Please try again.';
-       setError(errorMessage);
-      return false;
-      }finally {
-        setIsLoading(false);
+ // 🔐 SPECIAL HANDLING FOR 401 IN SECURITY-CRITICAL ENDPOINT
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+   // authFetch excluded this endpoint from silent refresh
+   // Token expired during password change - HIGH SECURITY RISK
+    logoutCleanup(true); // 'expired' reason
+    const errorMessage = 'Session expired for security. Please login again to change your password.';
+    setError(errorMessage);
+    return { 
+     success: false, 
+     error: errorMessage, 
+     sessionExpired: true,
+     securityCritical: true 
+     };
     }
+
+ // ⏰ HANDLE RATE LIMIT ERROR (429)
+ if(axios.isAxiosError(err) && err.response?.status === 429){
+  const errorData = err.response.data;
+  const retryAfter = errorData?.retryAfter || 900;
+  const minutes = Math.ceil(retryAfter/60);
+
+  const rateLimitMessage = `Security: Too many password change attempts. Please try again in ${minutes} minute${minutes !==1?'s':''}.`;
+  setError(rateLimitMessage);
+
+  return {
+   success:false,
+   error:rateLimitMessage,
+   rateLimit:true,
+   retryAfter,
+   minutes
   };
+ }
+
+// 📋 HANDLE VALIDATION ERRORS (400)
+if(axios.isAxiosError(err) && err.response?.status === 400){
+ const errorData = err.response.data;
+
+ //Extract user-friendly message
+ let errorMessage = errorData?.message || 'Invalid password data';
+
+ //Special handling for 'current password incorrect'
+ if(errorMessage.toLowerCase().includes('current password') ||
+ errorMessage.toLowerCase().includes('invalid credentials')){
+  errorMessage='Current password is incorrect'
+ }
+
+ setError(errorMessage);
+
+ //Pass field errors if available
+ if(errorData?.details?.fieldErrors){
+  return {
+   success:false,
+   error:errorMessage,
+   fieldErrors:errorData.details.fieldErrors
+  };
+ }
+
+ return {success:false, error:errorMessage};
+}
+
+// 🌐 GENERIC ERROR HANDLING
+const errorMessage = extractErrorMessage(err) || 'Error changing password';
+setError(errorMessage);
+
+return {success: false, error: errorMessage};
+
+ }finally {
+   setIsLoading(false);
+  }
+ };
 
 //------------------------
 // 8. UPDATE USER PROFILE
 //------------------------
-  const handleUpdateUserProfile = async (profileData: { 
+  const handleUpdateUserProfile = async (profileData: {
    firstname: string, lastname: string,
    contact: string
-   // currency: string, 
+   currency: CurrencyType, 
    }) => {
     clearError();
     clearSuccessMessage();
@@ -420,44 +502,112 @@ const handleSignOut = async()=>{
 
     try {
      const response = await authFetch<ProfileUpdateResponseType>(url_update_user, {
-        method: 'PUT',
+        method: 'PATCH',
         data: profileData
       });
-      // 🟢 PREFER server response for data accuracy
-     if (response.data?.user) {
-        setUserData(mapUserResponseToUserData(response.data.user) as UserDataType);
-      }
 
-     setSuccessMessage(response.data.message || 'Profile updated successfully!');
-     return true;
-    } catch (err: unknown) {
-     // 🟢 IMPORTANT: 401 from this endpoint means "incorrect current password"
-     const errorMessage = extractErrorMessage(err) || 'Error updating profile.'
-        setError(errorMessage);
-      return false;
-    } finally {
-      setIsLoading(false);
+     console.log("🚀 ~ handleUpdateUserProfile ~ response:", response.data);
+
+     const { success, message, user } = response.data;
+
+    // ✅ Validate response structure
+    if (success === undefined) {
+      throw new Error('Invalid server response format');
     }
-  };
+
+    // 🟢 PREFER server response for data accuracy
+     if (success && user) {
+     // ✅ Update user data in store 
+      setUserData(mapUserResponseToUserData(user) as UserDataType);
+      setSuccessMessage(message || 'Profile updated successfully');
+      return { success: true, user };
+      }else {
+     // Server returned success: false
+      const errorMsg = message || 'Profile update failed';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+  } catch (err: unknown) {
+  // ✅ Special handling for 401 in critical endpoints
+  if (axios.isAxiosError(err) && err.response?.status === 401) {
+  // authFetch excluded this endpoint from silent refresh
+  // Session expired during sensitive operation - force logout
+  logoutCleanup(true); // 'expired' reason
+  const errorMessage = 'Session expired for security. Please login again.';
+  setError(errorMessage);
+  return { success: false, error: errorMessage, sessionExpired: true };
+   }
+
+ // ✅ Extract error message (handles 429, 400 validation errors, etc.)
+ const errorMessage = extractErrorMessage(err) || 'Error updating profile';
+  setError(errorMessage);
+ 
+ // ✅ Check if it's a validation error to pass fieldErrors
+ if (axios.isAxiosError(err) && err.response?.status === 400) {
+  const errorData = err.response.data;
+  if (errorData?.details?.fieldErrors) {
+   return { 
+     success: false, 
+     error: errorMessage,
+     fieldErrors: errorData.details.fieldErrors 
+   };
+  }
+} 
+ return { success: false, error: errorMessage };
+
+  } finally {
+     setIsLoading(false);
+  }
+ };
+
 //------------------------------
 //9. function to use in components
 //------------------------------
-const authenticatedFetch = async (url: string, options: AxiosRequestConfig = {}) => {
-  try {
-    const response = await authFetch(url, options)
-    return response
-  } catch (error) {
-    // Solo relanzamos si no es el error especial de logout forzado, ya que authFetch ya manejó la UI y la redirección.
-    if (error instanceof Error && error.message === 'REFRESH_FAILED_LOGOUT_FORCED') {
-    // No hacer nada, la limpieza ya fue hecha.
-    throw error; 
-    }
-    console.log('Auth fetch error:', error)
-    throw error;
-  }
-};
+/**
+ * authenticatedFetch
+ * Unified wrapper for protected API calls.
+ * Handles automatic token management and provides consistent error propagation.
+ */
+// const authenticatedFetch = async (
+//   url: string,
+//   options: AxiosRequestConfig = {}) => {
+//   try {
+//     const response = await authFetch(url, options);
+//     return response
+//   } catch (error) {
+//   // 🔍 ERROR ANALYSIS 
+//    // 🎯 CASE 1: ZOD VALIDATION ERRORS
+//     // Identifying 'ValidationError' string defined in validateRequest.js
+//     if (error && error.response?.data?.error === 'ValidationError') {
+// //the form will map the errors
+//       console.warn('📝 [Validation_Failed]: Server-side Zod check failed.');
+//       // Re-throw the error so the component can map backendError.details.fieldErrors
+//       throw error
+//     }
+//     // ⏳ CASE 2: RATE LIMITING (429)
+//     // Identified by 'ProfileUpdateRateLimitExceeded' or similar types from rateLimiter.js
+//     if (error?.response?.status === 429) {
+//       console.error('🚫 [Rate_Limit]: Too many attempts.', error.response?.data?.message);
+//       throw error;
+//     }
+//     // 🔄 CASE 3: SESSION EXPIRATION
+//     // If the silent refresh fails inside the axios interceptor (already implemented in your system)
+//     // Solo relanzamos si no es el error especial de logout forzado, ya que authFetch ya manejó la UI y la redirección.
+//     if (error instanceof Error && error.message === 'REFRESH_FAILED_LOGOUT_FORCED') {
+//     // No hacer nada, la limpieza ya fue hecha.
+//     console.warn('🕒 Session expired and refresh failed. User logged out.');
+//     throw error; 
+//     }
 
-//------------------------------------
+// // 🚩 DEFAULT CASE
+//     // Log unexpected errors for debugging and re-throw
+//     console.error(`❌ [API_ERROR] ${options.method || 'GET'} ${url}:`, error?.message);
+//     console.log('Auth fetch error:', error)
+//     throw error;
+//   }
+// };
+
+//-------------------------------
 // Return the authentication state and action functions
 return {
  // Authentication State
@@ -486,7 +636,7 @@ return {
     setShowSignInModalOnLoad,
     setIsCheckingAuth,
 
-    authenticatedFetch
+    // authenticatedFetch
 
   };
 };
