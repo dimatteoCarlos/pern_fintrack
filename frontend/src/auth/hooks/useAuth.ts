@@ -97,8 +97,8 @@ const useAuth = () => {
 // Access state and actions from the auth store
  const {
   // Loading States
-   isLoading, setIsLoading,
-   isCheckingAuth, setIsCheckingAuth, 
+  isLoading, setIsLoading,
+  isCheckingAuth, setIsCheckingAuth, 
 
   // Authentication State 
   isAuthenticated, setIsAuthenticated,
@@ -529,14 +529,14 @@ return {success: false, error: errorMessage};
     }
   } catch (err: unknown) {
   // ✅ Special handling for 401 in critical endpoints
-  if (axios.isAxiosError(err) && err.response?.status === 401) {
-  // authFetch excluded this endpoint from silent refresh
-  // Session expired during sensitive operation - force logout
-  logoutCleanup(true); // 'expired' reason
-  const errorMessage = 'Session expired for security. Please login again.';
-  setError(errorMessage);
-  return { success: false, error: errorMessage, sessionExpired: true };
-   }
+   if (axios.isAxiosError(err) && err.response?.status === 401) {
+   // authFetch excluded this endpoint from silent refresh
+   // Session expired during sensitive operation - force logout
+   logoutCleanup(true); // 'expired' reason
+   const errorMessage = 'Session expired for security. Please login again.';
+   setError(errorMessage);
+   return { success: false, error: errorMessage, sessionExpired: true };
+    }
 
  // ✅ Extract error message (handles 429, 400 validation errors, etc.)
  const errorMessage = extractErrorMessage(err) || 'Error updating profile';
