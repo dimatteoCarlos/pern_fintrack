@@ -1,22 +1,11 @@
 // 📁 frontend/src/auth/utils/profileTransformation.ts
 
+/* 🌟 ===============================
+🏷️ IMPORT TYPE DEFINITIONS
+=============================== 🌟 */
 import { CurrencyType } from "../../types/types";
 import { ProfileUpdateSuccessResponseType, UpdateProfileFormDataType, UserDataType } from "../types/authTypes";
 
-// 📁 frontend/src/lib/transformations/profileTransformations.ts
-
-/* 🌟 ===============================
-📦 IMPORT DEPENDENCIES
-=============================== 🌟 */
-// import { 
-//   UserDataType,
-//   ProfileUpdateResponseType 
-// } from "@/profile/types/authTypes";
-// import { CurrencyType } from "@/types/types";
-
-/* 🌟 ===============================
-🏷️ TYPE DEFINITIONS
-=============================== 🌟 */
 /**
  * 📝 Form data structure for the profile form
  */
