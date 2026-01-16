@@ -1,3 +1,5 @@
+import { CurrencyType } from "../../types/types";
+
 //frontend/src/auth/types/authTypes.ts
 export type CredentialsType = {
   username: string;
@@ -98,7 +100,7 @@ export type UserResponseDataType ={
   user_lastname: string;
   role:string;
   currency: string;
-  contact?:string;
+  contact?:string | null;
   // currency_id?: number;
   // user_role_id?: number;
 }
@@ -114,7 +116,7 @@ export type UserDataType =
  user_lastname?: string;
  currency?: string;    
  role?: string;  
- contact?:string;
+ contact?:string | null;
 };
 //-------------------------------
 //sign-in
@@ -162,17 +164,12 @@ export type PasswordChangeResponseType={
  message:string;
  // user?:
 }
-export type ProfileUpdateResponseType ={
- success:boolean;
- message:string;
- user?:UserResponseDataType;
-}
 
-export type UpdateProfileFormData ={
-  firstname?: string;
-  lastname?: string;
-  currency?: 'usd' | 'cop' | 'eur';
-  contact?: string | null;
+export type UpdateProfileFormDataType ={
+  firstname: string;
+  lastname: string;
+  currency: CurrencyType;
+  contact: string | null;
 }
 // ===============
 // 🚨 ERROR TYPES
@@ -195,5 +192,46 @@ export type AuthErrorType =
   | { type: 'rate_limit'; retryAfter: number; }
   | { type: 'session_expired'; }
   | { type: 'network'; message: string; };
+//-----------------------------------
+//ALIGN BE AND FE
+//UPDATE USER PROFILE
+
+// 🎯 INPUT (PATCH payload)
+export type ProfileUpdatePayloadType = Partial<{
+  firstname: string;
+  lastname: string;
+  contact: string | null;
+  currency: CurrencyType;
+}>;
+
+// 🎯 SUCCESS RESPONSE
+export type ProfileUpdateSuccessResponseType = {
+  success: true;
+  message: string;
+  user: UserResponseDataType;
+};
+
+// 🎯 VALIDATION ERROR (400)
+export type ProfileUpdateValidationErrorType = {
+  success: false;
+  error: 'ValidationError';
+  message: string;
+  details?: {
+    fieldErrors?: Record<string, string>;
+  };
+};
+
+// 🎯 GENERIC ERROR
+export type ProfileUpdateErrorResponseType = {
+  success: false;
+  error: string;
+  message: string;
+};
+
+// 🎯 UNION RESPONSE
+export type ProfileUpdateResponseType =
+  | ProfileUpdateSuccessResponseType
+  | ProfileUpdateValidationErrorType
+  | ProfileUpdateErrorResponseType;
 
 
