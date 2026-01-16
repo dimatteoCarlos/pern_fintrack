@@ -137,7 +137,8 @@ const isFieldValid = <TFieldValue = unknown>(
  value: TFieldValue,
  context: Partial<TFormShape> = {}
  ): boolean => validateField(fieldName, value, context).isValid;
-
+ 
+//--------
  const createEmptyErrors = (): Partial<Record<keyof TFormShape, string>> => ({});
 //--------
 //returns of hook
