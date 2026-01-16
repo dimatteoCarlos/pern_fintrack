@@ -390,18 +390,22 @@ const handleSignOut = async()=>{
 
      console.log("🔐 handlePasswordChange ~ response:", response.data);
 
-     const { success, message } = response.data;
+     // const { success,message, ...rest } = response.data;
+    const responseData = response.data;
+    const isSuccess = 'success' in response.data && response.data.success;
+
+    const messageResponse='success' in response.data && response.data.success && response.data.message && response.data.message;
 
   // ✅ VALIDATE RESPONSE STRUCTURE
-    if (success === undefined) {
-     throw new Error('Invalid server response format');
-    }
+  // if (!isSuccess) {
+  //  throw new Error('Invalid server response format');
+  // }
 
- // 🟢 SUCCESS PATH 
-  if(success){
+ // 🟢 SUCCESS PATH
+  if(isSuccess){
   // ✅ PASSWORD CHANGE SUCCESSFUL
-    const successMessage = message || 'Password updated  successfully.';
-    setSuccessMessage(successMessage);
+  const successMessage = messageResponse || 'Password updated  successfully.';
+  setSuccessMessage(successMessage);
 
   // 🚨 SECURITY: Invalidate current session after password change
   // User should re-authenticate with new password
@@ -412,17 +416,50 @@ const handleSignOut = async()=>{
     // , message: successMessage, requiresReauth: true };
    }}
       
-// 🔴 Controlled failure from backend (non-throwing)
+// 🔴 Controlled failure from backend (success: false)
 // ❌ SERVER RETURNED success: false
-  const errorMsg = message || 'Password change failed';
+ // Extracción de mensaje type-safe
+    let errorMsg: string;
+    
+    if ('message' in responseData && responseData.message) {
+      errorMsg = responseData.message;
+    } else if ('error' in responseData && responseData.error) {
+      errorMsg = responseData.error;
+    } else if ('fieldErrors' in responseData) {
+      const fieldErrors = responseData.fieldErrors;
+      errorMsg = Object.values(fieldErrors)
+        .flat()
+        .join(', ') || 'Validation failed';
+    } else {
+      errorMsg = 'Password change failed';
+    }
+
   setError(errorMsg);
 
-  return { success: false, error: errorMsg };
+  // Devolver datos específicos según el tipo de error
+    if ('retryAfter' in responseData) {
+      return {
+        success: false,
+        error: errorMsg,
+        retryAfter: responseData.retryAfter
+      };
+    }
+    
+    if ('fieldErrors' in responseData) {
+      return {
+        success: false,
+        error: errorMsg,
+        fieldErrors: responseData.fieldErrors
+      };
+    }
+
+    return { success: false, error: errorMsg };
+
   } catch (err: unknown) {
 
-// ====================================================
+// =============================================
 // 🔐 CRITICAL: SESSION EXPIRED (401)
-// ====================================================
+// =============================================
 if (axios.isAxiosError(err) && err.response?.status === 401) {
  // ⛔ authFetch excluded this endpoint from silent refresh
  logoutCleanup(true); // session expired
@@ -437,109 +474,53 @@ if (axios.isAxiosError(err) && err.response?.status === 401) {
 }
 
 // ===================================
-// ⏰ HANDLE RATE LIMIT ERROR (429)
+// ⏳ 429 – RATE LIMIT EXCEEDED
 // ===================================
- if(axios.isAxiosError(err) && err.response?.status === 429){
-  const errorData = err.response.data;
+ if (axios.isAxiosError(err) && err.response?.status === 429) {
+  const data = err.response.data;
+  const errorMessage = data?.message || 'Too many password change attempts. Please try again later.';
+  setError(errorMessage);
+  return {
+    success: false,
+    error: data?.error || 'RateLimitExceeded',
+    message: errorMessage,
+    retryAfter: data?.retryAfter,
+      };
+    }
+// ========================================
+    // 🟡 400 – VALIDATION ERROR (FROM NETWORK)
+    // Esto maneja errores 400 que NO son del tipo PasswordChangeResponseType
+    // ========================================
+    if (axios.isAxiosError(err) && err.response?.status === 400) {
+      const errorData = err.response.data ;
+      const errorMessage = errorData?.message || 'Invalid data provided';
+      setError(errorMessage);
 
-/**
- * ✅ BACKEND CONTRACT (rateLimiter.js)
- * {
- *   success: false,
- *   error: 'PasswordChangeRateLimitExceeded',
- *   message: string,
- *   retryAfter: number
- * }
- */
+      if (errorData?.details?.fieldErrors) {
+        return {
+          success: false,
+          error: errorMessage,
+          fieldErrors: errorData.details.fieldErrors,
+        };
+      }
 
-  // const retryAfter = errorData?.retryAfter || 900;
-  // const minutes = Math.ceil(retryAfter/60);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
 
-  // const rateLimitMessage = `Security: Too many password change attempts. Please try again in ${minutes} minute${minutes !==1?'s':''}.`;
-  // setError(rateLimitMessage);
+// ========================================
+// 🔴 UNEXPECTED / NETWORK / 5XX ERROR
+// ========================================
+    const errorMessage = extractErrorMessage(err) || 'Error changing password';
+    setError(errorMessage);
+    return { success: false, error: errorMessage };
 
-
-const errorMessage =
-errorData?.message ||
-'Too many password change attempts. Please try again later.';
-
-setError(errorMessage);
-// 🔧 CHANGE:
-// ❌ No rateLimited flag
-// ❌ No minutes calculation here
-// ✅ Pass through retryAfter exactly as backend sends it
-
-  // return {
-  //  success:false,
-  //  error:rateLimitMessage,
-  //  rateLimit:true,
-  //  retryAfter,
-  //  minutes
-  // };
-
- // ✅ Pass through retryAfter exactly as backend sends it
-return {
-  success: false,
-  error: errorData?.error,
-  message: errorMessage,
-  retryAfter: errorData?.retryAfter,
- };
-}
-
-// ====================================================
-// ❌ OTHER ERRORS (400, 500, network, etc.)
-// ====================================================
-const errorMessage =
-  extractErrorMessage(err) || 'Error changing password';
-
-setError(errorMessage);
-
-return { success: false, error: errorMessage };
-
-} finally {
-setIsLoading(false);
-}
-
- }
-
-
-// // 📋 HANDLE VALIDATION ERRORS (400)
-// if(axios.isAxiosError(err) && err.response?.status === 400){
-//  const errorData = err.response.data;
-
-//  //Extract user-friendly message
-//  let errorMessage = errorData?.message || 'Invalid password data';
-
-//  //Special handling for 'current password incorrect'
-//  if(errorMessage.toLowerCase().includes('current password') ||
-//  errorMessage.toLowerCase().includes('invalid credentials')){
-//   errorMessage='Current password is incorrect'
-//  }
-
-//  setError(errorMessage);
-
-//  //Pass field errors if available
-//  if(errorData?.details?.fieldErrors){
-//   return {
-//    success:false,
-//    error:errorMessage,
-//    fieldErrors:errorData.details.fieldErrors
-//   };
-//  }
-
-//  return {success:false, error:errorMessage};
-// }
-
-// // 🌐 GENERIC ERROR HANDLING
-// const errorMessage = extractErrorMessage(err) || 'Error changing password';
-// setError(errorMessage);
-
-// return {success: false, error: errorMessage};
-
- // }finally {
- //   setIsLoading(false);
- //  }
- // };
+  } finally {
+    setIsLoading(false);
+  }
+};
 
  //******old version complete ***************************** */
 //   const handlePasswordChange = async (currentPassword: string, newPassword: string, confirmPassword: string) => {
@@ -673,9 +654,9 @@ const handleUpdateUserProfile = async (payload: ProfileUpdatePayloadType) => {
    });
 
   console.log("🚀 ~ handleUpdateUserProfile ~ response:", response.data);
- // ==================================================
+ // ========================================
 // 🟢 SUCCESS PATH (BACKEND CONTRACT)
- // ==================================================
+ // ========================================
 if (response.data.success) {
 // ✅ Prefer server response (single source of truth)
   setUserData(
@@ -692,16 +673,16 @@ if (response.data.success) {
   return response.data;
 }
 
-// ==================================================
+// ========================================
 // 🟠 BUSINESS / VALIDATION ERROR (success: false)
-// ==================================================
+// ========================================
  setError(response.data.message);
  return response.data;
  } catch (err: unknown) {
 
-// ==================================================
+// ========================================
 // 🔐 401 – SESSION EXPIRED (CRITICAL ENDPOINT)
-// ==================================================
+// ========================================
 if (
   axios.isAxiosError(err) &&
   err.response?.status === 401
@@ -721,9 +702,9 @@ if (
     };
   }
 
-// ==================================================
+// ========================================
 // ⏳ 429 – RATE LIMIT EXCEEDED
-// ==================================================
+// ========================================
  if (
    axios.isAxiosError(err) &&
    err.response?.status === 429
@@ -743,9 +724,9 @@ if (
   };
  }
 
-// ==================================================
+// ========================================
 // 🟡 400 – VALIDATION ERROR (FIELD ERRORS)
-// ==================================================
+// ========================================
 if (
  axios.isAxiosError(err) &&
  err.response?.status === 400
@@ -771,9 +752,9 @@ if (
  };
 }
 
-// ==================================================
+// ========================================
 // 🔴 UNEXPECTED / NETWORK / 5XX ERROR
-// ==================================================
+// ========================================
 const errorMessage =
  extractErrorMessage(err) ||
  'Error updating profile';
