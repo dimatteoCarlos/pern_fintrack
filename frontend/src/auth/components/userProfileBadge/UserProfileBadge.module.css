@@ -1,6 +1,8 @@
 /*frontend\src\auth\components\userProfileBadge\UserProfileBadge.module.css*/
 
-
+/* ================= 
+ FONT 
+==================*/
 @import url('https://fonts.googleapis.com/css2?family=Style+Script&display=swap');
 
 .style-script-regular {
@@ -9,19 +11,23 @@
   font-style: normal;
 }
 
-
-/* Estilos base (mobile first) */
+/* ================
+ BASE LAYOUT (Mobile first)
+=================== */
 .badgeContainer {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .userAvatar {
+  font-family: "Style Script", cursive;
+  color: #000;
+
   width: 32px;
   height: 32px;
-  background-color: rgb(16, 163, 127);
+
+  /* background-color: rgb(16, 163, 127); */
   border: 2px solid #000;
   border-radius: 6px;
   display: flex;
@@ -31,9 +37,6 @@
   font-size: 14px;
   cursor: pointer;
   user-select: none;
-  position: relative;
-  font-family: "Style Script", cursive;
-  color: #000;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -50,84 +53,154 @@
   outline: 2px solid rgb(16, 163, 127);
   outline-offset: 2px;
 }
-
-/* Tooltip para email */
+/* =====================
+   --- TOOLTIP --- 
+/* ====================
+/* Tooltip for email */
 .emailTooltip {
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   position: absolute;
+/*Posición fija debajo del avatar */
   top: 40px;
   left: 50%;
   transform: translateX(-50%);
+
   background-color: #333;
   color: white;
+
   padding: 6px 10px;
   border-radius: 4px;
+
   font-size: 12px;
   white-space: nowrap;
-  z-index: 1000;
+
+  z-index: 500;
+  pointer-events: none;
+
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   animation: fadeIn 0.2s ease;
 }
 
 .tooltipArrow {
   position: absolute;
-  bottom: -4px;
+  top: -4px;
   left: 50%;
   transform: translateX(-50%);
+
   width: 0;
   height: 0;
+
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
-  border-top: 4px solid #333;
+  /* arrow-down */
+  /* border-top: 4px solid #333; 
+  /* arrow-up */
+  border-bottom: 4px solid #333;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(5px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* =========================
+MENU OVERLAY (click outside)
+/* =========================
+/* --- MENÚ DESPLEGABLE --- */
+/* Overlay invisible para cerrar el menú al hacer click fuera */
+.menuOverlay {
+  position: fixed;
+  inset: 0;
+
+  background-color: rgba(0, 0, 0, 0.7); 
+  z-index: 998;
+
+  display: flex; 
+  align-items: center;
+  justify-content: center;
+
+animation: fadeIn 0.2s ease;
 }
 
-/* Menú desplegable */
-.profileMenu {
-  position: absolute;
-  top: calc(100% + 8px);
+/* ===============
+  PROFILE MENU
+===================*/
+/* profile menu location */
+/* .profileMenu{
+  position: fixed;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
+} */
+.profileMenu {
+  border:5px solid greenyellow;
+
   background-color: white;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  
   min-width: 240px;
+  max-width: 380px;
+
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow:hidden;
+
   z-index: 1000;
+
+/*Se mantiene la selección de texto desactivada para el arrastre fluido */
+  user-select: none;
+
+/* touch-action: none es VITAL para que funcione en móviles sin hacer scroll */
+  touch-action: none;
+}
+
+/*La animación solo ocurre si NO se está arrastrando */
+.profileMenu:not(.dragging) {
   animation: slideDown 0.2s ease;
-  overflow: hidden;
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* =========================
+   DRAGGING STATE
+========================= */
+
+.profileMenu.dragging {
+  cursor: grabbing;
+  opacity: 0.95;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 1001;
 }
 
-/* Encabezado del menú */
+/* ========================*/
+/* MENU HEADER (DRAG AREA)
+/* ========================*/
 .menuHeader {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  gap: 12px;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #eee;
+ display: flex;
+ align-items: center;
+ gap: 12px;
+
+ padding: 16px;
+
+ background-color: #f9f9f9;
+ border-bottom: 1px solid #eee;
+
+ cursor: grab;
+}
+
+.menuHeader:active {
+  cursor: grabbing;
 }
 
 .menuAvatar {
   width: 40px;
   height: 40px;
+
   background-color: rgb(16, 163, 127);
   border: 2px solid #000;
   border-radius: 6px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  font-size: 16px;
+
   font-family: "Style Script", cursive;
+  font-size: 16px;
+  font-weight: bold;
   color: #000;
+
   flex-shrink: 0;
 }
 
@@ -135,12 +208,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  flex: 1;
 }
 
 .menuUserName {
   font-size: 14px;
   font-weight: 600;
   color: #333;
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -149,12 +224,32 @@
 .menuUserEmail {
   font-size: 12px;
   color: #666;
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Divisores */
+.dragHandle {
+  margin-left: auto;
+
+  font-size: 12px;
+  color: #666;
+
+  opacity: 0.5;
+  user-select: none;
+  cursor: grab;
+
+  transition: opacity 0.2s ease;
+}
+
+.menuHeader:hover .dragHandle {
+  opacity: 1;
+}
+
+/* ==============
+MENU ITEMS
+================*/
 .menuDivider {
   height: 1px;
   background-color: #eee;
@@ -196,25 +291,87 @@
   flex: 1;
 }
 
+/* ==============
+   MENU FOOTER
+=================*/
 /* Footer del menú */
 .menuFooter {
   padding: 12px 16px;
   text-align: center;
+  background-color: #fff;
 }
 
-.currencyBadge {
-  font-size: 12px;
-  color: #666;
-  padding: 4px 8px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  display: inline-block;
+ .currencyBadge {
+ font-size: 12px;
+ color: #666;
+ padding: 4px 8px;
+ background-color: #f0f0f0;
+ border-radius: 4px;
+ display: inline-block;
 }
 
 .currencyBadge strong {
   color: #333;
   font-weight: 600;
+} 
+
+/* --- MODALES Y FORMULARIOS --- */
+/* ============
+   MODAL
+===============*/
+/* --- OVERLAYS --- */
+.modalOverlay {
+ position: fixed;
+ inset: 0;
+ background-color: rgba(0, 0, 0, 0.5);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ /*Z-index superior al menú arrastrable 1000 para que el modal siempre esté encima */
+ z-index: 2000;
+ animation: fadeIn 0.2s ease;
 }
+
+.modalContent {
+ background: white;
+ border-radius: 8px;
+ max-width: 90%;
+ max-height: 90vh;
+ overflow-y: auto;
+ box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+ animation: slideUp 0.3s ease;
+}
+
+/* =================
+   ANIMATIONS
+================= */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideUp {
+ from { opacity: 0; transform: translateY(20px); }
+ to { opacity: 1; transform: translateY(0); }
+}
+
+/*========================
+   --- RESPONSIVE --- 
+/*========================
+/* --- MEDIA QUERIES --- */
+/* Desactivar hovers en pantallas táctiles para evitar tooltips fantasma */
+/* --- ESTADOS TÁCTILES Y DRAGGING --- */
 
 /* Responsive para tablets y desktop */
 @media (min-width: 768px) {
@@ -243,12 +400,11 @@
     font-size: 15px;
   }
 }
+
 /*Para móviles, hacerlo full width con márgenes*/
 
 @media (max-width: 640px) {
   .profileMenu {
-    right: 0;
-    transform: none;
     width: calc(100vw - 32px); /* Con márgenes */
     margin: 0 16px;
   }
@@ -267,6 +423,9 @@
   }
 }
 
+/* ===================
+   TOUCH DEVICES
+=================== */
 /* Asegurar accesibilidad para dispositivos táctiles */
 @media (hover: none) and (pointer: coarse) {
   .userAvatar:hover {
@@ -274,10 +433,31 @@
   }
   
   .emailTooltip {
-    display: none; /* En móviles puros, no mostrar tooltip en hover */
+   display: none; /* En móviles puros, no mostrar tooltip en hover */
   }
   
   .menuItem {
-    padding: 16px; /* Más padding para toques en móvil */
+   padding: 16px; /* Más padding para toques en móvil */
   }
+}
+
+/* Dragging state visual feedback */
+/* Drag handle indicator */
+
+.menuHeader:hover .dragHandle {
+  opacity: 1;
+}
+
+/* Ensure menu header has grab cursor */
+.menuHeader {
+  cursor: grab;
+}
+
+.menuHeader:active {
+  cursor: grabbing;
+}
+
+/* Prevent text selection during drag */
+.profileMenu {
+  user-select: none;
 }
