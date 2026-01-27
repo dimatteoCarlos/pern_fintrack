@@ -1,3 +1,4 @@
+//backend/src/db/configDB.js
 import pg from 'pg';
 import pc from 'picocolors';
 import dotenv from 'dotenv';
