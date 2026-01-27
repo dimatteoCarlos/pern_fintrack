@@ -1,12 +1,24 @@
 //src/general_components/header/LogoMenuIcon.tsx
 import { Link, useLocation } from 'react-router-dom';
-import Logo from '../../assets/logo.svg';
-import MenuIcon from '../../assets/MenuSvg.svg';
-import SignOutIcon from '../../assets/SignOutSvg.svg';
-import './logoMenuIcon.css';
 import useAuth from '../../auth/hooks/useAuth';
 import UserProfileBadge from '../../auth/components/userProfileBadge/UserProfileBadge';
+
+//icon images
+import Logo from '../../assets/logo.svg';
+//edit icon alternatives
+import { MdOutlineEditNote } from 'react-icons/md';
+// import { FiEdit } from "react-icons/fi";
+// import MenuIcon from '../../assets/MenuSvg.svg';
+
+//exit icon alterantives: import { IoExitOutline } from 'react-icons/io5'; import { RxExit } from 'react-icons/rx';
+// import SignOutIcon from '../../assets/SignOutSvg.svg';
+
+import { BsArrowRight } from 'react-icons/bs';
+import './logoMenuIcon.css';
+
 // import UserSquareIcon from '../../assets/UserSquareIcon.svg';
+
+import './logoMenuIcon.css';
 
 function LogoMenuIcon() {
   const { pathname } = useLocation();
@@ -27,7 +39,7 @@ const handleSignOutClick = ()=>{
     <div className='header__logoAndIcon'>
       <Logo />
 
-      <div className="menuBox bordered"
+      <div className="menuBox "
       style={{display:'flex', justifyContent:'space-around', width:'35%', alignSelf:'center' }}
       >
       <Link
@@ -35,13 +47,18 @@ const handleSignOutClick = ()=>{
         className=''
         state={{ originRoute: pathname }}
       >
-         <div className="iconContainer bordered">
-        <MenuIcon />
+       <div className="iconContainer edit  ">
+        {/* <MenuIcon /> */}
+        <MdOutlineEditNote style={{color:"black" ,fontSize:"32px" ,
+         border:"2.5px solid black",
+         borderRadius:"8px",
+         // boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)"
+          }}/>
          </div>
       </Link>
 
       {isAuthenticated && 
-      <div className="iconContainer bordered">
+      <div className="iconContainer">
        <UserProfileBadge />
       </div>
       }
@@ -51,8 +68,19 @@ const handleSignOutClick = ()=>{
         className=''
         style={{border:'none', }}
        >
-        <div className="iconContainer bordered">
-            <SignOutIcon />
+        <div className="iconContainer exit ">
+         <BsArrowRight 
+         style={{color:"black" ,fontSize:"30px" ,
+         fontWeight:"bold",
+         paddingLeft:"8px",
+
+         border:"2.5px solid black",
+         borderRight:"0px solid white",
+         borderRadius:"8px",
+         // boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)"
+          }}
+         />
+            {/* <SignOutIcon /> */}
       </div>
   
       </button>
