@@ -4,4 +4,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 0.825rem 1.25rem 0rem;
+
+}
+
+.iconContainer.exit:hover,
+.iconContainer.edit:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease
+
 }
