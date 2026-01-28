@@ -57,7 +57,7 @@ type UserInfoType = {
  * @returns The complete user profile interaction system
  */
 const UserProfileMenu: React.FC = () => {
-  
+ 
 /* 🌟 ====================
 🏪 GLOBAL STATE CONNECTION
 ==================== 🌟 */
@@ -300,7 +300,7 @@ return (
 <div className={styles.menuDivider} />
 
 {/* ℹ️ ADDITIONAL INFORMATION */}
- <div className={styles.menuFooter}>
+   <div className={styles.menuFooter}>
    <span className={styles.currencyBadge}>
  Currency:{' '}
     <strong>{userInfo.currency.toLowerCase()}</strong>
