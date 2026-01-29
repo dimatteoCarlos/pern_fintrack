@@ -30,7 +30,6 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
   const client = await pool.connect();
   //----------------------------------------
   try {
-
     const {userId}=req.user
     // console.log(req);
 
@@ -125,7 +124,6 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       categoryAndSubcategoryAndNatureExistsResult.rows.length > 0;
 
     if (categoryAndSubcategoryAndNatureExists) {
-      await client.query('ROLLBACK');
       const message = `Can not create a new account since, category ${category_name} with subcategory ${subcategory} and nature ${nature_type_name_req} account already exists. Try again`;
       console.warn('🚀 ~ createAccount ~ message:', message);
       throw new Error(message);
@@ -169,8 +167,10 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const transactionAmount = account_starting_amount;
     const account_balance = transactionAmount;
 
+   //TRANSACTION BEGIN
     await client.query('BEGIN');
     const { account_basic_data } = await insertAccount(
+      client,
       userId,
       account_name,
       accountTypeIdReq,
@@ -178,6 +178,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       account_starting_amount,
       account_balance,
       account_start_date ?? transaction_actual_date
+      
     );
     const account_id = account_basic_data.account_id;
     //--------
@@ -193,7 +194,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
         account_start_date,
       ],
     };
-    const category_budget_accountResult = await pool.query(
+    const category_budget_accountResult = await client.query(
       category_budget_accountQuery
     );
     const category_budget_account = {
@@ -213,6 +214,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
 
     //get the transaction type id's
     const transactionTypeDescriptionIds = await getTransactionTypeId(
+      client, 
       transactionTypeDescriptionObj.transactionType,
       transactionTypeDescriptionObj.counterTransactionType
     );
@@ -241,7 +243,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     //------- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT)------
     //check whether slack account exists if not create it with start amount and balance = 0
     //slack account or counter account, is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation
-    const counterAccountInfo = await checkAndInsertAccount(userId, 'slack');
+    const counterAccountInfo = await checkAndInsertAccount(client, userId, 'slack');
 
     const newCounterAccountBalance =
       counterAccountInfo.account.account_balance - transactionAmount;
@@ -269,6 +271,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
 
     //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
     const updatedCounterAccountInfo = await updateAccountBalance(
+      client,
       newCounterAccountBalance,
       slackCounterAccountInfo.account_id,
       transaction_actual_date
@@ -303,7 +306,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       destination_account_id,
       movement_type_id
     );
-    const recordTransactionInfo = await recordTransaction(transactionOption);
+    const recordTransactionInfo = await recordTransaction(client, transactionOption);
 
     //--------REGISTER COUNTER ACCOUNT (SLACK) TRANSACTION ------
     const counterTransactionOption = prepareTransactionOption(
@@ -313,7 +316,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       movement_type_id
     );
     const counterTransactionInfo = !isAccountOpening
-      ? await recordTransaction(counterTransactionOption)
+      ? await recordTransaction(client, counterTransactionOption)
       : {};
 
     await client.query('COMMIT');
