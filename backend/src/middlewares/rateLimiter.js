@@ -1,13 +1,24 @@
 //backend/src/middleware/rateLimiter.js
 // backend/src/middleware/rateLimiter.js
 import rateLimit from 'express-rate-limit';
+import { ipKeyGenerator } from 'express-rate-limit';
 
 // =========================================
 // 🎯 KEY GENERATOR (USER-SPECIFIC LIMITING)
 // =========================================
 const keyGenerator = (req) => {
-  // Prioritize authenticated userId, fallback to IP for unauthenticated
-  return req.user?.userId || req.ip;
+  const safeIp = ipKeyGenerator(req);
+  
+  // Versión que mantiene formato similar al original
+  const userId = req.user?.userId;
+  
+  if (userId) {
+    // Formato: "userId_ip" (pero con IP segura)
+    return `${userId}_${safeIp}`;
+  }
+  
+  // Para anónimos: solo IP segura
+  return safeIp;
 };
 
 // =========================================
@@ -91,7 +102,7 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful logins
 // Always use IP for auth endpoints (before user is logged in)
-  keyGenerator: (req) => req.ip, // Track by IP address
+  keyGenerator: ipKeyGenerator, // Track by IP address
   handler: (req, res) => {
    res.status(429).json(
    createRateLimitResponse(
@@ -111,7 +122,7 @@ export const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
-  keyGenerator: (req) => req.ip,
+  keyGenerator:ipKeyGenerator,
   
   handler: (req, res) => {
     res.status(429).json(
