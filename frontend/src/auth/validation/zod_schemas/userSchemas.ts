@@ -1,5 +1,4 @@
 // frontend/src/auth/validation/zod/userSchemas.ts
-
 import {z} from 'zod';
 import { FIELD_LIMITS, FieldLimitType } from './constants';
 
@@ -48,7 +47,6 @@ const individualFieldSchema = (field:FieldLimitType)=>
    /**
     * Normalizes currency code to lowercase
     */
-   
    export const currencySchema= z.enum(['usd', 'cop', 'eur'], {
      error: (issue) => {
        if (issue.code === 'invalid_value') {
@@ -84,13 +82,74 @@ export const updateProfileSchema = z.object(
   }
 )
 
+// ==========================
+// 🔐 PASSWORD CHANGE SCHEMA
+// ==========================
+/*To practice and learn, I applied different ways of writing the validation rules */
+
+export const changePasswordSchema = z.object(
+ {
+  currentPassword: z.string()
+   .min(1, { message: "Current password is required" })
+   // .min(4,{message:'Password must be at least 4 characters'})
+   // .max(72,{message:'Password cannot exceed 72 characters'})
+   // .refine(val=>!val.includes('<') && !val.includes('>'), {message: `Password cannot contain < or > characters`})
+   // .refine(
+   //   (password) => password.trim().length > 0,
+   //   { message: "Password cannot be empty or just whitespace" }
+   // ),
+   ,
+    
+  newPassword: z.string()
+    .min(FIELD_LIMITS.PASSWORD.MIN, { 
+      message: `New password must be at least ${FIELD_LIMITS.PASSWORD.MIN} characters` 
+    })
+    .max(FIELD_LIMITS.PASSWORD.MAX, {
+      message: `Password cannot exceed ${FIELD_LIMITS.PASSWORD.MAX} characters`
+    })
+    .refine(
+      (password) => password.trim().length > 0,
+      { message: "New password cannot be empty or just whitespace" }
+    )
+    .refine(val=>!val.includes('<') && !val.includes('>'), {message: `Passwords cannot contain < or > characters`})
+    ,
+    
+  confirmPassword: z.string()
+    .min(1, { message: "Please confirm your new password" })
+})
+// Validate that new password and confirmation match
+.refine(
+  (data) => data.newPassword === data.confirmPassword,
+  {
+    message: "New password and confirmation do not match",
+    path: ["confirmPassword"]
+  }
+)
+// Validate that new password is different from current
+//data es el valor que Zod ya parseó/validó hasta ese punto y que le pasa a tu función de refinamiento
+.refine(
+  (data) => data.currentPassword.trim() !== data.newPassword.trim(),
+  {
+    message: "New password cannot be the same as current password",
+    path: ["newPassword"]
+  }
+)
+// Validate no leading/trailing spaces in new password
+.refine(
+  (data) => data.newPassword.trim() === data.newPassword,
+  {
+    message: "New password cannot have spaces at the beginning or end",
+    path: ["newPassword"]
+  }
+);
+
 // =======================
 // 📦 EXPORT ALL SCHEMAS
 // =======================
 export default {
 //Main schemas
  updateProfileSchema,
-// changePasswordSchema,
+ changePasswordSchema,
 
 // Individual schemas for potential reuse
  firstNameSchema,
@@ -103,6 +162,8 @@ export default {
 // 🏷️ TYPE INFERENCE
 // =====================
 export type UpdateProfileSchemaFormDataType =z.infer<typeof updateProfileSchema>;
+
+export type ChangePasswordSchemaFormDataType =z.infer<typeof changePasswordSchema>;
 
 
 
