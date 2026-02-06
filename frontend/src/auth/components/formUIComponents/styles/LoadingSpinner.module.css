@@ -1,0 +1,64 @@
+/* 📁 frontend/src/components/common/LoadingSpinner/LoadingSpinner.module.css */
+
+/* 🌟 ===============================
+🎨 LOADING SPINNER STYLES
+=============================== 🌟 */
+
+/**
+ * 🎯 Spinner container
+ * Centers the spinner and provides proper sizing
+ */
+.spinnerContainer {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+/**
+ * 🌀 Animated spinner element
+ * Pure CSS animation with smooth rotation
+ */
+.spinner {
+  display: inline-block;
+  border-style: solid;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  box-sizing: border-box;
+}
+
+/**
+ * 🎬 Spinner rotation animation
+ */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/**
+ * 👁️ Screen reader only text
+ * Hidden visually but accessible to screen readers
+ */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/**
+ * 📱 Responsive adjustments
+ */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
+}

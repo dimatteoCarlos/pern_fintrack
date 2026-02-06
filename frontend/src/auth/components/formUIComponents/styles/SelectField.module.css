@@ -1,0 +1,168 @@
+/* 📁 frontend/src/components/common/SelectField/SelectField.module.css */
+
+/* 🌟 ===============================
+🎨 SELECT FIELD STYLES
+=============================== 🌟 */
+
+/**
+ * 🎯 Select container
+ */
+.selectContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+/**
+ * 🎯 Select container with error
+ */
+.selectContainer.hasError {
+  --border-color: #dc3545;
+  --focus-color: #dc3545;
+}
+
+/**
+ * 🏷️ Select label
+ */
+.selectLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/**
+ * 🎯 Required field indicator
+ */
+.requiredIndicator {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+/**
+ * 📋 Select wrapper
+ */
+.selectWrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+/**
+ * 📋 Select field
+ */
+.selectField {
+  width: 100%;
+  padding: 10px 36px 10px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #495057;
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  font-family: inherit;
+  appearance: none;
+  cursor: pointer;
+}
+
+/**
+ * 📋 Select field focus state
+ */
+.selectField:focus {
+  border-color: #80bdff;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/**
+ * 📋 Select field disabled state
+ */
+.selectField:disabled {
+  background-color: #e9ecef;
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/**
+ * 📋 Select field with error
+ */
+.selectField[aria-invalid="true"] {
+  border-color: #dc3545;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 36px center;
+  background-size: 16px 16px;
+}
+
+/**
+ * 📋 Select field with error focus state
+ */
+.selectField[aria-invalid="true"]:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/**
+ * 🔽 Custom dropdown arrow
+ */
+.selectArrow {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #6c757d;
+  font-size: 12px;
+}
+
+/**
+ * 📋 Select option
+ */
+.selectOption {
+  padding: 8px;
+  font-size: 14px;
+}
+
+/**
+ * ❌ Error message
+ */
+.errorMessage {
+  font-size: 12px;
+  color: #dc3545;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/**
+ * ❌ Error message icon
+ */
+.errorMessage::before {
+  content: '⚠️';
+  font-size: 10px;
+}
+
+/**
+ * ℹ️ Help text
+ */
+.helpText {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 2px;
+  font-style: italic;
+}
+
+/**
+ * 📱 Responsive adjustments
+ */
+@media (max-width: 768px) {
+  .selectField {
+    padding: 8px 36px 8px 10px;
+    font-size: 16px; /* Better for mobile touch */
+  }
+}
