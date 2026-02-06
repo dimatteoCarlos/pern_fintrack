@@ -377,6 +377,7 @@ const handleSignOut = async()=>{
 * @param confirmPassword - Confirmation of new password
 * @returns Promise<boolean> indicating success
 */
+
  const handleChangePassword = async (currentPassword: string, newPassword: string, confirmPassword: string):Promise<ChangePasswordResponseType>=> {
   clearError();
   clearSuccessMessage();
@@ -486,6 +487,129 @@ const handleSignOut = async()=>{
   }
 
  }//handleChangePassword
+
+ //---------------------------------------------
+// 7.5 🎯 PASSWORD CHANGE ONLY DOMAIN OPERATIONS
+//----------------------------------------------
+/**
+* Changes user password with current password verification
+* 
+* 🟢 USING authFetch (NOT fetch):
+* - Protected route requires token
+* - Auto-refresh available if needed
+* - ONLY deals with domain status not UI states
+* @param currentPassword - For re-authentication
+* @param newPassword - New password to set
+* @param confirmPassword - Confirmation of new password
+* @returns Promise<boolean> indicating success
+*/
+ type ChangePasswordResult = {
+   success: boolean;
+   message?: string;
+   error?: string;
+   fieldErrors?: Record<string, string[]>;
+   retryAfter?: number;
+ };
+
+ const handleDomainChangePassword = async (currentPassword: string, newPassword: string, confirmPassword: string):Promise<ChangePasswordResult>=> {
+  // clearError();
+  // clearSuccessMessage();
+  // setIsLoading(true);
+  try {
+  // 🚀 API CALL
+   const response = await authFetch<ChangePasswordResponseType>(url_change_password, {
+     method: 'PATCH',
+     data: { currentPassword, newPassword, confirmPassword }
+   });
+   const responseData = response.data;
+  // ==================
+  // 🟢 SUCCESS PATH
+  // ==================
+  if(responseData.success === true){
+   const messageResponse='success' in response.data && response.data.success && response.data.message ;
+
+   // ✅ PASSWORD CHANGE SUCCESSFUL
+   const successMessage = messageResponse || 'Password updated  successfully.';
+   setSuccessMessage(successMessage);
+  // 🚨 SECURITY: Invalidate current session after password change
+  // User should re-authenticate with new password
+ // setTimeout(() => {
+ // logoutCleanup(false); // Manual logout (not expired)
+ // }, 3000); // Give user 3 seconds to read success message
+   return {
+    success: true,
+    message: responseData.message,
+    };
+  }//succces
+       
+ // ============================================
+ // 🔴 CONTROLLED BACKEND FAILURE (success:false)
+ // ============================================
+  // setError(responseData.message || 'Password change failed');
+  return {
+   success: false,
+   error: responseData.error || 'ChangePasswordError',
+   message: responseData.message ?? "Password change failed",
+   fieldErrors: responseData.fieldErrors ?? {},//fallback
+   retryAfter: responseData.retryAfter,
+   };
+  } catch (err: unknown) {
+ // ===================================
+ // 🔐 CRITICAL: SESSION EXPIRED (401)
+ // ===================================
+ if (axios.isAxiosError(err) && err.response?.status === 401) {
+ // ⛔ authFetch excluded this endpoint from silent refresh
+ // logoutCleanup(true); // session expired
+  const errorMessage='Session expired for security reasons.';
+  const dataError =err.response.data;
+  // setError(errorMessage);
+  return {
+    success: false,
+    error: dataError?.error || "SessionExpired",
+    message: errorMessage,
+    fieldErrors: {},
+  };
+ }
+
+// ===================================
+// ⏳ 429 – RATE LIMIT EXCEEDED (not used)
+// ===================================
+ if (axios.isAxiosError(err) && err.response?.status === 429) {
+  const errorData = err.response.data;
+  const errorMessage = errorData?.message || 'Too many password change attempts.';
+  // setError(errorMessage);
+  return {
+    success: false,
+    error: errorData?.error || 'RateLimitExceeded',
+    message: errorMessage,
+    retryAfter: errorData?.retryAfter,
+      };
+    }
+// ====================================
+// 🟡 400 – VALIDATION ERROR (FROM NETWORK or OUT OF CONTRAC) // Esto maneja errores 400 que NO son del tipo ChangePasswordResponseType (not used)
+// =======================================
+ if (axios.isAxiosError(err) && err.response?.status === 400) {
+  const errorData = err.response.data ;
+  const errorMessage = errorData?.message || 'Request validation failed';
+  // setError(errorMessage);
+
+ return {
+  success: false,
+  error: errorData.error || 'ValidationError',
+  message:errorMessage,
+  fieldErrors: errorData?.details?.fieldErrors,// 👈 NORMALIZADO
+  };}
+ // ==================
+ // ❌ UNKNOWN ERROR
+ // ==================
+ return {
+  success: false,
+  error: "UnknownError",
+  message: "Failed to change password due to unexpected error",
+   };
+  }
+ }//handleDomainChangePassword
+
 
 //------------------------
 // 8. UPDATE USER PROFILE (PATCH)
@@ -614,7 +738,7 @@ return {
 };
 
  } finally {
-setIsLoading(false);
+setIsLoading(false);//ve
  }
 
 };
@@ -628,12 +752,12 @@ return {
     isCheckingAuth,
 
  // Loading States
-    isLoading,
+    isLoading,//ve
 
  // User Interface Feedback    
     error,
     successMessage,
-    showSignInModalOnLoad,
+    showSignInModalOnLoad,//ve
 
 // Authentication Operations
     handleSignIn,
@@ -642,7 +766,10 @@ return {
     handleUpdateUserProfile,
     handleChangePassword,
 
+    handleDomainChangePassword,
+
 // UI Control Actions
+   //visual effects
     clearError,
     clearSuccessMessage,
     setShowSignInModalOnLoad,
