@@ -11,14 +11,14 @@ export type AnyZodSchemaType = z.ZodTypeAny;
 //Ej: si Zod dice {name: string}, infer devuelve {name: string}
 export type SchemaInferType<T extends AnyZodSchemaType> = z.infer<T>;
 
-//Interfaz para el resultado de validar UN SOLO campo
+//Validate a single field / Interfaz para el resultado de validar UN SOLO campo
 export type FieldValidationResultType<TFieldValue = unknown> = {
  isValid: boolean;
  error?: string;
  data?: TFieldValue;
 }
 
-//Interfaz para el resultado de validar TODO el formulario
+//Validate all form / Interfaz para el resultado de validar TODO el formulario
 export type FormValidationResultType<TFormShape extends Record<string, unknown>> ={
   isValid: boolean;
   errors: Partial<Record<keyof TFormShape, string>>;
@@ -40,7 +40,26 @@ export const useFieldValidation = <TFormShape extends Record<string, unknown>>(
 ) => {
   const { validateOnlyTouched = false } = options;
 
-/* 🔹 VALIDATE SINGLE FIELD (SIN PICK) */
+/* 🔹 VALIDATE SINGLE FIELD */
+/*
+┌──────────────────────────────────────────┐
+│  ENTRADAS:                               │
+│  • fieldName: "email"                    │
+│  • fieldValue: "usuario@ejemplo.com"     │
+│  • context: {password: "1234"}           │
+├──────────────────────────────────────────┤
+│  PROCESO:                                │
+│  1. Combina contexto + valor del campo   │
+│  2. Pregunta a Zod: ¿Estos datos cumplen │
+ las reglas?                               │
+│  3. Zod responde: Sí/No + motivo         │
+├──────────────────────────────────────────|
+│  SALIDAS:                                │
+│  • isValid: true/false                   │
+│  • error: "Email inválido" (si hay error)│
+│  • data: valor original                  │
+└──────────────────────────────────────────┘
+*/
   const validateField = <TFieldValue = unknown>(
     fieldName: keyof TFormShape,
     fieldValue: TFieldValue,
@@ -67,7 +86,6 @@ export const useFieldValidation = <TFormShape extends Record<string, unknown>>(
    data: fieldValue //returns original fieldValue
  };
  }
-
  //SI PASA: Devolvemos éxito
   return { isValid: true, data: fieldValue };
  } catch (error) {
@@ -80,8 +98,25 @@ export const useFieldValidation = <TFormShape extends Record<string, unknown>>(
   };
     }
   };
-//------------------------
+//----------------------------------------
 /* 🔹 VALIDATE ENTIRE FORM (FOR SUBMIT) */
+/*
+┌─────────────────────────────────────────────────────┐
+│  ENTRADAS:                                          │
+│  • formData: {email: "...", password: "..."}        │
+│  • touchedFields: Set(["email"])                    │
+├─────────────────────────────────────────────────────┤
+│  PROCESO:                                           │
+│  1. Filtra datos (solo campos tocados si está activo)│
+│  2. Pregunta a Zod: ¿TODO el formulario es válido?  │
+│  3. Zod valida todas las reglas a la vez            │
+├─────────────────────────────────────────────────────┤
+│  SALIDAS:                                           │
+│  • isValid: true/false                              │
+│  • errors: {email: "Error", password: "Error"}      │
+│  • validatedData: datos limpios y tipados           │
+└─────────────────────────────────────────────────────┘
+*/
  const validateAll = (
   formData: Partial<TFormShape>,
   touchedFields?: Set<keyof TFormShape>
@@ -158,3 +193,19 @@ return {
 };
 // Exportamos el tipo del retorno (para TypeScript)
 export default useFieldValidation;
+
+//FLOW CHART
+/*
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│  COMPONENTE     │    │  HOOK DE         │    │  ZOD            │
+│  DE FORMULARIO  │───▶│  VALIDACIÓN      │───▶│  (Motor de     │
+│                 │    │                  │    │   reglas)       │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                       │                       │
+         │ 1. onChange           │ 2. validateField()    │ 3. safeParse()
+         │    (usuario escribe)  │    (combina datos)    │    (aplica reglas)
+         │                       │                       │
+         │ 6. muestra error      │ 5. devuelve resultado │ 4. devuelve válido
+         │    o éxito            │    {isValid, error}   │    o lista errores
+         ◀───────────────────────◀───────────────────────◀
+*/
