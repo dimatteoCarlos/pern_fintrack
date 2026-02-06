@@ -1,0 +1,352 @@
+/* 📁 frontend/src/auth/components/UpdateProfileForm.module.css*/
+
+/* 🌟 ===============================
+🎨 UPDATE PROFILE FORM STYLES
+=============================== 🌟 */
+
+/**
+ * 🎯 Main form container
+ */
+.formContainer {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/**
+ * 📋 Form header section
+ */
+.formHeader {
+  margin-bottom: 32px;
+}
+
+/**
+ * 🎯 Form title
+ */
+.formTitle {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  color: #333;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/**
+ * 📝 Form subtitle/description
+ */
+.formSubtitle {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/**
+ * 📢 Messages container
+ */
+.messagesContainer {
+  margin-bottom: 24px;
+}
+
+/**
+ * 🎯 Form element
+ */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/**
+ * 🏷️ Fieldset styling
+ */
+.fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/**
+ * 🎯 Fieldset legend
+ */
+.fieldsetLegend {
+  font-size: 16px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 16px;
+  padding: 0;
+}
+
+/**
+ * 👥 Personal info grid
+ */
+.personalInfoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/**
+ * 💰 Preferences section
+ */
+.preferencesSection {
+  display: grid;
+  gap: 16px;
+}
+
+/**
+ * 🎯 Action buttons container
+ */
+.actionButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #eee;
+  flex-wrap: wrap;
+}
+
+/**
+ * 💾 Primary action button (Save)
+ */
+.saveButton {
+  flex: 1;
+}
+
+/**
+ * 🔄 Reset button
+ */
+.resetButton {
+  padding: 10px 20px;
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+
+/**
+ * 🔄 Reset button hover state
+ */
+.resetButton:hover:not(:disabled) {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+/**
+ * 🔄 Reset button disabled state
+ */
+.resetButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/**
+ * 🚪 Cancel button
+ */
+.cancelButton {
+  padding: 10px 20px;
+  background-color: transparent;
+  color: #6c757d;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+
+/**
+ * 🚪 Cancel button hover state
+ */
+.cancelButton:hover:not(:disabled) {
+  color: #495057;
+  background-color: #f8f9fa;
+}
+
+/**
+ * 🚪 Cancel button disabled state
+ */
+.cancelButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/*done button*/
+.doneButton {
+  width: 100%; /* Ocupa todo el ancho para dar sensación de finalización */
+  padding: 12px;
+  background-color: #28a745; /* Verde éxito */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 10px;
+}
+
+.doneButton:hover {
+  background-color: #218838;
+}
+
+.buttonGroupAnimation {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* 🆕 Animaciones para suavidad */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.messagesWrapper {
+  min-height: 60px; /* Reserva espacio */
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.messagesContainer {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/**
+ * 🛠️ Debug utilities container
+ */
+.debugUtilities {
+  margin-top: 24px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/**
+ * 🛠️ Debug buttons container
+ */
+.debugButtons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/**
+ * 🔧 Debug button
+ */
+.debugButton {
+  padding: 4px 8px;
+  font-size: 11px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+/**
+ * 🔧 Debug button hover
+ */
+.debugButton:hover {
+  opacity: 0.9;
+}
+
+/**
+ * 🎯 Clear errors debug button
+ */
+.debugButtonClear {
+  background-color: #dc3545;
+}
+
+/**
+ * ℹ️ Form status indicator
+ */
+.statusIndicator {
+  margin-top: 24px;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusIndicator {
+  margin-top: 20px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow: hidden;
+}
+
+/**
+ * ⚡ Dirty status indicator
+ */
+.statusIndicatorDirty {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+}
+
+/**
+ * ✅ Clean status indicator
+ */
+.statusIndicatorClean {
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
+  color: #0c5460;
+}
+
+/**
+ * 🎯 Status icon
+ */
+.statusIcon {
+  font-size: 14px;
+}
+
+/**
+ * 📱 Responsive adjustments
+ */
+@media (max-width: 600px) {
+  .formContainer {
+    padding: 16px;
+    max-width: 100%;
+  }
+  
+  .personalInfoGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+  }
+  
+  .saveButton,
+  .resetButton,
+  .cancelButton {
+    width: 100%;
+    min-width: auto;
+  }
+}
