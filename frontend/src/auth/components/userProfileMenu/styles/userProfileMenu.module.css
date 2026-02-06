@@ -1,0 +1,283 @@
+/* 📁 frontend/src/auth/components/userProfile/UserProfileMenu.module.css */
+/* 🎨 Component-specific styles for UserProfileMenu */
+
+/* ====================
+   MODAL OVERLAYS
+==================== */
+
+/* Menu overlay */
+.menuOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Form modal overlay */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+/* ====================
+   MODAL CONTAINERS
+==================== */
+
+/* Menu container */
+.menuContainer {
+  cursor: default;
+  border: 5px solid greenyellow;
+  background-color: white;
+  border-radius: 8px;
+  min-width: 240px;
+  max-width: 380px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1000;
+  user-select: none;
+  touch-action: none;
+}
+
+/* Modal container for forms */
+.modalContainer {
+  background: white;
+  border-radius: 8px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+/* ====================
+   PROFILE MENU
+==================== */
+
+/* Menu header */
+.menuHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #eee;
+}
+
+.menuAvatar {
+  width: 40px;
+  height: 40px;
+  background-color: rgb(16, 163, 127);
+  border: 2px solid #000;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Style Script", cursive;
+  font-size: 16px;
+  font-weight: bold;
+  color: #000;
+  flex-shrink: 0;
+}
+
+.menuUserInfo {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.menuUserName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menuUserEmail {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ====================
+   MENU CONTROLS
+==================== */
+
+/* Close button */
+.closeButton {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.closeButton:hover {
+  background-color: #f0f0f0;
+  color: #000;
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid rgb(16, 163, 127);
+  outline-offset: 2px;
+}
+
+/* ====================
+   MENU CONTENT
+==================== */
+
+/* Divider */
+.menuDivider {
+  height: 1px;
+  background-color: #eee;
+  margin: 0;
+}
+
+/* Menu items */
+.menuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+  color: #333;
+  gap: 10px;
+  transition: background-color 0.2s ease;
+  /* background-color: orange; */
+
+}
+
+.menuItem:hover {
+  background-color: #f5f5f5;
+}
+
+.menuItem:focus-visible {
+  outline: none;
+  background-color: #f0f0f0;
+}
+
+.menuItemIcon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.menuItemText {
+  flex: 1;
+}
+
+/* ====================
+   MENU FOOTER
+==================== */
+
+.menuFooter {
+  padding: 12px 16px;
+  text-align: center;
+  background-color: #fff;
+}
+
+.currencyBadge {
+  font-size: 12px;
+  color: #666;
+  padding: 4px 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.currencyBadge strong {
+  color: #333;
+  font-weight: 600;
+}
+
+/* ====================
+   ANIMATIONS
+==================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ====================
+   RESPONSIVE DESIGN
+==================== */
+
+/* Tablets */
+@media (min-width: 768px) {
+  .menuContainer {
+    min-width: 280px;
+  }
+  
+  .menuAvatar {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  
+  .menuUserName {
+    font-size: 15px;
+  }
+  
+  .menuItem {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .menuContainer {
+    width: calc(100vw - 32px);
+    margin: 0 16px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .menuContainer {
+    min-width: 320px;
+  }
+}
+
+/* Touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .menuItem {
+    padding: 16px;
+  }
+}

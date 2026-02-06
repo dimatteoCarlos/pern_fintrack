@@ -1,0 +1,185 @@
+/* 📁 frontend/src/auth/components/userProfile/UserAvatar.module.css */
+
+/* 🎨 Component-specific styles for UserAvatar */
+@import url('https://fonts.googleapis.com/css2?family=Style+Script&display=swap');
+
+/* Add font-display: swap for immediate fallback */
+.avatarInitial {
+  font-family: "Brush Script MT", "Lucida Calligraphy", cursive, "Style Script", cursive;
+  /* font-family: "Style Script", cursive; */
+  /* font-display: swap; /*⚡ Shows fallback first, then swaps */
+}
+
+/* ====================
+   BASE CONTAINER
+==================== */
+.badgeContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ====================
+   AVATAR ELEMENT
+==================== */
+.avatar {
+  font-family: "Style Script", cursive;
+  color: #000;
+  width: 32px;
+  height: 32px;
+  background-color: transparent;
+  border: 3px solid #000;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.avatar:active {
+  transform: scale(0.95);
+}
+
+.avatar:focus-visible {
+  outline: 2px solid rgb(16, 163, 127);
+  outline-offset: 2px;
+}
+
+/* ====================
+   DISABLED STATE
+==================== */
+.avatar.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ====================
+   AVATAR INITIAL
+==================== */
+/* Avatar initial - EXPLICIT FONT STYLES */
+.avatarInitial {
+  font-family: "Style Script", cursive;  /* 🔥 FIXED: Font here, not parent */
+  font-weight: bold;
+  font-size: 14px;                       /* 🔥 FIXED: Explicit size */
+  color: #000;                           /* 🔥 FIXED: Explicit color */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-weight: bold;
+}
+/* 
+.initial {
+  font-family: "Style Script", cursive; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+} */
+
+/* ====================
+   TOOLTIP
+==================== */
+.tooltip {
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 500;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.2s ease;
+}
+
+.tooltipContent {
+  display: block;
+}
+
+.tooltipArrow {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+/* arrow-down */
+/* border-top: 4px solid #333; 
+/* arrow-up */
+  border-bottom: 4px solid #333;
+}
+
+/* ====================
+   ANIMATIONS
+==================== */
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateX(-50%) translateY(5px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(-50%) translateY(0); 
+  }
+}
+
+/* ====================
+   RESPONSIVE DESIGN
+==================== */
+
+/* Tablets */
+@media (min-width: 768px) {
+  .avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+}
+
+/* Desktops */
+@media (min-width: 1024px) {
+  .avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+}
+
+/* Touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .avatar:hover {
+    transform: none;
+  }
+
+.userAvatar {
+  width: 32px; /* Tamaño mínimo recomendado para dedos */
+  height: 32px;
+}
+}
+
+/*
+pointer: coarse  es una Media Query de interacción que se utiliza para detectar si el usuario está utilizando un dispositivo con un puntero poco preciso, como un dedo en una pantalla táctil (smartphone o tablet).
+Se diferencia de pointer: fine, que detecta dispositivos precisos como un mouse o un lápiz óptico.
+
+*/
