@@ -35,7 +35,7 @@ import { PasswordFormErrorsType } from "../validation/hook/useChangePasswordVali
 
   transformFromApiToFormErrors: (apiError: unknown)=> PasswordFormErrorsType<keyof ChangePasswordFormDataType>;
 
-  handleChangePassword: (
+  handleDomainChangePassword: (
     payload: ChangePasswordFormDataType
   ) => Promise<unknown>;
 }
@@ -51,7 +51,7 @@ import { PasswordFormErrorsType } from "../validation/hook/useChangePasswordVali
   validateField,
   validateAll,
   transformFromApiToFormErrors,
-  handleChangePassword,}
+  handleDomainChangePassword,}
  :ChangePasswordFormLogicParamsType )=> {
 /* 🌟 ==============================
 🗃️ INTERNAL STATE (Logic Only)
@@ -114,7 +114,7 @@ const handleSubmit = useCallback(async ()=>{
  try {
 // Execute domain action
 // If this fails → it WILL throw
-  await handleChangePassword(formData);
+  await handleDomainChangePassword(formData);
  
   return {success:true};
  } catch (error) {
@@ -128,7 +128,7 @@ const handleSubmit = useCallback(async ()=>{
  }
 },[formData,
   validateAll,
-  handleChangePassword,
+  handleDomainChangePassword,
   transformFromApiToFormErrors,]);
 
 /* ===============================
