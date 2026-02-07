@@ -5,7 +5,6 @@ import { createError } from '../utils/errorHandling.js';
 import { pool } from '../db/configDB.js';
 import pc from 'picocolors';
 
-
 //getUserById
 //GET http://localhost:5000/api/user/f7c5abf9-89e5-4891-bfb8-6dfe3022f226
 export const getUserById = async (req, res, next) => {
@@ -38,14 +37,13 @@ export const getUserById = async (req, res, next) => {
     if (!userData) {
       return next(createError(404, 'user not found'));
     }
-
     // //consulta de info cuentas del user
-
     const userAccountsResult = await pool.query({
-      text: `SELECT  account_id
-             FROM user_accounts
-            WHERE user_id = $1
-            ORDER BY account_id ASC
+      text: 
+      `SELECT  account_id
+        FROM user_accounts
+       WHERE user_id = $1
+       ORDER BY account_id ASC
     `,
       values: [userId],
     });
@@ -150,7 +148,7 @@ console.log(pc.bgBlueBright('controller:',
    })
   }
     
-  // ✅ TRANSACTION
+// ✅ TRANSACTION
   await client.query('BEGIN');
   //1. Check user existence
   const userCheck = await client.query(
@@ -227,6 +225,8 @@ console.log(pc.bgBlueBright('controller:',
   `;
 
   const updatedUserResult = await client.query(updateQuery, values);
+  
+  console.log("🚀 ~ updateProfile ~ updatedUserResult:", updatedUserResult.rows[0])
 
   //4. Get the complete data for the response
   const fullUserData = await client.query({
@@ -249,7 +249,7 @@ console.log(pc.bgBlueBright('controller:',
    res.status(200).json({
     success: true,
     message: 'Profile updated successfully',
-    user: fullUserData.rows[0],
+    user: {...fullUserData.rows[0], currency:updateData.currency},
     });
     
 } catch (error) {
@@ -264,29 +264,34 @@ console.log(pc.bgBlueBright('controller:',
 //=========================
 // 🎯 CHANGE USER PASSWORD
 //=========================
-//PUT http://localhost:5000/api/user/change-password
+//PATCH http://localhost:5000/api/user/change-password
 export const changePassword = async (req, res, next) => {
   console.log(pc.redBright('changePassword'));
   const client = await pool.connect();
 
   try {
     const { userId } = req.user;
-    let { currentPassword, newPassword } = req.validatedData; //Validated by zod
+    const { currentPassword, newPassword } = req.validatedData; //Validated by zod
+    
+    // =========================
+    // 🛑 BASIC SAFETY CHECK
+    // =========================
+    if (!newPassword ) {
+     return res
+     .status(400)
+     .json({
+      success: false,
+      error: 'ValidationError',
+      message: 'New password was not received',
+     });
+    }
+    
     await client.query('BEGIN');
 
-    if (!newPassword ) {
-      return res
-        .status(400)
-        .json({ status: 400, message: 'NEW PASSWORD WAS NOT RECEIVED' });
-    }
-
-    // if (newPassword !== confirmPassword) {
-    //   return res
-    //     .status(401)
-    //     .json({ status: 400, message: 'new passwords do not match' });
-    // }
-
-    //1. GET USER AND CURRENT HASH
+ // =========================
+ // 🔍 FETCH USER PASSWORD
+ // =========================
+ //1. GET USER AND CURRENT HASH
     const userResult = await client.query(
      `SELECT u.password_hashed 
      FROM users u
@@ -297,62 +302,151 @@ export const changePassword = async (req, res, next) => {
 
     if(userResult.rowCount === 0){
      await client.query('ROLLBACK');
-     return next(createError(404, 'User not found'));
+     // return next(createError(404, 'User not found'));
+      return res.status(404).json({
+        success: false,
+        error: 'NotFound',
+        message: 'User not found',
+      });
+
     }
     
     //2. VERIFY CURRENT PASSWORD
-
     const isMatch = await isRight(
       currentPassword,
       userResult.rows[0].password_hashed
     );
-    // console.log({ isMatch });
 
+    // console.log({ isMatch });
     if (!isMatch) {
      await client.query('ROLLBACK');
-     return res.status(401).json({ 
-       success: false,
-       error: 'InvalidCredentials',
-       message: 'Current password is incorrect'
+     return res.status(401).json({
+        success: false,
+        error: 'InvalidCredentials',
+        message: 'Current password is incorrect',
+        details: {
+          fieldErrors: {
+            currentPassword: ['Current password is incorrect'],
+          },
+        },
       });
-    }
+     }
 
-   //3. HASH NEW PASSWORD
-    let newHashedPassword = await hashed(newPassword);
+ // ===========================
+ //3. 🔒 HASH & UPDATE PASSWORD
+ // ===========================
+   const newHashedPassword = await hashed(newPassword);
    
-   //4. UPDATE PASSWORD
    await client.query({
-      text: `UPDATE users SET password_hashed = $1, updated_at = CURRENT_TIMESTAMP 
-      WHERE user_id = $2`,
-      values: [newHashedPassword, userId],
+    text: `UPDATE users SET password_hashed = $1, updated_at = CURRENT_TIMESTAMP 
+    WHERE user_id = $2`,
+    values: [newHashedPassword, userId],
     });
     
-    await client.query('COMMMIT');
+   await client.query('COMMIT');
 
-   //6. SCRUB SENSITIVE VARIABLES
-    // delete req.user;
+  //6. SCRUB SENSITIVE DATA
     req.validatedData = undefined;  
-    delete userResult.rows;
-    (newPassword = undefined),
-      (currentPassword = undefined),
-      (confirmPassword = undefined),
-      (newHashedPassword = undefined);
-   
-   //7. STANDARD RESPONSE
-    res.status(200).json({ status: 200, success:true, message: 'Password changed successfully. Please sign in again with your new password.'});
+  // =========================
+  //7. ✅ SUCCESS RESPONSE
+  // =========================   
+    return res.status(200).json({
+      success: true,
+      message:
+        'Password changed successfully. Please sign in again with your new password.',
+    });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('changePassword error:', error);
-    //Handling for rate limiting
+
+   // ⏳ RATE LIMIT — let middleware handle it
     if(error.status === 429){
      return next(error);//Passing the error to rate limiter
     }
+
+   // ❌ INTERNAL ERROR
     next(
-      createError(500, error.message || 'internal user password change error')
+      createError(500, error.message ?? 'Internal error while changing password')
     )
   } finally {
      client.release();
     };
 };
 
+//DATA STRUCTURE OF RESPONSES
+// A. UPDATE PROFILE - SUCCESS:
+/*
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "user": {
+    "user_id": "uuid",
+    "username": "string",
+    "email": "string",
+    "user_firstname": "string",
+    "user_lastname": "string",
+    "user_contact": "string | null",
+    "currency": "usd|cop|eur",
+    "role": "user|admin|super_admin"
+  }
+}
+  B. UPDATE PROFILE - ERROR CASES:
+Validation Error (400):
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Request validation failed",
+  "details": {
+    "fieldErrors": {
+      "firstname": ["First name is required"],
+      "currency": ["Currency 'xyz' is not supported"]
+    }
+  }
+}
+  Rate Limit Exceeded (429):
+{
+  "success": false,
+  "error": "ProfileUpdateRateLimitExceeded",
+  "message": "Too many profile update attempts. Please try again in 15 minutes.",
+  "retryAfter": 900
+}
+
+User Not Found (404):
+{
+  "success": false,
+  "error": "NotFound",
+  "message": "User not found"
+}
+
+C. CHANGE PASSWORD - SUCCESS:
+{
+  "success": true,
+  "message": "Password changed successfully. Please sign in again with your new password."
+}
+
+D. CHANGE PASSWORD - ERROR CASES:
+Invalid Current Password (401):
+{
+  "success": false,
+  "error": "InvalidCredentials",
+  "message": "Current password is incorrect"
+}
+
+Password Change Rate Limit (429):
+{
+  "success": false,
+  "error": "PasswordChangeRateLimitExceeded",
+  "message": "Security: Too many password change attempts. Try again in 5 minutes.",
+  "retryAfter": 300
+}
+
+Same Password Error (400):
+
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "New password cannot be the same as current password"
+}
+  
+*/
 
