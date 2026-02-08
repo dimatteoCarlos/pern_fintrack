@@ -10,7 +10,7 @@ import { useCallback,  useState } from "react";
 /* 🌟 ===============================
 🏷️ IMPORT TYPE DEFINITIONS
 =============================== 🌟 */
-import {ChangePasswordFormDataType} from "../types/authTypes.ts";
+import {ChangePasswordFormDataType, ChangePasswordResultType} from "../types/authTypes.ts";
 import { PasswordFormErrorsType } from "../validation/hook/useChangePasswordValidation.ts";
 
 /* 🌟 ===============================
@@ -37,7 +37,7 @@ import { PasswordFormErrorsType } from "../validation/hook/useChangePasswordVali
 
   handleDomainChangePassword: (
     payload: ChangePasswordFormDataType
-  ) => Promise<unknown>;
+  ) => Promise<ChangePasswordResultType>;
 }
 
 
@@ -103,33 +103,36 @@ const [dirtyFields, setDirtyFields] =
 /* ===============================
 🚀 SUBMIT HANDLER
 =============================== */
-const handleSubmit = useCallback(async ()=>{
+//It ONLY coordinates validation, API call, and error mapping.
+const handleSubmit = async ()=>{
+ // Mark all fields as touched before validation
+ setTouchedFields({
+  currentPassword: true,
+  newPassword: true,
+  confirmPassword: true,
+ });
+ setValidationErrors({});
  setApiErrors({});
- const {isValid, errors}=validateAll(formData);
- setValidationErrors(errors);
- if(!isValid){
-  return {success:false, message:"validation_failed"}
+ // Run full client-side validation
+ const validationResult = validateAll(formData);
+
+ if (!validationResult.isValid) {
+  setValidationErrors(validationResult.errors);
+  return;
  }
 
- try {
-// Execute domain action
-// If this fails → it WILL throw
-  await handleDomainChangePassword(formData);
- 
-  return {success:true};
- } catch (error) {
-// Error path (FULLY CONTROLLED)
-  const transformedErrors = transformFromApiToFormErrors(error);
-  setApiErrors(transformedErrors);
+ const result = await handleDomainChangePassword(formData);
+// Domain contract guarantees ChangePasswordResultType
+  if (!result.success) {
+  // Field-level API errors only
+   if (result.fieldErrors) {
+    const mappedErrors = transformFromApiToFormErrors(result);
+    setApiErrors(mappedErrors);
+   }
+   return;
+  }
 
-  return {
-   success: false,
-  };
- }
-},[formData,
-  validateAll,
-  handleDomainChangePassword,
-  transformFromApiToFormErrors,]);
+}
 
 /* ===============================
   ♻️ RESET (OPTIONAL)
