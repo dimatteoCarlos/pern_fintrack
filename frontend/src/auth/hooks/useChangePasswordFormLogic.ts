@@ -1,166 +1,264 @@
 // 📁 frontend/src/auth/hooks/useChangePasswordFormLogic.ts
-//Parent: ChangePasswordContainer.tsx
-//Business Logic: error handlers, handle change and submit
 
 /* 🌟 ===============================
 📦 IMPORT DEPENDENCIES
 =============================== 🌟 */
-import { useCallback,  useState } from "react";
+import { useCallback, useState } from 'react';
 
 /* 🌟 ===============================
 🏷️ IMPORT TYPE DEFINITIONS
 =============================== 🌟 */
-import {ChangePasswordFormDataType, ChangePasswordResultType} from "../types/authTypes.ts";
-import { PasswordFormErrorsType } from "../validation/hook/useChangePasswordValidation.ts";
+import { ChangePasswordFormDataType, ChangePasswordResultType } from '../types/authTypes';
+
+import { FormErrorsType } from '../validation/hook/useChangePasswordValidation';
+
+
 
 /* 🌟 ===============================
 🏷️ TYPE DEFINITIONS (LOCALS)
 =============================== 🌟 */
-//📝 Validation hook interface
- type ChangePasswordFormLogicParamsType = {
-  formData:ChangePasswordFormDataType;
-  setFormData:React.Dispatch<React.SetStateAction<ChangePasswordFormDataType>>;
 
+/**
+ * 📝 Parameters for the change password form logic hook
+ */
+type ChangePasswordFormLogicParamsType = {
+  /** 📋 Current form data state */
+  formData: ChangePasswordFormDataType;
+  /** 📝 Form data setter from parent */
+  setFormData: React.Dispatch<React.SetStateAction<ChangePasswordFormDataType>>;
+
+  /** 🧪 Single field validation - adapter contract with FULL response */
   validateField: (
-   fieldName: keyof ChangePasswordFormDataType,
-   value: unknown,
-   formData?: Partial<ChangePasswordFormDataType>
-  ) => { isValid: boolean; error?: string };
+    fieldName: keyof ChangePasswordFormDataType,
+    value: string,
+    formData?: Partial<ChangePasswordFormDataType>
+  ) => {
+    isValid: boolean;
+    validatedData: string;  // ✅ PRESERVED - valor original
+    error?: string;
+  };
 
+  /** 📦 Full form validation - adapter contract with FULL response */
   validateAll: (
-   formData: Partial<ChangePasswordFormDataType>) => {
-   isValid: boolean;
-   errors: Partial<Record<keyof ChangePasswordFormDataType, string>>;
-   };
+    formData: Partial<ChangePasswordFormDataType>,
+    touchedFields?: Set<keyof ChangePasswordFormDataType>
+  ) => {
+    isValid: boolean;
+    validatedData?: ChangePasswordFormDataType;
+    errors: FormErrorsType<keyof ChangePasswordFormDataType>;
+  };
 
-  transformFromApiToFormErrors: (apiError: unknown)=> PasswordFormErrorsType<keyof ChangePasswordFormDataType>;
+  /** 🔄 Transform backend field errors to frontend format */
+  transformFromApiToFormErrors: (
+    apiError: unknown
+  ) => FormErrorsType<keyof ChangePasswordFormDataType>;
 
+  /** 🎯 Domain function - calls the actual API */
   handleDomainChangePassword: (
     payload: ChangePasswordFormDataType
   ) => Promise<ChangePasswordResultType>;
-}
-
+};
 
 /* 🌟 ==============================
-🎣 MAIN HOOK: useChangePasswordFormLogic
-=============================== 🌟 */
+   🎣 MAIN HOOK: useChangePasswordFormLogic
+   =============================== 🌟 */
 
- export const useChangePasswordFormLogic = (
-{  formData,
+export const useChangePasswordFormLogic = ({
+  formData,
   setFormData,
   validateField,
   validateAll,
   transformFromApiToFormErrors,
-  handleDomainChangePassword,}
- :ChangePasswordFormLogicParamsType )=> {
-/* 🌟 ==============================
-🗃️ INTERNAL STATE (Logic Only)
-=============================== 🌟 */
-const [touchedFields, setTouchedFields] =
-  useState<Partial<Record<keyof ChangePasswordFormDataType, boolean>>>({});
+  handleDomainChangePassword
+}: ChangePasswordFormLogicParamsType) => {
 
-const [dirtyFields, setDirtyFields] =
-  useState<Partial<Record<keyof ChangePasswordFormDataType, boolean>>>({});
+  /* 🌟 ==============================
+     🗃️ INTERNAL STATE
+     =============================== 🌟 */
 
- const [validationErrors, setValidationErrors] = useState<PasswordFormErrorsType<keyof ChangePasswordFormDataType>>({});
+  /** 🎯 Fields that have been blurred/touched - show errors only after interaction */
+  const [touchedFields, setTouchedFields] = useState<
+    Partial<Record<keyof ChangePasswordFormDataType, boolean>>
+  >({});
 
- const [apiErrors, setApiErrors] = useState<PasswordFormErrorsType<keyof ChangePasswordFormDataType>>({});
+  /** 🎯 Fields that have been modified from initial value - reserved for future UX */
+  const [dirtyFields, setDirtyFields] = useState<
+    Partial<Record<keyof ChangePasswordFormDataType, boolean>>
+  >({});
+
+  /** ❌ Client-side validation errors (Zod) - EMPTY OBJECT = no errors */
+  const [validationErrors, setValidationErrors] = useState<
+    FormErrorsType<keyof ChangePasswordFormDataType>
+  >({});
+
+  /** ❌ Server-side API errors (transformed) - EMPTY OBJECT = no errors */
+  const [apiErrors, setApiErrors] = useState<
+    FormErrorsType<keyof ChangePasswordFormDataType>
+  >({});
 
   /* ===============================
-  ✏️ FIELD CHANGE HANDLER
-  =============================== */
+     ✏️ FIELD CHANGE HANDLER
+     =============================== */
+
+  /**
+   * ✅ CORREGIDO:
+   * - Usa delete para campos válidos (NO strings vacíos)
+   * - Preserva validatedData del adapter
+   * - Semántica correcta: error existe SOLO cuando hay error
+   */
   const handleChange = useCallback(
-  (fieldName: keyof ChangePasswordFormDataType, value: string | null) => {
-  //New state first / Calculamos el nuevo estado primero
-   setFormData((currentFormData:ChangePasswordFormDataType) => {
-    const updatedForm = { ...currentFormData, [fieldName]: value };
+    (fieldName: keyof ChangePasswordFormDataType, value: string | null) => {
+      setFormData((currentFormData: ChangePasswordFormDataType) => {
+        const updatedForm = {
+          ...currentFormData,
+          [fieldName]: value ?? ''
+        };
 
-  // Mark touched
-    setTouchedFields((prev)=>({
-     ...prev,[fieldName]:true,
-    }))
-  
-  // Mark dirty
-  if(currentFormData[fieldName] !== value){
-   setDirtyFields((prev)=>({...prev, [fieldName]:true,}))
-  }
+        // 🎯 Mark field as touched
+        setTouchedFields((prev) => ({
+          ...prev,
+          [fieldName]: true
+        }));
 
-  // Validate field (real-time) / Validamos con la instantanea exacta del nuevo formulario
-    const validationResult = validateField(fieldName, value, updatedForm);
+        // 🎯 Mark field as dirty if value changed
+        if (currentFormData[fieldName] !== value) {
+          setDirtyFields((prev) => ({
+            ...prev,
+            [fieldName]: true
+          }));
+        }
 
-  // Update errors / actualizar errores
-    setValidationErrors((prevErrors) => ({
-      ...prevErrors,
-      [fieldName]: validationResult.isValid? "":validationResult.error??"",
-    }));
+        // 🧪 Real-time validation for this field only
+        const validationResult = validateField(
+          fieldName,
+          value ?? '',
+          updatedForm
+        );
 
-    return updatedForm;
-   });
-  },
-  [validateField, setFormData] 
-);
+        // 📝 Update validation errors - ✅ CORREGIDO: delete vs string vacío
+        setValidationErrors((prevErrors) => {
+          const next = { ...prevErrors };
 
-/* ===============================
-🚀 SUBMIT HANDLER
-=============================== */
-//It ONLY coordinates validation, API call, and error mapping.
-const handleSubmit = async ()=>{
- // Mark all fields as touched before validation
- setTouchedFields({
-  currentPassword: true,
-  newPassword: true,
-  confirmPassword: true,
- });
- setValidationErrors({});
- setApiErrors({});
- // Run full client-side validation
- const validationResult = validateAll(formData);
+          if (validationResult.isValid) {
+            // ✅ Campo válido - eliminar cualquier error existente
+            delete next[fieldName];
+          } else {
+            // ❌ Campo inválido - agregar mensaje de error
+            next[fieldName] = validationResult.error ?? 'Invalid value';
+          }
 
- if (!validationResult.isValid) {
-  setValidationErrors(validationResult.errors);
-  return;
- }
+          return next;
+        });
 
- const result = await handleDomainChangePassword(formData);
-// Domain contract guarantees ChangePasswordResultType
-  if (!result.success) {
-  // Field-level API errors only
-   if (result.fieldErrors) {
-    const mappedErrors = transformFromApiToFormErrors(result);
-    setApiErrors(mappedErrors);
-   }
-   return;
-  }
+        return updatedForm;
+      });
+    },
+    [validateField, setFormData]
+  );
 
-}
+  /* ===============================
+     🚀 SUBMIT HANDLER
+     =============================== */
 
-/* ===============================
-  ♻️ RESET (OPTIONAL)
-=============================== */
+  /**
+   * ✅ CORREGIDO:
+   * - Retorna ChangePasswordResultType | void (no throw)
+   * - Pasa touchedFields a validateAll (soporta validateOnlyTouched)
+   * - Objetos vacíos para errores (no strings vacíos)
+   */
+  const handleSubmit = async (): Promise<ChangePasswordResultType | void> => {
+    // 🎯 Mark ALL fields as touched for submit-time validation
+    setTouchedFields({
+      currentPassword: true,
+      newPassword: true,
+      confirmPassword: true
+    });
+
+    // 🧹 Clear previous errors - ✅ CORRECTO: objetos vacíos
+    setValidationErrors({});
+    setApiErrors({});
+
+    // 🧪 Full client-side validation with touched fields
+    const validationResult = validateAll(
+      formData,
+      new Set(Object.keys(touchedFields) as Array<keyof ChangePasswordFormDataType>)
+    );
+
+    // ❌ Client validation failed
+    if (!validationResult.isValid) {
+      setValidationErrors(validationResult.errors);
+      return; // ✅ void = validation failed, container knows
+    }
+
+    try {
+      // 🎯 Call domain function (API)
+      const result = await handleDomainChangePassword(formData);
+
+      // ❌ Domain error - transform backend field errors
+      if (!result.success && result.fieldErrors) {
+        // ✅ CORRECTO: Pasar SOLO fieldErrors, no todo el result
+        const mappedErrors = transformFromApiToFormErrors(result.fieldErrors);
+        setApiErrors(mappedErrors);
+      }
+
+      // ✅ Return domain result to container
+      return result;
+
+    } catch (error) {
+      // 🔴 Unexpected error (network, server down, etc.)
+      console.error('❌ Unexpected error in handleSubmit:', error);
+
+      // ✅ Return valid domain result, NEVER throw
+      const errorResult: ChangePasswordResultType = {
+        success: false,
+        error: 'UnexpectedError',
+        message: 'An unexpected error occurred. Please try again.'
+      };
+
+      return errorResult;
+    }
+  };
+
+  /* ===============================
+     ♻️ RESET FORM
+     =============================== */
+
+  /** Resets all form state to initial values */
   const resetForm = useCallback(() => {
-   setValidationErrors({});
-   setApiErrors({});
+    setValidationErrors({});
+    setApiErrors({});
+    setTouchedFields({});
+    setDirtyFields({});
   }, []);
 
- /* ===============================
-  📤 RETURN
- =============================== */
+  /* ===============================
+     📤 HOOK RETURN
+     =============================== */
+
   return {
-   handleChange,
-   handleSubmit,
-   resetForm,
-   validationErrors,
-   apiErrors,
-   touchedFields,
-   dirtyFields,
-   isSubmittingAllowed:
-    Object.values(validationErrors).every(error => error === ""),
-   
- };
+    /** ✏️ Field change handler with real-time validation */
+    handleChange,
+    /** 🚀 Form submit handler - returns domain result or void */
+    handleSubmit,
+    /** ♻️ Reset all form state */
+    resetForm,
+    /** ❌ Client-side validation errors - EMPTY = no errors */
+    validationErrors,
+    /** ❌ Server-side API errors - EMPTY = no errors */
+    apiErrors,
+    /** 🎯 Fields that have been touched/blurred */
+    touchedFields,
+    /** 🎯 Fields that have been modified (reserved for future UX) */
+    dirtyFields,
+    /**
+     * ✅ Whether form can be submitted
+     * 🔑 ROBUST: Uses Object.keys().length, not string comparison
+     * 🔑 SEMANTIC: Empty object = no errors = can submit
+     */
+    isSubmittingAllowed:
+      Object.keys(validationErrors).length === 0 &&
+      Object.keys(apiErrors).length === 0
+  };
 };
 
-/* 🌟 ===============================
-📝 DEFAULT EXPORT
-=============================== 🌟 */
 export default useChangePasswordFormLogic;
-
