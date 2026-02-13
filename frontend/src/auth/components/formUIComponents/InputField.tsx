@@ -1,5 +1,4 @@
 // 📁 frontend/src/components/common/InputField/InputField.tsx
-
 /* 🌟 ===============================
 📦 IMPORT DEPENDENCIES
 =============================== 🌟 */
@@ -18,7 +17,7 @@ export type InputFieldProps = {
   value: string;
 
   /** 🎮 Change handler */
-  onChange: (value: string) => void;
+  onChange: (value: string | React.ChangeEvent<HTMLInputElement>) => void;
 
   /** ❌ Error message */
   error?: string;
@@ -44,14 +43,20 @@ export type InputFieldProps = {
   /** 🔧 Extra CSS class names */
   className?: string;
 
+  
   /** 🎨 Inline styles */
   style?: React.CSSProperties;
-
+  
   // 🔑 Optional generic toggle for content visibility
   showContentToggle?: boolean;
+  onToggleVisibility?:() => void;
+
   isContentVisible?: boolean;
+
   onToggleContent?: () => void;
 
+  touched?: boolean;
+  
   /** 👀 Optional icon/svg for the toggle button */
   toggleIcon?: React.ReactNode;
 };
@@ -76,17 +81,19 @@ const InputField: React.FC<InputFieldProps> = React.memo(
     showContentToggle = false,
     isContentVisible = false,
     onToggleContent,
-    toggleIcon,
+    toggleIcon, 
+
   }) => {
     /* 🌟 ===============================
     🎮 EVENT HANDLERS
     ================================ 🌟 */
-    const handleChange = React.useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange(e.target.value);
-      },
-      [onChange]
-    );
+   const handleChange = React.useCallback(
+     (valueOrEvent: string | React.ChangeEvent<HTMLInputElement>) => {
+       const value = typeof valueOrEvent === 'string' ? valueOrEvent : valueOrEvent.target.value;
+       onChange(value);
+     },
+     [onChange]
+   );
 
     /* 🌟 ===============================
     🎨 COMPUTED VALUES
@@ -127,11 +134,13 @@ const InputField: React.FC<InputFieldProps> = React.memo(
             id={inputId}
             type={showContentToggle ? (isContentVisible ? "text" : "password") : type}
             value={value}
-            onChange={handleChange}
+            onChange={(e) => handleChange(e)}
             placeholder={placeholder}
             disabled={disabled}
             required={required}
             className={styles.inputField}
+            style={{ paddingRight: showContentToggle ? '40px' : '12px' }} // Evita que el texto toque el icono
+
             {...ariaAttributes}
           />
 
@@ -149,7 +158,7 @@ const InputField: React.FC<InputFieldProps> = React.memo(
         </div>
 
         {/* ❌ ERROR MESSAGE */}
-        {hasError && (
+        {hasError && (// hasError = touched && error
           <div
             id={`${inputId}-error`}
             className={styles.errorMessage}
@@ -162,7 +171,9 @@ const InputField: React.FC<InputFieldProps> = React.memo(
 
         {/* ℹ️ HELP TEXT */}
         {helpText && !hasError && (
-          <div className={styles.helpText}>{helpText}</div>
+          <div className={styles.helpText}>
+           {helpText}
+            </div>
         )}
       </div>
     );

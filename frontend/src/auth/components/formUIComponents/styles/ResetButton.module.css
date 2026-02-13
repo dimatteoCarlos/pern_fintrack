@@ -1,0 +1,73 @@
+/* 📁 frontend/src/components/common/SubmitButton/SubmitButton.module.css */
+
+/* 🌟 ===============================
+🎨 RESET BUTTON STYLES
+=============================== 🌟 */
+/**
+ * 🔄 Reset Button - Secondary Action Style
+ */
+
+.resetButton {
+  /* Layout & Box Model */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  min-height: 42px; /* Alineado con la altura del SubmitButton */
+  width:auto;
+  
+  /* Typography */
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6c757d; /* Gris neutro */
+  
+  /* Visual Style */
+  background-color: transparent;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  
+  /* Reset default button styles */
+  outline: none;
+  user-select: none;
+}
+
+/**
+ * 🖱️ Hover State
+ */
+.resetButton:hover:not(:disabled) {
+  background-color: #f8f9fa;
+  border-color: #ced4da;
+  color: #495057;
+  color: #212529;
+}
+
+/**
+ * ⚡ Active/Pressed State
+ */
+.resetButton:active:not(:disabled) {
+  background-color: #e9ecef;
+  transform: translateY(1px);
+}
+
+/**
+ * 🔧 Disabled State
+ */
+.resetButton:disabled {
+  background-color: #f8f9fa;
+  border-color: #e9ecef;
+  color: #adb5bd;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/**
+ * 🎯 Focus State (Accessibility)
+ */
+.resetButton:focus-visible {
+  box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
+  border-color: #6c757d;
+  outline: 0;
+}
