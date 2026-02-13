@@ -1,211 +1,211 @@
-// src/utils/validation/hooks/useFieldValidation.ts (VERSIÓN SIMPLIFICADA)
-import { z } from 'zod';
+// 📁 frontend/src/utils/validation/hooks/useFieldValidation.ts
+// NOTE:
+// This hook performs ONLY schema-level validation.
+// Authentication / authorization errors MUST be handled separately from backend responses (e.g. incorrect password).
 
 /* 🌟 ===============================
-   🏷️ TYPE DEFINITIONS
+   🧪 GENERIC ZOD FIELD VALIDATION HOOK
+   Zod v4 compliant - Validates FULL schema, filters errors by path
+   Single source of truth - NO schema fragmentation
+   FE/BE safe - Same schema works on both sides
    =============================== 🌟 */
-//Tipo para CUALQUIER esquema Zod (muy genérico)
-export type AnyZodSchemaType = z.ZodTypeAny;
 
-//Extrae el tipo TypeScript INFERIDO desde un esquema Zod
-//Ej: si Zod dice {name: string}, infer devuelve {name: string}
-export type SchemaInferType<T extends AnyZodSchemaType> = z.infer<T>;
+import { z } from 'zod';
+import { useCallback } from 'react';
+import {
+  FieldValidationResultType,
+  FormValidationResultType,
+  ValidationOptionsType
+} from '../types/validationTypes';
 
-//Validate a single field / Interfaz para el resultado de validar UN SOLO campo
-export type FieldValidationResultType<TFieldValue = unknown> = {
- isValid: boolean;
- error?: string;
- data?: TFieldValue;
-}
+/* 🌟 ====================================
+ 🎯 MAIN VALIDATION HOOK: useFieldValidation
+ ======================================= 🌟 */
 
-//Validate all form / Interfaz para el resultado de validar TODO el formulario
-export type FormValidationResultType<TFormShape extends Record<string, unknown>> ={
-  isValid: boolean;
-  errors: Partial<Record<keyof TFormShape, string>>;
-  validatedData?: TFormShape;
-  generalError?: string;
-}
-
-//Opciones configurables del hook
-export type ValidationOptionsType= {
-  validateOnlyTouched?: boolean;
-}
-
-/* 🌟 ===============================
-🎯 MAIN VALIDATION HOOK (SIMPLE VERSION)
-=============================== 🌟 */
+ /**
+ * Generic validation hook based on a full Zod schema.
+ *
+ * 🔑 DESIGN PRINCIPLES:
+ * 1. Schema is NEVER fragmented or sliced
+ * 2. Partial data is ALWAYS allowed during editing
+ * 3. Field validation = FULL schema validation + ERROR FILTERING by path
+ * 4. Same schema works on FE + BE - zero divergence
+ *
+ * @param schema - Zod schema (same as backend)
+ * @param options - Validation behavior configuration
+ * @returns Validation functions for field and form level
+ */
 export const useFieldValidation = <TFormShape extends Record<string, unknown>>(
-  schema: AnyZodSchemaType,
+  schema: z.ZodType<TFormShape> ,
   options: ValidationOptionsType = {}
 ) => {
-  const { validateOnlyTouched = false } = options;
 
-/* 🔹 VALIDATE SINGLE FIELD */
-/*
-┌──────────────────────────────────────────┐
-│  ENTRADAS:                               │
-│  • fieldName: "email"                    │
-│  • fieldValue: "usuario@ejemplo.com"     │
-│  • context: {password: "1234"}           │
-├──────────────────────────────────────────┤
-│  PROCESO:                                │
-│  1. Combina contexto + valor del campo   │
-│  2. Pregunta a Zod: ¿Estos datos cumplen │
- las reglas?                               │
-│  3. Zod responde: Sí/No + motivo         │
-├──────────────────────────────────────────|
-│  SALIDAS:                                │
-│  • isValid: true/false                   │
-│  • error: "Email inválido" (si hay error)│
-│  • data: valor original                  │
-└──────────────────────────────────────────┘
+/* 🔹 ===============================
+ 🔍 VALIDATE SINGLE FIELD
+ =============================== 🔹 */
+
+/**
+* Validates a single field using the FULL schema.
+* ✅ Validates complete schema with partial data
+* ✅ Filters errors by field path
+* ✅ Never fragments or modifies the schema
+* ✅ Always returns the original field value as validatedData
+*
+* @param fieldName - Field to validate
+* @param fieldValue - Current value of the field
+* @param formData - Current partial form state
+* @returns Validation result for this field only
 */
-  const validateField = <TFieldValue = unknown>(
-    fieldName: keyof TFormShape,
+  const validateField = useCallback(<TFieldName extends keyof TFormShape, TFieldValue>(
+    fieldName: TFieldName,
     fieldValue: TFieldValue,
-    context: Partial<TFormShape> = {}// Datos adicionales (otros campos)
+    formData: Partial<TFormShape> = {}
   ): FieldValidationResultType<TFieldValue> => {
-//TRY: Intentamos validar (por si hay errores inesperados) 
-    try {
-//Preparamos datos para validar: contexto + valor del campo   
-// ✅ SIMPLIFICADO: Validar datos parciales con el schema completo
-   const dataToValidate = { ...context, [fieldName]: fieldValue };
 
-//Ejecutamos validación Zod (safeParse NO lanza excepciones)
- const result = schema.safeParse(dataToValidate);
-
-//SI FALLA: Procesamos errores 
- if (!result.success) {
-// Filtrar solo errores de este campo
- const fieldIssue = result.error.issues.find(issue => issue.path[0] === fieldName);
-
-// Devolvemos resultado de error
- return {
-   isValid: false,
-   error: fieldIssue?.message || `Invalid fieldValue for ${String(fieldName)}`,
-   data: fieldValue //returns original fieldValue
- };
- }
- //SI PASA: Devolvemos éxito
-  return { isValid: true, data: fieldValue };
- } catch (error) {
-  console.warn(`[useFieldValidation] Error validating field "${String(fieldName)}":`, error);
-
-  return { 
-    isValid: false, 
-    error: `Validation failed for ${String(fieldName)}`, 
-    data: fieldValue 
-  };
-    }
-  };
-//----------------------------------------
-/* 🔹 VALIDATE ENTIRE FORM (FOR SUBMIT) */
-/*
-┌─────────────────────────────────────────────────────┐
-│  ENTRADAS:                                          │
-│  • formData: {email: "...", password: "..."}        │
-│  • touchedFields: Set(["email"])                    │
-├─────────────────────────────────────────────────────┤
-│  PROCESO:                                           │
-│  1. Filtra datos (solo campos tocados si está activo)│
-│  2. Pregunta a Zod: ¿TODO el formulario es válido?  │
-│  3. Zod valida todas las reglas a la vez            │
-├─────────────────────────────────────────────────────┤
-│  SALIDAS:                                           │
-│  • isValid: true/false                              │
-│  • errors: {email: "Error", password: "Error"}      │
-│  • validatedData: datos limpios y tipados           │
-└─────────────────────────────────────────────────────┘
-*/
- const validateAll = (
-  formData: Partial<TFormShape>,
-  touchedFields?: Set<keyof TFormShape>
-  ): FormValidationResultType<TFormShape> => {
-  try {
-   let dataToValidate: Partial<TFormShape> = formData;
-   
-   if (validateOnlyTouched && touchedFields?.size) {
-    const filteredData: Partial<TFormShape> = {};
-    for (const fieldName of touchedFields) {
-     if (fieldName in formData) {
-      filteredData[fieldName] = formData[fieldName];
-     }
-    }
-    dataToValidate = filteredData;
-   }
-
-// Validamos TODO el formulario con Zod
-  const result = schema.safeParse(dataToValidate);
-
-  if (!result.success) {
-   const errors: Partial<Record<keyof TFormShape, string>> = {};
-
-   result.error.issues.forEach(issue => {
-    const fieldName = issue.path[0];
-
-    if (typeof fieldName === 'string' && fieldName in formData && !errors[fieldName as keyof TFormShape]) {
-     errors[fieldName as keyof TFormShape] = issue.message || 'Invalid value';
-    }
-   });
-
-   return {
-    isValid: false, errors, validatedData: undefined 
+ // 🔁 Merge current field value into partial form state
+    const dataToValidate: Partial<TFormShape> = {
+      ...formData,
+      [fieldName]: fieldValue
     };
-  }
 
-// SI PASA: Devolvemos datos validados
-  return { isValid: true, errors: {}, validatedData: result.data as TFormShape };
-  } catch (error) {
-   console.error('[useFieldValidation] Unexpected error:', error);
+ // 🛡️ Validate using FULL schema
+    const result = schema.safeParse(dataToValidate);
+ //------------------------------------
+    console.log('field validation result:', result, fieldName, fieldValue);
+
+ // ✅ SUCCESS PATH - Field is valid
+    if (result.success) {
+      return {
+        isValid: true,
+        validatedData: fieldValue  // ✅ Always the original field value
+      };
+    }
+
+ // 🔍 ERROR PATH - Find issues for this specific field
+   const fieldIssues = result.error.issues.filter(issue =>
+    issue.path.length > 0 && issue.path[0] === fieldName
+   );
+
+// ✅ Field is valid (other fields may be invalid, but this one is fine)
+   if (fieldIssues.length === 0) {
+      return {
+        isValid: true,
+        validatedData: fieldValue
+      };
+    }
+
+ // ❌ Field has validation errors
    return {
     isValid: false,
-    errors: {},
-    validatedData: undefined,
-    generalError: 'Form validation failed unexpectedly'
-   };
+    validatedData: fieldValue,
+    error: fieldIssues[0].message  // First error message only (better UX)
+    };
+
+  }, [schema]);
+
+/* 🔹 ===============================
+ 📦 VALIDATE ENTIRE FORM
+ =============================== 🔹 */
+/**
+ * Validates the entire form using the FULL schema.
+ * Used primarily for form submission.
+ *
+ * @param formData - Complete or partial form data
+ * @param touchedFields - Optional set of touched fields (for validateOnlyTouched mode)
+ * @returns Complete validation result with errors and validated data
+ */
+ const validateAll = useCallback(
+  (
+   formData: Partial<TFormShape>,
+   touchedFields?: Set<keyof TFormShape>
+   ): FormValidationResultType<TFormShape> => {
+//----------------------------------------
+  console.log('received:', formData, touchedFields, options);
+
+// 🔍 Filter data if validateOnlyTouched is enabled
+  let dataToValidate: Partial<TFormShape> = formData;
+
+  if (options.validateOnlyTouched && touchedFields?.size) {
+   dataToValidate = {} as Partial<TFormShape>;
+   touchedFields.forEach(field => {
+    if (field in formData) {
+      dataToValidate[field] = formData[field];
+     }
+    });
+   }
+
+// 🛡️ Validate using FULL schema
+ const result = schema.safeParse(dataToValidate);
+//--------------------------------------------
+console.log('form validation result:', result)
+
+// ✅ SUCCESS PATH
+ if (result.success) {
+  return {
+   isValid: true,
+   errors: {},
+   validatedData: result.data,
+   formError: undefined
+  };
+ }
+
+// ❌ ERROR PATH
+ const errors: Partial<Record<keyof TFormShape, string>> = {};
+
+ let formError: string | undefined;
+
+// Process all validation issues
+ result.error.issues.forEach(issue => {
+  const field = issue.path[0] as keyof TFormShape | undefined;
+//-----------------------------------------
+ console.log('error path:', errors, issue, field,'options:', options, options.validateOnlyTouched,touchedFields, )
+
+// 📝 Global form error (no field associated)
+ if (!field) {
+  formError = issue.message;
+  return;
+ }
+
+// 🔍 Respect touched-only validation if enabled
+ if (options.validateOnlyTouched && touchedFields && !touchedFields.has(field)) {
+  return;
+ }
+
+// ✅ Store first error only (better UX)
+ if (!errors[field]) {
+   errors[field] = issue.message;
   }
- };
-//-------------------
-/* 🔹 UTILITIES */
-const isFieldValid = <TFieldValue = unknown>(
- fieldName: keyof TFormShape,
- value: TFieldValue,
- context: Partial<TFormShape> = {}
- ): boolean => validateField(fieldName, value, context).isValid;
- 
-//--------
- const createEmptyErrors = (): Partial<Record<keyof TFormShape, string>> => ({});
-//--------
-//returns of hook
-return {
-//main functions
+ });
+
+//---------------------------------
+ console.log('useFieldValidation return object:', {
+  isValid: false,
+  errors,
+  validatedData: undefined,
+  formError
+   })
+//----------------------------------
+
+ return {
+  isValid: false,
+  errors,
+  validatedData: undefined,
+  formError
+    };
+  },[schema, options ]
+ );
+
+/* ===============================
+📤 HOOK RETURN
+=============================== */
+ return {
+ /** 📋 The original schema (reference, for debugging) */
+  schema,
+ /** 🔍 Validate a single field - filtered by path */
  validateField,
- validateAll,
-
-//utils
- isFieldValid, //quick check
- createEmptyErrors, //state initialization
-
-//references (debug/testing)
- options,
- schema,
+ /** 📦 Validate entire form - all errors */
+ validateAll
  };
 };
-// Exportamos el tipo del retorno (para TypeScript)
-export default useFieldValidation;
 
-//FLOW CHART
-/*
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  COMPONENTE     │    │  HOOK DE         │    │  ZOD            │
-│  DE FORMULARIO  │───▶│  VALIDACIÓN      │───▶│  (Motor de     │
-│                 │    │                  │    │   reglas)       │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                       │                       │
-         │ 1. onChange           │ 2. validateField()    │ 3. safeParse()
-         │    (usuario escribe)  │    (combina datos)    │    (aplica reglas)
-         │                       │                       │
-         │ 6. muestra error      │ 5. devuelve resultado │ 4. devuelve válido
-         │    o éxito            │    {isValid, error}   │    o lista errores
-         ◀───────────────────────◀───────────────────────◀
-*/
+export default useFieldValidation;
