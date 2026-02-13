@@ -92,7 +92,7 @@ const getUserInfo = useCallback((): UserInfoType => {
  return {
   initial: 'U',
   currency: DEFAULT_CURRENCY
- };
+ }; 
  }
   
 const userLabel = userData.user_firstname || 
@@ -222,12 +222,14 @@ if (modalState === 'none') return;
 // Close modal on any click (overlay handles propagation)
  const handleClickOutside = (event: MouseEvent): void => {
   const target = event.target as Node;
+
 //If menu is open and click is outside menu
 const clickedOutsideMenu = menuRef.current && !menuRef.current.contains(target);
 
  if(modalState==='menu' && clickedOutsideMenu){
   setModalState('none');
  }
+
 //If form is open and click is outside form
  if((modalState === 'userForm' || modalState === 'changePasswordForm') && formRef.current && !formRef.current.contains(target)){
   setModalState('menu');
@@ -268,9 +270,9 @@ return (
  />
 
  {/* 📋 PROFILE MENU MODAL */}
- {modalState === 'menu' && (
+ {modalState !== 'none' && (
  <div 
-  className={styles.menuOverlay}
+  className={`${styles.menuOverlay} ${modalState !== 'menu' ? styles.hidden : ''}`}
   // data-testid="profile-menu-overlay"
  >
  <div 
@@ -286,6 +288,7 @@ return (
   >
         
 {/* 🎯 MENU HEADER */}
+
 <div className={styles.menuHeader}
  tabIndex={0} 
 >
@@ -386,8 +389,9 @@ return (
    onClick={(e) => e.stopPropagation()}
    >
    <ChangePasswordContainer 
-    onClose={handleNavigateBack}
-    onSuccess={handleCloseCurrentModal}
+     onClose={() => {
+     handleNavigateBack();  
+    }}
    />
    </div>
  </div>

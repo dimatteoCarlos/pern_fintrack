@@ -1,4 +1,5 @@
 // 📁 frontend/src/auth/components/userProfileMenu/UserAvatar.tsx
+//refs:UserProfileMenu.tsx
 // 🎯 PRESENTATIONAL COMPONENT: User Avatar with Tooltip
 // 🔧 Responsibility: Display user avatar and handle hover interactions
 /* 🌟 =======================
@@ -100,7 +101,7 @@ const avatarRef = useRef<HTMLDivElement>(null);
 // 🎮 EVENT HANDLERS
 // ====================
 const handleInternalClick = useCallback((event:React.MouseEvent<HTMLElement>)=>{
-if(isDisabled)return
+if(isDisabled)return;
 onClickFn(event);
 },[isDisabled,onClickFn]);
 
@@ -110,6 +111,7 @@ if (!isTooltipDisabled && !isDisabled) {
 setIsTooltipShown(true);
  }
 };
+
 /**
 * 🖱️ Handle mouse leave for tooltip
 */

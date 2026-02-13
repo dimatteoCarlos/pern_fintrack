@@ -9,24 +9,24 @@
 .menuOverlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.8);
   z-index: 998;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.3s ease;
 }
 
 /* Form modal overlay */
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.8);
   z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.3s ease;
 }
 
 /* ====================
@@ -56,7 +56,7 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease;
+  animation: slideUp 0.5s ease;
 }
 
 /* ====================
@@ -280,4 +280,18 @@
   .menuItem {
     padding: 16px;
   }
+}
+/*******************************/
+/*soft hidening*/
+.hidden {
+  visibility: none; /* O visibility: hidden; si quieres preservar el espacio */
+}
+
+/* Opcional: Si quieres que el menú se vea detrás del modal con un efecto de desenfoque */
+.menuOverlay {
+  z-index: 1000;
+}
+
+.modalOverlay {
+  z-index: 1100; /* Asegura que el formulario esté SIEMPRE por encima del menú */
 }
