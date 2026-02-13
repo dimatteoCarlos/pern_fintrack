@@ -530,7 +530,7 @@ const handleSignOut = async()=>{
  // ============================================
  // setError(responseData.message || 'Password change failed');
  //----------------------
-  console.log('fieldErrors:', response.data.fieldErrors)
+  console.log('fieldErrors:', responseData.fieldErrors)
 
   return {
    success: false,
