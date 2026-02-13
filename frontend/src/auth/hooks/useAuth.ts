@@ -41,6 +41,7 @@ import { INITIAL_PAGE_ADDRESS, LOCAL_STORAGE_KEY } from '../../helpers/constants
 import {
  AuthSuccessResponseType,
  ChangePasswordResponseType,
+ ChangePasswordResultType,
  ProfileUpdatePayloadType,
  ProfileUpdateResponseType,
  SignInCredentialsType,
@@ -203,24 +204,6 @@ return 'An unexpected error occurred';
 
   try {
 // ✅ USE AUTHFETCH FOR ALL HTTP REQUESTS
-   // if normal fetch is used:
-   // const response = await fetch(url_signin, {
-   //  method:'POST',
-   //  credentials:'include',
-   //  headers:{
-   //  'Content-Type':'application/json'},
-   //  body:JSON.stringify(credentials),
-   // });
-
-   // if(!response.ok){
-   //  const errorData = await response.json().catch(() => ({}));
-   //  console.error('sign in error',Error(errorData.message || `HTTP error! status: ${response.status}`))
-   //  throw new Error(errorData.message || `HTTP error! status: ${response.status}. Login failed`);
-   // }
-   // const data = await response.json()
-
-   //El .catch() solo se encarga de devolver un objeto vacío ({}) en caso de que response.json() falle, para evitar un error
-
    const response = await authFetch<SignInResponseType>(url_signin, { 
    method: 'POST', 
    data: credentials 
@@ -239,7 +222,7 @@ return 'An unexpected error occurred';
 
 // 🟢 VALIDATE response integrity before proceeding
    if (accessToken && userDataFromResponse) {
-    //Store access token in session store(cleared on browser close)
+//Store access token in session store(cleared on browser close)
     sessionStorage.setItem('accessToken', accessToken);
      
 // Handle "Remember Me" preference
@@ -503,15 +486,8 @@ const handleSignOut = async()=>{
 * @param confirmPassword - Confirmation of new password
 * @returns Promise<boolean> indicating success
 */
- type ChangePasswordResult = {
-   success: boolean;
-   message?: string;
-   error?: string;
-   fieldErrors?: Record<string, string[]>;
-   retryAfter?: number;
- };
 
- const handleDomainChangePassword = async (currentPassword: string, newPassword: string, confirmPassword: string):Promise<ChangePasswordResult>=> {
+ const handleDomainChangePassword = async (currentPassword: string, newPassword: string, confirmPassword: string):Promise<ChangePasswordResultType>=> {
   // clearError();
   // clearSuccessMessage();
   // setIsLoading(true);
@@ -522,17 +498,24 @@ const handleSignOut = async()=>{
      data: { currentPassword, newPassword, confirmPassword }
    });
    const responseData = response.data;
+  //-------------------------
+  console.log("🔐useAuth: Backend response:", response.data);
+  console.log("🔐 Backend response:", responseData);
+
   // ==================
   // 🟢 SUCCESS PATH
   // ==================
   if(responseData.success === true){
    const messageResponse='success' in response.data && response.data.success && response.data.message ;
 
-   // ✅ PASSWORD CHANGE SUCCESSFUL
+  // ✅ PASSWORD CHANGE SUCCESSFUL
    const successMessage = messageResponse || 'Password updated  successfully.';
    setSuccessMessage(successMessage);
+  //------------------------------
+  console.log('useAuth success msg:', successMessage, response.data.message)
+  //------------------------------
   // 🚨 SECURITY: Invalidate current session after password change
-  // User should re-authenticate with new password
+ // User should re-authenticate with new password
  // setTimeout(() => {
  // logoutCleanup(false); // Manual logout (not expired)
  // }, 3000); // Give user 3 seconds to read success message
@@ -545,7 +528,10 @@ const handleSignOut = async()=>{
  // ============================================
  // 🔴 CONTROLLED BACKEND FAILURE (success:false)
  // ============================================
-  // setError(responseData.message || 'Password change failed');
+ // setError(responseData.message || 'Password change failed');
+ //----------------------
+  console.log('fieldErrors:', response.data.fieldErrors)
+
   return {
    success: false,
    error: responseData.error || 'ChangePasswordError',
@@ -563,6 +549,10 @@ const handleSignOut = async()=>{
   const errorMessage='Session expired for security reasons.';
   const dataError =err.response.data;
   // setError(errorMessage);
+  //-------------------------------
+  console.error("🔥 Error in handleDomainChangePassword: 401", err);
+  //-------------------------------
+
   return {
     success: false,
     error: dataError?.error || "SessionExpired",
@@ -577,7 +567,10 @@ const handleSignOut = async()=>{
  if (axios.isAxiosError(err) && err.response?.status === 429) {
   const errorData = err.response.data;
   const errorMessage = errorData?.message || 'Too many password change attempts.';
-  // setError(errorMessage);
+ // setError(errorMessage);
+ //-------------------------------
+  console.error("🔥 Error in handleDomainChangePassword: 429", err);
+ //-------------------------------
   return {
     success: false,
     error: errorData?.error || 'RateLimitExceeded',
@@ -592,6 +585,9 @@ const handleSignOut = async()=>{
   const errorData = err.response.data ;
   const errorMessage = errorData?.message || 'Request validation failed';
   // setError(errorMessage);
+  //-------------------------------
+  console.error("🔥 Error in handleDomainChangePassword: 400", err);
+ //-------------------------------
 
  return {
   success: false,
@@ -602,6 +598,10 @@ const handleSignOut = async()=>{
  // ==================
  // ❌ UNKNOWN ERROR
  // ==================
+//-------------------------------
+  console.error("🔥 Error in handleDomainChangePassword: unknown:", err);
+//-------------------------------
+
  return {
   success: false,
   error: "UnknownError",
