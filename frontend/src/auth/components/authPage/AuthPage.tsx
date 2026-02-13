@@ -28,28 +28,45 @@ export default function AuthPage() {
     handleSignUp,
     clearError,
     clearSuccessMessage,
-    showSignInModalOnLoad,
-    setShowSignInModalOnLoad,
+    // showSignInModalOnLoad,
+    // setShowSignInModalOnLoad,
   } = useAuth();
 
 //------------------------------------
+// ✅ HANDLE DIFFERENT NAVIGATION STATES
+//------------------------------------
 //Detect Session expiration or forced login from navigation state
 useEffect(() => {
+ const navigationState = location.state as {
+  expired:boolean;
+  showModal?:boolean;
+  initialMode?:'signin'|'signup';
+  from?:string;
+ } | undefined;
+
+// Clear previous states
+ clearError();
+ clearSuccessMessage();
+
+// Determine behavior based on navigation state
  //coming from logoutCleanup with {expired:true}
- if(location.state?.expired){
+ if(navigationState?.expired===true){
+  // Session expired - open signin modal 
   setInitialAuthMode('signin');
   setShowAuthModal(true);
+  console.log('🔄 Session expired - opening signin modal');
  }
-}, [location.state]);
+ else if(navigationState?.expired===false){
+  // Manual logout - open signin modal
+  setInitialAuthMode('signin');
+  setShowAuthModal(true);
+  console.log('👋 Manual logout - opening signin modal');
+ }
+
+ // // If no specific reason, show page with buttons only
+// User must click "Sign In" or "Sign Up" to open modal
+}, [location.state, clearError, clearSuccessMessage]);
 //------------------------------
-// Effect to show sign-in modal on load if triggered by ProtectedRoute
-  useEffect(() => {
-   if (showSignInModalOnLoad) {
-     setShowAuthModal(true);
-     setShowSignInModalOnLoad(false); // Reset after showing
-   }
-  }, [showSignInModalOnLoad, setShowSignInModalOnLoad]);
-//------------------------------------
 //FUNCTIONS EVENT HANDLERS
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -59,7 +76,7 @@ useEffect(() => {
     setIsMenuOpen(false); //
     clearError();
     clearSuccessMessage();
-    setShowSignInModalOnLoad(false);
+    // setShowSignInModalOnLoad(false);
     //-----------------------
     setShowAuthModal(true);
     setInitialAuthMode('signin');
@@ -69,10 +86,10 @@ useEffect(() => {
     setIsMenuOpen(false);
     clearError();
     clearSuccessMessage();
-    setShowSignInModalOnLoad(false);
     //-----------------------
     setShowAuthModal(true);
     setInitialAuthMode('signup');
+    // setShowSignInModalOnLoad(false);
   };
 
   const closeAuthModal = () => {
