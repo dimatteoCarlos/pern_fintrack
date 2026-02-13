@@ -37,29 +37,3 @@ export function useAutoClose(
   }, [durationMs, callback, isEnabled]);
 }
 
-/*
-import { useState, useCallback } from "react";
-import { useSuccessAutoClose } from "./auth/hooks/useAutoClose";
-
-const MyComponent = () => {
-  const [msg, setMsg] = useState("");
-
-  // Memorizamos la función para que el hook no se reinicie innecesariamente
-  const handleClose = useCallback(() => setMsg(""), []);
-
-  // Usamos tu hook personalizado
-  useSuccessAutoClose(msg, handleClose);
-
-  return (
-    <div>
-      <button onClick={() => setMsg("¡Guardado con éxito!")}>
-        Simular Éxito
-      </button>
-      
-      {msg && <div className="alert">{msg}</div>}
-    </div>
-  );
-};
-
-
-*/
