@@ -1,5 +1,6 @@
 // backend/utils/authUtils/authFn.js
 //hashed,isRight,createToken,createRefreshToken,cleanRevokedTokens,rotateRefreshToken
+
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -74,7 +75,7 @@ export const createRefreshToken = (id) => {
   }
 //refresh token expiration time
   const expiresIn = process.env.NODE_ENV === 'development'
-    ? '7d'  //'5m'// ✅ 1 hora en desarrollo
+    ? '7d'// ✅ 1 hora en desarrollo
     : '7d'; // ✅ 7 días en producción
 
   return jwt.sign(
@@ -93,11 +94,10 @@ export const createRefreshToken = (id) => {
 //------------
 export async function cleanRevokedTokens() {
   try {
-
     await pool.query('SELECT 1');
     const daysAgo = new Date();
     daysAgo.setDate(daysAgo.getDate() - 1*0);
-  console.log("🚀 ~ cleanRevokedTokens ~ daysAgo:", daysAgo)
+    console.log("🚀 ~ cleanRevokedTokens ~ daysAgo:", daysAgo)
 
     const result = await pool.query(
       'DELETE FROM refresh_tokens WHERE revoked = TRUE OR (updated_at <= $1 OR expiration_date <= $1)',
@@ -188,4 +188,27 @@ console.error('❌ Error rotating refresh token:', error);
     client.release();
   }
 };
+
+//---
+export const revokeAllUserRefreshTokens  = async (clientOrPool=pool, userId, req) => {
+
+ try {
+  const dbClient = clientOrPool ?? pool;
+// 📛 REVOKE ALL FRESH TOKENS
+  console.log('Entering revocation of all refresh tokens')
+ 
+  const revokeResult = await dbClient.query(
+   `UPDATE refresh_tokens 
+    SET revoked = TRUE, updated_at = NOW() 
+    WHERE revoked = $1 AND user_id = $2`,
+    [FALSE, userId]
+   );
+  
+ } catch (error) {
+// Log and relaunch
+    console.error('Error revoking refresh tokens:', error.message);
+    throw error;
+ }
+};
+
 
