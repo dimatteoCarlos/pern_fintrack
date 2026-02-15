@@ -98,8 +98,7 @@ export const signUpUser = async (req, res, next) => {
 
 // ✅ -Insert new user into data base
     const userData = await pool.query({
-      text: `INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id) VALUES ($1, $2, $3,$4,$5, $6, $7, $8) RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id,
-       ur.user_role_name;`,
+      text: `INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id) VALUES ($1, $2, $3,$4,$5, $6, $7, $8) RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id;`,
       values: [
         newUserId,
         username,
@@ -172,15 +171,15 @@ setRefreshTokenCookie(res, refreshToken);
 //   userAccessDevice: clientDevice,
 // };
 
-const userResponseData = {
-user_id: newUser.user_id,
-username: newUser.username,
-email: newUser.email,
-user_firstname: newUser.user_firstname,
-user_lastname: newUser.user_lastname,
-currency: currency_code,
-role: newUser.user_role_name || 'user'
-}
+  const userResponseData = {
+  user_id: newUser.user_id,
+  username: newUser.username,
+  email: newUser.email,
+  user_firstname: newUser.user_firstname,
+  user_lastname: newUser.user_lastname,
+  currency: currency_code,
+  role: newUser.user_role_name || 'user'
+  }
 
   res.status(201).json({
     message: 'User successfully registered',
