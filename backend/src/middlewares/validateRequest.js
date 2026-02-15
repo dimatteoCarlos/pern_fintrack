@@ -20,24 +20,25 @@ import { createError } from '../utils/errorHandling.js';
 export const validateRequestSync = (schema) =>{
 return (req, res, next)=>{
  try {
-  const validationResult = schema.safeParse(req.body);
-  if (!validationResult.success) {
-    const flattenedErrors = validationResult.error.flatten();
+ const validationResult = schema.safeParse(req.body);
+ if (!validationResult.success) {
+  const flattenedErrors = validationResult.error.flatten();
 
-    // 🎯 FORMATO COMPATIBLE CON TU FRONTEND
-      const errorResponse = {
-        success: false,
-        error: 'ValidationError',
-        message: 'Request validation failed',
-        details: {
-         fieldErrors: flattenedErrors.fieldErrors || {},
-         formErrors: flattenedErrors.formErrors || []
-         }
-        };
+ // 🎯 FORMATO COMPATIBLE CON FRONTEND
+  const errorResponse = {
+    success: false,
+    error: 'ValidationError',
+    message: 'Request validation failed',
+     fieldErrors: flattenedErrors.fieldErrors || {},
+    // details: {
+    //  fieldErrors: flattenedErrors.fieldErrors || {},
+    //  formErrors: flattenedErrors.formErrors || []
+    //  }
+    };
    return res.status(400).json(errorResponse);
     }
 
- // ✅ DATOS VALIDADOS Y SANITIZADOS
+ // ✅ DATOS VALIDADOS
   req.validatedData = validationResult.data;
   next();
 
@@ -50,12 +51,8 @@ return (req, res, next)=>{
 
 export default {
  validateRequestSync,
-  // validateRequestAsync,
-  // formatZodErrorsForFrontend
+
 };
-
-
-
 
 
 // export const validateRequestAsync = (schema) => {
