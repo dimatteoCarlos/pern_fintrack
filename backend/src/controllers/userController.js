@@ -288,15 +288,15 @@ export const changePassword = async (req, res, next) => {
     // 🛑 BASIC SAFETY CHECK
     // =========================
     //Now, this is accomplished by zod
-    // if (!newPassword ) {
-    //  return res
-    //  .status(400)
-    //  .json({
-    //   success: false,
-    //   error: 'ValidationError',
-    //   message: 'New password was not received',
-    //  });
-    // }
+    if (!newPassword ) {
+     return res
+     .status(400)
+     .json({
+      success: false,
+      error: 'ValidationError',
+      message: 'New password was not received',
+     });
+    }
     
     await client.query('BEGIN');
 
@@ -343,6 +343,27 @@ export const changePassword = async (req, res, next) => {
       });
      }
 
+ // =========================
+ // 🚫 PREVENT PASSWORD REUSE
+ // =========================
+ const isSamePassword = await isRight(
+   newPassword,
+   userResult.rows[0].password_hashed
+ );
+
+ if (isSamePassword) {
+   await client.query('ROLLBACK');
+
+   return res.status(400).json({
+     success: false,
+     error: 'ValidationError',
+     message: 'New password must be different from the current password',
+     fieldErrors: {
+       newPassword: ['New password must be different from the current password'],
+     },
+   });
+ }; 
+
  // ===========================
  // 🔒 HASH & UPDATE PASSWORD
  // ===========================
@@ -363,7 +384,7 @@ export const changePassword = async (req, res, next) => {
 // ✅ SUCCESS RESPONSE
 // =========================   
 // 🔴 REVOKE ALL REFRESH TOKENS
-    await revokeAllUserRefreshTokens(client, userId);
+    await revokeAllUserRefreshTokens(userId, client);
 // 🔴 CLEAN ACCESS TOKEN
     clearAccessTokenFromCookie(res);
     res.clearCookie('refreshToken')
