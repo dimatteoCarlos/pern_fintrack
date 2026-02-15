@@ -1,9 +1,10 @@
 // backend/src/controllers/userController.js/
 //getUserById, updateUserById, changePassword
-import { hashed, isRight } from '../utils/authUtils/authFn.js';
+import { hashed, isRight, revokeAllUserRefreshTokens } from '../utils/authUtils/authFn.js';
 import { createError } from '../utils/errorHandling.js';
 import { pool } from '../db/configDB.js';
 import pc from 'picocolors';
+import { clearAccessTokenFromCookie } from '../middlewares/authMiddleware.js';
 
 //getUserById
 //GET http://localhost:5000/api/user/f7c5abf9-89e5-4891-bfb8-6dfe3022f226
@@ -265,33 +266,44 @@ console.log(pc.bgBlueBright('controller:',
 // 🎯 CHANGE USER PASSWORD
 //=========================
 //PATCH http://localhost:5000/api/user/change-password
+/**
+ * 🔐 CHANGE PASSWORD CONTROLLER
+ * 
+ * ✅ HTTP Semantics:
+ * - 401: Invalid Token / Expired (auth middleware)
+ * - 403: Current password wrong (NO logout)
+ * - 400: Field Schema validation
+ * - 429: Rate limit
+ */
 export const changePassword = async (req, res, next) => {
   console.log(pc.redBright('changePassword'));
+  
   const client = await pool.connect();
 
   try {
     const { userId } = req.user;
-    const { currentPassword, newPassword } = req.validatedData; //Validated by zod
+    const { currentPassword, newPassword } = req.validatedData; //Validated by Zod middleware (400 if fails)
     
     // =========================
     // 🛑 BASIC SAFETY CHECK
     // =========================
-    if (!newPassword ) {
-     return res
-     .status(400)
-     .json({
-      success: false,
-      error: 'ValidationError',
-      message: 'New password was not received',
-     });
-    }
+    //Now, this is accomplished by zod
+    // if (!newPassword ) {
+    //  return res
+    //  .status(400)
+    //  .json({
+    //   success: false,
+    //   error: 'ValidationError',
+    //   message: 'New password was not received',
+    //  });
+    // }
     
     await client.query('BEGIN');
 
  // =========================
  // 🔍 FETCH USER PASSWORD
  // =========================
- //1. GET USER AND CURRENT HASH
+ // GET USER AND CURRENT HASH
     const userResult = await client.query(
      `SELECT u.password_hashed 
      FROM users u
@@ -308,10 +320,11 @@ export const changePassword = async (req, res, next) => {
         error: 'NotFound',
         message: 'User not found',
       });
-
     }
     
-    //2. VERIFY CURRENT PASSWORD
+// =========================
+// 🔐 VERIFY CURRENT PASSWORD
+// =========================
     const isMatch = await isRight(
       currentPassword,
       userResult.rows[0].password_hashed
@@ -320,20 +333,18 @@ export const changePassword = async (req, res, next) => {
     // console.log({ isMatch });
     if (!isMatch) {
      await client.query('ROLLBACK');
-     return res.status(401).json({
+     return res.status(403).json({
         success: false,
         error: 'InvalidCredentials',
         message: 'Current password is incorrect',
-        details: {
-          fieldErrors: {
-            currentPassword: ['Current password is incorrect'],
-          },
+        fieldErrors: {
+          currentPassword: ['Current password is incorrect'],
         },
       });
      }
 
  // ===========================
- //3. 🔒 HASH & UPDATE PASSWORD
+ // 🔒 HASH & UPDATE PASSWORD
  // ===========================
    const newHashedPassword = await hashed(newPassword);
    
@@ -345,26 +356,35 @@ export const changePassword = async (req, res, next) => {
     
    await client.query('COMMIT');
 
-  //6. SCRUB SENSITIVE DATA
+// SCRUB SENSITIVE DATA
     req.validatedData = undefined;  
-  // =========================
-  //7. ✅ SUCCESS RESPONSE
-  // =========================   
+
+// =========================
+// ✅ SUCCESS RESPONSE
+// =========================   
+// 🔴 REVOKE ALL REFRESH TOKENS
+    await revokeAllUserRefreshTokens(client, userId);
+// 🔴 CLEAN ACCESS TOKEN
+    clearAccessTokenFromCookie(res);
+    res.clearCookie('refreshToken')
+
+// ✅ RESPONSE
     return res.status(200).json({
       success: true,
       message:
-        'Password changed successfully. Please sign in again with your new password.',
+       'Password changed successfully. Please sign in again with your new password.',
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('changePassword error:', error);
-
-   // ⏳ RATE LIMIT — let middleware handle it
+    
+// ⏳ RATE LIMIT — let middleware handle it
     if(error.status === 429){
      return next(error);//Passing the error to rate limiter
     }
+    
+    console.error('changePassword error:', error);
 
-   // ❌ INTERNAL ERROR
+// ❌ INTERNAL ERROR
     next(
       createError(500, error.message ?? 'Internal error while changing password')
     )
