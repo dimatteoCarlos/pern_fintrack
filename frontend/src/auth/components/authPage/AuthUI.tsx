@@ -16,6 +16,8 @@ type AuthUIPropsType = {
   onSignUp: (userData: SignUpCredentialsType) => void;
   isSignInInitial?: boolean;
 
+  isSessionExpired?: boolean;
+
   googleSignInUrl?: string; // Optional Google Sign-in URL
   
   isLoading: boolean;
@@ -29,7 +31,7 @@ const INITIAL_CREDENTIALS_STATE: CredentialsType = {
   email: 'user01@email.com',
   user_firstname: 'nombre usuario 01',
   user_lastname: 'usuario apellido',
-  password: '100',
+  password: '1000',
   // username: '',
   // email: '',
   // user_firstname: '',
@@ -49,6 +51,7 @@ function AuthUI({
   error,
   messageToUser="",
   isSignInInitial,
+  
 }: AuthUIPropsType): JSX.Element {
  // const location = useLocation();
  // const wasRedirectedByExpiration = location.state?.expired;
@@ -60,32 +63,7 @@ function AuthUI({
     // const navigateTo = useNavigate();
   const [isSignIn, setIsSignIn] = useState(isSignInInitial);
   const [rememberMe, setRememberMe] = useState(false);
-  // const [messageType, setMessageType] = useState<MessageType>('success');
-  /*
-  // 🔄 MESSAGE HANDLING HOOK
-  useEffect(() => {
-    if (isLoading) return;
-
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    if (messageToUser) {
-      setMessage(messageToUser);
-      setMessageType('success');
-      setShowMessage(true);
-      timeoutId = setTimeout(() => setShowMessage(false), MESSAGE_TIMEOUT_MS);
-    } else if (error) {
-      setMessage(error);
-      setMessageType('error');
-      setShowMessage(true);
-      timeoutId = setTimeout(() => setShowMessage(false), MESSAGE_TIMEOUT_MS);
-    }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [messageToUser, error, isLoading]);
-  */
-
+ 
   // 📝 INPUT HANDLERS
   const handleSignInSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -134,34 +112,42 @@ function AuthUI({
     setCredentials((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
-  // 🗑️ RESET FORM ON ERROR
+// ===============================
+// ⏱️ AUTO-HIDE MESSAGES AFTER TIMEOUT
+// ===============================
   useEffect(() => {
    const MESSAGE_TIMEOUT_MS = 5000;
-   let timer: ReturnType<typeof setTimeout>;
-   if (messageToUser && !isLoading) setShowMessageToUser(true);
-   timer = setTimeout(() => {
-    setShowMessageToUser(false);
-    setShowError(false);
-   }, MESSAGE_TIMEOUT_MS);
-   
-   if (error && !isLoading) setShowError(true);
-   timer = setTimeout(() => {
-    setShowError(false);
-   }, MESSAGE_TIMEOUT_MS);
-   
-   return () => {
-    if (timer) clearTimeout(timer);
-   };
+   let messageTimer: ReturnType<typeof setTimeout>;
+  
+  // Show error message
+  if (error && !isLoading) {
+    setShowError(true);
+    messageTimer = setTimeout(() => {
+      setShowError(false);
+    }, MESSAGE_TIMEOUT_MS);
+  }
+  
+  // Show success message (logout, sign in, etc.)
+  if (messageToUser && !isLoading) {
+    setShowMessageToUser(true);
+    messageTimer = setTimeout(() => {
+      setShowMessageToUser(false);
+    }, MESSAGE_TIMEOUT_MS);
+  }
+  
+  return () => {
+    if (messageTimer) clearTimeout(messageTimer);
+  };
   }, [messageToUser, error, isLoading]);
   
   //Reset form on signup error
-  useEffect(() => {
-    if (error && !isLoading && !isSignIn) {
-      setCredentials(INITIAL_CREDENTIALS_STATE);
-    }
-  }, [error, isLoading, isSignIn]);
-
-  //RENDERING
+ useEffect(() => {
+  if (error && !isLoading && !isSignIn) {
+    setCredentials(INITIAL_CREDENTIALS_STATE);
+   }
+  }, [error, isLoading, isSignIn]); 
+//------------------------------------------
+//RENDERING
   return (
     <div className={styles['auth-container']}>
 
