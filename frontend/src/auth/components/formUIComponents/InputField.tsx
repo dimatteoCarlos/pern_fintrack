@@ -34,6 +34,9 @@ export type InputFieldProps = {
   /** 🔧 Is field disabled? */
   disabled?: boolean;
 
+   /** 📝 Is field read-only? (success state) */
+  isReadOnly: boolean;
+
   /** ℹ️ Help text below the input */
   helpText?: string;
 
@@ -43,12 +46,12 @@ export type InputFieldProps = {
   /** 🔧 Extra CSS class names */
   className?: string;
 
-  
   /** 🎨 Inline styles */
   style?: React.CSSProperties;
   
   // 🔑 Optional generic toggle for content visibility
   showContentToggle?: boolean;
+
   onToggleVisibility?:() => void;
 
   isContentVisible?: boolean;
@@ -82,6 +85,7 @@ const InputField: React.FC<InputFieldProps> = React.memo(
     isContentVisible = false,
     onToggleContent,
     toggleIcon, 
+    isReadOnly,
 
   }) => {
     /* 🌟 ===============================
@@ -137,6 +141,7 @@ const InputField: React.FC<InputFieldProps> = React.memo(
             onChange={(e) => handleChange(e)}
             placeholder={placeholder}
             disabled={disabled}
+            readOnly={isReadOnly}
             required={required}
             className={styles.inputField}
             style={{ paddingRight: showContentToggle ? '40px' : '12px' }} // Evita que el texto toque el icono
