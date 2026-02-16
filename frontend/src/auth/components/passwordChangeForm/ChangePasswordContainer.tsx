@@ -4,7 +4,6 @@
 📦 IMPORTS
 ============= */
 import { useCallback, useEffect, useState } from "react";
-
 import styles from './styles/passwordChangeForm.module.css'
 
 /* =============
@@ -34,13 +33,12 @@ import useChangePasswordFormLogic from "../../hooks/useChangePasswordFormLogic";
 ============= */
 import ChangePasswordForm from './ChangePasswordForm';
 import useFieldVisibility from "../../hooks/useFieldVisibility";
-import  {useSuccessAutoClose}  from "../../hooks/useSuccessAutoClose";
+import { logoutCleanup } from "../../utils/logoutCleanup";
 
 /* ================
 ⏱️ TYPE DEFINITIONS
 ================ */
-type FormStatus = "idle" | "editing" | "submitting" | "success"| "error" | "rate_limited";
-
+export type FormStatus = "idle" | "editing" | "submitting" | "success"| "error" | "rate_limited";
 type ChangePasswordContainerProps = {
   onClose?: () => void;
 };
@@ -59,6 +57,8 @@ const FIELD_MAPPING: Record<string, keyof ChangePasswordFormDataType> = {
   newPassword: "newPassword",
   confirmPassword: "confirmPassword",
 };
+
+export const TOTAL_COUNTDOWN_SECONDS = 10;
 
 /* ==========================
 🧱 MAIN CONTAINER COMPONENTE
@@ -137,6 +137,44 @@ const [status, setStatus] = useState<FormStatus>("idle");
   handleDomainChangePassword:domainChangePasswordWrapper, 
  });
 
+// =================================
+//  ⏳  COUNTDOWN EFFECT WITH AUTO-LOGOUT ON SUCCESS
+// =================================
+ useEffect(() => {
+  if (countdown === null) return;
+
+  if(countdown <= 0) {
+   if(status === 'success'){
+    logoutCleanup(false);
+   }
+   setCountdown(null);
+   setStatus('idle');
+   return;
+  }
+ //⏱️
+  const timer = setTimeout(()=>setCountdown(countdown =>(countdown? countdown-1:0)),1000);
+
+  return ()=>clearTimeout(timer)
+ }, [countdown, status]);
+
+/* ================
+🔒 UI STATE DERIVED
+================== */
+// ✅ COMPUTED
+ const isDirty = Object.values(dirtyFields).some(Boolean);
+ const hasErrors = Object.values({...validationErrors, ...apiErrors}).some(error => error && error !== "");
+ const isDisabled = !isSubmittingAllowed || 
+ isSubmitting ||  !!countdown || 
+ !isDirty ||  hasErrors;
+
+// Reset disabled conditions
+const canReset = isDirty && !isSubmitting; 
+// Show Done button only on success
+const showDone = status === "success";
+// Show Cancel button when not submitting and not in success state
+const showCancel = !isSubmitting && status !== "success";
+
+
 /* =====================
 🎯 HANDLERS
 ==================== */
@@ -157,19 +195,31 @@ const [status, setStatus] = useState<FormStatus>("idle");
   setStatus("idle");
  }, [resetForm,resetVisibility]);
 
+ //======
+ const handleClose = useCallback(() => {
+  if (isDirty) {
+    const confirmClose = window.confirm(
+      'You have unsaved changes. Are you sure you want to close?'
+    );
+    if (!confirmClose) return;
+  }
+  
+  handleReset();
+  if (onClose) onClose();
+}, [handleReset, onClose, isDirty]);
+
 /* ============================
 🚀 ON SUCCESS
 ============================ */
-const handleCloseAndReset = useCallback(() => {
- handleReset();
-  if (onClose) onClose();
-  }, [handleReset, onClose]);
 
-// Done handler (after success)
+// ✅ DONE HANDLER - IMMEDIATE LOGOUT (CANCELS AUTO-LOGOUT)
 const handleDone = useCallback(() => {
- handleReset();
- if (onClose) onClose();
-}, [handleReset, onClose]);
+// ✅ Cancel countdown and logout immediately
+  setCountdown(null);
+  handleReset();
+  logoutCleanup(false); 
+  // No need to call onClose - logoutCleanup already redirects
+}, [handleReset]);
 
 //==========================
 // Enhanced submit handler with UX states
@@ -182,7 +232,8 @@ const handleDone = useCallback(() => {
  setStatus("submitting");
  setCountdown(null);
  
-  const result = await formLogicHandleSubmit();
+ const result = await formLogicHandleSubmit();
+ // console.log('result from container.nahdleSubmitForm.formLogicHandleSubmit:', result)
 
   if (!result) {
 // ❌If validation client failed-apiErrors is updated
@@ -193,21 +244,23 @@ const handleDone = useCallback(() => {
   }
 
  if (result.success) {
-// ✅ SUCCESS
+// ✅ SUCCESS PATH - Start 8 second countdown for auto-logout
   setStatus("success");
   setGlobalMessage(result.message || "Password changed successfully!");
-
 // Security: Suggest re-authentication
-   // setTimeout(() => {
-   //  console.log("Security: User should re-authenticate with new password");
-   // }, 3000);
+// ⏱️ Start 8 second countdown for auto-logout
+  console.log("Security: User should re-authenticate with new password");
+  setCountdown(TOTAL_COUNTDOWN_SECONDS)
+  // setTimeout(() => {
+  //  logoutCleanup(false);
+  // }, 8000);
 
  } else {
 // ❌ DOMAIN ERROR
   setStatus("error");
   setGlobalMessage(result.message || "Failed to change password");
   
-// Rate limiting
+// RATE LIMITING
  if (result.retryAfter) {
   setCountdown(result.retryAfter);
   setStatus("rate_limited");
@@ -217,59 +270,13 @@ const handleDone = useCallback(() => {
  } ,[formLogicHandleSubmit]
   );
 
-// =================================
-//  ⏳ COUNTDOWN SIDE EFFECT
-// =================================
- useEffect(() => {
-  if (countdown === null)return
-  if(countdown <= 0) {
-   setCountdown(null);
-   setStatus('idle');
-   return;
-  }
- //⏱️
-  const timer = setTimeout(()=>setCountdown(countdown-1),1000);
-
-  return ()=>clearTimeout(timer)
- }, [countdown]);
-
-/**
-* ===============================
-* 🚀 HOOK AUTO-CLOSE ON SUCCESS
-* ===============================
-* TIP: Hooks are executed every single time your component renders
-*/
-const durationMs = 7000;
-useSuccessAutoClose(
- status === "success" ? globalMessage : null,
- handleCloseAndReset,
- durationMs,
-);
-
-/* ================
-🔒 UI STATE DERIVED
-================== */
-// ✅ COMPUTED
- const isDirty = Object.values(dirtyFields).some(Boolean);
- const hasErrors = Object.values({...validationErrors, ...apiErrors}).some(error => error && error !== "");
- const isDisabled = !isSubmittingAllowed || 
- isSubmitting ||  !!countdown || 
- !isDirty ||  hasErrors;
-
-// Reset disabled conditions
-const canReset = isDirty && !isSubmitting; 
-// Show Done button only on success
-const showDone = status === "success";
-// Show Cancel button when not submitting and not in success state
-const showCancel = !isSubmitting && status !== "success";
-
 //---------Debugging logs --------
-console.log("🔄 Dirty fields:", dirtyFields);
-console.log("📊 isDirty:", Object.values(dirtyFields).some(Boolean));
-console.log("🔘 canReset:", isDirty && !isSubmitting);
+// console.log("🔄 Dirty fields:", dirtyFields);
+// console.log("📊 isDirty:", Object.values(dirtyFields).some(Boolean));
+// console.log("🔘 canReset:", isDirty && !isSubmitting);
 
 //----------------------------------
-// 1. DEBUG COMPONENT (temporal)
+// DEBUG COMPONENT (temporal)
 const DebugPanel = () => (
   <div style={{ position: 'fixed', bottom: 0, right: 0, background: '#333', color: 'white', padding: '10px' }}>
     <div>isDirty: {JSON.stringify(isDirty)}</div>
@@ -287,24 +294,30 @@ const DebugPanel = () => (
   <>
   <div className={styles.container}>
   <ChangePasswordForm
-   // Form Data
+// 📋 Form Data
    formData={formData}
-   //Handlers
+
+// 🎮 Event Handlers
    onChange={onChangeField}
    onSubmit={handleSubmitForm}
    onReset={handleReset}
-   onClose={showCancel ? onClose : undefined}
-   onDone={showDone ? handleDone : undefined}
-   //Errors
+   onClose={handleClose}
+   onDone={handleDone}
+   onToggleVisibility={toggleVisibility}
+
+// ❌ Validation Errors
    validationErrors={validationErrors}
    apiErrors={apiErrors}
-   //Field States
+   
+// 🎯 Field States 
    touchedFields={touchedFields}
    visibility={visibility}
-   onToggleVisibility={toggleVisibility}
-   //UI States
+
+// ⚡ UI States
    isSubmitting={isSubmitting}
    isDisabled={isDisabled}
+   // readOnly={status === 'success'} // ✅ Read-only in success state (eyes still work)
+   status={status}
    // isDirty={isDirty}
 
 // Messages & Status
@@ -314,15 +327,14 @@ const DebugPanel = () => (
 
 // Button Controls
    // showReset={canReset}
-   showReset={true}
+   showReset={canReset}
    showDone={showDone}
    showCancel={showCancel}
-   // canSubmit={canSubmit}
    canReset={canReset}
     />
  </div>
 
- {import.meta.env.NODE_ENV === 'development' && <DebugPanel />}
+ {import.meta.env.NODE_ENV === 'developmentx' && <DebugPanel />}
   
 </>
   );

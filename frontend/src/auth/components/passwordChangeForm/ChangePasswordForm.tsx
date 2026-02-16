@@ -1,11 +1,9 @@
 // 📁 frontend/src/auth/ChangePasswordForm.tsx
-
 /**
  * 🌟 ===============================
  * 📦 IMPORTS
  * =============================== 🌟
  */
-
 import React from 'react';
 import { ChangePasswordFormDataType } from '../../types/authTypes';
 import { FormErrorsType } from '../../validation/hook/useChangePasswordValidation';
@@ -16,14 +14,16 @@ import SubmitButton from '../formUIComponents/SubmitButton';
 import ResetButton from '../formUIComponents/Resetbutton';
 
 import styles from './styles/passwordChangeForm.module.css';
+import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
+
+
 
 /**
  * 🌟 ===============================
  * 🏷️ PROPS TYPE
  * =============================== 🌟
  */
-
-type PropsType = {
+ type PropsType = {
  // 📋 Form Data
  formData: ChangePasswordFormDataType;
  
@@ -31,8 +31,8 @@ type PropsType = {
  onChange: (field: keyof ChangePasswordFormDataType) => (value: string) => void;
  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
  onReset: () => void;
- onClose?: () => void;
- onDone?: () => void;
+ onClose: () => void;
+ onDone: () => void;
  onToggleVisibility: (field: keyof ChangePasswordFormDataType) => void;
  
  // ❌ Validation Errors
@@ -46,7 +46,9 @@ type PropsType = {
  // ⚡ UI States
  isSubmitting: boolean;
  isDisabled: boolean;
- 
+ isReadOnly?: boolean;
+ status:FormStatus;
+
  // 💬 Messages & Status
  globalMessage: string | null;
  countdown: number | null;
@@ -57,6 +59,7 @@ type PropsType = {
  showDone?: boolean;
  showCancel?: boolean;
  canReset?: boolean;
+
 };
 
 /**
@@ -64,48 +67,42 @@ type PropsType = {
  * 🎯 FORM COMPONENT
  * =============================== 🌟
  */
+ export default function ChangePasswordForm({
+  formData,
+  onChange,
+  onSubmit,
+  onReset,
+  onClose,
+  onDone,
+  onToggleVisibility,
+  validationErrors,
+  apiErrors,
+  touchedFields,
+  visibility,
+  isSubmitting,
+  isDisabled,
+  status,
+  globalMessage,
+  countdown,
+  isSuccess = false,
+  showReset = true,
+  showDone = false,
+  showCancel = true,
+  canReset = true,
+ }: PropsType) {
 
-export default function ChangePasswordForm({
- formData,
- onChange,
- onSubmit,
- onReset,
- onClose,
- onDone,
- onToggleVisibility,
- validationErrors,
- apiErrors,
- touchedFields,
- visibility,
- isSubmitting,
- isDisabled,
- globalMessage,
- countdown,
- isSuccess = false,
- showReset = true,
- showDone = false,
- showCancel = true,
- canReset = true,
-}: PropsType) {
-
- /**
-  * ===============================
-  * 🔧 HELPERS
-  * ===============================
-  */
-
+/*==================
+ 🔧 HELPERS
+ ==================*/
  const getFieldError = (field: keyof ChangePasswordFormDataType): string | undefined => {
   return validationErrors[field] || apiErrors[field];
  };
-
- /**
-  * ===============================
-  * 🎨 RENDER
-  * ===============================
-  */
-
+/* ===============================
+ 🎨 RENDER
+=============================== */
  return (
   <div className={styles.passwordFormContainer}>
+   {/* 🏷️ Header */}
    <header className={styles.passwordFormHeader}>
     <h2 className={styles.formTitle}>Change Password</h2>
     <p className={styles.passwordFormSubtitle}>
@@ -125,7 +122,34 @@ export default function ChangePasswordForm({
     </div>
    )}
 
-   <form onSubmit={onSubmit} className={styles.passwordForm}>
+{/* {TEMPRORARY INSER HERE THE COUNTDOWNS MSG} */}
+ {/* ⏱️ Countdown for rate limiting (Only when status is rate_limited ) */}
+     {status === 'rate_limited' && countdown !== null && (
+      <Message 
+        message={`Please wait ${countdown} seconds before trying again`} 
+        type="warning"
+      />
+    )}
+
+    {/* ⏱️ Countdown for success state - Visual progress bar */}
+    {/* {isSuccess && countdown !== null && countdown > 0 && (
+      <div className={styles.countdownContainer}>
+        <div className={styles.countdownText}>
+          Redirecting to login in <span className={styles.countdownNumber}>{countdown}</span> seconds...
+        </div>
+        <div className={styles.countdownBar}>
+          <div 
+            className={styles.countdownProgress} 
+            style={{ width: `${(countdown / 100) * 100}%` }}
+          />
+        </div>
+      </div>
+    )} */}
+
+{/* {TEMPRORARY INSER HERE THE COUNTDOWNS MSG} */}
+
+
+  <form onSubmit={onSubmit} className={styles.passwordForm}>
     <div className={styles.passwordFieldsContainer}>
      
      {/* 🔐 Current Password */}
@@ -142,6 +166,8 @@ export default function ChangePasswordForm({
       showContentToggle={true}
       isContentVisible={visibility.currentPassword}
       onToggleContent={() => onToggleVisibility('currentPassword')}
+      isReadOnly={isSuccess} // ✅ isReadOnly en éxito (ojos funcionan)
+      disabled={isSubmitting && isSuccess}  // ❌ disabled 
      />
 
      {/* 🔑 New Password */}
@@ -158,6 +184,8 @@ export default function ChangePasswordForm({
       showContentToggle={true}
       isContentVisible={visibility.newPassword}
       onToggleContent={() => onToggleVisibility('newPassword')}
+      isReadOnly={isSuccess} 
+       disabled={isSubmitting || isSuccess}
      />
 
      {/* 🔒 Confirm Password */}
@@ -174,22 +202,24 @@ export default function ChangePasswordForm({
       showContentToggle={true}
       isContentVisible={visibility.confirmPassword}
       onToggleContent={() => onToggleVisibility('confirmPassword')}
+      isReadOnly={isSuccess} 
+       disabled={isSubmitting || isSuccess}
      />
     </div>
 
     {/* ⏱️ Countdown Message */}
-    {countdown !== null && (
+    {/* {countdown !== null && (
      <Message 
       message={`Please wait ${countdown} seconds before trying again`} 
       type="info"
      />
-    )}
+    )} */}
     
     {/* 🔘 Action Buttons */}
     <div className={styles.actionButtons}>
      {isSuccess ? (
-      // ✅ Success State - Done Button
-      showDone && onDone && (
+     <div className={styles.successActionsWrapper}>
+      {showDone && (
        <button
         type="button"
         onClick={onDone}
@@ -198,7 +228,22 @@ export default function ChangePasswordForm({
        >
         Done
        </button>
-      )
+      )}
+
+      {/* 📊 Barra de progreso debajo del botón Done */}
+       {countdown !== null && countdown > 0 && (
+        <div className={styles.countdownContainer}>
+         <div className={styles.countdownBar}>
+          <div 
+           className={styles.countdownProgress} 
+           style={{ width: `${(countdown / TOTAL_COUNTDOWN_SECONDS) * 100}%` }} // ✅ Cálculo real
+          />
+         </div>
+         <p className={styles.countdownText}>Please, Sign In with new Password. Redirecting in {countdown}s...</p>
+        </div>
+       )}
+      
+     </div>
      ) : (
       // 🔄 Normal State - Action Buttons
       <div className={styles.buttonGroupAnimation}>
@@ -219,7 +264,7 @@ export default function ChangePasswordForm({
         </ResetButton>
        )}
 
-       {showCancel && onClose && (
+       {showCancel && (
         <button
          type="button"
          onClick={onClose}
@@ -232,7 +277,9 @@ export default function ChangePasswordForm({
       </div>
      )}
     </div>
+
    </form>
+
   </div>
  );
 }
