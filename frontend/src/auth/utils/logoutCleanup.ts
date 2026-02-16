@@ -12,6 +12,7 @@ import { notifySessionExpired } from "./notification";
 
 export const logoutCleanup = (shouldNotify:boolean = false)=>{
 console.log(`🚨 Performing cleanup: ${shouldNotify?'Session expired': 'Manual logout'}`);
+
 // 1. Get actions from Zustand store (directly from the state)
 const {setIsAuthenticated, setUserData,clearError,clearSuccessMessage}=useAuthStore.getState();
 //----------------------------------
@@ -19,13 +20,13 @@ const {setIsAuthenticated, setUserData,clearError,clearSuccessMessage}=useAuthSt
 //----------------------------------
 //1. Tokens and states cleaning
 sessionStorage.removeItem('accessToken');
-// ✅ ZUSTAND RESET
+
+// ✅ ZUSTAND RESET STORE
 //2. Reset global store.
 // Reset global authentication states in RAM
 setIsAuthenticated(false);
 clearError();
 clearSuccessMessage(); //no "Signed Up" messages remain
-// setUserData(null);
 
 // -------------------------------
 // ✅ LOCAL STORAGE CLEANING: CONDITIONAL PERSISTENCE
@@ -45,18 +46,16 @@ console.log('🚨 Full cleanup performed: All persistent data removed.');
 }
 // ----------------------------------
 // ✅ MANAGE NOTIFICATION AND REDIRECT
-
 // 4. Manage Nofitification and redirect with state
 if(shouldNotify){
-//expired:true
-// Session expired - show notification and specific state
+//expired:true. Session expired - show notification and specific state
  notifySessionExpired();
 // Redirect to auth page with 'expired' state so the UI knows to show a specific message
-navigationHelper.navigate('/auth', {state:{expired:shouldNotify,
-  // showModal:true, initialMode:'signin'
+navigationHelper.navigate('/auth', {state:{
+ expired:true,
 }});
 }else{
-//expired:false
+//expired:doesn't exist.
 // Normal logout: redirect without additional state or notifications
  navigationHelper.navigate('/auth');
  }
