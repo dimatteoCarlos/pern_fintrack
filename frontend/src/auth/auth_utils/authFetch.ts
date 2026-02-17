@@ -47,8 +47,7 @@ export const authFetch = async<T>(
      error.response?.status === 401 && 
      !isLoginEndpoint &&
      !url.includes(url_update_user) &&
-     !url.includes(url_change_password) &&
-     !url.includes(url_signin)
+     !url.includes(url_change_password) 
     ) {
      try {
        // 🔄 ATTEMPT SILENT REFRESH
