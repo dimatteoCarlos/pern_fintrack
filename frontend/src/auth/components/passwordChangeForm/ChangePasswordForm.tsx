@@ -142,7 +142,7 @@ const handleInputChange = (fieldName:keyof ChangePasswordFormDataType)=>(input:s
       />
     )}
 
-     <form onSubmit={onSubmit} className={styles.passwordForm}>
+    <form onSubmit={onSubmit} className={styles.passwordForm}>
     <div className={styles.passwordFieldsContainer}>
      
      {/* 🔐 Current Password */}
@@ -220,7 +220,7 @@ const handleInputChange = (fieldName:keyof ChangePasswordFormDataType)=>(input:s
        </button>
       )}
 
-      {/* 📊 Barra de progreso debajo del botón Done */}
+      {/* 📊 Progress Bar under Done button */}
        {countdown !== null && countdown > 0 && (
         <div className={styles.countdownContainer}>
          <div className={styles.countdownBar}>
@@ -229,7 +229,7 @@ const handleInputChange = (fieldName:keyof ChangePasswordFormDataType)=>(input:s
            style={{ width: `${(countdown / TOTAL_COUNTDOWN_SECONDS) * 100}%` }} // ✅ Cálculo real
           />
          </div>
-         <p className={styles.countdownText}> Redirecting in {countdown}s...</p>
+         <p className={styles.countdownText}> Redirecting in <span className={styles.countdownNumber}>{countdown}</span>s...</p>
         </div>
        )}
       
