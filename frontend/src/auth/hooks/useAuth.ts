@@ -136,7 +136,7 @@ const useAuth = () => {
       const accessToken = sessionStorage.getItem('accessToken');
       const isRemembered = localStorage.getItem(LOCAL_STORAGE_KEY.REMEMBER_ME) === 'true';
 
-      if ((accessToken || isRemembered) && !error && !isLoading) {
+      if ((accessToken || isRemembered) && !error && !isLoading&&!isAuthenticated) {
         try {
           const response = await authFetch<AuthSuccessResponseType>(url_validate_session, { method: 'GET' });
 
@@ -158,7 +158,7 @@ const useAuth = () => {
     checkAuthStatus();
 
     return () => { isMounted = false };
-  }, [setIsAuthenticated, setIsCheckingAuth, setUserData]);
+  }, [setIsAuthenticated, setIsCheckingAuth, error, isLoading, setUserData,isAuthenticated]);
 
   /* ===============================
      🔐 SIGN IN
