@@ -316,7 +316,7 @@ const {
 //===============================
 //transaction and account types from db
 //===============================
-    const transactionsTypes = await getTransactionTypes();
+    const transactionsTypes = await getTransactionTypes(client);
 
     const sourceTransactionTypeId = transactionsTypes.filter(
       (type) => type.transaction_type_name === sourceAccountTransactionType
@@ -325,7 +325,7 @@ const {
     const destinationTransactionTypeId = transactionsTypes.filter(
       (type) => type.transaction_type_name === destinationAccountTransactionType
     )[0].transaction_type_id;
-    const accountTypes = await getAccountTypes();
+    const accountTypes = await getAccountTypes(client);
     // console.log(
     //   '🚀 ~ transferBetweenAccounts ~ transactionsTypes:',
     //   sourceTransactionTypeId,

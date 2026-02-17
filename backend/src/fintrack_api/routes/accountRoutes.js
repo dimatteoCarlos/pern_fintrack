@@ -135,7 +135,7 @@ router.get(
 // 📝 Route for final deletion (Soft or Atomic Hard Delete)
 // DELETE /api/fintrack/account/delete/:accountId
 router.delete('/delete/:targetAccountId',
-verifyUser, 
+// verifyUser, 
 executeAccountDeletion 
 );
 

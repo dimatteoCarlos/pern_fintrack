@@ -34,27 +34,24 @@ retryAfter:Math.ceil(windowMs/1000)//in seconds
 // =================================
 // 🎯 PROFILE UPDATE RATE LIMITER
 // =================================
-// Limits: 10 attempts per 15 minutes per user
+// Limits: 10 attempts per 15 minutes per user is the reference
+const PROFILE_WINDOW_MINUTES =2;
+const PROFILE_MAX_ATTEMPTS = 5;
 export const profileUpdateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, //Maximum 10 attempts per window
+  windowMs: PROFILE_WINDOW_MINUTES * 60 * 1000, // 5 minutes
+  max: PROFILE_MAX_ATTEMPTS, //Maximum REF 10 attempts per window
 // Key generator: use userId if authenticated, otherwise IP
  keyGenerator,
-  // message: { 
-  //   success: false, 
-  //   error: 'RateLimitExceeded',
-  //   message: "Too many update attempts. Please try again in 15 minutes." 
-  // },
-  standardHeaders: true,// Return rate limit info in headers
-  legacyHeaders: false, // Disable legacy headers
-  skipSuccessfulRequests: true,// Only Counts failed requests
+ standardHeaders: true,// Return rate limit info in headers
+ legacyHeaders: false, // Disable legacy headers
+ skipSuccessfulRequests: true,// Only Counts failed requests
 
 // Custom handler for rate limit exceeded
   handler: (req, res) => {
     res.status(429).json(
      createRateLimitResponse(
-      'ProfileUpdateRateLimitExceeded',
-      'Too many profile update attempts. Please try again in 15 minutes',
+      'RateLimitExceeded',
+      `Security: Too many UPDATE attempts. Try again in ${WINDOW_MINUTES} minutes.`,
       profileUpdateLimiter.windowMs,
      )
    );
@@ -65,22 +62,26 @@ export const profileUpdateLimiter = rateLimit({
 // =================================
 // 🔐 PASSWORD CHANGE RATE LIMITER
 // =================================
-// Limits: 5 attempts per 15 minutes per user (security-critical)
-export const passwordChangeLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 5,// 🚨 Only 5 password change attempts
+// Limits: 5 attempts per 15 minutes per user (security-critical) - best practice reference
+const WINDOW_MINUTES = 0.5;
+const MAX_ATTEMPTS = 5;
+export const passwordChangeLimiter = rateLimit(
+ {
+  windowMs: WINDOW_MINUTES  * 60 * 1000,//ms
+  max: MAX_ATTEMPTS,// 🚨 password change attempts
   keyGenerator,
 
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,//Count all (even successes)
 
-  handler:(req, res)=>{
+  handler:(req, res, next, options)=>{
    res.status(429).json(
     createRateLimitResponse(
     'PasswordChangeRateLimitExceeded',
-    'Security: Too many password change attempts. Try again in 5 minutes.',
-    passwordChangeLimiter.windowMs
+    `Security: Too many password change attempts. Try again in ${WINDOW_MINUTES} minutes.`,
+    options.windowMs // Use 'options' to safely access config values
+    // passwordChangeLimiter.windowMs
     )
    )
   }
@@ -117,7 +118,7 @@ export const authLimiter = rateLimit({
 // 🔄 GLOBAL API RATE LIMITER (optional safety net)
 // =======================================
 export const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 5 * 60 * 1000, // 5 minutes
   max: 100, // Maximum 100 requests per window per IP
   standardHeaders: true,
   legacyHeaders: false,

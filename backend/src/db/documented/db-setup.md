@@ -35,12 +35,16 @@ npm run db:migrate
 # ==================================
 # 6. Ejecutar seeds base (catálogos estáticos)
 # ==================================
+# vsc windows cmd
+set SEED_ADMIN=true && npm run db:seed
+
+# Unix / Mac / Linux:
 SEED_BASE=true npm run db:seed
 
 # ==================================
 # 7. Crear usuario bootstrap admin (manual)
 # ==================================
-SEED_ADMIN=true npm run db:seed
+set SEED_ADMIN=true & npm run db:seed
 
 # ==================================
 # 8. (Opcional) Verificar en psql

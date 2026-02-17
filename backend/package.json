@@ -7,9 +7,12 @@
     "dev": "nodemon --experimental-specifier-resolution=node src/index.js",
     "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-
-    "db:migrate":"node src/db/runMigrations.js",
-    "db:seeds":"node src/db/runSeeds.js"
+    "db:bootstrap": "node src/db/bootstrapping.js",
+    "db:reset": "node src/db/runResetDb.js",
+    "db:migrate": "node src/db/runMigrations.js",
+    "db:seed:base": "node src/db/runSeeds.js base",
+    "db:seed:admin": "node src/db/runSeeds.js admin",
+    "clear": "node --clear src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -20,7 +23,7 @@
     "cors": "2.8.5",
     "dotenv": "16.4.7",
     "express": "4.21.2",
-    "express-rate-limit": "^8.2.1",
+    "express-rate-limit": "8.2.1",
     "express-useragent": "1.0.15",
     "helmet": "8.0.0",
     "jsonwebtoken": "9.0.2",
@@ -34,6 +37,8 @@
     "zod": "4.0.10"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "cross-env": "^10.1.0",
     "express-validator": "7.2.1",
     "nodemon": "3.1.9",
     "standard": "17.1.2",

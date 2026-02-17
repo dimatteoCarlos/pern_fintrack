@@ -23,8 +23,8 @@ import {
   tblMovementTypes,
   tbltransactionTypes,
   tblUserRoles,
-} from './db/populateDB.js';
-import { mainTables, createTables } from './db/createTables.js';
+} from './db/old_run_time_migrations/populateDB.js';
+import { mainTables, createTables } from './db/old_run_time_migrations/createTables.js';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
 import routes from './routes/index.js';
@@ -174,14 +174,14 @@ async function initializeDatabase() {
    } else {
      console.log(pc.yellow('Application already initialized. Skipping tables creation.'));
    }
-   //-------------------------------------
+   //---------------------------------
    //truncate or drop all tables manually
    if (false) {
      await Promise.allSettled(
        mainTables.map(async (item, indx) => {
          try {
-           if (item.tblName == 'users' || item.tblName=='transactionsm') {
-             console.log('skip users table');
+           if (item.tblName == 'users' || item.tblName=='refresh_tokens') {
+             console.log('skip: users table, refresh_tokens table');
              return false;
            }
            await pool.query({
@@ -211,7 +211,7 @@ async function initializeDatabase() {
    }
    //=============================
    //create tables manually
-   if (!false) {
+   if (false) {
      await Promise.allSettled(
        mainTables.map(async (item, ind) => {
          try {

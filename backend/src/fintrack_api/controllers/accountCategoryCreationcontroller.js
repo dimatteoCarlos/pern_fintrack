@@ -91,6 +91,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     //----------------------------------
     //verify account existence in user_accounts by userId and account name
     const accountExist = await verifyAccountExistence(
+      client, 
       userId,
       account_name,
       account_type_name
@@ -277,10 +278,10 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       transaction_actual_date
     );
 
-    // console.log(
-    //   '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
-    //   updatedCounterAccountInfo
-    // );
+    console.log(
+      '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
+      updatedCounterAccountInfo
+    );
 
     //--- determine which account serves as a SOURCE OR DESTINATION account
     //category_budget_account should always be a destination account

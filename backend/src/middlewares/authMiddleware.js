@@ -18,7 +18,6 @@ const ROLE_LEVELS = {
   'super_admin': 3
 };
 
-
 const TOKEN_ERRORS = {
   TokenExpiredError: { message: 'Token expired.', status: 401 },
   JsonWebTokenError: { message: 'Invalid token.', status: 403 },
@@ -161,27 +160,35 @@ export const verifyToken = async (req, res, next) => {
 // 2. Authorize. verifyOwnership. Check if the user is the owner of the targetAccountId OR is an Admin.
 //-------------------------------------------
 export const verifyUser = async (req, res, next) => {
+
   if (!req.user) {
     const token = getAuthToken(req);
     if (!token) return next(createError(401, 'Authentication required.'));
+
     try { req.user = await verifyJWTToken(token); } 
     catch (err) { return next(handleTokenError(err, req, res)); }
   }
 
   const { userId: authId, role: authRole } = req.user;
-  const { targetAccountId } = req.params;
+// const { userId } = req.user;
+ console.log("DEBUG: Verificando userId:", authId, 'user role:', authRole);
+
+  const targetAccountId = req.params.targetAccountId || req.params.id;
 
   if (!targetAccountId) return next(createError(500, 'Developer Error: targetAccountId missing in params.'));
 
   try {
     const query = `
-      SELECT u.user_id, u.role FROM user_accounts acc 
-      JOIN users u ON acc.user_id = u.user_id WHERE acc.account_id = $1`;
+      SELECT u.user_id, ur.user_role_name FROM user_accounts acc 
+      JOIN users u ON acc.user_id = u.user_id
+      JOIN user_roles ur ON u.user_role_id=ur.user_role_id
+      WHERE acc.account_id = $1`;
+
     const result = await pool.query(query, [targetAccountId]);
 
-    if (result.rows.length === 0) return next(createError(404, 'Resource not found.'));
+    if (result.rows.length === 0) return next(createError(404, 'The account you are trying to access does not exist.'));
 
-    const { user_id: ownerId, role: ownerRole } = result.rows[0];
+    const { user_id: ownerId, user_role_name: ownerRole } = result.rows[0];
 
     const isOwner = authId === ownerId;
     const hasAuthority = ROLE_LEVELS[authRole] > ROLE_LEVELS[ownerRole];
@@ -191,6 +198,7 @@ export const verifyUser = async (req, res, next) => {
 
     return next(createError(403, 'Unauthorized: You do not have authority over this resource.'));
   } catch (err) {
+   console.error("❌ Auth Error Detail:", err.message);
     return next(createError(500, 'Database error during authorization.'));
   }
 };

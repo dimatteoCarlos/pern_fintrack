@@ -5,30 +5,32 @@
 //this function considers category_budget_account with various transaction types possible.
 
 /*
+CONTENT:
 transactionAccountHelpers:
 
-determineTransactionType
-determineTransactionType_v1
-validateRequiredFields
-getAccountTypeId
-getCurrencyId
-filterCurrencyId
-handleTransactionRecording
+ determineTransactionType
+ determineTransactionType_v1
+ validateRequiredFields
+ getAccountTypeId
+ getCurrencyId
+ filterCurrencyId
+ handleTransactionRecording
 
 dataFormatHelpers:
 
-formatDateToISO
-validateAndNormalizeDate
-validateAndNormalizeDateFn
-formatDateToDDMMYYYY
-formatDate
-isValidDate
-convertToISO
-getMonthName
-numberToWords
-capitalize
+ formatDateToISO
+ validateAndNormalizeDate
+ validateAndNormalizeDateFn
+ formatDateToDDMMYYYY
+ formatDate
+ isValidDate
+ convertToISO
+ getMonthName
+ numberToWords
+ capitalize
 */
 //-----------------------
+//Capitalize every word in the sentence
 export function capitalize(text) {
    if(!text){return ""}
   // 1. Convertimos todo a minúsculas
@@ -72,7 +74,7 @@ export const determineTransactionType = (
   }
   return { transactionType, counterTransactionType };
 };
-//-----------------------------------------------------------------
+//----------------------------------------------------------
 //this function considers category_budget_account as account-opening transaction type only
 export const determineTransactionType_v1 = (
   transaction_amount,
@@ -106,7 +108,7 @@ export const determineTransactionType_v1 = (
     return { transactionType: WITHDRAW, counterTransactionType: DEPOSIT };
   }
 };
-//-----------------------------------------------------------------
+//----------------------------------------------------------
 // Helper function to validate required fields
 export function validateRequiredFields(fields, res) {
   const missingFields = Object.entries(fields)
@@ -122,19 +124,21 @@ export function validateRequiredFields(fields, res) {
 }
 //---
 // Helper function to get account type ID
-export async function getAccountTypeId(accountTypeName) {
+export async function getAccountTypeId(clientOrPool, accountTypeName) {
+  const db = clientOrPool || pool;
   const accountTypeQuery = `SELECT * FROM account_types`;
-  const accountTypeResult = await pool.query(accountTypeQuery);
+  const accountTypeResult = await db.query(accountTypeQuery);
   const accountType = accountTypeResult.rows.find(
     (type) => type.account_type_name === accountTypeName.trim()
   );
   return accountType?.account_type_id;
 }
-//---
+//----------
 //--- check currency existence and get currency_id ------------
-export async function getCurrencyId(currencyCode) {
+export async function getCurrencyId(clientOrPool=null, currencyCode) {
+  const db=clientOrPool || pool;
   console.log('running:', 'getCurrencyId')
-  const currencyIdResult = await pool.query({
+  const currencyIdResult = await db.query({
     text: `SELECT currency_id FROM currencies WHERE currency_code = $1`,
     values: [currencyCode],
   });
@@ -161,16 +165,16 @@ export async function filterCurrencyId(currencyTable, currencyCode) {
 }
 
 // Helper function to handle transaction recording
-export async function handleTransactionRecording(
+export async function handleTransactionRecording(clientOrPool=null,
   transactionOption,
   isAccountOpening
 ) {
-  if (!isAccountOpening) {
-    return await recordTransaction(transactionOption);
+   if (!isAccountOpening) {
+    return await recordTransaction(clientOrPool,transactionOption);
   }
   return {};
 }
-//-----------------------------------------------------------------
+//----------------------------------------------------------
 // Función para convertir de dd-mm-yyyy a ISO 8601 - frontend to api
 export const formatDateToISO = (dateString) => {
   const [day, month, year] = dateString.split('-');
@@ -214,6 +218,7 @@ export const validateAndNormalizeDateFn = (dateString) => {
 };
 
 //La API devuelve las fechas en formato ISO 8601, y el frontend las convierte al formato dd-mm-yyyy para mostrarlas al usuario
+
 // Función para convertir de ISO 8601 a dd-mm-yyyy en el frontend
 export const formatDateToDDMMYYYY = (isoDate) => {
   const date = new Date(isoDate);

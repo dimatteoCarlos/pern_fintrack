@@ -481,6 +481,7 @@ const client = await pool.connect();
     //----------------------------------------
     //verify selected account existence and get account_id from user_accounts table or handling error 
     const selectedAccountExists = await verifyAccountExists(
+      client,
       userId,
       selected_account_name,
       selected_account_type
@@ -581,11 +582,7 @@ const client = await pool.connect();
     //----------------------------------
     //DETERMINE THE TRANSACTION TYPE ID FOR NEW DEBTOR ACCOUNT AND FOR COUNTER ACCOUNT (SELECTED ACCOUNT OR SLACK)
     //----------------------------------
-    //aunque el tipo de transaccion ya viene desde el frontend, y ya se uso: lend or borrow
-    // const transactionTypeDescriptionObj = determineTransactionType(
-    //   transactionAmount,
-    //   debtorAccountType
-    // );
+    //transaction type comes from FE, though
     const transactionTypeDescriptionObj = { transactionType:debtorTransactionType, counterTransactionType:selectedAccountTransactionType}
 
     const { transactionType, counterTransactionType } =
@@ -596,8 +593,7 @@ const client = await pool.connect();
       transactionTypeDescriptionObj.transactionType,
       transactionTypeDescriptionObj.counterTransactionType
     );
-    //transaction_type_id, AS counterTransaction_type_id
-    // console.log(('getTransactionTypeIds:', transactionTypeDescriptionIds));
+ 
     const {transaction_type_id, countertransaction_type_id } =  transactionTypeDescriptionIds; 
 
     const isToOpenNewAccount = transactionAmount === 0.00 ? true:false
@@ -649,7 +645,9 @@ const client = await pool.connect();
     // console.log('updateCounterAccountInfo iput ',  newCounterAccountBalance,
     //   slackCounterAccountInfo.account_id,
     //   transaction_actual_date)
+    
     const updatedCounterAccountInfo = await updateAccountBalance(
+     client,
       newCounterAccountBalance,//counterAccountInfo.account.account_balance
       slackCounterAccountInfo.account_id,
       transaction_actual_date
@@ -674,7 +672,7 @@ const client = await pool.connect();
       destination_account_id,
       movement_type_id
     );
-    const recordTransactionInfo = await recordTransaction(transactionOption);
+    const recordTransactionInfo = await recordTransaction(client,transactionOption);
 
     //--------REGISTER COUNTER ACCOUNT (SLACK) TRANSACTION ---
     const counterTransactionOption = prepareTransactionOption(

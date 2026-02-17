@@ -3,11 +3,13 @@ import { pool } from '../db/configDB.js';
 //-----------------------------------
 
 export const getTransactionTypeId = async (
+  clientOrPool=null,
   transactionTypeName,
   counterTransactionTypeName
 ) => {
+  const db=clientOrPool || pool;
   console.log('args:', transactionTypeName, counterTransactionTypeName);
-  const transactionTypeDescriptionIdsResults = await pool.query({
+  const transactionTypeDescriptionIdsResults = await db.query({
     text: `SELECT
       MAX(transaction_type_id)
        FILTER (WHERE transaction_type_name = $1) AS transaction_type_id, 

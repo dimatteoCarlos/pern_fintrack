@@ -1,277 +1,283 @@
-Perfecto 👍
-Aquí tienes **el contenido real, limpio y profesional** de **`docs/db-lifecycle.md`**, alineado 100% con lo que ya implementaste (reset manual, migrate automático, seeds controlados).
+Buen ojo — aquí hay **dos cosas distintas** pasando. Te explico **por qué ves todo duplicado** y luego te dejo **el `db-lifecycle.md` final**, limpio y correcto.
 
 ---
 
-# Database Lifecycle
+## 1️⃣ ¿Por qué aparece TODO dos veces?
 
-This document describes **how the database is managed across its lifecycle** in the Fintrack backend.
+### 🔴 La causa real (no es Postgres, no es el seed)
 
-It defines **what runs**, **when it runs**, and **who is allowed to run it**.
+Es **Node ejecutando el archivo dos veces** por **cómo estás invocando el script**.
+
+Mira esto con lupa:
+
+```bash
+> node src/db/runSeeds.js admin
+```
+
+y antes aparece:
+
+```txt
+> backend@1.0.0 db:seeds
+> node src/db/runSeeds.js
+> node src/db/runSeeds.js
+```
+
+Eso indica que **el script se está llamando dos veces desde npm**.
+
+### ⚠️ El patrón típico que causa esto
+
+Sucede cuando en `package.json` tienes algo como:
+
+```json
+"db:seed:admin": "node src/db/runSeeds.js admin"
+```
+
+pero **además** estás ejecutando manualmente:
+
+```bash
+node src/db/runSeeds.js admin
+```
+
+O cuando hay:
+
+* un `pre` / `post` script
+* o un script que llama a otro script
+
+👉 **npm imprime cada comando que ejecuta**
+👉 Por eso ves el mismo `▶ Running admin_001...` dos veces
 
 ---
 
-## Scope
+### ✅ Cómo comprobarlo rápido
 
-This document applies to:
+Ejecuta **solo uno** de estos, no ambos:
 
-* Local development
-* Staging environments
-* CI pipelines (partial)
-* Production (with strict limitations)
+✔️ **Opción A (recomendada)**
+
+```bash
+npm run db:seed:admin
+```
+
+❌ **NO además**:
+
+```bash
+node src/db/runSeeds.js admin
+```
+
+Si usas **solo `npm run`**, el duplicado desaparece.
 
 ---
 
-## Core Principles
+### ✅ Por qué **NO es un bug del runner**
 
-1. **Migrations define schema**
-2. **Seeds define data**
-3. **Runtime never mutates schema**
-4. **Nothing destructive runs automatically**
-5. **Production is immutable by default**
+Tu `runSeeds.js` **ya no ejecuta doble**:
+
+* el `for` está bien
+* no hay doble `await`
+* el `Executed: 1` confirma que **solo contó una ejecución**
+
+El duplicado es **por invocación**, no por lógica.
 
 ---
 
-## Database Components
+## 2️⃣ Estado actual (muy importante)
 
-### 1. Migrations
+En este punto estás así:
 
-**Location**
+✅ `migrations` → **correctas y estables**
+✅ `runMigrations.js` → **bien diseñado**
+✅ `runSeeds.js` → **explícito, sin env flags, sin cross-env**
+✅ separación:
+
+* **base data → migrations**
+* **admin bootstrap → seed manual**
+
+👉 Estás **listo para documentar y cerrar este ciclo**.
+
+---
+
+## 3️⃣ `docs/db-lifecycle.md` (contenido FINAL)
+
+Este es el archivo **real**, en inglés, que debes guardar en:
+
+```
+docs/db-lifecycle.md
+```
+
+---
+
+````md
+# Database Lifecycle – FinTrack Backend
+
+This document describes how the database is created, migrated, seeded, and reset
+during the lifecycle of the FinTrack backend application.
+
+This project uses **PostgreSQL** and **Node.js (ESM)**.
+Migrations and seeds are executed manually or during deploy — never at runtime.
+
+---
+
+## 1. Environments
+
+The database lifecycle depends on the environment:
+
+| Environment | Migrations | Base Data | Admin Seed | Reset |
+|------------|------------|-----------|------------|-------|
+| Development | Manual / CI | Automatic | Manual only | Allowed |
+| Staging | Automatic | Automatic | Manual only | Restricted |
+| Production | Automatic | Automatic | Manual only | ❌ Never |
+
+---
+
+## 2. Database Creation (Manual)
+
+Creating or dropping databases is **never automated in production**.
+
+Example (local development):
+
+```bash
+psql -U postgres
+DROP DATABASE IF EXISTS fintrack_dev;
+CREATE DATABASE fintrack_dev;
+\q
+````
+
+---
+
+## 3. Migrations
+
+### Purpose
+
+Migrations define **schema structure and base reference data**.
+They are **idempotent** and tracked in the `migrations` table.
+
+### Location
 
 ```
 src/db/migrations/
 ```
 
-**Purpose**
-
-* Define the database schema
-* Create tables, indexes, constraints, functions
-* Track schema state via the `migrations` table
-
-**Rules**
-
-* Migrations are **append-only**
-* Never edit an executed migration
-* Never delete a migration that ran in any environment
-* Order matters (numeric prefix)
-
-**Execution**
+### Execution
 
 ```bash
 npm run db:migrate
 ```
 
-**Behavior**
+### Rules
 
-* Runs pending migrations only
-* Skips already executed migrations
-* Uses `migrations` table as source of truth
+* Migrations run **in order**
+* Already executed migrations are skipped
+* The `migrations` table is the source of truth
+* Migrations may include:
+
+  * Tables
+  * Constraints
+  * Base catalogs (currencies, roles, types, etc.)
 
 ---
 
-### 2. Seeds
+## 4. Seeds
 
-**Location**
+Seeds are **NOT migrations**.
+They insert **contextual or sensitive data** that must not run automatically.
+
+### Location
 
 ```
 src/db/seeds/
 ```
 
-Seeds populate **data**, not schema.
+### Naming Convention
 
-They are **explicit, controlled, and never automatic**.
+| Type                 | Prefix   |
+| -------------------- | -------- |
+| Base seeds           | `base_`  |
+| Admin / system seeds | `admin_` |
 
 ---
 
-#### Seed Types
+## 5. Base Seeds
 
-##### Base Seeds
+### Purpose
 
-**Purpose**
+Optional non-sensitive data used for development or staging.
 
-* Populate static reference data
-* Catalogs (currencies, movement types, etc.)
-
-**Naming**
-
-```
-base_*.js
-```
-
-**Execution**
+### Execution
 
 ```bash
 npm run db:seed:base
 ```
 
-**Environment Flag**
+### Rules
 
-```
-SEED_BASE=true
-```
+* Never required in production
+* Must be idempotent
+* May be empty in this project (base catalogs live in migrations)
 
 ---
 
-##### Admin Seed
+## 6. Admin / System Seeds
 
-**Purpose**
+### Purpose
 
-* Create the initial system administrator
-* Bootstrap the platform
+Bootstrap **system-level users**, not application users.
+
+Examples:
+
+* system_admin
+* platform owner
+* root operator
+
+### Execution (MANUAL ONLY)
+
+```bash
+npm run db:seed:admin
+```
+
+### Rules
+
 * Never auto-run
-
-**Naming**
-
-```
-admin_*.js
-```
-
-**Execution**
-
-```bash
-npm run db:seed:admin
-```
-
-**Environment Flag**
-
-```
-SEED_ADMIN=true
-```
-
-**Notes**
-
-* Idempotent (safe to re-run)
-* Must be executed manually
-* Uses `SYSTEM_ADMIN_EMAIL` and `SYSTEM_ADMIN_PASSWORD`
+* Requires explicit CLI command
+* Reads credentials from environment variables
+* Safe to re-run (checks for existence)
 
 ---
 
-### 3. Reset (Development Only)
+## 7. Reset Database (Development Only)
 
-**Purpose**
+Reset scripts are **manual and explicit**.
 
-* Completely wipe the database
-* Remove all schema and data
-* Reset migration state
+### Purpose
 
-**Location**
+* Drop database
+* Recreate database
+* Re-run migrations
+* Optionally re-run seeds
+
+### Rules
+
+* ❌ Never allowed in production
+* Must be run intentionally
+* Used only during development
+
+---
+
+## 8. Runtime Rule (Critical)
+
+🚫 **No migrations**
+🚫 **No seeds**
+🚫 **No schema changes**
+
+The application runtime must assume the database is already prepared.
+
+---
+
+## 9. Summary
+
+* Migrations define **structure**
+* Seeds define **initial context**
+* Admin users are **bootstrap-only**
+* Everything is explicit
+* Nothing dangerous runs automatically
 
 ```
-src/db/runResetDb.js
-```
-
-**Execution**
-
-```bash
-npm run db:reset
-```
-
-**Rules**
-
-* DEV ONLY
-* Forbidden in production
-* Drops the database entirely
-* Recreates it empty
-* Does NOT run migrations or seeds
-
----
-
-## Environment Responsibilities
-
-### Development
-
-Allowed:
-
-* `db:reset`
-* `db:migrate`
-* `db:seed:base`
-* `db:seed:admin`
-
-Typical workflow:
-
-```bash
-npm run db:reset
-npm run db:migrate
-npm run db:seed:base
-npm run db:seed:admin
-```
-
----
-
-### Staging
-
-Allowed:
-
-* `db:migrate`
-* `db:seed:base` (if required)
-
-Forbidden:
-
-* `db:reset`
-* `db:seed:admin`
-
----
-
-### Production
-
-Allowed:
-
-* `db:migrate` (via deploy pipeline only)
-
-Forbidden:
-
-* `db:reset`
-* All seeds by default
-
-Admin creation must be handled **outside automated processes**.
-
----
-
-## Migration State (`migrations` table)
-
-* Stores executed migration filenames
-* Represents schema version
-* Is **state**, not code
-
-### Reset Behavior
-
-When the database is reset:
-
-* The `migrations` table is deleted
-* Schema state returns to zero
-* First migration recreates it
-
-This is expected and correct in development.
-
----
-
-## Anti-Patterns (Do NOT Do This)
-
-* ❌ Manually deleting tables
-* ❌ Editing migration files after execution
-* ❌ Running seeds automatically on app start
-* ❌ Allowing destructive scripts in production
-* ❌ Mixing schema and data logic
-
----
-
-## Summary
-
-| Action          | Tool         | Automatic    |
-| --------------- | ------------ | ------------ |
-| Schema creation | Migrations   | Yes (deploy) |
-| Reference data  | Base seeds   | Optional     |
-| System admin    | Admin seed   | No           |
-| Full reset      | Reset script | No           |
-
----
-
-**Database changes are intentional, explicit, and traceable.**
-
-This lifecycle guarantees:
-
-* Predictability
-* Safety
-* Reproducibility
-
-

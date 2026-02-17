@@ -61,7 +61,7 @@ INSERT INTO movement_types (movement_type_id, movement_type_name) VALUES
   (5, 'pocket'),
   (6, 'transfer'),
   (7, 'receive'),
-  (8, 'account'),
+  (8, 'account-opening'),
   (9, 'pnl')
 ON CONFLICT (movement_type_id) DO NOTHING;
 

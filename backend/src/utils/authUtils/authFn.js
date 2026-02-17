@@ -190,7 +190,7 @@ console.error('❌ Error rotating refresh token:', error);
 };
 
 //---
-export const revokeAllUserRefreshTokens  = async (clientOrPool=pool, userId, req) => {
+export const revokeAllUserRefreshTokens  = async (userId,clientOrPool=pool) => {
 
  try {
   const dbClient = clientOrPool ?? pool;
@@ -201,8 +201,10 @@ export const revokeAllUserRefreshTokens  = async (clientOrPool=pool, userId, req
    `UPDATE refresh_tokens 
     SET revoked = TRUE, updated_at = NOW() 
     WHERE revoked = $1 AND user_id = $2`,
-    [FALSE, userId]
+    [false, userId]
    );
+  
+  console.log('revoke all refresh tokens:', revokeResult.rows)
   
  } catch (error) {
 // Log and relaunch

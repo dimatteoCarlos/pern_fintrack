@@ -12,9 +12,9 @@ const FIELD_LIMITS = {
   PASSWORD:{ MAX:72,MIN:4, name:'Password'},//8 is the Minimum securityRequirement and Maximum by Bcrypt practical limit
 };
 
-// ============================================
+// ==================================
 // 🧼 UTILITY FUNCTIONS FOR SANITIZATION
-// ============================================
+// ==================================
 /**
  * Basic sanitization to prevent XSS
  * Removes < and > characters, trims whitespace
@@ -23,9 +23,9 @@ export const sanitizeText = (text) => {
   return text.replace(/[<>]/g, '').trim();
 };
 
-// =======================================
+// =================================
 // 📝 INDIVIDUAL FIELD SCHEMAS (REUSABLE)
-// =======================================
+// =================================
 /**
  * Creates a schema for text fields with consistent validation
  * @param {Object} field - Field configuration {MAX, MIN, name}
@@ -38,9 +38,8 @@ export const sanitizeText = (text) => {
 /**
  * Normalizes currency code to lowercase
  */
-
 export const currencySchema = z.enum(['usd', 'cop', 'eur'], {
-  errorMap: (issue, ctx) => {
+  error: (issue, ctx) => {
     if (issue.code === 'invalid_enum_value') {
       return {
         message: `Currency "${issue.received}" is not supported. Available options: usd, cop, eur`
@@ -49,11 +48,11 @@ export const currencySchema = z.enum(['usd', 'cop', 'eur'], {
     return { message: ctx.defaultError };
   }
 })
-.default('usd'); // ✅ required with default value
+.optional();
 
-// =======================================
+// ======================================
 // 📝 INDIVIDUAL FIELD SCHEMAS (REUSABLE)
-// =======================================
+// ======================================
 const individualFieldSchema = (field)=>
  z.string()
  .min(1,{message:`${field.name} is required`})
@@ -110,7 +109,6 @@ export const updateProfileSchema = z.object({
     path: []
   }
 );
-
 // ==========================
 // 🔐 PASSWORD CHANGE SCHEMA
 // ==========================
@@ -128,8 +126,13 @@ export const changePasswordSchema = z.object({
     .refine(
       (password) => password.trim().length > 0,
       { message: "New password cannot be empty or just whitespace" }
-    ),
-    
+    )
+    .refine(
+      (val) => val === val.trim(),
+      { message: "New password cannot start or end with spaces" }
+    )
+    .refine(val=>!val.includes('<') && !val.includes('>'), {message: `Passwords cannot contain < or > characters`}),
+
   confirmPassword: z.string()
     .min(1, { message: "Please confirm your new password" })
 })
@@ -139,15 +142,6 @@ export const changePasswordSchema = z.object({
   {
     message: "New password and confirmation do not match",
     path: ["confirmPassword"]
-  }
-)
-// Validate that new password is different from current
-//data es el valor que Zod ya parseó/validó hasta ese punto y que le pasa a tu función de refinamiento
-.refine(
-  (data) => data.currentPassword.trim() !== data.newPassword.trim(),
-  {
-    message: "New password cannot be the same as current password",
-    path: ["newPassword"]
   }
 )
 // Validate no leading/trailing spaces in new password
@@ -166,6 +160,10 @@ export const changePasswordSchema = z.object({
 // export type UpdateProfileInputType = z.infer<typeof updateProfileSchema>;
 // export type ChangePasswordInputType = z.infer<typeof changePasswordSchema>;
 
+// Tipos automáticos para frontend y backend
+// type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
+// type SignUpInput = z.infer<typeof signUpSchema>;
+
 // =======================
 // 📦 EXPORT ALL SCHEMAS
 // =======================
@@ -179,9 +177,4 @@ export default {
   lastNameSchema,
   contactSchema,
   currencySchema,
-
-// TypeScript types (for frontend)
-  // UpdateProfileInput,
-  // ChangePasswordInput,
-  // CurrencyType
 };

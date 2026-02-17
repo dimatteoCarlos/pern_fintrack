@@ -18,7 +18,7 @@ CREATE TABLE transactions (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
 
-   description VARCHAR(155),
+   description TEXT,
    amount DECIMAL(15,2) NOT NULL, 
    movement_type_id INTEGER NOT NULL
     REFERENCES movement_types(movement_type_id)

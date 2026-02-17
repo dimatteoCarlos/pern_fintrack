@@ -8,6 +8,7 @@ import { pool } from '../db/configDB.js';
 //------------------------
 //adaptar a accountId y deleted_at
 export const verifyAccountExistence = async (
+  dbClient = null,
   userId,
   account_name,
   account_type_name = 'bank'
@@ -20,9 +21,15 @@ export const verifyAccountExistence = async (
     LIMIT 1`,
     values: [userId, `%${account_name}%`, `%${account_type_name}%`],
   };
-
+  const db = dbClient || pool;
   try {
-    const accountExistResult = await pool.query(accountExistQuery);
+   // Check if dbClient is valid
+    if (!dbClient || typeof dbClient.query !== 'function') {
+      throw new Error('Invalid database client provided to verifyAccountExistence');
+    }
+
+    const accountExistResult = await db.query(accountExistQuery);
+    
     const accountExist = accountExistResult.rows.length > 0;
 
     if (accountExist) {
@@ -39,10 +46,12 @@ export const verifyAccountExistence = async (
 //----------------------------------
 //verify that the account exists and handle error if does not exist
 export const verifyAccountExists = async (
+  clientOrPool=null,
   userId,
   account_name,
   account_type_name = 'bank'
 ) => {
+  const db=clientOrPool || pool;
   const accountExistQuery = {
     text: `SELECT 1, ua.account_id FROM user_accounts ua
      JOIN account_types act
@@ -54,7 +63,7 @@ export const verifyAccountExists = async (
     values: [userId, `%${account_name}%`, `%${account_type_name}%`],
   };
   try {
-    const accountExistResult = await pool.query(accountExistQuery);
+    const accountExistResult = await db.query(accountExistQuery);
     const accountExist = accountExistResult.rows.length > 0;
 
     if (!accountExist) {
