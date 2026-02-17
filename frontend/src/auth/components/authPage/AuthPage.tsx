@@ -18,8 +18,7 @@ export default function AuthPage() {
   const [initialAuthMode, setInitialAuthMode] = useState<'signin' | 'signup'>(
     'signin'
   );
-  // const [successMessage, setSuccessMessage] = useState<string | null>(null); 
-
+ 
 //CUSTOM HOOKS FOR SIGNIN AND SIGNUP
 // Execute the useAuth hook to get authentication state and actions
   const {
@@ -30,20 +29,44 @@ export default function AuthPage() {
     handleSignUp,
     clearError,
     clearSuccessMessage,
-    // showSignInModalOnLoad,
-    // setShowSignInModalOnLoad,
+
   } = useAuth();
 
 //------------------------------------
 // ✅ HANDLE DIFFERENT NAVIGATION STATES
 //------------------------------------
 
-const expired = location.state?.expired;
-useEffect(() => {
- if(!expired) return;
- navigateTo(location.pathname, { replace: true, state: {} });
+// const expired = location.state?.expired;
+// useEffect(() => {
+//  if(!expired) return;
+//  navigateTo(location.pathname, { replace: true, state: {} });
 
-}, [expired,location.pathname, navigateTo]);
+// }, [expired,location.pathname, navigateTo]);
+
+useEffect(() => {
+  const navigationState = location.state;
+ // ✅ Only when state exists
+  if (navigationState && (navigationState.expired || navigationState.showModal)) {
+   
+   if (navigationState.expired) {
+    setInitialAuthMode('signin');
+    setShowAuthModal(true);
+   } else if (navigationState.showModal) {
+    setInitialAuthMode(navigationState.initialMode || 'signin');
+    setShowAuthModal(true);
+   }
+
+// 🛑 Clean just once. By passing 'state:{}', the following render does not enter into this if
+// Al pasar 'state: {}', el siguiente render ya no entrará en este 'if'.
+
+   navigateTo(location.pathname, { replace: true, state: {} });
+   
+//clean the sotre
+   clearError();
+   clearSuccessMessage();
+  }
+ }, [location.state, navigateTo, clearError,clearSuccessMessage,location.pathname]); // 👈 Use location.pathname No complete location 
+
 //------------------------------
 //FUNCTIONS EVENT HANDLERS
   const toggleMenu = () => {
@@ -67,7 +90,6 @@ useEffect(() => {
     //-----------------------
     setShowAuthModal(true);
     setInitialAuthMode('signup');
-    // setShowSignInModalOnLoad(false);
   };
 
   const closeAuthModal = () => {
