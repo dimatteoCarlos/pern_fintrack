@@ -4,15 +4,15 @@ import { url_change_password, url_refrestoken, url_update_user } from "../../end
 import { logoutCleanup } from './logoutCleanup';
 
 /**
- * 🎯 AUTHENTICATED FETCH UTILITY
- * ✅ Automatically injects Bearer token.
- * ✅ Handles Silent Refresh with HttpOnly cookies.
- * ✅ Timeout protection for refresh attempts.
- * ✅ Differentiates between expired sessions and profile update auth failures.
- * ✅ Network-resilient: Prevents unwanted logouts.
- */
+* 🎯 AUTHENTICATED FETCH UTILITY
+* ✅ Automatically injects Bearer token.
+* ✅ Handles Silent Refresh with HttpOnly cookies.
+* ✅ Timeout protection for refresh attempts.
+* ✅ Differentiates between expired sessions and profile update auth failures.
+* ✅ Network-resilient: Prevents unwanted logouts.
+*/
 
-export const authFetch = async <T>(
+export const authFetch = async<T>(
   url: string,
   options: AxiosRequestConfig = {}
 ): Promise<AxiosResponse<T>> => {
@@ -32,7 +32,7 @@ export const authFetch = async <T>(
   };
 
   try {
-    // 🎯 FIRST ATTEMPT
+  // 🎯 FIRST ATTEMPT
     const authFetchResponse = await axios<T>(url, requestConfig);
     // console.log("🚀 ~ authFetch ~ FIRST ATTEMPT SUCCESS:", url);
     return authFetchResponse;
@@ -40,10 +40,12 @@ export const authFetch = async <T>(
   } catch (error) {
   // 3️⃣ HANDLE 401 UNAUTHORIZED ERRORS
   // Only attempt refresh if: it is a 401, NOT the profile update endpoint, and a valid Axios error
-    if (
-      axios.isAxiosError(error) && 
-      error.response?.status === 401 && 
-      !url.includes(url_update_user)  && !url.includes(url_change_password)
+   if (
+     axios.isAxiosError(error) && 
+     error.response?.status === 401 && 
+     !url.includes(url_update_user) &&
+     !url.includes(url_change_password) &&
+     !url.includes('/sign-in')
     ) {
      try {
        // 🔄 ATTEMPT SILENT REFRESH
@@ -89,28 +91,28 @@ export const authFetch = async <T>(
  // 2. This is NOT a password change flow (which expects token change)
  // 3. The user was previously authenticated (hasCookie or had token)
 
-      const isLoginEndpoint = url.includes('/sign-in');
-      const isPasswordChangeEndpoint = url.includes(url_change_password);
-      const hadTokenBefore = !!sessionStorage.getItem('accessToken');
-      const hasRefreshCookie = document.cookie.includes('refreshToken');
+   const isLoginEndpoint = url.includes('/sign-in');
+   const isPasswordChangeEndpoint = url.includes(url_change_password);
+   const hadTokenBefore = !!sessionStorage.getItem('accessToken');
+   const hasRefreshCookie = document.cookie.includes('refreshToken');
 
-      if (!isLoginEndpoint && !isPasswordChangeEndpoint && (hadTokenBefore || hasRefreshCookie)) {
-      console.log('🔴 Real session expired - triggering logout with notification');
+   if (!isLoginEndpoint && !isPasswordChangeEndpoint && (hadTokenBefore || hasRefreshCookie)) {
+   console.log('🔴 Real session expired - triggering logout with notification');
 //Only when the user WAS authenticated and it is NOT a special flow, is logoutCleanup(true) performed.
-      logoutCleanup(true);
-      } 
-// ⚠️ EXPECTED 401 - Part of normal flow (login, password change)
-       else {
-       console.log('🟡 Expected 401 in normal flow - no notification needed');
-       // Do NOT call logoutCleanup - let the calling function handle it
-      }
-       throw refreshError; 
-     }
-    }
+    logoutCleanup(true);
+    } 
 
-    // 4️⃣ PROPAGATE NON-401 OR ALREADY HANDLED ERRORS
-    // (This includes 400, 403, 500 or the 401 from Profile Update)
-    throw error;
+// ⚠️ EXPECTED 401 - Part of normal flow (login, password change)
+    else {
+     console.log('🟡 Expected 401 in normal flow - no notification needed');
+     // Do NOT call logoutCleanup - let the calling function handle it
+   }
+    throw refreshError; 
+   }
+  }
+  // 4️⃣ PROPAGATE NON-401 OR ALREADY HANDLED ERRORS
+  // (This includes 400, 403, 500 or the 401 from Profile Update)
+  throw error;
   }
 };//authFetch
 
