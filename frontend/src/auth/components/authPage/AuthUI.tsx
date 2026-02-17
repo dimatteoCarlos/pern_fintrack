@@ -38,10 +38,7 @@ const INITIAL_CREDENTIALS_STATE: CredentialsType = {
   password: '',
 };
 
-// 📊 MESSAGE TYPES (For better type safety)
-// type MessageType = 'error' | 'success';
-
-//--MAIN COMPONENT
+// 📊 --MAIN COMPONENT: AuthUI.tsx
 function AuthUI({
   onSignIn,
   onSignUp,
@@ -60,7 +57,7 @@ function AuthUI({
   const [showMessageToUser, setShowMessageToUser] = useState(true);
   const [showError, setShowError] = useState(true);
     // const navigateTo = useNavigate();
-  const [isSignIn, setIsSignIn] = useState(isSignInInitial);
+  const [isSignIn, setIsSignIn] = useState(isSignInInitial??true);
   const [rememberMe, setRememberMe] = useState(false);
  
   // 📝 INPUT HANDLERS
