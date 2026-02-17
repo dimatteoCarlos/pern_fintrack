@@ -7,6 +7,7 @@ import {
   SignInCredentialsType,
   SignUpCredentialsType,
 } from '../../types/authTypes';
+import Message, { MessageType } from '../formUIComponents/Message';
 
 // 🏷️ PROPS TYPE DEFINITION
 type AuthUIPropsType = {
@@ -26,13 +27,13 @@ type AuthUIPropsType = {
 // 🔧 CONSTANTS & INITIAL VALUES
 const INITIAL_CREDENTIALS_STATE: CredentialsType = {
  //harcoded credentials for test in dev
-  // username: 'usuario01',
-  // email: 'user01@email.com',
+  username: 'usuario01',
+  email: 'user01@email.com',
   // user_firstname: 'nombre usuario 01',
   // user_lastname: 'usuario apellido',
   // password: '1000',
-  username: '',
-  email: '',
+  // username: '',
+  // email: '',
   user_firstname: '',
   user_lastname: '',
   password: '',
@@ -54,8 +55,10 @@ function AuthUI({
 
 // 🏗️ STATE MANAGEMENT
   const [credentials, setCredentials] = useState<CredentialsType>(INITIAL_CREDENTIALS_STATE);
-  const [showMessageToUser, setShowMessageToUser] = useState(true);
-  const [showError, setShowError] = useState(true);
+
+  // const [showMessageToUser, setShowMessageToUser] = useState(true);
+  // const [showError, setShowError] = useState(true);
+
     // const navigateTo = useNavigate();
   const [isSignIn, setIsSignIn] = useState(isSignInInitial??true);
   const [rememberMe, setRememberMe] = useState(false);
@@ -111,30 +114,41 @@ function AuthUI({
 // ===============================
 // ⏱️ AUTO-HIDE MESSAGES AFTER TIMEOUT
 // ===============================
-  useEffect(() => {
-   const MESSAGE_TIMEOUT_MS = 5000;
-   let messageTimer: ReturnType<typeof setTimeout>;
+  // useEffect(() => {
+  //  const MESSAGE_TIMEOUT_MS = 5000;
+  //  let messageTimer: ReturnType<typeof setTimeout>;
   
-  // Show error message
-  if (error && !isLoading) {
-    setShowError(true);
-    messageTimer = setTimeout(() => {
-      setShowError(false);
-    }, MESSAGE_TIMEOUT_MS);
-  }
+  // // Show error message
+  // if (error && !isLoading) {
+  //   // setShowError(true);
+  //   messageTimer = setTimeout(() => {
+  //     setShowError(true);
+  //   }, MESSAGE_TIMEOUT_MS);
+  // }
   
-  // Show success message (logout, sign in, etc.)
-  if (messageToUser && !isLoading) {
-    setShowMessageToUser(true);
-    messageTimer = setTimeout(() => {
-      setShowMessageToUser(false);
-    }, MESSAGE_TIMEOUT_MS);
-  }
+  // // Show success message (logout, sign in, etc.)
+  // if (messageToUser && !isLoading) {
+  //   setShowMessageToUser(true);
+  //   messageTimer = setTimeout(() => {
+  //     setShowMessageToUser(false);
+  //   }, MESSAGE_TIMEOUT_MS);
+  // }
   
-  return () => {
-    if (messageTimer) clearTimeout(messageTimer);
-  };
-  }, [messageToUser, error, isLoading]);
+  // return () => {
+  //   if (messageTimer) clearTimeout(messageTimer);
+  // };
+  // }, [messageToUser, error, isLoading]);
+  
+
+const bannerMessage:
+  | { type: MessageType; text: string }
+  | null =
+  error
+    ? { type: 'error', text: error }
+    : messageToUser
+    ? { type: 'success', text: messageToUser }
+    : null;
+
   
   //Reset form on signup error
  useEffect(() => {
@@ -147,15 +161,14 @@ function AuthUI({
   return (
     <div className={styles['auth-container']}>
 
-      {/* {"succes message to user"} */}
-      {messageToUser && showMessageToUser && (
-        <span className={styles['messageToUser__msg']}>{messageToUser}</span>
-      )}
-
-      {error && showError && (
-        <p className={styles['auth-container__errorMsg']}
-        >{error}</p>
-      )}
+     {bannerMessage && (
+       <Message
+         type={bannerMessage.type} 
+         message={bannerMessage.text}
+         autoDismiss={bannerMessage.type === 'success' ? 155000 : undefined}
+         showIcon
+       />
+     )}
 
       <h2 className={styles['auth-container__title']}>
         {isSignIn ? 'Sign In' : 'Sign Up'}
