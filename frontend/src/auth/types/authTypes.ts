@@ -45,21 +45,21 @@ export interface AuthStateType<U> {
 
 //useAuthTypes response
 //R:check if it is usable
-export type UseAuthResponseType<U> = {
-  isAuthenticated: boolean;
-  userData: U | null;
-  isLoading: boolean;
-  error: string | null;
-  successMessage: string | null;
-  handleSignIn: (credentials: SignInCredentialsType) => Promise<unknown>;
-  handleSignUp: (userData: SignUpCredentialsType) => Promise<unknown>;
-  handleSignOut: () => Promise<unknown>;
-  clearError: () => void;
-  clearSuccessMessage: () => void;
+// export type UseAuthResponseType<U> = {
+//   isAuthenticated: boolean;
+//   userData: U | null;
+//   isLoading: boolean;
+//   error: string | null;
+//   successMessage: string | null;
+//   handleSignIn: (credentials: SignInCredentialsType) => Promise<unknown>;
+//   handleSignUp: (userData: SignUpCredentialsType) => Promise<unknown>;
+//   handleSignOut: () => Promise<unknown>;
+//   clearError: () => void;
+//   clearSuccessMessage: () => void;
 
-  showSignInModalOnLoad: boolean;
-  setShowSignInModalOnLoad: (showSignInModalOnLoad: boolean) => void;
-};
+//   showSignInModalOnLoad: boolean;
+//   setShowSignInModalOnLoad: (showSignInModalOnLoad: boolean) => void;
+// };
 
 //backend data response type. Common for all auth responses, as for Sign-in,Sign-up and refresh token
 export type AuthSuccessResponseType  = {
@@ -74,22 +74,22 @@ export type AuthSuccessResponseType  = {
 
 //sign-out
 //R:check if it is usable
-export type SignOutResponseType = {
-  message: string;
-};
+// export type SignOutResponseType = {
+//   message: string;
+// };
 //------------
 //sign-up
-export type SignUpResponseType= {
-  message: string;
-  accessToken?: string;
-  user:UserResponseDataType;
-  expiresIn: number;
-  refreshToken?: string;//R:check if it's usable
+// export type SignUpResponseType= {
+//   message: string;
+//   accessToken?: string;
+//   user:UserResponseDataType;
+//   expiresIn: number;
+//   refreshToken?: string;//R:check if it's usable
 
-  // data: DataRespType;
-}
-export type DataRespType ={user: UserResponseDataType;
-  userAccess: string;}//R: checi if it's usable
+//   // data: DataRespType;
+// }
+// export type DataRespType ={user: UserResponseDataType;
+//   userAccess: string;}//R: checi if it's usable
 
 // =====================  
 // 👤 USER TYPES / TIPOS DE USUARIO
@@ -103,8 +103,6 @@ export type UserResponseDataType ={
   role:string;
   currency: CurrencyType;
   user_contact:string | null;
-  // currency_id?: number;
-  // user_role_id?: number;
 }
 
 //input type user info
@@ -127,28 +125,25 @@ export type SignInResponseType ={
  accessToken: string;
  user: UserResponseDataType;
  expiresIn: number;
-  
- // userAccess?: string ;
- // refreshToken?: string;
 }
 
 //authRefreshToken refresh-token
 //R: chek if it's usable
-export interface AuthRefreshTokenResponseType {
-  message: string;
-  user: RefreshTokenUserInfoType | { [key: string]: string };
-  expiresIn?: number; 
-}
+// export interface AuthRefreshTokenResponseType {
+//   message: string;
+//   user: RefreshTokenUserInfoType | { [key: string]: string };
+//   expiresIn?: number; 
+// }
 //R: chek if it's usable
-export interface RefreshTokenUserInfoType {
-  user_id: string;
-  username: string;
-  email: string;
-  user_role_id: number;
-  user_role_name: string;
-  accessToken: string;
-  refreshToken: string;
-}
+// export interface RefreshTokenUserInfoType {
+//   user_id: string;
+//   username: string;
+//   email: string;
+//   user_role_id: number;
+//   user_role_name: string;
+//   accessToken: string;
+//   refreshToken: string;
+// }
 
 // Define the success response format for the frontend
 export interface SuccessResponseType<T> { // Make SuccessResponse generic
@@ -289,13 +284,6 @@ export type ChangePasswordValidationErrorResponse = {
   fieldErrors: Record<string, string[]>; // e.g., { newPassword: ["Too short"] }
 };
 
-// 5️⃣ Union type for all possible responses
-// export type ChangePasswordResponseType =
-//   | ChangePasswordSuccessResponse
-//   | ChangePasswordFailureResponse
-//   // | ChangePasswordRateLimitResponse
-//   // | ChangePasswordValidationErrorResponse;
-
 export type ChangePasswordResponseType =
   | {
       success: true;
@@ -321,31 +309,6 @@ export type ProfileUpdatePayloadType = Partial<{
   contact: string | null;
   currency: CurrencyType;
 }>;
-
-// 🎯 SUCCESS RESPONSE
-//  export type ProfileUpdateSuccessResponseType = {
-//   success: true;
-//   user: UserDataType;         // <-- Asegúrate que UserType exista
-//   message?: string;
-// };
-
-// 🎯 VALIDATION ERROR (400)
-// export type ProfileUpdateValidationErrorType = {
-//   success: false;
-//   error: 'ValidationError';
-//   message: string;
-//   details?: {
-//     fieldErrors?: Record<string, string>;
-//   };
-// };
-
-// 🎯 GENERIC ERROR
-// export type ProfileUpdateErrorResponseType = {
-//   success: false;
-//   error: string;
-//   message: string;
-// };
-
 // ------------------------------
 // Normalized response for Update Profile
 // ------------------------------
@@ -373,7 +336,34 @@ export type ProfileUpdateErrorResponseType = {
   retryAfter?:number;
 };
 
+
+// ===============================
+// 🆔 USER IDENTITY FOR PERSISTENCE
+// ===============================
+
+/**
+ * 🎯 User identity stored in localStorage for UX convenience
+ * 
+ * 🔒 SECURITY NOTES:
+ * - Only used for pre-filling login forms
+ * - NEVER contains tokens, passwords, or sensitive data
+ * - Backend NEVER trusts this data
+ * - Pure UX optimization
+*/
+export type UserIdentityType = {
+ /** 👤 User's email for login form pre-fill */
+ email: string;
+ 
+ /** 👤 User's username for login form pre-fill */
+ username: string;
+ 
+ /** ✅ Whether user wants to be remembered */
+ rememberMe: boolean;
+}; 
+
+// ===============================
+// 📦 EXPORTS (existing)
+// ===============================
 export type ProfileUpdateResponseType =
   | ProfileUpdateSuccessResponseType
   | ProfileUpdateErrorResponseType;
-
