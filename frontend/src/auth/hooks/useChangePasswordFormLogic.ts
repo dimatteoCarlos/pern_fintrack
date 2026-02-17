@@ -256,3 +256,25 @@ const handleChange = useCallback(
 };
 
 export default useChangePasswordFormLogic;
+
+/*
+ALTERNATIVE TO  isSubmittinAllowed:
+const allTouched = (Object.keys(formData) as (keyof ChangePasswordFormDataType)[])
+  .every((field) => touchedFields[field] === true);
+
+const allFilled = (Object.values(formData) as string[])
+  .every((value) => value.trim().length > 0);
+
+const hasClientErrors = Object.keys(validationErrors).length > 0;
+const hasApiErrors = Object.keys(apiErrors).length > 0;
+
+isSubmittingAllowed:
+  allTouched &&
+  allFilled &&
+  !hasClientErrors &&
+  !hasApiErrors
+
+
+
+
+*/

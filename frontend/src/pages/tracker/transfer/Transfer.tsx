@@ -58,7 +58,7 @@ import DropDownSelection from '../../../general_components/dropdownSelection/Dro
 import CardNoteSave from '../components/CardNoteSave.tsx';
 import RadioInput from '../../../general_components/radioInput/RadioInput.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
-import { fetchNewBalance } from '../../../auth/utils/fetchNewTotalBalance.ts';
+import { fetchNewBalance } from '../../../auth/auth_utils/fetchNewTotalBalance.ts';
 //-------------------------------------
 // 📝data type configuration 
 export type ShowValidationType={

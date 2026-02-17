@@ -1,3 +1,4 @@
+//frontend/src/pages/forms/accountDetail/AccountDetail.tsx
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useFetch } from '../../../hooks/useFetch.ts';
@@ -22,7 +23,6 @@ import { AccountByTypeResponseType, AccountListType, TransactionsAccountApiRespo
 import { url_get_account_by_id, url_get_transactions_by_account_id } from '../../../endpoints';
 
 import './styles/accountDetailTransactions-styles.css'
-
 // import CoinSpinner from '../../../loader/coin/CoinSpinner';
 
 type LocationStateType ={

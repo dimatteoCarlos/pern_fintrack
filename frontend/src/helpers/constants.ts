@@ -9,12 +9,17 @@ import {
 //------------------------
 export const PAGE_LOC_NUM = 3;
 //-------------------------
-//-----------------------
 //useAuth.ts
 export const INITIAL_PAGE_ADDRESS = '/fintrack/tracker/expense'
 export const LOCAL_STORAGE_KEY = {REMEMBER_ME :'fintrack_remember_me',USER_DATA:'fintrack_user_data'};
 //-------------------------
 export const CURRENCY_OPTIONS = { usd: 'en-US', cop: 'cop-CO', eur: 'en-US' };
+
+export const  SELECT_CURRENCY_OPTIONS = [
+  { value: 'usd', label: 'USD - US Dollar' },
+  { value: 'eur', label: 'EUR - Euro' },
+  { value: 'cop', label: 'COP - Colombian Peso' }
+];
 
 export const DEFAULT_CURRENCY:CurrencyType = 'usd';
 

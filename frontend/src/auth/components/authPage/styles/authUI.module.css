@@ -28,6 +28,18 @@
   font-size: 0.9rem; /* 0.9 * 16px = 14.4px */
 }
 
+/* Success message styles */
+.auth-container__successMsg {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-size: 14px;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;

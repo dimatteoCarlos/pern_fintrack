@@ -1,7 +1,7 @@
 //src/general_components/header/LogoMenuIcon.tsx
 import { Link, useLocation } from 'react-router-dom';
 import useAuth from '../../auth/hooks/useAuth';
-import UserProfileBadge from '../../auth/components/userProfileBadge/UserProfileBadge';
+import UserProfileMenu from '../../auth/components/userProfileMenu/UserProfileMenu';
 
 //icon images
 import Logo from '../../assets/logo.svg';
@@ -50,16 +50,15 @@ const handleSignOutClick = ()=>{
        <div className="iconContainer edit  ">
         {/* <MenuIcon /> */}
         <MdOutlineEditNote style={{color:"black" ,fontSize:"32px" ,
-         border:"2.5px solid black",
+         border:"3px solid black",
          borderRadius:"8px",
-         // boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)"
           }}/>
          </div>
       </Link>
 
       {isAuthenticated && 
       <div className="iconContainer">
-       <UserProfileBadge />
+       <UserProfileMenu />
       </div>
       }
 
@@ -74,11 +73,10 @@ const handleSignOutClick = ()=>{
          fontWeight:"bold",
          paddingLeft:"8px",
 
-         border:"2.5px solid black",
+         border:"3px solid black",
          borderRight:"0px solid white",
          borderRadius:"8px",
-         // boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)"
-          }}
+             }}
          />
             {/* <SignOutIcon /> */}
       </div>

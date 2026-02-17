@@ -27,8 +27,6 @@ body,
   -moz-osx-font-smoothing: grayscale;
 }
 
-
-
 a {
   text-decoration: none;
 }
@@ -57,4 +55,15 @@ button {
 
 .bordered {
   border: 2px solid red;
+}
+
+.tile__left .tile__subtitle,
+.input__container,/*note*/
+.flx-row-sb .box__subtitle/*aplicar ellipsis a note y disminuir a 100 chars*/
+{
+ width:100%;
+ overflow-wrap:anywhere;
+ word-break:break-word;
+ white-space: normal;
+ overflow:hidden;
 }

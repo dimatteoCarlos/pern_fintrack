@@ -81,7 +81,7 @@ function NewAccount() {
  // console.log('🚀 ~ NewAccount ~ user:', user);
   const { isAuthenticated } = useAuth();  
 
- //---states------
+//---states------
   const [accountData, setAccountData] = useState<AccountDataType>(
     initialNewAccountData
   );
@@ -103,11 +103,11 @@ function NewAccount() {
     null
   );
 
- // 🆕 VERIFICAR AUTENTICACIÓN AL INICIO
+// 🆕 VERIFICAR AUTENTICACIÓN AL INICIO
   useEffect(() => {
     if (!isAuthenticated) {
       setMessageToUser('Please log in to create an account');
- // 🆕 OPCIONAL: Redirigir al login después de un tiempo
+// 🆕 OPCIONAL: Redirigir al login después de un tiempo
    setTimeout(() => navigateTo('/auth'), 3500);
     }
   }, [isAuthenticated, navigateTo]);
@@ -208,7 +208,7 @@ function NewAccount() {
       const { name, type, currency, amount, date } = accountData;
 
       const payload: AccountDataType = { name, type, currency, amount, date } as AccountDataType;
-    // console.log('data to post:',{ ...accountData});
+    console.log('data to post:',{ ...accountData});
 
     //final URL, url is dynamic depending on type variable
       const finalUrl = `${url_create_basic_account}/${type}`;
@@ -369,12 +369,12 @@ function NewAccount() {
           setStateData={setAccountData}
           // disabled={isFormDisabled} 
         />
-                {/* <input
-                style={{ fontSize: '1.25rem', padding: '0 0.75rem' }}
-              /> FIGMA STYLE*/}
-              </div>
-            )}
-          </div>
+        {/* <input
+        style={{ fontSize: '1.25rem', padding: '0 0.75rem' }}
+      /> FIGMA STYLE*/}
+        </div>
+        )}
+      </div>
 
           <div className='submit__btn__container'>
             <FormSubmitBtn 

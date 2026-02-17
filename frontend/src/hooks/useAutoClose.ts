@@ -10,7 +10,7 @@ import { useEffect, useRef } from "react";
  * @param isEnabled - Enable/disable auto close
  */
 export function useAutoClose(
-  durationMs: number = 3000,
+  durationMs: number = 4000,
   callback: () => void,
   isEnabled: boolean = true
 ): void {

@@ -164,7 +164,7 @@ const useAuth = () => {
      🔐 SIGN IN
      =============================== */
 
-  const handleSignIn = async (credentials: SignInCredentialsType, rememberMe: boolean) => {
+    const handleSignIn = async (credentials: SignInCredentialsType, rememberMe: boolean) => {
     clearError();
     setIsLoading(true);
     clearSuccessMessage();

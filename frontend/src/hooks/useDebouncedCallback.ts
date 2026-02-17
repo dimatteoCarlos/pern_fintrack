@@ -29,7 +29,7 @@ export function useDebouncedCallback<F extends (...args:any[])=>void>(callback:F
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [debouncedCallback]);
+  }, [debouncedCallback]);//re-renders
 
   return debouncedCallback
 }

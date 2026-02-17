@@ -1,4 +1,4 @@
-// src/auth/stores/useAuthStore.ts
+//📂 src/auth/stores/useAuthStore.ts
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware'; // middleware
 import { LOCAL_STORAGE_KEY } from '../../helpers/constants';
@@ -62,7 +62,8 @@ export const useAuthStore = create<AuthStoreStateType>()(persist(
   {user_firstname:state.userData.user_firstname,
    user_lastname:state.userData.user_lastname,
    currency: state.userData.currency,
-   role: state.userData.role//check convinience in production
+   role: state.userData.role,
+   contact:state.userData.contact,
     }
    :null
     }

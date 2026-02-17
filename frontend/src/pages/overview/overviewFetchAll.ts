@@ -6,7 +6,7 @@ import {
   LastMovementRespType,
 } from '../../types/responseApiTypes';
 import { ApiRespDataType } from './Overview';
-import { authFetch } from '../../auth/utils/authFetch';
+import { authFetch } from '../../auth/auth_utils/authFetch';
 // import { FinancialResultType } from './CalculateMonthlyAverage';
 //--------------------
 // Define el tipo para una respuesta exitosa

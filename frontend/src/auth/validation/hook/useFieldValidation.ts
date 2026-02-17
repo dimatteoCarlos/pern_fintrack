@@ -70,7 +70,7 @@ export const useFieldValidation = <TFormShape extends Record<string, unknown>>(
  // 🛡️ Validate using FULL schema
     const result = schema.safeParse(dataToValidate);
  //------------------------------------
-    console.log('field validation result:', result, fieldName, fieldValue);
+    // console.log('field validation result:', result, fieldName, fieldValue);
 
  // ✅ SUCCESS PATH - Field is valid
     if (result.success) {
@@ -119,7 +119,7 @@ export const useFieldValidation = <TFormShape extends Record<string, unknown>>(
    touchedFields?: Set<keyof TFormShape>
    ): FormValidationResultType<TFormShape> => {
 //----------------------------------------
-  console.log('received:', formData, touchedFields, options);
+  // console.log('received:', formData, touchedFields, options);
 
 // 🔍 Filter data if validateOnlyTouched is enabled
   let dataToValidate: Partial<TFormShape> = formData;
@@ -136,7 +136,7 @@ export const useFieldValidation = <TFormShape extends Record<string, unknown>>(
 // 🛡️ Validate using FULL schema
  const result = schema.safeParse(dataToValidate);
 //--------------------------------------------
-console.log('form validation result:', result)
+// console.log('form validation result:', result)
 
 // ✅ SUCCESS PATH
  if (result.success) {
@@ -177,12 +177,12 @@ console.log('form validation result:', result)
  });
 
 //---------------------------------
- console.log('useFieldValidation return object:', {
-  isValid: false,
-  errors,
-  validatedData: undefined,
-  formError
-   })
+ // console.log('useFieldValidation return object:', {
+ //  isValid: false,
+ //  errors,
+ //  validatedData: undefined,
+ //  formError
+ //   })
 //----------------------------------
 
  return {

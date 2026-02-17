@@ -2,7 +2,7 @@
 export const DB_MAX_LENGTHS = {
   category_name: 20,
   subcategory: 20,
-  note: 150,
+  note: 100,
   account_name: 50,
   debtor_name: 20,
   debtor_lastname: 20,

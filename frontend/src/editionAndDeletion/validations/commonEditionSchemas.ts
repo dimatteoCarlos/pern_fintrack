@@ -112,6 +112,21 @@ export const currencySchema = z.enum(
  }
 });
 
+export const currencySchemav2 = z.enum(
+ ['usd','cop','eur'],{
+  error:(issue)=>{
+  if(issue.code==='invalid_value'){
+   return {
+     message: `Currency "${issue.received}" is not supported. Available options: usd, cop, eur`
+   };
+  }
+  return "Invalid currency input";
+ }
+});
+
+
+
+
 
 
 

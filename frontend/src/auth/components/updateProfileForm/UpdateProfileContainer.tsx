@@ -19,7 +19,7 @@ import useUpdateProfileFormLogic from "../../hooks/useUpdateProfileFormLogic";
 import useProfileValidation from "../../validation/hook/useUpdateProfileValidation";
 
 // 🔄 TRANSFORMATION UTILITIES - Data format converters
-import { storeToForm, formToApi, getChangedFields } from "../../utils/profileTransformation";
+import { storeToForm, formToApi, getChangedFields } from "../../auth_utils/profileTransformation";
 
 // 🎨 UI COMPONENTS
 import UpdateProfileForm from "./UpdateProfileForm";
@@ -103,7 +103,7 @@ const currencyOptions: CurrencyOptionType[]=[
 */
 
 const UpdateProfileContainer=  ({
-  onClose,
+  onClose, onSuccess,
   LoadingComponent = LoadingSpinner
 }:UpdateProfileContainerPropsType) => {
  /* 🌟 ==========================
@@ -181,10 +181,11 @@ const UpdateProfileContainer=  ({
    try {
 // 🚀 Call the actual API function
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   const apiResult = await handleUpdateUserProfile(payload);
+  const apiResult = await handleUpdateUserProfile(payload);
 
    // ✅ Successful API Response
    if (apiResult.success) {
+    if (onSuccess) onSuccess();
     return {
      success: true,
      fieldErrors: {},
@@ -203,7 +204,7 @@ const UpdateProfileContainer=  ({
      fieldErrors: apiResult.fieldErrors ?? {},
      };
     } catch (error) {
-      // 🌐 Network/Server Error
+     // 🌐 Network/Server Error
       console.error("API call failed:", error);
       return {
        success: false,
@@ -212,7 +213,7 @@ const UpdateProfileContainer=  ({
        };
      }
     },
-    [handleUpdateUserProfile]
+    [handleUpdateUserProfile, onSuccess]
   );
   
   /* 🌟 ==========================

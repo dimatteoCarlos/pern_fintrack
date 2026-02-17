@@ -20,7 +20,7 @@ import useBalanceStore from '../../../stores/useBalanceStore.ts';
 // =====================
 import { capitalize } from '../../../helpers/functions.ts';
 import { checkNumberFormatValue,validateAmount, validationData  } from '../../../validations/utils/custom_validation.ts';
-import { fetchNewBalance } from '../../../auth/utils/fetchNewTotalBalance.ts';
+import { fetchNewBalance } from '../../../auth/auth_utils/fetchNewTotalBalance.ts';
 // =====================
 // 🌐 ENDPOINTS
 // =====================

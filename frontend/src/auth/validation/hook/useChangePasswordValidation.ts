@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { z } from 'zod';
 import useFieldValidation from './useFieldValidation';
-import { extractErrorMessage } from '../../utils/extractErrorMessge';
+import { extractErrorMessage } from '../../auth_utils/extractErrorMessge';
 
 /* ===============================
    🏷️ TYPES DEFINITIONS

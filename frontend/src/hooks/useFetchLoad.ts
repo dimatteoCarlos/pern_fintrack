@@ -1,7 +1,7 @@
 // src/hooks/useFetchLoad.ts
 import axios, { AxiosRequestConfig,  Method } from 'axios';
 import { useCallback, useState } from 'react';
-import { authFetch } from '../auth/utils/authFetch';
+import { authFetch } from '../auth/auth_utils/authFetch';
 
 export type FetchResponseType<R, D = unknown> = {
   data: R | null;

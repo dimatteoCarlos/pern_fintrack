@@ -57,8 +57,6 @@ import './styles/accountTransactionsList-styles.css'
             </div>
       </div>
 )}
-
-
               </BoxRow>
             </BoxRow>
 

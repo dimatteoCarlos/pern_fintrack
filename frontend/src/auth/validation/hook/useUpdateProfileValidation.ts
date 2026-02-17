@@ -1,7 +1,7 @@
 // 📁 frontend/src/lib/validation/useUpdateProfileValidation.ts
 
 /* 🌟 ===============================
-📦 IMPORT DEPENDENCIES
+📦 IMPORT DEPENDENCIES.
 =============================== 🌟 */
 import { useCallback } from "react";
 
@@ -15,7 +15,7 @@ import useFieldValidation from "./useFieldValidation.ts";
 /* 🌟 ===============================
 🏷️ IMPORT UTILS
 =============================== 🌟 */
-import { extractErrorMessage } from "../../utils/extractErrorMessge.ts";
+import { extractErrorMessage } from "../../auth_utils/extractErrorMessge.ts";
 /* 🌟 ===============================
 🏷️ TYPE DEFINITIONS
 =============================== 🌟 */
@@ -63,7 +63,7 @@ type UseFormValidationParams<TProfileFieldName extends string> = {
  * @returns Validation utilities specialized for profile form
  */
 /* 🌟 ===============================
-📦 USE GENERIC VALIDATION HOOK
+📦 MAIN HOOK: useUpdateProfileValidation
 =============================== 🌟 */
 //🔹 Generic reusable form validation hook
 export const useUpdateProfileValidation = <TProfileFieldName extends string>(
@@ -73,13 +73,6 @@ const { fieldMapping, schema } = params;
 
 //FUNCTION DECLARATION
 // 🧠 Use the existing generic field validation hook
-// genericValidation function definition
-
- // const genericValidation = useFieldValidation<UpdateProfileFormDataType>(
- //   updateProfileSchema,
- //   { validateOnlyTouched: true }
- // );
-
   const genericValidation = useFieldValidation<Record<TProfileFieldName, unknown>>(schema, { validateOnlyTouched: true });
 
 /* 🌟 ===============================

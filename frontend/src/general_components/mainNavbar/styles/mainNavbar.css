@@ -14,7 +14,7 @@
   border: none;
   position: sticky;
   bottom: 0%;
-  z-index: 100;
+  /* z-index: 100; */
   /* border: 10px solid red; */
 }
 

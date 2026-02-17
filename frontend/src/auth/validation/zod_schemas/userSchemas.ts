@@ -21,6 +21,15 @@ const individualFieldSchema = (field:FieldLimitType)=>
  .max(field['MAX'],{
   message:`${field.name} cannot exceed ${field.MAX} characters`})
  .refine(val=>!val.includes('<') && !val.includes('>'), {message: `${field.name} cannot contain < or > characters`})
+  .refine(
+      (val) => val.trim().length > 0,
+      { message: `${field.name} cannot be empty or just whitespace`}
+    )
+     .refine(
+      (val) => val === val.trim(),
+      { message: `${field.name} cannot start or end with spaces`}
+    )
+
 //-----------------------
 // FIRSTNAME SCHEMA
  const firstNameSchema=individualFieldSchema(FIELD_LIMITS.FIRSTNAME);
@@ -91,13 +100,6 @@ export const changePasswordSchema = z.object(
  {
   currentPassword: z.string()
    .min(1, { message: "Current password is required" })
-   // .min(4,{message:'Password must be at least 4 characters'})
-   // .max(72,{message:'Password cannot exceed 72 characters'})
-   // .refine(val=>!val.includes('<') && !val.includes('>'), {message: `Password cannot contain < or > characters`})
-   // .refine(
-   //   (password) => password.trim().length > 0,
-   //   { message: "Password cannot be empty or just whitespace" }
-   // ),
    ,
     
   newPassword: z.string()
@@ -108,8 +110,12 @@ export const changePasswordSchema = z.object(
       message: `Password cannot exceed ${FIELD_LIMITS.PASSWORD.MAX} characters`
     })
     .refine(
-      (password) => password.trim().length > 0,
+      (newPassword) => newPassword.trim().length > 0,
       { message: "New password cannot be empty or just whitespace" }
+    )
+     .refine(
+      (val) => val === val.trim(),
+      { message: "New password cannot start or end with spaces" }
     )
     .refine(val=>!val.includes('<') && !val.includes('>'), {message: `Passwords cannot contain < or > characters`})
     ,
@@ -123,15 +129,6 @@ export const changePasswordSchema = z.object(
   {
     message: "New password and confirmation do not match",
     path: ["confirmPassword"]
-  }
-)
-// Validate that new password is different from current
-//data es el valor que Zod ya parseó/validó hasta ese punto y que le pasa a tu función de refinamiento
-.refine(
-  (data) => data.currentPassword.trim() !== data.newPassword.trim(),
-  {
-    message: "New password cannot be the same as current password",
-    path: ["newPassword"]
   }
 )
 // Validate no leading/trailing spaces in new password

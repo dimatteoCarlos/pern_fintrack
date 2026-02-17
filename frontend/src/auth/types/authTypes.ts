@@ -1,6 +1,8 @@
+//frontend/src/auth/types/authTypes.ts
+
 import { CurrencyType } from "../../types/types";
 
-//frontend/src/auth/types/authTypes.ts
+//used in: AuthUI.tsx, useAuth.ts
 export type CredentialsType = {
   username: string;
   email: string;
@@ -99,8 +101,8 @@ export type UserResponseDataType ={
   user_firstname: string;
   user_lastname: string;
   role:string;
-  currency: string;
-  contact?:string | null;
+  currency: CurrencyType;
+  user_contact:string | null;
   // currency_id?: number;
   // user_role_id?: number;
 }
@@ -109,14 +111,14 @@ export type UserResponseDataType ={
 // export type UserDataType = Partial<UserResponseDataType>
 export type UserDataType = 
 {
- user_id: string | null;
+ user_id: string ;//| null;
  username: string;
  email: string;
- user_firstname?: string;
- user_lastname?: string;
- currency?: string;    
- role?: string;  
- contact?:string | null;
+ user_firstname: string;
+ user_lastname: string;
+ currency: CurrencyType;    
+ role: string;  
+ contact:string | null;
 };
 //-------------------------------
 //sign-in
@@ -159,17 +161,24 @@ export interface SuccessResponseType<T> { // Make SuccessResponse generic
 // ===============
 // 🚨 USER PROFILE UPDATE AND PASSWORD CHANGE
 // ===============
-export type PasswordChangeResponseType={
- success:boolean;
- message:string;
- // user?:
-}
 
 export type UpdateProfileFormDataType ={
   firstname: string;
   lastname: string;
   currency: CurrencyType;
   contact: string | null;
+}
+
+export type UpdateProfileResponseUserType={
+ user_id: string ;
+ username: string ;
+ email: string;
+ user_firstname: string;
+ user_lastname: string;
+ user_contact: string ;
+ currency_id: number ;
+ currency:CurrencyType;
+ role:string;
 }
 // ===============
 // 🚨 ERROR TYPES
@@ -192,10 +201,119 @@ export type AuthErrorType =
   | { type: 'rate_limit'; retryAfter: number; }
   | { type: 'session_expired'; }
   | { type: 'network'; message: string; };
+
+export type FormErrorsType<TFieldName extends string> =
+  Partial<Record<TFieldName, string>> & {
+    form?: string;
+  };
+
+
+//-----------------------------------
+//ALIGN BE AND FE
+//UPDATE PASSWORD CHANGE
+// authTypes.ts
+
+// -------------------------------------
+// 🔐 Password Change API Responses
+// -------------------------------------
+// ---------------------------------------
+// Normalized response for Change Password
+// ---------------------------------------
+/**
+ * 🎯 Unified result type for password change operations
+ * Matches backend response structure exactly
+ refs: ChangePasswordContainer, useAuth, useChangePasswordFromLogic, 
+ */
+export type ChangePasswordResultType =
+ | {
+     success: true;
+     message: string;
+   }
+ | {
+     success: false;
+     error: string;
+     message: string;
+     fieldErrors?: Record<string, string[]>; // ✅ Matches backend: Record<string, string[]>
+     retryAfter?: number;
+   };
+
+/**
+* 📝 Change Password Form Data
+* Defines the strict structure for password update fields
+ref: ChangePasswordContainer.tsx, ChangePasswordForm.tsx, useChangePasswordFormLogic.ts, useChangePasswordValidation.ts
+*/
+export type ChangePasswordFormDataType={
+ currentPassword:string;
+ newPassword:string;
+ confirmPassword:string;
+}
+
+// 1️⃣ Success response
+// 2️⃣ API Raw Responses (Matching BE Middleware)
+export type ChangePasswordSuccessResponse = {
+  success: true;
+  message: string; // e.g., "Password changed successfully. Please sign in again."
+};
+
+// Error (The most common one from your validateRequestSync)
+export type ChangePasswordErrorResponse = {
+  success: false;
+  error: string; // e.g., "ValidationError" o "InvalidCredentials"
+  message: string;
+  // details?: {
+  //   fieldErrors?: Record<string, string[]>;
+  //   formErrors?: string[];
+  // };
+  fieldErrors?: Record<string, string[]>; // Fallback para otros middlewares
+  retryAfter?: number;        // Capturado por el limiter antes del validador
+};
+
+// 2️⃣ Generic failure
+export type ChangePasswordFailureResponse = {
+  success: false;
+  error: string; // e.g., "InvalidCredentials"
+  message?: string;
+};
+
+// 3️⃣ Rate limiter triggered (HTTP 429)
+export type ChangePasswordRateLimitResponse = {
+  success: false;
+  error: 'ChangePasswordRateLimitExceeded';
+  message: string;
+  retryAfter: number; // in seconds, backend-defined
+};
+
+// 4️⃣ Validation errors (future-proof, if backend starts returning fieldErrors)
+export type ChangePasswordValidationErrorResponse = {
+  success: false;
+  fieldErrors: Record<string, string[]>; // e.g., { newPassword: ["Too short"] }
+};
+
+// 5️⃣ Union type for all possible responses
+// export type ChangePasswordResponseType =
+//   | ChangePasswordSuccessResponse
+//   | ChangePasswordFailureResponse
+//   // | ChangePasswordRateLimitResponse
+//   // | ChangePasswordValidationErrorResponse;
+
+export type ChangePasswordResponseType =
+  | {
+      success: true;
+      message: string;
+    }
+  | {
+      success: false;
+      error: string;
+      message?: string;
+      fieldErrors?: Record<string, string[]>;
+      retryAfter?: number;
+    };
+
+
 //-----------------------------------
 //ALIGN BE AND FE
 //UPDATE USER PROFILE
-
+//used: useAuth.ts, 
 // 🎯 INPUT (PATCH payload)
 export type ProfileUpdatePayloadType = Partial<{
   firstname: string;
@@ -205,33 +323,57 @@ export type ProfileUpdatePayloadType = Partial<{
 }>;
 
 // 🎯 SUCCESS RESPONSE
-export type ProfileUpdateSuccessResponseType = {
-  success: true;
-  message: string;
-  user: UserResponseDataType;
-};
+//  export type ProfileUpdateSuccessResponseType = {
+//   success: true;
+//   user: UserDataType;         // <-- Asegúrate que UserType exista
+//   message?: string;
+// };
 
 // 🎯 VALIDATION ERROR (400)
-export type ProfileUpdateValidationErrorType = {
-  success: false;
-  error: 'ValidationError';
-  message: string;
-  details?: {
-    fieldErrors?: Record<string, string>;
-  };
-};
+// export type ProfileUpdateValidationErrorType = {
+//   success: false;
+//   error: 'ValidationError';
+//   message: string;
+//   details?: {
+//     fieldErrors?: Record<string, string>;
+//   };
+// };
 
 // 🎯 GENERIC ERROR
+// export type ProfileUpdateErrorResponseType = {
+//   success: false;
+//   error: string;
+//   message: string;
+// };
+
+// ------------------------------
+// Normalized response for Update Profile
+// ------------------------------
+//used: UpdateProfileContainer.tsx, useUpdatePRofileFormLogic.ts
+export type NormalizedProfileUpdateResultType = {
+  success: boolean;
+  error?: string;
+  fieldErrors: Record<string, string>;
+  message?: string;
+  // retryAfter?:number;
+};
+
+// 🎯 UNION RESPONSE
+export type ProfileUpdateSuccessResponseType = {
+  success: true;
+  user: UpdateProfileResponseUserType//UserDataType;        // <-- aquí debe estar
+  message?: string;
+};
+
 export type ProfileUpdateErrorResponseType = {
   success: false;
   error: string;
   message: string;
+  fieldErrors?: Record<string, string>;
+  retryAfter?:number;
 };
 
-// 🎯 UNION RESPONSE
 export type ProfileUpdateResponseType =
   | ProfileUpdateSuccessResponseType
-  | ProfileUpdateValidationErrorType
   | ProfileUpdateErrorResponseType;
-
 

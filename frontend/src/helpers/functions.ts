@@ -1,9 +1,18 @@
 //src/helpers/functions.ts
 //function related to ui data presentation
 // getCurrencySymbol
+
+// ## 🚀 Key Features
+
+// *   **`currencyFormat` & `numberFormatCurrency`**: Advanced formatters that convert raw numbers into localized currency strings. Supports custom decimal precision and regional settings (e.g., `en-US` vs `es-CO`).
+// *   **`getCurrencySymbol`**: Extracts the shortest visual symbol (e.g., `$`, `€`, `£`) for any currency code using "narrow symbol" logic with reliable ISO fallbacks.
+// *   **`generateCurrencyOptions`**: Dynamically builds descriptive arrays for UI dropdowns. It uses `Intl.DisplayNames` to map codes to full names (e.g., `USD` → `US Dollar`).
+// *   **`digitRound`**: A precision utility that avoids common JavaScript floating-point errors by rounding strictly to a specified number of decimal places.
+// *   **`genericToggle`**: A circular state helper that rotates through a set of options (`opc1` → `opc2` → `opc3` → `opc1`), perfect for multi-state filters or status buttons.
+// *   **`isValidCurrencyCode`**: Validation guard that checks strings against supported ISO 4217 codes to ensure application stability.
+//-------------------------
 import { CurrencyType, StatusType } from '../types/types';
 import { DATE_TIME_FORMAT_DEFAULT } from './constants';
-//-------------------------
 export function currencyFormat(
   chosenCurrency = 'USD',
   number = 0, 
@@ -51,6 +60,51 @@ export function getCurrencySymbol(chosenCurrency = 'USD') {
     return chosenCurrency;
   }
 }
+//--------------------
+// Define el tipo para el objeto de entrada si lo necesitas en otro lado
+type CurrencyLocales = Record<string, string>;
+
+// Define el tipo para el array de salida estándar
+type OptionType = {
+  value: string;
+  label: string;
+};
+
+/**
+ * Transforms a currency-locale map into a standard select option array format.
+ *
+ * @param CURRENCY_OPTIONS The source object of currencies and locales.
+ * @returns A formatted array of options.
+ */
+export function generateCurrencyOptions(CURRENCY_OPTIONS: CurrencyLocales): OptionType[] {
+// Empieza con la opción por defecto
+  const options: OptionType[] = [{ value: '', label: 'Select currency' }];
+
+  // Itera sobre las claves del objeto de entrada
+  Object.keys(CURRENCY_OPTIONS).forEach(currencyCode => {
+    // Para construir un label más descriptivo: "USD - US Dollar"
+    // Usamos el API nativo de Intl.DisplayNames (Estándar 2026)
+    try {
+      const locale = CURRENCY_OPTIONS[currencyCode];
+      // Nota: Intl.DisplayNames es compatible con la mayoría de navegadores modernos
+      const currencyName = new Intl.DisplayNames([locale], { type: 'currency' }).of(currencyCode.toUpperCase());
+      
+      options.push({
+        value: currencyCode, // 'usd'
+        label: `${currencyCode.toUpperCase()} - ${currencyName}` // 'USD - US Dollar'
+      });
+    } catch (error) {
+      // Fallback si el API de Intl falla (navegadores muy viejos)
+       options.push({
+        value: currencyCode,
+        label: `${currencyCode.toUpperCase()}`
+      });
+    }
+  });
+
+  return options;
+}
+
 //--------------------
 export function digitRound(n = Number.MIN_VALUE, digit = 2) {
   return Math.round(n * Math.pow(10, digit)) / Math.pow(10, digit);

@@ -1,12 +1,13 @@
 //frontend/src/pages/auth/AuthUI.tsx
 import { useEffect, useState } from 'react';
 import styles from './styles/AuthUI.module.css';// is a module
-import GoogleLogo from '../../../assets/auth/GoogleLogo';
+// import GoogleLogo from '../../../assets/auth/GoogleLogo';
 import {
   CredentialsType,
   SignInCredentialsType,
   SignUpCredentialsType,
 } from '../../types/authTypes';
+
 import Message, { MessageType } from '../formUIComponents/Message';
 
 // 🏷️ PROPS TYPE DEFINITION
@@ -14,10 +15,10 @@ type AuthUIPropsType = {
   onSignIn: (credentials: SignInCredentialsType, rememberMe:boolean) => void;
   onSignUp: (userData: SignUpCredentialsType) => void;
   isSignInInitial?: boolean;
-
+  clearError:()=>void;
   isSessionExpired?: boolean;
 
-  googleSignInUrl?: string; // Optional Google Sign-in URL
+  // googleSignInUrl?: string; // Optional Google Sign-in URL
   
   isLoading: boolean;
   error: string | null;
@@ -43,9 +44,10 @@ const INITIAL_CREDENTIALS_STATE: CredentialsType = {
 function AuthUI({
   onSignIn,
   onSignUp,
-  googleSignInUrl,
+  // googleSignInUrl,
   isLoading,
   error,
+  clearError,
   messageToUser="",
   isSignInInitial,
   
@@ -56,10 +58,6 @@ function AuthUI({
 // 🏗️ STATE MANAGEMENT
   const [credentials, setCredentials] = useState<CredentialsType>(INITIAL_CREDENTIALS_STATE);
 
-  // const [showMessageToUser, setShowMessageToUser] = useState(true);
-  // const [showError, setShowError] = useState(true);
-
-    // const navigateTo = useNavigate();
   const [isSignIn, setIsSignIn] = useState(isSignInInitial??true);
   const [rememberMe, setRememberMe] = useState(false);
  
@@ -108,39 +106,14 @@ function AuthUI({
   const handleRememberMeChange= (e:React.ChangeEvent<HTMLInputElement>)=>{setRememberMe(e.target.checked)}
 
   function inputCredentialsHandler(e: React.ChangeEvent<HTMLInputElement>) {
+   if(error) clearError();
     setCredentials((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
 // ===============================
 // ⏱️ AUTO-HIDE MESSAGES AFTER TIMEOUT
 // ===============================
-  // useEffect(() => {
-  //  const MESSAGE_TIMEOUT_MS = 5000;
-  //  let messageTimer: ReturnType<typeof setTimeout>;
-  
-  // // Show error message
-  // if (error && !isLoading) {
-  //   // setShowError(true);
-  //   messageTimer = setTimeout(() => {
-  //     setShowError(true);
-  //   }, MESSAGE_TIMEOUT_MS);
-  // }
-  
-  // // Show success message (logout, sign in, etc.)
-  // if (messageToUser && !isLoading) {
-  //   setShowMessageToUser(true);
-  //   messageTimer = setTimeout(() => {
-  //     setShowMessageToUser(false);
-  //   }, MESSAGE_TIMEOUT_MS);
-  // }
-  
-  // return () => {
-  //   if (messageTimer) clearTimeout(messageTimer);
-  // };
-  // }, [messageToUser, error, isLoading]);
-  
-
-const bannerMessage:
+  const bannerMessage:
   | { type: MessageType; text: string }
   | null =
   error
@@ -150,7 +123,7 @@ const bannerMessage:
     : null;
 
   
-  //Reset form on signup error
+ //Reset form on signup error
  useEffect(() => {
   if (error && !isLoading && !isSignIn) {
     setCredentials(INITIAL_CREDENTIALS_STATE);
@@ -165,21 +138,15 @@ const bannerMessage:
        <Message
          type={bannerMessage.type} 
          message={bannerMessage.text}
-         autoDismiss={bannerMessage.type === 'success' ? 155000 : undefined}
-         showIcon
+         autoDismiss={0}
+         onDismiss={() => clearError()}
+         showIcon={false}
        />
      )}
 
       <h2 className={styles['auth-container__title']}>
         {isSignIn ? 'Sign In' : 'Sign Up'}
       </h2>
-
-      {/* ℹ️ Success message (logout, etc.) */}
-      {/* {messageToUser && showMessageToUser && (
-        <div className={styles['auth-container__successMsg']}>
-          {messageToUser}
-        </div>
-      )} */}
 {/* //------------------------- */}
       <form
         className={`auth-form  ${
@@ -316,10 +283,12 @@ const bannerMessage:
             : 'Already have an account? Sign in'}
         </button>
 
-        {/* <button type="button" className="auth-actions__google-button" onClick={handleGoogleSignIn}>
+        {/* <button type="button" className="auth-actions__google-button"
+         // onClick={handleGoogleSignIn}
+         >
           Sign In with Google
         </button> */}
-
+{/* 
         {googleSignInUrl && (
           <>
             <div className={styles['separator']}>
@@ -334,14 +303,8 @@ const bannerMessage:
               Continue with Google
             </button>
           </>
-        )}
+        )} */}
       </div>
-      {/* {isSessionExpired && (
-        <div className={styles.auth_container__expireMsg}>
-         Your session has expired for safety.Try Sign in again.
-        </div>
-            )} */}
-
     </div>
   );
 }

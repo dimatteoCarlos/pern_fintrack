@@ -1,0 +1,100 @@
+Para que otra instancia de IA entienda perfectamente dónde estamos sin perder un solo detalle técnico, he preparado un Context Prompt Técnico.
+
+Copia y pega el siguiente bloque en tu nuevo chat. Está diseñado para ser ultra-preciso con la arquitectura que hemos construido (Zustand + Container/Presenter + Zod):
+
+Contexto de Desarrollo: Proyecto FinTrack (PERN Stack)
+Objetivo: Continuar con el refinamiento del módulo de autenticación y perfil de usuario.
+
+Stack Tecnológico:
+
+Frontend: React (Vite) + TypeScript.
+
+Estado Global: Zustand con persistencia selectiva (useAuthStore.ts).
+
+Validación: Zod + Custom Hooks de validación genéricos (useFieldValidation.ts).
+
+Patrón de Diseño: Container/Presentational components para separar lógica de negocio de la UI.
+
+Estilos: CSS Modules con variables y animaciones.
+
+Estado Actual del Módulo UpdateProfile:
+
+Lógica Funcional: El proceso de actualización (API calls vía authFetch, manejo de errores 400/500, actualización del store de Zustand) funciona correctamente.
+
+Validación: Implementada tanto en cliente (Zod) como mapeo de errores desde el backend.
+
+UI: El formulario está contenido en un modal orquestado por UserProfileMenu.tsx -> UpdateProfileContainer.tsx -> UpdateProfileForm.tsx.
+
+Problema Específico a Resolver: Hay un glitch visual en la UI durante el flujo de actualización de perfil. Aunque los datos se guardan, la transición de estados (loading -> success -> cierre de modal) o el renderizado de los mensajes de feedback (Message.tsx) presenta inconsistencias visuales (parpadeos o estados de error que no se limpian a tiempo).
+
+Archivos Clave (Disponibles para revisión):
+
+UpdateProfileContainer.tsx: Orquestador de la lógica y cierre de modal.
+
+UpdateProfileForm.tsx: Componente presentacional con los campos y mensajes.
+
+useUpdateProfileFormLogic.ts: Hook que maneja el estado local del formulario.
+
+updateProfileForm.module.css: Estilos de los indicadores de estado y mensajes.
+
+Tarea Inmediata: Analizar el ciclo de vida del componente y el flujo de estados en el hook de lógica para identificar y corregir el glitch visual, asegurando que el feedback al usuario sea fluido antes de pasar a la persistencia de sesión (Silent Refresh).
+
+¿Cómo usar este prompt?
+Abre el nuevo chat.
+
+Pega el texto anterior.
+
+Importante: Adjunta o pega el código de los 4 archivos clave mencionados arriba (Container, Form, Logic y CSS) inmediatamente después, para que la IA tenga la "materia prima" para trabajar.
+
+Para que otra instancia de IA entienda perfectamente dónde estamos sin perder un solo detalle técnico, he preparado un Context Prompt Técnico.
+
+Copia y pega el siguiente bloque en tu nuevo chat. Está diseñado para ser ultra-preciso con la arquitectura que hemos construido (Zustand + Container/Presenter + Zod):
+
+Contexto de Desarrollo: Proyecto FinTrack (PERN Stack)
+Objetivo: Continuar con el refinamiento del módulo de autenticación y perfil de usuario.
+
+Stack Tecnológico:
+
+Frontend: React (Vite) + TypeScript.
+
+Estado Global: Zustand con persistencia selectiva (useAuthStore.ts).
+
+Validación: Zod + Custom Hooks de validación genéricos (useFieldValidation.ts).
+
+Patrón de Diseño: Container/Presentational components para separar lógica de negocio de la UI.
+
+Estilos: CSS Modules con variables y animaciones.
+
+Estado Actual del Módulo UpdateProfile:
+
+Lógica Funcional: El proceso de actualización (API calls vía authFetch, manejo de errores 400/500, actualización del store de Zustand) funciona correctamente.
+
+Validación: Implementada tanto en cliente (Zod) como mapeo de errores desde el backend.
+
+UI: El formulario está contenido en un modal orquestado por UserProfileMenu.tsx -> UpdateProfileContainer.tsx -> UpdateProfileForm.tsx.
+
+Problema Específico a Resolver: Hay un glitch visual en la UI durante el flujo de actualización de perfil. Aunque los datos se guardan, la transición de estados (loading -> success -> cierre de modal) o el renderizado de los mensajes de feedback (Message.tsx) presenta inconsistencias visuales (parpadeos o estados de error que no se limpian a tiempo).
+
+Archivos Clave (Disponibles para revisión):
+
+UpdateProfileContainer.tsx: Orquestador de la lógica y cierre de modal.
+
+UpdateProfileForm.tsx: Componente presentacional con los campos y mensajes.
+
+useUpdateProfileFormLogic.ts: Hook que maneja el estado local del formulario.
+
+updateProfileForm.module.css: Estilos de los indicadores de estado y mensajes.
+
+Tarea Inmediata: Analizar el ciclo de vida del componente y el flujo de estados en el hook de lógica para identificar y corregir el glitch visual, asegurando que el feedback al usuario sea fluido antes de pasar a la persistencia de sesión (Silent Refresh).
+
+¿Cómo usar este prompt?
+Abre el nuevo chat.
+
+Pega el texto anterior.
+
+Importante: Adjunta o pega el código de los 4 archivos clave mencionados arriba (Container, Form, Logic y CSS) inmediatamente después, para que la IA tenga la "materia prima" para trabajar.
+
+¿Te gustaría que añada alguna especificación extra sobre el glitch antes de que cierres este chat?
+
+
+*******************************
