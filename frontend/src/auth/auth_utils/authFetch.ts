@@ -1,6 +1,6 @@
 //📂 src/utils/authFetch.ts
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { url_change_password, url_refrestoken, url_update_user } from "../../endpoints";
+import { url_change_password, url_refrestoken, url_signin, url_update_user } from "../../endpoints";
 import { logoutCleanup } from './logoutCleanup';
 
 /**
@@ -40,12 +40,15 @@ export const authFetch = async<T>(
   } catch (error) {
   // 3️⃣ HANDLE 401 UNAUTHORIZED ERRORS
   // Only attempt refresh if: it is a 401, NOT the profile update endpoint, and a valid Axios error
+  const isLoginEndpoint =
+  url === url_signin || url.includes('signin');
    if (
      axios.isAxiosError(error) && 
      error.response?.status === 401 && 
+     !isLoginEndpoint &&
      !url.includes(url_update_user) &&
      !url.includes(url_change_password) &&
-     !url.includes('/sign-in')
+     !url.includes(url_signin)
     ) {
      try {
        // 🔄 ATTEMPT SILENT REFRESH
