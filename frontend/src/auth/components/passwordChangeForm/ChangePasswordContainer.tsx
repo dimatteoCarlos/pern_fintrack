@@ -98,6 +98,10 @@ const [status, setStatus] = useState<FormStatus>("idle");
  const [isSubmitting, setIsSubmitting] = useState(false);
 
  const [countdown, setCountdown] = useState<number | null>(null);
+
+ const [totalCountdown, setTotalCountdown] = useState<number | null>(TOTAL_COUNTDOWN_SECONDS);
+
+ const [totalRetryCounter, setTotalRetryCounter] = useState<number | null>(totalCountdown);
  
 /* ===========================
 // 👁️ CONTENT VISIBILITY HOOK
@@ -137,9 +141,24 @@ const [status, setStatus] = useState<FormStatus>("idle");
   handleDomainChangePassword:domainChangePasswordWrapper, 
  });
 
-// =================================
-//  ⏳  COUNTDOWN EFFECT WITH AUTO-LOGOUT ON SUCCESS
-// =================================
+ // =================================
+ //  ⏳ INITIAL TIMER CONFIG
+ // =================================
+useEffect(() => {
+ //SUCCESS
+ if (status === 'success') {
+  setTotalCountdown(TOTAL_COUNTDOWN_SECONDS);
+  setCountdown(TOTAL_COUNTDOWN_SECONDS);
+ }
+//RATE LIMIT (API 429)
+ if (status === 'rate_limited' && totalRetryCounter) {
+  setTotalCountdown(totalRetryCounter); 
+  setCountdown(totalRetryCounter);
+ }
+}, [status, totalRetryCounter]);
+ // =================================
+ //  ⏳  COUNTDOWN TICK EFFECT
+ // =================================
  useEffect(() => {
   if (countdown === null) return;
 
@@ -148,14 +167,17 @@ const [status, setStatus] = useState<FormStatus>("idle");
     logoutCleanup(false);
    }
    setCountdown(null);
+  if (status !== 'success') {
    setStatus('idle');
+  }
    return;
   }
- //⏱️
-  const timer = setTimeout(()=>setCountdown(countdown =>(countdown? countdown-1:0)),1000);
+ //⏱️ NEXT COUNTDOWN TICK
+  const timer = setTimeout(()=>setCountdown(countdown =>(countdown !== null ? countdown-1:null)),1000);
 
   return ()=>clearTimeout(timer)
  }, [countdown, status]);
+
 
 /* ================
 🔒 UI STATE DERIVED
@@ -173,7 +195,6 @@ const canReset = isDirty && !isSubmitting;
 const showDone = status === "success";
 // Show Cancel button when not submitting and not in success state
 const showCancel = !isSubmitting && status !== "success";
-
 
 /* =====================
 🎯 HANDLERS
@@ -218,6 +239,7 @@ const handleDone = useCallback(() => {
   setCountdown(null);
   handleReset();
   logoutCleanup(false); 
+ 
   // No need to call onClose - logoutCleanup already redirects
 }, [handleReset]);
 
@@ -263,6 +285,7 @@ const handleDone = useCallback(() => {
 // RATE LIMITING
  if (result.retryAfter) {
   setCountdown(result.retryAfter);
+  setTotalRetryCounter(result.retryAfter)
   setStatus("rate_limited");
   }
  }
@@ -326,6 +349,7 @@ const DebugPanel = () => (
    onClearGlobalMessage={()=> setGlobalMessage(null)}
    
    countdown={countdown}
+   totalCountdown={totalCountdown}
    isSuccess={status === "success"}
 
 // Button Controls

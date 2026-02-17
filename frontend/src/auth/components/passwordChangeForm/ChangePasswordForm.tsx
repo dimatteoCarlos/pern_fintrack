@@ -50,6 +50,7 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
  globalMessage: string | null;
  onClearGlobalMessage:()=>void;//React.Dispatch<React.SetStateAction<string | null>>
  countdown: number | null;
+ totalCountdown: number | null;
  isSuccess?: boolean;
  
  // 🔘 Button Controls
@@ -83,6 +84,7 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
   globalMessage,
   onClearGlobalMessage,
   countdown,
+  totalCountdown,
   isSuccess = false,
   showReset = true,
   showDone = false,
@@ -226,7 +228,10 @@ const handleInputChange = (fieldName:keyof ChangePasswordFormDataType)=>(input:s
          <div className={styles.countdownBar}>
           <div 
            className={styles.countdownProgress} 
-           style={{ width: `${(countdown / TOTAL_COUNTDOWN_SECONDS) * 100}%` }} // ✅ Cálculo real
+           style={{ width: `${(countdown /( totalCountdown??(TOTAL_COUNTDOWN_SECONDS+0.01)) )* 100}%`,
+
+          backgroundColor: status === 'rate_limited' ? '#f59e0b' : '#28a745'
+          }} // ✅ Actual Calculation
           />
          </div>
          <p className={styles.countdownText}> Redirecting in <span className={styles.countdownNumber}>{countdown}</span>s...</p>
@@ -238,11 +243,11 @@ const handleInputChange = (fieldName:keyof ChangePasswordFormDataType)=>(input:s
       // 🔄 Normal State - Action Buttons
       <div className={styles.buttonGroupAnimation}>
        <SubmitButton 
-        disabled={isDisabled || isSubmitting }
+        disabled={isDisabled || isSubmitting || status === 'rate_limited' }
         isLoading={isSubmitting}
         type="submit"
        >
-        {isSubmitting ? 'Changing Password...' : 'Change Password'}
+        {status === 'rate_limited' ? 'System Locked' : 'Change Password'}
        </SubmitButton>
 
        {showReset && (
