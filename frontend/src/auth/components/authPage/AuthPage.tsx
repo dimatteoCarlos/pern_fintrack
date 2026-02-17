@@ -124,6 +124,7 @@ useEffect(() => {
                 onSignUp={handleSignUp}
                 isLoading={isLoading}
                 error={error}
+                clearError={clearError}
                 isSignInInitial={initialAuthMode === 'signin'}
                 messageToUser={successMessage}
               />
