@@ -33,7 +33,7 @@ import useChangePasswordFormLogic from "../../hooks/useChangePasswordFormLogic";
 ============= */
 import ChangePasswordForm from './ChangePasswordForm';
 import useFieldVisibility from "../../hooks/useFieldVisibility";
-import { logoutCleanup } from "../../utils/logoutCleanup";
+import { logoutCleanup } from "../../auth_utils/logoutCleanup";
 
 /* ================
 ⏱️ TYPE DEFINITIONS
@@ -58,7 +58,7 @@ const FIELD_MAPPING: Record<string, keyof ChangePasswordFormDataType> = {
   confirmPassword: "confirmPassword",
 };
 
-export const TOTAL_COUNTDOWN_SECONDS = 10;
+export const TOTAL_COUNTDOWN_SECONDS = 150;
 
 /* ==========================
 🧱 MAIN CONTAINER COMPONENTE
@@ -293,6 +293,7 @@ const DebugPanel = () => (
  return (
   <>
   <div className={styles.container}>
+
   <ChangePasswordForm
 // 📋 Form Data
    formData={formData}
@@ -322,6 +323,8 @@ const DebugPanel = () => (
 
 // Messages & Status
    globalMessage={globalMessage}
+   onClearGlobalMessage={()=> setGlobalMessage(null)}
+   
    countdown={countdown}
    isSuccess={status === "success"}
 
