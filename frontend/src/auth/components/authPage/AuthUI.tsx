@@ -7,8 +7,6 @@ import {
   SignInCredentialsType,
   SignUpCredentialsType,
 } from '../../types/authTypes';
-// import { useLocation } from 'react-router-dom';
-// import { useNavigate } from 'react-router-dom';
 
 // 🏷️ PROPS TYPE DEFINITION
 type AuthUIPropsType = {
@@ -27,16 +25,17 @@ type AuthUIPropsType = {
 
 // 🔧 CONSTANTS & INITIAL VALUES
 const INITIAL_CREDENTIALS_STATE: CredentialsType = {
-  username: 'usuario01',
-  email: 'user01@email.com',
-  user_firstname: 'nombre usuario 01',
-  user_lastname: 'usuario apellido',
-  password: '1000',
-  // username: '',
-  // email: '',
-  // user_firstname: '',
-  // user_lastname: '',
-  // password: '',
+ //harcoded credentials for test in dev
+  // username: 'usuario01',
+  // email: 'user01@email.com',
+  // user_firstname: 'nombre usuario 01',
+  // user_lastname: 'usuario apellido',
+  // password: '1000',
+  username: '',
+  email: '',
+  user_firstname: '',
+  user_lastname: '',
+  password: '',
 };
 
 // 📊 MESSAGE TYPES (For better type safety)
@@ -151,7 +150,7 @@ function AuthUI({
   return (
     <div className={styles['auth-container']}>
 
-      {/* {succes message to user} */}
+      {/* {"succes message to user"} */}
       {messageToUser && showMessageToUser && (
         <span className={styles['messageToUser__msg']}>{messageToUser}</span>
       )}
@@ -164,6 +163,13 @@ function AuthUI({
       <h2 className={styles['auth-container__title']}>
         {isSignIn ? 'Sign In' : 'Sign Up'}
       </h2>
+
+      {/* ℹ️ Success message (logout, etc.) */}
+      {/* {messageToUser && showMessageToUser && (
+        <div className={styles['auth-container__successMsg']}>
+          {messageToUser}
+        </div>
+      )} */}
 {/* //------------------------- */}
       <form
         className={`auth-form  ${
