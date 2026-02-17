@@ -1,5 +1,4 @@
 // 📁 frontend/src/components/common/Message/Message.tsx
-
 /* 🌟 =======================
 📦 IMPORT DEPENDENCIES
 =============================== 🌟 */
@@ -12,7 +11,7 @@ import styles from './styles/message.module.css';
 /**
  * 📝 Message types for different visual styles and semantic meanings
  */
-type MessageType = 'error' | 'success' | 'warning' | 'info';
+export type MessageType = 'error' | 'success' | 'warning' | 'info';
 
  // 📝 Props for the generic Message component
 type MessagePropsType = {
