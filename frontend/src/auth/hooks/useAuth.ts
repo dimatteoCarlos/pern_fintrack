@@ -11,9 +11,9 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuthStore } from '../stores/useAuthStore';
-import { authFetch } from '../utils/authFetch';
-import { logoutCleanup } from '../utils/logoutCleanup';
-import { useNavigationHelper } from '../utils/navigationHelper';
+import { authFetch } from '../auth_utils/authFetch';
+import { logoutCleanup } from '../auth_utils/logoutCleanup';
+import { useNavigationHelper } from '../auth_utils/navigationHelper';
 import { INITIAL_PAGE_ADDRESS, LOCAL_STORAGE_KEY } from '../../helpers/constants';
 
 import {
@@ -74,7 +74,9 @@ const extractErrorMessage = (err: unknown): string => {
   // If axios error with response
   if (axios.isAxiosError(err) && err.response) {
     const data = err.response.data as Record<string, unknown>;
-    
+//-----------------------------------------
+console.log('extractErrorMessage:', data, err.stack)
+//-----------------------------------------
     // Priority: BE error message
     if (data?.message && typeof data.message === 'string') {
       return data.message;
@@ -134,7 +136,7 @@ const useAuth = () => {
       const accessToken = sessionStorage.getItem('accessToken');
       const isRemembered = localStorage.getItem(LOCAL_STORAGE_KEY.REMEMBER_ME) === 'true';
 
-      if (accessToken || isRemembered) {
+      if ((accessToken || isRemembered) && !error && !isLoading) {
         try {
           const response = await authFetch<AuthSuccessResponseType>(url_validate_session, { method: 'GET' });
 
@@ -469,7 +471,7 @@ const useAuth = () => {
     handleSignUp,
     handleSignOut,
     handleUpdateUserProfile,
-    handleDomainChangePassword,  // ✅ Única fuente de verdad para cambio de password
+    handleDomainChangePassword,  // ✅Only source of truth of password changing
 
     // UI Control Actions
     clearError,
