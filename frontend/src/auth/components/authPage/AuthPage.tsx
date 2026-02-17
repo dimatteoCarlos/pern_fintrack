@@ -5,11 +5,12 @@ import AuthUI from './AuthUI';
 import useAuth from '../../hooks/useAuth';
 import Logo from '../../../assets/logo.svg';
 
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 //--MAIN COMPONENT AUTHENTICACION ACCESS PAGE
 export default function AuthPage() {
- const location = useLocation();//to access the 'expired' state, from navigationHelper.
+ const location = useLocation();
+ const navigateTo = useNavigate()
 
  //--MODAL STATES
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -17,6 +18,7 @@ export default function AuthPage() {
   const [initialAuthMode, setInitialAuthMode] = useState<'signin' | 'signup'>(
     'signin'
   );
+  // const [successMessage, setSuccessMessage] = useState<string | null>(null); 
 
 //CUSTOM HOOKS FOR SIGNIN AND SIGNUP
 // Execute the useAuth hook to get authentication state and actions
@@ -35,37 +37,13 @@ export default function AuthPage() {
 //------------------------------------
 // ✅ HANDLE DIFFERENT NAVIGATION STATES
 //------------------------------------
-//Detect Session expiration or forced login from navigation state
+
+const expired = location.state?.expired;
 useEffect(() => {
- const navigationState = location.state as {
-  expired:boolean;
-  showModal?:boolean;
-  initialMode?:'signin'|'signup';
-  from?:string;
- } | undefined;
+ if(!expired) return;
+ navigateTo(location.pathname, { replace: true, state: {} });
 
-// Clear previous states
- clearError();
- clearSuccessMessage();
-
-// Determine behavior based on navigation state
- //coming from logoutCleanup with {expired:true}
- if(navigationState?.expired===true){
-  // Session expired - open signin modal 
-  setInitialAuthMode('signin');
-  setShowAuthModal(true);
-  console.log('🔄 Session expired - opening signin modal');
- }
- else if(navigationState?.expired===false){
-  // Manual logout - open signin modal
-  setInitialAuthMode('signin');
-  setShowAuthModal(true);
-  console.log('👋 Manual logout - opening signin modal');
- }
-
- // // If no specific reason, show page with buttons only
-// User must click "Sign In" or "Sign Up" to open modal
-}, [location.state, clearError, clearSuccessMessage]);
+}, [expired,location.pathname, navigateTo]);
 //------------------------------
 //FUNCTIONS EVENT HANDLERS
   const toggleMenu = () => {
