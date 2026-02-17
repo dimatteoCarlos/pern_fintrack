@@ -1,5 +1,5 @@
 // 📁 frontend/src/auth/ChangePasswordForm.tsx
-/**
+ /**
  * 🌟 ===============================
  * 📦 IMPORTS
  * =============================== 🌟
@@ -15,9 +15,6 @@ import ResetButton from '../formUIComponents/Resetbutton';
 
 import styles from './styles/passwordChangeForm.module.css';
 import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
-
-
-
 /**
  * 🌟 ===============================
  * 🏷️ PROPS TYPE
@@ -34,7 +31,7 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
  onClose: () => void;
  onDone: () => void;
  onToggleVisibility: (field: keyof ChangePasswordFormDataType) => void;
- 
+
  // ❌ Validation Errors
  validationErrors: FormErrorsType<keyof ChangePasswordFormDataType>;
  apiErrors: FormErrorsType<keyof ChangePasswordFormDataType>;
@@ -51,6 +48,7 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
 
  // 💬 Messages & Status
  globalMessage: string | null;
+ onClearGlobalMessage:()=>void;//React.Dispatch<React.SetStateAction<string | null>>
  countdown: number | null;
  isSuccess?: boolean;
  
@@ -83,6 +81,7 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
   isDisabled,
   status,
   globalMessage,
+  onClearGlobalMessage,
   countdown,
   isSuccess = false,
   showReset = true,
@@ -97,6 +96,18 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
  const getFieldError = (field: keyof ChangePasswordFormDataType): string | undefined => {
   return validationErrors[field] || apiErrors[field];
  };
+
+ /*==================
+ 🔧 HANDLERS
+ ==================*/
+const handleInputChange = (fieldName:keyof ChangePasswordFormDataType)=>(input:string | React.ChangeEvent<HTMLInputElement>)=>{
+ const value = typeof input ==='string'? input:input.target.value;
+ if(globalMessage){
+  onClearGlobalMessage?.();
+ }
+ onChange(fieldName)(value);
+}
+
 /* ===============================
  🎨 RENDER
 =============================== */
@@ -122,7 +133,7 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
     </div>
    )}
 
-{/* {TEMPRORARY INSER HERE THE COUNTDOWNS MSG} */}
+{/* {INSERT HERE THE COUNTDOWNS MSG} */}
  {/* ⏱️ Countdown for rate limiting (Only when status is rate_limited ) */}
      {status === 'rate_limited' && countdown !== null && (
       <Message 
@@ -131,25 +142,7 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
       />
     )}
 
-    {/* ⏱️ Countdown for success state - Visual progress bar */}
-    {/* {isSuccess && countdown !== null && countdown > 0 && (
-      <div className={styles.countdownContainer}>
-        <div className={styles.countdownText}>
-          Redirecting to login in <span className={styles.countdownNumber}>{countdown}</span> seconds...
-        </div>
-        <div className={styles.countdownBar}>
-          <div 
-            className={styles.countdownProgress} 
-            style={{ width: `${(countdown / 100) * 100}%` }}
-          />
-        </div>
-      </div>
-    )} */}
-
-{/* {TEMPRORARY INSER HERE THE COUNTDOWNS MSG} */}
-
-
-  <form onSubmit={onSubmit} className={styles.passwordForm}>
+     <form onSubmit={onSubmit} className={styles.passwordForm}>
     <div className={styles.passwordFieldsContainer}>
      
      {/* 🔐 Current Password */}
@@ -157,10 +150,9 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
       label="Current Password"
       type={visibility.currentPassword ? 'text' : 'password'}
       value={formData.currentPassword}
-      onChange={(input: string | React.ChangeEvent<HTMLInputElement>) => {
-       const value = typeof input === 'string' ? input : input.target.value;
-       onChange('currentPassword')(value);
-      }}
+      onChange={
+       handleInputChange('currentPassword')
+      }
       error={getFieldError('currentPassword')}
       touched={!!touchedFields.currentPassword}
       showContentToggle={true}
@@ -175,10 +167,9 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
       label="New Password"
       type={visibility.newPassword ? 'text' : 'password'}
       value={formData.newPassword}
-      onChange={(input: string | React.ChangeEvent<HTMLInputElement>) => {
-       const value = typeof input === 'string' ? input : input.target.value;
-       onChange('newPassword')(value);
-      }}
+      onChange={
+       handleInputChange('newPassword')
+      }
       error={getFieldError('newPassword')}
       touched={!!touchedFields.newPassword}
       showContentToggle={true}
@@ -193,10 +184,9 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
       label="Confirm Password"
       type={visibility.confirmPassword ? 'text' : 'password'}
       value={formData.confirmPassword}
-      onChange={(input: string | React.ChangeEvent<HTMLInputElement>) => {
-       const value = typeof input === 'string' ? input : input.target.value;
-       onChange('confirmPassword')(value);
-      }}
+      onChange={
+       handleInputChange('confirmPassword')
+      }
       error={getFieldError('confirmPassword')}
       touched={!!touchedFields.confirmPassword}
       showContentToggle={true}
@@ -218,7 +208,7 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
     {/* 🔘 Action Buttons */}
     <div className={styles.actionButtons}>
      {isSuccess ? (
-     <div className={styles.successActionsWrapper}>
+    <div className={styles.successActionsWrapper}>
       {showDone && (
        <button
         type="button"
@@ -239,7 +229,7 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
            style={{ width: `${(countdown / TOTAL_COUNTDOWN_SECONDS) * 100}%` }} // ✅ Cálculo real
           />
          </div>
-         <p className={styles.countdownText}>Please, Sign In with new Password. Redirecting in {countdown}s...</p>
+         <p className={styles.countdownText}> Redirecting in {countdown}s...</p>
         </div>
        )}
       
@@ -248,7 +238,7 @@ import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
       // 🔄 Normal State - Action Buttons
       <div className={styles.buttonGroupAnimation}>
        <SubmitButton 
-        disabled={isDisabled || isSubmitting}
+        disabled={isDisabled || isSubmitting }
         isLoading={isSubmitting}
         type="submit"
        >
