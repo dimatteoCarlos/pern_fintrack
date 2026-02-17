@@ -101,7 +101,7 @@ const [status, setStatus] = useState<FormStatus>("idle");
 
  const [totalCountdown, setTotalCountdown] = useState<number | null>(TOTAL_COUNTDOWN_SECONDS);
 
- const [totalRetryCounter, setTotalRetryCounter] = useState<number | null>(totalCountdown);
+ // const [totalRetryCounter, setTotalRetryCounter] = useState<number | null>(totalCountdown);
  
 /* ===========================
 // 👁️ CONTENT VISIBILITY HOOK
@@ -142,42 +142,28 @@ const [status, setStatus] = useState<FormStatus>("idle");
  });
 
  // =================================
- //  ⏳ INITIAL TIMER CONFIG
- // =================================
-useEffect(() => {
- //SUCCESS
- if (status === 'success') {
-  setTotalCountdown(TOTAL_COUNTDOWN_SECONDS);
-  setCountdown(TOTAL_COUNTDOWN_SECONDS);
- }
-//RATE LIMIT (API 429)
- if (status === 'rate_limited' && totalRetryCounter) {
-  setTotalCountdown(totalRetryCounter); 
-  setCountdown(totalRetryCounter);
- }
-}, [status, totalRetryCounter]);
- // =================================
  //  ⏳  COUNTDOWN TICK EFFECT
  // =================================
  useEffect(() => {
   if (countdown === null) return;
 
-  if(countdown <= 0) {
+  if(countdown <=0) {
    if(status === 'success'){
-    logoutCleanup(false);
-   }
-   setCountdown(null);
-  if (status !== 'success') {
+    logoutCleanup(false); //redirect to app initial layout
+    } else {
    setStatus('idle');
-  }
+   }
+
+  setCountdown(null);
+  setTotalCountdown(null)
    return;
   }
+
  //⏱️ NEXT COUNTDOWN TICK
   const timer = setTimeout(()=>setCountdown(countdown =>(countdown !== null ? countdown-1:null)),1000);
 
   return ()=>clearTimeout(timer)
  }, [countdown, status]);
-
 
 /* ================
 🔒 UI STATE DERIVED
@@ -213,6 +199,7 @@ const showCancel = !isSubmitting && status !== "success";
   resetVisibility();
   setGlobalMessage(null);
   setCountdown(null);
+  setTotalCountdown(null);
   setStatus("idle");
  }, [resetForm,resetVisibility]);
 
@@ -272,7 +259,8 @@ const handleDone = useCallback(() => {
 // Security: Suggest re-authentication
 // ⏱️ Start 8 second countdown for auto-logout
   console.log("Security: User should re-authenticate with new password");
-  setCountdown(TOTAL_COUNTDOWN_SECONDS)
+  setCountdown(TOTAL_COUNTDOWN_SECONDS);
+  setTotalCountdown(TOTAL_COUNTDOWN_SECONDS)
   // setTimeout(() => {
   //  logoutCleanup(false);
   // }, 8000);
@@ -285,7 +273,7 @@ const handleDone = useCallback(() => {
 // RATE LIMITING
  if (result.retryAfter) {
   setCountdown(result.retryAfter);
-  setTotalRetryCounter(result.retryAfter)
+  setTotalCountdown(result.retryAfter)
   setStatus("rate_limited");
   }
  }
