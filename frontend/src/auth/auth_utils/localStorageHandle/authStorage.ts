@@ -1,11 +1,9 @@
-// 📁 frontend/src/logic/auth/authStorage.ts
-
+// 📁 frontend/src/auth/auth_utils/localStorageHandle/authStorage.ts
 /* ===============================
    🗄️ AUTH STORAGE UTILITIES
    Pure functions for localStorage persistence
    Single source of truth for user identity
    =============================== */
-
 import { UserIdentityType } from '../../types/authTypes';
 
 /**
@@ -57,9 +55,10 @@ export const getIdentity = (): UserIdentityType | null => {
         parsed !== null &&
         'email' in parsed && 
         'username' in parsed && 
-        'rememberMe' in parsed) {
-      return parsed;
-    }
+        'rememberMe' in parsed)//mark the checkbox in the form
+     {
+     return parsed;
+     }
     
     // Corrupted data - clean it up
     clearIdentity();
