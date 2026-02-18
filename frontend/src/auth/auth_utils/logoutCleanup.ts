@@ -17,6 +17,10 @@
    import { LOCAL_STORAGE_KEY } from "../../helpers/constants";
    import { useAuthStore } from "../stores/useAuthStore";
    import { clearIdentity, getIdentity } from "./localStorageHandle/authStorage";
+
+   //==========================
+   //MAIN FUNCTION: logoutCleanup
+   //==========================
    export const logoutCleanup = (shouldNotify: boolean = false): void => {
    // Infrastructure can log for debugging (doesn't affect UX)
    console.log(`🔧 logoutCleanup executing - shouldNotify:${shouldNotify} (ignored)`);
