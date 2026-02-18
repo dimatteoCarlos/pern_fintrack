@@ -1,26 +1,57 @@
-//📂 src/utils/authFetch.ts
+// 📁 frontend/src/auth/auth_utils/authFetch.ts
+
+/* ===============================
+   🔐 AUTHENTICATED FETCH - INFRASTRUCTURE LAYER
+   ===============================
+   
+   🔍 LAYER IDENTIFICATION:
+   - Capa: Infraestructura
+   - Propósito: Ejecutar peticiones HTTP con token y manejar refresh
+   - Decisiones: Ninguna - solo ejecuta y propaga
+   - Responsabilidades:
+     * Inyectar token Bearer en headers
+     * Intentar refresh automático en 401
+     * Limpiar sesión si refresh falla
+     * Propagar errores sin interpretarlos
+   
+   🚫 LO QUE NUNCA DEBE HACER:
+     * Interpretar "sesión expirada" (eso es capa de Dominio)
+     * Navegar (eso es capa de Aplicación)
+     * Mostrar notificaciones (capa de Presentación)
+   
+   📍 UBICACIÓN CORRECTA:
+     /auth_utils/ - utilitarios de infraestructura
+*/
+
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { url_change_password, url_refrestoken, url_signin, url_update_user } from "../../endpoints";
+import { url_refrestoken, url_update_user, url_change_password } from '../../endpoints';
 import { logoutCleanup } from './logoutCleanup';
 
 /**
-* 🎯 AUTHENTICATED FETCH UTILITY
-* ✅ Automatically injects Bearer token.
-* ✅ Handles Silent Refresh with HttpOnly cookies.
-* ✅ Timeout protection for refresh attempts.
-* ✅ Differentiates between expired sessions and profile update auth failures.
-* ✅ Network-resilient: Prevents unwanted logouts.
-*/
-
-export const authFetch = async<T>(
+ * 🔐 Authenticated fetch utility
+ * 
+ * Layer: Infrastructure
+ * 
+ * ✅ Responsibilities:
+ * - Inject Bearer token
+ * - Handle silent refresh with HttpOnly cookies
+ * - Clean up session on refresh failure
+ * - Propagate errors for upper layers to interpret
+ * 
+ * ❌ Never:
+ * - Interpret error meanings ("session expired" is Domain layer)
+ * - Navigate or redirect (Application layer)
+ * - Show notifications (Presentation layer)
+ */
+export const authFetch = async <T>(
   url: string,
   options: AxiosRequestConfig = {}
 ): Promise<AxiosResponse<T>> => {
 
-  // 1️⃣ PREPARE ACCESS TOKEN
+  // 1️⃣ Get access token from sessionStorage (Infrastructure)
   const accessToken = sessionStorage.getItem('accessToken');
 
-  // 2️⃣ CONFIGURE INITIAL REQUEST
+  // 2️⃣ Configure initial request with token
   const requestConfig: AxiosRequestConfig = {
     ...options,
     withCredentials: true,
@@ -32,89 +63,61 @@ export const authFetch = async<T>(
   };
 
   try {
-  // 🎯 FIRST ATTEMPT
-    const authFetchResponse = await axios<T>(url, requestConfig);
-    // console.log("🚀 ~ authFetch ~ FIRST ATTEMPT SUCCESS:", url);
-    return authFetchResponse;
+    // 🎯 First attempt
+    const response = await axios<T>(url, requestConfig);
+    return response;
 
   } catch (error) {
-  // 3️⃣ HANDLE 401 UNAUTHORIZED ERRORS
-  // Only attempt refresh if: it is a 401, NOT the profile update endpoint, and a valid Axios error
-  const isLoginEndpoint =
-  url === url_signin || url.includes('signin');
-   if (
-     axios.isAxiosError(error) && 
-     error.response?.status === 401 && 
-     !isLoginEndpoint &&
-     !url.includes(url_update_user) &&
-     !url.includes(url_change_password) 
+    // 3️⃣ Handle 401 errors - attempt silent refresh
+    if (
+      axios.isAxiosError(error) && 
+      error.response?.status === 401 && 
+      !url.includes(url_update_user) && 
+      !url.includes(url_change_password)
     ) {
-     try {
-       // 🔄 ATTEMPT SILENT REFRESH
-       // console.log('🔄 Session expired. Attempting silent refresh...');
+      try {
+        // 🔄 Attempt silent refresh
+        const refreshResponse = await axios.post(url_refrestoken, null, {
+          withCredentials: true,
+          timeout: 10000,
+        });
 
-       const refreshResponse = await axios.post(url_refrestoken, null, {
-         withCredentials: true,
-         timeout: 10000, // ⏱️ Prevent indefinite blocking
-       });
+        const newAccessToken = refreshResponse.data.accessToken;
 
-       const newAccessToken = refreshResponse.data.accessToken;
+        if (newAccessToken) {
+          // 💾 Save new token
+          sessionStorage.setItem('accessToken', newAccessToken);
 
-       if (newAccessToken) {
-         // 💾 SAVE NEW TOKEN IN SESSION STORAGE
-         sessionStorage.setItem('accessToken', newAccessToken);
+          // 🔁 Retry original request with new token
+          const retryConfig: AxiosRequestConfig = {
+            ...requestConfig,
+            headers: {
+              ...requestConfig.headers,
+              'Authorization': `Bearer ${newAccessToken}`,
+            },
+          };
 
-         // 🔁 PREPARE RETRY WITH IMMUTABLE CONFIG
-         const retryConfig: AxiosRequestConfig = {
-           ...requestConfig,
-           headers: {
-             ...requestConfig.headers,
-             'Authorization': `Bearer ${newAccessToken}`,
-           },
-         };
+          const retryResponse = await axios<T>(url, retryConfig);
+          return retryResponse;
+        }
+      } catch (refreshError) {
+        // 🚨 Refresh failed - clean up session
+        console.error('🚨 Refresh failed:', {
+          error: refreshError,
+          url,
+          hasCookie: document.cookie.includes('refreshToken')
+        });
+        
+        // ✅ Clean up session data - pure infrastructure, no navigation
+        logoutCleanup(false);
+        
+        // ✅ Propagate original error - NO interpretation here
+        // The meaning ("session expired") is determined by Application layer (ProtectedRoute)
+        throw refreshError;
+      }
+    }
 
-         // 🔁 RETRY ORIGINAL REQUEST
-         const retryAuthFetchResponse = await axios<T>(url, retryConfig);
-         // console.log('✅ Token refreshed. Request retried successfully.');
-
-         return retryAuthFetchResponse;
-       }
-     } catch (refreshError) {
-       // 🚨 REFRESH FAILED (Expired cookie, revoked session, or net error)
-       console.error('🚨 Refresh failed - forcing logout cleanup:', {
-         error: refreshError,
-         url,
-         hasCookie: document.cookie.includes('refreshToken')
-       });
-
- // 🔍 DETERMINE IF THIS IS A "REAL" SESSION EXPIRATION
- // Only trigger logout with notification if:
- // 1. This is NOT a login attempt (sign-in has its own error handling)
- // 2. This is NOT a password change flow (which expects token change)
- // 3. The user was previously authenticated (hasCookie or had token)
-
-   const isLoginEndpoint = url.includes('/sign-in');
-   const isPasswordChangeEndpoint = url.includes(url_change_password);
-   const hadTokenBefore = !!sessionStorage.getItem('accessToken');
-   const hasRefreshCookie = document.cookie.includes('refreshToken');
-
-   if (!isLoginEndpoint && !isPasswordChangeEndpoint && (hadTokenBefore || hasRefreshCookie)) {
-   console.log('🔴 Real session expired - triggering logout with notification');
-//Only when the user WAS authenticated and it is NOT a special flow, is logoutCleanup(true) performed.
-    logoutCleanup(true);
-    } 
-
-// ⚠️ EXPECTED 401 - Part of normal flow (login, password change)
-    else {
-     console.log('🟡 Expected 401 in normal flow - no notification needed');
-     // Do NOT call logoutCleanup - let the calling function handle it
-   }
-    throw refreshError; 
-   }
+    // 4️⃣ Propagate all other errors
+    throw error;
   }
-  // 4️⃣ PROPAGATE NON-401 OR ALREADY HANDLED ERRORS
-  // (This includes 400, 403, 500 or the 401 from Profile Update)
-  throw error;
-  }
-};//authFetch
-
+};
