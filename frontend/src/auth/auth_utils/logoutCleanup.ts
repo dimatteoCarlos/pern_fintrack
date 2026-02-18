@@ -1,72 +1,64 @@
-//📂 frontend/src/utils/logoutCleanup.ts
-import { LOCAL_STORAGE_KEY } from "../../helpers/constants";
-import { useAuthStore } from "../stores/useAuthStore"
-import { navigationHelper } from "./navigationHelper";
-import { notifySessionExpired } from "./notification";
+// 📁 frontend/src/auth/auth_utils/logoutCleanup.ts
 
+/* ===============================
+   🧹 INFRASTRUCTURE LAYER - PURE CLEANUP FUNCTION
+   ===============================
 /**
- * 🚨 GLOBAL CLEANUP FUNCTION 🚨
- * Centralizes the removal of all session data and redirects the user.
- * * @param shouldNotify If true, triggers a "Session Expired" toast and adds state to navigation.
-*/
+ * 🧹 Pure infrastructure cleanup function
+ * 
+ * Layer: Infrastructure
+ * Decisions: None - just execution
+ * Side effects: Only storage and memory
+ * 
+ * @param shouldNotify - Kept for backward compatibility but IGNORED
+ *                       Navigation/notifications now handled by Application layer
+ */
 
-export const logoutCleanup = (shouldNotify:boolean = false)=>{
-console.log(`🚨 Performing cleanup: ${shouldNotify?'Session expired': 'Manual logout'}`);
+   import { LOCAL_STORAGE_KEY } from "../../helpers/constants";
+   import { useAuthStore } from "../stores/useAuthStore";
+   import { clearIdentity, getIdentity } from "./localStorageHandle/authStorage";
+   export const logoutCleanup = (shouldNotify: boolean = false): void => {
+   // Infrastructure can log for debugging (doesn't affect UX)
+   console.log(`🔧 logoutCleanup executing - shouldNotify:${shouldNotify} (ignored)`);
 
-// 0. Get actions from Zustand store (directly from the state)
- const {setIsAuthenticated, setUserData,clearError,clearSuccessMessage}=useAuthStore.getState();
-//----------------------------------
-// ✅ SAFETY CLEANING: ACCESS TOKEN & SESSION STATE
-//----------------------------------
-//1. Tokens and states cleaning
- sessionStorage.removeItem('accessToken');
+  // ===============================
+  // 1️⃣ GET STORE ACTIONS (Infrastructure accessing state)
+  // ===============================
+  const { 
+    setIsAuthenticated, 
+    setUserData, 
+    clearError, 
+    clearSuccessMessage 
+  } = useAuthStore.getState();
 
- // ✅ ZUSTAND RESET STORE
- //2. Reset global store.
- // Reset global authentication states in RAM
- setIsAuthenticated(false);
- clearError();
- clearSuccessMessage(); //no "Signed Up" messages remain
+  // ===============================
+  // 2️⃣ CLEAN SESSION STORAGE (Volatile - Infrastructure)
+  // ===============================
+  sessionStorage.removeItem('accessToken');
+  sessionStorage.removeItem('tokenExpiry');
 
-// -------------------------------
-// ✅ LOCAL STORAGE CLEANING: CONDITIONAL PERSISTENCE
- const isRemembered=localStorage.getItem(LOCAL_STORAGE_KEY.REMEMBER_ME)==='true';
-
- if(!isRemembered){
-//not remembered - full cleanup
- setUserData(null);
-// Explicitly remove keys from LocalStorage
- localStorage.removeItem(LOCAL_STORAGE_KEY.REMEMBER_ME ||'fintrack_remember_me');
- localStorage.removeItem(LOCAL_STORAGE_KEY.USER_DATA ||'fintrack_user_data');
-
- console.log('🚨 Full cleanup performed: All persistent data removed.');
-}else{
-// Remembered - keep data for next visit
- console.log('Persistence kept for next visit (remember me enabled)');
-}
-// ----------------------------------
-// ✅ MANAGE NOTIFICATION AND REDIRECT
-// ----------------------------------
-// 🚨 TEMPORARY DEBUG LOGS - REMOVE AFTER FIXING
- console.log('🔍 logoutCleanup - shouldNotify:', shouldNotify);
- console.log('🔍 logoutCleanup - stack trace:', new Error().stack);
-
-// 4. Manage Nofitification and redirect with state
- if(shouldNotify){
- // 🔴 SESSION EXPIRED - Show notification and expired state
-  console.log('🔴 Session expired - showing notification');  
-//expired:true. Session expired - show notification and specific state
- notifySessionExpired();
-
-// Redirect to auth page with 'expired' state so the UI knows to show a specific message
- navigationHelper.navigate('/auth', {state:{expired:true}});
- }else{
-   // 🟢 MANUAL LOGOUT - No notification, no expired state
-  console.log('🟢 Manual logout - redirecting without state');
+  // ===============================
+  // 3️⃣ RESET ZUSTAND STORE (Memory - Infrastructure)
+  // ===============================
+  setIsAuthenticated(false);
+  clearError();
+  clearSuccessMessage();
   
-  // ✅ IMPORTANT: Navigate WITHOUT any state to prevent "expired" message
-  navigationHelper.navigate('/auth');
-  }
- };
+  // ===============================
+  // 4️⃣ CONDITIONAL LOCALSTORAGE CLEANUP (Persistence - Infrastructure)
+  // ===============================
+  // 🔍 Read the single source of truth
+  const identity = getIdentity();
+  const shouldKeepData = identity?.rememberMe === true;
 
-
+  if (!shouldKeepData) {
+  // ❌ User does NOT want to be remembered - full cleanup
+  setUserData(null);
+  clearIdentity(); // Remove the identity entirely
+  localStorage.removeItem(LOCAL_STORAGE_KEY.USER_DATA);
+  console.log('🔧 Full cleanup: all persistent data removed');
+  } else {
+  // ✅ User wants to be remembered - keep identity for next visit
+  console.log('🔧 Partial cleanup: keeping identity for next visit');
+   }
+  };
