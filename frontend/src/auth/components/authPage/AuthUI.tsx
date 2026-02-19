@@ -1,29 +1,41 @@
 //frontend/src/pages/auth/AuthUI.tsx
-import { useEffect, useState } from 'react';
+
+//* 📦 IMPORT DEPENDENCIES
+import { useCallback, useEffect, useState } from 'react';
 import styles from './styles/AuthUI.module.css';// is a module
-// import GoogleLogo from '../../../assets/auth/GoogleLogo';
+import GoogleLogo from '../../../assets/auth/GoogleLogo';
 import {
   CredentialsType,
   SignInCredentialsType,
   SignUpCredentialsType,
+  UserIdentityType,
 } from '../../types/authTypes';
 
 import Message, { MessageType } from '../formUIComponents/Message';
 
-// 🏷️ PROPS TYPE DEFINITION
+import { clearIdentity, getIdentity, saveIdentity } from '../../auth_utils/localStorageHandle/authStorage';
+
+import InputField from '../formUIComponents/InputField';
+
+// 🏷️ TYPE DEFINITION
 type AuthUIPropsType = {
-  onSignIn: (credentials: SignInCredentialsType, rememberMe:boolean) => void;
-  onSignUp: (userData: SignUpCredentialsType) => void;
+// 📋 Auth State 
+  onSignIn: (credentials: SignInCredentialsType, rememberMe:boolean) => Promise<boolean>;
+  onSignUp: (userData: SignUpCredentialsType) => Promise<boolean>;
   isSignInInitial?: boolean;
   clearError:()=>void;
   isSessionExpired?: boolean;
 
-  // googleSignInUrl?: string; // Optional Google Sign-in URL
-  
   isLoading: boolean;
   error: string | null;
   messageToUser?: string | undefined | null;
+  
+// 🚀 Social Access (Placeholder for next commit)
+ // googleSignInUrl?: string | null;
+ // handleGoogleSignIn?: () => void;
 };
+
+// type BannerMessageType={ type: 'success' | 'error' | 'warning' | 'info'; text: string } | null;
 
 // 🔧 CONSTANTS & INITIAL VALUES
 const INITIAL_CREDENTIALS_STATE: CredentialsType = {
@@ -40,38 +52,117 @@ const INITIAL_CREDENTIALS_STATE: CredentialsType = {
   password: '',
 };
 
-// 📊 --MAIN COMPONENT: AuthUI.tsx
+/**
+ * 🌟 ===============================
+ * 🎭 COMPONENT: AuthUI
+ * =============================== 🌟
+ */
 function AuthUI({
   onSignIn,
   onSignUp,
-  // googleSignInUrl,
   isLoading,
   error,
   clearError,
   messageToUser="",
   isSignInInitial,
-  
+  // googleSignInUrl,
 }: AuthUIPropsType): JSX.Element {
- // const location = useLocation();
- // const wasRedirectedByExpiration = location.state?.expired;
 
 // 🏗️ STATE MANAGEMENT
-  const [credentials, setCredentials] = useState<CredentialsType>(INITIAL_CREDENTIALS_STATE);
+// 📝 Initialize credentials from localStorage if user was remembered
+const [credentials, setCredentials] = useState<CredentialsType>(() => {
+// Read persisted identity (infrastructure layer)
+const identity = getIdentity();
 
-  const [isSignIn, setIsSignIn] = useState(isSignInInitial??true);
-  const [rememberMe, setRememberMe] = useState(false);
- 
-  // 📝 INPUT HANDLERS
-  const handleSignInSubmit = (event: React.FormEvent) => {
+if (identity) {
+  console.log('🔧 Lazy init: found remembered identity for', identity.email);
+
+  return {
+    ...INITIAL_CREDENTIALS_STATE,
+    email: identity.email,
+    username: identity.username,
+  };
+}
+
+console.log('🔧 Lazy init: no remembered identity, using empty form');
+return INITIAL_CREDENTIALS_STATE;
+});
+
+// ✅ Initialize rememberMe checkbox from persisted identity
+const [rememberMe, setRememberMe] = useState<boolean>(() => {
+ const identity = getIdentity();
+ return identity?.rememberMe === true;
+});
+
+// ⏱️ Message visibility states
+// const [showMessageToUser, setShowMessageToUser] = useState(true);
+// const [showError, setShowError] = useState(true);
+
+// 🔀 Auth mode (signin/signup)
+const [isSignIn, setIsSignIn] = useState(isSignInInitial);
+
+// 👁️ Local state for password visibility
+const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+//------------------------
+// 🔧 HANDLERS
+//------------------------
+const togglePasswordVisibility = useCallback(() => {
+  setIsPasswordVisible((prev) => !prev);
+ }, []);
+
+// 📝 INPUT HANDLERS
+const handleInputChange = (fieldName: keyof CredentialsType) => 
+    (input: string | React.ChangeEvent<HTMLInputElement>) => {
+      const value = typeof input === 'string' ? input : input.target.value;
+      
+      if (error) clearError();
+      
+      setCredentials((prev) => ({ 
+        ...prev, 
+        [fieldName]: value 
+      }));
+  };
+//------------------------
+// 📝 SIGN IN SUBMISSION HANDLERS
+//------------------------
+  const handleSignInSubmit = async (event: React.FormEvent) => {
+
     event.preventDefault();
-
-    onSignIn({
+try {
+    // 1️⃣ Call authentication service (infrastructure via props)
+    await onSignIn({
       username: credentials.username,
       email: credentials.email,
       password: credentials.password,
     } as SignInCredentialsType, rememberMe);
-  };
 
+    // 2️⃣ If we get here, login was successful
+    if (rememberMe) {
+      // ✅ Save identity for next visit
+      const identity: UserIdentityType = {
+        email: credentials.email,
+        username: credentials.username,
+        rememberMe: true,
+      };
+      saveIdentity(identity);
+      console.log('✅ Identity saved for remembered user');
+    } else {
+      // 🧹 Clear any existing identity
+      clearIdentity();
+      console.log('🧹 Identity cleared (remember me not checked)');
+    }
+
+    // Note: Navigation is handled by useAuth after successful login
+    // This component does not navigate directly
+
+  } catch (error) {
+    // Error is already handled by onSignIn (sets error state)
+    // UI layer only reacts to error state, doesn't interpret it
+    console.log('❌ Login failed, not saving identity');
+  }
+  };
+//-------------------------------
   const handleSignUpSubmit = (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -105,10 +196,10 @@ function AuthUI({
   //checkbox handler
   const handleRememberMeChange= (e:React.ChangeEvent<HTMLInputElement>)=>{setRememberMe(e.target.checked)}
 
-  function inputCredentialsHandler(e: React.ChangeEvent<HTMLInputElement>) {
-   if(error) clearError();
-    setCredentials((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  }
+  // function inputCredentialsHandler(e: React.ChangeEvent<HTMLInputElement>) {
+  //  if(error) clearError();
+  //   setCredentials((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  // }
 
 // ===============================
 // ⏱️ AUTO-HIDE MESSAGES AFTER TIMEOUT
@@ -130,58 +221,82 @@ function AuthUI({
    }
   }, [error, isLoading, isSignIn]); 
 //------------------------------------------
-//RENDERING
+//🎨 RENDER
   return (
-    <div className={styles['auth-container']}>
+  <div className={styles['auth-container']}>
+{/* 📢 Stable Message Area*/}
+   <div className={`${styles.messageArea} ${bannerMessage ? styles.isVisible : styles.isHidden}`}>
+   {bannerMessage && (
+    <Message
+     type={bannerMessage.type}
+     message={bannerMessage.text}
+     autoDismiss={0}
+     onDismiss={() => clearError()}
+     showIcon={false}
+    />
+   )}
+   </div>
 
-     {bannerMessage && (
-       <Message
-         type={bannerMessage.type} 
-         message={bannerMessage.text}
-         autoDismiss={0}
-         onDismiss={() => clearError()}
-         showIcon={false}
-       />
-     )}
+   <h2 className={styles['auth-container__title']}>
+     {isSignIn ? 'Sign In' : 'Sign Up'}
+   </h2>
+{/*------------------------- */}
+    <form
+     className={`auth-form  ${
+       isSignIn ? 'auth-form--signin' : 'auth-form--signup'
+     }`}
+     onSubmit={isSignIn ? handleSignInSubmit : handleSignUpSubmit}
+     >
+{/* 👤 Username */}
+{/* <div className={styles.fieldWrapper}> */}
+     <InputField
+     label="Username"
+     type="text"
+     placeholder="your_username"
+     value={credentials.username}
+     onChange={handleInputChange('username')}
+     required
+     disabled={isLoading}
+     isReadOnly={isLoading}
+    />
+    {/* </div> */}
 
-      <h2 className={styles['auth-container__title']}>
-        {isSignIn ? 'Sign In' : 'Sign Up'}
-      </h2>
-{/* //------------------------- */}
-      <form
-        className={`auth-form  ${
-          isSignIn ? 'auth-form--signin' : 'auth-form--signup'
-        }`}
-        onSubmit={isSignIn ? handleSignInSubmit : handleSignUpSubmit}
-      >
+{/* 📧 Email Field */}
+        <InputField
+          label="Email"
+          type="email"
+          placeholder="email"
+          value={credentials.email}
+          onChange={handleInputChange('email')}
+          required
+          disabled={isLoading}
+          isReadOnly={isLoading}
+        />
 
-        <div className={styles['auth-form__field']}>
-          <label
-            htmlFor='usernameOrEmail'
-            className={styles['auth-form__label']}
-          >
-            Username
-          </label>
-
-          <input
-            type='text'
-            id='username'
-            name='username'
-            placeholder='username'
-            className={styles['auth-form__input']}
-            value={credentials.username}
-            onChange={(e) => inputCredentialsHandler(e)}
-            required
-          />
-        </div>
-
-        {/* Checkbos of Remember Me (just for Sign in) */}
+{/* 🔑 Password Field with Visibility Toggle */}
+        <InputField
+          label="Password"
+          placeholder="password"
+          value={credentials.password || ''}
+          onChange={handleInputChange('password')}
+          required
+          disabled={isLoading}
+          isReadOnly={isLoading}
+          showContentToggle={true}
+          isContentVisible={isPasswordVisible}
+          onToggleContent={togglePasswordVisibility}
+        />       
+{/* Checkbox of Remember Me (Sign In Only) */}
         {
          isSignIn && (
-          <div className={styles['auth-form__remember-me']}>
-           <input
+          <div className={styles['auth-form__remember-me']}
+          onClick={() => setRememberMe(!rememberMe)}
+          >
+          <input
            className={styles['auth-form__checkbox']}
-            type="checkbox" id="rememberMe" checked={rememberMe} onChange={handleRememberMeChange} 
+           type="checkbox" id="rememberMe"
+           checked={rememberMe}
+           onChange={handleRememberMeChange} 
            />
            <label htmlFor="rememberMe"
             className={styles['auth-form__label-checkbox']}>
@@ -190,77 +305,26 @@ function AuthUI({
            </div>
          )
         }
-
-        <div className={styles['auth-form__field']}>
-          <label
-            htmlFor='usernameOrEmail'
-            className={styles['auth-form__label']}
-          >
-            Email
-          </label>
-          <input
-            type='text'
-            id='email'
-            name='email'
-            placeholder='email'
-            className={styles['auth-form__input']}
-            value={credentials.email}
-            onChange={(e) => inputCredentialsHandler(e)}
-            required
-          />
-        </div>
-
-        <div className={styles['auth-form__field']}>
-          <label htmlFor='password' className={styles['auth-form__label']}>
-            Password
-          </label>
-          <input
-            type='password'
-            id='password'
-            name='password'
-            placeholder='password'
-            className={styles['auth-form__input']}
-            value={credentials.password || ''}
-            onChange={(e) => inputCredentialsHandler(e)}
-            required
-          />
-        </div>
-
+{/* 📋 Registration Fields */}
         {!isSignIn && (
-          <>
-            <div className={styles['auth-form__field']}>
-              <label htmlFor='firstName' className={styles['auth-form__label']}>
-                First Name
-              </label>
-              <input
-                type='text'
-                id='firstName'
-                name='user_firstname'
-                placeholder='user_firstname'
-                className={styles['auth-form__input']}
-                value={credentials.user_firstname}
-                onChange={(e) => inputCredentialsHandler(e)}
-                required
-              />
-            </div>
-
-            <div className={styles['auth-form__field']}>
-              <label htmlFor='lastName' className={styles['auth-form__label']}>
-                Last Name
-              </label>
-              <input
-                type='text'
-                id='lastName'
-                name='user_lastname'
-                placeholder='user_lastname'
-                className={styles['auth-form__input']}
-                value={credentials.user_lastname}
-                onChange={(e) => inputCredentialsHandler(e)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-          </>
+         <div className={styles.extraFieldsGroup}>
+          <InputField
+            label="First Name"
+            value={credentials.user_firstname}
+            onChange={handleInputChange('user_firstname')}
+            required
+            disabled={isLoading}
+            isReadOnly={isLoading}
+          />
+          <InputField
+            label="Last Name"
+            value={credentials.user_lastname}
+            onChange={handleInputChange('user_lastname')}
+            required
+            disabled={isLoading}
+            isReadOnly={isLoading}
+          />
+          </div>
         )}
 
         <button
@@ -272,38 +336,38 @@ function AuthUI({
         </button>
       </form>
 
-      <div className='auth-actions'>
+{/* 🔗 Footer Actions & Social Placeholder */}
+      <div className={styles['auth-actions']}>
         <button
           type='button'
           className={styles['auth-actions__toggle-button']}
-          onClick={toggleAuthMode} disabled={isLoading}
+          onClick={toggleAuthMode}
+          disabled={isLoading}
         >
           {isSignIn
             ? "Don't have an account? Sign up"
             : 'Already have an account? Sign in'}
         </button>
 
-        {/* <button type="button" className="auth-actions__google-button"
-         // onClick={handleGoogleSignIn}
-         >
-          Sign In with Google
-        </button> */}
-{/* 
-        {googleSignInUrl && (
-          <>
-            <div className={styles['separator']}>
+      {/* 🚀 GOOGLE SIGN-IN (Placeholder for dedicated commit) */}
+        {
+        // !googleSignInUrl &&
+         (
+          <div className={styles.socialSection}>
+            <div className={styles.separator}>
               <span>OR</span>
             </div>
             <button
               type='button'
               className={styles['google-signin-button']}
-              // onClick={handleGoogleSignIn} handleGoogleSignIn
+              // onClick={handleGoogleSignIn}
             >
-              <GoogleLogo size={16} />
+              <GoogleLogo size={20} />
               Continue with Google
             </button>
-          </>
-        )} */}
+          </div>
+        )} 
+       
       </div>
     </div>
   );
