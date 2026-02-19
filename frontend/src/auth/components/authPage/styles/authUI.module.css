@@ -1,7 +1,47 @@
 /* src/components/auth/AuthUI.module.css */
-.borderTest {
-  border: 3px solid red;
+/* 📢 Stable Message Area with Smooth Transition */
+.messageArea {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Initial State: Closed and Invisible */
+  min-height: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-bottom: 0;
+  transform: translateY(-10px);
+  visibility: hidden;
+  
+  /* Smooth transitions for all properties */
+  transition: 
+    max-height 0.4s ease, 
+    margin-bottom 0.4s ease, 
+    opacity 0.3s ease, 
+    transform 0.4s ease;
 }
+
+/* 🟢 Active State: Opens and fades in */
+.isVisible {
+  max-height: 120px; /* Increased to accommodate multi-line messages */
+  opacity: 1;
+  margin-bottom: 1.5rem; /* Space only appears when message is present */
+  transform: translateY(0);
+  visibility: visible;
+}
+
+/* 🔴 Hidden State: Explicitly ensures it stays closed */
+.isHidden {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  transform: translateY(-10px);
+  visibility: hidden;
+  pointer-events: none; /* Prevents interaction when hidden */
+}
+/********************/
 .auth-container {
   display: flex;
   flex-direction: column;
@@ -39,7 +79,7 @@
   text-align: center;
   font-size: 14px;
 }
-
+/*-----------------*/
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -47,29 +87,31 @@
   margin-bottom: 1.25rem;
 }
 
+/* 
 .auth-form__field {
-  margin-bottom: 0.9375rem; /* 15px / 16px */
+  margin-bottom: 0.9375rem; 
 }
 
 .auth-form__label {
   display: block;
-  margin-bottom: 0.3125rem; /* 5px / 16px */
+  margin-bottom: 0.3125rem; 
   color: #555;
-  font-size: 0.95rem; /* 0.95 * 16px = 15.2px */
+  font-size: 0.95rem; 
 }
 
 .auth-form__input {
   width: 100%;
-  padding: 0.625rem; /* 10px / 16px */
+  padding: 0.625rem;
   border: 1px solid #ccc;
-  border-radius: 0.25rem; /* 4px / 16px */
-  font-size: 1rem; /* 1 * 16px = 16px */
+  border-radius: 0.25rem; 
+  font-size: 1rem; 
   background-color: rgba(0, 0, 0, 0.76);
 }
 .auth-form__input::placeholder {
   color: var(--creme, yellow);
-}
+} */
 
+/*-----------------*/
 .auth-form__remember-me{
  display: flex;
  align-items: center;
@@ -81,6 +123,21 @@
  /* background-color: orange; */
 }
 
+/*Name and Lastname fields*/
+
+.extraFieldsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0; /* Gap is usually handled inside InputField or here */
+}
+
+@media (min-width: 480px) {
+  .extraFieldsGroup {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+}
 /*--------------------------------*/
 /*
 Estilo por defecto del checkbox
@@ -142,6 +199,7 @@ Estilo por defecto del checkbox
 }
 
 .auth-form__button {
+ width:100%;
   background-color: #007bff;
   background-color: rgb(16, 163, 127);
   color: white;
@@ -151,6 +209,15 @@ Estilo por defecto del checkbox
   cursor: pointer;
   font-size: 1rem;
   transition: background-color 0.3s ease;
+
+  /*Internal centered */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.auth-form__button:active {
+  transform: scale(0.98); /* Feedback when pressed */
 }
 
 .auth-form__button:hover {
@@ -183,6 +250,14 @@ Estilo por defecto del checkbox
 
 .auth-actions__toggle-button:hover {
   color: #0056b3;
+}
+
+.socialSection {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
 }
 
 .separator {
