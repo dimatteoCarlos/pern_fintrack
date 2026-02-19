@@ -34,8 +34,6 @@ type AuthUIPropsType = {
  // handleGoogleSignIn?: () => void;
 };
 
-// type BannerMessageType={ type: 'success' | 'error' | 'warning' | 'info'; text: string } | null;
-
 // 🔧 CONSTANTS & INITIAL VALUES
 const INITIAL_CREDENTIALS_STATE: CredentialsType = {
  //harcoded credentials for test in dev
@@ -92,10 +90,6 @@ const [rememberMe, setRememberMe] = useState<boolean>(() => {
  const identity = getIdentity();
  return identity?.rememberMe === true;
 });
-
-// ⏱️ Message visibility states
-// const [showMessageToUser, setShowMessageToUser] = useState(true);
-// const [showError, setShowError] = useState(true);
 
 // 🔀 Auth mode (signin/signup)
 const [isSignIn, setIsSignIn] = useState(isSignInInitial);
