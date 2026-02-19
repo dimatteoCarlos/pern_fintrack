@@ -26,6 +26,7 @@ import {
   SignInResponseType,
   SignUpCredentialsType,
   UserDataType,
+  UserIdentityType,
   UserResponseDataType,
 } from '../types/authTypes';
 
@@ -37,6 +38,7 @@ import {
   url_change_password,
   url_validate_session
 } from '../../endpoints';
+import { clearIdentity, saveIdentity } from '../auth_utils/localStorageHandle/authStorage';
 
 /* ===============================
    🛠️ DATA TRANSFORMATION
@@ -56,20 +58,7 @@ const mapUserResponseToUserData = (user: UserResponseDataType): UserDataType => 
 /* ===============================
    🔧 ERROR EXTRACTION UTILITY
    =============================== */
-// const extractErrorMessage = (err: unknown): string => {
-//  //axios error with response
 
-//   if (err && typeof err === 'object' && 'response' in err) {
-//     const error = err as { response?: { data?: { message?: string } } };
-//     if (error.response?.data?.message) {
-//       return error.response.data.message;
-//     }
-//   }
-//   if (err instanceof Error) {
-//     return err.message;
-//   }
-//   return 'An unexpected error occurred';
-// };
 const extractErrorMessage = (err: unknown): string => {
   // If axios error with response
   if (axios.isAxiosError(err) && err.response) {
@@ -82,7 +71,7 @@ console.log('extractErrorMessage:', data, err.stack)
       return data.message;
     }
     
-    // Códigos de error comunes
+    // Common codes error
     if (err.response.status === 401) {
       return 'Invalid username or password';
     }
@@ -94,12 +83,12 @@ console.log('extractErrorMessage:', data, err.stack)
     }
   }
   
-  // Si es error de red
+  // Network error
   if (axios.isAxiosError(err) && !err.response) {
    return 'Network error. Please check your connection.';
   }
   
-  // Error genérico
+  // Generic Error
   if (err instanceof Error) {
     return err.message;
   }
@@ -163,7 +152,6 @@ const useAuth = () => {
   /* ===============================
      🔐 SIGN IN
      =============================== */
-
     const handleSignIn = async (credentials: SignInCredentialsType, rememberMe: boolean) => {
     clearError();
     setIsLoading(true);
@@ -186,18 +174,28 @@ const useAuth = () => {
 
       if (accessToken && userDataFromResponse) {
         sessionStorage.setItem('accessToken', accessToken);
+//managin identity persistent
+       if (rememberMe) {
+        const identity: UserIdentityType = {
+          email: credentials.email,
+          username: credentials.username,
+          rememberMe: true,
+        };
+        
+        saveIdentity(identity);
+        console.log('✅ Identity saved for remembered user');
+      } else {
+        clearIdentity();
+        console.log('🧹 Identity cleared');
+      }
 
-        if (rememberMe) {
-          localStorage.setItem(LOCAL_STORAGE_KEY.REMEMBER_ME, 'true');
-        } else {
-          localStorage.removeItem(LOCAL_STORAGE_KEY.REMEMBER_ME);
-        }
+      const userDataForStore = mapUserResponseToUserData(userDataFromResponse);
 
-        const userDataForStore = mapUserResponseToUserData(userDataFromResponse);
-        setUserData(userDataForStore);
-        setIsAuthenticated(true);
-        setSuccessMessage(message || 'Sign in successful! Welcome back!');
-        navigateTo(INITIAL_PAGE_ADDRESS || '/fintrack');
+      setUserData(userDataForStore);
+      setIsAuthenticated(true);
+      setSuccessMessage(message || 'Sign in successful! Welcome back!');
+      navigateTo(INITIAL_PAGE_ADDRESS || '/fintrack');
+
         return true;
       }
 
@@ -205,12 +203,15 @@ const useAuth = () => {
         ? 'Server response missing user data'
         : 'Server response missing access token';
       setError(`Invalid server response - ${errorMessage}`);
+
       return false;
 
     } catch (err: unknown) {
       const errorMessage = extractErrorMessage(err) || 'Login failed. Please check your credentials.';
       setError(errorMessage);
+
       return false;
+
     } finally {
       setIsLoading(false);
     }
@@ -249,11 +250,13 @@ const useAuth = () => {
       setIsAuthenticated(true);
       setSuccessMessage(resData.message || 'Sign up successful!');
       navigateTo('/fintrack');
+
       return true;
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Registration failed';
       setError(errorMessage);
+      
       return false;
     } finally {
       setIsLoading(false);
