@@ -68,12 +68,15 @@ export const authFetch = async <T>(
     return response;
 
   } catch (error) {
-    // 3️⃣ Handle 401 errors - attempt silent refresh
+  // 3️⃣ Handle 401 errors - attempt silent refresh
     if (
       axios.isAxiosError(error) && 
       error.response?.status === 401 && 
+//✅ Exclude from refresh attempt
+      !url.includes('/sign-in') &&
+      !url.includes('/sign-up') &&
       !url.includes(url_update_user) && 
-      !url.includes(url_change_password)
+      !url.includes(url_change_password) 
     ) {
       try {
         // 🔄 Attempt silent refresh
