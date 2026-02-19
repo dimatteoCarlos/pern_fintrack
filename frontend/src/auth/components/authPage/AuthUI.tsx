@@ -8,12 +8,11 @@ import {
   CredentialsType,
   SignInCredentialsType,
   SignUpCredentialsType,
-  UserIdentityType,
 } from '../../types/authTypes';
 
 import Message, { MessageType } from '../formUIComponents/Message';
 
-import { clearIdentity, getIdentity, saveIdentity } from '../../auth_utils/localStorageHandle/authStorage';
+import {  getIdentity} from '../../auth_utils/localStorageHandle/authStorage';
 
 import InputField from '../formUIComponents/InputField';
 
@@ -127,34 +126,16 @@ const handleInputChange = (fieldName: keyof CredentialsType) =>
 // 📝 SIGN IN SUBMISSION HANDLERS
 //------------------------
   const handleSignInSubmit = async (event: React.FormEvent) => {
-
     event.preventDefault();
 try {
-    // 1️⃣ Call authentication service (infrastructure via props)
+// 1️⃣ Call authentication service
     await onSignIn({
       username: credentials.username,
       email: credentials.email,
       password: credentials.password,
     } as SignInCredentialsType, rememberMe);
 
-    // 2️⃣ If we get here, login was successful
-    if (rememberMe) {
-      // ✅ Save identity for next visit
-      const identity: UserIdentityType = {
-        email: credentials.email,
-        username: credentials.username,
-        rememberMe: true,
-      };
-      saveIdentity(identity);
-      console.log('✅ Identity saved for remembered user');
-    } else {
-      // 🧹 Clear any existing identity
-      clearIdentity();
-      console.log('🧹 Identity cleared (remember me not checked)');
-    }
-
-    // Note: Navigation is handled by useAuth after successful login
-    // This component does not navigate directly
+//Note: Persistence, navigation and states are handled in useAuth
 
   } catch (error) {
     // Error is already handled by onSignIn (sets error state)
