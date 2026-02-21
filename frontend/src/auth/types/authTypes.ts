@@ -354,6 +354,15 @@ export type UserIdentityType = {
 }; 
 
 // ===============================
+// 🆔 UI STATE STORE TYPE
+// ===============================
+export type AuthUIStateType = 
+  | 'IDLE'
+  | 'SESSION_EXPIRED'
+  | 'REMEMBERED_VISITOR'
+  | 'PASSWORD_CHANGED';
+
+// ===============================
 // 📦 EXPORTS (existing)
 // ===============================
 export type ProfileUpdateResponseType =
