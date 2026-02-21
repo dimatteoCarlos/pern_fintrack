@@ -20,14 +20,20 @@ import InputField from '../formUIComponents/InputField';
 type AuthUIPropsType = {
 // 📋 Auth State 
   onSignIn: (credentials: SignInCredentialsType, rememberMe:boolean) => Promise<boolean>;
+
   onSignUp: (userData: SignUpCredentialsType) => Promise<boolean>;
+
   isSignInInitial?: boolean;
+
   clearError:()=>void;
+
   isSessionExpired?: boolean;
 
   isLoading: boolean;
   error: string | null;
   messageToUser?: string | undefined | null;
+
+  onClose?: () => void;
   
 // 🚀 Social Access (Placeholder for next commit)
  // googleSignInUrl?: string | null;
@@ -37,16 +43,17 @@ type AuthUIPropsType = {
 // 🔧 CONSTANTS & INITIAL VALUES
 const INITIAL_CREDENTIALS_STATE: CredentialsType = {
  //harcoded credentials for test in dev
-  username: 'usuario01',
-  email: 'user01@email.com',
+  // username: 'usuario01',
+  // email: 'user01@email.com',
   // user_firstname: 'nombre usuario 01',
   // user_lastname: 'usuario apellido',
   // password: '1000',
-  // username: '',
-  // email: '',
+  username: '',
+  email: '',
   user_firstname: '',
   user_lastname: '',
   password: '',
+
 };
 
 /**
@@ -62,6 +69,7 @@ function AuthUI({
   clearError,
   messageToUser="",
   isSignInInitial,
+  // onClose,
   // googleSignInUrl,
 }: AuthUIPropsType): JSX.Element {
 

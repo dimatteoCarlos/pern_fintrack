@@ -1,53 +1,55 @@
-//src/pages/auth/AuthPage.tsx
-import styles from './styles/authPage.module.css';
-import { useEffect, useState } from 'react';
-import AuthUI from './AuthUI';
-import useAuth from '../../hooks/useAuth';
-import Logo from '../../../assets/logo.svg';
+// 📁 frontend/src/pages/auth/AuthPage.tsx
 
+/* ===============================
+   🔐 AUTH PAGE - PRESENTATION ORCHESTRATOR
+   ===============================
+   
+   🔍 LAYER IDENTIFICATION:
+   - Layer: Presentation (UI Orchestration)
+   - Purpose: Coordinate authentication UI, modal, and navigation
+   
+   ✅ Responsibilities:
+   - Render navbar and modal container
+   - Observe UI store for modal visibility and messages
+   - Provide handlers to open modal (signin/signup)
+   - Reset UI store when modal closes
+   
+   ❌ Never:
+   - Handle authentication logic (useAuth does that)
+   - Persist data (authStorage does that)
+   - Decide routes (ProtectedRoute does that)
+*/
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import AuthUI from './AuthUI';
+import Logo from '../../../assets/logo.svg';
 import { useAuthUIStore } from '../../stores/useAuthUIStore';
 import { AUTH_UI_STATES } from '../../auth_constants/constants';
+import useAuth from '../../hooks/useAuth';
+
+import styles from './styles/authPage.module.css';
 
 //--MAIN COMPONENT AUTHENTICACION ACCESS PAGE
 export default function AuthPage() {
  const location = useLocation();
  const navigateTo = useNavigate();
 
- const { uiState, message, prefilledEmail, prefilledUsername, resetUI } = useAuthUIStore();
+ const { uiState, message,   resetUI } = useAuthUIStore();
 
 
-
- //--MODAL STATES
+ //--LOCAL UI STATES not related to auth UX
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  
+  const [initialAuthMode, setInitialAuthMode] = useState<'signin' | 'signup'>('signin');
 
-  // 🎯 Modal abierto si no es IDLE
-  const showModal = uiState !== AUTH_UI_STATES.IDLE;
-
-  // 🎯 Modo inicial según el estado (por ahora siempre signin, se puede extender)
-  const initialAuthMode = 'signin';
-
-  // const [showAuthModal, setShowAuthModal] = useState(false);
-  // const [initialAuthMode, setInitialAuthMode] = useState<'signin' | 'signup'>(
-  //   'signin'
-  // );
-
-// 🧹 Reset UI state when modal closes
-const handleCloseModal = () => {
-  resetUI();
-};
- 
 //CUSTOM HOOKS FOR SIGNIN AND SIGNUP
 // Execute the useAuth hook to get authentication state and actions
   const {
     isLoading,
     error,
-    successMessage,
     handleSignIn,
     handleSignUp,
     clearError,
-    clearSuccessMessage,
-
   } = useAuth();
 
 //------------------------------------
@@ -55,69 +57,67 @@ const handleCloseModal = () => {
 //------------------------------------
 // 🧹 Clear navigation state on mount
   useEffect(() => {
-    if (location.state) {
+    if (location.state && Object.keys(location.state).length > 0) {
       navigateTo(location.pathname, { replace: true, state: {} });
     }
-  }, [location, navigateTo]);
+  }, [location.state, location.pathname, location.key, navigateTo]);
 
-useEffect(() => {
-  const navigationState = location.state;
- // ✅ Only when state exists
-  if (navigationState && (navigationState.expired || navigationState.showModal)) {
+ // useEffect(() => {
+ //   const navigationState = location.state;
+ //  // ✅ Only when state exists
+ //   if (navigationState && (navigationState.expired || navigationState.showModal)) {
    
-   // if (navigationState.expired) {
-   //  setInitialAuthMode('signin');
-   //  setShowAuthModal(true);
-   // } else if (navigationState.showModal) {
-   //  setInitialAuthMode(navigationState.initialMode || 'signin');
-   //  setShowAuthModal(true);
-   // }
+ //    // if (navigationState.expired) {
+ //    //  setInitialAuthMode('signin');
+ //    //  setShowAuthModal(true);
+ //    // } else if (navigationState.showModal) {
+ //    //  setInitialAuthMode(navigationState.initialMode || 'signin');
+ //    //  setShowAuthModal(true);
+ //    // }
 
-// 🛑 Clean just once. By passing 'state:{}', the following render does not enter into this if
-// Al pasar 'state: {}', el siguiente render ya no entrará en este 'if'.
+ // // 🛑 Clean just once. By passing 'state:{}', the following render does not enter into this if
+ // // Al pasar 'state: {}', el siguiente render ya no entrará en este 'if'.
 
-   navigateTo(location.pathname, { replace: true, state: {} });
+ //    navigateTo(location.pathname, { replace: true, state: {} });
    
-//clean the sotre
-   clearError();
-   clearSuccessMessage();
-  }
- }, [location.state, navigateTo, clearError,clearSuccessMessage,location.pathname]); // 👈 Use location.pathname No complete location 
+ // //clean the sotre
+ //    clearError();
+ //    clearSuccessMessage();
+ //   }
+ //  }, [location.state, navigateTo, clearError,clearSuccessMessage,location.pathname]); // 👈 Use location.pathname No complete location 
 
 //------------------------------
 //FUNCTIONS EVENT HANDLERS
+// 🧹 Reset UI state when modal closes
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
   const openSigninModalHandler = () => {
-    setIsMenuOpen(false); //
+    setIsMenuOpen(false);
     clearError();
-    clearSuccessMessage();
-    // setShowSignInModalOnLoad(false);
-    //-----------------------
-    // setShowAuthModal(true);
-    // setInitialAuthMode('signin');
+    setInitialAuthMode('signin');
+    useAuthUIStore.getState().setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
   };
 
   const openSignupModalHandler = () => {
     setIsMenuOpen(false);
-    clearError();
-    clearSuccessMessage();
-    //-----------------------
-    // setShowAuthModal(true);
-    // setInitialAuthMode('signup');
-  };
-
-  const closeAuthModal = () => {
-    clearError;
-    // setShowAuthModal(false);
-  };
+    clearError();  // ✅ Limpiar errores previos
+    setInitialAuthMode('signup');  // ✅ Establecer modo
+    useAuthUIStore.getState().setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
+ };
   
+  const handleCloseModal = () => {
+    resetUI();
+   };
+
+   // Determine if modal should be open
+  const showModal = uiState !== AUTH_UI_STATES.IDLE;
+
  //---------------------------------
   return (
     <div className={styles.authPageContainer}>
-      {/* {navbar} */}
+      {/* {Navbar} */}
       <nav className={styles.navbar}>
         <div className={styles.logoContainer} onClick={openSigninModalHandler}>
           <span>
@@ -153,25 +153,26 @@ useEffect(() => {
       <main className={styles.mainContent}>
         {/* unique modal */}
         {showModal && (
-          <div className={styles.modalOverlay} onClick={handleCloseModal || closeAuthModal}>
+          <div className={styles.modalOverlay} onClick={handleCloseModal}>
             <div
               className={styles.modalContent}
               onClick={(e) => e.stopPropagation()}
             >
               <AuthUI
-               initialCredentials={{ email: prefilledEmail || '', username: prefilledUsername || '' }}
-               globalMessage={message}
-               onClose={handleCloseModal}
-
+               // Auth operations  
                 onSignIn={handleSignIn}
                 onSignUp={handleSignUp}
                 isLoading={isLoading}
                 error={error}
-                clearError={clearError}
+                messageToUser={message}//from UI store
+                // messageToUser={successMessage}
                 isSignInInitial={initialAuthMode === 'signin'}
-                messageToUser={successMessage}
+                clearError={clearError}
+              
+              // onClose is used by AuthUI to close modal (e.g., from its own close button)
+              onClose={handleCloseModal}
               />
-              <button className={styles.closeButton} onClick={closeAuthModal}>
+              <button className={styles.closeButton} onClick={handleCloseModal}>
                 Close
               </button>
             </div>
