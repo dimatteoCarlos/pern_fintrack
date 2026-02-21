@@ -37,3 +37,11 @@ export const AUTH_MODES = {
   SIGN_IN: 'signin',
   SIGN_UP: 'signup',
 } as const;
+
+//used in authFetch
+export const AUTH_UI_STATES = {
+  IDLE: 'IDLE',
+  SESSION_EXPIRED: 'SESSION_EXPIRED',
+  REMEMBERED_VISITOR: 'REMEMBERED_VISITOR',
+  PASSWORD_CHANGED: 'PASSWORD_CHANGED',
+} as const;
