@@ -1,83 +1,74 @@
 //📂 src/auth/stores/useAuthStore.ts
+/* ===============================
+   🔐 AUTH SESSION STORE - APPLICATION LAYER
+   Volatile store (memory only) for authentication state
+   ===============================*/
+/*
+🔍 LAYER IDENTIFICATION:
+- Layer: Application/State
+- Purpose: Manage authentication session state
+- Persistence: NONE (volatile)
+
+✅ Responsibilities:
+- Track authentication status (isAuthenticated)
+- Store user data (in memory only)
+- Manage loading states
+- Handle error/success messages for auth operations
+
+❌ Never:
+- Persist to localStorage (that's authStorage's job)
+- Handle UI state (useAuthUIStore does that)
+- Decide navigation
+*/ 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware'; // middleware
-import { LOCAL_STORAGE_KEY } from '../../helpers/constants';
-import { AuthStateType, UserDataType } from '../types/authTypes';
+import { AuthStoreStateType, UserDataType } from '../types/authTypes';
 
-// 1. Define the state structure for authentication
-interface AuthStoreStateType extends AuthStateType<UserDataType> {
-  isCheckingAuth?: boolean; 
-  setIsCheckingAuth:(isCheckingAuth: boolean) => void;
-} // Specify UserDataType as the generic type
-
-//2. Create the Zustand store with Persistence
-export const useAuthStore = create<AuthStoreStateType>()(persist(
+//-----------------------
+// 🎯 Auth Store State
+//-----------------------
+//1. Create the Zustand store
+export const useAuthStore = create<AuthStoreStateType<UserDataType>>(
  (set) => ({
- // Authentication States
+ // 🔐 Authentication States
+ isAuthenticated: false,
+ setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
+ 
+// 👤 User data (memory only)
+  userData: null,
+  setUserData: (userData) => set({ userData }),
+
+// ⏳ Loading states
   isLoading: false,
   setIsLoading: (isLoading: boolean) => set({ isLoading }),
   
-  // Action to set the authentication status
-  isAuthenticated: false,
-  setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
-  
-  // Action to set the user information
-  userData:  null,
-  setUserData: (userData: UserDataType | null) => set({ userData }),
-  
-  // Action to clear unknown authentication errors
+// Loading state for initial session check (Silent Refresh)
+  isCheckingAuth: true,
+  setIsCheckingAuth: (isCheckingAuth: boolean) => set({ isCheckingAuth }), 
+
+// ❌ Error handling
   error: null,
-  clearError: () => set({ error: null }),
   setError: (error) => set({ error }),
+// Action to clear unknown authentication errors
+  clearError: () => set({ error: null }),
   
-  // state and action to handle the success message and sign in modal used to force login when no authenticated
-  
+// ✅ Success messages 
   successMessage: '',
   setSuccessMessage: (successMessage) => set({ successMessage }),
   clearSuccessMessage: () => set({ successMessage: '' }),
   
-  showSignInModalOnLoad: false,
-  setShowSignInModalOnLoad: (showSignInModalOnLoad) =>
-   set({ showSignInModalOnLoad }),
-  
-  // Loading state for initial session check (Silent Refresh)
-  isCheckingAuth: true,
-  setIsCheckingAuth: (isCheckingAuth: boolean) => set({ isCheckingAuth }), 
-  
-})// set block
-, {
- // 3. Persistence Configuration
-  name:LOCAL_STORAGE_KEY.USER_DATA || 'fintrack_user_data',
-   storage:createJSONStorage(
-  ()=>localStorage),//where to save it
+ })) // set block
 
- // 4. Critical: Selective Persistence 
-  partialize:(state)=>{
-   const isRemembered = localStorage.getItem(LOCAL_STORAGE_KEY.REMEMBER_ME)==='true';
- // If "Remember Me" is false, don't save anything to LocalStorage
-  if(!isRemembered)return {};
-  return {
-   userData:state.userData
-   ?
-  {user_firstname:state.userData.user_firstname,
-   user_lastname:state.userData.user_lastname,
-   currency: state.userData.currency,
-   role: state.userData.role,
-   contact:state.userData.contact,
-    }
-   :null
-    }
-  },
- // 5. Rehydration Guard
- //Ensures that if the "Remember Me" flag is manually deleted, 
- // the store cleans itself during the next app load.
-  onRehydrateStorage:()=>(state)=>{
-   const isRemebered = localStorage.getItem(LOCAL_STORAGE_KEY.REMEMBER_ME)==='true';
-   if(!isRemebered && state){
-    state.setUserData(null);
-     }
-   }
-  }
- )
-);
+ // ✅ Debug in dev
+if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+  useAuthStore.subscribe((state) => {
+    console.log('🔧 AuthStore state:', {
+      isAuthenticated: state.isAuthenticated,
+      hasUserData: !!state.userData,
+      isLoading: state.isLoading,
+      error: state.error,
+      successMessage: state.successMessage,
+    });
+  });
+}
+
 
