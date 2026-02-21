@@ -14,7 +14,7 @@ import { useAuthStore } from '../stores/useAuthStore';
 import { authFetch } from '../auth_utils/authFetch';
 import { logoutCleanup } from '../auth_utils/logoutCleanup';
 import { useNavigationHelper } from '../auth_utils/navigationHelper';
-import { INITIAL_PAGE_ADDRESS, LOCAL_STORAGE_KEY } from '../../helpers/constants';
+import { INITIAL_PAGE_ADDRESS } from '../../helpers/constants';
 
 import {
   AuthSuccessResponseType,
@@ -111,7 +111,6 @@ const useAuth = () => {
     userData, setUserData,
     error, setError, clearError,
     successMessage, setSuccessMessage, clearSuccessMessage,
-    showSignInModalOnLoad, setShowSignInModalOnLoad,
   } = useAuthStore();
 
   /* ===============================
@@ -123,9 +122,8 @@ const useAuth = () => {
 
     const checkAuthStatus = async () => {
       const accessToken = sessionStorage.getItem('accessToken');
-      const isRemembered = localStorage.getItem(LOCAL_STORAGE_KEY.REMEMBER_ME) === 'true';
-
-      if ((accessToken || isRemembered) && !error && !isLoading&&!isAuthenticated) {
+   // ✅ Removed isRemembered – now handled by ProtectedRoute + UI store
+      if ((accessToken ) && !error && !isLoading &&!isAuthenticated) {
         try {
           const response = await authFetch<AuthSuccessResponseType>(url_validate_session, { method: 'GET' });
 
@@ -150,8 +148,8 @@ const useAuth = () => {
   }, [setIsAuthenticated, setIsCheckingAuth, error, isLoading, setUserData,isAuthenticated]);
 
   /* ===============================
-     🔐 SIGN IN
-     =============================== */
+   🔐 SIGN IN
+   =============================== */
     const handleSignIn = async (credentials: SignInCredentialsType, rememberMe: boolean) => {
     clearError();
     setIsLoading(true);
@@ -168,12 +166,15 @@ const useAuth = () => {
       if (expiresIn) {
         const expiryTime = Date.now() + (expiresIn * 1000);
         sessionStorage.setItem('tokenExpiry', expiryTime.toString());
+        //-------------
+        console.log('token expiration:', new Date(expiryTime))
       }
 
       const userDataFromResponse = response.data?.user || user;
 
       if (accessToken && userDataFromResponse) {
         sessionStorage.setItem('accessToken', accessToken);
+
 //managin identity persistent
        if (rememberMe) {
         const identity: UserIdentityType = {
@@ -491,7 +492,6 @@ const handleSignOut = async () => {
     isLoading,
     error,
     successMessage,
-    showSignInModalOnLoad,
 
     // Authentication Operations
     handleSignIn,
@@ -503,7 +503,6 @@ const handleSignOut = async () => {
     // UI Control Actions
     clearError,
     clearSuccessMessage,
-    setShowSignInModalOnLoad,
     setIsCheckingAuth,
   };
 };
