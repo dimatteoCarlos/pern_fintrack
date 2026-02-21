@@ -14,7 +14,7 @@ const STORAGE_KEYS = {
 } as const;
 
 /**
- * ✅ Save user identity to localStorage
+ * ✅ SAVE USER IDENTITY TO LOCALSTORAGE
  * 
  * @param identity - User identity data (email, username, rememberMe flag)
  * @returns void
@@ -27,7 +27,7 @@ export const saveIdentity = (identity: UserIdentityType): void => {
     const serialized = JSON.stringify(identity);
     localStorage.setItem(STORAGE_KEYS.IDENTITY, serialized);
   } catch (error) {
-    // Fail silently - localStorage is not critical for app functionality
+// Fail silently - localStorage is not critical for app functionality
     console.warn('⚠️ Failed to save identity to localStorage:', error);
   }
 };
@@ -60,13 +60,13 @@ export const getIdentity = (): UserIdentityType | null => {
      return parsed;
      }
     
-    // Corrupted data - clean it up
+// Corrupted data - clean it up
     clearIdentity();
     // localStorage.removeItem(STORAGE_KEYS.IDENTITY);
     return null;
     
   } catch (error) {
-    // JSON parsing failed - clean up corrupted data
+// JSON parsing failed - clean up corrupted data
     console.warn('⚠️ Failed to parse identity from localStorage:', error);
     localStorage.removeItem(STORAGE_KEYS.IDENTITY);
     return null;
