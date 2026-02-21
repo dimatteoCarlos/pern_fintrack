@@ -51,7 +51,8 @@
   // ===============================
   // 4️⃣ CONDITIONAL LOCALSTORAGE CLEANUP (Persistence - Infrastructure)
   // ===============================
-  // 🔍 Read the single source of truth
+  // 🔍 Read user's persistent decision from identity (Domain layer)
+  // Infrastructure reads, but does not own, this data
   const identity = getIdentity();
   const shouldKeepData = identity?.rememberMe === true;
 
