@@ -25,41 +25,33 @@ export interface SignUpCredentialsType extends SignInCredentialsType {
 // 🏪 STORE TYPES
 // ===============
 //--useAuthStoreTypes
-export interface AuthStateType<U> {
+export type AuthStoreStateType<U> ={
+ // 🔐 Authentication state
   isAuthenticated: boolean;
+  setIsAuthenticated: (isAuthenticated: boolean) => void;
+
+ // 👤 User data 
   userData: U | null;
+
+ // ⏳ Loading states 
   isLoading: boolean;
   setIsLoading: (isLoading: boolean) => void;
+
+  isCheckingAuth: boolean;
+  setIsCheckingAuth: (isCheckingAuth: boolean) => void;
+
+  // ❌ Error handling
   error: string | null;
-  setIsAuthenticated: (isAuthenticated: boolean) => void;
   setUserData: (userData: U | null) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
+
+  // ✅ Success messages
   successMessage: string | null;
   setSuccessMessage: (successMessage: string | null) => void;
   clearSuccessMessage: () => void;
 
-  showSignInModalOnLoad: boolean;
-  setShowSignInModalOnLoad: (showSignInModalOnLoad: boolean) => void;
 }
-
-//useAuthTypes response
-//R:check if it is usable
-// export type UseAuthResponseType<U> = {
-//   isAuthenticated: boolean;
-//   userData: U | null;
-//   isLoading: boolean;
-//   error: string | null;
-//   successMessage: string | null;
-//   handleSignIn: (credentials: SignInCredentialsType) => Promise<unknown>;
-//   handleSignUp: (userData: SignUpCredentialsType) => Promise<unknown>;
-//   handleSignOut: () => Promise<unknown>;
-//   clearError: () => void;
-//   clearSuccessMessage: () => void;
-
-//   showSignInModalOnLoad: boolean;
-//   setShowSignInModalOnLoad: (showSignInModalOnLoad: boolean) => void;
-// };
 
 //backend data response type. Common for all auth responses, as for Sign-in,Sign-up and refresh token
 export type AuthSuccessResponseType  = {
