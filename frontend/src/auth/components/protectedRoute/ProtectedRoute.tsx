@@ -1,47 +1,82 @@
-// frontend\src\auth\components\protectedRoute\ProtectedRoute.tsx
+// 📁 frontend/src/auth/components/protectedRoute/ProtectedRoute.tsx
+
+/* ===============================
+   🛡️ PROTECTED ROUTE - APPLICATION LAYER (GATEKEEPER)
+   ===============================
+   
+   🔍 LAYER IDENTIFICATION:
+   - Layer: Application/Orchestration (Guard)
+   - Purpose: Single source of truth for route protection
+   - Decisions:
+     * Render content if authenticated
+     * Redirect based on remembered identity if not authenticated
+   
+   ✅ Responsibilities:
+   - Block UI while checking auth status
+   - Consult persisted identity for intelligent redirects
+   - Signal expiration via location.state
+   
+   ❌ Never:
+   - Open modals or set UI state
+   - Call APIs directly
+   - Handle business logic
+   
+   📍 CORRECT LOCATION:
+     /auth/components/protectedRoute/ - auth module guard
+*/
+
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
-import useAuth from '../../hooks/useAuth.ts';
-import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx'
-// import { useEffect } from 'react';
+import useAuth from '../../hooks/useAuth';
+import CoinSpinner from '../../../loader/coin/CoinSpinner';
+import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
+import { AUTH_ROUTE } from '../../auth_constants/constants';
+// import { getIdentity } from '../../../auth_utils/localStorageHandle/authStorage';
+// import { AUTH_ROUTE } from '../../../auth_constants/constants';
 
+/**
+ * 🛡️ Protected Route Gatekeeper
+ * 
+ * This is the ONLY place in the app that decides:
+ * - Where to redirect unauthenticated users
+ * - Whether to show loading state
+ * - How to signal session expiration
+ * 
+ * All navigation decisions for unauthenticated users
+ * are centralized here.
+ */
 const ProtectedRoute = () => {
- const location = useLocation();
+  const location = useLocation();
+  const { isAuthenticated, isCheckingAuth } = useAuth();
 
- const { isAuthenticated, isCheckingAuth,
- //showSignInModalOnLoad,setShowSignInModalOnLoad 
+  // ⏳ While checking auth, block UI with spinner
+  if (isCheckingAuth) {
+    return <CoinSpinner />;
+  }
 
- } = useAuth();
-/*
-//🚨1.LÓGICA DE SEÑALIZACIÓN (Side Effect)🚨
- useEffect(() => {
-  // Verifica que el chequeo de persistencia haya terminado (!isCheckingAuth), y que el usuario efectivamente no tenga sesión antes de activar el modal.
-  if (!isCheckingAuth && !isAuthenticated && !showSignInModalOnLoad) {
-// Indica al store que, al llegar a /auth, se debe abrir el modal de login
-    setShowSignInModalOnLoad(true);
-    }
-  }, [isCheckingAuth, isAuthenticated, setShowSignInModalOnLoad, showSignInModalOnLoad]);
-  */
+  // 🚨 Not authenticated → intelligent redirect based on persisted identity
+  if (!isAuthenticated) {
+    // 🔍 Read the single source of truth for remembered identity
+    const identity = getIdentity();
 
-//===================
-//🚨 SHOW LOADING SPINNER WHILE CHECKING AUTH
- if (isCheckingAuth) {
-// Bloquea la UI mostrando el spinner mientras useAuth revisa el token en ls o cookies.
- return <CoinSpinner />; 
- }
+    // 🎯 Decide destination based on whether user was remembered
+    // - User with remembered identity → go to login page (pre-filled)
+    // - Anonymous user → go to landing page
+    const redirectTo = identity ? AUTH_ROUTE : '/';
 
-// 🚨 REDIRECT TO AUTH PAGE IF NOT AUTHENTICATED
- if (!isAuthenticated) {
-// Si terminó el chequeo y no hubo éxito, redirige a la página de acceso.
-// Redirección suave
-return <Navigate to='/auth' state={{ from: location.pathname}} replace />;
-}
-// 🚨 ACCESS GRANTED
-  return (
-    <>
-     <Outlet />
-    </>
-  );
+    return (
+      <Navigate
+        to={redirectTo}
+        replace
+        state={{
+          expired: true,           // Signal that session expired
+          from: location.pathname,  // Original destination for post-login redirect
+        }}
+      />
+    );
+  }
+
+  // ✅ Access granted - render child routes
+  return <Outlet />;
 };
 
 export default ProtectedRoute;
-
