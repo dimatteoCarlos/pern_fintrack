@@ -22,12 +22,8 @@
    - Navigate directly
 */
 import { create } from 'zustand';
+import { AuthUIStateType } from '../types/authTypes';
 // 🎯 UI States for authentication experience
-export type AuthUIStateType = 
-  | 'IDLE'
-  | 'SESSION_EXPIRED'
-  | 'REMEMBERED_VISITOR'
-  | 'PASSWORD_CHANGED';
 
 type AuthUIStoreType = {
 // 🎯 Current UI state
