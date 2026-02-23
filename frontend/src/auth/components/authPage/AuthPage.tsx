@@ -3,21 +3,20 @@
 /* ===============================
    🔐 AUTH PAGE - PRESENTATION ORCHESTRATOR
    ===============================
-   
-   🔍 LAYER IDENTIFICATION:
-   - Layer: Presentation (UI Orchestration)
-   - Purpose: Coordinate authentication UI, modal, and navigation
-   
-   ✅ Responsibilities:
-   - Render navbar and modal container
-   - Observe UI store for modal visibility and messages
-   - Provide handlers to open modal (signin/signup)
-   - Reset UI store when modal closes
-   
-   ❌ Never:
-   - Handle authentication logic (useAuth does that)
-   - Persist data (authStorage does that)
-   - Decide routes (ProtectedRoute does that)
+ 🔍 LAYER IDENTIFICATION:
+ - Layer: Presentation (UI Orchestration)
+ - Purpose: Coordinate authentication UI, modal, and navigation
+ 
+ ✅ Responsibilities:
+ - Render navbar and modal container
+ - Observe UI store for modal visibility and messages
+ - Provide handlers to open modal (signin/signup)
+ - Reset UI store when modal closes
+ 
+ ❌ Never:
+ - Handle authentication logic (useAuth does that)
+ - Persist data (authStorage does that)
+ - Decide routes (ProtectedRoute does that)
 */
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -29,11 +28,12 @@ import Logo from '../../../assets/logo.svg';
 
 import styles from './styles/authPage.module.css';
 
-//--MAIN COMPONENT AUTHENTICACION ACCESS PAGE
+//--MAIN COMPONENT AUTHENTICACION ACCESS PAGE - AuthPage.tsx
 export default function AuthPage() {
  const location = useLocation();
  const navigateTo = useNavigate();
- const {uiState, message, resetUI  } = useAuthUIStore();
+
+const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUIStore();
  
  //--LOCAL UI STATES not related to auth UX
  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -58,35 +58,35 @@ export default function AuthPage() {
 // ✅ HANDLE DIFFERENT NAVIGATION STATES
 //------------------------------------
 // 🧹 Clear navigation state on mount
-  useEffect(() => {
-    if (location.state && Object.keys(location.state).length > 0) {
-      navigateTo(location.pathname, { replace: true, state: {} });
-    }
+ useEffect(() => {
+  if (location.state && Object.keys(location.state).length > 0) {
+    navigateTo(location.pathname, { replace: true, state: {} });
+  }
   }, [location.state, location.pathname, location.key, navigateTo]);
 
- // useEffect(() => {
- //   const navigationState = location.state;
- //  // ✅ Only when state exists
- //   if (navigationState && (navigationState.expired || navigationState.showModal)) {
-   
- //    // if (navigationState.expired) {
- //    //  setInitialAuthMode('signin');
- //    //  setShowAuthModal(true);
- //    // } else if (navigationState.showModal) {
- //    //  setInitialAuthMode(navigationState.initialMode || 'signin');
- //    //  setShowAuthModal(true);
- //    // }
+ useEffect(() => {
+  const navigationState = location.state as {
+    hasIdentity?: boolean;
+    prefilledEmail?: string;
+    prefilledUsername?: string;
+    from?: string;
+  } | undefined;
 
- // // 🛑 Clean just once. By passing 'state:{}', the following render does not enter into this if
- // // Al pasar 'state: {}', el siguiente render ya no entrará en este 'if'.
+ if (navigationState?.hasIdentity) {
+   if (navigationState.prefilledEmail && navigationState.prefilledUsername) {
+     setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
+     setPrefilledData(
+       navigationState.prefilledEmail,
+       navigationState.prefilledUsername
+     );
+   }
+ }
 
- //    navigateTo(location.pathname, { replace: true, state: {} });
-   
- // //clean the sotre
- //    clearError();
- //    clearSuccessMessage();
- //   }
- //  }, [location.state, navigateTo, clearError,clearSuccessMessage,location.pathname]); // 👈 Use location.pathname No complete location 
+  // Clean up navigation state
+  if (location.state && Object.keys(location.state).length > 0) {
+    navigateTo(location.pathname, { replace: true, state: {} });
+  }
+}, [location.state, location.pathname, navigateTo, setUIState, setPrefilledData]);
 
 //------------------------------
 //FUNCTIONS EVENT HANDLERS
@@ -169,7 +169,7 @@ export default function AuthPage() {
                 error={error}
                 messageToUser={message}//from UI store
                 // messageToUser={successMessage}
-                isSignInInitial={initialAuthMode === 'signin'}
+                // isSignInInitial={initialAuthMode === 'signin'}
                 clearError={clearError}
               
               // onClose is used by AuthUI to close modal (e.g., from its own close button)
