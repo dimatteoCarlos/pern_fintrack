@@ -25,7 +25,6 @@ import { useAuthUIStore } from '../../stores/useAuthUIStore';
 import { AUTH_UI_STATES } from '../../auth_constants/constants';
 import useAuth from '../../hooks/useAuth';
 import Logo from '../../../assets/logo.svg';
-
 import styles from './styles/authPage.module.css';
 
 //--MAIN COMPONENT AUTHENTICACION ACCESS PAGE - AuthPage.tsx
@@ -38,11 +37,6 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
  //--LOCAL UI STATES not related to auth UX
  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
  
- // const [initialAuthMode, setInitialAuthMode] = useState<'signin' | 'signup'>('signin');
- 
- // 🎯 Modal abierto si no es IDLE
-  // const showModal = uiState !== AUTH_UI_STATES.IDLE;
-
 //CUSTOM HOOKS FOR SIGNIN AND SIGNUP
 // Auth operations (passed to AuthUI)
   const {
@@ -55,14 +49,14 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
   } = useAuth();
 
 //------------------------------------
-// ✅ HANDLE DIFFERENT NAVIGATION STATES
+// ✅ HANDLE NAVIGATION STATES
 //------------------------------------
 // 🧹 Clear navigation state on mount
- useEffect(() => {
-  if (location.state && Object.keys(location.state).length > 0) {
-    navigateTo(location.pathname, { replace: true, state: {} });
-  }
-  }, [location.state, location.pathname, location.key, navigateTo]);
+ // useEffect(() => {
+ //  if (location.state && Object.keys(location.state).length > 0) {
+ //    navigateTo(location.pathname, { replace: true, state: {} });
+ //  }
+ //  }, [location.state, location.pathname, location.key, navigateTo]);
 
  useEffect(() => {
   const navigationState = location.state as {
@@ -72,17 +66,18 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
     from?: string;
   } | undefined;
 
+ // Process navigation state if exists
  if (navigationState?.hasIdentity) {
    if (navigationState.prefilledEmail && navigationState.prefilledUsername) {
-     setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
-     setPrefilledData(
-       navigationState.prefilledEmail,
-       navigationState.prefilledUsername
+    setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
+    setPrefilledData(
+     navigationState.prefilledEmail,
+     navigationState.prefilledUsername
      );
    }
  }
 
-  // Clean up navigation state
+// Always clean up navigation state after processing
   if (location.state && Object.keys(location.state).length > 0) {
     navigateTo(location.pathname, { replace: true, state: {} });
   }
@@ -98,13 +93,14 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
   const openSigninModalHandler = () => {
     setIsMenuOpen(false);
     clearError();
-   // Open modal by setting UI state
+   // Mode is handled internally by AuthUI
     useAuthUIStore.getState().setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
   };
 
   const openSignupModalHandler = () => {
     setIsMenuOpen(false);
     clearError();  // ✅ Clean previous errors
+   // Mode is handled internally by AuthUI
     useAuthUIStore.getState().setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
  };
   
@@ -115,7 +111,9 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
   // Determine if modal should be open
   const showModal = uiState !== AUTH_UI_STATES.IDLE; 
 
- //---------------------------------
+// =============
+// 🎨 RENDER
+// =============
   return (
     <div className={styles.authPageContainer}>
       {/* {Navbar} */}
@@ -150,7 +148,7 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
         </ul>
       </nav>
 
-      {/* {auth section} */}
+      {/* Auth Modal */}
       <main className={styles.mainContent}>
         {/* unique modal */}
         {showModal && (
