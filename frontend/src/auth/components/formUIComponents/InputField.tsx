@@ -35,7 +35,7 @@ export type InputFieldProps = {
   disabled?: boolean;
 
    /** 📝 Is field read-only? (success state) */
-  isReadOnly: boolean;
+  isReadOnly?: boolean;
 
   /** ℹ️ Help text below the input */
   helpText?: string;
@@ -88,7 +88,7 @@ const InputField: React.FC<InputFieldProps> = React.memo(
     isContentVisible = false,
     onToggleContent,
     toggleIcon, 
-    isReadOnly,
+    isReadOnly=false,
 
   }) => {
     /* 🌟 ===============================
