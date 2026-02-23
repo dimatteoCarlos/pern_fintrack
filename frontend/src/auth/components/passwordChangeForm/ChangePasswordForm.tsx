@@ -14,7 +14,7 @@ import SubmitButton from '../formUIComponents/SubmitButton';
 import ResetButton from '../formUIComponents/Resetbutton';
 
 import styles from './styles/passwordChangeForm.module.css';
-import { FormStatus, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
+import { FormStatusType, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
 
 /**
  * 🌟 ===============================
@@ -45,7 +45,7 @@ type PropsType = {
  isSubmitting: boolean;
  isDisabled: boolean;
  isReadOnly?: boolean;
- status: FormStatus;
+ status: FormStatusType;
 
  // 💬 Messages & Status
  globalMessage: string | null;

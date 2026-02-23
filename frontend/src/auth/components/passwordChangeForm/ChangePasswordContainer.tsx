@@ -45,7 +45,7 @@ import { AUTH_ROUTE, AUTH_UI_STATES } from "../../auth_constants/constants";
 /* ================
 ⏱️ TYPE DEFINITIONS
 ================ */
-export type FormStatus = "idle" | "editing" | "submitting" | "success"| "error" | "rate_limited";
+export type FormStatusType = "idle" | "editing" | "submitting" | "success"| "error" | "rate_limited";
 type ChangePasswordContainerProps = {
   onClose?: () => void;
 };
@@ -103,7 +103,7 @@ const navigateTo=useNavigate()
  const [formData, setFormData] = useState<ChangePasswordFormDataType>(
   INITIAL_FORM_DATA
  );
-const [status, setStatus] = useState<FormStatus>("idle");
+const [status, setStatus] = useState<FormStatusType>("idle");
 
  const [globalMessage, setGlobalMessage] = useState<string | null>(null);
 
@@ -365,7 +365,7 @@ const DebugPanel = () => (
     />
  </div>
 
- {import.meta.env.NODE_ENV === 'developmentx' && <DebugPanel />}
+ {import.meta.env.NODE_ENV === 'development' && <DebugPanel />}
   
 </>
   );
