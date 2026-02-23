@@ -5,16 +5,13 @@
    Responsible for login UI and validation
    Uses useFormLogic with signInSchema
    =============================== */
-
 import React from 'react';
-
 import { signInSchema, SignInFormDataType } from '../../../auth/validation/zod_schemas/authSchemas';
-
 import { getIdentity } from '../../../auth/auth_utils/localStorageHandle/authStorage';
 import { useFormLogic } from '../../hooks/useFormLogic';
 import InputField from '../formUIComponents/InputField';
 
-import styles from '../styles/AuthUI.module.css';
+import styles from "../../authPage/styles/AuthUI.module.css"
 
 type SignInFormProps = {
   onSignIn: (credentials: SignInFormDataType, rememberMe: boolean) => Promise<void>;

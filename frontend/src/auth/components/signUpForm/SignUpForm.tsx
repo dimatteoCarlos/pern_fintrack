@@ -1,17 +1,16 @@
 // 📁 frontend/src/pages/auth/components/SignUpForm.tsx
 
 /* ===============================
-   📝 SIGN UP FORM
-   Responsible for registration UI and validation
-   Uses useFormLogic with signUpSchema
-   =============================== */
-
+📝 SIGN UP FORM
+Responsible for registration UI and validation
+Uses useFormLogic with signUpSchema
+=============================== */
 import React, { useState } from 'react';
 import { signUpSchema, SignUpFormDataType } from '../../../auth/validation/zod_schemas/authSchemas';
 import { useFormLogic } from '../../hooks/useFormLogic';
-// import InputField from '../formUIComponents/InputField';
-import styles from '../../styles/AuthUI.module.css';
 import InputField from '../formUIComponents/InputField';
+
+import styles from "../../authPage/styles/AuthUI.module.css"
 
 type SignUpFormProps = {
   onSignUp: (userData: SignUpFormDataType) => Promise<void>;
