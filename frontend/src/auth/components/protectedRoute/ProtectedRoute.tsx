@@ -29,8 +29,7 @@ import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import CoinSpinner from '../../../loader/coin/CoinSpinner';
 import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
-import { AUTH_ROUTE, AUTH_UI_STATES } from '../../auth_constants/constants';
-import { useAuthUIStore } from '../../stores/useAuthUIStore';
+import { AUTH_ROUTE } from '../../auth_constants/constants';
 
 //MAIN COMPONENT:🛡️ PROTECTED ROUTE
 
@@ -38,7 +37,7 @@ const ProtectedRoute = () => {
   const location = useLocation();
   const { isAuthenticated, isCheckingAuth } = useAuth();
   
-  const { setUIState, setPrefilledData } = useAuthUIStore();
+  // const { setUIState, setPrefilledData } = useAuthUIStore();
 
   // ⏳ While checking auth, block UI with spinner
   if (isCheckingAuth) {
@@ -49,13 +48,9 @@ const ProtectedRoute = () => {
   if (!isAuthenticated) {
 // 🔍 Read remembered identity
    const identity = getIdentity();
-
-   if (identity) {
-// 👤 REMEMBERED_VISITOR - set UI state for pre-filled form
-     setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
-     setPrefilledData(identity.email, identity.username); //zustand state
-   }
-
+// ✅ Do NOT set UI state here - that belongs in AuthPage
+// The store will be read by AuthPage when it renders
+  
 // 🎯 Decide destination based on whether user was remembered
 // - User with remembered identity → go to login page (pre-filled)
    const redirectTo = identity ? AUTH_ROUTE : '/';
@@ -65,8 +60,12 @@ const ProtectedRoute = () => {
      <Navigate
       to={redirectTo}
       replace
-       state={{
-          from: location.pathname,  // Only pass location, not UI state
+       state={{ 
+         from: location.pathname,
+         // ✅ Pass identity info via navigation state instead of store
+         hasIdentity: !!identity,
+         prefilledEmail: identity?.email,
+         prefilledUsername: identity?.username,
         }}
       />
     );
