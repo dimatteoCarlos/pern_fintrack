@@ -415,50 +415,7 @@ if (typeof total_balance === 'number') {
   setAvailableBudget(total_balance); // Update zustand when reactive fetch finish
 }
 },[balanceBankResponse.apiData, setAvailableBudget])
-// AUTHENTICATION AND REDIRECTION EFFECT
-//Message to user and action, when auth is checking or not authenticated
-/*
-useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (isCheckingAuth) {
-      setMessageToUser('Verifying session status. Please wait...');
-    } else if (!isAuthenticated) {
-// Use existing messageToUser state for feedback before redirecting
-      setMessageToUser('Session not active or expired. Redirecting to the sign-in page in 3 seconds...');
-      
-      timer = setTimeout(() => {
-        navigateTo('/auth', { replace: true });
-      }, 3000); 
 
-    } else {
-// If authenticated, clear the message (only if it was set by the auth check)
-      if (messageToUser?.includes('Verifying') || messageToUser?.includes('Session not active')) {setMessageToUser(null);}
-    }
-    return () => {
-      if (timer) clearTimeout(timer); // Cleanup timer
-    };
-  }, [isAuthenticated, isCheckingAuth, navigateTo, messageToUser]);
-  */
-//-----useEffect--------
-//Handle states related to the data submit form
-// useEffect(() => {
-// let timer: ReturnType<typeof setTimeout>;
-
-// if ((data || error) && !isLoading) {
-//   const success = data && !error;
-//   setMessageToUser(
-//     success
-//       ? 'Movement completed successfully!'
-//       : error ?? 'An error occurred during submission'
-//   );
-//   setShowMessage(true);
-//   timer = setTimeout(() => {
-//     setMessageToUser(null);
-//     setShowMessage(false);
-//   }, 8000);
-// }
-// return () => clearTimeout(timer);
-// }, [data, error, isLoading]);
 useEffect(() => {
   if (error && !isLoading) {
     setMessageToUser(error);

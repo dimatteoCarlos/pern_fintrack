@@ -1,4 +1,4 @@
-# 🏦 FinTrack App: Business Rules & Financial Architecture
+# 🏦 FinTrack App: Business Rules, Logic & Financial Architecture
 
 This document defines the strict logic governing account creation, fund transfers, and the architectural principles that ensure the financial integrity of the **FinTrack** system.
 
@@ -166,4 +166,3 @@ If you transfer $50 from your Bank account to the Food category:
 2.  **Food** is recorded as `+$50` (Destination/Accumulated Expense).
 
 ---
-*Reference logic based on directional flow principles, similar to resources found on [AccountingCoach](https://www.accountingcoach.com).*

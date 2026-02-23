@@ -55,6 +55,8 @@ const mapUserResponseToUserData = (user: UserResponseDataType): UserDataType => 
   contact: user.user_contact,
 });
 
+
+
 /* ===============================
    🔧 ERROR EXTRACTION UTILITY
    =============================== */
@@ -66,7 +68,7 @@ const extractErrorMessage = (err: unknown): string => {
 //-----------------------------------------
 console.log('extractErrorMessage:', data, err.stack)
 //-----------------------------------------
-    // Priority: BE error message
+   // Priority: BE error message
     if (data?.message && typeof data.message === 'string') {
       return data.message;
     }
@@ -104,29 +106,31 @@ const useAuth = () => {
   const navigateTo = useNavigate();
   useNavigationHelper();
 
-  const {
-    isLoading, setIsLoading,
-    isCheckingAuth, setIsCheckingAuth,
-    isAuthenticated, setIsAuthenticated,
-    userData, setUserData,
-    error, setError, clearError,
-    successMessage, setSuccessMessage, clearSuccessMessage,
-  } = useAuthStore();
+const {
+  isLoading, setIsLoading,
+  isCheckingAuth, setIsCheckingAuth,
+  isAuthenticated, setIsAuthenticated,
+  userData, setUserData,
+  error, setError, clearError,
+  successMessage, setSuccessMessage, clearSuccessMessage,
+} = useAuthStore();
 
-  /* ===============================
-     🔄 SESSION INITIALIZATION
-     =============================== */
+ /* ===============================
+    🔄 SESSION INITIALIZATION
+    =============================== */
 
   useEffect(() => {
     let isMounted = true;
 
     const checkAuthStatus = async () => {
-      const accessToken = sessionStorage.getItem('accessToken');
-   // ✅ Removed isRemembered – now handled by ProtectedRoute + UI store
-      if ((accessToken ) && !error && !isLoading &&!isAuthenticated) {
-        try {
-          const response = await authFetch<AuthSuccessResponseType>(url_validate_session, { method: 'GET' });
+    const accessToken = sessionStorage.getItem('accessToken');
 
+     if ((accessToken ) && !error && !isLoading &&!isAuthenticated) {
+        try {
+         const response = await authFetch<AuthSuccessResponseType>(url_validate_session, { method: 'GET' });
+//----------------------
+console.log("🚀 ~ checkAuthStatus ~ response:", response)
+//----------------------
           if (isMounted && response.data?.user) {
             setUserData(mapUserResponseToUserData(response.data.user));
             setIsAuthenticated(true);
@@ -175,7 +179,7 @@ const useAuth = () => {
       if (accessToken && userDataFromResponse) {
         sessionStorage.setItem('accessToken', accessToken);
 
-//managin identity persistent
+       // ✅ Persist identity if rememberMe is true
        if (rememberMe) {
         const identity: UserIdentityType = {
           email: credentials.email,
@@ -428,7 +432,9 @@ const handleSignOut = async () => {
 
       if (response.data.success) {
         setUserData(mapUserResponseToUserData(response.data.user) as UserDataType);
+
         setSuccessMessage(response.data.message || 'Profile updated successfully');
+
         return response.data;
       }
 
@@ -479,6 +485,94 @@ const handleSignOut = async () => {
       setIsLoading(false);
     }
   };
+
+/**
+ * const handleUpdateUserProfile = async (payload: ProfileUpdatePayloadType) => {
+  clearError();
+  clearSuccessMessage();
+  setIsLoading(true);
+
+  try {
+   const response = await authFetch<ProfileUpdateResponseType>(url_update_user, {
+    method: 'PATCH',
+    data: payload,
+   });
+
+   if (response.data.success) {
+    // 1️⃣ Get current store state before updating
+    const currentData = useAuthStore.getState().userData;
+
+    // 2️⃣ Map response using your existing mapper
+    // We use "as any" only for the response property access to avoid Union issues 
+    // while keeping the rest of the logic strictly typed
+    const mappedNewData = mapUserResponseToUserData((response.data as any).user);
+
+    // 3️⃣ ATOMIC MERGE (The Fix)
+    // We merge currentData with mappedNewData to ensure email/role/id persist
+    const finalUserData: UserDataType = {
+     ...currentData!,
+     ...mappedNewData,
+     // Protection: If PATCH response fields are empty, keep current ones
+     email: mappedNewData.email || currentData?.email || '',
+     role: mappedNewData.role || currentData?.role || 'user',
+    };
+
+    setUserData(finalUserData);
+
+    setSuccessMessage((response.data as any).message || 'Profile updated successfully');
+
+    return response.data;
+   }
+
+   setError((response.data as any).message);
+   return response.data;
+
+  } catch (err: unknown) {
+   if (axios.isAxiosError(err) && err.response) {
+    const { status, data } = err.response;
+    const errorData = data as Record<string, unknown>;
+
+    // 🔐 401 - Session expired
+    if (status === 401) {
+     logoutCleanup(true);
+     return {
+      success: false,
+      error: 'Session expired. Please login again.',
+      sessionExpired: true,
+     };
+    }
+
+    // 🚦 429 - Rate limit
+    if (status === 429) {
+     return {
+      success: false,
+      error: (errorData?.error as string) || 'RateLimitExceeded',
+      message: (errorData?.message as string) || 'Too many requests. Please try again later.',
+      retryAfter: errorData?.retryAfter as number | undefined,
+     };
+    }
+
+    // 🧪 400 - Validation error
+    if (status === 400) {
+     const details = errorData?.details as Record<string, unknown> | undefined;
+     return {
+      success: false,
+      error: (errorData?.message as string) || 'Invalid data provided',
+      fieldErrors: details?.fieldErrors as Record<string, string[]> | undefined,
+     };
+    }
+   }
+
+   const errorMessage = extractErrorMessage(err) || 'Error updating profile';
+   setError(errorMessage);
+   return { success: false, error: errorMessage };
+
+  } finally {
+   setIsLoading(false);
+  }
+ };
+*/
+  
 
   /* ===============================
      📤 HOOK RETURN

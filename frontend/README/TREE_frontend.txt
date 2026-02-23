@@ -1,0 +1,440 @@
+frontend
+├── .env.local
+├── .eslintrc.cjs
+├── .gitignore
+├── index.html
+├── package-lock.json
+├── package.json
+├── public
+│   └── favicon.ico
+├── README
+│   ├── READEME_useAuth.md
+│   ├── README_Buisiness_Rules.md
+│   ├── README_fintrack_app.md
+│   ├── README_UTILS.md
+│   ├── README_UTILS_ACC_MGMT_BE.md
+│   ├── README_UTILS_AUTH_HELPERS_BE.md
+│   └── README_UTILS_UI_FORMAT.md
+├── README.md
+├── src
+│   ├── App.tsx
+│   ├── assets
+│   │   ├── AddSquareSvg.svg
+│   │   ├── ArrowDownDarkSvg.svg
+│   │   ├── ArrowDownLightSvg.svg
+│   │   ├── arrowDownSvg.svg
+│   │   ├── auth
+│   │   │   └── GoogleLogo.tsx
+│   │   ├── cardBgTexture.png
+│   │   ├── ChevronRightSvg.svg
+│   │   ├── Dots3LightSvg.svg
+│   │   ├── fintrackDemo.PNG
+│   │   ├── how to configure to import svg react vite.txt
+│   │   ├── LeftArrowDarkSvg.svg
+│   │   ├── LeftArrowSvg.svg
+│   │   ├── logo.svg
+│   │   ├── mainNavbarSvg
+│   │   │   ├── AddSvg.svg
+│   │   │   ├── DebtsSvg.svg
+│   │   │   ├── OverviewSvg.svg
+│   │   │   └── WalletSvg.svg
+│   │   ├── MenuSvg.svg
+│   │   ├── PlusSignDarkSvg.svg
+│   │   ├── PlusSignSvg.svg
+│   │   ├── react.svg
+│   │   ├── SignOutSvg.svg
+│   │   ├── trackerNavbarSvg
+│   │   │   ├── AdjustSvg.svg
+│   │   │   ├── ArrowDownDarkSvg.svg
+│   │   │   ├── DebtsSvg.svg
+│   │   │   ├── ExpenseSvg.svg
+│   │   │   ├── IncomeSvg.svg
+│   │   │   ├── InvestmentSvg.svg
+│   │   │   ├── Plusvg.svg
+│   │   │   └── PlusvgDisabled.svg
+│   │   └── UserSquareIcon.svg
+│   ├── auth
+│   │   ├── auth_utils
+│   │   │   ├── authFetch.ts
+│   │   │   ├── extractErrorMessge.ts
+│   │   │   ├── fetchNewTotalBalance.ts
+│   │   │   ├── localStorageHandle
+│   │   │   │   └── authStorage.ts
+│   │   │   ├── logoutCleanup.ts
+│   │   │   ├── navigationHelper.ts
+│   │   │   ├── notification.ts
+│   │   │   ├── profileTransformation.ts
+│   │   │   └── transformFromApiToFormErrors.ts
+│   │   ├── components
+│   │   │   ├── authPage
+│   │   │   │   ├── AuthPage.tsx
+│   │   │   │   ├── AuthUI.tsx
+│   │   │   │   └── styles
+│   │   │   │       ├── authPage.module.css
+│   │   │   │       └── authUI.module.css
+│   │   │   ├── debugPanel
+│   │   │   ├── formUIComponents
+│   │   │   │   ├── InputField.tsx
+│   │   │   │   ├── LoadingSpinner.tsx
+│   │   │   │   ├── Message.tsx
+│   │   │   │   ├── Resetbutton.tsx
+│   │   │   │   ├── SelectField.tsx
+│   │   │   │   ├── styles
+│   │   │   │   │   ├── InputField.module.css
+│   │   │   │   │   ├── LoadingSpinner.module.css
+│   │   │   │   │   ├── message.module.css
+│   │   │   │   │   ├── ResetButton.module.css
+│   │   │   │   │   ├── SelectField.module.css
+│   │   │   │   │   ├── SubmitButton.module.css
+│   │   │   │   │   └── UserForms.module.css
+│   │   │   │   └── SubmitButton.tsx
+│   │   │   ├── passwordChangeForm
+│   │   │   │   ├── ChangePasswordContainer.tsx
+│   │   │   │   ├── ChangePasswordForm.tsx
+│   │   │   │   └── styles
+│   │   │   │       ├── changePasswordContainer.module.css
+│   │   │   │       └── passwordChangeForm.module.css
+│   │   │   ├── protectedRoute
+│   │   │   │   └── ProtectedRoute.tsx
+│   │   │   ├── updateProfileForm
+│   │   │   │   ├── styles
+│   │   │   │   │   ├── updateProfileContainer.module.css
+│   │   │   │   │   └── updateProfileForm.module.css
+│   │   │   │   ├── UpdateProfileContainer.tsx
+│   │   │   │   └── UpdateProfileForm.tsx
+│   │   │   └── userProfileMenu
+│   │   │       ├── styles
+│   │   │       │   ├── userAvatar.module.css
+│   │   │       │   └── userProfileMenu.module.css
+│   │   │       ├── UserAvatar.tsx
+│   │   │       └── UserProfileMenu.tsx
+│   │   ├── hooks
+│   │   │   ├── useAuth.ts
+│   │   │   ├── useCallbackDebounce.ts
+│   │   │   ├── useChangePasswordFormLogic.ts
+│   │   │   ├── useFieldVisibility.ts
+│   │   │   ├── useSuccessAutoClose.ts
+│   │   │   └── useUpdateProfileFormLogic.ts
+│   │   ├── stores
+│   │   │   └── useAuthStore.ts
+│   │   ├── types
+│   │   │   └── authTypes.ts
+│   │   └── validation
+│   │       ├── hook
+│   │       │   ├── useChangePasswordValidation.ts
+│   │       │   ├── useFieldValidation.ts
+│   │       │   └── useUpdateProfileValidation.ts
+│   │       ├── types
+│   │       │   └── validationTypes.ts
+│   │       └── zod_schemas
+│   │           ├── constants.ts
+│   │           └── userSchemas.ts
+│   ├── debugging
+│   │   ├── gemini.md
+│   │   ├── prompt
+│   │   └── promptChatgpt.md
+│   ├── editionAndDeletion
+│   │   ├── components
+│   │   │   ├── accountActionMenu
+│   │   │   │   ├── account-actions-menu-styles.css
+│   │   │   │   └── AccountActionsMenu.tsx
+│   │   │   └── toast
+│   │   │       ├── toast-styles.css
+│   │   │       └── Toast.tsx
+│   │   ├── hooks
+│   │   │   ├── useAutoClose.ts
+│   │   │   ├── useClickOutside.ts
+│   │   │   ├── useEscapeKey.ts
+│   │   │   ├── useLangTranslation.ts
+│   │   │   └── useRTAImpactAndDeletion.ts
+│   │   ├── pages
+│   │   │   ├── deletionAccount
+│   │   │   │   ├── accountDeletionPage.css
+│   │   │   │   ├── AccountDeletionPage.tsx
+│   │   │   │   ├── presentations
+│   │   │   │   │   ├── DeletionModuleBilingualPresentation.html
+│   │   │   │   │   ├── DeletionModulePresentation.html
+│   │   │   │   │   ├── DeletionModulePresentationFunctions.html
+│   │   │   │   │   ├── RTA_DeletionPresentation.html
+│   │   │   │   │   └── RTA_FlowDiagram.html
+│   │   │   │   └── UIComponents
+│   │   │   │       ├── accountDetailsUI
+│   │   │   │       │   ├── accountDetailsUI.css
+│   │   │   │       │   └── AccountDetailsUI.tsx
+│   │   │   │       ├── confirmationModalUI
+│   │   │   │       │   ├── initialConfirmationDeleteAccountUI.css
+│   │   │   │       │   ├── InitialConfirmationDeleteAccountUI.tsx
+│   │   │   │       │   ├── RTAConfirmationModal.css
+│   │   │   │       │   └── RTAConfirmationModal.tsx
+│   │   │   │       ├── impactReportUI
+│   │   │   │       │   ├── impactReportUI.css
+│   │   │   │       │   ├── ImpactReportUI.tsx
+│   │   │   │       │   └── NoImpactReportUI.tsx
+│   │   │   │       ├── languageSelector
+│   │   │   │       │   └── LanguageSelector.tsx
+│   │   │   │       ├── loadingReportUI
+│   │   │   │       │   ├── loadingReportUI.css
+│   │   │   │       │   ├── LoadingReportUI.tsx
+│   │   │   │       │   ├── loadingUI.css
+│   │   │   │       │   └── LoadingUI.tsx
+│   │   │   │       ├── postOperationView
+│   │   │   │       │   ├── postOperationView.css
+│   │   │   │       │   └── PostOperationView.tsx
+│   │   │   │       ├── proceedButtonUI
+│   │   │   │       │   ├── proceedButtonUI.css
+│   │   │   │       │   └── ProceedButtonUI.tsx
+│   │   │   │       ├── reportErrorUI
+│   │   │   │       │   ├── reportErrorUI.css
+│   │   │   │       │   └── ReportErrorUI.tsx
+│   │   │   │       ├── statusModalUI
+│   │   │   │       │   ├── statusModalUI.css
+│   │   │   │       │   └── StatusModalUI.tsx
+│   │   │   │       └── successMessageUI
+│   │   │   │           ├── successMessageUI.css
+│   │   │   │           └── SuccessMessageUI.tsx
+│   │   │   └── editionAccount
+│   │   │       ├── EditAccount.tsx
+│   │   │       └── UniversalDynamicInput.tsx
+│   │   ├── types
+│   │   │   ├── deletionTypes.ts
+│   │   │   └── editionTypes.ts
+│   │   ├── utils
+│   │   │   ├── categoryBudgetCalculations.ts
+│   │   │   ├── dateUtils.ts
+│   │   │   ├── debounce.ts
+│   │   │   └── languages.ts
+│   │   └── validations
+│   │       ├── accountEditSchema.ts
+│   │       ├── commonEditionSchemas.ts
+│   │       └── editSchemas.ts
+│   ├── endpoints.ts
+│   ├── general_components
+│   │   ├── boxComponents.tsx
+│   │   ├── CardTitle.tsx
+│   │   ├── currencyBadge
+│   │   │   ├── CurrencyBadge.tsx
+│   │   │   └── styles
+│   │   │       └── currency-style.css
+│   │   ├── datepicker
+│   │   │   ├── Datepicker.tsx
+│   │   │   └── styles
+│   │   │       └── datepicker-styles.css
+│   │   ├── dropdownSelection
+│   │   │   └── DropDownSelection.tsx
+│   │   ├── formSubmitBtn
+│   │   │   ├── FormPlusBtn.tsx
+│   │   │   ├── FormSubmitBtn.tsx
+│   │   │   └── styles
+│   │   │       └── formSubmitBtn-style.css
+│   │   ├── header
+│   │   │   ├── Header.tsx
+│   │   │   ├── logoMenuIcon.css
+│   │   │   └── LogoMenuIcon.tsx
+│   │   ├── inputNumberHandler
+│   │   │   └── InputNumberFormHandler.tsx
+│   │   ├── labelNumberValidation
+│   │   │   └── LabelNumberValidation.tsx
+│   │   ├── listContent
+│   │   │   └── ListContent.tsx
+│   │   ├── mainNavbar
+│   │   │   ├── BudgetButton.tsx
+│   │   │   ├── DebtsButton.tsx
+│   │   │   ├── MainNavbar.tsx
+│   │   │   ├── mainNavbarUnicoComponente
+│   │   │   │   ├── config.md
+│   │   │   │   ├── MainNavbar.tsx
+│   │   │   │   └── MainNavbarButton.tsx
+│   │   │   ├── OverviewButton.tsx
+│   │   │   ├── styles
+│   │   │   │   └── mainNavbar.css
+│   │   │   └── TrackerButton.tsx
+│   │   ├── messageToUser
+│   │   │   ├── messageToUser.css
+│   │   │   └── MessageToUser.tsx
+│   │   ├── OpenAddEditBtn.tsx
+│   │   ├── radioInput
+│   │   │   ├── RadioInput.tsx
+│   │   │   └── styles
+│   │   │       └── radioInput-styles.css
+│   │   ├── summaryDetailBox
+│   │   │   ├── styles
+│   │   │   │   └── summaryDetailBox-style.css
+│   │   │   └── SummaryDetailBox.tsx
+│   │   ├── titleHeader
+│   │   │   ├── titleHeader-style.css
+│   │   │   └── TitleHeader.tsx
+│   │   ├── tooltip
+│   │   │   ├── styles
+│   │   │   │   └── tooltip.css
+│   │   │   └── Tooltip.tsx
+│   │   ├── topWhiteSpace
+│   │   │   ├── topWhiteSpace.css
+│   │   │   └── TopWhiteSpace.tsx
+│   │   └── trackerNavbar
+│   │       ├── TrackerNavbar.tsx
+│   │       └── trackerStateButtons
+│   │           ├── TrackerAdjustmentPnLButton.tsx
+│   │           ├── TrackerDebtsButton.tsx
+│   │           ├── TrackerExpenseButton.tsx
+│   │           ├── TrackerIncomeButton.tsx
+│   │           ├── trackerStateButton.css
+│   │           └── TrackerTransferButton.tsx
+│   ├── helpers
+│   │   ├── constants.ts
+│   │   ├── functions.ts
+│   │   ├── handleError.ts
+│   │   ├── normalizeError.ts
+│   │   └── showToastByStatus.ts
+│   ├── hooks
+│   │   ├── useAutoClose.ts
+│   │   ├── useClickOutside.ts
+│   │   ├── useDebouncedCallback.ts
+│   │   ├── useEditAccountForm.ts
+│   │   ├── useEscapeKey.ts
+│   │   ├── useFetch.ts
+│   │   ├── useFetchLoad.ts
+│   │   ├── useFetchPost.tsx
+│   │   ├── useFormManager.ts
+│   │   ├── useFormManagerPnL.ts
+│   │   └── useInputNumberHandler.ts
+│   ├── index.css
+│   ├── loader
+│   │   ├── circleLoader
+│   │   │   └── CircleLoader.tsx
+│   │   ├── coin
+│   │   │   ├── CoinSpinner.tsx
+│   │   │   └── coin_loader.css
+│   │   └── spin
+│   │       ├── SpinLoader.tsx
+│   │       └── spin_loader.css
+│   ├── main.tsx
+│   ├── pages
+│   │   ├── accountingDashboard
+│   │   │   ├── AccountingBox.tsx
+│   │   │   ├── AccountingDashboard.tsx
+│   │   │   └── styles
+│   │   │       └── accountingDashboard-styles.css
+│   │   ├── budget
+│   │   │   ├── Budget.tsx
+│   │   │   ├── BudgetLayout.tsx
+│   │   │   ├── components
+│   │   │   │   ├── BudgetBigBoxResult.tsx
+│   │   │   │   ├── ListCategory.tsx
+│   │   │   │   └── ListPocket.tsx
+│   │   │   └── styles
+│   │   │       └── budget-styles.css
+│   │   ├── debts
+│   │   │   ├── components
+│   │   │   │   ├── boxComponents.tsx
+│   │   │   │   ├── DebtsBigBoxResult.tsx
+│   │   │   │   └── ListOfDebtors.tsx
+│   │   │   ├── Debtors.tsx
+│   │   │   ├── DebtsLayout.tsx
+│   │   │   └── styles
+│   │   │       └── debts-styles.css
+│   │   ├── error
+│   │   │   ├── ErrorPage.tsx
+│   │   │   ├── NotFoundPage.tsx
+│   │   │   └── styles
+│   │   │       └── errorPage.css
+│   │   ├── forms
+│   │   │   ├── accountDetail
+│   │   │   │   ├── AccountBalanceSummary.tsx
+│   │   │   │   ├── AccountDetail.tsx
+│   │   │   │   ├── AccountTransactionsList.tsx
+│   │   │   │   └── styles
+│   │   │   │       ├── accountBalanceSummary-styles.css
+│   │   │   │       ├── accountDetailTransactions-styles.css
+│   │   │   │       └── accountTransactionsList-styles.css
+│   │   │   ├── categoryDetail
+│   │   │   │   ├── CategoryAccountList.tsx
+│   │   │   │   ├── CategoryDetail.tsx
+│   │   │   │   ├── ListAccountOfCategory.tsx
+│   │   │   │   └── summaryDetailBox
+│   │   │   │       ├── styles
+│   │   │   │       │   └── summaryDetailBox-style.css
+│   │   │   │       └── SummaryDetailBox.tsx
+│   │   │   ├── debtorDetail
+│   │   │   │   ├── DebtorDetail.tsx
+│   │   │   │   └── summaryDebtorDetailBox
+│   │   │   │       ├── styles
+│   │   │   │       │   └── summaryDebtorDetailBox-style.css
+│   │   │   │       └── SummaryDebtorDetailBox.tsx
+│   │   │   ├── newAccount
+│   │   │   │   └── NewAccount.tsx
+│   │   │   ├── newCategory
+│   │   │   │   └── NewCategory.tsx
+│   │   │   ├── newPocket
+│   │   │   │   └── NewPocket.tsx
+│   │   │   ├── newProfile
+│   │   │   │   └── NewProfile.tsx
+│   │   │   ├── pocketDetail
+│   │   │   │   ├── PocketDetail.tsx
+│   │   │   │   └── summaryPocketDetailBox
+│   │   │   │       ├── styles
+│   │   │   │       │   └── summaryDetailBox-style.css
+│   │   │   │       └── SummaryPocketDetailBox.tsx
+│   │   │   └── styles
+│   │   │       └── forms-styles.css
+│   │   ├── layout
+│   │   │   └── Layout.tsx
+│   │   ├── overview
+│   │   │   ├── CalculateMonthlyAverage.ts
+│   │   │   ├── components
+│   │   │   │   ├── AccountBalance.tsx
+│   │   │   │   ├── BigBoxResult.tsx
+│   │   │   │   ├── InvestmentAccBalance.tsx
+│   │   │   │   ├── LastMovements.tsx
+│   │   │   │   ├── MonthlyAverage.tsx
+│   │   │   │   ├── SavingGoals.tsx
+│   │   │   │   └── SeeMore.tsx
+│   │   │   ├── Overview.tsx
+│   │   │   ├── overviewFetchAll.ts
+│   │   │   ├── OverviewLayout.tsx
+│   │   │   └── styles
+│   │   │       └── overview-styles.css
+│   │   ├── styles
+│   │   │   └── generalStyles.css
+│   │   └── tracker
+│   │       ├── components
+│   │       │   ├── CardNote.tsx
+│   │       │   ├── CardNoteSave.tsx
+│   │       │   ├── CardSeparator.tsx
+│   │       │   └── TopCard.tsx
+│   │       ├── debts
+│   │       │   └── Debts.tsx
+│   │       ├── expense
+│   │       │   └── Expense.tsx
+│   │       ├── income
+│   │       │   └── Income.tsx
+│   │       ├── profitNloss
+│   │       │   └── PnL.tsx
+│   │       ├── styles
+│   │       │   └── tracker-style.css
+│   │       ├── TrackerLayout.tsx
+│   │       └── transfer
+│   │           ├── ReFactoringTransfer.md
+│   │           └── Transfer.tsx
+│   ├── stores
+│   │   ├── useAccountStore.ts
+│   │   └── useBalanceStore.ts
+│   ├── types
+│   │   ├── responseApiTypes.ts
+│   │   └── types.ts
+│   ├── validations
+│   │   ├── types.ts
+│   │   ├── utils
+│   │   │   ├── constants.ts
+│   │   │   ├── custom_validation.ts
+│   │   │   └── zod_validation.ts
+│   │   ├── validationPnL
+│   │   │   └── validationPnL.ts
+│   │   └── zod_schemas
+│   │       ├── commonSchemas.ts
+│   │       └── trackerMovementSchema.ts
+│   └── vite-env.d.ts
+├── svg.d.ts
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts

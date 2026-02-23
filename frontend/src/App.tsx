@@ -56,6 +56,9 @@ import {AccountDeletionPage} from './editionAndDeletion/pages/deletionAccount/Ac
 
 // ❌ ERROR HANDLING
 import ErrorPage from './pages/error/ErrorPage.tsx';
+// import TestAuthStorage from './tests/Tests.tsx';
+
+import { AUTH_ROUTE } from './auth/auth_constants/constants.ts';
 // import NotFoundPage from './pages/error/NotFoundPage.tsx';
 //----------------------------------
 function App() {
@@ -65,7 +68,7 @@ function App() {
     
   // 🔐 AUTHENTICATION ROUTES
     {
-     path: '/auth',
+     path: AUTH_ROUTE,
      element: <AuthPage />,
     },
 
@@ -222,6 +225,10 @@ return (
 
   transition={Slide}//flip, bounce, zoom, slide
   />
+  
+{/* TEST SECTION */}
+{/* <TestAuthStorage/> */}
+
 </>
 );
 }

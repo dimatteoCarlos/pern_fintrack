@@ -146,7 +146,7 @@ const {data, isLoading, error, requestFn,
 // 🔐 AUTHENTICATION CHECK.BEFORE SUBMISSION
     if (!isAuthenticated) {
       setMessageToUser('Your session has expired. Please log in again.');
-      // navigateTo('/auth');
+      // navigateTo(AUTH_ROUTE);
       return;
     }
 

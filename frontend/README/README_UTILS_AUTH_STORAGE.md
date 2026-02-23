@@ -14,7 +14,7 @@ This utility module provides pure functions to handle `localStorage` persistence
 - **Silent Failures**: Designed to fail gracefully without interrupting the user experience.
 
 ## 📁 File Location
-`frontend/src/logic/auth/authStorage.ts`
+`frontend/src/logic/AUTH/authStorage.ts`
 
 ## 🛠️ Usage Guide
 

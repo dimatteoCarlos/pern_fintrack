@@ -274,7 +274,4 @@ isSubmittingAllowed:
   !hasClientErrors &&
   !hasApiErrors
 
-
-
-
 */

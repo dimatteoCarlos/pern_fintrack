@@ -58,6 +58,7 @@ import {validateForm  } from '../../../validations/utils/zod_validation.ts';
 import { expenseSchema} from '../../../validations/zod_schemas/trackerMovementSchema.ts';
 import { ExpenseValidatedDataType, ValidationMessagesType } from '../../../validations/types.ts';
 import { handleError } from '../../../helpers/handleError.ts';
+import { AUTH_ROUTE } from '../../../auth/auth_constants/constants.ts';
 //-----------------------------
 // 📝DATA TYPE DEFINITIONS
 export type ShowValidationType={
@@ -435,7 +436,7 @@ setAvailableBudget(total_balance);
       setMessageToUser('Session not active or expired. Redirecting to the sign-in page in 3 seconds...');
       
       timer = setTimeout(() => {
-        navigateTo('/auth', { replace: true });
+        navigateTo(AUTH_ROUTE, { replace: true });
       }, 3000); 
 
     } else {

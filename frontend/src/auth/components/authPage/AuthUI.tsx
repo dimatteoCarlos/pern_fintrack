@@ -21,7 +21,7 @@ type AuthUIPropsType = {
 // 📋 Auth State 
   onSignIn: (credentials: SignInCredentialsType, rememberMe:boolean) => Promise<boolean>;
 
-  onSignUp: (userData: SignUpCredentialsType) => Promise<boolean>;
+  onSignUp: (credentials: SignUpCredentialsType) => Promise<boolean>;
 
   isSignInInitial?: boolean;
 
@@ -53,6 +53,7 @@ const INITIAL_CREDENTIALS_STATE: CredentialsType = {
   user_firstname: '',
   user_lastname: '',
   password: '',
+  confirmPassword:'',
 
 };
 
@@ -69,7 +70,7 @@ function AuthUI({
   clearError,
   messageToUser="",
   isSignInInitial,
-  // onClose,
+  onClose,
   // googleSignInUrl,
 }: AuthUIPropsType): JSX.Element {
 
@@ -155,6 +156,7 @@ try {
       user_firstname: credentials.user_firstname,
       user_lastname: credentials.user_lastname,
       password: credentials.password,
+      confirmPassword: credentials.confirmPassword,
     } as SignUpCredentialsType);
   };
 
@@ -232,16 +234,17 @@ try {
      >
 {/* 👤 Username */}
 {/* <div className={styles.fieldWrapper}> */}
-     <InputField
-     label="Username"
-     type="text"
-     placeholder="your_username"
-     value={credentials.username}
-     onChange={handleInputChange('username')}
-     required
-     disabled={isLoading}
-     isReadOnly={isLoading}
-    />
+        <InputField
+         label="Username"
+         type="text"
+         placeholder="your_username"
+         value={credentials.username}
+         onChange={handleInputChange('username')}
+         required
+         disabled={isLoading}
+         isReadOnly={isLoading}
+         tabindex={1}
+       />
     {/* </div> */}
 
 {/* 📧 Email Field */}
@@ -254,8 +257,27 @@ try {
           required
           disabled={isLoading}
           isReadOnly={isLoading}
+          tabindex={2}
         />
 
+{/* 🔑 Password Field with Visibility Toggle */}
+        {/* <InputField
+          label="Password"
+          placeholder="password"
+          value={credentials.password || ''}
+          onChange={handleInputChange('password')}
+          required
+          disabled={isLoading}
+          isReadOnly={isLoading}
+          showContentToggle={true}
+          isContentVisible={isPasswordVisible}
+          onToggleContent={togglePasswordVisibility}
+          tabindex={3}
+        />        */}
+{/* Checkbox of Remember Me (Sign In Only) */}
+        {
+         isSignIn && (
+         <>
 {/* 🔑 Password Field with Visibility Toggle */}
         <InputField
           label="Password"
@@ -268,10 +290,9 @@ try {
           showContentToggle={true}
           isContentVisible={isPasswordVisible}
           onToggleContent={togglePasswordVisibility}
+          tabindex={3}
         />       
-{/* Checkbox of Remember Me (Sign In Only) */}
-        {
-         isSignIn && (
+          
           <div className={styles['auth-form__remember-me']}
           onClick={() => setRememberMe(!rememberMe)}
           >
@@ -280,12 +301,14 @@ try {
            type="checkbox" id="rememberMe"
            checked={rememberMe}
            onChange={handleRememberMeChange} 
+           tabIndex={5}
            />
            <label htmlFor="rememberMe"
             className={styles['auth-form__label-checkbox']}>
             Keep me signed in
             </label>
-           </div>
+          </div>
+         </>
          )
         }
 {/* 📋 Registration Fields */}
@@ -298,6 +321,7 @@ try {
             required
             disabled={isLoading}
             isReadOnly={isLoading}
+            tabindex={5}
           />
           <InputField
             label="Last Name"
@@ -306,7 +330,39 @@ try {
             required
             disabled={isLoading}
             isReadOnly={isLoading}
+            tabindex={6}
           />
+
+          <InputField
+           label="Password"
+           placeholder="password"
+           value={credentials.password || ''}
+           onChange={handleInputChange('password')}
+           required
+           disabled={isLoading}
+           isReadOnly={isLoading}
+           showContentToggle={true}
+           isContentVisible={isPasswordVisible}
+           onToggleContent={togglePasswordVisibility}
+           tabindex={7}
+           />       
+
+           <InputField
+            label="Confirm Password"
+            placeholder="confirm password"
+            type="password"
+            value={credentials.confirmPassword || ''}
+            onChange={handleInputChange('confirmPassword')}
+
+            required
+            disabled={isLoading}
+            isReadOnly={isLoading}
+            showContentToggle={true}
+            isContentVisible={isPasswordVisible}
+
+            onToggleContent={togglePasswordVisibility}
+            tabindex={8}
+  />
           </div>
         )}
 
@@ -314,8 +370,10 @@ try {
           type='submit'
           className={styles['auth-form__button']}
           disabled={isLoading}
+          tabIndex={7}
         >
           {isLoading ? 'Loading...' : isSignIn ? 'Sign In' : 'Sign Up'}
+
         </button>
       </form>
 
@@ -326,6 +384,7 @@ try {
           className={styles['auth-actions__toggle-button']}
           onClick={toggleAuthMode}
           disabled={isLoading}
+          tabIndex={7}
         >
           {isSignIn
             ? "Don't have an account? Sign up"

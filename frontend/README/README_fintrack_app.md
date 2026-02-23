@@ -2,7 +2,7 @@
 
 ## Objective
 
-**FinTrack** is a personal ACCOUNTING application, built as a "double-entry accounting system", offering a comprehensive and intuitive solution for managing your money.
+**FinTrack** is a personal ACCOUNTING application, built as a "double-entry accounting system" and "cash-flow approach", offering a comprehensive and intuitive solution for managing your money.
 
 Its primary goal is to provide users with effective tools to track expenses, incomes, investments, debts and bank accounts; keeping records of the interactions among the different accounts and keeping all balances updated and reconciled.
 
@@ -12,7 +12,7 @@ FinTrack also helps users monitor savings goals and investments. 🎯📊💡
 
 **A word for developers** "Throughout the development of this app, various alternative approaches were intentionally employed for similar tasks for the sake of learning.
 
-The methods applied ranged from customized native implementations to the use of common libraries to perform the same functions.
+The methods applied, ranged from customized native implementations to the use of common libraries to perform the same functions.
 
 ## Key Features
 
@@ -535,30 +535,31 @@ Best Practice / Role: Database Admin/Maintenance. (Only for specific legal reten
 For this app, the method number 4, Retrospective Total Annulment (RTA) was chosen, following the criteria of deletion of account only for critical data correction or emergency use cases.
 
 ## ACCOUNT DELETION IMPLEMENTED
-Status: COMPLETE
-
 Feature: Account deletion developed using the "Total Retrospective Annulment" strategy.
 
 Strategy: Total Retrospective Annulment
 This method invalidates a bank account and associated transactions from its origin date, removing the account record from the system.
 
 Implementation Details:
-Account Annulment: Permanent erasure of the complete account record; "not a standard closure process".
+Account Annulment: Permanent deletion of the account record and its associated history.
+Permanent erasure of the complete account record; "not a standard closure process".
 
 Retroactive Effect: Data removal impacts all operations from opening date to annulment time.
 
-Data Scope: Guarantees removal of linked records: balances, movements, commissions, personal data.
+Annulment Log: Retention of a procedural record that documents the annulment event and the final reconciliation steps.
+
+Balance Conciliation: Systematic adjustment of the balances of all related accounts that interacted with the annulled account to ensure current net worth remains accurate.
+
+Data Scope: Removal of all historical transaction details, replaced by a single summary entry for each affected counterpart account.
 
 Rationale:
-This approach addresses data privacy compliance requirements (e.g., "Right to be Forgotten" under GDPR *) and corrects account opening errors, providing a comprehensive erasure mechanism beyond typical standard closure processes.
+This approach addresses data privacy compliance requirements (e.g., "Right to be Forgotten" under GDPR(*) ) and corrects account opening errors, providing a comprehensive erasure mechanism beyond typical standard closure processes. 
+
+Data Privacy:Applied approach method facilitates the "Right to be Forgotten" under GDPR Article 17 by erasing personal or sensitive financial history.
+
+Ledger Integrity: Prevents "gaps" or discrepancies in the remaining accounts by using account reconciliation to account for the missing historical transfers.
+
+Error Correction: Provides a method to remove accounts created in error without leaving legacy data that would otherwise require manual closing entries. 
 
 (*) GDPR stands for the General Data Protection Regulation (RGPD in Spanish).
 It is the fundamental regulation of the European Union (EU) that establishes the rules on how organizations must process the personal data of citizens residing in the EU and the European Economic Area (EEA). It entered into force on May 25, 2018, and replaced previous directives.
-
-
-
-
-
-
-
-

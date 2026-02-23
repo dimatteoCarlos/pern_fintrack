@@ -26,7 +26,7 @@ Investment Calculation: Calculate the values of investment accounts, comparing i
 
 User Authentication: Implement user authentication and verify the userId before allowing access to the main functions.
 
-Slack Account: Define if a slack account should be created for balance when a bank account is created with an initial amount.
+Slack Account: Defines if a slack account should be created for balance when a bank account is created with an initial amount.
 
 
 3. Frontend and UI/UX

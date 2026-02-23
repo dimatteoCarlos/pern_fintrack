@@ -29,24 +29,16 @@ import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import CoinSpinner from '../../../loader/coin/CoinSpinner';
 import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
-import { AUTH_ROUTE } from '../../auth_constants/constants';
-// import { getIdentity } from '../../../auth_utils/localStorageHandle/authStorage';
-// import { AUTH_ROUTE } from '../../../auth_constants/constants';
+import { AUTH_ROUTE, AUTH_UI_STATES } from '../../auth_constants/constants';
+import { useAuthUIStore } from '../../stores/useAuthUIStore';
 
-/**
- * 🛡️ Protected Route Gatekeeper
- * 
- * This is the ONLY place in the app that decides:
- * - Where to redirect unauthenticated users
- * - Whether to show loading state
- * - How to signal session expiration
- * 
- * All navigation decisions for unauthenticated users
- * are centralized here.
- */
+//MAIN COMPONENT:🛡️ PROTECTED ROUTE
+
 const ProtectedRoute = () => {
   const location = useLocation();
   const { isAuthenticated, isCheckingAuth } = useAuth();
+  
+  const { setUIState, setPrefilledData } = useAuthUIStore();
 
   // ⏳ While checking auth, block UI with spinner
   if (isCheckingAuth) {
@@ -55,21 +47,26 @@ const ProtectedRoute = () => {
 
   // 🚨 Not authenticated → intelligent redirect based on persisted identity
   if (!isAuthenticated) {
-    // 🔍 Read the single source of truth for remembered identity
-    const identity = getIdentity();
+// 🔍 Read remembered identity
+   const identity = getIdentity();
 
-    // 🎯 Decide destination based on whether user was remembered
-    // - User with remembered identity → go to login page (pre-filled)
-    // - Anonymous user → go to landing page
-    const redirectTo = identity ? AUTH_ROUTE : '/';
+   if (identity) {
+// 👤 REMEMBERED_VISITOR - set UI state for pre-filled form
+     setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
+     setPrefilledData(identity.email, identity.username); //zustand state
+   }
 
-    return (
-      <Navigate
-        to={redirectTo}
-        replace
-        state={{
-          expired: true,           // Signal that session expired
-          from: location.pathname,  // Original destination for post-login redirect
+// 🎯 Decide destination based on whether user was remembered
+// - User with remembered identity → go to login page (pre-filled)
+   const redirectTo = identity ? AUTH_ROUTE : '/';
+// - Anonymous user → go to landing page
+
+   return (
+     <Navigate
+      to={redirectTo}
+      replace
+       state={{
+          from: location.pathname,  // Only pass location, not UI state
         }}
       />
     );

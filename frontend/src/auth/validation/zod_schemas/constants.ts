@@ -22,4 +22,27 @@ Record<UserFieldsType,FieldLimitType>
   PASSWORD:{ MAX:72,MIN:4, name:'Password'},//8 is the Minimum securityRequirement and Maximum by Bcrypt practical limit
 };
 
+//REUSABLE VALIDATION MESSAGES
+export const VALIDATION_MESSAGES = {
+  REQUIRED: (field: string) => `${field} is required`,
+  
+  MIN_LENGTH: (field: string, min: number) => 
+    `${field} must be at least ${min} character${min === 1 ? '' : 's'}`,
+  
+  MAX_LENGTH: (field: string, max: number) => 
+    `${field} cannot exceed ${max} characters`,
+  
+  NO_HTML: (field: string) => `${field} cannot contain < or > characters`,
+  
+  NO_WHITESPACE: (field: string) => `${field} cannot be empty or just whitespace`,
+  
+  NO_LEADING_TRAILING: (field: string) => `${field} cannot start or end with spaces`,
+  
+  INVALID_EMAIL: "Invalid email address",
+  
+  PASSWORDS_MATCH: "Passwords do not match",
+  
+} as const;
+
+
 

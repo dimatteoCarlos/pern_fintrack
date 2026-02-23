@@ -1,7 +1,7 @@
 // 📁 frontend/src/auth/auth_constants/constants.ts
 
 /* ===============================
-   🔐 AUTH MODULE CONSTANTS
+   🔐 AUTH CONSTANTS
    Centralized constants for authentication module
    Makes auth modular and reusable
    =============================== */
@@ -38,7 +38,7 @@ export const AUTH_MODES = {
   SIGN_UP: 'signup',
 } as const;
 
-//used in authFetch
+//UI States for authentication experience
 export const AUTH_UI_STATES = {
   IDLE: 'IDLE',
   SESSION_EXPIRED: 'SESSION_EXPIRED',

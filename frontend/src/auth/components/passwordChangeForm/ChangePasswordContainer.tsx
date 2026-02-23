@@ -1,9 +1,15 @@
 // 📁 frontend/src/auth/containers/ChangePasswordContainer.tsx
 // Coordinator: wires UI ↔ form logic ↔ validation ↔ domain actions
 /* =============
-📦 IMPORTS
+📦 IMPORTS DEPENDENCIES
 ============= */
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+
+/* =============
+🏷️ IMPORT STYLES CSS MODULE
+============= */
 import styles from './styles/passwordChangeForm.module.css'
 
 /* =============
@@ -33,7 +39,8 @@ import useChangePasswordFormLogic from "../../hooks/useChangePasswordFormLogic";
 ============= */
 import ChangePasswordForm from './ChangePasswordForm';
 import useFieldVisibility from "../../hooks/useFieldVisibility";
-import { logoutCleanup } from "../../auth_utils/logoutCleanup";
+import { useAuthUIStore } from "../../stores/useAuthUIStore";
+import { AUTH_ROUTE, AUTH_UI_STATES } from "../../auth_constants/constants";
 
 /* ================
 ⏱️ TYPE DEFINITIONS
@@ -75,6 +82,11 @@ Determines what to render and when.
 Enforces dirty, touched, real-time, and submit-time validation. 
 */
 const ChangePasswordContainer:React.FC<ChangePasswordContainerProps> = ({ onClose }) => {
+
+/* ==============
+🔐 NAVIGACTION HOOK
+=============== */
+const navigateTo=useNavigate()
 /* ==============
 🔐 AUTH DOMAIN
 =============== */
@@ -100,6 +112,8 @@ const [status, setStatus] = useState<FormStatus>("idle");
  const [countdown, setCountdown] = useState<number | null>(null);
 
  const [totalCountdown, setTotalCountdown] = useState<number | null>(TOTAL_COUNTDOWN_SECONDS);
+
+ const { setUIState, setMessage } = useAuthUIStore();
 
  // const [totalRetryCounter, setTotalRetryCounter] = useState<number | null>(totalCountdown);
  
@@ -140,30 +154,6 @@ const [status, setStatus] = useState<FormStatus>("idle");
   transformFromApiToFormErrors:transformApiErrors,
   handleDomainChangePassword:domainChangePasswordWrapper, 
  });
-
- // =================================
- //  ⏳  COUNTDOWN TICK EFFECT
- // =================================
- useEffect(() => {
-  if (countdown === null) return;
-
-  if(countdown <=0) {
-   if(status === 'success'){
-    logoutCleanup(false); //redirect to app initial layout
-    } else {
-   setStatus('idle');
-   }
-
-  setCountdown(null);
-  setTotalCountdown(null)
-   return;
-  }
-
- //⏱️ NEXT COUNTDOWN TICK
-  const timer = setTimeout(()=>setCountdown(countdown =>(countdown !== null ? countdown-1:null)),1000);
-
-  return ()=>clearTimeout(timer)
- }, [countdown, status]);
 
 /* ================
 🔒 UI STATE DERIVED
@@ -221,14 +211,19 @@ const showCancel = !isSubmitting && status !== "success";
 ============================ */
 
 // ✅ DONE HANDLER - IMMEDIATE LOGOUT (CANCELS AUTO-LOGOUT)
-const handleDone = useCallback(() => {
+ const handleDone = useCallback(() => {
 // ✅ Cancel countdown and logout immediately
   setCountdown(null);
   handleReset();
-  logoutCleanup(false); 
- 
-  // No need to call onClose - logoutCleanup already redirects
-}, [handleReset]);
+
+// ✅ Set UI state for password changed
+  setUIState(AUTH_UI_STATES.PASSWORD_CHANGED);
+  setMessage('Password changed successfully. Please sign in with your new password.');
+  
+// Navigate to auth page
+  navigateTo(AUTH_ROUTE, { replace: true });
+
+},[handleReset, setUIState, setMessage, navigateTo]);
 
 //==========================
 // Enhanced submit handler with UX states
@@ -280,6 +275,27 @@ const handleDone = useCallback(() => {
   setIsSubmitting(false);
  } ,[formLogicHandleSubmit]
   );
+
+ // =================================
+ //  ⏳  COUNTDOWN TICK EFFECT
+ // =================================
+ useEffect(() => {
+  if (countdown === null) return;
+    if (countdown <= 0) {
+      if (status === 'success') {
+        handleDone();
+      } else if (status === 'rate_limited') {
+        setCountdown(null);
+        setStatus('idle');
+      }
+      return;
+    }
+
+ //⏱️ NEXT COUNTDOWN TICK
+  const timer = setTimeout(()=>setCountdown(countdown =>(countdown !== null ? countdown-1:null)),1000);
+
+  return ()=>clearTimeout(timer)
+ }, [countdown, status, handleDone]);
 
 //---------Debugging logs --------
 // console.log("🔄 Dirty fields:", dirtyFields);

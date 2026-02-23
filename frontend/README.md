@@ -1,18 +1,70 @@
-# FinTrack
+# FinTrack_app
 
 ## Objective
 
-**FinTrack** is a personal ACCOUNTING application, built as a "double-entry accounting system", offering a comprehensive and intuitive solution for managing your money.
+**FinTrack** is a personal "accounting" application, built as a "double-entry accounting system" but under a "cash-flow approach", offering a comprehensive and intuitive solution for managing your money.
 
 Its primary goal is to provide users with effective tools to track expenses, incomes, investments, debts and bank accounts; keeping records of the interactions among the different accounts and keeping all balances updated and reconciled.
 
+FinTrack also helps users monitor savings goals and investments. 🎯📊💡
+
+### Double-Entry Accounting Approach
+The double-entry system is a method of recording financial transactions where every entry to an account requires a corresponding and opposite entry to a different account. 
+
 As a double-entry accounting system, it automatically reflects the updated balances of all related accounts as soon as a transaction is recorded, ensuring that your financial overview is always accurate and up to date.
 
-FinTrack also helps users monitor savings goals and investments. 🎯📊💡
+#### Core Mechanism
+*   **Duality:** Every transaction involves at least two accounts: a **Debit (Dr)** and a **Credit (Cr)**.
+*   **Accounting Equation:** The system is governed by the formula: `Assets = Liabilities + Equity`.
+*   **Balance Requirement:** The total sum of debits must equal the total sum of credits for every transaction, ensuring the ledger remains in equilibrium.
+
+### Cash-Flow Approach
+
+This system utilizes arithmetic logic to record the movement of funds:
+
+*   **Minus Sign (–):** Identifies withdrawals or outflows from an account.
+*   **Plus Sign (+):** Identifies deposits or inflows into an account.
+
+#### Mechanism
+The system records transfers by performing a simultaneous subtraction from the source and an addition to the destination. This tracks the path of funds between accounts for auditing purposes.
+
+#### Transfer Example: Savings to Checking ($500)
+
+| Account | Operation | Sign | Amount | Impact |
+| :--- | :--- | :---: | :--- | :--- |
+| **Savings** | Withdrawal | **–** | $500 | Outflow from source |
+| **Checking** | Deposit | **+** | $500 | Inflow to destination |
+
+### Integration of Dual Accounting Methodologies
+
+The system implements a hybrid architecture that integrates both **Standard Double-Entry Accounting** and an intuitive **Cash-Flow Approach**. The distinction between these methods is defined by the logic used to record fund directionality.
+
+#### Divergence in Account Interactions
+
+The primary difference between the two integrated layers lies in how transaction signs are assigned:
+
+1.  **Standard Accounting Layer (Classification-Dependent):**
+    Entries are recorded as Debits (Dr) or Credits (Cr) based on the account classification (Assets, Liabilities, Equity). In this layer, a mathematical sign's meaning fluctuates according to the account type.
+
+2.  **Cash-Flow Layer (Direction-Dependent):**
+    Unlike standard classification-based rules, this layer assigns signs based exclusively on the movement of funds. The sign is determined by whether the money enters or exits the account:
+    *   **Minus Sign (–):** Applied to all **Withdrawals** or outflows, regardless of account classification.
+    *   **Plus Sign (+):** Applied to all **Deposits** or inflows, regardless of account classification.
+
+#### Comparative Logic of the cohexistence of these two approaches
+
+| Feature | Standard Accounting Logic | Cash-Flow Logic (Integrated) |
+| :--- | :--- | :--- |
+| **Logic Basis** | Account Classification (Asset/Liability) | Movement Direction (Inflow/Outflow) |
+| **Sign Assignment** | Variable (Type-dependent) | Constant (Direction-dependent) |
+| **User Guidance** | Internal Ledger Integrity | Intuitive Transaction Tracking |
+
+#### Implementation Mechanism
+This dual approach allows the system to maintain professional-grade ledger books while guiding the user through an intuitive interface. When a transaction occurs, the system simultaneously records the classification-specific Withdrawal/Deposit for the accounting books and the direction-specific Plus/Minus sign for the user’s cash-flow tracking.
 
 **A word for developers** "Throughout the development of this app, various alternative approaches were intentionally employed for similar tasks for the sake of learning.
 
-The methods applied ranged from customized native implementations to the use of common libraries to perform the same functions.
+The methods applied, ranged from customized native implementations to the use of common libraries to perform the same functions.
 
 ## Key Features
 
@@ -36,11 +88,7 @@ The methods applied ranged from customized native implementations to the use of 
    - Set up personalized savings goals.
    - Monitor progress toward achieving goals.
 
-5. **Investment Projections** (not included in this version):
-   - Evaluate investment scenarios based on historical data and future estimates.
-   - Analyze long-term financial objectives.
-
-6. **Income Sources**:
+5. **Income Sources**:
    - Record and manage multiple income sources.
    - Clear visualization of contributions to overall balances.
 
@@ -535,7 +583,6 @@ Best Practice / Role: Database Admin/Maintenance. (Only for specific legal reten
 For this app, the method number 4, Retrospective Total Annulment (RTA) was chosen, following the criteria of deletion of account only for critical data correction or emergency use cases.
 
 ## ACCOUNT DELETION IMPLEMENTED
-Status: COMPLETE
 
 Feature: Account deletion developed using the "Total Retrospective Annulment" strategy.
 
@@ -543,22 +590,26 @@ Strategy: Total Retrospective Annulment
 This method invalidates a bank account and associated transactions from its origin date, removing the account record from the system.
 
 Implementation Details:
-Account Annulment: Permanent erasure of the complete account record; "not a standard closure process".
+Account Annulment: Permanent deletion of the account record and its associated history.
+Permanent erasure of the complete account record; "not a standard closure process".
 
 Retroactive Effect: Data removal impacts all operations from opening date to annulment time.
 
-Data Scope: Guarantees removal of linked records: balances, movements, commissions, personal data.
+Annulment Log: Retention of a procedural record that documents the annulment event and the final reconciliation steps.
+
+Balance Conciliation: Systematic adjustment of the balances of all related accounts that interacted with the annulled account to ensure current net worth remains accurate.
+
+Data Scope: Removal of all historical transaction details, replaced by a single summary entry for each affected counterpart account.
 
 Rationale:
-This approach addresses data privacy compliance requirements (e.g., "Right to be Forgotten" under GDPR *) and corrects account opening errors, providing a comprehensive erasure mechanism beyond typical standard closure processes.
+This approach addresses data privacy compliance requirements (e.g., "Right to be Forgotten" under GDPR(*) ) and corrects account opening errors, providing a comprehensive erasure mechanism beyond typical standard closure processes. 
+
+Data Privacy:Applied approach method facilitates the "Right to be Forgotten" under GDPR Article 17 by erasing personal or sensitive financial history.
+
+Ledger Integrity: Prevents "gaps" or discrepancies in the remaining accounts by using account reconciliation to account for the missing historical transfers.
+
+Error Correction: Provides a method to remove accounts created in error without leaving legacy data that would otherwise require manual closing entries. 
 
 (*) GDPR stands for the General Data Protection Regulation (RGPD in Spanish).
 It is the fundamental regulation of the European Union (EU) that establishes the rules on how organizations must process the personal data of citizens residing in the EU and the European Economic Area (EEA). It entered into force on May 25, 2018, and replaced previous directives.
-
-
-
-
-
-
-
 

@@ -35,6 +35,7 @@ import { validationData } from '../../../validations/utils/custom_validation.ts'
 
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import useAuth from '../../../auth/hooks/useAuth';
+import { AUTH_ROUTE } from '../../../auth/auth_constants/constants.ts';
 // import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
 //------------------------
 //-----handle currency
@@ -108,7 +109,7 @@ function NewAccount() {
     if (!isAuthenticated) {
       setMessageToUser('Please log in to create an account');
 // 🆕 OPCIONAL: Redirigir al login después de un tiempo
-   setTimeout(() => navigateTo('/auth'), 3500);
+   setTimeout(() => navigateTo(AUTH_ROUTE), 3500);
     }
   }, [isAuthenticated, navigateTo]);
 

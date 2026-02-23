@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './styles/errorPage.css'; // Import the CSS styles file
+import { AUTH_ROUTE } from '../../auth/auth_constants/constants';
 
 interface Props {}
 
@@ -13,7 +14,7 @@ const ErrorPage: React.FC<Props> = () => {
         Something went wrong. Don't worry, it happens sometimes!
       </div>
 
-      <Link to='/auth' className='button'>
+      <Link to={AUTH_ROUTE} className='button'>
         Back to Authentication
       </Link>
     </div>

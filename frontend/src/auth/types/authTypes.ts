@@ -9,6 +9,7 @@ export type CredentialsType = {
   user_firstname: string;
   user_lastname: string;
   password: string;
+  confirmPassword?:string;
 };
 
 export type SignInCredentialsType= {
@@ -16,9 +17,16 @@ export type SignInCredentialsType= {
   email: string;
   password: string;
 }
-export interface SignUpCredentialsType extends SignInCredentialsType {
+// export interface SignUpCredentialsType extends SignInCredentialsType {
+//   user_firstname: string;
+//   user_lastname: string;
+//   confirmPassword:string;
+// }
+
+export type SignUpCredentialsType = SignInCredentialsType & {
   user_firstname: string;
   user_lastname: string;
+  confirmPassword:string;
 }
 
 // ===============
@@ -361,6 +369,8 @@ export type AuthUIStateType =
   | 'SESSION_EXPIRED'
   | 'REMEMBERED_VISITOR'
   | 'PASSWORD_CHANGED';
+
+  
 
 // ===============================
 // 📦 EXPORTS (existing)

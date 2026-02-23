@@ -243,7 +243,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     };
     //------- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT)------
     //check whether slack account exists if not create it with start amount and balance = 0
-    //slack account or counter account, is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation
+    //slack account or counter account (bridge account), is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation
     const counterAccountInfo = await checkAndInsertAccount(client, userId, 'slack');
 
     const newCounterAccountBalance =

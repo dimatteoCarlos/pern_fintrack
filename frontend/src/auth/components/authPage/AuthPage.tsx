@@ -22,10 +22,10 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AuthUI from './AuthUI';
-import Logo from '../../../assets/logo.svg';
 import { useAuthUIStore } from '../../stores/useAuthUIStore';
 import { AUTH_UI_STATES } from '../../auth_constants/constants';
 import useAuth from '../../hooks/useAuth';
+import Logo from '../../../assets/logo.svg';
 
 import styles from './styles/authPage.module.css';
 
@@ -33,20 +33,22 @@ import styles from './styles/authPage.module.css';
 export default function AuthPage() {
  const location = useLocation();
  const navigateTo = useNavigate();
-
- const { uiState, message,   resetUI } = useAuthUIStore();
-
-
+ const {uiState, message, resetUI  } = useAuthUIStore();
+ 
  //--LOCAL UI STATES not related to auth UX
-  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-  
-  const [initialAuthMode, setInitialAuthMode] = useState<'signin' | 'signup'>('signin');
+ const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+ 
+ const [initialAuthMode, setInitialAuthMode] = useState<'signin' | 'signup'>('signin');
+ 
+ // 🎯 Modal abierto si no es IDLE
+  // const showModal = uiState !== AUTH_UI_STATES.IDLE;
 
 //CUSTOM HOOKS FOR SIGNIN AND SIGNUP
-// Execute the useAuth hook to get authentication state and actions
+// Auth operations (passed to AuthUI)
   const {
     isLoading,
     error,
+    // successMessage,
     handleSignIn,
     handleSignUp,
     clearError,
@@ -97,12 +99,13 @@ export default function AuthPage() {
     setIsMenuOpen(false);
     clearError();
     setInitialAuthMode('signin');
+   // Open modal by setting UI state
     useAuthUIStore.getState().setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
   };
 
   const openSignupModalHandler = () => {
     setIsMenuOpen(false);
-    clearError();  // ✅ Limpiar errores previos
+    clearError();  // ✅ Clean previous errors
     setInitialAuthMode('signup');  // ✅ Establecer modo
     useAuthUIStore.getState().setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
  };
@@ -111,8 +114,8 @@ export default function AuthPage() {
     resetUI();
    };
 
-   // Determine if modal should be open
-  const showModal = uiState !== AUTH_UI_STATES.IDLE;
+  // Determine if modal should be open
+  const showModal = uiState !== AUTH_UI_STATES.IDLE; 
 
  //---------------------------------
   return (

@@ -1,5 +1,6 @@
 /* src/components/auth/AuthUI.module.css */
-/* 📢 Stable Message Area with Smooth Transition */
+/* 📢 Stable Message Area with Smooth Transition
+Prevents layout shift when messages appear/disappear*/
 .messageArea {
   width: 100%;
   display: flex;

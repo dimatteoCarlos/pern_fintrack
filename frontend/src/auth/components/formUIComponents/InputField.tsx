@@ -4,7 +4,7 @@
 =============================== 🌟 */
 import React from "react";
 import styles from "./styles/InputField.module.css";
-import { LuEyeClosed , LuEyeOff } from "react-icons/lu";
+import { LuEyeClosed , LuEye } from "react-icons/lu";
 
 /* 🌟 ===============================
 🏷️ TYPE DEFINITIONS
@@ -62,6 +62,9 @@ export type InputFieldProps = {
   
   /** 👀 Optional icon/svg for the toggle button */
   toggleIcon?: React.ReactNode;
+
+  //tab control
+  tabindex?:number;
 };
 
 /* 🌟 ===============================
@@ -155,8 +158,9 @@ const InputField: React.FC<InputFieldProps> = React.memo(
               className={styles.toggleButton}
               onClick={onToggleContent}
               aria-label={isContentVisible ? "Hide content" : "Show content"}
+              tabIndex={-1} //Remove from the tab order
             >
-              {toggleIcon || (isContentVisible ? <LuEyeClosed /> :<LuEyeOff />)}
+              {toggleIcon || (isContentVisible ? <LuEyeClosed /> :<LuEye />)}
               {/* {toggleIcon || (isContentVisible ? "🙈" : "👁️")} */}
             </button>
           )}

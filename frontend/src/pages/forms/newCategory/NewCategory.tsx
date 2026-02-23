@@ -24,6 +24,7 @@ import { DEFAULT_CURRENCY, TILE_LABELS, VARIANT_FORM } from '../../../helpers/co
 
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
+import { AUTH_ROUTE } from '../../../auth/auth_constants/constants.ts';
 
 // import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
 // import { useLocation } from 'react-router-dom';
@@ -94,7 +95,7 @@ function NewCategory() {
  useEffect(()=>{
   if(!isAuthenticated){
   setMessageToUser('Please log in to create an account')
-  setTimeout(()=>navigateTo('/auth'), 5000)
+  setTimeout(()=>navigateTo(AUTH_ROUTE), 5000)
     }
  }, [isAuthenticated, navigateTo]);
 //------------------------------------

@@ -44,6 +44,7 @@ import {
   TYPEDEBTS_OPTIONS_DEFAULT,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
+import { AUTH_ROUTE } from '../../../auth/auth_constants/constants.ts';
 
 // import ProtectedRoute from '../../auth/ProtectedRoute.tsx';
 //-----default 'till decide how to handle multi currencies
@@ -128,7 +129,7 @@ const { isAuthenticated } = useAuth()
  useEffect(()=>{
   if(!isAuthenticated){
   setMessageToUser('Please log in to create an account')
-  setTimeout(()=>navigateTo('/auth'), 5000)
+  setTimeout(()=>navigateTo(AUTH_ROUTE), 5000)
     }
  }, [isAuthenticated, navigateTo]);
 //----------------------------------------------

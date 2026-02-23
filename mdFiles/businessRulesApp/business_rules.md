@@ -1,8 +1,104 @@
-BUSINESS RULES
+fintrack - BUSINESS RULES
 
-When creating a new account of type: bank, investment, pocket_saving, category_budget, the initial or a starting amount balance will always be 0 or positive (deposit transaction)
-When creating a new account of type: income_source, the initial or a starting amount balance will always be 0 (initial-account-opening)
-When creating a new account of type: debtor, the initial or a starting amount balance will be the input amount value and the  sigh will depend on the transaction type lend (-) or borrow (+). initial-lend/borrow
+ACCOUNT CREATION:
+You can create account of types: bank, investment,pocket_saving, category_budget, debtor or income_source.
+
+When creating a new account of type: bank, investment, pocket_saving, category_budget, the initial or a starting amount balance will always be 0 or positive (deposit transaction).
+
+When creating a new account of type: income_source, the initial or a starting amount balance will always be 0 (initial-account-opening).
+
+When creating a new account of type: debtor, the initial or a starting amount balance will be the input amount value and the  sigh will depend on the transaction type lend (-) or borrow (+). initial-lend or initial-borrow.
+
+TRANSACTION DIRECTIONS IN ACCOUNTS:
+
+Plus and minus symbols in trasaction description of a specific account, will indicate the "direction" of the transaction, always relative to the account in question.
+
+For example, when viewing a Debtor account, a minus sign indicates a withdrawal (an outflow of funds from that specific account). The transaction Description always reflects the direction of funds from the account-holder's perspective.
+
+"In any account, a positive sign represents a cash inflow (deposit/credit), meaning money has been added to the balance. Vice versa, a negative sign indicates a cash outflow (withdrawal/debit), showing that the account has disbursed funds."
+
+Thus, for any account transaction: 
+"Positive (+) = Account Inflow (Deposit/Credit)
+Negative (−) = Account Outflow (Withdrawal/Debit/Disbursement)"
+
+For example, In a Debtor account, a minus sign denotes a withdrawal/disbursement. All transaction descriptions are shown relative to the account account-owner's perspective.
+
+ABOUT ACCOUNT BALANCES
+
+FOR BANK AND INVESTMENT ACCOUNT TYPES
+For Bank and Investment accounts, the signs represent the net position of the funds:
+
+A Positive Sign (+) indicates a Surplus, meaning the account holds a credit balance or has achieved growth.
+
+A Negative Sign (-) indicates a Deficit, representing an overdraft in bank accounts or a shortfall in investment capital.
+
+FOR INCOME_SOURCE ACCOUTN TYPE
+Conversely, for income source accounts, a negative balance indicates that disbursements have been made. These outflows are reflected as credits (deposits) in the respective destination accounts.
+
+BALANCE FOR DEBTOR ACCOUNT TYPE
+This system uses a cash-flow approach that differs from traditional accounting. A positive sign (+) always represents an inflow (money entering the account), while a negative sign (-) indicates a disbursement (money exiting the account).
+
+Consequently, in a 'Debtor' account type,thus,
+ A negative balance means the account has provided funds (representing an account payable from our perspective).
+ 
+ A positive balance means it has received funds (representing an account receivable). This logic prioritizes tracking the physical movement of money over standard debit/credit conventions.
+
+EXAMPLES OF BOTH CASES FOR "DEBTOR TYPE ACCOUNT": 
+To make this crystal clear, here are the two scenarios for a Debtor Account named "John Doe":
+
+1. Case: Negative Balance (We owe him)
+Transaction: John Doe pays $500 for a company expense using his own money.
+Ledger Entry: -$500.00
+Meaning: The money exited John's personal pocket. Therefore, the system shows a negative balance, indicating we have a debt to him (Account Payable).
+
+2. Case: Positive Balance (He owes us)
+Transaction: The company gives John Doe a $200 cash advance.
+Ledger Entry: +$200.00
+Meaning: Money entered John's account. Therefore, the system shows a positive balance, indicating he is now a debtor and owes us that money (Account Receivable).
+
+Quick Examples
+If you see...	Direction of Money	What it means
++$1,000	Inflow	The account holder received money.
+-$1,000	Outflow	The account holder disbursed (spent) money.
+
+BALANCE FOR CATEGORY_BUDGET ACCOUNT TYPE
+This type of account represents the expenses made.
+
+Understanding Your Budget (Expense) Balances
+Account Type: Category/Budget
+In this app, budget categories work as "cost containers." They track the total amount of money that has flowed into a specific expense.
+Positive Balance (+): This represents your Accumulated Spending. When you buy something, money "enters" that category, increasing the total. A positive sign (+) shows how much value has been consumed in that area.
+The Cash-Flow Way: Unlike traditional accounting books (ledger way) that use complex "debits" and "credits," we use a Directional Flow approach. We show you the literal path of your money.
+Key Rule: In a budget account, a (+) sign doesn't mean you have "extra cash"—it means you have spent that total amount.
+
+Cash Flow Example
+If you spend $100 on Gas using your Bank Account:
+Account	Flow Sign	Meaning
+Bank Account	-$100.00	Money left your bank.
+Gas (Budget)	+$100.00	Money accumulated in your Gas expense.
+
+How to read your balances:
+Food Category is +$500: You have spent a total of $500 on food.
+
+This method prioritizes the physical movement of money—where it leaves a source (negative) and arrives at a destination (positive) AccountingCoach.
+
+Reference Guide: Cash Flow & Balance Logic
+This table explains the meaning of balances for each account type based on the direction of money.
+Account Type	Positive Sign (+)	Negative Sign (-)	Account Concept
+Bank / Cash	Surplus: Available funds or positive balance.	Deficit: Overdraft or negative balance.	Deposits vs. Withdrawals
+Investment	Gain / Deposit: Value increase or capital injection.	Loss / Withdrawal: Value decrease or funds removed.	Capital Performance
+Debtor (Person)	Accounts Receivable: You lent money; they owe you.	Accounts Payable: They paid for you; you owe them.	Loans & Debts
+Budget (Expense)	Accumulated Expense: Total money "sent" to this category.	Refund / Adjustment: Money returned from an expense.	Cost Accumulator
+Income (Source)	Income Received: Funds that entered your system.	Disbursement: Funds sent from this source to other accounts.	Origin of Funds
+Summary for Developers & Users
+"The Destination Rule":
+Negative Sign (-): Always identifies the ORIGIN (where the money came from).
+Positive Sign (+): Always identifies the DESTINATION (where the money went or accumulated).
+Integration Example:
+If you transfer $50 from your Bank account to the Food category:
+Bank is recorded as -$50 (Origin).
+Food is recorded as +$50 (Destination/Accumulated Expense).
+
 ---
 Here is a structured summary of the transfer rules mentioned, categorized into **allowed**, **restricted**, and **overdraft-permitted**:
 
