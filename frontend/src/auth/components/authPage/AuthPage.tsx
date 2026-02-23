@@ -38,7 +38,7 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
  //--LOCAL UI STATES not related to auth UX
  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
  
- const [initialAuthMode, setInitialAuthMode] = useState<'signin' | 'signup'>('signin');
+ // const [initialAuthMode, setInitialAuthMode] = useState<'signin' | 'signup'>('signin');
  
  // 🎯 Modal abierto si no es IDLE
   // const showModal = uiState !== AUTH_UI_STATES.IDLE;
@@ -98,7 +98,6 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
   const openSigninModalHandler = () => {
     setIsMenuOpen(false);
     clearError();
-    setInitialAuthMode('signin');
    // Open modal by setting UI state
     useAuthUIStore.getState().setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
   };
@@ -106,7 +105,6 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
   const openSignupModalHandler = () => {
     setIsMenuOpen(false);
     clearError();  // ✅ Clean previous errors
-    setInitialAuthMode('signup');  // ✅ Establecer modo
     useAuthUIStore.getState().setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
  };
   
