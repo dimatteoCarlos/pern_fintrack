@@ -154,7 +154,7 @@ console.log("🚀 ~ checkAuthStatus ~ response:", response)
   /* ===============================
    🔐 SIGN IN
    =============================== */
-    const handleSignIn = async (credentials: SignInCredentialsType, rememberMe: boolean) => {
+    const handleSignIn = async (credentials: SignInCredentialsType, rememberMe: boolean):Promise<void> => {
     clearError();
     setIsLoading(true);
     clearSuccessMessage();
@@ -201,7 +201,7 @@ console.log("🚀 ~ checkAuthStatus ~ response:", response)
       setSuccessMessage(message || 'Sign in successful! Welcome back!');
       navigateTo(INITIAL_PAGE_ADDRESS || '/fintrack');
 
-        return true;
+        // return true;
       }
 
       const errorMessage = accessToken
@@ -209,13 +209,13 @@ console.log("🚀 ~ checkAuthStatus ~ response:", response)
         : 'Server response missing access token';
       setError(`Invalid server response - ${errorMessage}`);
 
-      return false;
+      // return false;
 
     } catch (err: unknown) {
       const errorMessage = extractErrorMessage(err) || 'Login failed. Please check your credentials.';
       setError(errorMessage);
 
-      return false;
+      // return false;
 
     } finally {
       setIsLoading(false);
@@ -226,7 +226,7 @@ console.log("🚀 ~ checkAuthStatus ~ response:", response)
      📝 SIGN UP
      =============================== */
 
-  const handleSignUp = async (credentials: SignUpCredentialsType) => {
+  const handleSignUp = async (credentials: SignUpCredentialsType):Promise<void> => {
     clearError();
     clearSuccessMessage();
     setIsLoading(true);
@@ -256,13 +256,13 @@ console.log("🚀 ~ checkAuthStatus ~ response:", response)
       setSuccessMessage(resData.message || 'Sign up successful!');
       navigateTo('/fintrack');
 
-      return true;
+      // return true;
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Registration failed';
       setError(errorMessage);
       
-      return false;
+      // return false;
     } finally {
       setIsLoading(false);
     }
@@ -418,7 +418,6 @@ const handleSignOut = async () => {
   /* ===============================
      👤 UPDATE USER PROFILE
      =============================== */
-
   const handleUpdateUserProfile = async (payload: ProfileUpdatePayloadType) => {
     clearError();
     clearSuccessMessage();
