@@ -431,9 +431,24 @@ const handleSignOut = async () => {
       });
 
       if (response.data.success) {
-        setUserData(mapUserResponseToUserData(response.data.user) as UserDataType);
+       // 1️⃣ Get current store state before updating
+       const currentData = useAuthStore.getState().userData;
+      // 2️⃣ Map response
+       const mappedNewData = mapUserResponseToUserData((response.data).user);
+      // 3️⃣ ATOMIC MERGE
+       const finalUserData: UserDataType = {
+        ...currentData!,
+        ...mappedNewData,
+        // Protection: If PATCH response fields are empty, keep current ones
+        email: mappedNewData.email || currentData?.email || '',
+        role: mappedNewData.role || currentData?.role || 'user',
+       };
 
-        setSuccessMessage(response.data.message || 'Profile updated successfully');
+       setUserData(finalUserData);
+
+    // setUserData(mapUserResponseToUserData(response.data.user) as UserDataType);
+
+       setSuccessMessage(response.data.message || 'Profile updated successfully');
 
         return response.data;
       }
