@@ -2,7 +2,7 @@
 //Parent: UpdateProfileContainer.tsx
 //Business Logic: error handlers, handle change and submit
 
-/* 🌟 ===============================
+/* 🌟 =============================
 📦 IMPORT DEPENDENCIES
 =============================== 🌟 */
 import { useCallback,  useEffect,  useMemo, useState } from "react";
@@ -486,8 +486,7 @@ setFormData(currentFormData => {
 * and preventing unnecessary updates.
 */
 const handleSubmit = useCallback(async (
- e: React.FormEvent
-) => {
+ e: React.FormEvent) => {
  e.preventDefault();
 
 // 🧹 STEP 1: Clear any existing errors
@@ -523,7 +522,6 @@ const handleSubmit = useCallback(async (
   errors: noChangesError,
   hasChanges: false
   };
-
  }
 //---
 try {
@@ -533,7 +531,7 @@ try {
    
 // Transform form data to API format (handles null/undefined cleanup)
  const apiPayload = transformations.formToApi(changedFields);
-    
+
 // 📤 STEP 5: Send to API via injected function
 // console.log('📦 Payload to send:', apiPayload);//xx
 
@@ -541,24 +539,20 @@ try {
 
 // ⚠️ Step 6: Handle API response
  if (!result.success) {
-  // if(result.retryAfter){
-  //  setRetryAfter(result.retryAfter)}
-
-  //console.log("🚀 ~ useUpdateProfileFormLogic ~ result.retryAfter:", result.retryAfter)
-  // //initiate automatic countdown
-  //   startCountdown(result.retryAfter);
-
- // If fieldErrors exists / Si hay fieldErrors en la respuesta
+  //Handle field errors
+  
  if (result.fieldErrors && Object.keys(result.fieldErrors).length > 0) {
-   const apiErrors = validation.transformApiErrors(result);
-   setErrors(apiErrors);  // ← Solo field errors
-   setApiError(null);     // ← Limpiar apiError
+  const apiErrors = validation.transformApiErrors(result);
+  setErrors(apiErrors);  // ← Solo field errors
+  setApiError(null);     // ← Limpiar apiError
  } 
- // If global error / Si hay error global
+ // Handle global error
  else if (result.error) {
    setApiError(result.error);  // ← Solo apiError
    setErrors({});       // ← Limpiar field errors
- }
+  }
+  setIsLoading(false);
+  return { success: false };
  }
  //----------------------
  // 🎉 STEP 7: Success - update state and return success
@@ -568,7 +562,6 @@ try {
  setErrors({});
  setApiError(null);
  setTouchedFields({});
- setIsLoading(false);
  return { success: true };
 
  }catch (error) {
