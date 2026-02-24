@@ -169,6 +169,7 @@ const UpdateProfileContainer=  ({
  /**
  * 🚀 API Wrapper Function (Adapter Pattern)
  * 🎯 Purpose: Adapt the raw API response to standardized format
+ * Normalize BE response (Record<string, string[]>) to UI format (Record<string, string>)
  * 🔧 Responsibility: Error handling, response normalization
  * 🏷️ Pattern: Adapter Pattern (API response → Standardized format)
  * 💾 Memoization: useCallback prevents recreation on every render
@@ -178,31 +179,47 @@ const UpdateProfileContainer=  ({
  */  
   const updateProfileApiWrapper = React.useCallback(
    async (payload: Record<string, unknown>): Promise<NormalizedProfileUpdateResultType> => {
-   try {
+  try {
 // 🚀 Call the actual API function
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const apiResult = await handleUpdateUserProfile(payload);
 
-   // ✅ Successful API Response
-   if (apiResult.success) {
-    if (onSuccess) onSuccess();
+  // 1️⃣ Handle Success Case
+  // Reset retryAftr state on success and return consistent message 
+  if (apiResult.success) {
+   if (onSuccess) onSuccess();
     return {
      success: true,
-     fieldErrors: {},
-     message: apiResult.message,
+     fieldErrors: {} ,
+     message: apiResult.message || 'Profile updated successfully',
     };
    }
 
-   if (!apiResult.success && apiResult.retryAfter) {
+  // 2️⃣ Handle Rate Limit 🚦
+  if (!apiResult.success && apiResult.retryAfter) {
       setRetryAfter(apiResult.retryAfter);
-    }
+  }
 
-// ❌ Business Logic Error (server returned success: false)
+  // 3️⃣ 🧠 NORMALIZATION LOGIC (The Core Fix)
+   // Convert Record<string, string[]> (BE) -> Record<string, string> (UI)
+   // ❌ Business Logic Error (server returned success: false)
+   const normalizedFieldErrors: Record<string, string> = {};
+   if (apiResult.fieldErrors) {
+    Object.entries(apiResult.fieldErrors).forEach(([key, value]) => {
+     // If it's an array (BE style), take the first error message
+     // If it's already a string, use it directly
+     normalizedFieldErrors[key] = Array.isArray(value) ? value[0] : String(value);
+    });
+   }
+
+   // 4️⃣ Return standardized object to the logic hook
     return {
      success: false,
      error: apiResult.error ?? apiResult.message,
-     fieldErrors: apiResult.fieldErrors ?? {},
-     };
+     message: apiResult.message,
+     fieldErrors: normalizedFieldErrors, // Now it strictly matches Record<string, string>
+   };
+
     } catch (error) {
      // 🌐 Network/Server Error
       console.error("API call failed:", error);

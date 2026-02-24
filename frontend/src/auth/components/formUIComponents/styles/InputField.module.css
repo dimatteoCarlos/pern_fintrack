@@ -111,6 +111,7 @@
   bottom: 0;
   left: 0;
   animation:fadeIn 0.2s ease-in;
+
 }
 
 /**
@@ -129,6 +130,7 @@
   color: #6c757d;
   margin-top: 2px;
   font-style: italic;
+  /* border:1px solid blue; */
 }
 /**************/
 .inputWrapper {

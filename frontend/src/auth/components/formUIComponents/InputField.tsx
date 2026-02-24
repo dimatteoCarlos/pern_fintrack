@@ -168,14 +168,14 @@ const InputField: React.FC<InputFieldProps> = React.memo(
 
         {/* ❌ ERROR MESSAGE */}
         {hasError && (// hasError = touched && error
-          <div
-            id={`${inputId}-error`}
-            className={styles.errorMessage}
-            role="alert"
-            aria-live="polite"
-          >
-            {error}
-          </div>
+         <div
+           id={`${inputId}-error`}
+           className={styles.errorMessage}
+           role="alert"
+           aria-live="polite"
+         >
+           {error}
+         </div>
         )}
 
         {/* ℹ️ HELP TEXT */}

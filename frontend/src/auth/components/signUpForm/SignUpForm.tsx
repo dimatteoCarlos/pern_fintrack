@@ -10,7 +10,7 @@ import { signUpSchema, SignUpFormDataType } from '../../../auth/validation/zod_s
 import { useFormLogic } from '../../hooks/useFormLogic';
 import InputField from '../formUIComponents/InputField';
 
-import styles from "../../authPage/styles/AuthUI.module.css"
+import styles from "../authPage/styles/authUI.module.css"
 
 type SignUpFormProps = {
   onSignUp: (userData: SignUpFormDataType) => Promise<void>;
@@ -93,58 +93,60 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
       />
 
       {/* Password */}
-      <InputField
-        label="Password"
-        type={isPasswordVisible ? 'text' : 'password'}
-        placeholder="password"
-        value={formData.password}
-        onChange={handleInputChange('password')}
-        error={validationErrors.password}
-        touched={touchedFields.has('password')}
-        required
-        disabled={isLoading}
-        showContentToggle={true}
-        isContentVisible={isPasswordVisible}
-        onToggleContent={togglePasswordVisibility}
-      />
-
-      {/* Confirm Password */}
-      <InputField
-        label="Confirm Password"
-        type={isConfirmVisible ? 'text' : 'password'}
-        placeholder="confirm password"
-        value={formData.confirmPassword || ''}
-        onChange={handleInputChange('confirmPassword')}
-        error={validationErrors.confirmPassword}
-        touched={touchedFields.has('confirmPassword')}
-        required
-        disabled={isLoading}
-        showContentToggle={true}
-        isContentVisible={isConfirmVisible}
-        onToggleContent={toggleConfirmVisibility}
-      />
+      <div className={styles.extraFieldsGroup}>
+       <InputField
+         label="Password"
+         type={isPasswordVisible ? 'text' : 'password'}
+         placeholder="password"
+         value={formData.password}
+         onChange={handleInputChange('password')}
+         error={validationErrors.password}
+         touched={touchedFields.has('password')}
+         required
+         disabled={isLoading}
+         showContentToggle={true}
+         isContentVisible={isPasswordVisible}
+         onToggleContent={togglePasswordVisibility}
+       />
+       {/* Confirm Password */}
+       <InputField
+         label="Confirm Password"
+         type={isConfirmVisible ? 'text' : 'password'}
+         placeholder="confirm password"
+         value={formData.confirmPassword || ''}
+         onChange={handleInputChange('confirmPassword')}
+         error={validationErrors.confirmPassword}
+         touched={touchedFields.has('confirmPassword')}
+         required
+         disabled={isLoading}
+         showContentToggle={true}
+         isContentVisible={isConfirmVisible}
+         onToggleContent={toggleConfirmVisibility}
+       />
+      </div>
 
       {/* First Name */}
-      <InputField
-        label="First Name"
-        value={formData.user_firstname}
-        onChange={handleInputChange('user_firstname')}
-        error={validationErrors.user_firstname}
-        touched={touchedFields.has('user_firstname')}
-        required
-        disabled={isLoading}
-      />
-
-      {/* Last Name */}
-      <InputField
-        label="Last Name"
-        value={formData.user_lastname}
-        onChange={handleInputChange('user_lastname')}
-        error={validationErrors.user_lastname}
-        touched={touchedFields.has('user_lastname')}
-        required
-        disabled={isLoading}
-      />
+      <div className={styles.extraFieldsGroup}>
+       <InputField
+         label="First Name"
+         value={formData.user_firstname}
+         onChange={handleInputChange('user_firstname')}
+         error={validationErrors.user_firstname}
+         touched={touchedFields.has('user_firstname')}
+         required
+         disabled={isLoading}
+       />
+       {/* Last Name */}
+       <InputField
+         label="Last Name"
+         value={formData.user_lastname}
+         onChange={handleInputChange('user_lastname')}
+         error={validationErrors.user_lastname}
+         touched={touchedFields.has('user_lastname')}
+         required
+         disabled={isLoading}
+       />
+      </div>
 
       {/* Submit Button */}
       <button

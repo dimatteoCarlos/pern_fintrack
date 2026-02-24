@@ -9,13 +9,13 @@
   - Manage rememberMe state
  =============================== */
 import { useEffect, useState } from 'react';
-import styles from './styles/AuthUI.module.css';
 import GoogleLogo from '../../../assets/auth/GoogleLogo';
 import Message, { MessageType } from '../formUIComponents/Message';
 import { SignInFormDataType, SignUpFormDataType } from '../../validation/zod_schemas/authSchemas';
 import SignInForm from '../signInForm/SignInForm';
 import SignUpForm from '../signUpForm/SignUpForm';
 import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage'
+import styles from './styles/authUI.module.css';
 
 type AuthUIPropsType = {
   onSignIn: (credentials: SignInFormDataType, rememberMe: boolean) => Promise<void>;

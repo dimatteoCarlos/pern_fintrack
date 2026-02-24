@@ -316,9 +316,11 @@ export type ProfileUpdatePayloadType = Partial<{
 export type NormalizedProfileUpdateResultType = {
   success: boolean;
   error?: string;
-  fieldErrors: Record<string, string>;
+  // fieldErrors: Record<string, string>;
+  fieldErrors?: Record<string, string[] | string>;
   message?: string;
-  // retryAfter?:number;
+  retryAfter?:number;
+  sessionExpired?: boolean;
 };
 
 // 🎯 UNION RESPONSE

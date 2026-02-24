@@ -36,6 +36,8 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
  
  //--LOCAL UI STATES not related to auth UX
  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+ const [isSignInMode, setIsSignInMode] = useState(true); // true = signin, false = signup
  
 //CUSTOM HOOKS FOR SIGNIN AND SIGNUP
 // Auth operations (passed to AuthUI)
@@ -48,16 +50,9 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
     clearError,
   } = useAuth();
 
-//------------------------------------
+//------------------------------
 // ✅ HANDLE NAVIGATION STATES
-//------------------------------------
-// 🧹 Clear navigation state on mount
- // useEffect(() => {
- //  if (location.state && Object.keys(location.state).length > 0) {
- //    navigateTo(location.pathname, { replace: true, state: {} });
- //  }
- //  }, [location.state, location.pathname, location.key, navigateTo]);
-
+//------------------------------
  useEffect(() => {
   const navigationState = location.state as {
     hasIdentity?: boolean;
@@ -83,8 +78,9 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
   }
 }, [location.state, location.pathname, navigateTo, setUIState, setPrefilledData]);
 
-//------------------------------
-//FUNCTIONS EVENT HANDLERS
+// ======================
+// 🎯 EVENT HANDLERS
+// ======================
 // 🧹 Reset UI state when modal closes
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -93,14 +89,14 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
   const openSigninModalHandler = () => {
     setIsMenuOpen(false);
     clearError();
-   // Mode is handled internally by AuthUI
+    setIsSignInMode(true); 
     useAuthUIStore.getState().setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
   };
 
   const openSignupModalHandler = () => {
     setIsMenuOpen(false);
     clearError();  // ✅ Clean previous errors
-   // Mode is handled internally by AuthUI
+    setIsSignInMode(false);
     useAuthUIStore.getState().setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
  };
   
@@ -115,67 +111,67 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
 // 🎨 RENDER
 // =============
   return (
-    <div className={styles.authPageContainer}>
-      {/* {Navbar} */}
-      <nav className={styles.navbar}>
-        <div className={styles.logoContainer} onClick={openSigninModalHandler}>
-          <span>
-            <Logo />
-          </span>
-        </div>
+  <div className={styles.authPageContainer}>
+   {/* {Navbar} */}
+   <nav className={styles.navbar}>
+     <div className={styles.logoContainer} onClick={openSigninModalHandler}>
+       <span>
+         <Logo />
+       </span>
+     </div>
 
-        <button
-          className={styles.menuToggleButton}
-          aria-label='Navigation Menu'
-          aria-expanded={isMenuOpen}
-          onClick={toggleMenu}
+     <button
+       className={styles.menuToggleButton}
+       aria-label='Navigation Menu'
+       aria-expanded={isMenuOpen}
+       onClick={toggleMenu}
+     >
+       ☰
+     </button>
+
+     <ul
+       className={`${styles.navList} ${
+         isMenuOpen ? styles.navMenuActive : ''}
+         `}
+     >
+       <li className={styles.navItem} onClick={openSigninModalHandler}>
+         Sign in
+       </li>
+
+       <li className={styles.navItem} onClick={openSignupModalHandler}>
+         Sign up
+       </li>
+     </ul>
+   </nav>
+
+   {/* Auth Modal */}
+   <main className={styles.mainContent}>
+     {/* unique modal */}
+    {showModal && (
+      <div className={styles.modalOverlay} onClick={handleCloseModal}>
+       <div
+         className={styles.modalContent}
+         onClick={(e) => e.stopPropagation()}
         >
-          ☰
-        </button>
-
-        <ul
-          className={`${styles.navList} ${
-            isMenuOpen ? styles.navMenuActive : ''}
-            `}
-        >
-          <li className={styles.navItem} onClick={openSigninModalHandler}>
-            Sign in
-          </li>
-
-          <li className={styles.navItem} onClick={openSignupModalHandler}>
-            Sign up
-          </li>
-        </ul>
-      </nav>
-
-      {/* Auth Modal */}
-      <main className={styles.mainContent}>
-        {/* unique modal */}
-        {showModal && (
-          <div className={styles.modalOverlay} onClick={handleCloseModal}>
-            <div
-              className={styles.modalContent}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <AuthUI
-               // Auth operations  
-                onSignIn={handleSignIn}
-                onSignUp={handleSignUp}
-                isLoading={isLoading}
-                error={error}
-                messageToUser={message}//from UI store
-                // messageToUser={successMessage}
-                // isSignInInitial={initialAuthMode === 'signin'}
-                clearError={clearError}
-              
-              // onClose is used by AuthUI to close modal (e.g., from its own close button)
-              onClose={handleCloseModal}
-              />
-              <button className={styles.closeButton} onClick={handleCloseModal}>
-                Close
-              </button>
-            </div>
-          </div>
+      <AuthUI
+       // Auth operations  
+        onSignIn={handleSignIn}
+        onSignUp={handleSignUp}
+        isLoading={isLoading}
+        error={error}
+        messageToUser={message}//from UI store
+        //current mode
+        isSignInInitial={isSignInMode}
+        clearError={clearError}
+      
+      // onClose is used by AuthUI to close modal (e.g., from its own close button)
+      onClose={handleCloseModal}
+      />
+           <button className={styles.closeButton} onClick={handleCloseModal}>
+             Close
+           </button>
+         </div>
+       </div>
         )}
       </main>
     </div>
