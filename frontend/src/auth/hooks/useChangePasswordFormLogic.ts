@@ -93,52 +93,100 @@ export const useChangePasswordFormLogic = ({
 /**
 * Delete for valid fields (no empty strings)
 */
+// const handleChange = useCallback(
+// (fieldName: keyof ChangePasswordFormDataType, value: string | null) => {
+
+//  setFormData((currentFormData: ChangePasswordFormDataType) => {
+//  const updatedForm = {
+//    ...currentFormData,
+//    [fieldName]: value ?? ''
+//  };
+
+// // 🎯 Mark field as touched
+//  setTouchedFields((prev) => ({
+//   ...prev,
+//   [fieldName]: true
+//  }));
+
+// // 🎯 Mark field as dirty if value changed
+//  if (currentFormData[fieldName] !== value) {
+//   setDirtyFields((prev) => ({
+//    ...prev,
+//    [fieldName]: true
+//   }));
+//  }
+
+// // 🧪 Real-time validation for this field only
+//  const validationResult = validateField(
+//   fieldName,
+//   value ?? '',
+//   updatedForm
+//  );
+
+// // 📝 Update validation errors
+//  setValidationErrors((prevErrors) => {
+//   const next = { ...prevErrors };
+
+//  if (validationResult.isValid) {
+//    delete next[fieldName];
+//   } else {
+//     next[fieldName] = validationResult.error ?? 'Invalid value';
+//   }
+
+//    return next;
+//  });
+
+//  return updatedForm;
+//  });
+//  },
+//  [validateField, setFormData]
+// );
+
 const handleChange = useCallback(
 (fieldName: keyof ChangePasswordFormDataType, value: string | null) => {
 
  setFormData((currentFormData: ChangePasswordFormDataType) => {
- const updatedForm = {
-   ...currentFormData,
-   [fieldName]: value ?? ''
- };
+ const updatedForm={...currentFormData, [fieldName]: value??'' };
 
-// 🎯 Mark field as touched
+// 🎯 Mark field as touched and and dirty (unchanged)
  setTouchedFields((prev) => ({
-  ...prev,
-  [fieldName]: true
+  ...prev, [fieldName]: true
  }));
 
 // 🎯 Mark field as dirty if value changed
  if (currentFormData[fieldName] !== value) {
   setDirtyFields((prev) => ({
-   ...prev,
-   [fieldName]: true
-  }));
+   ...prev,  [fieldName]: true }));
  }
-
 // 🧪 Real-time validation for this field only
- const validationResult = validateField(
-  fieldName,
-  value ?? '',
-  updatedForm
- );
-
-// 📝 Update validation errors
+// 📝 Update validation errors for the changed field
  setValidationErrors((prevErrors) => {
   const next = { ...prevErrors };
 
- if (validationResult.isValid) {
-   delete next[fieldName];
-  } else {
-    next[fieldName] = validationResult.error ?? 'Invalid value';
+ const mainResult = validateField(fieldName, value??'',updatedForm);
+
+  if (mainResult.isValid) {
+    delete next[fieldName];
+   } else {
+     next[fieldName] = mainResult.error ?? 'Invalid value';
   }
 
-   return next;
- });
+ // If newPassword changed, also validate confirmPassword
+  if (fieldName === 'newPassword') {
+    const confirmResult = validateField('confirmPassword', updatedForm.confirmPassword, updatedForm);
+    if (confirmResult.isValid) {
+      delete next['confirmPassword'];
+    } else {
+      next['confirmPassword'] = confirmResult.error ?? 'Invalid value';
+    }
+ }
+//----------------------
+  return next;
+  });
 
  return updatedForm;
- });
- },
+   });
+  },
  [validateField, setFormData]
 );
 

@@ -1,4 +1,4 @@
-/* frontend\src\auth\components\authPage\styles\authUI.module.css */
+/* src/components/auth/AuthUI.module.css */
 /* 📢 Stable Message Area with Smooth Transition
 Prevents layout shift when messages appear/disappear*/
 .messageArea {
@@ -88,6 +88,30 @@ Prevents layout shift when messages appear/disappear*/
   margin-bottom: 1.25rem;
 }
 
+/* 
+.auth-form__field {
+  margin-bottom: 0.9375rem; 
+}
+
+.auth-form__label {
+  display: block;
+  margin-bottom: 0.3125rem; 
+  color: #555;
+  font-size: 0.95rem; 
+}
+
+.auth-form__input {
+  width: 100%;
+  padding: 0.625rem;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem; 
+  font-size: 1rem; 
+  background-color: rgba(0, 0, 0, 0.76);
+}
+.auth-form__input::placeholder {
+  color: var(--creme, yellow);
+} */
+
 /*-----------------*/
 .auth-form__remember-me{
  display: flex;
@@ -96,8 +120,8 @@ Prevents layout shift when messages appear/disappear*/
  margin-bottom: 1.25rem;
  cursor: pointer;
  user-select:none;
- width: 100%;
-
+ 
+ /* background-color: orange; */
 }
 
 /*Name and Lastname fields*/
@@ -117,7 +141,7 @@ Prevents layout shift when messages appear/disappear*/
 }
 /*--------------------------------*/
 /*
-checkbox default style / Estilo por defecto del checkbox 
+Estilo por defecto del checkbox
 .auth-form__checkbox{
  width: 1rem;
  height:1rem;
@@ -150,7 +174,6 @@ checkbox default style / Estilo por defecto del checkbox
   place-content: center;
   vertical-align: middle;
   transition: background-color 0.2s ease, border-color 0.2s ease;
-
 }
 
 /* Styles when the checkbox is checked */
@@ -174,7 +197,6 @@ checkbox default style / Estilo por defecto del checkbox
  font-size: 0.85rem;
  color: #666;
  cursor: pointer;
-
 }
 
 .auth-form__button {
