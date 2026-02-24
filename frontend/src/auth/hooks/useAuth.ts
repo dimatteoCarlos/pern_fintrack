@@ -39,6 +39,7 @@ import {
   url_validate_session
 } from '../../endpoints';
 import { clearIdentity, saveIdentity } from '../auth_utils/localStorageHandle/authStorage';
+import { safeMergeUser } from '../auth_utils/safeMergeUser';
 
 /* ===============================
    🛠️ DATA TRANSFORMATION
@@ -128,21 +129,23 @@ const {
      if ((accessToken ) && !error && !isLoading &&!isAuthenticated) {
         try {
          const response = await authFetch<AuthSuccessResponseType>(url_validate_session, { method: 'GET' });
-//----------------------
-console.log("🚀 ~ checkAuthStatus ~ response:", response)
-//----------------------
-          if (isMounted && response.data?.user) {
-            setUserData(mapUserResponseToUserData(response.data.user));
-            setIsAuthenticated(true);
-            console.log('✅ Session restored successfully');
-          }
-        } catch (error) {
+      //----------------------
+      // console.log("🚀 ~ checkAuthStatus ~ response:", response)
+      //----------------------
+      if (isMounted && response.data?.user) {
+      // ✅ Transform and merge user data on session restore
+       const transformedUser = mapUserResponseToUserData(response.data.user);
+       const mergedUser = safeMergeUser(transformedUser);
+       setUserData(mergedUser);
+       setIsAuthenticated(true);
+       console.log('✅ Session restored successfully');
+         }
+       } catch (error) {
           if (isMounted) {
-            console.warn('🔍 Session hydration failed');
+           console.warn('🔍 Session hydration failed');
           }
         }
       }
-
       if (isMounted) setIsCheckingAuth(false);
     };
 
@@ -151,81 +154,78 @@ console.log("🚀 ~ checkAuthStatus ~ response:", response)
     return () => { isMounted = false };
   }, [setIsAuthenticated, setIsCheckingAuth, error, isLoading, setUserData,isAuthenticated]);
 
-  /* ===============================
-   🔐 SIGN IN
-   =============================== */
-    const handleSignIn = async (credentials: SignInCredentialsType, rememberMe: boolean):Promise<void> => {
-    clearError();
-    setIsLoading(true);
-    clearSuccessMessage();
+/* ===============================
+🔐 SIGN IN
+=============================== */
+  const handleSignIn = async (credentials: SignInCredentialsType, rememberMe: boolean):Promise<void> => {
+  clearError();
+  setIsLoading(true);
+  clearSuccessMessage();
 
-    try {
-      const response = await authFetch<SignInResponseType>(url_signin, {
-        method: 'POST',
-        data: credentials
-      });
+  try {
+    const response = await authFetch<SignInResponseType>(url_signin, {method: 'POST', data: credentials});
 
-      const { accessToken, user, message, expiresIn } = response.data;
+    const { accessToken, user, message, expiresIn } = response.data;
 
-      if (expiresIn) {
-        const expiryTime = Date.now() + (expiresIn * 1000);
-        sessionStorage.setItem('tokenExpiry', expiryTime.toString());
-        //-------------
-        console.log('token expiration:', new Date(expiryTime))
-      }
+    const userFromSignIn = response.data?.user || user;
 
-      const userDataFromResponse = response.data?.user || user;
+//check data
+   if (!accessToken ||!userFromSignIn) {
+   const errorMessage = !accessToken 
+     ? 'Server response missing access token'
+     : 'Server response missing user data';
+   throw new Error(errorMessage);
+   }
 
-      if (accessToken && userDataFromResponse) {
-        sessionStorage.setItem('accessToken', accessToken);
+// processing expiresIn
+  if (expiresIn) {
+   const expiryTime = Date.now() + (expiresIn * 1000);
+   sessionStorage.setItem('tokenExpiry', expiryTime.toString());
+   //-------------
+   console.log('token expiration:', new Date(expiryTime))
+  }
 
-       // ✅ Persist identity if rememberMe is true
-       if (rememberMe) {
-        const identity: UserIdentityType = {
-          email: credentials.email,
-          username: credentials.username,
-          rememberMe: true,
-        };
-        
-        saveIdentity(identity);
-        console.log('✅ Identity saved for remembered user');
-      } else {
-        clearIdentity();
-        console.log('🧹 Identity cleared');
-      }
+  if (accessToken && userFromSignIn){
+    sessionStorage.setItem('accessToken', accessToken);
 
-      const userDataForStore = mapUserResponseToUserData(userDataFromResponse);
+   // ✅ Persist identity if rememberMe is true
+   if (rememberMe) {
+    const identity: UserIdentityType = {
+      email: credentials.email,
+      username: credentials.username,
+      rememberMe: true,
+    };
+    
+    saveIdentity(identity);
+    console.log('✅ Identity saved for remembered user');
+  } else {
+    clearIdentity();
+    console.log('🧹 Identity cleared');
+  }
 
-      setUserData(userDataForStore);
-      setIsAuthenticated(true);
-      setSuccessMessage(message || 'Sign in successful! Welcome back!');
-      navigateTo(INITIAL_PAGE_ADDRESS || '/fintrack');
+  // ✅ Transform and merge user data
+   const transformedUser = mapUserResponseToUserData(userFromSignIn);
+   const mergedUser = safeMergeUser(transformedUser);
+   setUserData(mergedUser);//to store
 
-        // return true;
-      }
+   setIsAuthenticated(true);
+   setSuccessMessage(message || 'Sign in successful! Welcome back!');
+   navigateTo(INITIAL_PAGE_ADDRESS || '/fintrack');
 
-      const errorMessage = accessToken
-        ? 'Server response missing user data'
-        : 'Server response missing access token';
-      setError(`Invalid server response - ${errorMessage}`);
+    // return true;
+  }
 
-      // return false;
-
-    } catch (err: unknown) {
-      const errorMessage = extractErrorMessage(err) || 'Login failed. Please check your credentials.';
-      setError(errorMessage);
-
-      // return false;
-
-    } finally {
-      setIsLoading(false);
-    }
+   } catch (err: unknown) {
+     const errorMessage = extractErrorMessage(err) || 'Login failed. Please check your credentials.';
+     setError(errorMessage);
+} finally {
+     setIsLoading(false);
+   }
   };
 
-  /* ===============================
-     📝 SIGN UP
-     =============================== */
-
+/* ===============================
+   📝 SIGN UP
+ =============================== */
   const handleSignUp = async (credentials: SignUpCredentialsType):Promise<void> => {
     clearError();
     clearSuccessMessage();
@@ -246,23 +246,26 @@ console.log("🚀 ~ checkAuthStatus ~ response:", response)
 
       const resData = await response.json();
 
+      //verify user exists
+      if (!resData.user) {
+      throw new Error('Server response missing user data');
+    }
+
       if (resData.accessToken) {
         sessionStorage.setItem('accessToken', resData.accessToken);
       }
+     // ✅ Transform and merge user data
+     const transformedUser = mapUserResponseToUserData(resData.user);
+     const mergedUser = safeMergeUser(transformedUser);
+     setUserData(mergedUser);
 
-      const userDataForStore = mapUserResponseToUserData(resData.user);
-      setUserData(userDataForStore);
-      setIsAuthenticated(true);
-      setSuccessMessage(resData.message || 'Sign up successful!');
-      navigateTo('/fintrack');
+     setIsAuthenticated(true);
+     setSuccessMessage(resData.message || 'Sign up successful!');
+     navigateTo('/fintrack');
 
-      // return true;
-
-    } catch (err: unknown) {
+   } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Registration failed';
       setError(errorMessage);
-      
-      // return false;
     } finally {
       setIsLoading(false);
     }
