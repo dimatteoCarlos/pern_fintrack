@@ -1,18 +1,18 @@
 //src/controllers/authcontroller.js
 //signUpUser,signInUser,signOutUser,validateSession
-import {
-  createToken,
-  createRefreshToken,
-  hashed,
-  isRight,
-} from '../utils/authUtils/authFn.js';
-import { createError } from '../utils/errorHandling.js';
-import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../db/configDB.js';
-import pc from 'picocolors';
-import { getCurrencyId } from '../fintrack_api/controllers/transactionController.js';
-import { sendSuccessResponse } from '../utils/authUtils/sendSuccessResponse.js';
-import { setRefreshTokenCookie } from '../utils/authUtils/cookieConfig.js';
+ import {
+   createToken,
+   createRefreshToken,
+   hashed,
+   isRight,
+ } from '../utils/authUtils/authFn.js';
+ import { createError } from '../utils/errorHandling.js';
+ import { v4 as uuidv4 } from 'uuid';
+ import { pool } from '../db/configDB.js';
+ import pc from 'picocolors';
+ import { getCurrencyId } from '../fintrack_api/controllers/transactionController.js';
+ import { sendSuccessResponse } from '../utils/authUtils/sendSuccessResponse.js';
+ import { setRefreshTokenCookie } from '../utils/authUtils/cookieConfig.js';
 //=====================
 //FUNCTIONS DECLARATION
 //=====================
@@ -98,7 +98,9 @@ export const signUpUser = async (req, res, next) => {
 
 // ✅ -Insert new user into data base
     const userData = await pool.query({
-      text: `INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id) VALUES ($1, $2, $3,$4,$5, $6, $7, $8) RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id;`,
+      text: `
+      INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id) VALUES ($1, $2, $3,$4,$5, $6, $7, $8) 
+      RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id;`,
       values: [
         newUserId,
         username,
@@ -155,13 +157,6 @@ export const signUpUser = async (req, res, next) => {
 
 // ✅ REFRESH TOKEN
 setRefreshTokenCookie(res, refreshToken);
-// res.cookie('refreshToken', refreshToken, {
-//   httpOnly: true,
-//   secure: process.env.NODE_ENV === 'production',
-//   sameSite: 'Lax', // ✅ Funciona para web y mobile
-//   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
-//   path: '/api'
-// });
 
 // ✅ RESPONSE HANDLING
 // const userResponseData  = {
@@ -214,10 +209,10 @@ await pool.query('BEGIN');
 // ✅ GET USER DATA FROM DB
     const userData = await pool
       .query({
-        text: `SELECT u.username, u.email, u.password_hashed, u.user_id, u.user_firstname, u.user_lastname, u.user_role_id,
+        text: `SELECT u.username, u.email, u.password_hashed, u.user_id, u.user_firstname, u.user_lastname, u.user_contact, u.user_role_id,
         ur.user_role_name,
-        ct.currency_code as currency FROM users u
-
+        ct.currency_code as currency
+        FROM users u
         JOIN user_roles ur ON u.user_role_id = ur.user_role_id
         JOIN currencies ct ON u.currency_id = ct.currency_id
         WHERE (u.username = $1 AND u.email = $2) OR u.username = $1 OR u.email = $2`,
@@ -430,7 +425,7 @@ export const validateSession = async (req, res, next) => {
     console.log("🚀 ~ validateSession ~ userId:", userId)
     
     const userDataResult = await pool.query({
-      text: `SELECT u.user_id, u.username, u.email, u.user_firstname, u.user_lastname, 
+      text: `SELECT u.user_id, u.username, u.email, u.user_firstname, u.user_contact, u.user_lastname, 
       u.user_contact, ct.currency_code as currency, 
       ur.user_role_name as role
       FROM users u
