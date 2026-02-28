@@ -1,4 +1,4 @@
-/* src/components/auth/AuthUI.module.css */
+/* frontend\src\auth\components\authPage\styles\authUI.module.css */
 /* 📢 Stable Message Area with Smooth Transition
 Prevents layout shift when messages appear/disappear*/
 .messageArea {
@@ -10,23 +10,29 @@ Prevents layout shift when messages appear/disappear*/
   /* Initial State: Closed and Invisible */
   min-height: 0;
   max-height: 0;
+  
+  /*Fix height reserved for the message*/
+  /* min-height: 3.75rem;
+  max-height: 3.75rem; */
+
   opacity: 0;
   overflow: hidden;
   margin-bottom: 0;
-  transform: translateY(-10px);
+  transform: translateY(-0.625rem);
   visibility: hidden;
   
   /* Smooth transitions for all properties */
   transition: 
-    max-height 0.4s ease, 
-    margin-bottom 0.4s ease, 
-    opacity 0.3s ease, 
-    transform 0.4s ease;
+   opacity 0.4s ease, 
+   transform 0.7s ease,
+   max-height 0.7s ease, 
+   margin-bottom 0.7s ease,
+   visibility 0.5s ease;
 }
 
 /* 🟢 Active State: Opens and fades in */
 .isVisible {
-  max-height: 120px; /* Increased to accommodate multi-line messages */
+  max-height: 7.5rem; /* Increased to accommodate multi-line messages */
   opacity: 1;
   margin-bottom: 1.5rem; /* Space only appears when message is present */
   transform: translateY(0);
@@ -38,7 +44,7 @@ Prevents layout shift when messages appear/disappear*/
   max-height: 0;
   opacity: 0;
   margin-bottom: 0;
-  transform: translateY(-10px);
+  transform: translateY(-0.625rem);
   visibility: hidden;
   pointer-events: none; /* Prevents interaction when hidden */
 }
@@ -86,6 +92,7 @@ Prevents layout shift when messages appear/disappear*/
   flex-direction: column;
   width: 100%;
   margin-bottom: 1.25rem;
+  gap:1rem;
 }
 
 /* 
@@ -130,6 +137,34 @@ Prevents layout shift when messages appear/disappear*/
   display: flex;
   flex-direction: column;
   gap: 0; /* Gap is usually handled inside InputField or here */
+}
+/**RESPONSIVE**/
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 1rem; 
+    max-width: 100%;
+    margin: 0.5rem auto;
+  }
+
+  .auth-container__title {
+    /* font-size: 1.5rem; */
+    margin-bottom: 1rem;
+  }
+
+  /* Assure min height for touch button */
+  .auth-form__button,
+  .auth-actions__toggle-button,
+  .google-signin-button,
+  .closeButton {
+    min-height: 44px;
+    font-size: 16px;/* Avoid auto zoom in iOS */
+  }
+
+  /* El área de mensajes puede tener menos altura si es necesario */
+  .messageArea {
+   max-height: 3.125rem;
+  }
+
 }
 
 @media (min-width: 480px) {
