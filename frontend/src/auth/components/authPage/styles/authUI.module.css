@@ -10,10 +10,6 @@ Prevents layout shift when messages appear/disappear*/
   /* Initial State: Closed and Invisible */
   min-height: 0;
   max-height: 0;
-  
-  /*Fix height reserved for the message*/
-  /* min-height: 3.75rem;
-  max-height: 3.75rem; */
 
   opacity: 0;
   overflow: hidden;
@@ -32,9 +28,9 @@ Prevents layout shift when messages appear/disappear*/
 
 /* 🟢 Active State: Opens and fades in */
 .isVisible {
-  max-height: 7.5rem; /* Increased to accommodate multi-line messages */
+  max-height: 3.5rem; 
   opacity: 1;
-  margin-bottom: 1.5rem; /* Space only appears when message is present */
+  margin-bottom: 0.5rem; /* Space only appears when message is present */
   transform: translateY(0);
   visibility: visible;
 }
@@ -53,20 +49,24 @@ Prevents layout shift when messages appear/disappear*/
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.25rem; /* 20px / 16px */
+  padding:  2rem 1.5rem; 
   border: 1px solid #e0e0e0;
-  border-radius: 0.5rem; /* 8px / 16px */
+  border-radius: 0.5rem; 
   background-color: #f9f9f9;
-  width: 90%; /* 350px / 16px */
-  max-width: 22rem;
-  /* width: 21.875rem; */
-  margin: 1.25rem auto;
+
+  width: 95%; 
+  max-width: 26rem;
+
+  margin: 0rem auto;
+  box-sizing: border-box;
+  /* height: auto;  */
 }
 
 .auth-container__title {
   font-size: 1.8rem; /* 1.8 * 16px = 28.8px */
-  margin-bottom: 1.25rem;
-  color: #333;
+  margin-bottom: 1.5rem;
+   color: #333;
+  font-weight: 600;  
 }
 
 .auth-container__errorMsg {
@@ -91,89 +91,28 @@ Prevents layout shift when messages appear/disappear*/
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin-bottom: 1.25rem;
-  gap:1rem;
+  margin-bottom:1rem;
+  gap:1.25rem;
 }
-
-/* 
-.auth-form__field {
-  margin-bottom: 0.9375rem; 
-}
-
-.auth-form__label {
-  display: block;
-  margin-bottom: 0.3125rem; 
-  color: #555;
-  font-size: 0.95rem; 
-}
-
-.auth-form__input {
-  width: 100%;
-  padding: 0.625rem;
-  border: 1px solid #ccc;
-  border-radius: 0.25rem; 
-  font-size: 1rem; 
-  background-color: rgba(0, 0, 0, 0.76);
-}
-.auth-form__input::placeholder {
-  color: var(--creme, yellow);
-} */
-
 /*-----------------*/
 .auth-form__remember-me{
  display: flex;
  align-items: center;
- gap:0.5rem;
- margin-bottom: 1.25rem;
+ gap:0.75rem;
+margin: 0.5rem 0 1.5rem 0;
  cursor: pointer;
  user-select:none;
- 
  /* background-color: orange; */
 }
 
 /*Name and Lastname fields*/
-
 .extraFieldsGroup {
   display: flex;
   flex-direction: column;
-  gap: 0; /* Gap is usually handled inside InputField or here */
-}
-/**RESPONSIVE**/
-@media (max-width: 480px) {
-  .auth-container {
-    padding: 1rem; 
-    max-width: 100%;
-    margin: 0.5rem auto;
-  }
-
-  .auth-container__title {
-    /* font-size: 1.5rem; */
-    margin-bottom: 1rem;
-  }
-
-  /* Assure min height for touch button */
-  .auth-form__button,
-  .auth-actions__toggle-button,
-  .google-signin-button,
-  .closeButton {
-    min-height: 44px;
-    font-size: 16px;/* Avoid auto zoom in iOS */
-  }
-
-  /* El área de mensajes puede tener menos altura si es necesario */
-  .messageArea {
-   max-height: 3.125rem;
-  }
-
+  width: 100%;
+  gap: 1rem;  
 }
 
-@media (min-width: 480px) {
-  .extraFieldsGroup {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-}
 /*--------------------------------*/
 /*
 Estilo por defecto del checkbox
@@ -186,8 +125,8 @@ Estilo por defecto del checkbox
 } */
 .auth-form__checkbox {
   /* Dimensions updated to 1.5rem */
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1.2rem;
+  height: 1.2rem;
   
   /* Use appearance none to bypass browser default styles and allow transparency */
   appearance: none;
@@ -213,7 +152,6 @@ Estilo por defecto del checkbox
 
 /* Styles when the checkbox is checked */
 .auth-form__checkbox:checked {
-  /* Switches background to your specific green */
   background-color: rgb(16, 163, 127);
   border-color: rgb(16, 163, 127);
 }
@@ -221,29 +159,33 @@ Estilo por defecto del checkbox
 /* Draws the white checkmark using clip-path when checked */
 .auth-form__checkbox:checked::before {
   content: "";
-  width: .5rem;
-  height: .5rem;
+  width: .6rem;
+  height: .6rem;
   background-color: white;
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
 }
 
 /*--------------------------------*/
 .auth-form__label-checkbox{
- font-size: 0.85rem;
+ font-size: 0.95rem;
  color: #666;
  cursor: pointer;
 }
 
 .auth-form__button {
- width:100%;
+  width:100%;
   background-color: #007bff;
   background-color: rgb(16, 163, 127);
   color: white;
-  padding: 0.75rem 0.9375rem; /* 12px / 16px   15px / 16px */
+
+  padding: 0.875rem 1rem; 
+  border-radius: 0.5rem;
+  margin-top: 0.5rem; 
+
   border: none;
-  border-radius: 0.25rem;
   cursor: pointer;
   font-size: 1rem;
+  font-weight: 500;   
   transition: background-color 0.3s ease;
 
   /*Internal centered */
@@ -271,6 +213,8 @@ Estilo por defecto del checkbox
   flex-direction: column;
   align-items: center;
   width: 100%;
+
+  margin-top: 0.5rem;
 }
 
 .auth-actions__toggle-button {
@@ -278,14 +222,18 @@ Estilo por defecto del checkbox
   border: none;
   color: #007bff;
   cursor: pointer;
-  font-size: 0.9rem;
-  margin-bottom: 0.625rem;
+
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+
   transition: color 0.3s ease;
-  padding: 0.5rem;
 }
 
 .auth-actions__toggle-button:hover {
   color: #0056b3;
+  text-decoration: underline;
 }
 
 .socialSection {
@@ -293,7 +241,9 @@ Estilo por defecto del checkbox
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 1rem;
+
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .separator {
@@ -301,7 +251,7 @@ Estilo por defecto del checkbox
   align-items: center;
   text-align: center;
   color: #777;
-  margin-bottom: 0.9375rem;
+  margin-bottom: 1rem;
   width: 100%;
 }
 
@@ -314,35 +264,43 @@ Estilo por defecto del checkbox
 }
 
 .separator::before {
-  margin-right: 0.625rem;
+  margin-right: 0.75rem;
 }
 
 .separator::after {
-  margin-left: 0.625rem;
+  margin-left: 0.75rem;
 }
 
 .google-signin-button {
   background-color: #fff;
   color: #333;
-  padding: 0.625rem 0.9375rem;
-  border: 1px solid #ddd;
-  border-radius: 0.25rem;
-  cursor: pointer;
+  padding: 0.875rem 1rem;
+  border-radius: 0.5rem;
   font-size: 1rem;
+  font-weight: 500;   
+
+  border: 1px solid #ddd;
+  cursor: pointer;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.3s ease;
   width: 100%;
-  margin-bottom: 0.625rem;
+  margin-bottom: 0.75rem;
+  gap: 0.75rem; 
+
+  transition: border-color 0.3s ease;
 }
 
-.google-signin-button:hover {
+.google-signin-button:hover:not(:disabled) {
   border-color: #aaa;
+  background-color: #fafafa;
 }
 
 .google-signin-button svg {
-  margin-right: 0.625rem;
+  height: 1.25rem;
+  width: 1.25rem;
+  /* margin-right: 0.625rem; */
 }
 
 .messageToUser__msg {
@@ -350,4 +308,108 @@ Estilo por defecto del checkbox
   margin-top: 0.625rem;
   color: green;
   font-size: 0.9rem;
+}
+
+.closeButton {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+  background-color: transparent;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  color: #666;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+.closeButton:hover {
+  background-color: #f5f5f5;
+  border-color: #999;
+  color: #333;
+}
+
+/**RESPONSIVE**/
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 1.5rem 1.25rem;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .auth-container__title {
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .auth-form {
+    gap:1rem;
+  }
+  .auth-form__remember-me {
+    margin: 0.25rem 0 1.25rem 0;
+  }
+   .extraFieldsGroup {
+    gap: 0.875rem;             /* 14px - slightly tighter */
+  }
+
+  /* Assure min height for touch button */
+  .auth-form__button,
+  .auth-actions__toggle-button,
+  .google-signin-button,
+  .closeButton {
+    min-height: 3rem;
+    font-size: 1rem;/* Avoid auto zoom in iOS */
+  }
+
+  .auth-form__button {
+    padding: 0.875rem 1rem;/* keep same as desktop */
+  }
+
+  .messageArea {
+   max-height: 3rem;
+  }
+
+  .socialSection {
+    margin-top: 0.5rem;
+  }
+
+  .separator {
+    margin-bottom: 0.875rem;   /* 14px */
+  }
+  .separator span {
+   font-size: 0.875rem;       /* 14px */
+ }
+ 
+  .google-signin-button {
+   padding: 0.75rem 1rem;     /* 12px 16px - slightly smaller */
+ }
+
+}
+
+/* Tablet adjustments */
+@media (min-width: 481px) and (max-width: 768px) {
+  .auth-container {
+    padding: 2rem 1.75rem;
+    max-width: 28rem; 
+  }
+  
+  .auth-form {
+    gap: 1.25rem;
+  }
+}
+
+/* Larger screens */
+@media (min-width: 480px) {
+  .extraFieldsGroup {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+}
+
+@media (min-width: 1024px) {
+  .auth-container {
+    max-width: 28rem;
+  }
 }
