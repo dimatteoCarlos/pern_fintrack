@@ -59,6 +59,7 @@ Prevents layout shift when messages appear/disappear*/
 
   margin: 0rem auto;
   box-sizing: border-box;
+  gap:0.5rem;
   /* height: auto;  */
 }
 
@@ -92,7 +93,7 @@ Prevents layout shift when messages appear/disappear*/
   flex-direction: column;
   width: 100%;
   margin-bottom:1rem;
-  gap:1.25rem;
+  /* gap:1.25rem; */
 }
 /*-----------------*/
 .auth-form__remember-me{
