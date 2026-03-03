@@ -1,0 +1,79 @@
+auth
+├── auth_constants
+│   └── constants.ts
+├── auth_utils
+│   ├── authFetch.ts
+│   ├── extractErrorMessge.ts
+│   ├── fetchNewTotalBalance.ts
+│   ├── localStorageHandle
+│   │   └── authStorage.ts
+│   ├── logoutCleanup.ts
+│   ├── navigationHelper.ts
+│   ├── notification.ts
+│   ├── profileTransformation.ts
+│   └── transformFromApiToFormErrors.ts
+├── components
+│   ├── authPage
+│   │   ├── AuthPage.tsx
+│   │   ├── AuthUI.tsx
+│   │   └── styles
+│   │       ├── authPage.module.css
+│   │       └── authUI.module.css
+│   ├── debugPanel
+│   ├── formUIComponents
+│   │   ├── InputField.tsx
+│   │   ├── LoadingSpinner.tsx
+│   │   ├── Message.tsx
+│   │   ├── Resetbutton.tsx
+│   │   ├── SelectField.tsx
+│   │   ├── styles
+│   │   │   ├── InputField.module.css
+│   │   │   ├── LoadingSpinner.module.css
+│   │   │   ├── message.module.css
+│   │   │   ├── ResetButton.module.css
+│   │   │   ├── SelectField.module.css
+│   │   │   ├── SubmitButton.module.css
+│   │   │   └── UserForms.module.css
+│   │   └── SubmitButton.tsx
+│   ├── passwordChangeForm
+│   │   ├── ChangePasswordContainer.tsx
+│   │   ├── ChangePasswordForm.tsx
+│   │   └── styles
+│   │       ├── changePasswordContainer.module.css
+│   │       └── passwordChangeForm.module.css
+│   ├── protectedRoute
+│   │   ├── ProtectedRoute copy.tsx
+│   │   └── ProtectedRoute.tsx
+│   ├── updateProfileForm
+│   │   ├── styles
+│   │   │   ├── updateProfileContainer.module.css
+│   │   │   └── updateProfileForm.module.css
+│   │   ├── UpdateProfileContainer.tsx
+│   │   └── UpdateProfileForm.tsx
+│   └── userProfileMenu
+│       ├── styles
+│       │   ├── userAvatar.module.css
+│       │   └── userProfileMenu.module.css
+│       ├── UserAvatar.tsx
+│       └── UserProfileMenu.tsx
+├── hooks
+│   ├── useAuth.ts
+│   ├── useCallbackDebounce.ts
+│   ├── useChangePasswordFormLogic.ts
+│   ├── useFieldVisibility.ts
+│   ├── useSuccessAutoClose.ts
+│   └── useUpdateProfileFormLogic.ts
+├── stores
+│   └── useAuthStore.ts
+├── types
+│   └── authTypes.ts
+└── validation
+    ├── hook
+    │   ├── useChangePasswordValidation.ts
+    │   ├── useFieldValidation.ts
+    │   └── useUpdateProfileValidation.ts
+    ├── types
+    │   └── validationTypes.ts
+    └── zod_schemas
+        ├── constants.ts
+        └── userSchemas.ts
