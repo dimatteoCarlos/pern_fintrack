@@ -77,7 +77,7 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
   if (location.state && Object.keys(location.state).length > 0) {
     navigateTo(location.pathname, { replace: true, state: {} });
   }
-}, [location.state, location.pathname, navigateTo, setUIState, setPrefilledData]);
+}, [location.state, location.pathname, navigateTo, setUIState, setPrefilledData, resetUI]);
 
 // ======================
 // 🎯 EVENT HANDLERS
