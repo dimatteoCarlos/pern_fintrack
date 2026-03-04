@@ -9,7 +9,7 @@
   - Manage rememberMe state
  =============================== */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import GoogleLogo from '../../../assets/auth/GoogleLogo';
+// import GoogleLogo from '../../../assets/auth/GoogleLogo';
 import Message, { MessageType } from '../formUIComponents/Message';
 import { SignInFormDataType, SignUpFormDataType } from '../../validation/zod_schemas/authSchemas';
 import SignInForm from '../signInForm/SignInForm';
@@ -161,7 +161,7 @@ const initialFormStateRef = useRef({
       </button>
 
       {/* Google Sign-In Placeholder */}
-      <div className={styles.socialSection}>
+      {/* <div className={styles.socialSection}>
         <div className={styles.separator}>
           <span>OR</span>
         </div>
@@ -169,11 +169,12 @@ const initialFormStateRef = useRef({
           <GoogleLogo size={20} />
           Continue with Google
         </button>
-      </div>
+      </div> */}
+      
 {/* Close button with unsaved guard */}
       {onClose && (
         <button type="button" onClick={handleCloseClick} className={styles.closeButton}>
-          Close
+         <span>Close</span>
         </button>
       )}
     </div>
