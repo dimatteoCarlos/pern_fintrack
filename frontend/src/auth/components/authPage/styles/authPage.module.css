@@ -182,4 +182,14 @@ button {
   .logoContainer {
     font-size: 1.2rem; /* adjust logo text size */
   }
+
+
+  /***************/
+  .modalContent {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+  }
 }
