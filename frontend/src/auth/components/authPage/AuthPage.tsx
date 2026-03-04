@@ -168,9 +168,7 @@ const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUISto
       // onClose is used by AuthUI to close modal (e.g., from its own close button)
       onClose={handleCloseModal}
       />
-          <button className={styles.closeButton} onClick={handleCloseModal}>
-            Close
-          </button>
+
         </div>
       </div>
         )}
