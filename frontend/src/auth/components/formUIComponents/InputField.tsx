@@ -3,7 +3,7 @@
 📦 IMPORT DEPENDENCIES
 =============================== 🌟 */
 import React from "react";
-import styles from "./styles/InputField.module.css";
+import styles from "./styles/inputField.module.css";
 import { LuEyeClosed , LuEye } from "react-icons/lu";
 
 /* 🌟 ===============================

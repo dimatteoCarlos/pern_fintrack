@@ -1,10 +1,13 @@
-Authentication
-check authentication
+Authentication:
+1. Check ux/ui forms.
+2. Check navigation.
+3. Check cross field validations in real time.
 
-
+Fintrack:
 🚧 Pending Issues and Unresolved Queries
 1. Functionality and Business Logic
-Editing and Deleting: Establish a strategy for editing and deleting data, defining which fields are editable and how to handle their interrelationships in the database.
+
+Define a multicurrency strategy for keeping balances in fintrack.
 
 Net Worth Calculation: Clarify with the client the definition of Net Worth and whether its calculation should include assets (bank, investments) and liabilities (debts).
 
@@ -46,6 +49,9 @@ Transaction Descriptions: Standardize and improve transaction descriptions.
 
 
 ✅ Resolved Activities (LISTO)
+
+Editing and Deleting: Establish a strategy for editing and deleting data, defining which fields are editable and how to handle their interrelationships in the database.
+
 Validate numbers and values in the trackers. listo.
 
 Perform real-time validation for dropdowns. listo.

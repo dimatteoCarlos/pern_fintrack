@@ -62,6 +62,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
   };
 
   const togglePasswordVisibility = () => setIsPasswordVisible(prev => !prev);
+  
   const toggleConfirmVisibility = () => setIsConfirmVisible(prev => !prev);
 
   return (

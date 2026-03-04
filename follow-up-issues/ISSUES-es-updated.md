@@ -1,6 +1,17 @@
 TÓPICOS LISTOS, PENDIENTES Y CONSULTAS AL CLIENTE
 
-AUTENTICATION
+AUTENTICACION
+
+Al hacer SIGN OUT, se redirige a Sign In, en vez de ir al menu principal. PENDIENTE.
+
+Definir un esquema de roles de autorizacion. PENDIENTE.
+
+Revisar la validacion cruzada entre campos password, new password y confirm password en el frontend.PENDIENTE.
+
+Revisar frontend de formularios de authentication: Sign In, Sign Up, Update user data, Change Password.PENDIENTE.
+
+Revisar validacion en tiempo real en SignUP, de los campos "password" y "confirmPassword". El caso edge es: cuando se introdujeron los dos campos y son diferentes, y en vez de ajustar confirmPassword,  se ajusta password para que coincidan los dos, no se valida sino hasta que se edita confirmPassword. PENDIENTE
+
 Revisar y completar la autentication con refresh token. LISTO
 
 Validar el monto target en linea al crear una cuenta pocket. LISTO. 
@@ -55,7 +66,11 @@ Totalidad: Se eliminan o anulan todos los datos, incluyendo saldos, movimientos,
 
 En la práctica, esto podría ser una característica técnica compleja diseñada para cumplir con normativas de privacidad (como el "derecho al olvido") o para corregir errores graves en la apertura de cuentas. A diferencia de un cierre de cuenta normal, que simplemente la marca como inactiva o cerrada a partir de una fecha determinada, una "anulación retrospectiva total" busca la eliminación completa del rastro digital de la cuenta.
 
- ACTIVIDADES O ISSUES LISTOS O PENDIENTES.
+FINTRACK: ACTIVIDADES O ISSUES LISTOS O PENDIENTES.
+
+En el frontend, limitar el numero de caracteres en todos los campos de los formularios.PENDIENTE.
+
+En el frontend. El input del datepicker, acepta otros caracteres aparte de la fecha puesta por el datepicker.
  
 Optimar AccountDeletionPage, usando useReducer Hook, para manejo de estados del modal, en vez de usar funcion centralizada con useMemo.PENDIENTE.
 
@@ -112,7 +127,7 @@ Manejo de Errores: Mejorar los mensajes de error para que sean más claros para 
 
 Cálculo de % Profit: Corregir el cálculo que muestra NaN.
 
-Validación de Fechas: Bloquear fechas futuras en el selector de fechas para las transacciones y la creación de pockets. y determinar regla de negocios para las fechas en las transacciones entre cuentas.PENDIENTE.
+Validación de Fechas: Bloquear fechas futuras en el selector de fechas para las transacciones y la creación de pockets. y determinar regla de negocios para las fechas en las transacciones entre cuentas. Si se hace en la edicion de datos de cuentas pocket. PENDIENTE.
 
 Error de Monto Inicial: Revisar el error del monto inicial de la cuenta cuando no hay transacciones.PENDIENTE.
 

@@ -1,19 +1,17 @@
-/* 📁 frontend/src/components/common/InputField/InputField.module.css */
+/* 📁 frontend/src/components/common/InputField/inputField.module.css */
 
 /* 🌟 ===============================
 🎨 INPUT FIELD STYLES
 =============================== 🌟 */
-
 /**
  * 🎯 Input container
  */
 .inputContainer {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
   position: relative;
-  padding-bottom: 20px;
 }
 
 /**
@@ -48,13 +46,13 @@
  * 📝 Input field
  */
 .inputField {
-  padding: 10px 12px;
-  font-size: 14px;
-  line-height: 1.5;
+  padding: 8px 10px;
+  font-size: 15px;
+  line-height: 1.3;
   color: #495057;
   background-color: #fff;
   border: 1px solid #ced4da;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   font-family: inherit;
 }
@@ -82,6 +80,7 @@
  */
 .inputField[aria-invalid="true"] {
   border-color: #dc3545;
+
   /* background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right 12px center;
@@ -97,21 +96,29 @@
   box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
 }
 
-/**
- * ❌ Error message
- */
+/* ❌ Error normal (1 línea) */
 .errorMessage {
-  font-size: 12px;
+  font-size: 10px;
   color: #dc3545;
-  margin-top: 2px;
   display: flex;
   align-items: center;
   gap: 4px;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  animation:fadeIn 0.2s ease-in;
+  position: static;
+  min-height: 18px;
+  max-height: 18px;
+  height: 18px;
+  line-height: 1;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease-in;
 
+}
+
+/* extraGroups allows 2 lines msg */
+.extraFieldsGroup .errorMessage {
+  min-height: 18px;
+  max-height: 36px; 
+  height: auto;
+  font-size: 10px;
 }
 
 /**
@@ -119,24 +126,25 @@
  */
 .errorMessage::before {
   content: '⚠️';
-  font-size: 10px;
+  font-size: 9px;
+  flex-shrink: 0;
 }
 
 /**
  * ℹ️ Help text
  */
 .helpText {
-  font-size: 12px;
+  font-size: 11px;
   color: #6c757d;
-  margin-top: 2px;
   font-style: italic;
-  /* border:1px solid blue; */
+  min-height: 16px;
 }
 /**************/
 .inputWrapper {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .inputField {
@@ -153,22 +161,70 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: 6px;
   transition: color 0.2s;
+
+  border-radius: 50%;
+
 }
 
 .toggleButton:hover {
   color: #333;
+ background-color: rgba(0, 0, 0, 0.05);
 }
 
-
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 /**
  * 📱 Responsive adjustments
  */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .inputField {
-    padding: 8px 10px;
-    font-size: 16px; /* Better for mobile touch */
+    padding: 0.375rem 0.625rem; 
+    font-size: 0.875rem;
+    line-height: 1.3;
+  }
+
+  .inputContainer {
+    gap: 4px;
+  }
+
+  .errorMessage {
+    font-size: 0.5625rem;  
+    min-height: 1rem;
+    max-height: 1rem;
+    /* height: 1rem; */
+  }
+  
+  .extraFieldsGroup .errorMessage {
+    min-height: 16px;
+    max-height: 32px;
+    font-size: 9px;
+  }
+
+  .inputLabel{
+   font-size: 0.9=8125rem;
+  }
+  
+  .toggleButton {
+    padding: 8px;
+    right: 10px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 360px) {
+  .inputField {
+    padding:  0.3125rem 0.5rem; 
   }
 }

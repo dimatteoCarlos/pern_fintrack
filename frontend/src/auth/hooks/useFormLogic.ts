@@ -82,13 +82,37 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
 
         // Real-time validation
         const result = validateField(fieldName, value, updated);
+
         setValidationErrors((prevErrors) => {
           const next = { ...prevErrors };
+
           if (result.isValid) {
             delete next[fieldName];
           } else {
             next[fieldName] = result.error || 'Invalid value';
           }
+
+// For Sign Up: If password changed, also validate confirmPassword
+ //  if (fieldName === 'password') {
+ //    const pswResult = validateField('password', updated.password, updated);
+ //    if (pswResult.isValid) {
+ //      delete next['password'];
+ //    } else {
+ //      next[fieldName] = pswResult.error ?? 'Invalid value';
+ //    }
+ // }
+
+// if (fieldName === 'confirmPassword') {
+//     const confirmResult = validateField('confirmPassword', updated.confirmPassword, updated);
+//     if (confirmResult.isValid) {
+//       delete next['confirmPassword'];
+//     } else {
+//       next[fieldName] = confirmResult.error ?? 'Invalid value';
+//     }
+//  }
+
+//----------------------
+
           return next;
         });
 

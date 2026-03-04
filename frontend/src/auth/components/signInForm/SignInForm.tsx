@@ -5,7 +5,7 @@
  Responsible for login UI and validation
  Uses useFormLogic with signInSchema
  =============================== */
-import React from 'react';
+import React, { useState } from 'react';
 import { signInSchema, SignInFormDataType } from '../../../auth/validation/zod_schemas/authSchemas';
 import { getIdentity } from '../../../auth/auth_utils/localStorageHandle/authStorage';
 import { useFormLogic } from '../../hooks/useFormLogic';
@@ -54,13 +54,17 @@ const SignInForm: React.FC<SignInFormProps> = ({
     },
   });
 
-  const isLoading = externalLoading || isSubmitting;
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const handleInputChange = (field: keyof SignInFormDataType) => (input: string | React.ChangeEvent<HTMLInputElement>) => {
+    const togglePasswordVisibility = () => setIsPasswordVisible(prev => !prev);
+
+    const isLoading = externalLoading || isSubmitting;
+
+    const handleInputChange = (field: keyof SignInFormDataType) => (input: string | React.ChangeEvent<HTMLInputElement>) => {
     const value = typeof input === 'string' ? input : input.target.value;
     if (error) clearError();
     handleChange(field)(value);
-  };
+    };
 
   return (
     <>
@@ -103,6 +107,9 @@ const SignInForm: React.FC<SignInFormProps> = ({
         touched={touchedFields.has('password')}
         required
         disabled={isLoading}
+       showContentToggle={true}
+       isContentVisible={isPasswordVisible}
+       onToggleContent={togglePasswordVisibility}
         tabindex={3}
       />
 

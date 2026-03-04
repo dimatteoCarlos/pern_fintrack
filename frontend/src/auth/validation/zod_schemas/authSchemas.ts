@@ -63,14 +63,15 @@ const baseAuthSchema = z.object({
  * No additional fields needed
  */
 export const signInSchema = baseAuthSchema;
-
+//---------------------------------
 /**
  * Sign Up schema - extends base with:
  * - firstname (required)
  * - lastname (required)
  * - confirmPassword (must match password)
  */
-export const signUpSchema = baseAuthSchema.extend({
+export const signUpSchema = (
+baseAuthSchema.extend({
   user_firstname: z.string()
     .min(1, { message: 'First name is required' })
     .max(FIELD_LIMITS.FIRSTNAME.MAX, { 
@@ -102,6 +103,7 @@ export const signUpSchema = baseAuthSchema.extend({
   confirmPassword: z.string()
     .min(1, { message: 'Please confirm your password' }),
 })
+)
 .refine(
   (data) => data.password === data.confirmPassword,
   {
@@ -112,6 +114,7 @@ export const signUpSchema = baseAuthSchema.extend({
 
 // Type inference for TypeScript
 export type SignInFormDataType = z.infer<typeof signInSchema>;
+
 export type SignUpFormDataType = z.infer<typeof signUpSchema>;
 
 // Default export with both schemas

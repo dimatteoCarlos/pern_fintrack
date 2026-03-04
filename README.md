@@ -1,4 +1,4 @@
-# FinTrack_app
+git add # FinTrack_app
 
 ## Objective
 
