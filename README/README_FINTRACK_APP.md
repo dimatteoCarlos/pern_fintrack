@@ -10,11 +10,16 @@ As a double-entry accounting system, it automatically reflects the updated balan
 
 FinTrack also helps users monitor savings goals and investments. 🎯📊💡
 
-**A word for developers** "Throughout the development of this app, various alternative approaches were intentionally employed for similar tasks for the sake of learning.
-
-The methods applied, ranged from customized native implementations to the use of common libraries to perform the same functions.
+**A WORD FOR DEVELOPERS** 
+Throughout the development of this app, various alternative approaches were intentionally employed for similar tasks for the sake of learning, it was like a sandbox.
 
 The codebase does not follow a single uniform standard because it focuses on exploring different approaches rather than adhering to one fixed pattern.
+
+The methods applied, ranged from customized native implementations to the use of common libraries to perform the same functions, specially form validations.
+
+This project is an exploration of different methods used to identify practices that will be used in defining a standard for future projects.
+
+### FINTRACK APP DESCRIPTION
 
 ## Key Features
 

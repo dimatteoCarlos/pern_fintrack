@@ -2,11 +2,22 @@ git add # FinTrack_app
 
 ## Objective
 
-**FinTrack** is a personal "accounting" application, built as a "double-entry accounting system" but under a "cash-flow approach", offering a comprehensive and intuitive solution for managing your money.
+**finTrack** is a personal "accounting" application, built as a "double-entry accounting system" but under a "cash-flow approach", offering a comprehensive and intuitive solution for managing your money.
 
 Its primary goal is to provide users with effective tools to track expenses, incomes, investments, debts and bank accounts; keeping records of the interactions among the different accounts and keeping all balances updated and reconciled.
 
-FinTrack also helps users monitor savings goals and investments. 🎯📊💡
+finTrack also helps users monitor savings goals and investments. 
+
+**A WORD FOR DEVELOPERS** 
+Throughout the development of this app, various alternative approaches were intentionally employed for similar tasks for the sake of learning; it functioned as a sandbox.
+
+The codebase does not follow a single uniform standard because it focuses on exploring different approaches rather than adhering to one fixed pattern.
+
+The methods applied, ranged from customized native implementations to the use of common libraries to perform the same functions, specifically for form validations.
+
+This project is an exploration of different methods used to identify practices that will be used in defining a standard for future projects.
+
+### APP DESCRIPTION
 
 ### Double-Entry Accounting Approach
 The double-entry system is a method of recording financial transactions where every entry to an account requires a corresponding and opposite entry to a different account. 
@@ -61,10 +72,6 @@ The primary difference between the two integrated layers lies in how transaction
 
 #### Implementation Mechanism
 This dual approach allows the system to maintain professional-grade ledger books while guiding the user through an intuitive interface. When a transaction occurs, the system simultaneously records the classification-specific Withdrawal/Deposit for the accounting books and the direction-specific Plus/Minus sign for the user’s cash-flow tracking.
-
-**A word for developers** "Throughout the development of this app, various alternative approaches were intentionally employed for similar tasks for the sake of learning.
-
-The methods applied, ranged from customized native implementations to the use of common libraries to perform the same functions.
 
 ## Key Features
 

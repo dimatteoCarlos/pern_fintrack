@@ -44,7 +44,6 @@ type UseFormLogicParams<TFormShape extends Record<string, unknown>> = {
 // ===============================
 // 🎣 HOOK: useFormLogic
 // ===============================
-
 export const useFormLogic = <TFormShape extends Record<string, unknown>>({
   schema,
   initialValues,
@@ -54,6 +53,7 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
 
   type FieldNames = keyof TFormShape & string;
 
+// STATES
   const [formData, setFormData] = useState<TFormShape>(initialValues);
 
   const [touchedFields, setTouchedFields] = useState<Set<FieldNames>>(new Set());
@@ -61,71 +61,77 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+ // VALDATION HOOK
   const { validateField, validateAll } = useFieldValidation<TFormShape>(schema, {
     validateOnlyTouched,
   });
 
   const [validationErrors, setValidationErrors] = useState<FormErrorsType<FieldNames>>({});
 
-  /**
-   * HANDLE FIELD CHANGE WITH REAL-TIME VALIDATION
-   */
+ /**
+ * HANDLE FIELD CHANGE WITH REAL-TIME VALIDATION
+ */
   const handleChange = useCallback(
-    (fieldName: FieldNames) => (value: string) => {
+ (fieldName: FieldNames) => (value: string) => {
 
-      setFormData((prev) => {
-        const updated = { ...prev, [fieldName]: value };
+   setFormData((prev) => {
+     const updated = { ...prev, [fieldName]: value };
 
-        // Mark as touched
-        setTouchedFields((prevTouched) => new Set(prevTouched).add(fieldName));
+ // Mark as touched
+      const nextTouched = new Set(touchedFields);
 
-        // Mark as dirty if value changed
-       if (prev[fieldName] !== value) {
-         setDirtyFields((prevDirty) => new Set(prevDirty).add(fieldName));
-        }
+      nextTouched.add(fieldName);
+      setTouchedFields(nextTouched);
 
-       // Real-time validation
-        const result = validateField(fieldName, value, updated);
+ // Mark as dirty if value changed
+    if (prev[fieldName] !== value) {
+      setDirtyFields((prevDirty) => new Set(prevDirty).add(fieldName));
+     }
 
-   setValidationErrors((prevErrors)=>  {
-        const next = { ...prevErrors };
+   // Real-time validation
+     console.log("touched BEFORE validation", touchedFields);
 
-        if (result.isValid) {
-          delete next[fieldName];
+    const result = validateField(fieldName, value, updated);
+
+    setValidationErrors((prevErrors)=>  {
+       const next = { ...prevErrors };
+
+       if (result.isValid) {
+         delete next[fieldName];
+       } else {
+         next[fieldName] = result.error ?? 'Invalid value';
+       }
+
+  // 🔹 CROSS VALIDATION. REVALIDATE CONFIRM PASSWORD IF PASSWORD CHANGES
+    if (fieldName === 'password' && 'confirmPassword' in updated) {
+
+      const confirmValue = updated['confirmPassword'];
+
+      if (typeof confirmValue === 'string') {
+
+        const confirmResult = validateField(
+          'confirmPassword' as FieldNames,
+          confirmValue,
+          updated
+        );
+
+        if (confirmResult.isValid) {
+          delete next['confirmPassword' as FieldNames];
         } else {
-          next[fieldName] = result.error || 'Invalid value';
+          next['confirmPassword' as FieldNames] =
+            confirmResult.error ?? 'Invalid value';
         }
-        
-// 🔹 REVALIDATE CONFIRM PASSWORD IF PASSWORD CHANGES
-  if (fieldName === 'password' && 'confirmPassword' in updated) {
 
-    const confirmValue = updated['confirmPassword'];
-
-    if (typeof confirmValue === 'string') {
-
-      const confirmResult = validateField(
-        'confirmPassword' as FieldNames,
-        confirmValue,
-        updated
-      );
-
-      if (confirmResult.isValid) {
-        delete next['confirmPassword' as FieldNames];
-      } else {
-        next['confirmPassword' as FieldNames] =
-          confirmResult.error ?? 'Invalid value';
       }
 
     }
-
-  }
-//----------------------
- return next 
-     });
-        return updated;
+  //----------------------
+       return next 
       });
-    },
-    [validateField]
+   return updated;
+  });
+ },
+ [validateField]
   );
 
 /**
@@ -171,14 +177,17 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
     setValidationErrors({});
   }, [initialValues]);
 
-  /**
-   * SUBMIT ENABLED
-   */
+// SUBMIT ENABLED
   const isSubmittingAllowed = useCallback(() => {
     const hasErrors = Object.keys(validationErrors).length > 0;
 
     return !hasErrors && !isSubmitting;
   }, [validationErrors, isSubmitting]);
+
+ // OTHER OPTION
+ // const isSubmittingAllowed =
+ //   !isSubmitting &&
+ //   Object.keys(validationErrors).length === 0
 
 //RETURN
   return {

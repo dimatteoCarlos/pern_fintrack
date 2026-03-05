@@ -148,7 +148,7 @@ const handleChange = useCallback(
  setFormData((currentFormData: ChangePasswordFormDataType) => {
  const updatedForm={...currentFormData, [fieldName]: value??'' };
 
-// 🎯 Mark field as touched and and dirty (unchanged)
+// 🎯 Mark field as touched and dirty (unchanged)
  setTouchedFields((prev) => ({
   ...prev, [fieldName]: true
  }));
