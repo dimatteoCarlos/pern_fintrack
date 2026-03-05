@@ -78,10 +78,7 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
      const updated = { ...prev, [fieldName]: value };
 
  // Mark as touched
-      const nextTouched = new Set(touchedFields);
-
-      nextTouched.add(fieldName);
-      setTouchedFields(nextTouched);
+ setTouchedFields((touchedFields)=>new Set(touchedFields));
 
  // Mark as dirty if value changed
     if (prev[fieldName] !== value) {
@@ -89,7 +86,7 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
      }
 
    // Real-time validation
-     console.log("touched BEFORE validation", touchedFields);
+     // console.log("touched BEFORE validation", touchedFields);
 
     const result = validateField(fieldName, value, updated);
 
@@ -121,9 +118,7 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
           next['confirmPassword' as FieldNames] =
             confirmResult.error ?? 'Invalid value';
         }
-
       }
-
     }
   //----------------------
        return next 
