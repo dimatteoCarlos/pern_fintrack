@@ -16,7 +16,7 @@ import useFieldValidation from '../validation/hook/useFieldValidation';
 // ===============================
 
 export type FormErrorsType<TFieldName extends string> = 
-  Partial<Record<TFieldName, string>> ;//& { form?: string };
+  Partial<Record<TFieldName, string>>
 
 export type FormLogicResult<TFormShape> = {
   isValid: boolean;
@@ -51,11 +51,14 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
   onSubmit,
   validateOnlyTouched = true,
 }: UseFormLogicParams<TFormShape>) => {
+
   type FieldNames = keyof TFormShape & string;
 
   const [formData, setFormData] = useState<TFormShape>(initialValues);
+
   const [touchedFields, setTouchedFields] = useState<Set<FieldNames>>(new Set());
   const [dirtyFields, setDirtyFields] = useState<Set<FieldNames>>(new Set());
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { validateField, validateAll } = useFieldValidation<TFormShape>(schema, {
@@ -65,10 +68,11 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
   const [validationErrors, setValidationErrors] = useState<FormErrorsType<FieldNames>>({});
 
   /**
-   * Handle field change with real-time validation
+   * HANDLE FIELD CHANGE WITH REAL-TIME VALIDATION
    */
   const handleChange = useCallback(
     (fieldName: FieldNames) => (value: string) => {
+
       setFormData((prev) => {
         const updated = { ...prev, [fieldName]: value };
 
@@ -76,65 +80,70 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
         setTouchedFields((prevTouched) => new Set(prevTouched).add(fieldName));
 
         // Mark as dirty if value changed
-        if (prev[fieldName] !== value) {
-          setDirtyFields((prevDirty) => new Set(prevDirty).add(fieldName));
+       if (prev[fieldName] !== value) {
+         setDirtyFields((prevDirty) => new Set(prevDirty).add(fieldName));
         }
 
-        // Real-time validation
+       // Real-time validation
         const result = validateField(fieldName, value, updated);
 
-        setValidationErrors((prevErrors) => {
-          const next = { ...prevErrors };
+   setValidationErrors((prevErrors)=>  {
+        const next = { ...prevErrors };
 
-          if (result.isValid) {
-            delete next[fieldName];
-          } else {
-            next[fieldName] = result.error || 'Invalid value';
-          }
+        if (result.isValid) {
+          delete next[fieldName];
+        } else {
+          next[fieldName] = result.error || 'Invalid value';
+        }
+        
+// 🔹 REVALIDATE CONFIRM PASSWORD IF PASSWORD CHANGES
+  if (fieldName === 'password' && 'confirmPassword' in updated) {
 
-// For Sign Up: If password changed, also validate confirmPassword
- //  if (fieldName === 'password') {
- //    const pswResult = validateField('password', updated.password, updated);
- //    if (pswResult.isValid) {
- //      delete next['password'];
- //    } else {
- //      next[fieldName] = pswResult.error ?? 'Invalid value';
- //    }
- // }
+    const confirmValue = updated['confirmPassword'];
 
-// if (fieldName === 'confirmPassword') {
-//     const confirmResult = validateField('confirmPassword', updated.confirmPassword, updated);
-//     if (confirmResult.isValid) {
-//       delete next['confirmPassword'];
-//     } else {
-//       next[fieldName] = confirmResult.error ?? 'Invalid value';
-//     }
-//  }
+    if (typeof confirmValue === 'string') {
 
+      const confirmResult = validateField(
+        'confirmPassword' as FieldNames,
+        confirmValue,
+        updated
+      );
+
+      if (confirmResult.isValid) {
+        delete next['confirmPassword' as FieldNames];
+      } else {
+        next['confirmPassword' as FieldNames] =
+          confirmResult.error ?? 'Invalid value';
+      }
+
+    }
+
+  }
 //----------------------
-
-          return next;
-        });
-
+ return next 
+     });
         return updated;
       });
     },
     [validateField]
   );
 
-  /**
-   * Handle form submission with full validation
-   */
+/**
+* HANDLE FORM SUBMISSION WITH FULL VALIDATION
+*/
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
 
       // Mark all fields as touched
       const allFields = Object.keys(formData) as FieldNames[];
-      setTouchedFields(new Set(allFields));
+
+      const touchedSet = new Set(allFields)
+
+      setTouchedFields(touchedSet);
 
       // Full validation
-      const result = validateAll(formData, new Set(allFields));
+      const result = validateAll(formData, touchedSet);
 
       if (!result.isValid) {
         setValidationErrors(result.errors as FormErrorsType<FieldNames>);
@@ -142,8 +151,9 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
       }
 
       setIsSubmitting(true);
+
       try {
-        await onSubmit(formData);
+        await onSubmit(result.validatedData!);
       } finally {
         setIsSubmitting(false);
       }
@@ -152,7 +162,7 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
   );
 
   /**
-   * Reset form to initial state
+   * RESET FORM TO INITIAL STATE
    */
   const resetForm = useCallback(() => {
     setFormData(initialValues);
@@ -162,21 +172,27 @@ export const useFormLogic = <TFormShape extends Record<string, unknown>>({
   }, [initialValues]);
 
   /**
-   * Check if form can be submitted
+   * SUBMIT ENABLED
    */
   const isSubmittingAllowed = useCallback(() => {
     const hasErrors = Object.keys(validationErrors).length > 0;
+
     return !hasErrors && !isSubmitting;
   }, [validationErrors, isSubmitting]);
 
+//RETURN
   return {
     formData,
+
     handleChange,
     handleSubmit,
     resetForm,
+
     validationErrors,
+
     touchedFields,
     dirtyFields,
+
     isSubmitting,
     isSubmittingAllowed: isSubmittingAllowed(),
   };
