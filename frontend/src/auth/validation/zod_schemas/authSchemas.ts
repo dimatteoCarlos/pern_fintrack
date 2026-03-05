@@ -104,13 +104,24 @@ baseAuthSchema.extend({
     .min(1, { message: 'Please confirm your password' }),
 })
 )
-.refine(
-  (data) => data.password === data.confirmPassword,
-  {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
+.superRefine((data, ctx) => {
+  if (data.password !== data.confirmPassword) {
+    ctx.addIssue({
+      code: "custom",
+      message: 'Passwords do not match',
+      path: ['confirmPassword'],
+    });
   }
-);
+
+});
+
+// .refine(
+//   (data) => data.password === data.confirmPassword,
+//   {
+//     message: 'Passwords do not match',
+//     path: ['confirmPassword'],
+//   }
+// );
 
 // Type inference for TypeScript
 export type SignInFormDataType = z.infer<typeof signInSchema>;
@@ -122,3 +133,17 @@ export default {
  signInSchema,
  signUpSchema,
 };
+
+// OPTIONALS
+/* ===============================
+   🔐 PASSWORD RULES
+================================ */
+export const generalPasswordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(128, 'Password too long')
+  .regex(/[A-Z]/, 'Must include an uppercase letter')
+  .regex(/[a-z]/, 'Must include a lowercase letter')
+  .regex(/[0-9]/, 'Must include a number');
+
+ 
