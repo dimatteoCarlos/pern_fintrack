@@ -7,7 +7,6 @@
 import React from 'react';
 
 // 🎨 COMMON UI COMPONENTS
-// 🆕 CHANGE: Usando el componente genérico Message para todo tipo de avisos
 import Message from '../formUIComponents/Message'; 
 import SelectField from '../formUIComponents/SelectField';
 import InputField from '../formUIComponents/InputField';
@@ -78,12 +77,21 @@ const UpdateProfileForm = ({
 /* 🌟 ===============================
  🎮 FORM FIELD HANDLERS
 =============================== 🌟 */
-  const handleTextChange = React.useCallback(
-    (fieldName: keyof UpdateProfileFormDataType) => (value: string) => {
-      onChange(fieldName, value);
-    }, [onChange]
-  );
+  // const handleTextChangeX = React.useCallback(
+  //   (fieldName: keyof UpdateProfileFormDataType) => (value: string) => {
+  //     onChange(fieldName, value);
+  //   }, [onChange]
+  // );
 
+  const handleTextChange = (fieldName:keyof UpdateProfileFormDataType)=>(input:string | React.ChangeEvent<HTMLInputElement>)=>{
+   const value = typeof input === 'string'? input : input.target.value;
+   // if(globalMessage){
+   //  onClearGlobalMessage?.();
+   // }
+   onChange(fieldName,value);
+   // onChange(fieldName)(value);
+  }
+ 
   const handleCurrencyChange = React.useCallback(
     (value: CurrencyType) => {
       onChange('currency', value);
@@ -91,10 +99,15 @@ const UpdateProfileForm = ({
   );
 
   const handleContactChange = React.useCallback(
-    (value: string) => {
-      onChange('contact', value || null);
+    (value: string | React.ChangeEvent<HTMLInputElement>) => {
+      const contactValue =
+      typeof value === 'string'
+        ? value
+        : value.target.value;
+
+    onChange('contact', contactValue || null);
     }, [onChange]
-  );
+  );   
 
   const handleSubmit = React.useCallback(
     async (e: React.FormEvent) => {
@@ -138,11 +151,11 @@ const UpdateProfileForm = ({
        {isSuccess && (
 
         <div className={styles.messagesWrapper}>
-         <Message type="success" message={successMessage!} autoDismiss={5000} />
+         <Message type="success" message={successMessage!} autoDismiss={8000} />
         </div>
         
         )}
-        {/* {Show api error only when no field errors exist} */}
+      {/* {Show api error only when no field errors exist} */}
         {apiErrorMessage && Object.keys(errors).length === 0 && !isSuccess && (
           <div className={styles.messagesWrapper}>
            <Message type="error" message={apiErrorMessage} onDismiss={onClearErrors} />
@@ -180,6 +193,7 @@ const UpdateProfileForm = ({
             />
           </div>
         </fieldset>
+
          {/* 💰 PREFERENCES SECTION */}
         <fieldset className={styles.fieldset}>
           <legend className={styles.fieldsetLegend}>Preferences</legend>
@@ -193,6 +207,7 @@ const UpdateProfileForm = ({
               disabled={isLoading || isSuccess}
               placeholder="Select currency"
             />
+
             <InputField
               label="Contact Information"
               value={formData.contact || ''}
@@ -243,8 +258,7 @@ const UpdateProfileForm = ({
             </>
           </div>
           ) : (
-            // 🆕 CHANGE: Botón único "Done" tras éxito
-            <button
+           <button
               type="button"
               onClick={onClose}
               className={styles.doneButton}
@@ -273,7 +287,9 @@ const UpdateProfileForm = ({
      {/* ℹ️ FORM STATUS INDICATOR - show when not success */}
       
       {Object.keys(touchedFields).length > 0 && !isSuccess && (
-        <div className={`${styles.statusIndicator} ${isDirty ? styles.statusIndicatorDirty : styles.statusIndicatorClean}`}>
+        <div className={`${styles.statusIndicator}
+         ${isDirty ? styles.statusIndicatorDirty : styles.statusIndicatorClean}`}>
+          
           <span className={styles.statusIcon}>{isDirty ? '⚡' : '✅'}</span>
           <span>
             {isDirty ? 'You have unsaved changes' : 'All changes saved (no unsaved changes)'}
