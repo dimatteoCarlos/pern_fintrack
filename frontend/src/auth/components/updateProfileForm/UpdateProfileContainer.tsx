@@ -107,7 +107,6 @@ const currencyOptions: CurrencyOptionType[]=[
 
 const UpdateProfileContainer = ({
   onClose,
-  onSuccess,
   LoadingComponent = LoadingSpinner
 }:UpdateProfileContainerPropsType) => {
  /* 🌟 ==========================
@@ -234,7 +233,7 @@ const UpdateProfileContainer = ({
        };
      }
   },
-    [handleUpdateUserProfile, onSuccess]
+    [handleUpdateUserProfile]
   );
 
 //---------------------------------
@@ -419,7 +418,7 @@ return (
 // 🎨 UI CONFIGURATION       
  currencyOptions={currencyOptions}
 // ⏰ RATE LIMIT INFO (🆕)
-retryAfter={retryAfter}
+ retryAfter={retryAfter}
 />
 
 {/* migrate this to a component */}
