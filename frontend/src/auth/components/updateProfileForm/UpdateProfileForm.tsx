@@ -20,6 +20,7 @@ import { UpdateProfileFormDataType } from '../../types/authTypes';
 import { CurrencyType } from '../../../types/types';
 import { ProfileFormErrorsType } from '../../hooks/useUpdateProfileFormLogic';
 import { CurrencyOptionType } from './UpdateProfileContainer';
+import { DEFAULT_CURRENCY } from '../../../helpers/constants';
 
 /* 🌟 ===============================
 🏷️ TYPE DEFINITIONS (LOCALS)
@@ -73,16 +74,13 @@ const UpdateProfileForm = ({
   const isSuccess = !!successMessage;
 
   const isRateLimited = typeof retryAfter === 'number' && retryAfter > 0;
+//
+  console.table([{'Currencies':'Comparing', 'Current':formData['currency'],'Default': DEFAULT_CURRENCY,'Is Match':formData.currency === DEFAULT_CURRENCY}, ],
+   )
 
 /* 🌟 ===============================
  🎮 FORM FIELD HANDLERS
 =============================== 🌟 */
-  // const handleTextChangeX = React.useCallback(
-  //   (fieldName: keyof UpdateProfileFormDataType) => (value: string) => {
-  //     onChange(fieldName, value);
-  //   }, [onChange]
-  // );
-
   const handleTextChange = (fieldName:keyof UpdateProfileFormDataType)=>(input:string | React.ChangeEvent<HTMLInputElement>)=>{
    const value = typeof input === 'string'? input : input.target.value;
    // if(globalMessage){
@@ -200,13 +198,22 @@ const UpdateProfileForm = ({
           <div className={styles.preferencesSection}>
             <SelectField
               label="Preferred Currency"
+              value={formData.currency === DEFAULT_CURRENCY? formData.currency : DEFAULT_CURRENCY}
+              options={currencyOptions || []}
+              onChange={handleCurrencyChange}
+              error={getFieldError('currency')}
+              disabled={isLoading || isSuccess || formData.currency === DEFAULT_CURRENCY }
+              placeholder="Select currency"
+            />
+            {/* <SelectField
+              label="Preferred Currency"
               value={formData.currency}
               options={currencyOptions || []}
               onChange={handleCurrencyChange}
               error={getFieldError('currency')}
               disabled={isLoading || isSuccess}
               placeholder="Select currency"
-            />
+            /> */}
 
             <InputField
               label="Contact Information"
