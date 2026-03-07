@@ -78,6 +78,9 @@ const currencyOptions: CurrencyOptionType[]=[
   contact: "contact"
 } as const;
 
+//Text for global messages
+// const globalTextMessage = {success:'', failed:''}
+
 /* 🌟 ===============================
 🎭 COMPONENT: UpdateProfileContainer
 =============================== 🌟 */
@@ -102,8 +105,9 @@ const currencyOptions: CurrencyOptionType[]=[
 * @returns The complete profile update orchestration system
 */
 
-const UpdateProfileContainer=  ({
-  onClose, onSuccess,
+const UpdateProfileContainer = ({
+  onClose,
+  onSuccess,
   LoadingComponent = LoadingSpinner
 }:UpdateProfileContainerPropsType) => {
  /* 🌟 ==========================
@@ -187,7 +191,7 @@ const UpdateProfileContainer=  ({
   // 1️⃣ Handle Success Case
   // Reset retryAftr state on success and return consistent message 
   if (apiResult.success) {
-   if (onSuccess) onSuccess();
+   // if (onSuccess) onSuccess();
     return {
      success: true,
      fieldErrors: {} ,
@@ -229,10 +233,11 @@ const UpdateProfileContainer=  ({
        fieldErrors: {},
        };
      }
-    },
+  },
     [handleUpdateUserProfile, onSuccess]
   );
-  
+
+//---------------------------------
   /* 🌟 ==========================
   🧠 BUSINESS LOGIC HOOK INITIALIZATION
   =========================== 🌟 */
@@ -268,10 +273,25 @@ const UpdateProfileContainer=  ({
 */
  useEffect(() => {
    return () => {
-     clearApiError();           // 🧹 Clear any API errors
-     clearApiSuccessMessage();  // 🧹 Clear any API success messages
+     clearApiError();// 🧹 Clear any API errors
+     clearApiSuccessMessage();// 🧹 Clear any API success messages
    };
   }, [clearApiError, clearApiSuccessMessage]); // ⚡ Dependencies
+
+//Save Guard
+useEffect(()=>{
+ const handleBeforeUnload = (e:BeforeUnloadEvent)=>{
+   if(formLogic.isDirty && !formLogic.successMessage){
+    e.preventDefault();
+   }
+  }
+  
+  window.addEventListener('beforeunload', handleBeforeUnload);
+
+ return ()=>{
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+ }
+})
   
 /* 🌟 ==========================
 🎮 EVENT HANDLERS & COORDINATION
@@ -310,10 +330,17 @@ const UpdateProfileContainer=  ({
 * 🏷️ Pattern: Guard Pattern (protects against data loss)
 */
 const handleClose = React.useCallback(() => {
+ //if success direct close with Done button
+ if (formLogic.successMessage) {
+   if (onClose) onClose();
+   // if (onSuccess) onSuccess();//redirect to fintrack
+   return;
+ }
 // ⚠️ Check for unsaved changes
  if (formLogic.isDirty && !formLogic.successMessage) {
   const confirmClose = window.confirm(
   'You have unsaved changes. Are you sure you want to close?');
+
   if (!confirmClose) return;// ❌ User cancelled
  }
 
@@ -375,13 +402,15 @@ return (
  isLoading={isLoading}      // ⏳ Combined loading state
 
 // 🎮 EVENT HANDLERS (delegated to business logic)
- onChange={formLogic.handleChange}  // ✏️ Field change handler
- onSubmit={handleFormSubmit}   // 📤 Form submission handler
+ onChange={formLogic.handleChange} // ✏️ Field change handler
+ onSubmit={handleFormSubmit}  // 📤 Form submission handler
  onReset={formLogic.resetForm} // 🔄 Form reset handler
  onClearErrors={formLogic.clearError} // 🧹 Clear errors handler
  onMarkAllTouched={formLogic.markAllFieldsTouched} // 👆 Mark all fields touched
+
 // 🚪 MODAL CONTROLS
  onClose={onClose ? handleClose : undefined} // 🚪 Close handler (if provided)
+
 // 📢 MESSAGES FROM BUSINESS LOGIC
 // 🌐 API-level errors
  apiErrorMessage={formLogic.apiError}
@@ -391,7 +420,6 @@ return (
  currencyOptions={currencyOptions}
 // ⏰ RATE LIMIT INFO (🆕)
 retryAfter={retryAfter}
-
 />
 
 {/* migrate this to a component */}
