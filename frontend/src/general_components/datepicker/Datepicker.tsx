@@ -21,6 +21,13 @@ type DatePickerProps = {
   isReset?: boolean;
 };
 
+// ⚙️ Config estándar
+const DATE_FORMAT = "dd/MMM/yyyy"
+
+const MIN_DATE = new Date(1900, 0, 1)
+const MAX_DATE = new Date(2100, 0, 1)
+
+
 //-------------------------------------
 // 🧩 Custom read-only input
 //react-datepicker recommends the usage of forwardRef to avoid focus problems.
@@ -46,23 +53,42 @@ function Datepicker({
   changeDate,
   variant,
 }: DatePickerProps) {
+
+const handleChange = React.useCallback(
+
+  (selectedDate: Date | null) => {
+
+   if (!selectedDate) return
+
+   changeDate(selectedDate)
+
+  },
+
+  [changeDate]
+
+ )
+
 //---
  return (
   <DatePicker
    selected={date}
-   // onChange={(date) => changeDate(date??new Date())}
-
-   onChange = {(date)=>{if(!date) return
-   changeDate(date)}}
+   onChange = {handleChange}
 
    showYearDropdown
    scrollableMonthYearDropdown
+   yearDropdownItemNumber={100}
+
    placeholderText='DD/MM/YYYY'
-   dateFormat='dd/MMM/yyyy'
 
-  customInput={<ReadOnlyInput />}
+   dateFormat={DATE_FORMAT}
 
-  // customInput={<input readOnly inputMode='none' />} //not showing mobile keyboard
+   minDate={MIN_DATE}
+
+   maxDate={MAX_DATE}
+
+   shouldCloseOnSelect
+
+   customInput={<ReadOnlyInput />}
 
    className={
      variant == 'tracker' || variant == 'light'
@@ -73,4 +99,12 @@ function Datepicker({
   );
 }
 
-export default Datepicker;
+// export default Datepicker;
+
+// Fast refresh: update the code without reloading the pag, and, since it can't handle anonymous components. Add the name to a constant to your export.eslint(react-refresh/only-export-components)
+
+const MemoizedDatepicker = React.memo(Datepicker);
+
+MemoizedDatepicker.displayName = 'Datepicker';
+
+export default MemoizedDatepicker;
