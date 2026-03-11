@@ -323,3 +323,4 @@ export type CategorySummaryInfoType = {
 // export type ValidationMessagesType<T> = Partial<Record<keyof T, string>>;
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
+

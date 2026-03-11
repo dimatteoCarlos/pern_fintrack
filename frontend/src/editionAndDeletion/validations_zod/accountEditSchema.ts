@@ -11,7 +11,7 @@ import { AccountListType } from '../../types/responseApiTypes';
 export type FieldConfigType = {
  fieldName: keyof (BaseAccountEditFormData & CategoryBudgetEditFormData & PocketSavingEditFormData & DebtorAccountEditFormData);
  label: string;
- inputType: 'text' | 'number' | 'textarea' | 'select' | 'date'; 
+ inputType: 'text' | 'number' | 'textarea' | 'select' | 'date'; //as FieldInputType in input constraints
  isEditable: boolean; // false = ReadOnly (at first, field could be editable though)
  isRequired: boolean; // for Zod, it must be validated and not null
  placeholder?: string;

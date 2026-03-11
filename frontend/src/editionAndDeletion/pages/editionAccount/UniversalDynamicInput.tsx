@@ -1,7 +1,7 @@
 // frontend/src/edition/pages/components/UniversalDynamicInput/UniversalDynamicInput.tsx
 // 💡Imports
 import { useMemo } from 'react';
-import { FieldConfigType } from '../../validations/accountEditSchema.ts';
+import { FieldConfigType } from '../../validations_zod/accountEditSchema.ts';
 import { ValidationMessagesType } from '../../../validations/types.ts';
 
 // 🧱 external components
@@ -62,6 +62,7 @@ export function UniversalDynamicInput<T extends Record<string, unknown>>(
 
  // ReadOnly fields:Lock interaction if the field is derived
  const isReadOnly = !fieldConfig.isEditable;
+
  const readOnlyStyle = useMemo(() => isReadOnly
   ? ({ opacity: 0.6, pointerEvents: 'none', backgroundColor: '#333333', cursor:'not-allowed', border:'1px dashed #555',whiteSpace:'nowrap', textOverflow:'ellipsis',overflow:'hidden',  
    } as React.CSSProperties)
@@ -202,7 +203,7 @@ return (
 
  // -----------------------------------
  // 📦 GENERAL STRUCTURE
- // -----------------------------------
+ // -----------------------------
  return (
   <div className='input__box'>
   <label className='label form__title'>

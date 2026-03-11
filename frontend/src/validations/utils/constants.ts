@@ -1,14 +1,27 @@
 // src/validations/utils/constants.ts
+// export const DB_MAX_LENGTHS = {
+//   category_name: 20,
+//   subcategory: 20,
+//   note: 100,
+//   account_name: 50,
+//   debtor_name: 20,
+//   debtor_lastname: 20,
+//   nature_type_name: 5,
+//   default:50,
+// }
+
+//adjusted lengths for UI
 export const DB_MAX_LENGTHS = {
-  category_name: 20,
-  subcategory: 20,
-  note: 100,
-  account_name: 50,
-  debtor_name: 20,
-  debtor_lastname: 20,
+  category_name: 10,
+  subcategory: 10,
+  note: 90,
+  account_name: 28,
+  debtor_name: 10,
+  debtor_lastname: 10,
   nature_type_name: 5,
-  default:50,
+  default:28,
 }
+
 
 export const ERROR_MESSAGES = {
 // Common field errors

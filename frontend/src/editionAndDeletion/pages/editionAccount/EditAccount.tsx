@@ -17,9 +17,9 @@ import { ValidationMessagesType } from '../../../validations/types.ts';
 import { DropdownOptionType } from '../../../types/types.ts';
 
 // ⚙️ VALIDATION CONFIG - FORM SCHEMAS AND FIELD DEFINITIONS
-import { ACCOUNT_EDIT_SCHEMA_CONFIG, FieldConfigType } from '../../validations/accountEditSchema.ts';
+import { ACCOUNT_EDIT_SCHEMA_CONFIG, FieldConfigType } from '../../validations_zod/accountEditSchema.ts';
 import { accountTypeEditSchemas
-} from '../../validations/editSchemas.ts';
+} from '../../validations_zod/editSchemas.ts';
 import { validateForm } from '../../../validations/utils/zod_validation.ts';
 
 // 🌐 API ENDPOINTS - BACKEND URL CONFIGURATION
@@ -235,11 +235,11 @@ if (result.data) {
    }, 500); 
   }
  };
-//-------------------------------------------
+//---------------------------------
 const isFormDisabled = isFetching || isSaving || !accountData || !schema;
 const finalError = fetchError || saveError;
 
-//-------------------------------------------  
+//------------------------------- 
 // 🎨 PAGE RENDERING - MAIN COMPONENT UI STRUCTURE
 return (
  <>

@@ -4,9 +4,11 @@ AUTENTICACION
 
 Al hacer SIGN OUT, se redirige a Sign In, en vez de ir al menu principal. PENDIENTE.
 
+Porque expira la sesion, si existe un refresh token, que deberia estar actualizado?. PENDIENTE. 
+
 Definir un esquema de roles de autorizacion. PENDIENTE.
 
-Revisar la validacion cruzada entre campos password, new password y confirm password en el frontend.PENDIENTE.
+Revisar la validacion cruzada entre campos password, new password y confirm password en el frontend.LISTO.
 
 Revisar frontend de formularios de authentication: Sign In, Sign Up, Update user data, Change Password.PENDIENTE.
 

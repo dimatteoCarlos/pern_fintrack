@@ -4,7 +4,6 @@
 //📊 ENRICH CATEGORY ACCOUNT WITH BUDGET DATA
 import { AccountListType, CategoryBudgetAccountListType } from "../../types/responseApiTypes";
 
-
 //  📊 VALIDATE CATEGORY BUDGET ACCOUNT
 //Type guard to check if account is category budget type
 export const isCategoryBudgetAccount = (account:AccountListType):account is CategoryBudgetAccountListType=>{
