@@ -45,6 +45,8 @@ import {
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
 import { AUTH_ROUTE } from '../../../auth/auth_constants/constants.ts';
+import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
+import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 // import ProtectedRoute from '../../auth/ProtectedRoute.tsx';
 //-----default 'till decide how to handle multi currencies
@@ -317,11 +319,19 @@ const { isAuthenticated } = useAuth()
    </div>
 
     {/* 📝 FORM SECTION */} 
-  <form className='form__box'>
+  <form  className='form__box'
+    autoComplete='off'
+    >
     <div className='container--profileName form__container '>
      <div className='input__box'>
       <label htmlFor='name' className='label form__title'>
        {'Name'}
+
+        <CharacterCounter 
+         value={profileData.name}
+         maxLength={NAME_MAX_LENGTHS.debtor_name}
+       />
+
        <span className='validation__errMsg'>
         {validationMessages['name']}
        </span>
@@ -335,16 +345,23 @@ const { isAuthenticated } = useAuth()
        id={'name'}
        onChange={inputHandler}
        value={profileData.name}
+       maxLength={NAME_MAX_LENGTHS.debtor_name} 
       />
      </div>
 
      <div className='input__box'>
       <label htmlFor='lastname' className='label form__title'>
        {'Last Name'}
-       <span className='validation__errMsg'>
-         {validationMessages['lastname']}
-       </span>
-      </label>
+
+     <CharacterCounter 
+     value={profileData.lastname}
+     maxLength={NAME_MAX_LENGTHS.debtor_lastname}
+     />
+
+      <span className='validation__errMsg'>
+        {validationMessages['lastname']}
+      </span>
+     </label>
 
       <input
        type='text'
@@ -354,6 +371,7 @@ const { isAuthenticated } = useAuth()
        id={'lastname'}
        onChange={inputHandler}
        value={profileData.lastname}
+       maxLength={NAME_MAX_LENGTHS.debtor_lastname} 
       />
     </div>
 
