@@ -11,6 +11,7 @@ import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBad
 import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
 import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
+import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 import {
   ACCOUNT_TYPE_DEFAULT,
@@ -36,6 +37,9 @@ import { validationData } from '../../../validations/utils/custom_validation.ts'
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import useAuth from '../../../auth/hooks/useAuth';
 import { AUTH_ROUTE } from '../../../auth/auth_constants/constants.ts';
+
+import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
+
 // import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
 //------------------------
 //-----handle currency
@@ -289,25 +293,34 @@ function NewAccount() {
         </div>
       )}
 
-        <form className='form__box'>
+        <form className='form__box' autoComplete="off"
+        >
           <div className=' form__container'>
             <div className='input__box'>
               <label htmlFor='name' className='label form__title'>
-                {'Account Name'} &nbsp;
-                <span className='validation__errMsg'>
-                  {validationMessages['name']}
-                </span>
+                {'Account Name'}
+
+            <CharacterCounter 
+              value={accountData.name} 
+              maxLength={NAME_MAX_LENGTHS.account_name}
+              />
+              &nbsp;
+             <span className='validation__errMsg'>
+               {validationMessages['name']}
+             </span>
               </label>
 
-              <input
-                type='text'
-                className='input__container'
-                placeholder='Account Name'
-                name='name'
-                onChange={inputHandler}
-                value={accountData.name}
-                disabled={isFormDisabled} // 🆕 DESHABILITAR SI NO AUTENTICADO
-              />
+           <input
+             type='text'
+             className='input__container'
+             placeholder='Account Name'
+             name='name'
+             onChange={inputHandler}
+             value={accountData.name}
+             disabled={isFormDisabled}//if not auth
+             maxLength={NAME_MAX_LENGTHS.account_name}
+            />
+              
             </div>
 
             <div className='input__box'>
