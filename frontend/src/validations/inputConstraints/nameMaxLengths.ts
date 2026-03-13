@@ -9,7 +9,7 @@
  */
 export const NAME_MAX_LENGTHS = {
   /** Category name (10 chars) */
-  category_name: 10,
+  category_name: 11,
   /** Subcategory name (10 chars) */
   subcategory: 10,
   /** Note/description field (90 chars) */
@@ -18,10 +18,10 @@ export const NAME_MAX_LENGTHS = {
   account_name: 28,
   /** Pocket name (28 chars) */
   pocket_name: 28,
-  /** Debtor first name (10 chars) */
-  debtor_name: 10,
-  /** Debtor last name (10 chars) */
-  debtor_lastname: 10,
+  /** Debtor first name ( chars) */
+  debtor_name: 13,
+  /** Debtor last name ( chars) */
+  debtor_lastname: 14,
   /** Nature type name (5 chars) */
   nature_type_name: 5,
   /** Default fallback (28 chars) */
