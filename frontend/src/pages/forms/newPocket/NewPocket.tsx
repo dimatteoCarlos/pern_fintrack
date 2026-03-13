@@ -27,6 +27,8 @@ import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
 // 🏷️ ENPOINTS
 import { url_create_pocket_saving_account } from '../../../endpoints.ts';
+import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
+import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 // 📋 TYPE DEFINITIONS
 type PocketDataType = {
@@ -286,12 +288,20 @@ setMessageToUser({message:responseData.message || "Server error when creating ne
       )}      */}
 
   {/* 📝 FORM SECTION */}
-  <form className='form__box'>
+  <form className='form__box'
+  autoComplete='off'
+  >
     <div className='container--pocketName form__container'>
   {/* 📛 NAME INPUT */}  
     <div className='input__box'>
       <label htmlFor='name' className='label form__title'>
-        {'Name'}&nbsp;
+        {'Name'}
+
+      <CharacterCounter 
+      value={pocketData.name}
+      maxLength={NAME_MAX_LENGTHS.pocket_name}
+      /> 
+        &nbsp;
         <span className='validation__errMsg'>
           {validationMessages['name']}
         </span>
@@ -305,16 +315,23 @@ setMessageToUser({message:responseData.message || "Server error when creating ne
         onChange={inputHandler}
         value={pocketData['name']}
         disabled={isFormDisabled}
+        maxLength={NAME_MAX_LENGTHS.pocket_name}
+        autoComplete="off"  
       />
     </div>
   {/* 📝 NOTE INPUT */}
-    <div className='input__box'>
-      <label htmlFor='note' className='label form__title'>
-        {'Note'}&nbsp;
-       <span className='validation__errMsg'>
-          {validationMessages['note']}
+     <div className='input__box'>
+       <label htmlFor='note' className='label form__title'>
+        {'Note'}
+         <CharacterCounter 
+         value={pocketData.note}
+         maxLength={NAME_MAX_LENGTHS.note}
+         />
+        &nbsp;
+        <span className='validation__errMsg'>
+        {validationMessages['note']}
         </span>
-      </label>
+       </label>
 
       <input
         type='text'
@@ -323,6 +340,8 @@ setMessageToUser({message:responseData.message || "Server error when creating ne
         onChange={inputHandler}
         name={'note'}
         value={pocketData['note']}
+        maxLength={NAME_MAX_LENGTHS.note}
+        autoComplete="off" 
       />
     </div>
 
@@ -330,6 +349,12 @@ setMessageToUser({message:responseData.message || "Server error when creating ne
     {/* Target Amount */}
     <label htmlFor={formDataNumber.keyName} className='form__title1'>
       {'Target Amount'}
+
+      <CharacterCounter 
+         value={formData[formDataNumber.keyName] || ''}
+         maxLength={15}
+       />
+
       <div
         className='validation__errMsg'
         style={{
@@ -351,6 +376,8 @@ setMessageToUser({message:responseData.message || "Server error when creating ne
       placeholder={formDataNumber.keyName}
       value={formData[formDataNumber.keyName]}
       onChange={inputHandler}
+      maxLength={15}
+      autoComplete='off'
     />
 
      {/* 📅 DATE PICKER */}
