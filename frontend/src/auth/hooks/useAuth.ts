@@ -56,8 +56,6 @@ const mapUserResponseToUserData = (user: UserResponseDataType): UserDataType => 
   contact: user.user_contact,
 });
 
-
-
 /* ===============================
    🔧 ERROR EXTRACTION UTILITY
    =============================== */
@@ -68,8 +66,8 @@ const extractErrorMessage = (err: unknown): string => {
     const data = err.response.data as Record<string, unknown>;
 //-----------------------------------------
 console.log('extractErrorMessage:', data, err.stack)
-//-----------------------------------------
-   // Priority: BE error message
+//---------------------------------------
+// Priority: BE error message
     if (data?.message && typeof data.message === 'string') {
       return data.message;
     }
@@ -119,7 +117,6 @@ const {
  /* ===============================
     🔄 SESSION INITIALIZATION
     =============================== */
-
   useEffect(() => {
     let isMounted = true;
 
@@ -127,18 +124,23 @@ const {
     const accessToken = sessionStorage.getItem('accessToken');
 
      if ((accessToken ) && !error && !isLoading &&!isAuthenticated) {
-        try {
-         const response = await authFetch<AuthSuccessResponseType>(url_validate_session, { method: 'GET' });
+      try {
+       const response = await authFetch<AuthSuccessResponseType>(url_validate_session, { method: 'GET' });
       //----------------------
-      // console.log("🚀 ~ checkAuthStatus ~ response:", response)
+      console.log("🚀 ~ checkAuthStatus ~ response:", response)
       //----------------------
       if (isMounted && response.data?.user) {
       // ✅ Transform and merge user data on session restore
        const transformedUser = mapUserResponseToUserData(response.data.user);
-       const mergedUser = safeMergeUser(transformedUser);
-       setUserData(mergedUser);
-       setIsAuthenticated(true);
-       console.log('✅ Session restored successfully');
+
+      //Get current store state before 
+      const currentUserData = useAuthStore.getState().userData;
+
+      //update user data: current + api
+      const mergedUser = safeMergeUser(currentUserData,transformedUser);
+      setUserData(mergedUser);
+      setIsAuthenticated(true);
+      console.log('✅ Session restored successfully');
          }
        } catch (error) {
           if (isMounted) {
@@ -204,8 +206,12 @@ const {
   }
 
   // ✅ Transform and merge user data
-   const transformedUser = mapUserResponseToUserData(userFromSignIn);
-   const mergedUser = safeMergeUser(transformedUser);
+   const transformedUser = mapUserResponseToUserData(userFromSignIn); 
+
+  // Get current user data store
+  const currentUserDataStore = useAuthStore.getState().userData
+  
+   const mergedUser = safeMergeUser(currentUserDataStore ,transformedUser);
    setUserData(mergedUser);//to store
 
    setIsAuthenticated(true);
@@ -256,7 +262,11 @@ const {
       }
      // ✅ Transform and merge user data
      const transformedUser = mapUserResponseToUserData(resData.user);
-     const mergedUser = safeMergeUser(transformedUser);
+
+     //Get user data from store
+     const currentUserDataStore = useAuthStore.getState().userData;
+
+     const mergedUser = safeMergeUser(currentUserDataStore, transformedUser);
      setUserData(mergedUser);
 
      setIsAuthenticated(true);
@@ -306,7 +316,7 @@ const handleSignOut = async () => {
     
     // 2️⃣ Application layer - explicit navigation for user-initiated logout
     // This does NOT affect automatic session expiration flows
-    navigateTo('/auth', { replace: true });
+    navigateTo('/', { replace: true });
   }
 };
   /* ===============================
@@ -433,18 +443,22 @@ const handleSignOut = async () => {
       });
 
       if (response.data.success) {
-       // 1️⃣ Get current store state before updating
-       const currentData = useAuthStore.getState().userData;
+      // 1️⃣ Get current store state before updating
+      const currentUserData = useAuthStore.getState().userData;
+
       // 2️⃣ Map response
-       const mappedNewData = mapUserResponseToUserData((response.data).user);
+      const mappedNewData = mapUserResponseToUserData((response.data).user);
+
       // 3️⃣ ATOMIC MERGE
-       const finalUserData: UserDataType = {
-        ...currentData!,
-        ...mappedNewData,
-        // Protection: If PATCH response fields are empty, keep current ones
-        email: mappedNewData.email || currentData?.email || '',
-        role: mappedNewData.role || currentData?.role || 'user',
-       };
+      //safeMergeUser get the current store state and merge it with api response
+       const finalUserData = safeMergeUser(currentUserData, mappedNewData);
+       // const finalUserData: UserDataType = {
+       //  ...currentData!,
+       //  ...mappedNewData,
+       //  // Protection: If PATCH response fields are empty, keep current ones
+       //  email: mappedNewData.email || currentData?.email || '',
+       //  role: mappedNewData.role || currentData?.role || 'user',
+       // };
 
        setUserData(finalUserData);
 
