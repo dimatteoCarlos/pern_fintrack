@@ -368,40 +368,6 @@ const markAllFieldsTouched = useCallback(() => {
  }, {} as Record<string, boolean>);
  setTouchedFields(allTouched);
   }, [formData]); // ✅ Updates if form structure changes 
-  
-//================================
-//🌟SIDE EFFECT
-//================================
-// 🔄 1. INTERNAL SYNCHRONIZATION (Reconciliation)
-// Cuando el Store Global cambia, initialData cambia. 
-// Este efecto actualiza el formulario automáticamente sin intervención del padre.
-// 🔄 EFFECT: Sync internal form state with external initial data
-// This effectively "clears" isDirty when the store updates after success
- useEffect(() => {
-  setFormData(initialData);
-  setErrors({});
-  setTouchedFields({});
-  setApiError(null);
-  }, [initialData])
-
-//====================================
-//🌟FUNCTION DECLARATION🌟
-//===================================
-// const startCountdown = (initialTime: number | undefined) => {
-//  if (!initialTime || initialTime <= 0) return;
-
-//  let remaining = Math.ceil(initialTime / 1000); // Convertir a segundos
- 
-//  const interval = setInterval(() => {
-//    remaining -= 1;
-   
-//    if (remaining <= 0) {
-//      clearInterval(interval);
-//    }
-//  }, 1000);
- 
-//  return () => clearInterval(interval);
-//  };
 
 //====================================
 //🌟FIELD CHANGE HANDLER (Core Logic)🌟
