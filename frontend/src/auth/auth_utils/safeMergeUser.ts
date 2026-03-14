@@ -1,6 +1,4 @@
-//frontend\src\auth\auth_utils\safeMergeUser.ts
-
-import { useAuthStore } from "../stores/useAuthStore";
+//frontend/src/auth/auth_utils/safeMergeUser.ts
 import { UserDataType } from "../types/authTypes";
 
 // ===============================
@@ -14,8 +12,9 @@ import { UserDataType } from "../types/authTypes";
  * @returns Merged user data with all fields preserved
  * @throws Error if newUser is missing
  */
-export const safeMergeUser = (newUser: Partial<UserDataType>): UserDataType => {
-  const current = useAuthStore.getState().userData;
+export const safeMergeUser = ( 
+ current: UserDataType | null,
+ newUser: Partial<UserDataType>): UserDataType => {
   
   if (!newUser) {
     throw new Error("Invalid server response - Missing user data");
@@ -29,13 +28,20 @@ export const safeMergeUser = (newUser: Partial<UserDataType>): UserDataType => {
 
   // Merge with current data, preserving existing values for missing fields
   return {
-   user_id: current?.user_id ?? cleaned.user_id ?? '',
-   username: current?.username ?? cleaned.username ?? '',
-   user_firstname: current?.user_firstname ?? cleaned.user_firstname ?? '',
-   user_lastname: current?.user_lastname ?? cleaned.user_lastname ?? '',
-   email: current?.email ?? cleaned.email ?? '',
-   currency: current?.currency ?? cleaned.currency ?? 'usd',
-   role: current?.role ?? cleaned.role ?? 'user',
-   contact: current?.contact ?? cleaned.contact ?? null,
+   user_id: cleaned.user_id ?? current?.user_id ?? '',
+
+   username: cleaned.username ?? current?.username ?? '',
+
+   email: cleaned.email ?? current?.email ?? '',
+
+   role: cleaned.role ?? current?.role ?? 'user',
+
+   currency: cleaned.currency ?? current?.currency ?? 'usd',
+
+   contact: cleaned.contact ?? current?.contact ?? null,
+
+   user_firstname: cleaned.user_firstname ?? current?.user_firstname ?? '',
+
+   user_lastname: cleaned.user_lastname ?? current?.user_lastname ?? '',
   };
 };
