@@ -8,12 +8,11 @@
 import { useCallback,  useEffect,  useMemo, useState } from "react";
 
 // 🏷️ IMPORT TYPE DEFINITIONS
-import { 
+import {
  NormalizedProfileUpdateResultType,
  UpdateProfileFormDataType,
 } from "../types/authTypes.ts";
 import { CurrencyType } from "../../types/types.ts";
-// import { FormDataType } from "./useUpdateProfileFormTodoEnUno_OLD.ts";
 
 /* 🌟 ===============================
 🏷️ TYPE DEFINITIONS (LOCALS)
@@ -342,7 +341,7 @@ const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
 // Check if any field has changed from its original value
 const changed = fieldNames.some(
-(key) => formData[key] !== initialData[key]
+(key) =>String(formData[key] ?? '') !== String(initialData[key] ?? '')//with ??this converts null/undefined -> ''.
 );
 // LOG FOR DEBUGGIN
 if (import.meta.env.VITE_ENVIRONMENT === 'development') {
