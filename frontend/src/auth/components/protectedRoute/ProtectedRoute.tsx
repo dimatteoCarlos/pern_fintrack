@@ -20,16 +20,13 @@
    - Open modals or set UI state
    - Call APIs directly
    - Handle business logic
-   
-   📍 CORRECT LOCATION:
-     /auth/components/protectedRoute/ - auth module guard
 */
 
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import CoinSpinner from '../../../loader/coin/CoinSpinner';
 import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
-import { AUTH_ROUTE } from '../../auth_constants/constants';
+// import { AUTH_ROUTE } from '../../auth_constants/constants';
 
 //MAIN COMPONENT:🛡️ PROTECTED ROUTE
 
@@ -44,32 +41,20 @@ const ProtectedRoute = () => {
     return <CoinSpinner />;
   }
 
-  // 🚨 Not authenticated → intelligent redirect based on persisted identity
-  if (!isAuthenticated) {
-// 🔍 Read remembered identity
-   const identity = getIdentity();
-// ✅ Do NOT set UI state here - that belongs in AuthPage
-// The store will be read by AuthPage when it renders
-  
-// 🎯 Decide destination based on whether user was remembered
-// - User with remembered identity → go to login page (pre-filled)
-   const redirectTo = identity ? AUTH_ROUTE : '/';
-// - Anonymous user → go to landing page
+  const redirectTo =  '/';
 
-   return (
-     <Navigate
+ if (!isAuthenticated) {
+  return (
+    <Navigate
       to={redirectTo}
       replace
-       state={{ 
-         from: location.pathname,
-         // ✅ Pass identity info via navigation state instead of store
-         hasIdentity: !!identity,
-         prefilledEmail: identity?.email,
-         prefilledUsername: identity?.username,
-        }}
-      />
-    );
-  }
+      state={{ 
+        from: location.pathname,
+        hasIdentity: !!getIdentity(),
+      }}
+    />
+  );
+}
 
   // ✅ Access granted - render child routes
   return <Outlet />;
