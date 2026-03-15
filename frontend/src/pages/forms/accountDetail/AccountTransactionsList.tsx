@@ -62,7 +62,7 @@ import './styles/accountTransactionsList-styles.css'
 
             {/* Balance after transacción */}
                 <BoxRow>
-                  <div className="box__title transaction-balance-afterx">
+                  <div className="box__title transaction-balance-after">
                     Balance:{' '}
                     {currencyFormat(
                     currency_code,

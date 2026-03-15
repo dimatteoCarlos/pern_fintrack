@@ -124,7 +124,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
           tabIndex={4}
         />
         <label htmlFor="rememberMe" className={styles['auth-form__label-checkbox']}>
-          Keep me signed in
+          Remember me
         </label>
       </div>
 

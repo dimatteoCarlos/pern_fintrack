@@ -1,8 +1,8 @@
 //📂 src/auth/stores/useAuthStore.ts
 /* ===============================
-   🔐 AUTH SESSION STORE - APPLICATION LAYER
-   Volatile store (memory only) for authentication state
-   ===============================*/
+ 🔐 AUTH SESSION STORE - APPLICATION LAYER
+ Volatile store (memory only) for authentication state
+ ===============================*/
 /*
 🔍 LAYER IDENTIFICATION:
 - Layer: Application/State
@@ -59,7 +59,7 @@ export const useAuthStore = create<AuthStoreStateType<UserDataType>>(
  })) // set block
 
  // ✅ Debug in dev
-if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+if (import.meta.env.VITE_ENVIRONMENT === 'developmentX') {
   useAuthStore.subscribe((state) => {
     console.log('🔧 AuthStore state:', {
       isAuthenticated: state.isAuthenticated,
@@ -70,5 +70,3 @@ if (import.meta.env.VITE_ENVIRONMENT === 'development') {
     });
   });
 }
-
-

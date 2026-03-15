@@ -10,14 +10,44 @@
 
 .period-info__label{
   font-weight: 600;
-  margin-right: 0.rem;
+  margin-right: 0;
 }
 
 .period-info__dates{
   font-weight: 400;
 }
+
+.account-transactions__container {
+  width: 100%;
+}
+
 /**********************/
 
+@media (max-width: 480px) {
+  .period-info {
+    font-size: 0.85rem;
+    padding: 0 0.5rem 0.75rem 0;
+  }
 
+  .transaction-header {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
 
+  .transaction-movement-type {
+    font-size: 0.95rem;
+  }
 
+  .transaction-amount {
+    font-size: 1rem;
+    margin-left: 0.5rem;
+  }
+
+  .transaction-item {
+    padding: 0.6rem 0.4rem !important;
+  }
+
+  .transaction-description {
+    font-size: 0.85rem;
+  }
+}

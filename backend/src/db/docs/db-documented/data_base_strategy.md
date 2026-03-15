@@ -1,5 +1,8 @@
+#  PLAN DE INGENIERÍA DE DATOS  🔥
+Establece las reglas de cómo se construye, se llena y se protege el sistema.
 
-# 1🔹 1. Borrar base de datos (opcional, manual)
+# GESTIÓN DE LA ESTRUCTURA (El esqueleto)
+# 1🔹 Borrar base de datos (opcional, manual)
 dropdb expensetracker_dev
 
 # 2➡️ Borra completamente la base
@@ -313,13 +316,6 @@ npm run db:migrate
 
 ---
 
-👉 **Siguiente paso lógico (te propongo):**
-¿Quieres que escribamos **`runSeeds.js` completo** con:
 
-* flags
-* protección prod
-* ejecución ordenada
-* reutilizando tu pool?
 
-Dime **sí** y entramos directo al código 🔥
 

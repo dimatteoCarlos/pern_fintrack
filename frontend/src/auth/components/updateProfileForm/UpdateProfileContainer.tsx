@@ -149,6 +149,7 @@ const UpdateProfileContainer = ({
 * ⚡ Optimization: Only recalculates when userData changes
 */
   const initialFormData = useMemo(() => {
+   // console.log(userData)
    return userData 
  // 🔄 Transform: Store format → Form format
   ? transformations.storeToForm(userData) 
@@ -271,9 +272,9 @@ const UpdateProfileContainer = ({
 * ⚡ Timing: Runs when component unmounts
 */
  useEffect(() => {
-   return () => {
-     clearApiError();// 🧹 Clear any API errors
-     clearApiSuccessMessage();// 🧹 Clear any API success messages
+  return () => {
+    clearApiError();// 🧹 Clear any API errors
+    clearApiSuccessMessage();// 🧹 Clear any API success messages
    };
   }, [clearApiError, clearApiSuccessMessage]); // ⚡ Dependencies
 
@@ -313,7 +314,10 @@ useEffect(()=>{
  
 // 🧠 Delegate submission to business logic hook   
   const result = await formLogic.handleSubmit(e);
-  console.log("🚀 ~ UpdateProfileContainer ~ result:", result);
+
+  if(import.meta.env.VITE_ENVIRONMENT === 'developmentX'){
+   console.log("🚀 ~ UpdateProfileContainer ~ result:", result);
+  }
 
  },
  [formLogic, clearApiError, clearApiSuccessMessage]
@@ -423,7 +427,7 @@ return (
 
 {/* migrate this to a component */}
 {/* 🐛 DEBUG INFORMATION */}
-{import.meta.env.VITE_ENVIRONMENT === 'developmentx' && (
+{import.meta.env.VITE_ENVIRONMENT === 'developmentX' && (
   <div className={styles.debugInfo}>
     <h4 className={styles.debugInfoHeader}>
       🐛 Development Debug Info
@@ -463,6 +467,7 @@ return (
         <span className={styles.debugLabel}>Initial Loaded:</span>
         <span className={styles.debugValue}>
           {initialFormData ? '✅' : '❌'}
+
         </span>
       </div>
     </div>

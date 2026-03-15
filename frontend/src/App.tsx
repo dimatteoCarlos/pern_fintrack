@@ -64,7 +64,10 @@ import { AUTH_ROUTE } from './auth/auth_constants/constants.ts';
 function App() {
   const router = createBrowserRouter([
   // 🔄 REDIRECT ROUTES  
-    { path: '/', element: <Navigate to='/auth/' replace /> },
+     {
+    path: '/',
+    element: <AuthPage />
+  },
     
   // 🔐 AUTHENTICATION ROUTES
     {

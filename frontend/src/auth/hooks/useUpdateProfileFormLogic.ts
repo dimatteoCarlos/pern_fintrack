@@ -344,7 +344,7 @@ const changed = fieldNames.some(
 (key) =>String(formData[key] ?? '') !== String(initialData[key] ?? '')//with ??this converts null/undefined -> ''.
 );
 // LOG FOR DEBUGGIN
-if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+if (import.meta.env.VITE_ENVIRONMENT === 'developmentX') {
   // console.log('--- 🔍 Check Dirty fields ---');
   // console.log('Original:', initialData);
   // console.log('Actual:', formData);

@@ -57,11 +57,10 @@
   const shouldKeepData = identity?.rememberMe === true;
 
   if (!shouldKeepData) {
-  // ❌ User does NOT want to be remembered - full cleanup
-  setUserData(null);
-  clearIdentity(); // Remove the identity entirely
-  localStorage.removeItem(LOCAL_STORAGE_KEY.USER_DATA);
-  console.log('🔧 Full cleanup: all persistent data removed');
+    setUserData(null);
+    clearIdentity(); // Remove the identity entirely
+    localStorage.removeItem(LOCAL_STORAGE_KEY.USER_DATA);
+    console.log('🔧 Full cleanup: all persistent data removed');
   } else {
   // ✅ User wants to be remembered - keep identity for next visit
   console.log('🔧 Partial cleanup: keeping identity for next visit');

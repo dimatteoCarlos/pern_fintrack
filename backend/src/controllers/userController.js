@@ -33,7 +33,8 @@ export const getUserById = async (req, res, next) => {
     });
 
     const userData = userDataResult.rows[0];
-    // console.log('🚀 ~ getUserById ~ userDataResult:', userData);
+    //---------------------------
+    console.log('🚀 ~ getUserById ~ userDataResult:', userData);
 
     if (!userData) {
       return next(createError(404, 'user not found'));
@@ -109,6 +110,8 @@ export const updateUserById = async (req, res, next) => {
         userId,
       ],
     });
+    //------------------------------
+    console.log("🚀 ~ updateUserById ~ updatedUser:", updatedUser)
 
     return res.status(200).json({
       status: 200,

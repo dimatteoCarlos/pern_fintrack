@@ -65,7 +65,7 @@ const FIELD_MAPPING: Record<string, keyof ChangePasswordFormDataType> = {
   confirmPassword: "confirmPassword",
 };
 
-export const TOTAL_COUNTDOWN_SECONDS = 150;
+export const TOTAL_COUNTDOWN_SECONDS = 60;
 
 /* ==========================
 🧱 MAIN CONTAINER COMPONENTE
@@ -256,9 +256,6 @@ const showCancel = !isSubmitting && status !== "success";
   console.log("Security: User should re-authenticate with new password");
   setCountdown(TOTAL_COUNTDOWN_SECONDS);
   setTotalCountdown(TOTAL_COUNTDOWN_SECONDS)
-  // setTimeout(() => {
-  //  logoutCleanup(false);
-  // }, 8000);
 
  } else {
 // ❌ DOMAIN ERROR

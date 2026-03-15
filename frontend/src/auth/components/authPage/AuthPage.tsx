@@ -78,7 +78,8 @@ export default function AuthPage() {
 
     // Always clean up navigation state after processing
     if (location.state && Object.keys(location.state).length > 0) {
-      navigateTo(location.pathname, { replace: true, state: {} });
+      navigateTo(location.pathname,
+        { replace: true, state: {} });
     }
   }, [
     location.state,

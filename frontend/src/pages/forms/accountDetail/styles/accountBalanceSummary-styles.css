@@ -42,4 +42,24 @@ font-size: 0.8rem;
 color: #a0a0a0;
 }
 
+@media (max-width: 480px) {
+  .balance-summary__container {
+    flex-direction: column;
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
 
+  .balance-summary__item.border-left {
+    border-left: none;
+    border-top: 1px dashed var(--light);
+    padding-top: 0.75rem;
+  }
+
+  .balance-summary__label {
+    font-size: 0.9rem;
+  }
+
+  .balance-summary__value {
+    font-size: 1rem;
+  }
+}

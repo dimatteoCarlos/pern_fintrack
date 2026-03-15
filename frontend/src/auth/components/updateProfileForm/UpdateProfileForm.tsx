@@ -277,7 +277,7 @@ const UpdateProfileForm = ({
 
         {/* 🛠️ DEBUG UTILITIES */}
         {/* 🆕 CHANGE: Ocultar debug si hay éxito para limpiar la UI */}
-        {import.meta.env.VITE_ENVIRONMENT === 'developmentx' && !isSuccess && (
+        {import.meta.env.VITE_ENVIRONMENT === 'developmentX' && !isSuccess && (
           <div className={styles.debugUtilities}>
             <div className={styles.debugButtons}>
               <button type="button" onClick={onMarkAllTouched} className={`${styles.debugButton} ${styles.debugButtonMark}`}>
