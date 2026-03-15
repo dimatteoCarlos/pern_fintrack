@@ -9,12 +9,11 @@
    - Purpose: Single source of truth for route protection
    - Decisions:
      * Render content if authenticated
-     * Redirect based on remembered identity if not authenticated
+     * Redirect
    
    ✅ Responsibilities:
    - Block UI while checking auth status
-   - Consult persisted identity for intelligent redirects
-   - Signal expiration via location.state
+   - Redirect to '/'
    
    ❌ Never:
    - Open modals or set UI state
@@ -33,8 +32,6 @@ import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
 const ProtectedRoute = () => {
   const location = useLocation();
   const { isAuthenticated, isCheckingAuth } = useAuth();
-  
-  // const { setUIState, setPrefilledData } = useAuthUIStore();
 
   // ⏳ While checking auth, block UI with spinner
   if (isCheckingAuth) {
