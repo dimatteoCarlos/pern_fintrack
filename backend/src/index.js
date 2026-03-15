@@ -166,6 +166,7 @@ async function initializeDatabase() {
     await pool.query('COMMIT');
 
     console.log(pc.green('Application initialized successfully'));
+
    } catch (error) {
      await pool.query('ROLLBACK');
      throw error;
@@ -176,21 +177,28 @@ async function initializeDatabase() {
    }
    //---------------------------------
    //truncate or drop all tables manually
-   if (false) {
+  const tableActions ={isActive:true,allTables:true, isDrop:false,}
+
+   if (tableActions.isActive) {
      await Promise.allSettled(
        mainTables.map(async (item, indx) => {
          try {
+          if(!tableActions.allTables){
            if (item.tblName == 'users' || item.tblName=='refresh_tokens') {
              console.log('skip: users table, refresh_tokens table');
              return false;
            }
+          }
+
            await pool.query({
              text: `TRUNCATE TABLE ${item.tblName} RESTART IDENTITY CASCADE`,
            });
             console.log(indx, item.tblName, 'truncated');
 
+           if(tableActions.isDrop){
            await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
            console.log(indx, item.tblName, 'drop');
+           }
 
          } catch (error) {
            console.error('error truncating the table', `${item.tblName}`);
@@ -210,8 +218,9 @@ async function initializeDatabase() {
      });
    }
    //=============================
-   //create tables manually
-   if (false) {
+   //Create tables manually
+   const createDbFlag=false
+   if (createDbFlag) {
      await Promise.allSettled(
        mainTables.map(async (item, ind) => {
          try {
