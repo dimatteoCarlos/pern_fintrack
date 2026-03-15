@@ -1,5 +1,5 @@
 //frontend/src/editionAndDeletion\pages/deletionAccount/UIComponents/statusModalUI/StatusModalUI.tsx
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ModalStatusType } from "../../../../types/deletionTypes";
 import { DictionaryDataType } from "../../../../utils/languages";
 
@@ -35,17 +35,22 @@ export const StatusModalUI = (
 //Countdown timer for auto-close
 const [timeLeft, setTimeLeft] = useState<number>(Math.floor(autoCloseDelay/1000))
 
-// 🎯 EFFECT:
+// 🎯 REF to track if auto-close should happen
+const shouldAutoClose = useRef(false);
+
+  // 🎯 EFFECT 1: Timer countdown
 //Auto-close timer for success/error states
 useEffect(() => {
  if(modalStatus!=='success' && modalStatus!=='error'){
-  return
+  return;
  }
- const timerId = setInterval(()=>{
+ shouldAutoClose.current = false;
+ //Start the countdown timer
+  const timerId = setInterval(()=>{
   setTimeLeft((prev)=>{
    if(prev<=1){
     clearInterval(timerId);
-    onClose();
+    shouldAutoClose.current = true;
     return 0;
    }
     return prev -1
@@ -56,7 +61,21 @@ useEffect(() => {
   return () => {
    clearInterval(timerId);
   }
-}, [modalStatus, onClose])
+}, [modalStatus, autoCloseDelay])
+
+// 🎯 EFFECT 2: Handle auto-close (separated from rendering)
+useEffect(() => {
+ if (shouldAutoClose.current && (modalStatus === 'success' || modalStatus === 'error')) {
+   shouldAutoClose.current = false;
+   onClose();
+ }
+}, [timeLeft, modalStatus, onClose]);
+
+// Reset timeLeft when modalStatus changes
+useEffect(() => {
+ setTimeLeft(Math.floor(autoCloseDelay / 1000));
+}, [modalStatus, autoCloseDelay]);
+
 // ============================
 // 🎯 HANDLERS
 // ============================
