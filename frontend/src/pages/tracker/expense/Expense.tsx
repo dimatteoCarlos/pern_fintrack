@@ -395,7 +395,7 @@ try {
   }
 
   if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-    console.log('Data from record transaction request:', response);
+    // console.log('Data from record transaction request:', response);
   }
 //------------------------
  showMessage('Transaction recorded successfully!', 3000);

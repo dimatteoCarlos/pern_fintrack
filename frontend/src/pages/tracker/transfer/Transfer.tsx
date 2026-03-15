@@ -466,7 +466,7 @@ try {
   }
   
   if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-    console.log('Data from record transaction request:', response);
+    // console.log('Data from record transaction request:', response);
   }
 // -------------------------------------
 // ✅ Update total balance after success 
@@ -479,7 +479,7 @@ try {
   }
   
   if (import.meta.env.VITE_ENVIRONMENT === 'development') {
-    console.log('Data from record transaction request:',  response.data);
+    // console.log('Data from record transaction request:',  response.data);
   }
   //-----------------------------  
   setMessageToUser('Transaction recorded successfully!');     

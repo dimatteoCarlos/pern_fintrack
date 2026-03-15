@@ -260,7 +260,7 @@ function NewProfile() {
         return;
       }
 
-      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+      if (import.meta.env.VITE_ENVIRONMENT === 'developmentX') {
         console.log('Data from New Debtor request:', data);
       }
       //--------------------

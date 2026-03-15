@@ -126,7 +126,7 @@ const {data, isLoading, error, requestFn,
     const { name, value } = e.target;
 
  if (name === formDataNumber.keyName) {
- console.log('formDataNumber.keyName', formDataNumber.keyName,formDataNumber)   
+ // console.log('formDataNumber.keyName', formDataNumber.keyName,formDataNumber)   
     inputNumberHandlerFn(name, value);
   } else {
     setPocketData((prev) => ({ ...prev, [name]: value }));
@@ -198,8 +198,8 @@ const {data, isLoading, error, requestFn,
 // ✅ CHECK STATUS CODE
  if(responseData.status >= 200 && responseData.status<300){
  //SUCCESS
- console.log('message', { message:responseData.message || 'New Pocket account successfully created!', status:responseData.status
- })
+ // console.log('message', { message:responseData.message || 'New Pocket account successfully created!', status:responseData.status
+ // })
 
  setMessageToUser(
    { message:responseData.message || 'New Pocket account successfully created!', status:responseData.status
@@ -220,7 +220,7 @@ setMessageToUser({message:responseData.message || "Server error when creating ne
  } 
 }
 
- if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+ if (import.meta.env.VITE_ENVIRONMENT === 'developmentx') {
      console.log('Data from New Pocket request:', responseData);
    }
  } catch (error) {

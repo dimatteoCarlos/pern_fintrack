@@ -75,7 +75,7 @@ export const useAuthUIStore = create<AuthUIStoreType>()(
 );
 
 // ✅ For debugging in development
-if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+if (import.meta.env.VITE_ENVIRONMENT === 'developmentX') {
   // Log state changes for debugging
   useAuthUIStore.subscribe((state) => {
     console.log('🔧 AuthUIStore state:', {
