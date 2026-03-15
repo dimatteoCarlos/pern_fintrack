@@ -99,7 +99,7 @@ const initialFormStateRef = useRef({
 // 🎨 RENDER
 // =============
  return (
-  <div className={styles['auth-container']}>
+  <form autoComplete='off' className={styles['auth-container']}>
     {/* 📢 Message Area with close button */}
     <div
       className={`${styles.messageArea} ${
@@ -178,7 +178,7 @@ const initialFormStateRef = useRef({
         </button>
       )}
     </div>
-  </div>
+  </form>
  );
 }
 
