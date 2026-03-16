@@ -39,17 +39,19 @@
   /* border: 1px solid var(--primary); */
 }
 
+.labelText,
 label,
-.form__title,
-.labelText {
+.forms__label {
   color: var(--light);
   font-size: 1.25rem;
-  text-align: center;
   width: 100%;
-  /* border: 1px solid var(--primary); */
+  text-align: left;
 }
 
-.form__title {
+/* ======================
+   FORM TITLES (just for page titles)
+   =====================*/
+  .main__title--container .form__title {
   font-size: 1.25rem;
   font-weight: 600;
   text-align: center;
@@ -61,9 +63,22 @@ label,
   text-overflow: ellipsis;
 
   padding: 0 0.5rem;
-  /* Quitar position absolute si existe */
+
   position: static;
 }
+
+/* =====================
+   FIELD LABELS (para labels inside inputs)
+  ==================== */
+   .input__box .forms__label {
+    text-align: left;
+    margin: 0;
+    padding: 0;
+    white-space: normal;
+    /* overflow: visible;
+    text-overflow: clip; */
+    /* max-width: none; */
+  }
 
 /* --------------- Responsive: forms & account detail --------------- */
 @media (max-width: 480px) {
@@ -361,3 +376,4 @@ textarea:invalid {
   border: 1px solid #f7f7f7;
   background-color: transparent;
 }
+
