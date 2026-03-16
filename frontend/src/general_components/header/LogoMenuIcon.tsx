@@ -40,7 +40,9 @@ const handleSignOutClick = ()=>{
       <Logo />
 
       <div className="menuBox "
-      style={{display:'flex', justifyContent:'space-around', width:'35%', alignSelf:'center' }}
+      style={{display:'flex', justifyContent:'space-around', width:'35%', alignSelf:'center',
+      gap:'0.5rem'
+       }}
       >
       <Link
         to='accounting'

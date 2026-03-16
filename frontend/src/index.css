@@ -58,7 +58,6 @@ button {
 }
 
 .tile__left .tile__subtitle,
-.input__container,/*note*/
 .flx-row-sb .box__subtitle/*aplicar ellipsis a note y disminuir a 100 chars*/
 {
  width:100%;

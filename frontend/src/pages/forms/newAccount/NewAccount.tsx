@@ -31,7 +31,7 @@ import {
 
 import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 
-import { capitalize, } from '../../../helpers/functions.ts';
+import { capitalize } from '../../../helpers/functions.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
@@ -50,7 +50,7 @@ type AccountDataType = {
   name: string;
   date: Date;
   type: string | undefined | null;
-  amount: number | ""; //later verifyin and fixed input
+  amount: number | ''; //later verifyin and fixed input
   currency: string;
 };
 
@@ -81,14 +81,14 @@ const initialFormData: FormNumberInputType = {
 //=============================
 function NewAccount() {
   const location = useLocation();
-  const navigateTo=useNavigate()
- // const user = import.meta.env.VITE_USER_ID;
- // console.log('🚀 ~ NewAccount ~ user:', user);
-  const { isAuthenticated } = useAuth();  
+  const navigateTo = useNavigate();
+  // const user = import.meta.env.VITE_USER_ID;
+  // console.log('🚀 ~ NewAccount ~ user:', user);
+  const { isAuthenticated } = useAuth();
 
-//---states------
+  //---states------
   const [accountData, setAccountData] = useState<AccountDataType>(
-    initialNewAccountData
+    initialNewAccountData,
   );
 
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
@@ -105,15 +105,15 @@ function NewAccount() {
     useState<FormNumberInputType>(initialFormData);
 
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
-    null
+    null,
   );
 
-// 🆕 VERIFICAR AUTENTICACIÓN AL INICIO
+  // 🆕 VERIFICAR AUTENTICACIÓN AL INICIO
   useEffect(() => {
     if (!isAuthenticated) {
       setMessageToUser('Please log in to create an account');
-// 🆕 OPCIONAL: Redirigir al login después de un tiempo
-   setTimeout(() => navigateTo(AUTH_ROUTE), 3500);
+      // 🆕 OPCIONAL: Redirigir al login después de un tiempo
+      setTimeout(() => navigateTo(AUTH_ROUTE), 3500);
     }
   }, [isAuthenticated, navigateTo]);
 
@@ -126,7 +126,7 @@ function NewAccount() {
   const title = 'type';
   const optionsTypeAccounts = ACCOUNT_TYPE_DEFAULT;
 
-//POST: NEW ACCOUNT DATA
+  //POST: NEW ACCOUNT DATA
   const { data, isLoading, error, requestFn } = useFetchLoad<
     CreateBasicAccountApiResponseType,
     AccountDataType
@@ -167,7 +167,7 @@ function NewAccount() {
           ...acc,
           type: selectedOption?.label,
         }));
-          setIsDisabledValue(false);
+        setIsDisabledValue(false);
       }
     } else {
       // console.log(`No option selected for ${'account type'}`);
@@ -193,13 +193,13 @@ function NewAccount() {
     e.preventDefault();
     // console.log('On submit Form');
 
- // 🆕 VERIFY AUTH BEFORE SENDING 
+    // 🆕 VERIFY AUTH BEFORE SENDING
     if (!isAuthenticated) {
       setMessageToUser('Please log in to create an account');
       return;
     }
 
- // ✅ DATA FORM VALIDATION
+    // ✅ DATA FORM VALIDATION
     const newValidationMessages = { ...validationData(accountData) };
     // console.log('message validation:', { newValidationMessages });
 
@@ -208,43 +208,49 @@ function NewAccount() {
       return;
     }
     //-------------------------------------
-    //POST TO THE ENDPOINT FOR ACCOUNT DATA 
+    //POST TO THE ENDPOINT FOR ACCOUNT DATA
     try {
       const { name, type, currency, amount, date } = accountData;
 
-      const payload: AccountDataType = { name, type, currency, amount, date } as AccountDataType;
-    console.log('data to post:',{ ...accountData});
+      const payload: AccountDataType = {
+        name,
+        type,
+        currency,
+        amount,
+        date,
+      } as AccountDataType;
+      console.log('data to post:', { ...accountData });
 
-    //final URL, url is dynamic depending on type variable
+      //final URL, url is dynamic depending on type variable
       const finalUrl = `${url_create_basic_account}/${type}`;
 
-    // console.log('🚀 ~ onSubmitForm ~ finalUrl:', finalUrl);
+      // console.log('🚀 ~ onSubmitForm ~ finalUrl:', finalUrl);
 
       await requestFn(payload, {
         url: finalUrl,
       } as AxiosRequestConfig);
 
-    if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
         console.log('Data from New Account request:', data);
       }
-      
-    //resetting form values
+
+      //resetting form values
       setIsReset(true);
       setValidationMessages({});
       setFormData(initialFormData);
       setAccountData(initialNewAccountData);
       setCurrency(defaultCurrency);
       setIsDisabledValue(false);
-      setMessageToUser(null)
+      setMessageToUser(null);
 
-    //delay isReset so dropdown type selection updates to null
+      //delay isReset so dropdown type selection updates to null
       setTimeout(() => {
         setIsReset(false);
       }, 1000);
     } catch (error) {
-      const messageError='Submission error'
+      const messageError = 'Submission error';
       console.error(messageError, error);
-      setMessageToUser(messageError)
+      setMessageToUser(messageError);
     }
   }
   //-----------------------------------
@@ -268,9 +274,9 @@ function NewAccount() {
     };
   }, [data, isLoading, error]);
 
-// 🆕 DESHABILITAR FORMULARIO SI NO ESTÁ AUTENTICADO
+  // 🆕 DESHABILITAR FORMULARIO SI NO ESTÁ AUTENTICADO
   const isFormDisabled = !isAuthenticated;
-//----
+  //----
   return (
     <section className='account__page__container page__container'>
       <TopWhiteSpace variant={'dark'} />
@@ -286,45 +292,45 @@ function NewAccount() {
           <div className='form__title'>{'New Account'}</div>
         </div>
 
-    {/* 🆕 MESSAGE FOR NOT AUTHENTICATED */}
-      {!isAuthenticated && (
-        <div className='error-message' style={{ margin: '1rem 0', padding: '1rem' }}>
-          Please log in to create a new account
-        </div>
-      )}
+        {/* 🆕 MESSAGE FOR NOT AUTHENTICATED */}
+        {!isAuthenticated && (
+          <div
+            className='error-message'
+            style={{ margin: '1rem 0', padding: '1rem' }}
+          >
+            Please log in to create a new account
+          </div>
+        )}
 
-        <form className='form__box' autoComplete="off"
-        >
+        <form className='form__box' autoComplete='off'>
           <div className=' form__container'>
             <div className='input__box'>
-              <label htmlFor='name' className='label form__title'>
+              <label htmlFor='name' className='label forms__label'>
                 {'Account Name'}
-
-            <CharacterCounter 
-              value={accountData.name} 
-              maxLength={NAME_MAX_LENGTHS.account_name}
-              />
-              &nbsp;
-             <span className='validation__errMsg'>
-               {validationMessages['name']}
-             </span>
+                <CharacterCounter
+                  value={accountData.name}
+                  maxLength={NAME_MAX_LENGTHS.account_name}
+                />
+                &nbsp;
+                <span className='validation__errMsg'>
+                  {validationMessages['name']}
+                </span>
               </label>
 
-           <input
-             type='text'
-             className='input__container'
-             placeholder='Account Name'
-             name='name'
-             onChange={inputHandler}
-             value={accountData.name}
-             disabled={isFormDisabled}//if not auth
-             maxLength={NAME_MAX_LENGTHS.account_name}
-            />
-              
+              <input
+                type='text'
+                className='input__container'
+                placeholder='Account Name'
+                name='name'
+                onChange={inputHandler}
+                value={accountData.name}
+                disabled={isFormDisabled} //if not auth
+                maxLength={NAME_MAX_LENGTHS.account_name}
+              />
             </div>
 
             <div className='input__box'>
-              <label className='label form__title'>
+              <label className='label forms__label'>
                 Account Type &nbsp;
                 <span className='validation__errMsg'>
                   {validationMessages['type']}
@@ -342,57 +348,59 @@ function NewAccount() {
 
             <div className='account__dateAndCurrency'>
               <div className='account__date'>
-                <label className='label form__title'>{'Starting Point'}</label>
+                <label className='label forms__label'>{'Starting Point'}</label>
                 <div className='form__datepicker__container'>
                   <FormDatepicker
                     changeDate={changeStartingPoint}
                     date={accountData.date}
                     variant={'form'}
                     isReset={isReset}
-                    // disabled={isFormDisabled} 
+                    // disabled={isFormDisabled}
                   ></FormDatepicker>
                 </div>
               </div>
 
               <div className='account__currency'>
-                <div className='label form__title'>Currency</div>
+                <div className='label forms__label'>Currency</div>
                 <CurrencyBadge
                   variant={'form'}
                   updateOutsideCurrencyData={updateDataCurrency}
                   currency={currency}
-                  // disabled={isFormDisabled} 
+                  // disabled={isFormDisabled}
                 />
               </div>
             </div>
 
-        {!isDisabledValue && (
-          <div className='input__box'>
-            <LabelNumberValidation
-              formDataNumber={formDataNumber}
-              validationMessages={validationMessages}
-              variant={VARIANT_FORM}
-            />
+            {!isDisabledValue && (
+              <div className='input__box'>
+                <LabelNumberValidation
+                  formDataNumber={formDataNumber}
+                  validationMessages={validationMessages}
+                  variant={VARIANT_FORM}
+                />
 
-        <InputNumberFormHandler
-          validationMessages={validationMessages}
-          setValidationMessages={setValidationMessages}
-          keyName={formDataNumber.keyName as keyof AccountDataType}
-          placeholderText={formDataNumber.keyName}
-          formData={formData}
-          setFormData={setFormData}
-          setStateData={setAccountData}
-          // disabled={isFormDisabled} 
-        />
-        {/* <input
+                <InputNumberFormHandler
+                  validationMessages={validationMessages}
+                  setValidationMessages={setValidationMessages}
+                  keyName={formDataNumber.keyName as keyof AccountDataType}
+                  placeholderText={formDataNumber.keyName}
+                  formData={formData}
+                  setFormData={setFormData}
+                  setStateData={setAccountData}
+                  // disabled={isFormDisabled}
+                />
+                {/* <input
         style={{ fontSize: '1.25rem', padding: '0 0.75rem' }}
       /> FIGMA STYLE*/}
-        </div>
-        )}
-      </div>
+              </div>
+            )}
+          </div>
 
           <div className='submit__btn__container'>
-            <FormSubmitBtn 
-            onClickHandler={onSubmitForm} disabled={isLoading || isFormDisabled}>
+            <FormSubmitBtn
+              onClickHandler={onSubmitForm}
+              disabled={isLoading || isFormDisabled}
+            >
               save
             </FormSubmitBtn>
           </div>
@@ -436,7 +444,6 @@ function NewAccount() {
           </span>
         </div>
       )}
-
     </section>
   );
 }

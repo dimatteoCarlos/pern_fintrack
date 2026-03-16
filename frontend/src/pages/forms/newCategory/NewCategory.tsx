@@ -20,7 +20,11 @@ import { url_create_category_budget_account } from '../../../endpoints.ts';
 
 import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
 
-import { DEFAULT_CURRENCY, TILE_LABELS, VARIANT_FORM } from '../../../helpers/constants.ts';
+import {
+  DEFAULT_CURRENCY,
+  TILE_LABELS,
+  VARIANT_FORM,
+} from '../../../helpers/constants.ts';
 
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
@@ -69,59 +73,62 @@ const initialFormData: FormNumberInputType = {
 // === COMPONENT DEFINITION ===
 function NewCategory() {
   const location = useLocation();
-  const navigateTo=useNavigate()
-//const user: string = import.meta.env.VITE_USER_ID;
-  const { isAuthenticated } = useAuth()
+  const navigateTo = useNavigate();
+  //const user: string = import.meta.env.VITE_USER_ID;
+  const { isAuthenticated } = useAuth();
 
- // === STATE INITIALIZATION ===
+  // === STATE INITIALIZATION ===
   const [formData, setFormData] =
     useState<FormNumberInputType>(initialFormData);
 
   const [categoryData, setCategoryData] = useState<CategoryDataType>(
-    initialNewCategoryData
+    initialNewCategoryData,
   );
   const [activeNature, setActiveNature] = useState(
-    initialNewCategoryData.nature
+    initialNewCategoryData.nature,
   );
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
   }>({});
 
-  const [messageToUser, setMessageToUser] = useState<{message:string, status?:number} | string | null | undefined>(
-    null
-  );
+  const [messageToUser, setMessageToUser] = useState<
+    { message: string; status?: number } | string | null | undefined
+  >(null);
 
-//✅ CHECK IF USER IS AUTHENTICATED
- useEffect(()=>{
-  if(!isAuthenticated){
-  setMessageToUser('Please log in to create an account')
-  setTimeout(()=>navigateTo(AUTH_ROUTE), 5000)
+  //✅ CHECK IF USER IS AUTHENTICATED
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setMessageToUser('Please log in to create an account');
+      setTimeout(() => navigateTo(AUTH_ROUTE), 5000);
     }
- }, [isAuthenticated, navigateTo]);
-//------------------------------------
-// === DATA FETCHING HOOK (POST) ===
-//endpoint: http://localhost:5000/api/fintrack/account/new_account/category_budget
-// === HANDLERS & UTILITIES ===
-//DATA FETCHING POST
-//POST: NEW ACCOUNT DATA
-const { isLoading, error, requestFn,
-  //  ...rest 
-} = useFetchLoad<
-  CreateCategoryBudgetAccountApiResponseType,
-  CategoryBudgetPayloadType
+  }, [isAuthenticated, navigateTo]);
+  //------------------------------------
+  // === DATA FETCHING HOOK (POST) ===
+  //endpoint: http://localhost:5000/api/fintrack/account/new_account/category_budget
+  // === HANDLERS & UTILITIES ===
+  //DATA FETCHING POST
+  //POST: NEW ACCOUNT DATA
+  const {
+    isLoading,
+    error,
+    requestFn,
+    //  ...rest
+  } = useFetchLoad<
+    CreateCategoryBudgetAccountApiResponseType,
+    CategoryBudgetPayloadType
   >({ url: url_create_category_budget_account, method: 'POST' });
-//  console.log('more data', rest)
-/*
+  //  console.log('more data', rest)
+  /*
 Errores HTTP (400, 500) → Vienen en responseData con su status y message
 Errores de red → Vienen en requestError
 Errores inesperados → Van al catch
 */
-// === HANDLERS & UTILITIES ===
-//event handler hook for number input handling
+  // === HANDLERS & UTILITIES ===
+  //event handler hook for number input handling
   const { inputNumberHandlerFn } = useInputNumberHandler(
     setFormData,
     setValidationMessages,
-    setCategoryData
+    setCategoryData,
   );
   //FUNCTIONS---------
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
@@ -129,7 +136,7 @@ Errores inesperados → Van al catch
     const { name, value } = e.target;
 
     if (name === formDataNumber.keyName) {
-    console.log('formDataNumber.keyName', formDataNumber.keyName)     
+      console.log('formDataNumber.keyName', formDataNumber.keyName);
       inputNumberHandlerFn(name, value);
     } else {
       setCategoryData((prev) => ({ ...prev, [name]: value }));
@@ -141,7 +148,7 @@ Errores inesperados → Van al catch
   //   //adding function
   //   console.log('addHandler subcategory method PENDING to define');
   // }
-// Category Nature tile selector handler
+  // Category Nature tile selector handler
   function natureHandler(e: React.MouseEvent<HTMLButtonElement>) {
     // console.log('natureHandler', e.currentTarget.id);
     e.preventDefault();
@@ -150,92 +157,95 @@ Errores inesperados → Van al catch
     setCategoryData((prev) => ({ ...prev, nature: activeNature }));
   }
 
-// = FORM SUBMISSION LOGIC (onSubmitForm) ===
- async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
+  // = FORM SUBMISSION LOGIC (onSubmitForm) ===
+  async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
- // console.log('🟢 onSubmitForm called');
- // 🆕 CHECK USER AUTHENTICATION BEFORE SUBMIT
+    // console.log('🟢 onSubmitForm called');
+    // 🆕 CHECK USER AUTHENTICATION BEFORE SUBMIT
     if (!isAuthenticated) {
       setMessageToUser('Please log in to create an account');
       return;
     }
- // ✅ DATA FORM VALIDATION
-   const newValidationMessages = { ...validationData(categoryData, { 
-    nonZeroFields: ['amount']}) };
-// console.log('mensajes de validacion:', { newValidationMessages });
+    // ✅ DATA FORM VALIDATION
+    const newValidationMessages = {
+      ...validationData(categoryData, {
+        nonZeroFields: ['amount'],
+      }),
+    };
+    // console.log('mensajes de validacion:', { newValidationMessages });
 
     if (Object.values(newValidationMessages).length > 0) {
       setValidationMessages(newValidationMessages);
       return;
     }
-//------------------------------------
-//POST TO THE ENDPOINT FOR ACCOUNT DATA HERE
-// new category data into database
-//------------------------------------
-// Payload construction
-  try {
-    const payload: CategoryBudgetPayloadType = {
-      name: categoryData.category.toLowerCase().trim(),
-      type: 'category_budget',
-      currency: categoryData?.currency ?? defaultCurrency, //default
-      budget: formData.amount ?? categoryData.amount,
-      date: new Date().toISOString(), // ISO format
-      nature: categoryData.nature,
-      subcategory: categoryData.subcategory || undefined,
-      // user,
-    };
+    //------------------------------------
+    //POST TO THE ENDPOINT FOR ACCOUNT DATA HERE
+    // new category data into database
+    //------------------------------------
+    // Payload construction
+    try {
+      const payload: CategoryBudgetPayloadType = {
+        name: categoryData.category.toLowerCase().trim(),
+        type: 'category_budget',
+        currency: categoryData?.currency ?? defaultCurrency, //default
+        budget: formData.amount ?? categoryData.amount,
+        date: new Date().toISOString(), // ISO format
+        nature: categoryData.nature,
+        subcategory: categoryData.subcategory || undefined,
+        // user,
+      };
 
-// ✅ requestFn devuelve { data: ResponseType | null, error: string | null }
-    const {data: responseData, error: requestError }= await requestFn(payload);
-    console.log('📦 Response received:', { responseData, requestError }); 
-//Los errores del servidor (4xx, 5xx) vienen en data.status
-    if (requestError) {
-    console.log('🔴 Network error:', requestError);  
-    // Error del request (network, etc.).Error de red/axios
-    setMessageToUser({
-      message: requestError,
-      status: 500
-      });
-      return;
-    }
-// Manejar Respuesta del Servidor (Éxito o Error HTTP)    
-     if (responseData) {
-     console.log('📊 Server response status:', responseData.status);  
- // ✅ VERIFICAR STATUS CODE AQUÍ MISMO
-      if (responseData.status >= 200 && responseData.status < 300) {
-        // SUCCESS
+      // ✅ requestFn devuelve { data: ResponseType | null, error: string | null }
+      const { data: responseData, error: requestError } =
+        await requestFn(payload);
+      console.log('📦 Response received:', { responseData, requestError });
+      //Los errores del servidor (4xx, 5xx) vienen en data.status
+      if (requestError) {
+        console.log('🔴 Network error:', requestError);
+        // Error del request (network, etc.).Error de red/axios
         setMessageToUser({
-          message: responseData.message || 'Category created successfully!',
-          status: responseData.status
+          message: requestError,
+          status: 500,
         });
-  // RESET WHEN SUCCESS
-        setActiveNature(initialNewCategoryData.nature);
-        setValidationMessages({});
-        setFormData(initialFormData);
-        setCategoryData(initialNewCategoryData);
-      } else {
-        console.log('❌ Server error - setting message');
-        // ❌ ERROR DEL SERVIDOR (4xx, 5xx) - Viene en responseData
-        setMessageToUser({
-          message: responseData.message || 'Server error',
-          status: responseData.status
-        });
+        return;
       }
-    }
+      // Manejar Respuesta del Servidor (Éxito o Error HTTP)
+      if (responseData) {
+        console.log('📊 Server response status:', responseData.status);
+        // ✅ VERIFICAR STATUS CODE AQUÍ MISMO
+        if (responseData.status >= 200 && responseData.status < 300) {
+          // SUCCESS
+          setMessageToUser({
+            message: responseData.message || 'Category created successfully!',
+            status: responseData.status,
+          });
+          // RESET WHEN SUCCESS
+          setActiveNature(initialNewCategoryData.nature);
+          setValidationMessages({});
+          setFormData(initialFormData);
+          setCategoryData(initialNewCategoryData);
+        } else {
+          console.log('❌ Server error - setting message');
+          // ❌ ERROR DEL SERVIDOR (4xx, 5xx) - Viene en responseData
+          setMessageToUser({
+            message: responseData.message || 'Server error',
+            status: responseData.status,
+          });
+        }
+      }
 
-   if (import.meta.env.VITE_ENVIRONMENT === 'developmentX') {
-      console.log('Data from New Category request:', responseData);
+      if (import.meta.env.VITE_ENVIRONMENT === 'developmentX') {
+        console.log('Data from New Category request:', responseData);
       }
-    
-   } catch (error) {
-    console.log('🔥 Unexpected error:', error);
-     //For unexpected errors only
-    const { message, status } = normalizeError(error);
-    setMessageToUser({ message, status });
+    } catch (error) {
+      console.log('🔥 Unexpected error:', error);
+      //For unexpected errors only
+      const { message, status } = normalizeError(error);
+      setMessageToUser({ message, status });
     }
   }
-// === EFFECTS (Message Cleanup) ===
-// Clear message after 5 seconds
+  // === EFFECTS (Message Cleanup) ===
+  // Clear message after 5 seconds
   useEffect(() => {
     if (messageToUser) {
       const timer = setTimeout(() => {
@@ -244,8 +254,8 @@ Errores inesperados → Van al catch
       return () => clearTimeout(timer);
     }
   }, [messageToUser]);
-//-----------------------
-// === RENDER (JSX) ===
+  //-----------------------
+  // === RENDER (JSX) ===
   return (
     <section className='account__page__container page__container'>
       <TopWhiteSpace variant={'dark'} />
@@ -264,11 +274,11 @@ Errores inesperados → Van al catch
           </Link> */}
           <div className='form__title'>{'New Category'}</div>
         </div>
-        {/* Form Start */}      
+        {/* Form Start */}
         <form className='form__box'>
           <div className='container--categoryName form__container'>
             <div className='input__box'>
-              <label htmlFor='category' className='label form__title'>
+              <label htmlFor='category' className='label forms__label'>
                 {'Category Name'}&nbsp;
                 <div className='validation__errMsg'>
                   {validationMessages['category']}
@@ -286,9 +296,9 @@ Errores inesperados → Van al catch
               />
             </div>
 
-        {/* SUBCATEGORY */}
+            {/* SUBCATEGORY */}
             <div className='input__box'>
-              <label htmlFor='subcategory' className='label form__title'>
+              <label htmlFor='subcategory' className='label forms__label'>
                 {'Subcategory'}&nbsp;
               </label>
               <div className='validation__errMsg'>
@@ -305,14 +315,14 @@ Errores inesperados → Van al catch
               />
             </div>
 
-          {/* Budget Amount Input */}
+            {/* Budget Amount Input */}
             <div className='input__box'>
               <LabelNumberValidation
                 formDataNumber={formDataNumber}
                 validationMessages={validationMessages}
                 variant={VARIANT_FORM}
               />
-              
+
               <input
                 className={'input__container'}
                 type='text'
@@ -358,16 +368,18 @@ Errores inesperados → Van al catch
           </div>
           {/* Submit Button */}
           <div className='submit__btn__container'>
-          <FormSubmitBtn onClickHandler={onSubmitForm}disabled={isLoading}>save</FormSubmitBtn>
+            <FormSubmitBtn onClickHandler={onSubmitForm} disabled={isLoading}>
+              save
+            </FormSubmitBtn>
           </div>
         </form>
-        
+
         {/* Message/Error Display Component */}
         <MessageToUser
           isLoading={isLoading}
           error={error}
           messageToUser={messageToUser}
-          variant="form"
+          variant='form'
         />
       </div>
     </section>

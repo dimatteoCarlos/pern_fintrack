@@ -322,7 +322,7 @@ function NewProfile() {
         <form className='form__box' autoComplete='off'>
           <div className='container--profileName form__container '>
             <div className='input__box'>
-              <label htmlFor='name' className='label form__title'>
+              <label htmlFor='name' className='label forms__label'>
                 {'Name'}
 
                 <CharacterCounter
@@ -348,7 +348,7 @@ function NewProfile() {
             </div>
 
             <div className='input__box'>
-              <label htmlFor='lastname' className='label form__title'>
+              <label htmlFor='lastname' className='label forms__label'>
                 {'Last Name'}
 
                 <CharacterCounter
@@ -374,7 +374,7 @@ function NewProfile() {
             </div>
 
             <div className='input__box'>
-              <label className='label form__title'>
+              <label className='label forms__label'>
                 Account &nbsp;
                 <span className='validation__errMsg'>
                   {validationMessages['account']}
@@ -392,7 +392,7 @@ function NewProfile() {
 
               <label
                 // htmlFor={formDataNumber.keyName}
-                className='label form__title'
+                className='label forms__label'
               >
                 {capitalize(formDataNumber.title)}&nbsp;
                 <span
@@ -425,7 +425,7 @@ function NewProfile() {
             </div>
 
             <div className='input__box'>
-              <label className='label form__title'>
+              <label className='label forms__label'>
                 {'Type'}
                 <span className='validation__errMsg'>
                   {validationMessages['type']}

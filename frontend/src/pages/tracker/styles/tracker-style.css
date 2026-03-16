@@ -60,7 +60,7 @@
 .total__container {
   position: absolute;
   top: 20%; /*figma*/
-  top: calc(var(--topSpaceHeight) * 1 + 15%);
+  top: calc(var(--topSpaceHeight) * 1 + 16%);
   left: 50%;
   transform: translateX(-50%);
   z-index: 0;
@@ -126,7 +126,7 @@ article {
 .cards__presentation--tracker {
   background: url('../../../assets/cardBgTexture.png') repeat;
   position: absolute;
-  top: calc(var(--topSpaceHeight) + 28%); /*figma*/
+  top: calc(var(--topSpaceHeight) + 30%); /*figma*/
   left: 50%;
   transform: translateX(-50%);
   /* border: 10px solid orange; */

@@ -17,20 +17,34 @@ import {
   VARIANT_FORM,
   DEFAULT_ACCOUNT_TRANSACTIONS,
 } from '../../../helpers/constants';
-import { capitalize,  numberFormatCurrency, formatDateToDDMMYYYY } from '../../../helpers/functions';
+import {
+  capitalize,
+  numberFormatCurrency,
+  formatDateToDDMMYYYY,
+} from '../../../helpers/functions';
 import '../styles/forms-styles.css';
-import { AccountByTypeResponseType, AccountListType, TransactionsAccountApiResponseType,  AccountTransactionType, AccountSummaryBalanceType } from '../../../types/responseApiTypes';
-import { url_get_account_by_id, url_get_transactions_by_account_id } from '../../../endpoints';
+import {
+  AccountByTypeResponseType,
+  AccountListType,
+  TransactionsAccountApiResponseType,
+  AccountTransactionType,
+  AccountSummaryBalanceType,
+} from '../../../types/responseApiTypes';
+import {
+  url_get_account_by_id,
+  url_get_transactions_by_account_id,
+} from '../../../endpoints';
 
-import './styles/accountDetailTransactions-styles.css'
+import './styles/accountDetailTransactions-styles.css';
 // import CoinSpinner from '../../../loader/coin/CoinSpinner';
 
-type LocationStateType ={
-previousRoute:string; detailedData:AccountListType;
-}
+type LocationStateType = {
+  previousRoute: string;
+  detailedData: AccountListType;
+};
 //dummy data (used if API data is not available or for initial state)
 //account main data
-const initialAccountDetail = ACCOUNT_DEFAULT[0]
+const initialAccountDetail = ACCOUNT_DEFAULT[0];
 
 const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
 // console.log('initialAccountTransactions', initialAccountTransactionsData)
@@ -38,186 +52,200 @@ const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
 //MAIN COMPONENT ACCOUNT DETAILED
 // ==============================
 function AccountDetail() {
-  const location = useLocation() 
-  const {accountId} = useParams();
+  const location = useLocation();
+  const { accountId } = useParams();
   const state = location.state as LocationStateType | null;
   const accountDetailedFromState = state?.detailedData;
-//------------------------------
-//✅ DYNAMIC BACK ROUTE
-  const previousRouteFromState = state?.previousRoute ||  "/fintrack/overview";
+  //------------------------------
+  //✅ DYNAMIC BACK ROUTE
+  const previousRouteFromState = state?.previousRoute || '/fintrack/overview';
   const isAccountDetailMissing = !accountDetailedFromState;
 
-//--STATES
-  const [previousRoute, setPreviousRoute] = useState<string>(previousRouteFromState); 
-// console.log('location',location,   accountId, {detailedData}, {previousRouteFromState}, )
+  //--STATES
+  const [previousRoute, setPreviousRoute] = useState<string>(
+    previousRouteFromState,
+  );
+  // console.log('location',location,   accountId, {detailedData}, {previousRouteFromState}, )
 
-  const [accountDetail, setAccountDetail] = useState<AccountListType>(initialAccountDetail);
+  const [accountDetail, setAccountDetail] =
+    useState<AccountListType>(initialAccountDetail);
 
   //--state for account transactions data
-  const [transactions, setTransactions]=useState<AccountTransactionType[]>(initialAccountTransactionsData.transactions)
-  
-  const [summaryAccountBalance, setSummaryAccountBalance]=useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary)
-//----------------------------------
-// API CALLS 
-//--Fetch Data
-//--account detail global info
+  const [transactions, setTransactions] = useState<AccountTransactionType[]>(
+    initialAccountTransactionsData.transactions,
+  );
+
+  const [summaryAccountBalance, setSummaryAccountBalance] =
+    useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary);
+  //----------------------------------
+  // API CALLS
+  //--Fetch Data
+  //--account detail global info
   const urlAccountById = isAccountDetailMissing
-  ?`${url_get_account_by_id}/${accountId}`
-  :null
+    ? `${url_get_account_by_id}/${accountId}`
+    : null;
 
   const {
     apiData: accountsDataFromFetch,
     isLoading,
     error,
-  } = useFetch<AccountByTypeResponseType>(
-    urlAccountById
+  } = useFetch<AccountByTypeResponseType>(urlAccountById);
+
+  //Data transforming for rendering
+  const accountsData =
+    accountDetailedFromState || accountsDataFromFetch?.data?.accountList[0];
+
+  //-------------------------------------
+  //--ACCOUNT TRANSACTION API RESPONSE
+  //period dates considering previous number of months and current month transactions
+  const tdy = new Date();
+  const numberOfMonths = 2;
+  const firstDayOfPeriod = new Date(
+    tdy.getFullYear(),
+    tdy.getMonth() - numberOfMonths + 1,
+    1,
   );
+  const lastDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth() + 1, 0);
 
-//Data transforming for rendering
-const accountsData =
-  accountDetailedFromState ||
-  accountsDataFromFetch?.data?.accountList[0]
+  //--YYYY-MM-DD
+  const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0];
+  const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0];
 
-//-------------------------------------
-//--ACCOUNT TRANSACTION API RESPONSE
-//period dates considering previous number of months and current month transactions
-    const tdy = new Date()
-    const numberOfMonths=2
-    const firstDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth()-numberOfMonths+1,1)
-    const lastDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth()+1,0)
+  //-----
+  const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
 
-    //--YYYY-MM-DD
-    const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0]
-    const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0]
-
-    //-----
-    const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
-
-    const {
-      apiData: transactionAccountApiResponse,//{status, message, data}
-      isLoading:isLoadingTransactions,
-      error:errorTransactions,
-    } = useFetch<TransactionsAccountApiResponseType>(
-      urlTransactionsAccountById
-    );
-//------------------------------
-// UPDATE TRANSACTIONS WHEN DATA LOADS
-useEffect(() => {
-  if(transactionAccountApiResponse?.data.transactions){
-    setTransactions(transactionAccountApiResponse?.data.transactions)
-    setSummaryAccountBalance(transactionAccountApiResponse?.data.summary)
-  }
-  //else keep the initial values
-}, [transactionAccountApiResponse])
-//-------------------------------
-// UPDATE ACCOUNT DETAIL WHEN DATA LOADS
-useEffect(()=>{
-if(accountsData){
-    setAccountDetail(accountsData)
-    // if (previousRouteFromState) {
-    setPreviousRoute(previousRouteFromState);
+  const {
+    apiData: transactionAccountApiResponse, //{status, message, data}
+    isLoading: isLoadingTransactions,
+    error: errorTransactions,
+  } = useFetch<TransactionsAccountApiResponseType>(urlTransactionsAccountById);
+  //------------------------------
+  // UPDATE TRANSACTIONS WHEN DATA LOADS
+  useEffect(() => {
+    if (transactionAccountApiResponse?.data.transactions) {
+      setTransactions(transactionAccountApiResponse?.data.transactions);
+      setSummaryAccountBalance(transactionAccountApiResponse?.data.summary);
+    }
+    //else keep the initial values
+  }, [transactionAccountApiResponse]);
+  //-------------------------------
+  // UPDATE ACCOUNT DETAIL WHEN DATA LOADS
+  useEffect(() => {
+    if (accountsData) {
+      setAccountDetail(accountsData);
+      // if (previousRouteFromState) {
+      setPreviousRoute(previousRouteFromState);
       // }
     }
-  },[accountsData, previousRouteFromState])
+  }, [accountsData, previousRouteFromState]);
 
-useEffect(() => {
-  if(!accountsData && accountsData){
-    const account = accountsData
-  //  const account = accountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
-    if(account)setAccountDetail(account)}
+  useEffect(() => {
+    if (!accountsData && accountsData) {
+      const account = accountsData;
+      //  const account = accountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
+      if (account) setAccountDetail(account);
+    }
+  }, [accountsData, accountId]);
+  //-----------------------------
+  return (
+    <section className='page__container'>
+      <TopWhiteSpace variant={'dark'} />
 
-}, [accountsData, accountId])
-//-----------------------------
-return (
-  <section className='page__container'>
-    <TopWhiteSpace variant={'dark'} />
+      <div className='page__content'>
+        <div className='main__title--container'>
+          <Link to={previousRoute} relative='path' className='iconLeftArrow'>
+            <LeftArrowLightSvg />
+          </Link>
 
-    <div className='page__content'>
-      <div className='main__title--container'>
-        <Link to={previousRoute} relative='path' className='iconLeftArrow'>
-          <LeftArrowLightSvg />
-        </Link>
-        
-        <div className='form__title'>
-         {accountDetail?capitalize(accountDetail.account_name).toUpperCase(): 'Loading...'}
-         </div>
-        
-        {/* <Link to='edit' className='flx-col-center icon3dots'>
+          <div className='form__title'>
+            {accountDetail
+              ? capitalize(accountDetail.account_name).toUpperCase()
+              : 'Loading...'}
+          </div>
+
+          {/* <Link to='edit' className='flx-col-center icon3dots'>
           <Dots3LightSvg />
         </Link> */}
-        
-        <div id='edit' className='flx-col-center icon3dots'>
-        <Dots3LightSvg />
+
+          <div id='edit' className='flx-col-center icon3dots'>
+            <Dots3LightSvg />
+          </div>
         </div>
-     </div>
 
-      <form className='form__box'>
-        <div className='form__container'>
-          <div className='input__box'>
-            <div className='label form__title'>{`Current Balance`}</div>
+        <form className='form__box'>
+          <div className='form__container'>
+            <div className='input__box'>
+              <div className='label forms__label'>{`Current Balance`}</div>
 
-            <div className='input__container' style={{ padding: '0.5rem' }}>
-              {numberFormatCurrency(accountDetail?.account_balance)}
-            </div>
-          </div>
-
-          <div className='input__box'>
-            <label className='label form__title'>{'Account Type'}</label>
-
-            <p className='input__container' style={{ padding: '0.5rem' }}>
-              {capitalize(accountDetail.account_type_name!.toLocaleString())}
-            </p>
-          </div>
-
-          <div className='account__dateAndCurrency'>
-            <div className='account__date'>
-              <label className='label form__title'>{'Starting Point'}</label>
-              <div
-                className='form__datepicker__container'
-                style={{ textAlign: 'center', color:'white' }}
-              >
-                {formatDateToDDMMYYYY((accountDetail.account_start_date))}
-              
+              <div className='input__container' style={{ padding: '0.5rem' }}>
+                {numberFormatCurrency(accountDetail?.account_balance)}
               </div>
             </div>
 
-            <div className='account__currency'>
-              <div className='label form__title'>{'Currency'}</div>
+            <div className='input__box'>
+              <label className='label forms__label'>{'Account Type'}</label>
 
-              <CurrencyBadge
-                variant={VARIANT_FORM}
-                currency={accountDetail.currency_code??DEFAULT_CURRENCY}
-              />
+              <p className='input__container' style={{ padding: '0.5rem' }}>
+                {capitalize(accountDetail.account_type_name!.toLocaleString())}
+              </p>
+            </div>
+
+            <div className='account__dateAndCurrency'>
+              <div className='account__date'>
+                <label className='label forms__label'>{'Starting Point'}</label>
+                <div
+                  className='form__datepicker__container'
+                  style={{ textAlign: 'center', color: 'white' }}
+                >
+                  {formatDateToDDMMYYYY(accountDetail.account_start_date)}
+                </div>
+              </div>
+
+              <div className='account__currency'>
+                <div className='label forms__label'>{'Currency'}</div>
+
+                <CurrencyBadge
+                  variant={VARIANT_FORM}
+                  currency={accountDetail.currency_code ?? DEFAULT_CURRENCY}
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-{/* --- TRANSACTION STATEMENT SECTION --- */}
-      <div className="account-transactions__container "
-      style={{margin:'1rem 0'}}
-      >
-      <div className="period-info">
-        <div className="period-info__label">Period</div>
-        <span className="period-info__dates  ">{formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}{'  '}  /  {'  '} {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}</span>
+          {/* --- TRANSACTION STATEMENT SECTION --- */}
+          <div
+            className='account-transactions__container '
+            style={{ margin: '1rem 0' }}
+          >
+            <div className='period-info'>
+              <div className='period-info__label'>Period</div>
+              <span className='period-info__dates  '>
+                {formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}
+                {'  '} / {'  '}{' '}
+                {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}
+              </span>
+            </div>
+
+            <AccountBalanceSummary
+              summaryAccountBalance={summaryAccountBalance}
+            />
+
+            <div className='presentation__card__title__container '>
+              <CardTitle>{'Last Movements'}</CardTitle>
+            </div>
+
+            <AccountTransactionsList transactions={transactions} />
+          </div>
+          {/* --- END TRANSACTION STATEMENT SECTION --- */}
+        </form>
+
+        {(isLoading || isLoadingTransactions) && <p>Loading...</p>}
+        {(error || errorTransactions) && (
+          <p>Error fetching account info: {error ?? errorTransactions}</p>
+        )}
       </div>
-
-        <AccountBalanceSummary summaryAccountBalance={summaryAccountBalance}/>
-
-        <div className='presentation__card__title__container '>
-          <CardTitle>{'Last Movements'}</CardTitle>
-        </div>
-
-        <AccountTransactionsList transactions={transactions} />
-        
-      </div>
-{/* --- END TRANSACTION STATEMENT SECTION --- */}
-      </form>
-      
-      {(isLoading || isLoadingTransactions) && <p>Loading...</p>}
-      {(error|| errorTransactions) && <p>Error fetching account info: {error??errorTransactions}</p>}
-    </div>
-  </section>
-);
+    </section>
+  );
 }
 
 export default AccountDetail;

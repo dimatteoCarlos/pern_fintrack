@@ -128,21 +128,19 @@ body {
   justify-content: space-between;
 
   min-width: var(--figmaWidth);
-  min-width: 0;
   max-width: 40rem;
 
   padding-bottom: 1rem;
   overflow-x: auto;
 
-  width: 100%;
-
+  /* border: 5px solid cyan; */
 }
 
 .home__layout {
   position: relative;
-  /* height: 100dvh; */
-  /* min-height: 48rem; */
-  min-height: 100dvh;
+  height: 100dvh;
+  min-height: 48rem;
+  /* max-height: 50rem; */ /*DEFINE A BREAKDOWN FOR SCREEN BEYOND 50 REM HEIGHT */
 }
 
 .home__header {
@@ -260,10 +258,6 @@ input[type='number'] {
   cursor: pointer;
 }
 
-.box__container, .box__row { 
- width: 100%; 
-}
-
 @media screen and (min-height: 50rem) {
   .home__layout {
     max-height: 55rem;
@@ -277,54 +271,4 @@ input[type='number'] {
   /* .mainNavbar__container {
     bottom: calc(4.5% - var(--topSpaceHeight));
   } */
-}
-
-
-/* =====================================
-   UTILITY CLASSES (prefijo utility-)
-   Reemplazan gradualmente a flx-*
-   ===================================== */
-
-/* Flex row utilities */
-.utility-flex-row-center {
- display: flex;
- flex-direction: row;
- align-items: center;
- justify-content: center;
-}
-
-.utility-flex-row-between {
- display: flex;
- flex-direction: row;
- align-items: center;
- justify-content: space-between;
-}
-
-.utility-flex-row-start {
- display: flex;
- flex-direction: row;
- align-items: center;
- justify-content: flex-start;
-}
-
-.utility-flex-row-end {
- display: flex;
- flex-direction: row;
- align-items: center;
- justify-content: flex-end;
-}
-
-/* Flex column utilities */
-.utility-flex-col-center {
- display: flex;
- flex-direction: column;
- align-items: center;
- justify-content: center;
-}
-
-.utility-flex-col-space-between {
- display: flex;
- flex-direction: column;
- align-items: center;
- justify-content: space-between;
 }
