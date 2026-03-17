@@ -1,5 +1,5 @@
 import { currencyFormat } from '../../../helpers/functions';
-import { StatusSquare } from '../../../general_components/boxComponents';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { CurrencyType } from '../../../types/types';
 import { ResultType, MovementType } from '../CalculateMonthlyAverage';
@@ -47,7 +47,7 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
   //convert input data structure into data to render structure
   const convertMovementData = (
     movement: MovementType,
-    data: ResultType | null
+    data: ResultType | null,
   ): DataToRenderType[] => {
     // console.log(movement, data);
 

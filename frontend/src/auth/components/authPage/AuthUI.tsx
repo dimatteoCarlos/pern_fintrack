@@ -104,7 +104,10 @@ const initialFormStateRef = useRef({
     <div
       className={`${styles.messageArea} ${
         bannerMessage ? styles.isVisible : styles.isHidden
-      }`}
+      }`}ff
+
+
+      w
     >
       {bannerMessage && (
       <Message

@@ -54,6 +54,7 @@ label,
   .main__title--container .form__title {
   font-size: 1.25rem;
   font-weight: 600;
+  color:var(--creme, white);
   text-align: center;
   max-width: calc(100% - 4rem); /* Deja espacio para la flecha y el menú */
   margin: 0 auto;
@@ -94,6 +95,7 @@ label,
   .form__title {
     max-width: calc(100% - 3rem);
     font-size: 1rem;
+    color:var(--creme, white)
   }
 
   .iconLeftArrow {

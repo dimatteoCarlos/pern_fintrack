@@ -2,47 +2,51 @@ TÓPICOS LISTOS, PENDIENTES Y CONSULTAS AL CLIENTE
 
 AUTENTICACION
 
-Al hacer SIGN OUT, se redirige a Sign In, en vez de ir al menu principal. PENDIENTE.
+Al hacer SIGN OUT, se redirige a Sign In, en vez de ir al menu principal. LISTO.
 
-Porque expira la sesion, si existe un refresh token, que deberia estar actualizado?. PENDIENTE. 
+Porque expira la sesion, si existe un refresh token, que deberia estar actualizado?. PENDIENTE.
 
 Definir un esquema de roles de autorizacion. PENDIENTE.
 
 Revisar la validacion cruzada entre campos password, new password y confirm password en el frontend.LISTO.
 
-Revisar frontend de formularios de authentication: Sign In, Sign Up, Update user data, Change Password.PENDIENTE.
+Revisar Responsiveness de frontend de formularios de authentication: Sign In, Sign Up, Update user data, Change Password.PENDIENTE.
 
-Revisar validacion en tiempo real en SignUP, de los campos "password" y "confirmPassword". El caso edge es: cuando se introdujeron los dos campos y son diferentes, y en vez de ajustar confirmPassword,  se ajusta password para que coincidan los dos, no se valida sino hasta que se edita confirmPassword. PENDIENTE
+Revisar validacion en tiempo real en SignUP, de los campos "password" y "confirmPassword". El caso edge es: cuando se introdujeron los dos campos y son diferentes, y en vez de ajustar confirmPassword, se ajusta password para que coincidan los dos, no se valida sino hasta que se edita confirmPassword. LISTO
 
 Revisar y completar la autentication con refresh token. LISTO
 
-Validar el monto target en linea al crear una cuenta pocket. LISTO. 
+Validar el monto target en linea al crear una cuenta pocket. LISTO.
 
 Verificar auth refresh token y la logica de refresh toekn automatico.LISTO.
 
 Como hacer para recordar al usuario y mantenerlo activo mientras refresh token este vigente. PENDIENTE
 
---------------------------------
+---
 
 BACKEND
 Organizar la asignacion de la duracion de cookies y tokens. PENDIENTE.
 
 GENERAL
- como hacer DEPLOYMENT, como verificar dinamicamente componentes no usados o rotos.PENDIENTE.
+como hacer DEPLOYMENT. PENDIENTE.
 
- POCKET DETAIL
- Revisar pocket detail, para accounting view detail,  y para budget pocket. No se esta renderizando los datos de las cuentas pocket saving.LISTO
+Como verificar dinamicamente componentes no usados o rotos.LISTO. Con npx knip.
 
- CATEGORY BUDGET DETAIL
- Arreglado pocket detial, ahora category detail, no recibe los datos bien, veerificar la estructura de los datos recibidos/enviados por el server.LISTO.
- 
+POCKET DETAIL
+Revisar pocket detail, para accounting view detail, y para budget pocket. No se esta renderizando los datos de las cuentas pocket saving.LISTO
+
+CATEGORY BUDGET DETAIL
+Arreglado pocket detial, ahora category detail, no recibe los datos bien, veerificar la estructura de los datos recibidos/enviados por el server.LISTO.
+
 TRANSFER
 Responsiveness en transfer, al agregar una linea en To:, no se ve la ui completa. Para una ancho menor de 450 px. La altura debe ser mayor de 842 px. Y normal la altura minima esta en 722 px. ANCHO maximo pra From es 468px, y par To es 450px. LISTO.
 
+TRANSFER. ¿Se puede ser responsive, para que no haya scroll?. PENIENTE.
+
 FIX update of total account balance. LISTO.
 
+==== EDICIÓN Y ELIMINACIÓN: Establecer una estrategia para editar y eliminar datos.LISTO.
 
-====  EDICIÓN Y ELIMINACIÓN: Establecer una Establecer estrategia para editar y eliminar datos.
 EDICIÓN
 La estrategia a seguir es definir los campos editables y los no editbles, asi como sus interrelaciones en la base de datos. No se prevé edición de transacciones, sino implementar transferencias manuales de reverso entre cuentas. LISTO.
 
@@ -57,14 +61,14 @@ Implantar en la edicion de TODOS LOS CAMPOS, incluyendo text areas y numericos, 
 
 ELIMINACIÓN
 Desarrollar eliminacion de cuentas.LISTO.
-ESTRATEGIA: desarrollar el método "Anulación Retrospectiva Total" de cuentas y transacciones.  En el contexto de una aplicación de eliminación de cuentas bancarias se refiere al acto de deshacer o invalidar la existencia de una cuenta bancaria y todas sus transacciones asociadas desde su origen, como si nunca hubiera existido, pero deja registros de cuentas borradas.
+ESTRATEGIA: desarrollar el método "Anulación Retrospectiva Total" de cuentas y transacciones. En el contexto de una aplicación de eliminación de cuentas bancarias se refiere al acto de deshacer o invalidar la existencia de una cuenta bancaria y todas sus transacciones asociadas desde su origen, como si nunca hubiera existido, pero deja registros de cuentas borradas.
 
 ESTO IMPLICA:
 Anulación de la cuenta: El cierre de la cuenta no es un cierre estándar a futuro, sino uno que borra o revierte digitalmente su registro completo en el sistema bancario.
 
 Efecto retroactivo: La acción impacta todas las operaciones realizadas desde la apertura de la cuenta hasta el momento de la anulación, en lugar de solo detener las transacciones futuras.
 
-Totalidad: Se eliminan o anulan todos los datos, incluyendo saldos, movimientos, comisiones, y cualquier otro registro contable o de datos personales vinculado a esa cuenta específica. 
+Totalidad: Se eliminan o anulan todos los datos, incluyendo saldos, movimientos, comisiones, y cualquier otro registro contable o de datos personales vinculado a esa cuenta específica.
 
 En la práctica, esto podría ser una característica técnica compleja diseñada para cumplir con normativas de privacidad (como el "derecho al olvido") o para corregir errores graves en la apertura de cuentas. A diferencia de un cierre de cuenta normal, que simplemente la marca como inactiva o cerrada a partir de una fecha determinada, una "anulación retrospectiva total" busca la eliminación completa del rastro digital de la cuenta.
 
@@ -73,7 +77,7 @@ FINTRACK: ACTIVIDADES O ISSUES LISTOS O PENDIENTES.
 En el frontend, limitar el numero de caracteres en todos los campos de los formularios.PENDIENTE.
 
 En el frontend. El input del datepicker, acepta otros caracteres aparte de la fecha puesta por el datepicker.
- 
+
 Optimar AccountDeletionPage, usando useReducer Hook, para manejo de estados del modal, en vez de usar funcion centralizada con useMemo.PENDIENTE.
 
 POSIBLES BUGS:
@@ -107,23 +111,23 @@ modificar el backend para que en las transacciones se haga la busqueda por accou
 
 Exportación de Datos: Habilitar la exportación de movimientos en formatos como PDF, Excel y .csv.PENDIENTE.
 
-Balance de Inversiones: Aclarar con usuario Cleinte,  el cálculo del balance total de las inversiones.
+Balance de Inversiones: Aclarar con usuario Cleinte, el cálculo del balance total de las inversiones.
 
 PÁGINA DE DETALLE DE INGRESOS: Definir si se debe crear una página de detalle para las cuentas de income.
-Se implemento en modo edicion con accounting dashboard,donde se puede ver el detalle de cualquier cuenta, menos la cuenta interna SLACK.LISTO. 
+Se implemento en modo edicion con accounting dashboard,donde se puede ver el detalle de cualquier cuenta, menos la cuenta interna SLACK.LISTO.
 
 BACKEND Y SEGURIDAD
 la hora de transaction-atual-date en el controller transfer between accounts, tiene 4 horas adicionales con respecto al momento que se hace la transaction?.PENDIENTE.
 
 como guardar los montos numericos en la bbdd como number o decimal, y no como string, o porque se recuperan como strings?. los campos account_starting_amount se ven asi: '0.00', account_balance: '75.00'.PENDIENTE
 
-Autenticación de Usuarios: Implementar la autenticación de usuarios y verificar el userId antes de permitir el acceso a las funciones principales.LISTO. 
+Autenticación de Usuarios: Implementar la autenticación de usuarios y verificar el userId antes de permitir el acceso a las funciones principales.LISTO.
 
 Cálculo de Inversiones: Calcular los valores de las cuentas de inversión, comparando el capital invertido con el balance real.PENDIENTE,.
 
 Establecer la regla de negocio, para el manejo de fechas y coherencias entre fechas. Por ejemplo, al realizar una transaccion entre cuentas, no deberia poder ser de cuentas con fechas en el futuro, o realizar transacciones en fechas anteriores a la creacion de las cuentas.PENDIENTE.
 
-FRONTEND Y UI/UX En detailed account page/view, colocar la flecha de regreso y los 3 puntos de edicion, separados del titulo. css page__content, ...position abosolute?..PENDIENTE.
+FRONTEND Y UI/UX En detailed account page/view, colocar la flecha de regreso y los 3 puntos de edicion, separados del titulo. css page\_\_content, ...position abosolute?..PENDIENTE.
 
 Manejo de Errores: Mejorar los mensajes de error para que sean más claros para el usuario.Unificar y estandarizar manejo de errores, para que sea reusable en otras aplicaciones. PENDIENTE
 
@@ -137,8 +141,8 @@ Formularios: Implementar el reseteo de los mensajes de toast y la limpieza de va
 
 Indicador de Carga: Agregar un indicador de loading en los formularios.PENDIENTE.
 
-Descripción de Transacciones: Estandarizar y mejorar las descripciones de las transacciones.PENDIENTE, a gusto del usuario.
-==========================
+# Descripción de Transacciones: Estandarizar y mejorar las descripciones de las transacciones.PENDIENTE, a gusto del usuario.
+
 ✅ ACTIVIDADES RESUELTAS (LISTO)
 
 EXPENSE
@@ -148,7 +152,7 @@ Revisar signos de los montos, de las transferencias de reverse expense y reverse
 
 y verificar si se incluye en la bbdd de transacciones. deshabilitar la opcion de reverse que no se este usando, evluar si pueden ser simultaneas?. LISTO, Expense Reverse puede ser SIMULTANEA con Income Reverse, por lo que no se requiere inhabilitacion.LISTO.
 
-arreglar style media query de transfer para To:. reducir tamano de fuente de From y To, en el media query. LISTO 
+arreglar style media query de transfer para To:. reducir tamano de fuente de From y To, en el media query. LISTO
 
 Debts tracker,
 si en amount se intoduce valores invalidos, y todos los ca demas campos tienen valores validos, al corregir el valor de amount, se somete inmediatemente la transaccion. Deberia esperar a que el usuario vuelva a someter los datos.Aunque, la transaccion no se graba. LISTO.
@@ -310,8 +314,8 @@ Autenticación de Usuarios: Implementar la autenticación de usuarios y verifica
 
 Cálculo de Inversiones: Calcular los valores de las cuentas de inversión, comparando el capital invertido con el balance real.
 
-minizar los console.log del backend.
-===================
+# minizar los console.log del backend.
+
 PENDIENTES Y DESEABLES.
 AUTENTICACION dual, es decir, para acceso a traves de web, y a traves de mobile-web.
 
@@ -387,8 +391,8 @@ Originalmente no se considera en el disenio el cálculo del monthly avg para INV
 
 Estandarizar los estilos.
 
-Añadir el placeholder "no opción" en los selectores.
-==================
+# Añadir el placeholder "no opción" en los selectores.
+
 PENDIENTES
 Reflejar los nombres y apellidos de los debtors, con primera letra en mayúscula.
 
@@ -396,7 +400,7 @@ EXPENSE: si se crea una cuenta con mas de 25 caracteres, se muestra un error war
 
 porqué se muestran varios toast renderizados, con la misma informacion?.Parece que se renderiza en varios sitios.
 
-En detailed account page/view, colocar la flecha de regreso y los 3 puntos de edicion, separados del titulo. css page__content, ...position abosolute?..
+En detailed account page/view, colocar la flecha de regreso y los 3 puntos de edicion, separados del titulo. css page\_\_content, ...position abosolute?..
 
 Manejo de Errores: Mejorar los mensajes de error para que sean más claros para el usuario.
 

@@ -117,6 +117,9 @@
   letter-spacing: 0.5px;
   font-weight: 400;
   text-transform: capitalize;
+
+  width: 100%;
+  text-align: right;
 }
 
 /* Open Add Edit Button */

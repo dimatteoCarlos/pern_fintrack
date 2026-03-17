@@ -2,7 +2,7 @@ import { BoxContainer, BoxRow } from './boxComponents';
 import { currencyFormat } from '../../../helpers/functions';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import { url_summary_balance_ByType, USER_ID } from '../../../endpoints';
-import { StatusSquare } from '../../../general_components/boxComponents';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import { Link } from 'react-router-dom';
 import {
   DebtorListSummaryType,
@@ -24,19 +24,18 @@ const defaultDebts: DebtsToRenderType = [
     debtor: 1,
     creditor: 0,
   },
-
 ];
-type AccountPropType={previousRoute:string, accountType:string}
+type AccountPropType = { previousRoute: string; accountType: string };
 //temporary values------------
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-  const user = import.meta.env.VITE_USER_ID;
+const user = import.meta.env.VITE_USER_ID;
 
 //-----------
-function ListOfDebtors({previousRoute, accountType}:AccountPropType) {
-//DATA FETCHING
+function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
+  //DATA FETCHING
   const { apiData, isLoading, error } = useFetch<DebtorListSummaryType>(
-    `${url_summary_balance_ByType}?type=${accountType}&user=${USER_ID??user}`
+    `${url_summary_balance_ByType}?type=${accountType}&user=${USER_ID ?? user}`,
   );
   // console.log('apiData:', apiData);
 
@@ -94,19 +93,24 @@ function ListOfDebtors({previousRoute, accountType}:AccountPropType) {
           } = debtor;
 
           const transactionType =
-            (debt_payable + debt_receivable) < 0 ? 'lender' : 'debtor';
+            debt_payable + debt_receivable < 0 ? 'lender' : 'debtor';
 
           return (
             <BoxContainer key={indx}>
               <BoxRow>
-                <Link to={`debtors/${account_id}`}
-                 state = {{previousRoute, debtorDetailedData:debtor}}
+                <Link
+                  to={`debtors/${account_id}`}
+                  state={{ previousRoute, debtorDetailedData: debtor }}
                 >
                   <div className='debtor box__title hover'>{account_name}</div>
                 </Link>
                 <div className='box__title'>
                   {' '}
-                  {currencyFormat(currency_code??defaultCurrency, total_debt_balance, formatNumberCountry)}
+                  {currencyFormat(
+                    currency_code ?? defaultCurrency,
+                    total_debt_balance,
+                    formatNumberCountry,
+                  )}
                 </div>
               </BoxRow>
 

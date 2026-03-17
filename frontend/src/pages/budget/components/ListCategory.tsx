@@ -1,18 +1,14 @@
 import {
   BoxRow,
   StatusSquare,
-} from '../../../general_components/boxComponents.tsx';
+} from '../../../general_components/boxComponents/BoxComponents.tsx';
 import {
   currencyFormat,
   numberFormatCurrency,
 } from '../../../helpers/functions.ts';
-import {
+import {} from '../../../types/types.ts';
 
-} from '../../../types/types.ts';
-
-import {
- url_summary_balance_ByType,
-} from '../../../endpoints.ts';
+import { url_summary_balance_ByType } from '../../../endpoints.ts';
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
@@ -28,130 +24,139 @@ export type CategoryToRenderType = CategoryListType & {
   total_budget: number;
 };
 
-type ListCategoryProp=
-{  previousRoute:string}
+type ListCategoryProp = { previousRoute: string };
 
 const defaultCategoryBudget: CategoryToRenderType[] = [];
 
 //==================================
-function ListCategory({previousRoute}:ListCategoryProp) {
-// console.log('component', 'ListCategory')
+function ListCategory({ previousRoute }: ListCategoryProp) {
+  // console.log('component', 'ListCategory')
 
-//++++++++++++++++++++++++++++++++++
-//DATA FETCHING
-//List of each category with summary info
-// CategoryListSummaryType
-const { apiData, isLoading, error } = useFetch<CategoryListSummaryType>(
- `${url_summary_balance_ByType}?type=category_budget`
-);
-// console.log(apiData);
-//--------------------
-const budgetList: CategoryToRenderType[] =
-  apiData?.data && !isLoading && !error && apiData.data.length > 0
-    ? apiData.data.map((catBudget: CategoryListType) => {
-        const {
-          category_name,
-          total_balance,
-          total_remaining,
-          currency_code,
-    } = catBudget;
+  //++++++++++++++++++++++++++++++++++
+  //DATA FETCHING
+  //List of each category with summary info
+  // CategoryListSummaryType
+  const { apiData, isLoading, error } = useFetch<CategoryListSummaryType>(
+    `${url_summary_balance_ByType}?type=category_budget`,
+  );
+  // console.log(apiData);
+  //--------------------
+  const budgetList: CategoryToRenderType[] =
+    apiData?.data && !isLoading && !error && apiData.data.length > 0
+      ? apiData.data.map((catBudget: CategoryListType) => {
+          const {
+            category_name,
+            total_balance,
+            total_remaining,
+            currency_code,
+          } = catBudget;
 
-        return {
-          category_name,
-          total_balance,
-          total_budget: total_balance + total_remaining,
-          total_remaining,
-          currency_code,
-        };
-      })
-    : defaultCategoryBudget;
-//--------------------------------
- return (
-  <>
-  {/*LIST CATEGORY  */}
-  <article className='list__main__container '>
-    {budgetList.map((category, indx) => {
-      const {
-        category_name,
-        total_balance,
-        total_budget: budget,
-        currency_code,
-      } = category;
+          return {
+            category_name,
+            total_balance,
+            total_budget: total_balance + total_remaining,
+            total_remaining,
+            currency_code,
+          };
+        })
+      : defaultCategoryBudget;
+  //--------------------------------
+  return (
+    <>
+      {/*LIST CATEGORY  */}
+      <article className='list__main__container '>
+        {budgetList.map((category, indx) => {
+          const {
+            category_name,
+            total_balance,
+            total_budget: budget,
+            currency_code,
+          } = category;
 
-// const { total_remaining } = category;
-// console.log('total_remaining', total_remaining);
+          // const { total_remaining } = category;
+          // console.log('total_remaining', total_remaining);
 
-      const remain = Math.round(-total_balance + budget);
+          const remain = Math.round(-total_balance + budget);
 
-// console.log('remain', remain);
+          // console.log('remain', remain);
 
-      const statusAlert = remain <= 0;
+          const statusAlert = remain <= 0;
 
-      return (
-        <div className='box__container .flx-row-sb' key={indx}>
-          <BoxRow>
-            <Link to={`category/${category_name}`}
-            state = {{ categorySummaryDetailed:{...category, remain,statusAlert}, previousRoute}}
-            >
-            <div className='box__title box__title--category__name hover '>
-              {category_name}{' '}
-            </div>
-            </Link>
+          return (
+            <div className='box__container .flx-row-sb' key={indx}>
+              <BoxRow>
+                <Link
+                  to={`category/${category_name}`}
+                  state={{
+                    categorySummaryDetailed: {
+                      ...category,
+                      remain,
+                      statusAlert,
+                    },
+                    previousRoute,
+                  }}
+                >
+                  <div className='box__title box__title--category__name hover '>
+                    {category_name}{' '}
+                  </div>
+                </Link>
 
-            <div
-              className='box__title--spent'
-              style={{
-                width: 'max-content',
-                display: 'flex',
-                justifyContent: 'space-between',
-                textAlign: 'right',
-                borderBottom: '0.5px dashed var(--creme)',
-              }}
-            >
-              Spent: {currencyFormat(currency_code, total_balance, 'en-US')}&nbsp;
-              <span style={{ fontSize: '0.75rem' }}>
-                (
-                {budget === 0
-                  ? ''
-                  : ((total_balance / budget) * 100).toFixed(1) + '%'}
-                )
-              </span>
-            </div>
-          </BoxRow>
-
-          <BoxRow>
-            <BoxRow>
-              <div className='flx-row-sb'>
-                <StatusSquare alert={statusAlert ? 'alert' : ''} />
-                <div className='box__subtitle'>
-                  &nbsp;
-                  {numberFormatCurrency(
-                    remain,
-                    0,
-                    currency_code ?? DEFAULT_CURRENCY,
-                    'en-US'
-                  )}
+                <div
+                  className='box__title--spent'
+                  style={{
+                    width: 'max-content',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    textAlign: 'right',
+                    borderBottom: '0.5px dashed var(--creme)',
+                  }}
+                >
+                  Spent: {currencyFormat(currency_code, total_balance, 'en-US')}
                   &nbsp;
                   <span style={{ fontSize: '0.75rem' }}>
                     (
                     {budget === 0
                       ? ''
-                      : ((1 - total_balance / budget) * 100).toFixed(1) + '%'}
+                      : ((total_balance / budget) * 100).toFixed(1) + '%'}
                     )
                   </span>
                 </div>
-              </div>
-            </BoxRow>
-            
-            <div className='box__subtitle'>
-              Budget: {currencyFormat(currency_code, budget, 'en-US')}{' '}
+              </BoxRow>
+
+              <BoxRow>
+                <BoxRow>
+                  <div className='flx-row-sb'>
+                    <StatusSquare alert={statusAlert ? 'alert' : ''} />
+                    <div className='box__subtitle'>
+                      &nbsp;
+                      {numberFormatCurrency(
+                        remain,
+                        0,
+                        currency_code ?? DEFAULT_CURRENCY,
+                        'en-US',
+                      )}
+                      &nbsp;
+                      <span style={{ fontSize: '0.75rem' }}>
+                        (
+                        {budget === 0
+                          ? ''
+                          : ((1 - total_balance / budget) * 100).toFixed(1) +
+                            '%'}
+                        )
+                      </span>
+                    </div>
+                  </div>
+                </BoxRow>
+
+                <div className='box__subtitle'>
+                  Budget: {currencyFormat(currency_code, budget, 'en-US')}{' '}
+                </div>
+              </BoxRow>
             </div>
-          </BoxRow>
-        </div>
-      );
-    })}
-  </article>
-  </>
+          );
+        })}
+      </article>
+    </>
   );
 }
 

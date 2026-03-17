@@ -35,7 +35,7 @@ const ImpactReportUI = ({
 //RENDER
  return (
   <div className="impact-report-container ">
-   <div className="impact-report-warning bordered">
+   <div className="impact-report-warning">
 
     <p className="impact-warning-title ">
       {formatImpactReportTitle(t( 'impactDetectedTitle'))}

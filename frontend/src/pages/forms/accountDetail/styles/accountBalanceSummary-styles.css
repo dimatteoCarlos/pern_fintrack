@@ -27,9 +27,9 @@ font-weight: 400;
 color: var(--light)
 }
 
-.balance-summary__item.border-left{
+/* .balance-summary__item.border-left{
 border-left: 1px dashed var(--light);
-}
+} */
 
 .balance-summary__value {
   font-size: 1.1rem;
