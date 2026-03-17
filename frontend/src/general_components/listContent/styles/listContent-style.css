@@ -1,0 +1,111 @@
+/* frontend/src/general_components/listContent/styles/listContent-style.css */
+
+/* ===================================
+   🎯 LIST CONTENT STYLES
+   Component: ListContent
+   Location: frontend/src/general_components/listContent/
+   =================================== */
+
+/* Main container for the entire list */
+.listContent__container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; 
+}
+
+/* Individual item container */
+.listContent__item {
+  width: 100%;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--creme);
+  /* margin-bottom: 1rem; */
+ }
+ 
+ .listContent__item:last-child{
+  border-bottom: none;
+}
+
+/* Header row: account name and amount */
+.listContent__item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Account name styling */
+.listContent__account {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--light);
+  text-transform: capitalize;
+}
+
+/* Amount styling */
+.listContent__amount {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--creme);
+  white-space: nowrap;
+}
+
+/* Details row container: description + date */
+.listContent__details-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  width: 100%;
+}
+
+/* Description text - COMPLETE, NO TRUNCATION */
+.listContent__description {
+  flex: 1;
+  font-size: 0.7rem;
+  font-weight: 200;
+  line-height: 1.2rem;
+  letter-spacing: 1px;
+  text-transform: none;
+  color: var(--creme);
+  
+  /* Allow text to flow naturally */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  
+  /* Prevent date from being pushed out */
+  min-width: 0;
+  padding-right: 0.5rem;
+}
+
+/* Date styling - fixed width, does not shrink */
+.listContent__date {
+  font-size: 0.7rem;
+  color: #a0a0a0;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: 0.1rem;
+}
+
+/* ====================================
+   📱 RESPONSIVE STYLES - Mobile
+   ==================================== */
+@media (max-width: 480px) {
+  .listContent__details-row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .listContent__description {
+    padding-right: 0;
+    width: 100%;
+  }
+  
+  .listContent__date {
+    align-self: flex-end;
+    padding-top: 0;
+  }
+}
