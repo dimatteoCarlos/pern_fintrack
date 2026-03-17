@@ -10,7 +10,9 @@ import {
   // truncateText,
 } from '../../helpers/functions';
 import { LastMovementType } from '../../pages/overview/components/LastMovements';
-import { BoxContainer, BoxRow } from '../boxComponents';
+import { BoxRow } from '../boxComponents/BoxComponents';
+import { BoxContainer } from '../boxComponents/BoxComponents';
+// import { BoxContainer, BoxRow } from '../boxComponents';
 
 // Configuración por defecto
 const defaultCurrency = DEFAULT_CURRENCY;
