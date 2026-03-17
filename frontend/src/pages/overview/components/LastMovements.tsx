@@ -32,10 +32,13 @@ function LastMovements({ data, title }: LastMovementsProps) {
 
   const lastMovements = data ? data : lastMovementDefault;
 
+ 
   return (
     <>
       {/*LAST MOVEMENTS  */}
-      <article className='goals__last__movements'>
+      <article
+        className='goals__last__movements'
+        >
         <div className='presentation__card__title__container'>
           <CardTitle>{title}</CardTitle>
         </div>
