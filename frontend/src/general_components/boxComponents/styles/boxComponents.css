@@ -1,0 +1,23 @@
+/* frontend/src/general_components/boxComponents/boxComponents.css */
+
+/* ===================================
+🎯 BOX COMPONENTS STYLES
+Components: BoxContainer, BoxRow
+Location: frontend/src/general_components/boxComponents/
+=================================== */
+
+/* Base container styles */
+.box-container {
+  width: 100%;
+}
+
+/* Base row styles */
+.box-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* Note: Specific layout variations should be handled
+   by the parent component using className prop */
