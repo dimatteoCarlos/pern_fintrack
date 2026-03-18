@@ -4,7 +4,7 @@ import DropDownSelection from '../../../general_components/dropdownSelection/Dro
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation';
 import RadioInput from '../../../general_components/radioInput/RadioInput';
 import { capitalize } from '../../../helpers/functions';
-// import { AccountListType } from '../../../types/responseApiTypes';
+
 import {
   CurrencyType,
   DropdownOptionType,
@@ -54,7 +54,7 @@ type TopCardPropType<TFormDataType  extends Record<string, unknown>> = {
 //---
 };
 
-//----Component------------------------
+//----Component--------------------
 const TopCard = <TFormDataType  extends Record<string, unknown>>({
   topCardElements,
   validationMessages,
@@ -106,7 +106,7 @@ const shouldShowError = !!validationMessages[accountFieldName]
   [accountFieldName]: selectedOption?.value || '',
       }));
 
-    // console.log('title2', title2.trim(),'label', selectedOption?.label,'value', selectedOption?.value );
+  // console.log('title2', title2.trim(),'label', selectedOption?.label,'value', selectedOption?.value );
 
   //if setValidationMessages is used, then clean the correspondent validation message
   //aqui sin validar con zod,  se asigna el valor, y se asume que es valido, y entonces, se  borra el mensaje de error asociado al campo que se selecciono.
@@ -115,7 +115,7 @@ const shouldShowError = !!validationMessages[accountFieldName]
       setValidationMessages((prev) => {
         const newMessages = { ...prev };
         if (newMessages[accountFieldName])
-           {
+         {
           delete newMessages[accountFieldName];
         }
         return newMessages;

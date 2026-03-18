@@ -59,7 +59,7 @@ import CardNoteSave from '../components/CardNoteSave.tsx';
 import RadioInput from '../../../general_components/radioInput/RadioInput.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import { fetchNewBalance } from '../../../auth/auth_utils/fetchNewTotalBalance.ts';
-//-------------------------------------
+//-------------------------------
 // 📝data type configuration 
 export type ShowValidationType={
  amount: boolean;
@@ -75,9 +75,9 @@ export type ShowValidationType={
 
 type RadioOptionType<T extends string> = {value:T, label:string}
 
-//=====================================
+//=================================
 // ⚙️ Initial Configuration and default values
-//====================================
+//================================
 const defaultCurrency = DEFAULT_CURRENCY;
 
 const initialMovementData: MovementInputDataType = {
@@ -537,7 +537,7 @@ try {
   //-----------------------------------
   return (
   <>
-    <form className='transfer' style={{ color: 'inherit' }}>
+    <form autoComplete={"off"} className='transfer' style={{ color: 'inherit' }}>
       {/* start of TOP CARD */}
       <TopCard
         topCardElements={topCardElements}

@@ -9,12 +9,6 @@
 .radio-input__container {
     cursor: pointer;
   background: transparent;
-  /* border: 1px solid var(--dark);
-  margin-left: 0.5rem;
-  padding: 0.1rem 0.1rem;
-  border-radius: 2rem;
-  width: 75%; */
-
 }
 
 .radio-input__title {

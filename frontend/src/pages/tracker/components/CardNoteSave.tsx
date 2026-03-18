@@ -2,7 +2,6 @@
 import FormPlusBtn from '../../../general_components/formSubmitBtn/FormPlusBtn';
 import { capitalize } from '../../../helpers/functions';
 import { ValidationMessagesType } from '../../../validations/types';
-// import { ValidationMessagesType } from '../../../validations/utils/zod_validation';
 import CardNote from './CardNote';
 
 type CardNoteSavePropType<TFormDataType extends Record<string, unknown>> = {
