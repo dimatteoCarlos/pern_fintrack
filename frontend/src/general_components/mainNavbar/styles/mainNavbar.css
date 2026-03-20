@@ -1,19 +1,38 @@
+/*📁 frontend/src/general_components/mainNavbar/styles/mainNavbar.css*/
+/* ============================================
+   🎯 MAIN NAVBAR STYLES
+   ============================================
+📍 frontend/src/general_components/mainNavbar/styles/mainNavbar.css
+   
+   [MODIFIED] Uses global vertical layout variables
+   - Height scales with --navbar-bottom-height
+   - Paddings and gaps use spacing system
+   - Responsive to height breakpoints
+   ============================================ */
+
 .mainNavbar__container {
   width: 88%;
   margin: 0 auto;
-  padding: 0.5em;
+  padding:0.25rem 0.5em;
   background-color: var(--light);
   border-radius: 1rem;
 
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+   /* [MODIFIED] Use global variable for height */
+  height: var(--navbar-bottom-height);
+  max-height: var(--navbar-bottom-height);
+  min-height: var(--navbar-bottom-height);
+  
 }
 
 .mainNavbar__container {
-  border: none;
-  position: sticky;
-  bottom: 0%;
+ position: sticky;
+ bottom: 0%;
+ transition: height 0.2s ease, padding 0.2s ease;
+  /* border: none; */
   /* z-index: 100; */
   /* border: 10px solid red; */
 }
@@ -22,32 +41,168 @@
   border: 1px solid red;
 } */
 
-.mainNavbarButton.active {
-  border-radius: 0.75rem;
-  padding: 0.25rem;
-  padding-right: 0rem;
-
+.mainNavbarButton {
   display: flex;
   justify-content: start;
   gap: 0.2em;
   align-items: center;
-  border: 2px solid var(--dark);
+ 
+  /* [MODIFIED] Height based on container minus padding */
+  height: calc(var(--navbar-bottom-height) - 0.5rem);
+  min-width: 3rem;
+  
+  background: transparent;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
 
-  height: 3rem;
-  min-width: 7rem;
-  background-color: var(--creme);
-
+  padding: 0 0.25rem;
+  
   color: var(--dark);
+    transition: all 0.2s ease;
 }
 
+/* ============================================
+   🎯 ACTIVE STATE
+   ============================================ */
+.mainNavbarButton.active {
+
+  border: 2px solid var(--dark); 
+  background-color: var(--creme);
+  min-width: 7rem;
+
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.2rem;
+  align-items: center;
+  
+  padding: 0.1rem 0.25rem 0.1rem 0.5rem;
+  border: 2px solid var(--dark);
+  background-color: var(--creme);
+  
+  /* height: 3rem; */
+
+}
+
+/* Label - hidden by default */
 .mainNavbarButton .button--label {
   display: none;
 }
 
+/* Active state - show label */
 .mainNavbarButton.active .button--label {
   display: inline;
   --fsz: 0.875rem;
   font-size: var(--fsz);
+  line-height: 1.2;
   text-transform: capitalize;
   font-weight: 600;
+  white-space: nowrap;
 }
+
+/* ============================================
+   ♿ INTERACTION STATES
+   ============================================ */
+.mainNavbarButton.active:hover {
+  opacity: 0.8; 
+  border-color:var(--creme);
+}
+
+
+.mainNavbarButton:active {
+  transform: scale(0.95);
+}
+
+.mainNavbarButton:focus-visible {
+  outline: 2px solid var(--hoverColor);
+  outline-offset: 2px;
+}
+
+/* Disabled state (if needed) */
+/* .mainNavbarButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+} */
+
+/* ============================================
+   📱 HEIGHT-BASED RESPONSIVE ADJUSTMENTS
+   Note: Variables are already handled in :root
+   These are fine-tuning overrides
+   ============================================ */
+
+/* Medium range (569-730px) - already handled by variables */
+@media (min-height: 569px) and (max-height: 730px) {
+  .mainNavbar__container {
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .mainNavbarButton {
+    min-width: 2.5rem;
+  }
+  
+  .mainNavbarButton.active {
+    padding: 0.05rem 0.2rem;
+    gap: 0.15rem;
+    min-width: 6rem;
+  }
+
+   .mainNavbarButton.active .button--label {
+    font-size: 0.8rem;
+  }
+}
+
+/* Ultra compact (≤568px) */
+@media (max-height: 568px) {
+  .mainNavbar__container {
+    padding: 0.15rem 0.3rem;
+  }
+  
+  .mainNavbarButton {
+    min-width: 2.5rem;
+  }
+  
+  .mainNavbarButton .button--label {
+    font-size: var(--font-size-tiny);
+    line-height: var(--line-height-tight);
+  }
+  
+  .mainNavbarButton.active {
+    padding: 0.05rem 0.15rem;
+    gap: 0.1rem;
+    border-width: 1px;
+  }
+  
+  .mainNavbarButton svg {
+    width: calc(var(--navbar-bottom-height) * 0.45);
+    height: calc(var(--navbar-bottom-height) * 0.45);
+  }
+}
+
+/* Ultra compact (≤568px) */
+@media (max-height: 568px) {
+  .mainNavbar__container {
+    padding: 0.15rem 0.3rem;
+  }
+  
+  .mainNavbarButton {
+    min-width: 2.2rem;
+  }
+  
+  .mainNavbarButton.active {
+    padding: 0.05rem 0.15rem 0.05rem 0.3rem;
+    gap: 0.1rem;
+    min-width: 5rem;
+    border-width: 1px;
+  }
+  
+  .mainNavbarButton.active .button--label {
+    font-size: 0.7rem;
+  }
+  
+  .mainNavbarButton svg {
+    width: calc(var(--navbar-bottom-height) * 0.45);
+    height: calc(var(--navbar-bottom-height) * 0.45);
+  }
+}
+
+
