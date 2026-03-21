@@ -69,6 +69,11 @@ layout style is stablished by the following elements:
   --line-height-normal: 1.5rem; /* 24px */
   --line-height-compact: 1.2rem;/* ~19px */
   --line-height-tight: 1rem;/* 16px */
+
+  /* Constants for layout calculation */
+  --header-content-height: 6.875rem; /* 94px - fixed height of .layout__header plus padding btm of 16 px = 110 px */
+  --gap-between: 1.0rem ; /*0.5rem;*//* Spacing between header, navbar, and card */
+  --header-total-height: calc(var(--topSpaceHeight) + var(--header-content-height));/* this will positioned navbar and card*/
 }
 
 
@@ -250,19 +255,19 @@ body {
 
 .home__header {
   width: 100%;
-  min-height: 12.5rem; /*figma*/
-  height: 12.5rem; /*figma*/
-  /*test*/ /*try calc or clap and put height, Top and Bottom as a function of topSpaceHeight and head layout height*/
-  /* min-height: 11rem; */
-  /* height: 11rem; */
-  /*---*/
   background-color: var(--light);
   display:flex;
   flex-direction: column;
   align-items: center;
   justify-content: start;
+  /* height from figma*/
+  /* min-height: 12.5rem;
+  height: 12.5rem; */
+/* [height variable responsive] Height adapts to content, no fixed value */
+  height: auto;
+  min-height: var(--header-total-height);
 
-  /* border: 5px solid cyan; */
+ /*test*/ /*try calc or clap and put height, Top and Bottom as a function of topSpaceHeight and head layout height*/
 }
 
 .content__presentation {
@@ -291,6 +296,7 @@ body {
   left: 0;
   background-color: var(--light);
   z-index: 1;
+  /* padding-bottom: 1rem; */
   /* background-color: orange; */
 }
 
