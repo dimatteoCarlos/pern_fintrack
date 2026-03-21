@@ -74,9 +74,7 @@ const UpdateProfileForm = ({
   const isSuccess = !!successMessage;
 
   const isRateLimited = typeof retryAfter === 'number' && retryAfter > 0;
-//
-  console.table([{'Currencies':'Comparing', 'Current':formData['currency'],'Default': DEFAULT_CURRENCY,'Is Match':formData.currency === DEFAULT_CURRENCY}, ],
-   )
+//  console.table([{'Currencies':'Comparing', 'Current':formData['currency'],'Default': DEFAULT_CURRENCY,'Is Match':formData.currency === DEFAULT_CURRENCY}, ], )
 
 /* 🌟 ===============================
  🎮 FORM FIELD HANDLERS

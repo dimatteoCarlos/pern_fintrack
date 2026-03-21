@@ -1,4 +1,5 @@
-//src/pages/tracker/TrackerLayout.tsx
+//frontend/src/pages/tracker/TrackerLayout.tsx
+
 import LogoMenuIcon from '../../general_components/header/LogoMenuIcon';
 import TrackerNavbar from '../../general_components/trackerNavbar/TrackerNavbar';
 import { Outlet } from 'react-router-dom';
@@ -10,9 +11,9 @@ import { url_get_total_account_balance_by_type } from '../../endpoints';
 import CoinSpinner from '../../loader/coin/CoinSpinner';
 import { MessageToUser } from '../../general_components/messageToUser/MessageToUser';
 import { useEffect, useState } from 'react';
-import './styles/tracker-style.css';
 import useBalanceStore from '../../stores/useBalanceStore';
-// import useAuth from '../../auth/hooks/useAuth.ts';
+
+import './styles/tracker-style.css';
 
 //default values------------
 const defaultCurrency = DEFAULT_CURRENCY;

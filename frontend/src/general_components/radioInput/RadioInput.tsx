@@ -1,38 +1,74 @@
-//src/general_components/radioIniput/RadionInput.tsx
+// 📍 frontend/src/general_components/radioInput/RadioInput.tsx
 //victorPace= value id className type
-
 import './styles/radioInput-styles.css';
-type RadioInputPropsType<T = string> = {
+
+//==================================
+// 🎯 RADIO INPUT TYPES
+// =================================
+/**
+ * Mode for account type selection
+ * - 'inputRadioMode': Traditional radio buttons
+ * - 'inputChipMode': Compact chip-style buttons (for mobile)
+ */
+export type AccountTypeSelectionModeType = 'inputRadioMode' | 'inputChipMode';
+
+/**
+ * Props for RadioInput component
+ * @template T - Type of the option value (usually string)
+ */
+export type RadioInputPropsType<T = string> = {
+  /** Currently selected option value */
   radioOptionSelected: T;
-  inputRadioOptions: { [key: string]: T }[];
+  /** Array of options to display */
+  inputRadioOptions: { value: T; label: string }[];
+  /** Callback when selection changes */
   setRadioOptionSelected: (radioOptionSelected: T) => void;
+  /** Optional title for the radio group */
   title?: string;
+  /** Unique identifier for the group (used in id attributes) */
   labelId: string;
-  disabled:boolean;
+  /** Whether the input is disabled */
+  disabled: boolean;
+  /** Selection mode: radio buttons or chips */
+  accountTypeSelectionMode?: AccountTypeSelectionModeType;
 };
 
-const RadioInput = ({
+// ============================
+// 🎯 COMPONENT: RadioInput
+// ============================
+/**
+ * RadioInput component that can display as traditional radio buttons
+ * or as horizontal chips (compact mode for mobile)
+ */
+const RadioInput =  <T extends string>({
   radioOptionSelected,
   inputRadioOptions,
   setRadioOptionSelected,
   title = '',
   labelId,
-  disabled=false
-}: RadioInputPropsType) => {
-  //vitorpace
+  disabled=false,
+  accountTypeSelectionMode = 'inputRadioMode',
+}: RadioInputPropsType<T>) => {
+  //victorpacient
+
   const onChangeHandleRadio = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newSelectedOption = e.target.value;
+    const newSelectedOption = e.target.value as T;
     setRadioOptionSelected(newSelectedOption);
   };
 
-  const ratioTitle = title;
-  //---
+ //---
+  const isChipMode = accountTypeSelectionMode === 'inputChipMode';
 
+  const InputOptionsClassName = `radio-input__options ${
+   isChipMode ? 'radio-input__options--chip' : ''
+  }`;
+
+  //--------------------------
   return (
     <>
       <div className='radio-input__container '>
-        <div className='radio-input__title'>{ratioTitle}</div>
-        <div className='radio-input__options'>
+ {title && <div className='radio-input__title'>{title}</div>}
+        <div className={InputOptionsClassName}>
           {inputRadioOptions?.map((option, index) => (
             <div
               className='radio-input__option'
@@ -47,12 +83,11 @@ const RadioInput = ({
                   onChangeHandleRadio(e)
                 }
                 checked={option.value === radioOptionSelected}
-                className='radio-input__radio'
+                className={ 'radio-input__radio'}
               />
               <label
                 htmlFor={`option-${labelId}-${index}`}
-                className='radio-input__label'
-              
+                className={'radio-input__label'}
               >
                 {option.label}
               </label>

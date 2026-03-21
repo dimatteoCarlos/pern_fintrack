@@ -1,3 +1,4 @@
+//frontend/src/general_components/header/Header.tsx
 import TopWhiteSpace from '../topWhiteSpace/TopWhiteSpace.tsx';
 
 function Header(): JSX.Element {

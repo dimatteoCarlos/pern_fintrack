@@ -557,13 +557,15 @@ try {
         customSelectHandler={handleOriginChange}
 
         radioInputProps={{
-          radioOptionSelected:
-            formData.originAccountType ??
-            initialMovementData.originAccountType!,
-          inputRadioOptions: inputRadioOptionsAccountTopCard,
-          setRadioOptionSelected: handleOriginAccountTypeChange,
-          title: '',
-          disabled:isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts 
+         radioOptionSelected:
+           formData.originAccountType ??
+           initialMovementData.originAccountType!,
+         inputRadioOptions: inputRadioOptionsAccountTopCard,
+         setRadioOptionSelected: handleOriginAccountTypeChange,
+         title: '',
+         disabled:isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts ,
+         accountTypeSelectionMode: "inputChipMode" ,
+         labelId:'origin'
         }}
       />
       {/* end of TOP CARD */}
@@ -575,7 +577,7 @@ try {
         <div className='account card--title card--title--top'>
         <span className="account-label">To:</span> 
         {/* <div className="radio-input-container"> */}
-          <div className="radio-input__options">
+          {/* <div className="radio-input__options"> */}
           <RadioInput
             radioOptionSelected={
               formData.destinationAccountType ??
@@ -586,8 +588,9 @@ try {
             title={''}
             labelId='destination'
             disabled=  {isLoading || isLoadingOriginAccounts || isLoadingDestinationAccounts }
+            accountTypeSelectionMode="inputChipMode"  
           />
-          </div> 
+          {/* </div>  */}
         {/* </div> */}
 
       </div>

@@ -3,8 +3,9 @@ import TrackerDebtsButton from './trackerStateButtons/TrackerDebtsButton';
 import TrackerExpenseButton from './trackerStateButtons/TrackerExpenseButton';
 import TrackerIncomeButton from './trackerStateButtons/TrackerIncomeButton';
 import TrackerTransferButton from './trackerStateButtons/TrackerTransferButton';
-import './trackerStateButtons/trackerStateButton.css';
 import TrackerAdjustmentPnLButton from './trackerStateButtons/TrackerAdjustmentPnLButton.tsx';
+
+import './trackerStateButtons/trackerStateButton.css';
 
 function TrackerNavbar() {
   return (

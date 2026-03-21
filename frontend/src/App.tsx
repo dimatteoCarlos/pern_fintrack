@@ -12,7 +12,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import ProtectedRoute from './auth/components/protectedRoute/ProtectedRoute.tsx';
 import AuthPage from './auth/components/authPage/AuthPage.tsx';
 
-
 // 🏗️ LAYOUT COMPONENTS & 
 import Layout from './pages/layout/Layout.tsx';
 import TrackerLayout from './pages/tracker/TrackerLayout.tsx';
