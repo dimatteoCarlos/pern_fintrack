@@ -2,7 +2,7 @@
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation';
-import RadioInput from '../../../general_components/radioInput/RadioInput';
+import RadioInput, { RadioInputPropsType } from '../../../general_components/radioInput/RadioInput';
 import { capitalize } from '../../../helpers/functions';
 
 import {
@@ -12,18 +12,10 @@ import {
 } from '../../../types/types';
 import { ValidationMessagesType } from '../../../validations/types';
 
-//------------------------------------
-type RadioInputPropsType = {
-  radioOptionSelected: string;
-  inputRadioOptions: { value: string; label: string }[];
-  setRadioOptionSelected: (option: string) => void;
-  disabled:boolean;
-  title?: string;
-};
 //---------------------------------
 type TopCardPropType<TFormDataType  extends Record<string, unknown>> = {
   topCardElements: TopCardElementsType;
-  // validationMessages: { [key: string]: string };
+
   validationMessages: ValidationMessagesType<TFormDataType>;
 
   setValidationMessages: React.Dispatch<React.SetStateAction<ValidationMessagesType<TFormDataType>>>;
@@ -54,7 +46,7 @@ type TopCardPropType<TFormDataType  extends Record<string, unknown>> = {
 //---
 };
 
-//----Component--------------------
+//----MAIN COMPONENT--------------
 const TopCard = <TFormDataType  extends Record<string, unknown>>({
   topCardElements,
   validationMessages,
@@ -168,6 +160,7 @@ const shouldShowError = !!validationMessages[accountFieldName]
               title={radioInputProps.title}
               labelId={title2.trim()}
               disabled={radioInputProps.disabled}
+              accountTypeSelectionMode={radioInputProps.accountTypeSelectionMode}
 
             />
           )}

@@ -5,20 +5,18 @@
   --border-radius: 25%;
   --check-radio-size:0.625rem;
 }
-
+/* Main input mode container */
 .radio-input__container {
-    cursor: pointer;
+  cursor: pointer;
   background: transparent;
 }
-
+/*Radio Input label or title */
 .radio-input__title {
   font-size: 0.5rem;
   font-weight: 200;
   color: var(--text-color);
-  /* margin-bottom: 0.5rem; */
-  /* padding-left: 1rem; */
 }
-
+/* Options container (default layout) */
 .radio-input__options {
   display: flex;
   flex-direction: row;
@@ -26,18 +24,15 @@
   justify-content: space-between;
   /* padding: 0.25rem 0.5rem; */
 }
-
+/* Single option wrapper */
 .radio-input__option {
   display: flex;
   flex-direction: row;
   align-items: center;
-  /* gap: 0.25rem; */
-
   margin-right: 1rem;
 }
-
+/* Hidden native radio button (custom styled) */
 .radio-input__radio {
-  /* Estilizar el input de radio en sí */
   appearance: none;
   margin-right: 0.25rem;
   border: 1px solid var(--dark);
@@ -46,18 +41,17 @@
   cursor: pointer;
   background-color: transparent;
   border-radius: var(--border-radius, 24%);
-  /* border-radius: 50%; */
 }
 
 .radio-input__radio:checked {
   /* Style when radio checked.Estilizar cuando el radio está seleccionado */
-  appearance: none; /* importante */
+  appearance: none;
   display: inline-block;
   background-color: var(--dark, black);
   border: 1px solid var(--dark);
   padding: 0;
   border-radius: var(--border-radius, 24%);
-    width: var(--check-radio-size, 0.625rem);
+  width: var(--check-radio-size, 0.625rem);
   height: var(--check-radio-size, 0.625rem);
   /* 
   /* Puedes necesitar usar appearance: none; y un estilo personalizado para la consistencia entre navegadores */
@@ -73,20 +67,60 @@
   outline: none;
   /* box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); */
 }
-
+/* Label for each option */
 .radio-input__label {
-  font-weight: regular;
+  font-weight: 400;
   font-size: 0.875rem;
+  color: var(--dark);
+  cursor: pointer;
   width: fit-content;
   padding: 0;
   margin: 0 auto;
-  color: var(--dark);
-  cursor: pointer;
-  /* text-transform: capitalize; */
 }
-
+/* Disabled state */
 input[type="radio"]:disabled + label,
 input[type="checkbox"]:disabled + label {
   color: #999999; /* Un color de texto más claro para el label */
   cursor: not-allowed;
+}
+/**
+/* ===============================
+📱RADIO INPUT STYLES (mobile only (≤470px))
+   =============================== */
+@media (max-width: 470px) {
+  /*chip variant for horizontal chips */
+  .radio-input__options--chip {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.25rem;
+    padding: 0.25rem 0;
+    -webkit-overflow-scrolling: touch; /* soft scroll in iOS */
+  }
+ /* Remove extra margin on option wrappers (gap handles spacing) */
+  .radio-input__options--chip .radio-input__option {
+    margin-right: 0; /* gap handles space*/
+  }
+ /* Hide the native radio circle */
+  .radio-input__options--chip .radio-input__radio {
+    display: none; /* radio circle hidden */
+    /* display:inline-flex; */
+  }
+
+/* Selected chip */
+  /*[Op1]:  badge selection */
+  .radio-input__options--chip input:checked + .radio-input__label {
+    background-color: var(--creme);
+    /* background-color: orange; */
+    color: var(--dark);
+    border-color: var(--dark);
+    font-weight: 600;
+  }
+
+  /* Active feedback for touch */
+  .radio-input__options--chip .radio-input__label:active {
+    background-color: rgba(232, 228, 218, 0.3);
+    border-radius: 50%;
+
+  }
 }

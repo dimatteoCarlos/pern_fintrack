@@ -15,7 +15,7 @@ function CardNote({ dataHandler, inputNote, title }: CardNotePropType) {
           placeholder='Description'
           name={title}
           rows={3}
-          maxLength={150}
+          maxLength={90}
           value={inputNote}
           onChange={dataHandler}
         />
