@@ -36,45 +36,19 @@ layout style is stablished by the following elements:
    - Compact: ≤568px
    ======================================= */
 
-:root {
-  /* Header - fixed height (200px = 12.5rem) */
-  --header-height: 12.5rem;
-  
-  /* Navigation bars - scalable */
-  --navbar-top-height: 5rem;/* TrackerNavbar - default 64px */
-  --navbar-bottom-height: 3.5rem;/* MainNavbar - default 56px */
-  
-  /* Card positioning and spacing */
-  --card-top-position: 30%;
-  --card-padding: 1rem;/* 16px */
-  
-  /* Spacing system - consistent gaps */
-  --spacing-large: 1rem;    /* 16px */
-  --spacing-medium: 0.75rem;/* 12px */
-  --spacing-small: 0.5rem;  /* 8px */
-  --spacing-tiny: 0.25rem;  /* 4px */
-  
-  /* Component specific */
-  --input-height: 2.8rem;   /* Amount input + badge container */
-  --chip-container-height: 2.4rem; /* Chip row height */
-  --separator-height: 0.5rem;/* Card separator */
-  
-  /* Typography scales */
-  --font-size-normal: 1rem; /* 16px */
-  --font-size-medium: 0.875rem; /* 14px */
-  --font-size-small: 0.75rem; /* 12px */
-  --font-size-tiny: 0.625rem; /* 10px */
-  
-  /* Line heights - for precise vertical rhythm */
-  --line-height-normal: 1.5rem; /* 24px */
-  --line-height-compact: 1.2rem;/* ~19px */
-  --line-height-tight: 1rem;/* 16px */
+  :root{
+/* Navigation bars - scalable */
+--navbar-top-height: 5rem;/* TrackerNavbar - default 64px */
+   --navbar-bottom-height: 3.5rem;/* MainNavbar - default 56px */
 
-  /* Constants for layout calculation */
-  --header-content-height: 6.8rem; /* 94px - fixed height of .layout__header plus padding btm of 16 px = 110 px */
-  --gap-between: 1.0rem ; /*0.5rem;*//* Spacing between header, navbar, and card */
+/* Constants for layout calculation */
+    --header-content-height: 6.8rem;
+
+    --gap-between: 1.0rem ; /*0.5rem;*//*  Spacing between header, navbar, and card */
+
   --header-total-height: calc(var(--topSpaceHeight) + var(--header-content-height));/* this will positioned navbar and card*/
-}
+
+  }
 
 
 /* =========================================
