@@ -420,6 +420,7 @@ textarea:invalid {
 
 @media (max-height: 835px) {
   /* ---------- NOTE SECTION ---------- */
+  /* Note from 3 to 2 lineas visual */
   .input__note__description {
     max-height: 2.4rem;
     overflow-y: auto;
@@ -447,34 +448,32 @@ textarea:invalid {
   }
 
   /* ---------- AMOUNT INPUT SECTION ---------- */
+  /* Values scale linearly between 700px and 835px */
   .card__screen {
-    height: clamp(2.2rem, 2.8rem - 0.6rem, 2.8rem);
-    padding: clamp(0.15rem, 0.5rem - 0.35rem, 0.5rem) clamp(0.35rem, 0.5rem - 0.15rem, 0.5rem);
+    height: calc(2.2rem + (2.8rem - 2.2rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
+    padding: calc(0.15rem + (0.5rem - 0.15rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) calc(0.35rem + (0.5rem - 0.35rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
   }
   
   .inputNumber {
-    font-size: clamp(1.1rem, 1.5rem - 0.4rem, 1.5rem);
-    line-height: clamp(1.3rem, 2rem - 0.7rem, 2rem);
+    font-size: calc(1.1rem + (1.5rem - 1.1rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
+    line-height: calc(1.3rem + (2rem - 1.3rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
   }
   
+  /* Currency badge - slightly smaller than container */
   .icon-currency {
-    height: clamp(1.6rem, 2.2rem - 0.6rem, 2.2rem);
-    width: clamp(1.6rem, 2.2rem - 0.6rem, 2.2rem);
-    font-size: clamp(0.65rem, 0.875rem - 0.225rem, 0.875rem);
-  }
-
-/* Currency badge - ensure it scales with card__screen */
-  .icon-currency {
-    height: calc(clamp(2.2rem, 2.8rem - 0.6rem, 2.8rem) - 0.4rem) !important;
-    width: calc(clamp(2.2rem, 2.8rem - 0.6rem, 2.8rem) - 0.4rem) !important;
-    font-size: clamp(0.65rem, 0.875rem - 0.225rem, 0.875rem) !important;
+    height: calc(1.8rem + (2.4rem - 1.8rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
+    width: calc(1.8rem + (2.4rem - 1.8rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
+    font-size: calc(0.65rem + (0.875rem - 0.65rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
 
-    border-radius: 0.8em !important;
+
+  .icon-currency{
+     border-radius: 0.8em !important;
     border:0.25px solid var(--dark)!important;
-
   }
 
 }
