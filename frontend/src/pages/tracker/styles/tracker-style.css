@@ -1,5 +1,4 @@
 /*tracker-style.css*/
-
 /*---------------------*/
 /*possible conflict w displayScreen*/
 .displayScreen.light {
@@ -49,6 +48,17 @@
   align-self: center;
   background-color: #1b1b1b;
   gap: 0.15rem;
+  
+/*contolled over position*/
+  top: calc(var(--header-total-height) - (var(--navbar-top-height) * 0.2)- var(--gap-between, 0));
+
+  /* ajustar el factor 0.2 para lograr el offset visual deseado. Prueba con 0.2 (20% de la altura del navbar) y luego ajusta. */
+
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
+  height: var(--navbar-top-height);
+  padding: 0.75rem;
 
 }
 
