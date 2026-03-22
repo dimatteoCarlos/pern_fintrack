@@ -41,17 +41,7 @@ function TrackerLayout() {
   } = useFetch<BalanceBankRespType>(
     `${url_get_total_account_balance_by_type}/?type=bank`
   );
-
-  // console.log(
-  //   'http status code',
-  //   'data',
-  //   apiData,
-  //   isLoading,
-  //   'error',
-  //   error,
-
-  // );
-
+//-----------
   useEffect(() => {
     if (apiData?.data.total_balance !== undefined) {
       setAvailableBudget(apiData.data.total_balance ?? 0);
@@ -107,7 +97,7 @@ function TrackerLayout() {
 
       <TrackerNavbar />
       <div className='cards__presentation--tracker'>
-   {  <Outlet />}
+     <Outlet />
         {messageToUser && (
           <MessageToUser
             isLoading={false}

@@ -1,10 +1,11 @@
+/* frontend\src\general_components\header\logoMenuIcon.css */
+
 .header__logoAndIcon {
   width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 0.825rem 1.25rem 0rem;
-
+  /* padding: 1.25rem 0.825rem 1.25rem 0rem; */
 }
 
 .iconContainer.exit:hover,

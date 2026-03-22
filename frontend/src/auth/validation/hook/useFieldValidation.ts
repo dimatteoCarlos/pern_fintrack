@@ -157,7 +157,7 @@ export const useFieldValidation = <TFormShape extends Record<string, unknown>>(
  result.error.issues.forEach(issue => {
   const field = issue.path[0] as keyof TFormShape | undefined;
 //-----------------------------------------
- console.log('error path:', errors, issue, field,'options:', options, options.validateOnlyTouched,touchedFields, )
+ // console.log('error path:', errors, issue, field,'options:', options, options.validateOnlyTouched,touchedFields, )
 
 // 📝 Global form error (no field associated)
  if (!field) {
