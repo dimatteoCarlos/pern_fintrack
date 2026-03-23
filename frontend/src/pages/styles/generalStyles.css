@@ -389,7 +389,7 @@ input[type='number'] {
 }
 
 /*776 px / 52rem */
-@media screen and (max-height: 835px) {
+@media screen and (max-height: 735px) {
   :root {
     --topSpaceHeight: 0rem;
   }
