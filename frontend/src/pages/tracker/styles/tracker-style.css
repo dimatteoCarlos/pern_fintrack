@@ -1,4 +1,4 @@
-/*tracker-style.css*/
+/* frontend\src\pages\tracker\styles\tracker-style.css */
 /*---------------------*/
 /*possible conflict w displayScreen*/
 .displayScreen.light {
@@ -43,13 +43,14 @@
 
   border-radius: 1rem 1rem 0 0;
   /*width: 80%;*/ /*original figma*/
-  width: 88%; /*changed*/
+  /*width: 88%;*/ /*changed*/
+  width: auto; /*default*/
   margin: 0 auto;
   align-self: center;
   background-color: #1b1b1b;
   gap: 0.15rem;
-  
-/*contolled over position*/
+
+  /*contolled over position*/
   /* top: calc(var(--header-total-height) - (var(--navbar-top-height) * 0.2)- var(--gap-between, 0)); */
 
   /* ajustar el factor 0.2 para lograr el offset visual deseado. Prueba con 0.2 (20% de la altura del navbar) y luego ajusta. */
@@ -59,7 +60,6 @@
   z-index: 0;
   height: var(--navbar-top-height);
   padding: 0.75rem;
-
 }
 
 .trackerNavbar__container,
@@ -71,7 +71,6 @@
   /* top: calc(var(--topSpaceHeight) * 1 + 16%); */
   /*Variable position based on header total height + gap*/
   top: calc(var(--header-total-height) + var(--gap-between));
-  
 }
 
 /*----card separator component-----*/
@@ -141,12 +140,12 @@ article {
 .cards__presentation--tracker {
   /* fixed top position */
   /* top: calc(var(--topSpaceHeight) + 30%); */
+
   /* [MODIFIED] Position based on header + navbar + two gaps */
-  top: calc(var(--header-total-height) + var(--navbar-top-height) + (var(--gap-between) * 2));
-
-  /* top: calc(var(--topSpaceHeight) + 30%); */
-
-  /* border: 10px solid orange; */
+  top: calc(
+    var(--header-total-height) + var(--navbar-top-height) +
+      (var(--gap-between) * 2)
+  );
 }
 
 .state__card--top,
@@ -160,11 +159,10 @@ article {
   font-weight: 600;
   padding: 0.5rem 0;
   color: var(--dark);
-
 }
 
 /***********/
-.account.card--title{
+.account.card--title {
   /* background-color: orange; */
   display: flex;
   justify-content: space-between;
@@ -172,7 +170,6 @@ article {
   flex-wrap: wrap;
   gap: 0.5rem;
   width: 100%;
-
 }
 /***********/
 .card--title--top {
@@ -314,11 +311,10 @@ textarea:invalid {
   min-width: 0;
   display: flex;
   justify-content: flex-end;
-
 }
 
 /* ========================================
-   📱 TRANSFER MOBILE OPTIMIZATION (≤470px)
+   📱 TRANSFER MOBILE OPTIMIZATION (width ≤470px)
 ====================================== */
 
 @media screen and (max-width: 470px) {
@@ -334,24 +330,21 @@ textarea:invalid {
     width: auto;
     flex-shrink: 0;
   }
- 
 }
 
 /* ========================================
-   📱 TRANSFER CHIP ROW (≤470px)
+   📱 TRANSFER CHIP ROW (width ≤470px)
 ====================================== */
-
 @media screen and (max-width: 470px) {
-
   /* Ensure chips take remaining space */
   .transfer .radio-input__options--chip {
     flex: 1;
     min-width: 0;
   }
 
-/* Force exact height for chip container */
+  /* Force exact height for chip container */
   .transfer .radio-input__options--chip {
-    height: 1.0rem; 
+    height: 1rem;
     min-height: 1.1rem;
     max-height: 1.1rem;
 
@@ -375,23 +368,23 @@ textarea:invalid {
   .transfer .radio-input__options--chip .radio-input__label {
     padding: 0.0625rem 0.375rem;
     font-size: 0.625rem;
-    line-height: 1rem;              /* 16px */
+    line-height: 1rem; /* 16px */
     border-width: 0.5px;
-    border-radius: 0.75rem;         /* 12px */
+    border-radius: 0.75rem; /* 12px */
     white-space: nowrap;
   }
 
   /* labelID label */
   .transfer .account-label {
-    font-size: 0.875rem;           /* 10px */
-    line-height: 1rem;              /* 16px */
+    font-size: 0.875rem; /* 10px */
+    line-height: 1rem; /* 16px */
     margin: 0;
     padding: 0;
     flex-shrink: 0;
   }
 
-  .transfer .radio-input__options--chip .radio-input__label{
-   font-size: 0.875rem;
+  .transfer .radio-input__options--chip .radio-input__label {
+    font-size: 0.875rem;
   }
 
   /* Reduce vertical spacing in cards */
@@ -403,22 +396,23 @@ textarea:invalid {
 
   /* Compact separator */
   .transfer .separator__container {
-    height: 0.5rem;                 /* 8px */
+    height: 0.5rem; /* 8px */
   }
 }
 
 @media screen and (max-width: 370px) {
-  .transfer .radio-input__options--chip .radio-input__label{
-   font-size: 0.72rem;
+  .transfer .radio-input__options--chip .radio-input__label {
+    font-size: 0.72rem;
   }
-
 }
 
 /* ========================================
-   📱 HEIGHT-BASED NOTE & AMOUNT OPTIMIZATION (≤835px)
+   📱 HEIGHT-BASED NOTE & AMOUNT OPTIMIZATION (≤var(--MHB800px))
    ====================================== */
-
-@media (max-height: 835px) {
+:root {
+  --MHB: 800px;
+}
+@media (max-height: 800px) {
   /* ---------- NOTE SECTION ---------- */
   /* Note from 3 to 2 lineas visual */
   .input__note__description {
@@ -448,33 +442,56 @@ textarea:invalid {
   }
 
   /* ---------- AMOUNT INPUT SECTION ---------- */
-  /* Values scale linearly between 700px and 835px */
+  /* Values scale linearly between 700px and var(--MHB,800px) */
   .card__screen {
-    height: calc(2.2rem + (2.8rem - 2.2rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
-    padding: calc(0.15rem + (0.5rem - 0.15rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) calc(0.35rem + (0.5rem - 0.35rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
+    height: calc(
+      2.2rem + (2.8rem - 2.2rem) *
+        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+    ) !important;
+    padding: calc(
+        0.15rem + (0.5rem - 0.15rem) *
+          min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+      )
+      calc(
+        0.35rem + (0.5rem - 0.35rem) *
+          min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+      ) !important;
   }
-  
+
   .inputNumber {
-    font-size: calc(1.1rem + (1.5rem - 1.1rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
-    line-height: calc(1.3rem + (2rem - 1.3rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
+    font-size: calc(
+      1.1rem + (1.5rem - 1.1rem) *
+        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+    ) !important;
+    line-height: calc(
+      1.3rem + (2rem - 1.3rem) *
+        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+    ) !important;
   }
-  
+
   /* Currency badge - slightly smaller than container */
   .icon-currency {
-    height: calc(1.8rem + (2.4rem - 1.8rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
-    width: calc(1.8rem + (2.4rem - 1.8rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
-    font-size: calc(0.65rem + (0.875rem - 0.65rem) * min(1, max(0, (100svh - 700px) / (835px - 700px)))) !important;
+    height: calc(
+      1.8rem + (2.4rem - 1.8rem) *
+        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+    ) !important;
+    width: calc(
+      1.8rem + (2.4rem - 1.8rem) *
+        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+    ) !important;
+    font-size: calc(
+      0.65rem + (0.875rem - 0.65rem) *
+        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+    ) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     flex-shrink: 0 !important;
   }
 
-
-  .icon-currency{
-     border-radius: 0.8em !important;
-    border:0.25px solid var(--dark)!important;
+  .icon-currency {
+    border-radius: 0.8em !important;
+    border: 0.25px solid var(--dark) !important;
   }
-
 }
 
