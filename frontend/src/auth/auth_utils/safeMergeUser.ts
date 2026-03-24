@@ -17,16 +17,20 @@ export const safeMergeUser = (
  newUser: Partial<UserDataType>): UserDataType => {
   
   if (!newUser) {
-    throw new Error("Invalid server response - Missing user data");
+   console.error('❌ safeMergeUser: newUser is null or undefined');
+   throw new Error("Invalid server response - Missing user data");
   }
 
-  // Filter out undefined values to avoid overwriting with undefined
+ // Filter out undefined values to avoid overwriting with undefined
   const cleaned = Object.fromEntries(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+ // eslint-disable-next-line @typescript-eslint/no-unused-vars 
     Object.entries(newUser).filter(([_, value]) => value !== undefined)
   ) as Partial<UserDataType>;
 
-  // Merge with current data, preserving existing values for missing fields
+  // console.log('🔧 safeMergeUser - Current:', current);
+  // console.log('🔧 safeMergeUser - Cleaned:', cleaned);
+
+ // Merge with current data, preserving existing values for missing fields
   return {
    user_id: cleaned.user_id ?? current?.user_id ?? '',
 
@@ -34,9 +38,9 @@ export const safeMergeUser = (
 
    email: cleaned.email ?? current?.email ?? '',
 
-   role: cleaned.role ?? current?.role ?? 'user',
+   role: cleaned.role ?? current?.role ?? 'user',//default
 
-   currency: cleaned.currency ?? current?.currency ?? 'usd',
+   currency: cleaned.currency ?? current?.currency ?? 'usd',//default
 
    contact: cleaned.contact ?? current?.contact ?? null,
 
