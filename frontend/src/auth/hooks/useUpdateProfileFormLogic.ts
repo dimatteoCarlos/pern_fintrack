@@ -311,13 +311,13 @@ const [successMessage, setSuccessMessage] = useState<string | null>(null);
 // 🔄 EFFECT: Sync internal form state with external initial data
 // This effectively "clears" isDirty when the store updates after success
  useEffect(() => {
+ // console.log('🔄 Syncing form with new initialData:', initialData);
   setFormData(initialData);
   setErrors({});
   setTouchedFields({});
   setApiError(null);
-  setSuccessMessage(null);//check
+  setSuccessMessage(null);//when new data is received clean success message
   }, [initialData])
-
 
 /* 🌟 ===============================
 🔍 COMPUTED PROPERTIES (Derived State)
@@ -340,6 +340,7 @@ const [successMessage, setSuccessMessage] = useState<string | null>(null);
  const fieldNames = Object.keys(formData) as Array<keyof UpdateProfileFormDataType>;
 
 // Check if any field has changed from its original value
+//contact could be null in one side and '' in the other, and null!=='', undefined !== '' but null vs null or '' vs '' could lead to true.
 const changed = fieldNames.some(
 (key) =>String(formData[key] ?? '') !== String(initialData[key] ?? '')//with ??this converts null/undefined -> ''.
 );
