@@ -44,7 +44,7 @@ import { safeMergeUser } from '../auth_utils/safeMergeUser';
 /* ===============================
    🛠️ DATA TRANSFORMATION
    =============================== */
-
+//api response to frontend format
 const mapUserResponseToUserData = (user: UserResponseDataType): UserDataType => ({
   user_id: user.user_id,
   username: user.username,
@@ -451,26 +451,17 @@ const handleSignOut = async () => {
 
       // 3️⃣ ATOMIC MERGE
       //safeMergeUser get the current store state and merge it with api response
-       const finalUserData = safeMergeUser(currentUserData, mappedNewData);
-       // const finalUserData: UserDataType = {
-       //  ...currentData!,
-       //  ...mappedNewData,
-       //  // Protection: If PATCH response fields are empty, keep current ones
-       //  email: mappedNewData.email || currentData?.email || '',
-       //  role: mappedNewData.role || currentData?.role || 'user',
-       // };
+      const finalUserData = safeMergeUser(currentUserData, mappedNewData);
+   
+      setUserData(finalUserData);
 
-       setUserData(finalUserData);
-
-    // setUserData(mapUserResponseToUserData(response.data.user) as UserDataType);
-
-       setSuccessMessage(response.data.message || 'Profile updated successfully');
+      setSuccessMessage(response.data.message || 'Profile updated successfully');
 
         return response.data;
       }
 
-      setError(response.data.message);
-      return response.data;
+     setError(response.data.message);
+     return response.data;
 
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response) {
