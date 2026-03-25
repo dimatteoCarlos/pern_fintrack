@@ -27,7 +27,7 @@ auth
 │   │   ├── Resetbutton.tsx
 │   │   ├── SelectField.tsx
 │   │   ├── styles
-│   │   │   ├── InputField.module.css
+│   │   │   ├── inputField.module.css
 │   │   │   ├── LoadingSpinner.module.css
 │   │   │   ├── message.module.css
 │   │   │   ├── ResetButton.module.css
