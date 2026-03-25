@@ -43,8 +43,8 @@
 
   border-radius: 1rem 1rem 0 0;
   /*width: 80%;*/ /*original figma*/
-  /*width: 88%;*/ /*changed*/
-  width: auto; /*default*/
+  width: 88%; /*changed*/
+
   margin: 0 auto;
   align-self: center;
   background-color: #1b1b1b;
