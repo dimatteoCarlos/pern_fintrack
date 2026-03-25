@@ -426,3 +426,18 @@
     margin-top: 8px;
   }
 }
+
+/* Ultra-small screens (320px) */
+@media (max-width: 320px) {
+  .formContainer {
+    padding: 10px;
+  }
+
+  .formTitle {
+    font-size: 18px;
+  }
+
+  .secondaryButtons {
+    flex-direction: column;
+  }
+}
