@@ -339,7 +339,7 @@
 }
 
 /**
- * 📱 Responsive adjustments
+ * 📱 RESPONSIVE ADJUSTMENTS
  */
 @media (max-width: 480px) {
   .formContainer {
@@ -364,5 +364,65 @@
   .cancelButton {
     width: 100%;
     min-width: auto;
+  }
+}
+
+/* ============================================
+   Height-based responsive behavior
+   ============================================ */
+
+/* Medium height screens (≤800px) - reduce spacing */
+@media (max-height: 800px) {
+  .formContainer {
+    padding: 16px;
+  }
+
+  .formHeader {
+    margin-bottom: 12px;
+  }
+
+  .formTitle {
+    font-size: 20px;
+  }
+
+  .form {
+    gap: 12px;
+  }
+
+  .fieldsetLegend {
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+
+  .personalInfoGrid,
+  .preferencesSection {
+    gap: 10px;
+  }
+}
+
+/* Very short screens (≤568px) - ultra compact, hide non‑essential */
+@media (max-height: 568px) {
+  .formContainer {
+    padding: 12px;
+  }
+
+  .formSubtitle {
+    display: none;
+  }
+
+  .statusIndicator {
+    display: none;
+  }
+
+  .form {
+    gap: 10px;
+  }
+
+  .fieldsetLegend {
+    margin-bottom: 6px;
+  }
+
+  .actionButtons {
+    margin-top: 8px;
   }
 }
