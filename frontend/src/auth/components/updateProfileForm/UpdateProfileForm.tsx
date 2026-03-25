@@ -165,7 +165,7 @@ const UpdateProfileForm = ({
         )}
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className={styles.form}>
+      <form onSubmit={handleSubmit} noValidate className={styles.form} autoComplete='off'>
         <fieldset className={styles.fieldset}>
           <legend className={styles.fieldsetLegend}>Personal Information</legend>
           <div className={styles.personalInfoGrid}>
@@ -239,7 +239,7 @@ const UpdateProfileForm = ({
                >
                  Save Changes
                </SubmitButton>
-
+         <div className={styles.secondaryButtons}>
               <button
                 type="button"
                 onClick={handleReset}
@@ -258,10 +258,10 @@ const UpdateProfileForm = ({
                 >
                   Cancel
                 </button>
-                
               )}
+           </div> 
             </>
-          </div>
+         </div>
           ) : (
            <button
               type="button"

@@ -12,8 +12,8 @@
   margin: 0 auto;
   padding: 24px;
   background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* border-radius: 8px; */
+  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); */
 }
 
 /**
@@ -89,9 +89,7 @@
   gap: 12px;
 }
 
-/**
- * 💰 Preferences section
- */
+/* 💰 Preferences section */
 .preferencesSection {
   display: grid;
   gap: 12px;
@@ -101,18 +99,32 @@
  * 🎯 Action buttons container
  */
 .actionButtons {
+ margin-top: 16px;
+ border-top: 1px solid #eee;
+}
+
+.buttonGroupAnimation {
   display: flex;
   gap: 12px;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #eee;
-  flex-wrap: wrap;
+  padding-top: 10px;
 }
 
 /**
  * 💾 Primary action button (Save)
  */
 .saveButton {
+  flex: 1;
+}
+
+/* Secondary buttons container for better visual hierarchy*/
+
+.secondaryButtons {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.secondaryButtons button {
   flex: 1;
 }
 
@@ -329,7 +341,7 @@
 /**
  * 📱 Responsive adjustments
  */
-@media (max-width: 600px) {
+@media (max-width: 480px) {
   .formContainer {
     padding: 16px;
     max-width: 100%;
@@ -339,10 +351,14 @@
     grid-template-columns: 1fr;
   }
   
-  .actionButtons {
-    flex-direction: column;
+  .actionButtons{
+   margin-top: 5px;
   }
-  
+  .buttonGroupAnimation {
+    flex-direction: column;
+    /* gap:10px; */
+  }
+
   .saveButton,
   .resetButton,
   .cancelButton {
