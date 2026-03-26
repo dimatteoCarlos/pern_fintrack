@@ -232,7 +232,7 @@ console.log(pc.bgBlueBright('controller:',
   
   console.log("🚀 ~ updateProfile ~ updatedUserResult:", updatedUserResult.rows[0])
 
-  //4. Get the complete data for the response
+ //4. Get the complete data for the response
   const fullUserData = await client.query({
    text: `
    SELECT u.user_id, u.username, u.email,
@@ -248,12 +248,13 @@ console.log(pc.bgBlueBright('controller:',
 
   await client.query('COMMIT');
   
-  //5. STANDARD RESPONSE
+ //5. STANDARD RESPONSE
   // return updated user info if dev env
    res.status(200).json({
     success: true,
     message: 'Profile updated successfully',
-    user: {...fullUserData.rows[0], currency:updateData.currency},
+    user: fullUserData.rows[0],
+    // user: {...fullUserData.rows[0], currency:updateData.currency},
     });
     
 } catch (error) {
