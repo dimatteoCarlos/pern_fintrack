@@ -516,7 +516,7 @@ const useAuth = () => {
 
         // 2️⃣ Map response
         const mappedNewData = mapUserResponseToUserData(response.data.user);
-
+       //validation for backend user response
         if (!mappedNewData || typeof mappedNewData !== 'object') {
           console.error(
             '❌ Invalid user data from backend:',
