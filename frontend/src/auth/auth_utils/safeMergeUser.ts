@@ -31,21 +31,27 @@ export const safeMergeUser = (
   // console.log('🔧 safeMergeUser - Cleaned:', cleaned);
 
  // Merge with current data, preserving existing values for missing fields
-  return {
-   user_id: cleaned.user_id ?? current?.user_id ?? '',
 
-   username: cleaned.username ?? current?.username ?? '',
+   return {
+    ...current,
+    ...cleaned,
+  } as UserDataType;
 
-   email: cleaned.email ?? current?.email ?? '',
+  // return {
+  //  user_id: cleaned.user_id ?? current?.user_id ?? '',
 
-   role: cleaned.role ?? current?.role ?? 'user',//default
+  //  username: cleaned.username ?? current?.username ?? '',
 
-   currency: cleaned.currency ?? current?.currency ?? 'usd',//default
+  //  email: cleaned.email ?? current?.email ?? '',
 
-   contact: cleaned.contact ?? current?.contact ?? null,
+  //  role: cleaned.role ?? current?.role ?? 'user',//default
 
-   user_firstname: cleaned.user_firstname ?? current?.user_firstname ?? '',
+  //  currency: cleaned.currency ?? current?.currency ?? 'usd',//default
 
-   user_lastname: cleaned.user_lastname ?? current?.user_lastname ?? '',
-  };
+  //  contact: cleaned.contact ?? current?.contact ?? null,
+
+  //  user_firstname: cleaned.user_firstname ?? current?.user_firstname ?? '',
+
+  //  user_lastname: cleaned.user_lastname ?? current?.user_lastname ?? '',
+  // };
 };
