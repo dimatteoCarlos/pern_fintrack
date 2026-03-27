@@ -23,7 +23,7 @@ const router = express.Router();
 // =================================
 // 🎯 UPDATE USER PROFILE (with rate limiting)
 router.patch('/update-profile', 
- verifyToken,       // Check authentication
+ verifyToken, // Check authentication
  profileUpdateLimiter,// Apply rate limiting
 validateRequestSync(updateProfileSchema), // ✅ Middleware Zod
  updateProfile //  Process update

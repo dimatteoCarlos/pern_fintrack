@@ -19,6 +19,14 @@ router.post('/refresh-token', authRefreshToken);
 //api/auth/sign-out
 router.post('/sign-out', signOutUser);
 
+//validate session
+router.get('/validate-session', verifyToken, validateSession);
+
+
+export default router;
+
+//when ready, include into the router
+
 //--------------------------------------
 // Ruta de Google OAuth: redirige a Google para la autenticación
 // router.get(
@@ -36,8 +44,3 @@ router.post('/sign-out', signOutUser);
 //   }
 // );
 //------------------------
-//validate session
-router.get('/validate-session', verifyToken, validateSession);
-
-
-export default router;

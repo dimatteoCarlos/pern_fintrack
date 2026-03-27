@@ -101,7 +101,8 @@ const UpdateProfileForm = ({
         ? value
         : value.target.value;
 
-    onChange('contact', contactValue || null);
+    // onChange('contact', contactValue || null);
+    onChange('contact', contactValue);
     }, [onChange]
   );   
 

@@ -201,7 +201,7 @@ const { username, email } = req.body;
 await pool.query('BEGIN');
   try {
 // ✅ VALIDATION
-    if (!(username && email && req.body.password)) {
+   if (!(username && email && req.body.password)) {
       return next(
         createError(400, 'username, email and password, are required')
       );
@@ -251,7 +251,7 @@ await pool.query('BEGIN');
 
 // ✅ CHECK PASSWORD
 // console.log(req.body.password, userData[0].password_hashed);
-    const isPasswordCorrect = await isRight(
+   const isPasswordCorrect = await isRight(
       req.body.password,
       user.password_hashed
     );

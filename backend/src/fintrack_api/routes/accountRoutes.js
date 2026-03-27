@@ -45,27 +45,21 @@ const router = express.Router();
 // 📝 CREATE ACCOUNT ROUTES
 // ---------------------------------
 router.post('/new_account/bank',
-   //verifyToken,
   createBasicAccount); 
 
 router.post('/new_account/income_source',
-  // verifyToken,
 createBasicAccount);
 
 router.post('/new_account/investment', 
-  // verifyToken,
   createBasicAccount);
 
 router.post('/new_account/debtor', 
-  // verifyToken,
   createDebtorAccount);
 
 router.post('/new_account/pocket_saving',
-  // verifyToken, 
   createPocketAccount);
   
 router.post('/new_account/category_budget',
-  //  verifyToken,
   createCategoryBudgetAccount);
 
 //------------------------------
@@ -74,19 +68,15 @@ router.post('/new_account/category_budget',
 // 📖 ACCOUNT READING (GET) ROUTES
 // ---------------------------------
 router.get('/allAccounts',
-  // verifyToken, 
   getAccounts);
 
 router.get('/type',
-  // verifyToken, 
   getAllAccountsByType);
 
 router.get('/:accountId',
-  // verifyToken,
    getAccountById);
 //-----
 router.get('/transactions/:accountId',
-  // verifyToken, 
   getTransactionsForAccountById);
 
 // ---------------------------------
@@ -95,7 +85,6 @@ router.get('/transactions/:accountId',
 // get all category budget account type info associated to a category Name
 //route: /api/fintrack/category/
 router.get('/category/:categoryName',
-  // verifyToken, 
   getAccountsByCategory);
 
 //----------------------
