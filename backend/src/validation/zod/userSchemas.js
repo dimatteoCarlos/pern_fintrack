@@ -83,7 +83,11 @@ const contactSchema = z.string()
   .optional()
   .nullable()
   .transform(val => {
-    if (!val) return null;
+    if (val === undefined) return undefined;
+
+    // ✅ allow explicit null (erase contact)
+    if (val === null) return null;
+
     const sanitized = sanitizeText(val);
     return sanitized.length > 0 ? sanitized : null;
   });
