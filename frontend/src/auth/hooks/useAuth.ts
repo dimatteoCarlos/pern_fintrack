@@ -98,6 +98,27 @@ console.log('extractErrorMessage:', data, err.stack)
 };
 
 /* ===============================
+   🔧 RESET AUTH STATE
+   =============================== */
+/**
+ * Resets the authentication state in the global store.
+ * 
+ * Responsibilities:
+ * - Marks user as not authenticated
+ * - Clears user data from memory
+ * - Removes any UI error or success messages
+ * 
+ * This function does NOT handle storage cleanup.
+ * It only affects in-memory state (Zustand).
+ */
+// const resetAuthState = () => {
+//   setUserData(null);
+//   setIsAuthenticated(false);
+//   setError(null);
+//   setSuccessMessage(null);
+// };
+
+/* ===============================
    🎯 MAIN HOOK: useAuth
    =============================== */
 
@@ -123,7 +144,13 @@ const {
     const checkAuthStatus = async () => {
     const accessToken = sessionStorage.getItem('accessToken');
 
-     if ((accessToken ) && !error && !isLoading &&!isAuthenticated) {
+     if (!accessToken) {
+     setIsCheckingAuth(false);
+     return;
+     }
+
+     // if ((accessToken ) && !error && !isLoading &&!isAuthenticated) {
+     if ((accessToken ) && !isAuthenticated) {
       try {
        const response = await authFetch<AuthSuccessResponseType>(url_validate_session, { method: 'GET' });
       //----------------------
@@ -138,6 +165,7 @@ const {
 
       //update user data: current + api
       const mergedUser = safeMergeUser(currentUserData,transformedUser);
+
       setUserData(mergedUser);
       setIsAuthenticated(true);
       console.log('✅ Session restored successfully');
@@ -155,6 +183,8 @@ const {
 
     return () => { isMounted = false };
   }, [setIsAuthenticated, setIsCheckingAuth, error, isLoading, setUserData,isAuthenticated]);
+//-------------
+ // console.log("user data:", userData)
 
 /* ===============================
 🔐 SIGN IN
@@ -360,6 +390,8 @@ const handleSignOut = async () => {
         // 🔐 401 - TOKEN INVALID / EXPIRED (REAL LOGOUT)
         if (status === 401) {
           logoutCleanup(true);
+          // resetAuthState();
+
 
           return {
            success: false,
@@ -449,6 +481,12 @@ const handleSignOut = async () => {
       // 2️⃣ Map response
       const mappedNewData = mapUserResponseToUserData((response.data).user);
 
+      if (!mappedNewData || typeof mappedNewData !== 'object') {
+      console.error("❌ Invalid user data from backend:", response.data.user);
+
+      throw new Error("Invalid user data from backend");
+}
+
       // 3️⃣ ATOMIC MERGE
       //safeMergeUser get the current store state and merge it with api response
       const finalUserData = safeMergeUser(currentUserData, mappedNewData);
@@ -471,6 +509,7 @@ const handleSignOut = async () => {
         // 🔐 401 - Session expired
         if (status === 401) {
           logoutCleanup(true);
+
           return {
             success: false,
             error: 'Session expired. Please login again.',
