@@ -257,7 +257,6 @@ console.log(pc.bgBlueBright('controller:',
     success: true,
     message: 'Profile updated successfully',
     user: fullUserData.rows[0],
-    // user: {...fullUserData.rows[0], currency:updateData.currency},
     });
     
 } catch (error) {

@@ -494,6 +494,13 @@ try {
 // 🔄 STEP 4: Prepare optimized API payload
 // Get ONLY fields that have actually changed (performance optimization)
  const changedFields = transformations.getChangedFields(formData, initialData);
+
+ // 🔍 DEBUG
+  console.log("🧪 CONTACT DEBUG", {
+  initial: initialData.contact,
+  current: formData.contact,
+  changedFields
+});
    
 // Transform form data to API format (handles null/undefined cleanup)
  const apiPayload = transformations.formToApi(changedFields);
