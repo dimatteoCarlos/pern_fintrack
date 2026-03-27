@@ -41,7 +41,7 @@ export const storeToForm =(userData:UserDataType | null):UpdateProfileFormDataTy
  firstname:userData?.user_firstname || '',
  lastname:userData?.user_lastname || '',
  currency:(userData?.currency?.toLowerCase()  as CurrencyType) || DEFAULT_CURRENCY,
- contact:userData?.contact || null,
+ contact:userData?.contact ?? null,
 });
 
 /**
@@ -70,9 +70,10 @@ export const formToApi = (formData: Partial<UpdateProfileFormDataType>): Profile
     payload.currency = formData.currency;
   }
 
-  if (formData.contact?.trim()) {
-    payload.contact = formData.contact;
-  }
+  if (formData.contact !== undefined) {
+  payload.contact =
+    formData.contact === '' ? null : formData.contact;
+}
 
   return payload;
 };
@@ -151,13 +152,16 @@ export const getChangedFields = (
      ? string | null 
      : UpdateProfileFormDataType[K]
   };
+
+  //Normalization
+  const normalize = (val: unknown) => String(val ?? '');
   
   const changed: ChangedType = {};
 
   (Object.keys(currentData) as Array<keyof UpdateProfileFormDataType>).forEach(key => {
-    if (currentData[key] !== originalData[key]) {
+    if (normalize(currentData[key]) !== normalize(originalData[key])) {
     // Type assertion específica
-      (changed)[key] = currentData[key];
+    (changed)[key] = currentData[key];
     }
   });
 
