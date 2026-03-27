@@ -45,7 +45,9 @@ const individualFieldSchema = (field:FieldLimitType)=>
    .optional()
    .nullable()
    .transform(val => {
-     if (!val) return null;
+     if (val === undefined) return undefined;
+     if (val === null) return null;
+     
      const sanitized = sanitizeText(val);
      return sanitized.length > 0 ? sanitized : null;
    });
