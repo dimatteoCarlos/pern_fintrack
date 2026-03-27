@@ -141,6 +141,9 @@ console.log(pc.bgBlueBright('controller:',
 // =====================================
   const { userId } = req.user;
   const updateData = req.validatedData;//req.body //Data Validated by zod.
+
+  console.log("📥 BODY:", req.body);
+  console.log("📥 VALIDATED:", req.validatedData);
   
   // ✅ VALIDATE DATA TO UPDATE
   if(!updateData || Object.keys(updateData).length===0){
