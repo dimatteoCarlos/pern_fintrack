@@ -315,8 +315,11 @@ await pool.query('BEGIN');
     user_firstname: user.user_firstname,
     user_lastname: user.user_lastname,
     user_role_name: user.user_role_name,
-    currency: user.currency
+    currency: user.currency,
+    user_contact: user.user_contact,
   };
+
+  console.log("🚀 ~ signInUser ~ userResponseData:", userResponseData)
 
   res.status(200).json({
   message: 'Login successful',
