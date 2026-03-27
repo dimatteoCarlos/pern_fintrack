@@ -36,16 +36,21 @@ import {
   url_signout,
   url_update_user,
   url_change_password,
-  url_validate_session
+  url_validate_session,
 } from '../../endpoints';
-import { clearIdentity, saveIdentity } from '../auth_utils/localStorageHandle/authStorage';
+import {
+  clearIdentity,
+  saveIdentity,
+} from '../auth_utils/localStorageHandle/authStorage';
 import { safeMergeUser } from '../auth_utils/safeMergeUser';
 
 /* ===============================
    🛠️ DATA TRANSFORMATION
    =============================== */
 //api response to frontend format
-const mapUserResponseToUserData = (user: UserResponseDataType): UserDataType => ({
+const mapUserResponseToUserData = (
+  user: UserResponseDataType,
+): UserDataType => ({
   user_id: user.user_id,
   username: user.username,
   user_firstname: user.user_firstname,
@@ -64,14 +69,14 @@ const extractErrorMessage = (err: unknown): string => {
   // If axios error with response
   if (axios.isAxiosError(err) && err.response) {
     const data = err.response.data as Record<string, unknown>;
-//-----------------------------------------
-console.log('extractErrorMessage:', data, err.stack)
-//---------------------------------------
-// Priority: BE error message
+    //-----------------------------------------
+    console.log('extractErrorMessage:', data, err.stack);
+    //---------------------------------------
+    // Priority: BE error message
     if (data?.message && typeof data.message === 'string') {
       return data.message;
     }
-    
+
     // Common codes error
     if (err.response.status === 401) {
       return 'Invalid username or password';
@@ -83,40 +88,19 @@ console.log('extractErrorMessage:', data, err.stack)
       return 'Too many attempts. Please try again later.';
     }
   }
-  
+
   // Network error
   if (axios.isAxiosError(err) && !err.response) {
-   return 'Network error. Please check your connection.';
+    return 'Network error. Please check your connection.';
   }
-  
+
   // Generic Error
   if (err instanceof Error) {
     return err.message;
   }
-  
+
   return 'An unexpected error occurred';
 };
-
-/* ===============================
-   🔧 RESET AUTH STATE
-   =============================== */
-/**
- * Resets the authentication state in the global store.
- * 
- * Responsibilities:
- * - Marks user as not authenticated
- * - Clears user data from memory
- * - Removes any UI error or success messages
- * 
- * This function does NOT handle storage cleanup.
- * It only affects in-memory state (Zustand).
- */
-// const resetAuthState = () => {
-//   setUserData(null);
-//   setIsAuthenticated(false);
-//   setError(null);
-//   setSuccessMessage(null);
-// };
 
 /* ===============================
    🎯 MAIN HOOK: useAuth
@@ -126,53 +110,66 @@ const useAuth = () => {
   const navigateTo = useNavigate();
   useNavigationHelper();
 
-const {
-  isLoading, setIsLoading,
-  isCheckingAuth, setIsCheckingAuth,
-  isAuthenticated, setIsAuthenticated,
-  userData, setUserData,
-  error, setError, clearError,
-  successMessage, setSuccessMessage, clearSuccessMessage,
-} = useAuthStore();
+  const {
+    isLoading,
+    setIsLoading,
+    isCheckingAuth,
+    setIsCheckingAuth,
+    isAuthenticated,
+    setIsAuthenticated,
+    userData,
+    setUserData,
+    error,
+    setError,
+    clearError,
+    successMessage,
+    setSuccessMessage,
+    clearSuccessMessage,
+  } = useAuthStore();
 
- /* ===============================
+  /* ===============================
     🔄 SESSION INITIALIZATION
     =============================== */
   useEffect(() => {
     let isMounted = true;
 
     const checkAuthStatus = async () => {
-    const accessToken = sessionStorage.getItem('accessToken');
+      const accessToken = sessionStorage.getItem('accessToken');
 
-     if (!accessToken) {
-     setIsCheckingAuth(false);
-     return;
-     }
+      if (!accessToken) {
+        setIsCheckingAuth(false);
+        return;
+      }
 
-     // if ((accessToken ) && !error && !isLoading &&!isAuthenticated) {
-     if ((accessToken ) && !isAuthenticated) {
-      try {
-       const response = await authFetch<AuthSuccessResponseType>(url_validate_session, { method: 'GET' });
-      //----------------------
-      console.log("🚀 ~ checkAuthStatus ~ response:", response)
-      //----------------------
-      if (isMounted && response.data?.user) {
-      // ✅ Transform and merge user data on session restore
-       const transformedUser = mapUserResponseToUserData(response.data.user);
+      // if ((accessToken ) && !error && !isLoading &&!isAuthenticated) {
+      if (accessToken && !isAuthenticated) {
+        try {
+          const response = await authFetch<AuthSuccessResponseType>(
+            url_validate_session,
+            { method: 'GET' },
+          );
+          //----------------------
+          console.log('🚀 ~ checkAuthStatus ~ response:', response);
+          //----------------------
+          if (isMounted && response.data?.user) {
+            // ✅ Transform and merge user data on session restore
+            const transformedUser = mapUserResponseToUserData(
+              response.data.user,
+            );
 
-      //Get current store state before 
-      const currentUserData = useAuthStore.getState().userData;
+            //Get current store state before
+            const currentUserData = useAuthStore.getState().userData;
 
-      //update user data: current + api
-      const mergedUser = safeMergeUser(currentUserData,transformedUser);
+            //update user data: current + api
+            const mergedUser = safeMergeUser(currentUserData, transformedUser);
 
-      setUserData(mergedUser);
-      setIsAuthenticated(true);
-      console.log('✅ Session restored successfully');
-         }
-       } catch (error) {
+            setUserData(mergedUser);
+            setIsAuthenticated(true);
+            console.log('✅ Session restored successfully');
+          }
+        } catch (error) {
           if (isMounted) {
-           console.warn('🔍 Session hydration failed');
+            console.warn('🔍 Session hydration failed');
           }
         }
       }
@@ -181,88 +178,104 @@ const {
 
     checkAuthStatus();
 
-    return () => { isMounted = false };
-  }, [setIsAuthenticated, setIsCheckingAuth, error, isLoading, setUserData,isAuthenticated]);
-//-------------
- // console.log("user data:", userData)
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    setIsAuthenticated,
+    setIsCheckingAuth,
+    error,
+    isLoading,
+    setUserData,
+    isAuthenticated,
+  ]);
+  //-------------
+  // console.log("user data:", userData)
 
-/* ===============================
+  /* ===============================
 🔐 SIGN IN
 =============================== */
-  const handleSignIn = async (credentials: SignInCredentialsType, rememberMe: boolean):Promise<void> => {
-  clearError();
-  setIsLoading(true);
-  clearSuccessMessage();
+  const handleSignIn = async (
+    credentials: SignInCredentialsType,
+    rememberMe: boolean,
+  ): Promise<void> => {
+    clearError();
+    setIsLoading(true);
+    clearSuccessMessage();
 
-  try {
-    const response = await authFetch<SignInResponseType>(url_signin, {method: 'POST', data: credentials});
+    try {
+      const response = await authFetch<SignInResponseType>(url_signin, {
+        method: 'POST',
+        data: credentials,
+      });
 
-    const { accessToken, user, message, expiresIn } = response.data;
+      const { accessToken, user, message, expiresIn } = response.data;
 
-    const userFromSignIn = response.data?.user || user;
+      const userFromSignIn = response.data?.user || user;
 
-//check data
-   if (!accessToken ||!userFromSignIn) {
-   const errorMessage = !accessToken 
-     ? 'Server response missing access token'
-     : 'Server response missing user data';
-   throw new Error(errorMessage);
-   }
+      //check data
+      if (!accessToken || !userFromSignIn) {
+        const errorMessage = !accessToken
+          ? 'Server response missing access token'
+          : 'Server response missing user data';
+        throw new Error(errorMessage);
+      }
 
-// processing expiresIn
-  if (expiresIn) {
-   const expiryTime = Date.now() + (expiresIn * 1000);
-   sessionStorage.setItem('tokenExpiry', expiryTime.toString());
-   //-------------
-   console.log('token expiration:', new Date(expiryTime))
-  }
+      // processing expiresIn
+      if (expiresIn) {
+        const expiryTime = Date.now() + expiresIn * 1000;
+        sessionStorage.setItem('tokenExpiry', expiryTime.toString());
+        //-------------
+        console.log('token expiration:', new Date(expiryTime));
+      }
 
-  if (accessToken && userFromSignIn){
-    sessionStorage.setItem('accessToken', accessToken);
+      if (accessToken && userFromSignIn) {
+        sessionStorage.setItem('accessToken', accessToken);
 
-   // ✅ Persist identity if rememberMe is true
-   if (rememberMe) {
-    const identity: UserIdentityType = {
-      email: credentials.email,
-      username: credentials.username,
-      rememberMe: true,
-    };
-    
-    saveIdentity(identity);
-    console.log('✅ Identity saved for remembered user');
-  } else {
-    clearIdentity();
-    console.log('🧹 Identity cleared');
-  }
+        // ✅ Persist identity if rememberMe is true
+        if (rememberMe) {
+          const identity: UserIdentityType = {
+            email: credentials.email,
+            username: credentials.username,
+            rememberMe: true,
+          };
 
-  // ✅ Transform and merge user data
-   const transformedUser = mapUserResponseToUserData(userFromSignIn); 
+          saveIdentity(identity);
+          console.log('✅ Identity saved for remembered user');
+        } else {
+          clearIdentity();
+          console.log('🧹 Identity cleared');
+        }
 
-  // Get current user data store
-  const currentUserDataStore = useAuthStore.getState().userData
-  
-   const mergedUser = safeMergeUser(currentUserDataStore ,transformedUser);
-   setUserData(mergedUser);//to store
+        // ✅ Transform and merge user data
+        const transformedUser = mapUserResponseToUserData(userFromSignIn);
 
-   setIsAuthenticated(true);
-   setSuccessMessage(message || 'Sign in successful! Welcome back!');
-   navigateTo(INITIAL_PAGE_ADDRESS || '/fintrack');
+        // Get current user data store
+        const currentUserDataStore = useAuthStore.getState().userData;
 
-    // return true;
-  }
+        const mergedUser = safeMergeUser(currentUserDataStore, transformedUser);
+        setUserData(mergedUser); //to store
 
-   } catch (err: unknown) {
-     const errorMessage = extractErrorMessage(err) || 'Login failed. Please check your credentials.';
-     setError(errorMessage);
-} finally {
-     setIsLoading(false);
-   }
+        setIsAuthenticated(true);
+        setSuccessMessage(message || 'Sign in successful! Welcome back!');
+        navigateTo(INITIAL_PAGE_ADDRESS || '/fintrack');
+      }
+    } catch (err: unknown) {
+      const errorMessage =
+        extractErrorMessage(err) ||
+        'Login failed. Please check your credentials.';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-/* ===============================
+  /* ===============================
    📝 SIGN UP
  =============================== */
-  const handleSignUp = async (credentials: SignUpCredentialsType):Promise<void> => {
+  const handleSignUp = async (
+    credentials: SignUpCredentialsType,
+  ): Promise<void> => {
     clearError();
     clearSuccessMessage();
     setIsLoading(true);
@@ -277,34 +290,37 @@ const {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}. Registration failed.`);
+        throw new Error(
+          errorData.message ||
+            `HTTP error! status: ${response.status}. Registration failed.`,
+        );
       }
 
       const resData = await response.json();
 
       //verify user exists
       if (!resData.user) {
-      throw new Error('Server response missing user data');
-    }
+        throw new Error('Server response missing user data');
+      }
 
       if (resData.accessToken) {
         sessionStorage.setItem('accessToken', resData.accessToken);
       }
-     // ✅ Transform and merge user data
-     const transformedUser = mapUserResponseToUserData(resData.user);
+      // ✅ Transform and merge user data
+      const transformedUser = mapUserResponseToUserData(resData.user);
 
-     //Get user data from store
-     const currentUserDataStore = useAuthStore.getState().userData;
+      //Get user data from store
+      const currentUserDataStore = useAuthStore.getState().userData;
 
-     const mergedUser = safeMergeUser(currentUserDataStore, transformedUser);
-     setUserData(mergedUser);
+      const mergedUser = safeMergeUser(currentUserDataStore, transformedUser);
+      setUserData(mergedUser);
 
-     setIsAuthenticated(true);
-     setSuccessMessage(resData.message || 'Sign up successful!');
-     navigateTo('/fintrack');
-
-   } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      setIsAuthenticated(true);
+      setSuccessMessage(resData.message || 'Sign up successful!');
+      navigateTo('/fintrack');
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Registration failed';
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -315,53 +331,56 @@ const {
      🚪 SIGN OUT
      =============================== */
 
-/**
- * 🚪 Manual logout - user initiated
- * 
- * 🔍 LAYER IDENTIFICATION:
- * - Layer: Application/Orchestration
- * - Purpose: Handle explicit user logout action
- * - Decisions: When to navigate after cleanup
- * 
- * ✅ Responsibilities:
- * - Call logout API
- * - Clean up session data (via infrastructure)
- * - Navigate to auth page
- * 
- * ❌ Never:
- * - Handle automatic session expiration (ProtectedRoute does that)
- * - Show notifications (Presentation layer)
- * - Interpret error meanings (Domain layer)
- */
-const handleSignOut = async () => {
-  try {
-    // Infrastructure layer - API call
-    await authFetch(url_signout, { method: 'POST' });
-  } catch (err: unknown) {
-    // Infrastructure error - log but proceed with cleanup
-    console.log('⚠️ Logout API call failed, proceeding with client cleanup');
-  } finally {
-    // 1️⃣ Infrastructure layer - clean up session data
-    logoutCleanup(false);
-    
-    // 2️⃣ Application layer - explicit navigation for user-initiated logout
-    // This does NOT affect automatic session expiration flows
-    navigateTo('/', { replace: true });
-  }
-};
+  /**
+   * 🚪 Manual logout - user initiated
+   *
+   * 🔍 LAYER IDENTIFICATION:
+   * - Layer: Application/Orchestration
+   * - Purpose: Handle explicit user logout action
+   * - Decisions: When to navigate after cleanup
+   *
+   * ✅ Responsibilities:
+   * - Call logout API
+   * - Clean up session data (via infrastructure)
+   * - Navigate to auth page
+   *
+   * ❌ Never:
+   * - Handle automatic session expiration (ProtectedRoute does that)
+   * - Show notifications (Presentation layer)
+   * - Interpret error meanings (Domain layer)
+   */
+  const handleSignOut = async () => {
+    try {
+      // Infrastructure layer - API call
+      await authFetch(url_signout, { method: 'POST' });
+    } catch (err: unknown) {
+      // Infrastructure error - log but proceed with cleanup
+      console.log('⚠️ Logout API call failed, proceeding with client cleanup');
+    } finally {
+      // 1️⃣ Infrastructure layer - clean up session data
+      logoutCleanup(false);
+
+      // 2️⃣ Application layer - explicit navigation for user-initiated logout
+      // This does NOT affect automatic session expiration flows
+      navigateTo('/', { replace: true });
+    }
+  };
   /* ===============================
      🔐 DOMAIN PASSWORD CHANGE (SINGLE SOURCE OF TRUTH)
      =============================== */
   const handleDomainChangePassword = async (
     currentPassword: string,
     newPassword: string,
-    confirmPassword: string
+    confirmPassword: string,
   ): Promise<ChangePasswordResultType> => {
     try {
-      const response = await authFetch<ChangePasswordResponseType>(url_change_password, {
-        method: 'PATCH',
-        data: { currentPassword, newPassword, confirmPassword }
-      });
+      const response = await authFetch<ChangePasswordResponseType>(
+        url_change_password,
+        {
+          method: 'PATCH',
+          data: { currentPassword, newPassword, confirmPassword },
+        },
+      );
 
       const responseData = response.data;
 
@@ -371,7 +390,7 @@ const handleSignOut = async () => {
           message: responseData.message || 'Password updated successfully.',
         };
       }
-    // 🔴 CONTROLLED BACKEND FAILURE
+      // 🔴 CONTROLLED BACKEND FAILURE
       return {
         success: false,
         error: responseData.error || 'ChangePasswordError',
@@ -379,25 +398,23 @@ const handleSignOut = async () => {
         fieldErrors: responseData.fieldErrors ?? {},
         retryAfter: responseData.retryAfter,
       };
-
     } catch (err: unknown) {
-    // 🛡️ Axios error with response
+      // 🛡️ Axios error with response
       // 🔐 401 – SESSION EXPIRED → logout
       if (axios.isAxiosError(err) && err.response) {
         const { status, data } = err.response;
-        const errorData = data //as Record<string, unknown>;
+        const errorData = data; //as Record<string, unknown>;
 
         // 🔐 401 - TOKEN INVALID / EXPIRED (REAL LOGOUT)
         if (status === 401) {
           logoutCleanup(true);
-          // resetAuthState();
-
 
           return {
-           success: false,
-           error: (errorData?.error as string) || 'SessionExpired',
-           message: (errorData?.message as string) || 'Session expired. Please sign in again.',
-          // fieldErrors: errorData?.fieldErrors //as Record<string, string[]> | undefined, //401 is not a field error
+            success: false,
+            error: (errorData?.error as string) || 'SessionExpired',
+            message:
+              (errorData?.message as string) ||
+              'Session expired. Please sign in again.',
           };
         }
 
@@ -406,8 +423,12 @@ const handleSignOut = async () => {
           return {
             success: false,
             error: (errorData?.error as string) || 'InvalidCurrentPassword',
-            message: (errorData?.message as string) || 'Current password is incorrect.',
-            fieldErrors: errorData?.fieldErrors as Record<string, string[]> | undefined,
+            message:
+              (errorData?.message as string) ||
+              'Current password is incorrect.',
+            fieldErrors: errorData?.fieldErrors as
+              | Record<string, string[]>
+              | undefined,
           };
         }
 
@@ -416,20 +437,28 @@ const handleSignOut = async () => {
           return {
             success: false,
             error: (errorData?.error as string) || 'RateLimitExceeded',
-            message: (errorData?.message as string) || 'Too many attempts. Please try again later.',
-            fieldErrors: errorData?.fieldErrors as Record<string, string[]> | undefined,
+            message:
+              (errorData?.message as string) ||
+              'Too many attempts. Please try again later.',
+            fieldErrors: errorData?.fieldErrors as
+              | Record<string, string[]>
+              | undefined,
             retryAfter: errorData?.retryAfter as number | undefined,
           };
         }
 
         // 🧪 400 - VALIDATION ERROR
         if (status === 400) {
-          const details = errorData?.details as Record<string, unknown> | undefined;//detials is legacy
+          const details = errorData?.details as
+            | Record<string, unknown>
+            | undefined; //detials is legacy
           return {
             success: false,
             error: (errorData?.error as string) || 'ValidationError',
             message: (errorData?.message as string) || 'Invalid input data.',
-            fieldErrors: (details?.fieldErrors as Record<string, string[]>) || errorData?.fieldErrors as Record<string, string[]> | undefined,
+            fieldErrors:
+              (details?.fieldErrors as Record<string, string[]>) ||
+              (errorData?.fieldErrors as Record<string, string[]> | undefined),
           };
         }
 
@@ -437,8 +466,12 @@ const handleSignOut = async () => {
         return {
           success: false,
           error: (errorData?.error as string) || 'ChangePasswordFailed',
-          message: (errorData?.message as string) || 'Failed to change password due to server error.',
-          fieldErrors: errorData?.fieldErrors as Record<string, string[]> | undefined,
+          message:
+            (errorData?.message as string) ||
+            'Failed to change password due to server error.',
+          fieldErrors: errorData?.fieldErrors as
+            | Record<string, string[]>
+            | undefined,
         };
       }
 
@@ -469,38 +502,45 @@ const handleSignOut = async () => {
     setIsLoading(true);
 
     try {
-      const response = await authFetch<ProfileUpdateResponseType>(url_update_user, {
-        method: 'PATCH',
-        data: payload,
-      });
+      const response = await authFetch<ProfileUpdateResponseType>(
+        url_update_user,
+        {
+          method: 'PATCH',
+          data: payload,
+        },
+      );
 
       if (response.data.success) {
-      // 1️⃣ Get current store state before updating
-      const currentUserData = useAuthStore.getState().userData;
+        // 1️⃣ Get current store state before updating
+        const currentUserData = useAuthStore.getState().userData;
 
-      // 2️⃣ Map response
-      const mappedNewData = mapUserResponseToUserData((response.data).user);
+        // 2️⃣ Map response
+        const mappedNewData = mapUserResponseToUserData(response.data.user);
 
-      if (!mappedNewData || typeof mappedNewData !== 'object') {
-      console.error("❌ Invalid user data from backend:", response.data.user);
+        if (!mappedNewData || typeof mappedNewData !== 'object') {
+          console.error(
+            '❌ Invalid user data from backend:',
+            response.data.user,
+          );
 
-      throw new Error("Invalid user data from backend");
-}
+          throw new Error('Invalid user data from backend');
+        }
 
-      // 3️⃣ ATOMIC MERGE
-      //safeMergeUser get the current store state and merge it with api response
-      const finalUserData = safeMergeUser(currentUserData, mappedNewData);
-   
-      setUserData(finalUserData);
+        // 3️⃣ ATOMIC MERGE
+        //safeMergeUser get the current store state and merge it with api response
+        const finalUserData = safeMergeUser(currentUserData, mappedNewData);
 
-      setSuccessMessage(response.data.message || 'Profile updated successfully');
+        setUserData(finalUserData);
+
+        setSuccessMessage(
+          response.data.message || 'Profile updated successfully',
+        );
 
         return response.data;
       }
 
-     setError(response.data.message);
-     return response.data;
-
+      setError(response.data.message);
+      return response.data;
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response) {
         const { status, data } = err.response;
@@ -522,18 +562,24 @@ const handleSignOut = async () => {
           return {
             success: false,
             error: (errorData?.error as string) || 'RateLimitExceeded',
-            message: (errorData?.message as string) || 'Too many requests. Please try again later.',
+            message:
+              (errorData?.message as string) ||
+              'Too many requests. Please try again later.',
             retryAfter: errorData?.retryAfter as number | undefined,
           };
         }
 
         // 🧪 400 - Validation error
         if (status === 400) {
-          const details = errorData?.details as Record<string, unknown> | undefined;
+          const details = errorData?.details as
+            | Record<string, unknown>
+            | undefined;
           return {
             success: false,
             error: (errorData?.message as string) || 'Invalid data provided',
-            fieldErrors: details?.fieldErrors as Record<string, string[]> | undefined,
+            fieldErrors: details?.fieldErrors as
+              | Record<string, string[]>
+              | undefined,
           };
         }
       }
@@ -541,7 +587,6 @@ const handleSignOut = async () => {
       const errorMessage = extractErrorMessage(err) || 'Error updating profile';
       setError(errorMessage);
       return { success: false, error: errorMessage };
-
     } finally {
       setIsLoading(false);
     }
@@ -565,7 +610,7 @@ const handleSignOut = async () => {
     handleSignUp,
     handleSignOut,
     handleUpdateUserProfile,
-    handleDomainChangePassword,  // ✅Only source of truth of password changing
+    handleDomainChangePassword, // ✅Only source of truth of password changing
 
     // UI Control Actions
     clearError,
