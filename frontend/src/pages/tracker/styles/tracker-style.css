@@ -414,7 +414,7 @@ textarea:invalid {
 }
 @media (max-height: 800px) {
   /* ---------- NOTE SECTION ---------- */
-  /* Note from 3 to 2 lineas visual */
+  /* Note from 3 to 2 lines visual */
   .input__note__description {
     max-height: 2.4rem;
     overflow-y: auto;
