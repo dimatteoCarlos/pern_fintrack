@@ -49,7 +49,7 @@ export const basicAccountConfig:FieldConfigType[] = [
    inputType: 'textarea',
    isEditable: true,
    isRequired: false,
-   placeholder: 'Add any relevant note (max 150 chars)',
+   placeholder: 'Add any relevant note (max 90 chars)',
   },
  ]
 //=====================================
@@ -132,7 +132,7 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
     inputType: 'textarea',
     isEditable: true,
     isRequired: false,
-    placeholder: 'Max 150 chars',
+    placeholder: 'Max 90 chars',
    },
  ],
  
@@ -171,7 +171,7 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
       inputType: 'textarea',
       isEditable: true,
       isRequired: true,
-      placeholder: 'Max 150 chars',
+      placeholder: 'Max 90 chars',
      },
   ],
 
@@ -218,7 +218,7 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
   inputType: 'textarea',
   isEditable: true,
   isRequired: false,
-  placeholder: 'Max 150 chars',
+  placeholder: 'Max 90 chars',
   },
  ],
 };
