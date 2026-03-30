@@ -48,9 +48,9 @@ import CategoryAccountList from './fintrack/pages/forms/categoryDetail/CategoryA
 import CategoryDetail from './fintrack/pages/forms/categoryDetail/CategoryDetail.tsx';
 
 //🚀 ACTIONS FOR ACCOUNT EDITION/DELETION
-import EditAccount from './editionAndDeletion/pages/editionAccount/EditAccount.tsx';
+import EditAccount from './fintrack/editionAndDeletion/pages/editionAccount/EditAccount.tsx';
 
-import { AccountDeletionPage } from './editionAndDeletion/pages/deletionAccount/AccountDeletionPage.tsx';
+import { AccountDeletionPage } from './fintrack/editionAndDeletion/pages/deletionAccount/AccountDeletionPage.tsx';
 
 // ❌ ERROR HANDLING
 import ErrorPage from './fintrack/pages/error/ErrorPage.tsx';
