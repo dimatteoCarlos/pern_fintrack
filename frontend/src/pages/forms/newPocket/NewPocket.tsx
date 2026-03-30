@@ -5,11 +5,11 @@ import { Link, useLocation } from 'react-router-dom';
 import '../styles/forms-styles.css';
 
 // 🛠️ CUSTOM HOOKS & UTILITIES
-import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import useInputNumberHandler from '../../../fintrack/hooks/useInputNumberHandler.ts';
+import { useFetchLoad } from '../../../fintrack/hooks/useFetchLoad.ts';
 import useAuth from '../../../auth/hooks/useAuth.ts';
-import { validationData } from '../../../validations/utils/custom_validation.ts';
-import { normalizeError } from '../../../helpers/normalizeError.ts';
+import { validationData } from '../../../fintrack/validations/utils/custom_validation.ts';
+import { normalizeError } from '../../../fintrack/helpers/normalizeError.ts';
 
 // 📦 COMPONENTS
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
@@ -21,13 +21,16 @@ import { MessageToUser } from '../../../general_components/messageToUser/Message
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
 
 // 🏷️ TYPES & CONSTANTS
-import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
-import { CreatePocketSavingAccountApiResponseType } from '../../../types/responseApiTypes.ts';
-import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import {
+  CurrencyType,
+  FormNumberInputType,
+} from '../../../fintrack/types/types.ts';
+import { CreatePocketSavingAccountApiResponseType } from '../../../fintrack/types/responseApiTypes.ts';
+import { DEFAULT_CURRENCY } from '../../../fintrack/helpers/constants.ts';
 
 // 🏷️ ENPOINTS
 import { url_create_pocket_saving_account } from '../../../endpoints.ts';
-import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
+import { NAME_MAX_LENGTHS } from '../../../fintrack/validations/inputConstraints/nameMaxLengths.ts';
 import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 // 📋 TYPE DEFINITIONS

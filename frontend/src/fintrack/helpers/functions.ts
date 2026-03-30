@@ -15,15 +15,15 @@ import { CurrencyType, StatusType } from '../types/types';
 import { DATE_TIME_FORMAT_DEFAULT } from './constants';
 export function currencyFormat(
   chosenCurrency = 'USD',
-  number = 0, 
-  countryFormat = 'en-US'
+  number = 0,
+  countryFormat = 'en-US',
 ) {
   // console.log('currency', chosenCurrency)
   const formatFn = new Intl.NumberFormat(countryFormat, {
     style: 'currency',
     currency: chosenCurrency,
-     minimumFractionDigits: 0, // Establece un mínimo de 0 decimales
-     maximumFractionDigits: 1
+    minimumFractionDigits: 0, // Establece un mínimo de 0 decimales
+    maximumFractionDigits: 1,
   });
   return formatFn.format(number);
 }
@@ -32,7 +32,8 @@ export function getCurrencySymbol(chosenCurrency = 'USD') {
   try {
     // Creamos un formateador de números específicamente para extraer el símbolo.
     // Usamos 'narrowSymbol' para obtener la forma más corta del símbolo (ej. $ en lugar de US$).
-    const formatter = new Intl.NumberFormat(undefined, { // 'undefined' usa la configuración regional por defecto del navegador/servidor
+    const formatter = new Intl.NumberFormat(undefined, {
+      // 'undefined' usa la configuración regional por defecto del navegador/servidor
       style: 'currency',
       currency: chosenCurrency,
       currencyDisplay: 'narrowSymbol',
@@ -48,11 +49,13 @@ export function getCurrencySymbol(chosenCurrency = 'USD') {
     // Si el símbolo resultante es una cadena vacía o es el mismo código de moneda
     // (lo que ocurre si no hay un símbolo único para esa moneda en esa configuración regional),
     // se devuelve el código de la moneda original como un fallback.
-    if (symbol === '' || symbol.toUpperCase() === chosenCurrency.toUpperCase()) {
+    if (
+      symbol === '' ||
+      symbol.toUpperCase() === chosenCurrency.toUpperCase()
+    ) {
       return chosenCurrency;
     }
     return symbol;
-
   } catch (error) {
     // En caso de que la moneda no sea válida o haya algún otro error,
     // devolvemos el código de la moneda como fallback.
@@ -76,28 +79,32 @@ type OptionType = {
  * @param CURRENCY_OPTIONS The source object of currencies and locales.
  * @returns A formatted array of options.
  */
-export function generateCurrencyOptions(CURRENCY_OPTIONS: CurrencyLocales): OptionType[] {
-// Empieza con la opción por defecto
+export function generateCurrencyOptions(
+  CURRENCY_OPTIONS: CurrencyLocales,
+): OptionType[] {
+  // Empieza con la opción por defecto
   const options: OptionType[] = [{ value: '', label: 'Select currency' }];
 
   // Itera sobre las claves del objeto de entrada
-  Object.keys(CURRENCY_OPTIONS).forEach(currencyCode => {
+  Object.keys(CURRENCY_OPTIONS).forEach((currencyCode) => {
     // Para construir un label más descriptivo: "USD - US Dollar"
     // Usamos el API nativo de Intl.DisplayNames (Estándar 2026)
     try {
       const locale = CURRENCY_OPTIONS[currencyCode];
       // Nota: Intl.DisplayNames es compatible con la mayoría de navegadores modernos
-      const currencyName = new Intl.DisplayNames([locale], { type: 'currency' }).of(currencyCode.toUpperCase());
-      
+      const currencyName = new Intl.DisplayNames([locale], {
+        type: 'currency',
+      }).of(currencyCode.toUpperCase());
+
       options.push({
         value: currencyCode, // 'usd'
-        label: `${currencyCode.toUpperCase()} - ${currencyName}` // 'USD - US Dollar'
+        label: `${currencyCode.toUpperCase()} - ${currencyName}`, // 'USD - US Dollar'
       });
     } catch (error) {
       // Fallback si el API de Intl falla (navegadores muy viejos)
-       options.push({
+      options.push({
         value: currencyCode,
-        label: `${currencyCode.toUpperCase()}`
+        label: `${currencyCode.toUpperCase()}`,
       });
     }
   });
@@ -151,7 +158,7 @@ export function genericToggle({ currentOpc, opc1, opc2, opc3 }: OpcType) {
 //-------------------------
 export function numberFormat(
   x: number | string,
-  formatNumberCountry: string = 'en-US'
+  formatNumberCountry: string = 'en-US',
 ): string {
   // Convertir la entrada a número. Si no es válido, devolver una cadena vacía.
   const enteredNumber = parseFloat(x.toString());
@@ -212,10 +219,10 @@ export function isValidCurrencyCode(currency: string): boolean {
 //-----------------------
 // Función para formatear números con soporte opcional de moneda y decimales
 export function numberFormatCurrency(
-  x: number | string=0,
+  x: number | string = 0,
   decimals: number = 2, // Argumento opcional para el número de decimales (predeterminado: 2)
   currency?: string, // Argumento opcional para la moneda
-  formatNumberCountry: string = 'en-US'
+  formatNumberCountry: string = 'en-US',
 ): string {
   // Convertir la entrada a número. Si no es válido, devolver una cadena vacía.
   const enteredNumber = parseFloat(String(x));
@@ -267,7 +274,7 @@ export function showDate(date: Date, countryFormat = DATE_TIME_FORMAT_DEFAULT) {
 // };
 //-------------------------
 export function isDateValid(
-  dateStr: Date | string | number | undefined | null
+  dateStr: Date | string | number | undefined | null,
 ) {
   if (dateStr === null || dateStr === undefined) {
     return false;
@@ -285,8 +292,12 @@ export function isDateValid(
 // La API devuelve las fechas en formato ISO 8601, y el frontend las convierte al formato dd-mm-yyyy para mostrarlas al usuario
 
 // Función para convertir de ISO 8601 a dd-mm-yyyy en el frontend
-export const formatDateToDDMMYYYY = (isoDate:Date | string | undefined | null) => {
-  if(!isoDate){return "not a valid date"}
+export const formatDateToDDMMYYYY = (
+  isoDate: Date | string | undefined | null,
+) => {
+  if (!isoDate) {
+    return 'not a valid date';
+  }
   const date = new Date(isoDate);
   const day = String(date.getUTCDate()).padStart(2, '0');
   const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Los meses son base 0
@@ -294,36 +305,42 @@ export const formatDateToDDMMYYYY = (isoDate:Date | string | undefined | null) =
   return `${day}-${month}-${year}`;
 };
 // Formateador de fecha (DD/MM/YYYY HH:MM)
-export const formatDate = (date:Date | string ) => 
-    new Date(date).toLocaleString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+export const formatDate = (date: Date | string) =>
+  new Date(date).toLocaleString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
 //-----------------------
-export function capitalize(text: string| undefined): string {
-   if(!text){return ""}
+export function capitalize(text: string | undefined): string {
+  if (!text) {
+    return '';
+  }
   // 1. Convertimos todo a minúsculas
   const lower = text.toLowerCase();
 
   // 2. Capitalizamos la primera letra del texto y después de cada punto + espacio
-  const capitalized = lower.replace(/(^\w)|(\. \w)|(\.\w)/g, match => match.toUpperCase());
+  const capitalized = lower.replace(/(^\w)|(\. \w)|(\.\w)/g, (match) =>
+    match.toUpperCase(),
+  );
 
   return capitalized;
 }
 
 export function capitalize1(word: string | undefined) {
-    if(!word){return ""}
+  if (!word) {
+    return '';
+  }
 
-  return word? word.charAt(0).toUpperCase() + word.slice(1):'';
+  return word ? word.charAt(0).toUpperCase() + word.slice(1) : '';
 }
 //----------------
-export const truncateText = ( 
+export const truncateText = (
   textContent: string = '',
-  maxLength: number = 255
+  maxLength: number = 255,
 ) => {
   if (textContent.length > maxLength) {
     textContent = textContent.slice(0, maxLength) + '...';
@@ -335,7 +352,7 @@ export const truncateText = (
 //is necessary to adapt the alert to the business rule to use
 export const statusFn = (
   budget: number = 100,
-  spent: number = 100
+  spent: number = 100,
 ): StatusType => {
   //Definir reglas de negocios para los semaforos
   const diff = budget - spent;

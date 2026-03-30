@@ -1,10 +1,10 @@
-import  { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 // import  { AxiosResponse } from 'axios';
 import {
   BalancePocketRespType,
   FinancialDataRespType,
   LastMovementRespType,
-} from '../../types/responseApiTypes';
+} from '../../fintrack/types/responseApiTypes';
 import { ApiRespDataType } from './Overview';
 import { authFetch } from '../../auth/auth_utils/authFetch';
 // import { FinancialResultType } from './CalculateMonthlyAverage';
@@ -87,17 +87,19 @@ function isBalancePocketRespType(data: any): data is BalancePocketRespType {
 // Función que recibe un array de endpoints y retorna los datos de todos
 //[K in KPIKeyType] es una mapped type de TypeScript.
 export async function overviewFetchAll(
-  endpoints: EndpointItemType<KPIKeyType>[]
+  endpoints: EndpointItemType<KPIKeyType>[],
 ): Promise<{ [K in KPIKeyType]: FetchResult<ApiRespDataType[K]> }> {
   // const promises = endpoints.map((endpoint) => axios.get(endpoint.url));
 
-  const promises = endpoints.map((endpoint) => authFetch<ApiRespDataType[KPIKeyType]>(endpoint.url));
+  const promises = endpoints.map((endpoint) =>
+    authFetch<ApiRespDataType[KPIKeyType]>(endpoint.url),
+  );
   // const promises = endpoints.map((endpoint) => axios.get(endpoint.url));
-  
+
   // Espera a que todas las promesas terminen, sean exitosas o no
   const settledResults = await Promise.allSettled(promises);
   // console.log('🚀 ~ settledResults:', settledResults);
-   //[status, value.data.data.monthlyAmounts[{amount, ...},...]]
+  //[status, value.data.data.monthlyAmounts[{amount, ...},...]]
 
   // console.log(
   //   'Endpoint keys:',
@@ -135,26 +137,27 @@ export async function overviewFetchAll(
       ) {
         results[endpoint.key] = { status: 'success', data };
       } else if (
-        ( endpoint.key === 'MovementExpenseTransactions' ||
-          endpoint.key === 'MovementDebtTransactions' ||
-          endpoint.key === 'MovementIncomeTransactions') ||
-          endpoint.key === 'MovementPocketTransactions'||
-          endpoint.key === 'MovementInvestmentTransactions'
-          || 
-          endpoint.key === 'MovementPnLTransactions'
-          &&
-        isLastMovementRespType(data)
+        endpoint.key === 'MovementExpenseTransactions' ||
+        endpoint.key === 'MovementDebtTransactions' ||
+        endpoint.key === 'MovementIncomeTransactions' ||
+        endpoint.key === 'MovementPocketTransactions' ||
+        endpoint.key === 'MovementInvestmentTransactions' ||
+        (endpoint.key === 'MovementPnLTransactions' &&
+          isLastMovementRespType(data))
       ) {
-        results[endpoint.key] = { status: 'success', data:data as LastMovementRespType };
+        results[endpoint.key] = {
+          status: 'success',
+          data: data as LastMovementRespType,
+        };
       }
     } else {
       results[endpoint.key] = {
         status: 'error',
         error: result.reason as AxiosError,
-         };
+      };
       console.error('❌ Error response:', result.reason.response);
     }
   }
-// console.log('📊 Final results object:', results);
+  // console.log('📊 Final results object:', results);
   return results;
 }

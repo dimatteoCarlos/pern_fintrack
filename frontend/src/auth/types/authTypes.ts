@@ -1,6 +1,6 @@
 //frontend/src/auth/types/authTypes.ts
 
-import { CurrencyType } from "../../types/types";
+import { CurrencyType } from '../../fintrack/types/types';
 
 //used in: AuthUI.tsx, useAuth.ts
 export type CredentialsType = {
@@ -9,14 +9,14 @@ export type CredentialsType = {
   user_firstname: string;
   user_lastname: string;
   password: string;
-  confirmPassword?:string;
+  confirmPassword?: string;
 };
 
-export type SignInCredentialsType= {
+export type SignInCredentialsType = {
   username: string;
   email: string;
   password: string;
-}
+};
 // export interface SignUpCredentialsType extends SignInCredentialsType {
 //   user_firstname: string;
 //   user_lastname: string;
@@ -26,22 +26,22 @@ export type SignInCredentialsType= {
 export type SignUpCredentialsType = SignInCredentialsType & {
   user_firstname: string;
   user_lastname: string;
-  confirmPassword:string;
-}
+  confirmPassword: string;
+};
 
 // ===============
 // 🏪 STORE TYPES
 // ===============
 //--useAuthStoreTypes
-export type AuthStoreStateType<U> ={
- // 🔐 Authentication state
+export type AuthStoreStateType<U> = {
+  // 🔐 Authentication state
   isAuthenticated: boolean;
   setIsAuthenticated: (isAuthenticated: boolean) => void;
 
- // 👤 User data 
+  // 👤 User data
   userData: U | null;
 
- // ⏳ Loading states 
+  // ⏳ Loading states
   isLoading: boolean;
   setIsLoading: (isLoading: boolean) => void;
 
@@ -58,17 +58,16 @@ export type AuthStoreStateType<U> ={
   successMessage: string | null;
   setSuccessMessage: (successMessage: string | null) => void;
   clearSuccessMessage: () => void;
-
-}
+};
 
 //backend data response type. Common for all auth responses, as for Sign-in,Sign-up and refresh token
-export type AuthSuccessResponseType  = {
+export type AuthSuccessResponseType = {
   message: string;
-  accessToken: string;      // Siempre presente en login/register/refresh
+  accessToken: string; // Siempre presente en login/register/refresh
   user: UserResponseDataType;
-  expiresIn: number;     
+  expiresIn: number;
 };
-// If SignIn and SignUp use the same structure then: 
+// If SignIn and SignUp use the same structure then:
 // export type SignInResponseType = AuthSuccessResponse;
 // export type SignUpResponseType = AuthSuccessResponse;
 
@@ -91,48 +90,47 @@ export type AuthSuccessResponseType  = {
 // export type DataRespType ={user: UserResponseDataType;
 //   userAccess: string;}//R: checi if it's usable
 
-// =====================  
+// =====================
 // 👤 USER TYPES / TIPOS DE USUARIO
-// =====================  
-export type UserResponseDataType ={
+// =====================
+export type UserResponseDataType = {
   user_id: string;
   username: string;
   email: string;
   user_firstname: string;
   user_lastname: string;
-  role:string;
+  role: string;
   currency: CurrencyType;
-  user_contact:string | null;
-}
+  user_contact: string | null;
+};
 
 //input type user info
 // export type UserDataType = Partial<UserResponseDataType>
-export type UserDataType = 
-{
- user_id: string ;//| null;
- username: string;
- email: string;
- user_firstname: string;
- user_lastname: string;
- currency: CurrencyType;    
- role: string;  
- contact:string | null;
+export type UserDataType = {
+  user_id: string; //| null;
+  username: string;
+  email: string;
+  user_firstname: string;
+  user_lastname: string;
+  currency: CurrencyType;
+  role: string;
+  contact: string | null;
 };
 //-------------------------------
 //sign-in
-export type SignInResponseType ={
- message: string;
- accessToken: string;
- user: UserResponseDataType;
- expiresIn: number;
-}
+export type SignInResponseType = {
+  message: string;
+  accessToken: string;
+  user: UserResponseDataType;
+  expiresIn: number;
+};
 
 //authRefreshToken refresh-token
 //R: chek if it's usable
 // export interface AuthRefreshTokenResponseType {
 //   message: string;
 //   user: RefreshTokenUserInfoType | { [key: string]: string };
-//   expiresIn?: number; 
+//   expiresIn?: number;
 // }
 //R: chek if it's usable
 // export interface RefreshTokenUserInfoType {
@@ -146,9 +144,10 @@ export type SignInResponseType ={
 // }
 
 // Define the success response format for the frontend
-export interface SuccessResponseType<T> { // Make SuccessResponse generic
-  message: string;    // Success message
-  data?: T;         // Optional: Response data, now of type T
+export interface SuccessResponseType<T> {
+  // Make SuccessResponse generic
+  message: string; // Success message
+  data?: T; // Optional: Response data, now of type T
   accessToken?: string; // Optional: Access token
   refreshToken?: string; // Optional: Refresh token
 }
@@ -157,51 +156,51 @@ export interface SuccessResponseType<T> { // Make SuccessResponse generic
 // 🚨 USER PROFILE UPDATE AND PASSWORD CHANGE
 // ===============
 
-export type UpdateProfileFormDataType ={
+export type UpdateProfileFormDataType = {
   firstname: string;
   lastname: string;
   currency: CurrencyType;
   contact: string | null;
-}
+};
 
-export type UpdateProfileResponseUserType={
- user_id: string ;
- username: string ;
- email: string;
- user_firstname: string;
- user_lastname: string;
- user_contact: string ;
- currency_id: number ;
- currency:CurrencyType;
- role:string;
-}
+export type UpdateProfileResponseUserType = {
+  user_id: string;
+  username: string;
+  email: string;
+  user_firstname: string;
+  user_lastname: string;
+  user_contact: string;
+  currency_id: number;
+  currency: CurrencyType;
+  role: string;
+};
 // ===============
 // 🚨 ERROR TYPES
 // ===============
 //Error format backend response
 export type ErrorResponseType = {
- status: number;      //  HTTP status code
-  error:string;
-  message: string;    //  Descriptive error messager
-  details?:{
-   fieldErrors?:Record<string,string[]>;
-   formErrors?:string[];
-  }
-//  Detailed error information optional
-  timestamp?: string;  // Timestamp of the error (opcional)
-}
-
-export type AuthErrorType = 
-  | { type: 'validation'; fieldErrors: Record<string, string[]>; }
-  | { type: 'rate_limit'; retryAfter: number; }
-  | { type: 'session_expired'; }
-  | { type: 'network'; message: string; };
-
-export type FormErrorsType<TFieldName extends string> =
-  Partial<Record<TFieldName, string>> & {
-    form?: string;
+  status: number; //  HTTP status code
+  error: string;
+  message: string; //  Descriptive error messager
+  details?: {
+    fieldErrors?: Record<string, string[]>;
+    formErrors?: string[];
   };
+  //  Detailed error information optional
+  timestamp?: string; // Timestamp of the error (opcional)
+};
 
+export type AuthErrorType =
+  | { type: 'validation'; fieldErrors: Record<string, string[]> }
+  | { type: 'rate_limit'; retryAfter: number }
+  | { type: 'session_expired' }
+  | { type: 'network'; message: string };
+
+export type FormErrorsType<TFieldName extends string> = Partial<
+  Record<TFieldName, string>
+> & {
+  form?: string;
+};
 
 //-----------------------------------
 //ALIGN BE AND FE
@@ -220,28 +219,28 @@ export type FormErrorsType<TFieldName extends string> =
  refs: ChangePasswordContainer, useAuth, useChangePasswordFromLogic, 
  */
 export type ChangePasswordResultType =
- | {
-     success: true;
-     message: string;
-   }
- | {
-     success: false;
-     error: string;
-     message: string;
-     fieldErrors?: Record<string, string[]>; // ✅ Matches backend: Record<string, string[]>
-     retryAfter?: number;
-   };
+  | {
+      success: true;
+      message: string;
+    }
+  | {
+      success: false;
+      error: string;
+      message: string;
+      fieldErrors?: Record<string, string[]>; // ✅ Matches backend: Record<string, string[]>
+      retryAfter?: number;
+    };
 
 /**
 * 📝 Change Password Form Data
 * Defines the strict structure for password update fields
 ref: ChangePasswordContainer.tsx, ChangePasswordForm.tsx, useChangePasswordFormLogic.ts, useChangePasswordValidation.ts
 */
-export type ChangePasswordFormDataType={
- currentPassword:string;
- newPassword:string;
- confirmPassword:string;
-}
+export type ChangePasswordFormDataType = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
 
 // 1️⃣ Success response
 // 2️⃣ API Raw Responses (Matching BE Middleware)
@@ -260,7 +259,7 @@ export type ChangePasswordErrorResponse = {
   //   formErrors?: string[];
   // };
   fieldErrors?: Record<string, string[]>; // Fallback para otros middlewares
-  retryAfter?: number;        // Capturado por el limiter antes del validador
+  retryAfter?: number; // Capturado por el limiter antes del validador
 };
 
 // 2️⃣ Generic failure
@@ -297,11 +296,10 @@ export type ChangePasswordResponseType =
       retryAfter?: number;
     };
 
-
 //-----------------------------------
 //ALIGN BE AND FE
 //UPDATE USER PROFILE
-//used: useAuth.ts, 
+//used: useAuth.ts,
 // 🎯 INPUT (PATCH payload)
 export type ProfileUpdatePayloadType = Partial<{
   firstname: string;
@@ -319,14 +317,14 @@ export type NormalizedProfileUpdateResultType = {
   // fieldErrors: Record<string, string>;
   fieldErrors?: Record<string, string[] | string>;
   message?: string;
-  retryAfter?:number;
+  retryAfter?: number;
   sessionExpired?: boolean;
 };
 
 // 🎯 UNION RESPONSE
 export type ProfileUpdateSuccessResponseType = {
   success: true;
-  user: UpdateProfileResponseUserType//UserDataType;        // <-- aquí debe estar
+  user: UpdateProfileResponseUserType; //UserDataType;        // <-- aquí debe estar
   message?: string;
 };
 
@@ -335,9 +333,8 @@ export type ProfileUpdateErrorResponseType = {
   error: string;
   message: string;
   fieldErrors?: Record<string, string>;
-  retryAfter?:number;
+  retryAfter?: number;
 };
-
 
 // ===============================
 // 🆔 USER IDENTITY FOR PERSISTENCE
@@ -345,34 +342,32 @@ export type ProfileUpdateErrorResponseType = {
 
 /**
  * 🎯 User identity stored in localStorage for UX convenience
- * 
+ *
  * 🔒 SECURITY NOTES:
  * - Only used for pre-filling login forms
  * - NEVER contains tokens, passwords, or sensitive data
  * - Backend NEVER trusts this data
  * - Pure UX optimization
-*/
+ */
 export type UserIdentityType = {
- /** 👤 User's email for login form pre-fill */
- email: string;
- 
- /** 👤 User's username for login form pre-fill */
- username: string;
- 
- /** ✅ Whether user wants to be remembered */
- rememberMe: boolean;
-}; 
+  /** 👤 User's email for login form pre-fill */
+  email: string;
+
+  /** 👤 User's username for login form pre-fill */
+  username: string;
+
+  /** ✅ Whether user wants to be remembered */
+  rememberMe: boolean;
+};
 
 // ===============================
 // 🆔 UI STATE STORE TYPE
 // ===============================
-export type AuthUIStateType = 
+export type AuthUIStateType =
   | 'IDLE'
   | 'SESSION_EXPIRED'
   | 'REMEMBERED_VISITOR'
   | 'PASSWORD_CHANGED';
-
-  
 
 // ===============================
 // 📦 EXPORTS (existing)

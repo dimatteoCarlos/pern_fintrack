@@ -1,4 +1,9 @@
-import { AccountListType, PocketListType, PocketSavingAccountListType, TransactionsAccountApiResponseType } from '../types/responseApiTypes';
+import {
+  AccountListType,
+  PocketListType,
+  PocketSavingAccountListType,
+  TransactionsAccountApiResponseType,
+} from '../types/responseApiTypes';
 import {
   AccountingListType,
   CurrencyType,
@@ -10,18 +15,21 @@ import {
 export const PAGE_LOC_NUM = 3;
 //-------------------------
 //useAuth.ts
-export const INITIAL_PAGE_ADDRESS = '/fintrack/tracker/expense'
-export const LOCAL_STORAGE_KEY = {REMEMBER_ME :'fintrack_remember_me',USER_DATA:'fintrack_user_data'};
+export const INITIAL_PAGE_ADDRESS = '/fintrack/tracker/expense';
+export const LOCAL_STORAGE_KEY = {
+  REMEMBER_ME: 'fintrack_remember_me',
+  USER_DATA: 'fintrack_user_data',
+};
 //-------------------------
 export const CURRENCY_OPTIONS = { usd: 'en-US', cop: 'cop-CO', eur: 'en-US' };
 
-export const  SELECT_CURRENCY_OPTIONS = [
+export const SELECT_CURRENCY_OPTIONS = [
   { value: 'usd', label: 'USD - US Dollar' },
   { value: 'eur', label: 'EUR - Euro' },
-  { value: 'cop', label: 'COP - Colombian Peso' }
+  { value: 'cop', label: 'COP - Colombian Peso' },
 ];
 
-export const DEFAULT_CURRENCY:CurrencyType = 'usd';
+export const DEFAULT_CURRENCY: CurrencyType = 'usd';
 
 export const DATE_TIME_FORMAT_DEFAULT = 'es-ES';
 
@@ -39,7 +47,6 @@ export const ACCOUNT_OPTIONS_DEFAULT = [
 ];
 
 export const CATEGORY_OPTIONS_DEFAULT = [
-
   // { value: 'category_01', label: 'Category/SubCategory' },
   // { value: 'category_02', label: 'Category_02 / SubCategory 02' },
   // { value: 'category_03', label: 'Category_03 / SubCategory 03' },
@@ -47,7 +54,6 @@ export const CATEGORY_OPTIONS_DEFAULT = [
 
 //tracker/income
 export const INCOME_OPTIONS_DEFAULT = [
-
   // { value: 'account_01', label: 'Account_01' },
   // { value: 'account_02', label: 'Account_02' },
   // { value: 'account_03', label: 'Account_03' },
@@ -55,7 +61,6 @@ export const INCOME_OPTIONS_DEFAULT = [
 ];
 
 export const SOURCE_OPTIONS_DEFAULT = [
-
   // { value: 'source_01', label: 'source_01' },
   // { value: 'source_02', label: 'source_02' },
   // { value: 'source_03', label: 'source_03' },
@@ -71,7 +76,7 @@ export const INVESTMENT_ACCOUNT_OPTIONS_DEFAULT = [
 ];
 
 //tracker/debts
-export const DEBTOR_OPTIONS_DEFAULT:DropdownOptionType[] = [];
+export const DEBTOR_OPTIONS_DEFAULT: DropdownOptionType[] = [];
 
 export const DEFAULT_DEBTOR_TYPE = 'lending';
 
@@ -99,7 +104,7 @@ export const ACCOUNT_TYPE_DEFAULT: DropdownOptionType[] = [
 //overview/
 //account balance
 
-export const ACCOUNT_DEFAULT:AccountListType[] = [
+export const ACCOUNT_DEFAULT: AccountListType[] = [
   {
     account_name: '',
     // concept: 'balance',
@@ -108,8 +113,8 @@ export const ACCOUNT_DEFAULT:AccountListType[] = [
     currency_code: DEFAULT_CURRENCY,
     account_type_name: '',
     account_type_id: 0,
-    account_starting_amount:0,
-    account_start_date:'',
+    account_starting_amount: 0,
+    account_start_date: '',
   },
 
   // {
@@ -134,98 +139,100 @@ export const ACCOUNT_DEFAULT:AccountListType[] = [
   //       account_starting_amount:0,
   //    account_start_date:new Date()
   // },
-  
 ];
 
 //pages/budget/ListPocket.tsx
 //just a DEMO
 export const DEFAULT_POCKET_LIST: PocketListType[] = [
- {
-  account_id: Infinity,
-  account_name: '',
-  note: '',
-  balance: 0,
-  target: 0,
-  currency_code:DEFAULT_CURRENCY,
-  desired_date:new Date(),
-  account_start_date:new Date(),
-        },
-    // {
-    // account_name: 'pocket name example',
-    // note: 'note example',
-    // balance: 0,
-    // target:140,
-    // currency_code:DEFAULT_CURRENCY,
-    // account_id: 1,
-    // desired_date:new Date(),
-    //     account_start_date:new Date()
-    //       }
-        ];
+  {
+    account_id: Infinity,
+    account_name: '',
+    note: '',
+    balance: 0,
+    target: 0,
+    currency_code: DEFAULT_CURRENCY,
+    desired_date: new Date(),
+    account_start_date: new Date(),
+  },
+  // {
+  // account_name: 'pocket name example',
+  // note: 'note example',
+  // balance: 0,
+  // target:140,
+  // currency_code:DEFAULT_CURRENCY,
+  // account_id: 1,
+  // desired_date:new Date(),
+  //     account_start_date:new Date()
+  //       }
+];
 
-   export const DEFAULT_POCKET_ACCOUNT_LIST  :   PocketSavingAccountListType[]=[
-    {
+export const DEFAULT_POCKET_ACCOUNT_LIST: PocketSavingAccountListType[] = [
+  {
     account_id: Infinity,
     account_name: '',
     note: '',
     account_balance: 0,
     target: 0,
-    currency_code:DEFAULT_CURRENCY,
-    desired_date:new Date(),
-    account_start_date:new Date(),
-    account_type_id:Infinity,
-    account_type_name:'pocket_saving',
-    user_id:''
-          },
-        ];
+    currency_code: DEFAULT_CURRENCY,
+    desired_date: new Date(),
+    account_start_date: new Date(),
+    account_type_id: Infinity,
+    account_type_name: 'pocket_saving',
+    user_id: '',
+  },
+];
 
 //account detail transactions
-export const DEFAULT_ACCOUNT_TRANSACTIONS:TransactionsAccountApiResponseType= {
-  "status": 200,
-  "message": "This is a sample. 5 transaction(s) found for account id SAMPLE. Period between startDate and endDate.",
- 
-  "data": {
-    "totalTransactions": 5,
-    "summary": {
-      "initialBalance": {
-        "amount": 1010.55,
-        "date": "2025-06-15T22:40:50.140Z",
-        "currency": "usd"
+export const DEFAULT_ACCOUNT_TRANSACTIONS: TransactionsAccountApiResponseType =
+  {
+    status: 200,
+    message:
+      'This is a sample. 5 transaction(s) found for account id SAMPLE. Period between startDate and endDate.',
+
+    data: {
+      totalTransactions: 5,
+      summary: {
+        initialBalance: {
+          amount: 1010.55,
+          date: '2025-06-15T22:40:50.140Z',
+          currency: 'usd',
+        },
+        finalBalance: {
+          amount: 902.55,
+          currency: 'usd',
+          date: '2025-06-16T00:55:12.445Z',
+        },
+        periodStartDate: '2025-05-18',
+        periodEndDate: '2025-06-18',
       },
-      "finalBalance": {
-        "amount": 902.55,
-        "currency": "usd",
-        "date": "2025-06-16T00:55:12.445Z"
-      },
-      "periodStartDate": "2025-05-18",
-      "periodEndDate": "2025-06-18"
+
+      transactions: [
+        {
+          transaction_id: 23,
+          user_id: 'c109eb15-4139-43b4-b081-8fb9860588af',
+          description:
+            'EXAMPLE.Transaction: withdraw. Transfered 2 usd from account "Nueva Cuenta" (bank) credited to "presents_other" (category_budget). Date: 15/06/2025, 20:55',
+          amount: -2.0,
+          movement_type_id: 1,
+          transaction_type_id: 1,
+          currency_id: 1,
+          account_id: 21,
+          account_balance_after_tr: 902.55,
+          source_account_id: 21,
+          destination_account_id: 27,
+          status: 'complete',
+          transaction_actual_date: '2025-06-16T00:55:12.445Z',
+          created_at: '2025-06-16T04:55:13.424Z',
+          updated_at: '2025-06-16T04:55:13.424Z',
+          movement_type_name: 'example',
+          currency_code: 'usd',
+          account_name: 'Nueva Cuenta',
+          account_starting_amount: 1010.55,
+          account_start_date: '2025-06-15T22:40:50.140Z',
+        },
+      ],
     },
-    
-    "transactions": [
-      {
-        "transaction_id": 23,
-        "user_id": "c109eb15-4139-43b4-b081-8fb9860588af",
-        "description": "EXAMPLE.Transaction: withdraw. Transfered 2 usd from account \"Nueva Cuenta\" (bank) credited to \"presents_other\" (category_budget). Date: 15/06/2025, 20:55",
-        "amount": -2.00,
-        "movement_type_id": 1,
-        "transaction_type_id": 1,
-        "currency_id": 1,
-        "account_id": 21,
-        "account_balance_after_tr": 902.55,
-        "source_account_id": 21,
-        "destination_account_id": 27,
-        "status": "complete",
-        "transaction_actual_date": "2025-06-16T00:55:12.445Z",
-        "created_at": "2025-06-16T04:55:13.424Z",
-        "updated_at": "2025-06-16T04:55:13.424Z",
-        "movement_type_name": "example",
-        "currency_code": "usd",
-        "account_name": "Nueva Cuenta",
-        "account_starting_amount": 1010.55,
-        "account_start_date": "2025-06-15T22:40:50.140Z"
-      },
-      ]
-    }
-  }
+  };
 
 //debtor detail
 export const DEFAULT_LAST_MOVEMENTS = [
@@ -235,7 +242,6 @@ export const DEFAULT_LAST_MOVEMENTS = [
   //   description: 'Description',
   //   date: new Date(),
   // },
-
   // {
   //   categoryName: 'Category Name_02',
   //   record: 'Record',

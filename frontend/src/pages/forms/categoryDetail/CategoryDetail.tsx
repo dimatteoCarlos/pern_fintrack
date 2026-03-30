@@ -11,7 +11,7 @@ import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBad
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import SummaryDetailBox from './summaryDetailBox/SummaryDetailBox.tsx';
 
-import { useFetch } from '../../../hooks/useFetch.ts';
+import { useFetch } from '../../../fintrack/hooks/useFetch.ts';
 import {
   url_get_account_by_id,
   url_get_transactions_by_account_id,
@@ -20,16 +20,19 @@ import {
 import {
   CategoryBudgetAccountsResponseType,
   TransactionsAccountApiResponseType,
-} from '../../../types/responseApiTypes.ts';
-import { CurrencyType } from '../../../types/types.ts';
+} from '../../../fintrack/types/responseApiTypes.ts';
+import { CurrencyType } from '../../../fintrack/types/types.ts';
 
 import {
   capitalize,
   currencyFormat,
   formatDateToDDMMYYYY,
-} from '../../../helpers/functions.ts';
+} from '../../../fintrack/helpers/functions.ts';
 
-import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
+import {
+  DEFAULT_CURRENCY,
+  VARIANT_FORM,
+} from '../../../fintrack/helpers/constants.ts';
 
 //========================
 // MAIN COMPONENT CATEGORY DETAIL

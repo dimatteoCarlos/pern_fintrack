@@ -8,13 +8,13 @@ import {
   CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   // DATE_TIME_FORMAT_DEFAULT,
- } from '../../../helpers/constants';
- import {
+} from '../../../fintrack/helpers/constants';
+import {
   capitalize,
   currencyFormat,
   // isDateValid,
-} from '../../../helpers/functions';
-import { AccountTransactionType } from '../../../types/responseApiTypes';
+} from '../../../fintrack/helpers/functions';
+import { AccountTransactionType } from '../../../fintrack/types/responseApiTypes';
 import './styles/accountTransactionsList-styles.css';
 
 // Configuración por defecto / default config

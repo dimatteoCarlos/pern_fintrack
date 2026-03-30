@@ -1,11 +1,11 @@
 // SummaryPocketDetailBox.tsx
 import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
-import { DEFAULT_CURRENCY } from '../../../../helpers/constants';
+import { DEFAULT_CURRENCY } from '../../../../fintrack/helpers/constants';
 import {
   getCurrencySymbol,
   numberFormatCurrency,
-} from '../../../../helpers/functions';
-import { PocketSavingAccountListType } from '../../../../types/responseApiTypes';
+} from '../../../../fintrack/helpers/functions';
+import { PocketSavingAccountListType } from '../../../../fintrack/types/responseApiTypes';
 import './styles/summaryDetailBox-style.css';
 
 //default values------------

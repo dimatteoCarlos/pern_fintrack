@@ -3,15 +3,18 @@
 import LogoMenuIcon from '../../general_components/header/LogoMenuIcon';
 import TrackerNavbar from '../../general_components/trackerNavbar/TrackerNavbar';
 import { Outlet } from 'react-router-dom';
-import { currencyFormat } from '../../helpers/functions';
-import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../helpers/constants';
-import { useFetch } from '../../hooks/useFetch.ts';
-import { BalanceBankRespType } from '../../types/responseApiTypes';
+import { currencyFormat } from '../../fintrack/helpers/functions.ts';
+import {
+  CURRENCY_OPTIONS,
+  DEFAULT_CURRENCY,
+} from '../../fintrack/helpers/constants.ts';
+import { useFetch } from '../../fintrack/hooks/useFetch.ts';
+import { BalanceBankRespType } from '../../fintrack/types/responseApiTypes.ts';
 import { url_get_total_account_balance_by_type } from '../../endpoints';
-import CoinSpinner from '../../loader/coin/CoinSpinner';
+import CoinSpinner from '../../fintrack/loader/coin/CoinSpinner.tsx';
 import { MessageToUser } from '../../general_components/messageToUser/MessageToUser';
 import { useEffect, useState } from 'react';
-import useBalanceStore from '../../stores/useBalanceStore';
+import useBalanceStore from '../../fintrack/stores/useBalanceStore.ts';
 
 import './styles/tracker-style.css';
 
@@ -20,14 +23,14 @@ const defaultCurrency = DEFAULT_CURRENCY;
 //------------------------------
 function TrackerLayout() {
   const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-//------states--------------
+  //------states--------------
   const [messageToUser, setMessageToUser] = useState<string | null | Error>(
-    null
+    null,
   );
   //---store states
   const availableBudget = useBalanceStore((state) => state.availableBudget);
   const setAvailableBudget = useBalanceStore(
-    (state) => state.setAvailableBudget
+    (state) => state.setAvailableBudget,
   );
   //--------------------
   //DATA FETCHING
@@ -39,9 +42,9 @@ function TrackerLayout() {
     error,
     //  status
   } = useFetch<BalanceBankRespType>(
-    `${url_get_total_account_balance_by_type}/?type=bank`
+    `${url_get_total_account_balance_by_type}/?type=bank`,
   );
-//-----------
+  //-----------
   useEffect(() => {
     if (apiData?.data.total_balance !== undefined) {
       setAvailableBudget(apiData.data.total_balance ?? 0);
@@ -88,7 +91,7 @@ function TrackerLayout() {
               {currencyFormat(
                 defaultCurrency,
                 availableBudget,
-                formatNumberCountry
+                formatNumberCountry,
               )}
             </div>
           </div>
@@ -97,7 +100,7 @@ function TrackerLayout() {
 
       <TrackerNavbar />
       <div className='cards__presentation--tracker'>
-     <Outlet />
+        <Outlet />
         {messageToUser && (
           <MessageToUser
             isLoading={false}

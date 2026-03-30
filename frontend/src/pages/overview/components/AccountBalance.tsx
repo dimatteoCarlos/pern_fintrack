@@ -1,40 +1,48 @@
 // frontend/src/pages/overview/components/AccountBalance.tsx
 import { Link } from 'react-router-dom';
-import { currencyFormat } from '../../../helpers/functions';
+import { currencyFormat } from '../../../fintrack/helpers/functions.ts';
 import { CardTitle } from '../../../general_components/CardTitle';
 import { url_get_accounts_by_type } from '../../../endpoints';
-import { useFetch } from '../../../hooks/useFetch.ts';
-import {CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
-import { AccountByTypeResponseType, AccountListType } from '../../../types/responseApiTypes';
+import { useFetch } from '../../../fintrack/hooks/useFetch.ts';
+import {
+  CURRENCY_OPTIONS,
+  DEFAULT_CURRENCY,
+} from '../../../fintrack/helpers/constants.ts';
+import {
+  AccountByTypeResponseType,
+  AccountListType,
+} from '../../../fintrack/types/responseApiTypes.ts';
 import { useEffect, useState } from 'react';
-import useAuth from '../../../auth/hooks/useAuth.ts'; 
+import useAuth from '../../../auth/hooks/useAuth.ts';
 
 //---------------------------------------
-export type AccountPropType={previousRoute:string, accountType:string}
+export type AccountPropType = { previousRoute: string; accountType: string };
 
 //--default values------------
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-const concept = 'balance'
+const concept = 'balance';
 
 //-----------
 function AccountBalance({
-  previousRoute,accountType,
-}:AccountPropType): JSX.Element {
+  previousRoute,
+  accountType,
+}: AccountPropType): JSX.Element {
   // const user = import.meta.env.VITE_USER_ID;
 
   //--STATES---------------------
-  const [accountsToRender, setAccountsToRender] =
-    useState<AccountListType[]>([]);
+  const [accountsToRender, setAccountsToRender] = useState<AccountListType[]>(
+    [],
+  );
 
-  //Check authentication  
-  const { isAuthenticated, isCheckingAuth } = useAuth(); 
-    
+  //Check authentication
+  const { isAuthenticated, isCheckingAuth } = useAuth();
+
   //DATA FETCHING
   const urlGetAccounts =
-  !isCheckingAuth && isAuthenticated
-  ? `${url_get_accounts_by_type}/?type=${accountType}`
-  :undefined // &user=${user}`;
+    !isCheckingAuth && isAuthenticated
+      ? `${url_get_accounts_by_type}/?type=${accountType}`
+      : undefined; // &user=${user}`;
 
   const {
     apiData: accountsData,
@@ -43,42 +51,48 @@ function AccountBalance({
   } = useFetch<AccountByTypeResponseType>(urlGetAccounts as string);
   //------------------------------
   useEffect(() => {
-   function updateAccounts() {
-    const newBankAccounts: AccountListType[] =
+    function updateAccounts() {
+      const newBankAccounts: AccountListType[] =
         accountsData &&
         !isLoading &&
         !error &&
         !!accountsData.data.accountList?.length
           ? accountsData.data?.accountList?.map((acc, indx) => ({
-            account_id: acc.account_id ?? indx,
+              account_id: acc.account_id ?? indx,
               account_name: acc.account_name,
-              concept: {concept}, 
+              concept: { concept },
               account_balance: acc.account_balance,
               account_type_name: acc.account_type_name,
               currency_code: acc.currency_code ?? defaultCurrency,
               account_start_date: acc.account_start_date ?? acc.created_at,
-              account_type_id:acc.account_type_id ,
+              account_type_id: acc.account_type_id,
             }))
-          : 
-          []
-          // ACCOUNT_DEFAULT
-          ;
+          : [];
+      // ACCOUNT_DEFAULT
       setAccountsToRender(newBankAccounts);
     }
-  //---
+    //---
     updateAccounts();
   }, [accountsData, isLoading, error]);
 
   // console.log('accounts:', accountsData, error, isLoading);
 
   if (isLoading) {
-    return <span style={{color:'cyan', width:'100%', textAlign:'center'}}>Loading...</span>;
+    return (
+      <span style={{ color: 'cyan', width: '100%', textAlign: 'center' }}>
+        Loading...
+      </span>
+    );
   }
-//------------------------------
- if (isCheckingAuth || isLoading) {
-    return <span className='loading__msg' style={{ color: '#fff' }}>Loading...</span>;
+  //------------------------------
+  if (isCheckingAuth || isLoading) {
+    return (
+      <span className='loading__msg' style={{ color: '#fff' }}>
+        Loading...
+      </span>
+    );
   }
-//--------  
+  //--------
   return (
     <>
       {/*BANK ACCOUNTS  */}
@@ -90,12 +104,18 @@ function AccountBalance({
       <article className='goals__account'>
         {/* Account Balance  */}
         {accountsToRender.map((account) => {
-          const { account_name, account_balance, account_type_name, account_id, currency_code } = account;
+          const {
+            account_name,
+            account_balance,
+            account_type_name,
+            account_id,
+            currency_code,
+          } = account;
           {
             return (
               <Link
                 to={`accounts/${account_id}`} //AccountDetail.tsx
-                state = {{previousRoute, detailedData:account}}
+                state={{ previousRoute, detailedData: account }}
                 className='tile__container tile__container--account flx-col-sb'
                 key={`account-${account_id}`}
               >
@@ -108,7 +128,7 @@ function AccountBalance({
                   {currencyFormat(
                     currency_code ?? defaultCurrency,
                     account_balance,
-                    formatNumberCountry
+                    formatNumberCountry,
                   )}
                 </div>
               </Link>
@@ -116,7 +136,6 @@ function AccountBalance({
           }
         })}
       </article>
-
     </>
   );
 }

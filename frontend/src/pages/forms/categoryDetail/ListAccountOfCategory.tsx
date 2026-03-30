@@ -9,15 +9,15 @@ import {
 import {
   currencyFormat,
   numberFormatCurrency,
-} from '../../../helpers/functions.ts';
+} from '../../../fintrack/helpers/functions.ts';
 
-import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import { DEFAULT_CURRENCY } from '../../../fintrack/helpers/constants.ts';
 
 import { Link } from 'react-router-dom';
 import {
   CategoryBudgetAccountListType,
   CategoryListType,
-} from '../../../types/responseApiTypes.ts';
+} from '../../../fintrack/types/responseApiTypes.ts';
 //-----------------------------
 export type CategoryToRenderType = CategoryListType & {
   total_budget: number;

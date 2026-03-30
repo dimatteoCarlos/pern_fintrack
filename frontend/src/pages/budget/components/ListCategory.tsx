@@ -5,19 +5,19 @@ import {
 import {
   currencyFormat,
   numberFormatCurrency,
-} from '../../../helpers/functions.ts';
-import {} from '../../../types/types.ts';
+} from '../../../fintrack/helpers/functions.ts';
+import {} from '../../../fintrack/types/types.ts';
 
 import { url_summary_balance_ByType } from '../../../endpoints.ts';
 
-import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import { DEFAULT_CURRENCY } from '../../../fintrack/helpers/constants.ts';
 
-import { useFetch } from '../../../hooks/useFetch.ts';
+import { useFetch } from '../../../fintrack/hooks/useFetch.ts';
 import { Link } from 'react-router-dom';
 import {
   CategoryListSummaryType,
   CategoryListType,
-} from '../../../types/responseApiTypes.ts';
+} from '../../../fintrack/types/responseApiTypes.ts';
 //-----------------------------
 export type CategoryToRenderType = CategoryListType & {
   // currency_code?: CurrencyType;

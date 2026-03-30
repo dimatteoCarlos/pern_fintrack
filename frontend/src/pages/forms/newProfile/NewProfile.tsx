@@ -15,12 +15,12 @@ import '../styles/forms-styles.css';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 
 // 🛠️ CUSTOM HOOKS & UTILITIES
-import { useFetch } from '../../../hooks/useFetch.ts';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import { useFetch } from '../../../fintrack/hooks/useFetch.ts';
+import { useFetchLoad } from '../../../fintrack/hooks/useFetchLoad.ts';
 import useAuth from '../../../auth/hooks/useAuth.ts';
 //UTILITIES
-import { capitalize } from '../../../helpers/functions.ts';
-import { validationData } from '../../../validations/utils/custom_validation.ts';
+import { capitalize } from '../../../fintrack/helpers/functions.ts';
+import { validationData } from '../../../fintrack/validations/utils/custom_validation.ts';
 
 // 🏷️ ENPOINTS
 import {
@@ -29,20 +29,23 @@ import {
 } from '../../../endpoints.ts';
 
 // 🏷️ TYPES & CONSTANTS
-import { CurrencyType, DropdownOptionType } from '../../../types/types.ts';
+import {
+  CurrencyType,
+  DropdownOptionType,
+} from '../../../fintrack/types/types.ts';
 import {
   AccountByTypeResponseType,
   CreateDebtorAccountApiResponseType,
-} from '../../../types/responseApiTypes.ts';
+} from '../../../fintrack/types/responseApiTypes.ts';
 //CONSTANTS
 import {
   ACCOUNT_OPTIONS_DEFAULT,
   DEFAULT_CURRENCY,
   TYPEDEBTS_OPTIONS_DEFAULT,
   VARIANT_FORM,
-} from '../../../helpers/constants.ts';
+} from '../../../fintrack/helpers/constants.ts';
 import { AUTH_ROUTE } from '../../../auth/auth_constants/constants.ts';
-import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
+import { NAME_MAX_LENGTHS } from '../../../fintrack/validations/inputConstraints/nameMaxLengths.ts';
 import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 //-----default 'till decide how to handle multi currencies

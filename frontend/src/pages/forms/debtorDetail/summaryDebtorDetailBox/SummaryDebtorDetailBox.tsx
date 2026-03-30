@@ -1,8 +1,8 @@
 // SummaryDebtorDetailBox.tsx
 import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
-import { DEFAULT_CURRENCY } from '../../../../helpers/constants';
-import { getCurrencySymbol } from '../../../../helpers/functions';
-import { DebtorListType } from '../../../../types/responseApiTypes';
+import { DEFAULT_CURRENCY } from '../../../../fintrack/helpers/constants';
+import { getCurrencySymbol } from '../../../../fintrack/helpers/functions';
+import { DebtorListType } from '../../../../fintrack/types/responseApiTypes';
 
 //temporary values------------
 const defaultCurrency = DEFAULT_CURRENCY;

@@ -1,14 +1,18 @@
 //src/general_components/messageToUser/MessageToUser.tsx
 import { useEffect, useRef } from 'react';
-import { capitalize,  } from '../../helpers/functions';
-import { VariantType } from '../../types/types';
-import './messageToUser.css'
-import { showToastByStatus } from '../../helpers/showToastByStatus';
+import { capitalize } from '../../fintrack/helpers/functions';
+import { VariantType } from '../../fintrack/types/types';
+import './messageToUser.css';
+import { showToastByStatus } from '../../fintrack/helpers/showToastByStatus';
 
 type MessageToUserPropType = {
   isLoading?: boolean;
-  error?: string | Error | null
-  messageToUser:{message:string, status?:number} | string | null | undefined;
+  error?: string | Error | null;
+  messageToUser:
+    | { message: string; status?: number }
+    | string
+    | null
+    | undefined;
   variant?: VariantType;
   showToast?: boolean;
 };
@@ -18,51 +22,51 @@ export const MessageToUser = ({
   error,
   messageToUser,
   // variant,
-  variant,// = 'form',
+  variant, // = 'form',
   showToast = true,
-
 }: MessageToUserPropType): JSX.Element => {
-  const lastMessageRef =useRef<string>('')
+  const lastMessageRef = useRef<string>('');
   const colorStyles =
     variant === 'tracker'
       ? { success: 'darkgreen', failure: 'red' }
       : { success: 'lightgreen', failure: 'orange' };
 
-  const topStyles =
-    variant === 'tracker'
-      ? '2%'
-      : '70%';
+  const topStyles = variant === 'tracker' ? '2%' : '70%';
 
-// Toast notification logic - only for form variant and when showToast is true, not for tracker
-// ---------------------------------- 
-useEffect(()=>{
-if(messageToUser && variant=='form' && showToast){
- const msg = typeof messageToUser === 'string' ? messageToUser :messageToUser.message;
- 
- const status =typeof messageToUser === 'string'? 200 : messageToUser.status ?? 200
+  // Toast notification logic - only for form variant and when showToast is true, not for tracker
+  // ----------------------------------
+  useEffect(() => {
+    if (messageToUser && variant == 'form' && showToast) {
+      const msg =
+        typeof messageToUser === 'string'
+          ? messageToUser
+          : messageToUser.message;
 
-   // console.log('📨 Showing toast:', { msg, status, variant });
+      const status =
+        typeof messageToUser === 'string' ? 200 : (messageToUser.status ?? 200);
 
- // if(variant=='form'){showToastByStatus(msg, status)}
+      // console.log('📨 Showing toast:', { msg, status, variant });
 
-// Prevent duplicate toasts for the same message
-if (msg !== lastMessageRef.current) {
-    showToastByStatus(msg, status);
-    lastMessageRef.current = msg;
-  }
+      // if(variant=='form'){showToastByStatus(msg, status)}
 
-//Clean reference if there is not message
- if (!messageToUser) {
-   lastMessageRef.current = '';
- }
-}
-}, [showToast, messageToUser, variant])
- //----------------------------------  
-// For non-form variants or when toast is disabled, show inline messages
-const shouldShowInlineMessage = variant !== 'form' //|| !showToast;
+      // Prevent duplicate toasts for the same message
+      if (msg !== lastMessageRef.current) {
+        showToastByStatus(msg, status);
+        lastMessageRef.current = msg;
+      }
 
-// console.log("🚀 ~ MessageToUser ~ shouldShowInlineMessage:", shouldShowInlineMessage)
-//-------------------------------     
+      //Clean reference if there is not message
+      if (!messageToUser) {
+        lastMessageRef.current = '';
+      }
+    }
+  }, [showToast, messageToUser, variant]);
+  //----------------------------------
+  // For non-form variants or when toast is disabled, show inline messages
+  const shouldShowInlineMessage = variant !== 'form'; //|| !showToast;
+
+  // console.log("🚀 ~ MessageToUser ~ shouldShowInlineMessage:", shouldShowInlineMessage)
+  //-------------------------------
   return (
     <>
       {isLoading && <div style={{ color: 'lightblue' }}>Loading...</div>}
@@ -73,20 +77,20 @@ const shouldShowInlineMessage = variant !== 'form' //|| !showToast;
             className='validation__errMsg1 '
             style={{
               color: colorStyles.failure,
-              position:'absolute',
-              top:`${topStyles}`,
-              right:'2rem',
-              width:'80%',
-              height:'1.5rem',
-              textAlign:'right',
+              position: 'absolute',
+              top: `${topStyles}`,
+              right: '2rem',
+              width: '80%',
+              height: '1.5rem',
+              textAlign: 'right',
               borderRadius: '4px',
               fontSize: '0.75rem',
               fontWeight: '400',
               lineHeight: '1.5rem',
-              zIndex:'1'
+              zIndex: '1',
             }}
           >
-          {typeof error=='string'?error:error?.message}
+            {typeof error == 'string' ? error : error?.message}
           </span>
         </div>
       )}
@@ -96,21 +100,24 @@ const shouldShowInlineMessage = variant !== 'form' //|| !showToast;
           <span
             style={{
               color: colorStyles.success,
-              position:'absolute',
-              top:`${topStyles}`,
-              right:'2rem',
-              width:'60%',
-              height:'1.5rem',
-              textAlign:'right',
+              position: 'absolute',
+              top: `${topStyles}`,
+              right: '2rem',
+              width: '60%',
+              height: '1.5rem',
+              textAlign: 'right',
               borderRadius: '4px',
               fontSize: '0.75rem',
               fontWeight: '400',
               lineHeight: '1.5rem',
-              zIndex:'1'
+              zIndex: '1',
             }}
           >
-            {capitalize(typeof messageToUser ==='string'?messageToUser:messageToUser.message)}
-
+            {capitalize(
+              typeof messageToUser === 'string'
+                ? messageToUser
+                : messageToUser.message,
+            )}
           </span>
         </div>
       )}

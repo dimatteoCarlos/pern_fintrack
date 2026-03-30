@@ -11,7 +11,7 @@ import Select, {
 import { useEffect, useRef } from 'react';
 import ArrowDownDarkSvg from '../../assets/ArrowDownDarkSvg.svg';
 import ArrowDownLightSvg from '../../assets/ArrowDownLightSvg.svg';
-import { VariantType, DropdownOptionType } from '../../types/types';
+import { VariantType, DropdownOptionType } from '../../fintrack/types/types';
 
 export type DropdownSelectPropType = {
   dropDownOptions: {
@@ -37,17 +37,16 @@ const createDropdownIndicator =
       DropdownOptionType,
       false,
       GroupBase<DropdownOptionType>
-    >
-  ) =>
-    (
-      <components.DropdownIndicator {...props}>
-        {variant === 'tracker' ? <ArrowDownDarkSvg /> : <ArrowDownLightSvg />}
-      </components.DropdownIndicator>
-    );
+    >,
+  ) => (
+    <components.DropdownIndicator {...props}>
+      {variant === 'tracker' ? <ArrowDownDarkSvg /> : <ArrowDownLightSvg />}
+    </components.DropdownIndicator>
+  );
 
 // ✅ Styles function based on `variant`
 const createStyles = (
-  variant: VariantType
+  variant: VariantType,
 ): StylesConfig<DropdownOptionType, false, GroupBase<DropdownOptionType>> => ({
   container: (baseStyles) => ({
     ...baseStyles,
@@ -80,7 +79,7 @@ const createStyles = (
     backgroundColor: variant === 'tracker' ? 'white' : 'var(--dark)',
     color: variant === 'tracker' ? 'var(--dark)' : 'var(--light)',
   }),
-  
+
   singleValue: (base) => ({
     ...base,
     color: variant === 'tracker' ? 'var(--dark)' : 'var(--creme)',
@@ -114,8 +113,8 @@ function DropDownSelection({
   updateOptionHandler,
   isReset,
   isResetDropdown,
-  setIsReset,setIsResetDropdown, 
-
+  setIsReset,
+  setIsResetDropdown,
 }: DropdownSelectPropType) {
   const { title, options, variant } = dropDownOptions;
   // console.log('dropSel:', { title, options, variant });
@@ -128,15 +127,17 @@ function DropDownSelection({
     if ((isReset || isResetDropdown) && selectRef.current) {
       selectRef.current.clearValue();
       setIsReset(false); //Parent does this
-     if(setIsResetDropdown){ setIsResetDropdown(false);}
+      if (setIsResetDropdown) {
+        setIsResetDropdown(false);
+      }
     }
-  }, [isReset, isResetDropdown,setIsResetDropdown, setIsReset]);
+  }, [isReset, isResetDropdown, setIsResetDropdown, setIsReset]);
 
   const handleChange = (
-    newValue: SingleValue<DropdownOptionType> | MultiValue<DropdownOptionType>
+    newValue: SingleValue<DropdownOptionType> | MultiValue<DropdownOptionType>,
   ) => {
     updateOptionHandler(newValue as SingleValue<DropdownOptionType>);
-      };
+  };
 
   return (
     <Select

@@ -1,6 +1,6 @@
 // frontend/src/general_components/inputNumberHandler/InputNumberFormHandler.tsx
 
-import useInputNumberHandler from '../../hooks/useInputNumberHandler.ts';
+import useInputNumberHandler from '../../fintrack/hooks/useInputNumberHandler.ts';
 
 // 💡 Explicit type for input states, just strings for inputs.
 type StringInputMapType = {
@@ -18,8 +18,8 @@ type InputNumberFormHandlerPropType<T> = {
   >;
   keyName: keyof T;
   placeholderText: string;
-  formData: StringInputMapType//Partial<T>;
-  setFormData: React.Dispatch<React.SetStateAction<StringInputMapType>>
+  formData: StringInputMapType; //Partial<T>;
+  setFormData: React.Dispatch<React.SetStateAction<StringInputMapType>>;
   //<Partial<T>>>;
   setStateData: React.Dispatch<React.SetStateAction<T>>;
   onChangeHandler?: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -33,13 +33,14 @@ function InputNumberFormHandler<T>({
   formData,
   setFormData,
   setStateData,
-      onChangeHandler
+  onChangeHandler,
 }: InputNumberFormHandlerPropType<T>) {
-  
- const { inputNumberHandlerFn } = useInputNumberHandler(
-   setFormData as React.Dispatch<React.SetStateAction<{ [key: string]: string }>>, // Aserción general
+  const { inputNumberHandlerFn } = useInputNumberHandler(
+    setFormData as React.Dispatch<
+      React.SetStateAction<{ [key: string]: string }>
+    >, // Aserción general
     setValidationMessages,
-    setStateData as React.Dispatch<React.SetStateAction<T>>
+    setStateData as React.Dispatch<React.SetStateAction<T>>,
   );
 
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
@@ -49,13 +50,14 @@ function InputNumberFormHandler<T>({
     onChangeHandler?.(e);
   }
 
-// 👇 Type assertion segura para el valor
+  // 👇 Type assertion segura para el valor
   const currentValue = formData[keyName as string];
 
-  const displayValue = currentValue !== undefined && currentValue !== null 
-    ? String(currentValue) 
-    : "";
-  
+  const displayValue =
+    currentValue !== undefined && currentValue !== null
+      ? String(currentValue)
+      : '';
+
   return (
     <>
       <input

@@ -8,26 +8,29 @@ import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitB
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 
-import { validationData } from '../../../validations/utils/custom_validation.ts';
+import { validationData } from '../../../fintrack/validations/utils/custom_validation.ts';
 
 import '../styles/forms-styles.css';
 
 import useAuth from '../../../auth/hooks/useAuth.ts';
-import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import useInputNumberHandler from '../../../fintrack/hooks/useInputNumberHandler.ts';
+import { useFetchLoad } from '../../../fintrack/hooks/useFetchLoad.ts';
 
 import { url_create_category_budget_account } from '../../../endpoints.ts';
 
-import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
+import {
+  CurrencyType,
+  FormNumberInputType,
+} from '../../../fintrack/types/types.ts';
 
 import {
   DEFAULT_CURRENCY,
   TILE_LABELS,
   VARIANT_FORM,
-} from '../../../helpers/constants.ts';
+} from '../../../fintrack/helpers/constants.ts';
 
-import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
-import { normalizeError } from '../../../helpers/normalizeError.ts';
+import { CreateCategoryBudgetAccountApiResponseType } from '../../../fintrack/types/responseApiTypes.ts';
+import { normalizeError } from '../../../fintrack/helpers/normalizeError.ts';
 import { AUTH_ROUTE } from '../../../auth/auth_constants/constants.ts';
 
 // import PlusSignSvg from '../../../assets/PlusSignSvg.svg';

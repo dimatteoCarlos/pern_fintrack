@@ -1,4 +1,4 @@
-import { VariantType } from '../../types/types';
+import { VariantType } from '../../fintrack/types/types';
 import './topWhiteSpace.css';
 
 type TopWhiteSpacePropType = {
@@ -8,7 +8,10 @@ type TopWhiteSpacePropType = {
 function TopWhiteSpace({ variant }: TopWhiteSpacePropType) {
   return (
     <>
-      <div className='top--whiteSpace' style={{ backgroundColor: variant }}></div>
+      <div
+        className='top--whiteSpace'
+        style={{ backgroundColor: variant }}
+      ></div>
     </>
   );
 }

@@ -1,7 +1,7 @@
 //src\pages\tracker\components\CardNoteSave.tsx
 import FormPlusBtn from '../../../general_components/formSubmitBtn/FormPlusBtn';
-import { capitalize } from '../../../helpers/functions';
-import { ValidationMessagesType } from '../../../validations/types';
+import { capitalize } from '../../../fintrack/helpers/functions';
+import { ValidationMessagesType } from '../../../fintrack/validations/types';
 import CardNote from './CardNote';
 
 type CardNoteSavePropType<TFormDataType extends Record<string, unknown>> = {
@@ -12,13 +12,12 @@ type CardNoteSavePropType<TFormDataType extends Record<string, unknown>> = {
   // validationMessages: {
   //   [key: string]: string;
   // };
- validationMessages: ValidationMessagesType<TFormDataType>;
-  isDisabled :boolean
+  validationMessages: ValidationMessagesType<TFormDataType>;
+  isDisabled: boolean;
   showError?: boolean;
-
 };
 //ExpenseInputDataType
-const CardNoteSave =<TFormDataType extends Record<string, unknown>> ({
+const CardNoteSave = <TFormDataType extends Record<string, unknown>>({
   title,
   validationMessages,
   dataHandler,
@@ -26,13 +25,12 @@ const CardNoteSave =<TFormDataType extends Record<string, unknown>> ({
   onSaveHandler,
   isDisabled,
   showError,
-
 }: CardNoteSavePropType<TFormDataType>) => {
   return (
     <>
       <div className='card--title'>
         {capitalize(title)}
-        <span className='validation__errMsg'>{`${showError && validationMessages?.[title]?validationMessages?.[title]:""}`}</span>
+        <span className='validation__errMsg'>{`${showError && validationMessages?.[title] ? validationMessages?.[title] : ''}`}</span>
       </div>
 
       <div
@@ -45,9 +43,9 @@ const CardNoteSave =<TFormDataType extends Record<string, unknown>> ({
             inputNote={inputNote}
             title={title}
           />
-         </div>
+        </div>
 
-        <FormPlusBtn onClickHandler={onSaveHandler} isDisabled={isDisabled}/>
+        <FormPlusBtn onClickHandler={onSaveHandler} isDisabled={isDisabled} />
       </div>
     </>
   );

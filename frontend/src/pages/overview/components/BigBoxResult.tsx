@@ -1,8 +1,11 @@
 //-------BigBoxResult---------
 //Parent:OverviewLayout.tsx
 
-import { currencyFormat } from '../../../helpers/functions';
-import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
+import { currencyFormat } from '../../../fintrack/helpers/functions';
+import {
+  CURRENCY_OPTIONS,
+  DEFAULT_CURRENCY,
+} from '../../../fintrack/helpers/constants';
 
 //temporary values------------
 const defaultCurrency = DEFAULT_CURRENCY;

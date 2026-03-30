@@ -1,7 +1,7 @@
 //frontend/src/pages/forms/accountDetail/AccountDetail.tsx
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useFetch } from '../../../hooks/useFetch.ts';
+import { useFetch } from '../../../fintrack/hooks/useFetch.ts';
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
@@ -16,12 +16,12 @@ import {
   DEFAULT_CURRENCY,
   VARIANT_FORM,
   DEFAULT_ACCOUNT_TRANSACTIONS,
-} from '../../../helpers/constants';
+} from '../../../fintrack/helpers/constants.ts';
 import {
   capitalize,
   numberFormatCurrency,
   formatDateToDDMMYYYY,
-} from '../../../helpers/functions';
+} from '../../../fintrack/helpers/functions.ts';
 import '../styles/forms-styles.css';
 import {
   AccountByTypeResponseType,
@@ -29,7 +29,7 @@ import {
   TransactionsAccountApiResponseType,
   AccountTransactionType,
   AccountSummaryBalanceType,
-} from '../../../types/responseApiTypes';
+} from '../../../fintrack/types/responseApiTypes.ts';
 import {
   url_get_account_by_id,
   url_get_transactions_by_account_id,

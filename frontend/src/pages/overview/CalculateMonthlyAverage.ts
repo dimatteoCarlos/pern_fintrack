@@ -1,9 +1,9 @@
 //monthlyAverage.ts
 //group by type of movement by month and by currency
 //input data structure
-import { MonthlyDataType } from '../../types/responseApiTypes';
+import { MonthlyDataType } from '../../fintrack/types/responseApiTypes';
 
-import { CurrencyType } from '../../types/types';
+import { CurrencyType } from '../../fintrack/types/types';
 export type MovementType = 'expense' | 'income' | 'saving' | 'other';
 
 export type FinancialResultType = {
@@ -26,11 +26,9 @@ type MonthCurrencyTrackerType = {
 };
 //------------------------------------------
 export function calculateMonthlyAverage(
-  arrayData: MonthlyDataType[]
+  arrayData: MonthlyDataType[],
 ): ResultType {
-  const result: ResultType = { expense: {}, income: {}
-  , saving: {}
- };
+  const result: ResultType = { expense: {}, income: {}, saving: {} };
   const monthCurrencyTracker: MonthCurrencyTrackerType = {
     expense: {},
     income: {},
@@ -73,8 +71,8 @@ export function calculateMonthlyAverage(
       result[movementType]![currencyCode]!.monthCounter++;
     }
   }
-// console.log('item', item, 'result', result);
-// Calcular promedios
+  // console.log('item', item, 'result', result);
+  // Calcular promedios
   for (const type in result) {
     const movementType = type as MovementType;
     for (const currency in result[movementType]) {

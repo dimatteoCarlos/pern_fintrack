@@ -7,13 +7,13 @@ import {
   CURRENCY_OPTIONS,
   DATE_TIME_FORMAT_DEFAULT,
   DEFAULT_CURRENCY,
-} from '../../helpers/constants';
+} from '../../fintrack/helpers/constants';
 
 import {
   capitalize,
   currencyFormat,
   isDateValid,
-} from '../../helpers/functions';
+} from '../../fintrack/helpers/functions';
 
 import { LastMovementType } from '../../pages/overview/components/LastMovements';
 
@@ -29,49 +29,44 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // MAIN COMPONENT
 // ====================================
 function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
+  const formatDate = (dateInput: Date | string | number): string => {
+    const date = new Date(dateInput);
 
- const formatDate = (dateInput: Date | string | number): string => {
-  const date = new Date(dateInput);
+    return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
+  };
 
-  return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
- };
+  return (
+    <div className='listContent__container '>
+      {listOfItems.map((item, index) => {
+        const { accountName, record, description, date, currency } = item;
 
- return (
-  <div className='listContent__container '>
-    {listOfItems.map((item, index) => {
-      const { accountName, record, description, date, currency } = item;
-
-   return (
-    <BoxContainer key={index} className="listContent__item ">      
- {/* ----------------------------------
+        return (
+          <BoxContainer key={index} className='listContent__item '>
+            {/* ----------------------------------
  📋 HEADER ROW: Account name and amount
  ---------------------------------- */}
-      <BoxRow className="listContent__item-header">
-        <span className="listContent__account">
-          {accountName}
-        </span>
-        <span className="listContent__amount">
-          {currencyFormat(currency, record, formatNumberCountry)}
-        </span>
-      </BoxRow>
-{/* -----------------------------------
+            <BoxRow className='listContent__item-header'>
+              <span className='listContent__account'>{accountName}</span>
+              <span className='listContent__amount'>
+                {currencyFormat(currency, record, formatNumberCountry)}
+              </span>
+            </BoxRow>
+            {/* -----------------------------------
 📝 DETAILS ROW: Description and date
 ----------------------------------- */}
-      <div className="listContent__details-row">
-        <p className="listContent__description">
-          {capitalize(description)}
-        </p>
-        {date && isDateValid(date) && (
-          <time className="listContent__date">
-            {formatDate(date)}
-          </time>
-        )}
-      </div>
-     </BoxContainer>
-      );
-    })}
-  </div>
- );
+            <div className='listContent__details-row'>
+              <p className='listContent__description'>
+                {capitalize(description)}
+              </p>
+              {date && isDateValid(date) && (
+                <time className='listContent__date'>{formatDate(date)}</time>
+              )}
+            </div>
+          </BoxContainer>
+        );
+      })}
+    </div>
+  );
 }
 
 export default ListContent;

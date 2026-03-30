@@ -1,8 +1,11 @@
 //-------DebtsBigBoxResult---------
 //Parent:DebtsLayout.tsx
-import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
-import { currencyFormat } from '../../../helpers/functions';
-import { CurrencyType } from '../../../types/types';
+import {
+  CURRENCY_OPTIONS,
+  DEFAULT_CURRENCY,
+} from '../../../fintrack/helpers/constants';
+import { currencyFormat } from '../../../fintrack/helpers/functions';
+import { CurrencyType } from '../../../fintrack/types/types';
 
 type BigBoxResultPropType = {
   bigScreenInfo: { title: string; amount: number }[];
@@ -45,14 +48,13 @@ export function DebtsBigBoxResult({
 
       {/***/}
       <div className='debtIndicatorContainer '>
-        
         <div className='debtInfo '>
           <div className='displayScreen--concept light'>{receivable}:</div>
           <div className='displayScreen--result light'>
             {currencyFormat(
               defaultCurrency,
               receivableAmount,
-              formatNumberCountry
+              formatNumberCountry,
             )}
           </div>
 
@@ -60,7 +62,7 @@ export function DebtsBigBoxResult({
           <div className='displayScreen--result light'>{debtorCount}</div>
         </div>
         {}
-        
+
         <div className='debtInfo '>
           <div className='displayScreen--concept light'>{payable}:</div>
 
@@ -68,7 +70,7 @@ export function DebtsBigBoxResult({
             {currencyFormat(
               defaultCurrency,
               payableAmount,
-              formatNumberCountry
+              formatNumberCountry,
             )}
           </div>
 

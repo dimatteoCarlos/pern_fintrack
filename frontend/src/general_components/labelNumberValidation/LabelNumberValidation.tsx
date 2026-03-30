@@ -1,7 +1,7 @@
 //frontend/src/general_components/labelNumberValidation/LabelNumberValidation.tsx
-import { capitalize } from '../../helpers/functions';
-import { VariantType } from '../../types/types';
-import { ValidationMessagesType } from '../../validations/types';
+import { capitalize } from '../../fintrack/helpers/functions';
+import { VariantType } from '../../fintrack/types/types';
+import { ValidationMessagesType } from '../../fintrack/validations/types';
 
 type LabelNumberValidationPropType<
   TFormDataType extends { [key: string]: unknown },

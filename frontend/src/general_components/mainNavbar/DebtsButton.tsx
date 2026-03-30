@@ -1,7 +1,7 @@
 import DebtsSvg from '../../assets/mainNavbarSvg/DebtsSvg.svg';
 import { NavLink, useLocation } from 'react-router-dom';
 import Tooltip from '../tooltip/Tooltip';
-import { capitalize } from '../../helpers/functions';
+import { capitalize } from '../../fintrack/helpers/functions';
 
 const classNavLink = `mainNavbarButton ${({
   isActive,
@@ -13,10 +13,13 @@ function DebtsButton() {
   const btnName = 'debts';
   const isBtnActive =
     useLocation().pathname.split('/')[2] == btnName ? 'active' : '';
-    // console.log(useLocation().pathname, isBtnActive, )
+  // console.log(useLocation().pathname, isBtnActive, )
   return (
     <>
-      <NavLink to='/fintrack/debts/debtors' className={`${classNavLink} ${isBtnActive}`}>
+      <NavLink
+        to='/fintrack/debts/debtors'
+        className={`${classNavLink} ${isBtnActive}`}
+      >
         <Tooltip
           tipText={capitalize(btnName)}
           isActive={isBtnActive ? true : false}

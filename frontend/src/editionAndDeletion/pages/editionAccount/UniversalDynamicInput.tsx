@@ -2,14 +2,14 @@
 // 💡Imports
 import { useMemo } from 'react';
 import { FieldConfigType } from '../../validations_zod/accountEditSchema.ts';
-import { ValidationMessagesType } from '../../../validations/types.ts';
+import { ValidationMessagesType } from '../../../fintrack/validations/types.ts';
 
 // 🧱 external components
-import { DropdownOptionType } from '../../../types/types.ts';
+import { DropdownOptionType } from '../../../fintrack/types/types.ts';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
 
-import { DB_MAX_LENGTHS } from '../../../validations/utils/constants.ts';
+import { DB_MAX_LENGTHS } from '../../../fintrack/validations/utils/constants.ts';
 // =====================================
 // 🎯 GENERIC TYPE PROPERTIES DEFINITION/INTERFAZ DE PROPIEDADES (USANDO GENÉRICOS)
 // ====================================

@@ -14,7 +14,7 @@ import { useAuthStore } from '../stores/useAuthStore';
 import { authFetch } from '../auth_utils/authFetch';
 import { logoutCleanup } from '../auth_utils/logoutCleanup';
 import { useNavigationHelper } from '../auth_utils/navigationHelper';
-import { INITIAL_PAGE_ADDRESS } from '../../helpers/constants';
+import { INITIAL_PAGE_ADDRESS } from '../../fintrack/helpers/constants';
 
 import {
   AuthSuccessResponseType,
@@ -516,7 +516,7 @@ const useAuth = () => {
 
         // 2️⃣ Map response
         const mappedNewData = mapUserResponseToUserData(response.data.user);
-       //validation for backend user response
+        //validation for backend user response
         if (!mappedNewData || typeof mappedNewData !== 'object') {
           console.error(
             '❌ Invalid user data from backend:',

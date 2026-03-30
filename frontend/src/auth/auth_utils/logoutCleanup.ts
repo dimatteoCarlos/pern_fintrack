@@ -14,26 +14,24 @@
  *                       Navigation/notifications now handled by Application layer
  */
 
-   import { LOCAL_STORAGE_KEY } from "../../helpers/constants";
-   import { useAuthStore } from "../stores/useAuthStore";
-   import { clearIdentity, getIdentity } from "./localStorageHandle/authStorage";
+import { LOCAL_STORAGE_KEY } from '../../fintrack/helpers/constants';
+import { useAuthStore } from '../stores/useAuthStore';
+import { clearIdentity, getIdentity } from './localStorageHandle/authStorage';
 
-   //==========================
-   //MAIN FUNCTION: logoutCleanup
-   //==========================
-   export const logoutCleanup = (shouldNotify: boolean = false): void => {
-   // Infrastructure can log for debugging (doesn't affect UX)
-   console.log(`🔧 logoutCleanup executing - shouldNotify:${shouldNotify} (ignored)`);
+//==========================
+//MAIN FUNCTION: logoutCleanup
+//==========================
+export const logoutCleanup = (shouldNotify: boolean = false): void => {
+  // Infrastructure can log for debugging (doesn't affect UX)
+  console.log(
+    `🔧 logoutCleanup executing - shouldNotify:${shouldNotify} (ignored)`,
+  );
 
   // ===============================
   // 1️⃣ GET STORE ACTIONS (Infrastructure accessing state)
   // ===============================
-  const { 
-    setIsAuthenticated, 
-    setUserData, 
-    clearError, 
-    clearSuccessMessage 
-  } = useAuthStore.getState();
+  const { setIsAuthenticated, setUserData, clearError, clearSuccessMessage } =
+    useAuthStore.getState();
 
   // ===============================
   // 2️⃣ CLEAN SESSION STORAGE (Volatile - Infrastructure)
@@ -47,7 +45,7 @@
   setIsAuthenticated(false);
   clearError();
   clearSuccessMessage();
-  
+
   // ===============================
   // 4️⃣ CONDITIONAL LOCALSTORAGE CLEANUP (Persistence - Infrastructure)
   // ===============================
@@ -62,7 +60,7 @@
     localStorage.removeItem(LOCAL_STORAGE_KEY.USER_DATA);
     console.log('🔧 Full cleanup: all persistent data removed');
   } else {
-  // ✅ User wants to be remembered - keep identity for next visit
-  console.log('🔧 Partial cleanup: keeping identity for next visit');
-   }
-  };
+    // ✅ User wants to be remembered - keep identity for next visit
+    console.log('🔧 Partial cleanup: keeping identity for next visit');
+  }
+};

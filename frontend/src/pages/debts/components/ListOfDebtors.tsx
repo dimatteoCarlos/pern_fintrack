@@ -1,14 +1,17 @@
 import { BoxContainer, BoxRow } from './boxComponents';
-import { currencyFormat } from '../../../helpers/functions';
-import { useFetch } from '../../../hooks/useFetch.ts';
+import { currencyFormat } from '../../../fintrack/helpers/functions.ts';
+import { useFetch } from '../../../fintrack/hooks/useFetch.ts';
 import { url_summary_balance_ByType, USER_ID } from '../../../endpoints';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import { Link } from 'react-router-dom';
 import {
   DebtorListSummaryType,
   DebtorListType,
-} from '../../../types/responseApiTypes';
-import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
+} from '../../../fintrack/types/responseApiTypes.ts';
+import {
+  CURRENCY_OPTIONS,
+  DEFAULT_CURRENCY,
+} from '../../../fintrack/helpers/constants.ts';
 
 export type DebtsToRenderType = DebtorListType[];
 

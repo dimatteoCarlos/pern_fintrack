@@ -1,4 +1,4 @@
-import { CurrencyType, VariantType } from '../../types/types';
+import { CurrencyType, VariantType } from '../../fintrack/types/types';
 import './styles/currency-style.css';
 // import { changeCurrency } from '../../helpers/functions';
 
@@ -20,7 +20,7 @@ function CurrencyBadge({
     console.log(
       'updateOutsideCurrencyData',
       updateOutsideCurrencyData,
-      'is disabled'
+      'is disabled',
     );
     //these block is functional but disabled
     // const newCurrency = changeCurrency(currency);

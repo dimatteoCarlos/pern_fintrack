@@ -2,21 +2,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { url_get_total_account_balance_by_type } from '../../endpoints';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader';
-import { useFetch } from '../../hooks/useFetch.ts';
-import { BalanceCategoryRespType } from '../../types/responseApiTypes';
+import { useFetch } from '../../fintrack/hooks/useFetch.ts';
+import { BalanceCategoryRespType } from '../../fintrack/types/responseApiTypes.ts';
 import Budget from './Budget';
 import BudgetBigBoxResult from './components/BudgetBigBoxResult';
 import './styles/budget-styles.css';
-import CoinSpinner from '../../loader/coin/CoinSpinner';
+import CoinSpinner from '../../fintrack/loader/coin/CoinSpinner.tsx';
 
 function BudgetLayout() {
-
   // console.log('')
   //temporary values------------
   const userId = import.meta.env.VITE_USER_ID;
-  
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const budgetUrl = `${url_get_total_account_balance_by_type}?type=category_budget&user=${userId}`;
 
@@ -30,7 +28,7 @@ function BudgetLayout() {
       return () => clearTimeout(timer);
     }
   }, [error]);
-//--------------------------------------
+  //--------------------------------------
   const { total_balance, total_budget, total_remaining, currency } =
     useMemo(() => {
       return {

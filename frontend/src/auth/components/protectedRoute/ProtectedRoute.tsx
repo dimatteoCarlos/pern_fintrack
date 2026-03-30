@@ -23,7 +23,7 @@
 
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
-import CoinSpinner from '../../../loader/coin/CoinSpinner';
+import CoinSpinner from '../../../fintrack/loader/coin/CoinSpinner';
 import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
 // import { AUTH_ROUTE } from '../../auth_constants/constants';
 
@@ -38,20 +38,20 @@ const ProtectedRoute = () => {
     return <CoinSpinner />;
   }
 
-  const redirectTo =  '/';
+  const redirectTo = '/';
 
- if (!isAuthenticated) {
-  return (
-    <Navigate
-      to={redirectTo}
-      replace
-      state={{ 
-        from: location.pathname,
-        hasIdentity: !!getIdentity(),
-      }}
-    />
-  );
-}
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to={redirectTo}
+        replace
+        state={{
+          from: location.pathname,
+          hasIdentity: !!getIdentity(),
+        }}
+      />
+    );
+  }
 
   // ✅ Access granted - render child routes
   return <Outlet />;

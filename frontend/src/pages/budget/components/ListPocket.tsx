@@ -5,19 +5,19 @@ import { StatusSquare } from '../../../general_components/boxComponents/BoxCompo
 import {
   DEFAULT_CURRENCY,
   // DEFAULT_POCKET_LIST,
-} from '../../../helpers/constants';
+} from '../../../fintrack/helpers/constants.ts';
 import {
   currencyFormat,
   numberFormatCurrency,
-} from '../../../helpers/functions';
+} from '../../../fintrack/helpers/functions.ts';
 import { url_summary_balance_ByType, USER_ID } from '../../../endpoints.ts';
 import {
   // BalancePocketRespType,
   // PocketListType,
   PocketListSummaryType,
   PocketListType,
-} from '../../../types/responseApiTypes.ts';
-import { useFetch } from '../../../hooks/useFetch.ts';
+} from '../../../fintrack/types/responseApiTypes.ts';
+import { useFetch } from '../../../fintrack/hooks/useFetch.ts';
 
 //============================================
 function ListPocket({ previousRoute }: { previousRoute: string }) {

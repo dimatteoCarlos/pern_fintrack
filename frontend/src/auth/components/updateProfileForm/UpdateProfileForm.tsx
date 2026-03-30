@@ -7,7 +7,7 @@
 import React from 'react';
 
 // 🎨 COMMON UI COMPONENTS
-import Message from '../formUIComponents/Message'; 
+import Message from '../formUIComponents/Message';
 import SelectField from '../formUIComponents/SelectField';
 import InputField from '../formUIComponents/InputField';
 import SubmitButton from '../formUIComponents/SubmitButton';
@@ -17,10 +17,10 @@ import styles from './styles/updateProfileForm.module.css';
 
 // 🏷️ TYPE DEFINITIONS
 import { UpdateProfileFormDataType } from '../../types/authTypes';
-import { CurrencyType } from '../../../types/types';
+import { CurrencyType } from '../../../fintrack/types/types';
 import { ProfileFormErrorsType } from '../../hooks/useUpdateProfileFormLogic';
 import { CurrencyOptionType } from './UpdateProfileContainer';
-import { DEFAULT_CURRENCY } from '../../../helpers/constants';
+import { DEFAULT_CURRENCY } from '../../../fintrack/helpers/constants';
 
 /* 🌟 ===============================
 🏷️ TYPE DEFINITIONS (LOCALS)
@@ -32,7 +32,10 @@ type UpdateProfileFormPropsType = {
   isDirty: boolean;
   isLoading: boolean;
 
-  onChange: (fieldName: keyof UpdateProfileFormDataType, value: string | null | CurrencyType) => void;
+  onChange: (
+    fieldName: keyof UpdateProfileFormDataType,
+    value: string | null | CurrencyType,
+  ) => void;
 
   onSubmit: (e: React.FormEvent) => Promise<void>;
   onReset: () => void;
@@ -43,9 +46,8 @@ type UpdateProfileFormPropsType = {
   successMessage?: string | null;
   currencyOptions?: CurrencyOptionType[];
   className?: string;
-  
-  retryAfter?: number | null;
 
+  retryAfter?: number | null;
 };
 
 /* 🌟 ===============================
@@ -67,50 +69,51 @@ const UpdateProfileForm = ({
   successMessage,
   currencyOptions,
   className = '',
-  retryAfter, 
-  
+  retryAfter,
 }: UpdateProfileFormPropsType) => {
-
   const isSuccess = !!successMessage;
 
   const isRateLimited = typeof retryAfter === 'number' && retryAfter > 0;
-//  console.table([{'Currencies':'Comparing', 'Current':formData['currency'],'Default': DEFAULT_CURRENCY,'Is Match':formData.currency === DEFAULT_CURRENCY}, ], )
+  //  console.table([{'Currencies':'Comparing', 'Current':formData['currency'],'Default': DEFAULT_CURRENCY,'Is Match':formData.currency === DEFAULT_CURRENCY}, ], )
 
-/* 🌟 ===============================
+  /* 🌟 ===============================
  🎮 FORM FIELD HANDLERS
 =============================== 🌟 */
-  const handleTextChange = (fieldName:keyof UpdateProfileFormDataType)=>(input:string | React.ChangeEvent<HTMLInputElement>)=>{
-   const value = typeof input === 'string'? input : input.target.value;
-   // if(globalMessage){
-   //  onClearGlobalMessage?.();
-   // }
-   onChange(fieldName,value);
-   // onChange(fieldName)(value);
-  }
- 
+  const handleTextChange =
+    (fieldName: keyof UpdateProfileFormDataType) =>
+    (input: string | React.ChangeEvent<HTMLInputElement>) => {
+      const value = typeof input === 'string' ? input : input.target.value;
+      // if(globalMessage){
+      //  onClearGlobalMessage?.();
+      // }
+      onChange(fieldName, value);
+      // onChange(fieldName)(value);
+    };
+
   const handleCurrencyChange = React.useCallback(
     (value: CurrencyType) => {
       onChange('currency', value);
-    }, [onChange]
+    },
+    [onChange],
   );
 
   const handleContactChange = React.useCallback(
     (value: string | React.ChangeEvent<HTMLInputElement>) => {
       const contactValue =
-      typeof value === 'string'
-        ? value
-        : value.target.value;
+        typeof value === 'string' ? value : value.target.value;
 
-    // onChange('contact', contactValue || null);
-    onChange('contact', contactValue);
-    }, [onChange]
-  );   
+      // onChange('contact', contactValue || null);
+      onChange('contact', contactValue);
+    },
+    [onChange],
+  );
 
   const handleSubmit = React.useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       await onSubmit(e);
-    }, [onSubmit]
+    },
+    [onSubmit],
   );
 
   const handleReset = React.useCallback(() => {
@@ -125,13 +128,15 @@ const UpdateProfileForm = ({
   const shouldShowError = React.useCallback(
     (fieldName: string): boolean => {
       return !!touchedFields[fieldName] && !!errors[fieldName];
-    }, [touchedFields, errors]
+    },
+    [touchedFields, errors],
   );
-//---
+  //---
   const getFieldError = React.useCallback(
     (fieldName: string): string | undefined => {
       return shouldShowError(fieldName) ? errors[fieldName] : undefined;
-    }, [shouldShowError, errors]
+    },
+    [shouldShowError, errors],
   );
 
   return (
@@ -145,64 +150,87 @@ const UpdateProfileForm = ({
 
       {/* 📢 GLOBAL MESSAGES CONTAINER */}
       <div className={styles.messagesContainer}>
-       {isSuccess && (
-
-        <div className={styles.messagesWrapper}>
-         <Message type="success" message={successMessage!} autoDismiss={8000} />
-        </div>
-        
+        {isSuccess && (
+          <div className={styles.messagesWrapper}>
+            <Message
+              type='success'
+              message={successMessage!}
+              autoDismiss={8000}
+            />
+          </div>
         )}
-      {/* {Show api error only when no field errors exist} */}
+        {/* {Show api error only when no field errors exist} */}
         {apiErrorMessage && Object.keys(errors).length === 0 && !isSuccess && (
           <div className={styles.messagesWrapper}>
-           <Message type="error" message={apiErrorMessage} onDismiss={onClearErrors} />
+            <Message
+              type='error'
+              message={apiErrorMessage}
+              onDismiss={onClearErrors}
+            />
           </div>
         )}
 
         {errors.form && !isSuccess && (
           <div className={styles.messagesWrapper}>
-           <Message type="warning" message={errors.form} onDismiss={onClearErrors} />
+            <Message
+              type='warning'
+              message={errors.form}
+              onDismiss={onClearErrors}
+            />
           </div>
         )}
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className={styles.form} autoComplete='off'>
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className={styles.form}
+        autoComplete='off'
+      >
         <fieldset className={styles.fieldset}>
-          <legend className={styles.fieldsetLegend}>Personal Information</legend>
+          <legend className={styles.fieldsetLegend}>
+            Personal Information
+          </legend>
           <div className={styles.personalInfoGrid}>
             <InputField
-              label="First Name"
+              label='First Name'
               value={formData.firstname}
               onChange={handleTextChange('firstname')}
               error={getFieldError('firstname')}
               required
-              placeholder="Enter your first name"
-              disabled={isLoading || isSuccess} 
+              placeholder='Enter your first name'
+              disabled={isLoading || isSuccess}
             />
             <InputField
-              label="Last Name"
+              label='Last Name'
               value={formData.lastname}
               onChange={handleTextChange('lastname')}
               error={getFieldError('lastname')}
               required
-              placeholder="Enter your last name"
-              disabled={isLoading || isSuccess} 
+              placeholder='Enter your last name'
+              disabled={isLoading || isSuccess}
             />
           </div>
         </fieldset>
 
-         {/* 💰 PREFERENCES SECTION */}
+        {/* 💰 PREFERENCES SECTION */}
         <fieldset className={styles.fieldset}>
           <legend className={styles.fieldsetLegend}>Preferences</legend>
           <div className={styles.preferencesSection}>
             <SelectField
-              label="Preferred Currency"
-              value={formData.currency === DEFAULT_CURRENCY? formData.currency : DEFAULT_CURRENCY}
+              label='Preferred Currency'
+              value={
+                formData.currency === DEFAULT_CURRENCY
+                  ? formData.currency
+                  : DEFAULT_CURRENCY
+              }
               options={currencyOptions || []}
               onChange={handleCurrencyChange}
               error={getFieldError('currency')}
-              disabled={isLoading || isSuccess || formData.currency === DEFAULT_CURRENCY }
-              placeholder="Select currency"
+              disabled={
+                isLoading || isSuccess || formData.currency === DEFAULT_CURRENCY
+              }
+              placeholder='Select currency'
             />
             {/* <SelectField
               label="Preferred Currency"
@@ -215,13 +243,13 @@ const UpdateProfileForm = ({
             /> */}
 
             <InputField
-              label="Contact Information"
+              label='Contact Information'
               value={formData.contact || ''}
               onChange={handleContactChange}
               error={getFieldError('contact')}
-              placeholder="Phone or email (optional)"
+              placeholder='Phone or email (optional)'
               disabled={isLoading || isSuccess}
-              helpText="Optional - for notifications and updates"
+              helpText='Optional - for notifications and updates'
             />
           </div>
         </fieldset>
@@ -229,43 +257,42 @@ const UpdateProfileForm = ({
         {/* 🎯 ACTION BUTTONS */}
         <div className={styles.actionButtons}>
           {!isSuccess ? (
-          <div className={styles.buttonGroupAnimation}>
-             <>
-               <SubmitButton
-                 type="submit"
-                 isLoading={isLoading}
-                 disabled={!isDirty || isLoading || isRateLimited
-                 }
-                 className={styles.saveButton}
-               >
-                 Save Changes
-               </SubmitButton>
-         <div className={styles.secondaryButtons}>
-              <button
-                type="button"
-                onClick={handleReset}
-                disabled={!isDirty || isLoading}
-                className={styles.resetButton}
-              >
-                Reset
-              </button>
-
-              {onClose && (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  disabled={isLoading}
-                  className={styles.cancelButton}
+            <div className={styles.buttonGroupAnimation}>
+              <>
+                <SubmitButton
+                  type='submit'
+                  isLoading={isLoading}
+                  disabled={!isDirty || isLoading || isRateLimited}
+                  className={styles.saveButton}
                 >
-                  Cancel
-                </button>
-              )}
-           </div> 
-            </>
-         </div>
+                  Save Changes
+                </SubmitButton>
+                <div className={styles.secondaryButtons}>
+                  <button
+                    type='button'
+                    onClick={handleReset}
+                    disabled={!isDirty || isLoading}
+                    className={styles.resetButton}
+                  >
+                    Reset
+                  </button>
+
+                  {onClose && (
+                    <button
+                      type='button'
+                      onClick={onClose}
+                      disabled={isLoading}
+                      className={styles.cancelButton}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </>
+            </div>
           ) : (
-           <button
-              type="button"
+            <button
+              type='button'
               onClick={onClose}
               className={styles.doneButton}
             >
@@ -279,10 +306,18 @@ const UpdateProfileForm = ({
         {import.meta.env.VITE_ENVIRONMENT === 'developmentX' && !isSuccess && (
           <div className={styles.debugUtilities}>
             <div className={styles.debugButtons}>
-              <button type="button" onClick={onMarkAllTouched} className={`${styles.debugButton} ${styles.debugButtonMark}`}>
+              <button
+                type='button'
+                onClick={onMarkAllTouched}
+                className={`${styles.debugButton} ${styles.debugButtonMark}`}
+              >
                 Mark All Touched
               </button>
-              <button type="button" onClick={onClearErrors} className={`${styles.debugButton} ${styles.debugButtonClear}`}>
+              <button
+                type='button'
+                onClick={onClearErrors}
+                className={`${styles.debugButton} ${styles.debugButtonClear}`}
+              >
                 Clear All Errors
               </button>
             </div>
@@ -290,15 +325,18 @@ const UpdateProfileForm = ({
         )}
       </form>
 
-     {/* ℹ️ FORM STATUS INDICATOR - show when not success */}
-      
+      {/* ℹ️ FORM STATUS INDICATOR - show when not success */}
+
       {Object.keys(touchedFields).length > 0 && !isSuccess && (
-        <div className={`${styles.statusIndicator}
-         ${isDirty ? styles.statusIndicatorDirty : styles.statusIndicatorClean}`}>
-          
+        <div
+          className={`${styles.statusIndicator}
+         ${isDirty ? styles.statusIndicatorDirty : styles.statusIndicatorClean}`}
+        >
           <span className={styles.statusIcon}>{isDirty ? '⚡' : '✅'}</span>
           <span>
-            {isDirty ? 'You have unsaved changes' : 'All changes saved (no unsaved changes)'}
+            {isDirty
+              ? 'You have unsaved changes'
+              : 'All changes saved (no unsaved changes)'}
           </span>
         </div>
       )}

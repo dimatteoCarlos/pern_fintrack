@@ -1,8 +1,11 @@
 //-------BudgetBigBoxResult---------
 //Parent:BudgetLayout.tsx
-import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
-import { currencyFormat } from '../../../helpers/functions';
-import { CurrencyType } from '../../../types/types';
+import {
+  CURRENCY_OPTIONS,
+  DEFAULT_CURRENCY,
+} from '../../../fintrack/helpers/constants';
+import { currencyFormat } from '../../../fintrack/helpers/functions';
+import { CurrencyType } from '../../../fintrack/types/types';
 
 type BigBoxResultPropType = {
   bigScreenInfo: { title: string; amount: number }[];
@@ -15,7 +18,7 @@ function BudgetBigBoxResult({ bigScreenInfo, currency }: BigBoxResultPropType) {
   const title = bigScreenInfo[1].title;
   const remaining = bigScreenInfo[1].amount;
   const currency_code = currency ?? DEFAULT_CURRENCY;
-  
+
   const formatNumberCountry = CURRENCY_OPTIONS[currency_code];
 
   return (

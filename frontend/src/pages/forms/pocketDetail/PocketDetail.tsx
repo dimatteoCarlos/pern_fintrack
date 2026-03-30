@@ -8,23 +8,23 @@ import {
   DEFAULT_CURRENCY,
   DEFAULT_POCKET_ACCOUNT_LIST,
   VARIANT_FORM,
-} from '../../../helpers/constants.ts';
+} from '../../../fintrack/helpers/constants.ts';
 import {
   PocketSavingAccountsResponseType,
   AccountSummaryBalanceType,
   AccountTransactionType,
   PocketListType,
   TransactionsAccountApiResponseType,
-} from '../../../types/responseApiTypes.ts';
+} from '../../../fintrack/types/responseApiTypes.ts';
 import {
   url_get_account_by_id,
   url_get_transactions_by_account_id,
 } from '../../../endpoints.ts';
-import { useFetch } from '../../../hooks/useFetch.ts';
+import { useFetch } from '../../../fintrack/hooks/useFetch.ts';
 import {
   capitalize,
   formatDateToDDMMYYYY,
-} from '../../../helpers/functions.ts';
+} from '../../../fintrack/helpers/functions.ts';
 import '../styles/forms-styles.css';
 import SummaryPocketDetailBox from './summaryPocketDetailBox/SummaryPocketDetailBox.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';

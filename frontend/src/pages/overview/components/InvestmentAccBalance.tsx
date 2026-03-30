@@ -4,18 +4,18 @@ import { useEffect, useState } from 'react';
 import { url_get_accounts_by_type } from '../../../endpoints';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import { CardTitle } from '../../../general_components/CardTitle';
-import { currencyFormat } from '../../../helpers/functions';
-import { useFetch } from '../../../hooks/useFetch.ts';
+import { currencyFormat } from '../../../fintrack/helpers/functions.ts';
+import { useFetch } from '../../../fintrack/hooks/useFetch.ts';
 import {
   AccountByTypeResponseType,
   AccountListType,
-} from '../../../types/responseApiTypes';
+} from '../../../fintrack/types/responseApiTypes.ts';
 
 import {
   //ACCOUNT_DEFAULT ,
   CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
-} from '../../../helpers/constants';
+} from '../../../fintrack/helpers/constants.ts';
 
 type AccountPropType = { previousRoute: string; accountType: string };
 

@@ -1,4 +1,4 @@
-import { capitalize } from "../../helpers/functions";
+import { capitalize } from '../../helpers/functions';
 
 //src/helpers/functions.ts
 export function validationData<T extends Record<string, unknown>>(
@@ -6,7 +6,7 @@ export function validationData<T extends Record<string, unknown>>(
   options?: {
     nonZeroFields?: string[]; // Campos que NO deben ser 0
     optionalFields?: string[]; // Campos opcionales
-  }
+  },
 ): Record<keyof T, string> {
   const errorValidationMessages: Partial<Record<keyof T, string>> = {};
 
@@ -15,35 +15,36 @@ export function validationData<T extends Record<string, unknown>>(
 
   for (const key in stateToValidate) {
     const value = stateToValidate[key];
-    
+
     // Validación para valores vacíos/nulos
     if (value === null || value === undefined || value === '') {
       errorValidationMessages[key] = `* Please provide the ${capitalize(key)}`;
       continue;
     }
-// console.log('key', key)
+    // console.log('key', key)
 
-// Validación adicional para números/additional validation for numbers
-//this accept zero as number input, used by new account creation
-   if (typeof value === 'number') {
-    if (nonZeroFields.includes(key) && value === 0) {
-      errorValidationMessages[key] = `* ${capitalize(key)} must be greater than zero`;
-    }else if (value < 0) {
+    // Validación adicional para números/additional validation for numbers
+    //this accept zero as number input, used by new account creation
+    if (typeof value === 'number') {
+      if (nonZeroFields.includes(key) && value === 0) {
+        errorValidationMessages[key] =
+          `* ${capitalize(key)} must be greater than zero`;
+      } else if (value < 0) {
         errorValidationMessages[key] = `* ${capitalize(key)} must be positive`;
       }
-    continue;
+      continue;
+    }
   }
-}
   return errorValidationMessages as Record<keyof T, string>;
 }
 //---------------------------------
 // ✅ función helper reutilizable para validar el campo 'amount' /validat speceifically amount field
-//used by custom validation of amount. ex.Debts.tsx. It does not accept zero 
+//used by custom validation of amount. ex.Debts.tsx. It does not accept zero
 export function validateAmount(value: string): string | null {
   if (value === '' || value === undefined) return 'Amount is required';
 
   const result = checkNumberFormatValue(value);
-  
+
   if (result.isError) {
     return `* ${result.formatMessage}`;
   }
@@ -61,10 +62,12 @@ export function validateAmount(value: string): string | null {
 }
 
 //---------------------------------
-export function validateField_v0(name: string, value: string 
+export function validateField_v0(
+  name: string,
+  value: string,
   //| number | null | undefined): string | null
- ) {
-if (name === 'amount') {
+) {
+  if (name === 'amount') {
     return validateAmount(value);
   }
 
@@ -82,16 +85,19 @@ function validateNumber(value: number, fieldName: string): string | null {
   return null;
 }
 //---
-//refactorizar para hacer un validateField generico / working on a dynamic or generic validateField 
-export function validateField(name: string, value: string | number | null | undefined) {
+//refactorizar para hacer un validateField generico / working on a dynamic or generic validateField
+export function validateField(
+  name: string,
+  value: string | number | null | undefined,
+) {
   if (value === '' || value == null) {
     return `* Please provide the ${capitalize(name)}`;
   }
-    if (name === 'amount') return validateAmount(String(value));
-    if (typeof value === 'number') {
+  if (name === 'amount') return validateAmount(String(value));
+  if (typeof value === 'number') {
     return validateNumber(value, name);
   }
-return null;
+  return null;
 }
 //-----------------------------
 //-----check number format ----
@@ -99,7 +105,7 @@ return null;
 export function checkNumberFormatValue(value: string): {
   formatMessage: string;
   valueNumber: string | undefined;
-  valueToSave: number  | undefined ;
+  valueToSave: number | undefined;
   isError: boolean;
 } {
   const notMatching = /([^0-9.,])/g; // Pattern for invalid characters
@@ -111,26 +117,31 @@ export function checkNumberFormatValue(value: string): {
   //valueToSave is the number used to update the number type state value
   //no matching character
   if (notMatching.test(value)) {
-   const matches = value.match(notMatching)// || [];
-    const invalidCharacters = [...new Set(matches)].slice(0,4).join(',').replace(' ','blank')
+    const matches = value.match(notMatching); // || [];
+    const invalidCharacters = [...new Set(matches)]
+      .slice(0, 4)
+      .join(',')
+      .replace(' ', 'blank');
 
     //  const  isError= true
     // const valueToSave = undefined
-    
+
     return {
       formatMessage: `not valid number: ${invalidCharacters}`,
-      isError:true,
+      isError: true,
       valueNumber: value.toString(),
-      valueToSave:  undefined
+      valueToSave: undefined,
     };
   }
   //normal number: point as decimal
   if (onlyDotDecimalSep.test(value)) {
-    const valueNumber = !isNaN(parseFloat(value)) ? parseFloat(value) : undefined;
+    const valueNumber = !isNaN(parseFloat(value))
+      ? parseFloat(value)
+      : undefined;
 
     return {
       formatMessage: 'decimal point format', //'point as decimal, no th separators with optional point as decimal sep '
-       
+
       valueNumber: valueNumber?.toString(),
       valueToSave: valueNumber,
       isError: false,
@@ -168,14 +179,12 @@ export function checkNumberFormatValue(value: string): {
   //dot as thousand separator, comma as decimal separator
   if (dotSepFormat.test(value)) {
     const valueNumber = !isNaN(
-      parseFloat(value.replace(/\./g, '').replace(',', '.'))
+      parseFloat(value.replace(/\./g, '').replace(',', '.')),
     )
       ? parseFloat(
-          parseFloat(value.replace(/\./g, '').replace(',', '.')).toFixed(2)
+          parseFloat(value.replace(/\./g, '').replace(',', '.')).toFixed(2),
         ) //seems that toFixed method does not work here - check
-      : 0
-      ;
-
+      : 0;
     return {
       formatMessage: 'dot as th-sep, comma as decimal',
       valueToSave: valueNumber,
@@ -188,13 +197,9 @@ export function checkNumberFormatValue(value: string): {
     formatMessage: `format number not valid`,
     isError: true,
     valueNumber: '',
-    valueToSave: undefined 
+    valueToSave: undefined,
   };
 }
 //General reg exp to validate number format--
 // ^(0([.,]\d+)?|[1-9]\d{0,2}(,\d{3})_(\.\d_)?|[1-9]\d{0,2}(\.\d{3})_(,\d_)?|[1-9]\d*([.,]\d*)?|[.,]\d+|\d+[.,])$
 //------------------------------------
-
-
-
-

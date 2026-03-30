@@ -17,7 +17,7 @@ import {
   ACCOUNT_TYPE_DEFAULT,
   DEFAULT_CURRENCY,
   VARIANT_FORM,
-} from '../../../helpers/constants.ts';
+} from '../../../fintrack/helpers/constants.ts';
 import { url_create_basic_account } from '../../../endpoints.ts';
 
 import '../styles/forms-styles.css';
@@ -27,18 +27,18 @@ import {
   DropdownOptionType,
   FormNumberInputType,
   VariantType,
-} from '../../../types/types.ts';
+} from '../../../fintrack/types/types.ts';
 
-import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+import { CreateBasicAccountApiResponseType } from '../../../fintrack/types/responseApiTypes.ts';
 
-import { capitalize } from '../../../helpers/functions.ts';
-import { validationData } from '../../../validations/utils/custom_validation.ts';
+import { capitalize } from '../../../fintrack/helpers/functions.ts';
+import { validationData } from '../../../fintrack/validations/utils/custom_validation.ts';
 
-import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import { useFetchLoad } from '../../../fintrack/hooks/useFetchLoad.ts';
 import useAuth from '../../../auth/hooks/useAuth';
 import { AUTH_ROUTE } from '../../../auth/auth_constants/constants.ts';
 
-import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
+import { NAME_MAX_LENGTHS } from '../../../fintrack/validations/inputConstraints/nameMaxLengths.ts';
 
 // import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
 //------------------------

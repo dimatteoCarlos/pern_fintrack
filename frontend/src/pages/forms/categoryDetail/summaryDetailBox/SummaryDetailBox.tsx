@@ -1,12 +1,12 @@
 // SummaryDetailBox.tsx
 import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
-import { DEFAULT_CURRENCY } from '../../../../helpers/constants';
+import { DEFAULT_CURRENCY } from '../../../../fintrack/helpers/constants';
 import {
   digitRound,
   getCurrencySymbol,
   numberFormatCurrency,
-} from '../../../../helpers/functions';
-import { CurrencyType } from '../../../../types/types';
+} from '../../../../fintrack/helpers/functions';
+import { CurrencyType } from '../../../../fintrack/types/types';
 import './styles/summaryDetailBox-style.css';
 
 //temporary values------------
