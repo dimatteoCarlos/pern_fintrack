@@ -1,4 +1,6 @@
-import AddSvg from '../../assets/mainNavbarSvg/AddSvg.svg';
+//frontend/src/fintrack/general_components/mainNavbar/TrackerButton.tsx
+
+import AddSvg from '../../../assets/mainNavbarSvg/AddSvg.svg';
 import { NavLink, useLocation } from 'react-router-dom';
 import Tooltip from '../tooltip/Tooltip';
 import { capitalize } from '../../helpers/functions';

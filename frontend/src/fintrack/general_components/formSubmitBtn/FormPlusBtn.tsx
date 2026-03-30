@@ -1,6 +1,8 @@
-//FormPlusBtn.tsx
-import Plusvg from '../../assets/trackerNavbarSvg/Plusvg.svg';
-import PlusvgDisabled from '../../assets/trackerNavbarSvg/PlusvgDisabled.svg';
+// frontend/src/fintrack/general_components/formSubmitBtn/FormPlusBtn.tsx
+
+import Plusvg from '../../../assets/trackerNavbarSvg/Plusvg.svg';
+import PlusvgDisabled from '../../../assets/trackerNavbarSvg/PlusvgDisabled.svg';
+
 type FormPlusBtnPropType = {
   onClickHandler: (e: React.MouseEvent<HTMLButtonElement>) => void;
   isDisabled:boolean

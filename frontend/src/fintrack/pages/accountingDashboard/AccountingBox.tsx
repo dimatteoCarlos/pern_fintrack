@@ -3,7 +3,7 @@
 
 import { numberFormatCurrency } from '../../helpers/functions';
 import { CurrencyType } from '../../types/types';
-import Dots3LightSvg from '../../assets/Dots3LightSvg.svg';
+import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 
 type AccountingBoxPropType = {
   title: string;

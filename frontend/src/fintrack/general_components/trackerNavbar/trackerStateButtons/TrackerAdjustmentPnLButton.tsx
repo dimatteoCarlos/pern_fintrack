@@ -1,4 +1,6 @@
-import AdjustSvg from '../../../assets/trackerNavbarSvg/AdjustSvg.svg';
+// frontend/src/fintrack/general_components/trackerNavbar/trackerStateButtons/TrackerAdjustmentPnLButton.tsx
+
+import AdjustSvg from '../../../../assets/trackerNavbarSvg/AdjustSvg.svg';
 import { NavLink } from 'react-router-dom';
 
 function TrackerInvestmentButton() {

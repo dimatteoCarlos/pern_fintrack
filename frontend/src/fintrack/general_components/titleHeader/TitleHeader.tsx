@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import LeftArrowDarkSvg from '../../assets/LeftArrowDarkSvg.svg';
+import LeftArrowDarkSvg from '../../../assets/LeftArrowDarkSvg.svg';
 import './titleHeader-style.css';
 import { PAGE_LOC_NUM } from '../../helpers/constants.ts';
 

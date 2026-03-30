@@ -1,4 +1,6 @@
-import DebtsSvg from '../../../assets/trackerNavbarSvg/DebtsSvg.svg';
+//frontend/src/fintrack/general_components/trackerNavbar/trackerStateButtons/TrackerDebtsButton.tsx
+
+import DebtsSvg from '../../../../assets/trackerNavbarSvg/DebtsSvg.svg';
 import { NavLink } from 'react-router-dom';
 
 function TrackerDebtsButton() {

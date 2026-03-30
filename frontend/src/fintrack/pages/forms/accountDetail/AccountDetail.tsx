@@ -3,9 +3,10 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useFetch } from '../../../hooks/useFetch.ts';
 
+import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
+import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
+
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
-import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import AccountBalanceSummary from './AccountBalanceSummary.tsx';

@@ -18,7 +18,7 @@ import FormDatepicker from '../../../general_components/datepicker/Datepicker.ts
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 
 // 🖼️ ASSETS
-import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
+import LeftArrowSvg from '../../../../assets/LeftArrowSvg.svg';
 
 // 🏷️ TYPES & CONSTANTS
 import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';

@@ -8,9 +8,9 @@ import { url_get_all_accounting_accounts } from '../../../endpoints';
 //---
 import AccountingBox from './AccountingBox';
 import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace';
-import LeftArrowSvg from '../../assets/LeftArrowSvg.svg';
-import Toast from '../../../editionAndDeletion/components/toast/Toast';
-import AccountActionsMenu from '../../../editionAndDeletion/components/accountActionMenu/AccountActionsMenu';
+import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
+import Toast from '../../editionAndDeletion/components/toast/Toast';
+import AccountActionsMenu from '../../editionAndDeletion/components/accountActionMenu/AccountActionsMenu';
 //---
 import {
   AccountByTypeResponseType,
@@ -20,7 +20,7 @@ import {
 //---
 import { capitalize } from '../../helpers/functions';
 //---
-import { isCategoryBudgetAccount } from '../../../editionAndDeletion/utils/categoryBudgetCalculations';
+import { isCategoryBudgetAccount } from '../../editionAndDeletion/utils/categoryBudgetCalculations';
 //---
 import './styles/accountingDashboard-styles.css';
 // import AccountingSkeleton from '../../edition/components/skeleton/AccountingSkeleton'

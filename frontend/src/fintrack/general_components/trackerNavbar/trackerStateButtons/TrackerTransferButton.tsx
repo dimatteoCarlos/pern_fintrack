@@ -1,4 +1,7 @@
-import TransferSvg from '../../../assets/trackerNavbarSvg/TransferSvg.svg';
+//frontend/src/fintrack/general_components/trackerNavbar/trackerStateButtons/TrackerTransferButton.tsx
+
+import TransferSvg from '../../../../assets/trackerNavbarSvg/TransferSvg.svg';
+
 import { NavLink } from 'react-router-dom';
 
 function TrackerTransferButton() {

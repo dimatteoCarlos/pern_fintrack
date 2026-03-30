@@ -1,4 +1,6 @@
-import ExpenseSvg from '../../../assets/trackerNavbarSvg/ExpenseSvg.svg';
+// frontend/src/fintrack/general_components/trackerNavbar/trackerStateButtons/TrackerExpenseButton.tsx
+
+import ExpenseSvg from '../../../../assets/trackerNavbarSvg/ExpenseSvg.svg';
 import { NavLink } from 'react-router-dom';
 
 function TrackerExpenseButton() {

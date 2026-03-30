@@ -1,4 +1,5 @@
-import OverviewSvg from '../../assets/mainNavbarSvg/OverviewSvg.svg';
+//frontend/src/fintrack/general_components/mainNavbar/OverviewButton.tsx
+import OverviewSvg from '../../../assets/mainNavbarSvg/OverviewSvg.svg';
 import { NavLink, useLocation } from 'react-router-dom';
 import Tooltip from '../tooltip/Tooltip';
 import { capitalize } from '../../helpers/functions';

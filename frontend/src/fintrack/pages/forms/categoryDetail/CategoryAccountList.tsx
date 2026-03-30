@@ -1,8 +1,8 @@
 // frontend/src/pages/forms/categoryDetail/CategoryAccountList.tsx
 import { Link, useLocation, useParams } from 'react-router-dom';
+import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
+import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
-import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { url_get_accounts_by_category } from '../../../../endpoints.ts';
 import { CategoryBudgetAccountsResponseType } from '../../../types/responseApiTypes.ts';

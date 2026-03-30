@@ -4,7 +4,7 @@ import useAuth from '../../../auth/hooks/useAuth';
 import UserProfileMenu from '../../../auth/components/userProfileMenu/UserProfileMenu';
 
 //icon images
-import Logo from '../../assets/logo.svg';
+import Logo from '../../../assets/logo.svg';
 //edit icon alternatives
 import { MdOutlineEditNote } from 'react-icons/md';
 // import { FiEdit } from "react-icons/fi";

@@ -1,4 +1,5 @@
-import DebtsSvg from '../../assets/mainNavbarSvg/DebtsSvg.svg';
+// frontend/src/fintrack/general_components/mainNavbar/DebtsButton.tsx
+import DebtsSvg from '../../../assets/mainNavbarSvg/DebtsSvg.svg';
 import { NavLink, useLocation } from 'react-router-dom';
 import Tooltip from '../tooltip/Tooltip';
 import { capitalize } from '../../helpers/functions';

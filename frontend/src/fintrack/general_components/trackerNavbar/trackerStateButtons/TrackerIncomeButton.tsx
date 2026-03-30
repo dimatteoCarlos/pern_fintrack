@@ -1,4 +1,6 @@
-import IncomeSvg from '../../../assets/trackerNavbarSvg/IncomeSvg.svg';
+//frontend/src/fintrack/general_components/trackerNavbar/trackerStateButtons/TrackerIncomeButton.tsx
+
+import IncomeSvg from '../../../../assets/trackerNavbarSvg/IncomeSvg.svg';
 
 import { NavLink } from 'react-router-dom';
 function TrackerIncomeButton() {

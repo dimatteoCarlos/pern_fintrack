@@ -12,7 +12,7 @@ import { MessageToUser } from '../../../general_components/messageToUser/Message
 import '../styles/forms-styles.css';
 
 // 🖼️ ASSETS
-import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
+import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 
 // 🛠️ CUSTOM HOOKS & UTILITIES
 import { useFetch } from '../../../hooks/useFetch.ts';

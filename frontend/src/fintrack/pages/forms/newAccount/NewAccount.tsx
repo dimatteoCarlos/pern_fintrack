@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AxiosRequestConfig } from 'axios';
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
+import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';

@@ -1,4 +1,6 @@
-import WalletSvg from '../../assets/mainNavbarSvg/WalletSvg.svg';
+//frontend/src/fintrack/general_components/mainNavbar/BudgetButton.tsx
+
+import WalletSvg from '../../../assets/mainNavbarSvg/WalletSvg.svg';
 import { NavLink, useLocation } from 'react-router-dom';
 import Tooltip from '../tooltip/Tooltip';
 import { capitalize } from '../../helpers/functions';

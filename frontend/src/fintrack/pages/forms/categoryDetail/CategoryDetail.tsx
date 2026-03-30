@@ -2,31 +2,32 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
+import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
-import '../styles/forms-styles.css';
 import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
-import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
+import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
 import SummaryDetailBox from './summaryDetailBox/SummaryDetailBox.tsx';
 
 import { useFetch } from '../../../hooks/useFetch.ts';
 import {
-  url_get_account_by_id,
-  url_get_transactions_by_account_id,
+ url_get_account_by_id,
+ url_get_transactions_by_account_id,
 } from '../../../../endpoints.ts';
 
 import {
-  CategoryBudgetAccountsResponseType,
-  TransactionsAccountApiResponseType,
+ CategoryBudgetAccountsResponseType,
+ TransactionsAccountApiResponseType,
 } from '../../../types/responseApiTypes.ts';
 import { CurrencyType } from '../../../types/types.ts';
 
+import '../styles/forms-styles.css';
+
 import {
-  capitalize,
-  currencyFormat,
-  formatDateToDDMMYYYY,
+ capitalize,
+ currencyFormat,
+ formatDateToDDMMYYYY,
 } from '../../../helpers/functions.ts';
 
 import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';

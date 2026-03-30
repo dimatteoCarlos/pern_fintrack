@@ -128,7 +128,7 @@ article {
   border-radius: 1rem;
   padding: 1rem 1.625rem;
 
-  background: url('../../../assets/cardBgTexture.png') repeat;
+  background: url('../../../../assets/cardBgTexture.png') repeat;
   /*figma*/
   left: 50%;
   transform: translateX(-50%);
