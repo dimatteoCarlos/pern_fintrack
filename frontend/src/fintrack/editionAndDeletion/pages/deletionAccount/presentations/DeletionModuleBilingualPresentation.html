@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTA Module - Technical Presentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Urbanist:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --accent: #deff9a;
+            --secondary: #3b82f6;
+            --text: #f8fafc;
+            --dim: #94a3b8;
+            --card: #1e293b;
+            --nav-bg: rgba(15, 23, 42, 0.8);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            font-family: 'Urbanist', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Language Selector UI */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 15px 40px;
+            background: var(--nav-bg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 10px;
+            background: #000;
+            padding: 5px;
+            border-radius: 30px;
+        }
+
+        .lang-btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 25px;
+            background: transparent;
+            color: var(--dim);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .lang-btn.active {
+            background: var(--accent);
+            color: #000;
+        }
+
+        /* Slide System */
+        .slide {
+            min-height: 100vh;
+            padding: 100px 20px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid #1e293b;
+            scroll-snap-align: start;
+        }
+
+        .container { max-width: 1100px; width: 100%; }
+
+        h1 { font-size: clamp(36px, 8vw, 72px); color: var(--accent); margin-bottom: 20px; text-align: center; line-height: 1.1; }
+        h2 { font-size: 32px; margin-bottom: 40px; border-left: 4px solid var(--accent); padding-left: 20px; }
+        
+        .code-font { font-family: 'Fira Code', monospace; color: var(--secondary); font-weight: 600; }
+
+        /* Steps & Interactions */
+        .flow-container { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
+        .flow-step {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+        }
+        .flow-step:hover { border-color: var(--accent); transform: translateX(5px); }
+        .step-number {
+            background: var(--accent);
+            color: #000;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* Hook Grid */
+        .hooks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+        .hook-card {
+            background: #111827;
+            padding: 20px;
+            border-radius: 12px;
+            border-top: 3px solid var(--secondary);
+        }
+        .hook-card h4 { color: var(--accent); margin-bottom: 12px; font-size: 18px; }
+        .hook-card ul { list-style: none; color: var(--dim); font-size: 14px; }
+        .hook-card li { margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px; }
+        .hook-card li i { color: var(--secondary); margin-top: 4px; font-size: 10px; }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: rgba(222, 255, 154, 0.1);
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .top-nav { padding: 10px 20px; }
+            .flow-step { flex-direction: column; align-items: flex-start; }
+            h1 { font-size: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="top-nav">
+    <div style="font-weight: 800; letter-spacing: 1px;">RTA <span style="color: var(--accent);">DOCS</span></div>
+    <div class="lang-switcher">
+        <button class="lang-btn active" onclick="setLang('es')">ES</button>
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+    </div>
+</nav>
+
+<!-- SLIDE 1: HERO -->
+<section class="slide">
+    <div class="container" style="text-align: center;">
+        <span class="tag" data-t="hero-tag">Arquitectura de Software</span>
+        <h1 data-t="hero-title">Módulo de Borrado de Cuentas RTA</h1>
+        <p style="font-size: 20px; color: var(--dim);" data-t="hero-desc">Análisis profundo del flujo de datos y la interacción entre componentes y hooks.</p>
+    </div>
+</section>
+
+<!-- SLIDE 2: ESTRUCTURA -->
+<section class="slide">
+    <div class="container">
+        <h2 data-t="s2-title">01. Estructura y Orquestación</h2>
+        <div class="flow-container">
+            <div class="flow-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3 class="code-font">AccountDeletionPage.tsx</h3>
+                    <p data-t="s2-p1">Controlador principal que gestiona el estado del reporte y la visibilidad del modal.</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3 class="code-font">useRTAImpactAndDeletion.ts</h3>
+                    <p data-t="s2-p2">Hook de lógica de negocio. Orquesta las llamadas GET (reporte) y DELETE (ejecución).</p>
+                </div>
+            </div>
+            <div class="flow-step" style="border-color: var(--secondary);">
+                <div class="step-number" style="background: var(--secondary); color: white;">3</div>
+                <div class="step-content">
+                    <h3 class="code-font">UI Components</h3>
+                    <p data-t="s2-p3">Componentes atómicos (ImpactReport, Modal, SuccessMessage) que renderizan el estado puro.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 3: INTERACCIONES -->
+<section class="slide">
+    <div class="container">
+        <h2 data-t="s3-title">02. Interacción entre Funciones</h2>
+        <p style="margin-bottom: 30px; color: var(--dim);" data-t="s3-desc">¿Cómo se comunican las funciones internas del módulo?</p>
+        
+        <div class="hooks-grid">
+            <div class="hook-card">
+                <h4 data-t="h1-title">Fase de Consulta</h4>
+                <ul data-t="h1-list">
+                    <li><i class="fas fa-circle"></i> Valida accountId al inicio.</li>
+                    <li><i class="fas fa-circle"></i> Ejecuta GET via useFetch.</li>
+                    <li><i class="fas fa-circle"></i> Mapea la respuesta al estado local.</li>
+                </ul>
+            </div>
+            <div class="hook-card">
+                <h4 data-t="h2-title">Fase de Ejecución</h4>
+                <ul data-t="h2-list">
+                    <li><i class="fas fa-circle"></i> Construye el payload RTA.</li>
+                    <li><i class="fas fa-circle"></i> Dispara POST/DELETE via useFetchLoad.</li>
+                    <li><i class="fas fa-circle"></i> Notifica éxito al Store Global.</li>
+                </ul>
+            </div>
+            <div class="hook-card">
+                <h4 data-t="h3-title">Post-Acción</h4>
+                <ul data-t="h3-list">
+                    <li><i class="fas fa-circle"></i> Cierra modal automáticamente.</li>
+                    <li><i class="fas fa-circle"></i> Muestra feedback visual temporal.</li>
+                    <li><i class="fas fa-circle"></i> Limpia timers de seguridad.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 4: HOOKS DE SOPORTE -->
+<section class="slide">
+    <div class="container">
+        <h2 data-t="s4-title">03. Hooks de Utilidad (UX)</h2>
+        <div class="hooks-grid">
+            <div class="hook-card">
+                <h4>useEscapeKey</h4>
+                <p style="font-size: 14px; color: var(--dim);" data-t="u-esc">Permite cerrar el modal presionando 'ESC', mejorando la accesibilidad.</p>
+            </div>
+            <div class="hook-card">
+                <h4>useAutoClose</h4>
+                <p style="font-size: 14px; color: var(--dim);" data-t="u-auto">Gestiona el cierre automático de mensajes de éxito tras 3 segundos.</p>
+            </div>
+            <div class="hook-card">
+                <h4>useClickOutside</h4>
+                <p style="font-size: 14px; color: var(--dim);" data-t="u-click">Detecta interacciones fuera del modal para colapsarlo.</p>
+            </div>
+            <div class="hook-card">
+                <h4>useLangTranslation</h4>
+                <p style="font-size: 14px; color: var(--dim);" data-t="u-lang">Provee acceso reactivo al diccionario de idiomas.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    const translations = {
+        es: {
+            "hero-tag": "Arquitectura de Software",
+            "hero-title": "Módulo de Borrado de Cuentas RTA",
+            "hero-desc": "Análisis profundo del flujo de datos y la interacción entre componentes y hooks.",
+            "s2-title": "01. Estructura y Orquestación",
+            "s2-p1": "Controlador principal que gestiona el estado del reporte y la visibilidad del modal.",
+            "s2-p2": "Hook de lógica de negocio. Orquesta las llamadas GET (reporte) y DELETE (ejecución).",
+            "s2-p3": "Componentes atómicos (ImpactReport, Modal, SuccessMessage) que renderizan el estado puro.",
+            "s3-title": "02. Interacción entre Funciones",
+            "s3-desc": "¿Cómo se comunican las funciones internas del módulo?",
+            "h1-title": "Fase de Consulta",
+            "h1-list": "<li><i class='fas fa-circle'></i> Valida accountId al inicio.</li><li><i class='fas fa-circle'></i> Ejecuta GET via useFetch.</li><li><i class='fas fa-circle'></i> Mapea la respuesta al estado local.</li>",
+            "h2-title": "Fase de Ejecución",
+            "h2-list": "<li><i class='fas fa-circle'></i> Construye el payload RTA.</li><li><i class='fas fa-circle'></i> Dispara POST/DELETE via useFetchLoad.</li><li><i class='fas fa-circle'></i> Notifica éxito al Store Global.</li>",
+            "h3-title": "Post-Acción",
+            "h3-list": "<li><i class='fas fa-circle'></i> Cierra modal automáticamente.</li><li><i class='fas fa-circle'></i> Muestra feedback visual temporal.</li><li><i class='fas fa-circle'></i> Limpia timers de seguridad.</li>",
+            "s4-title": "03. Hooks de Utilidad (UX)",
+            "u-esc": "Permite cerrar el modal presionando 'ESC', mejorando la accesibilidad.",
+            "u-auto": "Gestiona el cierre automático de mensajes de éxito tras 3 segundos.",
+            "u-click": "Detecta interacciones fuera del modal para colapsarlo.",
+            "u-lang": "Provee acceso reactivo al diccionario de idiomas."
+        },
+        en: {
+            "hero-tag": "Software Architecture",
+            "hero-title": "RTA Account Deletion Module",
+            "hero-desc": "Deep dive into data flow and interaction between components and hooks.",
+            "s2-title": "01. Structure & Orchestration",
+            "s2-p1": "Main controller managing report state and modal visibility.",
+            "s2-p2": "Business logic hook. Orchestrates GET (report) and DELETE (execution) calls.",
+            "s2-p3": "Atomic components (ImpactReport, Modal, SuccessMessage) rendering pure state.",
+            "s3-title": "02. Function Interactions",
+            "s3-desc": "How do the internal module functions communicate?",
+            "h1-title": "Consultation Phase",
+            "h1-list": "<li><i class='fas fa-circle'></i> Validates accountId at start.</li><li><i class='fas fa-circle'></i> Executes GET via useFetch.</li><li><i class='fas fa-circle'></i> Maps response to local state.</li>",
+            "h2-title": "Execution Phase",
+            "h2-list": "<li><i class='fas fa-circle'></i> Builds the RTA payload.</li><li><i class='fas fa-circle'></i> Triggers POST/DELETE via useFetchLoad.</li><li><i class='fas fa-circle'></i> Notifies Success to Global Store.</li>",
+            "h3-title": "Post-Action",
+            "h3-list": "<li><i class='fas fa-circle'></i> Closes modal automatically.</li><li><i class='fas fa-circle'></i> Shows temporal visual feedback.</li><li><i class='fas fa-circle'></i> Cleans up safety timers.</li>",
+            "s4-title": "03. Utility Hooks (UX)",
+            "u-esc": "Allows closing the modal by pressing 'ESC', improving accessibility.",
+            "u-auto": "Manages automatic closing of success messages after 3 seconds.",
+            "u-click": "Detects interactions outside the modal to collapse it.",
+            "u-lang": "Provides reactive access to the language dictionary."
+        }
+    };
+
+    function setLang(lang) {
+        // Update Buttons
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText.toLowerCase() === lang);
+        });
+
+        // Update Content
+        document.querySelectorAll('[data-t]').forEach(el => {
+            const key = el.getAttribute('data-t');
+            el.innerHTML = translations[lang][key];
+        });
+    }
+</script>
+
+</body>
+</html>

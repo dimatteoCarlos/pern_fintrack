@@ -1,0 +1,147 @@
+/* =====================================
+   ACCOUNT DELETION PAGE STYLES
+===================================== */
+/* CSS Variables */
+:root {
+  --primary-color: #3b82f6;
+  --danger-color: #dc2626;
+  --success-color: #059669;
+  --warning-color: #d97706;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-600: #4b5563;
+  --gray-800: #1f2937;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --radius-lg: 0.5rem;
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Page Container */
+.account-deletion-page {
+  min-height: 100vh;
+  background-color: var(--gray-100);
+  padding: var(--spacing-8);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-8);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 2px solid var(--gray-200);
+  /* border:2px solid red; */
+  }
+
+.header-icon{
+ width:19px;
+ height: 16px;
+}  
+
+.page-title {
+ flex-grow: 1;
+ text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--gray-800);
+  margin: 0;
+  width: 100%;
+  /* border:1px solid red; */
+  /* white-space: nowrap; */
+  /* overflow: hidden;
+  text-overflow: ellipsis; */
+
+
+}
+
+/* El placeholder vacío toma el mismo espacio que el botón de atrás */
+.header-placeholder {
+  width: 19px; /* Mismo ancho que el botón/icono para centrar perfectamente */
+}
+/* Language Selector */
+.language-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+}
+
+.language-dropdown {
+ padding: 0.5rem 0.75rem;
+ border: 1px solid var(--gray-200);
+ border-radius: var(--radius-lg);
+ background: white;
+ color: var(--gray-800);
+ font-weight: 500;
+ cursor: pointer;
+ transition: border-color 0.32s ease;
+
+}
+
+.language-dropdown:hover {
+  border-color: var(--primary-color);
+}
+
+/* Main Content */
+.main-content {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-8);
+  box-shadow: var(--shadow-lg);
+  margin-top: var(--spacing-6);
+
+}
+
+.content-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-6);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--gray-200);
+
+}
+
+/* Action Section */
+.action-section {
+  margin-top: var(--spacing-8);
+  padding-top: var(--spacing-6);
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: flex-end;
+  /* background-color: orange; */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .account-deletion-page {
+    padding: var(--spacing-4);
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-4);
+  }
+  
+  .main-content {
+    padding: var(--spacing-4);
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+    
+  }
+  
+  .content-title {
+    font-size: 1.25rem;
+    
+  }
+}

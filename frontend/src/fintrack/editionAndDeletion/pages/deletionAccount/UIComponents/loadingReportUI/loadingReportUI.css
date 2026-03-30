@@ -1,0 +1,86 @@
+/* ============================================
+   LOADING REPORT UI STYLES
+============================================ */
+
+/* CSS Variables - Consistent with other components */
+:root {
+  --primary-indigo: #4f46e5;
+  --primary-indigo-light: #e0e7ff;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --spacing-8: 2rem;
+  --spacing-4: 1rem;
+  --spacing-2: 0.5rem;
+  --radius-lg: 0.5rem;
+}
+
+/* Loading Container */
+.loading-report {
+  text-align: center;
+  padding: var(--spacing-8);
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Spinner Styles */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  height: 2.5rem;
+  width: 2.5rem;
+  margin: 0 auto;
+  color: var(--primary-indigo);
+}
+
+.spinner-circle {
+  opacity: 0.25;
+  stroke: currentColor;
+}
+
+.spinner-path {
+  opacity: 0.75;
+  fill: currentColor;
+}
+
+/* Loading Text */
+.loading-text {
+  margin-top: var(--spacing-4);
+  color: var(--gray-700);
+  font-weight: 600;
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+/* Animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .loading-report {
+    padding: var(--spacing-4);
+  }
+  
+  .loading-spinner {
+    height: 2rem;
+    width: 2rem;
+  }
+  
+  .loading-text {
+    font-size: 1rem;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation-duration: 2s;
+  }
+}

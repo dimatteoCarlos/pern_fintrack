@@ -1,0 +1,144 @@
+/*frontend/src/editionAndDeletion/pages/deletionAccount/UIComponents/impactReportUI/impactReportUI.css
+*/
+:root {
+  --yellow-50: #fffbeb;
+  --yellow-300: #fde68a;
+  --yellow-800: #92400e;
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --red-300: #fca5a5;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-800: #991b1b;
+  --green-600: #059669;
+  --green-700: #047857;
+  --gray-50: #f9fafb;
+  --gray-200: #e5e7eb;
+  --gray-500: #6b7280;
+  --gray-900: #111827;
+  --radius-lg: 0.5rem;
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+}
+
+/* No Impact Report */
+.no-impact-report {
+  padding: 1rem;
+  background: var(--yellow-50);
+  border: 1px solid var(--yellow-300);
+  border-radius: var(--radius-lg);
+  color: var(--yellow-800);
+}
+
+.no-impact-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.no-impact-message {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Impact Report Warning */
+.impact-report-warning {
+  padding: 0.75rem;
+  background: var(--red-50);
+  border: 1px solid var(--red-300);
+  border-radius: var(--radius-lg);
+  color: var(--red-800);
+
+}
+
+.impact-warning-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.impact-warning-message {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Table */
+.impact-report-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.impact-report-table {
+/* width: 100%; *//*in this way the scrollbar is shown since the content defines the minimum width for the table*/
+  /* min-width: 100%; */
+  border-collapse: collapse;
+  background: white;
+}
+
+.impact-report-table th {
+  padding: 0.5rem 0.55rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  background: var(--gray-50);
+
+}
+
+.impact-report-table .adjustment-column {
+  background: var(--red-100);
+}
+
+.impact-report-table td {
+  padding: 0.5rem 0.55rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--gray-200);
+  text-align: right;
+  /* border:1px solid gray */
+
+}
+.impact-report-table td.account-name,
+.impact-report-table td.account-type{
+  /* background-color: red; */
+  text-align: left;
+  white-space:wrap; 
+  /* overflow: hidden; */
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.impact-report-table .net-adjustment.positive {
+  color: var(--green-600);
+  font-weight: 600;
+}
+
+.impact-report-table .net-adjustment.negative {
+  color: var(--red-600);
+  font-weight: 600;
+}
+
+.impact-report-total {
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  margin-top: 0.5rem;
+}
+
+.total-amount.positive {
+  color: var(--green-700);
+  font-weight: 700;
+  margin-left: 0.5rem;
+}
+
+.total-amount.negative {
+  color: var(--red-700);
+  font-weight: 700;
+  margin-left: 0.5rem;
+}
+
+
+
+

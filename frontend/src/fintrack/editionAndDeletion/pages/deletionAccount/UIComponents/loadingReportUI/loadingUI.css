@@ -1,0 +1,105 @@
+/* frontend/src/editionAndDeletion/pages/deletionAccount/UIComponents/loadingReportUI/loadingUI.css */
+
+:root {
+  --loading-primary: #3b82f6;
+  --loading-text: #4b5563;
+  --loading-bg: transparent;
+}
+
+.loading-ui {
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ text-align: center;
+ align-items: center;
+ padding: 2rem;
+
+}
+
+/* 🎯 SPINNER BASE STYLES */
+.loading-spinner{
+ animation: spin 1s linear infinite;
+ color:var(--loading-primary);
+}
+
+.spinner-circle{
+ opacity: 0.25;
+ stroke:currentColor;
+}
+
+.spinner-path{
+ opacity: 0.75;
+ stroke: currentColor;
+}
+
+/* 🎯 SIZE VARIATIONS */
+.loading-spinner-small {
+ height:1.5rem;
+ width: 1.5rem;
+}
+
+.loading-spinner-medium {
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+.loading-spinner-large {
+  height: 3.5rem;
+  width: 3.5rem;
+}
+
+/* 🎯 TEXT STYLES */
+.loading-text {
+  margin-top: 1rem;
+  color: var(--loading-text);
+  font-size: 1rem;
+  font-weight: 500;
+  max-width: 300px;
+}
+
+/* 🎯 SIZE-SPECIFIC TEXT */
+.loading-spinner-small + .loading-text {
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+}
+
+.loading-spinner-large + .loading-text {
+  font-size: 1.125rem;
+  margin-top: 1.25rem;
+}
+
+/* 🎯 ANIMATION */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 🎯 REDUCED MOTION */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation-duration: 2s;
+  }
+}
+
+/* 🎯 RESPONSIVE */
+@media (max-width: 768px) {
+  .loading-ui {
+    padding: 1rem;
+  }
+  
+  .loading-spinner-medium {
+    height: 2rem;
+    width: 2rem;
+  }
+  
+  .loading-spinner-large {
+    height: 2.5rem;
+    width: 2.5rem;
+  }
+}
+
+
+
+
+
+

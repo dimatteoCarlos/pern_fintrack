@@ -1,0 +1,358 @@
+/*
+frontend/src/editionAndDeletion/pages/deletionAccount/UIComponents/confirmationModalUI/initialConfirmationDeleteAccountUI.css
+*/
+/* ============================================
+   INITIAL CONFIRMATION DELETE ACCOUNT UI STYLES
+============================================ */
+
+:root {
+  /* Colors - Consistent with your design system */
+  --confirm-bg: #ffffff;
+  --confirm-text: #1f2937;
+  --confirm-red: #dc2626;
+  --confirm-red-hover: #b91c1c;
+  --confirm-gray-300: #d1d5db;
+  --confirm-gray-600: #4b5563;
+  --confirm-gray-700: #374151;
+  --confirm-blue-100: #dbeafe;
+  --confirm-blue-600: #2563eb;
+  --confirm-red-100: #fee2e2;
+  --confirm-red-800: #991b1b;
+  
+  /* Spacing */
+  --confirm-spacing-6: 1.5rem;
+  --confirm-spacing-4: 1rem;
+  --confirm-spacing-3: 0.75rem;
+  --confirm-spacing-2: 0.5rem;
+  
+  /* Borders */
+  --confirm-radius-lg: 0.5rem;
+  --confirm-radius-xl: 0.75rem;
+  --confirm-radius-full: 9999px;
+  
+  /* Shadows */
+  --confirm-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --confirm-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  /* Typography */
+  --confirm-text-xl: 1.25rem;
+  --confirm-text-lg: 1.125rem;
+  --confirm-text-base: 1rem;
+  --confirm-text-sm: 0.875rem;
+  
+  /* Font Weights */
+  --confirm-font-bold: 700;
+  --confirm-font-extrabold: 800;
+  --confirm-font-semibold: 600;
+  --confirm-font-medium: 500;
+  
+  /* Transitions */
+  --confirm-transition: 200ms ease;
+}
+
+/* ============================================
+   MAIN CONTAINER
+============================================ */
+.confirm-delete-container {
+  padding: var(--confirm-spacing-6);
+  background-color: var(--confirm-bg);
+  border-radius: var(--confirm-radius-xl);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  width: 100%;
+}
+
+/* Fade-in animation */
+.confirm-delete-container.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   HEADER WITH LANGUAGE SELECTOR
+============================================ */
+.component-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--confirm-spacing-6);
+  flex-wrap: wrap;
+  gap: var(--confirm-spacing-4);
+}
+
+.confirm-delete-title {
+  font-size: var(--confirm-text-xl);
+  font-weight: var(--confirm-font-bold);
+  color: var(--confirm-text);
+  margin: 0;
+  padding-bottom: 1rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.language-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--confirm-spacing-2);
+}
+
+.language-label {
+  font-size: var(--confirm-text-sm);
+  color: var(--confirm-gray-600);
+  font-weight: var(--confirm-font-medium);
+}
+
+.language-buttons {
+  display: flex;
+  background-color: #f8fafc;
+  border-radius: var(--confirm-radius-full);
+  padding: 0.25rem;
+  border: 1px solid var(--confirm-gray-300);
+}
+
+.lang-btn {
+  padding: 0.25rem 0.75rem;
+  border: none;
+  background: none;
+  border-radius: var(--confirm-radius-full);
+  font-size: var(--confirm-text-sm);
+  font-weight: var(--confirm-font-medium);
+  color: var(--confirm-gray-600);
+  cursor: pointer;
+  transition: var(--confirm-transition);
+  min-width: 60px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.lang-btn:hover:not(:disabled) {
+  color: var(--confirm-gray-700);
+  background-color: #f3f4f6;
+}
+
+.lang-btn.active {
+  background-color: #3b82f6;
+  color: #ffffff;
+  box-shadow: var(--confirm-shadow-md);
+}
+
+.lang-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   CONTENT AREA
+============================================ */
+.confirm-delete-description {
+  color: var(--confirm-gray-600);
+  margin-bottom: var(--confirm-spacing-6);
+  line-height: 1.5;
+  font-size: var(--confirm-text-base);
+}
+
+.confirm-delete-count {
+  font-weight: var(--confirm-font-semibold);
+  margin-bottom: var(--confirm-spacing-6);
+  font-size: var(--confirm-text-base);
+  color: var(--confirm-text);
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.count-number {
+  font-size: var(--confirm-text-lg);
+  font-weight: var(--confirm-font-extrabold);
+  color: var(--confirm-red);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width:20px;
+}
+
+/* ============================================
+   PROCESSING INDICATOR
+============================================ */
+.processing-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--confirm-spacing-3);
+  background-color: var(--confirm-blue-100);
+  color: var(--confirm-blue-600);
+  border-radius: var(--confirm-radius-lg);
+  margin-bottom: var(--confirm-spacing-4);
+  gap: var(--confirm-spacing-3);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  height: 1.25rem;
+  width: 1.25rem;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   ERROR MESSAGE
+============================================ */
+.error-message {
+  padding: var(--confirm-spacing-3);
+  margin-bottom: var(--confirm-spacing-4);
+  background-color: var(--confirm-red-100);
+  color: var(--confirm-red-800);
+  border-radius: var(--confirm-radius-lg);
+  font-size: var(--confirm-text-sm);
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--confirm-spacing-2);
+}
+
+.error-message strong {
+  font-weight: var(--confirm-font-semibold);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   ACTION BUTTONS
+============================================ */
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--confirm-spacing-6);
+  gap: var(--confirm-spacing-3);
+}
+
+.action-buttons.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Cancel Button */
+.cancel-button {
+  padding: var(--confirm-spacing-2) var(--confirm-spacing-4);
+  border: 1px solid var(--confirm-gray-300);
+  border-radius: var(--confirm-radius-lg);
+  color: var(--confirm-gray-700);
+  background-color: var(--confirm-bg);
+  font-weight: var(--confirm-font-medium);
+  cursor: pointer;
+  transition: var(--confirm-transition);
+  font-size: var(--confirm-text-base);
+}
+
+.cancel-button:hover:not(:disabled) {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.cancel-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Confirm Button */
+.confirm-button {
+  padding: var(--confirm-spacing-2) var(--confirm-spacing-4);
+  border-radius: var(--confirm-radius-lg);
+  color: #ffffff;
+  background-color: var(--confirm-red);
+  font-weight: var(--confirm-font-semibold);
+  border: none;
+  cursor: pointer;
+  transition: var(--confirm-transition);
+  box-shadow: var(--confirm-shadow-md);
+  font-size: var(--confirm-text-base);
+}
+
+.confirm-button:hover:not(:disabled) {
+  background-color: var(--confirm-red-hover);
+  box-shadow: var(--confirm-shadow-lg);
+}
+
+.confirm-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+============================================ */
+@media (max-width: 768px) {
+  .confirm-delete-container {
+    padding: var(--confirm-spacing-4);
+  }
+  
+  .component-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--confirm-spacing-3);
+  }
+  
+  .language-selector {
+    justify-content: space-between;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .cancel-button,
+  .confirm-button {
+    width: 100%;
+    padding: 0.625rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .confirm-delete-title {
+    font-size: var(--confirm-text-lg);
+  }
+  
+  .confirm-delete-description,
+  .confirm-delete-count {
+    font-size: var(--confirm-text-sm);
+  }
+  
+  .count-number {
+    font-size: var(--confirm-text-base);
+  }
+  
+  .language-buttons {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .lang-btn {
+    flex: 1;
+  }
+  
+  .processing-indicator {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--confirm-spacing-2);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .confirm-delete-container.fade-in,
+  .spinner,
+  .cancel-button,
+  .confirm-button,
+  .lang-btn {
+    animation: none;
+    transition: none;
+  }
+}

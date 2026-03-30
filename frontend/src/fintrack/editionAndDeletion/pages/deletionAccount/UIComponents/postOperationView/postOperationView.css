@@ -1,0 +1,388 @@
+/* frontend/src/editionAndDeletion/pages/deletionAccount/UIComponents/PostOperationView.css */
+/* ============================================
+   POST OPERATION VIEW STYLES
+============================================ */
+
+:root {
+  /* Success Colors */
+  --post-success-bg: #f0f9ff;
+  --post-success-border: #0ea5e9;
+  --post-success-text: #0369a1;
+  --post-success-icon: #059669;
+  --post-success-accent: #d1fae5;
+  
+  /* Error Colors */
+  --post-error-bg: #fef2f2;
+  --post-error-border: #ef4444;
+  --post-error-text: #991b1b;
+  --post-error-icon: #dc2626;
+  --post-error-accent: #fee2e2;
+  
+  /* Common Colors */
+  --post-card-bg: #ffffff;
+  --post-card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --post-radius-lg: 0.75rem;
+  --post-radius-md: 0.5rem;
+  --post-radius-sm: 0.25rem;
+  
+  /* Spacing */
+  --post-spacing-8: 2rem;
+  --post-spacing-6: 1.5rem;
+  --post-spacing-4: 1rem;
+  --post-spacing-3: 0.75rem;
+  --post-spacing-2: 0.5rem;
+  --post-spacing-1: 0.25rem;
+  
+  /* Typography */
+  --post-font-title: 1.75rem;
+  --post-font-subtitle: 1.125rem;
+  --post-font-body: 1rem;
+  --post-font-small: 0.875rem;
+  
+  /* Transitions */
+  --post-transition: all 0.3s ease;
+}
+
+/* ============================================
+   MAIN CONTAINER
+============================================ */
+.post-operation-view {
+  background: var(--post-card-bg);
+  border-radius: var(--post-radius-lg);
+  box-shadow: var(--post-card-shadow);
+  padding: var(--post-spacing-6);
+  margin-top: var(--post-spacing-4);
+  animation: fadeInUp 0.5s ease-out;
+  overflow: hidden;
+}
+
+.success-view {
+  border-top: 4px solid var(--post-success-border);
+  border-left: 1px solid var(--post-success-accent);
+  border-right: 1px solid var(--post-success-accent);
+  border-bottom: 1px solid var(--post-success-accent);
+}
+
+.error-view {
+  border-top: 4px solid var(--post-error-border);
+  border-left: 1px solid var(--post-error-accent);
+  border-right: 1px solid var(--post-error-accent);
+  border-bottom: 1px solid var(--post-error-accent);
+}
+
+/* ============================================
+   HEADER SECTION
+============================================ */
+.post-operation-header {
+  text-align: center;
+  margin-bottom: var(--post-spacing-6);
+  padding-bottom: var(--post-spacing-4);
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.status-icon {
+  font-size: 3rem;
+  margin-bottom: var(--post-spacing-3);
+  line-height: 1;
+}
+
+.success .status-icon {
+  color: var(--post-success-icon);
+}
+
+.error .status-icon {
+  color: var(--post-error-icon);
+}
+
+.post-operation-title {
+  font-size: var(--post-font-title);
+  font-weight: 700;
+  margin-bottom: var(--post-spacing-2);
+  line-height: 1.2;
+}
+
+.success .post-operation-title {
+  color: var(--post-success-text);
+}
+
+.error .post-operation-title {
+  color: var(--post-error-text);
+}
+
+.post-operation-subtitle {
+  color: #6b7280;
+  font-size: var(--post-font-subtitle);
+  line-height: 1.5;
+}
+
+/* ============================================
+   DETAILS SECTIONS
+============================================ */
+.operation-details,
+.error-details,
+.error-metadata {
+  background: #f9fafb;
+  border-radius: var(--post-radius-md);
+  padding: var(--post-spacing-4);
+  margin-bottom: var(--post-spacing-6);
+}
+
+.detail-row,
+.metadata-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--post-spacing-2) 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-row:last-child,
+.metadata-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label,
+.metadata-label {
+  font-weight: 600;
+  color: #4b5563;
+  font-size: var(--post-font-body);
+}
+
+.detail-value,
+.metadata-value {
+  color: #1f2937;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: var(--post-font-body);
+}
+
+/* ============================================
+   RESULTS SUMMARY
+============================================ */
+.results-summary {
+  background: var(--post-success-accent);
+  border: 1px solid #bbf7d0;
+  border-radius: var(--post-radius-md);
+  padding: var(--post-spacing-4);
+  margin-bottom: var(--post-spacing-6);
+}
+
+.results-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #065f46;
+  margin-bottom: var(--post-spacing-3);
+}
+
+.summary-stats {
+  display: flex;
+  gap: var(--post-spacing-6);
+  margin-bottom: var(--post-spacing-3);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: var(--post-font-small);
+  color: #6b7280;
+  margin-bottom: var(--post-spacing-1);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+.results-note {
+  font-size: var(--post-font-small);
+  color: #6b7280;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ============================================
+   MESSAGES
+============================================ */
+.success-message-container {
+  background: var(--post-success-accent);
+  border-radius: var(--post-radius-md);
+  padding: var(--post-spacing-4);
+  margin-bottom: var(--post-spacing-6);
+}
+
+.success-message {
+  color: #065f46;
+  font-size: var(--post-font-subtitle);
+  line-height: 1.5;
+  text-align: center;
+  margin: 0;
+}
+
+.error-message-container {
+  background: var(--post-error-accent);
+  border-radius: var(--post-radius-md);
+  padding: var(--post-spacing-4);
+  margin-bottom: var(--post-spacing-4);
+}
+
+.error-message-text {
+  color: #991b1b;
+  font-size: var(--post-font-subtitle);
+  line-height: 1.5;
+  margin: 0;
+  word-break: break-word;
+}
+
+/* ============================================
+   INSTRUCTIONS
+============================================ */
+.error-instructions {
+  background: #fffbeb;
+  border-radius: var(--post-radius-md);
+  padding: var(--post-spacing-4);
+  margin-bottom: var(--post-spacing-4);
+}
+
+.instructions-title {
+  font-size: var(--post-font-subtitle);
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: var(--post-spacing-2);
+}
+
+.instructions-list {
+  margin-left: var(--post-spacing-4);
+  color: #92400e;
+  padding: 0;
+}
+
+.instructions-list li {
+  margin-bottom: var(--post-spacing-2);
+  line-height: 1.5;
+  font-size: var(--post-font-body);
+}
+
+/* ============================================
+   ACTION BUTTONS
+============================================ */
+.post-operation-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--post-spacing-6);
+  border-top: 2px solid #e5e7eb;
+  margin-top: var(--post-spacing-4);
+}
+
+.back-to-actions-button {
+  padding: var(--post-spacing-3) var(--post-spacing-8);
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: var(--post-radius-md);
+  font-weight: 600;
+  font-size: var(--post-font-subtitle);
+  cursor: pointer;
+  transition: var(--post-transition);
+  min-width: 250px;
+}
+
+.back-to-actions-button:hover {
+  background-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+}
+
+.back-to-actions-button:active {
+  transform: translateY(0);
+}
+
+.back-to-actions-button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ============================================
+   ANIMATIONS
+============================================ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+============================================ */
+@media (max-width: 768px) {
+  .post-operation-view {
+    padding: var(--post-spacing-4);
+    margin: var(--post-spacing-2);
+  }
+  
+  .post-operation-title {
+    font-size: 1.5rem;
+  }
+  
+  .post-operation-subtitle {
+    font-size: var(--post-font-body);
+  }
+  
+  .detail-row,
+  .metadata-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--post-spacing-1);
+  }
+  
+  .summary-stats {
+    flex-direction: column;
+    gap: var(--post-spacing-3);
+  }
+  
+  .back-to-actions-button {
+    width: 100%;
+    min-width: auto;
+    padding: var(--post-spacing-3) var(--post-spacing-4);
+  }
+  
+  .status-icon {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .post-operation-view {
+    padding: var(--post-spacing-3);
+  }
+  
+  .operation-details,
+  .error-details,
+  .error-metadata,
+  .results-summary,
+  .success-message-container,
+  .error-message-container,
+  .error-instructions {
+    padding: var(--post-spacing-3);
+  }
+  
+  .post-operation-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .post-operation-view,
+  .back-to-actions-button {
+    animation: none;
+    transition: none;
+  }
+}

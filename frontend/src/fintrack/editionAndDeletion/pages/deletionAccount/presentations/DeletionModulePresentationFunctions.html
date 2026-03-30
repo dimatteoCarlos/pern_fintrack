@@ -1,0 +1,232 @@
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interacciones del Módulo RTA Deletion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Urbanist:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0a0f1e;
+            --accent: #deff9a;
+            --secondary: #3b82f6;
+            --text: #f8fafc;
+            --dim: #64748b;
+            --card: #161e31;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Urbanist', sans-serif; }
+
+        .slide {
+            min-height: 100vh;
+            padding: 60px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .container { max-width: 1100px; width: 100%; }
+
+        h1 { font-size: clamp(32px, 6vw, 64px); color: var(--accent); margin-bottom: 20px; text-align: center; }
+        h2 { font-size: 32px; margin-bottom: 40px; border-left: 4px solid var(--accent); padding-left: 20px; }
+        
+        .code-font { font-family: 'Fira Code', monospace; color: var(--secondary); font-weight: 600; }
+
+        /* Diagrama de Flujo */
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .flow-step {
+            background: var(--card);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            transition: transform 0.3s ease;
+        }
+
+        .flow-step:hover { transform: translateX(10px); border-color: var(--accent); }
+
+        .step-number {
+            background: var(--accent);
+            color: #000;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 { font-size: 20px; margin-bottom: 5px; color: var(--accent); }
+        .step-content p { color: var(--dim); font-size: 16px; }
+
+        /* Grid de Hooks */
+        .hooks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .hook-card {
+            background: #111827;
+            padding: 20px;
+            border-radius: 12px;
+            border-top: 3px solid var(--secondary);
+        }
+
+        .hook-card h4 { margin-bottom: 10px; font-size: 18px; }
+        .hook-card ul { list-style: none; color: var(--dim); font-size: 14px; }
+        .hook-card li { margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px; }
+        .hook-card li i { color: var(--accent); margin-top: 4px; font-size: 12px; }
+
+        .arrow-down { text-align: center; color: var(--dim); font-size: 24px; margin: 10px 0; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 36px; }
+            .flow-step { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SLIDE 1: INTRO -->
+<section class="slide">
+    <div class="container">
+        <span style="color: var(--accent); text-transform: uppercase; font-weight: bold; letter-spacing: 2px;">Inmersión Técnica</span>
+        <h1>Arquitectura de Interacción</h1>
+        <p style="text-align: center; max-width: 800px; margin: 0 auto;">Análisis del flujo de datos entre <strong>AccountDeletionPage</strong>, Hooks de lógica RTA y Hooks de utilidad del sistema.</p>
+    </div>
+</section>
+
+<!-- SLIDE 2: EL ORQUESTADOR -->
+<section class="slide">
+    <div class="container">
+        <h2>01. El Componente Orquestador</h2>
+        <p style="margin-bottom: 30px;">La <span class="code-font">AccountDeletionPage.tsx</span> centraliza el estado y decide qué mostrar basándose en la respuesta de los hooks.</p>
+        
+        <div class="flow-container">
+            <div class="flow-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Carga Inicial (Mounting)</h3>
+                    <p>El componente llama a <code>useRTAImpactAndDeletion</code>. Este dispara un GET a <code>url_report_of_affected_accounts</code>.</p>
+                </div>
+            </div>
+            <div class="arrow-down"><i class="fas fa-chevron-down"></i></div>
+            <div class="flow-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Evaluación de Impacto</h3>
+                    <p>Si hay cuentas afectadas, se inyecta el array en <code>ImpactReportUI</code>. Si no, se activa <code>NoImpactReportUI</code>.</p>
+                </div>
+            </div>
+            <div class="arrow-down"><i class="fas fa-chevron-down"></i></div>
+            <div class="flow-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Apertura de Modal</h3>
+                    <p>Al hacer click en "Proceed", se activa <code>isModalOpen</code>. El modal recibe el callback <code>onConfirm</code> vinculado a la función de ejecución del hook.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 3: LA LÓGICA DE NEGOCIO -->
+<section class="slide">
+    <div class="container">
+        <h2>02. El Motor: useRTAImpactAndDeletion</h2>
+        <p style="margin-bottom: 40px;">Este Hook es el cerebro. Maneja dos canales de comunicación distintos:</p>
+        
+        <div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+            <div style="background: rgba(59, 130, 246, 0.1); padding: 30px; border-radius: 16px; border: 1px solid var(--secondary);">
+                <h3 style="color: var(--secondary); margin-bottom: 15px;"><i class="fas fa-search"></i> Fase de Consulta</h3>
+                <ul style="list-style: none; color: var(--text);">
+                    <li style="margin-bottom: 10px;">• Usa <code>useFetch</code> (GET).</li>
+                    <li style="margin-bottom: 10px;">• Devuelve <code>affectedAccountReport</code>.</li>
+                    <li style="margin-bottom: 10px;">• Mantiene el estado <code>isLoadingReport</code>.</li>
+                </ul>
+            </div>
+            <div style="background: rgba(222, 255, 154, 0.1); padding: 30px; border-radius: 16px; border: 1px solid var(--accent);">
+                <h3 style="color: var(--accent); margin-bottom: 15px;"><i class="fas fa-trash-alt"></i> Fase de Ejecución</h3>
+                <ul style="list-style: none; color: var(--text);">
+                    <li style="margin-bottom: 10px;">• Usa <code>useFetchLoad</code> (POST/DELETE).</li>
+                    <li style="margin-bottom: 10px;">• Llama a <code>removeAccountFromStore</code> al tener éxito.</li>
+                    <li style="margin-bottom: 10px;">• Actualiza <code>deletionResult</code> para el Modal.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 4: HOOKS DE SOPORTE -->
+<section class="slide">
+    <div class="container">
+        <h2>03. Hooks de Utilidad (UX & UI)</h2>
+        <div class="hooks-grid">
+            <div class="hook-card">
+                <h4><i class="fas fa-keyboard"></i> useEscapeKey</h4>
+                <ul>
+                    <li><i class="fas fa-check"></i> Escucha el evento 'keydown'.</li>
+                    <li><i class="fas fa-check"></i> Cierra el modal de forma accesible.</li>
+                </ul>
+            </div>
+            <div class="hook-card">
+                <h4><i class="fas fa-mouse-pointer"></i> useClickOutside</h4>
+                <ul>
+                    <li><i class="fas fa-check"></i> Detecta clics fuera del contenedor.</li>
+                    <li><i class="fas fa-check"></i> Mejora la usabilidad en pantallas móviles.</li>
+                </ul>
+            </div>
+            <div class="hook-card">
+                <h4><i class="fas fa-clock"></i> useAutoClose</h4>
+                <ul>
+                    <li><i class="fas fa-check"></i> Temporizador post-éxito (3000ms).</li>
+                    <li><i class="fas fa-check"></i> Limpia el timeout al desmontar (Cleanup).</li>
+                </ul>
+            </div>
+            <div class="hook-card">
+                <h4><i class="fas fa-language"></i> useLangTranslation</h4>
+                <ul>
+                    <li><i class="fas fa-check"></i> Centraliza el acceso al diccionario.</li>
+                    <li><i class="fas fa-check"></i> Usa <code>useCallback</code> para evitar renders.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SLIDE 5: RESUMEN FINAL -->
+<section class="slide" style="text-align: center;">
+    <div class="container">
+        <h2 style="border: none; padding: 0;">Sincronización Total</h2>
+        <p>Cuando el API responde con éxito, el flujo se cierra de la siguiente manera:</p>
+        <div style="background: #1e293b; padding: 40px; border-radius: 20px; display: inline-block; text-align: left; border: 1px solid var(--accent);">
+            <p style="margin-bottom: 10px; color: var(--accent); font-weight: bold;">API Success (200 OK)</p>
+            <p style="color: var(--text); font-family: monospace; font-size: 16px;">
+                1. removeAccountFromStore(id) <span style="color: var(--dim);">// Persistencia Global</span><br>
+                2. setIsModalOpen(false) <span style="color: var(--dim);">// UI Cleanup</span><br>
+                3. setFinalSuccessMessage(msg) <span style="color: var(--dim);">// Feedback Usuario</span><br>
+                4. useAutoClose(callback) <span style="color: var(--dim);">// Reset Final</span>
+            </p>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>
