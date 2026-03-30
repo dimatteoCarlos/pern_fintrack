@@ -1,0 +1,451 @@
+//src/pages/forms/newAccount/NewAccount.tsx
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AxiosRequestConfig } from 'axios';
+
+import TopWhiteSpace from '../../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
+import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
+import FormSubmitBtn from '../../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
+import DropDownSelection from '../../../../general_components/dropdownSelection/DropDownSelection.tsx';
+import CurrencyBadge from '../../../../general_components/currencyBadge/CurrencyBadge.tsx';
+import FormDatepicker from '../../../../general_components/datepicker/Datepicker.tsx';
+import InputNumberFormHandler from '../../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
+import LabelNumberValidation from '../../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
+import CharacterCounter from '../../../../general_components/characterCounter/CharacterCounter.tsx';
+
+import {
+  ACCOUNT_TYPE_DEFAULT,
+  DEFAULT_CURRENCY,
+  VARIANT_FORM,
+} from '../../../helpers/constants.ts';
+import { url_create_basic_account } from '../../../../endpoints.ts';
+
+import '../styles/forms-styles.css';
+
+import {
+  CurrencyType,
+  DropdownOptionType,
+  FormNumberInputType,
+  VariantType,
+} from '../../../types/types.ts';
+
+import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+
+import { capitalize } from '../../../helpers/functions.ts';
+import { validationData } from '../../../validations/utils/custom_validation.ts';
+
+import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import useAuth from '../../../../auth/hooks/useAuth.ts';
+import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
+
+import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
+
+// import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
+//------------------------
+//-----handle currency
+const defaultCurrency = DEFAULT_CURRENCY;
+
+//---- data config---------
+type AccountDataType = {
+  name: string;
+  date: Date;
+  type: string | undefined | null;
+  amount: number | ''; //later verifyin and fixed input
+  currency: string;
+};
+
+const initialNewAccountData: AccountDataType = {
+  name: '', //'Account Name',
+  type: '', //'Account Type',
+  date: new Date(), //'Starting Point'
+  amount: '', // 'Value'
+  currency: 'usd',
+};
+
+//Type Options
+export type TypeOptionsType = {
+  title: string;
+  options: {
+    value: string;
+    label: string;
+  }[];
+  variant: VariantType;
+};
+
+const formDataNumber = { keyName: 'amount', title: 'value' };
+const initialFormData: FormNumberInputType = {
+  [formDataNumber.keyName]: '',
+};
+//=============================
+//MAIN COMPONENTE NEW ACCOUNT
+//=============================
+function NewAccount() {
+  const location = useLocation();
+  const navigateTo = useNavigate();
+  // const user = import.meta.env.VITE_USER_ID;
+  // console.log('🚀 ~ NewAccount ~ user:', user);
+  const { isAuthenticated } = useAuth();
+
+  //---states------
+  const [accountData, setAccountData] = useState<AccountDataType>(
+    initialNewAccountData,
+  );
+
+  const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
+
+  const [validationMessages, setValidationMessages] = useState<{
+    [key: string]: string;
+  }>({});
+
+  const [isDisabledValue, setIsDisabledValue] = useState<boolean>(false);
+
+  const [isReset, setIsReset] = useState<boolean>(false);
+
+  const [formData, setFormData] =
+    useState<FormNumberInputType>(initialFormData);
+
+  const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
+    null,
+  );
+
+  // 🆕 VERIFICAR AUTENTICACIÓN AL INICIO
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setMessageToUser('Please log in to create an account');
+      // 🆕 OPCIONAL: Redirigir al login después de un tiempo
+      setTimeout(() => navigateTo(AUTH_ROUTE), 3500);
+    }
+  }, [isAuthenticated, navigateTo]);
+
+  //-------------------------------------
+  //endpoint: http://localhost:5000/api/fintrack/account/${type}
+  //DATA FETCHING
+  //OPTION SELECTION: ACCOUNT TYPE
+  //account types from account_types table
+
+  const title = 'type';
+  const optionsTypeAccounts = ACCOUNT_TYPE_DEFAULT;
+
+  //POST: NEW ACCOUNT DATA
+  const { data, isLoading, error, requestFn } = useFetchLoad<
+    CreateBasicAccountApiResponseType,
+    AccountDataType
+  >({ url: url_create_basic_account, method: 'POST' });
+
+  //--------------------------------------
+  //--used in drop down selection
+  const accountSelectionProp = {
+    title,
+    options: optionsTypeAccounts,
+    variant: VARIANT_FORM, //this stablishes the custom styles to use in selection dropdown component
+  };
+  //---functions-----
+  function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
+    e.preventDefault();
+    const { name, value } = e.target;
+    setAccountData((prev) => ({ ...prev, [name]: value }));
+  }
+  //---
+  function amountIncomeSource() {
+    setIsDisabledValue(true);
+    setAccountData((prev) => ({ ...prev, ['amount']: 0 }));
+  }
+  //---
+  function accountTypeSelectHandler(selectedOption: DropdownOptionType | null) {
+    if (selectedOption) {
+      setAccountData((acc: AccountDataType) => ({
+        ...acc,
+        type: selectedOption?.label,
+      }));
+
+      if (selectedOption.label === 'income_source') {
+        amountIncomeSource();
+        setIsDisabledValue(true);
+        // return;
+      } else {
+        setAccountData((acc: AccountDataType) => ({
+          ...acc,
+          type: selectedOption?.label,
+        }));
+        setIsDisabledValue(false);
+      }
+    } else {
+      // console.log(`No option selected for ${'account type'}`);
+      setAccountData((acc: AccountDataType) => ({
+        ...acc,
+        type: undefined,
+      }));
+      setIsDisabledValue(false);
+    }
+  }
+  //---------
+  function changeStartingPoint(selectedDate: Date) {
+    setAccountData((acc) => ({ ...acc, date: selectedDate }));
+    // console.log('selected starting point:', selectedDate);
+  }
+  //---------
+  function updateDataCurrency(currency: CurrencyType) {
+    setCurrency(currency);
+    setAccountData((acc) => ({ ...acc, currency: currency }));
+  }
+  //--FORM SUBMISSION --------------------
+  async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    // console.log('On submit Form');
+
+    // 🆕 VERIFY AUTH BEFORE SENDING
+    if (!isAuthenticated) {
+      setMessageToUser('Please log in to create an account');
+      return;
+    }
+
+    // ✅ DATA FORM VALIDATION
+    const newValidationMessages = { ...validationData(accountData) };
+    // console.log('message validation:', { newValidationMessages });
+
+    if (Object.values(newValidationMessages).length > 0) {
+      setValidationMessages(newValidationMessages);
+      return;
+    }
+    //-------------------------------------
+    //POST TO THE ENDPOINT FOR ACCOUNT DATA
+    try {
+      const { name, type, currency, amount, date } = accountData;
+
+      const payload: AccountDataType = {
+        name,
+        type,
+        currency,
+        amount,
+        date,
+      } as AccountDataType;
+      console.log('data to post:', { ...accountData });
+
+      //final URL, url is dynamic depending on type variable
+      const finalUrl = `${url_create_basic_account}/${type}`;
+
+      // console.log('🚀 ~ onSubmitForm ~ finalUrl:', finalUrl);
+
+      await requestFn(payload, {
+        url: finalUrl,
+      } as AxiosRequestConfig);
+
+      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
+        console.log('Data from New Account request:', data);
+      }
+
+      //resetting form values
+      setIsReset(true);
+      setValidationMessages({});
+      setFormData(initialFormData);
+      setAccountData(initialNewAccountData);
+      setCurrency(defaultCurrency);
+      setIsDisabledValue(false);
+      setMessageToUser(null);
+
+      //delay isReset so dropdown type selection updates to null
+      setTimeout(() => {
+        setIsReset(false);
+      }, 1000);
+    } catch (error) {
+      const messageError = 'Submission error';
+      console.error(messageError, error);
+      setMessageToUser(messageError);
+    }
+  }
+  //-----------------------------------
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (data && !isLoading && !error) {
+      // Success response
+      setMessageToUser(data.message || 'Account successfully  created!');
+      // console.log('Received data:', data);
+
+      //resetting message to user
+      timer = setTimeout(() => {
+        setMessageToUser(null);
+      }, 4000);
+    } else if (error) {
+      setMessageToUser(error);
+      timer = setTimeout(() => setMessageToUser(null), 4000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [data, isLoading, error]);
+
+  // 🆕 DESHABILITAR FORMULARIO SI NO ESTÁ AUTENTICADO
+  const isFormDisabled = !isAuthenticated;
+  //----
+  return (
+    <section className='account__page__container page__container'>
+      <TopWhiteSpace variant={'dark'} />
+      <div className='account__page__content page__content'>
+        <div className='main__title--container'>
+          <Link
+            to={location.state.previousRoute || '/dashboard'}
+            relative='path'
+            className='iconLeftArrow'
+          >
+            <LeftArrowLightSvg />
+          </Link>
+          <div className='form__title'>{'New Account'}</div>
+        </div>
+
+        {/* 🆕 MESSAGE FOR NOT AUTHENTICATED */}
+        {!isAuthenticated && (
+          <div
+            className='error-message'
+            style={{ margin: '1rem 0', padding: '1rem' }}
+          >
+            Please log in to create a new account
+          </div>
+        )}
+
+        <form className='form__box' autoComplete='off'>
+          <div className=' form__container'>
+            <div className='input__box'>
+              <label htmlFor='name' className='label forms__label'>
+                {'Account Name'}
+                <CharacterCounter
+                  value={accountData.name}
+                  maxLength={NAME_MAX_LENGTHS.account_name}
+                />
+                &nbsp;
+                <span className='validation__errMsg'>
+                  {validationMessages['name']}
+                </span>
+              </label>
+
+              <input
+                type='text'
+                className='input__container'
+                placeholder='Account Name'
+                name='name'
+                onChange={inputHandler}
+                value={accountData.name}
+                disabled={isFormDisabled} //if not auth
+                maxLength={NAME_MAX_LENGTHS.account_name}
+              />
+            </div>
+
+            <div className='input__box'>
+              <label className='label forms__label'>
+                Account Type &nbsp;
+                <span className='validation__errMsg'>
+                  {validationMessages['type']}
+                </span>
+              </label>
+
+              <DropDownSelection
+                dropDownOptions={accountSelectionProp}
+                updateOptionHandler={accountTypeSelectHandler}
+                isReset={isReset}
+                setIsReset={setIsReset}
+                //disabled={isFormDisabled} // 🆕 DESHABILITAR SI NO AUTENTICADO
+              />
+            </div>
+
+            <div className='account__dateAndCurrency'>
+              <div className='account__date'>
+                <label className='label forms__label'>{'Starting Point'}</label>
+                <div className='form__datepicker__container'>
+                  <FormDatepicker
+                    changeDate={changeStartingPoint}
+                    date={accountData.date}
+                    variant={'form'}
+                    isReset={isReset}
+                    // disabled={isFormDisabled}
+                  ></FormDatepicker>
+                </div>
+              </div>
+
+              <div className='account__currency'>
+                <div className='label forms__label'>Currency</div>
+                <CurrencyBadge
+                  variant={'form'}
+                  updateOutsideCurrencyData={updateDataCurrency}
+                  currency={currency}
+                  // disabled={isFormDisabled}
+                />
+              </div>
+            </div>
+
+            {!isDisabledValue && (
+              <div className='input__box'>
+                <LabelNumberValidation
+                  formDataNumber={formDataNumber}
+                  validationMessages={validationMessages}
+                  variant={VARIANT_FORM}
+                />
+
+                <InputNumberFormHandler
+                  validationMessages={validationMessages}
+                  setValidationMessages={setValidationMessages}
+                  keyName={formDataNumber.keyName as keyof AccountDataType}
+                  placeholderText={formDataNumber.keyName}
+                  formData={formData}
+                  setFormData={setFormData}
+                  setStateData={setAccountData}
+                  // disabled={isFormDisabled}
+                />
+                {/* <input
+        style={{ fontSize: '1.25rem', padding: '0 0.75rem' }}
+      /> FIGMA STYLE*/}
+              </div>
+            )}
+          </div>
+
+          <div className='submit__btn__container'>
+            <FormSubmitBtn
+              onClickHandler={onSubmitForm}
+              disabled={isLoading || isFormDisabled}
+            >
+              save
+            </FormSubmitBtn>
+          </div>
+        </form>
+      </div>
+
+      {isLoading && <div style={{ color: 'cyan' }}>Loading...</div>}
+
+      {error && (
+        <div className='error-message'>
+          <span
+            className='validation__errMsg'
+            style={{
+              color: 'var(--error, #d32f2f)',
+              borderRadius: '4px',
+              margin: '1rem 0',
+              fontSize: '1rem',
+              fontWeight: '200',
+              lineHeight: '1.5rem',
+            }}
+          >
+            {/* Error: {error} */}
+            {messageToUser}
+          </span>
+        </div>
+      )}
+
+      {!error && messageToUser && (
+        <div className='success-message'>
+          <span
+            style={{
+              color: 'lightgreen',
+              fontSize: '1rem',
+              marginTop: '1rem',
+              textAlign: 'center',
+              fontWeight: '200',
+              lineHeight: '1.5rem',
+            }}
+          >
+            {capitalize(messageToUser)}
+          </span>
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default NewAccount;

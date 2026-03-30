@@ -15,7 +15,7 @@ import {
   isDateValid,
 } from '../../fintrack/helpers/functions';
 
-import { LastMovementType } from '../../pages/overview/components/LastMovements';
+import { LastMovementType } from '../../fintrack/pages/overview/components/LastMovements';
 
 import { BoxContainer, BoxRow } from '../boxComponents/BoxComponents';
 
