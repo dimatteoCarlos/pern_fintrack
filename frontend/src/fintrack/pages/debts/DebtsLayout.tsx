@@ -1,5 +1,5 @@
 import DebtsBigBoxResult from './components/DebtsBigBoxResult.tsx';
-import { TitleHeader } from '../../../general_components/titleHeader/TitleHeader.tsx';
+import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import Debtors from './Debtors.tsx';
 import './styles/debts-styles.css';
 import { DEFAULT_CURRENCY } from '../../helpers/constants.ts';

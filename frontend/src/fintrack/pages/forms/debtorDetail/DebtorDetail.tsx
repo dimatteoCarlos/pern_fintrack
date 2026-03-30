@@ -1,9 +1,9 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import TopWhiteSpace from '../../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
+import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
-import { CardTitle } from '../../../../general_components/CardTitle.tsx';
+import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import '../styles/forms-styles.css';
 import {
   DEFAULT_ACCOUNT_TRANSACTIONS,
@@ -29,7 +29,7 @@ import {
   formatDateToDDMMYYYY,
   numberFormatCurrency,
 } from '../../../helpers/functions.ts';
-import CurrencyBadge from '../../../../general_components/currencyBadge/CurrencyBadge.tsx';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
 import SummaryDebtorDetailBox from './summaryDebtorDetailBox/SummaryDebtorDetailBox.tsx';

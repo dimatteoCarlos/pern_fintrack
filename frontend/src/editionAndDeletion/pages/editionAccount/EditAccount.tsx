@@ -37,9 +37,9 @@ import {
 } from '../../../endpoints.ts';
 
 // 🧱 UI COMPONENTS - REUSABLE PRESENTATION COMPONENTS
-import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
-import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
+import TopWhiteSpace from '../../../fintrack/general_components/topWhiteSpace/TopWhiteSpace.tsx';
+import { MessageToUser } from '../../../fintrack/general_components/messageToUser/MessageToUser.tsx';
+import FormSubmitBtn from '../../../fintrack/general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import UniversalDynamicInput from './UniversalDynamicInput.tsx';
 
 // 🎨 ASSETS AND STYLES - VISUAL RESOURCES AND CSS

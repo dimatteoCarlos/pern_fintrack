@@ -1,8 +1,8 @@
 // import { useNavigate, useLocation } from 'react-router-dom';
-import TrackerDebtsButton from './trackerStateButtons/TrackerDebtsButton';
-import TrackerExpenseButton from './trackerStateButtons/TrackerExpenseButton';
-import TrackerIncomeButton from './trackerStateButtons/TrackerIncomeButton';
-import TrackerTransferButton from './trackerStateButtons/TrackerTransferButton';
+import TrackerDebtsButton from './trackerStateButtons/TrackerDebtsButton.tsx';
+import TrackerExpenseButton from './trackerStateButtons/TrackerExpenseButton.tsx';
+import TrackerIncomeButton from './trackerStateButtons/TrackerIncomeButton.tsx';
+import TrackerTransferButton from './trackerStateButtons/TrackerTransferButton.tsx';
 import TrackerAdjustmentPnLButton from './trackerStateButtons/TrackerAdjustmentPnLButton.tsx';
 
 import './trackerStateButtons/trackerStateButton.css';

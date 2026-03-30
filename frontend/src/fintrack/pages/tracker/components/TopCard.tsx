@@ -1,10 +1,10 @@
 // src/pages/tracker/components/TopCard.tsx
-import CurrencyBadge from '../../../../general_components/currencyBadge/CurrencyBadge';
-import DropDownSelection from '../../../../general_components/dropdownSelection/DropDownSelection';
-import LabelNumberValidation from '../../../../general_components/labelNumberValidation/LabelNumberValidation';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge';
+import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection';
+import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation';
 import RadioInput, {
   RadioInputPropsType,
-} from '../../../../general_components/radioInput/RadioInput';
+} from '../../../general_components/radioInput/RadioInput';
 import { capitalize } from '../../../helpers/functions';
 
 import {

@@ -11,7 +11,7 @@ import Select, {
 import { useEffect, useRef } from 'react';
 import ArrowDownDarkSvg from '../../assets/ArrowDownDarkSvg.svg';
 import ArrowDownLightSvg from '../../assets/ArrowDownLightSvg.svg';
-import { VariantType, DropdownOptionType } from '../../fintrack/types/types';
+import { VariantType, DropdownOptionType } from '../../types/types';
 
 export type DropdownSelectPropType = {
   dropDownOptions: {

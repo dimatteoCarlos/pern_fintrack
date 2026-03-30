@@ -12,10 +12,10 @@ import { validationData } from '../../../validations/utils/custom_validation.ts'
 import { normalizeError } from '../../../helpers/normalizeError.ts';
 
 // 📦 COMPONENTS
-import TopWhiteSpace from '../../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import FormSubmitBtn from '../../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
-import FormDatepicker from '../../../../general_components/datepicker/Datepicker.tsx';
-import { MessageToUser } from '../../../../general_components/messageToUser/MessageToUser.tsx';
+import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
+import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
+import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
+import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 
 // 🖼️ ASSETS
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
@@ -28,7 +28,7 @@ import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 // 🏷️ ENPOINTS
 import { url_create_pocket_saving_account } from '../../../../endpoints.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
-import CharacterCounter from '../../../../general_components/characterCounter/CharacterCounter.tsx';
+import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 // 📋 TYPE DEFINITIONS
 type PocketDataType = {

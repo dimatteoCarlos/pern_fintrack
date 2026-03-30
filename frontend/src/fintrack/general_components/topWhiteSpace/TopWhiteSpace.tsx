@@ -1,4 +1,4 @@
-import { VariantType } from '../../fintrack/types/types';
+import { VariantType } from '../../types/types';
 import './topWhiteSpace.css';
 
 type TopWhiteSpacePropType = {

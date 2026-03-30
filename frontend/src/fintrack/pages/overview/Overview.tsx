@@ -13,7 +13,7 @@ import LastMovements, {
   LastMovementType,
 } from './components/LastMovements.tsx';
 import InvestmentAccountBalance from './components/InvestmentAccBalance.tsx';
-import OpenAddEditBtn from '../../../general_components/OpenAddEditBtn.tsx';
+import OpenAddEditBtn from '../../general_components/OpenAddEditBtn.tsx';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 
 //ENDPOINTS

@@ -29,9 +29,9 @@ import {
 // UI COMPONENTS
 //=====================
 import CardSeparator from '../components/CardSeparator.tsx';
-import Datepicker from '../../../../general_components/datepicker/Datepicker.tsx';
+import Datepicker from '../../../general_components/datepicker/Datepicker.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
-import { MessageToUser } from '../../../../general_components/messageToUser/MessageToUser.tsx';
+import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import TopCard from '../components/TopCard.tsx';
 // =====================
 // 📝 TYPES

@@ -1,5 +1,5 @@
 import { currencyFormat } from '../../../helpers/functions';
-import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { CurrencyType } from '../../../types/types';
 import { ResultType, MovementType } from '../CalculateMonthlyAverage';

@@ -1,7 +1,7 @@
 // frontend/src/pages/overview/components/AccountBalance.tsx
 import { Link } from 'react-router-dom';
 import { currencyFormat } from '../../../helpers/functions.ts';
-import { CardTitle } from '../../../../general_components/CardTitle.tsx';
+import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { url_get_accounts_by_type } from '../../../../endpoints.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import {

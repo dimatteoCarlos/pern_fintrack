@@ -5,7 +5,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import './styles/datepicker-styles.css';
 //-------
 // import { showDate } from '../../helpers/functions';
-import { VariantType } from '../../fintrack/types/types';
+import { VariantType } from '../../types/types';
 import React from 'react';
 
 //to express date in spanish

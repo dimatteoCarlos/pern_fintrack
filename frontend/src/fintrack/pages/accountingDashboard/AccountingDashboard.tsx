@@ -7,7 +7,7 @@ import { INITIAL_PAGE_ADDRESS } from '../../helpers/constants';
 import { url_get_all_accounting_accounts } from '../../../endpoints';
 //---
 import AccountingBox from './AccountingBox';
-import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace';
+import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace';
 import LeftArrowSvg from '../../assets/LeftArrowSvg.svg';
 import Toast from '../../../editionAndDeletion/components/toast/Toast';
 import AccountActionsMenu from '../../../editionAndDeletion/components/accountActionMenu/AccountActionsMenu';

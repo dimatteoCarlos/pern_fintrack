@@ -1,9 +1,9 @@
 //src/general_components/messageToUser/MessageToUser.tsx
 import { useEffect, useRef } from 'react';
-import { capitalize } from '../../fintrack/helpers/functions';
-import { VariantType } from '../../fintrack/types/types';
+import { capitalize } from '../../helpers/functions';
+import { VariantType } from '../../types/types';
 import './messageToUser.css';
-import { showToastByStatus } from '../../fintrack/helpers/showToastByStatus';
+import { showToastByStatus } from '../../helpers/showToastByStatus';
 
 type MessageToUserPropType = {
   isLoading?: boolean;

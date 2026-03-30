@@ -2,7 +2,7 @@ import { BoxContainer, BoxRow } from './boxComponents.tsx';
 import { currencyFormat } from '../../../helpers/functions.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import { url_summary_balance_ByType, USER_ID } from '../../../../endpoints.ts';
-import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents.tsx';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import { Link } from 'react-router-dom';
 import {
   DebtorListSummaryType,

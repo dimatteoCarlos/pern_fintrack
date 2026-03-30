@@ -1,4 +1,4 @@
-import { CurrencyType, VariantType } from '../../fintrack/types/types';
+import { CurrencyType, VariantType } from '../../types/types';
 import './styles/currency-style.css';
 // import { changeCurrency } from '../../helpers/functions';
 

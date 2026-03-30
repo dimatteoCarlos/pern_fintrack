@@ -1,7 +1,7 @@
 //ListPocket.tsx
 //parent:
 import { Link } from 'react-router-dom';
-import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents.tsx';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import {
   DEFAULT_CURRENCY,
   // DEFAULT_POCKET_LIST,

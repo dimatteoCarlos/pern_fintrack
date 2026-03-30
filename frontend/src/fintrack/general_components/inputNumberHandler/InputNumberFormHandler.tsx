@@ -1,6 +1,6 @@
 // frontend/src/general_components/inputNumberHandler/InputNumberFormHandler.tsx
 
-import useInputNumberHandler from '../../fintrack/hooks/useInputNumberHandler.ts';
+import useInputNumberHandler from '../../hooks/useInputNumberHandler.ts';
 
 // 💡 Explicit type for input states, just strings for inputs.
 type StringInputMapType = {

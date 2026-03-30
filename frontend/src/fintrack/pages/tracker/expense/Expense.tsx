@@ -18,9 +18,9 @@ import { useBalanceStore } from '../../../stores/useBalanceStore.ts';
 // 🎨 UI COMPONENTS
 import TopCard from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
-import DropDownSelection from '../../../../general_components/dropdownSelection/DropDownSelection.tsx';
+import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
-import { MessageToUser } from '../../../../general_components/messageToUser/MessageToUser.tsx';
+import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 //---
 // 🌐ENDPOINTS AND CONSTANTS

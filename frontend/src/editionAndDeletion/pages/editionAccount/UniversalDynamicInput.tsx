@@ -6,8 +6,8 @@ import { ValidationMessagesType } from '../../../fintrack/validations/types.ts';
 
 // 🧱 external components
 import { DropdownOptionType } from '../../../fintrack/types/types.ts';
-import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
-import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
+import DropDownSelection from '../../../fintrack/general_components/dropdownSelection/DropDownSelection.tsx';
+import FormDatepicker from '../../../fintrack/general_components/datepicker/Datepicker.tsx';
 
 import { DB_MAX_LENGTHS } from '../../../fintrack/validations/utils/constants.ts';
 // =====================================

@@ -2,8 +2,8 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { url_get_accounts_by_type } from '../../../../endpoints.ts';
-import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents.tsx';
-import { CardTitle } from '../../../../general_components/CardTitle.tsx';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
+import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { currencyFormat } from '../../../helpers/functions.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import {

@@ -1,7 +1,7 @@
 import DebtsSvg from '../../assets/mainNavbarSvg/DebtsSvg.svg';
 import { NavLink, useLocation } from 'react-router-dom';
 import Tooltip from '../tooltip/Tooltip';
-import { capitalize } from '../../fintrack/helpers/functions';
+import { capitalize } from '../../helpers/functions';
 
 const classNavLink = `mainNavbarButton ${({
   isActive,

@@ -3,7 +3,7 @@
 import {
   BoxContainer,
   BoxRow,
-} from '../../../../general_components/boxComponents/BoxComponents';
+} from '../../../general_components/boxComponents/BoxComponents';
 import {
   CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,

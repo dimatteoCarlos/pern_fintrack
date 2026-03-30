@@ -1,5 +1,5 @@
 // SummaryDetailBox.tsx
-import { StatusSquare } from '../../../../../general_components/boxComponents/BoxComponents';
+import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
 import { DEFAULT_CURRENCY } from '../../../../helpers/constants';
 import {
   digitRound,

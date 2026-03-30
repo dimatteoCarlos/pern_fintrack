@@ -1,7 +1,7 @@
 //frontend/src/pages/tracker/TrackerLayout.tsx
 
-import LogoMenuIcon from '../../../general_components/header/LogoMenuIcon.tsx';
-import TrackerNavbar from '../../../general_components/trackerNavbar/TrackerNavbar.tsx';
+import LogoMenuIcon from '../../general_components/header/LogoMenuIcon.tsx';
+import TrackerNavbar from '../../general_components/trackerNavbar/TrackerNavbar.tsx';
 import { Outlet } from 'react-router-dom';
 import { currencyFormat } from '../../helpers/functions.ts';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../helpers/constants.ts';
@@ -9,7 +9,7 @@ import { useFetch } from '../../hooks/useFetch.ts';
 import { BalanceBankRespType } from '../../types/responseApiTypes.ts';
 import { url_get_total_account_balance_by_type } from '../../../endpoints.ts';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
-import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+import { MessageToUser } from '../../general_components/messageToUser/MessageToUser.tsx';
 import { useEffect, useState } from 'react';
 import useBalanceStore from '../../stores/useBalanceStore.ts';
 

@@ -1,6 +1,6 @@
-import { DEFAULT_CURRENCY } from '../../fintrack/helpers/constants';
-import { getCurrencySymbol } from '../../fintrack/helpers/functions';
-import { DebtorListType } from '../../fintrack/types/responseApiTypes';
+import { DEFAULT_CURRENCY } from '../../helpers/constants';
+import { getCurrencySymbol } from '../../helpers/functions';
+import { DebtorListType } from '../../types/responseApiTypes';
 import { StatusSquare } from '../boxComponents/BoxComponents';
 
 import './styles/summaryDetailBox-style.css';

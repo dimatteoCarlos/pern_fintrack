@@ -7,15 +7,15 @@ import {
   CURRENCY_OPTIONS,
   DATE_TIME_FORMAT_DEFAULT,
   DEFAULT_CURRENCY,
-} from '../../fintrack/helpers/constants';
+} from '../../helpers/constants';
 
 import {
   capitalize,
   currencyFormat,
   isDateValid,
-} from '../../fintrack/helpers/functions';
+} from '../../helpers/functions';
 
-import { LastMovementType } from '../../fintrack/pages/overview/components/LastMovements';
+import { LastMovementType } from '../../pages/overview/components/LastMovements';
 
 import { BoxContainer, BoxRow } from '../boxComponents/BoxComponents';
 

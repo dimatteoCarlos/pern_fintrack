@@ -3,11 +3,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 // 📦 COMPONENTS
-import TopWhiteSpace from '../../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import FormSubmitBtn from '../../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
-import DropDownSelection from '../../../../general_components/dropdownSelection/DropDownSelection.tsx';
-import InputNumberFormHandler from '../../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
-import { MessageToUser } from '../../../../general_components/messageToUser/MessageToUser.tsx';
+import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
+import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
+import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
+import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
+import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 
 import '../styles/forms-styles.css';
 
@@ -43,7 +43,7 @@ import {
 } from '../../../helpers/constants.ts';
 import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
-import CharacterCounter from '../../../../general_components/characterCounter/CharacterCounter.tsx';
+import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 //-----default 'till decide how to handle multi currencies
 const defaultCurrency = DEFAULT_CURRENCY;

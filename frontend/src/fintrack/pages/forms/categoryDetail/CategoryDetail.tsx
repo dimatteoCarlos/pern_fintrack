@@ -1,13 +1,13 @@
 //frontend/src/pages\/orms/categoryDetail/CategoryDetail.tsx
 import { Link, useLocation, useParams } from 'react-router-dom';
 
-import TopWhiteSpace from '../../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
+import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../assets/LeftArrowSvg.svg';
-import { CardTitle } from '../../../../general_components/CardTitle.tsx';
+import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import '../styles/forms-styles.css';
 import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
-import CurrencyBadge from '../../../../general_components/currencyBadge/CurrencyBadge.tsx';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 import SummaryDetailBox from './summaryDetailBox/SummaryDetailBox.tsx';
 

@@ -1,8 +1,8 @@
 import { numberFormatCurrency } from '../../../helpers/functions';
 import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
 // import { Link } from 'react-router-dom';
-import { CardTitle } from '../../../../general_components/CardTitle';
-import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
+import { CardTitle } from '../../../general_components/CardTitle';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
 import { BalancePocketRespType } from '../../../types/responseApiTypes';
 import { DEFAULT_CURRENCY } from '../../../helpers/constants';
 

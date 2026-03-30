@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
-import TopWhiteSpace from '../../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
-import FormSubmitBtn from '../../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
-import LabelNumberValidation from '../../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
-import { MessageToUser } from '../../../../general_components/messageToUser/MessageToUser.tsx';
+import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
+import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
+import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
+import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 

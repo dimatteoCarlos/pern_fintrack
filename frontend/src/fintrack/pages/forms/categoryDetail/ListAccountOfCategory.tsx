@@ -4,7 +4,7 @@
 import {
   BoxRow,
   StatusSquare,
-} from '../../../../general_components/boxComponents/BoxComponents.tsx';
+} from '../../../general_components/boxComponents/BoxComponents.tsx';
 
 import {
   currencyFormat,

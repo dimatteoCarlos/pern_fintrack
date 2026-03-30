@@ -1,5 +1,5 @@
 //src\pages\tracker\components\CardNoteSave.tsx
-import FormPlusBtn from '../../../../general_components/formSubmitBtn/FormPlusBtn';
+import FormPlusBtn from '../../../general_components/formSubmitBtn/FormPlusBtn';
 import { capitalize } from '../../../helpers/functions';
 import { ValidationMessagesType } from '../../../validations/types';
 import CardNote from './CardNote';

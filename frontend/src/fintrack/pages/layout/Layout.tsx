@@ -1,8 +1,8 @@
 //C:/AA1-WEB_DEVELOPER/REACT/apps/FINTRACK/pern_fintrack/frontend/src/pages/layout/Layout.tsx
 
-import Header from '../../../general_components/header/Header.tsx';
+import Header from '../../general_components/header/Header.tsx';
 import { Outlet } from 'react-router-dom';
-import MainNavbar from '../../../general_components/mainNavbar/MainNavbar.tsx';
+import MainNavbar from '../../general_components/mainNavbar/MainNavbar.tsx';
 
 import '../styles/generalStyles.css';
 
