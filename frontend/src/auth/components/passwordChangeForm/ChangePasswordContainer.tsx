@@ -65,7 +65,7 @@ const FIELD_MAPPING: Record<string, keyof ChangePasswordFormDataType> = {
   confirmPassword: "confirmPassword",
 };
 
-export const TOTAL_COUNTDOWN_SECONDS = 60;
+export const TOTAL_COUNTDOWN_SECONDS = 5;
 
 /* ==========================
 🧱 MAIN CONTAINER COMPONENTE
@@ -92,7 +92,7 @@ const navigateTo=useNavigate()
 =============== */
  const { handleDomainChangePassword} = useAuth();
 
-/* =============
+/* ==================
   🧪 VALIDATION SETUP
  ============= */
  const {validateField, validateAll, transformApiErrors} = useChangePasswordValidation({fieldMapping:FIELD_MAPPING, schema: changePasswordSchema,});
@@ -221,7 +221,11 @@ const showCancel = !isSubmitting && status !== "success";
   setMessage('Password changed successfully. Please sign in with your new password.');
   
 // Navigate to auth page
-  navigateTo(AUTH_ROUTE, { replace: true });
+  navigateTo(AUTH_ROUTE, { replace: true,
+   state: {
+    intent: 'password_changed'
+  }
+  });
 
 },[handleReset, setUIState, setMessage, navigateTo]);
 
