@@ -39,8 +39,7 @@ import useChangePasswordFormLogic from "../../hooks/useChangePasswordFormLogic";
 ============= */
 import ChangePasswordForm from './ChangePasswordForm';
 import useFieldVisibility from "../../hooks/useFieldVisibility";
-import { useAuthUIStore } from "../../stores/useAuthUIStore";
-import { AUTH_ROUTE, AUTH_UI_STATES } from "../../auth_constants/constants";
+import { AUTH_ROUTE } from "../../auth_constants/constants";
 
 /* ================
 ⏱️ TYPE DEFINITIONS
@@ -113,10 +112,6 @@ const [status, setStatus] = useState<FormStatusType>("idle");
 
  const [totalCountdown, setTotalCountdown] = useState<number | null>(TOTAL_COUNTDOWN_SECONDS);
 
- const { setUIState, setMessage } = useAuthUIStore();
-
- // const [totalRetryCounter, setTotalRetryCounter] = useState<number | null>(totalCountdown);
- 
 /* ===========================
 // 👁️ CONTENT VISIBILITY HOOK
 =========================== */  
@@ -216,14 +211,12 @@ const showCancel = !isSubmitting && status !== "success";
   setCountdown(null);
   handleReset();
 
-// ✅ Set UI state for password changed
-  setUIState(AUTH_UI_STATES.PASSWORD_CHANGED);
-  setMessage('Password changed successfully. Please sign in with your new password.');
-  
-// Navigate to auth page
-  navigateTo(AUTH_ROUTE, { replace: true });
+// ✅ Unique Source of truth: just intent. 
+  navigateTo(AUTH_ROUTE, { replace: true,
+   state: { intent: 'password_changed' as const }
+   });
 
-},[handleReset, setUIState, setMessage, navigateTo]);
+},[handleReset, navigateTo]);
 
 //==========================
 // Enhanced submit handler with UX states
