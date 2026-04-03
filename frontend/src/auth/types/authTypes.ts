@@ -367,7 +367,7 @@ export type AuthUIStateType =
   | 'IDLE'
   | 'SESSION_EXPIRED'
   | 'REMEMBERED_VISITOR'
-  | 'PASSWORD_CHANGED';
+  // | 'PASSWORD_CHANGED';
 
 // ===============================
 // 📦 EXPORTS (existing)
@@ -375,3 +375,42 @@ export type AuthUIStateType =
 export type ProfileUpdateResponseType =
   | ProfileUpdateSuccessResponseType
   | ProfileUpdateErrorResponseType;
+
+// ===============================
+// 🎯 AUTH INTENT - Navigation Events
+// ===============================
+
+/**
+ * AuthIntent - Events that trigger navigation with state
+ * 
+ * An intent represents a ONE-TIME event that travels via navigation.state
+ * and is consumed by the appropriate component.
+ * 
+ * - password_changed: User successfully changed password
+ * - session_expired: Token expired while user had active session
+ * - user_logged_out: User explicitly clicked Sign Out
+ * - welcome_new_user: User signed up for the first time
+ */
+
+export type AuthIntentType = 
+  | 'password_changed'
+  | 'session_expired'
+  | 'user_logged_out'
+  | 'welcome_new_user';
+
+/**
+ * NavigationState - Structure for navigate() state parameter
+ * 
+ * Travels in location.state and is consumed by:
+ * - AuthPage (for password_changed, session_expired, user_logged_out)
+ * - FintrackLayout (for welcome_new_user)
+ */
+export type NavigationStateType = {
+  intent?: AuthIntentType;
+  email?: string;
+  username?: string;
+  from?: string;
+};
+
+
+
