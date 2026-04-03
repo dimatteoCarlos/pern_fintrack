@@ -24,8 +24,6 @@
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import CoinSpinner from '../../../fintrack/loader/coin/CoinSpinner';
-import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
-// import { AUTH_ROUTE } from '../../auth_constants/constants';
 
 //MAIN COMPONENT:🛡️ PROTECTED ROUTE
 
@@ -41,14 +39,20 @@ const ProtectedRoute = () => {
   const redirectTo = '/';
 
   if (!isAuthenticated) {
+  // ✅ Check if user had a token (real session expired)
+    const hasToken = !!sessionStorage.getItem('accessToken'); 
     return (
       <Navigate
         to={redirectTo}
         replace
-        state={{
-          from: location.pathname,
-          hasIdentity: !!getIdentity(),
-        }}
+        state={
+          hasToken
+            ? { 
+                intent: 'session_expired' as const, 
+                from: location.pathname 
+              }
+            : { from: location.pathname }
+        }
       />
     );
   }
