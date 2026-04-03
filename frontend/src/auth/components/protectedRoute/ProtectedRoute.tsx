@@ -39,8 +39,16 @@ const ProtectedRoute = () => {
   const redirectTo = '/';
 
   if (!isAuthenticated) {
-  // ✅ Check if user had a token (real session expired)
+ // ✅ Check if user had a token (real session expired)
     const hasToken = !!sessionStorage.getItem('accessToken'); 
+    
+//Debugging Temporary
+  console.log('🔍 ProtectedRoute debug:', {
+  isAuthenticated,
+  hasToken,
+  willSendIntent: hasToken ? 'session_expired' : 'none'
+  });
+
     return (
       <Navigate
         to={redirectTo}
