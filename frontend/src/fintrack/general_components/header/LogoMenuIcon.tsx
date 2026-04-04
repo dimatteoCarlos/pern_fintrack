@@ -1,5 +1,5 @@
 //src/general_components/header/LogoMenuIcon.tsx
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../../auth/hooks/useAuth';
 import UserProfileMenu from '../../../auth/components/userProfileMenu/UserProfileMenu';
 
@@ -19,49 +19,55 @@ import './logoMenuIcon.css';
 // import UserSquareIcon from '../../assets/UserSquareIcon.svg';
 
 import './logoMenuIcon.css';
+import { AUTH_ROUTE } from '../../../auth/auth_constants/constants';
 
 function LogoMenuIcon() {
   const { pathname } = useLocation();
-
+  const navigateTo = useNavigate();
   //--auth states-------------
   const { handleSignOut, clearError, clearSuccessMessage, isAuthenticated } =
     useAuth();
 
   //handler for sign out click function button
-  const handleSignOutClick = () => {
+  const handleSignOutClick = async() => {
     clearError();
     clearSuccessMessage();
-    handleSignOut();
-    //re direct to /auth and signout
+    await handleSignOut();
+  //re direct to /auth and signout
+  // ✅ UI decides navigation + intent
+    navigateTo(AUTH_ROUTE, {
+      replace: true,
+      state: { intent: 'user_logged_out' as const }
+    });
   };
 
   return (
     <div className='header__logoAndIcon'>
       <Logo />
 
-      <div
-        className='menuBox '
-        style={{
-          display: 'flex',
-          justifyContent: 'space-around',
-          width: '35%',
-          alignSelf: 'center',
-          gap: '0.5rem',
-        }}
+     <div
+      className='menuBox '
+      style={{
+        display: 'flex',
+        justifyContent: 'space-around',
+        width: '35%',
+        alignSelf: 'center',
+        gap: '0.5rem',
+      }}
       >
-        <Link to='accounting' className='' state={{ originRoute: pathname }}>
-          <div className='iconContainer edit  '>
-            {/* <MenuIcon /> */}
-            <MdOutlineEditNote
-              style={{
-                color: 'black',
-                fontSize: '32px',
-                border: '3px solid black',
-                borderRadius: '8px',
-              }}
-            />
-          </div>
-        </Link>
+     <Link to='accounting' className='' state={{ originRoute: pathname }}>
+       <div className='iconContainer edit  '>
+         {/* <MenuIcon /> */}
+        <MdOutlineEditNote
+          style={{
+           color: 'black',
+           fontSize: '32px',
+           border: '3px solid black',
+           borderRadius: '8px',
+          }}
+         />
+       </div>
+     </Link>
 
         {isAuthenticated && (
           <div className='iconContainer'>
@@ -87,7 +93,6 @@ function LogoMenuIcon() {
                 borderRadius: '8px',
               }}
             />
-            {/* <SignOutIcon /> */}
           </div>
         </button>
       </div>
