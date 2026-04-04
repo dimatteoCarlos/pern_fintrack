@@ -9,9 +9,6 @@
  * Layer: Infrastructure
  * Decisions: None - just execution
  * Side effects: Only storage and memory
- * 
- * @param shouldNotify - Kept for backward compatibility but IGNORED
- *                       Navigation/notifications now handled by Application layer
  */
 
 import { LOCAL_STORAGE_KEY } from '../../fintrack/helpers/constants';

@@ -365,9 +365,10 @@ export type UserIdentityType = {
 // ===============================
 export type AuthUIStateType =
   | 'IDLE'
+  | 'SIGN_IN'
+  | 'SIGN_UP'
   | 'SESSION_EXPIRED'
-  | 'REMEMBERED_VISITOR'
-  // | 'PASSWORD_CHANGED';
+  | 'REMEMBERED_VISITOR';
 
 // ===============================
 // 📦 EXPORTS (existing)

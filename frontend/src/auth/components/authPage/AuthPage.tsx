@@ -45,7 +45,6 @@ export default function AuthPage() {
   const {
     isLoading,
     error,
-    // successMessage,
     handleSignIn,
     handleSignUp,
     clearError,
@@ -54,32 +53,38 @@ export default function AuthPage() {
   //------------------------------
   // ✅ HANDLE NAVIGATION STATES
   //------------------------------
-  useEffect(() => {
-    const navigationState = location.state as
-      | {
-          hasIdentity?: boolean;
-          prefilledEmail?: string;
-          prefilledUsername?: string;
-          from?: string;
-        }
-      | undefined;
+  const navigationState = location.state as
+    | {
+        intent?: string;
+        hasIdentity?: boolean;
+        prefilledEmail?: string;
+        prefilledUsername?: string;
+        from?: string;
+      }
+    | undefined;
+    
+    const intent = navigationState?.intent;
 
-    resetUI(); //clean UI state keeping modals close
-    // Process navigation state if exists
+ // Debugging
+  console.log('🔍 AuthPage debug:', { intent, uiState });
+  
+ //---  
+ useEffect(() => {
+   resetUI(); //clean UI state keeping modals close
+   // ✅ Handle password_changed intent (legacy - will be updated in Commit 6)
     if (navigationState?.hasIdentity) {
-      if (navigationState.prefilledEmail && navigationState.prefilledUsername) {
-        setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
-        setPrefilledData(
-          navigationState.prefilledEmail,
-          navigationState.prefilledUsername,
+     if (navigationState.prefilledEmail && navigationState.prefilledUsername) {
+      setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
+       setPrefilledData(
+         navigationState.prefilledEmail,
+         navigationState.prefilledUsername,
         );
       }
     }
 
-    // Always clean up navigation state after processing
-    if (location.state && Object.keys(location.state).length > 0) {
-      navigateTo(location.pathname,
-        { replace: true, state: {} });
+// Always clean up navigation state after processing
+  if (location.state && Object.keys(location.state).length > 0) {
+   navigateTo(location.pathname, { replace: true, state: {} });
     }
   }, [
     location.state,
@@ -88,6 +93,9 @@ export default function AuthPage() {
     setUIState,
     setPrefilledData,
     resetUI,
+    navigationState?.hasIdentity,
+    navigationState?.prefilledEmail,
+    navigationState?.prefilledUsername,
   ]);
 
   // ======================
@@ -109,7 +117,7 @@ export default function AuthPage() {
     setIsMenuOpen(false);
     clearError(); // ✅ Clean previous errors
     setIsSignInMode(false);
-    useAuthUIStore.getState().setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
+    useAuthUIStore.getState().setUIState(AUTH_UI_STATES.SIGN_UP);
   };
 
   const handleCloseModal = () => {

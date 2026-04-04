@@ -64,7 +64,7 @@ const FIELD_MAPPING: Record<string, keyof ChangePasswordFormDataType> = {
   confirmPassword: "confirmPassword",
 };
 
-export const TOTAL_COUNTDOWN_SECONDS = 60;
+export const TOTAL_COUNTDOWN_SECONDS = 6;
 
 /* ==========================
 🧱 MAIN CONTAINER COMPONENTE

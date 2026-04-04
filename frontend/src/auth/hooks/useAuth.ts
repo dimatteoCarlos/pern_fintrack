@@ -337,32 +337,28 @@ const useAuth = () => {
    * 🔍 LAYER IDENTIFICATION:
    * - Layer: Application/Orchestration
    * - Purpose: Handle explicit user logout action
-   * - Decisions: When to navigate after cleanup
+   * - - Decisions: None (pure cleanup, no navigation)
    *
    * ✅ Responsibilities:
    * - Call logout API
    * - Clean up session data (via infrastructure)
-   * - Navigate to auth page
    *
    * ❌ Never:
+   * - Navigate (UI component decides)
    * - Handle automatic session expiration (ProtectedRoute does that)
    * - Show notifications (Presentation layer)
    * - Interpret error meanings (Domain layer)
    */
-  const handleSignOut = async () => {
+  const handleSignOut = async ():Promise<void> => {
     try {
-      // Infrastructure layer - API call
+  // Infrastructure layer - API call
       await authFetch(url_signout, { method: 'POST' });
     } catch (err: unknown) {
-      // Infrastructure error - log but proceed with cleanup
+  // Infrastructure error - log but proceed with cleanup
       console.log('⚠️ Logout API call failed, proceeding with client cleanup');
     } finally {
       // 1️⃣ Infrastructure layer - clean up session data
       logoutCleanup(false);
-
-      // 2️⃣ Application layer - explicit navigation for user-initiated logout
-      // This does NOT affect automatic session expiration flows
-      navigateTo('/', { replace: true });
     }
   };
   /* ===============================

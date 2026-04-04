@@ -41,7 +41,10 @@ export const AUTH_MODES = {
 //UI States for authentication experience
 export const AUTH_UI_STATES = {
   IDLE: 'IDLE',
+  SIGN_IN:'SIGN_IN',
+  SIGN_UP:'SIGN_UP',
   SESSION_EXPIRED: 'SESSION_EXPIRED',
   REMEMBERED_VISITOR: 'REMEMBERED_VISITOR',
   PASSWORD_CHANGED: 'PASSWORD_CHANGED',
+
 } as const;
