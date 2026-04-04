@@ -8,13 +8,13 @@
 
 import { useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 import { useAuthStore } from '../stores/useAuthStore';
 import { authFetch } from '../auth_utils/authFetch';
 import { logoutCleanup } from '../auth_utils/logoutCleanup';
-import { useNavigationHelper } from '../auth_utils/navigationHelper';
-import { INITIAL_PAGE_ADDRESS } from '../../fintrack/helpers/constants';
+// import { useNavigate } from 'react-router-dom';
+// import { useNavigationHelper } from '../auth_utils/navigationHelper';
+// import { INITIAL_PAGE_ADDRESS } from '../../fintrack/helpers/constants';
 
 import {
   AuthSuccessResponseType,
@@ -107,8 +107,8 @@ const extractErrorMessage = (err: unknown): string => {
    =============================== */
 
 const useAuth = () => {
-  const navigateTo = useNavigate();
-  useNavigationHelper();
+  // const navigateTo = useNavigate();
+  // useNavigationHelper();
 
   const {
     isLoading,
@@ -193,12 +193,26 @@ const useAuth = () => {
   // console.log("user data:", userData)
 
   /* ===============================
-🔐 SIGN IN
+🔐 SIGN IN – DOMAIN LAYER (PURE)
 =============================== */
+/**
+ * Authenticates a user with email/username and password.
+ *
+ * ✅ Responsibilities:
+ * - Call signin API
+ * - Store token and expiry
+ * - Persist identity if rememberMe is true
+ * - Update global auth state (user, authenticated)
+ * - Return success/error result
+ *
+ * ❌ Never:
+ * - Navigate (presentation layer decides)
+ * - Show toasts/modals (UI layer)
+ */
   const handleSignIn = async (
     credentials: SignInCredentialsType,
     rememberMe: boolean,
-  ): Promise<void> => {
+  ): Promise<{ success: boolean; error?: string }> => {
     clearError();
     setIsLoading(true);
     clearSuccessMessage();
@@ -213,15 +227,15 @@ const useAuth = () => {
 
       const userFromSignIn = response.data?.user || user;
 
-      //check data
+     //check data
       if (!accessToken || !userFromSignIn) {
-        const errorMessage = !accessToken
-          ? 'Server response missing access token'
-          : 'Server response missing user data';
+       const errorMessage = !accessToken
+        ? 'Server response missing access token'
+        : 'Server response missing user data';
         throw new Error(errorMessage);
       }
 
-      // processing expiresIn
+     // processing expiresIn
       if (expiresIn) {
         const expiryTime = Date.now() + expiresIn * 1000;
         sessionStorage.setItem('tokenExpiry', expiryTime.toString());
@@ -229,10 +243,10 @@ const useAuth = () => {
         console.log('token expiration:', new Date(expiryTime));
       }
 
-      if (accessToken && userFromSignIn) {
+      // if (accessToken && userFromSignIn) {
         sessionStorage.setItem('accessToken', accessToken);
 
-        // ✅ Persist identity if rememberMe is true
+      // ✅ Persist identity if rememberMe is true
         if (rememberMe) {
           const identity: UserIdentityType = {
             email: credentials.email,
@@ -247,7 +261,7 @@ const useAuth = () => {
           console.log('🧹 Identity cleared');
         }
 
-        // ✅ Transform and merge user data
+      // ✅ Transform and merge user data
         const transformedUser = mapUserResponseToUserData(userFromSignIn);
 
         // Get current user data store
@@ -258,24 +272,40 @@ const useAuth = () => {
 
         setIsAuthenticated(true);
         setSuccessMessage(message || 'Sign in successful! Welcome back!');
-        navigateTo(INITIAL_PAGE_ADDRESS || '/fintrack');
-      }
+
+        return { success: true };
+        // navigateTo(INITIAL_PAGE_ADDRESS || '/fintrack');
+      // }
     } catch (err: unknown) {
       const errorMessage =
         extractErrorMessage(err) ||
         'Login failed. Please check your credentials.';
       setError(errorMessage);
+        return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
   };
 
   /* ===============================
-   📝 SIGN UP
+   📝 SIGN UP – DOMAIN LAYER (PURE)
  =============================== */
+ /**
+ * Registers a new user.
+ *
+ * ✅ Responsibilities:
+ * - Call signup API
+ * - Store token if provided
+ * - Update global auth state (user, authenticated)
+ * - Return success/error result
+ *
+ * ❌ Never:
+ * - Navigate (presentation layer decides)
+ * - Show toasts/modals (UI layer)
+ */
   const handleSignUp = async (
     credentials: SignUpCredentialsType,
-  ): Promise<void> => {
+  ): Promise<{ success: boolean; error?: string }> => {
     clearError();
     clearSuccessMessage();
     setIsLoading(true);
@@ -292,13 +322,13 @@ const useAuth = () => {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
           errorData.message ||
-            `HTTP error! status: ${response.status}. Registration failed.`,
+           `HTTP error! status: ${response.status}. Registration failed.`,
         );
       }
 
       const resData = await response.json();
 
-      //verify user exists
+     //verify user exists
       if (!resData.user) {
         throw new Error('Server response missing user data');
       }
@@ -306,7 +336,7 @@ const useAuth = () => {
       if (resData.accessToken) {
         sessionStorage.setItem('accessToken', resData.accessToken);
       }
-      // ✅ Transform and merge user data
+     // ✅ Transform and merge user data
       const transformedUser = mapUserResponseToUserData(resData.user);
 
       //Get user data from store
@@ -317,11 +347,16 @@ const useAuth = () => {
 
       setIsAuthenticated(true);
       setSuccessMessage(resData.message || 'Sign up successful!');
-      navigateTo('/fintrack');
+
+   // navigateTo('/fintrack');
+   // ✅ NO navigation - return success
+    return { success: true };
+
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : 'Registration failed';
       setError(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
@@ -358,7 +393,7 @@ const useAuth = () => {
       console.log('⚠️ Logout API call failed, proceeding with client cleanup');
     } finally {
       // 1️⃣ Infrastructure layer - clean up session data
-      logoutCleanup(false);
+      logoutCleanup();
     }
   };
   /* ===============================
@@ -403,7 +438,7 @@ const useAuth = () => {
 
         // 🔐 401 - TOKEN INVALID / EXPIRED (REAL LOGOUT)
         if (status === 401) {
-          logoutCleanup(true);
+          logoutCleanup();
 
           return {
             success: false,
@@ -544,7 +579,7 @@ const useAuth = () => {
 
         // 🔐 401 - Session expired
         if (status === 401) {
-          logoutCleanup(true);
+          logoutCleanup();
 
           return {
             success: false,

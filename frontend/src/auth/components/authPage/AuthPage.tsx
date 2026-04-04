@@ -26,6 +26,7 @@ import { AUTH_UI_STATES } from '../../auth_constants/constants';
 import useAuth from '../../hooks/useAuth';
 import Logo from '../../../assets/logo.svg';
 import styles from './styles/authPage.module.css';
+import { SignInCredentialsType, SignUpCredentialsType } from '../../types/authTypes';
 
 //--MAIN COMPONENT AUTHENTICACION ACCESS PAGE - AuthPage.tsx
 export default function AuthPage() {
@@ -45,10 +46,42 @@ export default function AuthPage() {
   const {
     isLoading,
     error,
-    handleSignIn,
-    handleSignUp,
+    handleSignIn:handleSignInDomain,
+    handleSignUp:handleSignUpDomain,
     clearError,
   } = useAuth();
+
+// ===============================
+// 🎯 PRESENTATION LAYER WRAPPERS
+// =============================== 
+ /**
+   * Sign in wrapper – decides navigation after successful login.
+   * (Future refactor – currently domain still navigates)
+   * TODO: Move navigation logic here once handleSignIn is cleaned.
+   */
+
+ const handleSignInWithNavigation = async (
+    credentials: SignInCredentialsType,
+    rememberMe: boolean,
+  ) => {
+    await handleSignInDomain(credentials, rememberMe);
+// ⚠️ Currently handleSignInDomain still navigates internally.
+// Will be refactored in a later commit.
+  };
+
+ /**
+   * Sign up wrapper – decides navigation after successful registration.
+   * ✅ Domain no longer navigates – we control it here.
+   */
+
+  const handleSignUpWithNavigation = async(credentials:SignUpCredentialsType)=>{
+   const result = await handleSignUpDomain(credentials);
+   if(result.success){
+    navigateTo('/fintrack');
+   }
+  // Errors are already stored in useAuthStore and displayed by AuthUI
+
+  }
 
   //------------------------------
   // ✅ HANDLE NAVIGATION STATES
@@ -176,8 +209,8 @@ export default function AuthPage() {
             >
               <AuthUI
                 // Auth operations
-                onSignIn={handleSignIn}
-                onSignUp={handleSignUp}
+                onSignIn={handleSignInWithNavigation}
+                onSignUp={handleSignUpWithNavigation}
                 isLoading={isLoading}
                 error={error}
                 messageToUser={message} //from UI store
