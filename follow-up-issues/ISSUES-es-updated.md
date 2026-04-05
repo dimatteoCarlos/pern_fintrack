@@ -4,13 +4,9 @@ AUTENTICACION
 
 Al hacer SIGN OUT, se redirige a Sign In, en vez de ir al menu principal. LISTO.
 
-Porque expira la sesion, si existe un refresh token, que deberia estar actualizado?. PENDIENTE.
-
-Definir un esquema de roles de autorizacion. PENDIENTE.
-
 Revisar la validacion cruzada entre campos password, new password y confirm password en el frontend.LISTO.
 
-Revisar Responsiveness de frontend de formularios de authentication: Sign In, Sign Up, Update user data, Change Password.PENDIENTE.
+Revisar Responsiveness de frontend de formularios de authentication: Sign In, Sign Up, Update user data, Change Password.LISTO.
 
 Revisar validacion en tiempo real en SignUP, de los campos "password" y "confirmPassword". El caso edge es: cuando se introdujeron los dos campos y son diferentes, y en vez de ajustar confirmPassword, se ajusta password para que coincidan los dos, no se valida sino hasta que se edita confirmPassword. LISTO
 
@@ -20,7 +16,23 @@ Validar el monto target en linea al crear una cuenta pocket. LISTO.
 
 Verificar auth refresh token y la logica de refresh toekn automatico.LISTO.
 
-Como hacer para recordar al usuario y mantenerlo activo mientras refresh token este vigente. PENDIENTE
+Porque expira la sesion, si existe un refresh token, que deberia estar actualizado?. PENDIENTE.
+
+Como hacer para recordar al usuario y mantenerlo activo mientras refresh token este vigente. Verificar si esto es deseable. PENDIENTE
+
+Definir y aplicar un esquema de roles de autorizacion. PENDIENTE.
+
+ADICIONALES PENDIENTES:
+
+### Tabla de issues pendientes
+
+| #   | Problema                                        | Ubicación              | Severidad | Propuesta                  |
+| :-- | :---------------------------------------------- | :--------------------- | :-------- | :------------------------- |
+| 1   | isAuthenticated no se sincroniza con storage    | useAuth.ts + authStore | 🔴 Alta   | Crear issue técnico aparte |
+| 2   | 403/401 no disparan logout + redirect           | authFetch.ts           | 🔴 Alta   | Issue aparte (middleware)  |
+| 3   | Validación de campos no se limpia en NewAccount | NewAccount.tsx         | 🟡 Media  | Issue de feature           |
+| 4   | Toast/overlay persiste después de error         | useFetchLoad.ts        | 🟡 Media  | Issue de UI                |
+| 5   | openSignupModalHandler usa estado incorrecto    | AuthPage.tsx           | 🟢 Baja   | Arreglar en Commit 6       |
 
 ---
 
@@ -28,9 +40,10 @@ BACKEND
 Organizar la asignacion de la duracion de cookies y tokens. PENDIENTE.
 
 GENERAL
+
 como hacer DEPLOYMENT. PENDIENTE.
 
-Como verificar dinamicamente componentes no usados o rotos.LISTO. Con npx knip.
+Como verificar dinamicamente componentes no usados o rotos.LISTO. Con npx knip, pero no esta funcionando.
 
 POCKET DETAIL
 Revisar pocket detail, para accounting view detail, y para budget pocket. No se esta renderizando los datos de las cuentas pocket saving.LISTO
@@ -41,7 +54,9 @@ Arreglado pocket detial, ahora category detail, no recibe los datos bien, veerif
 TRANSFER
 Responsiveness en transfer, al agregar una linea en To:, no se ve la ui completa. Para una ancho menor de 450 px. La altura debe ser mayor de 842 px. Y normal la altura minima esta en 722 px. ANCHO maximo pra From es 468px, y par To es 450px. LISTO.
 
-TRANSFER. ¿Se puede ser responsive, para que no haya scroll?. PENIENTE.
+TRANSFER. ¿Se puede ser responsive, para que no haya scroll?.Si, LISTO hasta un tamano de 360 x 700px.
+
+Para responsiveness a alturas menores de 700px, se requiere activar el scroll dentro de cards_presentation--tracker y el main navbar container fixed sin ocultar el card. Tambien se puede disminuir altura del tracker navbar container. Para alcanzar un ancho minimo de 320 px hay que ajustar tamanos de altura y ancho del tracker navbar container. PENDIENTE.
 
 FIX update of total account balance. LISTO.
 
@@ -74,9 +89,10 @@ En la práctica, esto podría ser una característica técnica compleja diseñad
 
 FINTRACK: ACTIVIDADES O ISSUES LISTOS O PENDIENTES.
 
-En el frontend, limitar el numero de caracteres en todos los campos de los formularios.PENDIENTE.
+En el frontend, limitar el numero de caracteres en todos los campos de los formularios.LISTO.
+Queda pendiente arreglar para creacion de cuentas de budget, NewCategory account. PENDIENTE.
 
-En el frontend. El input del datepicker, acepta otros caracteres aparte de la fecha puesta por el datepicker.
+En el frontend. El input del datepicker, acepta otros caracteres aparte de la fecha puesta por el datepicker. LISTO,.
 
 Optimar AccountDeletionPage, usando useReducer Hook, para manejo de estados del modal, en vez de usar funcion centralizada con useMemo.PENDIENTE.
 
@@ -103,7 +119,7 @@ Cálculo de Net Worth: Aclarar con el cliente la definición de Net Worth y si s
 
 Manejo de Pocket Savings: Definir con usuario cliente, si los montos de Pocket Savings son cuentas separadas o están distribuidos en otras cuentas.PENDIENTE.
 
-Estructura de Creacion de Categorías y Subcategorias: Implementar una nueva estructura para manejar categorías y subcategorías.PENDIENTE.
+Estructura de Creacion de Categorías y Subcategorias: Implementar una nueva estructura para manejar categorías y subcategorías. Tipo calculadora.PENDIENTE.
 
 Ajustar los formularios del frontend, para que envien acount_id al backend, pqara que este realice las busquedas de las cuentas no por nombre sino por id de las cuentas. Se ajusto para busqueda de ambos. LISTO.
 
@@ -113,8 +129,7 @@ Exportación de Datos: Habilitar la exportación de movimientos en formatos como
 
 Balance de Inversiones: Aclarar con usuario Cleinte, el cálculo del balance total de las inversiones.
 
-PÁGINA DE DETALLE DE INGRESOS: Definir si se debe crear una página de detalle para las cuentas de income.
-Se implemento en modo edicion con accounting dashboard,donde se puede ver el detalle de cualquier cuenta, menos la cuenta interna SLACK.LISTO.
+PÁGINA DE DETALLE DE INGRESOS: Definir si se debe crear una página de detalle para las cuentas de income. Se implemento en modo edicion con accounting dashboard,donde se puede ver el detalle de cualquier cuenta, menos la cuenta interna SLACK.LISTO.
 
 BACKEND Y SEGURIDAD
 la hora de transaction-atual-date en el controller transfer between accounts, tiene 4 horas adicionales con respecto al momento que se hace la transaction?.PENDIENTE.
@@ -133,7 +148,7 @@ Manejo de Errores: Mejorar los mensajes de error para que sean más claros para 
 
 Cálculo de % Profit: Corregir el cálculo que muestra NaN.
 
-Validación de Fechas: Bloquear fechas futuras en el selector de fechas para las transacciones y la creación de pockets. y determinar regla de negocios para las fechas en las transacciones entre cuentas. Si se hace en la edicion de datos de cuentas pocket. PENDIENTE.
+Validación de Fechas: Bloquear fechas futuras en el selector de fechas para las transacciones y la creación de pockets. y determinar regla de negocios para las fechas en las transacciones entre cuentas. Ya se hace en la edicion de datos de cuentas pocket. PENDIENTE.
 
 Error de Monto Inicial: Revisar el error del monto inicial de la cuenta cuando no hay transacciones.PENDIENTE.
 
@@ -242,10 +257,6 @@ Estandarizar los estilos. LISTO.
 Minimizar los console.log del backend. LISTO.
 
 Añadir el placeholder "no opción" en los selectores. LISTO.
-PENDIENTE
-Cómo hacer deployment.
-
-Cómo verificar componentes no usados o ROTOS.
 
 LÓGICA DE NEGOCIO
 
@@ -258,41 +269,41 @@ Corregir la lógica de lend y borrow y ordenar los movimientos por fecha.
 
 Completar el cálculo del net worth.
 
-Validar números y valores en los trackers.
+Validar números y valores en los trackers.LISTO.
 
 Hacer validación en tiempo real para dropdowns.
 
 Implementar la lista de categorías.
 
-Crear endpoints y controladores en el backend.
+Crear endpoints y controladores en el backend.LISTO.
 
 Ajustar la base de datos para zonas horarias y queries.
 
-Incluir PnL en el fintrack.
+Incluir PnL en el fintrack.LISTO.
 
-Ajustar la lógica de debts para usar solo cuentas bancarias.
+Ajustar la lógica de debts para usar solo cuentas bancarias.LISTO.
 
 Corregir la funcionalidad borrow en la creación de deudas.
 
-Arreglar la restricción de fondos.
+Arreglar la restricción de fondos.LISTO.
 
-Corregir que los expenses no se reflejaban en los resúmenes.
+Corregir que los expenses no se reflejaban en los resúmenes.LISTO.
 
 Pendiente
-Implantar edicion de cuentas, datos solamente, no transacciones. Edicion SIMPLE.
+Implantar edicion de cuentas, datos solamente, no transacciones. Edicion SIMPLE.LISTO.
 
 El orden de las transacciones debeRIA ser primero el retiro o withdraw y despues received o deposit.
 
-New Pocket deberia validar como requerido el Target Amount.
+New Pocket deberia validar como requerido el Target Amount.LISTO.
 
-Ajustar los formularios del frontend, para que envien acount_id al backend, para que este realice las busquedas de las cuentas no por nombre sino por id de las cuentas. En progreso.
+Ajustar los formularios del frontend, para que envien acount_id al backend, para que este realice las busquedas de las cuentas no por nombre sino por id de las cuentas. LISTO.
 
 Exportación de Datos: Habilitar la exportación de movimientos en formatos como PDF, Excel y .csv.
 
 A Definir con Cliente
-EDICIÓN Y ELIMINACIÓN: Establecer una estrategia para editar y eliminar datos, y definir los campos editables y sus interrelaciones en la base de datos.
+EDICIÓN Y ELIMINACIÓN: Establecer una estrategia para editar y eliminar datos, y definir los campos editables y sus interrelaciones en la base de datos.LISTO.
 
-Considerar en accounting, listar todas las cuentas, inclueyendo income, expense, debtors, investment, banck, pocket, para luego usarlo como centro de edicion de cuentas.
+Considerar en accounting, listar todas las cuentas, incluyendo income, expense, debtors, investment, banck, pocket, para luego usarlo como centro de edicion de cuentas.LISTO.
 
 Cálculo de Net Worth: Aclarar con el cliente la definición de Net Worth y si su cálculo debe incluir activos (bancos, inversiones) y pasivos (deudas).
 
@@ -302,7 +313,7 @@ Estructura de Creacion de Categorías y Subcategorias: Implementar una nueva est
 
 Balance de Inversiones: Aclarar el cálculo del balance total de las inversiones.
 
-Página de Detalle de Ingresos: Definir si se debe crear una página de detalle para las cuentas de income.
+Página de Detalle de Ingresos: Definir si se debe crear una página de detalle para las cuentas de income.Definida en accounting. LISTO. 
 
 CONSULTAR PREFERENCIAS DE USUARIO Establecer la regla de negocio, para el manejo de fechas y coherencias entre fechas. Por ejemplo, al realizar una transaccion entre cuentas, no puede ser de cuentas con fechas en el futuro, o realizar transacciones en fechas anteriores a la creacion de las cuentas.
 
@@ -317,9 +328,9 @@ Cálculo de Inversiones: Calcular los valores de las cuentas de inversión, comp
 # minizar los console.log del backend.
 
 PENDIENTES Y DESEABLES.
-AUTENTICACION dual, es decir, para acceso a traves de web, y a traves de mobile-web.
+AUTENTICACION dual, es decir, para acceso a traves de web, y a traves de mobile-web. No necesario. LISTO.
 
-Incluir aspectos de seguridad, como tokens JWT, uso de cookies, envio por headers, Refresh Tokens, usuario logueado persistente.
+Incluir aspectos de seguridad, como tokens JWT, uso de cookies, envio por headers, Refresh Tokens, usuario logueado persistente.. LISTO.
 
 Frontend y UI/UX
 LISTOS
@@ -394,7 +405,7 @@ Estandarizar los estilos.
 # Añadir el placeholder "no opción" en los selectores.
 
 PENDIENTES
-Reflejar los nombres y apellidos de los debtors, con primera letra en mayúscula.
+Reflejar los nombres y apellidos de los debtors, con primera letra en mayúscula.LISTO.
 
 EXPENSE: si se crea una cuenta con mas de 25 caracteres, se muestra un error warning, pero igualmente se crea con categoria en blanco. errores de pg.
 
@@ -404,7 +415,7 @@ En detailed account page/view, colocar la flecha de regreso y los 3 puntos de ed
 
 Manejo de Errores: Mejorar los mensajes de error para que sean más claros para el usuario.
 
-Validación de Fechas: Bloquear fechas futuras en el selector de fechas para las transacciones y la creación de pockets.
+Validación de Fechas: Bloquear fechas futuras en el selector de fechas para las transacciones y la creación de pockets. Se implemento en el modulo de edicion de cuentas.
 
 Error de Monto Inicial: Revisar el error del monto inicial de la cuenta cuando no hay transacciones.
 
