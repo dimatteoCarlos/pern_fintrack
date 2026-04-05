@@ -1,10 +1,10 @@
 // 📁 frontend/src/auth/hooks/useAuth.ts
 
 /* 🌟 ===============================
-   🔐 AUTH SERVICE HOOK
-   Centralizes all authentication operations
-   Single source of truth for auth logic
-   =============================== 🌟 */
+🔐 AUTH SERVICE HOOK
+Centralizes all authentication operations
+Single source of truth for auth logic
+=============================== 🌟 */
 
 import { useEffect } from 'react';
 import axios from 'axios';
