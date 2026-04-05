@@ -5,39 +5,41 @@ import UserProfileMenu from '../../../auth/components/userProfileMenu/UserProfil
 
 //icon images
 import Logo from '../../../assets/logo.svg';
-
 import { MdOutlineEditNote } from 'react-icons/md';
-
 import { BsArrowRight } from 'react-icons/bs';
-
 import './logoMenuIcon.css';
+import { notifySuccess } from '../../../auth/auth_utils/notification';
 
 import { AUTH_ROUTE } from '../../../auth/auth_constants/constants';
 
+//MAIN COMPONENT: LogoMenuIcon.tsx
 function LogoMenuIcon() {
   const { pathname } = useLocation();
   const navigateTo = useNavigate();
-  //--auth states-------------
+
+ //--auth states-------------
   const { handleSignOut, clearError, clearSuccessMessage, isAuthenticated } =
     useAuth();
 
-  //handler for sign out click function button
+ //handler for sign out click function button
   const handleSignOutClick = async() => {
     clearError();
     clearSuccessMessage();
     await handleSignOut();
-  //re direct to /auth and signout
-  // ✅ UI decides navigation + intent
+
+ // ✅ Redirect to home and show toast
+ // ✅ UI decides navigation + intent
+  // navigateTo('/', { replace: true });
+    notifySuccess('Signed out successfully');
     navigateTo(AUTH_ROUTE, {
       replace: true,
-      state: { intent: 'user_logged_out' as const }
+      // state: { intent: 'user_logged_out' as const }
     });
   };
 
   return (
     <div className='header__logoAndIcon'>
       <Logo />
-
      <div
       className='menuBox '
       style={{
@@ -50,7 +52,7 @@ function LogoMenuIcon() {
       >
      <Link to='accounting' className='' state={{ originRoute: pathname }}>
        <div className='iconContainer edit  '>
-         {/* <MenuIcon /> */}
+       {/* <MenuIcon /> */}
         <MdOutlineEditNote
           style={{
            color: 'black',
