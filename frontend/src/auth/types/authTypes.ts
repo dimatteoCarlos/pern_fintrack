@@ -1,4 +1,4 @@
-//frontend/src/auth/types/authTypes.ts
+//📁 frontend/src/auth/types/authTypes.ts
 
 import { CurrencyType } from '../../fintrack/types/types';
 
@@ -12,16 +12,12 @@ export type CredentialsType = {
   confirmPassword?: string;
 };
 
+//used in: AuthPage.tsx, useAuth.ts
 export type SignInCredentialsType = {
   username: string;
   email: string;
   password: string;
 };
-// export interface SignUpCredentialsType extends SignInCredentialsType {
-//   user_firstname: string;
-//   user_lastname: string;
-//   confirmPassword:string;
-// }
 
 export type SignUpCredentialsType = SignInCredentialsType & {
   user_firstname: string;
@@ -363,12 +359,11 @@ export type UserIdentityType = {
 // ===============================
 // 🆔 UI STATE STORE TYPE
 // ===============================
+//used in: useAuthUIStore.ts
 export type AuthUIStateType =
   | 'IDLE'
   | 'SIGN_IN'
   | 'SIGN_UP'
-  | 'SESSION_EXPIRED'
-  | 'REMEMBERED_VISITOR';
 
 // ===============================
 // 📦 EXPORTS (existing)
@@ -396,8 +391,8 @@ export type ProfileUpdateResponseType =
 export type AuthIntentType = 
   | 'password_changed'
   | 'session_expired'
-  | 'user_logged_out'
-  | 'welcome_new_user';
+  // | 'user_logged_out'
+  // | 'welcome_new_user';
 
 /**
  * NavigationState - Structure for navigate() state parameter
