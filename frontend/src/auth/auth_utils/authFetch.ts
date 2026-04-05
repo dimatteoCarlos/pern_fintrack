@@ -96,16 +96,7 @@ export const authFetch = async <T>(
         
      // ✅ Clean up session data - pure infrastructure, no navigation
         logoutCleanup();
-        
-     // ✅ DISPATCH UI EVENT - but DO NOT NAVIGATE
-     // AuthPage will observe this state and navigate
-     // useAuthUIStore.getState()
-     // .setUIState(AUTH_UI_STATES.SESSION_EXPIRED);
-     // useAuthUIStore.getState().setMessage('Your session has expired. Please sign in again.');
-      
-     // ❌ NO NAVIGATION HERE - infrastructure doesn't navigate
-     // Navigation happens in AuthPage when it observes the state change
-        
+              
      // Return rejected promise so calling code knows it failed
         return Promise.reject(refreshError);
       }
