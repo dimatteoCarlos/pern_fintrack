@@ -1,11 +1,10 @@
 // 📁 frontend/src/auth/auth_constants/constants.ts
 
 /* ===============================
-   🔐 AUTH CONSTANTS
-   Centralized constants for authentication module
-   Makes auth modular and reusable
-   =============================== */
-
+ 🔐 AUTH CONSTANTS
+ Centralized constants for authentication module
+ Makes auth modular and reusable
+ =============================== */
 /**
  * 🧭 Authentication page route
  * Used throughout auth module and app for redirects
@@ -43,8 +42,5 @@ export const AUTH_UI_STATES = {
   IDLE: 'IDLE',
   SIGN_IN:'SIGN_IN',
   SIGN_UP:'SIGN_UP',
-  SESSION_EXPIRED: 'SESSION_EXPIRED',
-  REMEMBERED_VISITOR: 'REMEMBERED_VISITOR',
-  PASSWORD_CHANGED: 'PASSWORD_CHANGED',
 
 } as const;
