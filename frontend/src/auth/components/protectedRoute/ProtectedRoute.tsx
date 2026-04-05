@@ -40,29 +40,29 @@ const ProtectedRoute = () => {
 
   if (!isAuthenticated) {
  // ✅ Check if user had a token (real session expired)
-    const hasToken = !!sessionStorage.getItem('accessToken'); 
+   const hasToken = !!sessionStorage.getItem('accessToken'); 
     
 //Debugging Temporary
-  console.log('🔍 ProtectedRoute debug:', {
-  isAuthenticated,
-  hasToken,
-  willSendIntent: hasToken ? 'session_expired' : 'none'
-  });
+// console.log('🔍 ProtectedRoute debug:', {
+// isAuthenticated,
+// hasToken,
+// willSendIntent: hasToken ? 'session_expired' : 'none'
+// });
 
-    return (
-      <Navigate
-        to={redirectTo}
-        replace
-        state={
-          hasToken
-            ? { 
-                intent: 'session_expired' as const, 
-                from: location.pathname 
-              }
-            : { from: location.pathname }
-        }
-      />
-    );
+   return (
+     <Navigate
+       to={redirectTo}
+       replace
+       state={
+         hasToken
+          ? { 
+             intent: 'session_expired' as const, 
+             from: location.pathname 
+            }
+          : { from: location.pathname }
+       }
+     />
+   );
   }
 
   // ✅ Access granted - render child routes
