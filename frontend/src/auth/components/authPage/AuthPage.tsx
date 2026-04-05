@@ -185,33 +185,6 @@ useEffect(() => {
 // Determine if modal should be open
   const showModal = uiState !== AUTH_UI_STATES.IDLE;
 
-// ✅ Handle password_changed intent (legacy - will be updated in Commit 6)
-//     if (navigationState?.hasIdentity) {
-//      if (navigationState.prefilledEmail && navigationState.prefilledUsername) {
-//       setUIState(AUTH_UI_STATES.REMEMBERED_VISITOR);
-//        setPrefilledData(
-//          navigationState.prefilledEmail,
-//          navigationState.prefilledUsername,
-//         );
-//       }
-//     }
-
-// // Always clean up navigation state after processing
-//   if (location.state && Object.keys(location.state).length > 0) {
-//    navigateTo(location.pathname, { replace: true, state: {} });
-//     }
-//   }, [
-//     location.state,
-//     location.pathname,
-//     navigateTo,
-//     setUIState,
-//     setPrefilledData,
-//     resetUI,
-//     navigationState?.hasIdentity,
-//     navigationState?.prefilledEmail,
-//     navigationState?.prefilledUsername,
-//   ]);
-
 // =============
 // 🎨 RENDER
 // =============
