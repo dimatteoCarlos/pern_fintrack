@@ -5,20 +5,13 @@ import UserProfileMenu from '../../../auth/components/userProfileMenu/UserProfil
 
 //icon images
 import Logo from '../../../assets/logo.svg';
-//edit icon alternatives
-import { MdOutlineEditNote } from 'react-icons/md';
-// import { FiEdit } from "react-icons/fi";
-// import MenuIcon from '../../assets/MenuSvg.svg';
 
-//exit icon alterantives: import { IoExitOutline } from 'react-icons/io5'; import { RxExit } from 'react-icons/rx';
-// import SignOutIcon from '../../assets/SignOutSvg.svg';
+import { MdOutlineEditNote } from 'react-icons/md';
 
 import { BsArrowRight } from 'react-icons/bs';
-import './logoMenuIcon.css';
-
-// import UserSquareIcon from '../../assets/UserSquareIcon.svg';
 
 import './logoMenuIcon.css';
+
 import { AUTH_ROUTE } from '../../../auth/auth_constants/constants';
 
 function LogoMenuIcon() {
