@@ -375,7 +375,6 @@ export type ProfileUpdateResponseType =
 // ===============================
 // 🎯 AUTH INTENT - Navigation Events
 // ===============================
-
 /**
  * AuthIntent - Events that trigger navigation with state
  * 
