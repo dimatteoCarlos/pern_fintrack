@@ -149,7 +149,7 @@ const useAuth = () => {
             { method: 'GET' },
           );
           //----------------------
-          console.log('🚀 ~ checkAuthStatus ~ response:', response);
+          // console.log('🚀 ~ checkAuthStatus ~ response:', response);
           //----------------------
           if (isMounted && response.data?.user) {
             // ✅ Transform and merge user data on session restore

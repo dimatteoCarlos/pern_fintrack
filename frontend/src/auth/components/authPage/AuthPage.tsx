@@ -66,10 +66,10 @@ export default function AuthPage() {
     credentials: SignInCredentialsType,
     rememberMe: boolean,
   ) => {
-  console.log('🔐 Sign in wrapper called');
+  // console.log('🔐 Sign in wrapper called');
   const result =  await handleSignInDomain(credentials, rememberMe);
 
- console.log('Sign in result:', result);
+ // console.log('Sign in result:', result);
 
    if(result.success){
     navigateTo(INITIAL_PAGE_ADDRESS ?? '/fintrack');
@@ -111,7 +111,7 @@ const openLoginModalWithPrefill = useCallback(()=>{
   const intent = navigationState?.intent;
 
 // Debugging log
- console.log('🔍 AuthPage debug:', { intent, uiState });
+ // console.log('🔍 AuthPage debug:', { intent, uiState });
   
 //✅ Main effect – only processes intents, does NOT force IDLE when no intent  
 useEffect(() => {
@@ -231,7 +231,7 @@ useEffect(() => {
               onClick={(e) => e.stopPropagation()}
             >
               <AuthUI
-               // Auth operations
+              // Auth operations
                 onSignIn={handleSignInWithNavigation}
                 onSignUp={handleSignUpWithNavigation}
                 isLoading={isLoading}
