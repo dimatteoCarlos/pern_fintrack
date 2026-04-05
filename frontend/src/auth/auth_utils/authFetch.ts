@@ -23,7 +23,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { url_refrestoken, url_update_user, url_change_password } from '../../endpoints';
 import { logoutCleanup } from './logoutCleanup';
 import { useAuthUIStore } from '../stores/useAuthUIStore';
-import { AUTH_UI_STATES } from '../auth_constants/constants';
+// import { AUTH_UI_STATES } from '../auth_constants/constants';
 
 /* 🔐 Authenticated fetch utility*/
 export const authFetch = async <T>(
@@ -95,12 +95,12 @@ export const authFetch = async <T>(
         });
         
       // ✅ Clean up session data - pure infrastructure, no navigation
-        logoutCleanup(false);
+        logoutCleanup();
         
       // ✅ DISPATCH UI EVENT - but DO NOT NAVIGATE
       // AuthPage will observe this state and navigate
-      useAuthUIStore.getState()
-      .setUIState(AUTH_UI_STATES.SESSION_EXPIRED);
+      // useAuthUIStore.getState()
+      // .setUIState(AUTH_UI_STATES.SESSION_EXPIRED);
       useAuthUIStore.getState().setMessage('Your session has expired. Please sign in again.');
       
      // ❌ NO NAVIGATION HERE - infrastructure doesn't navigate
