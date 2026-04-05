@@ -18,10 +18,10 @@ import { clearIdentity, getIdentity } from './localStorageHandle/authStorage';
 //==========================
 //MAIN FUNCTION: logoutCleanup
 //==========================
-export const logoutCleanup = (shouldNotify: boolean = false): void => {
-  // Infrastructure can log for debugging (doesn't affect UX)
+export const logoutCleanup = (): void => {
+// Infrastructure can log for debugging (doesn't affect UX)
   console.log(
-    `🔧 logoutCleanup executing - shouldNotify:${shouldNotify} (ignored)`,
+    `🔧 logoutCleanup executing`,
   );
 
   // ===============================
@@ -47,7 +47,6 @@ export const logoutCleanup = (shouldNotify: boolean = false): void => {
   // 4️⃣ CONDITIONAL LOCALSTORAGE CLEANUP (Persistence - Infrastructure)
   // ===============================
   // 🔍 Read user's persistent decision from identity (Domain layer)
-  // Infrastructure reads, but does not own, this data
   const identity = getIdentity();
   const shouldKeepData = identity?.rememberMe === true;
 
@@ -57,7 +56,7 @@ export const logoutCleanup = (shouldNotify: boolean = false): void => {
     localStorage.removeItem(LOCAL_STORAGE_KEY.USER_DATA);
     console.log('🔧 Full cleanup: all persistent data removed');
   } else {
-    // ✅ User wants to be remembered - keep identity for next visit
+  // ✅ User wants to be remembered - keep identity for next visit
     console.log('🔧 Partial cleanup: keeping identity for next visit');
   }
 };
