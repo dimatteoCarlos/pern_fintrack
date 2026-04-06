@@ -82,7 +82,7 @@ try {
 // console.log('total life time', totalLifetime/1000/60)
 
 //rotation threshold or remnant life limit 
- const limitRemLife = ((decoded.exp - decoded.iat) * 1000) / 4; //threshold of 25% remanent life was arbitrarily set
+ const limitRemLife = ((decoded.exp - decoded.iat) * 1000) / 10; //threshold of 10% remanent life was arbitrarily set
 
  let newRefreshToken = refreshTokenFromClient;
  let shouldSetNewCookie = false;
