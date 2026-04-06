@@ -27,13 +27,11 @@ function LogoMenuIcon() {
     clearSuccessMessage();
     await handleSignOut();
 
- // ✅ Redirect to home and show toast
- // ✅ UI decides navigation + intent
-  // navigateTo('/', { replace: true });
+   // ✅ Redirect to home and show toast
     notifySuccess('Signed out successfully');
     navigateTo(AUTH_ROUTE, {
       replace: true,
-      // state: { intent: 'user_logged_out' as const }
+      state: { intent: 'user_logged_out' as const }
     });
   };
 

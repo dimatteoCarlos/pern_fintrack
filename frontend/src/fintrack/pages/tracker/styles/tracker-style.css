@@ -481,7 +481,7 @@ textarea:invalid {
         min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
     ) !important;
     font-size: calc(
-      0.65rem + (0.875rem - 0.65rem) *
+      0.55rem + (0.875rem - 0.65rem) *
         min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
     ) !important;
     display: flex !important;
@@ -492,7 +492,8 @@ textarea:invalid {
 
   .icon-currency {
     border-radius: 0.8em !important;
-    border: 0.25px solid var(--dark) !important;
+    border: 2px solid var(--dark) !important;
+    /* background-color: orange; */
   }
 }
 

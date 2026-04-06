@@ -5,13 +5,12 @@
    Generic validation for signin/signup forms
    Reuses useFieldValidation for consistent validation
    =============================== */
-
 import { useCallback } from 'react';
 import { z } from 'zod';
 
-// ============================================
+// =======================================
 // 📝 IMPOR GENERIC VALIDATION HOOK AND SCHEMAS
-// ============================================
+// =======================================
 import useFieldValidation from './useFieldValidation';
 import { signInSchema, signUpSchema } from '../zod_schemas/authSchemas';
 
