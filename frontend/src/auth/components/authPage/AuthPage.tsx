@@ -120,11 +120,9 @@ const openLoginModalWithPrefill = useCallback(()=>{
   
   const authEvent = navigationState?.authEvent;
 
-  // const eventData = {from:navigationState?.from}
-
-  console.log({authEvent},'data event:', navigationState?.from)
-
+  
 // Debugging log
+// console.log({authEvent},'data event:', navigationState?.from)
 // console.log(🔍 AuthPage debug:, { authEvent, uiState });
   
 //✅ Main effect – only processes intents, does NOT force IDLE when no authEvent  
