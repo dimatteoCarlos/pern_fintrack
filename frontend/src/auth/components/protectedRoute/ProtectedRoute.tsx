@@ -56,7 +56,7 @@ const ProtectedRoute = () => {
        state={
          hasToken
           ? { 
-             intent: 'session_expired' as const, 
+             authEvent: 'session_expired' as const, 
              from: location.pathname 
             }
           : { from: location.pathname }
