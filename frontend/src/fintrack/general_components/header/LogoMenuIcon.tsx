@@ -31,7 +31,7 @@ function LogoMenuIcon() {
     notifySuccess('Signed out successfully');
     navigateTo(AUTH_ROUTE, {
       replace: true,
-      state: { intent: 'user_logged_out' as const }
+      state: { authEvent: 'user_logged_out' as const }
     });
   };
 
