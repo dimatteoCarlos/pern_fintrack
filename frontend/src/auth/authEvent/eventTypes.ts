@@ -9,6 +9,7 @@
 */
 
 import { AuthUIStateType } from '../types/authTypes';
+import { AuthEventContextType } from './eventContextTypes';
 
 /**
  * AuthEventMapType - Data payload for each auth navigation event
@@ -45,3 +46,18 @@ export type AuthEventResultType = {
   // Session expiry specific (store return path)
   returnTo?: string | null;
 };
+
+export type NoDataHandler = (
+  _data: never,
+  ctx: AuthEventContextType
+) => AuthEventResultType;
+
+export type NoContextHandler = (
+  data: AuthEventMapType['session_expired'],
+  _ctx: never
+) => AuthEventResultType;
+
+export type NoParamsHandler = (
+  _data: never,
+  _ctx: never
+) => AuthEventResultType;

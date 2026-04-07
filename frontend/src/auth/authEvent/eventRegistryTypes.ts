@@ -14,29 +14,55 @@ AuthPage (orchestrator) will execute the result.
 import { AuthEventMapType, AuthEventType, AuthEventResultType } from './eventTypes';
 
 import { AuthEventContextType } from './eventContextTypes';
+import { getIdentity } from '../auth_utils/localStorageHandle/authStorage';
 
 export type AuthEventHandlerType<EventKey extends AuthEventType> = (
-  data: AuthEventMapType[EventKey],
-  ctx: AuthEventContextType
+  data?: AuthEventMapType[EventKey],
+  ctx?: AuthEventContextType
 ) => AuthEventResultType;
 
+//-------------------------------
 // Registry with all events (handlers return placeholders for now)
 export const authEventRegistryType: {
   [EventKey in AuthEventType]: AuthEventHandlerType<EventKey>;
 } = {
-  password_changed: (_data, _ctx) => {
-  console.log(_data, _ctx);
-    // TODO: Implement in Commit 2
-    return {};
-  },
-  session_expired: (_data, _ctx) => {
-  console.log(_data, _ctx);
-    // TODO: Implement in Commit 2
-    return {};
-  },
-  user_logged_out: (_data, _ctx) => {
-  console.log(_data, _ctx);   
-    // TODO: Implement in Commit 2
-    return {};
+// password_changed event handler
+// Opens sign in modal with prefill if identity exists 
+ password_changed: () => {
+  const identity = getIdentity(); //from authStorage
+  const result: AuthEventResultType = { uiState: 'SIGN_IN' };
+
+  if (identity?.email && identity?.username) {
+   result.prefill = { email: identity.email, username: identity.username };
+  }
+  return result;
+ },
+
+//session_expired event handler
+// - Opens sign in modal with expiration message
+// - Stores return path (from) for post-login redirect
+
+  session_expired: (data) => {
+  const result: AuthEventResultType = {
+   uiState: 'SIGN_IN',
+   message: 'Your session has expired. Please sign in again.',
+  };
+    
+  if (data?.from) {
+    result.returnTo = data.from;
+  }
+  return result;
+ },
+
+/**
+ * user_logged_out event handler
+ * - Does NOT open any modal
+ * - Only closes the modal (uiState IDLE)
+ * - Toast is already shown in LogoMenuIcon before navigation
+ */
+ user_logged_out: () => {
+  return {
+    uiState: 'IDLE',
+  };
   },
 };
