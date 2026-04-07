@@ -95,7 +95,6 @@ export default function AuthPage() {
    }
 // Errors are already stored in useAuthStore and displayed by AuthUI
   }
-
 // ===============================
 // ✅ CENTRALIZED LOGIN MODAL OPENER WITH PREFILL LOGIC
 // ===============================
@@ -206,6 +205,7 @@ useEffect(() => {
   const openSigninModalHandler = () => {
     setIsMenuOpen(false);
     clearError();
+    returnToRef.current = null;//✅ clean before manual open
     setIsSignInMode(true);
     openLoginModalWithPrefill();
   };
@@ -219,7 +219,8 @@ useEffect(() => {
 
   const handleCloseModal = () => {
    resetUI(); //user‑initiated close, keep it
-   };
+   returnToRef.current = null; //clean to avoid ghost redirection
+  };
 
 // Determine if modal should be open
   const showModal = uiState !== AUTH_UI_STATES.IDLE;
