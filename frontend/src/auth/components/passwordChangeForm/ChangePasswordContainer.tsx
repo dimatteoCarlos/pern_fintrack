@@ -211,9 +211,9 @@ const showCancel = !isSubmitting && status !== "success";
   setCountdown(null);
   handleReset();
 
-// ✅ Unique Source of truth: just intent. 
+// ✅ Unique Source of truth: just authEvent. 
   navigateTo(AUTH_ROUTE, { replace: true,
-   state: { intent: 'password_changed' as const }
+   state: { authEvent: 'password_changed' as const }
    });
 
 },[handleReset, navigateTo]);
