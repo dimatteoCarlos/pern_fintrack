@@ -143,28 +143,28 @@ const useAuth = () => {
 
      if (accessToken && !isAuthenticated) {
        try {
-         const response = await authFetch<AuthSuccessResponseType>(
-           url_validate_session,
-           { method: 'GET' },
-         );
-         //----------------------
-         // console.log('🚀 ~ checkAuthStatus ~ response:', response);
-         //----------------------
-        if (isMounted && response.data?.user) {
-        // ✅ Transform and merge user data on session restore
-        const transformedUser = mapUserResponseToUserData(
-          response.data.user,
+        const response = await authFetch<AuthSuccessResponseType>(
+          url_validate_session,
+          { method: 'GET' },
         );
+     //----------------------
+     // console.log('🚀 ~ checkAuthStatus ~ response:', response);
+     //----------------------
+       if (isMounted && response.data?.user) {
+       // ✅ Transform and merge user data on session restore
+       const transformedUser = mapUserResponseToUserData(
+         response.data.user,
+       );
 
-        //Get current store state before
-        const currentUserData = useAuthStore.getState().userData;
+       //Get current store state before
+       const currentUserData = useAuthStore.getState().userData;
 
-        //update user data: current + api
-        const mergedUser = safeMergeUser(currentUserData, transformedUser);
+       //update user data: current + api
+       const mergedUser = safeMergeUser(currentUserData, transformedUser);
 
-        setUserData(mergedUser);
-        setIsAuthenticated(true);
-        console.log('✅ Session restored successfully');
+       setUserData(mergedUser);
+       setIsAuthenticated(true);
+       console.log('✅ Session restored successfully');
          }
        } catch (error) {
          if (isMounted) {
