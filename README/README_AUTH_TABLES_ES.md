@@ -1,4 +1,4 @@
-
+```markdown
 # 📋 TODOS LOS INDICADORES DE ESTADO EN EL SISTEMA DE AUTENTICACIÓN
 
 ---
@@ -165,14 +165,16 @@
 
 ---
 
-## 3.2 useAuthUIStore – Estado UI
+## 3.2 useAuthUIStore – Estado UI (ACTUALIZADO)
 
-| Indicador         | Tipo          | Valores Posibles                                                    | Inicial | Descripción            |
-| ----------------- | ------------- | ------------------------------------------------------------------- | ------- | ---------------------- |
-| uiState           | enum          | 'IDLE', 'REMEMBERED_VISITOR', 'SESSION_EXPIRED', 'PASSWORD_CHANGED' | 'IDLE'  | Estado actual de la UI |
-| message           | string / null | Texto o null                                                        | null    | Mensaje global         |
-| prefilledEmail    | string / null | Email o null                                                        | null    | Email pre-rellenado    |
-| prefilledUsername | string / null | Username o null                                                     | null    | Username pre-rellenado |
+| Indicador         | Tipo          | Valores Posibles               | Inicial | Descripción                    |
+| ----------------- | ------------- | ------------------------------ | ------- | ------------------------------ |
+| uiState           | enum          | 'IDLE', 'SIGN_IN', 'SIGN_UP'   | 'IDLE'  | Estado actual de la UI         |
+| message           | string / null | Texto o null                   | null    | Mensaje global (ej. sesión expirada) |
+| prefilledEmail    | string / null | Email o null                   | null    | Email pre-rellenado            |
+| prefilledUsername | string / null | Username o null                | null    | Username pre-rellenado         |
+
+**Nota:** Los estados `REMEMBERED_VISITOR`, `SESSION_EXPIRED` y `PASSWORD_CHANGED` han sido eliminados. El prefill y los mensajes especiales ahora se manejan a través de `prefilledEmail/prefilledUsername` y `message` respectivamente.
 
 ---
 
@@ -198,29 +200,32 @@
 
 ---
 
-# 🧭 5. FRONTEND – REACT ROUTER
+# 🧭 5. FRONTEND – REACT ROUTER (SISTEMA DE EVENTOS)
 
-| Indicador                        | Tipo                | Valores Posibles            | Descripción      |
-| -------------------------------- | ------------------- | --------------------------- | ---------------- |
-| location.pathname                | string              | '/', '/auth', '/fintrack/*' | Ruta actual      |
-| location.state.from              | string / undefined  | Ruta de origen              | Ruta previa      |
-| location.state.fromLogout        | boolean / undefined | true / undefined            | Logout manual    |
-| location.state.hasIdentity       | boolean / undefined | true / undefined            | Tiene identidad  |
-| location.state.prefilledEmail    | string / undefined  | Email                       | Prefill email    |
-| location.state.prefilledUsername | string / undefined  | Username                    | Prefill username |
+## Estado de Navegación (location.state)
+
+| Campo        | Tipo                | Valores Posibles                                    | Descripción                                |
+| ------------ | ------------------- | --------------------------------------------------- | ------------------------------------------ |
+| authEvent    | string              | 'password_changed', 'session_expired', 'user_logged_out' | Evento de autenticación                    |
+| from         | string / undefined  | Ruta de origen                                      | Ruta original (para session_expired)       |
+| email        | string / undefined  | Email                                               | Para eventos futuros                       |
+| username     | string / undefined  | Username                                            | Para eventos futuros                       |
+
+**Nota:** Los campos `hasIdentity`, `prefilledEmail`, `prefilledUsername` han sido eliminados del estado de navegación. El prefill ahora se maneja mediante `getIdentity()` directamente en los handlers.
 
 ---
 
 # 📐 6. INDICADORES DERIVADOS
 
-| Indicador           | Dónde se calcula        | Cálculo                                       | Valores      | Descripción         |
-| ------------------- | ----------------------- | --------------------------------------------- | ------------ | ------------------- |
-| showModal           | AuthPage.tsx            | uiState !== 'IDLE' && pathname === AUTH_ROUTE | true / false | Modal visible       |
-| isDirty             | UpdateProfileContainer  | formData !== initialData                      | true / false | Cambios sin guardar |
-| isSubmittingAllowed | Form hooks              | allTouched && !hasErrors && !isSubmitting     | true / false | Submit habilitado   |
-| hasIdentity         | ProtectedRoute          | getIdentity() !== null                        | true / false | Identidad recordada |
-| canReset            | ChangePasswordContainer | isDirty && !isSubmitting                      | true / false | Botón Reset         |
-| showDone            | Containers              | status === 'success'                          | true / false | Mostrar botón Done  |
+| Indicador           | Dónde se calcula        | Cálculo                                       | Valores      | Descripción                    |
+| ------------------- | ----------------------- | --------------------------------------------- | ------------ | ------------------------------ |
+| showModal           | AuthPage.tsx            | uiState !== 'IDLE'                            | true / false | Modal visible                  |
+| returnTo            | AuthPage.tsx (ref)      | Almacenado durante `session_expired`          | string / null | Ruta original antes de expirar |
+| isDirty             | UpdateProfileContainer  | formData !== initialData                      | true / false | Cambios sin guardar            |
+| isSubmittingAllowed | Form hooks              | allTouched && !hasErrors && !isSubmitting     | true / false | Submit habilitado              |
+| hasIdentity         | getIdentity()           | getIdentity() !== null                        | true / false | Identidad recordada            |
+| canReset            | ChangePasswordContainer | isDirty && !isSubmitting                      | true / false | Botón Reset habilitado         |
+| showDone            | Containers              | status === 'success'                          | true / false | Mostrar botón Done             |
 
 ---
 
@@ -280,31 +285,45 @@ type ChangePasswordFormDataType = {
 
 ---
 
+## AuthEventResultType (Nuevo)
+
+```ts
+type AuthEventResultType = {
+  uiState?: 'IDLE' | 'SIGN_IN' | 'SIGN_UP';
+  message?: string | null;
+  prefill?: { email?: string; username?: string };
+  navigation?: { to: string; replace?: boolean; state?: Record<string, unknown> };
+  returnTo?: string | null;
+}
+```
+
+---
+
 # 🎯 8. MATRIZ DE ESTADOS POR ESCENARIO
 
-| Escenario                       | isAuthenticated | identity     | uiState            | Ruta destino | Modal | Prefill |
-| ------------------------------- | --------------- | ------------ | ------------------ | ------------ | ----- | ------- |
-| Primera visita                  | false           | null         | IDLE               | /            | No    | No      |
-| Login exitoso (remember)        | true            | {...}        | IDLE               | /fintrack    | No    | N/A     |
-| Login exitoso (no remember)     | true            | null         | IDLE               | /fintrack    | No    | N/A     |
-| Logout manual (con identidad)   | false           | {...}        | IDLE               | /            | No    | No      |
-| Logout manual (sin identidad)   | false           | null         | IDLE               | /            | No    | No      |
-| Sesión expirada (con identidad) | false           | {...}        | SESSION_EXPIRED    | /auth        | Sí    | Sí      |
-| Sesión expirada (sin identidad) | false           | null         | SESSION_EXPIRED    | /            | No    | No      |
-| Cambio password exitoso         | false           | {...} o null | PASSWORD_CHANGED   | /auth        | Sí    | No      |
-| Visitante recordado en /auth    | false           | {...}        | REMEMBERED_VISITOR | /auth        | Sí    | Sí      |
+| Escenario                       | isAuthenticated | identity     | uiState      | Ruta destino | Modal | Prefill | Mensaje               |
+| ------------------------------- | --------------- | ------------ | ------------ | ------------ | ----- | ------- | --------------------- |
+| Primera visita                  | false           | null         | IDLE         | /auth        | No    | No      | No                    |
+| Login exitoso (remember)        | true            | {...}        | IDLE         | /fintrack    | No    | N/A     | No                    |
+| Login exitoso (no remember)     | true            | null         | IDLE         | /fintrack    | No    | N/A     | No                    |
+| Logout manual                   | false           | {...} o null | IDLE         | /auth        | No    | No      | No (solo toast)       |
+| Sesión expirada (con identidad) | false           | {...}        | SIGN_IN      | /auth        | Sí    | Sí      | "Your session has expired..." |
+| Sesión expirada (sin identidad) | false           | null         | SIGN_IN      | /auth        | Sí    | No      | "Your session has expired..." |
+| Cambio password exitoso         | false           | {...} o null | SIGN_IN      | /auth        | Sí    | Sí/No   | No                    |
+| user_logged_out                 | false           | {...} o null | IDLE         | /auth        | No    | No      | No (solo toast)       |
 
 ---
 
 # ✅ RESUMEN POR COMPONENTE
 
-| Componente              | Consume                                   | Produce              |
-| ----------------------- | ----------------------------------------- | -------------------- |
-| ProtectedRoute          | isAuthenticated, identity, location       | redirectTo, state    |
-| AuthPage                | uiState, message, prefilled*, location    | showModal            |
-| AuthUI                  | isSignInInitial, error, messageToUser     | isSignIn (local)     |
-| SignInForm              | formData, validationErrors, touchedFields | onSignIn             |
-| ChangePasswordContainer | status, countdown, isDirty                | showDone, showCancel |
-| UpdateProfileContainer  | isDirty, isLoading, successMessage        | status               |
+| Componente              | Consume                                         | Produce                              |
+| ----------------------- | ----------------------------------------------- | ------------------------------------ |
+| ProtectedRoute          | isAuthenticated, hasToken, location             | navigate with authEvent              |
+| AuthPage                | authEvent, uiState, message, prefilled*         | modal visibility, returnTo ref       |
+| AuthUI                  | isSignInInitial, error, messageToUser           | isSignIn (local)                     |
+| SignInForm              | formData, validationErrors, touchedFields       | onSignIn                             |
+| ChangePasswordContainer | status, countdown, isDirty                      | showDone, showCancel, authEvent      |
+| UpdateProfileContainer  | isDirty, isLoading, successMessage              | status                               |
+| authEventRegistry       | event data, getIdentity                         | AuthEventResultType                  |
 
 ---

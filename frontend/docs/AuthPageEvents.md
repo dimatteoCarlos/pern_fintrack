@@ -140,7 +140,7 @@ ctx?: AuthEventContextType,
 ) => AuthEventResultType;
 
 export const authEventRegistry: {
-[EventKey in AuthEventType]: AuthEventHandlerType<EventKey>;
+[EventKey in AuthEventType]: ../src/auth/components/authPage/AuthEventHandlerType<EventKey>;
 } = {
 // ============================================
 // CURRENT EVENTS

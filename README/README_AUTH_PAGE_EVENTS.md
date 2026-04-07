@@ -1,6 +1,10 @@
-Tienes razón. En GitHub Markdown, las tablas necesitan estar correctamente formateadas. Aquí está la versión corregida del README completo con tablas bien formateadas.
+## ✅ Archivos de documentación definitivos
+
+Aquí tienes los archivos Markdown que puedes guardar en la carpeta `docs/` de tu repositorio.
 
 ---
+
+### 📁 1. `docs/auth-event-architecture.md`
 
 ```markdown
 # 🧠 AuthEvent Architecture – Declarative Event-Driven Authentication
@@ -131,160 +135,33 @@ src/pages/auth/
 
 ---
 
-## 📄 Implementation Details
+## 📄 Current Events
 
-### 1. `eventTypes.ts` – Event Contracts
-
-```typescript
-// Defines what data each event carries
-export type AuthEventMapType = {
-  password_changed: undefined;           // no data needed
-  session_expired: { from?: string };    // optional return path
-  user_logged_out: undefined;            // no data needed
-};
-
-// Defines what result a handler returns
-export type AuthEventResultType = {
-  uiState?: 'IDLE' | 'SIGN_IN' | 'SIGN_UP';
-  message?: string | null;
-  prefill?: { email?: string; username?: string };
-  navigation?: { to: string; replace?: boolean; state?: Record<string, unknown> };
-  returnTo?: string | null;
-};
-```
-
-### 2. `eventContextTypes.ts` – Read-only Context
-
-```typescript
-// Tools injected into handlers (read-only)
-export type AuthEventContextType = {
-  getIdentity: () => { email?: string; username?: string } | null;
-};
-```
-
-### 3. `eventRegistry.ts` – Event Handlers
-
-```typescript
-import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
-
-export const authEventRegistry = {
-  password_changed: () => {
-    const identity = getIdentity();
-    const result: AuthEventResultType = { uiState: 'SIGN_IN' };
-    if (identity?.email && identity?.username) {
-      result.prefill = { email: identity.email, username: identity.username };
-    }
-    return result;
-  },
-
-  session_expired: (data) => ({
-    uiState: 'SIGN_IN',
-    message: 'Your session has expired. Please sign in again.',
-    returnTo: data?.from,
-  }),
-
-  user_logged_out: () => ({ uiState: 'IDLE' }),
-};
-```
-
-### 4. `AuthPage.tsx` – Orchestrator (Key Parts)
-
-```typescript
-// Ref for storing return path (for session_expired)
-const returnToRef = useRef<string | null>(null);
-
-// Extract event data based on event type
-const getEventData = (event: AuthEventType | undefined, navState: typeof navigationState) => {
-  if (!event) return undefined;
-  switch (event) {
-    case 'session_expired':
-      return { from: navState?.from };
-    default:
-      return undefined; // events without data
-  }
-};
-
-// Main effect
-useEffect(() => {
-  if (!authEvent) return;
-
-  // Reset previous UI state
-  if (uiState !== AUTH_UI_STATES.IDLE) {
-    setUIState(AUTH_UI_STATES.IDLE);
-  }
-
-  // Get and execute handler
-  const handler = authEventRegistry[authEvent];
-  const eventData = getEventData(authEvent, navigationState);
-  const result = handler(eventData, { getIdentity });
-
-  // Apply result
-  if (result.uiState) setUIState(result.uiState);
-  if (result.message) setMessage(result.message);
-  if (result.prefill) {
-    setPrefilledData(result.prefill.email ?? null, result.prefill.username ?? null);
-  }
-  if (result.returnTo !== undefined) {
-    returnToRef.current = result.returnTo;
-  }
-  if (result.navigation) {
-    navigateTo(result.navigation.to, {
-      replace: result.navigation.replace ?? false,
-      state: result.navigation.state,
-    });
-  }
-}, [authEvent, navigationState, ...]);
-
-// Login wrapper uses returnToRef for redirect after session_expired
-const handleSignInWithNavigation = async (credentials, rememberMe) => {
-  const result = await handleSignInDomain(credentials, rememberMe);
-  if (result.success) {
-    const redirectPath = returnToRef.current ?? INITIAL_PAGE_ADDRESS;
-    navigateTo(redirectPath);
-    returnToRef.current = null; // cleanup
-  }
-};
-```
+| Event | Data | Handler Returns |
+|-------|------|-----------------|
+| `password_changed` | `undefined` | `{ uiState: 'SIGN_IN', prefill: identity }` |
+| `session_expired` | `{ from?: string }` | `{ uiState: 'SIGN_IN', message: '...', returnTo: from }` |
+| `user_logged_out` | `undefined` | `{ uiState: 'IDLE' }` |
 
 ---
 
-## 🚀 How to Add a New Event (Step by Step)
+## 🚀 How to Add a New Event
 
-### Example: Adding `email_verification_required`
+To add a new event (e.g., `email_verification_required`), follow these steps:
 
-| Step | File | Code |
-|------|------|------|
-| 1 | `eventTypes.ts` | Add to `AuthEventMapType`:<br>`email_verification_required: { email: string };` |
-| 2 | `eventRegistry.ts` | Add handler:<br>`email_verification_required: (data) => ({ uiState: 'SIGN_IN', message: \`Verify ${data?.email}\` })` |
-| 3 | `AuthPage.tsx` | Add case in `getEventData()`:<br>`case 'email_verification_required': return { email: navState?.email };` |
-| 4 | `navigationState` type | Add property:<br>`email?: string;` |
+| Step | File | Action |
+|------|------|--------|
+| 1 | `eventTypes.ts` | Add to `AuthEventMapType`: `email_verification_required: { email: string }` |
+| 2 | `eventRegistry.ts` | Add handler: `email_verification_required: (data) => ({ uiState: 'SIGN_IN', message: \`Verify ${data?.email}\` })` |
+| 3 | `AuthPage.tsx` | Add case in `getEventData()`: `case 'email_verification_required': return { email: navState?.email }` |
+| 4 | `navigationState` type | Add property: `email?: string` |
 | 5 | Emitter | `navigate('/auth', { state: { authEvent: 'email_verification_required', email: user.email } })` |
 
 > ✅ No changes needed in `AuthPage`'s core logic beyond these steps.
 
 ---
 
-## 🔮 Future Events (Ready to Uncomment)
-
-The codebase includes commented examples for:
-
-| Event | Data | Purpose |
-|-------|------|---------|
-| `email_verification_required` | `{ email: string }` | Show verification prompt |
-| `account_locked` | `{ retryAfter: number }` | Show lock message with timer |
-| `two_factor_required` | `{ tempToken: string }` | Redirect to 2FA page |
-| `welcome_new_user` | `{ email?: string; username?: string }` | Show onboarding modal |
-| `maintenance_mode` | `{ message: string; endTime?: string }` | Show maintenance banner |
-| `password_reset_requested` | `{ email: string }` | Show reset confirmation |
-| `subscription_expired` | `{ plan: string; redirectUrl?: string }` | Show upgrade prompt |
-
-To activate any of them, simply uncomment the corresponding code blocks.
-
----
-
 ## 🧪 Testing Example
-
-Because handlers are pure functions, testing is straightforward:
 
 ```typescript
 import { authEventRegistry } from './config/eventRegistry';
@@ -297,12 +174,6 @@ describe('authEventRegistry', () => {
       message: 'Your session has expired. Please sign in again.',
       returnTo: '/dashboard',
     });
-  });
-
-  it('password_changed includes prefill when identity exists', () => {
-    const result = authEventRegistry.password_changed();
-    expect(result.uiState).toBe('SIGN_IN');
-    // prefill may be present or not depending on identity
   });
 });
 ```
@@ -328,6 +199,227 @@ describe('authEventRegistry', () => {
 - `src/auth/authEvent/config/eventRegistry.ts`
 - `src/pages/auth/AuthPage.tsx`
 - `src/auth/auth_utils/localStorageHandle/authStorage.ts` (provides `getIdentity`)
+```
 
-For questions or contributions, refer to the inline comments in the source files.
+---
+
+### 📁 2. `docs/future-events-examples.md`
+
+```markdown
+# 🔮 Future Auth Events – Implementation Examples
+
+This document contains **reference examples** for implementing additional authentication events. These are **not active in the codebase** but serve as a guide for future extensions.
+
+---
+
+## Event Reference Table
+
+| Event | Data | Suggested Handler Behavior |
+|-------|------|---------------------------|
+| `email_verification_required` | `{ email: string }` | Show verification prompt with resend option |
+| `account_locked` | `{ retryAfter: number }` | Show lock message with timer |
+| `two_factor_required` | `{ tempToken: string }` | Redirect to 2FA page or show 2FA modal |
+| `welcome_new_user` | `{ email?: string; username?: string }` | Show onboarding modal with welcome message |
+| `maintenance_mode` | `{ message: string; endTime?: string }` | Show maintenance banner or redirect |
+| `password_reset_requested` | `{ email: string }` | Show confirmation message "Check your email" |
+| `subscription_expired` | `{ plan: string; redirectUrl?: string }` | Show upgrade prompt, optionally redirect |
+
+---
+
+## Example: Adding `email_verification_required`
+
+### Step 1: Update `eventTypes.ts`
+
+```typescript
+export type AuthEventMapType = {
+  // ... existing events
+  email_verification_required: { email: string };
+};
+```
+
+### Step 2: Update `eventRegistry.ts`
+
+```typescript
+export const authEventRegistry = {
+  // ... existing handlers
+  email_verification_required: (data) => ({
+    uiState: 'SIGN_IN',
+    message: `Please verify your email (${data?.email}) before logging in.`,
+  }),
+};
+```
+
+### Step 3: Update `AuthPage.tsx` – `getEventData()`
+
+```typescript
+const getEventData = (event, navState) => {
+  switch (event) {
+    // ... existing cases
+    case 'email_verification_required':
+      return { email: navState?.email };
+  }
+};
+```
+
+### Step 4: Update `navigationState` type
+
+```typescript
+const navigationState = location.state as {
+  authEvent?: string;
+  from?: string;
+  email?: string;  // ← add this
+} | undefined;
+```
+
+### Step 5: Emit the event
+
+```typescript
+navigate('/auth', {
+  state: {
+    authEvent: 'email_verification_required',
+    email: user.email
+  }
+});
+```
+
+---
+
+## Example: Adding `two_factor_required`
+
+### Step 1: Update `eventTypes.ts`
+
+```typescript
+export type AuthEventMapType = {
+  // ... existing events
+  two_factor_required: { tempToken: string };
+};
+```
+
+### Step 2: Update `eventRegistry.ts`
+
+```typescript
+export const authEventRegistry = {
+  // ... existing handlers
+  two_factor_required: (data) => ({
+    uiState: 'SIGN_IN', // or a custom 2FA state
+    message: 'Two-factor authentication required.',
+    navigation: { to: '/2fa', state: { tempToken: data?.tempToken } },
+  }),
+};
+```
+
+### Step 3: Update `AuthPage.tsx` – `getEventData()`
+
+```typescript
+const getEventData = (event, navState) => {
+  switch (event) {
+    // ... existing cases
+    case 'two_factor_required':
+      return { tempToken: navState?.tempToken };
+  }
+};
+```
+
+### Step 4: Update `navigationState` type
+
+```typescript
+const navigationState = location.state as {
+  authEvent?: string;
+  from?: string;
+  tempToken?: string;  // ← add this
+} | undefined;
+```
+
+### Step 5: Emit the event
+
+```typescript
+navigate('/auth', {
+  state: {
+    authEvent: 'two_factor_required',
+    tempToken: 'abc123...'
+  }
+});
+```
+
+---
+
+## Example: Adding `welcome_new_user`
+
+### Step 1: Update `eventTypes.ts`
+
+```typescript
+export type AuthEventMapType = {
+  // ... existing events
+  welcome_new_user: { email?: string; username?: string };
+};
+```
+
+### Step 2: Update `eventRegistry.ts`
+
+```typescript
+export const authEventRegistry = {
+  // ... existing handlers
+  welcome_new_user: (data) => ({
+    uiState: 'SIGN_IN',
+    message: `Welcome ${data?.email || data?.username || 'new user'}!`,
+    prefill: { email: data?.email, username: data?.username },
+  }),
+};
+```
+
+### Step 3: Update `AuthPage.tsx` – `getEventData()`
+
+```typescript
+const getEventData = (event, navState) => {
+  switch (event) {
+    // ... existing cases
+    case 'welcome_new_user':
+      return { email: navState?.email, username: navState?.username };
+  }
+};
+```
+
+### Step 4: Update `navigationState` type
+
+```typescript
+const navigationState = location.state as {
+  authEvent?: string;
+  from?: string;
+  email?: string;
+  username?: string;  // ← add this
+} | undefined;
+```
+
+### Step 5: Emit the event
+
+```typescript
+navigate('/auth', {
+  state: {
+    authEvent: 'welcome_new_user',
+    email: newUser.email,
+    username: newUser.username
+  }
+});
+```
+
+---
+
+## 📌 General Pattern
+
+To add **any new event**, follow this pattern:
+
+1. **Add type** in `eventTypes.ts` (data shape)
+2. **Add handler** in `eventRegistry.ts` (returns `AuthEventResultType`)
+3. **Add case** in `getEventData()` (extract data from `location.state`)
+4. **Add property** in `navigationState` type (for TypeScript)
+5. **Emit** from any component using `navigate('/auth', { state: { authEvent, ...data } })`
+
+The orchestrator (`AuthPage`) handles everything else automatically.
+
+---
+
+## 🔗 Related Documentation
+
+- [AuthEvent Architecture](./auth-event-architecture.md) – Main documentation
+- [Source Code](../frontend/src/auth/authEvent) – Implementation files
 ```
