@@ -127,68 +127,69 @@ const useAuth = () => {
     clearSuccessMessage,
   } = useAuthStore();
 
-  /* ===============================
-    🔄 SESSION INITIALIZATION
-    =============================== */
-  useEffect(() => {
-    let isMounted = true;
+/* ===============================
+ 🔄 SESSION INITIALIZATION
+ =============================== */
+ useEffect(() => {
+   let isMounted = true;
 
-    const checkAuthStatus = async () => {
-      const accessToken = sessionStorage.getItem('accessToken');
+   const checkAuthStatus = async () => {
+     const accessToken = sessionStorage.getItem('accessToken');
 
-      if (!accessToken) {
-        setIsCheckingAuth(false);
-        return;
-      }
+     if (!accessToken) {
+       setIsCheckingAuth(false);
+       return;
+     }
 
-      // if ((accessToken ) && !error && !isLoading &&!isAuthenticated) {
-      if (accessToken && !isAuthenticated) {
-        try {
-          const response = await authFetch<AuthSuccessResponseType>(
-            url_validate_session,
-            { method: 'GET' },
-          );
-          //----------------------
-          // console.log('🚀 ~ checkAuthStatus ~ response:', response);
-          //----------------------
-          if (isMounted && response.data?.user) {
-            // ✅ Transform and merge user data on session restore
-            const transformedUser = mapUserResponseToUserData(
-              response.data.user,
-            );
+     if (accessToken && !isAuthenticated) {
+       try {
+         const response = await authFetch<AuthSuccessResponseType>(
+           url_validate_session,
+           { method: 'GET' },
+         );
+         //----------------------
+         // console.log('🚀 ~ checkAuthStatus ~ response:', response);
+         //----------------------
+        if (isMounted && response.data?.user) {
+        // ✅ Transform and merge user data on session restore
+        const transformedUser = mapUserResponseToUserData(
+          response.data.user,
+        );
 
-            //Get current store state before
-            const currentUserData = useAuthStore.getState().userData;
+        //Get current store state before
+        const currentUserData = useAuthStore.getState().userData;
 
-            //update user data: current + api
-            const mergedUser = safeMergeUser(currentUserData, transformedUser);
+        //update user data: current + api
+        const mergedUser = safeMergeUser(currentUserData, transformedUser);
 
-            setUserData(mergedUser);
-            setIsAuthenticated(true);
-            console.log('✅ Session restored successfully');
-          }
-        } catch (error) {
-          if (isMounted) {
-            console.warn('🔍 Session hydration failed');
-          }
-        }
-      }
-      if (isMounted) setIsCheckingAuth(false);
-    };
+        setUserData(mergedUser);
+        setIsAuthenticated(true);
+        console.log('✅ Session restored successfully');
+         }
+       } catch (error) {
+         if (isMounted) {
+          console.warn('🔍 Session hydration failed');
+       // ✅ Clean up inconsistent state
+          logoutCleanup();
+         }
+       }
+     }
+     if (isMounted) setIsCheckingAuth(false);
+   };
 
-    checkAuthStatus();
+   checkAuthStatus();
 
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    setIsAuthenticated,
-    setIsCheckingAuth,
-    error,
-    isLoading,
-    setUserData,
-    isAuthenticated,
-  ]);
+   return () => {
+     isMounted = false;
+   };
+ }, [
+   setIsAuthenticated,
+   setIsCheckingAuth,
+   error,
+   isLoading,
+   setUserData,
+   isAuthenticated,
+ ]);
   //-------------
   // console.log("user data:", userData)
 
