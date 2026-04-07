@@ -18,7 +18,7 @@
  - Decide routes (ProtectedRoute does that)
 */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState , useRef} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import AuthUI from './AuthUI';
@@ -36,12 +36,14 @@ import { INITIAL_PAGE_ADDRESS } from '../../../fintrack/helpers/constants';
 
 import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
 
+import { authEventRegistry } from '../../authEvent/config/authEventRegistry';
+
 //--MAIN COMPONENT AUTHENTICACION ACCESS PAGE - AuthPage.tsx
 export default function AuthPage() {
   const location = useLocation();
   const navigateTo = useNavigate();
 
-  const { uiState, message, setUIState, setPrefilledData, resetUI } = useAuthUIStore();
+  const { uiState, message, setUIState,setMessage,  setPrefilledData, resetUI } = useAuthUIStore();
 
 //--LOCAL UI STATES not related to auth UX
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -57,6 +59,9 @@ export default function AuthPage() {
     clearError,
   } = useAuth();
 
+// ref for storing return path (session_expired)
+   const returnToRef = useRef<string | null>(null)
+
 // ===============================
 // 🎯 PRESENTATION LAYER WRAPPERS
 // =============================== 
@@ -66,13 +71,18 @@ export default function AuthPage() {
     credentials: SignInCredentialsType,
     rememberMe: boolean,
   ) => {
-  // console.log('🔐 Sign in wrapper called');
+  // console.log(🔐 Sign in wrapper called);
   const result =  await handleSignInDomain(credentials, rememberMe);
 
- // console.log('Sign in result:', result);
+ // console.log(Sign in result:, result);
 
-   if(result.success){
-    navigateTo(INITIAL_PAGE_ADDRESS ?? '/fintrack');
+  if(result.success){
+  // ✅ Use returnToRef if exists for session_expired
+  const redirectPath = returnToRef.current ?? INITIAL_PAGE_ADDRESS;
+
+  navigateTo(redirectPath);
+  // ✅ clean after navigation
+   returnToRef.current = null;
    }
   }
 
@@ -81,7 +91,7 @@ export default function AuthPage() {
    const result = await handleSignUpDomain(credentials);
 
    if(result.success){
-    navigateTo(INITIAL_PAGE_ADDRESS ?? '/fintrack');
+    navigateTo(INITIAL_PAGE_ADDRESS ??' /fintrack');
    }
 // Errors are already stored in useAuthStore and displayed by AuthUI
   }
@@ -99,61 +109,92 @@ const openLoginModalWithPrefill = useCallback(()=>{
 }, [setPrefilledData, setUIState]);
 
 //------------------------------
-//✅ INTENT-BASED NAVIGATION HANDLER (MAIN EFFECT)
+//✅ INTENT NAVIGATION HANDLER BASED ON authEvent (MAIN EFFECT)
 //------------------------------
  const navigationState = location.state as
   | {
-     intent?: string;
+     authEvent?: string;
      from?: string;
     }
   | undefined;
   
-  const intent = navigationState?.intent;
+  const authEvent = navigationState?.authEvent;
+
+  // const eventData = {from:navigationState?.from}
+
+  console.log({authEvent},'data event:', navigationState?.from)
 
 // Debugging log
- // console.log('🔍 AuthPage debug:', { intent, uiState });
+// console.log(🔍 AuthPage debug:, { authEvent, uiState });
   
-//✅ Main effect – only processes intents, does NOT force IDLE when no intent  
+//✅ Main effect – only processes intents, does NOT force IDLE when no authEvent  
 useEffect(() => {
-// 🔥 Force clean state ONLY when an intent is present
-if (intent) {
-// Ensure we start from a clean baseline before processing the intent
+ if (!authEvent) return;
+ 
+// ================================
+// 🔥 Force clean state ONLY when an authEvent is present
+// if (authEvent) {
+//0️⃣ Start from a clean baseline before processing the authEvent
  if (uiState !== AUTH_UI_STATES.IDLE) {
    setUIState(AUTH_UI_STATES.IDLE);
  }
 
-// ================================
-// 1️⃣ COMMON STEP: Open login modal for intents that require it
-// ================================
-  const intentsThatRequireLogin = ['password_changed', 'session_expired'];
+//1️⃣ Get handler from registry
+ const authEventHandler = authEventRegistry[authEvent as keyof typeof authEventRegistry];
 
-  if (intentsThatRequireLogin.includes(intent)) {
-    openLoginModalWithPrefill();
+ if (!authEventHandler) {
+  console.warn(`Unknown authEvent: ${authEvent}`);
+  return;
   }
 
-// ===================================
-// 2️⃣ INTENT-SPECIFIC ADJUSTMENTS
-// ===================================
- if (intent === 'session_expired') {
-//ensure it's SIGN_IN (override if needed)
- setUIState(AUTH_UI_STATES.SIGN_IN);
+//2️⃣ Execute handler and get result
+// session_expired needs the 'from' data; others don't
+  let result;
+  if (authEvent === 'session_expired') {
+// session_expired needs the 'from' data
+  result = authEventRegistry.session_expired({ from: navigationState?.from }, { getIdentity });
+  } else {
+// password_changed and user_logged_out don't need data
+// const authEventHandler = authEventRegistry[authEvent as 'password_changed' | 'user_logged_out'];
 
- useAuthUIStore.getState().setMessage(
-  'Your session has expired. Please sign in again.');
+  result = authEventHandler(undefined, { getIdentity });
+
+  //alternative
+  // result = authEventRegistry[authEvent as 'password_changed' | 'user_logged_out'](undefined, { getIdentity });
   }
 
- if (intent === 'password_changed') {
- // optional success message (commented by default)
- // useAuthUIStore.getState().setMessage('Password changed. Please sign in.');
-    }
+
+//3️⃣ Apply result (UI + navigation)
+ if(result.uiState){
+  setUIState(result.uiState);
  }
-// No intent → do NOT change uiState (modal stays as user left it)
- }, [intent, openLoginModalWithPrefill, setUIState, uiState]);
 
+ if (result.message) {
+  setMessage(result.message);
+  }
+   
+ if (result.prefill) {
+  setPrefilledData(result.prefill.email ?? null, result.prefill.username ?? null);
+  }
+
+// 4️⃣ Handle returnTo (for session_expired)
+if(result.returnTo !== undefined){
+ returnToRef.current = result.returnTo;
+}
+
+//5️⃣ Handle navigation (if required)
+if(result.navigation){
+ navigateTo(result.navigation.to,{
+  replace:result.navigation.replace ?? false,
+  state:result.navigation.state,
+ });
+ }
+}, [authEvent,  navigateTo,navigationState?.from, setMessage, setPrefilledData, setUIState,uiState]);
+//===================================
 // ✅ Separate effect for cleaning location.state (prevents loop)
 useEffect(() => {
   if (location.state && Object.keys(location.state).length > 0) {
- // Only clean if there is actually state to clean
+// Only clean if there is actually state to clean
    navigateTo(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, location.pathname, navigateTo]);
@@ -207,7 +248,7 @@ useEffect(() => {
 
         <ul
           className={`${styles.navList} ${
-            isMenuOpen ? styles.navMenuActive : ''
+            isMenuOpen ? styles.navMenuActive :''
           }
          `}
         >
