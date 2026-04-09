@@ -119,7 +119,6 @@ const openLoginModalWithPrefill = useCallback(()=>{
   
   const authEvent = navigationState?.authEvent;
 
-  
 // Debugging log
 // console.log({authEvent},'data event:', navigationState?.from)
 // console.log(🔍 AuthPage debug:, { authEvent, uiState });
