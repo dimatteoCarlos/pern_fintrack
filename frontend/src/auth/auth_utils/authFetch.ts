@@ -4,122 +4,100 @@
 ===============================
 🔍 LAYER IDENTIFICATION:
 - Layer: Infrastructure
-- Purpose: Execute authenticated HTTP requests with token refresh
+- Purpose: Execute authenticated HTTP requests with silent token refresh
 
 ✅ Responsibilities:
 - Inject Bearer token
-- Handle silent refresh on 401
-- Clean up session on refresh failure
-- Dispatch UI events via store (without navigating)
+- On 401, trigger single‑flight refresh and retry once
+- Prevent infinite loops with _retry flag
+- Exclude login/update/change-password endpoints from auto-refresh
 
 ❌ Never:
-- Navigate directly (useNavigate is for UI layer)
-- Open modals
-- Show notification
+ - Navigate or show modals
+ - Manage refresh state locally (delegated to manager)
+ - Open modals
+ - Show notification
 */
 
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { url_refrestoken, url_update_user, url_change_password } from '../../endpoints';
-import { logoutCleanup } from './logoutCleanup';
-
-//variables for refreshing lock
-let isRefreshing = false;
-let refreshPromise:Promise<string> | null = null;
+import { getRefreshedToken } from './authRefreshManager';
+import {
+  url_update_user,
+  url_change_password,
+} from '../../endpoints';
 
 /* 🔐 Authenticated fetch utility*/
+/**
+ * Makes an authenticated request.
+ * On 401, attempts to refresh the token once and retries the request.
+ */
 export const authFetch = async <T>(
   url: string,
-  options: AxiosRequestConfig = {}
+  options: AxiosRequestConfig = {},
 ): Promise<AxiosResponse<T>> => {
+  // 1️⃣ Get access token from sessionStorage (Infrastructure)
+  const accessToken = sessionStorage.getItem('accessToken');
 
-// 1️⃣ Get access token from sessionStorage (Infrastructure)
- const accessToken = sessionStorage.getItem('accessToken');
-
-// 2️⃣ Configure initial request with token
- const requestConfig: AxiosRequestConfig = {
-  ...options,
-  withCredentials: true,
-  headers: {
-   'Content-Type': 'application/json',
-   ...options?.headers,
-   ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
-   }
-  };
-
- try {
-// 🎯 First attempt
-  const response = await axios<T>(url, requestConfig);
-  return response;
-
- } catch (error) {
-// 3️⃣ Handle 401 errors - attempt silent refresh
- if (
-   axios.isAxiosError(error) && 
-   error.response?.status === 401 && 
-//✅ Exclude from refresh attempt
-   !url.includes('/sign-in') &&
-   !url.includes('/sign-up') &&
-   !url.includes(url_update_user) && 
-   !url.includes(url_change_password) 
-   )
- {
-  try {
-   // ✅ Lock mechanism - only one refresh at a time
-    if (!isRefreshing) {
-     isRefreshing = true;
-     refreshPromise = (async () => {
-    // 🔄 Attempt silent refresh
-      const refreshResponse = await axios.post(url_refrestoken, null, {
-        withCredentials: true,
-        timeout: 10000,
-      });
-
-     const newAccessToken = refreshResponse.data.accessToken;
-
-     if (newAccessToken) {
-     // 💾 Save new token
-      sessionStorage.setItem('accessToken', newAccessToken);
-      return newAccessToken;
-     }
-      throw new Error('No access token in refresh response');
-     })();
-    }//if not refreshing
-
- // Wait for refresh to complete
-   const newAccessToken = await refreshPromise;
-
-// 🔁 Retry original request with new token
-  const retryConfig: AxiosRequestConfig = {
-    ...requestConfig,
+  // 2️⃣ Prepare request config with token
+  const requestConfig: AxiosRequestConfig & { _retry?: boolean } = {
+    ...options,
+    withCredentials: true,
     headers: {
-      ...requestConfig.headers,
-      'Authorization': `Bearer ${newAccessToken}`,
+      'Content-Type': 'application/json',
+      ...options?.headers,
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
     },
   };
 
-  const retryResponse = await axios<T>(url, retryConfig);
-  return retryResponse;
-    } catch (refreshError) {
-      // 🚨 Refresh failed - clean up session
-       console.error('🚨 Refresh failed:', {
-         error: refreshError,
-         url,
-         hasCookie: document.cookie.includes('refreshToken')
+  try {
+    // 🎯 First attempt
+    const response = await axios<T>(url, requestConfig);
+    return response;
+  } catch (error) {
+    // 3️⃣ Handle 401 errors - avoid infinite retries, and skip specific endpoints
+    if (
+      axios.isAxiosError(error) &&
+      error.response?.status === 401 &&
+      //✅ Exclude from refresh attempt
+      !requestConfig._retry && // Prevents endless loops
+      !url.includes('/sign-in') && // Login endpoint has no token
+      !url.includes('/sign-up') && // Signup endpoint has no token
+      !url.includes(url_update_user) && // Update profile handles 401 itself
+      !url.includes(url_change_password) // Change password handles 401 itself
+    ) {
+      // Mark this request as already retried
+      requestConfig._retry = true;
+
+      try {
+        // 4️⃣ Get a fresh token (shared across all concurrent requests)
+        const newToken = await getRefreshedToken();
+
+        // 5️⃣ Retry original request with the new token
+        const retryConfig = {
+          ...requestConfig,
+          headers: {
+            ...requestConfig.headers,
+            Authorization: `Bearer ${newToken}`,
+          },
+        };
+
+        const retryResponse = await axios<T>(url, retryConfig);
+        return retryResponse;
+      } catch (refreshError) {
+        // 6️⃣ Refresh failed – propagate error; UI will redirect via ProtectedRoute
+        // 🚨 Refresh failed - error log
+        console.error('🚨 Refresh failed:', {
+          error: refreshError,
+          url,
+          hasCookie: document.cookie.includes('refreshToken'),
         });
-        
-     // ✅ Clean up session data - pure infrastructure, no navigation
-        logoutCleanup();
-              
-     // Return rejected promise so calling code knows it failed
+
+        // Return rejected promise so calling code knows it failed
         return Promise.reject(refreshError);
-      }finally {
-      // ✅ Reset lock
-        isRefreshing = false;
-        refreshPromise = null;
       }
     }
 
-    // 4️⃣ Propagate all other errors
+    // 7️⃣ Any other error (non‑401, or already retried) – just throw
     throw error;
   }
 };
