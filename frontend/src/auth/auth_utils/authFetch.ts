@@ -54,7 +54,8 @@ export const authFetch = async <T>(
     const response = await axios<T>(url, requestConfig);
     return response;
   } catch (error) {
-    // 3️⃣ Handle 401 errors - avoid infinite retries, and skip specific endpoints
+    // 3️⃣ Handle 401 errors - avoid infinite retries, and skip specific endpoints.
+    //Only retry once per request, only on 401, exclude public/special endpoints.
     if (
       axios.isAxiosError(error) &&
       error.response?.status === 401 &&
@@ -65,7 +66,7 @@ export const authFetch = async <T>(
       !url.includes(url_update_user) && // Update profile handles 401 itself
       !url.includes(url_change_password) // Change password handles 401 itself
     ) {
-      // Mark this request as already retried
+      // Mark this request as already retried to prevent infinite loops.
       requestConfig._retry = true;
 
       try {
@@ -73,6 +74,7 @@ export const authFetch = async <T>(
         const newToken = await getRefreshedToken();
 
         // 5️⃣ Retry original request with the new token
+        //Replace token and retry the exact same request.
         const retryConfig = {
           ...requestConfig,
           headers: {

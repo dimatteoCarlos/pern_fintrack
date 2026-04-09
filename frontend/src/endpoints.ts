@@ -13,7 +13,7 @@ export const url_signin: string = 'http://localhost:5000/api/auth/sign-in';
 //sign-out
 export const url_signout: string = 'http://localhost:5000/api/auth/sign-out';
 //refresh-token
-export const url_refrestoken: string =
+export const url_refreshToken: string =
   'http://localhost:5000/api/auth/refresh-token';
 
 export const url_validate_session = `http://localhost:5000/api/auth/validate-session`;
@@ -42,7 +42,7 @@ export const url_account_type_list: string = BASE_URL + '/account/type/list';
 //http://localhost:5000/api/fintrack/account/new_account/account_type
 export const url_create_basic_account: string =
   BASE_URL + '/account/new_account'; //account_type is dynamic
- 
+
 //ENDPOINTS FOR BUDGET PAGE
 // dashboardAccountSummaryList
 //accouny list summary by account type and acc name
@@ -58,7 +58,8 @@ export const url_create_category_budget_account: string =
 //get accounts info  by categoryName
 //--endpoint: http://localhost:5000/api/fintrack/budget/category/:categoryName?&user=${user}
 //api response type data:
-export const url_get_accounts_by_category: string = BASE_URL + '/account/category'; 
+export const url_get_accounts_by_category: string =
+  BASE_URL + '/account/category';
 
 //------
 //create a pocket_saving account
@@ -85,7 +86,8 @@ export const url_get_account_by_id: string = BASE_URL + '/account';
 
 //---GET ACCOUNT TRANSACTIONS BY ACCOUNT ID
 //--endpoint: http://localhost:5000/api/fintrack/account/transactions/:account_id/?start=&end=&user=c109eb15-4139-43b4-b081-8fb9860588af
-export const url_get_transactions_by_account_id: string = BASE_URL + '/account/transactions';
+export const url_get_transactions_by_account_id: string =
+  BASE_URL + '/account/transactions';
 //-----------------------------------
 //----GET ALL ACCOUNTS INFO OF A SPECIFIC ACCOUNT TYPE
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
@@ -171,11 +173,11 @@ export const url_get_category_budget_full_data = `${BASE_URL}/fintrack/account`;
 //ACCOUNT EDITION ENDPOINT
 //http://localhost:5000/api/fintrack/account/edit/11
 //http://localhost:5000/api/fintrack/account/details/11
-export const url_get_account_details_by_id_for_edition : string = BASE_URL + '/account/details/';
+export const url_get_account_details_by_id_for_edition: string =
+  BASE_URL + '/account/details/';
 
 //http://localhost:5000/api/fintrack/account/edit/11
-export const url_patch_account_edit =   
-BASE_URL+'/account/edit';
+export const url_patch_account_edit = BASE_URL + '/account/edit';
 
 // ===================================
 //📝 GET IMPACT REPORT URL (RTA-specific)
@@ -187,7 +189,10 @@ BASE_URL+'/account/edit';
  * @returns The full URL string.
  */
 
-export const url_report_of_affected_accounts = (targetAccountId:string | number)=>(`${BASE_URL}/account/delete/report_of_affected_accounts/${targetAccountId}`);
+export const url_report_of_affected_accounts = (
+  targetAccountId: string | number,
+) =>
+  `${BASE_URL}/account/delete/report_of_affected_accounts/${targetAccountId}`;
 
 // ===================================
 //💣 EXECUTE DELETION URL (Used by RTA, HARD, and SOFT methods)
@@ -195,7 +200,5 @@ export const url_report_of_affected_accounts = (targetAccountId:string | number)
 // Builds the URL for the DELETE request to execute the account deletion (RTA, HARD, or SOFT).
 //Endpoint: DELETE /fintrack/account/delete/:targetAccountId
 
-export const url_account_delete  =(targetAccountId:string | number)=>(`${BASE_URL}/account/delete/${targetAccountId}`);
-
-
-
+export const url_account_delete = (targetAccountId: string | number) =>
+  `${BASE_URL}/account/delete/${targetAccountId}`;

@@ -33,7 +33,7 @@ let refreshPromise: Promise<string> | null = null;
  * @throws Error if refresh fails (network, invalid refresh token, etc.)
  */
 export const getRefreshedToken = async (): Promise<string> => {
-  if (!refreshPromise) {
+  if (!refreshPromise) {//Only the first caller creates the promise; others wait.
     refreshPromise = (async () => {
       try {
         // Call refresh endpoint with cookie (no manual token)
@@ -58,7 +58,6 @@ export const getRefreshedToken = async (): Promise<string> => {
         return newAccessToken;
       } catch (error) {
         // 🚨 Refresh failed – session is irrecoverable
-
         // 📍 Save current location to redirect after login
         const currentPath = window.location.pathname + window.location.search; //return route page + query string parameters
         sessionStorage.setItem('returnTo', currentPath);
@@ -70,7 +69,7 @@ export const getRefreshedToken = async (): Promise<string> => {
         // Re-throw so callers know refresh failed
         throw error;
       } finally {
-        // Allow future refresh attempts after this one completes (success or failure)
+        // Allow a new refresh cycle later (e.g., after login).
         refreshPromise = null;
       }
     })();
