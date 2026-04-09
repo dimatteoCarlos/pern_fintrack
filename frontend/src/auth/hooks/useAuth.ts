@@ -39,6 +39,7 @@ import {
 } from '../auth_utils/localStorageHandle/authStorage';
 import { safeMergeUser } from '../auth_utils/safeMergeUser';
 import { invalidateSession } from '../auth_utils/invalidateSession';
+import { logoutCleanup } from '../auth_utils/logoutCleanup';
 
 /* ===============================
    🛠️ DATA TRANSFORMATION
@@ -387,7 +388,7 @@ const useAuth = () => {
       console.log('⚠️ Logout API call failed, proceeding with client cleanup');
     } finally {
       // 1️⃣ Infrastructure layer - clean up session data
-      invalidateSession();
+      logoutCleanup();
     }
   };
   /* ===============================
