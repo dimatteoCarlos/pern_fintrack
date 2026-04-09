@@ -9,7 +9,7 @@
 - Decisions:
  * Render content if authenticated
  * Redirect to /signin if session expired (with intent)
-    * Redirect to / if not authenticated and no session expired flag
+ * Redirect to / for normal unauthenticated users
 
 ✅ Responsibilities:
 - Block UI while checking auth status
@@ -20,7 +20,9 @@
 - Open modals or set UI state
 - Call APIs directly
 - Handle business logic
+- Clear session_expired or returnTo flags (AuthPage is the only owner)
 */
+
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import CoinSpinner from '../../../fintrack/loader/coin/CoinSpinner';
@@ -40,7 +42,6 @@ const ProtectedRoute = () => {
   const sessionExpired = sessionStorage.getItem('session_expired') === 'true';//Read flag set by authRefreshManager when refresh fails.
 
   const hasToken = !!sessionStorage.getItem('accessToken');//Check if token exists (even if invalid) – indicates prior authenticated session.
-
   
  //Debugging Temporary
  // console.log('🔍 ProtectedRoute debug:', {
@@ -51,15 +52,15 @@ const ProtectedRoute = () => {
 
  const redirectToHomeMenu = '/';
  
- // 🎯 Decision logic - Only act when store says user is not logged in
+ // 🎯 Decision logic
   if (!isAuthenticated) {
  // If either flag or token exists, treat as expired session
 
  // Case 1: Session expired (user had a token but it's invalid)
   if (sessionExpired || hasToken) {
-   // Clear flag to avoid redirect loop on subsequent renders (will be re-set on next expiration)
-    sessionStorage.removeItem('session_expired');
-      
+   // ❌ DO NOT clear session_expired here – AuthPage needs it for fallback
+   // ✅ Only redirect, leave flags intact for AuthPage to consume and clean
+    
       return (
         <Navigate
           to={AUTH_MODES.SIGN_IN || "/signin"}
