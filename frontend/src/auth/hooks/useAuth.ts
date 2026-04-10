@@ -166,7 +166,7 @@ const useAuth = () => {
          if (isMounted) {
           console.warn('🔍 Session hydration failed');
       // ✅ Clean up inconsistent state
-          invalidateSession();
+          invalidateSession('expired');
           }
         }
       }
@@ -431,20 +431,24 @@ const useAuth = () => {
         const { status, data } = err.response;
         const errorData = data; //as Record<string, unknown>;
 
-        // 🔐 401 - TOKEN INVALID / EXPIRED (REAL LOGOUT)
-        if (status === 401) {
-          invalidateSession();
+       // 🔐 401 - TOKEN INVALID / EXPIRED (REAL LOGOUT)
+       if (status === 401) {
+       // Save returnTo and expired flag
+         const currentPath = window.location.pathname + window.location.search;
+         sessionStorage.setItem('returnTo', currentPath);
+        
+         invalidateSession('expired');
 
           return {
-            success: false,
-            error: (errorData?.error as string) || 'SessionExpired',
-            message:
-              (errorData?.message as string) ||
-              'Session expired. Please sign in again.',
+           success: false,
+           error: (errorData?.error as string) || 'SessionExpired',
+           message:
+             (errorData?.message as string) ||
+             'Session expired. Please sign in again.',
           };
         }
 
-        // 🔒 403 – WRONG CURRENT PASSWORD (NO logout)
+       // 🔒 403 – WRONG CURRENT PASSWORD (NO logout)
         if (status === 403) {
           return {
             success: false,
@@ -458,7 +462,7 @@ const useAuth = () => {
           };
         }
 
-        // 🚦 429 - RATE LIMIT
+       // 🚦 429 - RATE LIMIT
         if (status === 429) {
           return {
             success: false,
@@ -572,7 +576,10 @@ const useAuth = () => {
 
         // 🔐 401 - Session expired
         if (status === 401) {
-          invalidateSession();
+         const currentPath = window.location.pathname + window.location.search;
+         sessionStorage.setItem('returnTo', currentPath);
+                 
+         invalidateSession('expired');
 
           return {
             success: false,
