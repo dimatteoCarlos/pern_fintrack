@@ -1,20 +1,15 @@
 // 📁 frontend/src/auth/hooks/useAuth.ts
-
 /* 🌟 ===============================
 🔐 AUTH SERVICE HOOK
 Centralizes all authentication operations
 Single source of truth for auth logic
 =============================== 🌟 */
-
 import { useEffect } from 'react';
 import axios from 'axios';
 
 import { useAuthStore } from '../stores/useAuthStore';
 import { authFetch } from '../auth_utils/authFetch';
-import { logoutCleanup } from '../auth_utils/logoutCleanup';
-// import { useNavigate } from 'react-router-dom';
-// import { useNavigationHelper } from '../auth_utils/navigationHelper';
-// import { INITIAL_PAGE_ADDRESS } from '../../fintrack/helpers/constants';
+
 
 import {
   AuthSuccessResponseType,
@@ -43,6 +38,8 @@ import {
   saveIdentity,
 } from '../auth_utils/localStorageHandle/authStorage';
 import { safeMergeUser } from '../auth_utils/safeMergeUser';
+import { invalidateSession } from '../auth_utils/invalidateSession';
+import { logoutCleanup } from '../auth_utils/logoutCleanup';
 
 /* ===============================
    🛠️ DATA TRANSFORMATION
@@ -62,31 +59,30 @@ const mapUserResponseToUserData = (
 });
 
 /* ===============================
-   🔧 ERROR EXTRACTION UTILITY
-   =============================== */
-
+🔧 ERROR EXTRACTION UTILITY
+ =============================== */
 const extractErrorMessage = (err: unknown): string => {
   // If axios error with response
   if (axios.isAxiosError(err) && err.response) {
     const data = err.response.data as Record<string, unknown>;
-    //-----------------------------------------
+//-------------------------------------
     console.log('extractErrorMessage:', data, err.stack);
-    //---------------------------------------
-    // Priority: BE error message
+//-------------------------------------
+  // Priority: BE error message
     if (data?.message && typeof data.message === 'string') {
       return data.message;
     }
 
-    // Common codes error
-    if (err.response.status === 401) {
-      return 'Invalid username or password';
-    }
-    if (err.response.status === 400) {
-      return 'Invalid input data';
-    }
-    if (err.response.status === 429) {
-      return 'Too many attempts. Please try again later.';
-    }
+  // Common codes error
+   if (err.response.status === 401) {
+     return 'Invalid username or password';
+   }
+   if (err.response.status === 400) {
+     return 'Invalid input data';
+   }
+   if (err.response.status === 429) {
+     return 'Too many attempts. Please try again later.';
+   }
   }
 
   // Network error
@@ -103,8 +99,8 @@ const extractErrorMessage = (err: unknown): string => {
 };
 
 /* ===============================
-   🎯 MAIN HOOK: useAuth
-   =============================== */
+  🎯 MAIN HOOK: useAuth
+  =============================== */
 
 const useAuth = () => {
   // const navigateTo = useNavigate();
@@ -125,11 +121,12 @@ const useAuth = () => {
     successMessage,
     setSuccessMessage,
     clearSuccessMessage,
+    sessionExpired, 
   } = useAuthStore();
 
   /* ===============================
-    🔄 SESSION INITIALIZATION
-    =============================== */
+ 🔄 SESSION INITIALIZATION
+ =============================== */
   useEffect(() => {
     let isMounted = true;
 
@@ -141,7 +138,6 @@ const useAuth = () => {
         return;
       }
 
-      // if ((accessToken ) && !error && !isLoading &&!isAuthenticated) {
       if (accessToken && !isAuthenticated) {
         try {
           const response = await authFetch<AuthSuccessResponseType>(
@@ -168,8 +164,10 @@ const useAuth = () => {
             console.log('✅ Session restored successfully');
           }
         } catch (error) {
-          if (isMounted) {
-            console.warn('🔍 Session hydration failed');
+         if (isMounted) {
+          console.warn('🔍 Session hydration failed');
+      // ✅ Clean up inconsistent state
+          invalidateSession('expired');
           }
         }
       }
@@ -195,20 +193,20 @@ const useAuth = () => {
   /* ===============================
 🔐 SIGN IN – DOMAIN LAYER (PURE)
 =============================== */
-/**
- * Authenticates a user with email/username and password.
- *
- * ✅ Responsibilities:
- * - Call signin API
- * - Store token and expiry
- * - Persist identity if rememberMe is true
- * - Update global auth state (user, authenticated)
- * - Return success/error result
- *
- * ❌ Never:
- * - Navigate (presentation layer decides)
- * - Show toasts/modals (UI layer)
- */
+  /**
+   * Authenticates a user with email/username and password.
+   *
+   * ✅ Responsibilities:
+   * - Call signin API
+   * - Store token and expiry
+   * - Persist identity if rememberMe is true
+   * - Update global auth state (user, authenticated)
+   * - Return success/error result
+   *
+   * ❌ Never:
+   * - Navigate (presentation layer decides)
+   * - Show toasts/modals (UI layer)
+   */
   const handleSignIn = async (
     credentials: SignInCredentialsType,
     rememberMe: boolean,
@@ -227,15 +225,15 @@ const useAuth = () => {
 
       const userFromSignIn = response.data?.user || user;
 
-     //check data
+      //check data
       if (!accessToken || !userFromSignIn) {
-       const errorMessage = !accessToken
-        ? 'Server response missing access token'
-        : 'Server response missing user data';
+        const errorMessage = !accessToken
+          ? 'Server response missing access token'
+          : 'Server response missing user data';
         throw new Error(errorMessage);
       }
 
-     // processing expiresIn
+      // processing expiresIn
       if (expiresIn) {
         const expiryTime = Date.now() + expiresIn * 1000;
         sessionStorage.setItem('tokenExpiry', expiryTime.toString());
@@ -244,44 +242,44 @@ const useAuth = () => {
       }
 
       // if (accessToken && userFromSignIn) {
-        sessionStorage.setItem('accessToken', accessToken);
+      sessionStorage.setItem('accessToken', accessToken);
 
       // ✅ Persist identity if rememberMe is true
-        if (rememberMe) {
-          const identity: UserIdentityType = {
-            email: credentials.email,
-            username: credentials.username,
-            rememberMe: true,
-          };
+      if (rememberMe) {
+        const identity: UserIdentityType = {
+          email: credentials.email,
+          username: credentials.username,
+          rememberMe: true,
+        };
 
-          saveIdentity(identity);
-          console.log('✅ Identity saved for remembered user');
-        } else {
-          clearIdentity();
-          console.log('🧹 Identity cleared');
-        }
+        saveIdentity(identity);
+        console.log('✅ Identity saved for remembered user');
+      } else {
+        clearIdentity();
+        console.log('🧹 Identity cleared');
+      }
 
       // ✅ Transform and merge user data
-        const transformedUser = mapUserResponseToUserData(userFromSignIn);
+      const transformedUser = mapUserResponseToUserData(userFromSignIn);
 
-        // Get current user data store
-        const currentUserDataStore = useAuthStore.getState().userData;
+      // Get current user data store
+      const currentUserDataStore = useAuthStore.getState().userData;
 
-        const mergedUser = safeMergeUser(currentUserDataStore, transformedUser);
-        setUserData(mergedUser); //to store
+      const mergedUser = safeMergeUser(currentUserDataStore, transformedUser);
+      setUserData(mergedUser); //to store
 
-        setIsAuthenticated(true);
-        setSuccessMessage(message || 'Sign in successful! Welcome back!');
+      setIsAuthenticated(true);
+      setSuccessMessage(message || 'Sign in successful! Welcome back!');
 
-        return { success: true };
-        // navigateTo(INITIAL_PAGE_ADDRESS || '/fintrack');
+      return { success: true };
+      // navigateTo(INITIAL_PAGE_ADDRESS || '/fintrack');
       // }
     } catch (err: unknown) {
       const errorMessage =
         extractErrorMessage(err) ||
         'Login failed. Please check your credentials.';
       setError(errorMessage);
-        return { success: false, error: errorMessage };
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
@@ -290,19 +288,19 @@ const useAuth = () => {
   /* ===============================
    📝 SIGN UP – DOMAIN LAYER (PURE)
  =============================== */
- /**
- * Registers a new user.
- *
- * ✅ Responsibilities:
- * - Call signup API
- * - Store token if provided
- * - Update global auth state (user, authenticated)
- * - Return success/error result
- *
- * ❌ Never:
- * - Navigate (presentation layer decides)
- * - Show toasts/modals (UI layer)
- */
+  /**
+   * Registers a new user.
+   *
+   * ✅ Responsibilities:
+   * - Call signup API
+   * - Store token if provided
+   * - Update global auth state (user, authenticated)
+   * - Return success/error result
+   *
+   * ❌ Never:
+   * - Navigate (presentation layer decides)
+   * - Show toasts/modals (UI layer)
+   */
   const handleSignUp = async (
     credentials: SignUpCredentialsType,
   ): Promise<{ success: boolean; error?: string }> => {
@@ -322,13 +320,13 @@ const useAuth = () => {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
           errorData.message ||
-           `HTTP error! status: ${response.status}. Registration failed.`,
+            `HTTP error! status: ${response.status}. Registration failed.`,
         );
       }
 
       const resData = await response.json();
 
-     //verify user exists
+      //verify user exists
       if (!resData.user) {
         throw new Error('Server response missing user data');
       }
@@ -336,7 +334,7 @@ const useAuth = () => {
       if (resData.accessToken) {
         sessionStorage.setItem('accessToken', resData.accessToken);
       }
-     // ✅ Transform and merge user data
+      // ✅ Transform and merge user data
       const transformedUser = mapUserResponseToUserData(resData.user);
 
       //Get user data from store
@@ -348,10 +346,9 @@ const useAuth = () => {
       setIsAuthenticated(true);
       setSuccessMessage(resData.message || 'Sign up successful!');
 
-   // navigateTo('/fintrack');
-   // ✅ NO navigation - return success
-    return { success: true };
-
+      // navigateTo('/fintrack');
+      // ✅ NO navigation - return success
+      return { success: true };
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : 'Registration failed';
@@ -365,7 +362,6 @@ const useAuth = () => {
   /* ===============================
      🚪 SIGN OUT
      =============================== */
-
   /**
    * 🚪 Manual logout - user initiated
    *
@@ -384,12 +380,12 @@ const useAuth = () => {
    * - Show notifications (Presentation layer)
    * - Interpret error meanings (Domain layer)
    */
-  const handleSignOut = async ():Promise<void> => {
+  const handleSignOut = async (): Promise<void> => {
     try {
-  // Infrastructure layer - API call
+      // Infrastructure layer - API call
       await authFetch(url_signout, { method: 'POST' });
     } catch (err: unknown) {
-  // Infrastructure error - log but proceed with cleanup
+      // Infrastructure error - log but proceed with cleanup
       console.log('⚠️ Logout API call failed, proceeding with client cleanup');
     } finally {
       // 1️⃣ Infrastructure layer - clean up session data
@@ -436,20 +432,24 @@ const useAuth = () => {
         const { status, data } = err.response;
         const errorData = data; //as Record<string, unknown>;
 
-        // 🔐 401 - TOKEN INVALID / EXPIRED (REAL LOGOUT)
-        if (status === 401) {
-          logoutCleanup();
+       // 🔐 401 - TOKEN INVALID / EXPIRED (REAL LOGOUT)
+       if (status === 401) {
+       // Save returnTo and expired flag
+         const currentPath = window.location.pathname + window.location.search;
+         sessionStorage.setItem('returnTo', currentPath);
+        
+         invalidateSession('expired');
 
           return {
-            success: false,
-            error: (errorData?.error as string) || 'SessionExpired',
-            message:
-              (errorData?.message as string) ||
-              'Session expired. Please sign in again.',
+           success: false,
+           error: (errorData?.error as string) || 'SessionExpired',
+           message:
+             (errorData?.message as string) ||
+             'Session expired. Please sign in again.',
           };
         }
 
-        // 🔒 403 – WRONG CURRENT PASSWORD (NO logout)
+       // 🔒 403 – WRONG CURRENT PASSWORD (NO logout)
         if (status === 403) {
           return {
             success: false,
@@ -463,7 +463,7 @@ const useAuth = () => {
           };
         }
 
-        // 🚦 429 - RATE LIMIT
+       // 🚦 429 - RATE LIMIT
         if (status === 429) {
           return {
             success: false,
@@ -471,10 +471,8 @@ const useAuth = () => {
             message:
               (errorData?.message as string) ||
               'Too many attempts. Please try again later.',
-            fieldErrors: errorData?.fieldErrors as
-              | Record<string, string[]>
-              | undefined,
-            retryAfter: errorData?.retryAfter as number | undefined,
+            fieldErrors: errorData?.fieldErrors as Record<string, string[]>,
+            retryAfter: errorData?.retryAfter as number,
           };
         }
 
@@ -579,7 +577,10 @@ const useAuth = () => {
 
         // 🔐 401 - Session expired
         if (status === 401) {
-          logoutCleanup();
+         const currentPath = window.location.pathname + window.location.search;
+         sessionStorage.setItem('returnTo', currentPath);
+                 
+         invalidateSession('expired');
 
           return {
             success: false,
@@ -635,6 +636,7 @@ const useAuth = () => {
     isLoading,
     error,
     successMessage,
+    sessionExpired, 
 
     // Authentication Operations
     handleSignIn,

@@ -19,6 +19,7 @@ import {
 
 import { AuthEventContextType } from '../types/eventContextTypes';
 import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
+import { AUTH_UI_STATES } from '../../auth_constants/constants';
 
 export type AuthEventHandlerType<EventKey extends AuthEventType> = (
   data?: AuthEventMapType[EventKey],
@@ -26,12 +27,12 @@ export type AuthEventHandlerType<EventKey extends AuthEventType> = (
 ) => AuthEventResultType;
 
 //-------------------------------
-// Registry with all events (handlers return placeholders for now)
+// REGISTRY WITH ALL EVENTS (HANDLERS RETURN PLACEHOLDERS FOR NOW)
 export const authEventRegistry: {
   [EventKey in AuthEventType]: AuthEventHandlerType<EventKey>;
 } = {
-  // password_changed event handler
-  // Opens sign in modal with prefill if identity exists
+// password_changed event handler
+// Opens sign in modal with prefill if identity exists
   password_changed: () => {
     const identity = getIdentity(); //from authStorage
     const result: AuthEventResultType = { uiState: 'SIGN_IN' };
@@ -48,12 +49,15 @@ export const authEventRegistry: {
 
   session_expired: (data) => {
     const result: AuthEventResultType = {
-      uiState: 'SIGN_IN',
+      uiState: AUTH_UI_STATES.SIGN_IN || 'SIGN_IN',
       message: 'Your session has expired. Please sign in again.',
     };
 
-    if (data?.from) {
-      result.returnTo = data.from;
+  // Priority: data.from (from ProtectedRoute) > sessionStorage returnTo
+    const returnTo = data?.from || sessionStorage.getItem('returnTo');
+    
+    if (returnTo) {
+      result.returnTo = returnTo;
     }
     return result;
   },

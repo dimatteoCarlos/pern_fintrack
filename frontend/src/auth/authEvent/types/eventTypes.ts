@@ -34,7 +34,10 @@ export type AuthEventResultType = {
   // UI State changes
   uiState?: AuthUIStateType;
   message?: string | null;
-  prefill?: { email?: string; username?: string };
+  prefill?: {
+  email?: string | null;
+  username?: string | null;
+} | null;
 
   // Navigation
   navigation?: {

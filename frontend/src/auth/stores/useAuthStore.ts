@@ -55,6 +55,10 @@ export const useAuthStore = create<AuthStoreStateType<UserDataType>>(
   successMessage: '',
   setSuccessMessage: (successMessage) => set({ successMessage }),
   clearSuccessMessage: () => set({ successMessage: '' }),
+
+// ✅ Session Expired Signal
+  sessionExpired:false,
+  setSessionExpired:(expired:boolean)=>set({sessionExpired:expired})
   
  })) // set block
 

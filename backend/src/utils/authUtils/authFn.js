@@ -44,8 +44,8 @@ export const createToken = (id, role) => {
   }
 
 const expiresIn = process.env.NODE_ENV === 'development' 
-    ? '1h'  // ✅  in development
-    : '1h'; // ✅ 3 in production
+    ? '1m'  // ✅  in development
+    : '1m'; // ✅ 3 in production
 
 // Consistencia: expiresIn en el token y maxAge en la cookie deben estar sincronizados
   return jwt.sign(
@@ -75,8 +75,8 @@ export const createRefreshToken = (id) => {
   }
 //refresh token expiration time
   const expiresIn = process.env.NODE_ENV === 'development'
-    ? '7d'// ✅ desarrollo
-    : '7d'; // ✅ 7 días en producción
+    ? '2m'// ✅ desarrollo
+    : '2m'; // ✅ 7 días en producción
 
   return jwt.sign(
     { userId: id,

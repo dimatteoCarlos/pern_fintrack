@@ -1,4 +1,5 @@
-# 🔐 Full-Stack Authentication & Authorization System  
+# 🔐 Full-Stack Authentication & Authorization System
+
 ## Security Design & Technical Documentation
 
 ---
@@ -32,14 +33,14 @@ Architecture Type:
 
 ## Layered Structure
 
-| Layer | Responsibility |
-|--------|---------------|
-| Presentation (FE) | UI rendering, modals, form state |
-| Application (FE) | Auth orchestration, navigation decisions |
-| Infrastructure (FE) | Authenticated HTTP, silent refresh |
-| API Layer (BE) | Token issuing, verification, refresh |
+| Layer                    | Responsibility                               |
+| ------------------------ | -------------------------------------------- |
+| Presentation (FE)        | UI rendering, modals, form state             |
+| Application (FE)         | Auth orchestration, navigation decisions     |
+| Infrastructure (FE)      | Authenticated HTTP, silent refresh           |
+| API Layer (BE)           | Token issuing, verification, refresh         |
 | Security Middleware (BE) | JWT validation, authorization, rate limiting |
-| Persistence | Refresh token storage & revocation |
+| Persistence              | Refresh token storage & revocation           |
 
 ---
 
@@ -247,7 +248,7 @@ Flow
 Request → 401?
     → Call /refresh-token
         → Success → Retry request
-        → Failure → logoutCleanup()
+        → Failure → invalidateSession()
 6.3 ProtectedRoute
 
 Decision Matrix:
@@ -340,7 +341,7 @@ Backend:
     JWT expired
     401
 Client:
-    logoutCleanup()
+    invalidateSession()
     UI state → SESSION_EXPIRED
     Redirect to /auth
 10. Security Matrix
@@ -471,3 +472,4 @@ No privilege escalation without role hierarchy validation
 No brute-force without throttling
 
 No session persistence without valid refresh token
+```

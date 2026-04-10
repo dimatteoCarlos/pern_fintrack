@@ -26,7 +26,7 @@ export type SignUpCredentialsType = SignInCredentialsType & {
 };
 
 // ===============
-// 🏪 STORE TYPES
+// 🏪 AUTH STORE TYPES
 // ===============
 //--useAuthStoreTypes
 export type AuthStoreStateType<U> = {
@@ -54,6 +54,10 @@ export type AuthStoreStateType<U> = {
   successMessage: string | null;
   setSuccessMessage: (successMessage: string | null) => void;
   clearSuccessMessage: () => void;
+
+ // ✅ Expired session signal
+  sessionExpired: boolean;
+  setSessionExpired: (expired: boolean) => void; 
 };
 
 //backend data response type. Common for all auth responses, as for Sign-in,Sign-up and refresh token
@@ -63,28 +67,6 @@ export type AuthSuccessResponseType = {
   user: UserResponseDataType;
   expiresIn: number;
 };
-// If SignIn and SignUp use the same structure then:
-// export type SignInResponseType = AuthSuccessResponse;
-// export type SignUpResponseType = AuthSuccessResponse;
-
-//sign-out
-//R:check if it is usable
-// export type SignOutResponseType = {
-//   message: string;
-// };
-//------------
-//sign-up
-// export type SignUpResponseType= {
-//   message: string;
-//   accessToken?: string;
-//   user:UserResponseDataType;
-//   expiresIn: number;
-//   refreshToken?: string;//R:check if it's usable
-
-//   // data: DataRespType;
-// }
-// export type DataRespType ={user: UserResponseDataType;
-//   userAccess: string;}//R: checi if it's usable
 
 // =====================
 // 👤 USER TYPES / TIPOS DE USUARIO
