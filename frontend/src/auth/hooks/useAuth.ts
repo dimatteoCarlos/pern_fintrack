@@ -121,6 +121,7 @@ const useAuth = () => {
     successMessage,
     setSuccessMessage,
     clearSuccessMessage,
+    sessionExpired, 
   } = useAuthStore();
 
   /* ===============================
@@ -635,6 +636,7 @@ const useAuth = () => {
     isLoading,
     error,
     successMessage,
+    sessionExpired, 
 
     // Authentication Operations
     handleSignIn,
