@@ -8,15 +8,13 @@
  - Handle concurrent 401 responses efficiently
  
  ✅ Responsibilities:
- - Maintain a single shared refresh promise across all callers
- - Store new token in sessionStorage on success
- - On refresh failure: save returnTo and session_expired flag, then invalidate session
- - Idempotent and race-condition free
+ - Share a single refresh promise across concurrent 401s
+ - On success: store new token, clear returnTo flags
+ - On failure: save returnTo in sessionStorage, call invalidateSession('expired')
  
  ❌ Never:
- - Make navigation decisions
- - Show UI messages
- - Know about React components
+ - Navigate or show UI messages
+ - Save session_expired in storage (that's now in store)
 */
 
 import axios from 'axios';
@@ -33,6 +31,8 @@ let refreshPromise: Promise<string> | null = null;
  * @throws Error if refresh fails (network, invalid refresh token, etc.)
  */
 export const getRefreshedToken = async (): Promise<string> => {
+ console.log('[RefreshManager] ;getRefreshedToken called');
+ 
   if (!refreshPromise) {//Only the first caller creates the promise; others wait.
     refreshPromise = (async () => {
       try {
@@ -51,20 +51,18 @@ export const getRefreshedToken = async (): Promise<string> => {
         // 💾 Save the new token for future requests
         sessionStorage.setItem('accessToken', newAccessToken);
 
-        // Clear any leftover expiration flags (will be set again on next 401 if needed)
-        sessionStorage.removeItem('session_expired');
+        // Clear any leftover returnTo (no longer needed after successful refresh)
         sessionStorage.removeItem('returnTo');
 
         return newAccessToken;
       } catch (error) {
         // 🚨 Refresh failed – session is irrecoverable
-        // 📍 Save current location to redirect after login
+        // 📍 Save current location to redirect after login (context, not signal)
         const currentPath = window.location.pathname + window.location.search; //return route page + query string parameters
         sessionStorage.setItem('returnTo', currentPath);
-        sessionStorage.setItem('session_expired', 'true');
-
+        
         // 🧹 Centralized session cleanup (storage + store, keeps remembered identity)
-        invalidateSession();
+        invalidateSession('expired');
 
         // Re-throw so callers know refresh failed
         throw error;
