@@ -37,19 +37,18 @@ import { INITIAL_PAGE_ADDRESS } from '../../../fintrack/helpers/constants';
 import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
 
 import { authEventRegistry } from '../../authEvent/config/authEventRegistry';
+import { useAuthStore } from '../../stores/useAuthStore';
 
 //--MAIN COMPONENT AUTHENTICACION ACCESS PAGE - AuthPage.tsx
 export default function AuthPage() {
   const location = useLocation();
   const navigateTo = useNavigate();
 
-  const { uiState, message, setUIState,setMessage,  setPrefilledData, resetUI } = useAuthUIStore();
-
 //--LOCAL UI STATES not related to auth UX
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isSignInMode, setIsSignInMode] = useState(true); // true = signin, false = signup
 
-//CUSTOM HOOKS FOR SIGNIN AND SIGNUP
+//CUSTOM HOOKS
 // Auth operations (passed to AuthUI)
   const {
     isLoading,
@@ -58,6 +57,10 @@ export default function AuthPage() {
     handleSignUp:handleSignUpDomain,
     clearError,
   } = useAuth();
+  
+  const { uiState, message, setUIState,setMessage,  setPrefilledData, resetUI } = useAuthUIStore();
+
+  const { setSessionExpired } = useAuthStore();
 
 // ref for storing return path (session_expired)
    const returnToRef = useRef<string | null>(null)
@@ -68,23 +71,23 @@ export default function AuthPage() {
 //Sign in wrapper – decides navigation after successful login.
 
  const handleSignInWithNavigation = async (
-    credentials: SignInCredentialsType,
-    rememberMe: boolean,
+  credentials: SignInCredentialsType,
+  rememberMe: boolean,
   ) => {
   // console.log(🔐 Sign in wrapper called);
   const result =  await handleSignInDomain(credentials, rememberMe);
 
  // console.log(Sign in result:, result);
-
+ 
   if(result.success){
-  // ✅ Use returnToRef if exists for session_expired
+ // ✅ Use returnToRef if exists for session_expired
   const redirectPath = returnToRef.current ?? INITIAL_PAGE_ADDRESS;
-
   navigateTo(redirectPath);
-  // ✅ clean after navigation
-   returnToRef.current = null;
+
+ // ✅ Clean returnTo after navigation
+  returnToRef.current = null;
    }
-  }
+  };
 
 //Sign up wrapper – decides navigation after successful registration.
  const handleSignUpWithNavigation = async(credentials:SignUpCredentialsType)=>{
@@ -93,6 +96,7 @@ export default function AuthPage() {
    if(result.success){
     navigateTo(INITIAL_PAGE_ADDRESS ??' /fintrack');
    }
+
 // Errors are already stored in useAuthStore and displayed by AuthUI
   }
 // ===============================
@@ -102,7 +106,7 @@ const openLoginModalWithPrefill = useCallback(()=>{
  const identity = getIdentity();
  if(identity?.email && identity?.username){
   setPrefilledData(identity.email, identity.username)
- }else {setPrefilledData(null, null)}
+ }else {setPrefilledData(null, null);}
 
  setUIState(AUTH_UI_STATES.SIGN_IN); // always SIGN_IN, prefill handled separately
 }, [setPrefilledData, setUIState]);
@@ -116,14 +120,16 @@ const openLoginModalWithPrefill = useCallback(()=>{
      from?: string;
     }
   | undefined;
-  
-  const authEvent = navigationState?.authEvent;
+ const authEvent = navigationState?.authEvent;
 
 // Debugging log
 // console.log({authEvent},'data event:', navigationState?.from)
 // console.log(🔍 AuthPage debug:, { authEvent, uiState });
-  
-//✅ Main effect – only processes intents, does NOT force IDLE when no authEvent  
+
+//==============================
+//SIDE EFFECTS
+//==============================
+//✅ Main effect – only processes intents, does NOT force IDLE when no authEvent 
 useEffect(() => {
  if (!authEvent) return;
  
@@ -150,17 +156,10 @@ useEffect(() => {
 // session_expired needs the 'from' data
   result = authEventRegistry.session_expired({ from: navigationState?.from }, { getIdentity });
   } else {
-// password_changed and user_logged_out don't need data
-// const authEventHandler = authEventRegistry[authEvent as 'password_changed' | 'user_logged_out'];
-
   result = authEventHandler(undefined, { getIdentity });
-
-  //alternative
-  // result = authEventRegistry[authEvent as 'password_changed' | 'user_logged_out'](undefined, { getIdentity });
   }
 
-
-//3️⃣ Apply result (UI + navigation)
+//3️⃣ Apply  (UI + navigation) UI changes
  if(result.uiState){
   setUIState(result.uiState);
  }
@@ -184,9 +183,13 @@ if(result.navigation){
   replace:result.navigation.replace ?? false,
   state:result.navigation.state,
  });
- }
-}, [authEvent,  navigateTo,navigationState?.from, setMessage, setPrefilledData, setUIState,uiState]);
-//===================================
+}
+
+ // ✅ CENTRAL CLEANUP: remove returnTo from storage and reset sessionExpired flag
+  sessionStorage.removeItem('returnTo');
+  setSessionExpired(false);
+ }, [authEvent,  navigateTo,navigationState?.from, setMessage, setPrefilledData, setUIState,uiState,setSessionExpired]);
+
 // ✅ Separate effect for cleaning location.state (prevents loop)
 useEffect(() => {
   if (location.state && Object.keys(location.state).length > 0) {
@@ -194,6 +197,27 @@ useEffect(() => {
    navigateTo(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, location.pathname, navigateTo]);
+
+//====================================
+// ✅ Restore from sessionStorage if location.state is empty (page reload fallback)
+  useEffect(() => {
+    const savedReturnTo = sessionStorage.getItem('returnTo');
+
+    if (savedReturnTo && !authEvent) {
+      returnToRef.current = savedReturnTo;
+      setUIState(AUTH_UI_STATES.SIGN_IN);
+      setMessage('Your session has expired. Please sign in again.');
+
+      // Prefill identity if exists
+      const identity = getIdentity();
+      if (identity?.email && identity?.username) {
+        setPrefilledData(identity.email, identity.username);
+      }
+
+    // Clean only returnTo (session_expired is gone)
+      sessionStorage.removeItem('returnTo');
+    }
+  }, [authEvent, setUIState, setMessage, setPrefilledData]);
 
 // ======================
 // 🎯 EVENT HANDLERS
