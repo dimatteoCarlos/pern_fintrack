@@ -10,6 +10,7 @@
  - Remove access token and expiry from sessionStorage
  - Reset Zustand auth store (isAuthenticated, userData, errors, messages, loading flags)
  - Preserve persistent identity (remembered email/username) in localStorage for pre-fill
+  - Set sessionExpired flag in store when reason is 'expired'
  - Idempotent: safe to call multiple times
  
  ❌ Never:
@@ -17,11 +18,15 @@
  - Show UI messages (that's AuthPage's job)
  - Clear localStorage identity (that's for explicit logout only)
  - Touch useAuthUIStore (modal handling is separate)
+ - Handle logout logic (logoutCleanup exists for that)
 */
 
 import { useAuthStore } from '../stores/useAuthStore';
-
-export const invalidateSession = (): void => {
+/**
+ * Invalidates the current session due to expiration.
+ * @param reason - Only 'expired' is handled; logout is managed by logoutCleanup.
+ */
+export const invalidateSession = (reason?: 'expired'): void => {
   // 1️⃣ Clean storage (only if token exists)
   const hasToken = sessionStorage.getItem('accessToken');
   if (hasToken) {
@@ -44,7 +49,10 @@ export const invalidateSession = (): void => {
   authStore.setIsLoading(false);
   authStore.setIsCheckingAuth(false);
 
-  console.log(
-    '🧹 Session invalidated (storage + store reset, persistent identity kept)',
-  );
+ // This flag is used by ProtectedRoute to differentiate expiration from normal unauthenticated state
+if (reason === 'expired') {
+    authStore.setSessionExpired(true);
+  }
+
+  console.log('🧹 Session invalidated:', {reason});
 };
