@@ -1,4 +1,4 @@
-// 📁 frontend/src/auth/authEvent/config/eventRegistry.ts
+// 📁 frontend/src/auth/authEvent/config/authEventRegistry.ts
 
 /* ===============================
 📋 AUTH EVENT REGISTRY - Central configuration for all auth events
@@ -62,12 +62,6 @@ export const authEventRegistry: {
     return result;
   },
 
-  /**
-   * user_logged_out event handler
-   * - Does NOT open any modal
-   * - Only closes the modal (uiState IDLE)
-   * - Toast is already shown in LogoMenuIcon before navigation
-   */
   user_logged_out: () => {
     return {
       uiState: 'IDLE',

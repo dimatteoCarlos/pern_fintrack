@@ -81,8 +81,15 @@ export default function AuthPage() {
  
   if(result.success){
  // ✅ Use returnToRef if exists for session_expired
-  const redirectPath = returnToRef.current ?? INITIAL_PAGE_ADDRESS;
+
+ //redirectPath to previous route before session expired. Is disabled now:
+  // const redirectPath = returnToRef.current ?? INITIAL_PAGE_ADDRESS;
+ 
+  //redirectPath to initial page - fixed
+  const redirectPath = INITIAL_PAGE_ADDRESS;
   navigateTo(redirectPath);
+
+  console.log("🚀 ~ handleSignInWithNavigation ~ redirectPath:", redirectPath)
 
  // ✅ Clean returnTo after navigation
   returnToRef.current = null;
