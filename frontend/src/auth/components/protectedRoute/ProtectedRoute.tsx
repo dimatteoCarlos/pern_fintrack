@@ -22,7 +22,7 @@
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import CoinSpinner from '../../../fintrack/loader/coin/CoinSpinner';
-import { AUTH_MODES } from '../../auth_constants/constants';
+import { AUTH_ROUTE } from '../../auth_constants/constants';
 
 //MAIN COMPONENT:🛡️ PROTECTED ROUTE
 const ProtectedRoute = () => {
@@ -42,7 +42,7 @@ const ProtectedRoute = () => {
   if (sessionExpired ) {
     return (
      <Navigate
-       to={AUTH_MODES.SIGN_IN || "/signin"}
+       to={AUTH_ROUTE}
        replace
        state={{
          authEvent: 'session_expired',
