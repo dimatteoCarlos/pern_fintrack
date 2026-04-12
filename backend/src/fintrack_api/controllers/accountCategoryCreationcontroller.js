@@ -96,7 +96,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       account_name,
       account_type_name
     );
-    console.log('🚀 ~ CATEGORY BUDGET ~ accountExist:', accountExist);
+    // console.log('🚀 ~ CATEGORY BUDGET ~ accountExist:', accountExist);
     //----------------------------------
     //get currency id from currency_code requested
     const currencyQuery = `SELECT * FROM currencies`;
@@ -278,10 +278,10 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       transaction_actual_date
     );
 
-    console.log(
-      '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
-      updatedCounterAccountInfo
-    );
+    // console.log(
+    //   '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
+    //   updatedCounterAccountInfo
+    // );
 
     //--- determine which account serves as a SOURCE OR DESTINATION account
     //category_budget_account should always be a destination account
@@ -324,7 +324,8 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     //-----------------------------
     //SUCCESS MESSAGE RESPONSE
     const message = `${account_name} account of type ${account_type_name} with number ${account_id} was successfully created `;
-    console.log('🚀 ~ createAccount ~ message:', pc.cyanBright(message));
+
+    // console.log('🚀 ~ createAccount ~ message:', pc.cyanBright(message));
 
     //---deliver user_id only once
     delete account_basic_data.user_id;

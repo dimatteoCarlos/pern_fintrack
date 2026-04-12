@@ -37,10 +37,10 @@ export const insertAccount = async (
     ],
   };
   try {
-   console.log(pc.green('inserAccount: '), account_name)
+   // console.log(pc.green('inserAccount: '), account_name)
     const accountResult = await db.query(insertQuery);
     const account_basic_data = accountResult.rows[0];
-    console.log("🚀 ~ account_basic_data:", accountResult.rows[0])
+    // console.log("🚀 ~ account_basic_data:", accountResult.rows[0])
     
     return {account_basic_data};
   } catch (error) {

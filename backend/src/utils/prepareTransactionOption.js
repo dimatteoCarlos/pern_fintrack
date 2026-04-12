@@ -4,7 +4,7 @@ export function prepareTransactionOption(
   destination_account_id,
   movement_type_id
 ) {
-  console.log('userId from prepare:', accountInfo.user_id);
+  // console.log('userId from prepare:', accountInfo.user_id);
 
   return {
     userId: accountInfo.user_id,

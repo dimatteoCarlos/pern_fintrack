@@ -129,15 +129,15 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
   try {
    const { type } = req.query; //bank| investment | income_source | category_budget | debtor | pocket_saving
    const userId = req.user.userId || (req.body.user ?? req.query.user);
-    console.log(
-      '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
-      userId,
-      req.query,
-      'Body',
-      req.body,
-      'type',
-      type
-    );
+    // console.log(
+    //   '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
+    //   userId,
+    //   req.query,
+    //   'Body',
+    //   req.body,
+    //   'type',
+    //   type
+    // );
     const accountType = type;
 
     if (!accountType || !userId) {
@@ -250,7 +250,7 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     }
 
     const data = accountTotalBalanceResult.rows[0];
-    console.log('datos from dashboardTotalBalanceAccountByType', data);
+    // console.log('data from dashboardTotalBalanceAccountByType', data);
 
     return RESPONSE(res, 200, successMsg, data);
   }
@@ -322,13 +322,13 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
     const userId =req.user.userId || (req.body.user ?? req.query.user);
     const accountType = req.body.type ?? req.query.type;
 
-    console.log(
-      '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
-      userId,
-      req.query,
-      req.body,
-      type
-    );
+    // console.log(
+    //   '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
+    //   userId,
+    //   req.query,
+    //   req.body,
+    //   type
+    // );
 
     if (!accountType || !userId) {
       return RESPONSE(res, 400, 'User ID and account TYPE are required');
@@ -516,12 +516,12 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   const endDate = new Date(end || today.toISOString().split('T')[0]);
 
   endDate.setHours(23,59,59,999)
-  console.log('f', startDate, endDate);
+  // console.log('date range', startDate, endDate);
 
-  console.log('Fechas usadas:', {
-  start: startDate.toISOString(),
-  end: endDate.toISOString(),
-});
+//   console.log('Used Dates:', {
+//   start: startDate.toISOString(),
+//   end: endDate.toISOString(),
+// });
 //----------------------------------------
 //later add a function to validate type and movement against the types
 //!account_type_name ||
@@ -832,7 +832,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   //-------------------------------
   try {
     const movements = await queryFn(queryModel.text, queryModel.values);
-    console.log('🚀 ~ dashboardMovementTransactions ~ result:', movements);
+    // console.log('🚀 ~ dashboardMovementTransactions ~ result:', movements);
 
     if (movements && movements?.length === 0) {
       

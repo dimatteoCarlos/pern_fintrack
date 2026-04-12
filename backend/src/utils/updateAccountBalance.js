@@ -3,15 +3,20 @@ import pc from 'picocolors';
 import { pool } from '../db/configDB.js';
 
 //------------------------------
-console.log(pc.bgMagentaBright('updateAccountBalance.js'))
+console.log(pc.magentaBright('File: updateAccountBalance.js', '\n'));
+console.log(
+  '\n',
+  pc.yellowBright('DATA BASE COMMENTS WILL BE IN SPANISH'),
+  '\n',
+);
 //------------------------------
 export const updateAccountBalance = async (
-  clientOrPool=null,
+  clientOrPool = null,
   newBalance,
   accountId,
-  transactionActualDate = new Date()
+  transactionActualDate = new Date(),
 ) => {
-  const db=clientOrPool || pool;
+  const db = clientOrPool || pool;
   const insertBalanceQuery = {
     text: `UPDATE user_accounts SET account_balance=$1, updated_at = $2 WHERE account_id = $3 RETURNING *`,
     values: [newBalance, transactionActualDate, accountId],

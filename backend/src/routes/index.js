@@ -5,7 +5,7 @@ import userRoutes from './userRoutes.js';
 import { authDetectClienttype } from '../middlewares/authDetectClienttype.js';
 
 const router = express.Router(); 
-console.log('index routes');
+console.log('File:indx.js', 'index routes');
 
 router.use('/auth', authDetectClienttype,authRoutes);
 
