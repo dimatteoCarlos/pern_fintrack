@@ -1,4 +1,4 @@
-# 📘 FinTrack Backend – Database Administration and Maintenance Guide
+## 📘 FinTrack Backend – Database Administration and Maintenance Guide
 
 This guide is dedicated **exclusively to the administration and maintenance of the FinTrack database**. Here you will find everything needed to manage the complete data lifecycle: from initial creation to production operation, including migrations, seeds, and security protocols.
 
@@ -52,8 +52,9 @@ createdb fintrack_dev && npm run db:migrate && SEED_BASE=true npm run db:seed
    - [Admin User](#-admin-user-bootstrap)
 5. [Environments](#-environments)
 6. [Security Protocol](#-security-protocol)
-7. [Useful Commands (Complete Reference)](#-useful-commands-complete-reference)
-8. [Troubleshooting](#-troubleshooting)
+7. [⚠️ WARNING TABLE: Destructive Operations](#️-warning-table-destructive-operations)
+8. [Useful Commands (Complete Reference)](#-useful-commands-complete-reference)
+9. [Troubleshooting](#-troubleshooting)
 
 ---
 
@@ -293,6 +294,84 @@ ALLOW_SEEDS=true
 
 ---
 
+## ⚠️ WARNING TABLE: Destructive Operations
+
+This table documents **operations that permanently modify or delete data**. Always verify your environment before executing.
+
+| # | Operation | Command | Destructive Level | Irreversible | Production Allowed | Precaution |
+|---|-----------|---------|-------------------|--------------|-------------------|------------|
+| **1** | **Drop Database** | `dropdb fintrack_dev --if-exists` | 🔴 FULL | ✅ Yes | ❌ No | Deletes ALL tables and data. No recovery. |
+| **2** | **Run Reset DB** | `node src/db/runResetDb.js` | 🔴 FULL | ✅ Yes | ❌ No | Drops schema, recreates tables, runs seeds. Complete wipe. |
+| **3** | **Drop Schema** | `DROP SCHEMA public CASCADE;` | 🔴 FULL | ✅ Yes | ❌ No | Removes all tables, functions, views. |
+| **4** | **Truncate Tables** | `TRUNCATE TABLE users CASCADE;` | 🟠 HIGH | ⚠️ Yes (no FK check) | ❌ No | Deletes all rows. Resets sequences. |
+| **5** | **Delete Records** | `DELETE FROM users WHERE id = 1;` | 🟡 MEDIUM | ⚠️ Yes (no backup) | ⚠️ With WHERE | Can delete critical admin users. |
+| **6** | **Run Migrations** | `npm run db:migrate` | 🟢 LOW | ❌ No | ✅ Yes | Safe. Only adds structure. |
+| **7** | **Run Base Seeds** | `SEED_BASE=true npm run db:seed` | 🟡 MEDIUM | ⚠️ Partial | ❌ No | Can duplicate catalog data if run twice. |
+| **8** | **Run Admin Seeds** | `SEED_ADMIN=true npm run db:seed` | 🟡 MEDIUM | ⚠️ Partial | ❌ Manual | Creates system admin. Checks existence first. |
+| **9** | **ALTER TABLE DROP COLUMN** | `ALTER TABLE users DROP COLUMN email;` | 🔴 FULL | ✅ Yes | ❌ No | Permanent column deletion. Data loss. |
+| **10** | **UPDATE without WHERE** | `UPDATE users SET role = 'admin';` | 🔴 FULL | ✅ Yes | ❌ No | Updates ALL rows. Privilege escalation risk. |
+
+### 🟢 Destructive Level Legend
+
+| Level | Color | Meaning | Example |
+|-------|-------|---------|---------|
+| **LOW** | 🟢 | Safe, reversible | Adding columns, running migrations |
+| **MEDIUM** | 🟡 | Potentially destructive, partially reversible | Deleting specific records, truncating tables |
+| **HIGH** | 🟠 | Very destructive, difficult to reverse | Truncate cascade, bulk deletes |
+| **FULL** | 🔴 | Completely destructive, irreversible | Drop database, drop schema, drop column |
+
+### ⚡ Pre-Run Checklist
+
+Before executing any **FULL** or **HIGH** destructive operation:
+
+- [ ] Verify `NODE_ENV` is NOT `production` (or understand the risks)
+- [ ] Create a database backup: `pg_dump fintrack_dev > backup_$(date +%Y%m%d_%H%M%S).sql`
+- [ ] Confirm the command with a second person (team environment)
+- [ ] Test on staging environment first
+- [ ] Have a rollback plan ready
+
+### 🛡️ Production Safety Rules
+
+| Rule | Description |
+|------|-------------|
+| **Rule 1** | Never run `runResetDb.js` in production |
+| **Rule 2** | Never run seeds automatically in production |
+| **Rule 3** | Always backup before destructive operations |
+| **Rule 4** | Use transactions for manual `DELETE`/`UPDATE` |
+| **Rule 5** | Keep `ALLOW_SEEDS=false` in production `.env` |
+
+### 🔐 Protection Mechanisms in Code
+
+```javascript
+// Example: runResetDb.js protection
+if (process.env.NODE_ENV === 'production') {
+  console.error('❌ This script cannot run in production!');
+  process.exit(1);
+}
+
+// Example: runSeeds.js protection  
+if (process.env.NODE_ENV === 'production' && process.env.ALLOW_SEEDS !== 'true') {
+  throw new Error('❌ Seeds are disabled in production');
+}
+
+// Example: Migration protection (PostgreSQL)
+BEGIN;
+  -- Your migration here
+COMMIT;  -- Only commit if successful
+-- ROLLBACK; -- Use if something went wrong
+```
+
+### 📝 Quick Reference: Safe vs Unsafe
+
+| ✅ SAFE to run anytime | ❌ NEVER run automatically | ⚠️ ONLY with caution |
+|----------------------|---------------------------|---------------------|
+| `npm run db:migrate` | `dropdb fintrack_dev` | `node src/db/runSeeds.js` |
+| `npm run dev` | `node src/db/runResetDb.js` | `DELETE FROM ...` (with WHERE) |
+| `psql -c "SELECT ..."` | `DROP SCHEMA public CASCADE` | `UPDATE ... SET ...` (with WHERE) |
+| View queries | `TRUNCATE TABLE ... CASCADE` | `ALTER TABLE ... DROP COLUMN` |
+
+---
+
 ## 🚀 Useful Commands (Complete Reference)
 
 ### Full Setup (Development)
@@ -465,6 +544,7 @@ postgres --version
 - In production, **only automatic migrations**
 - Keep your `.env` file out of version control
 - In Windows, use `&&` to chain commands and `set` for temporary environment variables
+- Refer to the **Warning Table** above before running any destructive operation
 
 ---
 
