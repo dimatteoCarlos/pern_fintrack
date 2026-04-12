@@ -107,7 +107,6 @@ export const ACCOUNT_TYPE_DEFAULT: DropdownOptionType[] = [
 export const ACCOUNT_DEFAULT: AccountListType[] = [
   {
     account_name: '',
-    // concept: 'balance',
     account_balance: 0,
     account_id: Infinity,
     currency_code: DEFAULT_CURRENCY,
