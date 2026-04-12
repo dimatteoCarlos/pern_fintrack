@@ -29,6 +29,8 @@ import {
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
 import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
+import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
+import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 // import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
 // import { useLocation } from 'react-router-dom';
@@ -272,6 +274,7 @@ Errores inesperados → Van al catch
           {/* <Link to='..' relative='path' className='iconLeftArrow'>
             <LeftArrowSvg />
           </Link> */}
+
           <div className='form__title'>{'New Category'}</div>
         </div>
         {/* Form Start */}
@@ -280,9 +283,13 @@ Errores inesperados → Van al catch
             <div className='input__box'>
               <label htmlFor='category' className='label forms__label'>
                 {'Category Name'}&nbsp;
-                <div className='validation__errMsg'>
+               <CharacterCounter
+                  value={categoryData.category}
+                  maxLength={NAME_MAX_LENGTHS.category_name}
+                /> &nbsp;
+                <span className='validation__errMsg'>
                   {validationMessages['category']}
-                </div>
+                </span>
               </label>
 
               <input
@@ -292,6 +299,7 @@ Errores inesperados → Van al catch
                 name={'category'}
                 onChange={inputHandler}
                 value={categoryData.category}
+                maxLength={NAME_MAX_LENGTHS.category_name}
                 // disabled={isFormDisabled}
               />
             </div>
@@ -300,6 +308,10 @@ Errores inesperados → Van al catch
             <div className='input__box'>
               <label htmlFor='subcategory' className='label forms__label'>
                 {'Subcategory'}&nbsp;
+               <CharacterCounter
+                  value={categoryData.subcategory!}
+                  maxLength={NAME_MAX_LENGTHS.subcategory}
+                /> &nbsp;
               </label>
               <div className='validation__errMsg'>
                 {validationMessages['subcategory']}
@@ -312,6 +324,7 @@ Errores inesperados → Van al catch
                 name={'subcategory'}
                 onChange={inputHandler}
                 value={categoryData.subcategory}
+                maxLength={NAME_MAX_LENGTHS.subcategory}
               />
             </div>
 
