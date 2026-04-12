@@ -1,3 +1,6 @@
+## ✅ Aquí está el README completo y corregido (solo UNA versión, sin duplicados):
+
+```markdown
 ## 📘 FinTrack Backend – Database Administration and Maintenance Guide
 
 This guide is dedicated **exclusively to the administration and maintenance of the FinTrack database**. Here you will find everything needed to manage the complete data lifecycle: from initial creation to production operation, including migrations, seeds, and security protocols.
@@ -8,35 +11,72 @@ This guide is dedicated **exclusively to the administration and maintenance of t
 
 ## 📊 Consolidated Summary: FinTrack Database Lifecycle
 
+## 📊 Consolidated Summary: FinTrack Database Lifecycle
+
 | # | Stage | Purpose | Windows (cmd) | Linux/Mac | Production? |
-|---|-------|---------|---------------|-----------|-------------|
-| **1** | **Create DB** | Clean database | `createdb fintrack_dev` | `createdb fintrack_dev` | ❌ No |
-| **2** | **Migrations** | Structure (tables, FKs) | `npm run db:migrate` | `npm run db:migrate` | ✅ Yes |
-| **3** | **Base Seeds** | Catalogs (currencies, roles) | `set SEED_BASE=true && npm run db:seed` | `SEED_BASE=true npm run db:seed` | ❌ No |
-| **4** | **Admin Seeds** | System user (bootstrap) | `set SEED_ADMIN=true && npm run db:seed` | `SEED_ADMIN=true npm run db:seed` | ❌ Manual |
-| **5** | **Verify** | Check data | `psql -U postgres -d fintrack_dev -c "SELECT * FROM users;"` | `psql -U postgres -d fintrack_dev -c "SELECT * FROM users;"` | ✅ Yes |
-| **6** | **Start App** | Launch server | `npm run dev` | `npm run dev` | `npm start` |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Create DB | Clean database | `createdb fintrack_dev` | `createdb fintrack_dev` | ❌ |
+| 2 | Migrations | Structure (tables, FKs) | `npm run db:migrate` | `npm run db:migrate` | ✅ |
+| 3 | Base Seeds | Catalogs (currencies, roles) | `node src/db/runSeeds.js base` | `node src/db/runSeeds.js base` | ❌ |
+| 4 | Admin Seeds | System user (bootstrap) | `node src/db/runSeeds.js admin` | `node src/db/runSeeds.js admin` | ❌ |
+| 5 | Verify | Check data | `psql -U postgres -d fintrack_dev -c "SELECT * FROM users;"` | `psql -U postgres -d fintrack_dev -c "SELECT * FROM users;"` | ✅ |
+| 6 | Start App | Launch server | `npm run dev` | `npm run dev` | ✅ |
+
+---
+
+## 🔄 Full Database Reset Sequence
+
+This sequence is necessary when you want to start from scratch, after a failed reset, or when migrations did not run correctly.
+
+### Step-by-Step Commands:
+
+| # | Command | Purpose |
+|:---:|:---|:---|
+| 1 | `dropdb fintrack_dev --if-exists` | Drop existing database |
+| 2 | `createdb fintrack_dev` | Create new database |
+| 3 | `npm run db:migrate` | Run migrations (creates all tables) |
+| 4 | `node src/db/runSeeds.js base` | Run base seeds (catalogs) |
+| 5 | `node src/db/runSeeds.js admin` | Run admin seed (creates system admin user) |
+| 6 | `npm run dev` | Start the application |
+
+### Quick Copy-Paste (Windows):
+
+```cmd
+dropdb fintrack_dev --if-exists && createdb fintrack_dev && npm run db:migrate && node src/db/runSeeds.js base && node src/db/runSeeds.js admin && npm run dev
+```
+
+### Quick Copy-Paste (Linux/Mac):
+
+```bash
+dropdb fintrack_dev --if-exists && createdb fintrack_dev && npm run db:migrate && node src/db/runSeeds.js base && node src/db/runSeeds.js admin && npm run dev
+```
+
+### Verification:
+
+```bash
+psql -U postgres -d fintrack_dev -c "SELECT id, email, role FROM users;"
+```
+
+### Default Admin Credentials:
+
+| Field | Value |
+|:---|:---|
+| **Email** | `system_admin@fintrack.local` |
+| **Password** | Check the seed file: `src/db/seeds/admin_001_system_admin_user.js` |
+
+> ⚠️ **Important:** The order of commands matters. Migrations must run before seeds.
+
+---
 
 ### 🔄 Quick Utility Commands
 
 | Operation | Windows (cmd) | Linux/Mac |
-|-----------|---------------|-----------|
+|:---|:---|:---|
 | **Full reset** | `dropdb fintrack_dev --if-exists && createdb fintrack_dev && npm run db:migrate` | `dropdb fintrack_dev --if-exists && createdb fintrack_dev && npm run db:migrate` |
-| **Combined seed** | `set SEED_BASE=true && set SEED_ADMIN=true && npm run db:seed` | `SEED_BASE=true SEED_ADMIN=true npm run db:seed` |
+| **Base seeds only** | `node src/db/runSeeds.js base` | `node src/db/runSeeds.js base` |
+| **Admin seed only** | `node src/db/runSeeds.js admin` | `node src/db/runSeeds.js admin` |
 | **View tables** | `psql -U postgres -d fintrack_dev -c "\dt"` | `psql -U postgres -d fintrack_dev -c "\dt"` |
 | **Connect to PSQL** | `psql -U postgres -d fintrack_dev` | `psql -U postgres -d fintrack_dev` |
-
-### ⚡ Quick Flow (Development)
-
-**Windows:**
-```cmd
-createdb fintrack_dev && npm run db:migrate && set SEED_BASE=true && npm run db:seed
-```
-
-**Linux/Mac:**
-```bash
-createdb fintrack_dev && npm run db:migrate && SEED_BASE=true npm run db:seed
-```
 
 ---
 
@@ -113,7 +153,6 @@ DATABASE_URI=postgresql://postgres:your_password@localhost:5432/fintrack_dev
 
 # Admin user (for bootstrap)
 SYSTEM_ADMIN_EMAIL=system_admin@fintrack.local
-SYSTEM_ADMIN_PASSWORD=a_very_secure_password_123
 
 # Seed control
 ALLOW_SEEDS=true
@@ -198,12 +237,12 @@ Seeds insert **contextual data**. They are divided into two types:
 
 **Windows (cmd):**
 ```cmd
-set SEED_BASE=true && npm run db:seed
+node src/db/runSeeds.js base
 ```
 
 **Linux/Mac:**
 ```bash
-SEED_BASE=true npm run db:seed
+node src/db/runSeeds.js base
 ```
 
 **Examples of base data:**
@@ -216,24 +255,12 @@ SEED_BASE=true npm run db:seed
 
 **Windows (cmd):**
 ```cmd
-set SEED_ADMIN=true && npm run db:seed
+node src/db/runSeeds.js admin
 ```
 
 **Linux/Mac:**
 ```bash
-SEED_ADMIN=true npm run db:seed
-```
-
-**Combined seed (multiple flags):**
-
-**Windows (cmd):**
-```cmd
-set SEED_BASE=true && set SEED_ADMIN=true && npm run db:seed
-```
-
-**Linux/Mac:**
-```bash
-SEED_BASE=true SEED_ADMIN=true npm run db:seed
+node src/db/runSeeds.js admin
 ```
 
 ---
@@ -244,7 +271,6 @@ The first administrator is created **once** through manual seed.
 
 **Requirements:**
 - `SYSTEM_ADMIN_EMAIL` defined in `.env`
-- `SYSTEM_ADMIN_PASSWORD` defined in `.env`
 
 **Characteristics:**
 - Password is hashed with `bcrypt` (never in plain text)
@@ -306,8 +332,8 @@ This table documents **operations that permanently modify or delete data**. Alwa
 | **4** | **Truncate Tables** | `TRUNCATE TABLE users CASCADE;` | 🟠 HIGH | ⚠️ Yes (no FK check) | ❌ No | Deletes all rows. Resets sequences. |
 | **5** | **Delete Records** | `DELETE FROM users WHERE id = 1;` | 🟡 MEDIUM | ⚠️ Yes (no backup) | ⚠️ With WHERE | Can delete critical admin users. |
 | **6** | **Run Migrations** | `npm run db:migrate` | 🟢 LOW | ❌ No | ✅ Yes | Safe. Only adds structure. |
-| **7** | **Run Base Seeds** | `SEED_BASE=true npm run db:seed` | 🟡 MEDIUM | ⚠️ Partial | ❌ No | Can duplicate catalog data if run twice. |
-| **8** | **Run Admin Seeds** | `SEED_ADMIN=true npm run db:seed` | 🟡 MEDIUM | ⚠️ Partial | ❌ Manual | Creates system admin. Checks existence first. |
+| **7** | **Run Base Seeds** | `node src/db/runSeeds.js base` | 🟡 MEDIUM | ⚠️ Partial | ❌ No | Can duplicate catalog data if run twice. |
+| **8** | **Run Admin Seeds** | `node src/db/runSeeds.js admin` | 🟡 MEDIUM | ⚠️ Partial | ❌ Manual | Creates system admin. Checks existence first. |
 | **9** | **ALTER TABLE DROP COLUMN** | `ALTER TABLE users DROP COLUMN email;` | 🔴 FULL | ✅ Yes | ❌ No | Permanent column deletion. Data loss. |
 | **10** | **UPDATE without WHERE** | `UPDATE users SET role = 'admin';` | 🔴 FULL | ✅ Yes | ❌ No | Updates ALL rows. Privilege escalation risk. |
 
@@ -386,10 +412,10 @@ createdb fintrack_dev
 npm run db:migrate
 
 :: 3. Base seeds
-set SEED_BASE=true && npm run db:seed
+node src/db/runSeeds.js base
 
 :: 4. Admin (optional)
-set SEED_ADMIN=true && npm run db:seed
+node src/db/runSeeds.js admin
 
 :: 5. Start application
 npm run dev
@@ -405,10 +431,10 @@ createdb fintrack_dev
 npm run db:migrate
 
 # 3. Base seeds
-SEED_BASE=true npm run db:seed
+node src/db/runSeeds.js base
 
 # 4. Admin (optional)
-SEED_ADMIN=true npm run db:seed
+node src/db/runSeeds.js admin
 
 # 5. Start application
 npm run dev
@@ -487,6 +513,16 @@ echo $ALLOW_SEEDS      # Linux/Mac
 psql -U postgres -d fintrack_dev -c "SELECT * FROM migrations;"
 ```
 
+### Error: "relation 'users' does not exist"
+
+**Solution:** Run migrations first, then seeds:
+
+```cmd
+npm run db:migrate
+node src/db/runSeeds.js base
+node src/db/runSeeds.js admin
+```
+
 ### PostgreSQL authentication error
 
 **Windows (cmd):**
@@ -521,13 +557,11 @@ postgres --version
 └────────┬────────┘
          ↓
 ┌─────────────────┐
-│   Base Seeds    │  Windows: set SEED_BASE=true && npm run db:seed
-│                 │  Linux/Mac: SEED_BASE=true npm run db:seed
+│   Base Seeds    │  node src/db/runSeeds.js base
 └────────┬────────┘
          ↓
 ┌─────────────────┐
-│   Admin Seeds   │  Windows: set SEED_ADMIN=true && npm run db:seed
-│                 │  Linux/Mac: SEED_ADMIN=true npm run db:seed
+│   Admin Seeds   │  node src/db/runSeeds.js admin
 └────────┬────────┘
          ↓
 ┌─────────────────┐
@@ -549,3 +583,6 @@ postgres --version
 ---
 
 **finTrack** - Smart Financial Management © 2024
+```
+
+---

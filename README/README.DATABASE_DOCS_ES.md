@@ -5,6 +5,26 @@ Esta guía está dedicada **exclusivamente a la administración y mantenimiento 
 > ⚠️ **Nota**: Esta documentación cubre únicamente aspectos de base de datos. Para otros aspectos del sistema (API, autenticación, frontend), consulta la documentación específica.
 
 ---
+## 🔄 Reinicio Completo de la Base de Datos
+
+Esta secuencia es necesaria cuando deseas empezar desde cero, después de un reset, o cuando las migraciones no se ejecutaron correctamente.
+
+### Comandos paso a paso:
+
+| # | Comando | Propósito |
+|---|---------|-----------|
+| 1 | `dropdb fintrack_dev --if-exists` | Eliminar base de datos existente |
+| 2 | `createdb fintrack_dev` | Crear base de datos nueva |
+| 3 | `npm run db:migrate` | Ejecutar migraciones (crea todas las tablas) |
+| 4 | `node src/db/runSeeds.js base` | Ejecutar seeds base (catálogos) |
+| 5 | `node src/db/runSeeds.js admin` | Ejecutar seed admin (crea usuario administrador) |
+| 6 | `npm run dev` | Iniciar la aplicación |
+
+### Verificación:
+
+```bash
+psql -U postgres -d fintrack_dev -c "SELECT id, email, role FROM users;"
+---
 
 ## 📊 Resumen Consolidado: Ciclo de Vida de Base de Datos FinTrack
 
