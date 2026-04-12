@@ -44,8 +44,8 @@ export const createToken = (id, role) => {
   }
 
 const expiresIn = process.env.NODE_ENV === 'development' 
-    ? '1m'  // ✅  in development
-    : '1m'; // ✅ 3 in production
+    ? '1h'  // ✅  in development
+    : '1h'; // ✅ 3 in production
 
 // Consistencia: expiresIn en el token y maxAge en la cookie deben estar sincronizados
   return jwt.sign(
@@ -75,8 +75,8 @@ export const createRefreshToken = (id) => {
   }
 //refresh token expiration time
   const expiresIn = process.env.NODE_ENV === 'development'
-    ? '2m'// ✅ desarrollo
-    : '2m'; // ✅ 7 días en producción
+    ? '8.9d'// ✅ 8 days
+    : '8.9d'; // ✅ 8 days effective at start, considering a limit life remaining o 10%.(see remainingTime in authRefreshToken.)
 
   return jwt.sign(
     { userId: id,
@@ -141,7 +141,7 @@ export const rotateRefreshToken = async (oldToken, userId, req) => {
     await client.query('BEGIN');
 //FUNCTIONS DECLARATION
 // 1. 📛 REVOKE OLD TOKEN
-console.log('aqui deberia estar revocando el refresh token viejo', oldToken)
+// console.log('old refresh token', oldToken);
 
     const revokeResult = await client.query(
       `UPDATE refresh_tokens 

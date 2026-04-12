@@ -69,7 +69,7 @@ export const authRefreshToken = async (req, res, next) => {
     // ✅ GENERATE NEW ACCESS TOKEN
     const newAccessToken = createToken(user.user_id, user.user_role_name);
 
-    // ✅ 6.VERIFY NEED OF ROTATION (at 25% remaining life)
+    // ✅ 6.VERIFY NEED OF ROTATION (at 10% remaining life)
     const currentRefreshTokenExpiry = decoded.exp * 1000;
     const now = Date.now();
     const remainingTime = currentRefreshTokenExpiry - now;
