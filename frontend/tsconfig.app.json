@@ -32,10 +32,19 @@
       // "general_components/*": ["src/general_components/*"] // y así sucesivamente
     }
   },
+  "exclude": [
+    "node_modules",
+    "archived",
+    "dist",
+    "build",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ],
 
   "include": [
     "src", // Asegúrate de incluir la carpeta src
-    "src/fintrack/types/svg.d.ts", // Incluye el archivo de definiciones si está en una carpeta específica
-    "archived/archives"
+    "src/fintrack/types/svg.d.ts",
   ]
 }

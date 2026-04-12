@@ -38,7 +38,7 @@ import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
 
-import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
+import { NAME_MAX_LENGTHS } from '../../../../../archived/libreria/validationFiles/inputConstraints/nameMaxLengths.ts';
 
 // import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
 //------------------------

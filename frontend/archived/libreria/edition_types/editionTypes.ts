@@ -1,6 +1,6 @@
 //frontend\src\edition\types\editionTypes.ts
 
-import { CategoryBudgetAccountListType } from '../../types/responseApiTypes';
+import { CategoryBudgetAccountListType } from '../../../src/fintrack/types/responseApiTypes';
 
 // 🎯 EXTENDED TYPES FOR CATEGORY BUDGET ACCOUNTS
 // 🧾 ENRICHED CATEGORY ACCOUNT TYPE

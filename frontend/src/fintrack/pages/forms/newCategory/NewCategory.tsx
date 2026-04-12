@@ -29,7 +29,7 @@ import {
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
 import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
-import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
+import { NAME_MAX_LENGTHS } from '../../../../../archived/libreria/validationFiles/inputConstraints/nameMaxLengths.ts';
 import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 // import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
@@ -283,10 +283,11 @@ Errores inesperados → Van al catch
             <div className='input__box'>
               <label htmlFor='category' className='label forms__label'>
                 {'Category Name'}&nbsp;
-               <CharacterCounter
+                <CharacterCounter
                   value={categoryData.category}
                   maxLength={NAME_MAX_LENGTHS.category_name}
-                /> &nbsp;
+                />{' '}
+                &nbsp;
                 <span className='validation__errMsg'>
                   {validationMessages['category']}
                 </span>
@@ -308,10 +309,11 @@ Errores inesperados → Van al catch
             <div className='input__box'>
               <label htmlFor='subcategory' className='label forms__label'>
                 {'Subcategory'}&nbsp;
-               <CharacterCounter
+                <CharacterCounter
                   value={categoryData.subcategory!}
                   maxLength={NAME_MAX_LENGTHS.subcategory}
-                /> &nbsp;
+                />{' '}
+                &nbsp;
               </label>
               <div className='validation__errMsg'>
                 {validationMessages['subcategory']}

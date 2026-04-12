@@ -1,6 +1,6 @@
 // frontend/src/auth/hooks/useSuccessAutoClose.ts
 
-import { useAutoClose } from '../../fintrack/hooks/useAutoClose';
+import { useAutoClose } from './useAutoClose';
 
 //frontend/src/auth/hooks/useAutoClose.ts
 export const useSuccessAutoClose = (

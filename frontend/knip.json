@@ -1,0 +1,6 @@
+{
+  "ignore": ["archived/**", "node_modules/**", "dist/**", "build/**"],
+  "entry": ["src/main.tsx", "src/App.tsx"],
+  "project": ["src/**/*.ts", "src/**/*.tsx"]
+}
+

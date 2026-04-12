@@ -27,7 +27,7 @@ import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
 // 🏷️ ENPOINTS
 import { url_create_pocket_saving_account } from '../../../../endpoints.ts';
-import { NAME_MAX_LENGTHS } from '../../../validations/inputConstraints/nameMaxLengths.ts';
+import { NAME_MAX_LENGTHS } from '../../../../../archived/libreria/validationFiles/inputConstraints/nameMaxLengths.ts';
 import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 // 📋 TYPE DEFINITIONS

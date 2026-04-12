@@ -1,0 +1,303 @@
+{
+  "timestamp": "2026-04-12T18:44:02.178Z",
+  "summary": {
+    "total": 24,
+    "exists": 19,
+    "notFound": 5,
+    "used": 18,
+    "unused": 1
+  },
+  "results": [
+    {
+      "file": "svg.d.ts",
+      "exists": true,
+      "isUsed": false,
+      "recommendation": "SAFE_TO_ARCHIVE",
+      "reasons": [
+        "No se encontró ninguna referencia a este archivo"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": false
+      }
+    },
+    {
+      "file": "src/tests/Tests.tsx",
+      "exists": false,
+      "recommendation": "NOT_FOUND"
+    },
+    {
+      "file": "src/assets/auth/GoogleLogo.tsx",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/auth/auth_utils/navigationHelper.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/auth/auth_utils/transformFromApiToFormErrors.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/auth/hooks/useCallbackDebounce.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/auth/hooks/useSuccessAutoClose.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/hooks/useAutoClose.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/hooks/useClickOutside.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/hooks/useEscapeKey.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/hooks/useFetchPost.tsx",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/auth/validation/hook/useAuthValidation.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/editionAndDeletion/hooks/useAutoClose.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/editionAndDeletion/hooks/useEscapeKey.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/editionAndDeletion/types/editionTypes.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/editionAndDeletion/utils/debounce.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/components/summaryDetailBox/SummaryDetailBox.tsx",
+      "exists": false,
+      "recommendation": "NOT_FOUND"
+    },
+    {
+      "file": "src/fintrack/loader/spin/SpinLoader.tsx",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/pages/error/NotFoundPage.tsx",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/validations/inputConstraints/inputConstraintsTypes.ts",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/pages/overview/components/SeeMore.tsx",
+      "exists": true,
+      "isUsed": true,
+      "recommendation": "REVIEW",
+      "reasons": [
+        "El nombre del archivo aparece en otro lugar"
+      ],
+      "metrics": {
+        "importUsage": false,
+        "exportUsage": false,
+        "directUsage": true
+      }
+    },
+    {
+      "file": "src/fintrack/components/languageSelector/LanguageSelector.tsx",
+      "exists": false,
+      "recommendation": "NOT_FOUND"
+    },
+    {
+      "file": "src/fintrack/account/UIComponents/loadingReportUI/LoadingUI.tsx",
+      "exists": false,
+      "recommendation": "NOT_FOUND"
+    },
+    {
+      "file": "src/fintrack/components/successMessageUI/SuccessMessageUI.tsx",
+      "exists": false,
+      "recommendation": "NOT_FOUND"
+    }
+  ]
+}

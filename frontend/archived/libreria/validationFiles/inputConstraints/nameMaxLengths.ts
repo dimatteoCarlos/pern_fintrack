@@ -10,7 +10,7 @@
 export const NAME_MAX_LENGTHS = {
   /** Category name (10 chars) */
   category_name: 11,
-  /** Subcategory name (10 chars) */
+  /** Subcategory name (10 chars)*/
   subcategory: 10,
   /** Note/description field (90 chars) */
   note: 90,

@@ -11,14 +11,18 @@ import { z } from 'zod';
 // =======================================
 // 📝 IMPOR GENERIC VALIDATION HOOK AND SCHEMAS
 // =======================================
-import useFieldValidation from './useFieldValidation';
-import { signInSchema, signUpSchema } from '../zod_schemas/authSchemas';
+import useFieldValidation from '../../../src/auth/validation/hook/useFieldValidation';
+import {
+  signInSchema,
+  signUpSchema,
+} from '../../../src/auth/validation/zod_schemas/authSchemas';
 
 // ===========================
 // 🎯 IMPORT TYPES
 // ===========================
-export type FormErrorsType<TFieldName extends string> = 
-  Partial<Record<TFieldName, string>> & { form?: string };
+export type FormErrorsType<TFieldName extends string> = Partial<
+  Record<TFieldName, string>
+> & { form?: string };
 
 export type ValidateFieldResultType = {
   isValid: boolean;
@@ -35,12 +39,12 @@ export type ValidateAllResultType<TFormShape> = {
 export type ValidateFieldFnType<TFormShape> = (
   fieldName: keyof TFormShape,
   value: string,
-  formData?: Partial<TFormShape>
+  formData?: Partial<TFormShape>,
 ) => ValidateFieldResultType;
 
 export type ValidateAllFnType<TFormShape> = (
   formData: Partial<TFormShape>,
-  touchedFields?: Set<keyof TFormShape>
+  touchedFields?: Set<keyof TFormShape>,
 ) => ValidateAllResultType<TFormShape>;
 
 type UseAuthValidationParams = {
@@ -52,16 +56,15 @@ type UseAuthValidationParams = {
 // ===============================
 
 export const useAuthValidation = ({ mode }: UseAuthValidationParams) => {
- // Select schema based on mode
+  // Select schema based on mode
   const schema = mode === 'signin' ? signInSchema : signUpSchema;
   type FormShape = z.infer<typeof schema>;
   type FieldNames = keyof FormShape & string;
 
-  const { validateField: baseValidateField, validateAll: baseValidateAll } = 
-   useFieldValidation<FormShape>(
-     schema as unknown as z.ZodType<FormShape>,
-     { validateOnlyTouched: true }
-    );
+  const { validateField: baseValidateField, validateAll: baseValidateAll } =
+    useFieldValidation<FormShape>(schema as unknown as z.ZodType<FormShape>, {
+      validateOnlyTouched: true,
+    });
 
   /**
    * Validate a single field in real-time
@@ -75,7 +78,7 @@ export const useAuthValidation = ({ mode }: UseAuthValidationParams) => {
         error: result.error,
       };
     },
-    [baseValidateField]
+    [baseValidateField],
   );
 
   /**
@@ -84,9 +87,9 @@ export const useAuthValidation = ({ mode }: UseAuthValidationParams) => {
   const validateAll = useCallback(
     (formData: Partial<FormShape>, touchedFields?: Set<FieldNames>) => {
       const result = baseValidateAll(formData, touchedFields);
-      
+
       const errors = {} as FormErrorsType<FieldNames>;
-      
+
       Object.entries(result.errors).forEach(([field, message]) => {
         if (field && message) {
           (errors as Record<FieldNames, string>)[field as FieldNames] = message;
@@ -103,7 +106,7 @@ export const useAuthValidation = ({ mode }: UseAuthValidationParams) => {
         errors,
       };
     },
-    [baseValidateAll]
+    [baseValidateAll],
   );
 
   return {
@@ -125,12 +128,12 @@ export type AuthValidationResultType = {
 export type AuthValidationFieldFnType<T> = (
   fieldName: keyof T,
   value: string,
-  formData?: Partial<T>
+  formData?: Partial<T>,
 ) => AuthValidationResultType;
 
 export type AuthValidationAllFnType<T> = (
   formData: Partial<T>,
-  touchedFields?: Set<keyof T>
+  touchedFields?: Set<keyof T>,
 ) => {
   isValid: boolean;
   errors: FormErrorsType<keyof T & string>;
