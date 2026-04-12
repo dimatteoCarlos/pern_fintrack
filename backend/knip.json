@@ -1,0 +1,9 @@
+{
+  "entry": ["src/index.js"],
+  "project": ["src/**/*.js"],
+  "ignore": [
+    "src/db/docs/**",
+    "src/db/old_run_time_migrations/**",
+    "src/db/seeds/**"
+  ]
+}

@@ -3,7 +3,7 @@ import express from 'express';
 import { signUpUser, signInUser, signOutUser, validateSession } from '../controllers/authController.js';
 import { authRefreshToken } from '../controllers/authRefreshToken.js';
 import { verifyToken } from '../middlewares/authMiddleware.js';
-import { authLimiter, globalLimiter } from '../middlewares/rateLimiter.js';
+import { authLimiter } from '../middlewares/rateLimiter.js';
 
 const router = express.Router();
 
@@ -25,22 +25,4 @@ router.get('/validate-session', verifyToken, validateSession);
 
 export default router;
 
-//when ready, include into the router
-
-//--------------------------------------
-// Ruta de Google OAuth: redirige a Google para la autenticación
-// router.get(
-//   '/google',
-//   passport.authenticate('google', { scope: ['profile', 'email'] })
-// );
-
-// Callback de Google OAuth: recibirá el código de Google y autenticará al usuario
-// router.get(
-//   '/google/callback',
-//   passport.authenticate('google', { failureRedirect: '/login' }),
-//   (req, res) => {
-//     const token = createToken(req.user.user_id, req.user.user_role_name);
-//     res.cookie('access_token', token, { httpOnly: true }).redirect('/');
-//   }
-// );
 //------------------------
