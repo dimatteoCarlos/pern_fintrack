@@ -43,7 +43,7 @@ import {
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
 import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
-import { NAME_MAX_LENGTHS } from '../../../../../archived/libreria/validationFiles/inputConstraints/nameMaxLengths.ts';
+import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 //-----default 'till decide how to handle multi currencies

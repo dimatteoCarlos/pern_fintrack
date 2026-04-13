@@ -23,7 +23,9 @@ import { capitalize } from '../../helpers/functions';
 import { isCategoryBudgetAccount } from '../../editionAndDeletion/utils/categoryBudgetCalculations';
 //---
 import './styles/accountingDashboard-styles.css';
-// import AccountingSkeleton from '../../edition/components/skeleton/AccountingSkeleton'
+
+//--------------------------------
+
 //--------------------------------
 // ACCOUNT TYPE CONFIGURATION
 const ACCOUNT_TYPE_DATA = {
@@ -64,15 +66,15 @@ const groupAccountsBytype = (
       ? (account.account_type_name as AccountType)
       : 'other';
 
-    if (!groups[accountType]) {
-      groups[accountType] = [];
-    }
+    // if (!groups[accountType]) {
+    //   groups[accountType] = [];
+    // }
+    // groups[accountType] = [...(groups[accountType] ||= []), account];
 
-    groups[accountType] = [...groups[accountType], account];
+    (groups[accountType] ||= []).push(account);
+
   });
-  //  if(groups['other']){
-  //   console.log('check other accounts', groceriesgroups['other'])
-  //   }
+
   return groups;
 };
 //============================
@@ -88,7 +90,7 @@ const AccountingDashboard = () => {
   const previousRoute = location.pathname; // this works as a previous route to account detail view, edit and delete
   // -----------------------------
   // console.log('location', {location},'previousRoute', {previousRoute},'state', location.state, 'originRoute', location.state?.originRoute)
-  //  const user = import.meta.env.VITE_USER_ID ;
+ 
   // -----------------------------
   // 🔄 FETCHING - ACCOUNTS LIST
   //get all basic info accounts
@@ -189,7 +191,6 @@ const AccountingDashboard = () => {
     if (!apiData?.data.accountList.length) {
       return {};
     }
-
     return groupAccountsBytype(apiData?.data?.accountList);
   }, [apiData?.data.accountList]);
   //=================================
@@ -210,12 +211,12 @@ const AccountingDashboard = () => {
 
     showToast(`Menu opened for ${account.account_name}`, 'info');
     //----------
-    console.log(
-      'Menu clicked for account:',
-      account.account_name,
-      'previousRoute:',
-      previousRoute,
-    );
+    // console.log(
+    //   'Menu clicked for account:',
+    //   account.account_name,
+    //   'previousRoute:',
+    //   previousRoute,
+    // );
   };
   //----------
   // 🆕 CLOSE MENU FUNCTION
@@ -293,10 +294,10 @@ const AccountingDashboard = () => {
       },
     });
 
-    showToast(
-      `Delete functionality for ${account.account_name} will be implemented soon!`,
-      'warning',
-    );
+    // showToast(
+    //   `Delete functionality for ${account.account_name} will be implemented soon!`,
+    //   'warning',
+    // );
     // console.log('Delete account:', account)
   };
 

@@ -30,3 +30,5 @@ dist-ssr
 .netlify
 
 .vercel
+
+.git/cursor

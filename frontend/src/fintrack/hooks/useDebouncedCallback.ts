@@ -31,7 +31,7 @@ export function useDebouncedCallback<F extends (...args:any[])=>void>(callback:F
     };
   }, [debouncedCallback]);//re-renders
 
-  return debouncedCallback
+  return debouncedCallback as unknown as F
 }
 /*ReturnType Obtain the return type of a function type,es una utilidad de TypeScript. Toma un tipo de función como argumento y devuelve el tipo de lo que esa función retorna. A menudo verás NodeJS.Timeout o number directamente
 useRef, useRef returns a mutable ref object whose .current property is initialized to the passed argument (initialValue). The returned object will persist for the full lifetime of the component.

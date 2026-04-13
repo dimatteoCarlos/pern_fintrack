@@ -29,7 +29,7 @@ import {
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
 import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
-import { NAME_MAX_LENGTHS } from '../../../../../archived/libreria/validationFiles/inputConstraints/nameMaxLengths.ts';
+import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
 // import PlusSignSvg from '../../../assets/PlusSignSvg.svg';

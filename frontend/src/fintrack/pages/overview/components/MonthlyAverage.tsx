@@ -66,8 +66,11 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
         },
       ];
     }
+
     //convert movement-currency object to an array of DataToRenderType
-    return Object.entries(data[movement]).map(([currency, financialDatum]) => {
+    const movementData = data[movement];
+    if (!movementData) return [];
+    return Object.entries(movementData).map(([currency, financialDatum]) => {
       const incomeFactor = movement === 'income' ? -1 : 1;
       return {
         amount: incomeFactor * (financialDatum?.monthlyAverage ?? 0),
