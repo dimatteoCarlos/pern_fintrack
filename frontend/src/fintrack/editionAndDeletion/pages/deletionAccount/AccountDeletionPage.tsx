@@ -343,3 +343,5 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
     </div>
   );
 };
+
+export default AccountDeletionPage
