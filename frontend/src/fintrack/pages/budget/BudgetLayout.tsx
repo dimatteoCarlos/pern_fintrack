@@ -1,22 +1,18 @@
-//DebtsLayout.tsx
+//frontend\src\fintrack\pages\budget\BudgetLayout.tsx
 import { useEffect, useMemo, useState } from 'react';
 import { url_get_total_account_balance_by_type } from '../../../endpoints.ts';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import { useFetch } from '../../hooks/useFetch.ts';
 import { BalanceCategoryRespType } from '../../types/responseApiTypes.ts';
-import Budget from './Budget.tsx';
 import BudgetBigBoxResult from './components/BudgetBigBoxResult.tsx';
 import './styles/budget-styles.css';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
+import { Outlet } from 'react-router-dom';
 
 function BudgetLayout() {
-  // console.log('')
-  //temporary values------------
-  const userId = import.meta.env.VITE_USER_ID;
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const budgetUrl = `${url_get_total_account_balance_by_type}?type=category_budget&user=${userId}`;
+  const budgetUrl = `${url_get_total_account_balance_by_type}?type=category_budget`;
 
   const { apiData, isLoading, error } =
     useFetch<BalanceCategoryRespType>(budgetUrl);
@@ -90,7 +86,7 @@ function BudgetLayout() {
             {errorMessage}
           </p>
         )}
-        <Budget />
+        <Outlet />
       </div>
     </>
   );
