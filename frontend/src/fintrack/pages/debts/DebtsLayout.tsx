@@ -6,9 +6,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useFetch } from '../../hooks/useFetch.ts';
 import { DebtorRespType } from '../../types/responseApiTypes.ts';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
-import { Outlet } from 'react-router-dom';
-// import Debtors from './Debtors.tsx';
-// import './styles/debts-styles.css';
+import Debtors from './Debtors.tsx';
+import './styles/debts-styles.css';
 
 //default values------------
 const defaultCurrency = DEFAULT_CURRENCY;
@@ -126,7 +125,7 @@ function DebtsLayout() {
           {errorMessage}
         </p>
       )}
-      <Outlet />
+      <Debtors />
     </div>
   );
 }
