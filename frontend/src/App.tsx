@@ -1,7 +1,7 @@
-// frontend/src/App.tsx
+// frontend/src/App
 
 // 🚀 THIRD-PARTY IMPORTS
-import { lazy, Suspense} from 'react';
+import React, { lazy, Suspense } from 'react';
 import {
   createBrowserRouter,
   Navigate,
@@ -11,64 +11,90 @@ import { Slide, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // 🛡️ AUTHENTICATION & PROTECTION
-import ProtectedRoute from './auth/components/protectedRoute/ProtectedRoute.tsx';
-import AuthPage from './auth/components/authPage/AuthPage.tsx';
+import ProtectedRoute from './auth/components/protectedRoute/ProtectedRoute';
+import AuthPage from './auth/components/authPage/AuthPage';
 
 // 🏗️ LAYOUT COMPONENTS (Load immediately - core structure)
-import Layout from './fintrack/pages/layout/Layout.tsx';
-import TrackerLayout from './fintrack/pages/tracker/TrackerLayout.tsx';
+import Layout from './fintrack/pages/layout/Layout';
+import TrackerLayout from './fintrack/pages/tracker/TrackerLayout';
 
 // 📊 TRACKER PAGES (Load immediately - main pages)
-import Expense from './fintrack/pages/tracker/expense/Expense.tsx';
-import Income from './fintrack/pages/tracker/income/Income.tsx';
-import Transfer from './fintrack/pages/tracker/transfer/Transfer.tsx';
-import Debts from './fintrack/pages/tracker/debts/Debts.tsx';
-import PnL from './fintrack/pages/tracker/profitNloss/PnL.tsx';
+import Expense from './fintrack/pages/tracker/expense/Expense';
+import Income from './fintrack/pages/tracker/income/Income';
+import Transfer from './fintrack/pages/tracker/transfer/Transfer';
+import Debts from './fintrack/pages/tracker/debts/Debts';
+import PnL from './fintrack/pages/tracker/profitNloss/PnL';
 
 // 💰 BUDGET & DEBT PAGES
 //(Load immediately - structure)
-import BudgetLayout from './fintrack/pages/budget/BudgetLayout.tsx';
-import DebtsLayout from './fintrack/pages/debts/DebtsLayout.tsx';
+import BudgetLayout from './fintrack/pages/budget/BudgetLayout';
+import DebtsLayout from './fintrack/pages/debts/DebtsLayout';
 
 // These components are loaded only when the route is accessed
-const Budget = lazy(()=>import ('./fintrack/pages/budget/Budget.tsx'));
-const Debtors = lazy(()=>import ('./fintrack/pages/debts/Debtors.tsx'));
+const Budget = lazy(() => import('./fintrack/pages/budget/Budget'));
+const Debtors = lazy(() => import('./fintrack/pages/debts/Debtors'));
 
 // 👁️ OVERVIEW & ACCOUNTING PAGES
-import OverviewLayout from './fintrack/pages/overview/OverviewLayout.tsx';//(Load immediately - structure)
+import OverviewLayout from './fintrack/pages/overview/OverviewLayout'; //(Load immediately - structure)
 
 // ✅ Overview page - loads when user navigates to /fintrack/overview
-const Overview = lazy(()=>import ('./fintrack/pages/overview/Overview.tsx'));
+const Overview = lazy(() => import('./fintrack/pages/overview/Overview'));
 
 // ✅ Accounting Dashboard - loads when user navigates to /fintrack/tracker/accounting
-const AccountingDashboard = lazy(()=>import ('./fintrack/pages/accountingDashboard/AccountingDashboard.tsx'));
+const AccountingDashboard = lazy(
+  () => import('./fintrack/pages/accountingDashboard/AccountingDashboard'),
+);
 
 // 📝 FORM PAGES - CREATION
 // (used infrequently)
-const NewCategory = lazy(()=>import ('./fintrack/pages/forms/newCategory/NewCategory.tsx'));
-const NewPocket = lazy(()=>import ('./fintrack/pages/forms/newPocket/NewPocket.tsx'));
-const NewProfile = lazy(()=>import ('./fintrack/pages/forms/newProfile/NewProfile.tsx'));
-const NewAccount = lazy(()=>import ('./fintrack/pages/forms/newAccount/NewAccount.tsx'));
+const NewCategory = lazy(
+  () => import('./fintrack/pages/forms/newCategory/NewCategory'),
+);
+const NewPocket = lazy(
+  () => import('./fintrack/pages/forms/newPocket/NewPocket'),
+);
+const NewProfile = lazy(
+  () => import('./fintrack/pages/forms/newProfile/NewProfile'),
+);
+const NewAccount = lazy(
+  () => import('./fintrack/pages/forms/newAccount/NewAccount'),
+);
 
 // 🔍 FORM PAGES - DETAIL VIEWS
 // ✅ Detail view pages (load on demand when user clicks on an item)
-const AccountDetail = lazy(()=>import ('./fintrack/pages/forms/accountDetail/AccountDetail.tsx'));
-const DebtorDetail = lazy(()=>import ('./fintrack/pages/forms/debtorDetail/DebtorDetail.tsx'));
-const PocketDetail = lazy(()=>import ('./fintrack/pages/forms/pocketDetail/PocketDetail.tsx'));
-const CategoryAccountList = lazy(()=>import ('./fintrack/pages/forms/categoryDetail/CategoryAccountList.tsx'));
-const CategoryDetail = lazy(()=>import ('./fintrack/pages/forms/categoryDetail/CategoryDetail.tsx'));
+const AccountDetail = lazy(
+  () => import('./fintrack/pages/forms/accountDetail/AccountDetail'),
+);
+const DebtorDetail = lazy(
+  () => import('./fintrack/pages/forms/debtorDetail/DebtorDetail'),
+);
+const PocketDetail = lazy(
+  () => import('./fintrack/pages/forms/pocketDetail/PocketDetail'),
+);
+const CategoryAccountList = lazy(
+  () => import('./fintrack/pages/forms/categoryDetail/CategoryAccountList'),
+);
+const CategoryDetail = lazy(
+  () => import('./fintrack/pages/forms/categoryDetail/CategoryDetail'),
+);
 
 //🚀 ACTIONS FOR ACCOUNT EDITION/DELETION
 //dition and deletion pages (used occasionally)
-const EditAccount = lazy(()=>import ('./fintrack/editionAndDeletion/pages/editionAccount/EditAccount.tsx'));
+const EditAccount = lazy(
+  () =>
+    import('./fintrack/editionAndDeletion/pages/editionAccount/EditAccount'),
+);
 
-const AccountDeletionPage = lazy(()=>import ('./fintrack/editionAndDeletion/pages/deletionAccount/AccountDeletionPage.tsx'));
+const AccountDeletionPage = lazy(
+  () =>
+    import('./fintrack/editionAndDeletion/pages/deletionAccount/AccountDeletionPage'),
+);
 
 // ❌ ERROR HANDLING
-import ErrorPage from './fintrack/pages/error/ErrorPage.tsx';
-// import TestAuthStorage from './tests/Tests.tsx';
+import ErrorPage from './fintrack/pages/error/ErrorPage';
+// import TestAuthStorage from './tests/Tests';
 
-import { AUTH_ROUTE } from './auth/auth_constants/constants.ts';
+import { AUTH_ROUTE } from './auth/auth_constants/constants';
 
 // ==========================================
 // LOADER COMPONENT
@@ -77,10 +103,10 @@ import { AUTH_ROUTE } from './auth/auth_constants/constants.ts';
 // Uses CircleLoader from existing loader components
 // ==========================================
 
-import CircleLoader from './fintrack/loader/circleLoader/CircleLoader.tsx';
+import CircleLoader from './fintrack/loader/circleLoader/CircleLoader';
 
 const PageLoader = () => (
-  <div className="flex justify-center items-center min-h-screen">
+  <div className='flex justify-center items-center min-h-screen'>
     <CircleLoader />
   </div>
 );
@@ -160,7 +186,16 @@ function App() {
             {
               path: 'budget',
               element: <BudgetLayout />,
-              children: [{ index: true, element:(<LazyRoute> <Budget /></LazyRoute> )}],
+              children: [
+                {
+                  index: true,
+                  element: (
+                    <LazyRoute>
+                      <Budget />
+                    </LazyRoute>
+                  ),
+                },
+              ],
             },
 
             // 🏦 DEBTS SECTION
@@ -168,9 +203,23 @@ function App() {
               path: 'debts',
               element: <DebtsLayout />,
               children: [
-                { index: true, element:(<LazyRoute> <Debtors /></LazyRoute>) },
+                {
+                  index: true,
+                  element: (
+                    <LazyRoute>
+                      <Debtors />
+                    </LazyRoute>
+                  ),
+                },
                 //fintrack/debts/
-                { path: 'debtors', element:(<LazyRoute> <Debtors /></LazyRoute>) },
+                {
+                  path: 'debtors',
+                  element: (
+                    <LazyRoute>
+                      <Debtors />
+                    </LazyRoute>
+                  ),
+                },
               ],
             },
 
@@ -179,60 +228,148 @@ function App() {
             {
               path: 'overview',
               element: <OverviewLayout />,
-              children: [{ index: true, element:(<LazyRoute> <Overview /></LazyRoute>)}],
+              children: [
+                {
+                  index: true,
+                  element: (
+                    <LazyRoute>
+                      <Overview />
+                    </LazyRoute>
+                  ),
+                },
+              ],
             },
           ],
         },
 
         // 🧾 STANDALONE PAGES (PROTECTED)
         // /fintrack
-        { path: 'tracker/accounting', element:(<LazyRoute> <AccountingDashboard /></LazyRoute>) },
+        {
+          path: 'tracker/accounting',
+          element: (
+            <LazyRoute>
+              <AccountingDashboard />
+            </LazyRoute>
+          ),
+        },
 
         // ✨ACCOUNT CREATION FORMS (PROTECTED)
         //page form new item
-        { path: 'budget/new_category', element:(<LazyRoute> <NewCategory /></LazyRoute>) },
+        {
+          path: 'budget/new_category',
+          element: (
+            <LazyRoute>
+              <NewCategory />
+            </LazyRoute>
+          ),
+        },
 
-        { path: 'budget/new_pocket', element:(<LazyRoute> <NewPocket /></LazyRoute>) },
+        {
+          path: 'budget/new_pocket',
+          element: (
+            <LazyRoute>
+              <NewPocket />
+            </LazyRoute>
+          ),
+        },
 
         {
           path: 'debts/debtors/new_profile',
-          element:(<LazyRoute> <NewProfile /></LazyRoute>)},
+          element: (
+            <LazyRoute>
+              <NewProfile />
+            </LazyRoute>
+          ),
+        },
 
-        { path: 'overview/new_account', element:(<LazyRoute> <NewAccount /></LazyRoute>) },
+        {
+          path: 'overview/new_account',
+          element: (
+            <LazyRoute>
+              <NewAccount />
+            </LazyRoute>
+          ),
+        },
 
         // 🔍 DETAIL VIEW PAGES (PROTECTED)
         //show detail item page
         {
           path: 'overview/accounts/:accountId',
-          element:(<LazyRoute> <AccountDetail /></LazyRoute>)},
+          element: (
+            <LazyRoute>
+              <AccountDetail />
+            </LazyRoute>
+          ),
+        },
 
         {
           path: 'debts/debtors/:debtorId',
-          element:(<LazyRoute> <DebtorDetail /></LazyRoute>)},
+          element: (
+            <LazyRoute>
+              <DebtorDetail />
+            </LazyRoute>
+          ),
+        },
         {
           path: 'budget/pockets/:pocketId',
-          element:(<LazyRoute> <PocketDetail /></LazyRoute>)},
+          element: (
+            <LazyRoute>
+              <PocketDetail />
+            </LazyRoute>
+          ),
+        },
 
-       { path: 'budget/category/:categoryName', element: (<LazyRoute><CategoryAccountList /></LazyRoute>), },
+        {
+          path: 'budget/category/:categoryName',
+          element: (
+            <LazyRoute>
+              <CategoryAccountList />
+            </LazyRoute>
+          ),
+        },
 
         {
           path: 'budget/category/:categoryName/account/:accountId',
-          element:(<LazyRoute> <CategoryDetail /></LazyRoute>)},
+          element: (
+            <LazyRoute>
+              <CategoryDetail />
+            </LazyRoute>
+          ),
+        },
 
         //Accounting -> category detail view
         {
           path: 'budget/account/:accountId',
-          element:(<LazyRoute> <CategoryDetail /></LazyRoute>)},
+          element: (
+            <LazyRoute>
+              <CategoryDetail />
+            </LazyRoute>
+          ),
+        },
 
         // ✨ EDITION FORMS (PROTECTED)
         //Accounting -> edit account
         // { path: 'account/:accountId/edit', element: <ErrorPage /> },
-        { path: 'account/:accountId/edit', element:(<LazyRoute> <EditAccount /></LazyRoute>) },
+        {
+          path: 'account/:accountId/edit',
+          element: (
+            <LazyRoute>
+              <EditAccount />
+            </LazyRoute>
+          ),
+        },
 
         // 🚮 DELETION ACCOUNT PROCESS
         //Accounting -> delete account
         // { path: 'account/:accountId/edit', element: <ErrorPage /> },
-        { path: 'account/:accountId/delete', element:(<LazyRoute> <AccountDeletionPage /></LazyRoute>) },
+        {
+          path: 'account/:accountId/delete',
+          element: (
+            <LazyRoute>
+              <AccountDeletionPage />
+            </LazyRoute>
+          ),
+        },
       ],
     },
   ]);
@@ -256,7 +393,6 @@ function App() {
 
         transition={Slide} //flip, bounce, zoom, slide
       />
-
     </>
   );
 }
