@@ -8,7 +8,7 @@
 .bigBox__container {
  /* width: 81.11%; ORIGINAL */
  width: 88%; /*changed*/
- max-width: 17.0625rem; /* 273px Figma */
+ /* max-width: 17.0625rem; 273px Figma */
  margin: 0 auto;
 
  padding: 1.25rem;
