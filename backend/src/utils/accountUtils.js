@@ -1,5 +1,6 @@
 // backend/src/utils/accountUtils.js
 //getUserIdFromAccount, getSlackAccountId, getAccountTypeId
+//Actually not used, just for future uses.
 import { pool } from "../db/configDB.js";
 import { createError } from "../../utils/errorHandling.js";
 
@@ -74,14 +75,4 @@ export const getSlackAccountId = async ( userId)=>{
  // return result.rows[0].account_id
     
  }
-//-------------
-
-
-
-
-
-
-
-
-
-
+//------------
