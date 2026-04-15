@@ -1,3 +1,4 @@
+//frontend\src\fintrack\pages\debts\DebtsLayout.tsx
 import DebtsBigBoxResult from './components/DebtsBigBoxResult.tsx';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import { DEFAULT_CURRENCY } from '../../helpers/constants.ts';
