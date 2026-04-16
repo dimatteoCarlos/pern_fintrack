@@ -1,10 +1,12 @@
-// SummaryDebtorDetailBox.tsx
-import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
+// frontend/src/fintrack/pages/forms/debtorDetail/summaryDebtorDetailBox/SummaryDebtorDetailBox.tsx
+
 import { DEFAULT_CURRENCY } from '../../../../helpers/constants';
 import { getCurrencySymbol } from '../../../../helpers/functions';
-import { DebtorListType } from '../../../../types/responseApiTypes';
 
-import './styles/summaryDebtorDetailBox-style.css'
+import { DebtorListType } from '../../../../types/responseApiTypes';
+import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
+
+import './styles/summaryDebtorDetailBox-style.css';
 
 //temporary values------------
 const defaultCurrency = DEFAULT_CURRENCY;
