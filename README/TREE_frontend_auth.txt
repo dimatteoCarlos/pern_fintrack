@@ -1,96 +1,91 @@
-📦auth
- ┣ 📂authEvent
- ┃ ┣ 📂config
- ┃ ┃ ┗ 📜authEventRegistry.ts
- ┃ ┗ 📂types
- ┃ ┃ ┣ 📜eventContextTypes.ts
- ┃ ┃ ┗ 📜eventTypes.ts
- ┣ 📂auth_constants
- ┃ ┗ 📜constants.ts
- ┣ 📂auth_utils
- ┃ ┣ 📂localStorageHandle
- ┃ ┃ ┗ 📜authStorage.ts
- ┃ ┣ 📜authFetch.ts
- ┃ ┣ 📜authRefreshManager.ts
- ┃ ┣ 📜extractErrorMessge.ts
- ┃ ┣ 📜fetchNewTotalBalance.ts
- ┃ ┣ 📜invalidateSession.ts
- ┃ ┣ 📜logoutCleanup.ts
- ┃ ┣ 📜navigationHelper.ts
- ┃ ┣ 📜notification.ts
- ┃ ┣ 📜profileTransformation.ts
- ┃ ┣ 📜safeMergeUser.ts
- ┃ ┗ 📜transformFromApiToFormErrors.ts
- ┣ 📂components
- ┃ ┣ 📂authPage
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┣ 📜authPage.module.css
- ┃ ┃ ┃ ┣ 📜authUI.module.css
- ┃ ┃ ┃ ┗ 📜mobileUIDiag.md
- ┃ ┃ ┣ 📜AuthPage.tsx
- ┃ ┃ ┗ 📜AuthUI.tsx
- ┃ ┣ 📂formUIComponents
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┣ 📜InputField.module.css
- ┃ ┃ ┃ ┣ 📜LoadingSpinner.module.css
- ┃ ┃ ┃ ┣ 📜message.module.css
- ┃ ┃ ┃ ┣ 📜ResetButton.module.css
- ┃ ┃ ┃ ┣ 📜SelectField.module.css
- ┃ ┃ ┃ ┣ 📜SubmitButton.module.css
- ┃ ┃ ┃ ┗ 📜UserForms.module.css
- ┃ ┃ ┣ 📜InputField.tsx
- ┃ ┃ ┣ 📜LoadingSpinner.tsx
- ┃ ┃ ┣ 📜Message.tsx
- ┃ ┃ ┣ 📜Resetbutton.tsx
- ┃ ┃ ┣ 📜SelectField.tsx
- ┃ ┃ ┗ 📜SubmitButton.tsx
- ┃ ┣ 📂passwordChangeForm
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┣ 📜changePasswordContainer.module.css
- ┃ ┃ ┃ ┗ 📜passwordChangeForm.module.css
- ┃ ┃ ┣ 📜ChangePasswordContainer.tsx
- ┃ ┃ ┗ 📜ChangePasswordForm.tsx
- ┃ ┣ 📂protectedRoute
- ┃ ┃ ┗ 📜ProtectedRoute.tsx
- ┃ ┣ 📂signInForm
- ┃ ┃ ┗ 📜SignInForm.tsx
- ┃ ┣ 📂signUpForm
- ┃ ┃ ┗ 📜SignUpForm.tsx
- ┃ ┣ 📂updateProfileForm
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┣ 📜updateProfileContainer.module.css
- ┃ ┃ ┃ ┗ 📜updateProfileForm.module.css
- ┃ ┃ ┣ 📜UpdateProfileContainer.tsx
- ┃ ┃ ┗ 📜UpdateProfileForm.tsx
- ┃ ┗ 📂userProfileMenu
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┣ 📜userAvatar.module.css
- ┃ ┃ ┃ ┗ 📜userProfileMenu.module.css
- ┃ ┃ ┣ 📜UserAvatar.tsx
- ┃ ┃ ┗ 📜UserProfileMenu.tsx
- ┣ 📂hooks
- ┃ ┣ 📜useAuth.ts
- ┃ ┣ 📜useAuthFormLogic.md
- ┃ ┣ 📜useCallbackDebounce.ts
- ┃ ┣ 📜useChangePasswordFormLogic.ts
- ┃ ┣ 📜useFieldVisibility.ts
- ┃ ┣ 📜useFormLogic.ts
- ┃ ┣ 📜useSuccessAutoClose.ts
- ┃ ┗ 📜useUpdateProfileFormLogic.ts
- ┣ 📂stores
- ┃ ┣ 📜useAuthStore.ts
- ┃ ┗ 📜useAuthUIStore.ts
- ┣ 📂types
- ┃ ┗ 📜authTypes.ts
- ┗ 📂validation
- ┃ ┣ 📂hook
- ┃ ┃ ┣ 📜useAuthValidation.ts
- ┃ ┃ ┣ 📜useChangePasswordValidation.ts
- ┃ ┃ ┣ 📜useFieldValidation.ts
- ┃ ┃ ┗ 📜useUpdateProfileValidation.ts
- ┃ ┣ 📂types
- ┃ ┃ ┗ 📜validationTypes.ts
- ┃ ┗ 📂zod_schemas
- ┃ ┃ ┣ 📜authSchemas.ts
- ┃ ┃ ┣ 📜constants.ts
- ┃ ┃ ┗ 📜userSchemas.ts
+auth
+ ┣ authEvent
+ ┃ ┣ config
+ ┃ ┃ ┗ authEventRegistry.ts
+ ┃ ┗ types
+ ┃ ┃ ┣ eventContextTypes.ts
+ ┃ ┃ ┗ eventTypes.ts
+ ┣ auth_constants
+ ┃ ┗ constants.ts
+ ┣ auth_utils
+ ┃ ┣ localStorageHandle
+ ┃ ┃ ┗ authStorage.ts
+ ┃ ┣ authFetch.ts
+ ┃ ┣ authRefreshManager.ts
+ ┃ ┣ extractErrorMessge.ts
+ ┃ ┣ fetchNewTotalBalance.ts
+ ┃ ┣ invalidateSession.ts
+ ┃ ┣ logoutCleanup.ts
+ ┃ ┣ notification.ts
+ ┃ ┣ profileTransformation.ts
+ ┃ ┗ safeMergeUser.ts
+ ┣ components
+ ┃ ┣ authPage
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┣ authPage.module.css
+ ┃ ┃ ┃ ┣ authUI.module.css
+ ┃ ┃ ┃ ┗ mobileUIDiag.md
+ ┃ ┃ ┣ AuthPage.tsx
+ ┃ ┃ ┗ AuthUI.tsx
+ ┃ ┣ formUIComponents
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┣ InputField.module.css
+ ┃ ┃ ┃ ┣ LoadingSpinner.module.css
+ ┃ ┃ ┃ ┣ message.module.css
+ ┃ ┃ ┃ ┣ ResetButton.module.css
+ ┃ ┃ ┃ ┣ SelectField.module.css
+ ┃ ┃ ┃ ┣ SubmitButton.module.css
+ ┃ ┃ ┃ ┗ UserForms.module.css
+ ┃ ┃ ┣ InputField.tsx
+ ┃ ┃ ┣ LoadingSpinner.tsx
+ ┃ ┃ ┣ Message.tsx
+ ┃ ┃ ┣ Resetbutton.tsx
+ ┃ ┃ ┣ SelectField.tsx
+ ┃ ┃ ┗ SubmitButton.tsx
+ ┃ ┣ passwordChangeForm
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┣ changePasswordContainer.module.css
+ ┃ ┃ ┃ ┗ passwordChangeForm.module.css
+ ┃ ┃ ┣ ChangePasswordContainer.tsx
+ ┃ ┃ ┗ ChangePasswordForm.tsx
+ ┃ ┣ protectedRoute
+ ┃ ┃ ┗ ProtectedRoute.tsx
+ ┃ ┣ signInForm
+ ┃ ┃ ┗ SignInForm.tsx
+ ┃ ┣ signUpForm
+ ┃ ┃ ┗ SignUpForm.tsx
+ ┃ ┣ updateProfileForm
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┣ updateProfileContainer.module.css
+ ┃ ┃ ┃ ┗ updateProfileForm.module.css
+ ┃ ┃ ┣ UpdateProfileContainer.tsx
+ ┃ ┃ ┗ UpdateProfileForm.tsx
+ ┃ ┗ userProfileMenu
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┣ userAvatar.module.css
+ ┃ ┃ ┃ ┗ userProfileMenu.module.css
+ ┃ ┃ ┣ UserAvatar.tsx
+ ┃ ┃ ┗ UserProfileMenu.tsx
+ ┣ hooks
+ ┃ ┣ useAuth.ts
+ ┃ ┣ useAuthFormLogic.md
+ ┃ ┣ useChangePasswordFormLogic.ts
+ ┃ ┣ useFieldVisibility.ts
+ ┃ ┣ useFormLogic.ts
+ ┃ ┗ useUpdateProfileFormLogic.ts
+ ┣ stores
+ ┃ ┣ useAuthStore.ts
+ ┃ ┗ useAuthUIStore.ts
+ ┣ types
+ ┃ ┗ authTypes.ts
+ ┗ validation
+ ┃ ┣ hook
+ ┃ ┃ ┣ useChangePasswordValidation.ts
+ ┃ ┃ ┣ useFieldValidation.ts
+ ┃ ┃ ┗ useUpdateProfileValidation.ts
+ ┃ ┣ types
+ ┃ ┃ ┗ validationTypes.ts
+ ┃ ┗ zod_schemas
+ ┃ ┃ ┣ authSchemas.ts
+ ┃ ┃ ┣ constants.ts
+ ┃ ┃ ┗ userSchemas.ts

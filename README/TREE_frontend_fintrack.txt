@@ -1,11 +1,4 @@
 📦fintrack
- ┣ 📂archives
- ┃ ┣ 📂cssDebugger
- ┃ ┃ ┣ 📜measureChipHegihts.md
- ┃ ┃ ┗ 📜TransferHeighMeasure.md
- ┃ ┣ 📜monitoringHeights.md
- ┃ ┣ 📜monitoringProportionality.md
- ┃ ┗ 📜monitorNote.md
  ┣ 📂editionAndDeletion
  ┃ ┣ 📂components
  ┃ ┃ ┣ 📂accountActionMenu
@@ -15,9 +8,7 @@
  ┃ ┃ ┃ ┣ 📜toast-styles.css
  ┃ ┃ ┃ ┗ 📜Toast.tsx
  ┃ ┣ 📂hooks
- ┃ ┃ ┣ 📜useAutoClose.ts
  ┃ ┃ ┣ 📜useClickOutside.ts
- ┃ ┃ ┣ 📜useEscapeKey.ts
  ┃ ┃ ┣ 📜useLangTranslation.ts
  ┃ ┃ ┗ 📜useRTAImpactAndDeletion.ts
  ┃ ┣ 📂pages
@@ -41,13 +32,9 @@
  ┃ ┃ ┃ ┃ ┃ ┣ 📜impactReportUI.css
  ┃ ┃ ┃ ┃ ┃ ┣ 📜ImpactReportUI.tsx
  ┃ ┃ ┃ ┃ ┃ ┗ 📜NoImpactReportUI.tsx
- ┃ ┃ ┃ ┃ ┣ 📂languageSelector
- ┃ ┃ ┃ ┃ ┃ ┗ 📜LanguageSelector.tsx
  ┃ ┃ ┃ ┃ ┣ 📂loadingReportUI
  ┃ ┃ ┃ ┃ ┃ ┣ 📜loadingReportUI.css
- ┃ ┃ ┃ ┃ ┃ ┣ 📜LoadingReportUI.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📜loadingUI.css
- ┃ ┃ ┃ ┃ ┃ ┗ 📜LoadingUI.tsx
+ ┃ ┃ ┃ ┃ ┃ ┗ 📜LoadingReportUI.tsx
  ┃ ┃ ┃ ┃ ┣ 📂postOperationView
  ┃ ┃ ┃ ┃ ┃ ┣ 📜postOperationView.css
  ┃ ┃ ┃ ┃ ┃ ┗ 📜PostOperationView.tsx
@@ -57,24 +44,19 @@
  ┃ ┃ ┃ ┃ ┣ 📂reportErrorUI
  ┃ ┃ ┃ ┃ ┃ ┣ 📜reportErrorUI.css
  ┃ ┃ ┃ ┃ ┃ ┗ 📜ReportErrorUI.tsx
- ┃ ┃ ┃ ┃ ┣ 📂statusModalUI
+ ┃ ┃ ┃ ┃ ┗ 📂statusModalUI
  ┃ ┃ ┃ ┃ ┃ ┣ 📜statusModalUI.css
  ┃ ┃ ┃ ┃ ┃ ┗ 📜StatusModalUI.tsx
- ┃ ┃ ┃ ┃ ┗ 📂successMessageUI
- ┃ ┃ ┃ ┃ ┃ ┣ 📜successMessageUI.css
- ┃ ┃ ┃ ┃ ┃ ┗ 📜SuccessMessageUI.tsx
  ┃ ┃ ┃ ┣ 📜accountDeletionPage.css
  ┃ ┃ ┃ ┗ 📜AccountDeletionPage.tsx
  ┃ ┃ ┗ 📂editionAccount
  ┃ ┃ ┃ ┣ 📜EditAccount.tsx
  ┃ ┃ ┃ ┗ 📜UniversalDynamicInput.tsx
  ┃ ┣ 📂types
- ┃ ┃ ┣ 📜deletionTypes.ts
- ┃ ┃ ┗ 📜editionTypes.ts
+ ┃ ┃ ┗ 📜deletionTypes.ts
  ┃ ┣ 📂utils
  ┃ ┃ ┣ 📜categoryBudgetCalculations.ts
  ┃ ┃ ┣ 📜dateUtils.ts
- ┃ ┃ ┣ 📜debounce.ts
  ┃ ┃ ┗ 📜languages.ts
  ┃ ┗ 📂validations_zod
  ┃ ┃ ┣ 📜accountEditSchema.ts
@@ -129,10 +111,6 @@
  ┃ ┃ ┣ 📂styles
  ┃ ┃ ┃ ┗ 📜radioInput-styles.css
  ┃ ┃ ┗ 📜RadioInput.tsx
- ┃ ┣ 📂summaryDetailBox
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜summaryDetailBox-style.css
- ┃ ┃ ┗ 📜SummaryDetailBox.tsx
  ┃ ┣ 📂titleHeader
  ┃ ┃ ┣ 📜titleHeader-style.css
  ┃ ┃ ┗ 📜TitleHeader.tsx
@@ -161,26 +139,19 @@
  ┃ ┣ 📜normalizeError.ts
  ┃ ┗ 📜showToastByStatus.ts
  ┣ 📂hooks
- ┃ ┣ 📜useAutoClose.ts
- ┃ ┣ 📜useClickOutside.ts
  ┃ ┣ 📜useDebouncedCallback.ts
  ┃ ┣ 📜useEditAccountForm.ts
- ┃ ┣ 📜useEscapeKey.ts
  ┃ ┣ 📜useFetch.ts
  ┃ ┣ 📜useFetchLoad.ts
- ┃ ┣ 📜useFetchPost.tsx
  ┃ ┣ 📜useFormManager.ts
  ┃ ┣ 📜useFormManagerPnL.ts
  ┃ ┗ 📜useInputNumberHandler.ts
  ┣ 📂loader
  ┃ ┣ 📂circleLoader
  ┃ ┃ ┗ 📜CircleLoader.tsx
- ┃ ┣ 📂coin
+ ┃ ┗ 📂coin
  ┃ ┃ ┣ 📜CoinSpinner.tsx
  ┃ ┃ ┗ 📜coin_loader.css
- ┃ ┗ 📂spin
- ┃ ┃ ┣ 📜SpinLoader.tsx
- ┃ ┃ ┗ 📜spin_loader.css
  ┣ 📂pages
  ┃ ┣ 📂accountingDashboard
  ┃ ┃ ┣ 📂styles
@@ -208,8 +179,7 @@
  ┃ ┣ 📂error
  ┃ ┃ ┣ 📂styles
  ┃ ┃ ┃ ┗ 📜errorPage.css
- ┃ ┃ ┣ 📜ErrorPage.tsx
- ┃ ┃ ┗ 📜NotFoundPage.tsx
+ ┃ ┃ ┗ 📜ErrorPage.tsx
  ┃ ┣ 📂forms
  ┃ ┃ ┣ 📂accountDetail
  ┃ ┃ ┃ ┣ 📂styles
@@ -258,8 +228,7 @@
  ┃ ┃ ┃ ┣ 📜InvestmentAccBalance.tsx
  ┃ ┃ ┃ ┣ 📜LastMovements.tsx
  ┃ ┃ ┃ ┣ 📜MonthlyAverage.tsx
- ┃ ┃ ┃ ┣ 📜SavingGoals.tsx
- ┃ ┃ ┃ ┗ 📜SeeMore.tsx
+ ┃ ┃ ┃ ┗ 📜SavingGoals.tsx
  ┃ ┃ ┣ 📂styles
  ┃ ┃ ┃ ┗ 📜overview-styles.css
  ┃ ┃ ┣ 📜CalculateMonthlyAverage.ts
@@ -294,10 +263,9 @@
  ┃ ┣ 📜responseApiTypes.ts
  ┃ ┗ 📜types.ts
  ┗ 📂validations
- ┃ ┣ 📂inputConstraints
- ┃ ┃ ┣ 📜inputConstraintsTypes.ts
- ┃ ┃ ┗ 📜nameMaxLengths.ts
  ┃ ┣ 📂utils
+ ┃ ┃ ┣ 📂inputConstraints
+ ┃ ┃ ┃ ┗ 📜nameMaxLengths.ts
  ┃ ┃ ┣ 📜constants.ts
  ┃ ┃ ┣ 📜custom_validation.ts
  ┃ ┃ ┗ 📜zod_validation.ts
