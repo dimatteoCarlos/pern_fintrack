@@ -1,3 +1,4 @@
+//frontend/archived/libreria/components/summaryDetailBox/SummaryDetailBox.tsx
 import { DEFAULT_CURRENCY } from '../../../../src/fintrack/helpers/constants';
 import { getCurrencySymbol } from '../../../../src/fintrack/helpers/functions';
 import { DebtorListType } from '../../../../src/fintrack/types/responseApiTypes';

@@ -1,4 +1,4 @@
-// SummaryDetailBox.tsx
+// frontend/src/fintrack/pages/forms/categoryDetail/summaryDetailBox/SummaryDetailBox.tsx
 import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
 import { DEFAULT_CURRENCY } from '../../../../helpers/constants';
 import {
@@ -9,7 +9,7 @@ import {
 import { CurrencyType } from '../../../../types/types';
 import './styles/summaryDetailBox-style.css';
 
-//temporary values------------
+//------------
 const defaultCurrency = DEFAULT_CURRENCY;
 //----------------------------
 type SummaryDetailPropType = {

@@ -1,3 +1,5 @@
+/* frontend\archived\libreria\components\summaryDetailBox\styles\summaryDetailBox-style.css */
+
 .summary__container {
   background-color: var(--creme);
   color: var(--dark);
@@ -40,7 +42,6 @@
   justify-content: center;
 }
 
- 
 .summary__data--subtitle2 {
   color: #5b5b5b;
   font-size: 0.75rem;

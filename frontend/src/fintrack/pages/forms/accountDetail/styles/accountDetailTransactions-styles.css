@@ -3,17 +3,19 @@
 .period-info{
   text-align: center;
   width: 100%;
-  color:var(--creme);
+  color:var(--creme, white);
   font-size: 0.95rem;
   padding: 0 1rem 1rem 0;
 }
 
 .period-info__label{
+   color:var(--creme, white);
   font-weight: 600;
   margin-right: 0;
 }
 
 .period-info__dates{
+   color:var(--creme, white);
   font-weight: 400;
 }
 
