@@ -4,6 +4,8 @@ import { DEFAULT_CURRENCY } from '../../../../helpers/constants';
 import { getCurrencySymbol } from '../../../../helpers/functions';
 import { DebtorListType } from '../../../../types/responseApiTypes';
 
+import './styles/SummaryDebtorDetailBox-style.css'
+
 //temporary values------------
 const defaultCurrency = DEFAULT_CURRENCY;
 //----------------------------

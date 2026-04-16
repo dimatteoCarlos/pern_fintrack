@@ -4,7 +4,7 @@ import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpa
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
-import '../styles/forms-styles.css';
+
 import {
   DEFAULT_ACCOUNT_TRANSACTIONS,
   DEFAULT_CURRENCY,
@@ -33,6 +33,8 @@ import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBad
 import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
 import SummaryDebtorDetailBox from './summaryDebtorDetailBox/SummaryDebtorDetailBox.tsx';
+
+import '../styles/forms-styles.css';
 
 //---------------
 // const user = import.meta.env.VITE_USER_ID;
