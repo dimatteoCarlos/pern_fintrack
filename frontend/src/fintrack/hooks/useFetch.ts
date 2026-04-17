@@ -25,7 +25,7 @@ export function useFetch<R>(url: string | null): FetchResponseType<R> {
 
   useEffect(() => {
     if (!url) {
-      console.log('return url null');
+      // console.log('return url null');
       return;
     }
 

@@ -1,4 +1,5 @@
 //backend/src/index.js
+
 // ====================
 // 📥 Imports
 // ====================
@@ -65,27 +66,28 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 //CORS Configuration for access control
+const ACCEPTED_ORIGINS = [
+  'http://localhost:5000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:8080',
+  'http://localhost:1234',
+  'http://localhost:5432',
+  process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      const ACCEPTED_ORIGINS = [
-        'http://localhost:5000',
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:8080',
-        'http://localhost:1234',
-        'http://localhost:5432',
-      ];
-
       if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
         return callback(null, true);
       }
       console.error('CORS error: Origin not allowed', origin);
 
       return callback(
-        new Error('Your address is not an accepted origin CORS'),
+        new Error('Your address is not an accepted origin by CORS'),
         false,
       );
     },

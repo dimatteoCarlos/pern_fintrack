@@ -50,7 +50,7 @@ button {
   font-family: inherit;
   padding: 0;
   cursor: pointer;
-  /* border: none; */
+  border: none;
 }
 
 .bordered {
