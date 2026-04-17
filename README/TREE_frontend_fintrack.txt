@@ -1,277 +1,282 @@
-📦fintrack
- ┣ 📂editionAndDeletion
- ┃ ┣ 📂components
- ┃ ┃ ┣ 📂accountActionMenu
- ┃ ┃ ┃ ┣ 📜account-actions-menu-styles.css
- ┃ ┃ ┃ ┗ 📜AccountActionsMenu.tsx
- ┃ ┃ ┗ 📂toast
- ┃ ┃ ┃ ┣ 📜toast-styles.css
- ┃ ┃ ┃ ┗ 📜Toast.tsx
- ┃ ┣ 📂hooks
- ┃ ┃ ┣ 📜useClickOutside.ts
- ┃ ┃ ┣ 📜useLangTranslation.ts
- ┃ ┃ ┗ 📜useRTAImpactAndDeletion.ts
- ┃ ┣ 📂pages
- ┃ ┃ ┣ 📂deletionAccount
- ┃ ┃ ┃ ┣ 📂presentations
- ┃ ┃ ┃ ┃ ┣ 📜DeletionModuleBilingualPresentation.html
- ┃ ┃ ┃ ┃ ┣ 📜DeletionModulePresentation.html
- ┃ ┃ ┃ ┃ ┣ 📜DeletionModulePresentationFunctions.html
- ┃ ┃ ┃ ┃ ┣ 📜RTA_DeletionPresentation.html
- ┃ ┃ ┃ ┃ ┗ 📜RTA_FlowDiagram.html
- ┃ ┃ ┃ ┣ 📂UIComponents
- ┃ ┃ ┃ ┃ ┣ 📂accountDetailsUI
- ┃ ┃ ┃ ┃ ┃ ┣ 📜accountDetailsUI.css
- ┃ ┃ ┃ ┃ ┃ ┗ 📜AccountDetailsUI.tsx
- ┃ ┃ ┃ ┃ ┣ 📂confirmationModalUI
- ┃ ┃ ┃ ┃ ┃ ┣ 📜initialConfirmationDeleteAccountUI.css
- ┃ ┃ ┃ ┃ ┃ ┣ 📜InitialConfirmationDeleteAccountUI.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📜RTAConfirmationModal.css
- ┃ ┃ ┃ ┃ ┃ ┗ 📜RTAConfirmationModal.tsx
- ┃ ┃ ┃ ┃ ┣ 📂impactReportUI
- ┃ ┃ ┃ ┃ ┃ ┣ 📜impactReportUI.css
- ┃ ┃ ┃ ┃ ┃ ┣ 📜ImpactReportUI.tsx
- ┃ ┃ ┃ ┃ ┃ ┗ 📜NoImpactReportUI.tsx
- ┃ ┃ ┃ ┃ ┣ 📂loadingReportUI
- ┃ ┃ ┃ ┃ ┃ ┣ 📜loadingReportUI.css
- ┃ ┃ ┃ ┃ ┃ ┗ 📜LoadingReportUI.tsx
- ┃ ┃ ┃ ┃ ┣ 📂postOperationView
- ┃ ┃ ┃ ┃ ┃ ┣ 📜postOperationView.css
- ┃ ┃ ┃ ┃ ┃ ┗ 📜PostOperationView.tsx
- ┃ ┃ ┃ ┃ ┣ 📂proceedButtonUI
- ┃ ┃ ┃ ┃ ┃ ┣ 📜proceedButtonUI.css
- ┃ ┃ ┃ ┃ ┃ ┗ 📜ProceedButtonUI.tsx
- ┃ ┃ ┃ ┃ ┣ 📂reportErrorUI
- ┃ ┃ ┃ ┃ ┃ ┣ 📜reportErrorUI.css
- ┃ ┃ ┃ ┃ ┃ ┗ 📜ReportErrorUI.tsx
- ┃ ┃ ┃ ┃ ┗ 📂statusModalUI
- ┃ ┃ ┃ ┃ ┃ ┣ 📜statusModalUI.css
- ┃ ┃ ┃ ┃ ┃ ┗ 📜StatusModalUI.tsx
- ┃ ┃ ┃ ┣ 📜accountDeletionPage.css
- ┃ ┃ ┃ ┗ 📜AccountDeletionPage.tsx
- ┃ ┃ ┗ 📂editionAccount
- ┃ ┃ ┃ ┣ 📜EditAccount.tsx
- ┃ ┃ ┃ ┗ 📜UniversalDynamicInput.tsx
- ┃ ┣ 📂types
- ┃ ┃ ┗ 📜deletionTypes.ts
- ┃ ┣ 📂utils
- ┃ ┃ ┣ 📜categoryBudgetCalculations.ts
- ┃ ┃ ┣ 📜dateUtils.ts
- ┃ ┃ ┗ 📜languages.ts
- ┃ ┗ 📂validations_zod
- ┃ ┃ ┣ 📜accountEditSchema.ts
- ┃ ┃ ┣ 📜commonEditionSchemas.ts
- ┃ ┃ ┗ 📜editSchemas.ts
- ┣ 📂general_components
- ┃ ┣ 📂boxComponents
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜boxComponents.css
- ┃ ┃ ┗ 📜BoxComponents.tsx
- ┃ ┣ 📂characterCounter
- ┃ ┃ ┗ 📜CharacterCounter.tsx
- ┃ ┣ 📂currencyBadge
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜currency-style.css
- ┃ ┃ ┗ 📜CurrencyBadge.tsx
- ┃ ┣ 📂datepicker
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜datepicker-styles.css
- ┃ ┃ ┗ 📜Datepicker.tsx
- ┃ ┣ 📂dropdownSelection
- ┃ ┃ ┗ 📜DropDownSelection.tsx
- ┃ ┣ 📂formSubmitBtn
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜formSubmitBtn-style.css
- ┃ ┃ ┣ 📜FormPlusBtn.tsx
- ┃ ┃ ┗ 📜FormSubmitBtn.tsx
- ┃ ┣ 📂header
- ┃ ┃ ┣ 📜Header.tsx
- ┃ ┃ ┣ 📜logoMenuIcon.css
- ┃ ┃ ┗ 📜LogoMenuIcon.tsx
- ┃ ┣ 📂inputNumberHandler
- ┃ ┃ ┗ 📜InputNumberFormHandler.tsx
- ┃ ┣ 📂labelNumberValidation
- ┃ ┃ ┗ 📜LabelNumberValidation.tsx
- ┃ ┣ 📂listContent
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜listContent-style.css
- ┃ ┃ ┗ 📜ListContent.tsx
- ┃ ┣ 📂mainNavbar
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜mainNavbar.css
- ┃ ┃ ┣ 📜BudgetButton.tsx
- ┃ ┃ ┣ 📜DebtsButton.tsx
- ┃ ┃ ┣ 📜MainNavbar.tsx
- ┃ ┃ ┣ 📜OverviewButton.tsx
- ┃ ┃ ┗ 📜TrackerButton.tsx
- ┃ ┣ 📂messageToUser
- ┃ ┃ ┣ 📜messageToUser.css
- ┃ ┃ ┗ 📜MessageToUser.tsx
- ┃ ┣ 📂radioInput
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜radioInput-styles.css
- ┃ ┃ ┗ 📜RadioInput.tsx
- ┃ ┣ 📂titleHeader
- ┃ ┃ ┣ 📜titleHeader-style.css
- ┃ ┃ ┗ 📜TitleHeader.tsx
- ┃ ┣ 📂tooltip
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜tooltip.css
- ┃ ┃ ┗ 📜Tooltip.tsx
- ┃ ┣ 📂topWhiteSpace
- ┃ ┃ ┣ 📜topWhiteSpace.css
- ┃ ┃ ┗ 📜TopWhiteSpace.tsx
- ┃ ┣ 📂trackerNavbar
- ┃ ┃ ┣ 📂trackerStateButtons
- ┃ ┃ ┃ ┣ 📜TrackerAdjustmentPnLButton.tsx
- ┃ ┃ ┃ ┣ 📜TrackerDebtsButton.tsx
- ┃ ┃ ┃ ┣ 📜TrackerExpenseButton.tsx
- ┃ ┃ ┃ ┣ 📜TrackerIncomeButton.tsx
- ┃ ┃ ┃ ┣ 📜trackerStateButton.css
- ┃ ┃ ┃ ┗ 📜TrackerTransferButton.tsx
- ┃ ┃ ┗ 📜TrackerNavbar.tsx
- ┃ ┣ 📜CardTitle.tsx
- ┃ ┗ 📜OpenAddEditBtn.tsx
- ┣ 📂helpers
- ┃ ┣ 📜constants.ts
- ┃ ┣ 📜functions.ts
- ┃ ┣ 📜handleError.ts
- ┃ ┣ 📜normalizeError.ts
- ┃ ┗ 📜showToastByStatus.ts
- ┣ 📂hooks
- ┃ ┣ 📜useDebouncedCallback.ts
- ┃ ┣ 📜useEditAccountForm.ts
- ┃ ┣ 📜useFetch.ts
- ┃ ┣ 📜useFetchLoad.ts
- ┃ ┣ 📜useFormManager.ts
- ┃ ┣ 📜useFormManagerPnL.ts
- ┃ ┗ 📜useInputNumberHandler.ts
- ┣ 📂loader
- ┃ ┣ 📂circleLoader
- ┃ ┃ ┗ 📜CircleLoader.tsx
- ┃ ┗ 📂coin
- ┃ ┃ ┣ 📜CoinSpinner.tsx
- ┃ ┃ ┗ 📜coin_loader.css
- ┣ 📂pages
- ┃ ┣ 📂accountingDashboard
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜accountingDashboard-styles.css
- ┃ ┃ ┣ 📜AccountingBox.tsx
- ┃ ┃ ┗ 📜AccountingDashboard.tsx
- ┃ ┣ 📂budget
- ┃ ┃ ┣ 📂components
- ┃ ┃ ┃ ┣ 📜BudgetBigBoxResult.tsx
- ┃ ┃ ┃ ┣ 📜ListCategory.tsx
- ┃ ┃ ┃ ┗ 📜ListPocket.tsx
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜budget-styles.css
- ┃ ┃ ┣ 📜Budget.tsx
- ┃ ┃ ┗ 📜BudgetLayout.tsx
- ┃ ┣ 📂debts
- ┃ ┃ ┣ 📂components
- ┃ ┃ ┃ ┣ 📜boxComponents.tsx
- ┃ ┃ ┃ ┣ 📜DebtsBigBoxResult.tsx
- ┃ ┃ ┃ ┗ 📜ListOfDebtors.tsx
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜debts-styles.css
- ┃ ┃ ┣ 📜Debtors.tsx
- ┃ ┃ ┗ 📜DebtsLayout.tsx
- ┃ ┣ 📂error
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜errorPage.css
- ┃ ┃ ┗ 📜ErrorPage.tsx
- ┃ ┣ 📂forms
- ┃ ┃ ┣ 📂accountDetail
- ┃ ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┃ ┣ 📜accountBalanceSummary-styles.css
- ┃ ┃ ┃ ┃ ┣ 📜accountDetailTransactions-styles.css
- ┃ ┃ ┃ ┃ ┗ 📜accountTransactionsList-styles.css
- ┃ ┃ ┃ ┣ 📜AccountBalanceSummary.tsx
- ┃ ┃ ┃ ┣ 📜AccountDetail.tsx
- ┃ ┃ ┃ ┗ 📜AccountTransactionsList.tsx
- ┃ ┃ ┣ 📂categoryDetail
- ┃ ┃ ┃ ┣ 📂summaryDetailBox
- ┃ ┃ ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┃ ┃ ┗ 📜summaryDetailBox-style.css
- ┃ ┃ ┃ ┃ ┗ 📜SummaryDetailBox.tsx
- ┃ ┃ ┃ ┣ 📜CategoryAccountList.tsx
- ┃ ┃ ┃ ┣ 📜CategoryDetail.tsx
- ┃ ┃ ┃ ┗ 📜ListAccountOfCategory.tsx
- ┃ ┃ ┣ 📂debtorDetail
- ┃ ┃ ┃ ┣ 📂summaryDebtorDetailBox
- ┃ ┃ ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┃ ┃ ┗ 📜summaryDebtorDetailBox-style.css
- ┃ ┃ ┃ ┃ ┗ 📜SummaryDebtorDetailBox.tsx
- ┃ ┃ ┃ ┗ 📜DebtorDetail.tsx
- ┃ ┃ ┣ 📂newAccount
- ┃ ┃ ┃ ┗ 📜NewAccount.tsx
- ┃ ┃ ┣ 📂newCategory
- ┃ ┃ ┃ ┗ 📜NewCategory.tsx
- ┃ ┃ ┣ 📂newPocket
- ┃ ┃ ┃ ┗ 📜NewPocket.tsx
- ┃ ┃ ┣ 📂newProfile
- ┃ ┃ ┃ ┗ 📜NewProfile.tsx
- ┃ ┃ ┣ 📂pocketDetail
- ┃ ┃ ┃ ┣ 📂summaryPocketDetailBox
- ┃ ┃ ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┃ ┃ ┗ 📜summaryDetailBox-style.css
- ┃ ┃ ┃ ┃ ┗ 📜SummaryPocketDetailBox.tsx
- ┃ ┃ ┃ ┗ 📜PocketDetail.tsx
- ┃ ┃ ┗ 📂styles
- ┃ ┃ ┃ ┗ 📜forms-styles.css
- ┃ ┣ 📂layout
- ┃ ┃ ┗ 📜Layout.tsx
- ┃ ┣ 📂overview
- ┃ ┃ ┣ 📂components
- ┃ ┃ ┃ ┣ 📜AccountBalance.tsx
- ┃ ┃ ┃ ┣ 📜BigBoxResult.tsx
- ┃ ┃ ┃ ┣ 📜InvestmentAccBalance.tsx
- ┃ ┃ ┃ ┣ 📜LastMovements.tsx
- ┃ ┃ ┃ ┣ 📜MonthlyAverage.tsx
- ┃ ┃ ┃ ┗ 📜SavingGoals.tsx
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜overview-styles.css
- ┃ ┃ ┣ 📜CalculateMonthlyAverage.ts
- ┃ ┃ ┣ 📜Overview.tsx
- ┃ ┃ ┣ 📜overviewFetchAll.ts
- ┃ ┃ ┗ 📜OverviewLayout.tsx
- ┃ ┣ 📂styles
- ┃ ┃ ┗ 📜generalStyles.css
- ┃ ┗ 📂tracker
- ┃ ┃ ┣ 📂components
- ┃ ┃ ┃ ┣ 📜CardNote.tsx
- ┃ ┃ ┃ ┣ 📜CardNoteSave.tsx
- ┃ ┃ ┃ ┣ 📜CardSeparator.tsx
- ┃ ┃ ┃ ┗ 📜TopCard.tsx
- ┃ ┃ ┣ 📂debts
- ┃ ┃ ┃ ┗ 📜Debts.tsx
- ┃ ┃ ┣ 📂expense
- ┃ ┃ ┃ ┗ 📜Expense.tsx
- ┃ ┃ ┣ 📂income
- ┃ ┃ ┃ ┗ 📜Income.tsx
- ┃ ┃ ┣ 📂profitNloss
- ┃ ┃ ┃ ┗ 📜PnL.tsx
- ┃ ┃ ┣ 📂styles
- ┃ ┃ ┃ ┗ 📜tracker-style.css
- ┃ ┃ ┣ 📂transfer
- ┃ ┃ ┃ ┗ 📜Transfer.tsx
- ┃ ┃ ┗ 📜TrackerLayout.tsx
- ┣ 📂stores
- ┃ ┣ 📜useAccountStore.ts
- ┃ ┗ 📜useBalanceStore.ts
- ┣ 📂types
- ┃ ┣ 📜responseApiTypes.ts
- ┃ ┗ 📜types.ts
- ┗ 📂validations
- ┃ ┣ 📂utils
- ┃ ┃ ┣ 📂inputConstraints
- ┃ ┃ ┃ ┗ 📜nameMaxLengths.ts
- ┃ ┃ ┣ 📜constants.ts
- ┃ ┃ ┣ 📜custom_validation.ts
- ┃ ┃ ┗ 📜zod_validation.ts
- ┃ ┣ 📂validationPnL
- ┃ ┃ ┗ 📜validationPnL.ts
- ┃ ┣ 📂zod_schemas
- ┃ ┃ ┣ 📜commonSchemas.ts
- ┃ ┃ ┗ 📜trackerMovementSchema.ts
- ┃ ┗ 📜types.ts
+fintrack
+ ┣ editionAndDeletion
+ ┃ ┣ components
+ ┃ ┃ ┣ accountActionMenu
+ ┃ ┃ ┃ ┣ account-actions-menu-styles.css
+ ┃ ┃ ┃ ┗ AccountActionsMenu.tsx
+ ┃ ┃ ┗ toast
+ ┃ ┃ ┃ ┣ toast-styles.css
+ ┃ ┃ ┃ ┗ Toast.tsx
+ ┃ ┣ hooks
+ ┃ ┃ ┣ useClickOutside.ts
+ ┃ ┃ ┣ useLangTranslation.ts
+ ┃ ┃ ┗ useRTAImpactAndDeletion.ts
+ ┃ ┣ pages
+ ┃ ┃ ┣ deletionAccount
+ ┃ ┃ ┃ ┣ presentations
+ ┃ ┃ ┃ ┃ ┣ DeletionModuleBilingualPresentation.html
+ ┃ ┃ ┃ ┃ ┣ DeletionModulePresentation.html
+ ┃ ┃ ┃ ┃ ┣ DeletionModulePresentationFunctions.html
+ ┃ ┃ ┃ ┃ ┣ RTA_DeletionPresentation.html
+ ┃ ┃ ┃ ┃ ┗ RTA_FlowDiagram.html
+ ┃ ┃ ┃ ┣ UIComponents
+ ┃ ┃ ┃ ┃ ┣ accountDetailsUI
+ ┃ ┃ ┃ ┃ ┃ ┣ accountDetailsUI.css
+ ┃ ┃ ┃ ┃ ┃ ┗ AccountDetailsUI.tsx
+ ┃ ┃ ┃ ┃ ┣ confirmationModalUI
+ ┃ ┃ ┃ ┃ ┃ ┣ initialConfirmationDeleteAccountUI.css
+ ┃ ┃ ┃ ┃ ┃ ┣ InitialConfirmationDeleteAccountUI.tsx
+ ┃ ┃ ┃ ┃ ┃ ┣ RTAConfirmationModal.css
+ ┃ ┃ ┃ ┃ ┃ ┗ RTAConfirmationModal.tsx
+ ┃ ┃ ┃ ┃ ┣ impactReportUI
+ ┃ ┃ ┃ ┃ ┃ ┣ impactReportUI.css
+ ┃ ┃ ┃ ┃ ┃ ┣ ImpactReportUI.tsx
+ ┃ ┃ ┃ ┃ ┃ ┗ NoImpactReportUI.tsx
+ ┃ ┃ ┃ ┃ ┣ loadingReportUI
+ ┃ ┃ ┃ ┃ ┃ ┣ loadingReportUI.css
+ ┃ ┃ ┃ ┃ ┃ ┗ LoadingReportUI.tsx
+ ┃ ┃ ┃ ┃ ┣ postOperationView
+ ┃ ┃ ┃ ┃ ┃ ┣ postOperationView.css
+ ┃ ┃ ┃ ┃ ┃ ┗ PostOperationView.tsx
+ ┃ ┃ ┃ ┃ ┣ proceedButtonUI
+ ┃ ┃ ┃ ┃ ┃ ┣ proceedButtonUI.css
+ ┃ ┃ ┃ ┃ ┃ ┗ ProceedButtonUI.tsx
+ ┃ ┃ ┃ ┃ ┣ reportErrorUI
+ ┃ ┃ ┃ ┃ ┃ ┣ reportErrorUI.css
+ ┃ ┃ ┃ ┃ ┃ ┗ ReportErrorUI.tsx
+ ┃ ┃ ┃ ┃ ┗ statusModalUI
+ ┃ ┃ ┃ ┃ ┃ ┣ statusModalUI.css
+ ┃ ┃ ┃ ┃ ┃ ┗ StatusModalUI.tsx
+ ┃ ┃ ┃ ┣ accountDeletionPage.css
+ ┃ ┃ ┃ ┗ AccountDeletionPage.tsx
+ ┃ ┃ ┗ editionAccount
+ ┃ ┃ ┃ ┣ EditAccount.tsx
+ ┃ ┃ ┃ ┗ UniversalDynamicInput.tsx
+ ┃ ┣ types
+ ┃ ┃ ┗ deletionTypes.ts
+ ┃ ┣ utils
+ ┃ ┃ ┣ categoryBudgetCalculations.ts
+ ┃ ┃ ┣ dateUtils.ts
+ ┃ ┃ ┗ languages.ts
+ ┃ ┗ validations_zod
+ ┃ ┃ ┣ accountEditSchema.ts
+ ┃ ┃ ┣ commonEditionSchemas.ts
+ ┃ ┃ ┗ editSchemas.ts
+ ┣ general_components
+ ┃ ┣ boxComponents
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ boxComponents.css
+ ┃ ┃ ┗ BoxComponents.tsx
+ ┃ ┣ characterCounter
+ ┃ ┃ ┗ CharacterCounter.tsx
+ ┃ ┣ currencyBadge
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ currency-style.css
+ ┃ ┃ ┗ CurrencyBadge.tsx
+ ┃ ┣ datepicker
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ datepicker-styles.css
+ ┃ ┃ ┗ Datepicker.tsx
+ ┃ ┣ dropdownSelection
+ ┃ ┃ ┗ DropDownSelection.tsx
+ ┃ ┣ formSubmitBtn
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ formSubmitBtn-style.css
+ ┃ ┃ ┣ FormPlusBtn.tsx
+ ┃ ┃ ┗ FormSubmitBtn.tsx
+ ┃ ┣ header
+ ┃ ┃ ┣ Header.tsx
+ ┃ ┃ ┣ logoMenuIcon.css
+ ┃ ┃ ┗ LogoMenuIcon.tsx
+ ┃ ┣ inputNumberHandler
+ ┃ ┃ ┗ InputNumberFormHandler.tsx
+ ┃ ┣ labelNumberValidation
+ ┃ ┃ ┗ LabelNumberValidation.tsx
+ ┃ ┣ listContent
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ listContent-style.css
+ ┃ ┃ ┗ ListContent.tsx
+ ┃ ┣ mainNavbar
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ mainNavbar.css
+ ┃ ┃ ┣ BudgetButton.tsx
+ ┃ ┃ ┣ DebtsButton.tsx
+ ┃ ┃ ┣ MainNavbar.tsx
+ ┃ ┃ ┣ OverviewButton.tsx
+ ┃ ┃ ┗ TrackerButton.tsx
+ ┃ ┣ messageToUser
+ ┃ ┃ ┣ messageToUser.css
+ ┃ ┃ ┗ MessageToUser.tsx
+ ┃ ┣ radioInput
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ radioInput-styles.css
+ ┃ ┃ ┗ RadioInput.tsx
+ ┃ ┣ titleHeader
+ ┃ ┃ ┣ titleHeader-style.css
+ ┃ ┃ ┗ TitleHeader.tsx
+ ┃ ┣ tooltip
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ tooltip.css
+ ┃ ┃ ┗ Tooltip.tsx
+ ┃ ┣ topWhiteSpace
+ ┃ ┃ ┣ topWhiteSpace.css
+ ┃ ┃ ┗ TopWhiteSpace.tsx
+ ┃ ┣ trackerNavbar
+ ┃ ┃ ┣ trackerStateButtons
+ ┃ ┃ ┃ ┣ TrackerAdjustmentPnLButton.tsx
+ ┃ ┃ ┃ ┣ TrackerDebtsButton.tsx
+ ┃ ┃ ┃ ┣ TrackerExpenseButton.tsx
+ ┃ ┃ ┃ ┣ TrackerIncomeButton.tsx
+ ┃ ┃ ┃ ┣ trackerStateButton.css
+ ┃ ┃ ┃ ┗ TrackerTransferButton.tsx
+ ┃ ┃ ┗ TrackerNavbar.tsx
+ ┃ ┣ CardTitle.tsx
+ ┃ ┗ OpenAddEditBtn.tsx
+ ┣ helpers
+ ┃ ┣ constants.ts
+ ┃ ┣ functions.ts
+ ┃ ┣ handleError.ts
+ ┃ ┣ normalizeError.ts
+ ┃ ┗ showToastByStatus.ts
+ ┣ hooks
+ ┃ ┣ useDebouncedCallback.ts
+ ┃ ┣ useEditAccountForm.ts
+ ┃ ┣ useFetch.ts
+ ┃ ┣ useFetchLoad.ts
+ ┃ ┣ useFormManager.ts
+ ┃ ┣ useFormManagerPnL.ts
+ ┃ ┗ useInputNumberHandler.ts
+ ┣ loader
+ ┃ ┣ circleLoader
+ ┃ ┃ ┗ CircleLoader.tsx
+ ┃ ┗ coin
+ ┃ ┃ ┣ CoinSpinner.tsx
+ ┃ ┃ ┗ coin_loader.css
+ ┣ pages
+ ┃ ┣ accountingDashboard
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ accountingDashboard-styles.css
+ ┃ ┃ ┣ AccountingBox.tsx
+ ┃ ┃ ┗ AccountingDashboard.tsx
+ ┃ ┣ budget
+ ┃ ┃ ┣ components
+ ┃ ┃ ┃ ┣ BudgetBigBoxResult.tsx
+ ┃ ┃ ┃ ┣ ListCategory.tsx
+ ┃ ┃ ┃ ┗ ListPocket.tsx
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ budget-styles.css
+ ┃ ┃ ┣ Budget.tsx
+ ┃ ┃ ┗ BudgetLayout.tsx
+ ┃ ┣ debts
+ ┃ ┃ ┣ components
+ ┃ ┃ ┃ ┣ boxComponents.tsx
+ ┃ ┃ ┃ ┣ DebtsBigBoxResult.tsx
+ ┃ ┃ ┃ ┗ ListOfDebtors.tsx
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ debts-styles.css
+ ┃ ┃ ┣ Debtors.tsx
+ ┃ ┃ ┗ DebtsLayout.tsx
+ ┃ ┣ error
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ errorPage.css
+ ┃ ┃ ┗ ErrorPage.tsx
+ ┃ ┣ forms
+ ┃ ┃ ┣ accountDetail
+ ┃ ┃ ┃ ┗ AccountDetail.tsx
+ ┃ ┃ ┣ accountDetailSharedComponents
+ ┃ ┃ ┃ ┣ accountBalanceSummary
+ ┃ ┃ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┃ ┃ ┗ accountBalanceSummary-styles.css
+ ┃ ┃ ┃ ┃ ┗ AccountBalanceSummary.tsx
+ ┃ ┃ ┃ ┣ accountTransactionsList
+ ┃ ┃ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┃ ┃ ┣ accountDetailPeriodInfo-styles.css
+ ┃ ┃ ┃ ┃ ┃ ┗ accountTransactionsList-styles.css
+ ┃ ┃ ┃ ┃ ┗ AccountTransactionsList.tsx
+ ┃ ┃ ┃ ┣ summaryDetailBox
+ ┃ ┃ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┃ ┃ ┗ summaryDetailBox-style.css
+ ┃ ┃ ┃ ┃ ┗ SummaryDetailBox.tsx
+ ┃ ┃ ┃ ┗ accountDetailPeriodInfo-styles.css
+ ┃ ┃ ┣ categoryDetail
+ ┃ ┃ ┃ ┣ CategoryAccountList.tsx
+ ┃ ┃ ┃ ┣ CategoryDetail.tsx
+ ┃ ┃ ┃ ┗ ListAccountOfCategory.tsx
+ ┃ ┃ ┣ debtorDetail
+ ┃ ┃ ┃ ┣ summaryDebtorDetailBox
+ ┃ ┃ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┃ ┃ ┗ summaryDebtorDetailBox-style.css
+ ┃ ┃ ┃ ┃ ┗ SummaryDebtorDetailBox.tsx
+ ┃ ┃ ┃ ┗ DebtorDetail.tsx
+ ┃ ┃ ┣ newAccount
+ ┃ ┃ ┃ ┗ NewAccount.tsx
+ ┃ ┃ ┣ newCategory
+ ┃ ┃ ┃ ┗ NewCategory.tsx
+ ┃ ┃ ┣ newPocket
+ ┃ ┃ ┃ ┗ NewPocket.tsx
+ ┃ ┃ ┣ newProfile
+ ┃ ┃ ┃ ┗ NewProfile.tsx
+ ┃ ┃ ┣ pocketDetail
+ ┃ ┃ ┃ ┣ summaryPocketDetailBox
+ ┃ ┃ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┃ ┃ ┗ summaryDetailBox-style.css
+ ┃ ┃ ┃ ┃ ┗ SummaryPocketDetailBox.tsx
+ ┃ ┃ ┃ ┗ PocketDetail.tsx
+ ┃ ┃ ┗ styles
+ ┃ ┃ ┃ ┗ forms-styles.css
+ ┃ ┣ layout
+ ┃ ┃ ┗ Layout.tsx
+ ┃ ┣ overview
+ ┃ ┃ ┣ components
+ ┃ ┃ ┃ ┣ AccountBalance.tsx
+ ┃ ┃ ┃ ┣ BigBoxResult.tsx
+ ┃ ┃ ┃ ┣ InvestmentAccBalance.tsx
+ ┃ ┃ ┃ ┣ LastMovements.tsx
+ ┃ ┃ ┃ ┣ MonthlyAverage.tsx
+ ┃ ┃ ┃ ┗ SavingGoals.tsx
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ overview-styles.css
+ ┃ ┃ ┣ CalculateMonthlyAverage.ts
+ ┃ ┃ ┣ Overview.tsx
+ ┃ ┃ ┣ overviewFetchAll.ts
+ ┃ ┃ ┗ OverviewLayout.tsx
+ ┃ ┣ styles
+ ┃ ┃ ┗ generalStyles.css
+ ┃ ┗ tracker
+ ┃ ┃ ┣ components
+ ┃ ┃ ┃ ┣ CardNote.tsx
+ ┃ ┃ ┃ ┣ CardNoteSave.tsx
+ ┃ ┃ ┃ ┣ CardSeparator.tsx
+ ┃ ┃ ┃ ┗ TopCard.tsx
+ ┃ ┃ ┣ debts
+ ┃ ┃ ┃ ┗ Debts.tsx
+ ┃ ┃ ┣ expense
+ ┃ ┃ ┃ ┗ Expense.tsx
+ ┃ ┃ ┣ income
+ ┃ ┃ ┃ ┗ Income.tsx
+ ┃ ┃ ┣ profitNloss
+ ┃ ┃ ┃ ┗ PnL.tsx
+ ┃ ┃ ┣ styles
+ ┃ ┃ ┃ ┗ tracker-style.css
+ ┃ ┃ ┣ transfer
+ ┃ ┃ ┃ ┗ Transfer.tsx
+ ┃ ┃ ┗ TrackerLayout.tsx
+ ┣ stores
+ ┃ ┣ useAccountStore.ts
+ ┃ ┗ useBalanceStore.ts
+ ┣ types
+ ┃ ┣ responseApiTypes.ts
+ ┃ ┗ types.ts
+ ┗ validations
+ ┃ ┣ utils
+ ┃ ┃ ┣ inputConstraints
+ ┃ ┃ ┃ ┗ nameMaxLengths.ts
+ ┃ ┃ ┣ constants.ts
+ ┃ ┃ ┣ custom_validation.ts
+ ┃ ┃ ┗ zod_validation.ts
+ ┃ ┣ validationPnL
+ ┃ ┃ ┗ validationPnL.ts
+ ┃ ┣ zod_schemas
+ ┃ ┃ ┣ commonSchemas.ts
+ ┃ ┃ ┗ trackerMovementSchema.ts
+ ┃ ┗ types.ts
