@@ -40,8 +40,7 @@ export type AccountSchemaConfigType = {
 };
 
 // 🎯 3. DYNAMIC CONFIG MAP / EL MAPA DE CONFIGURACIÓN DINÁMICA
-export const basicAccountConfig: FieldConfigType[] = [
-  // base for bank, investment and income_source
+export const basicAccountConfig: FieldConfigType[] = [  // base for bank, investment and income_source
   {
     fieldName: 'account_name',
     label: 'Account Name',
@@ -57,6 +56,7 @@ export const basicAccountConfig: FieldConfigType[] = [
     isEditable: true,
     isRequired: false,
     placeholder: 'Add any relevant note (max 90 chars)',
+
   },
 ];
 //=====================================

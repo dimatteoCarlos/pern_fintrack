@@ -125,6 +125,7 @@ export function UniversalDynamicInput<T extends Record<string, unknown>>({
               readOnly={isReadOnly}
               style={readOnlyStyle}
               maxLength={currentMax}
+            
             />
           );
         }
@@ -246,6 +247,7 @@ export function UniversalDynamicInput<T extends Record<string, unknown>>({
               fontSize: '0.75rem',
               color: isLimit ? '#ff4d4d' : 'rgba(255,255,255,0.4)',
               fontWeight: isLimit ? 'bold' : 'normal',
+              resize:'vertical'
             }}
           >
             {inputValue.length}/{currentMax}

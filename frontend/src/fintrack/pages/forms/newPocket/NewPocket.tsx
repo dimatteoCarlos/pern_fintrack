@@ -122,7 +122,7 @@ function NewPocket() {
 
   //---------------------------------------
   // ✨ INPUT HANDLERS
-  function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
+  function inputHandler(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     e.preventDefault();
     const { name, value } = e.target;
 
@@ -350,8 +350,7 @@ function NewPocket() {
                 </span>
               </label>
 
-              <input
-                type='text'
+              <textarea
                 className={`input__container`}
                 placeholder={`${'description'}`}
                 onChange={inputHandler}

@@ -180,7 +180,11 @@ label,
   border-radius: 1rem;
   color: var(--creme);
   padding: 0.25rem;
-  /* border: 5px solid var(--primary); */
+  /* adjust vertical sizing */
+  resize:vertical;
+  /* new property for adjustment */
+  field-sizing:content;
+
 }
 
 /*dark forms*/
