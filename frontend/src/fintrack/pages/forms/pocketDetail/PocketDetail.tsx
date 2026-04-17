@@ -28,11 +28,13 @@ import {
 } from '../../../helpers/functions.ts';
 import SummaryPocketDetailBox from './summaryPocketDetailBox/SummaryPocketDetailBox.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
-import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
+import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
-import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
+import AccountTransactionsList from '../accountDetailSharedComponents/accountTransactionsList/AccountTransactionsList.tsx';
 
 import '../styles/forms-styles.css';
+import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
+
 //---
 type LocationStateType = {
   pocketData: PocketListType;

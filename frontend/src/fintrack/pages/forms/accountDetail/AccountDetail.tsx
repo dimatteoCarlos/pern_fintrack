@@ -9,8 +9,8 @@ import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
-import AccountBalanceSummary from './AccountBalanceSummary.tsx';
-import AccountTransactionsList from './AccountTransactionsList.tsx';
+import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
+import AccountTransactionsList from '../accountDetailSharedComponents/accountTransactionsList/AccountTransactionsList.tsx';
 
 import {
   ACCOUNT_DEFAULT,
@@ -23,7 +23,7 @@ import {
   numberFormatCurrency,
   formatDateToDDMMYYYY,
 } from '../../../helpers/functions.ts';
-import '../styles/forms-styles.css';
+
 import {
   AccountByTypeResponseType,
   AccountListType,
@@ -31,14 +31,22 @@ import {
   AccountTransactionType,
   AccountSummaryBalanceType,
 } from '../../../types/responseApiTypes.ts';
+
 import {
   url_get_account_by_id,
   url_get_transactions_by_account_id,
 } from '../../../../endpoints.ts';
 
-import './styles/accountDetailTransactions-styles.css';
-// import CoinSpinner from '../../../loader/coin/CoinSpinner';
+//styles import
+import '../styles/forms-styles.css';
 
+import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css'
+
+/*frontend/src/fintrack/pages/forms/accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css */
+
+// frontend\src\fintrack\pages\forms\accountDetail\AccountDetail.tsx
+
+//--------------------------------
 type LocationStateType = {
   previousRoute: string;
   detailedData: AccountListType;

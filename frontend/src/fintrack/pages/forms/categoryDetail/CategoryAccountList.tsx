@@ -1,20 +1,24 @@
 // frontend/src/pages/forms/categoryDetail/CategoryAccountList.tsx
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
+
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
+
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
+import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
+import ListAccountOfCategory from './ListAccountOfCategory.tsx';
+
 import { url_get_accounts_by_category } from '../../../../endpoints.ts';
 import { CategoryBudgetAccountsResponseType } from '../../../types/responseApiTypes.ts';
-import { useFetch } from '../../../hooks/useFetch.ts';
 import { CategorySummaryInfoType, CurrencyType } from '../../../types/types.ts';
 import { capitalize } from '../../../helpers/functions.ts';
-import SummaryDetailBox from './summaryDetailBox/SummaryDetailBox.tsx';
-import ListAccountOfCategory from './ListAccountOfCategory.tsx';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-//=================================
+
+import { useFetch } from '../../../hooks/useFetch.ts';
+//==============================
 function CategoryAccountList() {
-  // console.log('CategoryAccountList')
+ // console.log('CategoryAccountList')
   //get the info from location state
   const location = useLocation();
   const { categoryName } = useParams();

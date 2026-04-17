@@ -30,11 +30,12 @@ import {
   numberFormatCurrency,
 } from '../../../helpers/functions.ts';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
-import AccountBalanceSummary from '../accountDetail/AccountBalanceSummary.tsx';
-import AccountTransactionsList from '../accountDetail/AccountTransactionsList.tsx';
+import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
+import AccountTransactionsList from '../accountDetailSharedComponents/accountTransactionsList/AccountTransactionsList.tsx';
 import SummaryDebtorDetailBox from './summaryDebtorDetailBox/SummaryDebtorDetailBox.tsx';
 
 import '../styles/forms-styles.css';
+import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
 
 //---------------
 // const user = import.meta.env.VITE_USER_ID;
