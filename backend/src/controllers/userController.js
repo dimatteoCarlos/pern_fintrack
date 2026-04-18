@@ -4,7 +4,7 @@ import { hashed, isRight, revokeAllUserRefreshTokens } from '../utils/authUtils/
 import { createError } from '../utils/errorHandling.js';
 import { pool } from '../db/configDB.js';
 import pc from 'picocolors';
-import { clearAccessTokenFromCookie } from '../middlewares/authMiddleware.js';
+import { clearAccessTokenFromCookie, clearRefreshTokenFromCookie } from '../middlewares/authMiddleware.js';
 
 //getUserById
 //GET http://localhost:5000/api/user/f7c5abf9-89e5-4891-bfb8-6dfe3022f226
@@ -393,7 +393,8 @@ export const changePassword = async (req, res, next) => {
     await revokeAllUserRefreshTokens(userId, client);
 // 🔴 CLEAN ACCESS TOKEN
     clearAccessTokenFromCookie(res);
-    res.clearCookie('refreshToken')
+    clearRefreshTokenFromCookie(res);
+    // res.clearCookie('refreshToken')
 
 // ✅ RESPONSE
     return res.status(200).json({

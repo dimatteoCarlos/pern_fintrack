@@ -22,7 +22,7 @@ export const getCookieOptions = (type = 'set') => {
   return baseOptions;
 };
 
-// ========== REFRESH TOKEN ==========
+//=== SET REFRESH TOKEN =======
 export const setRefreshTokenCookie = (res, refreshToken) => {
 
   res.cookie('refreshToken', refreshToken, getCookieOptions('set'));
@@ -30,7 +30,7 @@ export const setRefreshTokenCookie = (res, refreshToken) => {
   console.log(pc.green('🍪 Refresh token cookie set successfully.'));
 };
 
-// ===== CLEAR TOKENS IN COOKIES =====
+// === CLEAR REFRESH TOKEN ====
 export const clearRefreshTokenCookie = (res) => {
   res.clearCookie('refreshToken', getCookieOptions('clear'));
   console.log(pc.yellow('🗑️ Refresh token cookie cleared.'));

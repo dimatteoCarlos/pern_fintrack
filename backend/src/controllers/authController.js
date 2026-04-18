@@ -12,7 +12,7 @@
  import pc from 'picocolors';
  import { getCurrencyId } from '../fintrack_api/controllers/transactionController.js';
  import { sendSuccessResponse } from '../utils/authUtils/sendSuccessResponse.js';
- import { clearRefreshTokenCookie, setRefreshTokenCookie } from '../utils/authUtils/cookieConfig.js';
+ import { clearAccessTokenCookie, clearRefreshTokenCookie, setRefreshTokenCookie } from '../utils/authUtils/cookieConfig.js';
 
 //=====================
 //FUNCTIONS DECLARATION
@@ -387,34 +387,34 @@ console.log(pc.yellow('signOutUser'));
   }
 // ✅ CLEARING OF COOKIES/HEADERS 
    clearRefreshTokenCookie(res);
-   clearAccessTokenCookie(res);//just in case
+   clearAccessTokenCookie(res); //just in case
 
 // ✅ RESPONSE HANDLING ()
-    if (revokeSuccess) {
-     sendSuccessResponse(res, 200, 'Logged out successfully. Token revoked.');
-      console.log('Logged out successfully. Token revoked.')
-      } else if (refreshTokenFromClient) {
+   if (revokeSuccess) {
+    sendSuccessResponse(res, 200, 'Logged out successfully. Token revoked.');
+     console.log('Logged out successfully. Token revoked.')
+     } else if (refreshTokenFromClient) {
     // ❌ Token exists but revoking failed / Token proporcionado pero revocación falló
-        const message = 'Logged out with issues: ' + revokeMessage + '. Please login again to ensure security.'
+     const message = 'Logged out with issues: ' + revokeMessage + '. Please login again to ensure security.'
 
-        console.warn(message)
+     console.warn(message)
 
-        sendSuccessResponse(res, 200, message);
-        } else {
-       // ℹ️ No token but completed logout anyway / No había token para revocar, pero logout completado
-       const message ='Logged out successfully. No active session found to revoke.'
-       console.error(message)
-       sendSuccessResponse(res, 200,message);
+     sendSuccessResponse(res, 200, message);
+      } else {
+     // ℹ️ No token but completed logout anyway / No había token para revocar, pero logout completado
+     const message ='Logged out successfully. No active session found to revoke.'
+     console.error(message)
+     sendSuccessResponse(res, 200,message);
         }
   } catch (error) {
 // ✅ 4. FALLBACK: Asegurar limpieza incluso en errores
-   console.error(pc.red('Error during logout:', error));
+  console.error(pc.red('Error during logout:', error));
     
 // Contingency cleaning / limpieza de emergencia
-    clearRefreshTokenCookie(res);
-    clearAccessTokenCookie(res);
-    const message ='Logged out with some technical issues. Please login again to ensure complete security.'
-    sendSuccessResponse(res, 200, message);
+  clearRefreshTokenCookie(res);
+  clearAccessTokenCookie(res);
+  const message ='Logged out with some technical issues. Please login again to ensure complete security.'
+  sendSuccessResponse(res, 200, message);
   }
 }
 

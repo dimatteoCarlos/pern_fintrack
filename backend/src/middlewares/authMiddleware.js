@@ -4,7 +4,7 @@
 import jwt from 'jsonwebtoken';
 import { createError } from '../utils/errorHandling.js';
 import { pool } from "../db/configDB.js"; // 
-import { clearAccessTokenCookie } from '../utils/authUtils/cookieConfig.js';
+import { clearAccessTokenCookie, clearRefreshTokenCookie } from '../utils/authUtils/cookieConfig.js';
 
 // import { getTokenSource } from './authDetectClientType.js';
 //constants
@@ -28,10 +28,14 @@ const TOKEN_ERRORS = {
 // =================================
 // 🔍 UTILS: TOKEN EXTRACTION & VERIFICATION
 // =================================
-// CLEAR ACCESS COOKIE
+// CLEAR ACCESS TOKEN FROM COOKIE
 // =================================
 export const clearAccessTokenFromCookie = (res) => {
   clearAccessTokenCookie(res);
+};
+
+export const clearRefreshTokenFromCookie = (res) => {
+  clearRefreshTokenCookie(res);
 };
 
 // =================================
