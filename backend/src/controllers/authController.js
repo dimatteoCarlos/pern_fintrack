@@ -12,7 +12,8 @@
  import pc from 'picocolors';
  import { getCurrencyId } from '../fintrack_api/controllers/transactionController.js';
  import { sendSuccessResponse } from '../utils/authUtils/sendSuccessResponse.js';
- import { setRefreshTokenCookie } from '../utils/authUtils/cookieConfig.js';
+ import { clearRefreshTokenCookie, setRefreshTokenCookie } from '../utils/authUtils/cookieConfig.js';
+
 //=====================
 //FUNCTIONS DECLARATION
 //=====================
@@ -156,7 +157,7 @@ export const signUpUser = async (req, res, next) => {
 // delete newUser.password; delete newUser.password_hashed; delete newUser.user_role_name
 
 // ✅ REFRESH TOKEN
-setRefreshTokenCookie(res, refreshToken);
+  setRefreshTokenCookie(res, refreshToken);
 
 // ✅ RESPONSE HANDLING
 // const userResponseData  = {
@@ -373,10 +374,10 @@ console.log(pc.yellow('signOutUser'));
         [refreshTokenFromClient]
       );
       revokeSuccess = result.rowCount > 0;
-// console message for debugging
-      revokeMessage =revokeSuccess? 
-       'Refresh token successfully revoked' : 
-       'Refresh token not found for revocation';
+
+      revokeMessage =revokeSuccess
+      ? 'Refresh token successfully revoked'
+      : 'Refresh token not found for revocation';
       console.log(pc.yellow(revokeMessage));
 
       } catch(revokeError){
@@ -385,33 +386,33 @@ console.log(pc.yellow('signOutUser'));
     }
   }
 // ✅ CLEARING OF COOKIES/HEADERS 
-    res.clearCookie('accessToken',{path:'/api'});
-    res.clearCookie('refreshToken',{path:'/api'});
+   clearRefreshTokenCookie(res);
+   clearAccessTokenCookie(res);//just in case
 
 // ✅ RESPONSE HANDLING ()
     if (revokeSuccess) {
      sendSuccessResponse(res, 200, 'Logged out successfully. Token revoked.');
       console.log('Logged out successfully. Token revoked.')
       } else if (refreshTokenFromClient) {
-        // ❌ Token exists but revoking failed / Token proporcionado pero revocación falló
+    // ❌ Token exists but revoking failed / Token proporcionado pero revocación falló
         const message = 'Logged out with issues: ' + revokeMessage + '. Please login again to ensure security.'
 
         console.warn(message)
 
         sendSuccessResponse(res, 200, message);
         } else {
-          // ℹ️ No token but completed logout anyway / No había token para revocar, pero logout completado
-           const message ='Logged out successfully. No active session found to revoke.'
-          console.error(message)
-          sendSuccessResponse(res, 200,message);
+       // ℹ️ No token but completed logout anyway / No había token para revocar, pero logout completado
+       const message ='Logged out successfully. No active session found to revoke.'
+       console.error(message)
+       sendSuccessResponse(res, 200,message);
         }
   } catch (error) {
 // ✅ 4. FALLBACK: Asegurar limpieza incluso en errores
    console.error(pc.red('Error during logout:', error));
     
 // Contingency cleaning / limpieza de emergencia
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    clearRefreshTokenCookie(res);
+    clearAccessTokenCookie(res);
     const message ='Logged out with some technical issues. Please login again to ensure complete security.'
     sendSuccessResponse(res, 200, message);
   }

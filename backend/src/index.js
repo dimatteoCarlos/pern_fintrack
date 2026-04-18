@@ -55,6 +55,11 @@ dotenv.config();
 //app config, global middlewares application.
 //safety, request records and data handling
 const app = express();
+// Render (y muchos servicios cloud) usan proxies inversos. Express debe confiar en el proxy para obtener la IP real y el protocolo correcto (HTTP/HTTPS). Agrega justo después de const app = express():
+if (process.env.NODE_ENV === 'production') {
+app.set('trust proxy', 1); // trust the first proxy
+}
+
 const PORT = parseInt(process.env.PORT ?? '5000');
 
 //Middlewares initialization
@@ -97,7 +102,7 @@ app.use(
 );
 //allow cross origin sharing request
 // app.use(cors('*'));
-app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
+// app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
 app.use(cookieParser()); //Enable cookies analysis
 // =====================
 // 🛣️ API ROUTING

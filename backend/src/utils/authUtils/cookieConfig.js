@@ -1,15 +1,43 @@
-// utils/cookieConfig.js
+// backend/src/utils/authUtils/cookieConfig.js
+
+//functions: getCookieOptions, setRefreshTokenCookie,clearRefreshTokenCookie
+
 import pc from 'picocolors';
 
-export const setRefreshTokenCookie = (res, refreshToken) => {
-  const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'Lax', // O 'Strict'
-    maxAge: 7 * 24 * 60 * 60 * 1000 *3, // 7 días
-    path: '/api'
+// === DEFINE AND GET COOKIE OPTIONS ===
+export const getCookieOptions = (type = 'set') => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const baseOptions = {
+   httpOnly: true,
+   secure: isProduction,
+   sameSite: isProduction ? 'none' : 'lax',
+   path: '/api',
   };
 
-  res.cookie('refreshToken', refreshToken, cookieOptions);
+  if (type === 'clear') {
+// Para clearCookie no necesitas httpOnly ni sameSite? En realidad sí, deben coincidir.
+    return { ...baseOptions };
+  }
+
+  return baseOptions;
+};
+
+// ========== REFRESH TOKEN ==========
+export const setRefreshTokenCookie = (res, refreshToken) => {
+
+  res.cookie('refreshToken', refreshToken, getCookieOptions('set'));
+
   console.log(pc.green('🍪 Refresh token cookie set successfully.'));
+};
+
+// ===== CLEAR TOKENS IN COOKIES =====
+export const clearRefreshTokenCookie = (res) => {
+  res.clearCookie('refreshToken', getCookieOptions('clear'));
+  console.log(pc.yellow('🗑️ Refresh token cookie cleared.'));
+};
+
+// == CLEAR ACCESS TOKEN (for future use just in case) ===
+export const clearAccessTokenCookie = (res) => {
+  res.clearCookie('accessToken', getCookieOptions('clear'));
+  console.log(pc.yellow('🗑️ Access token cookie cleared.'));
 };

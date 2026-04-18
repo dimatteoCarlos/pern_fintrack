@@ -1,17 +1,18 @@
 // src/middleware/authMiddleware.js
-// getAuthToken,clearAccessTokenFromCookie, verifyJWTToken, handleTokenError, verifyToken,verifyUser, verifyAdmin
+// getAuthToken,clearAccessTokenFromCookie,verifyJWTToken, handleTokenError, verifyToken,verifyUser, verifyAdmin
 
 import jwt from 'jsonwebtoken';
 import { createError } from '../utils/errorHandling.js';
 import { pool } from "../db/configDB.js"; // 
+import { clearAccessTokenCookie } from '../utils/authUtils/cookieConfig.js';
 
 // import { getTokenSource } from './authDetectClientType.js';
 //constants
 // const accessMode ={MOBILE:'mobile', WEB:'web'}
 
-// ==========================================
+// ======================================
 // 📊 ROLE HIERARCHY CONFIGURATION
-// ==========================================
+// ======================================
 const ROLE_LEVELS = {
   'user': 1,
   'admin': 2,
@@ -24,10 +25,15 @@ const TOKEN_ERRORS = {
   NotBeforeError: { message: 'Token not yet active.', status: 403 }
 };
 
-//---utils functions
-// ==========================================
+// =================================
 // 🔍 UTILS: TOKEN EXTRACTION & VERIFICATION
-// ==========================================
+// =================================
+// CLEAR ACCESS COOKIE
+// =================================
+export const clearAccessTokenFromCookie = (res) => {
+  clearAccessTokenCookie(res);
+};
+
 // =================================
 // GET AUTHENTICATION TOKEN
 // =================================
@@ -55,18 +61,6 @@ export const getAuthToken = (req) => {
   
   console.log('❌ No token provided in headers or cookies');
   return null;
-};
-
-// =================================
-// CLEAR ACCESS COOKIE
-// =================================
-export const clearAccessTokenFromCookie = (res) => {
-  res.clearCookie('accessToken', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'Lax',
-    path: '/api',
-  });
 };
 
 // =================================
@@ -152,9 +146,9 @@ export const verifyToken = async (req, res, next) => {
    return  next(handleTokenError(error, req, res));
   }
 };
-// ==========================================
+// ===================================
 // 👤 ATOMIC MIDDLEWARE: VERIFY USER OWNERSHIP & HIERARCHY
-// ==========================================
+// ===================================
 // Middleware to check authentication and authorization: 
 // 1. Authenticate (verifyToken)
 // 2. Authorize. verifyOwnership. Check if the user is the owner of the targetAccountId OR is an Admin.
