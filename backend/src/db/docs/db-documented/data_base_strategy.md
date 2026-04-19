@@ -11,7 +11,7 @@ createdb expensetracker_dev
 # 3 ➡️ Crea una DB vacía
 # 📌 expensetracker_dev es el nombre de la DB, debe coincidir con:
 
-DATABASE_URI=postgresql://user:pass@localhost:5432/expensetracker_dev
+DATABASE_URI=postgresql://user:passW@localhost:5432/expensetracker_dev
 
 # 🔹 2. Ejecutar migraciones
 npm run db:migrate

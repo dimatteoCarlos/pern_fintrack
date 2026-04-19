@@ -19,7 +19,7 @@ CREATE DATABASE fintrack_dev;
 # 3. Verificar variables de entorno
 # ==================================
 # Debe existir en tu .env:
-# DATABASE_URI=postgresql://postgres:admin@localhost:5432/fintrack_dev
+# DATABASE_URI=postgresql://postgres:PASSWORD@localhost:5432/fintrack_dev
 # ADMIN_PASSWORD=alguna_password_segura
 
 # ==================================
