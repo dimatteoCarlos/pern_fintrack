@@ -12,7 +12,6 @@ import cookieParser from 'cookie-parser';
 import useragent from 'express-useragent';
 import dotenv from 'dotenv';
 import pc from 'picocolors';
-// import '../utils/authUtils/cronJobs.js';
 
 //Database utils and conection
 import { pool, checkConnection } from './db/configDB.js';
@@ -24,11 +23,12 @@ import {
   tblMovementTypes,
   tbltransactionTypes,
   tblUserRoles,
-} from './db/old_run_time_migrations/populateDB.js';
+} from './db/run_time_migrations/populateDB.js';
+
 import {
   mainTables,
   createTables,
-} from './db/old_run_time_migrations/createTables.js';
+} from './db/run_time_migrations/createTables.js';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
 import routes from './routes/index.js';

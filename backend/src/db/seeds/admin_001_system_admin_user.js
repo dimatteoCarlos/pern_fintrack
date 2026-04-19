@@ -12,7 +12,7 @@
  */
 
 import bcrypt from 'bcrypt';
-import pc from 'picocolors';
+// import pc from 'picocolors';
 
 export default async function seedAdminUser(client) {
 // Read required environment variables 

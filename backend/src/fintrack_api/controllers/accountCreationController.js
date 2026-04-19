@@ -29,7 +29,7 @@ export const createBasicAccount = async (req, res, next) => {
   //movement_type_name:'account-opening', movement_type_id: 8, transaction_type_name:deposit,
   console.log(pc.blueBright('createBasicAccount'));
 
-  console.log('body:',req.body,'params:',req.params,'query:',req.query,'path:',req.path,'originalUrl:',req.originalUrl );
+  // console.log('body:',req.body,'params:',req.params,'query:',req.query,'path:',req.path,'originalUrl:',req.originalUrl );
 
   const client = await pool.connect();
 
@@ -85,7 +85,7 @@ export const createBasicAccount = async (req, res, next) => {
       return res.status(400).json({ status: 400, message });
     }
     //-----------------------
-    console.log(pc.bgCyan('userId', userId));
+    // console.log(pc.bgCyan('userId', userId));
     //-----------------------
    
     //check input data
@@ -129,12 +129,12 @@ export const createBasicAccount = async (req, res, next) => {
     )[0].currency_id;
     // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
     //---------------------------------
-    console.log("--- FK DEBUGING / DEBUG DE LLAVES FORÁNEAS ---");
-    console.log("User ID:", userId);
-    console.log("Currency ID encontrado:", currencyIdReq);
-    console.log("Account Type ID encontrado:", accountTypeIdReq);
-    console.log("Movement Type ID (Hardcoded):", 8);
-    console.log("---------------------------------");
+    // console.log("--- FK DEBUGING / DEBUG DE LLAVES FORÁNEAS ---");
+    // console.log("User ID:", userId);
+    // console.log("Currency ID encontrado:", currencyIdReq);
+    // console.log("Account Type ID encontrado:", accountTypeIdReq);
+    // console.log("Movement Type ID (Hardcoded):", 8);
+    // console.log("---------------------------------");
     //---------------------------------
     await client.query('BEGIN');
     //NEW ACCOUNT TO CREATE AND COUNTER TRANSACTION ACCOUNT (SLACK)
@@ -208,10 +208,10 @@ export const createBasicAccount = async (req, res, next) => {
           transaction_actual_date
         )
       : null;
-    console.log(
-      '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
-      updatedCounterAccountInfo
-    );
+    // console.log(
+    //   '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
+    //   updatedCounterAccountInfo
+    // );
 
     //----- INSERT NEW ACCOUNT -------
     const { account_basic_data } = await insertAccount(
@@ -229,7 +229,7 @@ export const createBasicAccount = async (req, res, next) => {
     const transactionDescription = `Transaction: ${transactionType}. Account: ${newAccountName}. Type: ${account_type_name}. Initial-(${transactionType}). Amount: ${newaccount_starting_amount} ${currency_code}. Date: ${formatDateToDDMMYYYY(transaction_actual_date)}`;
 
     const message = `${newAccountName} account of type ${account_type_name} with number ${account_id} was successfully created `;
-    console.log('🚀 ~ createAccount ~ message:', message);
+    // console.log('🚀 ~ createAccount ~ message:', message);
 
     //-------NEW ACCOUNT INFO --------------------
     const newAccountInfo = {
@@ -264,7 +264,7 @@ export const createBasicAccount = async (req, res, next) => {
       destination_account_id = newAccountInfo.account_id;
       source_account_id = counterAccountInfo.account.account_id;
     }
-    console.log('id:', destination_account_id, source_account_id);
+    // console.log('id:', destination_account_id, source_account_id);
 
     //------MOVEMENT TYPE ASSOCIATED TO CREATE A NEW ACCOUNT ---
     const movement_type_id = 8; //account opening
@@ -459,10 +459,10 @@ const client = await pool.connect();
     // console.log("🚀 ~ createDebtorAccount ~ selectedAccountTypeIdReqObj:", selectedAccountTypeIdReqObj)
     const selectedAccountTypeIdReq =
       selectedAccountTypeIdReqObj.account_type_id;
-    console.log(
-      '🚀 ~ createAccount ~ selected_account_type_id:',
-      selectedAccountTypeIdReq
-    );
+    // console.log(
+    //   '🚀 ~ createAccount ~ selected_account_type_id:',
+    //   selectedAccountTypeIdReq
+    // );
 
     if (selectedAccountTypeIdReq === undefined) {
       throw new Error(
@@ -477,7 +477,7 @@ const client = await pool.connect();
       newAccountName,
       debtorAccountType
     );
-    console.log('🚀 ~ createDebtorAccount ~ debtorAccountExist:',  newAccountName,debtorAccountExist );
+    // console.log('🚀 ~ createDebtorAccount ~ debtorAccountExist:',  newAccountName,debtorAccountExist );
     //----------------------------------------
     //verify selected account existence and get account_id from user_accounts table or handling error 
     const selectedAccountExists = await verifyAccountExists(
@@ -486,7 +486,7 @@ const client = await pool.connect();
       selected_account_name,
       selected_account_type
     );
-    console.log('selectedAccountExist',selectedAccountExists, selectedAccountExists.accountId)
+    // console.log('selectedAccountExist',selectedAccountExists, selectedAccountExists.accountId)
    
     //============================
     //NEW VERSION:get selected account info as the counter account. checkAndInsertAccount gets the selected account info
@@ -501,10 +501,10 @@ const client = await pool.connect();
      selected_account_type
     );
     const messageCounterAccountInfo = counterAccountInfo.exists?`${selected_account_name} exists`:`${selected_account_name} didn't exist and it was created`
-    console.log(
-      '🚀 ~ createDebtorAccount ~ messageCounterAccountInfo:',messageCounterAccountInfo,
-      counterAccountInfo.account.account_balance
-    );
+    // console.log(
+    //   '🚀 ~ createDebtorAccount ~ messageCounterAccountInfo:',messageCounterAccountInfo,
+    //   counterAccountInfo.account.account_balance
+    // );
    //==================================
     //---check for enough funds
     //rules
@@ -533,11 +533,11 @@ const client = await pool.connect();
         ? value * -1
         : value;
     const newAccountBalance = transactionAmount;
-    console.log(
-      { debtorTransactionType },
-      { transactionAmount },
-      { newAccountBalance }
-    );
+    // console.log(
+    //   { debtorTransactionType },
+    //   { transactionAmount },
+    //   { newAccountBalance }
+    // );
     //------- NEW DEBTOR BASIC ACCOUNT INFO ----------
     await client.query('BEGIN');
     //---INSERT DEBTOR ACCOUNT into user_accounts table
@@ -552,7 +552,7 @@ const client = await pool.connect();
       account_start_date ?? transaction_actual_date
     );
     const account_id = account_basic_data.account_id;
-    console.log('account_basic_data',account_basic_data)
+    // console.log('account_basic_data',account_basic_data)
     //--------------------------------
     //---INSERT DEBTOR ACCOUNT into debtor_accounts table
     const debtorInsertQuery = {
@@ -951,7 +951,7 @@ export const createPocketAccount = async (req, res, next) => {
       account_balance: parseFloat(account_balance),
     };
 
-    console.log('newAccountInfo', newAccountInfo)
+    // console.log('newAccountInfo', newAccountInfo)
     //---- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT)------
     //OLD VERSION EXPLANATION
     //in the original version, a arbigtrary counter account is created to be a counter account of opening account movement,  when initial amount is greater than 0. 

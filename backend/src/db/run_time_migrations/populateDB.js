@@ -1,3 +1,4 @@
+// backend/src/db/run_time_migrations/populateDB.js
 import {
   createError,
   handlePostgresErrorEs,
@@ -118,7 +119,7 @@ export async function tblUserRoles() {
     const exists = await tableExists(tblName);
     if (!exists) {
       console.log(
-        pc.cyan(`\" ${tblName}\" table does not exist. Creating it...`)
+        pc.cyan(`/" ${tblName}/" table does not exist. Creating it...`)
       );
       const createQuery = `CREATE TABLE user_roles(user_role_id SERIAL PRIMARY KEY  NOT NULL, user_role_name VARCHAR(15) NOT NULL CHECK (user_role_name IN ('user', 'admin', 'super_admin') ) )`;
       await pool.query(createQuery);

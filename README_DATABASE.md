@@ -1,5 +1,3 @@
-## ✅ Aquí está el README completo y corregido (solo UNA versión, sin duplicados):
-
 ```markdown
 ## 📘 FinTrack Backend – Database Administration and Maintenance Guide
 
