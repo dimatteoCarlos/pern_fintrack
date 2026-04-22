@@ -327,7 +327,7 @@ export const signInUser = async (req, res, next) => {
       user_contact: user.user_contact,
     };
 
-    console.log('🚀 ~ signInUser ~ userResponseData:', userResponseData);
+    // console.log('🚀 ~ signInUser ~ userResponseData:', userResponseData);
 
     res.status(200).json({
       message: 'Login successful',
