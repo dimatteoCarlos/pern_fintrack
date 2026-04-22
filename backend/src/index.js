@@ -69,6 +69,7 @@ app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); //Enable cookies analysis
 
 //CORS Configuration for access control
 const ACCEPTED_ORIGINS = [
@@ -103,7 +104,6 @@ app.use(
 //allow cross origin sharing request
 // app.use(cors('*'));
 // app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
-app.use(cookieParser()); //Enable cookies analysis
 // =====================
 // 🛣️ API ROUTING
 // =====================
