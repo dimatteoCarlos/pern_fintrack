@@ -6,7 +6,7 @@ import { pool } from '../db/configDB.js';
 console.log(pc.magentaBright('File: updateAccountBalance.js', '\n'));
 console.log(
   '\n',
-  pc.yellowBright('DATA BASE COMMENTS WILL BE IN SPANISH'),
+  pc.yellowBright('DATA BASE COMMENTS ARE IN SPANISH'),
   '\n',
 );
 //------------------------------
