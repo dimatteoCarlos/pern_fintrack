@@ -39,7 +39,7 @@ async function isTablePopulated(tableName, minCount = 1) {
 //==========================================
 //--
 //currencies
-export async function tblCurrencies() {
+export async function tblCurrencies(client=pool) {
   const currenciesValues = [
     {
       currency_id: 1,
@@ -60,7 +60,7 @@ export async function tblCurrencies() {
       currency_code VARCHAR(3) NOT NULL ,
       currency_name VARCHAR(10) NOT NULL 
 )`;
-      await pool.query(createQuery);
+      await client.query(createQuery);
     }
 
     //is it already populated
@@ -72,7 +72,7 @@ export async function tblCurrencies() {
 
     console.log(currenciesValues);
     //initiate a transaction
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
     //run through the data and insert every tuple
 
     for (const currency of currenciesValues) {
@@ -82,17 +82,17 @@ export async function tblCurrencies() {
         currency.currency_code,
         currency.currency_name,
       ];
-      await pool.query(queryText, values);
+      await client.query(queryText, values);
       // console.log('inerted: currency', currency.currency_code);
     }
 
     //confirm transaction
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
     // console.log('All tuples inserted successfully.');
   } catch (
     error // Revertir la transacción en caso de error
   ) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.error(pc.orange('Error inserting tuples:', error));
     throw error;
   }
@@ -101,7 +101,7 @@ export async function tblCurrencies() {
 // tblCurrencies();
 //--
 //user roles
-export async function tblUserRoles() {
+export async function tblUserRoles(client=pool) {
   const rolesValues = [
     { user_role_id: 1, user_role_name: 'user' },
     { user_role_id: 2, user_role_name: 'admin' },
@@ -122,7 +122,7 @@ export async function tblUserRoles() {
         pc.cyan(`/" ${tblName}/" table does not exist. Creating it...`)
       );
       const createQuery = `CREATE TABLE user_roles(user_role_id SERIAL PRIMARY KEY  NOT NULL, user_role_name VARCHAR(15) NOT NULL CHECK (user_role_name IN ('user', 'admin', 'super_admin') ) )`;
-      await pool.query(createQuery);
+      await client.query(createQuery);
     }
 
     //is it already populated?
@@ -133,13 +133,13 @@ export async function tblUserRoles() {
     }
 
     //initiate a transaction
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
     //run through the data and insert every tuple
     for (const role of rolesValues) {
       const queryText = `INSERT INTO user_roles(user_role_id, user_role_name) VALUES ($1,$2)`;
       const values = [role.user_role_id, role.user_role_name];
-      await pool.query(queryText, values);
+      await client.query(queryText, values);
       console.log(
         pc.green('inserted: user_role'),
         pc.green(role.user_role_name)
@@ -147,12 +147,12 @@ export async function tblUserRoles() {
     }
 
     //confirm transaction
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
   } catch (
     error // Revertir la transacción en caso de error
   ) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.error(pc.red('Error inserting tuples:', tblName, error));
   }
 }
@@ -160,7 +160,7 @@ export async function tblUserRoles() {
 // tblUserRoles()
 //--
 //accountTypes
-export async function tblAccountTypes() {
+export async function tblAccountTypes(client=pool) {
   const accountTypeValues = [
     { account_type_id: 1, account_type_name: 'bank' },
     { account_type_id: 2, account_type_name: 'investment' },
@@ -186,7 +186,7 @@ export async function tblAccountTypes() {
         account_type_id INT PRIMARY KEY NOT NULL,
         account_type_name VARCHAR(50) NOT NULL 
 )`;
-      await pool.query(createQuery);
+      await client.query(createQuery);
     }
 
     //is it already populated
@@ -197,30 +197,30 @@ export async function tblAccountTypes() {
     }
 
     //initiate a transaction
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
     //run through the data and insert every tuple
     for (const type of accountTypeValues) {
       const queryText = `INSERT INTO account_types(account_type_id,
       account_type_name) VALUES ($1,$2)`;
       const values = [type.account_type_id, type.account_type_name];
-      await pool.query(queryText, values);
+      await client.query(queryText, values);
       console.log(pc.green(`inserted: ${tblName}, ${type.account_type_name}`));
     }
 
     //confirm transaction
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
   } catch (
     error // Revertir la transacción en caso de error
   ) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.error('Error inserting tuples:', error);
   }
 }
 //tblAccountTypes();
 //--
 //categoryNatureTypes
-export async function tblCategoryNatureTypes() {
+export async function tblCategoryNatureTypes(client=pool) {
   const categoryNatureTypeValues = [
     { category_nature_type_id: 1, category_nature_type_name: 'must' },
     { category_nature_type_id: 2, category_nature_type_name: 'need' },
@@ -243,7 +243,7 @@ export async function tblCategoryNatureTypes() {
         category_nature_type_id SERIAL PRIMARY KEY NOT NULL,
         category_nature_type_name VARCHAR(15) NOT NULL 
 )`;
-      await pool.query(createQuery);
+      await client.query(createQuery);
     }
 
     //is it already populated
@@ -254,7 +254,7 @@ export async function tblCategoryNatureTypes() {
     }
 
     //initiate a transaction
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
     //run through the data and insert every tuple
     for (const type of categoryNatureTypeValues) {
       const queryText = `INSERT INTO category_nature_types(category_nature_type_id,
@@ -263,19 +263,19 @@ export async function tblCategoryNatureTypes() {
         type.category_nature_type_id,
         type.category_nature_type_name,
       ];
-      await pool.query(queryText, values);
+      await client.query(queryText, values);
       console.log(
         pc.green(`inserted: ${tblName}, ${type.category_nature_type_name}`)
       );
     }
 
     //confirm transaction
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
   } catch (
     error // Revertir la transacción en caso de error
   ) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     const { code, message } = handlePostgresErrorEs();
     next(createError(code, message));
     console.error('Error inserting tuples:', message || error);
@@ -284,7 +284,7 @@ export async function tblCategoryNatureTypes() {
 //tblCategoryNatureTypes();
 //---
 //movement_types
-export async function tblMovementTypes() {
+export async function tblMovementTypes(client=pool) {
   const movementTypeValues = [
     { movement_type_id: 1, movement_type_name: 'expense' },
     { movement_type_id: 2, movement_type_name: 'income' },
@@ -312,7 +312,7 @@ export async function tblMovementTypes() {
         movement_type_id INT PRIMARY KEY NOT NULL,
         movement_type_name VARCHAR(50) NOT NULL CHECK(movement_type_name IN ('expense','income','investment','debt','pocket','transfer','receive','account-opening','pnl'))
 )`;
-      await pool.query(createQuery);
+      await client.query(createQuery);
     }
 
     //is it already populated
@@ -323,23 +323,23 @@ export async function tblMovementTypes() {
     }
 
     //initiate a transaction
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
     //run through the data and insert every tuple
     for (const type of movementTypeValues) {
       const queryText = `INSERT INTO movement_types(movement_type_id,
       movement_type_name) VALUES ($1,$2)`;
       const values = [type.movement_type_id, type.movement_type_name];
-      await pool.query(queryText, values);
+      await client.query(queryText, values);
       console.log(pc.green(`inserted: ${tblName}, ${type.movement_type_name}`));
     }
 
     //confirm transaction
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
   } catch (
     error // Revertir la transacción en caso de error
   ) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.error('Error inserting tuples:', error);
   }
 }
@@ -347,7 +347,7 @@ export async function tblMovementTypes() {
 
 //--
 //transactionTypes
-export async function tbltransactionTypes() {
+export async function tbltransactionTypes(client=pool) {
   const transactionTypeValues = [
     { transaction_type_id: 1, transaction_type_name: 'withdraw' },
     { transaction_type_id: 2, transaction_type_name: 'deposit' },
@@ -370,7 +370,7 @@ export async function tbltransactionTypes() {
       console.log(pc.yellow`${tblName} table does not exist. Creating it...'`);
       const createQuery = `CREATE TABLE transaction_types(transaction_type_id SERIAL PRIMARY KEY NOT NULL,
         transaction_type_name VARCHAR(50) NOT NULL)`;
-      await pool.query(createQuery);
+      await client.query(createQuery);
     }
 
     //is it already populated
@@ -381,23 +381,23 @@ export async function tbltransactionTypes() {
     }
 
     //initiate a transaction
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
     //run through the data and insert every tuple
     for (const type of transactionTypeValues) {
       const queryText = `INSERT INTO transaction_types(transaction_type_id,
       transaction_type_name) VALUES ($1,$2)`;
       const values = [type.transaction_type_id, type.transaction_type_name];
-      await pool.query(queryText, values);
+      await client.query(queryText, values);
       console.log(`inserted: ${tblName}, ${type.transaction_type_name}`);
     }
 
     //confirm transaction
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
   } catch (
     error // reverse transaction in case of error
   ) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.error('Error inserting tuples:', error);
   }
 }

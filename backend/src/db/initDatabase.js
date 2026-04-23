@@ -1,4 +1,4 @@
-//backend/src/initDatabase.js
+//backend/src/db/initDatabase.js
 // Database initialization logic (tables, constraints, initial data)
 // ====================
 // 📥 Imports
@@ -27,6 +27,9 @@ import {
 // 📊 DATA BASE INITIALIZATION
 // ============================
 export async function initializeDatabase() {
+
+   const client = await pool.connect();
+
   try {
     console.log(pc.cyanBright('Verificando existencia de datos en tablas ...'));
 
@@ -39,10 +42,10 @@ export async function initializeDatabase() {
     initialized_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
-      await pool.query(createQuery);
+      await client.query(createQuery);
     }
 
-    const initCheck = await pool.query(
+    const initCheck = await client.query(
       `SELECT tables_created FROM app_initialization ORDER BY id DESC LIMIT 1`,
     );
 
@@ -52,36 +55,38 @@ export async function initializeDatabase() {
       console.log(pc.cyan('Initializing app for the first time....'));
       //----------
       //Transaction pg
-      await pool.query('BEGIN');
+   
+      await client.query('BEGIN');
       try {
         // Initialize tables with catalogued field attributes
-        await tblAccountTypes();
-        await tblCurrencies();
-        await tblCategoryNatureTypes();
-        await tblUserRoles();
-        await tbltransactionTypes();
-        await tblMovementTypes();
+        await tblAccountTypes(client);
+        await tblCurrencies(client);
+        await tblCategoryNatureTypes(client);
+        await tblUserRoles(client);
+        await tbltransactionTypes(client);
+        await tblMovementTypes(client);
 
         //Create the main tables
-        await pool.query('SET CONSTRAINTS ALL DEFERRED');
-        await createTables();
-        await pool.query('SET CONSTRAINTS ALL IMMEDIATE');
+        await client.query('SET CONSTRAINTS ALL DEFERRED');
+        await createTables(client);
+        await client.query('SET CONSTRAINTS ALL IMMEDIATE');
 
         //Mark as initialized
-        await pool.query(`
-     INSERT INTO app_initialization (tables_created) VALUES (TRUE)
-     ON CONFLICT (id) DO UPDATE SET
-       tables_created = EXCLUDED.tables_created,
-       updated_at = NOW()
+        await client.query(`
+         INSERT INTO app_initialization (tables_created) VALUES (TRUE)
+         ON CONFLICT (id)
+         DO UPDATE SET
+         tables_created = EXCLUDED.tables_created,
+         updated_at = NOW()
      `);
-        await pool.query('COMMIT');
+        await client.query('COMMIT');
 
         console.log(pc.green('Application initialized successfully'));
+
       } catch (error) {
-        await pool.query('ROLLBACK');
+        await client.query('ROLLBACK');
         throw error;
       }
-      //----------
     } else {
       console.log(
         pc.yellow('Application already initialized. Skipping tables creation.'),
@@ -103,13 +108,13 @@ export async function initializeDatabase() {
               }
             }
 
-            await pool.query({
+            await client.query({
               text: `TRUNCATE TABLE ${item.tblName} RESTART IDENTITY CASCADE`,
             });
             console.log(indx, item.tblName, 'truncated');
 
             if (tableActions.isDrop) {
-              await pool.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
+              await client.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
               console.log(indx, item.tblName, 'drop');
             }
           } catch (error) {
@@ -136,7 +141,7 @@ export async function initializeDatabase() {
       await Promise.allSettled(
         mainTables.map(async (item, ind) => {
           try {
-            await pool.query(item.table);
+            await client.query(item.table);
             console.log(ind, item.tblName, 'verified/created');
           } catch (error) {
             console.error(
@@ -168,5 +173,7 @@ export async function initializeDatabase() {
       error,
     );
     throw error; // Relanzar el error para manejarlo en el nivel superior
-  }
+  }finally {
+    client.release();
+    }
 }

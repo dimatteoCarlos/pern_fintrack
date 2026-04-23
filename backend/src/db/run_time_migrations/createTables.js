@@ -281,13 +281,13 @@ export const createSearchIndexes = [
 
 //----
 //Create main tables needed at initialization of the app
-export async function createTables() {
+export async function createTables(client=pool) {
   try {
     console.log('Creando las tablas en caso que no existan...');
     await Promise.allSettled(
       mainTables.map(async (item, ind) => {
         try {
-          await pool.query(item.table);
+          await client.query(item.table);
           // console.log(ind, item.tblName, 'verified/created');
           console.log(
             pc.green(`${ind}) Table ${item.tblName} verified/created`)
