@@ -82,7 +82,7 @@ label,
   }
 
 /* --------------- Responsive: forms & account detail --------------- */
-@media (max-width: 480px) {
+/* @media (max-width: 480px) {
   .page__container {
     min-width: 100%;
     padding: 0 0.75rem;
@@ -142,7 +142,7 @@ label,
     min-width: 4.5rem;
     font-size: 0.8rem;
   }
-}
+} */
 
 label,
 .labelText {
@@ -344,7 +344,7 @@ textarea:invalid {
   justify-content: space-between;
   align-items: start;
   gap: 1.5rem;
-  flex-wrap: wrap;
+  /* flex-wrap: wrap; */
 }
 
 .account__date,
