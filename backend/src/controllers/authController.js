@@ -40,7 +40,7 @@ NotBeforeError	Sucede si se intenta usar un token antes de su fecha de validez (
 //===========================
 export const signUpUser = async (req, res, next) => {
   console.log(pc.blueBright('signUpUser'));
-  await pool.query('BEGIN');
+  const client = await pool.connect();
   try {
     // ✅ GET CREDENTIALS
     const { username, user_firstname, user_lastname, email, currency } =
@@ -62,7 +62,7 @@ export const signUpUser = async (req, res, next) => {
     }
 
     // ✅ CHECK EXISTENCE OF USER/EMAIL
-    const usernameExists = await pool.query(
+    const usernameExists = await client.query(
       'SELECT 1 FROM users WHERE username=$1 FOR UPDATE',
       [username],
     );
@@ -73,7 +73,7 @@ export const signUpUser = async (req, res, next) => {
     }
 
     // ✅ CHECK IF EMAIL EXISTS
-    const emailExists = await pool.query(
+    const emailExists = await client.query(
       'SELECT 1 FROM users WHERE email=$1 FOR UPDATE',
       [email],
     );
@@ -100,7 +100,7 @@ export const signUpUser = async (req, res, next) => {
     //evalute to adding: google_id, display_name, auth_method, user_contact, user_role_id is 1 by default.
 
     // ✅ -Insert new user into data base
-    const userData = await pool.query({
+    const userData = await client.query({
       text: `
       INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id) VALUES ($1, $2, $3,$4,$5, $6, $7, $8) 
       RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id;`,
@@ -143,8 +143,8 @@ export const signUpUser = async (req, res, next) => {
     refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 7);
 
     //Store refresh token in refresh_tokens db table
-    // const insertedRefreshTokenResult = await pool.query(
-    await pool.query(
+    // const insertedRefreshTokenResult = await client.query(
+    await client.query(
       `INSERT INTO refresh_tokens(user_id, token, expiration_date, user_agent, ip_address) VALUES($1,$2,$3,$4,$5) RETURNING token_id`,
       [
         newUser.user_id,
@@ -189,11 +189,13 @@ export const signUpUser = async (req, res, next) => {
       expiresIn: 3600 * 1 * 1, // 60 minutos
     });
 
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.log(pc.red('Sign-up error:'), error);
     next(createError(500, error.message || 'internal signup error'));
+  } finally {
+    client.release();
   }
 };
 //===================================
@@ -201,11 +203,12 @@ export const signUpUser = async (req, res, next) => {
 //===================================
 export const signInUser = async (req, res, next) => {
   console.log(pc.greenBright('signInUser'));
+  const client = await pool.connect();
   const { username, email } = req.body;
   // console.log('req.body', req.body);
 
-  await pool.query('BEGIN');
   try {
+   await client.query('BEGIN');
     // ✅ VALIDATION
     if (!(username && email && req.body.password)) {
       return next(
@@ -292,7 +295,7 @@ export const signInUser = async (req, res, next) => {
     );
 
     // Store the refresh token in the database
-    await pool.query(
+    await client.query(
       'INSERT INTO refresh_tokens (user_id, token, expiration_date, user_agent, ip_address) VALUES ($1, $2, $3, $4, $5) RETURNING token_id',
       [
         user.user_id,
@@ -347,11 +350,13 @@ export const signInUser = async (req, res, next) => {
       // 'userResponseData:',
       // userResponseData
     );
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.log('Sign-in error:', error);
     next(createError(500, error.message || 'internal sign-in user error'));
+  }finally{
+   client.release();
   }
 };
 
@@ -374,7 +379,7 @@ export const signOutUser = async (req, res, next) => {
     // ✅ REVOKING REFRESH TOKEN
     if (refreshTokenFromClient) {
       try {
-        const result = await pool.query(
+        const result = await client.query(
           `UPDATE refresh_tokens
          SET revoked = TRUE
          WHERE token = $1`,
@@ -387,8 +392,8 @@ export const signOutUser = async (req, res, next) => {
           : 'Refresh token not found for revocation';
         console.log(pc.yellow(revokeMessage));
       } catch (revokeError) {
-        console.error('Error revoking token:', revokeError);
-        revokeMessage = 'Error during token revocation';
+         console.error('Error revoking token:', revokeError);
+         revokeMessage = 'Error during token revocation';
       }
     }
     // ✅ CLEARING OF COOKIES/HEADERS
@@ -429,9 +434,9 @@ export const signOutUser = async (req, res, next) => {
   }
 };
 
-// =================
+// ========================
 // 🎯 VALIDATE USER SESSION
-// =================
+// ========================
 // backend/src/controllers/authController.js
 export const validateSession = async (req, res, next) => {
   try {
@@ -439,7 +444,7 @@ export const validateSession = async (req, res, next) => {
     const { userId } = req.user;
     console.log('🚀 ~ validateSession ~ userId:', userId);
 
-    const userDataResult = await pool.query({
+    const userDataResult = await client.query({
       text: `SELECT u.user_id, u.username, u.email, u.user_firstname, u.user_contact, u.user_lastname, 
       u.user_contact, ct.currency_code as currency, 
       ur.user_role_name as role

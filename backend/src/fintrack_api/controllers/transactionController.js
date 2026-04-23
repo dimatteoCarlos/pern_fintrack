@@ -2,7 +2,7 @@
 // Functions: Handles financial transfers between accounts with balance updates and transaction recording
 
 //functions defined here:getAccountTypeId,getAccountInfo, getAccountTypes,getTransactionTypes, balanceMultiplierFn,updateAccountBalance,
-//-----------------------------
+//--------------------------
 import pc from 'picocolors';
 import { pool } from '../../db/configDB.js';
 import {
