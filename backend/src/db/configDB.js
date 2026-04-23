@@ -1,26 +1,19 @@
 //backend/src/db/configDB.js
 import pg from 'pg';
 import pc from 'picocolors';
-import dotenv from 'dotenv';
-dotenv.config();
+import { activeConfig } from '../config/index.js';
 
-const isProduction = process.env.NODE_ENV === 'production';
+// Use database configuration from central config
+const dbConfig = activeConfig.database;
 
-const uri = {
- connectionString: process.env.DATABASE_URI,
- //,  ssl: { rejectUnauthorized: false }, //Never use this in production. alternative: mkcert
- ssl: isProduction ? { rejectUnauthorized: false } : false,
+export const pool = new pg.Pool(dbConfig);
 
- connectionTimeoutMillis: 10000, // Tiempo de espera para la conexión (5 segundos)
+//Log pool configuration (useful for debugging)
+console.log(pc.cyan(`[DB] Pool created with max=${dbConfig.max}`), pc.green(`ssl=${JSON.stringify(dbConfig.ssl)}`));
 
- idleTimeoutMillis: 30000, // Tiempo de espera para conexiones inactivas (30 segundos)
-};
-
-export const pool = new pg.Pool(uri); // Ojo, Pool espera un objeto
-
-// Manejo de errores globales del pool (Muy recomendado)
+// Handle pool errors
 pool.on('error', (err) => {
- console.error(pc.red('Error inesperado en un cliente inactivo de la DB:'), err);
+ console.error(pc.red('Error inesperado en un cliente inactivo de la DB / Unexpected error on idle client:'), err);
  // No cerramos el proceso necesariamente, pero lo registramos
 });
 
@@ -31,11 +24,11 @@ export async function checkConnection() {
     client.release();
 
    console.log(
-    pc.italic(pc.yellowBright('Conexión a la base de datos verificada.'))
+    pc.italic(pc.yellowBright('Conexión a la base de datos verificada / Database connection verified.'))
    ); //Data base connection verified
   } catch (error) {
     console.error(
-     pc.red('❌ Error crítico al conectar con la base de datos:', error.message)
+     pc.red('❌ Error crítico al conectar con la base de datos / Critical error connecting to database:', error.message)
     ); //Error when connecting to data base.
     // if (isProduction) throw error;
     throw error;
