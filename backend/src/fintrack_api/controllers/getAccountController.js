@@ -56,7 +56,7 @@ const calculateBudgetMetrics = (balanceAccount, budgetAccount)=>{
     values:[userId, accountId, defaultStartDate, defaultEndDate]
   }
   
- const transactionsResult = await pool.query(transactionsQuery)
+ const transactionsResult = await pool.query(transactionsQuery);
 
 // 📈 CALCULATE SUMMARY DATA
 const transactions = transactionsResult.rows
