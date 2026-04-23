@@ -233,7 +233,7 @@ console.log(pc.bgBlueBright('controller:',
 
   const updatedUserResult = await client.query(updateQuery, values);
   
-  console.log("🚀 ~ updateProfile ~ updatedUserResult:", updatedUserResult.rows[0])
+  // console.log("🚀 ~ updateProfile ~ updatedUserResult:", updatedUserResult.rows[0])
 
  //4. Get the complete data for the response
   const fullUserData = await client.query({
