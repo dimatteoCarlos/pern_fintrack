@@ -42,6 +42,8 @@ export const signUpUser = async (req, res, next) => {
   console.log(pc.blueBright('signUpUser'));
   const client = await pool.connect();
   try {
+
+    await client.query('BEGIN'); 
     // ✅ GET CREDENTIALS
     const { username, user_firstname, user_lastname, email, currency } =
       req.body;
@@ -197,7 +199,7 @@ export const signUpUser = async (req, res, next) => {
   } finally {
     client.release();
   }
-};
+};//signUpUser
 //===================================
 // 🎯 FUNCTION FOR USER SIGN IN (LOG IN SESSION)
 //===================================
@@ -216,7 +218,7 @@ export const signInUser = async (req, res, next) => {
       );
     }
     // ✅ GET USER DATA FROM DB
-    const userData = await pool
+    const userData = await client
       .query({
         text: `SELECT u.username, u.email, u.password_hashed, u.user_id, u.user_firstname, u.user_lastname, u.user_contact, u.user_role_id,
         ur.user_role_name,
@@ -379,7 +381,7 @@ export const signOutUser = async (req, res, next) => {
     // ✅ REVOKING REFRESH TOKEN
     if (refreshTokenFromClient) {
       try {
-        const result = await client.query(
+        const result = await pool.query(
           `UPDATE refresh_tokens
          SET revoked = TRUE
          WHERE token = $1`,
@@ -444,7 +446,7 @@ export const validateSession = async (req, res, next) => {
     const { userId } = req.user;
     console.log('🚀 ~ validateSession ~ userId:', userId);
 
-    const userDataResult = await client.query({
+    const userDataResult = await pool.query({
       text: `SELECT u.user_id, u.username, u.email, u.user_firstname, u.user_contact, u.user_lastname, 
       u.user_contact, ct.currency_code as currency, 
       ur.user_role_name as role
