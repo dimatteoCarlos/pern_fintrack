@@ -92,7 +92,7 @@ export const signUpUser = async (req, res, next) => {
     // ✅ Generate user id and get currency id
     const newUserId = uuidv4();
     //In db tabl. currency_id = 1. currency_code= 'usd'
-    const currencyId = !currency ? 1 : await getCurrencyId(currency);
+    const currencyId = !currency ? 1 : await getCurrencyId(client, currency);
     console.log('🚀 ~ signUpUser ~ currencyId:', currencyId);
     // console.log('hashedPwd:', hashedPassword.length);
     // console.log('testUUID:', newUserId);
