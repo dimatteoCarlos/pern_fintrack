@@ -492,8 +492,7 @@ textarea:invalid {
 
   .icon-currency {
     border-radius: 0.8em !important;
-    border: 2px solid var(--dark) !important;
+    border: 2px solid var(--dark) ;
     /* background-color: orange; */
   }
 }
-
