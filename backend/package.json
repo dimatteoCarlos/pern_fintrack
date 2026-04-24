@@ -4,20 +4,20 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-  "dev": "nodemon --experimental-specifier-resolution=node src/index.js",
-  "start": "node src/index.js",
-  "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon --experimental-specifier-resolution=node src/index.js",
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
 
-  "init-db": "node src/db/run_time_db_init/init-db.js",
-  "vercel-build": "npm run init-db",
-  
-  "db:bootstrap": "node src/db/migrations/bootstrapping.js",
-  "db:reset": "node src/db/migrations/runResetDb.js",
-  "db:migrate": "node src/db/migrations/runMigrations.js",
-  "db:seed:base": "node src/db/migrations/runSeeds.js base",
-  "db:seed:admin": "node src/db/migrations/runSeeds.js admin",
-  "clear": "node --clear src/index.js"
-},
+    "init-db": "node src/db/run_time_db_init/init-db.js",
+    "vercel-build": "npm run init-db",
+
+    "db:bootstrap": "node src/db/migrations/bootstrapping.js",
+    "db:reset": "node src/db/migrations/runResetDb.js",
+    "db:migrate": "node src/db/migrations/runMigrations.js",
+    "db:seed:base": "node src/db/migrations/runSeeds.js base",
+    "db:seed:admin": "node src/db/migrations/runSeeds.js admin",
+    "clear": "node --clear src/index.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -34,6 +34,7 @@
     "morgan": "1.10.0",
     "pg": "8.13.3",
     "picocolors": "^1.1.1",
+    "serverless-http": "^4.0.0",
     "zod": "4.0.10"
   },
   "devDependencies": {
@@ -45,5 +46,8 @@
   "eslingConfig": {
     "extends": "standard"
   },
+  "engines": {
+  "node": "22.x"
+},
   "description": ""
 }
