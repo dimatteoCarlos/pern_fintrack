@@ -8,9 +8,9 @@
 import fs from 'fs';
 import path from 'path';
 import pc from 'picocolors';
-import { pool } from './configDB.js';
+import { pool } from '../config/configDB.js';
 
-const MIGRATIONS_DIR = path.join(process.cwd(), 'src/db/migrations');//
+const MIGRATIONS_DIR = path.join(process.cwd(), 'src/db/migrations'); //
 
 async function runMigrations() {
   const client = await pool.connect();
@@ -30,16 +30,14 @@ async function runMigrations() {
     `);
 
     // 2. Get already executed migrations
-    const { rows } = await client.query(
-      'SELECT filename FROM migrations'
-    );
-    console.log({rows})
-    const executedMigrations = rows.map(r => r.filename);
+    const { rows } = await client.query('SELECT filename FROM migrations');
+    console.log({ rows });
+    const executedMigrations = rows.map((r) => r.filename);
 
     // 3. Read migration files
     const migrationFiles = fs
       .readdirSync(MIGRATIONS_DIR)
-      .filter(f => f.endsWith('.sql'))
+      .filter((f) => f.endsWith('.sql'))
       .sort(); // critical: order matters
 
     // 4. Execute pending migrations
@@ -56,10 +54,9 @@ async function runMigrations() {
 
       await client.query(sql);
 
-      await client.query(
-        'INSERT INTO migrations (filename) VALUES ($1)',
-        [file]
-      );
+      await client.query('INSERT INTO migrations (filename) VALUES ($1)', [
+        file,
+      ]);
 
       console.log(pc.green(`✔ Completed ${file}\n`));
     }

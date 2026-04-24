@@ -6,13 +6,13 @@
 import pc from 'picocolors';
 
 //Database utils and conection
-import { pool, checkConnection } from './db/configDB.js';
+import { pool, checkConnection } from './db/config/configDB.js';
 import { cleanRevokedTokens } from './utils/authUtils/authFn.js';
 
 //import app from separate config file
 import app from './app.js';
-//import initializeDatabase from dedicated module
-import { initializeDatabase } from './db/initDatabase.js';
+
+import { initializeDatabase } from './db/run_time_db_init/initDatabase.js';
 
 const PORT = parseInt(process.env.PORT ?? '5000');
 
@@ -24,21 +24,21 @@ const PORT = parseInt(process.env.PORT ?? '5000');
 //Initiate db, clear tokens and start server
 console.log(pc.yellowBright('Hola Mundo'));
 
-async function startServer(){
- try {
-//Data base connection 
- await checkConnection();
- await initializeDatabase()
- await cleanRevokedTokens();
- 
- app.listen(PORT, '0.0.0.0', () => {
-  console.log(pc.yellowBright(`Server running on port ${PORT}`));
-  });
-} catch (error) {
-  console.error(pc.red('Critical error during startup:', error));
-  process.exit(1);
+async function startServer() {
+  try {
+    //Data base connection
+    await checkConnection();
+    await initializeDatabase();
+    await cleanRevokedTokens();
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(pc.yellowBright(`Server running on port ${PORT}`));
+    });
+  } catch (error) {
+    console.error(pc.red('Critical error during startup:', error));
+    process.exit(1);
   }
- }
+}
 
 startServer();
 
@@ -60,7 +60,7 @@ process.on('SIGINT', () => {
   console.log(pc.cyan('Shutting down gracefully...'));
   pool.end(() => {
     console.log(pc.greenBright('Database pool closed.'));
-//reference: https://nodejs.org/api/process.html#process_process_exit_code
+    //reference: https://nodejs.org/api/process.html#process_process_exit_code
     process.exit(0);
     // process.exitCode=0;
   });

@@ -3,9 +3,11 @@
 import jwt from 'jsonwebtoken';
 import { createToken, rotateRefreshToken } from '../utils/authUtils/authFn.js';
 import { createError } from '../utils/errorHandling.js';
-import { pool } from '../db/configDB.js';
-import pc from 'picocolors';
+
 import { setRefreshTokenCookie } from '../utils/authUtils/cookieConfig.js';
+
+import { pool } from '../db/config/configDB.js';
+import pc from 'picocolors';
 
 // Controller for refreshing the access token using a valid refresh token
 export const authRefreshToken = async (req, res, next) => {

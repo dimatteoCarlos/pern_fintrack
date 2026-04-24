@@ -1,7 +1,7 @@
 //backend/src/controllers/authController.js
 //signUpUser,signInUser,signOutUser,validateSession
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../db/configDB.js';
+import { pool } from '../db/config/configDB.js';
 import pc from 'picocolors';
 
 import {
@@ -42,8 +42,7 @@ export const signUpUser = async (req, res, next) => {
   console.log(pc.blueBright('signUpUser'));
   const client = await pool.connect();
   try {
-
-    await client.query('BEGIN'); 
+    await client.query('BEGIN');
     // ✅ GET CREDENTIALS
     const { username, user_firstname, user_lastname, email, currency } =
       req.body;
@@ -199,7 +198,7 @@ export const signUpUser = async (req, res, next) => {
   } finally {
     client.release();
   }
-};//signUpUser
+}; //signUpUser
 //===================================
 // 🎯 FUNCTION FOR USER SIGN IN (LOG IN SESSION)
 //===================================
@@ -210,7 +209,7 @@ export const signInUser = async (req, res, next) => {
   // console.log('req.body', req.body);
 
   try {
-   await client.query('BEGIN');
+    await client.query('BEGIN');
     // ✅ VALIDATION
     if (!(username && email && req.body.password)) {
       return next(
@@ -357,8 +356,8 @@ export const signInUser = async (req, res, next) => {
     await client.query('ROLLBACK');
     console.log('Sign-in error:', error);
     next(createError(500, error.message || 'internal sign-in user error'));
-  }finally{
-   client.release();
+  } finally {
+    client.release();
   }
 };
 
@@ -394,8 +393,8 @@ export const signOutUser = async (req, res, next) => {
           : 'Refresh token not found for revocation';
         console.log(pc.yellow(revokeMessage));
       } catch (revokeError) {
-         console.error('Error revoking token:', revokeError);
-         revokeMessage = 'Error during token revocation';
+        console.error('Error revoking token:', revokeError);
+        revokeMessage = 'Error during token revocation';
       }
     }
     // ✅ CLEARING OF COOKIES/HEADERS

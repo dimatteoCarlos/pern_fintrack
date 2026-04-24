@@ -1,4 +1,4 @@
-// backend/src/config/index.js
+// backend/src/config/dbEnvironmentConfig.js
 // Centralized configuration per environment
 import dotenv from 'dotenv';
 

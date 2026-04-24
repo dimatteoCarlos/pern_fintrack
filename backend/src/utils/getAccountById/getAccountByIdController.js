@@ -1,3 +1,5 @@
+//backend/src/utils/getAccountById/getAccountByIdController.js
+
 import { getAccountDataById } from "./getAccountDataById";
 
 export const getAccountById = async (req, res, next) => {

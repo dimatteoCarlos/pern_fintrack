@@ -5,7 +5,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import pc from 'picocolors';
-import { pool } from '../../db/configDB.js';
+import { pool } from '../../db/config/configDB.js';
+
 dotenv.config();
 //------------------------------
 const salt = Number(process.env.SALT_ROUNDS);
@@ -40,24 +41,29 @@ export const createToken = (id, role) => {
 
   // Verificar que la clave secreta esté configurada
   if (!process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET is not configured in environment variables')
+    throw new Error('JWT_SECRET is not configured in environment variables');
   }
 
-const expiresIn = process.env.NODE_ENV === 'development' 
-    ? '1h'  // ✅  in development
-    : '1h'; // ✅ 3 in production
+  const expiresIn =
+    process.env.NODE_ENV === 'development'
+      ? '1h' // ✅  in development
+      : '1h'; // ✅ 3 in production
 
-// Consistencia: expiresIn en el token y maxAge en la cookie deben estar sincronizados
+  // Consistencia: expiresIn en el token y maxAge en la cookie deben estar sincronizados
   return jwt.sign(
-    { userId: id, type: 'access_token', role,
-       iat: Math.floor(Date.now() / 1000)  },
+    {
+      userId: id,
+      type: 'access_token',
+      role,
+      iat: Math.floor(Date.now() / 1000),
+    },
     process.env.JWT_SECRET,
     {
       // expiresIn: process.env.JWT_ACCESS_EXPIRATION || '1h',
-       expiresIn,
+      expiresIn,
       issuer: process.env.JWT_ISSUER || 'fintrack app',
       // audience: process.env.JWT_AUDIENCE || 'your-app-users'
-    }
+    },
   );
 };
 
@@ -70,24 +76,24 @@ export const createRefreshToken = (id) => {
   // Verificar que la clave secreta esté configurada
   if (!process.env.JWT_REFRESH_TOKEN_SECRET) {
     throw new Error(
-      'JWT_REFRESH_TOKEN_SECRET is not configured on environment variables.La clave secreta JWT no está configurada en las variables de entorno.'
+      'JWT_REFRESH_TOKEN_SECRET is not configured on environment variables.La clave secreta JWT no está configurada en las variables de entorno.',
     );
   }
-//refresh token expiration time
-  const expiresIn = process.env.NODE_ENV === 'development'
-    ? '8.9d'// ✅ 8 days
-    : '8.9d'; // ✅ 8 days effective at start, considering a limit life remaining o 10%.(see remainingTime in authRefreshToken.)
+  //refresh token expiration time
+  const expiresIn =
+    process.env.NODE_ENV === 'development'
+      ? '8.9d' // ✅ 8 days
+      : '8.9d'; // ✅ 8 days effective at start, considering a limit life remaining o 10%.(see remainingTime in authRefreshToken.)
 
   return jwt.sign(
-    { userId: id,
-       type: 'refresh_token',iat: Math.floor(Date.now() / 1000) },
+    { userId: id, type: 'refresh_token', iat: Math.floor(Date.now() / 1000) },
     process.env.JWT_REFRESH_TOKEN_SECRET,
     {
       expiresIn,
-    // expiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d', 
-     issuer: process.env.JWT_ISSUER || 'fintrack',
+      // expiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
+      issuer: process.env.JWT_ISSUER || 'fintrack',
       // audience: process.env.JWT_AUDIENCE || 'your-app-users'
-    }
+    },
   );
 };
 
@@ -96,25 +102,25 @@ export async function cleanRevokedTokens() {
   try {
     await pool.query('SELECT 1');
     const daysAgo = new Date();
-    daysAgo.setDate(daysAgo.getDate()-1);
-    console.log("🚀 ~ cleanRevokedTokens ~ daysAgo:", daysAgo)
+    daysAgo.setDate(daysAgo.getDate() - 1);
+    console.log('🚀 ~ cleanRevokedTokens ~ daysAgo:', daysAgo);
 
     const result = await pool.query(
       'DELETE FROM refresh_tokens WHERE revoked = TRUE OR (updated_at <= $1 OR expiration_date <= $1)',
-      [daysAgo]
+      [daysAgo],
     );
 
     console.log(
       pc.greenBright(
-        `Limpieza de tokens revocados al inicio: ${result.rowCount} tokens eliminados.`
-      )
+        `Limpieza de tokens revocados al inicio: ${result.rowCount} tokens eliminados.`,
+      ),
     );
   } catch (error) {
     console.error(
       pc.redBright(
         'Error durante la limpieza inicial de tokens revocados:',
-        error
-      )
+        error,
+      ),
     );
   }
 }
@@ -136,32 +142,32 @@ export async function verifyTableStructure() {
 }
 //---
 export const rotateRefreshToken = async (oldToken, userId, req) => {
- const client = await pool.connect();
+  const client = await pool.connect();
   try {
     await client.query('BEGIN');
-//FUNCTIONS DECLARATION
-// 1. 📛 REVOKE OLD TOKEN
-// console.log('old refresh token', oldToken);
+    //FUNCTIONS DECLARATION
+    // 1. 📛 REVOKE OLD TOKEN
+    // console.log('old refresh token', oldToken);
 
     const revokeResult = await client.query(
       `UPDATE refresh_tokens 
        SET revoked = TRUE, updated_at = NOW() 
        WHERE token = $1 AND user_id = $2`,
-      [oldToken, userId]
+      [oldToken, userId],
     );
 
     if (revokeResult.rowCount === 0) {
       throw new Error('Old refresh token not found for revocation');
     }
 
-// 🆕 2.CREATE NEW REFRESH TOKEN
+    // 🆕 2.CREATE NEW REFRESH TOKEN
     const newRefreshToken = createRefreshToken(userId);
 
-// ✅ 3.EXPIRATION DATE / CALCULAR FECHA DE EXPIRACIÓN (consistent with expiresIn)
+    // ✅ 3.EXPIRATION DATE / CALCULAR FECHA DE EXPIRACIÓN (consistent with expiresIn)
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + 7); // 7 días
 
-// 3. 💾 SAVE NEW TOKEN TO DB
+    // 3. 💾 SAVE NEW TOKEN TO DB
     await client.query(
       `INSERT INTO refresh_tokens 
        (user_id, token, expiration_date, user_agent, ip_address) 
@@ -171,18 +177,17 @@ export const rotateRefreshToken = async (oldToken, userId, req) => {
         newRefreshToken,
         expirationDate,
         req.headers['user-agent'],
-        req.ip
-      ]
+        req.ip,
+      ],
     );
     await client.query('COMMIT');
-    
-console.log('🔄 Refresh token rotated successfully');
+
+    console.log('🔄 Refresh token rotated successfully');
 
     return newRefreshToken;
-
   } catch (error) {
     await client.query('ROLLBACK');
-console.error('❌ Error rotating refresh token:', error);
+    console.error('❌ Error rotating refresh token:', error);
     throw error;
   } finally {
     client.release();
@@ -190,27 +195,26 @@ console.error('❌ Error rotating refresh token:', error);
 };
 
 //---
-export const revokeAllUserRefreshTokens  = async (userId,clientOrPool=pool) => {
+export const revokeAllUserRefreshTokens = async (
+  userId,
+  clientOrPool = pool,
+) => {
+  try {
+    const dbClient = clientOrPool ?? pool;
+    // 📛 REVOKE ALL FRESH TOKENS
+    console.log('Entering revocation of all refresh tokens');
 
- try {
-  const dbClient = clientOrPool ?? pool;
-// 📛 REVOKE ALL FRESH TOKENS
-  console.log('Entering revocation of all refresh tokens')
- 
-  const revokeResult = await dbClient.query(
-   `UPDATE refresh_tokens 
+    const revokeResult = await dbClient.query(
+      `UPDATE refresh_tokens 
     SET revoked = TRUE, updated_at = NOW() 
     WHERE revoked = $1 AND user_id = $2`,
-    [false, userId]
-   );
-  
-  console.log('revoke all refresh tokens:', revokeResult.rows)
-  
- } catch (error) {
-// Log and relaunch
+      [false, userId],
+    );
+
+    console.log('revoke all refresh tokens:', revokeResult.rows);
+  } catch (error) {
+    // Log and relaunch
     console.error('Error revoking refresh tokens:', error.message);
     throw error;
- }
+  }
 };
-
-

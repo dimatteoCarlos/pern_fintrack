@@ -1,7 +1,7 @@
 //backend\src\utils\verifyAccountExistence.js
 //verifyAccountExistence, verifyAccountExists
 import pc from 'picocolors';
-import { pool } from '../db/configDB.js';
+import { pool } from '../db/config/configDB.js';
 // import { handlePostgresError } from './errorHandling.js';
 //-------------------------
 //VERIFY EXISTENCE OF ACCOUNT BY ACCOUNT_NAME AND ACCOUNT TYPE
@@ -11,7 +11,7 @@ export const verifyAccountExistence = async (
   dbClient = null,
   userId,
   account_name,
-  account_type_name = 'bank'
+  account_type_name = 'bank',
 ) => {
   const accountExistQuery = {
     text: `SELECT 1
@@ -23,13 +23,15 @@ export const verifyAccountExistence = async (
   };
   const db = dbClient || pool;
   try {
-   // Check if dbClient is valid
+    // Check if dbClient is valid
     if (!dbClient || typeof dbClient.query !== 'function') {
-      throw new Error('Invalid database client provided to verifyAccountExistence');
+      throw new Error(
+        'Invalid database client provided to verifyAccountExistence',
+      );
     }
 
     const accountExistResult = await db.query(accountExistQuery);
-    
+
     const accountExist = accountExistResult.rows.length > 0;
 
     if (accountExist) {
@@ -46,12 +48,12 @@ export const verifyAccountExistence = async (
 //----------------------------------
 //verify that the account exists and handle error if does not exist
 export const verifyAccountExists = async (
-  clientOrPool=null,
+  clientOrPool = null,
   userId,
   account_name,
-  account_type_name = 'bank'
+  account_type_name = 'bank',
 ) => {
-  const db=clientOrPool || pool;
+  const db = clientOrPool || pool;
   const accountExistQuery = {
     text: `SELECT 1, ua.account_id FROM user_accounts ua
      JOIN account_types act
@@ -71,7 +73,7 @@ export const verifyAccountExists = async (
       console.log(pc.blueBright(message));
       throw new Error(message);
     }
-    return{ accountExist, accountId:accountExistResult.rows[0].account_id};
+    return { accountExist, accountId: accountExistResult.rows[0].account_id };
     // return accountExist;
   } catch (error) {
     console.error('Error verifying account existence:', error);

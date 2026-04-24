@@ -1,11 +1,8 @@
 // backend\src\fintrack_api\controllers\accountCategoryCreationcontroller.js
 //
 import pc from 'picocolors';
-import {
-  createError,
-  handlePostgresError,
-} from '../../utils/errorHandling.js';
-import { pool } from '../../db/configDB.js';
+import { createError, handlePostgresError } from '../../utils/errorHandling.js';
+import { pool } from '../../db/config/configDB.js';
 import { determineTransactionType, formatDate } from '../../utils/helpers.js';
 import { recordTransaction } from '../../utils/recordTransaction.js';
 import { checkAndInsertAccount } from '../../utils/checkAndInsertAccount.js';
@@ -30,7 +27,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
   const client = await pool.connect();
   //----------------------------------------
   try {
-    const {userId}=req.user
+    const { userId } = req.user;
     // console.log(req);
 
     if (!userId) {
@@ -54,7 +51,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       budget,
       sourceAccountId,
     } = req.body;
-//BUILD ACCOUNT NAME FOR CATEGORY BUDGET
+    //BUILD ACCOUNT NAME FOR CATEGORY BUDGET
     const account_type_name = 'category_budget';
     const account_name =
       account_type_name === 'category_budget'
@@ -84,17 +81,17 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const accountTypeResult = await pool.query(accountTypeQuery);
     const accountTypeArr = accountTypeResult.rows;
     const accountTypeIdReqObj = accountTypeArr.filter(
-      (type) => type.account_type_name == account_type_name.trim()
+      (type) => type.account_type_name == account_type_name.trim(),
     )[0];
     const accountTypeIdReq = accountTypeIdReqObj.account_type_id;
     //----CATEGORY BUDGET ACCOUNT ------
     //----------------------------------
     //verify account existence in user_accounts by userId and account name
     const accountExist = await verifyAccountExistence(
-      client, 
+      client,
       userId,
       account_name,
-      account_type_name
+      account_type_name,
     );
     // console.log('🚀 ~ CATEGORY BUDGET ~ accountExist:', accountExist);
     //----------------------------------
@@ -103,7 +100,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const currencyResult = await pool.query(currencyQuery);
     const currencyArr = currencyResult?.rows;
     const currencyIdReq = currencyArr.filter(
-      (currency) => currency.currency_code === currency_code
+      (currency) => currency.currency_code === currency_code,
     )[0].currency_id;
     // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
     //---------------------------------------
@@ -119,7 +116,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       values: [category_name, nature_type_name_req, subcategory.trim()],
     };
     const categoryAndSubcategoryAndNatureExistsResult = await pool.query(
-      categoryAndSubcategoryAndNatureQuery
+      categoryAndSubcategoryAndNatureQuery,
     );
     const categoryAndSubcategoryAndNatureExists =
       categoryAndSubcategoryAndNatureExistsResult.rows.length > 0;
@@ -159,7 +156,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     //   console.warn('🚀 ~ createAccount ~ message:', message);
     //   throw new Error(message);
     // }
-   
+
     //--------------------------------------
     //----- INSERT NEW CATEGORY_BUDGET BASIC ACCOUNT into user_accounts table --------
     //initial amount spent in the balance (expense from other accounts) could be considered
@@ -168,7 +165,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const transactionAmount = account_starting_amount;
     const account_balance = transactionAmount;
 
-   //TRANSACTION BEGIN
+    //TRANSACTION BEGIN
     await client.query('BEGIN');
     const { account_basic_data } = await insertAccount(
       client,
@@ -178,8 +175,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       currencyIdReq,
       account_starting_amount,
       account_balance,
-      account_start_date ?? transaction_actual_date
-      
+      account_start_date ?? transaction_actual_date,
     );
     const account_id = account_basic_data.account_id;
     //--------
@@ -196,7 +192,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       ],
     };
     const category_budget_accountResult = await client.query(
-      category_budget_accountQuery
+      category_budget_accountQuery,
     );
     const category_budget_account = {
       ...category_budget_accountResult.rows[0],
@@ -207,7 +203,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     //DETERMINE THE TRANSACTION TYPE FOR NEW CATEGORY_BUDGET ACCOUNT AND FOR COUNTER ACCOUNT (SLACK)
     const transactionTypeDescriptionObj = determineTransactionType(
       transactionAmount,
-      account_type_name
+      account_type_name,
     );
 
     const { transactionType, counterTransactionType } =
@@ -215,9 +211,9 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
 
     //get the transaction type id's
     const transactionTypeDescriptionIds = await getTransactionTypeId(
-      client, 
+      client,
       transactionTypeDescriptionObj.transactionType,
-      transactionTypeDescriptionObj.counterTransactionType
+      transactionTypeDescriptionObj.counterTransactionType,
     );
 
     const { transaction_type_id, countertransaction_type_id } =
@@ -244,7 +240,11 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     //------- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT)------
     //check whether slack account exists if not create it with start amount and balance = 0
     //slack account or counter account (bridge account), is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation
-    const counterAccountInfo = await checkAndInsertAccount(client, userId, 'slack');
+    const counterAccountInfo = await checkAndInsertAccount(
+      client,
+      userId,
+      'slack',
+    );
 
     const newCounterAccountBalance =
       counterAccountInfo.account.account_balance - transactionAmount;
@@ -275,7 +275,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       client,
       newCounterAccountBalance,
       slackCounterAccountInfo.account_id,
-      transaction_actual_date
+      transaction_actual_date,
     );
 
     // console.log(
@@ -305,16 +305,19 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       newAccountInfo,
       source_account_id,
       destination_account_id,
-      movement_type_id
+      movement_type_id,
     );
-    const recordTransactionInfo = await recordTransaction(client, transactionOption);
+    const recordTransactionInfo = await recordTransaction(
+      client,
+      transactionOption,
+    );
 
     //--------REGISTER COUNTER ACCOUNT (SLACK) TRANSACTION ------
     const counterTransactionOption = prepareTransactionOption(
       slackCounterAccountInfo,
       source_account_id,
       destination_account_id,
-      movement_type_id
+      movement_type_id,
     );
     const counterTransactionInfo = !isAccountOpening
       ? await recordTransaction(client, counterTransactionOption)
@@ -371,7 +374,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const { code, message } = handlePostgresError(error); //handle pg errors
     console.error(
       pc.red('Error creating category budget account:'),
-      message || 'something went wrong'
+      message || 'something went wrong',
     );
     return next(createError(code, message));
   } finally {

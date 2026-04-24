@@ -3,26 +3,25 @@
 
 import jwt from 'jsonwebtoken';
 import { createError } from '../utils/errorHandling.js';
-import { pool } from "../db/configDB.js"; // 
-import { clearAccessTokenCookie, clearRefreshTokenCookie } from '../utils/authUtils/cookieConfig.js';
-
-// import { getTokenSource } from './authDetectClientType.js';
-//constants
-// const accessMode ={MOBILE:'mobile', WEB:'web'}
+import { pool } from '../db/config/configDB.js';
+import {
+  clearAccessTokenCookie,
+  clearRefreshTokenCookie,
+} from '../utils/authUtils/cookieConfig.js';
 
 // ======================================
 // 📊 ROLE HIERARCHY CONFIGURATION
 // ======================================
 const ROLE_LEVELS = {
-  'user': 1,
-  'admin': 2,
-  'super_admin': 3
+  user: 1,
+  admin: 2,
+  super_admin: 3,
 };
 
 const TOKEN_ERRORS = {
   TokenExpiredError: { message: 'Token expired.', status: 401 },
   JsonWebTokenError: { message: 'Invalid token.', status: 403 },
-  NotBeforeError: { message: 'Token not yet active.', status: 403 }
+  NotBeforeError: { message: 'Token not yet active.', status: 403 },
 };
 
 // =================================
@@ -46,23 +45,24 @@ export const getAuthToken = (req) => {
   // console.log('🔍 HEADERS keys:', Object.keys(req.headers));
   // console.log('🔍 COOKIES:', req.cookies);
 
-  // Check Authorization header   
-  const authHeader = req.headers['authorization'] || req.headers['Authorization'];
-  
- if (authHeader && authHeader.startsWith('Bearer ')) {
-  const token = authHeader.split(' ')[1];
-  console.log('✅ Access Token found  in headers');
-  // console.log('✅ Token found in headers:', token);
-  return token;
+  // Check Authorization header
+  const authHeader =
+    req.headers['authorization'] || req.headers['Authorization'];
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    console.log('✅ Access Token found  in headers');
+    // console.log('✅ Token found in headers:', token);
+    return token;
   }
-  
-// CHECK COOKIE (FOR WEB APP)
+
+  // CHECK COOKIE (FOR WEB APP)
   if (req.cookies.accessToken) {
     console.log('✅ Token found in cookies');
     // console.log('✅ Token found in cookies:', req.cookies.accessToken);
     return req.cookies.accessToken;
   }
-  
+
   console.log('❌ No token provided in headers or cookies');
   return null;
 };
@@ -74,7 +74,7 @@ const verifyJWTToken = async (token) => {
   if (!token || typeof token !== 'string' || token.trim().length === 0) {
     throw new Error('Invalid token format');
   }
-//old sintaxis
+  //old sintaxis
   return new Promise((resolve, reject) => {
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
       if (err) reject(err);
@@ -105,9 +105,9 @@ NotBeforeError	Sucede si se intenta usar un token antes de su fecha de validez (
 // HANDLE TOKEN ERROR (Función centralizada)
 // =================================
 const handleTokenError = (error, req, res) => {
-  const errorConfig = TOKEN_ERRORS[error.name] || { 
+  const errorConfig = TOKEN_ERRORS[error.name] || {
     message: 'Invalid token. Please sign in again.', //Authentication failed
-    status: 403 
+    status: 403,
   };
 
   // Clear cookie. if token expired and was in cookies
@@ -128,52 +128,57 @@ const handleTokenError = (error, req, res) => {
  * Use for: General routes where user identity is needed.
  */
 export const verifyToken = async (req, res, next) => {
- console.log('verifyToken');
+  console.log('verifyToken');
   try {
-  const token = getAuthToken(req);
+    const token = getAuthToken(req);
 
-  if (!token) {
-    console.error('Error when verifying token');
-    return next(
-      createError(
-        401,
-        'Access Unauthenticated. No token provided. Please sign in.'
-      )
-    );
-  }
-  const decoded = await verifyJWTToken(token);
-// Adjuntar información del usuario al req
+    if (!token) {
+      console.error('Error when verifying token');
+      return next(
+        createError(
+          401,
+          'Access Unauthenticated. No token provided. Please sign in.',
+        ),
+      );
+    }
+    const decoded = await verifyJWTToken(token);
+    // Adjuntar información del usuario al req
     req.user = decoded;
     console.log('Token successfully verified for req.user:');
     next();
   } catch (error) {
-   return  next(handleTokenError(error, req, res));
+    return next(handleTokenError(error, req, res));
   }
 };
 // ===================================
 // 👤 ATOMIC MIDDLEWARE: VERIFY USER OWNERSHIP & HIERARCHY
 // ===================================
-// Middleware to check authentication and authorization: 
+// Middleware to check authentication and authorization:
 // 1. Authenticate (verifyToken)
 // 2. Authorize. verifyOwnership. Check if the user is the owner of the targetAccountId OR is an Admin.
 //-------------------------------------------
 export const verifyUser = async (req, res, next) => {
-
   if (!req.user) {
     const token = getAuthToken(req);
     if (!token) return next(createError(401, 'Authentication required.'));
 
-    try { req.user = await verifyJWTToken(token); } 
-    catch (err) { return next(handleTokenError(err, req, res)); }
+    try {
+      req.user = await verifyJWTToken(token);
+    } catch (err) {
+      return next(handleTokenError(err, req, res));
+    }
   }
 
   const { userId: authId, role: authRole } = req.user;
-// const { userId } = req.user;
- console.log("DEBUG: Verificando userId:", authId, 'user role:', authRole);
+  // const { userId } = req.user;
+  console.log('DEBUG: Verificando userId:', authId, 'user role:', authRole);
 
   const targetAccountId = req.params.targetAccountId || req.params.id;
 
-  if (!targetAccountId) return next(createError(500, 'Developer Error: targetAccountId missing in params.'));
+  if (!targetAccountId)
+    return next(
+      createError(500, 'Developer Error: targetAccountId missing in params.'),
+    );
 
   try {
     const query = `
@@ -184,7 +189,13 @@ export const verifyUser = async (req, res, next) => {
 
     const result = await pool.query(query, [targetAccountId]);
 
-    if (result.rows.length === 0) return next(createError(404, 'The account you are trying to access does not exist.'));
+    if (result.rows.length === 0)
+      return next(
+        createError(
+          404,
+          'The account you are trying to access does not exist.',
+        ),
+      );
 
     const { user_id: ownerId, user_role_name: ownerRole } = result.rows[0];
 
@@ -194,9 +205,14 @@ export const verifyUser = async (req, res, next) => {
 
     if (isOwner || hasAuthority || isSuperAdmin) return next();
 
-    return next(createError(403, 'Unauthorized: You do not have authority over this resource.'));
+    return next(
+      createError(
+        403,
+        'Unauthorized: You do not have authority over this resource.',
+      ),
+    );
   } catch (err) {
-   console.error("❌ Auth Error Detail:", err.message);
+    console.error('❌ Auth Error Detail:', err.message);
     return next(createError(500, 'Database error during authorization.'));
   }
 };
@@ -208,7 +224,7 @@ export const verifyUser = async (req, res, next) => {
 // =================================
 // Solo verifica si es Admin (Asume que verifyToken ya corrió)
 export const verifyAdmin = (req, res, next) => {
-  const { role } = req.user; 
+  const { role } = req.user;
   if (role === 'admin' || role === 'super_admin') {
     return next();
   }
@@ -224,8 +240,11 @@ export const verifyTokenAndAdmin = async (req, res, next) => {
   if (!req.user) {
     const token = getAuthToken(req);
     if (!token) return next(createError(401, 'Authentication required.'));
-    try { req.user = await verifyJWTToken(token); } 
-    catch (err) { return next(handleTokenError(err, req, res)); }
+    try {
+      req.user = await verifyJWTToken(token);
+    } catch (err) {
+      return next(handleTokenError(err, req, res));
+    }
   }
 
   if (ROLE_LEVELS[req.user.role] >= ROLE_LEVELS['admin']) return next();
@@ -245,7 +264,8 @@ export const verifyAuthorization = (requiredRole = 'user') => {
       // 1. Ensure Authentication
       if (!req.user) {
         const token = getAuthToken(req);
-        if (!token) return next(createError(401, 'Please sign in to continue.'));
+        if (!token)
+          return next(createError(401, 'Please sign in to continue.'));
         req.user = await verifyJWTToken(token);
       }
 
@@ -262,7 +282,9 @@ export const verifyAuthorization = (requiredRole = 'user') => {
 
       if (authPower >= requiredPower) return next();
 
-      return next(createError(403, `Access denied. ${requiredRole} role required.`));
+      return next(
+        createError(403, `Access denied. ${requiredRole} role required.`),
+      );
     } catch (error) {
       return next(handleTokenError(error, req, res));
     }

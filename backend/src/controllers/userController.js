@@ -1,10 +1,19 @@
 // backend/src/controllers/userController.js/
 //getUserById, updateUserById, changePassword
-import { hashed, isRight, revokeAllUserRefreshTokens } from '../utils/authUtils/authFn.js';
+import {
+  hashed,
+  isRight,
+  revokeAllUserRefreshTokens,
+} from '../utils/authUtils/authFn.js';
 import { createError } from '../utils/errorHandling.js';
-import { pool } from '../db/configDB.js';
+
+import { pool } from '../db/config/configDB.js';
+
 import pc from 'picocolors';
-import { clearAccessTokenFromCookie, clearRefreshTokenFromCookie } from '../middlewares/authMiddleware.js';
+import {
+  clearAccessTokenFromCookie,
+  clearRefreshTokenFromCookie,
+} from '../middlewares/authMiddleware.js';
 
 //getUserById
 //GET http://localhost:5000/api/user/f7c5abf9-89e5-4891-bfb8-6dfe3022f226
@@ -16,7 +25,7 @@ export const getUserById = async (req, res, next) => {
 
   try {
     const userDataResult = await pool.query({
-    text: `SELECT u.user_id, u.username,
+      text: `SELECT u.user_id, u.username,
     u.email,
     u.user_firstname,
     u.user_lastname,
@@ -41,8 +50,7 @@ export const getUserById = async (req, res, next) => {
     }
     // //consulta de info cuentas del user
     const userAccountsResult = await pool.query({
-      text: 
-      `SELECT  account_id
+      text: `SELECT  account_id
         FROM user_accounts
        WHERE user_id = $1
        ORDER BY account_id ASC
@@ -111,7 +119,7 @@ export const updateUserById = async (req, res, next) => {
       ],
     });
     //------------------------------
-    console.log("🚀 ~ updateUserById ~ updatedUser:", updatedUser)
+    console.log('🚀 ~ updateUserById ~ updatedUser:', updatedUser);
 
     return res.status(200).json({
       status: 200,
@@ -120,124 +128,127 @@ export const updateUserById = async (req, res, next) => {
   } catch (error) {
     console.error(error);
     next(
-      createError(500, error.message || 'internal updateUserById user error')
+      createError(500, error.message || 'internal updateUserById user error'),
     );
   }
 };
 
 //--------
-// 🎯 UPDATE USER PROFILE CONTROLLER 
+// 🎯 UPDATE USER PROFILE CONTROLLER
 export const updateProfile = async (req, res, next) => {
-console.log(pc.bgBlueBright('controller:', 
- 'updateProfile')
-)
+  console.log(pc.bgBlueBright('controller:', 'updateProfile'));
 
-// 🎯 GET CLIENT FOR TRANSACTION MANAGEMENT  
- const client = await pool.connect();
+  // 🎯 GET CLIENT FOR TRANSACTION MANAGEMENT
+  const client = await pool.connect();
 
- try {
-// =====================================
-// 🔍 EXTRACT AND VALIDATE BASIC INPUTS
-// =====================================
-  const { userId } = req.user;
-  const updateData = req.validatedData;//req.body //Data Validated by zod.
+  try {
+    // =====================================
+    // 🔍 EXTRACT AND VALIDATE BASIC INPUTS
+    // =====================================
+    const { userId } = req.user;
+    const updateData = req.validatedData; //req.body //Data Validated by zod.
 
-  console.log("📥 BODY:", req.body);
-  console.log("📥 VALIDATED:", req.validatedData);
-  
-  // ✅ VALIDATE DATA TO UPDATE
-  if(!updateData || Object.keys(updateData).length===0){
+    console.log('📥 BODY:', req.body);
+    console.log('📥 VALIDATED:', req.validatedData);
 
-   return res.status(400).json({
-    success:false,
-    error:'ValidationError',
-    message:'No valid fields provided for update'
-   })
-  }
-    
-// ✅ TRANSACTION
-  await client.query('BEGIN');
-  //1. Check user existence
-  const userCheck = await client.query(
-   'SELECT 1 FROM users WHERE user_id =$1', [userId]
-  );
-  if(userCheck.rowCount===0){
-   await client.query('ROLLBACK');
-   return next(createError(404,'User not found'));
-  }
-  //2. Build a dynamic query with just provided fields.
-  // Reference: Also, in accountEdtiController the approach used by patchAccountById could be used.
-  const updates = [];
-  const values =[];
-  let paramCount =1;
+    // ✅ VALIDATE DATA TO UPDATE
+    if (!updateData || Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'No valid fields provided for update',
+      });
+    }
 
- //Process just provided fields from validatedData
-  //firstname 
-  if(updateData.firstname !==undefined){
-   updates.push(`user_firstname=$${paramCount}`);
-   values.push(updateData.firstname)
-   paramCount++;
-  }
-//lastname 
-  if(updateData.lastname !==undefined){
-   updates.push(`user_lastname=$${paramCount}`);
-   values.push(updateData.lastname)
-   paramCount++;
-  }
-//currency 
-  if(updateData.currency !==undefined){
-  //verify if currency exists
-  const currencyResult = await client.query(
-  'SELECT currency_id FROM currencies WHERE currency_code = $1',
-   [updateData.currency]
-  );
-    
-  if (currencyResult.rowCount === 0) {
-   await client.query('ROLLBACK');
-   return next(createError(400, `Currency '${updateData.currency}' is not supported`));
-  }
-    
-   updates.push(`currency_id = $${paramCount}`);
-   values.push(currencyResult.rows[0].currency_id);
-   paramCount++;
-  }
-//contact 
-  if(updateData.contact !==undefined){
-// contact can be null (to delete the contact)
-   updates.push(`user_contact=$${paramCount}`);
-   values.push(updateData.contact);
-   paramCount++;
-  }
- 
- //If there are no valid fields to update
-  if (updates.length === 0) {
-    await client.query('ROLLBACK');
-    return res.status(400).json({
-      success: false,
-      error: 'ValidationError',
-      message: 'No valid fields to update'
-    });
-  }
+    // ✅ TRANSACTION
+    await client.query('BEGIN');
+    //1. Check user existence
+    const userCheck = await client.query(
+      'SELECT 1 FROM users WHERE user_id =$1',
+      [userId],
+    );
+    if (userCheck.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return next(createError(404, 'User not found'));
+    }
+    //2. Build a dynamic query with just provided fields.
+    // Reference: Also, in accountEdtiController the approach used by patchAccountById could be used.
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
 
- // Always update updated_at
-  updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    //Process just provided fields from validatedData
+    //firstname
+    if (updateData.firstname !== undefined) {
+      updates.push(`user_firstname=$${paramCount}`);
+      values.push(updateData.firstname);
+      paramCount++;
+    }
+    //lastname
+    if (updateData.lastname !== undefined) {
+      updates.push(`user_lastname=$${paramCount}`);
+      values.push(updateData.lastname);
+      paramCount++;
+    }
+    //currency
+    if (updateData.currency !== undefined) {
+      //verify if currency exists
+      const currencyResult = await client.query(
+        'SELECT currency_id FROM currencies WHERE currency_code = $1',
+        [updateData.currency],
+      );
 
-//2. UPDATE
-  values.push(userId);
-  const updateQuery = `
+      if (currencyResult.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return next(
+          createError(
+            400,
+            `Currency '${updateData.currency}' is not supported`,
+          ),
+        );
+      }
+
+      updates.push(`currency_id = $${paramCount}`);
+      values.push(currencyResult.rows[0].currency_id);
+      paramCount++;
+    }
+    //contact
+    if (updateData.contact !== undefined) {
+      // contact can be null (to delete the contact)
+      updates.push(`user_contact=$${paramCount}`);
+      values.push(updateData.contact);
+      paramCount++;
+    }
+
+    //If there are no valid fields to update
+    if (updates.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'No valid fields to update',
+      });
+    }
+
+    // Always update updated_at
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+
+    //2. UPDATE
+    values.push(userId);
+    const updateQuery = `
    UPDATE users
    SET ${updates.join(', ')}
    WHERE user_id = $${paramCount}
    RETURNING user_id, username, email, user_firstname, user_lastname, user_contact, currency_id
   `;
 
-  const updatedUserResult = await client.query(updateQuery, values);
-  
-  // console.log("🚀 ~ updateProfile ~ updatedUserResult:", updatedUserResult.rows[0])
+    const updatedUserResult = await client.query(updateQuery, values);
 
- //4. Get the complete data for the response
-  const fullUserData = await client.query({
-   text: `
+    // console.log("🚀 ~ updateProfile ~ updatedUserResult:", updatedUserResult.rows[0])
+
+    //4. Get the complete data for the response
+    const fullUserData = await client.query({
+      text: `
    SELECT u.user_id, u.username, u.email,
     u.user_firstname, u.user_lastname,
     u.user_contact, c.currency_code as currency, c.currency_name,
@@ -246,22 +257,24 @@ console.log(pc.bgBlueBright('controller:',
    JOIN currencies c ON c.currency_id = u.currency_id
    JOIN user_roles ur ON ur.user_role_id = u.user_role_id
    WHERE u.user_id = $1`,
-    values: [userId] 
-  });
-
-  await client.query('COMMIT');
-  
- //5. STANDARD RESPONSE
-  // return updated user info if dev env
-   res.status(200).json({
-    success: true,
-    message: 'Profile updated successfully',
-    user: fullUserData.rows[0],
+      values: [userId],
     });
-    
-} catch (error) {
+
+    await client.query('COMMIT');
+
+    //5. STANDARD RESPONSE
+    // return updated user info if dev env
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: fullUserData.rows[0],
+    });
+  } catch (error) {
     await client.query('ROLLBACK');
-    console.error(`[UPDATE PROFILE ERROR] User: ${userId}, IP: ${req.ip}`, error);
+    console.error(
+      `[UPDATE PROFILE ERROR] User: ${userId}, IP: ${req.ip}`,
+      error,
+    );
     next(createError(500, 'Internal server error'));
   } finally {
     client.release();
@@ -274,7 +287,7 @@ console.log(pc.bgBlueBright('controller:',
 //PATCH http://localhost:5000/api/user/change-password
 /**
  * 🔐 CHANGE PASSWORD CONTROLLER
- * 
+ *
  * ✅ HTTP Semantics:
  * - 401: Invalid Token / Expired (auth middleware)
  * - 403: Current password wrong (NO logout)
@@ -283,63 +296,61 @@ console.log(pc.bgBlueBright('controller:',
  */
 export const changePassword = async (req, res, next) => {
   console.log(pc.redBright('changePassword'));
-  
+
   const client = await pool.connect();
 
   try {
     const { userId } = req.user;
     const { currentPassword, newPassword } = req.validatedData; //Validated by Zod middleware (400 if fails)
-    
+
     // =========================
     // 🛑 BASIC SAFETY CHECK
     // =========================
     //Now, this is accomplished by zod
-    if (!newPassword ) {
-     return res
-     .status(400)
-     .json({
-      success: false,
-      error: 'ValidationError',
-      message: 'New password was not received',
-     });
+    if (!newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'New password was not received',
+      });
     }
-    
+
     await client.query('BEGIN');
 
- // =========================
- // 🔍 FETCH USER PASSWORD
- // =========================
- // GET USER AND CURRENT HASH
+    // =========================
+    // 🔍 FETCH USER PASSWORD
+    // =========================
+    // GET USER AND CURRENT HASH
     const userResult = await client.query(
-     `SELECT u.password_hashed 
+      `SELECT u.password_hashed 
      FROM users u
      WHERE u.user_id = $1
-     `, 
-     [userId]
+     `,
+      [userId],
     );
 
-    if(userResult.rowCount === 0){
-     await client.query('ROLLBACK');
-     // return next(createError(404, 'User not found'));
+    if (userResult.rowCount === 0) {
+      await client.query('ROLLBACK');
+      // return next(createError(404, 'User not found'));
       return res.status(404).json({
         success: false,
         error: 'NotFound',
         message: 'User not found',
       });
     }
-    
-// =========================
-// 🔐 VERIFY CURRENT PASSWORD
-// =========================
+
+    // =========================
+    // 🔐 VERIFY CURRENT PASSWORD
+    // =========================
     const isMatch = await isRight(
       currentPassword,
-      userResult.rows[0].password_hashed
+      userResult.rows[0].password_hashed,
     );
 
     // console.log({ isMatch });
     if (!isMatch) {
-     await client.query('ROLLBACK');
-     return res.status(403).json({
+      await client.query('ROLLBACK');
+      return res.status(403).json({
         success: false,
         error: 'InvalidCredentials',
         message: 'Current password is incorrect',
@@ -347,78 +358,83 @@ export const changePassword = async (req, res, next) => {
           currentPassword: ['Current password is incorrect'],
         },
       });
-     }
+    }
 
- // =========================
- // 🚫 PREVENT PASSWORD REUSE
- // =========================
- const isSamePassword = await isRight(
-   newPassword,
-   userResult.rows[0].password_hashed
- );
+    // =========================
+    // 🚫 PREVENT PASSWORD REUSE
+    // =========================
+    const isSamePassword = await isRight(
+      newPassword,
+      userResult.rows[0].password_hashed,
+    );
 
- if (isSamePassword) {
-   await client.query('ROLLBACK');
+    if (isSamePassword) {
+      await client.query('ROLLBACK');
 
-   return res.status(400).json({
-     success: false,
-     error: 'ValidationError',
-     message: 'New password must be different from the current password',
-     fieldErrors: {
-       newPassword: ['New password must be different from the current password'],
-     },
-   });
- }; 
+      return res.status(400).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'New password must be different from the current password',
+        fieldErrors: {
+          newPassword: [
+            'New password must be different from the current password',
+          ],
+        },
+      });
+    }
 
- // ===========================
- // 🔒 HASH & UPDATE PASSWORD
- // ===========================
-   const newHashedPassword = await hashed(newPassword);
-   
-   await client.query({
-    text: `UPDATE users SET password_hashed = $1, updated_at = CURRENT_TIMESTAMP 
+    // ===========================
+    // 🔒 HASH & UPDATE PASSWORD
+    // ===========================
+    const newHashedPassword = await hashed(newPassword);
+
+    await client.query({
+      text: `UPDATE users SET password_hashed = $1, updated_at = CURRENT_TIMESTAMP 
     WHERE user_id = $2`,
-    values: [newHashedPassword, userId],
+      values: [newHashedPassword, userId],
     });
-    
-   await client.query('COMMIT');
 
-// SCRUB SENSITIVE DATA
-    req.validatedData = undefined;  
+    await client.query('COMMIT');
 
-// =========================
-// ✅ SUCCESS RESPONSE
-// =========================   
-// 🔴 REVOKE ALL REFRESH TOKENS
+    // SCRUB SENSITIVE DATA
+    req.validatedData = undefined;
+
+    // =========================
+    // ✅ SUCCESS RESPONSE
+    // =========================
+    // 🔴 REVOKE ALL REFRESH TOKENS
     await revokeAllUserRefreshTokens(userId, client);
-// 🔴 CLEAN ACCESS TOKEN
+    // 🔴 CLEAN ACCESS TOKEN
     clearAccessTokenFromCookie(res);
     clearRefreshTokenFromCookie(res);
     // res.clearCookie('refreshToken')
 
-// ✅ RESPONSE
+    // ✅ RESPONSE
     return res.status(200).json({
       success: true,
       message:
-       'Password changed successfully. Please sign in again with your new password.',
+        'Password changed successfully. Please sign in again with your new password.',
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    
-// ⏳ RATE LIMIT — let middleware handle it
-    if(error.status === 429){
-     return next(error);//Passing the error to rate limiter
+
+    // ⏳ RATE LIMIT — let middleware handle it
+    if (error.status === 429) {
+      return next(error); //Passing the error to rate limiter
     }
-    
+
     console.error('changePassword error:', error);
 
-// ❌ INTERNAL ERROR
+    // ❌ INTERNAL ERROR
     next(
-      createError(500, error.message ?? 'Internal error while changing password')
-    )
+      createError(
+        500,
+        error.message ?? 'Internal error while changing password',
+      ),
+    );
   } finally {
-     client.release();
-    };
+    client.release();
+  }
 };
 
 //DATA STRUCTURE OF RESPONSES
@@ -497,4 +513,3 @@ Same Password Error (400):
 }
   
 */
-

@@ -1,7 +1,7 @@
 // backend/src/fintrack_api/services/accountAnnulmentService.js
 
 import pc from 'picocolors';
-import { pool } from "../../db/configDB.js";
+import { pool } from '../../db/config/configDB.js';
 
 //target account: is the account to delete
 //affected_account: is the affected account which has interacted with the target account
@@ -9,21 +9,23 @@ import { pool } from "../../db/configDB.js";
 //calcular el impacto (Flujo Neto a Eliminar - FNE o Financial Impact on affected account by target account) y el ajuste necesario para revertir ese flujo, devolviendo el informe para que el usuario lo revise antes de la confirmación final del borrado.
 
 /*
- * 📊 Generates a report detailing the net financial impact on each and all affected accounts 
+ * 📊 Generates a report detailing the net financial impact on each and all affected accounts
  * by transactions involving the Target Account (RTA - Retroactive Total Annulment).
- * * The logic relies on the Double-Entry principle: the sum of all signed amounts 
- * recorded for the Target Account (T) in the 'transactions' table is exactly 
+ * * The logic relies on the Double-Entry principle: the sum of all signed amounts
+ * recorded for the Target Account (T) in the 'transactions' table is exactly
  * the PnL Adjustment needed for the Affected Account (A).
  */
 
-export const getAnnulmentImpactReport = async (userId, targetAccountId)=>{
- console.log(pc.blue('getAnnulmentImpactReport'))
- console.log(pc.blue(`Generating RTA impact report for Target ID: ${targetAccountId}`));
- // console.log('type of targetAccountId', typeof targetAccountId)
-//=====================================
-// 1️⃣ SQL: QUERY FOR RTA IMPACT CALCULATION REPORT
-//=====================================
-const reportQuery =`
+export const getAnnulmentImpactReport = async (userId, targetAccountId) => {
+  console.log(pc.blue('getAnnulmentImpactReport'));
+  console.log(
+    pc.blue(`Generating RTA impact report for Target ID: ${targetAccountId}`),
+  );
+  // console.log('type of targetAccountId', typeof targetAccountId)
+  //=====================================
+  // 1️⃣ SQL: QUERY FOR RTA IMPACT CALCULATION REPORT
+  //=====================================
+  const reportQuery = `
  WITH TargetAccountTransactions AS
  (
   SELECT
@@ -72,39 +74,48 @@ const reportQuery =`
   acctype.account_type_name
 
 -- HAVING SUM(tat.amount) !=0;
- `
-const rawReportResults = await pool.query(reportQuery, [userId, targetAccountId])
+ `;
+  const rawReportResults = await pool.query(reportQuery, [
+    userId,
+    targetAccountId,
+  ]);
 
-const reportResult =  rawReportResults.rows
+  const reportResult = rawReportResults.rows;
 
-if (reportResult.length===0){
- console.log(pc.yellow(`No existing transactions or financial impact found for the Target Account ${targetAccountId}.`));
-return []
-}
+  if (reportResult.length === 0) {
+    console.log(
+      pc.yellow(
+        `No existing transactions or financial impact found for the Target Account ${targetAccountId}.`,
+      ),
+    );
+    return [];
+  }
 
-//=======================================
-// 2️⃣ FORMAT IMPACT REPORT OUTPUT
-//=======================================
-const impactReport = reportResult.map((row)=>({
- affectedAccountId:row.affected_account_id,
+  //=======================================
+  // 2️⃣ FORMAT IMPACT REPORT OUTPUT
+  //=======================================
+  const impactReport = reportResult.map((row) => ({
+    affectedAccountId: row.affected_account_id,
 
- affectedAccountName:row.affected_account_name,
+    affectedAccountName: row.affected_account_name,
 
- affectedAccountType:row.affected_account_type_name,
+    affectedAccountType: row.affected_account_type_name,
 
- affectedAccountCurrentBalance:parseFloat(row.affected_account_current_balance),
+    affectedAccountCurrentBalance: parseFloat(
+      row.affected_account_current_balance,
+    ),
 
- affectedAccountNetAdjustmentAmount:parseFloat(row.net_adjustment_amount),
+    affectedAccountNetAdjustmentAmount: parseFloat(row.net_adjustment_amount),
 
- affectedAccountCurrencyId:row.currency_id,
- affectedAccountCurrencyCode:row.currency_code,
+    affectedAccountCurrencyId: row.currency_id,
+    affectedAccountCurrencyCode: row.currency_code,
+  }));
 
-}))
+  console.log(
+    pc.green(
+      `Report generated successfully. Total ${impactReport.length} accounts affected.`,
+    ),
+  );
 
-console.log(pc.green(`Report generated successfully. Total ${impactReport.length} accounts affected.`));
-
-return impactReport;
-
-}
-
-
+  return impactReport;
+};

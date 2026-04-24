@@ -7,6 +7,10 @@
     "dev": "nodemon --experimental-specifier-resolution=node src/index.js",
     "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
+
+    "init-db": "node scripts/init-db.js",
+    "vercel-build": "npm run init-db",
+
     "db:bootstrap": "node src/db/bootstrapping.js",
     "db:reset": "node src/db/runResetDb.js",
     "db:migrate": "node src/db/runMigrations.js",
@@ -33,7 +37,7 @@
     "zod": "4.0.10"
   },
   "devDependencies": {
-    "cross-env": "^10.1.0",
+    "cross-env": "10.1.0",
     "nodemon": "3.1.9",
     "standard": "17.1.2",
     "uuid": "11.1.0"

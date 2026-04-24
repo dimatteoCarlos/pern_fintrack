@@ -6,7 +6,7 @@
 import pc from 'picocolors';
 
 //Database utils and conection
-import { pool } from './configDB.js';
+import { pool } from '../config/configDB.js';
 
 import {
   tableExists,
@@ -16,19 +16,15 @@ import {
   tblMovementTypes,
   tbltransactionTypes,
   tblUserRoles,
-} from './run_time_migrations/populateDB.js';
+} from './populateDB.js';
 
-import {
-  mainTables,
-  createTables,
-} from './run_time_migrations/createTables.js';
+import { mainTables, createTables } from './createTables.js';
 
 // ===========================
 // 📊 DATA BASE INITIALIZATION
 // ============================
 export async function initializeDatabase() {
-
-   const client = await pool.connect();
+  const client = await pool.connect();
 
   try {
     console.log(pc.cyanBright('Verificando existencia de datos en tablas ...'));
@@ -55,7 +51,7 @@ export async function initializeDatabase() {
       console.log(pc.cyan('Initializing app for the first time....'));
       //----------
       //Transaction pg
-   
+
       await client.query('BEGIN');
       try {
         // Initialize tables with catalogued field attributes
@@ -82,7 +78,6 @@ export async function initializeDatabase() {
         await client.query('COMMIT');
 
         console.log(pc.green('Application initialized successfully'));
-
       } catch (error) {
         await client.query('ROLLBACK');
         throw error;
@@ -114,7 +109,9 @@ export async function initializeDatabase() {
             console.log(indx, item.tblName, 'truncated');
 
             if (tableActions.isDrop) {
-              await client.query({ text: `DROP TABLE ${item.tblName} CASCADE` });
+              await client.query({
+                text: `DROP TABLE ${item.tblName} CASCADE`,
+              });
               console.log(indx, item.tblName, 'drop');
             }
           } catch (error) {
@@ -173,7 +170,7 @@ export async function initializeDatabase() {
       error,
     );
     throw error; // Relanzar el error para manejarlo en el nivel superior
-  }finally {
+  } finally {
     client.release();
-    }
+  }
 }

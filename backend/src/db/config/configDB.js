@@ -1,14 +1,12 @@
 //backend/src/db/configDB.js
 import pg from 'pg';
 import pc from 'picocolors';
-import { activeConfig } from '../config/index.js';
-import { instrumentPool } from './instrumentPool.js';
+import { activeConfig } from './dbEnvironmentConfig.js';
+
 import 'dotenv/config';
 
 // Use database configuration from central config
 const dbConfig = activeConfig.database;
-console.log('DB CONFIG:', dbConfig);
-
 export const pool = new pg.Pool(dbConfig);
 
 //Log pool configuration (useful for debugging)
@@ -17,10 +15,7 @@ console.log(
   pc.green(`ssl=${JSON.stringify(dbConfig.ssl)}`),
 );
 
-//follow up clients status
-instrumentPool(pool);
-
-// Handle pool errors
+// GLOBAL ERROR HANDLER (CRITICAL)
 pool.on('error', (err) => {
   console.error(
     pc.red(
@@ -46,7 +41,7 @@ export async function checkConnection() {
     ); //Data base connection verified
   } catch (error) {
     console.error(error);
-    console.error(error.stack)
+    console.error(error.stack);
     console.error(
       pc.red(
         '❌ Error crítico al conectar con la base de datos / Critical error connecting to database:',

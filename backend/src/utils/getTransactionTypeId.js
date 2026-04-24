@@ -1,13 +1,13 @@
 // import pc from 'picocolors';
-import { pool } from '../db/configDB.js';
+import { pool } from '../db/config/configDB.js';
 //-----------------------------------
 
 export const getTransactionTypeId = async (
-  clientOrPool=null,
+  clientOrPool = null,
   transactionTypeName,
-  counterTransactionTypeName
+  counterTransactionTypeName,
 ) => {
-  const db=clientOrPool || pool;
+  const db = clientOrPool || pool;
   console.log('args:', transactionTypeName, counterTransactionTypeName);
   const transactionTypeDescriptionIdsResults = await db.query({
     text: `SELECT
@@ -26,5 +26,5 @@ export const getTransactionTypeId = async (
 
   console.log(transactionTypeName, counterTransactionTypeName);
 
-  return  transactionTypeDescriptionIds ;
+  return transactionTypeDescriptionIds;
 };

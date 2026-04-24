@@ -1,12 +1,12 @@
 // backend/src/db/createTables.js
 //version de SQL mayor a 13.
-import { pool } from '../configDB.js';
+import { pool } from '../config/configDB.js';
 import pc from 'picocolors';
 //-----------------------------
 export const mainTables = [
- {
-   tblName: 'users',
-   table: `CREATE TABLE IF NOT EXISTS 
+  {
+    tblName: 'users',
+    table: `CREATE TABLE IF NOT EXISTS 
     users(
      user_id UUID PRIMARY KEY UNIQUE NOT NULL,
      username VARCHAR(50) UNIQUE NOT NULL,
@@ -58,21 +58,6 @@ export const mainTables = [
     deleted_at TIMESTAMPTZ DEFAULT NULL
 )`,
   },
-
-  //CHECK (account_start_date <= NOW()
-  //------specific type accounts
-  // {
-  //   tblName: 'bank_accounts',
-  //   table:
-  //     'CREATE TABLE IF NOT EXISTS bank_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id) ON DELETE CASCADE, account_starting_amount DECIMAL (15,2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL )',
-  // },
-
-  // {
-  //   tblName: 'investment_accounts',
-  //   table:
-  //     'CREATE TABLE IF NOT EXISTS investment_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id) ON DELETE CASCADE, account_starting_amount DECIMAL (15,2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL)',
-  // },
-
   {
     tblName: 'income_source_accounts',
     table:
@@ -139,7 +124,7 @@ export const mainTables = [
   },
 
   {
-   tblName: 'refresh_tokens',
+    tblName: 'refresh_tokens',
     table: `
       CREATE TABLE IF NOT EXISTS refresh_tokens (
       token_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -160,93 +145,6 @@ export const mainTables = [
       )
    `,
   },
-
-  // -----
-  /*
-  {
-    tblName: 'movements',
-    table: `CREATE TABLE IF NOT EXISTS movements (
-    movement_id SERIAL PRIMARY KEY NOT NULL,
-    movement_type_id INT NOT NULL REFERENCES movement_types(movement_type_id) ON DELETE SET NULL ON UPDATE CASCADE,
-    user_id UUID NOT NULL REFERENCES "users"(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, 
-    amount DECIMAL(15,2) NOT NULL,
-    description VARCHAR(255),
-    transaction_type_id INT, 
-    actual_transaction_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-)`,
-
-  },
-  */
-
-  // {
-  //   tblName: 'movement_types',
-  //   table: `CREATE TABLE IF NOT EXISTS movement_types (movement_type_id SERIAL PRIMARY KEY NOT NULL, movement_type_name VARCHAR(15) NOT NULL CHECK (movement_type_name IN ('expense', 'income', 'investment', 'debt', 'pocket', 'transfer', 'receive','account-opening', 'pnl')))`,
-  // },
-
-  // {
-  //   tblName: 'expense_movements',
-  //   table: `CREATE TABLE IF NOT EXISTS expense_movements (movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  //   category_id INT,
-  //   account_id INT NOT NULL REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE)`,
-  // },
-
-  //   {
-  //     tblName: 'expense_categories',
-  //     table: `CREATE TABLE IF NOT EXISTS expense_categories(
-  //     category_id SERIAL PRIMARY KEY NOT NULL,
-  //     category_name VARCHAR(50) NOT NULL,
-  //     nature_name VARCHAR(8) NOT NULL CHECK (nature_name IN ('must', 'need', 'other', 'want')),
-  //     budget DECIMAL(15,2) NOT NULL,
-  //     currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,
-  // )`,
-  //   },
-
-  //   {
-  //     tblName: 'income_movements',
-  //     table: `CREATE TABLE IF NOT EXISTS income_movements (
-  //     movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  //     source_id INT NOT NULL REFERENCES expense_categories(category_id),
-  //     account_id INT NOT NULL REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE
-  // )`,
-  //   },
-
-  //   {
-  //     tblName: 'investment_movements',
-  //     table: `CREATE TABLE IF NOT EXISTS investment_movements (
-  //     movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  //     account_id INT NOT NULL REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE
-  // )`,
-  //   },
-  //   {
-  //     tblName: 'debt_movements',
-  //     table: `CREATE TABLE IF NOT EXISTS debt_movements (
-  //     movement_id INT PRIMARY KEY NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  //     debtor_id INT NOT NULL
-  //  )`,
-  //   },
-  // {
-  //   tblName: 'debt_debtors',
-  //   table: `CREATE TABLE IF NOT EXISTS debt_debtors (
-  //   debtor_id SERIAL PRIMARY KEY NOT NULL,
-  //   debtor_name VARCHAR(25) NOT NULL,
-  //   debtor_lastname VARCHAR(25) NOT NULL
-  //   )`,
-  // },
-  //   {
-  //     tblName: 'pocket_movements',
-  //     table: `CREATE TABLE IF NOT EXISTS pocket_movements (
-  //     pocket_id SERIAL PRIMARY KEY NOT NULL,
-  //     movement_id INT NOT NULL REFERENCES movements(movement_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  //     pocket_name VARCHAR(50) NOT NULL,
-  //     target_amount DECIMAL(15,2),
-  //     pocket_note VARCHAR(50),
-  //     desired_date TIMESTAMP
-  // )`,
-  //   },
-  
 ];
 
 //=============================================
@@ -268,20 +166,8 @@ export const createSearchIndexes = [
 ];
 
 // ===========================
-// Función para crear la tabla de inicialización
-// export async function createInitFlagTable() {
-//   try {
-//     await pool.query(initFlagTable);
-//     console.log('Initialization flag table created/verified');
-//   } catch (error) {
-//     console.error('Error creating initialization flag table:', error);
-//     throw error;
-//   }
-// }
-
-//----
 //Create main tables needed at initialization of the app
-export async function createTables(client=pool) {
+export async function createTables(client = pool) {
   try {
     console.log('Creando las tablas en caso que no existan...');
     await Promise.allSettled(
@@ -290,24 +176,24 @@ export async function createTables(client=pool) {
           await client.query(item.table);
           // console.log(ind, item.tblName, 'verified/created');
           console.log(
-            pc.green(`${ind}) Table ${item.tblName} verified/created`)
+            pc.green(`${ind}) Table ${item.tblName} verified/created`),
           );
           // console.log(pc.green(`Table ${tblName} verified/created`));
         } catch (error) {
           console.error(pc.red(`Error creating table ${item.tblName}:`, error));
           throw error;
         }
-      })
+      }),
     ).then((results) => {
       results.forEach((result, indx) => {
         if (result.status === 'fulfilled') {
           console.log(
-            `Table ${mainTables[indx].tblName} was successfully created .`
+            `Table ${mainTables[indx].tblName} was successfully created .`,
           );
         } else if (result.status === 'rejected') {
           console.error(
             `Table ${mainTables[indx].tblName} failed to create:`,
-            result.reason
+            result.reason,
           );
         }
       });

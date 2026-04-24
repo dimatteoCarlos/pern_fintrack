@@ -10,12 +10,9 @@
 // router.get('/balance/monthly_total_amount_by_type/?type=${type}&', dashboardMonthlyTotalAmountByType);
 //get: //http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?type=${type}&user=eacef623-6fb0-4168-a27f-fa135de093e1
 
-import {
-  createError,
-  handlePostgresError,
-} from '../../utils/errorHandling.js';
+import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import pc from 'picocolors';
-import { pool } from '../../db/configDB.js';
+import { pool } from '../../db/config/configDB.js';
 import { validate as uuidValidate } from 'uuid';
 
 export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
@@ -27,31 +24,31 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
     res.status(status).json({ status, message, data });
   };
   console.log(pc[backendColor]('dashboardMonthlyTotalAmountByType'));
-//-----------------------------------------
-//params validation
+  //-----------------------------------------
+  //params validation
   const { startDate, endDate } = req.query;
-  const userId =req.user.userId ||( req.body.user ?? req.query.user); //uuid
-// console.log(
-//   '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
-//   userId,
-//   req.query,
-//   req.body
-//   // movement_type
-// );
+  const userId = req.user.userId || (req.body.user ?? req.query.user); //uuid
+  // console.log(
+  //   '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
+  //   userId,
+  //   req.query,
+  //   req.body
+  //   // movement_type
+  // );
   if (!userId) {
     return RESPONSE(res, 400, 'User ID and account type are required');
   }
-// if (!['expense', 'income', 'saving'].includes(movement_type)) {
-//   const msg = 'Movement type must be expense, income or saving';
-//   return RESPONSE(res, 400, msg);
-// }
+  // if (!['expense', 'income', 'saving'].includes(movement_type)) {
+  //   const msg = 'Movement type must be expense, income or saving';
+  //   return RESPONSE(res, 400, msg);
+  // }
 
   if (!uuidValidate(userId)) {
     const msg = 'Invalid user ID format';
     return RESPONSE(res, 400, msg);
   }
 
-//time period to evaluate
+  //time period to evaluate
   const currentYear = new Date().getFullYear();
   let dateRange = {
     start: new Date(currentYear, 0, 1), //January 1st of the year
@@ -79,7 +76,7 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
     //deposit amount in pocket saving account, represents a saving contribution, withdrawed from a bank account, but it is possible to withdraw from pockets too, so this would measured the contribution to saving but no the balance of total saved in the period
 
     try {
-    const queryText = `
+      const queryText = `
      WITH financial_data AS (
       SELECT CAST(EXTRACT(MONTH FROM tr.transaction_actual_date) AS INTEGER) AS month_index,
           TRIM(TO_CHAR(tr.transaction_actual_date, 'month')) AS month_name,
@@ -125,23 +122,23 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
         SELECT * FROM financial_data
         ORDER BY month_index ASC, type, name, currency_code
 `;
-    const result = await pool.query(queryText, [
+      const result = await pool.query(queryText, [
         userId,
         dateRange.start,
         dateRange.end,
       ]);
-    return result.rows;
+      return result.rows;
     } catch (error) {
       console.error('Error fetching financial data:', error);
       throw error;
     }
   } //end of getFinancialData function
-//****************************************/
+  //****************************************/
   try {
     const dataArr = await getFinancialData(
       userId,
       dateRange.start,
-      dateRange.end
+      dateRange.end,
     );
 
     if (dataArr.length === 0) {
@@ -163,14 +160,14 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
       res,
       200,
       'Financial data retrieved successfully',
-      responseData
+      responseData,
     );
   } catch (error) {
     if (error instanceof Error) {
       console.error(
         pc.red(
-          `Error while getting monthly total amount from movement ${movement_type}`
-        )
+          `Error while getting monthly total amount from movement ${movement_type}`,
+        ),
       );
       if (process.env.NODE_ENV === 'development') {
         console.log(error.stack);
@@ -178,7 +175,7 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
     } else {
       console.error(
         pc.red('Something went wrong'),
-        pc[errorColor]('Unknown error occurred')
+        pc[errorColor]('Unknown error occurred'),
       );
     }
     // Manejo de errores de PostgreSQL

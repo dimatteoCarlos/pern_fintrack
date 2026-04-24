@@ -2,11 +2,8 @@
 //getAllAccountsByType, getAccounts, getAccountById, getAccountsByCategory
 
 import pc from 'picocolors';
-import {
-  createError,
-  handlePostgresError,
-} from '../../utils/errorHandling.js';
-import { pool } from '../../db/configDB.js';
+import { createError, handlePostgresError } from '../../utils/errorHandling.js';
+import { pool } from '../../db/config/configDB.js';
 import dotenv from 'dotenv';
 import { respondError, respondSuccess } from '../../utils/responseHelpers.js';
 dotenv.config();
@@ -24,24 +21,38 @@ const RESPONSE = (res, status, message, data = null) => {
 };
 //------
 // 🧮 CATEGORY BUDGET METRICS CALCULATOR
-const calculateBudgetMetrics = (balanceAccount, budgetAccount)=>{
-  const remain = Math.round(parseFloat(budgetAccount) - parseFloat(balanceAccount))
-  const statusAlert = remain <=0
+const calculateBudgetMetrics = (balanceAccount, budgetAccount) => {
+  const remain = Math.round(
+    parseFloat(budgetAccount) - parseFloat(balanceAccount),
+  );
+  const statusAlert = remain <= 0;
 
-  return {remain, statusAlert}
-  }
-//-------  
+  return { remain, statusAlert };
+};
+//-------
 // 📊 TRANSACTIONS QUERY
-  const getAccountTransactions =async (userId, accountId, startDate, endDate)=>{
-// 🗓️ DEFAULT PERIOD: Last 2 months + current month
-    const defaultStartDate = startDate || new Date(new Date().getFullYear(), new Date().getMonth-1, 1).toISOString().split('T')[0];
+const getAccountTransactions = async (
+  userId,
+  accountId,
+  startDate,
+  endDate,
+) => {
+  // 🗓️ DEFAULT PERIOD: Last 2 months + current month
+  const defaultStartDate =
+    startDate ||
+    new Date(new Date().getFullYear(), new Date().getMonth - 1, 1)
+      .toISOString()
+      .split('T')[0];
 
-    const defaultEndDate = endDate || 
-    new Date(new Date().getFullYear(), new Date().getMonth +1, 0).toISOString().split('T')[0]
-  
-  // 📝 TRANSACTIONS QUERY 
+  const defaultEndDate =
+    endDate ||
+    new Date(new Date().getFullYear(), new Date().getMonth + 1, 0)
+      .toISOString()
+      .split('T')[0];
+
+  // 📝 TRANSACTIONS QUERY
   const transactionsQuery = {
-    text:`
+    text: `
     SELECT tr.*, mt.movement_type_name, trt.transaction_type_name, ct.currency_code
     FROM transactions tr
     JOIN user_accounts ua ON (tr.account_id = ua.account_id AND tr.user_id = ua.user_id)
@@ -53,31 +64,36 @@ const calculateBudgetMetrics = (balanceAccount, budgetAccount)=>{
         AND tr.transaction_actual_date BETWEEN $3 AND $4
       ORDER BY tr.transaction_actual_date DESC, tr.created_at DESC
     `,
-    values:[userId, accountId, defaultStartDate, defaultEndDate]
-  }
-  
- const transactionsResult = await pool.query(transactionsQuery);
+    values: [userId, accountId, defaultStartDate, defaultEndDate],
+  };
 
-// 📈 CALCULATE SUMMARY DATA
-const transactions = transactionsResult.rows
-const totalTransactions = transactions.length
+  const transactionsResult = await pool.query(transactionsQuery);
 
-// 🏦 FIND INITIAL AND FINAL BALANCES
-const initialBalance = transactions.length>0
-  ?{
-   amount:parseFloat(transactions[transactions.length-1].account_balance_after_tr) || 0,
-   date: transactions[transactions.length-1].transaction_actual_date,
-   currency: transactions[0].currency_code
-    }
-  :{ amount: 0, date: defaultStartDate, currency: 'usd' };
-//---
-  const finalBalance = transactions.length > 0
-    ? {
-      amount: parseFloat(transactions[0].account_balance_after_tr) || 0,
-      date: transactions[0].transaction_actual_date,
-      currency: transactions[0].currency_code
-      }
-    : {amount: 0, date: defaultEndDate, currency: 'usd' };
+  // 📈 CALCULATE SUMMARY DATA
+  const transactions = transactionsResult.rows;
+  const totalTransactions = transactions.length;
+
+  // 🏦 FIND INITIAL AND FINAL BALANCES
+  const initialBalance =
+    transactions.length > 0
+      ? {
+          amount:
+            parseFloat(
+              transactions[transactions.length - 1].account_balance_after_tr,
+            ) || 0,
+          date: transactions[transactions.length - 1].transaction_actual_date,
+          currency: transactions[0].currency_code,
+        }
+      : { amount: 0, date: defaultStartDate, currency: 'usd' };
+  //---
+  const finalBalance =
+    transactions.length > 0
+      ? {
+          amount: parseFloat(transactions[0].account_balance_after_tr) || 0,
+          date: transactions[0].transaction_actual_date,
+          currency: transactions[0].currency_code,
+        }
+      : { amount: 0, date: defaultEndDate, currency: 'usd' };
 
   return {
     totalTransactions,
@@ -85,21 +101,25 @@ const initialBalance = transactions.length>0
       initialBalance,
       finalBalance,
       periodStartDate: defaultStartDate,
-      periodEndDate: defaultEndDate
-      },
-      transactions
-    };
-  };//END OF getAccountTransactions
+      periodEndDate: defaultEndDate,
+    },
+    transactions,
+  };
+}; //END OF getAccountTransactions
 //----------
 // 🎯 UNIFIED CATEGORY BUDGET DATA FETCHER
 // Get complete category_budget account data including transactions
-const getCategoryBudgetFullData = async (userId, accountId)=>{
-try {
-  console.log(pc[backendColor](`Fetching full category_budget data for account: ${accountId}`)); 
+const getCategoryBudgetFullData = async (userId, accountId) => {
+  try {
+    console.log(
+      pc[backendColor](
+        `Fetching full category_budget data for account: ${accountId}`,
+      ),
+    );
 
-// 📋 ACCOUNT BASIC INFO + CATEGORY BUDGET DATA
-  const accountQuery ={
-    text:`
+    // 📋 ACCOUNT BASIC INFO + CATEGORY BUDGET DATA
+    const accountQuery = {
+      text: `
     SELECT 
       ui.*,
       act.account_type_name,
@@ -120,42 +140,43 @@ try {
       AND ua.account_id = $2
       AND act.account_type_name = 'category_budget'
     `,
-    values:[userId, accountId]
-  }
+      values: [userId, accountId],
+    };
 
- const accountResult = await pool.query(accountQuery)
+    const accountResult = await pool.query(accountQuery);
 
-if(accountResult.rows.length ===0){
-  throw new Error("Category budget account not found")
-}
+    if (accountResult.rows.length === 0) {
+      throw new Error('Category budget account not found');
+    }
 
-const accountData = accountResult.rows[0]
-const { remain, statusAlert } = calculateBudgetMetrics(
-    parseFloat(accountData.account_balance),
-    parseFloat(accountData.budget)
-  );
+    const accountData = accountResult.rows[0];
+    const { remain, statusAlert } = calculateBudgetMetrics(
+      parseFloat(accountData.account_balance),
+      parseFloat(accountData.budget),
+    );
 
-// 📊 GET TRANSACTIONS DATA
-  const transactionsData = await getAccountTransactions(userId, accountId);
+    // 📊 GET TRANSACTIONS DATA
+    const transactionsData = await getAccountTransactions(userId, accountId);
 
-// 🏗️ BUILD COMPLETE RESPONSE OBJECT
-  const completeAccountData ={
+    // 🏗️ BUILD COMPLETE RESPONSE OBJECT
+    const completeAccountData = {
       accountInfo: {
         ...accountData,
         remain,
-        statusAlert
+        statusAlert,
       },
-      transactions: transactionsData
+      transactions: transactionsData,
     };
 
-  console.log(pc[backendColor]('Category budget full data prepared successfully'));
+    console.log(
+      pc[backendColor]('Category budget full data prepared successfully'),
+    );
     return completeAccountData;
-
- } catch (error) {
-  console.error('Error in getCategoryBudgetFullData:', error);
-  throw error;
+  } catch (error) {
+    console.error('Error in getCategoryBudgetFullData:', error);
+    throw error;
   }
- }//END OF getCategoryBudgetFullData
+}; //END OF getCategoryBudgetFullData
 
 //**** CONTROLLERS *********
 //GET ALL ACCOUNTS INFO BY ACCOUNT TYPE: id, name, type, currency and balance, by user id and account_type but slack account.
@@ -169,8 +190,8 @@ export const getAllAccountsByType = async (req, res, next) => {
   try {
     const { type } = req.query;
     const accountType = type.trim();
-    const userId = req.user.userId||(req.body.user ?? req.query.user);
-  // console.log(userId, req.user, controllerName);
+    const userId = req.user.userId || (req.body.user ?? req.query.user);
+    // console.log(userId, req.user, controllerName);
 
     if (!accountType || !userId) {
       const message = `User ID and account type are required.Try again!.`;
@@ -178,7 +199,7 @@ export const getAllAccountsByType = async (req, res, next) => {
       // return res.status(400).json({ status: 400, message });
       return respondError(res, 400, message);
     }
-    
+
     if (
       ![
         'bank',
@@ -262,9 +283,9 @@ JOIN currencies ct ON ua.currency_id = ct.currency_id
         },
       },
 
- pocket_saving: {
-  typeQuery: {
-   text: `
+      pocket_saving: {
+        typeQuery: {
+          text: `
    SELECT ua.account_id, ua.account_name,
     CAST(ua.account_balance AS FLOAT),
     act.account_type_name, ct.currency_code, ps.target, ps.desired_date,
@@ -279,13 +300,13 @@ WHERE ua.user_id =$1
 AND act.account_type_name = $2 AND ua.account_name != $3
 ORDER BY ps.target DESC,  ABS(ua.account_balance) DESC
 `,
-    values: [userId, accountType, 'slack'],
-  },
- },
+          values: [userId, accountType, 'slack'],
+        },
+      },
 
- debtor: {
-  typeQuery: {
-   text: `
+      debtor: {
+        typeQuery: {
+          text: `
    SELECT ua.account_id,ua.account_name,
     CAST(ua.account_balance AS FLOAT),
     act.account_type_name, ct.currency_code,
@@ -306,9 +327,9 @@ ORDER BY ps.target DESC,  ABS(ua.account_balance) DESC
    AND act.account_type_name = $2 AND ua.account_name != $3
    ORDER BY  (ua.account_balance) ASC
 `,
-    values: [userId, accountType, 'slack'],
-  },
- },
+          values: [userId, accountType, 'slack'],
+        },
+      },
 
       bank_and_investment: {
         typeQuery: {
@@ -330,7 +351,7 @@ ORDER BY ps.target DESC,  ABS(ua.account_balance) DESC
     };
 
     const accountListResult = await pool.query(
-      accountTypeQuery[accountType].typeQuery
+      accountTypeQuery[accountType].typeQuery,
     );
 
     if (accountListResult.rows.length === 0) {
@@ -382,7 +403,7 @@ export const getAccounts = async (req, res, next) => {
 
   try {
     // const { user: userId } = req.query;
-    const userId = req.user.userId ?? req.body.user ;
+    const userId = req.user.userId ?? req.body.user;
 
     if (!userId) {
       const message = `User ID is required. Try again.`;
@@ -410,7 +431,7 @@ export const getAccounts = async (req, res, next) => {
     //CHECK ACCOUNT TYPE ON DDBB
     //es necesario chequear si el usuario tiene ese tipo de cuentas?
     const accountListResult = await pool.query(
-      accountTypeQuery['all'].typeQuery
+      accountTypeQuery['all'].typeQuery,
     );
     if (accountListResult.rows.length === 0) {
       const message = `No accounts available`;
@@ -435,14 +456,14 @@ export const getAccounts = async (req, res, next) => {
     } else {
       console.error(
         pc.red('Error during getting accounts'),
-        pc[errorColor]('Unknown error occurred')
+        pc[errorColor]('Unknown error occurred'),
       );
     }
     // Manejo de errores de PostgreSQL
     const { code, message } = handlePostgresError(error);
     next(createError(code, message));
   }
-};//END OF getAccounts
+}; //END OF getAccounts
 
 //**********************************
 //GET ACCOUNT INFO BY ACCOUNT_ID
@@ -451,11 +472,11 @@ export const getAccounts = async (req, res, next) => {
 export const getAccountById = async (req, res, next) => {
   console.log(pc[backendColor]('getAccountById'));
   const basicAccountTypes = ['bank', 'investment', 'income_source'];
-//--------------------------------
-// GET ACCOUNT BY ID 
-//----------------------------------
- try {
-   const userId = req.user.userId||(req.body.user ?? req.query.user);
+  //--------------------------------
+  // GET ACCOUNT BY ID
+  //----------------------------------
+  try {
+    const userId = req.user.userId || (req.body.user ?? req.query.user);
 
     if (!userId) {
       const message = 'User ID is required';
@@ -463,17 +484,17 @@ export const getAccountById = async (req, res, next) => {
       return res.status(400).json({ status: 400, message });
     }
 
-    const {accountId } = req.params;
+    const { accountId } = req.params;
 
-     if (!accountId) {
+    if (!accountId) {
       const message = `Account ID is required.`;
       console.warn(pc[backendColor](message));
       return res.status(400).json({ status: 400, message });
     }
-//--------------
-// 📋 GET ACCOUNT BASIC INFO
-   const accountsResult = await pool.query({
-     text: `SELECT act.account_type_name , ua.*
+    //--------------
+    // 📋 GET ACCOUNT BASIC INFO
+    const accountsResult = await pool.query({
+      text: `SELECT act.account_type_name , ua.*
         FROM user_accounts ua
         JOIN account_types act ON 
         act.account_type_id = ua.account_type_id
@@ -482,12 +503,12 @@ export const getAccountById = async (req, res, next) => {
     });
     // console.log('result', accountsResult.rows[0])
 
-     if (!accountsResult || accountsResult.rows.length===0) {
+    if (!accountsResult || accountsResult.rows.length === 0) {
       const message = `Account does not exist or user mismatch.`;
       console.warn(pc[backendColor](message));
-      return res.status(404).json({ status: 404, message });//400
+      return res.status(404).json({ status: 404, message }); //400
     }
-//------------------------------------
+    //------------------------------------
     //--check account_type_name developer mode
     // console.log('account type', accountsResult.rows[0].account_type_name)
 
@@ -507,44 +528,52 @@ export const getAccountById = async (req, res, next) => {
       ? accountsResult.rows[0].account_type_name
       : req.body.accountTypeName.trim().toLowerCase();
 */
-//-------------------------------------
-   const account_type_name =accountsResult.rows[0].account_type_name
-//-------------------------------------
-// in case of a failure db?
-  if(!['pocket_saving','category_budget', 'bank', 'investment', 'income_source','debtor'].includes(account_type_name))
-  {
-   const message = `${account_type_name} is not included in the account types fintrack app`
-    console.warn(message)
-   return RESPONSE(res, 404, message);
-    }    
-//-------------------------------------
-// 🎯 SPECIAL HANDLING FOR CATEGORY_BUDGET - UNIFIED DATA
-//   if(account_type_name ==='category_budget'){
-//   console.log(pc[backendColor]('Processing category_budget with unified data'))
+    //-------------------------------------
+    const account_type_name = accountsResult.rows[0].account_type_name;
+    //-------------------------------------
+    // in case of a failure db?
+    if (
+      ![
+        'pocket_saving',
+        'category_budget',
+        'bank',
+        'investment',
+        'income_source',
+        'debtor',
+      ].includes(account_type_name)
+    ) {
+      const message = `${account_type_name} is not included in the account types fintrack app`;
+      console.warn(message);
+      return RESPONSE(res, 404, message);
+    }
+    //-------------------------------------
+    // 🎯 SPECIAL HANDLING FOR CATEGORY_BUDGET - UNIFIED DATA
+    //   if(account_type_name ==='category_budget'){
+    //   console.log(pc[backendColor]('Processing category_budget with unified data'))
 
-//   const fullDataCategoryAccount = await getCategoryBudgetFullData(userId, accountId)//include transactions
+    //   const fullDataCategoryAccount = await getCategoryBudgetFullData(userId, accountId)//include transactions
 
-//   const message = `Category budget account data retrieved successfully`
-//   console.log('success:', pc[backendColor](message));     
+    //   const message = `Category budget account data retrieved successfully`
+    //   console.log('success:', pc[backendColor](message));
 
-//   return res.status(200).json({ 
-//     status: 200, 
-//     message, 
-//     data: fullDataCategoryAccount 
-//      });
-// }
+    //   return res.status(200).json({
+    //     status: 200,
+    //     message,
+    //     data: fullDataCategoryAccount
+    //      });
+    // }
 
-//-------------------------------------
-// ✅ HANDLING FOR OTHER ACCOUNT TYPES
-//-------------------------------------
-// 🏦 PROCESS SPECIFIC ACCOUNT TYPES
-//--get account basic and specific info by account id and account type for catgory_budget, debtor or pocket_saving
-//--bank account type
- const accountTypeQuery = {
-  //category_budget
-  category_budget: {
-    typeQuery: {
-      text: `
+    //-------------------------------------
+    // ✅ HANDLING FOR OTHER ACCOUNT TYPES
+    //-------------------------------------
+    // 🏦 PROCESS SPECIFIC ACCOUNT TYPES
+    //--get account basic and specific info by account id and account type for catgory_budget, debtor or pocket_saving
+    //--bank account type
+    const accountTypeQuery = {
+      //category_budget
+      category_budget: {
+        typeQuery: {
+          text: `
       SELECT
        ua.*, act.*, cba.*,
        ct.currency_code,
@@ -565,14 +594,14 @@ export const getAccountById = async (req, res, next) => {
         AND ua.account_id = $3 AND ua.account_name != $4
       ORDER BY ua.created_at DESC, ua.updated_at DESC 
       `,
-      values: [userId, account_type_name, accountId, 'slack'],
-    },
-  },
-  
-  //pocket_saving
-  pocket_saving: {
-   typeQuery: {
-    text: `SELECT ua.*, act.account_type_name, ct.currency_code, ps.* 
+          values: [userId, account_type_name, accountId, 'slack'],
+        },
+      },
+
+      //pocket_saving
+      pocket_saving: {
+        typeQuery: {
+          text: `SELECT ua.*, act.account_type_name, ct.currency_code, ps.* 
     FROM user_accounts ua
     JOIN account_types act ON ua.account_type_id = act.account_type_id
     JOIN currencies ct ON ua.currency_id = ct.currency_id
@@ -581,14 +610,14 @@ export const getAccountById = async (req, res, next) => {
     AND ua.account_id = $2
     AND act.account_type_name = $3 AND ua.account_name != $4
 `,
-      values: [userId, accountId, account_type_name, 'slack'],
-    },
-  },
+          values: [userId, accountId, account_type_name, 'slack'],
+        },
+      },
 
-  //debtor
-  debtor: {
-    typeQuery: {
-      text: `SELECT ua.*, act.account_type_name, ct.currency_code,
+      //debtor
+      debtor: {
+        typeQuery: {
+          text: `SELECT ua.*, act.account_type_name, ct.currency_code,
       da.*
       FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
@@ -598,12 +627,12 @@ export const getAccountById = async (req, res, next) => {
         AND ua.account_id = $2
         AND act.account_type_name = $3 AND ua.account_name != $4
 `,
-      values: [userId, accountId, account_type_name, 'slack'],
-    },
-  },
+          values: [userId, accountId, account_type_name, 'slack'],
+        },
+      },
 
-  //since account basic info works fine for bank, income and investment accounts, theses codes are not needed, unless, specific attributes were added for these accounts types in the future.   
- /*
+      //since account basic info works fine for bank, income and investment accounts, theses codes are not needed, unless, specific attributes were added for these accounts types in the future.
+      /*
   bank: {
           typeQuery: {
               text: `SELECT ua.*,  ct.currency_code, act.*
@@ -646,10 +675,10 @@ export const getAccountById = async (req, res, next) => {
       },
      */
     };
-//-------------------------
-  //check account type on ddbb
-  //es necesario chequear si el usuario tiene ese tipo de cuentas?
-/*
+    //-------------------------
+    //check account type on ddbb
+    //es necesario chequear si el usuario tiene ese tipo de cuentas?
+    /*
     const accountListResult = ['bank','investment','income_source'].includes(account_type_name)
 
     ? accountsResult
@@ -658,57 +687,58 @@ export const getAccountById = async (req, res, next) => {
       accountTypeQuery[account_type_name].typeQuery
     );
   */
-//--CHECK ACCOUNT TYPE IN CONFIG
-  let accountListResult 
-  //basic accounts
-  if (basicAccountTypes.includes(account_type_name)) {
-    accountListResult = accountsResult; 
+    //--CHECK ACCOUNT TYPE IN CONFIG
+    let accountListResult;
+    //basic accounts
+    if (basicAccountTypes.includes(account_type_name)) {
+      accountListResult = accountsResult;
+    } else if (accountTypeQuery.hasOwnProperty(account_type_name)) {
+      //pocket, debtor, category_budget accounts
+      accountListResult = await pool.query(
+        accountTypeQuery[account_type_name].typeQuery,
+      );
+    } else {
+      const message = `No query defined for account type "${account_type_name}"`;
+      console.warn(pc[backendColor](message));
 
-  } else if (accountTypeQuery.hasOwnProperty(account_type_name)) {
-  //pocket, debtor, category_budget accounts 
-  accountListResult =
-   await pool.query(accountTypeQuery[account_type_name].typeQuery);
-  
-  }else {
-    const message = `No query defined for account type "${account_type_name}"`;
-    console.warn(pc[backendColor](message));
+      return res.status(400).json({ status: 400, message });
+    }
+    //-------------------------
+    // console.log("🚀 ~ getAccountById ~ accountListResult:", accountListResult.rows, accountListResult.rows[0], accountListResult.rows[0].account_balance,
+    // accountListResult.rows[0].budget,
+    // )
+    //-------------------------
+    if (accountListResult.rows.length === 0) {
+      const message = `No accounts available for ${account_type_name}`;
+      console.warn(pc[backendColor](message));
 
-    return res.status(400).json({ status: 400, message });
-  }
-//-------------------------
-  // console.log("🚀 ~ getAccountById ~ accountListResult:", accountListResult.rows, accountListResult.rows[0], accountListResult.rows[0].account_balance, 
-  // accountListResult.rows[0].budget, 
-  // )
-//-------------------------  
-  if (accountListResult.rows.length === 0) {
-  const message = `No accounts available for ${account_type_name}`;
-  console.warn(pc[backendColor](message));
+      return res.status(400).json({ status: 400, message });
+    }
+    //------------------------
+    const data = {
+      rows: accountListResult.rows.length,
+      accountList: [accountListResult.rows[0]],
+    };
+    // console.log("🚀 ~ getAccountById ~ data:", data)
 
-  return res.status(400).json({ status: 400, message });
-  }
-//------------------------
-const data = { rows: accountListResult.rows.length, accountList:[accountListResult.rows[0] ]};
-// console.log("🚀 ~ getAccountById ~ data:", data)
+    // 🧮 ENRICH CATEGORY ACCOUNT WITH BUDGET CALCULATIONS
+    //budget remain and status alert for category_budget account type
+    if (account_type_name.trim().toLowerCase() === 'category_budget') {
+      const { remain, statusAlert } = calculateBudgetMetrics(
+        parseFloat(data.accountList[0].account_balance),
+        parseFloat(data.accountList[0].budget),
+      );
 
-// 🧮 ENRICH CATEGORY ACCOUNT WITH BUDGET CALCULATIONS
-//budget remain and status alert for category_budget account type
-if(account_type_name.trim().toLowerCase() === 'category_budget'){
-const { remain, statusAlert } = calculateBudgetMetrics(
-    parseFloat(data.accountList[0].account_balance),
-    parseFloat(data.accountList[0].budget)
-  );
+      data.accountList[0].remain = remain;
+      data.accountList[0].statusAlert = statusAlert;
 
-  data.accountList[0].remain = remain
-  data.accountList[0].statusAlert = statusAlert
+      // console.log('remain and statusAlert',data.accountList[0].remain, data.accountList[0].statusAlert,'data', data )
+    }
+    //----------------------------
+    const message = `Get account successfully!`;
+    console.log('success:', pc[backendColor](message));
 
-  // console.log('remain and statusAlert',data.accountList[0].remain, data.accountList[0].statusAlert,'data', data )
-} 
-//----------------------------
-  const message = `Get account successfully!`;
-  console.log('success:', pc[backendColor](message));
-
-  res.status(200).json({ status: 200, message, data });
-
+    res.status(200).json({ status: 200, message, data });
   } catch (error) {
     if (error instanceof Error) {
       console.error(pc.red('Error while getting accounts by account ID'));
@@ -719,85 +749,88 @@ const { remain, statusAlert } = calculateBudgetMetrics(
     } else {
       console.error(
         pc.red('Error during getting accounts by ID'),
-        pc[errorColor]('Unknown error occurred')
+        pc[errorColor]('Unknown error occurred'),
       );
     }
-// Manejo de errores de PostgreSQL / pgsql error handling
+    // Manejo de errores de PostgreSQL / pgsql error handling
     const { code, message } = handlePostgresError(error);
     next(createError(code, message));
   }
-};//End of getAccountById
+}; //End of getAccountById
 
 //*********************************
 // 🆕 ENDPOINT: GET CATEGORY BUDGET FULL DATA
-export const getCategoryBudgetFullDataEndpoint = async (req, res, next) =>{
-  console.log(pc[backendColor]('getCategoryBudgetFullDataEndpoint'))
+export const getCategoryBudgetFullDataEndpoint = async (req, res, next) => {
+  console.log(pc[backendColor]('getCategoryBudgetFullDataEndpoint'));
 
   try {
-    const userId = req.user.userId  || (req.body.user ?? req.query.user);
+    const userId = req.user.userId || (req.body.user ?? req.query.user);
 
-    if(!userId){
-      const message = 'User ID is required'
-      console.war(pc.blueBright(message))
-      return res.status(400).json({status:400, message})
+    if (!userId) {
+      const message = 'User ID is required';
+      console.war(pc.blueBright(message));
+      return res.status(400).json({ status: 400, message });
     }
 
-    const {accountId} = req.params
-    if(!accountId){
-      const message = `Account ID is required`
-      console.warn(pc[backendColor](message))
-      return res.status(400).json({status:400, message})
+    const { accountId } = req.params;
+    if (!accountId) {
+      const message = `Account ID is required`;
+      console.warn(pc[backendColor](message));
+      return res.status(400).json({ status: 400, message });
     }
 
-  // 🎯 VERIFY ACCOUNT EXISTS AND IS CATEGORY_BUDGET
+    // 🎯 VERIFY ACCOUNT EXISTS AND IS CATEGORY_BUDGET
     const accountsResult = await pool.query({
-     text: `
+      text: `
      SELECT act.account_type_name
      FROM user_accounts ua
      JOIN account_types act ON act.account_type_id = ua.account_type_id
      WHERE ua.account_id = $1 AND ua.user_id = $2`,
-     values: [accountId, userId],
-    }) 
+      values: [accountId, userId],
+    });
 
     if (!accountsResult.rows.length) {
-      return res.status(404).json({ status: 404, message: 'Account not found' });
+      return res
+        .status(404)
+        .json({ status: 404, message: 'Account not found' });
     }
 
     const account_type_name = accountsResult.rows[0].account_type_name;
 
-    if(account_type_name !== 'category_budget'){
-      return res.status(400).json({ 
-        status: 400, 
-        message: 'This endpoint is only for category_budget accounts' 
-      })
+    if (account_type_name !== 'category_budget') {
+      return res.status(400).json({
+        status: 400,
+        message: 'This endpoint is only for category_budget accounts',
+      });
     }
 
-  // 🎯 USE EXISTING LOGIC TO GET COMPLETE DATA
-   const fullDataCategoryAccount =  await getCategoryBudgetFullData(userId, accountId);
-  //---------------------------------
-  console.log('full data endpoint', fullDataCategoryAccount) 
-  //--------------------------------- 
-   const message = `Category budget full data retrieved successfully`
-   console.log('success:', pc[backendColor](message))
+    // 🎯 USE EXISTING LOGIC TO GET COMPLETE DATA
+    const fullDataCategoryAccount = await getCategoryBudgetFullData(
+      userId,
+      accountId,
+    );
+    //---------------------------------
+    console.log('full data endpoint', fullDataCategoryAccount);
+    //---------------------------------
+    const message = `Category budget full data retrieved successfully`;
+    console.log('success:', pc[backendColor](message));
 
-  return res.status(200).json({ 
-    status: 200, 
-    message, 
-    data: fullDataCategoryAccount 
-   }); 
-    
-  }catch (error) {
-   console.error(pc.red('Error in getCategoryBudgetFullDataEndpoint:'), error);
+    return res.status(200).json({
+      status: 200,
+      message,
+      data: fullDataCategoryAccount,
+    });
+  } catch (error) {
+    console.error(pc.red('Error in getCategoryBudgetFullDataEndpoint:'), error);
 
     if (error.message === 'Category budget account not found') {
       return res.status(404).json({ status: 404, message: error.message });
     }
-    
+
     const { code, message } = handlePostgresError(error);
     next(createError(code, message));
-
   }
-}//End of getCategoryBudgetFullDataEndpoint 
+}; //End of getCategoryBudgetFullDataEndpoint
 
 //**********************************
 //GET ALL ACCOUNTS OF A CATEGORY BY CATEGORY_NAME
@@ -805,7 +838,7 @@ export const getCategoryBudgetFullDataEndpoint = async (req, res, next) =>{
 
 //example of route:http://localhost:5173/fintrack/budget/category/${category_name}
 
-export const getAccountsByCategory= async (req, res, next) => {
+export const getAccountsByCategory = async (req, res, next) => {
   console.log(pc[backendColor]('getAccountsByCategory'));
   //   console.log(
   //   'body:',
@@ -820,24 +853,24 @@ export const getAccountsByCategory= async (req, res, next) => {
   //   req.originalUrl
   // );
 
- try {
-  const userId = req.user.userId ||(req.body.user ?? req.query.user);
-  
-  if (!userId) {
-    const message = 'User ID is required';
-    console.warn(pc.blueBright(message));
-    return res.status(400).json({ status: 400, message });
-  }
-  const {categoryName } = req.params;
+  try {
+    const userId = req.user.userId || (req.body.user ?? req.query.user);
 
-  if (!categoryName) {
-    const message = `Category name is required.`;
-    console.warn(pc[backendColor](message));
-    return res.status(400).json({ status: 400, message });
+    if (!userId) {
+      const message = 'User ID is required';
+      console.warn(pc.blueBright(message));
+      return res.status(400).json({ status: 400, message });
     }
-  //------------------------------------
-  //--GET ACCOUNTS INFO BY CATEGORY NAME
-   const accountsResult = await pool.query({
+    const { categoryName } = req.params;
+
+    if (!categoryName) {
+      const message = `Category name is required.`;
+      console.warn(pc[backendColor](message));
+      return res.status(400).json({ status: 400, message });
+    }
+    //------------------------------------
+    //--GET ACCOUNTS INFO BY CATEGORY NAME
+    const accountsResult = await pool.query({
       text: `SELECT ua.*, CAST(ua.account_balance AS FLOAT), CAST(ua.Account_starting_amount AS FLOAT), cba.*,CAST(cba.budget AS FLOAT),
        cur.currency_code,act.account_type_name ,cnt.category_nature_type_name
       FROM user_accounts ua
@@ -854,32 +887,31 @@ export const getAccountsByCategory= async (req, res, next) => {
 
     // console.log('result', accountsResult.rows[0])
 
-    if (!accountsResult || accountsResult.rows.length===0) {
+    if (!accountsResult || accountsResult.rows.length === 0) {
       const message = `No accounts of cateogry ${categoryName} were found`;
       console.warn(pc[backendColor](message));
       return res.status(400).json({ status: 400, message });
     }
 
     // console.log('accounts', accountsResult.rows[0])
- 
-    const accountListResult = accountsResult
-    
+
+    const accountListResult = accountsResult;
+
     if (accountListResult.rows.length === 0) {
       const message = `No accounts available`;
       console.warn(pc[backendColor](message));
       return res.status(400).json({ status: 400, message });
-      }
-      
-      const accountList = accountListResult.rows;
-      //devolver el nombre de la cuenta, (balance actual), currency_code
-      
-      const data = { rows: accountList.length, accountList };
-      
-      const message = `${categoryName} account list successfully completed `;
-      console.log('success:', pc[backendColor](message));
-      
-      res.status(200).json({ status: 200, message, data });
+    }
 
+    const accountList = accountListResult.rows;
+    //devolver el nombre de la cuenta, (balance actual), currency_code
+
+    const data = { rows: accountList.length, accountList };
+
+    const message = `${categoryName} account list successfully completed `;
+    console.log('success:', pc[backendColor](message));
+
+    res.status(200).json({ status: 200, message, data });
   } catch (error) {
     if (error instanceof Error) {
       console.error(pc.red('Error while getting accounts by category name'));
@@ -890,15 +922,14 @@ export const getAccountsByCategory= async (req, res, next) => {
     } else {
       console.error(
         pc.red('Error during getting accounts by category name'),
-        pc[errorColor]('Unknown error occurred')
+        pc[errorColor]('Unknown error occurred'),
       );
     }
     // Manejo de errores de PostgreSQL
     const { code, message } = handlePostgresError(error);
     next(createError(code, message));
   }
-  
-};//End of getAccountsByCategory
+}; //End of getAccountsByCategory
 
 /*
 example response of getAccountByCategory

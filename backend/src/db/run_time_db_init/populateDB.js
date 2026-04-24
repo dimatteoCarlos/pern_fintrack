@@ -3,7 +3,7 @@ import {
   createError,
   handlePostgresErrorEs,
 } from '../../utils/errorHandling.js';
-import { pool } from '../configDB.js';
+import { pool } from '../config/configDB.js';
 import pc from 'picocolors';
 
 //========================================
@@ -39,7 +39,7 @@ async function isTablePopulated(tableName, minCount = 1) {
 //==========================================
 //--
 //currencies
-export async function tblCurrencies(client=pool) {
+export async function tblCurrencies(client = pool) {
   const currenciesValues = [
     {
       currency_id: 1,
@@ -101,7 +101,7 @@ export async function tblCurrencies(client=pool) {
 // tblCurrencies();
 //--
 //user roles
-export async function tblUserRoles(client=pool) {
+export async function tblUserRoles(client = pool) {
   const rolesValues = [
     { user_role_id: 1, user_role_name: 'user' },
     { user_role_id: 2, user_role_name: 'admin' },
@@ -119,7 +119,7 @@ export async function tblUserRoles(client=pool) {
     const exists = await tableExists(tblName);
     if (!exists) {
       console.log(
-        pc.cyan(`/" ${tblName}/" table does not exist. Creating it...`)
+        pc.cyan(`/" ${tblName}/" table does not exist. Creating it...`),
       );
       const createQuery = `CREATE TABLE user_roles(user_role_id SERIAL PRIMARY KEY  NOT NULL, user_role_name VARCHAR(15) NOT NULL CHECK (user_role_name IN ('user', 'admin', 'super_admin') ) )`;
       await client.query(createQuery);
@@ -142,7 +142,7 @@ export async function tblUserRoles(client=pool) {
       await client.query(queryText, values);
       console.log(
         pc.green('inserted: user_role'),
-        pc.green(role.user_role_name)
+        pc.green(role.user_role_name),
       );
     }
 
@@ -160,7 +160,7 @@ export async function tblUserRoles(client=pool) {
 // tblUserRoles()
 //--
 //accountTypes
-export async function tblAccountTypes(client=pool) {
+export async function tblAccountTypes(client = pool) {
   const accountTypeValues = [
     { account_type_id: 1, account_type_name: 'bank' },
     { account_type_id: 2, account_type_name: 'investment' },
@@ -168,7 +168,6 @@ export async function tblAccountTypes(client=pool) {
     { account_type_id: 4, account_type_name: 'pocket_saving' },
     { account_type_id: 5, account_type_name: 'category_budget' }, //expense category
     { account_type_id: 6, account_type_name: 'income_source' },
- 
   ];
   const tblName = 'account_types';
   const minCount = accountTypeValues.length - 1;
@@ -220,7 +219,7 @@ export async function tblAccountTypes(client=pool) {
 //tblAccountTypes();
 //--
 //categoryNatureTypes
-export async function tblCategoryNatureTypes(client=pool) {
+export async function tblCategoryNatureTypes(client = pool) {
   const categoryNatureTypeValues = [
     { category_nature_type_id: 1, category_nature_type_name: 'must' },
     { category_nature_type_id: 2, category_nature_type_name: 'need' },
@@ -265,7 +264,7 @@ export async function tblCategoryNatureTypes(client=pool) {
       ];
       await client.query(queryText, values);
       console.log(
-        pc.green(`inserted: ${tblName}, ${type.category_nature_type_name}`)
+        pc.green(`inserted: ${tblName}, ${type.category_nature_type_name}`),
       );
     }
 
@@ -284,7 +283,7 @@ export async function tblCategoryNatureTypes(client=pool) {
 //tblCategoryNatureTypes();
 //---
 //movement_types
-export async function tblMovementTypes(client=pool) {
+export async function tblMovementTypes(client = pool) {
   const movementTypeValues = [
     { movement_type_id: 1, movement_type_name: 'expense' },
     { movement_type_id: 2, movement_type_name: 'income' },
@@ -347,7 +346,7 @@ export async function tblMovementTypes(client=pool) {
 
 //--
 //transactionTypes
-export async function tbltransactionTypes(client=pool) {
+export async function tbltransactionTypes(client = pool) {
   const transactionTypeValues = [
     { transaction_type_id: 1, transaction_type_name: 'withdraw' },
     { transaction_type_id: 2, transaction_type_name: 'deposit' },

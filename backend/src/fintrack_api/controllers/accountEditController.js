@@ -1,7 +1,7 @@
 // backend/src/fintrack_api/controllers/accountEditController.js
 
 import pc from 'picocolors';
-import { pool } from '../../db/configDB.js';
+import { pool } from '../../db/config/configDB.js';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import { capitalize } from '../../utils/helpers.js';
 

@@ -1,11 +1,11 @@
 //recordTransaction.js
 
 import pc from 'picocolors';
-import { pool } from '../db/configDB.js';
+import { pool } from '../db/config/configDB.js';
 import { handlePostgresError } from './errorHandling.js';
 
-export async function recordTransaction(clientOrPool=null, option) {
- const dbClient=clientOrPool || pool;
+export async function recordTransaction(clientOrPool = null, option) {
+  const dbClient = clientOrPool || pool;
   try {
     const {
       userId,
@@ -20,7 +20,7 @@ export async function recordTransaction(clientOrPool=null, option) {
       transaction_type_id,
       destination_account_id,
       transaction_actual_date,
-      account_balance
+      account_balance,
     } = option;
     // console.log('🚀 ~ recordTransaction ~ options:', options);
 
@@ -39,13 +39,12 @@ export async function recordTransaction(clientOrPool=null, option) {
         transaction_type_id,
         destination_account_id,
         transaction_actual_date,
-        account_balance
+        account_balance,
       ],
     });
     // console.log(transactionResult.rows[0]);
-    
-    return transactionResult.rows[0];
 
+    return transactionResult.rows[0];
   } catch (error) {
     const message = error.message || `Error when recording transaction.`;
     console.error(pc.redBright(message), 'from record transaction');

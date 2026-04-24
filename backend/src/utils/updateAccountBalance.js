@@ -1,14 +1,10 @@
 //backend/src/utils/updateAccountBalance.js
 import pc from 'picocolors';
-import { pool } from '../db/configDB.js';
+import { pool } from '../db/config/configDB.js';
 
 //------------------------------
 console.log(pc.magentaBright('File: updateAccountBalance.js', '\n'));
-console.log(
-  '\n',
-  pc.yellowBright('DATA BASE COMMENTS ARE IN SPANISH'),
-  '\n',
-);
+console.log('\n', pc.yellowBright('DATA BASE COMMENTS ARE IN SPANISH'), '\n');
 //------------------------------
 export const updateAccountBalance = async (
   clientOrPool = null,
