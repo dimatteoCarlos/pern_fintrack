@@ -1,7 +1,8 @@
 // backend/src/db/run_time_db_init/init-db.js
 // Script to initialize database (run once during build or manually)
-import { initializeDatabase } from './initDatabase.js';
 import { pool } from '../config/configDB.js';
+import { initializeDatabase } from './initDatabase.js';
+
 import pc from 'picocolors';
 
 async function run() {
