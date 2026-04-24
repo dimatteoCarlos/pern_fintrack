@@ -13,9 +13,10 @@ import useragent from 'express-useragent';
 import dotenv from 'dotenv';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
+import { verifyToken } from './middlewares/authMiddleware.js';
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
-import { verifyToken } from './middlewares/authMiddleware.js';
+import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
 dotenv.config();
@@ -30,7 +31,7 @@ export const app = express();
 //muchos servicios cloud) usan proxies inversos. Express debe confiar en el proxy para obtener la IP real y el protocolo correcto (HTTP/HTTPS). Se coloca después de const app = express():
 // trust proxy only in production (e.g., Render, Vercel)
 if (process.env.NODE_ENV === 'production') {
- app.set('trust proxy', 1); // trust the first proxy
+  app.set('trust proxy', 1); // trust the first proxy
 }
 // const PORT = parseInt(process.env.PORT ?? '5000');
 
@@ -53,7 +54,7 @@ const ACCEPTED_ORIGINS = [
   'http://localhost:8080',
   'http://localhost:1234',
   'http://localhost:5432',
-  process.env.CLIENT_URL
+  process.env.CLIENT_URL,
 ].filter(Boolean);
 
 app.use(
@@ -84,8 +85,8 @@ app.use(
 //----------------------
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
 app.use('/api', routes); //main app routes
-
 app.use('/api/fintrack', verifyToken, fintrack_routes);
+app.use('/api/cronjob', cronRoutes);
 
 // ==================================
 //🚩 404 errors handler
