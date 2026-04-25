@@ -3,7 +3,7 @@
   "project": ["src/**/*.js"],
   "ignore": [
     "src/db/docs/**",
-    "src/db/old_run_time_migrations/**",
+    "src/db/run_time_db_init/**",
     "src/db/seeds/**"
   ]
 }
