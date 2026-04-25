@@ -1,112 +1,119 @@
-//temporary user id - while developing
-export const USER_ID: string = import.meta.env.VITE_USER_ID;
-//api auth routes endpoints
+//frontend/src/endpoints.ts
+
+//=========================
+//API AUTH ROUTES ENDPOINTS
 //http://localhost:5000/api/
-//authentication
+
+//AUTHENTICATION & USER HANDLER
 // http://localhost:5000/api/auth/
+export const BASE_URL_AUTH: string = import.meta.env.VITE_API_BASE_URL_AUTH;
+
+export const BASE_URL: string = import.meta.env.VITE_API_BASE_URL;
+
 //sign-up
-export const url_signup: string = 'http://localhost:5000/api/auth/sign-up';
+export const url_signup: string = BASE_URL_AUTH + 'sign-up';
 
 //sign-in
-export const url_signin: string = 'http://localhost:5000/api/auth/sign-in';
+export const url_signin: string = BASE_URL_AUTH + 'sign-in';
 
 //sign-out
-export const url_signout: string = 'http://localhost:5000/api/auth/sign-out';
+export const url_signout: string = BASE_URL_AUTH + 'sign-out';
 //refresh-token
-export const url_refreshToken: string =
-  'http://localhost:5000/api/auth/refresh-token';
+export const url_refreshToken: string = BASE_URL_AUTH + 'refresh-token';
 
-export const url_validate_session = `http://localhost:5000/api/auth/validate-session`;
-//-----------------------
-//fintrack routes endpoints
-//http://localhost:5000/api/fintrack
-export const BASE_URL: string = import.meta.env.VITE_API_URL_APP;
+export const url_validate_session = BASE_URL_AUTH + 'validate-session';
 
 // ===================================
 // CHANGE PASSWORD && UPDATE USER DATA
 // ===================================
-export const url_change_password = `http://localhost:5000/api/user/change-password`;
+export const url_change_password = BASE_URL + `user/change-password`;
 
-export const url_update_user = `http://localhost:5000/api/user/update-profile`;
+export const url_update_user = BASE_URL + 'user/update-profile';
+
+//-----------------------
+//FINTRACK ROUTES ENDPOINTS
+//http://localhost:5000/api/fintrack
+export const BASE_URL_APP: string = import.meta.env.VITE_API_URL_APP;
 
 // ===================================
 // FINTRACK FUNCTIONALITIES APP ENDPOINTS
 // ===================================
 //aCCOUNT_TYPES LIST
 //http://localhost:5000/api/fintrack/account/type/list
-export const url_account_type_list: string = BASE_URL + '/account/type/list';
+export const url_account_type_list: string =
+  BASE_URL_APP + 'account/type/list';
 //-----------------------------------
 //CREATE NEW ACCOUNT
 //for Overview page
 //create a new account for types: bank, investment and income_source
 //http://localhost:5000/api/fintrack/account/new_account/account_type
 export const url_create_basic_account: string =
-  BASE_URL + '/account/new_account'; //account_type is dynamic
+  BASE_URL_APP + 'account/new_account'; //account_type is dynamic
 
 //ENDPOINTS FOR BUDGET PAGE
 // dashboardAccountSummaryList
 //accouny list summary by account type and acc name
 //example:http://localhost:5000/api/fintrack/dashboard/balance/summary/?type=category_budget&user=
 export const url_summary_balance_ByType: string =
-  BASE_URL + '/dashboard/balance/summary/'; //?type=expense&user=
+  BASE_URL_APP + 'dashboard/balance/summary/'; //?type=expense&user=
 
 //create a category_budget account
 //http://localhost:5000/api/fintrack/account/new_account/category_budget
 export const url_create_category_budget_account: string =
-  BASE_URL + '/account/new_account/category_budget';
+  BASE_URL_APP + 'account/new_account/category_budget';
 
 //get accounts info  by categoryName
 //--endpoint: http://localhost:5000/api/fintrack/budget/category/:categoryName?&user=${user}
 //api response type data:
 export const url_get_accounts_by_category: string =
-  BASE_URL + '/account/category';
+  BASE_URL_APP + 'account/category';
 
 //------
 //create a pocket_saving account
 //http://localhost:5000/api/fintrack/account/new_account/pocket_saving
 export const url_create_pocket_saving_account: string =
-  BASE_URL + '/account/new_account/pocket_saving';
+  BASE_URL_APP + 'account/new_account/pocket_saving';
 
 //FOR DEBTS PAGE
 //create a debtor account
 //http://localhost:5000/api/fintrack/account/new_account/debtor
 export const url_create_debtor_account: string =
-  BASE_URL + '/account/new_account/debtor';
+  BASE_URL_APP + 'account/new_account/debtor';
 
 //--for debts page
 //---GET ACCOUNT INFO BY ACCOUNT ID
 //--endpoint: http://localhost:5000/api/fintrack/debts/debtor/${account_id)?&user=c109eb15-4139-43b4-b081-8fb9860588af
-export const url_get_debtor_by_id: string = BASE_URL + '/debts/debtor/';
+export const url_get_debtor_by_id: string = BASE_URL_APP + 'debts/debtor/';
 
 //--FOR OVERVIEW PAGE
 //---GET ACCOUNT INFO BY ACCOUNT ID
 //--endpoint example: http://localhost:5000/api/fintrack/account/11?&user=${user}
 
-export const url_get_account_by_id: string = BASE_URL + '/account';
+export const url_get_account_by_id: string = BASE_URL_APP + 'account';
 
 //---GET ACCOUNT TRANSACTIONS BY ACCOUNT ID
 //--endpoint: http://localhost:5000/api/fintrack/account/transactions/:account_id/?start=&end=&user=c109eb15-4139-43b4-b081-8fb9860588af
 export const url_get_transactions_by_account_id: string =
-  BASE_URL + '/account/transactions';
+  BASE_URL_APP + 'account/transactions';
 //-----------------------------------
 //----GET ALL ACCOUNTS INFO OF A SPECIFIC ACCOUNT TYPE
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
 //controller:getAllAccountsByType
 //endpoint: http://localhost:5000/api/fintrack/account/type/?type=${account_type_name}&user=${6e0ba475-bf23-4e1b-a125-3a8f0b3d352c}
 //Example:for expense tracker, types used are: bank or category_budget,
-export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
+export const url_get_accounts_by_type: string = BASE_URL_APP + 'account/type';
 //---------------------------------
 //get user accounts info by account prefixed type_name bank and investment except slack account
 //for accounting and overview components
 //http://localhost:5000/api/fintrack/account/type/?type=bankAndInvestment
 //example for expense tracker, types used are: bank and investment,
 export const url_get_accounting_accounts: string =
-  BASE_URL + '/account/type/?type=bank_and_investment';
+  BASE_URL_APP + 'account/type/?type=bank_and_investment';
 //----------------------------------
 // get all the available accounts, all types,  but slack account
 //endpoint: http://localhost:5000/api/fintrack/account/allAccounts/?
 export const url_get_all_accounting_accounts: string =
-  BASE_URL + '/account/allAccounts/';
+  BASE_URL_APP + 'account/allAccounts/';
 //----------------------------------
 //GET THE SUM OF BALANCE OF ALL ACCOUNTS OF ONE ACCOUNT TYPE
 //example: total balance is the sum of all bank accounts balance
@@ -117,29 +124,29 @@ export const url_get_all_accounting_accounts: string =
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type
 //used in:OverviewLayout.tsx, Overview.tsx,
 export const url_get_total_account_balance_by_type: string =
-  BASE_URL + '/dashboard/balance/type';
+  BASE_URL_APP + 'dashboard/balance/type';
 
 //MOVEMENT TRANSACTION RECORD
 //ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?user=eacef623-6fb0-4168-a27f-fa135de093e1&movement=expense
 export const url_movement_transaction_record: string =
-  BASE_URL + '/transaction/transfer-between-accounts';
+  BASE_URL_APP + 'transaction/transfer-between-accounts';
 
 //=======================================
 //endpoints for OVERVIEWLAYOUT page
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type
 // export const url_get_total_account_balance_by_type: string =
-//   BASE_URL + '/dashboard/balance/type';
+//   BASE_URL_APP + 'dashboard/balance/type';
 //=======================================
 //ENDPOINTS for OVERVIEW page
 //controller:dashboardMonthlyTotalAmountByType
 //get.http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?user=
 
 export const url_monthly_TotalAmount_ByType: string =
-  BASE_URL + '/dashboard/balance/monthly_total_amount_by_type/'; //?&user=
+  BASE_URL_APP + 'dashboard/balance/monthly_total_amount_by_type/'; //?&user=
 //---------------------------------------
 //for accounting and overview components
 //http://localhost:5000/api/fintrack/account/type/?type=
-// export const url_get_accounts_by_type: string = BASE_URL + '/account/type';
+// export const url_get_accounts_by_type: string = BASE_URL_APP + 'account/type';
 
 //=======================================
 //LAST MOVEMENTS BY MOVEMENT TYPE
@@ -150,7 +157,7 @@ export const url_monthly_TotalAmount_ByType: string =
 //example: http://localhost:5000/api/fintrack/dashboard/movements/account_type/?start=&end=&movement=expense&transaction_type=&account_type=category_budget&user=51ba7238-31f0-4153-a80b-6709c34a1955
 
 export const dashboardMovementTransactionsByType: string =
-  BASE_URL + '/dashboard/movements/account_type/';
+  BASE_URL_APP + 'dashboard/movements/account_type/';
 //------------------------------
 // controller:dashboardMovementTransactions
 // insomnia: fintrack dashboardMovementTransactions
@@ -158,26 +165,26 @@ export const dashboardMovementTransactionsByType: string =
 //example:http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=pocket&user=${user}
 //http://localhost:5000/api/fintrack/dashboard/movements/movement/?start=&end=&movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
 export const dashboardMovementTransactions: string =
-  BASE_URL + '/dashboard/movements/movement/';
+  BASE_URL_APP + 'dashboard/movements/movement/';
 //--------------------------
 //fintrack dashboard movements
 //this is more general since it can search
 //get.http://localhost:5000/api/fintrack/dashboard/movements/search/?start=&end=&search=opening&user=eacef623-6fb0-4168-a27f-fa135de093e1
 // dashboardMovementTransactionsSearch
 export const url_get_transactions_by_search: string =
-  BASE_URL + '/dashboard/movements/search/';
+  BASE_URL_APP + 'dashboard/movements/search/';
 
 //http://localhost:5000/api/fintrack/account/11
-export const url_get_category_budget_full_data = `${BASE_URL}/fintrack/account`;
+export const url_get_category_budget_full_data = `${BASE_URL_APP}/fintrack/account`;
 //--------------------------
 //ACCOUNT EDITION ENDPOINT
 //http://localhost:5000/api/fintrack/account/edit/11
 //http://localhost:5000/api/fintrack/account/details/11
 export const url_get_account_details_by_id_for_edition: string =
-  BASE_URL + '/account/details/';
+  BASE_URL_APP + 'account/details/';
 
 //http://localhost:5000/api/fintrack/account/edit/11
-export const url_patch_account_edit = BASE_URL + '/account/edit';
+export const url_patch_account_edit = BASE_URL_APP + 'account/edit';
 
 // ===================================
 //📝 GET IMPACT REPORT URL (RTA-specific)
@@ -192,7 +199,7 @@ export const url_patch_account_edit = BASE_URL + '/account/edit';
 export const url_report_of_affected_accounts = (
   targetAccountId: string | number,
 ) =>
-  `${BASE_URL}/account/delete/report_of_affected_accounts/${targetAccountId}`;
+  `${BASE_URL_APP}/account/delete/report_of_affected_accounts/${targetAccountId}`;
 
 // ===================================
 //💣 EXECUTE DELETION URL (Used by RTA, HARD, and SOFT methods)
@@ -201,4 +208,4 @@ export const url_report_of_affected_accounts = (
 //Endpoint: DELETE /fintrack/account/delete/:targetAccountId
 
 export const url_account_delete = (targetAccountId: string | number) =>
-  `${BASE_URL}/account/delete/${targetAccountId}`;
+  `${BASE_URL_APP}/account/delete/${targetAccountId}`;
