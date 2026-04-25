@@ -14,7 +14,7 @@ export const DELETION_TYPE_HARD='HARD'
 export const DELETION_TYPE_SOFT='SOFT'
 
 export const ADMIN_ACTION='ADMIN_ACTION'
-export const USER_ACTION='USER_CTION'
+export const USER_ACTION='USER_ACTION'
 // =========================================
 // 📊 RTA REPORT HANDLER
 // Endpoint: GET /api/fintrack/account/delete/report_of_affected_accounts/:targetAccountId
