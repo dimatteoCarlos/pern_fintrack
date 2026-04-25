@@ -1,7 +1,7 @@
 import { BoxContainer, BoxRow } from './boxComponents.tsx';
 import { currencyFormat } from '../../../helpers/functions.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
-import { url_summary_balance_ByType, USER_ID } from '../../../../endpoints.ts';
+import { url_summary_balance_ByType} from '../../../../endpoints.ts';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import { Link } from 'react-router-dom';
 import {
@@ -32,14 +32,17 @@ type AccountPropType = { previousRoute: string; accountType: string };
 //temporary values------------
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
-const user = import.meta.env.VITE_USER_ID;
+// const user = import.meta.env.VITE_USER_ID;
 
 //-----------
 function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
   //DATA FETCHING
   const { apiData, isLoading, error } = useFetch<DebtorListSummaryType>(
-    `${url_summary_balance_ByType}?type=${accountType}&user=${USER_ID ?? user}`,
+    `${url_summary_balance_ByType}?type=${accountType}`,
   );
+  // const { apiData, isLoading, error } = useFetch<DebtorListSummaryType>(
+  //   `${url_summary_balance_ByType}?type=${accountType}&user=${USER_ID ?? user}`,
+  // );
   // console.log('apiData:', apiData);
 
   const debtList: DebtsToRenderType =
