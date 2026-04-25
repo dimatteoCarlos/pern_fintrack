@@ -30,7 +30,7 @@ function InvestmentAccountBalance({
   previousRoute,
   accountType,
 }: AccountPropType) {
-  const user = import.meta.env.VITE_USER_ID;
+  // const user = import.meta.env.VITE_USER_ID;
 
   //--STATES---------------------
   const [investmentAccountsToRender, setInvestmentAccountsToRender] = useState<
@@ -41,7 +41,7 @@ function InvestmentAccountBalance({
   );
 
   //DATA FETCHING
-  const urlInvestmentAccounts = `${url_get_accounts_by_type}/?type=${accountType}&user=${user}`;
+  const urlInvestmentAccounts = `${url_get_accounts_by_type}/?type=${accountType}`;
 
   const { apiData, isLoading, error } = useFetch<AccountByTypeResponseType>(
     urlInvestmentAccounts,
