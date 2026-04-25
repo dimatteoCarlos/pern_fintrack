@@ -1,8 +1,9 @@
-import pc from 'picocolors';
-import { pool } from '../db/config/configDB.js';
-// import { handlePostgresError } from './errorHandling.js';
-//--------------------------------
+// backend/src/utils/insertAccount.js
 
+// import pc from 'picocolors';
+import { pool } from '../db/config/configDB.js';
+
+//--------------------------------
 export const insertAccount = async (
   clientOrPool = null,
   userId,
