@@ -3,11 +3,11 @@
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
+// import dotenv from 'dotenv';
 import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 
-dotenv.config();
+// dotenv.config();
 //------------------------------
 const salt = Number(process.env.SALT_ROUNDS);
 
