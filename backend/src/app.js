@@ -16,7 +16,7 @@ import dotenv from 'dotenv';
 import { verifyToken } from './middlewares/authMiddleware.js';
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
-import cronRoutes from './cronjob/cronRoutes.js';
+// import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
 dotenv.config();
@@ -91,7 +91,7 @@ console.log('✅ /api/health invoked');
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
 app.use('/api', routes); //main app routes
 app.use('/api/fintrack', verifyToken, fintrack_routes);
-app.use('/api/cronjob', cronRoutes);
+// app.use('/api/cronjob', cronRoutes);
 
 // ==================================
 //🚩 404 errors handler
