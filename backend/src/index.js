@@ -42,7 +42,9 @@ async function startServer() {
   }
 }
 
-startServer();
+if (process.env.NODE_ENV !== 'production') {
+  startServer();
+}
 
 //==================================
 //error handler of db connection pool
