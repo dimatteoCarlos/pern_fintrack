@@ -12,29 +12,30 @@ function isValidTableName(tableName) {
   return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName); // only allowed table names from create table array | Solo permite nombres de tablas válidos
 }
 //check if table exists
-export async function tableExists(tableName) {
+export async function tableExists(client=pool, tableName) {
   if (!isValidTableName(tableName)) {
     throw new Error('Invalid table name');
   }
   const queryText = `
     SELECT EXISTS (
       SELECT 1 FROM information_schema.tables
-      WHERE table_name = '${tableName}'
+      WHERE table_name = $1
     );
   `;
-  const result = await pool.query(queryText);
+  const result = await client.query(queryText,[tableName]);
   console.log(pc.magentaBright(tableName), ' exists? ', result.rows[0].exists);
   return result.rows[0].exists; // Returns true or false
 }
 
 //check if table is populated
-async function isTablePopulated(tableName, minCount = 1) {
+async function isTablePopulated(client=pool,tableName, minCount = 1) {
   if (!isValidTableName(tableName)) {
     throw new Error('Invalid table name');
   }
   const queryText = `SELECT COUNT(*) FROM ${tableName}`;
-  const result = await pool.query(queryText);
-  return result.rows[0].count >= minCount;
+  const result = await client.query(queryText);
+  // return result.rows[0].count >= minCount;
+  return parseInt(result.rows[0].count, 10) >= minCount;
 }
 //==========================================
 //--
@@ -52,7 +53,7 @@ export async function tblCurrencies(client = pool) {
 
   try {
     //verify if table exists
-    const exists = await tableExists('currencies');
+    const exists = await tableExists(client, 'currencies');
     if (!exists) {
       // console.log('"currencies" table does not exist. Creating it...');
       const createQuery = `CREATE TABLE currencies (
@@ -64,7 +65,7 @@ export async function tblCurrencies(client = pool) {
     }
 
     //is it already populated
-    const isPopulated = await isTablePopulated('currencies', 2);
+    const isPopulated = await isTablePopulated(client,'currencies', 2);
     if (isPopulated) {
       console.log('currencies table is already populated.');
       return;
@@ -72,7 +73,7 @@ export async function tblCurrencies(client = pool) {
 
     console.log(currenciesValues);
     //initiate a transaction
-    await client.query('BEGIN');
+    // await client.query('BEGIN');
     //run through the data and insert every tuple
 
     for (const currency of currenciesValues) {
@@ -87,12 +88,12 @@ export async function tblCurrencies(client = pool) {
     }
 
     //confirm transaction
-    await client.query('COMMIT');
+    // await client.query('COMMIT');
     // console.log('All tuples inserted successfully.');
   } catch (
     error // Revertir la transacción en caso de error
   ) {
-    await client.query('ROLLBACK');
+    // await client.query('ROLLBACK');
     console.error(pc.orange('Error inserting tuples:', error));
     throw error;
   }
@@ -116,7 +117,7 @@ export async function tblUserRoles(client = pool) {
       throw new Error('Invalid table name');
     }
 
-    const exists = await tableExists(tblName);
+    const exists = await tableExists(client, tblName);
     if (!exists) {
       console.log(
         pc.cyan(`/" ${tblName}/" table does not exist. Creating it...`),
@@ -126,14 +127,14 @@ export async function tblUserRoles(client = pool) {
     }
 
     //is it already populated?
-    const isPopulated = await isTablePopulated(tblName, minCount);
+    const isPopulated = await isTablePopulated(client,tblName, minCount);
     if (isPopulated) {
       console.log(pc.cyan(`${tblName} table is already populated.`));
       return;
     }
 
     //initiate a transaction
-    await client.query('BEGIN');
+    // await client.query('BEGIN');
 
     //run through the data and insert every tuple
     for (const role of rolesValues) {
@@ -147,13 +148,15 @@ export async function tblUserRoles(client = pool) {
     }
 
     //confirm transaction
-    await client.query('COMMIT');
+    // await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
   } catch (
-    error // Revertir la transacción en caso de error
+    error// Revertir la transacción en caso de error
+   
   ) {
-    await client.query('ROLLBACK');
+    // await client.query('ROLLBACK');
     console.error(pc.red('Error inserting tuples:', tblName, error));
+     throw error;
   }
 }
 
@@ -177,7 +180,7 @@ export async function tblAccountTypes(client = pool) {
     if (!isValidTableName(tblName)) {
       throw new Error('Invalid table name');
     }
-    const exists = await tableExists(tblName);
+    const exists = await tableExists(client, tblName);
 
     if (!exists) {
       console.log(pc.yellow`${tblName} table does not exist. Creating it...'`);
@@ -189,14 +192,14 @@ export async function tblAccountTypes(client = pool) {
     }
 
     //is it already populated
-    const isPopulated = await isTablePopulated(tblName, minCount);
+    const isPopulated = await isTablePopulated(client,tblName, minCount);
     if (isPopulated) {
       console.log(pc.yellowBright(`${tblName} table is already populated.`));
       return;
     }
 
     //initiate a transaction
-    await client.query('BEGIN');
+    // await client.query('BEGIN');
     //run through the data and insert every tuple
     for (const type of accountTypeValues) {
       const queryText = `INSERT INTO account_types(account_type_id,
@@ -207,13 +210,14 @@ export async function tblAccountTypes(client = pool) {
     }
 
     //confirm transaction
-    await client.query('COMMIT');
+    // await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
   } catch (
     error // Revertir la transacción en caso de error
   ) {
-    await client.query('ROLLBACK');
+    // await client.query('ROLLBACK');
     console.error('Error inserting tuples:', error);
+    throw error;
   }
 }
 //tblAccountTypes();
@@ -234,7 +238,7 @@ export async function tblCategoryNatureTypes(client = pool) {
     if (!isValidTableName(tblName)) {
       throw new Error('Invalid table name');
     }
-    const exists = await tableExists(tblName);
+    const exists = await tableExists(client, tblName);
 
     if (!exists) {
       console.log(pc.yellow`${tblName} table does not exist. Creating it...'`);
@@ -246,14 +250,14 @@ export async function tblCategoryNatureTypes(client = pool) {
     }
 
     //is it already populated
-    const isPopulated = await isTablePopulated(tblName, minCount);
+    const isPopulated = await isTablePopulated(client,tblName, minCount);
     if (isPopulated) {
       console.log(pc.yellowBright(`${tblName} table is already populated.`));
       return;
     }
 
     //initiate a transaction
-    await client.query('BEGIN');
+    // await client.query('BEGIN');
     //run through the data and insert every tuple
     for (const type of categoryNatureTypeValues) {
       const queryText = `INSERT INTO category_nature_types(category_nature_type_id,
@@ -269,15 +273,18 @@ export async function tblCategoryNatureTypes(client = pool) {
     }
 
     //confirm transaction
-    await client.query('COMMIT');
+    // await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
   } catch (
     error // Revertir la transacción en caso de error
   ) {
-    await client.query('ROLLBACK');
+    // await client.query('ROLLBACK');
+
     const { code, message } = handlePostgresErrorEs();
-    next(createError(code, message));
+
+    // next(createError(code, message));
     console.error('Error inserting tuples:', message || error);
+    throw createError(code, message);
   }
 }
 //tblCategoryNatureTypes();
@@ -303,7 +310,7 @@ export async function tblMovementTypes(client = pool) {
     if (!isValidTableName(tblName)) {
       throw new Error('Invalid table name');
     }
-    const exists = await tableExists(tblName);
+    const exists = await tableExists(client, tblName);
 
     if (!exists) {
       console.log(pc.yellow`${tblName} table does not exist. Creating it...'`);
@@ -315,14 +322,14 @@ export async function tblMovementTypes(client = pool) {
     }
 
     //is it already populated
-    const isPopulated = await isTablePopulated(tblName, minCount);
+    const isPopulated = await isTablePopulated(client,tblName, minCount);
     if (isPopulated) {
       console.log(pc.yellowBright(`${tblName} table is already populated.`));
       return;
     }
 
     //initiate a transaction
-    await client.query('BEGIN');
+    // await client.query('BEGIN');
     //run through the data and insert every tuple
     for (const type of movementTypeValues) {
       const queryText = `INSERT INTO movement_types(movement_type_id,
@@ -333,13 +340,14 @@ export async function tblMovementTypes(client = pool) {
     }
 
     //confirm transaction
-    await client.query('COMMIT');
+    // await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
   } catch (
     error // Revertir la transacción en caso de error
   ) {
-    await client.query('ROLLBACK');
+    // await client.query('ROLLBACK');
     console.error('Error inserting tuples:', error);
+    throw error;
   }
 }
 //tblMovementTypes();
@@ -363,7 +371,7 @@ export async function tbltransactionTypes(client = pool) {
     if (!isValidTableName(tblName)) {
       throw new Error('Invalid table name');
     }
-    const exists = await tableExists(tblName);
+    const exists = await tableExists(client, tblName);
 
     if (!exists) {
       console.log(pc.yellow`${tblName} table does not exist. Creating it...'`);
@@ -373,14 +381,14 @@ export async function tbltransactionTypes(client = pool) {
     }
 
     //is it already populated
-    const isPopulated = await isTablePopulated(tblName, minCount);
+    const isPopulated = await isTablePopulated(client,tblName, minCount);
     if (isPopulated) {
       console.log(pc.yellowBright(`${tblName} table is already populated.`));
       return;
     }
 
     //initiate a transaction
-    await client.query('BEGIN');
+    // await client.query('BEGIN');
     //run through the data and insert every tuple
     for (const type of transactionTypeValues) {
       const queryText = `INSERT INTO transaction_types(transaction_type_id,
@@ -391,12 +399,13 @@ export async function tbltransactionTypes(client = pool) {
     }
 
     //confirm transaction
-    await client.query('COMMIT');
+    // await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
   } catch (
     error // reverse transaction in case of error
   ) {
-    await client.query('ROLLBACK');
+    // await client.query('ROLLBACK');
     console.error('Error inserting tuples:', error);
+    throw error;
   }
 }
