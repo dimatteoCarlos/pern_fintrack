@@ -26,10 +26,11 @@ console.log(pc.yellowBright('Hola Mundo'));
 
 async function startServer() {
   try {
+    console.log(pc.yellowBright('HELLO WORLD FROM INDEX.JS.startServer'))
     //Data base connection
-    await checkConnection();
-    await initializeDatabase();
-    await cleanRevokedTokens();
+    // await checkConnection();
+    // await initializeDatabase();
+    // await cleanRevokedTokens();
 
     //set server
     app.listen(PORT, '0.0.0.0', () => {
