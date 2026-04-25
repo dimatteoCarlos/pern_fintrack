@@ -10,7 +10,7 @@ import {
   currencyFormat,
   numberFormatCurrency,
 } from '../../../helpers/functions.ts';
-import { url_summary_balance_ByType, USER_ID } from '../../../../endpoints.ts';
+import { url_summary_balance_ByType} from '../../../../endpoints.ts';
 import {
   // BalancePocketRespType,
   // PocketListType,
@@ -27,7 +27,7 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
   //DATA FETCHING
   //List Pocket - get accounts by type:pocket_saving
   const { apiData, isLoading, error } = useFetch<PocketListSummaryType>(
-    `${url_summary_balance_ByType}?type=pocket_saving&user=${USER_ID}`,
+    `${url_summary_balance_ByType}?type=pocket_saving`,
   );
   // console.log('🚀 ~ ListPocket ~ apiData:', apiData);
   //----------
