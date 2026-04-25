@@ -9,7 +9,6 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     
     "init-db": "node src/db/run_time_db_init/init-db.js",
-    "vercel-build": "node src/db/run_time_db_init/init-db.js",
 
     "db:bootstrap": "node src/db/migrations/bootstrapping.js",
     "db:reset": "node src/db/migrations/runResetDb.js",

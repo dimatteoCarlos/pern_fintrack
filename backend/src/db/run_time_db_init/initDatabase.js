@@ -30,7 +30,7 @@ export async function initializeDatabase() {
     console.log(pc.cyanBright('Verificando existencia de datos en tablas ...'));
 
     //Verify app_initialization table
-    const exists = await tableExists('app_initialization');
+    const exists = await tableExists(client, 'app_initialization');
     if (!exists) {
       const createQuery = ` CREATE TABLE IF NOT EXISTS app_initialization (
     id SERIAL PRIMARY KEY,
@@ -75,6 +75,8 @@ export async function initializeDatabase() {
          tables_created = EXCLUDED.tables_created,
          updated_at = NOW()
      `);
+//UPDATE app_initialization
+// SET tables_created = TRUE, updated_at = NOW();
         await client.query('COMMIT');
 
         console.log(pc.green('Application initialized successfully'));
@@ -131,6 +133,14 @@ export async function initializeDatabase() {
         }
       });
     }
+
+    /**
+     * results.forEach((result, i) => {
+  if (result.status === 'fulfilled') {
+    ...
+  }
+});
+     */
     //=============================
     //Create tables manually
     const createDbFlag = false;
