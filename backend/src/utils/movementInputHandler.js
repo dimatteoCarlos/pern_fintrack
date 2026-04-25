@@ -49,7 +49,7 @@ export const getDebtConfig = (body) => {
     destinationAccountName: isLend ? debtorIdentifier : accountIdentifier,
     destinationAccountTypeName: isLend ? 'debtor' : accountType ,
     destinationAccountTransactionType: 'borrow',
-// destinationAccountTransactionType: type === 'lend' ? 'deposit' : 'withdraw',
+    // destinationAccountTransactionType: type === 'lend' ? 'deposit' : 'withdraw',
   };
 };
 
