@@ -82,6 +82,12 @@ app.use(
 // =====================
 //api main routes and associated controllers
 //----------------------
+//temporal debug before app.use
+app.get('/api/health', (req, res)=>{
+console.log('✅ /api/health invoked');
+  res.json({ status: 'ok', timestamp: Date.now() });
+})
+
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
 app.use('/api', routes); //main app routes
 app.use('/api/fintrack', verifyToken, fintrack_routes);
