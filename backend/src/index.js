@@ -31,6 +31,7 @@ async function startServer() {
     await initializeDatabase();
     await cleanRevokedTokens();
 
+    //set server
     app.listen(PORT, '0.0.0.0', () => {
       console.log(pc.yellowBright(`Server running on port ${PORT}`));
     });
@@ -41,11 +42,6 @@ async function startServer() {
 }
 
 startServer();
-
-// Pool error handler (unchanged)
-pool.on('error', (err) => {
-  console.error(pc.redBright('Unexpected error on idle client', err));
-});
 
 //==================================
 //error handler of db connection pool
@@ -59,9 +55,9 @@ pool.on('error', (err) => {
 process.on('SIGINT', () => {
   console.log(pc.cyan('Shutting down gracefully...'));
   pool.end(() => {
-    console.log(pc.greenBright('Database pool closed.'));
-    //reference: https://nodejs.org/api/process.html#process_process_exit_code
-    process.exit(0);
-    // process.exitCode=0;
+   console.log(pc.greenBright('Database pool closed.'));
+   //reference: https://nodejs.org/api/process.html#process_process_exit_code
+   process.exit(0);
+   // process.exitCode=0;
   });
 });
