@@ -26,7 +26,7 @@ console.log(pc.yellowBright('Hola Mundo'));
 
 async function startServer() {
   try {
-    console.log(pc.yellowBright('HELLO WORLD FROM INDEX.JS.startServer'))
+    console.log(pc.yellowBright('HELLO WORLD FROM INDEX.JS.startServer', 'ESTO NO DEBERIA EJECUTARSE EN SERVERLESS'))
     //Data base connection
     // await checkConnection();
     // await initializeDatabase();
