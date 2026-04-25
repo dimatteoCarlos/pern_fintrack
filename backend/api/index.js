@@ -4,6 +4,7 @@
 
 // export default serverless(app);
 export default function handler(req, res) {
-  res.status(200).json({ from: "test" });
+  // res.status(200).json({ from: "test" });
+   res.status(200).send("Hello from Vercel");
 }
 
