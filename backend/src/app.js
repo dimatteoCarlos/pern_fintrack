@@ -24,8 +24,7 @@ dotenv.config();
 // ==================================
 // ⚙️ Express app configuration
 // ==================================
-//app config, global middlewares application.
-//safety, request records and data handling
+//app config, global middlewares application, safety, request records and data handling
 export const app = express();
 
 //muchos servicios cloud) usan proxies inversos. Express debe confiar en el proxy para obtener la IP real y el protocolo correcto (HTTP/HTTPS). Se coloca después de const app = express():
