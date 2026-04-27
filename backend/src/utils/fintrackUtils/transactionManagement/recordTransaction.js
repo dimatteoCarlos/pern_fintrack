@@ -1,8 +1,10 @@
 //recordTransaction.js
+// Inserts a transaction record into the database
+// Handles both single transactions and transaction batches via connection pooling
 
 import pc from 'picocolors';
-import { pool } from '../db/config/configDB.js';
-import { handlePostgresError } from './errorHandling.js';
+import { pool } from '../../../db/config/configDB.js';
+import { handlePostgresError } from '../../errorHandling.js';
 
 export async function recordTransaction(clientOrPool = null, option) {
   const dbClient = clientOrPool || pool;

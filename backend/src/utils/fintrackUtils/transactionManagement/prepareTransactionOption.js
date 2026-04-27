@@ -1,3 +1,7 @@
+// prepareTransactionOption.js
+// Prepares a standardized transaction option object for database insertion
+// Maps account information to the required transaction record structure
+
 export function prepareTransactionOption(
   accountInfo,
   source_account_id,

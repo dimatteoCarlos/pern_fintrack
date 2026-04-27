@@ -1,8 +1,17 @@
+// backend/src/fintrack_api/controllers/transactionController.js
+
 //controller:transferBetweenAccounts.js
 // Functions: Handles financial transfers between accounts with balance updates and transaction recording
 
-//functions defined here:getAccountTypeId,getAccountInfo, getAccountTypes,getTransactionTypes, balanceMultiplierFn,updateAccountBalance,
-//--------------------------
+//declared functions defined here:
+//getAccountTypeId,getAccountInfo, getAccountTypes,getTransactionTypes, balanceMultiplierFn,updateAccountBalance,
+
+// transferBetweenAccounts.js (Controller)
+// Main controller for financial transfers between accounts
+// Handles expense, income, debt, pocket, transfer, and PnL movements
+// Updates balances and records dual transactions (source/destination)
+// Includes Slack account creation for PnL operations
+//------------------------------------
 import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
@@ -12,8 +21,8 @@ import {
   getDebtConfig,
   getTransferConfig,
   getPnLConfig,
-} from '../../utils/movementInputHandler.js';
-import { recordTransaction } from '../../utils/recordTransaction.js';
+} from '../../utils/fintrackUtils/transactionManagement/movementInputHandler.js';
+import { recordTransaction } from '../../utils/fintrackUtils/transactionManagement/recordTransaction.js';
 import { formatDate } from '../../utils/helpers.js';
 
 //endpoint: put:/api/fintrack/transaction/transfer-between-accounts?user=UUID&&movement=expense

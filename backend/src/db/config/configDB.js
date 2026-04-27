@@ -10,10 +10,10 @@ const dbConfig = activeConfig.database;
 export const pool = new pg.Pool(dbConfig);
 
 //Log pool configuration (useful for debugging)
-console.log(
-  pc.cyan(`[DB] Pool created with max=${dbConfig.max}`),
-  pc.green(`ssl=${JSON.stringify(dbConfig.ssl)}`),
-);
+// console.log(
+//   pc.cyan(`[DB] Pool created with max=${dbConfig.max}`),
+//   pc.green(`ssl=${JSON.stringify(dbConfig.ssl)}`),
+// );
 
 // GLOBAL ERROR HANDLER (CRITICAL)
 pool.on('error', (err) => {

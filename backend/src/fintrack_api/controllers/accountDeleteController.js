@@ -37,7 +37,7 @@ if (!targetAccountId ||isNaN(targetAccountId)) {
  } 
 
 try {
- console.log(pc.magenta(`Generating Retrospective Total Annulment impact report for User ${userId} and Account ${targetAccountId}`));
+ console.log(pc.magenta(`Generating Retrospective Total Annulment impact report for User ${((userId).slice(0,5)+'...')} and Account ${targetAccountId}`));
 
 // 2. CALL SERVICE
 // The service handles the SQL logic to calculate the net financial impact

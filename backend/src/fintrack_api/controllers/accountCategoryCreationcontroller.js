@@ -4,14 +4,14 @@ import pc from 'picocolors';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import { pool } from '../../db/config/configDB.js';
 import { determineTransactionType, formatDate } from '../../utils/helpers.js';
-import { recordTransaction } from '../../utils/recordTransaction.js';
-import { checkAndInsertAccount } from '../../utils/checkAndInsertAccount.js';
-import { verifyAccountExistence } from '../../utils/verifyAccountExistence.js';
-import { updateAccountBalance } from '../../utils/updateAccountBalance.js';
-import { insertAccount } from '../../utils/insertAccount.js';
-import { getTransactionTypeId } from '../../utils/getTransactionTypeId.js';
-import { determineSourceAndDestinationAccounts } from '../../utils/determineSourceAndDestinationAccounts.js';
-import { prepareTransactionOption } from '../../utils/prepareTransactionOption.js';
+import { recordTransaction } from '../../utils/fintrackUtils/transactionManagement/recordTransaction.js';
+import { checkAndInsertAccount } from '../../utils/fintrackUtils/accountManagement/checkAndInsertAccount.js';
+import { verifyAccountExistence } from '../../utils/fintrackUtils/accountManagement/verifyAccountExistence.js';
+import { updateAccountBalance } from '../../utils/fintrackUtils/accountManagement/updateAccountBalance.js';
+import { insertAccount } from '../../utils/fintrackUtils/accountManagement/insertAccount.js';
+import { getTransactionTypeId } from '../../utils/fintrackUtils/accountDataRetrieval/getTransactionTypeId.js';
+import { determineSourceAndDestinationAccounts } from '../../utils/fintrackUtils/accountManagement/determineSourceAndDestinationAccounts.js';
+import { prepareTransactionOption } from '../../utils/fintrackUtils/transactionManagement/prepareTransactionOption.js';
 //import { validateAndNormalizeDate } from '../../utils/helpers.js';
 //-----------------
 //endpoint: POST: http://localhost:5000/api/fintrack/account/new_account/category_budget?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c

@@ -1,8 +1,9 @@
 // backend/src/utils/accountUtils.js
-//getUserIdFromAccount, getSlackAccountId, getAccountTypeId
+//content: getUserIdFromAccount, getSlackAccountId, getAccountTypeId
 //Actually not used, just for future uses.
+
 import { pool } from "../db/configDB.js";
-import { createError } from "../../utils/errorHandling.js";
+import { createError } from "../../errorHandling.js";
 
 // Helper function to get account type ID
 export async function getAccountTypeId(accountTypeName) {
@@ -17,7 +18,7 @@ export async function getAccountTypeId(accountTypeName) {
 // ⚙️ UTILITY: GET USER ID FROM TARGET ACCOUNT
 
 // 🔑 UTILITY: GET USER ID FROM ACCOUNT ID
-
+//not used yet
 export const getUserIdFromAccount = async (clientOrPool, targetAccountId)=>{
 const dbClient=clientOrPool.connect?
  await clientOrPool.connect():clientOrPool

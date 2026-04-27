@@ -1,5 +1,7 @@
 //backend/src/utils/getAccountById/getAccountByIdController.js
 
+// HTTP controller: retrieves account information by ID and returns formatted JSON response
+
 import { getAccountDataById } from "./getAccountDataById";
 
 export const getAccountById = async (req, res, next) => {

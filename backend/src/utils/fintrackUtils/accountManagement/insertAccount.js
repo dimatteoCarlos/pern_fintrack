@@ -1,7 +1,9 @@
 // backend/src/utils/insertAccount.js
+// Creates a new account record in user_accounts table
+// Returns the newly created account basic data
 
 // import pc from 'picocolors';
-import { pool } from '../db/config/configDB.js';
+import { pool } from '../../../db/config/configDB.js';
 
 //--------------------------------
 export const insertAccount = async (

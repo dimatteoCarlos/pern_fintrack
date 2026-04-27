@@ -1,6 +1,10 @@
 //backend/src/utils/updateAccountBalance.js
+
+// Updates account balance in user_accounts table after a transaction
+// Records the new balance and timestamp for audit trail
+
 import pc from 'picocolors';
-import { pool } from '../db/config/configDB.js';
+import { pool } from '../../../db/config/configDB.js';
 
 //------------------------------
 console.log(pc.magentaBright('File: updateAccountBalance.js', '\n'));

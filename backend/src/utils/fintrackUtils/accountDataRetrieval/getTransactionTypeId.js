@@ -1,5 +1,5 @@
 // import pc from 'picocolors';
-import { pool } from '../db/config/configDB.js';
+import { pool } from '../../../db/config/configDB.js';
 //-----------------------------------
 
 export const getTransactionTypeId = async (

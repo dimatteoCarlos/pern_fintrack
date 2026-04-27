@@ -1,7 +1,7 @@
 //backend\src\utils\verifyAccountExistence.js
 //verifyAccountExistence, verifyAccountExists
 import pc from 'picocolors';
-import { pool } from '../db/config/configDB.js';
+import { pool } from '../../../db/config/configDB.js';
 // import { handlePostgresError } from './errorHandling.js';
 //-------------------------
 //VERIFY EXISTENCE OF ACCOUNT BY ACCOUNT_NAME AND ACCOUNT TYPE

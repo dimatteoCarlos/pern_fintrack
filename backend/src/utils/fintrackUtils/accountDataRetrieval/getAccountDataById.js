@@ -1,4 +1,8 @@
 //backend/utils/getAccountById/getAccountDataById.ts
+
+// Service layer: fetches account data and enriches it based on account type
+// (for category_budget accounts: adds remain and statusAlert fields)
+
 import { pool } from "../../src/db/configDB";
 
 //=============================

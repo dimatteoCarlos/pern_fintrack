@@ -8,18 +8,18 @@ import {
   formatDateToDDMMYYYY,
 } from '../../utils/helpers.js';
 
-import { recordTransaction } from '../../utils/recordTransaction.js';
-import { checkAndInsertAccount } from '../../utils/checkAndInsertAccount.js';
+import { recordTransaction } from '../../utils/fintrackUtils/transactionManagement/recordTransaction.js';
+import { checkAndInsertAccount } from '../../utils/fintrackUtils/accountManagement/checkAndInsertAccount.js';
 import {
   verifyAccountExistence,
   verifyAccountExists,
-} from '../../utils/verifyAccountExistence.js';
-import { updateAccountBalance } from '../../utils/updateAccountBalance.js';
-import { insertAccount } from '../../utils/insertAccount.js';
-import { getTransactionTypeId } from '../../utils/getTransactionTypeId.js';
+} from '../../utils/fintrackUtils/accountManagement/verifyAccountExistence.js';
+import { updateAccountBalance } from '../../utils/fintrackUtils/accountManagement/updateAccountBalance.js';
+import { insertAccount } from '../../utils/fintrackUtils/accountManagement/insertAccount.js';
+import { getTransactionTypeId } from '../../utils/fintrackUtils/accountDataRetrieval/getTransactionTypeId.js';
 
-import { determineSourceAndDestinationAccounts } from '../../utils/determineSourceAndDestinationAccounts.js';
-import { prepareTransactionOption } from '../../utils/prepareTransactionOption.js';
+import { determineSourceAndDestinationAccounts } from '../../utils/fintrackUtils/accountManagement/determineSourceAndDestinationAccounts.js';
+import { prepareTransactionOption } from '../../utils/fintrackUtils/transactionManagement/prepareTransactionOption.js';
 
 //--------------------------------
 //endpoint: post: /api/fintrack/account/new_account/account_type_name?user=UUID

@@ -16,17 +16,16 @@ import {
 } from '../controllers/accountDeleteController.js';
 
 // RTA Utilities
-import { checkAndInsertAccount } from '../../utils/checkAndInsertAccount.js';
-import { updateAffectedAccountBalance } from '../../utils/updateAffectedAccountBalance.js';
-import { recordAnnulmentTransaction } from '../../utils/recordAnnulmentTransaction.js';
+import { checkAndInsertAccount } from '../../utils/fintrackUtils/accountManagement/checkAndInsertAccount.js';
+import { updateAffectedAccountBalance } from '../../utils/fintrackUtils/accountDeletionUtils/updateAffectedAccountBalance.js';
+import { recordAnnulmentTransaction } from '../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 //=====================================
 // 📋 MESSAGES CONFIGURATION
 const messages = {
   notFound: {
     status: 404,
-    messagefn: (id) =>
-      `Account with ID ${id} not found`,
-      // "Account not found or access denied"
+    messagefn: (id) => `Account with ID ${id} not found`,
+    // "Account not found or access denied"
   },
 
   deletionTypeInvalid: {
@@ -44,7 +43,7 @@ const messages = {
     status: 500,
     messagefn: (id, actionType) =>
       `Failed to execute  ${actionType} fo account ${id}`,
-      // 'Operation failed. Please try again later.'
+    // 'Operation failed. Please try again later.'
   },
 
   adminAction: {
