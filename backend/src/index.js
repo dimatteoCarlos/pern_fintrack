@@ -1,8 +1,8 @@
 //backend/src/index.js
 
-// ====================
+// ========================
 // 📥 Imports
-// ====================
+// ========================
 import pc from 'picocolors';
 
 //Database utils and conection
@@ -26,11 +26,16 @@ console.log(pc.yellowBright('Hola Mundo'));
 
 async function startServer() {
   try {
-    console.log(pc.yellowBright('HELLO WORLD FROM INDEX.JS.startServer', 'ESTO NO DEBERIA EJECUTARSE EN SERVERLESS'))
+    console.log(
+      pc.yellowBright(
+        'HELLO WORLD FROM INDEX.JS.startServer',
+        'ESTO NO DEBERIA EJECUTARSE EN SERVERLESS',
+      ),
+    );
     //Data base connection
-    // await checkConnection();
-    // await initializeDatabase();
-    // await cleanRevokedTokens();
+    await checkConnection();
+    await initializeDatabase();
+    await cleanRevokedTokens();
 
     //set server
     app.listen(PORT, '0.0.0.0', () => {
@@ -58,9 +63,9 @@ pool.on('error', (err) => {
 process.on('SIGINT', () => {
   console.log(pc.cyan('Shutting down gracefully...'));
   pool.end(() => {
-   console.log(pc.greenBright('Database pool closed.'));
-   //reference: https://nodejs.org/api/process.html#process_process_exit_code
-   process.exit(0);
-   // process.exitCode=0;
+    console.log(pc.greenBright('Database pool closed.'));
+    //reference: https://nodejs.org/api/process.html#process_process_exit_code
+    process.exit(0);
+    // process.exitCode=0;
   });
 });
