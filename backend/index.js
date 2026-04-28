@@ -1,11 +1,12 @@
 //backend/index.js
 // import app from './src/app.js';
-// import serverless from 'serverless-http';
+import serverless from 'serverless-http';
 
 // export default serverless(app);
 
-export default function handler(req, res) {
+export  function handler(req, res) {
   console.log("Handler funciona");
-  res.status(200).json({ ok: true, message: "Handler directo funciona" });
+  res.status(200).json({ ok: true, message: "Handler envuelto por serverless-http"})
 }
 
+export default serverless(handler)
