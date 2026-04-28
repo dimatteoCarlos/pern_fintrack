@@ -5,11 +5,11 @@
 // ====================
 // Express configuration (middlewares, routes, CORS, error handlers)
 import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import cookieParser from 'cookie-parser';
-import useragent from 'express-useragent';
+// import cors from 'cors';
+// import helmet from 'helmet';
+// import morgan from 'morgan';
+// import cookieParser from 'cookie-parser';
+// import useragent from 'express-useragent';
 import dotenv from 'dotenv';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
@@ -35,13 +35,13 @@ if (process.env.NODE_ENV === 'production') {
 // const PORT = parseInt(process.env.PORT ?? '5000');
 
 //Middlewares initialization
-app.use(useragent.express());
-app.disable('x-powered-by');
-app.use(helmet());
-app.use(morgan('dev'));
+// app.use(useragent.express());
+// app.disable('x-powered-by');
+// app.use(helmet());
+// app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); //Enable cookies analysis
+// app.use(cookieParser()); //Enable cookies analysis
 
 //CORS Configuration for access control
 const ACCEPTED_ORIGINS = [
@@ -56,23 +56,23 @@ const ACCEPTED_ORIGINS = [
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
-        return callback(null, true);
-      }
-      console.error('CORS error: Origin not allowed', origin);
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
+//         return callback(null, true);
+//       }
+//       console.error('CORS error: Origin not allowed', origin);
 
-      return callback(
-        new Error('Your address is not an accepted origin by CORS'),
-        false,
-      );
-    },
-    credentials: true, // Allow to send cookies
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }),
-);
+//       return callback(
+//         new Error('Your address is not an accepted origin by CORS'),
+//         false,
+//       );
+//     },
+//     credentials: true, // Allow to send cookies
+//     allowedHeaders: ['Content-Type', 'Authorization'],
+//   }),
+// );
 //allow cross origin sharing request
 // app.use(cors('*'));
 // app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
@@ -90,8 +90,8 @@ console.log('✅ /api/health invoked');
 })
 
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
-app.use('/api', routes); //main app routes
-app.use('/api/fintrack', verifyToken, fintrack_routes);
+// app.use('/api', routes); //main app routes
+// app.use('/api/fintrack', verifyToken, fintrack_routes);
 // app.use('/api/cronjob', cronRoutes);
 
 // ==================================
