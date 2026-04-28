@@ -13,9 +13,10 @@ import express from 'express';
 import dotenv from 'dotenv';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
-import { verifyToken } from './middlewares/authMiddleware.js';
-import routes from './routes/index.js';
-import fintrack_routes from './fintrack_api/routes/index.js';
+// import { verifyToken } from './middlewares/authMiddleware.js';
+// import routes from './routes/index.js';
+// import fintrack_routes from './fintrack_api/routes/index.js';
+
 // import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
@@ -84,10 +85,14 @@ const ACCEPTED_ORIGINS = [
 //----------------------
 //temporal debug before app.use
 //considering backend as root directory in vercel
-app.get('/api/health', (req, res)=>{
-console.log('✅ /api/health invoked');
-  res.json({ status: 'ok', timestamp: Date.now(), message:'Serverless Working OK!' });
-})
+app.get('/api/health', (req, res) => {
+  console.log('✅ /api/health invoked');
+  res.json({
+    status: 'ok',
+    timestamp: Date.now(),
+    message: 'Serverless Working OK!',
+  });
+});
 
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
 // app.use('/api', routes); //main app routes
