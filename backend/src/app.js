@@ -14,8 +14,8 @@ import dotenv from 'dotenv';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
 // import { verifyToken } from './middlewares/authMiddleware.js';
-// import routes from './routes/index.js';
-// import fintrack_routes from './fintrack_api/routes/index.js';
+import routes from './routes/index.js';
+import fintrack_routes from './fintrack_api/routes/index.js';
 
 // import cronRoutes from './cronjob/cronRoutes.js';
 
@@ -95,7 +95,8 @@ app.get('/api/health', (req, res) => {
 });
 
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
-// app.use('/api', routes); //main app routes
+app.use('/api', routes); //main app routes
+app.use('/api/fintrack', fintrack_routes);
 // app.use('/api/fintrack', verifyToken, fintrack_routes);
 // app.use('/api/cronjob', cronRoutes);
 
