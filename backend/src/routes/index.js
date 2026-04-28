@@ -5,6 +5,9 @@ import userRoutes from './userRoutes.js';
 import { authDetectClienttype } from '../middlewares/authDetectClienttype.js';
 
 const router = express.Router(); 
+//prueba 
+router.get('/ping',(res, req)=>res.json({pong:true}))
+
 console.log('File:indx.js', 'index routes');
 
 router.use('/auth', authDetectClienttype,authRoutes);
