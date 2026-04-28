@@ -32,8 +32,8 @@ async function startServer() {
         'ESTO NO DEBERIA EJECUTARSE EN SERVERLESS',
       ),
     );
-    //Data base connection
-    await checkConnection();
+   //Verify Data base connection
+    await checkConnection(); //in configDB
     await initializeDatabase();
     await cleanRevokedTokens();
 
@@ -46,7 +46,7 @@ async function startServer() {
     process.exit(1);
   }
 }
-
+//VERCEL automatically assigns VERCEL variable to '1' when executing inside its environment
 if (!process.env.VERCEL) {
   startServer();
 }

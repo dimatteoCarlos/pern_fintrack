@@ -2,30 +2,38 @@
 import pg from 'pg';
 import pc from 'picocolors';
 import { activeConfig } from './dbEnvironmentConfig.js';
-
 import 'dotenv/config';
 
-// Use database configuration from central config
-const dbConfig = activeConfig.database;
-export const pool = new pg.Pool(dbConfig);
-
+// USE DATABASE CONFIGURATION FROM CENTRAL CONFIG
 //Log pool configuration (useful for debugging)
 // console.log(
-//   pc.cyan(`[DB] Pool created with max=${dbConfig.max}`),
-//   pc.green(`ssl=${JSON.stringify(dbConfig.ssl)}`),
-// );
+ //   pc.cyan(`[DB] Pool will be created with max=${dbConfig.max}`),
+ //   pc.green(`ssl=${JSON.stringify(dbConfig.ssl)}`),
+ // );
+ 
+ function createPool (){
+ const dbConfig = activeConfig.database;
+ const pool = new pg.Pool(dbConfig);
+
 
 // GLOBAL ERROR HANDLER (CRITICAL)
-pool.on('error', (err) => {
-  console.error(
-    pc.red(
-      'Error inesperado en un cliente inactivo de la DB / Unexpected error on idle client:',
-    ),
-    err,
-  );
-  // No cerramos el proceso necesariamente, pero lo registramos
-});
+ pool.on('error', (err) => {
+   console.error(
+     pc.red(
+       'Error inesperado en un cliente inactivo de la DB / Unexpected error on idle client:',
+     ),
+     err,
+   );
+   // No cerramos el proceso necesariamente, pero lo registramos
+ });
 
+ return pool;
+
+}
+//Apply singleton global for pool
+export const pool = global._pool || (global._pool = createPool());
+
+//function to verify db connection and log results
 export async function checkConnection() {
   try {
     const client = await pool.connect();
@@ -53,3 +61,4 @@ export async function checkConnection() {
     throw error;
   }
 }
+

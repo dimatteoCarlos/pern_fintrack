@@ -83,9 +83,10 @@ app.use(
 //api main routes and associated controllers
 //----------------------
 //temporal debug before app.use
+//considering backend as root directory in vercel
 app.get('/api/health', (req, res)=>{
 console.log('✅ /api/health invoked');
-  res.json({ status: 'ok', timestamp: Date.now() });
+  res.json({ status: 'ok', timestamp: Date.now(), message:'Serverless Working OK!' });
 })
 
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION

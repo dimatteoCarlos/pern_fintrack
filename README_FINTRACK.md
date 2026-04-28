@@ -9,7 +9,7 @@ Its primary goal is to provide users with effective tools to track expenses, inc
 finTrack also helps users monitor savings goals and investments. 
 
 **A WORD FOR DEVELOPERS** 
-Throughout the development of this app, various alternative approaches were intentionally employed for similar tasks for the sake of learning; it functioned as a sandbox.
+Throughout the development of this app, various alternative approaches were intentionally employed for similar tasks for the sake of gradually learning; it functioned as a sandbox.
 
 The codebase does not follow a single uniform standard because it focuses on exploring different approaches rather than adhering to one fixed pattern.
 
