@@ -4,12 +4,12 @@ import serverless from 'serverless-http';
 
 // export default serverless(app);
 
-function handler(req, res) {
-  console.log('Handler funciona');
-  res.status(200).json({
-    ok: true,
-    message: 'Handler envuelto por serverless-http - FUNCIONA!',
+export default async function handler(req, res) {
+  // Ejecuta Express con los objetos req/res de Vercel
+  await new Promise((resolve, reject) => {
+    app(req, res, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
   });
 }
-
-export default serverless(handler);
