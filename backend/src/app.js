@@ -35,13 +35,13 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 //Middlewares initialization
-// app.use(useragent.express());
+app.use(useragent.express());
 // app.disable('x-powered-by');
 // app.use(helmet());
 // app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-// app.use(cookieParser()); //Enable cookies analysis
+app.use(cookieParser()); //Enable cookies analysis
 
 //CORS Configuration for access control
 const ACCEPTED_ORIGINS = [
