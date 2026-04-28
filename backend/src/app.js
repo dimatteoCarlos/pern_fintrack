@@ -8,8 +8,8 @@ import express from 'express';
 // import cors from 'cors';
 // import helmet from 'helmet';
 // import morgan from 'morgan';
-// import cookieParser from 'cookie-parser';
-// import useragent from 'express-useragent';
+import cookieParser from 'cookie-parser';
+import useragent from 'express-useragent';
 import dotenv from 'dotenv';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
