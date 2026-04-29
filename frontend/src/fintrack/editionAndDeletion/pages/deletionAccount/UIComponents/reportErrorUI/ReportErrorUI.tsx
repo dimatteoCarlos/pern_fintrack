@@ -2,7 +2,7 @@
 
 import { DictionaryDataType } from "../../../../utils/languages";
 
-import './ReportErrorUI.css';
+import './reportErrorUI.css';
 
 //TYPE DEFINITIONS
 type ReportErrorUIPropType ={
