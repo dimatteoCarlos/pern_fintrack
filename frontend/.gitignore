@@ -32,3 +32,16 @@ dist-ssr
 .vercel
 
 .git/cursor
+
+
+# Local Netlify folder
+.netlify
+.vercel
+
+# Archived files (frontend files)
+archived/
+*archived
+
+# Temporary files
+*.tmp
+.cache/
