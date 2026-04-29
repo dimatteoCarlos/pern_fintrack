@@ -38,7 +38,7 @@ if (process.env.NODE_ENV === 'production') {
 
 //Middlewares initialization
 app.use(useragent.express());
-// app.disable('x-powered-by');
+app.disable('x-powered-by');
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
@@ -55,8 +55,8 @@ const ACCEPTED_ORIGINS = [
   'http://localhost:8080',
   'http://localhost:1234',
   'http://localhost:5432',
-  'https://vercel.com/cadrs-projects/pern-fintrack-frontend',
   process.env.CLIENT_URL,
+  'https://vercel.com/cadrs-projects/pern-fintrack-frontend',
 ].filter(Boolean);
 
 app.use(
@@ -78,8 +78,8 @@ app.use(
 );
 
 // allow cross origin sharing request
-app.use(cors('*'));
-app.use(cors({ origin: true, credentials: true }));
+// app.use(cors('*'));
+// app.use(cors({ origin: true, credentials: true }));
 // app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
 
 // ==================================
