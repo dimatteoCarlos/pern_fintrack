@@ -17,18 +17,19 @@ import { verifyToken } from './middlewares/authMiddleware.js';
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
 
+
 //db test
 // import { pool } from './db/config/configDB.js';
 // import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
-dotenv.config();
 
 // ==================================
 // ⚙️ Express app configuration
 // ==================================
 //app config, global middlewares application, safety, request records and data handling
 export const app = express();
+dotenv.config();
 
 //muchos servicios cloud) usan proxies inversos. Express debe confiar en el proxy para obtener la IP real y el protocolo correcto (HTTP/HTTPS). Se coloca después de const app = express():
 // trust proxy only in production (e.g., Render, Vercel)
