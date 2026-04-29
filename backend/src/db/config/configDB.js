@@ -15,7 +15,6 @@ import 'dotenv/config';
  const dbConfig = activeConfig.database;
  const pool = new pg.Pool(dbConfig);
 
-
 // GLOBAL ERROR HANDLER (CRITICAL)
  pool.on('error', (err) => {
    console.error(
@@ -30,6 +29,7 @@ import 'dotenv/config';
  return pool;
 
 }
+
 //Apply singleton global for pool
 export const pool = global._pool || (global._pool = createPool());
 
