@@ -59,25 +59,26 @@ const ACCEPTED_ORIGINS = [
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
-        return callback(null, true);
-      }
-      console.error('CORS error: Origin not allowed', origin);
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
+//         return callback(null, true);
+//       }
+//       console.error('CORS error: Origin not allowed', origin);
 
-      return callback(
-        new Error('Your address is not an accepted origin by CORS'),
-        false,
-      );
-    },
-    credentials: true, // Allow to send cookies
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }),
-);
+//       return callback(
+//         new Error('Your address is not an accepted origin by CORS'),
+//         false,
+//       );
+//     },
+//     credentials: true, // Allow to send cookies
+//     allowedHeaders: ['Content-Type', 'Authorization'],
+//   }),
+// );
 // allow cross origin sharing request
 // app.use(cors('*'));
+app.use(cors({ origin: true, credentials: true }));
 // app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
 
 // ==================================
