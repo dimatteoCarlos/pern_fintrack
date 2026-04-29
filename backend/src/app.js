@@ -38,7 +38,7 @@ if (process.env.NODE_ENV === 'production') {
 
 //Middlewares initialization
 app.use(useragent.express());
-app.disable('x-powered-by');
+// app.disable('x-powered-by');
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
