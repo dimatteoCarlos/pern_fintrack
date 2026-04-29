@@ -18,7 +18,7 @@ import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
 
 //db test
-import { pool } from './db/config/configDB.js';
+// import { pool } from './db/config/configDB.js';
 // import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
@@ -87,28 +87,27 @@ app.use(
 // considering backend as root directory in vercel
 // Testing routes:
 // db test
-app.get('/api/db-test', async (req, res)=>{
- try {
-  const result = await pool.query('SELECT 1 as test');
-  res.json({success:true, data:result.rows})
+// app.get('/api/db-test', async (req, res)=>{
+//  try {
+//   const result = await pool.query('SELECT 1 as test');
+//   res.json({success:true, data:result.rows})
 
-  } catch (error) {
-   console.error('DB test error', error);
-   res.status(500).json({
-    success:false, error:error.message
-   });
-  }
- })
-
-//get test
-app.get('/api/health', (req, res) => {
-  console.log('✅ /api/health invoked');
-  res.json({
-    status: 'ok',
-    timestamp: Date.now(),
-    message: 'Testing Ready for fintrack',
-  });
-});
+//   } catch (error) {
+//    console.error('DB test error', error);
+//    res.status(500).json({
+//     success:false, error:error.message
+//    });
+//   }
+//  })
+// //get test
+// app.get('/api/health', (req, res) => {
+//   console.log('✅ /api/health invoked');
+//   res.json({
+//     status: 'ok',
+//     timestamp: Date.now(),
+//     message: 'Testing Ready for fintrack',
+//   });
+// });
 
 // =====================
 // 🛣️ API ROUTING
