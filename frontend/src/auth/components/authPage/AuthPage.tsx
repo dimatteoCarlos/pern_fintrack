@@ -89,7 +89,7 @@ export default function AuthPage() {
   const redirectPath = INITIAL_PAGE_ADDRESS;
   navigateTo(redirectPath);
 
-  console.log("🚀 ~ handleSignInWithNavigation ~ redirectPath:", redirectPath)
+  // console.log("🚀 ~ handleSignInWithNavigation ~ redirectPath:", redirectPath)
 
  // ✅ Clean returnTo after navigation
   returnToRef.current = null;
