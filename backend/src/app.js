@@ -17,6 +17,8 @@ import dotenv from 'dotenv';
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
 
+//db test
+import { pool } from './db/config/configDB.js';
 // import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
@@ -36,7 +38,7 @@ if (process.env.NODE_ENV === 'production') {
 
 //Middlewares initialization
 app.use(useragent.express());
-// app.disable('x-powered-by');
+app.disable('x-powered-by');
 // app.use(helmet());
 // app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
@@ -82,17 +84,34 @@ const ACCEPTED_ORIGINS = [
 // =====================
 //api main routes and associated controllers
 //----------------------
-//temporal debug before app.use
 //considering backend as root directory in vercel
+//Testing routes:
+//db test
+ app.get('/api/db-test', async (req, res)=>{
+ try {
+  const result = await pool.query('SELECT 1 as test');
+  res.json({success:true, data:result.rows})
+
+  } catch (error) {
+   console.error('DB test error', error);
+   res.status(500).json({
+    success:false, error:error.message
+   });
+  }
+ })
+
+//get test
 app.get('/api/health', (req, res) => {
   console.log('✅ /api/health invoked');
   res.json({
     status: 'ok',
     timestamp: Date.now(),
-    message: 'Serverless Working OK!',
+    message: 'Testing Right now',
   });
 });
 
+
+//---------------
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
 app.use('/api', routes); //main app routes
 app.use('/api/fintrack', fintrack_routes);
