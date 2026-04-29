@@ -4,7 +4,7 @@
 📦 IMPORT DEPENDENCIES
 =============================== 🌟 */
 import React from 'react';
-import styles from './styles/SubmitButton.module.css';
+import styles from './styles/submitButton.module.css';
 
 /* 🌟 ===============================
 🏷️ TYPE DEFINITIONS
