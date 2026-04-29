@@ -47,17 +47,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); //Enable cookies analysis
 
 //CORS Configuration for access control
-const ACCEPTED_ORIGINS = [
-  'http://localhost:5000',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:8080',
-  'http://localhost:1234',
-  'http://localhost:5432',
-  process.env.CLIENT_URL,
-].filter(Boolean);
+// const ACCEPTED_ORIGINS = [
+//   'http://localhost:5000',
+//   'http://localhost:5173',
+//   'http://localhost:5174',
+//   'http://localhost:3000',
+//   'http://localhost:3001',
+//   'http://localhost:8080',
+//   'http://localhost:1234',
+//   'http://localhost:5432',
+//   'https://vercel.com/cadrs-projects/pern-fintrack-frontend',
+//   process.env.CLIENT_URL,
+
+// ].filter(Boolean);
 
 // app.use(
 //   cors({
