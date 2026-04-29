@@ -6,8 +6,8 @@
 // Express configuration (middlewares, routes, CORS, error handlers)
 import express from 'express';
 import cors from 'cors';
-// import helmet from 'helmet';
-// import morgan from 'morgan';
+import helmet from 'helmet';
+import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import useragent from 'express-useragent';
 import dotenv from 'dotenv';
@@ -39,8 +39,8 @@ if (process.env.NODE_ENV === 'production') {
 //Middlewares initialization
 app.use(useragent.express());
 app.disable('x-powered-by');
-// app.use(helmet());
-// app.use(morgan('dev'));
+app.use(helmet());
+app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); //Enable cookies analysis
@@ -58,36 +58,36 @@ const ACCEPTED_ORIGINS = [
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
-// app.use(
-//   cors({
-//     origin: (origin, callback) => {
-//       if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
-//         return callback(null, true);
-//       }
-//       console.error('CORS error: Origin not allowed', origin);
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
+        return callback(null, true);
+      }
+      console.error('CORS error: Origin not allowed', origin);
 
-//       return callback(
-//         new Error('Your address is not an accepted origin by CORS'),
-//         false,
-//       );
-//     },
-//     credentials: true, // Allow to send cookies
-//     allowedHeaders: ['Content-Type', 'Authorization'],
-//   }),
-// );
-//allow cross origin sharing request
-// app.use(cors('*'));
-// app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
+      return callback(
+        new Error('Your address is not an accepted origin by CORS'),
+        false,
+      );
+    },
+    credentials: true, // Allow to send cookies
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
+// allow cross origin sharing request
+app.use(cors('*'));
+app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
 
-// =====================
-// 🛣️ API ROUTING
-// =====================
-//api main routes and associated controllers
-//----------------------
-//considering backend as root directory in vercel
-//Testing routes:
-//db test
- app.get('/api/db-test', async (req, res)=>{
+// ==================================
+// 🛣️ TESTING API ROUTING WITH VERCEL
+// ==================================
+// api main routes and associated controllers
+// ----------------------
+// considering backend as root directory in vercel
+// Testing routes:
+// db test
+app.get('/api/db-test', async (req, res)=>{
  try {
   const result = await pool.query('SELECT 1 as test');
   res.json({success:true, data:result.rows})
@@ -110,12 +110,14 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-
-//---------------
+// =====================
+// 🛣️ API ROUTING
+// =====================
+// api main routes and associated controllers
+// ----------------------
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
 app.use('/api', routes); //main app routes
-app.use('/api/fintrack', fintrack_routes);
-// app.use('/api/fintrack', verifyToken, fintrack_routes);
+app.use('/api/fintrack', verifyToken, fintrack_routes);
 // app.use('/api/cronjob', cronRoutes);
 
 // ==================================
