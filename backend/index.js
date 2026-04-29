@@ -1,8 +1,6 @@
 //backend/index.js
 import app from './src/app.js';
 
-// export default serverless(app);
-
 export default async function handler(req, res) {
   // Ejecuta Express con los objetos req/res de Vercel
   await new Promise((resolve, reject) => {

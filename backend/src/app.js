@@ -17,7 +17,6 @@ import { verifyToken } from './middlewares/authMiddleware.js';
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
 
-
 //db test
 // import { pool } from './db/config/configDB.js';
 // import cronRoutes from './cronjob/cronRoutes.js';
@@ -47,39 +46,39 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); //Enable cookies analysis
 
 //CORS Configuration for access control
-// const ACCEPTED_ORIGINS = [
-//   'http://localhost:5000',
-//   'http://localhost:5173',
-//   'http://localhost:5174',
-//   'http://localhost:3000',
-//   'http://localhost:3001',
-//   'http://localhost:8080',
-//   'http://localhost:1234',
-//   'http://localhost:5432',
-//   'https://vercel.com/cadrs-projects/pern-fintrack-frontend',
-//   process.env.CLIENT_URL,
+const ACCEPTED_ORIGINS = [
+  'http://localhost:5000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:8080',
+  'http://localhost:1234',
+  'http://localhost:5432',
+  'https://vercel.com/cadrs-projects/pern-fintrack-frontend',
+  process.env.CLIENT_URL,
+].filter(Boolean);
 
-// ].filter(Boolean);
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
+        return callback(null, true);
+      }
+      console.error('CORS error: Origin not allowed', origin);
 
-// app.use(
-//   cors({
-//     origin: (origin, callback) => {
-//       if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
-//         return callback(null, true);
-//       }
-//       console.error('CORS error: Origin not allowed', origin);
+      return callback(
+        new Error('Your address is not an accepted origin by CORS'),
+        false,
+      );
+    },
+    credentials: true, // Allow to send cookies
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
 
-//       return callback(
-//         new Error('Your address is not an accepted origin by CORS'),
-//         false,
-//       );
-//     },
-//     credentials: true, // Allow to send cookies
-//     allowedHeaders: ['Content-Type', 'Authorization'],
-//   }),
-// );
 // allow cross origin sharing request
-// app.use(cors('*'));
+app.use(cors('*'));
 app.use(cors({ origin: true, credentials: true }));
 // app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
 
@@ -91,18 +90,18 @@ app.use(cors({ origin: true, credentials: true }));
 // considering backend as root directory in vercel
 // Testing routes:
 // db test
-app.get('/api/db-test', async (req, res)=>{
- try {
-  const result = await pool.query('SELECT 1 as test');
-  res.json({success:true, data:result.rows})
-
+app.get('/api/db-test', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT 1 as test');
+    res.json({ success: true, data: result.rows });
   } catch (error) {
-   console.error('DB test error', error);
-   res.status(500).json({
-    success:false, error:error.message
-   });
+    console.error('DB test error', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
- })
+});
 //get test
 app.get('/api/health', (req, res) => {
   console.log('✅ /api/health invoked');
@@ -137,8 +136,10 @@ app.use('*', (req, res) => {
 // ==================================
 app.use((err, req, response, next) => {
   console.error(('error handled response ', err));
+
   const errorStatus = err.status || 500;
   const errorMessage = err.message || 'Something went wrong';
+
   response.status(errorStatus).json({
     message: errorMessage,
     status: errorStatus,
