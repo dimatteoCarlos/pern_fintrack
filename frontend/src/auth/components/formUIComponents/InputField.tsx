@@ -5,7 +5,6 @@
 import React from 'react';
 import styles from './styles/inputField.module.css';
 import { LuEyeClosed, LuEye } from 'react-icons/lu';
-
 /* 🌟 ===============================
 🏷️ TYPE DEFINITIONS
 =============================== 🌟 */
