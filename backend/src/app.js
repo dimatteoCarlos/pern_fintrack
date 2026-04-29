@@ -13,7 +13,7 @@ import useragent from 'express-useragent';
 import dotenv from 'dotenv';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
-// import { verifyToken } from './middlewares/authMiddleware.js';
+import { verifyToken } from './middlewares/authMiddleware.js';
 import routes from './routes/index.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
 
