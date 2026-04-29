@@ -76,8 +76,8 @@ app.use(
   }),
 );
 // allow cross origin sharing request
-app.use(cors('*'));
-app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
+// app.use(cors('*'));
+// app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
 
 // ==================================
 // 🛣️ TESTING API ROUTING WITH VERCEL
