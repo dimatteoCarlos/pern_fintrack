@@ -106,7 +106,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: Date.now(),
-    message: 'Testing Right now',
+    message: 'Testing Ready for fintrack',
   });
 });
 
