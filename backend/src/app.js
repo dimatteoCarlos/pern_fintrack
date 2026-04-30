@@ -76,7 +76,7 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
-
+//----only for testings ----------
 // allow cross origin sharing request
 // app.use(cors('*'));
 // app.use(cors({ origin: true, credentials: true }));
@@ -88,14 +88,13 @@ app.use(
 // considering backend as root directory in vercel
 // ----------------------
 //HEALTH
-
 app.get('/api/health', (req, res) => {
   console.log('✅ /api/health invoked');
   res.json({
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'NOW TEST 07.Add app.use for cors.TEST 06:WAS OK. test adding endpoints.'
+    step: 'NOW TEST 07.Add all middleware app.use of initialization and error handling TEST 06:WAS OK.test adding endpoints.'
   });
 });
 // Testing routes:
@@ -121,6 +120,7 @@ app.get('/api/db-test', async (req, res) => {
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
 // app.use('/api', routes); //main app routes
 // app.use('/api/fintrack', verifyToken, fintrack_routes);
+
 // app.use('/api/cronjob', cronRoutes);
 
 // ==================================
