@@ -10,12 +10,12 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import useragent from 'express-useragent';
-// import dotenv from 'dotenv';
+import dotenv from 'dotenv';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
-// import { verifyToken } from './middlewares/authMiddleware.js';
-// import routes from './routes/index.js';
-// import fintrack_routes from './fintrack_api/routes/index.js';
+import routes from './routes/index.js';
+import { verifyToken } from './middlewares/authMiddleware.js';
+import fintrack_routes from './fintrack_api/routes/index.js';
 
 //db test
 import { pool } from './db/config/configDB.js';
@@ -94,7 +94,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'NOW TEST 04.TEST 03:WAS OK. test adding endpoints.'
+    step: 'NOW TEST 05.All imports descomented, but app buisiness middlewares.TEST 04:WAS OK. test adding endpoints.'
   });
 });
 // Testing routes:
@@ -111,7 +111,6 @@ app.get('/api/db-test', async (req, res) => {
     });
   }
 });
-
 
 // =====================
 // 🛣️ API ROUTING
