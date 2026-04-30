@@ -79,3 +79,5 @@ storybook-static/
 # ===============================
 *.pem
 *.key
+.vercel
+.env*.local
