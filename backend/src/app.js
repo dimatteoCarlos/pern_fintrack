@@ -5,8 +5,8 @@
 // ====================
 // Express configuration (middlewares, routes, CORS, error handlers)
 import express from 'express';
-// import cors from 'cors';
-// import helmet from 'helmet';
+import cors from 'cors';
+import helmet from 'helmet';
 // import morgan from 'morgan';
 // import cookieParser from 'cookie-parser';
 // import useragent from 'express-useragent';
