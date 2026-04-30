@@ -5,20 +5,20 @@
 // ====================
 // Express configuration (middlewares, routes, CORS, error handlers)
 import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import cookieParser from 'cookie-parser';
-import useragent from 'express-useragent';
-import dotenv from 'dotenv';
+// import cors from 'cors';
+// import helmet from 'helmet';
+// import morgan from 'morgan';
+// import cookieParser from 'cookie-parser';
+// import useragent from 'express-useragent';
+// import dotenv from 'dotenv';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
-import { verifyToken } from './middlewares/authMiddleware.js';
-import routes from './routes/index.js';
-import fintrack_routes from './fintrack_api/routes/index.js';
+// import { verifyToken } from './middlewares/authMiddleware.js';
+// import routes from './routes/index.js';
+// import fintrack_routes from './fintrack_api/routes/index.js';
 
 //db test
-// import { pool } from './db/config/configDB.js';
+import { pool } from './db/config/configDB.js';
 // import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
@@ -28,22 +28,22 @@ import fintrack_routes from './fintrack_api/routes/index.js';
 // ==================================
 //app config, global middlewares application, safety, request records and data handling
 export const app = express();
-dotenv.config();
+// dotenv.config();
 
 //muchos servicios cloud) usan proxies inversos. Express debe confiar en el proxy para obtener la IP real y el protocolo correcto (HTTP/HTTPS). Se coloca después de const app = express():
 // trust proxy only in production (e.g., Render, Vercel)
-if (process.env.NODE_ENV === 'production') {
-  app.set('trust proxy', 1); // trust the first proxy
-}
+// if (process.env.NODE_ENV === 'production') {
+//   app.set('trust proxy', 1); // trust the first proxy
+// }
 
 //Middlewares initialization
-app.use(useragent.express());
-app.disable('x-powered-by');
-app.use(helmet());
-app.use(morgan('dev'));
+// app.use(useragent.express());
+// app.disable('x-powered-by');
+// app.use(helmet());
+// app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); //Enable cookies analysis
+// app.use(cookieParser()); //Enable cookies analysis
 
 //CORS Configuration for access control
 const ACCEPTED_ORIGINS = [
@@ -59,23 +59,23 @@ const ACCEPTED_ORIGINS = [
   'https://vercel.com/cadrs-projects/pern-fintrack-frontend',
 ].filter(Boolean);
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
-        return callback(null, true);
-      }
-      console.error('CORS error: Origin not allowed', origin);
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
+//         return callback(null, true);
+//       }
+//       console.error('CORS error: Origin not allowed', origin);
 
-      return callback(
-        new Error('Your address is not an accepted origin by CORS'),
-        false,
-      );
-    },
-    credentials: true, // Allow to send cookies
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }),
-);
+//       return callback(
+//         new Error('Your address is not an accepted origin by CORS'),
+//         false,
+//       );
+//     },
+//     credentials: true, // Allow to send cookies
+//     allowedHeaders: ['Content-Type', 'Authorization'],
+//   }),
+// );
 
 // allow cross origin sharing request
 // app.use(cors('*'));
@@ -118,8 +118,8 @@ app.get('/api/health', (req, res) => {
 // api main routes and associated controllers
 // ----------------------
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
-app.use('/api', routes); //main app routes
-app.use('/api/fintrack', verifyToken, fintrack_routes);
+// app.use('/api', routes); //main app routes
+// app.use('/api/fintrack', verifyToken, fintrack_routes);
 // app.use('/api/cronjob', cronRoutes);
 
 // ==================================
