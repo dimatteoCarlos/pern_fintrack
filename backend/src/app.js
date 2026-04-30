@@ -5,12 +5,12 @@
 // ====================
 // Express configuration (middlewares, routes, CORS, error handlers)
 import express from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
+import cors from 'cors';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import useragent from 'express-useragent';
 import dotenv from 'dotenv';
+import useragent from 'express-useragent';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
 import routes from './routes/index.js';
@@ -28,7 +28,9 @@ import { pool } from './db/config/configDB.js';
 // ==================================
 //app config, global middlewares application, safety, request records and data handling
 const app = express();
-// dotenv.config();
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 //muchos servicios cloud) usan proxies inversos. Express debe confiar en el proxy para obtener la IP real y el protocolo correcto (HTTP/HTTPS). Se coloca después de const app = express():
 // trust proxy only in production (e.g., Render, Vercel)
@@ -37,14 +39,7 @@ const app = express();
 // }
 
 //Middlewares initialization
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-app.use(useragent.express());
-app.disable('x-powered-by');
 app.use(helmet());
-app.use(morgan('dev'));
-app.use(cookieParser()); //Enable cookies analysis
-
 //CORS Configuration for access control
 const ACCEPTED_ORIGINS = [
   'http://localhost:5000',
@@ -76,11 +71,20 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
+
 //----only for testings ----------
 // allow cross origin sharing request
 // app.use(cors('*'));
 // app.use(cors({ origin: true, credentials: true }));
 // app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
+
+//---------------------------------
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); //Enable cookies analysis
+app.use(morgan('dev'));
+app.use(useragent.express());
+// app.disable('x-powered-by');
 
 // ==================================
 // 🛣️ TESTING API ROUTING WITH VERCEL
@@ -94,7 +98,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'NOW TEST 07.Add all middleware app.use of initialization and error handling TEST 06:WAS OK.test adding endpoints.'
+    step: 'TESTING ADDING ENDPOINTS. - NOW TEST 08.Add auth module base with ping endpoint - .TEST 07:WAS OK.'
   });
 });
 // Testing routes:
@@ -118,7 +122,7 @@ app.get('/api/db-test', async (req, res) => {
 // api main routes and associated controllers
 // ----------------------
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
-// app.use('/api', routes); //main app routes
+app.use('/api', routes); //main app routes
 // app.use('/api/fintrack', verifyToken, fintrack_routes);
 
 // app.use('/api/cronjob', cronRoutes);
@@ -128,7 +132,7 @@ app.get('/api/db-test', async (req, res) => {
 // ==================================
 // --- 404 handler for undefined routes ---
 //not defined (404 Not Found) routes handler
-app.use('*', (req, res) => {
+app.all('*', (req, res) => {
   res.status(404).json({ error: '404', message: 'Route link was not found' });
 });
 
@@ -136,7 +140,7 @@ app.use('*', (req, res) => {
 //❌ gobal errors handler
 // ==================================
 app.use((err, req, response, next) => {
-  console.error(('error handled response ', err));
+  console.error('error handled response ', err);
 
   const errorStatus = err.status || 500;
   const errorMessage = err.message || 'Something went wrong';
