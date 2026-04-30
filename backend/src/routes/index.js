@@ -4,9 +4,8 @@ import authRoutes from './authRoutes.js';
 import userRoutes from './userRoutes.js';
 import { authDetectClienttype } from '../middlewares/authDetectClienttype.js';
 
-//----------------------------------------
+//-- route for testing -----------------
 const router = express.Router(); 
-// route for testing 
 router.get('/auth/ping',(req, res)=>{res.json({pong:true, module:'auth', status:"ready"})});
 //----------------------------------------
 
