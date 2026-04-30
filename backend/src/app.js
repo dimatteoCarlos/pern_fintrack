@@ -18,7 +18,7 @@ import express from 'express';
 // import fintrack_routes from './fintrack_api/routes/index.js';
 
 //db test
-// import { pool } from './db/config/configDB.js';
+import { pool } from './db/config/configDB.js';
 // import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
@@ -94,23 +94,23 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'test with importing and exporting app.js. with only /api/helth'
+    step: 'test adding endpoint /api/db-test and no route linked'
   });
 });
 // Testing routes:
 // db test
-// app.get('/api/db-test', async (req, res) => {
-//   try {
-//     const result = await pool.query('SELECT 1 as test');
-//     res.json({ success: true, data: result.rows });
-//   } catch (error) {
-//     console.error('DB test error', error);
-//     res.status(500).json({
-//       success: false,
-//       error: error.message,
-//     });
-//   }
-// });
+app.get('/api/db-test', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT 1 as test');
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('DB test error', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 
 
 // =====================
@@ -128,9 +128,9 @@ app.get('/api/health', (req, res) => {
 // ==================================
 // --- 404 handler for undefined routes ---
 //not defined (404 Not Found) routes handler
-// app.use('*', (req, res) => {
-//   res.status(404).json({ error: '404', message: 'Route link was not found' });
-// });
+app.use('*', (req, res) => {
+  res.status(404).json({ error: '404', message: 'Route link was not found' });
+});
 
 // ==================================
 //❌ gobal errors handler

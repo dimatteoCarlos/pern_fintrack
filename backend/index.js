@@ -1,11 +1,12 @@
 //backend/index.js
 import app from './src/app.js';
 
+// Ejecuta Express con los objetos req/res de Vercel
 // export default function handler(req, res) {
 //   return app(req, res);
 // }
 
-// Ejecuta Express con los objetos req/res de Vercel
+//Este patron tambien funciona ok. 
 export default async function handler(req, res) {
   await new Promise((resolve, reject) => {
     app(req, res, (err) => {
