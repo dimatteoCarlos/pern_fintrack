@@ -94,7 +94,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'test with importing and exporting app.js'
+    step: 'test with importing and exporting app.js. with only /api/helth'
   });
 });
 // Testing routes:
