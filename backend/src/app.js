@@ -37,13 +37,13 @@ const app = express();
 // }
 
 //Middlewares initialization
-// app.use(express.json({ limit: '10mb' }));
-// app.use(express.urlencoded({ extended: true }));
-// app.use(useragent.express());
-// app.disable('x-powered-by');
-// app.use(helmet());
-// app.use(morgan('dev'));
-// app.use(cookieParser()); //Enable cookies analysis
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(useragent.express());
+app.disable('x-powered-by');
+app.use(helmet());
+app.use(morgan('dev'));
+app.use(cookieParser()); //Enable cookies analysis
 
 //CORS Configuration for access control
 const ACCEPTED_ORIGINS = [
@@ -95,7 +95,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'NOW TEST 06.Add app.use for cors.TEST 05:WAS OK. test adding endpoints.'
+    step: 'NOW TEST 07.Add app.use for cors.TEST 06:WAS OK. test adding endpoints.'
   });
 });
 // Testing routes:
@@ -135,17 +135,17 @@ app.use('*', (req, res) => {
 // ==================================
 //❌ gobal errors handler
 // ==================================
-// app.use((err, req, response, next) => {
-//   console.error(('error handled response ', err));
+app.use((err, req, response, next) => {
+  console.error(('error handled response ', err));
 
-//   const errorStatus = err.status || 500;
-//   const errorMessage = err.message || 'Something went wrong';
+  const errorStatus = err.status || 500;
+  const errorMessage = err.message || 'Something went wrong';
 
-//   response.status(errorStatus).json({
-//     message: errorMessage,
-//     status: errorStatus,
-//     stack: process.env.NODE_ENV == 'development' ? err.stack : undefined,
-//   });
-// });
+  response.status(errorStatus).json({
+    message: errorMessage,
+    status: errorStatus,
+    stack: process.env.NODE_ENV == 'development' ? err.stack : undefined,
+  });
+});
 
 export default app;
