@@ -98,7 +98,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'TESTING ADDING ENDPOINTS. - NOW TEST 08.Add auth module base with ping endpoint - .TEST 07:WAS OK.',
+    step: 'TESTING ADDING ENDPOINTS. - NOW TEST 09.Enable fintrack routes with auth middleware - .TEST 08:WAS OK.',
   });
 });
 
