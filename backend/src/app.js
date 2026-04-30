@@ -34,9 +34,9 @@ if (process.env.NODE_ENV !== 'production') {
 
 //muchos servicios cloud) usan proxies inversos. Express debe confiar en el proxy para obtener la IP real y el protocolo correcto (HTTP/HTTPS). Se coloca después de const app = express():
 // trust proxy only in production (e.g., Render, Vercel)
-// if (process.env.NODE_ENV === 'production') {
-//   app.set('trust proxy', 1); // trust the first proxy
-// }
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // trust the first proxy
+}
 
 //Middlewares initialization
 app.use(helmet());
@@ -79,18 +79,18 @@ app.use(
 // app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
 
 //---------------------------------
+app.disable('x-powered-by');
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); //Enable cookies analysis
 app.use(morgan('dev'));
 app.use(useragent.express());
-// app.disable('x-powered-by');
 
 // ==================================
 // 🛣️ TESTING API ROUTING WITH VERCEL
 // ==================================
 // considering backend as root directory in vercel
-// ----------------------
+// --- TESTING PUBLIC ROUTES:-----------------
 //HEALTH
 app.get('/api/health', (req, res) => {
   console.log('✅ /api/health invoked');
@@ -98,11 +98,11 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'TESTING ADDING ENDPOINTS. - NOW TEST 08.Add auth module base with ping endpoint - .TEST 07:WAS OK.'
+    step: 'TESTING ADDING ENDPOINTS. - NOW TEST 08.Add auth module base with ping endpoint - .TEST 07:WAS OK.',
   });
 });
-// Testing routes:
-// db test
+
+// DB TEST
 app.get('/api/db-test', async (req, res) => {
   try {
     const result = await pool.query('SELECT 1 as test');
@@ -115,7 +115,7 @@ app.get('/api/db-test', async (req, res) => {
     });
   }
 });
-
+//------------------------------------------
 // =====================
 // 🛣️ API ROUTING
 // =====================
@@ -123,7 +123,7 @@ app.get('/api/db-test', async (req, res) => {
 // ----------------------
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
 app.use('/api', routes); //main app routes
-// app.use('/api/fintrack', verifyToken, fintrack_routes);
+app.use('/api/fintrack', verifyToken, fintrack_routes);
 
 // app.use('/api/cronjob', cronRoutes);
 
