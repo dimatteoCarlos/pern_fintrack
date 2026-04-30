@@ -94,7 +94,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'test adding endpoint /api/db-test and no route linked'
+    step: 'TEST 03: test adding endpoints.'
   });
 });
 // Testing routes:
