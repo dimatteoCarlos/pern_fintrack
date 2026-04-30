@@ -37,12 +37,12 @@ const app = express();
 // }
 
 //Middlewares initialization
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 // app.use(useragent.express());
 // app.disable('x-powered-by');
 // app.use(helmet());
 // app.use(morgan('dev'));
-// app.use(express.json({ limit: '10mb' }));
-// app.use(express.urlencoded({ extended: true }));
 // app.use(cookieParser()); //Enable cookies analysis
 
 //CORS Configuration for access control
@@ -68,7 +68,7 @@ const app = express();
 //       console.error('CORS error: Origin not allowed', origin);
 
 //       return callback(
-//         new Error('Your address is not an accepted origin by CORS'),
+//         new Error('Your address is not an allowed origin by CORS'),
 //         false,
 //       );
 //     },
@@ -85,9 +85,17 @@ const app = express();
 // ==================================
 // 🛣️ TESTING API ROUTING WITH VERCEL
 // ==================================
-// api main routes and associated controllers
-// ----------------------
 // considering backend as root directory in vercel
+// ----------------------
+//HEALTH
+app.get('/api/health', (req, res) => {
+  console.log('✅ /api/health invoked');
+  res.json({
+    status: 'ok',
+    timestamp: Date.now(),
+    message: 'Testing vercel-serverless',
+  });
+});
 // Testing routes:
 // db test
 // app.get('/api/db-test', async (req, res) => {
@@ -102,15 +110,7 @@ const app = express();
 //     });
 //   }
 // });
-//get test
-app.get('/api/health', (req, res) => {
-  console.log('✅ /api/health invoked');
-  res.json({
-    status: 'ok',
-    timestamp: Date.now(),
-    message: 'Testing Ready for fintrack',
-  });
-});
+
 
 // =====================
 // 🛣️ API ROUTING
@@ -127,24 +127,24 @@ app.get('/api/health', (req, res) => {
 // ==================================
 // --- 404 handler for undefined routes ---
 //not defined (404 Not Found) routes handler
-// app.use('*', (req, res) => {
-//   res.status(404).json({ error: '404', message: 'Route link was not found' });
-// });
+app.use('*', (req, res) => {
+  res.status(404).json({ error: '404', message: 'Route link was not found' });
+});
 
 // ==================================
 //❌ gobal errors handler
 // ==================================
-// app.use((err, req, response, next) => {
-//   console.error(('error handled response ', err));
+app.use((err, req, response, next) => {
+  console.error(('error handled response ', err));
 
-//   const errorStatus = err.status || 500;
-//   const errorMessage = err.message || 'Something went wrong';
+  const errorStatus = err.status || 500;
+  const errorMessage = err.message || 'Something went wrong';
 
-//   response.status(errorStatus).json({
-//     message: errorMessage,
-//     status: errorStatus,
-//     stack: process.env.NODE_ENV == 'development' ? err.stack : undefined,
-//   });
-// });
+  response.status(errorStatus).json({
+    message: errorMessage,
+    status: errorStatus,
+    stack: process.env.NODE_ENV == 'development' ? err.stack : undefined,
+  });
+});
 
 export default app;
