@@ -46,36 +46,36 @@ const app = express();
 // app.use(cookieParser()); //Enable cookies analysis
 
 //CORS Configuration for access control
-// const ACCEPTED_ORIGINS = [
-//   'http://localhost:5000',
-//   'http://localhost:5173',
-//   'http://localhost:5174',
-//   'http://localhost:3000',
-//   'http://localhost:3001',
-//   'http://localhost:8080',
-//   'http://localhost:1234',
-//   'http://localhost:5432',
-//   process.env.CLIENT_URL,
-//   'https://vercel.com/cadrs-projects/pern-fintrack-frontend',
-// ].filter(Boolean);
+const ACCEPTED_ORIGINS = [
+  'http://localhost:5000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:8080',
+  'http://localhost:1234',
+  'http://localhost:5432',
+  process.env.CLIENT_URL,
+  'https://vercel.com/cadrs-projects/pern-fintrack-frontend',
+].filter(Boolean);
 
-// app.use(
-//   cors({
-//     origin: (origin, callback) => {
-//       if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
-//         return callback(null, true);
-//       }
-//       console.error('CORS error: Origin not allowed', origin);
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || ACCEPTED_ORIGINS.includes(origin)) {
+        return callback(null, true);
+      }
+      console.error('CORS error: Origin not allowed', origin);
 
-//       return callback(
-//         new Error('Your address is not an allowed origin by CORS'),
-//         false,
-//       );
-//     },
-//     credentials: true, // Allow to send cookies
-//     allowedHeaders: ['Content-Type', 'Authorization'],
-//   }),
-// );
+      return callback(
+        new Error('Your address is not an allowed origin by CORS'),
+        false,
+      );
+    },
+    credentials: true, // Allow to send cookies
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
 
 // allow cross origin sharing request
 // app.use(cors('*'));
@@ -88,13 +88,14 @@ const app = express();
 // considering backend as root directory in vercel
 // ----------------------
 //HEALTH
+
 app.get('/api/health', (req, res) => {
   console.log('✅ /api/health invoked');
   res.json({
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'NOW TEST 05.All imports descomented, but app buisiness middlewares.TEST 04:WAS OK. test adding endpoints.'
+    step: 'NOW TEST 06.Add app.use for cors.TEST 05:WAS OK. test adding endpoints.'
   });
 });
 // Testing routes:
