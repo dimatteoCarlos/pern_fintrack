@@ -7,9 +7,9 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-// import morgan from 'morgan';
-// import cookieParser from 'cookie-parser';
-// import useragent from 'express-useragent';
+import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
+import useragent from 'express-useragent';
 // import dotenv from 'dotenv';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
@@ -94,7 +94,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'TEST 03: test adding endpoints.'
+    step: 'NOW TEST 04.TEST 03:WAS OK. test adding endpoints.'
   });
 });
 // Testing routes:
