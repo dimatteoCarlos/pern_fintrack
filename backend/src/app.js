@@ -18,7 +18,7 @@ import express from 'express';
 // import fintrack_routes from './fintrack_api/routes/index.js';
 
 //db test
-import { pool } from './db/config/configDB.js';
+// import { pool } from './db/config/configDB.js';
 // import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
@@ -27,7 +27,7 @@ import { pool } from './db/config/configDB.js';
 // ⚙️ Express app configuration
 // ==================================
 //app config, global middlewares application, safety, request records and data handling
-export const app = express();
+const app = express();
 // dotenv.config();
 
 //muchos servicios cloud) usan proxies inversos. Express debe confiar en el proxy para obtener la IP real y el protocolo correcto (HTTP/HTTPS). Se coloca después de const app = express():
@@ -41,23 +41,23 @@ export const app = express();
 // app.disable('x-powered-by');
 // app.use(helmet());
 // app.use(morgan('dev'));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+// app.use(express.json({ limit: '10mb' }));
+// app.use(express.urlencoded({ extended: true }));
 // app.use(cookieParser()); //Enable cookies analysis
 
 //CORS Configuration for access control
-const ACCEPTED_ORIGINS = [
-  'http://localhost:5000',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:8080',
-  'http://localhost:1234',
-  'http://localhost:5432',
-  process.env.CLIENT_URL,
-  'https://vercel.com/cadrs-projects/pern-fintrack-frontend',
-].filter(Boolean);
+// const ACCEPTED_ORIGINS = [
+//   'http://localhost:5000',
+//   'http://localhost:5173',
+//   'http://localhost:5174',
+//   'http://localhost:3000',
+//   'http://localhost:3001',
+//   'http://localhost:8080',
+//   'http://localhost:1234',
+//   'http://localhost:5432',
+//   process.env.CLIENT_URL,
+//   'https://vercel.com/cadrs-projects/pern-fintrack-frontend',
+// ].filter(Boolean);
 
 // app.use(
 //   cors({
@@ -90,18 +90,18 @@ const ACCEPTED_ORIGINS = [
 // considering backend as root directory in vercel
 // Testing routes:
 // db test
-app.get('/api/db-test', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT 1 as test');
-    res.json({ success: true, data: result.rows });
-  } catch (error) {
-    console.error('DB test error', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
+// app.get('/api/db-test', async (req, res) => {
+//   try {
+//     const result = await pool.query('SELECT 1 as test');
+//     res.json({ success: true, data: result.rows });
+//   } catch (error) {
+//     console.error('DB test error', error);
+//     res.status(500).json({
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// });
 //get test
 app.get('/api/health', (req, res) => {
   console.log('✅ /api/health invoked');
@@ -127,24 +127,24 @@ app.get('/api/health', (req, res) => {
 // ==================================
 // --- 404 handler for undefined routes ---
 //not defined (404 Not Found) routes handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: '404', message: 'Route link was not found' });
-});
+// app.use('*', (req, res) => {
+//   res.status(404).json({ error: '404', message: 'Route link was not found' });
+// });
 
 // ==================================
 //❌ gobal errors handler
 // ==================================
-app.use((err, req, response, next) => {
-  console.error(('error handled response ', err));
+// app.use((err, req, response, next) => {
+//   console.error(('error handled response ', err));
 
-  const errorStatus = err.status || 500;
-  const errorMessage = err.message || 'Something went wrong';
+//   const errorStatus = err.status || 500;
+//   const errorMessage = err.message || 'Something went wrong';
 
-  response.status(errorStatus).json({
-    message: errorMessage,
-    status: errorStatus,
-    stack: process.env.NODE_ENV == 'development' ? err.stack : undefined,
-  });
-});
+//   response.status(errorStatus).json({
+//     message: errorMessage,
+//     status: errorStatus,
+//     stack: process.env.NODE_ENV == 'development' ? err.stack : undefined,
+//   });
+// });
 
 export default app;
