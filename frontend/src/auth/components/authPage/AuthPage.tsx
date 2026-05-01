@@ -41,6 +41,7 @@ import { useAuthStore } from '../../stores/useAuthStore';
 
 //--MAIN COMPONENT AUTHENTICACION ACCESS PAGE - AuthPage.tsx
 export default function AuthPage() {
+
   const location = useLocation();
   const navigateTo = useNavigate();
 

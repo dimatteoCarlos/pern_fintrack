@@ -40,3 +40,4 @@ archived/
 # Temporary files
 *.tmp
 .cache/
+.env*.local
