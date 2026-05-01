@@ -25,8 +25,6 @@ import AuthUI from './AuthUI';
 import { AUTH_UI_STATES } from '../../auth_constants/constants';
 import Logo from '../../../assets/logo.svg';
 
-import styles from './styles/authPage.module.css';
-
 import { useAuthUIStore } from '../../stores/useAuthUIStore';
 import useAuth from '../../hooks/useAuth';
 
@@ -39,10 +37,14 @@ import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage';
 import { authEventRegistry } from '../../authEvent/config/authEventRegistry';
 import { useAuthStore } from '../../stores/useAuthStore';
 
+import styles from './styles/authPage.module.css';
+
+import fintrackDemo from '../../../assets/fintrackDemo.png';
+
 //--MAIN COMPONENT AUTHENTICACION ACCESS PAGE - AuthPage.tsx
 export default function AuthPage() {
-
-  const location = useLocation();
+ 
+ const location = useLocation();
   const navigateTo = useNavigate();
 
 //--LOCAL UI STATES not related to auth UX
@@ -260,7 +262,19 @@ useEffect(() => {
 // 🎨 RENDER
 // =============
   return (
-    <div className={styles.authPageContainer}>
+    <div className={styles.authPageContainer}
+    
+    style={{
+    backgroundImage: `
+       linear-gradient(
+        rgba(0,0,0,var(--opacidad-black-start)),
+        rgba(0,0,0,var(--opacidad-black-end))
+      ),
+      url(${fintrackDemo})
+    `
+  }}
+    
+    >
       {/* {Navbar} */}
       <nav className={styles.navbar}>
        <div className={styles.logoContainer} onClick={openSigninModalHandler}>
