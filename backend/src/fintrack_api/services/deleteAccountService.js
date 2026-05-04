@@ -355,7 +355,7 @@ const processStandardDelete = async (
     queryText =
       'DELETE FROM user_accounts ua WHERE ua.account_id = $1 AND ua.user_id = $2';
     console.log(
-      pc.red(`Admin HARD DELETE for account ${(targetAccountId, userId)}`),
+      pc.red(`Admin HARD DELETE for account ${targetAccountId} by user ${userId}`),
     );
   } else if (deletionType === DELETION_TYPE_SOFT) {
     // Soft delete
@@ -364,9 +364,9 @@ const processStandardDelete = async (
     }
     actionType = USER_ACTION;
     queryText =
-      'UPDATE user_accounts ua SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE (ua.account_id = $1 AND AND ua.user_id = $2) AND ua.deleted_at IS NULL';
+      'UPDATE user_accounts ua SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE (ua.account_id = $1 AND ua.user_id = $2) AND ua.deleted_at IS NULL';
     console.log(
-      pc.yellow(`User SOFT DELETE for account ${(targetAccountId, userId)}`),
+      pc.yellow(`User SOFT DELETE for account ${targetAccountId} by user ${userId}`),
     );
   } else {
     throw createError(400, 'Invalid or unauthorized deletion type.');
@@ -536,9 +536,11 @@ export const deleteAccountService = async (
           ),
         );
         // Ejecutar hard delete directamente
-        const deleteQuery =
-          'DELETE FROM user_accounts ua WHERE ua.account_id = $1';
-        await dbClient.query(deleteQuery, [targetAccountId]);
+        // const deleteQuery =
+          // 'DELETE FROM user_accounts ua WHERE ua.account_id = $1';
+          const deleteQuery = 'DELETE FROM user_accounts ua WHERE ua.account_id = $1 AND ua.user_id = $2'
+
+        await dbClient.query(deleteQuery, [targetAccountId, userId]);
 
         console.log(
           pc.red(`Target Account ${targetAccountId} DELETED (CASCADE).`),
