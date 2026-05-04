@@ -49,9 +49,9 @@ const ACCEPTED_ORIGINS = [
   'http://localhost:3001',
   'http://localhost:8080',
   'http://localhost:1234',
-  'http://localhost:5432',process.env.CLIENT_URL,
- 'https://pern-fintrack.vercel.app',
-  
+  'http://localhost:5432',
+  process.env.CLIENT_URL,
+  'https://pern-fintrack.vercel.app',
 ].filter(Boolean);
 
 app.use(
