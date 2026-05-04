@@ -8,7 +8,7 @@ import {
   RouterProvider,
 } from 'react-router-dom';
 import { Slide, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import 'react-toastify/dist/ReactToastify.css'; //it seems not necessary
 
 // 🛡️ AUTHENTICATION & PROTECTION
 import ProtectedRoute from './auth/components/protectedRoute/ProtectedRoute';
