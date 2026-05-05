@@ -64,6 +64,8 @@ Prevents layout shift when messages appear/disappear*/
   padding:  1.25rem; 
   gap:0.75rem;
 
+  overflow-y:auto;
+
 }
 
 .auth-container__title {
@@ -429,60 +431,6 @@ Estilo por defecto del checkbox
     font-size: 0.875rem;
   }
 
-/*MOBILE: X floating button*/
-.closeButton {
-  position: fixed;
-  top: 0.75rem;
-  right: 0.5rem;
-  /* top: 1.25rem;
-  right: 1.5rem; */
-
-  width: 2rem; 
-  height: 2rem;
-  min-height: auto;
-
-  padding: 0;
-  border-radius: 50%;
-  background-color: #d32f2f;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-
-  font-size: 0; 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  margin: 0;
-  transition: opacity 0.3s ease;
-}
-
-.closeButton span{
- display:none;
-}
-  
-  /* 3. LA X usando pseudo-elemento */
-  .closeButton::before {
-    content: "✕";
-    font-size: 1.25rem;
-    line-height: 1;
-    font-weight: 300;
-    display: block;
-  }
-  
-  /* 4. Hover en mobile (feedback táctil) */
-  .closeButton:active {
-    transform: scale(0.95);
-    background-color:  #b71c1c;  
-  }
-
-  .closeButton:hover {
-    transform: scale(0.95);
-    background-color:  #ec3131;  
-
-  }
 
   .socialSection {
     display: none; 
@@ -536,14 +484,14 @@ Estilo por defecto del checkbox
 
 /* 7. very small screens */
 @media (max-width: 360px) {
-  .closeButton {
+  /* .closeButton {
     width: 1.5rem;
     height: 1.5rem; 
   }
   
   .closeButton::before {
     font-size: 1rem;
-  }
+  } */
 
   .messageArea {
    max-height:none;
@@ -568,4 +516,60 @@ Estilo por defecto del checkbox
     padding: 1.5rem;
     gap:0.875rem;
   }
+}
+
+@media (max-height:775px) {
+/*MOBILE: X floating button*/
+.closeButton {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.5rem;
+
+  width: 2rem; 
+  height: 2rem;
+  min-height: auto;
+
+  padding: 0;
+  border-radius: 50%;
+  background-color: #d32f2f;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+
+  font-size: 0; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  margin: 0;
+  transition: opacity 0.3s ease;
+}
+
+.closeButton span{
+ display:none;
+}
+  
+/* 3. La X usando pseudo-elemento */
+.closeButton::before {
+  content: "✕";
+  font-size: 1.25rem;
+  line-height: 1;
+  font-weight: 300;
+  display: block;
+}
+  
+/* 4. Hover en mobile (feedback táctil) */
+.closeButton:active {
+  transform: scale(0.95);
+  background-color:  #b71c1c;  
+}
+
+.closeButton:hover {
+  transform: scale(0.95);
+  background-color:  #ec3131;  
+
+}
+
 }
