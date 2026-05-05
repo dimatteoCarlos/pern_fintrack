@@ -517,7 +517,7 @@ Estilo por defecto del checkbox
     gap:0.875rem;
   }
 }
-
+/* */
 @media (max-height:775px) {
 /*MOBILE: X floating button*/
 .closeButton {
