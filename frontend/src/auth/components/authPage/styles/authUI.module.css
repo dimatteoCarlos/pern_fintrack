@@ -338,9 +338,10 @@ Estilo por defecto del checkbox
 /**RESPONSIVE**/
 @media (max-width: 480px) {
   .auth-container {
-   width: 100%;
+    width: 100%;
     max-width: 100vw;
-    min-height: 100vh;
+    /* min-height: auto; */
+    min-height: 90vh;
     
     margin: 0;
     padding: 0.8125rem 0.75rem 1.5rem 0.75rem;
@@ -558,7 +559,6 @@ Estilo por defecto del checkbox
   /* .auth-container {
     padding-top: 3rem;
   } */
-
 
 }
 
