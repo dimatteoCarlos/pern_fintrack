@@ -31,7 +31,7 @@ export type AuthEventHandlerType<EventKey extends AuthEventType> = (
 export const authEventRegistry: {
   [EventKey in AuthEventType]: AuthEventHandlerType<EventKey>;
 } = {
-// password_changed event handler
+// PASSWORD_CHANGED EVENT HANDLER
 // Opens sign in modal with prefill if identity exists
   password_changed: () => {
     const identity = getIdentity(); //from authStorage
@@ -43,7 +43,7 @@ export const authEventRegistry: {
     return result;
   },
 
-  //session_expired event handler
+  //SESSION_EXPIRED EVENT HANDLER
   // - Opens sign in modal with expiration message
   // - Stores return path (from) for post-login redirect
 

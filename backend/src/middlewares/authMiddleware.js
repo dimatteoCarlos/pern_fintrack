@@ -41,7 +41,9 @@ export const clearRefreshTokenFromCookie = (res) => {
 // GET AUTHENTICATION TOKEN
 // =================================
 export const getAuthToken = (req) => {
-  //console.log('🔍 ALL HEADERS RECEIVED:', req.headers); // ← DEBUG
+  
+ //Debugging
+ //console.log('🔍 ALL HEADERS RECEIVED:', req.headers); // ← DEBUG
   // console.log('🔍 HEADERS keys:', Object.keys(req.headers));
   // console.log('🔍 COOKIES:', req.cookies);
 

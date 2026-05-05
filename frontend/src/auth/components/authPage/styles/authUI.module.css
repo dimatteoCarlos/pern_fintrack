@@ -413,7 +413,7 @@ Estilo por defecto del checkbox
   .messageArea.isVisible span {
     font-size: 0.75rem !important;
   }
-
+/* close normal button at the end of page */
   .auth-form__button{
    margin-top: 0.25rem;
    padding: 0.375rem 0.875rem;
@@ -484,14 +484,6 @@ Estilo por defecto del checkbox
 
 /* 7. very small screens */
 @media (max-width: 360px) {
-  /* .closeButton {
-    width: 1.5rem;
-    height: 1.5rem; 
-  }
-  
-  .closeButton::before {
-    font-size: 1rem;
-  } */
 
   .messageArea {
    max-height:none;
