@@ -15,8 +15,8 @@ import { SignInFormDataType, SignUpFormDataType } from '../../validation/zod_sch
 import SignInForm from '../signInForm/SignInForm';
 import SignUpForm from '../signUpForm/SignUpForm';
 import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage'
-import styles from './styles/authUI.module.css';
 import { useAuthUIStore } from '../../stores/useAuthUIStore';
+import styles from './styles/authUI.module.css';
 
 type AuthUIPropsType = {
   onSignIn: (credentials: SignInFormDataType, rememberMe: boolean) => Promise<void>;
