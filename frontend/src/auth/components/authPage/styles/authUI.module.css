@@ -340,8 +340,8 @@ Estilo por defecto del checkbox
   .auth-container {
     width: 100%;
     max-width: 100vw;
-    /* min-height: auto; */
-    min-height: 90vh;
+    min-height: auto;
+    /* min-height: 88vh; */
     
     margin: 0;
     padding: 1.5rem 0.75rem 1.5rem 0.75rem;
