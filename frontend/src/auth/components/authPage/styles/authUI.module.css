@@ -28,7 +28,7 @@ Prevents layout shift when messages appear/disappear*/
 
 /* 🟢 Active State: Opens and fades in */
 .isVisible {
-  max-height: 3.5rem; 
+  max-height: none; 
   opacity: 1;
   margin-bottom: 0.5rem; /* Space only appears when message is present */
   transform: translateY(0);
@@ -115,7 +115,7 @@ Prevents layout shift when messages appear/disappear*/
   gap: 0.75rem;  
 }
 
-/*--------------------------------*/
+/*------------------------------*/
 /*
 Estilo por defecto del checkbox
 .auth-form__checkbox{
@@ -400,11 +400,10 @@ Estilo por defecto del checkbox
   .messageArea.isVisible{
    font-size: 0.75rem !important;
    line-height: 1.2 !important;
-   max-height: 2.5rem,!important;
-   min-height: 2.0rem;
+   max-height: none,!important;
+   min-height: auto;
    width: 100%;
    text-align: center;
-   /* padding: 0.25rem 0.25rem !important; */
   }
 
   .messageArea.isVisible div,
@@ -521,7 +520,7 @@ Estilo por defecto del checkbox
 }
 
 /* Larger screens */
-@media (min-width: 480px) {
+@media (min-width: 600px) {
   .extraFieldsGroup {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -530,7 +529,7 @@ Estilo por defecto del checkbox
   }
 
    .messageArea.isVisible {
-    max-height: 4rem;
+    max-height: none;
     font-size: 0.875rem;
   }
 }
@@ -547,12 +546,13 @@ Estilo por defecto del checkbox
   }
 
   .messageArea {
-   max-height:2rem;
+   max-height:none;
   }
 
   .messageArea.isVisible{
-   min-height: 2rem;
-   font-size: 0.25rem !important;
+   min-height: auto;
+   max-height: none;
+   font-size: 0.5rem !important;
    margin-bottom: 0.25rem;
   }
   
