@@ -33,9 +33,11 @@ dist-ssr
 .vercel
 
 # Archived files (backup files)
+archived
 archived/
 *archived
 
 # Temporary files
 *.tmp
 .cache/
+.env*.local

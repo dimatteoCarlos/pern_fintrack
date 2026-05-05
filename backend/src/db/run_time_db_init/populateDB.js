@@ -1,4 +1,5 @@
 // backend/src/db/run_time_migrations/populateDB.js
+//This is a run time db seed
 import {
   createError,
   handlePostgresErrorEs,

@@ -4,7 +4,7 @@
 📦 IMPORT DEPENDENCIES
 =============================== 🌟 */
 import React from 'react';
-import styles from './styles/SelectField.module.css';
+import styles from './styles/selectField.module.css';
 
 /* 🌟 ===============================
 🏷️ TYPE DEFINITIONS

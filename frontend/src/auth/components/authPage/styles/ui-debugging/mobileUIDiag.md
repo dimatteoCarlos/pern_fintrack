@@ -1,3 +1,5 @@
+//Debugging UI by copy/paste this script in browser console
+
 (function() {
   console.log('========== DIAGNÓSTICO COMPLETO MOBILE V3 ==========');
   

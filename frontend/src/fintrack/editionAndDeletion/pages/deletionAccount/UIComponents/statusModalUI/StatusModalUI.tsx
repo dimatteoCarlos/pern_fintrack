@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ModalStatusType } from "../../../../types/deletionTypes";
 import { DictionaryDataType } from "../../../../utils/languages";
 
-import './StatusModalUI.css';
+import './statusModalUI.css';
 
 // ==========================
 // 🎯 STATUS MODAL UI PROPS TYPE

@@ -2,10 +2,9 @@
 /* 🌟 ===============================
 📦 IMPORT DEPENDENCIES
 =============================== 🌟 */
-import React from "react";
-import styles from "./styles/inputField.module.css";
-import { LuEyeClosed , LuEye } from "react-icons/lu";
-
+import React from 'react';
+import styles from './styles/inputField.module.css';
+import { LuEyeClosed, LuEye } from 'react-icons/lu';
 /* 🌟 ===============================
 🏷️ TYPE DEFINITIONS
 =============================== 🌟 */
@@ -23,7 +22,7 @@ export type InputFieldProps = {
   error?: string;
 
   /** 🔧 Input type (default: text) */
-  type?: "text" | "email" | "tel" | "password" | "number";
+  type?: 'text' | 'email' | 'tel' | 'password' | 'number';
 
   /** 🎯 Is field required? */
   required?: boolean;
@@ -34,7 +33,7 @@ export type InputFieldProps = {
   /** 🔧 Is field disabled? */
   disabled?: boolean;
 
-   /** 📝 Is field read-only? (success state) */
+  /** 📝 Is field read-only? (success state) */
   isReadOnly?: boolean;
 
   /** ℹ️ Help text below the input */
@@ -48,23 +47,23 @@ export type InputFieldProps = {
 
   /** 🎨 Inline styles */
   style?: React.CSSProperties;
-  
+
   // 🔑 Optional generic toggle for content visibility
   showContentToggle?: boolean;
 
-  onToggleVisibility?:() => void;
+  onToggleVisibility?: () => void;
 
   isContentVisible?: boolean;
 
   onToggleContent?: () => void;
 
   touched?: boolean;
-  
+
   /** 👀 Optional icon/svg for the toggle button */
   toggleIcon?: React.ReactNode;
 
   //tab control
-  tabindex?:number;
+  tabindex?: number;
 };
 
 /* 🌟 ===============================
@@ -76,43 +75,45 @@ const InputField: React.FC<InputFieldProps> = React.memo(
     value,
     onChange,
     error,
-    type = "text",
+    type = 'text',
     required = false,
-    placeholder = "",
+    placeholder = '',
     disabled = false,
     helpText,
     id,
-    className = "",
+    className = '',
     style,
     showContentToggle = false,
     isContentVisible = false,
     onToggleContent,
-    toggleIcon, 
-    isReadOnly=false,
-
+    toggleIcon,
+    isReadOnly = false,
   }) => {
     /* 🌟 ===============================
     🎮 EVENT HANDLERS
     ================================ 🌟 */
-   const handleChange = React.useCallback(
-     (valueOrEvent: string | React.ChangeEvent<HTMLInputElement>) => {
-       const value = typeof valueOrEvent === 'string' ? valueOrEvent : valueOrEvent.target.value;
-       onChange(value);
-     },
-     [onChange]
-   );
+    const handleChange = React.useCallback(
+      (valueOrEvent: string | React.ChangeEvent<HTMLInputElement>) => {
+        const value =
+          typeof valueOrEvent === 'string'
+            ? valueOrEvent
+            : valueOrEvent.target.value;
+        onChange(value);
+      },
+      [onChange],
+    );
 
     /* 🌟 ===============================
     🎨 COMPUTED VALUES
     ================================ 🌟 */
-    const inputId = id || `input-${label.toLowerCase().replace(/\s+/g, "-")}`;
+    const inputId = id || `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
     const hasError = !!error;
 
     /* 🌟 ===============================
     ♿ ACCESSIBILITY ATTRIBUTES
     ================================ 🌟 */
     const ariaAttributes = hasError
-      ? { "aria-invalid": true, "aria-describedby": `${inputId}-error` }
+      ? { 'aria-invalid': true, 'aria-describedby': `${inputId}-error` }
       : {};
 
     /* 🌟 ===============================
@@ -121,7 +122,7 @@ const InputField: React.FC<InputFieldProps> = React.memo(
     return (
       <div
         className={`${styles.inputContainer} ${className} ${
-          hasError ? styles.hasError : ""
+          hasError ? styles.hasError : ''
         }`}
         style={style}
       >
@@ -129,7 +130,7 @@ const InputField: React.FC<InputFieldProps> = React.memo(
         <label htmlFor={inputId} className={styles.inputLabel}>
           {label}
           {required && (
-            <span className={styles.requiredIndicator} aria-hidden="true">
+            <span className={styles.requiredIndicator} aria-hidden='true'>
               *
             </span>
           )}
@@ -139,7 +140,13 @@ const InputField: React.FC<InputFieldProps> = React.memo(
         <div className={styles.inputWrapper}>
           <input
             id={inputId}
-            type={showContentToggle ? (isContentVisible ? "text" : "password") : type}
+            type={
+              showContentToggle
+                ? isContentVisible
+                  ? 'text'
+                  : 'password'
+                : type
+            }
             value={value}
             onChange={(e) => handleChange(e)}
             placeholder={placeholder}
@@ -148,48 +155,45 @@ const InputField: React.FC<InputFieldProps> = React.memo(
             required={required}
             className={styles.inputField}
             style={{ paddingRight: showContentToggle ? '40px' : '12px' }} // Evita que el texto toque el icono
-
             {...ariaAttributes}
           />
 
           {showContentToggle && onToggleContent && (
             <button
-              type="button"
+              type='button'
               className={styles.toggleButton}
               onClick={onToggleContent}
-              aria-label={isContentVisible ? "Hide content" : "Show content"}
+              aria-label={isContentVisible ? 'Hide content' : 'Show content'}
               tabIndex={-1} //Remove from the tab order
             >
-              {toggleIcon || (isContentVisible ? <LuEyeClosed /> :<LuEye />)}
+              {toggleIcon || (isContentVisible ? <LuEyeClosed /> : <LuEye />)}
               {/* {toggleIcon || (isContentVisible ? "🙈" : "👁️")} */}
             </button>
           )}
         </div>
 
         {/* ❌ ERROR MESSAGE */}
-        {hasError && (// hasError = touched && error
-         <div
-           id={`${inputId}-error`}
-           className={styles.errorMessage}
-           role="alert"
-           aria-live="polite"
-         >
-           {error}
-         </div>
+        {hasError && ( // hasError = touched && error
+          <div
+            id={`${inputId}-error`}
+            className={styles.errorMessage}
+            role='alert'
+            aria-live='polite'
+          >
+            {error}
+          </div>
         )}
 
         {/* ℹ️ HELP TEXT */}
         {helpText && !hasError && (
-          <div className={styles.helpText}>
-           {helpText}
-            </div>
+          <div className={styles.helpText}>{helpText}</div>
         )}
       </div>
     );
-  }
+  },
 );
 
 // Display name for React DevTools
-InputField.displayName = "InputField";
+InputField.displayName = 'InputField';
 
 export default InputField;

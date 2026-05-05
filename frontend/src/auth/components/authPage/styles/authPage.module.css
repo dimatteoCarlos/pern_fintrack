@@ -9,11 +9,11 @@ button {
   background-color: #f4f4f4;
   --opacidad-black-start: 0.1;
   --opacidad-black-end: 0.8;
-  background-image: linear-gradient(
+  /* background-image: linear-gradient(
       rgba(0, 0, 0, var(--opacidad-black-start, 0.1)),
       rgba(0, 0, 0, var(--opacidad-black-end))
     ),
-    url('/src/assets/fintrackDemo.png');
+    url('/src/assets/fintrackDemo.png'); */
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;

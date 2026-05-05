@@ -1,8 +1,8 @@
 //backend/src/index.js
 
-// ====================
+// ========================
 // 📥 Imports
-// ====================
+// ========================
 import pc from 'picocolors';
 
 //Database utils and conection
@@ -26,11 +26,16 @@ console.log(pc.yellowBright('Hola Mundo'));
 
 async function startServer() {
   try {
-    console.log(pc.yellowBright('HELLO WORLD FROM INDEX.JS.startServer', 'ESTO NO DEBERIA EJECUTARSE EN SERVERLESS'))
-    //Data base connection
-    // await checkConnection();
-    // await initializeDatabase();
-    // await cleanRevokedTokens();
+    console.log(
+      pc.yellowBright(
+        'HELLO WORLD FROM INDEX.JS.startServer',
+        'ESTO NO DEBERIA EJECUTARSE EN SERVERLESS',
+      ),
+    );
+   //Verify Data base connection
+    await checkConnection(); //in configDB
+    await initializeDatabase();
+    await cleanRevokedTokens();
 
     //set server
     app.listen(PORT, '0.0.0.0', () => {
@@ -41,7 +46,7 @@ async function startServer() {
     process.exit(1);
   }
 }
-
+//VERCEL automatically assigns VERCEL variable to '1' when executing inside its environment
 if (!process.env.VERCEL) {
   startServer();
 }
@@ -58,9 +63,9 @@ pool.on('error', (err) => {
 process.on('SIGINT', () => {
   console.log(pc.cyan('Shutting down gracefully...'));
   pool.end(() => {
-   console.log(pc.greenBright('Database pool closed.'));
-   //reference: https://nodejs.org/api/process.html#process_process_exit_code
-   process.exit(0);
-   // process.exitCode=0;
+    console.log(pc.greenBright('Database pool closed.'));
+    //reference: https://nodejs.org/api/process.html#process_process_exit_code
+    process.exit(0);
+    // process.exitCode=0;
   });
 });

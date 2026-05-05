@@ -33,6 +33,16 @@ dist-ssr
 
 .git/cursor
 
-/arhived
+
+# Local Netlify folder
+.netlify
+.vercel
+
+# Archived files (frontend files)
+archived/
+*archived
 archived
 
+# Temporary files
+*.tmp
+.cache/

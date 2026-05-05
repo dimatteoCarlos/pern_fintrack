@@ -4,7 +4,7 @@
 📦 IMPORT DEPENDENCIES
 =============================== 🌟 */
 import React from 'react';
-import styles from './styles/LoadingSpinner.module.css';
+import styles from './styles/loadingSpinner.module.css';
 
 /* 🌟 ============================
 🏷️ TYPE DEFINITIONS

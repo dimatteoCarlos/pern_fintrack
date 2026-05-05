@@ -4,7 +4,7 @@ import CircleLoader from '../../../../../loader/circleLoader/CircleLoader';
 
 import { RTAConfirmationModalPropsType } from './RTAConfirmationModal';
 
-import './InitialConfirmationDeleteAccountUI.css';
+import './initialConfirmationDeleteAccountUI.css';
 
 //TYPE DEFINITIONS
 type InitialConfirmationDeleteAccountUIPropsType =

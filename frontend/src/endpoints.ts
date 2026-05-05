@@ -1,5 +1,4 @@
 //frontend/src/endpoints.ts
-
 //=========================
 //API AUTH ROUTES ENDPOINTS
 //http://localhost:5000/api/

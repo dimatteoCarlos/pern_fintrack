@@ -1,5 +1,7 @@
 // backend/src/db/run_time_db_init/init-db.js
 // Script to initialize database (run once during build or manually)
+//This procedure is a run time DB verification, but, instead,  it is recommended to use DB manual migration procedures from scripts defined at db/migrations, documented in db/docs/db-documented
+
 import { pool } from '../config/configDB.js';
 import { initializeDatabase } from './initDatabase.js';
 

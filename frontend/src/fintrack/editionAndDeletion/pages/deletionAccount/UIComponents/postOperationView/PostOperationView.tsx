@@ -1,6 +1,6 @@
 //frontend/src/editionAndDeletion/pages/deletionAccount/UIComponents/postOperationView/PostOperationView.tsx
 
-import './PostOperationView.css';
+import './postOperationView.css';
 import { DictionaryDataType } from '../../../../utils/languages';
 import {
   DeletionSuccessDataType,

@@ -2,7 +2,7 @@
 
 import { DictionaryDataType } from "../../../../utils/languages.ts";
 
-import './ProceedButtonUI.css';
+import './proceedButtonUI.css';
 
 //TYPE DEFINITIONS
 type ProceedButtonUIPropsType = {

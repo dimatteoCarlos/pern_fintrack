@@ -1,6 +1,6 @@
 // 📁 frontend/src/auth/formUIComponents/ResetButton.tsx
 import React from "react";
-import styles from "./styles/ResetButton.module.css"; 
+import styles from "./styles/resetButton.module.css"; 
 
 type ResetButtonProps = {
   children: React.ReactNode;
