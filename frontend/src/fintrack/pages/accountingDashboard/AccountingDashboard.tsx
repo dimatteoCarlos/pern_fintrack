@@ -89,7 +89,7 @@ const AccountingDashboard = () => {
 
   const previousRoute = location.pathname; // this works as a previous route to account detail view, edit and delete
   // -----------------------------
-  console.log('location', {location},'previousRoute', {previousRoute},'state', location.state, 'originRoute', location.state?.originRoute)
+  // console.log('location', {location},'previousRoute', {previousRoute},'state', location.state, 'originRoute', location.state?.originRoute)
  
   // -----------------------------
   // 🔄 FETCHING - ACCOUNTS LIST
@@ -395,7 +395,7 @@ const AccountingDashboard = () => {
 
         {/*🆕 ACCOUNT ACTIONS MENU */}
         {menuState.isOpen && menuState.account && (
-         
+
           <AccountActionsMenu
             account={menuState.account}
             isOpen={menuState.isOpen}
