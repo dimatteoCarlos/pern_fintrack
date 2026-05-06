@@ -174,7 +174,7 @@ export const url_get_transactions_by_search: string =
   BASE_URL_APP + 'dashboard/movements/search/';
 
 //http://localhost:5000/api/fintrack/account/11
-export const url_get_category_budget_full_data = `${BASE_URL_APP}/fintrack/account`;
+export const url_get_category_budget_full_data = `${BASE_URL_APP}fintrack/account`;
 //--------------------------
 //ACCOUNT EDITION ENDPOINT
 //http://localhost:5000/api/fintrack/account/edit/11
@@ -194,11 +194,10 @@ export const url_patch_account_edit = BASE_URL_APP + 'account/edit';
  * @param targetAccountId The ID of the account whose deletion impact is being assessed.
  * @returns The full URL string.
  */
-
 export const url_report_of_affected_accounts = (
   targetAccountId: string | number,
 ) =>
-  `${BASE_URL_APP}/account/delete/report_of_affected_accounts/${targetAccountId}`;
+  `${BASE_URL_APP}account/delete/report_of_affected_accounts/${targetAccountId}`;
 
 // ===================================
 //💣 EXECUTE DELETION URL (Used by RTA, HARD, and SOFT methods)
@@ -207,4 +206,4 @@ export const url_report_of_affected_accounts = (
 //Endpoint: DELETE /fintrack/account/delete/:targetAccountId
 
 export const url_account_delete = (targetAccountId: string | number) =>
-  `${BASE_URL_APP}/account/delete/${targetAccountId}`;
+  `${BASE_URL_APP}account/delete/${targetAccountId}`;
