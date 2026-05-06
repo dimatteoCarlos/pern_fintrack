@@ -37,7 +37,7 @@ export const BASE_URL_APP: string = import.meta.env.VITE_API_URL_APP;
 // ===================================
 // FINTRACK FUNCTIONALITIES APP ENDPOINTS
 // ===================================
-//aCCOUNT_TYPES LIST
+//ACCOUNT_TYPES LIST
 //http://localhost:5000/api/fintrack/account/type/list
 export const url_account_type_list: string =
   BASE_URL_APP + 'account/type/list';
