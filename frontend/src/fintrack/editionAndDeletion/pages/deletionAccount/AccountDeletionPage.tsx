@@ -219,15 +219,17 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
       return <LoadingReportUI language={language} />;
     }
 
-    //Error state
+   //Error state
     if (reportError) {
       // console.log({reportError})
       return <ReportErrorUI errorMessage={reportError} t={translateText} />;
     }
-
-    //No impact REPORT
+   //---------------------------
+   // console.log('report:', affectedAccountReport)
+   //---------------------------
+   //No impact REPORT
     if (affectedAccountReport.length === 0) {
-      console.log('no report');
+     // console.log('no report');
       return <NoImpactReportUI t={translateText} />;
     }
 
@@ -298,7 +300,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
       ) : (
         // 🎯 PRE-OPERATION VIEW (Existing content)
         <>
-          {/* 🎯 ACCOUNT DETAILS SECTION */}
+         {/* 🎯 ACCOUNT DETAILS SECTION */}
           <AccountDetailsUI
             accountId={targetAccountId}
             accountName={targetAccountName}

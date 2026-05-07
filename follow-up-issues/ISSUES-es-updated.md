@@ -1,5 +1,11 @@
 TÓPICOS LISTOS, PENDIENTES Y CONSULTAS AL CLIENTE
 
+GESTION DE MULTIPLES SESIONES. PENDIENTE. 
+Como se gestionan: 
+Multiples sesiones de un mismo usuario. 
+Multiples usuarios. 
+Multiples sesiones de un mismo usuario en distintos dispositivos. 
+
 AUTENTICACION
 
 Al hacer SIGN OUT, se redirige a Sign In, en vez de ir al menu principal. LISTO.
@@ -41,9 +47,11 @@ Organizar la asignacion de la duracion de cookies y tokens. PENDIENTE.
 
 GENERAL
 
-como hacer DEPLOYMENT. PENDIENTE.
+como hacer DEPLOYMENT.Se logro hacer despliegue del FRONTEND en vercel. LISTO.
+El despliegue del BACKEND en vercel, se requiere hacer adaptaciones para que opere como SERVERLESS.Listo.
+Backend en vercel, aun no funciona en forma estable.PENDIENTE.
 
-Como verificar dinamicamente componentes no usados o rotos.LISTO. Con npx knip, pero no esta funcionando.
+Como verificar dinamicamente componentes no usados o rotos.LISTO. Con npx knip. Pero no funciona bien para backend. Se reorganizaron algunas carpetas.PENDIENTE buscar una mejor solucion.
 
 POCKET DETAIL
 Revisar pocket detail, para accounting view detail, y para budget pocket. No se esta renderizando los datos de las cuentas pocket saving.LISTO
@@ -313,7 +321,7 @@ Estructura de Creacion de Categorías y Subcategorias: Implementar una nueva est
 
 Balance de Inversiones: Aclarar el cálculo del balance total de las inversiones.
 
-Página de Detalle de Ingresos: Definir si se debe crear una página de detalle para las cuentas de income.Definida en accounting. LISTO. 
+Página de Detalle de Ingresos: Definir si se debe crear una página de detalle para las cuentas de income.Definida en accounting. LISTO.
 
 CONSULTAR PREFERENCIAS DE USUARIO Establecer la regla de negocio, para el manejo de fechas y coherencias entre fechas. Por ejemplo, al realizar una transaccion entre cuentas, no puede ser de cuentas con fechas en el futuro, o realizar transacciones en fechas anteriores a la creacion de las cuentas.
 
