@@ -1,5 +1,11 @@
 TÓPICOS LISTOS, PENDIENTES Y CONSULTAS AL CLIENTE
 
+GESTION DE MULTIPLES SESIONES. PENDIENTE. 
+Como se gestionan: 
+Multiples sesiones de un mismo usuario. 
+Multiples usuarios. 
+Multiples sesiones de un mismo usuario en distintos dispositivos. 
+
 AUTENTICACION
 
 Al hacer SIGN OUT, se redirige a Sign In, en vez de ir al menu principal. LISTO.
