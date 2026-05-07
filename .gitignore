@@ -81,3 +81,10 @@ storybook-static/
 *.key
 .vercel
 .env*.local
+
+# ===============================
+#🧪 SCRIPTS
+# ===============================
+SCRIPTS
+scripts/
+*scripts
