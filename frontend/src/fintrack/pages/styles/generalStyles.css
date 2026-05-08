@@ -38,14 +38,13 @@ layout style is stablished by the following elements:
 
   :root{
 /* Navigation bars - scalable */
---navbar-top-height: 5rem;/* TrackerNavbar - default 64px */
-   --navbar-bottom-height: 3.5rem;/* MainNavbar - default 56px */
+  --header-height: 12.5rem;
+  --navbar-top-height: 5rem;/* TrackerNavbar - default 64px */
+  --navbar-bottom-height: 3.5rem;/* MainNavbar - default 56px */
 
 /* Constants for layout calculation */
-    --header-content-height: 6.8rem;
-
-    --gap-between: 1.0rem ; /*0.5rem;*//*  Spacing between header, navbar, and card */
-
+  --header-content-height: 6.8rem;
+  --gap-between: 1.0rem ; /*0.5rem;*//*  Spacing between header, navbar, and card */
   --header-total-height: calc(var(--topSpaceHeight) + var(--header-content-height));/* this will positioned navbar and card*/
 
   }
