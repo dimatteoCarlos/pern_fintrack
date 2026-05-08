@@ -129,6 +129,7 @@ article {
   padding: 1rem 1.625rem;
 
   background: url('../../../../assets/cardBgTexture.png') repeat;
+
   /*figma*/
   left: 50%;
   transform: translateX(-50%);
@@ -138,15 +139,30 @@ article {
 }
 
 .cards__presentation--tracker {
-  /* fixed top position */
-  /* top: calc(var(--topSpaceHeight) + 30%); */
+/* fixed top position */
+/* top: calc(var(--topSpaceHeight) + 30%); */
 
-  /* [MODIFIED] Position based on header + navbar + two gaps */
+/* [MODIFIED] Position based on header + navbar + two gaps */
   top: calc(
     var(--header-total-height) + var(--navbar-top-height) +
       (var(--gap-between) * 2)
   );
+
+/* SCROLL */
+  overflow-y: auto;
+  overflow-x:hidden;
+  scroll-behavior: smooth;
+  padding-right: 0.5rem;
+
+  max-height: calc(100dvh - var(--header-height) - var(--navbar-top-height) - var(--navbar-bottom-height) - 1rem);
+
+   padding-right: 0.5rem;
+   margin-bottom: calc(var(--navbar-bottom-height) + 0.5rem);
 }
+
+/* .cards__presentation--tracker form > :last-child {
+  margin-bottom: calc(var(--navbar-bottom-height)*1 + 0.5rem);
+} */
 
 .state__card--top,
 .state__card--bottom {
@@ -316,7 +332,6 @@ textarea:invalid {
 /* ========================================
    📱 TRANSFER MOBILE OPTIMIZATION (width ≤470px)
 ====================================== */
-
 @media screen and (max-width: 470px) {
   .transfer .account.card--title {
     flex-direction: row;
@@ -494,5 +509,11 @@ textarea:invalid {
     border-radius: 0.8em !important;
     border: 2px solid var(--dark) ;
     /* background-color: orange; */
+  }
+}
+
+@media (max-height: 733px) {
+  .separator__container {
+    display: none;
   }
 }
