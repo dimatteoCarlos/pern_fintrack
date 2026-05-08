@@ -49,7 +49,7 @@ function BudgetLayout() {
 
   return (
     <>
-      <div className='budgetLayout '>
+      <div className='budgetLayout'>
         <div className='layout__header'>
           <div className='headerContent__container'>
             <TitleHeader></TitleHeader>
