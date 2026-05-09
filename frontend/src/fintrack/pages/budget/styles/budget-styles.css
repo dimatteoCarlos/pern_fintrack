@@ -8,22 +8,28 @@
 /*BigBoxResult*/
 
 /*it includes the tracker navbar styles*/
-.budgetLayout .total__container {
+.budgetLayout {
   display: flex;
   flex-direction: column;
+  border-radius: 1rem 1rem 0 0 !important;
 
+  /* background-color: red; */
   gap: 1rem;
   top: 7.5rem;
   width: 81.11%; /*ORIGINAL*/
   width: 88%; /*CHANGED*/
   padding: 0.75rem;
   /* border:1px solid red; */
+   margin: 0 auto;
+   align-self: center; 
+   background-color: #1b1b1b;
+
 }
 
 /*afecta solo a budget*/
-.budgetLayout .total__container .total__amount {
+.budgetLayout .total__amount {
   font-size: 2rem;
-  display: flex;
+  /* display: flex; */
   color: var(--light);
   letter-spacing: 1px;
 }
