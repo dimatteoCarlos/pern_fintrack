@@ -295,13 +295,7 @@ const AccountingDashboard = () => {
       },
     });
 
-    // showToast(
-    //   `Delete functionality for ${account.account_name} will be implemented soon!`,
-    //   'warning',
-    // );
-    // console.log('Delete account:', account)
-  };
-
+  
   //====================================
   // 📦 ACCOUNT GROUPS RENDER FUNCTION
   const renderAccountGroups = () => {
@@ -390,7 +384,7 @@ const AccountingDashboard = () => {
           type={toast.type}
           visible={toast.visible}
           onClose={hideToast}
-          duration={1500}
+          duration={3000}
         />
 
         {/*🆕 ACCOUNT ACTIONS MENU */}
