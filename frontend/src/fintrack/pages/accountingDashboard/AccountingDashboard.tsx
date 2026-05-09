@@ -294,8 +294,8 @@ const AccountingDashboard = () => {
         originRoute: originRoute,
       },
     });
+  };
 
-  
   //====================================
   // 📦 ACCOUNT GROUPS RENDER FUNCTION
   const renderAccountGroups = () => {
