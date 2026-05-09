@@ -1,12 +1,12 @@
 // frontend/src/general_components/datepicker/Datepicker.tsx
-
+ import React from "react";
 import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 import './styles/datepicker-styles.css';
+import "react-datepicker/dist/react-datepicker.css";
+
 //-------
 // import { showDate } from '../../helpers/functions';
 import { VariantType } from '../../types/types';
-import React from 'react';
 
 //to express date in spanish
 // import es  from 'date-fns/locale/es';

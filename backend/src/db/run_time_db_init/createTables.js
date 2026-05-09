@@ -15,15 +15,11 @@ export const mainTables = [
      user_lastname VARCHAR(25) NOT NULL,
      user_contact VARCHAR(25),
      password_hashed VARCHAR(255) NOT NULL, 
-     currency_id INT,
-     ON DELETE SET NULL ON UPDATE CASCADE,
-     REFERENCES currencies(currency_id)
+     currency_id INT REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,
      google_id VARCHAR(255) UNIQUE,
      display_name VARCHAR(255),
      auth_method VARCHAR(255) DEFAULT 'password',
-     user_role_id INT,
-     ON DELETE SET NULL ON UPDATE CASCADE,
-     REFERENCES user_roles(user_role_id)
+     user_role_id INT REFERENCES user_roles(user_role_id) ON DELETE SET NULL ON UPDATE CASCADE,
      deleted_at TIMESTAMPTZ DEFAULT NULL,
      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
      updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -149,21 +145,21 @@ export const mainTables = [
 
 //=============================================
 
-export const createSearchIndexes = [
-  {
-    tblName: 'currencies',
-    index: `CREATE UNIQUE INDEX index_currency_code ON currencies(currency_code)`,
-  },
-  {
-    tblName: 'account_types',
-    index: `CREATE UNIQUE INDEX index_account_type_name ON account_types(account_type_name)`,
-  },
+// export const createSearchIndexes = [
+//   {
+//     tblName: 'currencies',
+//     index: `CREATE UNIQUE INDEX index_currency_code ON currencies(currency_code)`,
+//   },
+//   {
+//     tblName: 'account_types',
+//     index: `CREATE UNIQUE INDEX index_account_type_name ON account_types(account_type_name)`,
+//   },
 
-  {
-    tblName: 'refresh_tokens',
-    index: `CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens (user_id);`,
-  },
-];
+//   {
+//     tblName: 'refresh_tokens',
+//     index: `CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens (user_id);`,
+//   },
+// ];
 
 // ===========================
 //Create main tables needed at initialization of the app
