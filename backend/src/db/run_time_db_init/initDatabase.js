@@ -33,10 +33,10 @@ export async function initializeDatabase() {
     const exists = await tableExists(client, 'app_initialization');
     if (!exists) {
       const createQuery = ` CREATE TABLE IF NOT EXISTS app_initialization (
-    id SERIAL PRIMARY KEY,
-    tables_created BOOLEAN NOT NULL DEFAULT FALSE,
-    initialized_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+       id SERIAL PRIMARY KEY,
+       tables_created BOOLEAN NOT NULL DEFAULT FALSE,
+       initialized_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
       await client.query(createQuery);
     }
@@ -75,8 +75,8 @@ export async function initializeDatabase() {
          tables_created = EXCLUDED.tables_created,
          updated_at = NOW()
      `);
-//UPDATE app_initialization
-// SET tables_created = TRUE, updated_at = NOW();
+        //UPDATE app_initialization
+        // SET tables_created = TRUE, updated_at = NOW();
         await client.query('COMMIT');
 
         console.log(pc.green('Application initialized successfully'));
@@ -92,9 +92,9 @@ export async function initializeDatabase() {
     //---------------------------------
     //truncate or drop all tables manually
     //Manual truncate/drop (disabled by flags)
-    const tableActions = { isActive: false, allTables: false, isDrop: false };
+    const tableActions = { isTruncate: false, allTables: false, isDrop: false };
 
-    if (tableActions.isActive) {
+    if (tableActions.isTruncate) {
       await Promise.allSettled(
         mainTables.map(async (item, indx) => {
           try {
@@ -143,8 +143,8 @@ export async function initializeDatabase() {
      */
     //=============================
     //Create tables manually
-    const createDbFlag = false;
-    if (createDbFlag) {
+    const createTableDbFlag = true;
+    if (createTableDbFlag) {
       await Promise.allSettled(
         mainTables.map(async (item, ind) => {
           try {
