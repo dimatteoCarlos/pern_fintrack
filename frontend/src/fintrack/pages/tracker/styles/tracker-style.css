@@ -59,7 +59,7 @@
   height: var(--navbar-top-height);
   padding: 0.75rem;
 
-  background-color:#252525;
+  background-color: #252525;
 }
 
 .trackerNavbar__container,
@@ -72,8 +72,9 @@
   /*Variable position based on header total height + gap*/
   top: calc(var(--header-total-height) + var(--gap-between));
 }
-
-/*----card separator component-----*/
+/* =============================== */
+/*----CARD SEPARATOR COMPONENT-----*/
+/* =============================== */
 .separator__container {
   width: 100%;
   position: absolute;
@@ -120,7 +121,9 @@ article {
   border: none;
 }
 
-/*---tracker card results---*/
+/* ============================= */
+/*---TRACKER CARD PRESENTATION---*/
+/* ============================= */
 
 .cards__presentation--tracker {
   width: 88%;
@@ -139,25 +142,22 @@ article {
 }
 
 .cards__presentation--tracker {
-/* fixed top position */
-/* top: calc(var(--topSpaceHeight) + 30%); */
-
-/* [MODIFIED] Position based on header + navbar + two gaps */
+  /* [MODIFIED] Position based on header + navbar + two gaps */
   top: calc(
     var(--header-total-height) + var(--navbar-top-height) +
       (var(--gap-between) * 2)
   );
 
-/* SCROLL */
+  /* SCROLL */
   overflow-y: auto;
-  overflow-x:hidden;
+  overflow-x: hidden;
   scroll-behavior: smooth;
   padding-right: 0.5rem;
 
-  max-height: calc(100dvh - var(--header-height) - var(--navbar-top-height) - var(--navbar-bottom-height) - 1rem);
+  /* max-height: calc(100dvh - var(--header-height) - var(--navbar-top-height) - var(--navbar-bottom-height) - 1rem); */
 
-   padding-right: 0.5rem;
-   margin-bottom: calc(var(--navbar-bottom-height) + 0.5rem);
+  /* padding-right: 0.5rem; */
+  /* padding-bottom: calc(var(--navbar-bottom-height) + 1rem); */
 }
 
 /* .cards__presentation--tracker form > :last-child {
@@ -359,9 +359,9 @@ textarea:invalid {
 
   /* Force exact height for chip container */
   .transfer .radio-input__options--chip {
-    height: 1rem;
-    min-height: 1.1rem;
-    max-height: 1.1rem;
+    height: 0.95rem;
+    min-height: 0.95rem;
+    max-height: 0.95rem;
 
     overflow-x: auto;
     overflow-y: hidden;
@@ -462,26 +462,26 @@ textarea:invalid {
   .card__screen {
     height: calc(
       2.2rem + (2.8rem - 2.2rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
     ) !important;
     padding: calc(
         0.15rem + (0.5rem - 0.15rem) *
-          min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+          min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
       )
       calc(
         0.35rem + (0.5rem - 0.35rem) *
-          min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+          min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
       ) !important;
   }
 
   .inputNumber {
     font-size: calc(
       1.1rem + (1.5rem - 1.1rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
     ) !important;
     line-height: calc(
       1.3rem + (2rem - 1.3rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
     ) !important;
   }
 
@@ -489,15 +489,15 @@ textarea:invalid {
   .icon-currency {
     height: calc(
       1.8rem + (2.4rem - 1.8rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
     ) !important;
     width: calc(
       1.8rem + (2.4rem - 1.8rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
     ) !important;
     font-size: calc(
       0.55rem + (0.875rem - 0.65rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB,800px) - 700px)))
+        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
     ) !important;
     display: flex !important;
     align-items: center !important;
@@ -507,13 +507,85 @@ textarea:invalid {
 
   .icon-currency {
     border-radius: 0.8em !important;
-    border: 2px solid var(--dark) ;
+    border: 2px solid var(--dark);
     /* background-color: orange; */
   }
 }
 
-@media (max-height: 733px) {
-  .separator__container {
-    display: none;
+@media (max-height: 700px) {
+  .cards__presentation--tracker {
+    max-height: calc(
+      100dvh - var(--header-total-height) - var(--navbar-top-height) -
+        var(--navbar-bottom-height) - (var(--gap-between) * 3)
+    );
+
+    overflow-y: auto;
   }
+
+  .separator__container {
+    position: static;
+    transform: none;
+    width: calc(100% + 2.25rem);
+    margin-left: -1.625rem;
+  }
+
+  .card--title--top {
+    padding: 1.5rem 0 0.4rem 0;
+  }
+}
+
+@media (max-height: 701px) {
+  .cards__presentation--tracker {
+    bottom: calc(var(--navbar-bottom-height) + 1rem);
+    overflow-y: auto;
+  }
+
+  .account.card--title {
+    gap: 0.15rem;
+  }
+
+   .card--title {
+   padding-top: 0.25rem;
+   padding-bottom: 0.15rem;
+ }
+
+  .card--title--top {
+    padding-top: 0.35rem;
+    padding-bottom: 0.15rem;
+  }
+
+ }
+
+ /* ====================================
+   📱 PNL ULTRA COMPACT MODE
+==================================== */
+
+@media (max-height: 701px) {
+
+  .pnl .card__typeDate--type,
+  .pnl .card__typeDate--date,
+  .pnl .card__typeDate--element {
+    padding-top: 0.35rem;
+  }
+
+  .pnl .card__screen--type {
+    padding: 0.28rem 0;
+    min-height: 2rem;
+  }
+
+  .pnl .card__screen--date {
+    padding: 0.28rem;
+    min-height: 2rem;
+  }
+
+  .pnl .screen--concept {
+    font-size: 0.875rem;
+    line-height: 1rem;
+  }
+
+  .pnl .card--title {
+    padding-top: 0.15rem;
+    padding-bottom: 0.1rem;
+  }
+
 }
