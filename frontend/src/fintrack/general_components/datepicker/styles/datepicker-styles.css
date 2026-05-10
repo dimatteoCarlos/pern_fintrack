@@ -1,5 +1,5 @@
 /*tracker-style.css*/
-z
+
 /*-----  datepicker  ---------*/
 .form__datepicker__container {
   border: 1px solid var(--creme);
@@ -55,16 +55,89 @@ z
   position: relative;
   /* border: 1px solid green; */
 }
-.react-datepicker-popper {
-  /*don't know yet how to define this as a centered modal*/
-  position: absolute;
-  /* transform: translate(61px, 311.818px) !important; */
-  transform: translate(-10%, -95%) !important;
-  /* top:-5rem !important;
-  left: 0rem !important; */
+.react-datepicker__portal {
+  background-color: rgba(0, 0, 0, 0.25);
+
+  display: block;
+
+  padding: 0;
+
+  overflow: hidden;
 }
 
-.react-datepicker__triangle {
+.react-datepicker {
+  transform-origin: top center;
+}
+/* =================================
+   DATEPICKER VIEWPORT FIT
+==================================== */
+/* -------- DESKTOP / LARGE HEIGHT -------- */
+
+@media (min-height: 901px) {
+
+  .react-datepicker {
+    transform:
+      translateY(-18vh)
+      scale(0.84);
+  }
+
+}
+
+/* -------- TABLET / MEDIUM HEIGHT -------- */
+
+@media (max-height: 900px) {
+
+  .react-datepicker {
+    transform:
+      translateY(-20vh)
+      scale(0.82);
+  }
+
+}
+
+/* -------- SMALL TABLET -------- */
+
+@media (max-height: 800px) {
+
+  .react-datepicker {
+    transform:
+      translateY(-22vh)
+      scale(0.76);
+  }
+
+}
+
+/* -------- MOBILE -------- */
+
+@media (max-height: 700px) {
+
+  .react-datepicker {
+    transform:
+      translateY(-11vh)
+      scale(0.70);
+  }
+
+}
+/* -------- MOBILE -------- */
+
+/* @media (max-height: 700px) {
+
+  .react-datepicker {
+    transform:
+      translateY(-24vh)
+      scale(0.70);
+  }
+
+} */
+ 
+ /*
+ .react-datepicker-popper {
+   position: absolute;
+   transform: translate(-10%, -95%) !important;
+   left: 0rem !important;
+ }
+ 
+ .react-datepicker__triangle {
   display: none;
 }
 
