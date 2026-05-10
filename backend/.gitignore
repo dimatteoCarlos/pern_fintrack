@@ -41,3 +41,5 @@ archived/
 *.tmp
 .cache/
 .env*.local
+
+.depcheckrc/
