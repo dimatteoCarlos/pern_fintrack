@@ -68,8 +68,11 @@ function Datepicker({ date, changeDate, variant }: DatePickerProps) {
       dateFormat={DATE_FORMAT}
       minDate={MIN_DATE}
       maxDate={MAX_DATE}
-      shouldCloseOnSelect
       customInput={<ReadOnlyInput />}
+      shouldCloseOnSelect
+      withPortal
+      // popperPlacement = 'top'
+      
       className={
         variant == 'tracker' || variant == 'light'
           ? 'tracker__inside__datepicker'
