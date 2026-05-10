@@ -149,7 +149,8 @@ article {
   );
 
   /* SCROLL */
-  overflow-y: auto;
+  /* overflow-y: auto; */
+  overflow-y: visible;
   overflow-x: hidden;
   scroll-behavior: smooth;
   padding-right: 0.5rem;
