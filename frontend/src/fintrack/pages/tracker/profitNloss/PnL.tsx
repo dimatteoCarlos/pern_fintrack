@@ -33,6 +33,9 @@ import Datepicker from '../../../general_components/datepicker/Datepicker.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import TopCard from '../components/TopCard.tsx';
+
+import '../styles/tracker-style.css';
+
 // =====================
 // 📝 TYPES
 // =====================

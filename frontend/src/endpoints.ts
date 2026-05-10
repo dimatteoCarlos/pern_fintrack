@@ -5,9 +5,10 @@
 
 //AUTHENTICATION & USER HANDLER
 // http://localhost:5000/api/auth/
+export const BASE_URL: string = import.meta.env.VITE_API_BASE_URL;
+
 export const BASE_URL_AUTH: string = import.meta.env.VITE_API_BASE_URL_AUTH;
 
-export const BASE_URL: string = import.meta.env.VITE_API_BASE_URL;
 
 //sign-up
 export const url_signup: string = BASE_URL_AUTH + 'sign-up';
