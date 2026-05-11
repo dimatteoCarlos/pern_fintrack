@@ -109,11 +109,6 @@ export function EditAccount(): JSX.Element {
     { message: string; status: number } | undefined
   >(undefined);
 
-  // const [formData, setFormData] = useState<GenericEditFormData>({});
-  // const [validationMessages, setValidationMessages] = useState<ValidationMessagesType<GenericEditFormData>>({});
-
-  // const [isReset] = useState(false);
-
   // 🔍 ACCOUNT TYPE IDENTIFICATION - DETERMINE FORM CONFIGURATION
   const accountType = accountData ? accountData.account_type_name : null;
   // console.log('apiData', {accountData})
