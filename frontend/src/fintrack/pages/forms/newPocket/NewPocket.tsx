@@ -405,12 +405,13 @@ function NewPocket() {
             </label>
 
             <div className='form__datepicker__container'>
+             
               <FormDatepicker
                 changeDate={changeDesiredDate} //onChange
                 date={pocketData.desiredDate}
                 variant={'form'}
-                // isReset={isReset}
-              />
+                popperClassName='pocket-datepicker-popper'/>
+
             </div>
           </div>{' '}
           {/* END. container--pocketName form__container*/}

@@ -217,6 +217,7 @@ export function UniversalDynamicInput<T extends Record<string, unknown>>({
               changeDate={handleDateChange(fieldConfig.fieldName)}
               date={dateValue}
               variant={'form'}
+              // popperClassName='pocket-datepicker-popper'
             />
           </div>
         );
