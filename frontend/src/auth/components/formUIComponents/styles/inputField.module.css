@@ -241,7 +241,7 @@
 
 /* Small phones */
 @media (max-width: 360px) {
-  .inputField {
+ .inputField {
     padding: 0.3125rem 0.5rem;
   }
 }
