@@ -50,18 +50,28 @@ z
 
 /*-----------------------------------*/
 
-/*MODIFIED DATE PICKER STYLES */
+/*MODIFIED REACT DATE PICKER STYLES */
+.react-datepicker {
+  transition: transform 0.2s ease;
+}
+
 .react-datepicker__tab-loop {
   position: relative;
   /* border: 1px solid green; */
 }
-.react-datepicker-popper {
-  /*don't know yet how to define this as a centered modal*/
-  position: absolute;
-  /* transform: translate(61px, 311.818px) !important; */
-  transform: translate(-10%, -95%) !important;
-  /* top:-5rem !important;
-  left: 0rem !important; */
+
+/* =========================================
+   PNL DATEPICKER POSITION
+========================================= */
+.pnl-datepicker-popper {
+  transform: translate(-55%, -85%) !important;
+}
+
+/* =========================================
+   POCKET DATEPICKER POSITION
+========================================= */
+.pocket-datepicker-popper {
+  transform: translate(5%, -85%) !important;
 }
 
 .react-datepicker__triangle {
@@ -103,15 +113,34 @@ z
   background-color: var(--creme);
 }
 
-a.react-datepicker__navigation.react-datepicker__navigation--years.react-datepicker__navigation--years-upcoming {
-  background: url('../../../assets/ArrowDownDarkSvg.svg') no-repeat center;
-  transform: rotate(180deg);
-  top: 1px;
+/* =========================================
+   YEAR & MONTH SELECT DROPDOWNS
+========================================= */
+.react-datepicker__year-select,
+.react-datepicker__month-select {
+
+  /* appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none; */
+
+  background-color: var(--creme);
+  color: var(--dark);
+
+  border: 1px solid var(--dark);
+  border-radius: 0.5rem;
+
+  padding: 0.2rem 1.5rem 0.2rem 0.5rem;
+
+  font-size: 0.875rem;
+  font-weight: 600;
+
+  cursor: pointer;
 }
 
-a.react-datepicker__navigation.react-datepicker__navigation--years.react-datepicker__navigation--years-previous {
-  background: url('../../../assets/ArrowDownDarkSvg.svg') no-repeat center;
-  top: 1px;
+/* dropdown options */
+.react-datepicker__year-select option,
+.react-datepicker__month-select option {
+  background-color: var(--creme);
+  color: var(--dark);
 }
-
 /*-----------*/
