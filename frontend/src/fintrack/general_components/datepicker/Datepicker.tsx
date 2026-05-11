@@ -61,9 +61,13 @@ function Datepicker({ date, changeDate, variant }: DatePickerProps) {
     <DatePicker
       selected={date}
       onChange={handleChange}
+
       showYearDropdown
-      scrollableMonthYearDropdown
-      yearDropdownItemNumber={100}
+      // scrollableMonthYearDropdown
+      scrollableYearDropdown
+      yearDropdownItemNumber={15}
+      dropdownMode="select"
+
       placeholderText='DD/MM/YYYY'
       dateFormat={DATE_FORMAT}
       minDate={MIN_DATE}
