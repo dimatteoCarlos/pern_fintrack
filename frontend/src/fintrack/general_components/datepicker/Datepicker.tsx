@@ -1,8 +1,8 @@
 // frontend/src/general_components/datepicker/Datepicker.tsx
- import React from "react";
+import React from 'react';
 import DatePicker from 'react-datepicker';
 import './styles/datepicker-styles.css';
-import "react-datepicker/dist/react-datepicker.css";
+import 'react-datepicker/dist/react-datepicker.css';
 
 //-------
 // import { showDate } from '../../helpers/functions';
@@ -19,6 +19,7 @@ type DatePickerProps = {
   changeDate: (selectedDate: Date) => void;
   variant?: VariantType;
   isReset?: boolean;
+  popperClassName?: string;
 };
 
 // ⚙️ Config estándar
@@ -45,7 +46,7 @@ const ReadOnlyInput = React.forwardRef<
   );
 });
 //--------------------
-function Datepicker({ date, changeDate, variant }: DatePickerProps) {
+function Datepicker({ date, changeDate, variant, popperClassName }: DatePickerProps) {
   const handleChange = React.useCallback(
     (selectedDate: Date | null) => {
       if (!selectedDate) return;
@@ -62,14 +63,17 @@ function Datepicker({ date, changeDate, variant }: DatePickerProps) {
       selected={date}
       onChange={handleChange}
       showYearDropdown
-      scrollableMonthYearDropdown
-      yearDropdownItemNumber={100}
+      scrollableYearDropdown
+      yearDropdownItemNumber={5}
+      // dropdownMode='select'
+
       placeholderText='DD/MM/YYYY'
       dateFormat={DATE_FORMAT}
       minDate={MIN_DATE}
       maxDate={MAX_DATE}
       shouldCloseOnSelect
       customInput={<ReadOnlyInput />}
+      popperClassName={popperClassName}
       className={
         variant == 'tracker' || variant == 'light'
           ? 'tracker__inside__datepicker'
