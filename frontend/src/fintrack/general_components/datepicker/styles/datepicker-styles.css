@@ -1,5 +1,5 @@
 /*tracker-style.css*/
-
+z
 /*-----  datepicker  ---------*/
 .form__datepicker__container {
   border: 1px solid var(--creme);
@@ -59,13 +59,19 @@
   position: relative;
   /* border: 1px solid green; */
 }
-.react-datepicker-popper {
-  /*don't know yet how to define this as a centered modal*/
-  position: absolute;
-  /* transform: translate(61px, 311.818px) !important; */
-  transform: translate(-10%, -95%) !important;
-  /* top:-5rem !important;
-  left: 0rem !important; */
+
+/* =========================================
+   PNL DATEPICKER POSITION
+========================================= */
+.pnl-datepicker-popper {
+  transform: translate(-55%, -85%) !important;
+}
+
+/* =========================================
+   POCKET DATEPICKER POSITION
+========================================= */
+.pocket-datepicker-popper {
+  transform: translate(5%, -85%) !important;
 }
 
 .react-datepicker__triangle {
