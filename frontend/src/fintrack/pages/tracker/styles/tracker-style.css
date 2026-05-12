@@ -130,7 +130,7 @@ article {
   margin: 0 auto;
   border-radius: 1rem;
   padding: 1rem 1.625rem;
-
+background-color: white;
   background: url('../../../../assets/cardBgTexture.png') repeat;
 
   /*figma*/
@@ -155,15 +155,7 @@ article {
   scroll-behavior: smooth;
   padding-right: 0.5rem;
 
-  /* max-height: calc(100dvh - var(--header-height) - var(--navbar-top-height) - var(--navbar-bottom-height) - 1rem); */
-
-  /* padding-right: 0.5rem; */
-  /* padding-bottom: calc(var(--navbar-bottom-height) + 1rem); */
 }
-
-/* .cards__presentation--tracker form > :last-child {
-  margin-bottom: calc(var(--navbar-bottom-height)*1 + 0.5rem);
-} */
 
 .state__card--top,
 .state__card--bottom {
