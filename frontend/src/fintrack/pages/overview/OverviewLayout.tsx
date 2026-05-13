@@ -190,12 +190,11 @@ function OverviewLayout() {
 
       const timer = setTimeout(() => {
         setErrorMessage(null);
-
-        //allows to show the same error later
+       //allows to show the same error later
         setTimeout(() => {
           setLastErrorMessage(null);
         }, 1000);
-      }, 2000);
+      }, 4000);
 
       return () => clearTimeout(timer);
     }

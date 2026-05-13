@@ -15,7 +15,7 @@ duration?: number;
 }
 
 // 🚨 TOAST COMPONENT
-function Toast({message, type, visible, onClose, duration=3000}:ToastPropsType){
+function Toast({message, type, visible, onClose, duration=5000}:ToastPropsType){
 // 🎯 TOAST EMOJI MAPPING
 const toastEmojis = {
     success: '✅',

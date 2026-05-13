@@ -384,7 +384,7 @@ const AccountingDashboard = () => {
           type={toast.type}
           visible={toast.visible}
           onClose={hideToast}
-          duration={3000}
+          duration={5000}
         />
 
         {/*🆕 ACCOUNT ACTIONS MENU */}

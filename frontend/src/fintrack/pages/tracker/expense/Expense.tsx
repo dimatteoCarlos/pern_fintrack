@@ -392,7 +392,7 @@ function Expense(): JSX.Element {
       showMessage('Validation failed. Please check your inputs.');
       return;
     }
-    showMessage('Processing transaction...', 2000);
+    showMessage('Processing transaction...', 4000);
     //-------------------------
     //POST ENDPOINT FOR MOVEMENT TRANSACTION
     //--sending data to server ------

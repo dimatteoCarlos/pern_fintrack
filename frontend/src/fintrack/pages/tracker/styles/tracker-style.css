@@ -130,7 +130,7 @@ article {
   margin: 0 auto;
   border-radius: 1rem;
   padding: 1rem 1.625rem;
-background-color: white;
+  background-color: white;
   background: url('../../../../assets/cardBgTexture.png') repeat;
 
   /*figma*/
@@ -154,7 +154,6 @@ background-color: white;
   overflow-x: hidden;
   scroll-behavior: smooth;
   padding-right: 0.5rem;
-
 }
 
 .state__card--top,
@@ -537,24 +536,22 @@ textarea:invalid {
     gap: 0.15rem;
   }
 
-   .card--title {
-   padding-top: 0.25rem;
-   padding-bottom: 0.15rem;
- }
+  .card--title {
+    padding-top: 0.25rem;
+    padding-bottom: 0.15rem;
+  }
 
   .card--title--top {
     padding-top: 0.35rem;
     padding-bottom: 0.15rem;
   }
+}
 
- }
-
- /* ====================================
+/* ====================================
    📱 PNL ULTRA COMPACT MODE
 ==================================== */
 
 @media (max-height: 701px) {
-
   .pnl .card__typeDate--type,
   .pnl .card__typeDate--date,
   .pnl .card__typeDate--element {
@@ -580,5 +577,4 @@ textarea:invalid {
     padding-top: 0.15rem;
     padding-bottom: 0.1rem;
   }
-
 }
