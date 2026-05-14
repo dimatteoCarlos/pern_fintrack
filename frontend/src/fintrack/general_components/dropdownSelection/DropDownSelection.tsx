@@ -1,4 +1,4 @@
-// frontend\src\general_components\dropdownSelection\DropDownSelection.tsx
+// frontend/src/general_components/dropdownSelection/DropDownSelection.tsx
 import Select, {
   components,
   DropdownIndicatorProps,
@@ -12,7 +12,6 @@ import { useEffect, useRef } from 'react';
 import ArrowDownDarkSvg from '../../../assets/ArrowDownDarkSvg.svg';
 import ArrowDownLightSvg from '../../../assets/ArrowDownLightSvg.svg';
 import { DropdownOptionType, VariantType } from '../../types/types';
-
 
 export type DropdownSelectPropType = {
   dropDownOptions: {
@@ -106,6 +105,17 @@ const createStyles = (
           ':active': { backgroundColor: '#333030' },
           ':hover': { backgroundColor: 'hsla(0, 3.00%, 19.40%, 0.50)' },
         },
+
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999, // Ensure the dropdown menu appears above other elements
+  }),
+
+  menuList: (base) => ({
+    ...base,
+    maxHeight: '360px', // Set a max height for the dropdown menu
+    overflowY: 'auto', // Enable vertical scrolling if the content exceeds the max height
+  }),
 });
 //----------------------------------
 //--Main component
@@ -146,10 +156,16 @@ function DropDownSelection({
       onChange={handleChange}
       placeholder={title}
       styles={createStyles(variant)}
-      closeMenuOnSelect
-      isSearchable={false}
+      closeMenuOnSelect={true}
+      tabSelectsValue={false}
+      captureMenuScroll={false}
+      isSearchable={true}
       isClearable
       ref={selectRef}
+      /* AVOID DROPDOWN CLIPPING */
+      menuPortalTarget={document.body}
+      menuPosition='fixed'
+      maxMenuHeight={220}
       menuPlacement={variant === 'tracker' ? 'top' : 'bottom'}
       components={{
         DropdownIndicator: createDropdownIndicator(variant), // passing variant without select props`
