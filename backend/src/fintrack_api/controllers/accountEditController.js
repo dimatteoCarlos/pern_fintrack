@@ -211,7 +211,7 @@ export const patchAccountById = async (req, res, next) => {
     await client.query('COMMIT'); // Commit if both updates were successful
 
     // 5. Deliver updated account to frontend (sync)
-    //getAccountById can be implemented here to deliver all acccount info updated as it i sreturned by getAccountById.
+    //getAccountById can be implemented here to deliver all acccount info updated as it is returned by getAccountById.
     req.params.accountId = accountId;
     const message = `Account ${accountId} updated successfully!`;
     console.log('success:', pc.greenBright(message));
