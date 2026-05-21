@@ -31,7 +31,7 @@ import { fetchNewBalance } from '../../../../auth/auth_utils/fetchNewTotalBalanc
 import {
   url_get_accounts_by_type,
   url_movement_transaction_record,
-} from '../../../../endpoints.ts';
+} from '../../../../urlConfig.ts';
 // =====================
 // UI COMPONENTS
 //=====================

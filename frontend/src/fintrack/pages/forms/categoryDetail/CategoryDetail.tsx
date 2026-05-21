@@ -14,7 +14,7 @@ import { useFetch } from '../../../hooks/useFetch.ts';
 import {
   url_get_account_by_id,
   url_get_transactions_by_account_id,
-} from '../../../../endpoints.ts';
+} from '../../../../urlConfig.ts';
 
 import {
   CategoryBudgetAccountsResponseType,

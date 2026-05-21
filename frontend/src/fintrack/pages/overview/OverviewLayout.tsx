@@ -8,7 +8,7 @@ import './styles/overview-styles.css';
 import { MessageToUser } from '../../general_components/messageToUser/MessageToUser.tsx';
 // import Overview from './Overview.tsx';
 
-import { url_get_total_account_balance_by_type } from '../../../endpoints.ts';
+import { url_get_total_account_balance_by_type } from '../../../urlConfig.ts';
 
 import {
   BalanceBankRespType,

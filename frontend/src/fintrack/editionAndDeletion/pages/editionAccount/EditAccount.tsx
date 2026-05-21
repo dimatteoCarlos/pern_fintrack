@@ -34,7 +34,7 @@ import { validateForm } from '../../../validations/utils/zod_validation.ts';
 import {
   url_get_account_details_by_id_for_edition,
   url_patch_account_edit,
-} from '../../../../endpoints.ts';
+} from '../../../../urlConfig.ts';
 
 // 🧱 UI COMPONENTS - REUSABLE PRESENTATION COMPONENTS
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';

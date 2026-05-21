@@ -16,7 +16,7 @@ import useAuth from '../../../../auth/hooks/useAuth.ts';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 
-import { url_create_category_budget_account } from '../../../../endpoints.ts';
+import { url_create_category_budget_account } from '../../../../urlConfig.ts';
 
 import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
 

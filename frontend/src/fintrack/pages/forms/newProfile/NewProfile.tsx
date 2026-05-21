@@ -26,7 +26,7 @@ import { validationData } from '../../../validations/utils/custom_validation.ts'
 import {
   url_create_debtor_account,
   url_get_accounts_by_type,
-} from '../../../../endpoints.ts';
+} from '../../../../urlConfig.ts';
 
 // 🏷️ TYPES & CONSTANTS
 import { CurrencyType, DropdownOptionType } from '../../../types/types.ts';

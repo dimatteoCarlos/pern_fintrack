@@ -26,7 +26,7 @@ import { CreatePocketSavingAccountApiResponseType } from '../../../types/respons
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
 // 🏷️ ENPOINTS
-import { url_create_pocket_saving_account } from '../../../../endpoints.ts';
+import { url_create_pocket_saving_account } from '../../../../urlConfig.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
@@ -122,7 +122,9 @@ function NewPocket() {
 
   //---------------------------------------
   // ✨ INPUT HANDLERS
-  function inputHandler(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function inputHandler(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
     e.preventDefault();
     const { name, value } = e.target;
 
@@ -405,13 +407,12 @@ function NewPocket() {
             </label>
 
             <div className='form__datepicker__container'>
-             
               <FormDatepicker
                 changeDate={changeDesiredDate} //onChange
                 date={pocketData.desiredDate}
                 variant={'form'}
-                popperClassName='pocket-datepicker-popper'/>
-
+                popperClassName='pocket-datepicker-popper'
+              />
             </div>
           </div>{' '}
           {/* END. container--pocketName form__container*/}

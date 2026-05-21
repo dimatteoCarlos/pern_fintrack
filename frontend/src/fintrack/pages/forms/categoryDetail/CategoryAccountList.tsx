@@ -10,7 +10,7 @@ import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
 import ListAccountOfCategory from './ListAccountOfCategory.tsx';
 
-import { url_get_accounts_by_category } from '../../../../endpoints.ts';
+import { url_get_accounts_by_category } from '../../../../urlConfig.ts';
 import { CategoryBudgetAccountsResponseType } from '../../../types/responseApiTypes.ts';
 import { CategorySummaryInfoType, CurrencyType } from '../../../types/types.ts';
 import { capitalize } from '../../../helpers/functions.ts';
@@ -18,7 +18,7 @@ import { capitalize } from '../../../helpers/functions.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 //==============================
 function CategoryAccountList() {
- // console.log('CategoryAccountList')
+  // console.log('CategoryAccountList')
   //get the info from location state
   const location = useLocation();
   const { categoryName } = useParams();

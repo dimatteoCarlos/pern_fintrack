@@ -18,7 +18,7 @@ import {
   DEFAULT_CURRENCY,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
-import { url_create_basic_account } from '../../../../endpoints.ts';
+import { url_create_basic_account } from '../../../../urlConfig.ts';
 
 import '../styles/forms-styles.css';
 

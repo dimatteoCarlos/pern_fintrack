@@ -1,6 +1,6 @@
 //frontend\src\fintrack\pages\budget\BudgetLayout.tsx
 import { useEffect, useMemo, useState } from 'react';
-import { url_get_total_account_balance_by_type } from '../../../endpoints.ts';
+import { url_get_total_account_balance_by_type } from '../../../urlConfig.ts';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import { useFetch } from '../../hooks/useFetch.ts';
 import { BalanceCategoryRespType } from '../../types/responseApiTypes.ts';

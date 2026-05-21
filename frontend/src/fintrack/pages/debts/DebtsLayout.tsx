@@ -2,7 +2,7 @@
 import DebtsBigBoxResult from './components/DebtsBigBoxResult.tsx';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import { DEFAULT_CURRENCY } from '../../helpers/constants.ts';
-import { url_get_total_account_balance_by_type } from '../../../endpoints.ts';
+import { url_get_total_account_balance_by_type } from '../../../urlConfig.ts';
 import { useEffect, useMemo, useState } from 'react';
 import { useFetch } from '../../hooks/useFetch.ts';
 import { DebtorRespType } from '../../types/responseApiTypes.ts';

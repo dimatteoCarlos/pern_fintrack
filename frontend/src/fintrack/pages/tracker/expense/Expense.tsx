@@ -28,7 +28,7 @@ import {
   url_get_accounts_by_type,
   url_get_total_account_balance_by_type,
   url_movement_transaction_record,
-} from '../../../../endpoints.ts';
+} from '../../../../urlConfig.ts';
 import {
   ACCOUNT_OPTIONS_DEFAULT,
   CATEGORY_OPTIONS_DEFAULT,

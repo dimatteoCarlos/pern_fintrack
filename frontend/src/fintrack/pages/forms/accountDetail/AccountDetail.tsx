@@ -35,12 +35,12 @@ import {
 import {
   url_get_account_by_id,
   url_get_transactions_by_account_id,
-} from '../../../../endpoints.ts';
+} from '../../../../urlConfig.ts';
 
 //styles import
 import '../styles/forms-styles.css';
 
-import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css'
+import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
 
 /*frontend/src/fintrack/pages/forms/accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css */
 

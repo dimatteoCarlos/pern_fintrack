@@ -8,7 +8,7 @@ import {
 } from '../../../helpers/functions.ts';
 import {} from '../../../types/types.ts';
 
-import { url_summary_balance_ByType } from '../../../../endpoints.ts';
+import { url_summary_balance_ByType } from '../../../../urlConfig.ts';
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 

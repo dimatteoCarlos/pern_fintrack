@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useFetch } from '../../hooks/useFetch';
 //---
 import { INITIAL_PAGE_ADDRESS } from '../../helpers/constants';
-import { url_get_all_accounting_accounts } from '../../../endpoints';
+import { url_get_all_accounting_accounts } from '../../../urlConfig';
 //---
 import AccountingBox from './AccountingBox';
 import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace';
@@ -72,7 +72,6 @@ const groupAccountsBytype = (
     // groups[accountType] = [...(groups[accountType] ||= []), account];
 
     (groups[accountType] ||= []).push(account);
-
   });
 
   return groups;
@@ -90,7 +89,7 @@ const AccountingDashboard = () => {
   const previousRoute = location.pathname; // this works as a previous route to account detail view, edit and delete
   // -----------------------------
   // console.log('location', {location},'previousRoute', {previousRoute},'state', location.state, 'originRoute', location.state?.originRoute)
- 
+
   // -----------------------------
   // 🔄 FETCHING - ACCOUNTS LIST
   //get all basic info accounts
@@ -232,7 +231,7 @@ const AccountingDashboard = () => {
       '/fintrack/overview/accounts';
 
     const detailRoute = `${baseRoute}/${account.account_id}`;
-     console.log('regular', {detailRoute}, {account}, {previousRoute})
+    console.log('regular', { detailRoute }, { account }, { previousRoute });
 
     navigateTo(detailRoute, {
       state: { previousRoute, detailedData: account },
@@ -245,7 +244,14 @@ const AccountingDashboard = () => {
   ) => {
     const categoryDetailRoute = `${ACCOUNT_TYPE_DETAIL_PAGE[account.account_type_name]}/${account.account_id}`;
 
-    console.log('categoryRoute', {categoryDetailRoute}, {account}, 'id', account.account_id, {previousRoute})
+    console.log(
+      'categoryRoute',
+      { categoryDetailRoute },
+      { account },
+      'id',
+      account.account_id,
+      { previousRoute },
+    );
 
     // 🧭 NAVIGATE TO CATEGORY DETAIL
     navigateTo(categoryDetailRoute, {
@@ -389,7 +395,6 @@ const AccountingDashboard = () => {
 
         {/*🆕 ACCOUNT ACTIONS MENU */}
         {menuState.isOpen && menuState.account && (
-
           <AccountActionsMenu
             account={menuState.account}
             isOpen={menuState.isOpen}

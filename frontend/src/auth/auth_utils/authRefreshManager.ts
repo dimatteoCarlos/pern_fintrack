@@ -18,7 +18,7 @@
 */
 
 import axios from 'axios';
-import { url_refreshToken } from '../../endpoints';
+import { url_refreshToken } from '../../urlConfig';
 import { invalidateSession } from './invalidateSession';
 
 // 🔒 Singleton promise – ensures only one refresh at a time
@@ -31,9 +31,10 @@ let refreshPromise: Promise<string> | null = null;
  * @throws Error if refresh fails (network, invalid refresh token, etc.)
  */
 export const getRefreshedToken = async (): Promise<string> => {
- console.log('[RefreshManager] ;getRefreshedToken called');
- 
-  if (!refreshPromise) {//Only the first caller creates the promise; others wait.
+  console.log('[RefreshManager] ;getRefreshedToken called');
+
+  if (!refreshPromise) {
+    //Only the first caller creates the promise; others wait.
     refreshPromise = (async () => {
       try {
         // Call refresh endpoint with cookie (no manual token)
@@ -60,7 +61,7 @@ export const getRefreshedToken = async (): Promise<string> => {
         // 📍 Save current location to redirect after login (context, not signal)
         const currentPath = window.location.pathname + window.location.search; //return route page + query string parameters
         sessionStorage.setItem('returnTo', currentPath);
-        
+
         // 🧹 Centralized session cleanup (storage + store, keeps remembered identity)
         invalidateSession('expired');
 

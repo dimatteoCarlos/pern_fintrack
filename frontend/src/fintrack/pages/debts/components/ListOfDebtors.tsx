@@ -1,7 +1,7 @@
 import { BoxContainer, BoxRow } from './boxComponents.tsx';
 import { currencyFormat } from '../../../helpers/functions.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
-import { url_summary_balance_ByType} from '../../../../endpoints.ts';
+import { url_summary_balance_ByType } from '../../../../urlConfig.ts';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import { Link } from 'react-router-dom';
 import {

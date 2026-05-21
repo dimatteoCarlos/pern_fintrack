@@ -1,5 +1,5 @@
 // src/utils/fetchNewTotalBalance.ts
-import { url_get_total_account_balance_by_type } from '../../endpoints';
+import { url_get_total_account_balance_by_type } from '../../urlConfig';
 import { BalanceBankRespType } from '../../fintrack/types/responseApiTypes';
 import { authFetch } from './authFetch';
 

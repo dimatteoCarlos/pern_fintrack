@@ -21,7 +21,7 @@ import {
   url_get_total_account_balance_by_type,
   url_monthly_TotalAmount_ByType,
   dashboardMovementTransactions,
-} from '../../../endpoints.ts';
+} from '../../../urlConfig.ts';
 
 //TYPES
 import {

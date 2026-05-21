@@ -8,7 +8,7 @@ import { useAccountStore } from '../../stores/useAccountStore.ts';
 import {
   url_account_delete,
   url_report_of_affected_accounts,
-} from '../../../endpoints.ts';
+} from '../../../urlConfig.ts';
 
 import {
   DELETION_TYPE_RTA,

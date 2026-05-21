@@ -21,10 +21,7 @@
 
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getRefreshedToken } from './authRefreshManager';
-import {
-  url_update_user,
-  url_change_password,
-} from '../../endpoints';
+import { url_update_user, url_change_password } from '../../urlConfig';
 
 /* 🔐 Authenticated fetch utility*/
 /**

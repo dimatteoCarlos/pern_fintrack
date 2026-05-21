@@ -1,7 +1,7 @@
 // frontend\src\pages\overview\components\InvestmentAccBalance.tsx
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { url_get_accounts_by_type } from '../../../../endpoints.ts';
+import { url_get_accounts_by_type } from '../../../../urlConfig.ts';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { currencyFormat } from '../../../helpers/functions.ts';
