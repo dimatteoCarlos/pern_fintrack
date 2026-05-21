@@ -448,7 +448,7 @@ function Expense(): JSX.Element {
 
     // Solo actualiza si los datos han llegado y son un número
     if (typeof total_balance === 'number') {
-      // Llama a la función de la store fuera de la fase de renderizado
+    // Llama a la función de la store fuera de la fase de renderizado
       setAvailableBudget(total_balance);
     }
     // Dependencia: Solo re-ejecuta cuando la respuesta del fetch de balance cambia
@@ -462,9 +462,9 @@ function Expense(): JSX.Element {
     if (isCheckingAuth) {
       setMessageToUser('Verifying session status. Please wait...');
     } else if (!isAuthenticated) {
-      // Use existing messageToUser state for feedback before redirecting
+     // Use existing messageToUser state for feedback before redirecting
       setMessageToUser(
-        'Session not active or expired. Redirecting to the sign-in page in 3 seconds...',
+       'Session not active or expired. Redirecting to the sign-in page in 3 seconds...',
       );
 
       timer = setTimeout(() => {
@@ -656,17 +656,21 @@ function Expense(): JSX.Element {
           setValidationMessages={setValidationMessages}
           updateTrackerData={updateTrackerData_Zod}
           trackerName={trackerState}
+
           currency={currency}
           updateCurrency={updateDataCurrency}
+
           setSelectState={
             setExpenseData as React.Dispatch<
               React.SetStateAction<typeof initialExpenseData>
             >
           }
+
           isReset={isReset}
           isResetDropdown={isResetDropdown}
           setIsReset={setIsReset}
           setIsResetDropdown={setIsResetDropdown}
+
           customSelectHandler={accountSelectHandler}
         />
         {/* end of TOP CARD */}
@@ -710,11 +714,10 @@ function Expense(): JSX.Element {
       {messageToUser && (
         <div className='fade-message'>
           <MessageToUser
-            // isLoading={false}
             isLoading={
-              isLoading ||
-              isLoadingBankAccounts ||
-              isLoadingCategoryBudgetAccounts
+             isLoading ||
+             isLoadingBankAccounts ||
+             isLoadingCategoryBudgetAccounts
             }
             error={
               postError ||

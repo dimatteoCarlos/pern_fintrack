@@ -45,7 +45,7 @@ export type ExpensesInfoType = {
 export type ExpenseType = {
   id: number;
   date: string;
-  category: string; //in the future specify the possible names as a union of string types
+  category: string;
   category_id: number;
   expense: number;
   description: string;
@@ -278,8 +278,6 @@ export type DebtsTrackerInputDataType = {
   note: string;
 };
 
-
-
 export type BasicTrackerMovementInputDataType = {
   amount:string;
   currency: CurrencyType;
@@ -320,7 +318,5 @@ export type CategorySummaryInfoType = {
     currency_code: CurrencyType;
     category_name?: string;
 }
-
-// export type ValidationMessagesType<T> = Partial<Record<keyof T, string>>;
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any

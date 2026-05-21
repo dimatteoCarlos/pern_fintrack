@@ -42,7 +42,7 @@ export const useAccountStore = create<
       ),
     })),
 
-  // 🗑️ NEW: LOGIC TO REMOVE ACCOUNT
+  // 🗑️ LOGIC TO REMOVE ACCOUNT
   removeAccount: (accountId) =>
     set((state) => ({
       allAccounts: state.allAccounts.filter(

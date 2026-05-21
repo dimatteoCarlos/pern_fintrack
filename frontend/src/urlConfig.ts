@@ -1,4 +1,4 @@
-//frontend/src/endpoints.ts
+//frontend/src/urlConfig.ts
 //=========================
 //API AUTH ROUTES ENDPOINTS
 //http://localhost:5000/api/
@@ -18,6 +18,7 @@ export const url_signin: string = BASE_URL_AUTH + 'sign-in';
 
 //sign-out
 export const url_signout: string = BASE_URL_AUTH + 'sign-out';
+
 //refresh-token
 export const url_refreshToken: string = BASE_URL_AUTH + 'refresh-token';
 
@@ -80,7 +81,6 @@ export const url_create_pocket_saving_account: string =
 export const url_create_debtor_account: string =
   BASE_URL_APP + 'account/new_account/debtor';
 
-//--for debts page
 //---GET ACCOUNT INFO BY ACCOUNT ID
 //--endpoint: http://localhost:5000/api/fintrack/debts/debtor/${account_id)?&user=c109eb15-4139-43b4-b081-8fb9860588af
 export const url_get_debtor_by_id: string = BASE_URL_APP + 'debts/debtor/';
