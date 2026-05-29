@@ -18,8 +18,7 @@ import {
   tblUserRoles,
 } from './populateDB.js';
 
-import { mainTables, createTables } from './createTables.js';
-
+import { mainTables, createTables, addFxAuditColumns } from './createTables.js';
 // ===========================
 // 📊 DATA BASE INITIALIZATION
 // ============================
@@ -171,6 +170,9 @@ export async function initializeDatabase() {
           }
         });
       });
+
+      // Add FX columns / Asegurar columnas FX (idempotente)
+      await addFxAuditColumns(client);
     }
     //=============================
     console.log(pc.greenBright('Base de datos inicializada correctamente.'));
