@@ -42,6 +42,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use(helmet());
 //CORS Configuration for access control
 const ACCEPTED_ORIGINS = [
+ process.env.CLIENT_URL,
   'http://localhost:5000',
   'http://localhost:5173',
   'http://localhost:5174',
@@ -50,7 +51,6 @@ const ACCEPTED_ORIGINS = [
   'http://localhost:8080',
   'http://localhost:1234',
   'http://localhost:5432',
-  process.env.CLIENT_URL,
   'https://pern-fintrack.vercel.app',
 ].filter(Boolean);
 
