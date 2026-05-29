@@ -48,8 +48,14 @@ export async function tblCurrencies(client = pool) {
       currency_code: 'usd',
       currency_name: 'us-dollars',
     },
+
     { currency_id: 2, currency_code: 'eur', currency_name: 'euros' },
+
     { currency_id: 3, currency_code: 'cop', currency_name: 'pesos col' },
+    
+    { currency_id: 4, currency_code: 'ves', currency_name: 'bolívares' },
+
+    { currency_id: 5, currency_code: 'mxn', currency_name: 'pesos mexicanos' },
   ];
 
   try {
