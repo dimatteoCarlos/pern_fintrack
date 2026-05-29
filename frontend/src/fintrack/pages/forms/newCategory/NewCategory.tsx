@@ -34,7 +34,7 @@ import CharacterCounter from '../../../general_components/characterCounter/Chara
 
 // import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
 // import { useLocation } from 'react-router-dom';
-//-------data config----------------------
+//-------data config----------------
 // === TYPE DEFINITIONS AND CONSTANTS ===
 const defaultCurrency = DEFAULT_CURRENCY;
 //----Category Nature Tiles---------------
@@ -183,7 +183,7 @@ Errores inesperados → Van al catch
     //------------------------------------
     //POST TO THE ENDPOINT FOR ACCOUNT DATA HERE
     // new category data into database
-    //------------------------------------
+    //-----------------------------------
     // Payload construction
     try {
       const payload: CategoryBudgetPayloadType = {
