@@ -7,7 +7,6 @@
 /*
 CONTENT:
 transactionAccountHelpers:
-
  determineTransactionType
  determineTransactionType_v1
  validateRequiredFields
@@ -17,7 +16,6 @@ transactionAccountHelpers:
  handleTransactionRecording
 
 dataFormatHelpers:
-
  formatDateToISO
  validateAndNormalizeDate
  validateAndNormalizeDateFn

@@ -1,5 +1,4 @@
 //backend/src/middleware/rateLimiter.js
-// backend/src/middleware/rateLimiter.js
 import rateLimit from 'express-rate-limit';
 import { ipKeyGenerator } from 'express-rate-limit';
 
