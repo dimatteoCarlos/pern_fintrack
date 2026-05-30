@@ -2,12 +2,12 @@
 // getAuthToken,clearAccessTokenFromCookie,verifyJWTToken, handleTokenError, verifyToken,verifyUser, verifyAdmin
 
 import jwt from 'jsonwebtoken';
-import { createError } from '../utils/errorHandling.js';
-import { pool } from '../db/config/configDB.js';
+import { createError } from '../../utils/errorHandling.js';
+import { pool } from '../../db/config/configDB.js';
 import {
   clearAccessTokenCookie,
   clearRefreshTokenCookie,
-} from '../utils/authUtils/cookieConfig.js';
+} from '../../utils/authUtils/cookieConfig.js';
 
 // ======================================
 // 📊 ROLE HIERARCHY CONFIGURATION
@@ -41,9 +41,8 @@ export const clearRefreshTokenFromCookie = (res) => {
 // GET AUTHENTICATION TOKEN
 // =================================
 export const getAuthToken = (req) => {
-  
- //Debugging
- //console.log('🔍 ALL HEADERS RECEIVED:', req.headers); // ← DEBUG
+  //Debugging
+  //console.log('🔍 ALL HEADERS RECEIVED:', req.headers); // ← DEBUG
   // console.log('🔍 HEADERS keys:', Object.keys(req.headers));
   // console.log('🔍 COOKIES:', req.cookies);
 

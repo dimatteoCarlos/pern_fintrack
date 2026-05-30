@@ -1,66 +1,63 @@
 // backend/src/middleware/validateRequest.js
 // 🛡️ ZOD VALIDATION MIDDLEWARE (ZOD v4 COMPATIBLE)
 // Universal middleware to validate request bodies against Zod schemas
-import { createError } from '../utils/errorHandling.js';
+import { createError } from '../../utils/errorHandling.js';
 
 /**
  * Creates a middleware function that validates request body against a Zod schema
  * @param {z.ZodSchema} schema - Zod schema to validate against
  * @returns {Function} Express middleware function
-*/
+ */
 
 //SYNC alternative: this is the one that will be used.
 // ============================================
-// 🎯 ALTERNATIVE: SYNCHRONOUS VERSION 
+// 🎯 ALTERNATIVE: SYNCHRONOUS VERSION
 // ============================================
 /**
  * Synchronous version of the validation middleware
  * Use for simple schemas that don't need async operations
  */
-export const validateRequestSync = (schema) =>{
-return (req, res, next)=>{
- try {
- const validationResult = schema.safeParse(req.body);
- if (!validationResult.success) {
-  const flattenedErrors = validationResult.error.flatten();
+export const validateRequestSync = (schema) => {
+  return (req, res, next) => {
+    try {
+      const validationResult = schema.safeParse(req.body);
+      if (!validationResult.success) {
+        const flattenedErrors = validationResult.error.flatten();
 
- // 🎯 FORMATO COMPATIBLE CON FRONTEND
-  const errorResponse = {
-    success: false,
-    error: 'ValidationError',
-    message: 'Request validation failed',
-     fieldErrors: flattenedErrors.fieldErrors || {},
-    // details: {
-    //  fieldErrors: flattenedErrors.fieldErrors || {},
-    //  formErrors: flattenedErrors.formErrors || []
-    //  }
-    };
-   return res.status(400).json(errorResponse);
+        // 🎯 FORMATO COMPATIBLE CON FRONTEND
+        const errorResponse = {
+          success: false,
+          error: 'ValidationError',
+          message: 'Request validation failed',
+          fieldErrors: flattenedErrors.fieldErrors || {},
+          // details: {
+          //  fieldErrors: flattenedErrors.fieldErrors || {},
+          //  formErrors: flattenedErrors.formErrors || []
+          //  }
+        };
+        return res.status(400).json(errorResponse);
+      }
+
+      // ✅ DATOS VALIDADOS
+      req.validatedData = validationResult.data;
+      next();
+    } catch (error) {
+      console.error('Validation middleware error:', error);
+      next(createError(500, 'Internal validation error'));
     }
-
- // ✅ DATOS VALIDADOS
-  req.validatedData = validationResult.data;
-  next();
-
- } catch (error) {
-    console.error('Validation middleware error:', error);
-    next(createError(500, 'Internal validation error'));
-  }
- };
+  };
 };
 
 export default {
- validateRequestSync,
-
+  validateRequestSync,
 };
-
 
 // export const validateRequestAsync = (schema) => {
 //   return async (req, res, next) => {
 //     try {
 //       // 🎯 VALIDATE REQUEST BODY AGAINST SCHEMA (Zod v4)
 //       const validationResult = await schema.safeParseAsync(req.body);
-      
+
 //       if (!validationResult.success) {
 //       // 🚨 FORMAT ZOD v4 ERRORS FOR CLIENT RESPONSE USING flatten()
 //         const flattenedErrors  = validationResult.error.flatten();
@@ -69,7 +66,7 @@ export default {
 //         const fieldErrors = flattenedErrors.fieldErrors || {};
 //         const formErrors = flattenedErrors.formErrors || [];
 
-//       // 🎨 PREPARE RESPONSE IN CONSISTENT FORMAT  
+//       // 🎨 PREPARE RESPONSE IN CONSISTENT FORMAT
 //      const errorResponse = {
 //       success: false,
 //       error: 'ValidationError',
@@ -88,11 +85,11 @@ export default {
 //        };//errorResponse
 //        return res.status(400).json(errorResponse);
 //       }//!validation result
-      
+
 //       // ✅ VALIDATION SUCCESSFUL - ATTACH CLEAN DATA TO REQUEST
 //       req.validatedData = validationResult.data;
 //       next();
-      
+
 //     } catch (error) {
 //       // 🚨 UNEXPECTED ERROR IN VALIDATION MIDDLEWARE
 //       console.error('Validation middleware error:', error);
@@ -111,14 +108,14 @@ export default {
 // export const formatZodErrorsForFrontend = (zodError) => {
 //   const flattened = zodError.flatten();
 //   const errors = {};
-  
+
 //   // Map field errors to simple key-value pairs
 //   Object.entries(flattened.fieldErrors || {}).forEach(([field, messages]) => {
 //     if (messages && messages.length > 0) {
 //       errors[field] = messages[0]; // Take first error only (like used in frontend)
 //     }
 //   });
-  
+
 //   return {
 //     errors,
 //     formErrors: flattened.formErrors || []

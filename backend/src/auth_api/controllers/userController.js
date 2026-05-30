@@ -13,7 +13,7 @@ import pc from 'picocolors';
 import {
   clearAccessTokenFromCookie,
   clearRefreshTokenFromCookie,
-} from '../../middlewares/authMiddleware.js';
+} from '../middlewares/authMiddleware.js';
 
 //getUserById
 //GET http://localhost:5000/api/user/f7c5abf9-89e5-4891-bfb8-6dfe3022f226

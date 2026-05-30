@@ -13,8 +13,8 @@ import dotenv from 'dotenv';
 import useragent from 'express-useragent';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
-import routes from './routes/index.js';
-import { verifyToken } from './middlewares/authMiddleware.js';
+import routes from './auth_api/routes/index.js';
+import { verifyToken } from './auth_api/middlewares/authMiddleware.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
 
 //db test
@@ -42,7 +42,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use(helmet());
 //CORS Configuration for access control
 const ACCEPTED_ORIGINS = [
- process.env.CLIENT_URL,
+  process.env.CLIENT_URL,
   'http://localhost:5000',
   'http://localhost:5173',
   'http://localhost:5174',

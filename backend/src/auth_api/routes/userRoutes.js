@@ -11,14 +11,14 @@ import {
   getUserById,
   changePassword,
   updateProfile,
-} from '../auth_api/controllers/userController.js';
+} from '../controllers/userController.js';
 
 import { validateRequestSync } from '../middlewares/validateRequest.js';
 
 import {
   changePasswordSchema,
   updateProfileSchema,
-} from '../validation/zod/userSchemas.js';
+} from '../../validation/zod/userSchemas.js';
 
 const router = express.Router();
 

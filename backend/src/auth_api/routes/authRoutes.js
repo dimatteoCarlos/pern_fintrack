@@ -5,8 +5,8 @@ import {
   signInUser,
   signOutUser,
   validateSession,
-} from '../auth_api/controllers/authController.js';
-import { authRefreshToken } from '../auth_api/controllers/authRefreshToken.js';
+} from '../controllers/authController.js';
+import { authRefreshToken } from '../controllers/authRefreshToken.js';
 import { verifyToken } from '../middlewares/authMiddleware.js';
 import { authLimiter } from '../middlewares/rateLimiter.js';
 
