@@ -48,12 +48,15 @@
 
 ### ✅ LISTO (1/2)
 ```
-- [x] Verify dynamically unused or broken components
+- [x] Verify dynamically unused or broken components.Listo.
+
+- [ ] Define a deployment process.Listo. Found a provider free and does not require CARD info.  VERCEL was used for deploymente, where modification for SERVERLESS AND STATELESS BE was necessary to deploy BE in vercel.
 ```
 
 ### 🔄 PENDIENTE (1/2)
 ```
-- [ ] Define the deployment process
+- [ ] Define a deployment process. Found an alternative providers wher BE can be deploy as STATEFUL with vps or 
+ Instancias de Contenedores (como AWS EC2, DigitalOcean, Render o Railway).
 ```
 
 ---
