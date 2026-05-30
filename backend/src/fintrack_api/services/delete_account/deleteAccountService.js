@@ -1,8 +1,8 @@
-//backend/src/fintrack_api/services/deleteAccountService.js
+//backend/src/fintrack_api/services/delete_account/deleteAccountService.js
 
 import pc from 'picocolors';
-import { pool } from '../../db/config/configDB.js';
-import { createError, handlePostgresError } from '../../utils/errorHandling.js';
+import { pool } from '../../../db/config/configDB.js';
+import { createError, handlePostgresError } from '../../../utils/errorHandling.js';
 
 //Constants from controller
 // account deletion methods - not all implemented yet
@@ -13,12 +13,14 @@ import {
   DELETION_TYPE_SOFT,
   DELETION_TYPE_RTA,
   USER_ACTION,
-} from '../controllers/accountDeleteController.js';
+} from '../../controllers/accountDeleteController.js';
 
 // RTA Utilities
-import { checkAndInsertAccount } from '../../utils/fintrackUtils/accountManagement/checkAndInsertAccount.js';
-import { updateAffectedAccountBalance } from '../../utils/fintrackUtils/accountDeletionUtils/updateAffectedAccountBalance.js';
-import { recordAnnulmentTransaction } from '../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
+import { checkAndInsertAccount } from '../../../utils/fintrackUtils/accountManagement/checkAndInsertAccount.js';
+
+import { updateAffectedAccountBalance } from '../../../utils/fintrackUtils/accountDeletionUtils/updateAffectedAccountBalance.js';
+
+import { recordAnnulmentTransaction } from '../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 //=====================================
 // 📋 MESSAGES CONFIGURATION
 const messages = {
