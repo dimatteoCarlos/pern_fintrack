@@ -38,11 +38,11 @@ export const sanitizeText = (text) => {
 /**
  * Normalizes currency code to lowercase
  */
-export const currencySchema = z.enum(['usd', 'cop', 'eur'], {
+export const currencySchema = z.enum(['usd', 'cop', 'eur', 'ves', 'mxn'], {
   error: (issue, ctx) => {
     if (issue.code === 'invalid_enum_value') {
       return {
-        message: `Currency "${issue.received}" is not supported. Available options: usd, cop, eur`
+        message: `Currency "${issue.received}" is not supported. Available options: usd, cop, eur, ves, mxn`
       };
     }
     return { message: ctx.defaultError };
