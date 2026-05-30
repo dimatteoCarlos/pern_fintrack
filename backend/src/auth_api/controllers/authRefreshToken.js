@@ -1,12 +1,15 @@
 //src/controllers/authRefreshToken.js
 //url_refreshToken: 'http://localhost:5000/api/auth/refresh-token';
 import jwt from 'jsonwebtoken';
-import { createToken, rotateRefreshToken } from '../utils/authUtils/authFn.js';
-import { createError } from '../utils/errorHandling.js';
+import {
+  createToken,
+  rotateRefreshToken,
+} from '../../utils/authUtils/authFn.js';
+import { createError } from '../../utils/errorHandling.js';
 
-import { setRefreshTokenCookie } from '../utils/authUtils/cookieConfig.js';
+import { setRefreshTokenCookie } from '../../utils/authUtils/cookieConfig.js';
 
-import { pool } from '../db/config/configDB.js';
+import { pool } from '../../db/config/configDB.js';
 import pc from 'picocolors';
 
 // Controller for refreshing the access token using a valid refresh token
