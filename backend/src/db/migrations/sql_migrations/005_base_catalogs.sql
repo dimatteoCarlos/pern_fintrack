@@ -15,8 +15,8 @@ INSERT INTO currencies (currency_id, currency_code, currency_name) VALUES
   (1, 'usd', 'US Dollar'),
   (2, 'eur', 'Euro'),
   (3, 'cop', 'Pesos col'),
-  (4, 'mxn', 'Peso mex'),
-  (5, 'ves', 'Bs'),
+  (4, 'ves', 'Bs'),
+  (5, 'mxn', 'Pesos mxn'),
 
 ON CONFLICT (currency_id) DO NOTHING;
 
