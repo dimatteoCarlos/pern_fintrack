@@ -18,7 +18,18 @@ import {
   tblUserRoles,
 } from './populateDB.js';
 
-import { mainTables, createTables, addFxAuditColumns } from './createTables.js';
+import {
+  mainTables,
+  createTables,
+  addFxAuditColumns,
+  recreateExchangeRatesTable,
+} from './createTables.js';
+
+// Flag to force recreation of exchange_rates table (cache reset)
+// Set environment variable RESET_EXCHANGE_RATES=true to enable, or change to true manually
+const FORCE_RECREATE_EXCHANGE_RATES =
+  process.env.RESET_EXCHANGE_RATES === 'true' || false;
+
 // ===========================
 // 📊 DATA BASE INITIALIZATION
 // ============================
@@ -50,10 +61,9 @@ export async function initializeDatabase() {
       console.log(pc.cyan('Initializing app for the first time....'));
       //----------
       //Transaction pg
-
       await client.query('BEGIN');
       try {
-        // Initialize tables with catalogued field attributes
+        // Initialize tables with catalog field attributes
         await tblAccountTypes(client);
         await tblCurrencies(client);
         await tblCategoryNatureTypes(client);
@@ -88,8 +98,18 @@ export async function initializeDatabase() {
         pc.yellow('Application already initialized. Skipping tables creation.'),
       );
     }
-    //---------------------------------
-    //truncate or drop all tables manually
+
+    // =======================================
+    // [FX Migrations execute / Migraciones FX (siempre se ejecutan, son idempotentes)
+    // =======================================
+    await addFxAuditColumns(client);
+
+    // Recreate exchange_rates if flag is set
+    if (FORCE_RECREATE_EXCHANGE_RATES) {
+      await recreateExchangeRatesTable(client);
+    }
+    //------------------------------------
+    //TRUNCATE OR DROP ALL TABLES MANUALLY
     //Manual truncate/drop (disabled by flags)
     const tableActions = { isTruncate: false, allTables: false, isDrop: false };
 
@@ -132,17 +152,9 @@ export async function initializeDatabase() {
         }
       });
     }
-
-    /**
-     * results.forEach((result, i) => {
-  if (result.status === 'fulfilled') {
-    ...
-  }
-});
-     */
-    //=============================
-    //Create tables manually
-    const createTableDbFlag = true;
+    //====================================
+    //CREATE TABLES MANUALLY
+    const createTableDbFlag = false;
     if (createTableDbFlag) {
       await Promise.allSettled(
         mainTables.map(async (item, ind) => {
@@ -171,8 +183,11 @@ export async function initializeDatabase() {
         });
       });
 
-      // Add FX columns / Asegurar columnas FX (idempotente)
-      await addFxAuditColumns(client);
+      // Add FX columns into transactions / Asegurar columnas FX en trasactions (idempotente)
+      // await addFxAuditColumns(client);
+
+      // Add exchange_rates / Asegurar exchange_rates
+      // await recreateExchangeRatesTable(client);
     }
     //=============================
     console.log(pc.greenBright('Base de datos inicializada correctamente.'));

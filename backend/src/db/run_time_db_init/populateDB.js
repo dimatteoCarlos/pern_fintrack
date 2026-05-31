@@ -13,7 +13,7 @@ function isValidTableName(tableName) {
   return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName); // only allowed table names from create table array | Solo permite nombres de tablas válidos
 }
 //check if table exists
-export async function tableExists(client=pool, tableName) {
+export async function tableExists(client = pool, tableName) {
   if (!isValidTableName(tableName)) {
     throw new Error('Invalid table name');
   }
@@ -23,13 +23,13 @@ export async function tableExists(client=pool, tableName) {
       WHERE table_name = $1
     );
   `;
-  const result = await client.query(queryText,[tableName]);
+  const result = await client.query(queryText, [tableName]);
   console.log(pc.magentaBright(tableName), ' exists? ', result.rows[0].exists);
   return result.rows[0].exists; // Returns true or false
 }
 
 //check if table is populated
-async function isTablePopulated(client=pool,tableName, minCount = 1) {
+async function isTablePopulated(client = pool, tableName, minCount = 1) {
   if (!isValidTableName(tableName)) {
     throw new Error('Invalid table name');
   }
@@ -52,10 +52,10 @@ export async function tblCurrencies(client = pool) {
     { currency_id: 2, currency_code: 'eur', currency_name: 'euros' },
 
     { currency_id: 3, currency_code: 'cop', currency_name: 'pesos col' },
-    
-    { currency_id: 4, currency_code: 'ves', currency_name: 'bolívares' },
 
-    { currency_id: 5, currency_code: 'mxn', currency_name: 'pesos mexicanos' },
+    { currency_id: 4, currency_code: 'ves', currency_name: 'bs' },
+
+    { currency_id: 5, currency_code: 'mxn', currency_name: 'pesos mxn' },
   ];
 
   try {
@@ -72,7 +72,7 @@ export async function tblCurrencies(client = pool) {
     }
 
     //is it already populated
-    const isPopulated = await isTablePopulated(client,'currencies', 2);
+    const isPopulated = await isTablePopulated(client, 'currencies', 2);
     if (isPopulated) {
       console.log('currencies table is already populated.');
       return;
@@ -134,7 +134,7 @@ export async function tblUserRoles(client = pool) {
     }
 
     //is it already populated?
-    const isPopulated = await isTablePopulated(client,tblName, minCount);
+    const isPopulated = await isTablePopulated(client, tblName, minCount);
     if (isPopulated) {
       console.log(pc.cyan(`${tblName} table is already populated.`));
       return;
@@ -158,12 +158,11 @@ export async function tblUserRoles(client = pool) {
     // await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
   } catch (
-    error// Revertir la transacción en caso de error
-   
+    error // Revertir la transacción en caso de error
   ) {
     // await client.query('ROLLBACK');
     console.error(pc.red('Error inserting tuples:', tblName, error));
-     throw error;
+    throw error;
   }
 }
 
@@ -199,7 +198,7 @@ export async function tblAccountTypes(client = pool) {
     }
 
     //is it already populated
-    const isPopulated = await isTablePopulated(client,tblName, minCount);
+    const isPopulated = await isTablePopulated(client, tblName, minCount);
     if (isPopulated) {
       console.log(pc.yellowBright(`${tblName} table is already populated.`));
       return;
@@ -257,7 +256,7 @@ export async function tblCategoryNatureTypes(client = pool) {
     }
 
     //is it already populated
-    const isPopulated = await isTablePopulated(client,tblName, minCount);
+    const isPopulated = await isTablePopulated(client, tblName, minCount);
     if (isPopulated) {
       console.log(pc.yellowBright(`${tblName} table is already populated.`));
       return;
@@ -329,7 +328,7 @@ export async function tblMovementTypes(client = pool) {
     }
 
     //is it already populated
-    const isPopulated = await isTablePopulated(client,tblName, minCount);
+    const isPopulated = await isTablePopulated(client, tblName, minCount);
     if (isPopulated) {
       console.log(pc.yellowBright(`${tblName} table is already populated.`));
       return;
@@ -388,7 +387,7 @@ export async function tbltransactionTypes(client = pool) {
     }
 
     //is it already populated
-    const isPopulated = await isTablePopulated(client,tblName, minCount);
+    const isPopulated = await isTablePopulated(client, tblName, minCount);
     if (isPopulated) {
       console.log(pc.yellowBright(`${tblName} table is already populated.`));
       return;

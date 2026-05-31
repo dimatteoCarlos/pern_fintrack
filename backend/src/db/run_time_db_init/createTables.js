@@ -116,8 +116,17 @@ export const mainTables = [
 
      status VARCHAR(50) NOT NULL, 
      transaction_actual_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )`,
+     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, 
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+ --  FX audit columns
+    original_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+    original_currency_id INTEGER NOT NULL DEFAULT 1 REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    exchange_rate DECIMAL(18,8) NOT NULL DEFAULT 1.0 CHECK (exchange_rate > 0),
+    exchange_rate_source VARCHAR(60) NOT NULL DEFAULT 'identity',
+    exchange_rate_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    exchange_rate_target_currency_id INTEGER NOT NULL DEFAULT 1 REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE
+      );`,
   },
 
   {
@@ -148,12 +157,19 @@ export const mainTables = [
     table: `CREATE TABLE IF NOT EXISTS exchange_rates (
      rate_id SERIAL PRIMARY KEY,
       base_currency_id INTEGER NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-      target_currency_id INTEGER NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-      exchange_rate DECIMAL(15, 6) NOT NULL CHECK (exchange_rate > 0),
-      source VARCHAR(30) NOT NULL,
-      fetched_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE (base_currency_id,target_currency_id, fetched_at)
+
+     target_currency_id INTEGER NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+
+     exchange_rate DECIMAL(18, 8) NOT NULL CHECK (exchange_rate > 0),
+    
+     source VARCHAR(30) NOT NULL,
+
+     fetched_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+     provider_updated_at TIMESTAMPTZ,
+     UNIQUE (base_currency_id,target_currency_id)
     );`,
   },
 ];
@@ -181,7 +197,7 @@ export const mainTables = [
 // ===================================
 //Create main tables needed at initialization of the app
 export async function createTables(client = pool) {
-  console.log(pc.bgMagenta('🔥 VERSIÓN DE CREATE TABLES CON FX 🔥'));
+  console.log(pc.bgMagenta('🔥 CREATE TABLES with FX 🔥'));
 
   try {
     console.log('Creando las tablas en caso que no existan...');
@@ -214,9 +230,23 @@ export async function createTables(client = pool) {
       });
     });
 
-    // 2. Do migration of FX columns (idempotent) / Ejecutar la migración de columnas FX (idempotente)
+    // 2. Create exchange_rates table
+    console.log(
+      pc.cyan('Ensuring exchange_rates has final structure (recreating)...'),
+    );
+    const exchangeRatesDef = mainTables.find(
+      (t) => t.tblName === 'exchange_rates',
+    );
+    if (!exchangeRatesDef)
+      throw new Error('exchange_rates definition not found');
+    await client.query(`DROP TABLE IF EXISTS exchange_rates CASCADE`);
+    await client.query(exchangeRatesDef.table);
+    console.log(pc.green('exchange_rates recreated with final structure.'));
+
+    // 3. Do migration of FX columns (idempotent) / Ejecutar la migración de columnas FX (idempotente)
     await addFxAuditColumns(client);
-    console.log('🔥 addFxAuditColumns finalizado');
+
+    console.log('🔥  All FX migrations completed / finalizado');
   } catch (error) {
     console.error(pc.red('Error in table creation process:'), error);
     throw error;
@@ -233,7 +263,7 @@ export async function createTables(client = pool) {
 export async function addFxAuditColumns(client = pool) {
   console.log(pc.cyan('Adding FX audit columns to transactions if missing...'));
 
-  const alterQueries = [
+  const transactionsAlterQueries = [
     `ALTER TABLE transactions ADD COLUMN IF NOT EXISTS original_amount DECIMAL(15,2) NOT NULL DEFAULT 0`,
     `ALTER TABLE transactions ADD COLUMN IF NOT EXISTS original_currency_id INTEGER NOT NULL DEFAULT 1`,
     `ALTER TABLE transactions ADD COLUMN IF NOT EXISTS exchange_rate DECIMAL(18,8) NOT NULL DEFAULT 1.0 CHECK (exchange_rate > 0)`,
@@ -242,10 +272,11 @@ export async function addFxAuditColumns(client = pool) {
     `ALTER TABLE transactions ADD COLUMN IF NOT EXISTS exchange_rate_target_currency_id INTEGER NOT NULL DEFAULT 1`,
   ];
 
-  for (const query of alterQueries) {
+  for (const query of transactionsAlterQueries) {
     await client.query(query);
   }
-  // Add constraints FK (if do not exist)
+
+  // Add constraints FK in transactions (if not exist)
   await client.query(`
     DO $$
     BEGIN
@@ -269,4 +300,29 @@ export async function addFxAuditColumns(client = pool) {
   `);
 
   console.log(pc.green('FX audit columns added/verified successfully.'));
+}
+
+// ===========================================
+// 🧩 FUNCTION: Recreate exchange_rates table
+// ===========================================
+/**
+ * Forcefully drop and recreate exchange_rates table using its current definition.
+ * Useful when table structure has changed and you need to reset the cache.
+ * Safe because no foreign keys reference this table.
+ * @param {object} client - Database client (pool or transaction)
+ */
+
+export async function recreateExchangeRatesTable(client = pool) {
+  console.log(pc.yellow('⚠️ Recreating exchange_rates table (cache reset)...'));
+  const exchangeRatesDef = mainTables.find(
+    (t) => t.tblName === 'exchange_rates',
+  );
+
+  if (!exchangeRatesDef) {
+    throw new Error('exchange_rates definition not found in mainTables');
+  }
+  await client.query(`DROP TABLE IF EXISTS exchange_rates CASCADE`);
+
+  await client.query(exchangeRatesDef.table);
+  console.log(pc.green('✅ exchange_rates recreated with final structure.'));
 }
