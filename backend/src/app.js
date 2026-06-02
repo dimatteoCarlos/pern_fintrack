@@ -22,7 +22,6 @@ import { pool } from './db/config/configDB.js';
 // import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
-
 // ==================================
 // ⚙️ Express app configuration
 // ==================================
