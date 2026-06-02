@@ -26,6 +26,10 @@ dataFormatHelpers:
  getMonthName
  numberToWords
  capitalize
+
+fx function:
+ getCurrencyName
+ 
 */
 //-----------------------
 //Capitalize every word in the sentence
@@ -375,3 +379,15 @@ export function numberToWords(num) {
 // console.log(numberToWords(123)); // "One Hundred Twenty Three"
 // console.log(numberToWords(1050)); // "One Thousand Fifty"
 // console.log(numberToWords(1234567)); // "One Million Two Hundred Thirty Four Thousand Five Hundred Sixty Seven"
+//---------------------
+//currencyCodes to currency name
+export const getCurrencyName = (currencyCode) => {
+  return new Intl.DisplayNames(['en'], { type: 'currency' }).of(currencyCode.toUpperCase());
+};
+
+//How to use getCurrencyName to get currency name from code
+// const codigo = 'EUR';
+// const info = currencyCodes.code(codigo); 
+
+// console.log(info.currency); // Imprime: "Euro" (en inglés)
+
