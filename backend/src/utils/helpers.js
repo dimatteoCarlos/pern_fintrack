@@ -11,8 +11,7 @@ transactionAccountHelpers:
  determineTransactionType_v1
  validateRequiredFields
  getAccountTypeId
- getCurrencyId
- filterCurrencyId
+ filterCurrencyId (not yet used)
  handleTransactionRecording
 
 dataFormatHelpers:
@@ -31,6 +30,8 @@ fx function:
  getCurrencyName
  
 */
+
+
 //-----------------------
 //Capitalize every word in the sentence
 export function capitalize(text) {
@@ -135,27 +136,6 @@ export async function getAccountTypeId(clientOrPool, accountTypeName) {
   );
   return accountType?.account_type_id;
 }
-//----------
-//--- check currency existence and get currency_id ------------
-export async function getCurrencyId(clientOrPool=null, currencyCode) {
-  const db=clientOrPool || pool;
-  console.log('running:', 'getCurrencyId')
-  const currencyIdResult = await db.query({
-    text: `SELECT currency_id FROM currencies WHERE currency_code = $1`,
-    values: [currencyCode],
-  });
-
-  if (currencyIdResult.rows.length === 0) {
-    const message = `Currency with code ${currencyCode} does not exist as catalogued.`;
-    console.warn(pc.yellowBright(message));
-    return res.status(404).json({ status: 404, message });
-  }
-
-  const currencyId = currencyIdResult.rows[0].currency_id;
-
-  console.log('🚀 ~ helpers ~ currencyId:', currencyId);
-}
-
 // Helper function to get currency ID
 export async function filterCurrencyId(currencyTable, currencyCode) {
   // const currencyQuery = `SELECT * FROM currencies`;
