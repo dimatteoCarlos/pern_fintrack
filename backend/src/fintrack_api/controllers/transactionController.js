@@ -13,8 +13,11 @@
 // Includes Slack account creation for PnL operations
 //------------------------------------
 import pc from 'picocolors';
+
 import { pool } from '../../db/config/configDB.js';
+
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
+
 import {
   getExpenseConfig,
   getIncomeConfig,
@@ -22,19 +25,22 @@ import {
   getTransferConfig,
   getPnLConfig,
 } from '../../utils/fintrackUtils/transactionManagement/movementInputHandler.js';
+
 import { recordTransaction } from '../../utils/fintrackUtils/transactionManagement/recordTransaction.js';
+
 import { formatDate } from '../../utils/helpers.js';
+
+import { getCurrencyId } from '../../utils/currencyLookup.js';
 
 //endpoint: put:/api/fintrack/transaction/transfer-between-accounts?user=UUID&&movement=expense
 //=============================
 //FUNCTIONS DECLARATION
 //get the currency_id by the currency_code
-
-export const getCurrencyId = async (dbClient = pool, currency_code) => {
-  const currencyQuery = `SELECT * FROM currencies WHERE currency_code = $1`;
-  const currencyResult = await dbClient.query(currencyQuery, [currency_code]);
-  return currencyResult.rows[0]?.currency_id;
-};
+// export const getCurrencyId = async (dbClient = pool, currency_code) => {
+//   const currencyQuery = `SELECT * FROM currencies WHERE currency_code = $1`;
+//   const currencyResult = await dbClient.query(currencyQuery, [currency_code]);
+//   return currencyResult.rows[0]?.currency_id;
+// };
 
 //get the account_type_id by account_type_name
 export const getAccountTypeId = async (dbClient = pool, accountTypeName) => {
