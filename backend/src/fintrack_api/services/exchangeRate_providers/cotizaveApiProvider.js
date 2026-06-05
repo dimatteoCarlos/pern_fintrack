@@ -1,7 +1,10 @@
 // backend/src/fintrack_api/services/exchangeRate_providers/cotizaveApiProvider.js
 // 💰 PROVIDER: Cotizave API (Venezuela - official BCV exchange rate)
 
-console.log('[ENV CHECK] API_KEY_COTIZAVE START =', process.env.API_KEY_COTIZAVE);
+// console.log(
+//   '[ENV CHECK] API_KEY_COTIZAVE START =',
+//   process.env.API_KEY_COTIZAVE,
+// );
 
 const COTIZAVE_API_URL = 'https://api.cotizave.com/v1/fx/rates';
 
@@ -10,10 +13,7 @@ const COTIZAVE_API_URL = 'https://api.cotizave.com/v1/fx/rates';
 // const TIMEOUT_MS = Number(process.env.FX_REQUEST_TIMEOUT_MS || 3000);
 
 export async function fetchFromCotizave(baseCode, targetCode) {
-
- const FZ_API_KEY = process.env.API_KEY_COTIZAVE;
-
- console.log('[ENV CHECK] API_KEY_COTIZAVE =',FZ_API_KEY);
+  const FZ_API_KEY = process.env.API_KEY_COTIZAVE;
 
   if (!FZ_API_KEY) {
     throw new Error('Missing COTIZAVE_API_KEY');
@@ -25,6 +25,7 @@ export async function fetchFromCotizave(baseCode, targetCode) {
 
   const base = baseCode.toLowerCase();
   const target = targetCode.toLowerCase();
+
   // DEBUG LOGS
   console.log('[FX DEBUG] ENV KEY EXISTS:', !!FZ_API_KEY);
   console.log('[FX DEBUG] ENV KEY:', FZ_API_KEY);
@@ -35,13 +36,6 @@ export async function fetchFromCotizave(baseCode, targetCode) {
   console.log('[FX DEBUG] API KEY LENGTH:', FZ_API_KEY?.length);
   console.log('[FX DEBUG] API KEY PREFIX:', FZ_API_KEY?.slice(0, 10));
   console.log('==============================');
-  // const response = await axios.get(COTIZAVE_API_URL, {
-  //   headers: {
-  //     'X-API-Key': FZ_API_KEY,
-  //     Accept: 'application/json',
-  //   },
-  //   timeout: TIMEOUT_MS,
-  // });
 
   const res = await fetch(COTIZAVE_API_URL, {
     headers: {
@@ -49,16 +43,18 @@ export async function fetchFromCotizave(baseCode, targetCode) {
     },
   });
 
-   const data = await res.json();
+  const data = await res.json();
 
-   console.log('[FX DEBUG] RAW RESPONSE:', data);
+  // console.log('[FX DEBUG] RAW RESPONSE:', data);
+  console.log('[FX DEBUG] VES BCV:', data?.rates?.find((r) => r.market === 'reference').mid);
 
-   const rates = data?.rates;
+  console.log('[FX DEBUG] VES PRL:', data?.rates?.find((r) => r.market === 'parallel').mid);
 
-  // const text = await res.text();
-  // console.log('[FX DEBUG] RAW RESPONSE:', text);
+  console.log('[FX DEBUG] VES BNC:', data?.rates?.find((r) => r.market === 'binance').mid);
 
-  // const rates = res.data?.rates;
+
+
+  const rates = data?.rates;
 
   if (!Array.isArray(rates)) {
     throw new Error('Invalid API response');
@@ -89,3 +85,5 @@ export async function fetchFromCotizave(baseCode, targetCode) {
     fetchedAt: new Date(),
   };
 }
+//===================================
+
