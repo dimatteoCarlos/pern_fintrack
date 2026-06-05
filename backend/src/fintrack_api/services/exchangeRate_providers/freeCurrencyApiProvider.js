@@ -6,9 +6,7 @@ import axios from 'axios';
 const FX_BASE_URL = 'https://api.freecurrencyapi.com/v1/latest';
 
 // 1. Read environment variables inside function (avoids ESM load order issues)
-  // const FX_API_KEY = process.env.FREE_CURRENCY_API_KEY;
-  // const FX_TIMEOUT_MS = Number(process.env.FX_REQUEST_TIMEOUT_MS || 2000);
-
+ 
 /**
  * Fetch exchange rate from FreeCurrencyAPI
  * @param {string} baseCode - Base currency code (lowercase)
