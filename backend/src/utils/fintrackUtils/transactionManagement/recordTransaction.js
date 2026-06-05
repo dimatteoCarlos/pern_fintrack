@@ -1,6 +1,9 @@
-//recordTransaction.js
+// backend/src/utils/fintrackUtils/transactionManagement/recordTransaction.js
+
 // Inserts a transaction record into the database
 // Handles both single transactions and transaction batches via connection pooling
+
+// 💰 TRANSACTION RECORDER: Persists a single transaction with FX snapshot
 
 import pc from 'picocolors';
 import { pool } from '../../../db/config/configDB.js';
