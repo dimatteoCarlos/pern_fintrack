@@ -67,3 +67,8 @@ export async function getCurrencyCode(clientOrPool = null, currencyId) {
   }
   return result.rows[0].currency_code;
 }
+
+// ======================================
+// Export synchronous versions for direct catalog access
+// ======================================
+export { getCurrencyIdSync, getCurrencyCodeSync };
