@@ -6,8 +6,6 @@ import axios from 'axios';
 // 1. Read environment variables (constants for API configuration)
 const FX_BASE_URL = 'https://v6.exchangerate-api.com/v6';
 
-// const FX_API_KEY = process.env.EXCHANGE_RATE_API_KEY;
-
 // const FX_TIMEOUT_MS = Number(
 //   process.env.FX_REQUEST_TIMEOUT_MS || 4000
 // )*2;
@@ -24,7 +22,7 @@ export async function fetchFromExchangeRateAPI(baseCode, targetCode) {
  const FX_API_KEY = process.env.EXCHANGE_RATE_API_KEY;
 
 const FX_TIMEOUT_MS = Number(
-  process.env.FX_REQUEST_TIMEOUT_MS || 4000
+  process.env.FX_REQUEST_TIMEOUT_MS || 2000
 )*2;
 
  // 2. Validate input parameters and API key configuration
