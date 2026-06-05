@@ -11,7 +11,7 @@ import { pool } from '../../../db/config/configDB.js';
 let currenciesByCode = null;
 // Map<currency_id, currency_code (lowercase)>
 let currenciesById = null;
-let isLoaded = false;
+let isCurrencyLoaded = false;
 
 // ===================================
 // 2. Load catalog from database (call once at startup)
@@ -24,14 +24,19 @@ let isLoaded = false;
  */
 export async function loadCurrencyCatalog(client = pool) {
   const res = await client.query('SELECT currency_id, currency_code FROM currencies');
+
   currenciesByCode = new Map();
   currenciesById = new Map();
+
   for (const row of res.rows) {
-    const currencyCode = row.currency_code.toLowerCase();
-    currenciesByCode.set(currencyCode, row.currency_id);
-    currenciesById.set(row.currency_id, currencyCode);
+   const currencyCode = row.currency_code.toLowerCase();
+   
+   currenciesByCode.set(currencyCode, row.currency_id);
+
+   currenciesById.set(row.currency_id, currencyCode);
   }
-  isLoaded = true;
+
+  isCurrencyLoaded = true;
   console.log(`✅ Currency catalog loaded: ${currenciesByCode.size} currencies`);
 }
 
@@ -45,9 +50,10 @@ export async function loadCurrencyCatalog(client = pool) {
  * @throws {Error} If catalog not loaded or code not found
  */
 export function getCurrencyIdSync(currencyCode) {
-  if (!isLoaded) {
+  if (!isCurrencyLoaded) {
     throw new Error('Currency catalog not loaded. Call loadCurrencyCatalog() first.');
   }
+  
   const normalizedCode = currencyCode.toLowerCase();
   const currencyId = currenciesByCode.get(normalizedCode);
   if (currencyId === undefined) {
@@ -62,8 +68,9 @@ export function getCurrencyIdSync(currencyCode) {
  * @returns {string} Currency code (lowercase)
  * @throws {Error} If catalog not loaded or ID not found
  */
+
 export function getCurrencyCodeSync(currencyId) {
-  if (!isLoaded) {
+  if (!isCurrencyLoaded) {
     throw new Error('Currency catalog not loaded. Call loadCurrencyCatalog() first.');
   }
   const currencyCode = currenciesById.get(currencyId);
@@ -77,5 +84,5 @@ export function getCurrencyCodeSync(currencyId) {
 // 4. Utility to check if catalog is ready
 // ===================================
 export function isCurrencyCatalogLoaded() {
-  return isLoaded;
+  return isCurrencyLoaded;
 }
