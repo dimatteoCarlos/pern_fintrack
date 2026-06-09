@@ -35,7 +35,8 @@ export const SELECT_CURRENCY_OPTIONS = [
   { value: 'cop', label: 'COP - Colombian Peso' },
 ];
 
-export const DEFAULT_CURRENCY: CurrencyType = 'usd';
+
+export const DEFAULT_CURRENCY = import.meta.env.VITE_ACCOUNTING_CURRENCY_CODE || 'usd';
 
 export const DATE_TIME_FORMAT_DEFAULT = 'es-ES';
 
