@@ -1,0 +1,40 @@
+//backend/src/fintrack_api/controllers/currencyController.js
+
+// 💰 CONTROLLER: Currency conversion for frontend preview
+
+import { currencyAmountConversion } from '../services/exchangeRate_service/currencyAmountConversion.js';
+import { getCurrencyId } from '../../utils/currencyLookup.js';
+import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
+
+export async function currencyConvert(req, res, next) {
+  try {
+    const { amount, fromCurrency, toCurrency = ACCOUNTING_CURRENCY_CODE } = req.body;
+
+    // 1. Validate amount
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({ error: 'Amount must be a positive number' });
+    }
+
+    // 2. Validate currencies (optional but recommended)
+    const fromId = await getCurrencyId(null, fromCurrency);
+    const toId = await getCurrencyId(null, toCurrency);
+    if (!fromId || !toId) {
+      return res.status(400).json({ error: 'Invalid currency code' });
+    }
+
+    // 3. Perform conversion
+    const conversion = await currencyAmountConversion(numericAmount, fromCurrency, toCurrency);
+
+    // 4. Return result
+    res.json({
+      convertedAmount: conversion.amount.toNumber(),//where amount is a Decimal object from Decimal.js lib.
+      rate: conversion.rate,
+      source: conversion.source,
+      fetchedAt: conversion.fetchedAt
+    });
+  } catch (error) {
+    console.error('Currency conversion error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+}

@@ -1,7 +1,7 @@
 //backend/src/controllers/authController.js
 //signUpUser,signInUser,signOutUser,validateSession
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../db/config/configDB.js';
+import { pool } from '../../db/config/configDB.js';
 import pc from 'picocolors';
 
 import {
@@ -9,17 +9,19 @@ import {
   createRefreshToken,
   hashed,
   isRight,
-} from '../utils/authUtils/authFn.js';
+} from '../../utils/authUtils/authFn.js';
 
-import { sendSuccessResponse } from '../utils/authUtils/sendSuccessResponse.js';
+import { sendSuccessResponse } from '../../utils/authUtils/sendSuccessResponse.js';
 import {
   clearAccessTokenCookie,
   clearRefreshTokenCookie,
   setRefreshTokenCookie,
-} from '../utils/authUtils/cookieConfig.js';
-import { createError } from '../utils/errorHandling.js';
+} from '../../utils/authUtils/cookieConfig.js';
+import { createError } from '../../utils/errorHandling.js';
 
-import { getCurrencyId } from '../fintrack_api/controllers/transactionController.js';
+import { getCurrencyId } from '../../utils/currencyLookup.js';
+
+// import { getCurrencyId } from '../../fintrack_api/controllers/transactionController.js';
 
 //=====================
 //FUNCTIONS DECLARATION
@@ -94,6 +96,7 @@ export const signUpUser = async (req, res, next) => {
     const newUserId = uuidv4();
     //In db tabl. currency_id = 1. currency_code= 'usd'
     const currencyId = !currency ? 1 : await getCurrencyId(client, currency);
+    
     console.log('🚀 ~ signUpUser ~ currencyId:', currencyId);
     // console.log('hashedPwd:', hashedPassword.length);
     // console.log('testUUID:', newUserId);

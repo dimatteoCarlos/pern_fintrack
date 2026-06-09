@@ -13,27 +13,45 @@ import dotenv from 'dotenv';
 import useragent from 'express-useragent';
 
 //API ROUTES AND AUTHENTICACION FUNCTIONS
-import routes from './routes/index.js';
-import { verifyToken } from './middlewares/authMiddleware.js';
+import routes from './auth_api/routes/index.js';
+import { verifyToken } from './auth_api/middlewares/authMiddleware.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
 
 //db test
 import { pool } from './db/config/configDB.js';
+
+//Get currency catalog function
+import { loadCurrencyCatalog } from './fintrack_api/services/fx_currency_catalog/loadCurrencyCatalog.js';
+
 // import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
-
 // ==================================
 // ⚙️ Express app configuration
 // ==================================
 //app config, global middlewares application, safety, request records and data handling
 const app = express();
-if (process.env.NODE_ENV !== 'production') {
+
+// Load .env conditionally (Vercel injects env vars automatically)
+if (!process.env.VERCEL) {
   dotenv.config();
 }
 
+// ====================================
+// Initialize in-memory currency catalog
+// ====================================
+try {
+  await loadCurrencyCatalog();
+  console.log('✅ Currency catalog loaded successfully');
+} catch (err) {
+  console.error('❌ Failed to load currency catalog:', err.message);
+}
+
+// ====================================
+// TRUST PROXY only in production (e.g., Render, Vercel)
+// ====================================
 //muchos servicios cloud) usan proxies inversos. Express debe confiar en el proxy para obtener la IP real y el protocolo correcto (HTTP/HTTPS). Se coloca después de const app = express():
-// trust proxy only in production (e.g., Render, Vercel)
+
 if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1); // trust the first proxy
 }
@@ -42,6 +60,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use(helmet());
 //CORS Configuration for access control
 const ACCEPTED_ORIGINS = [
+  process.env.CLIENT_URL,
   'http://localhost:5000',
   'http://localhost:5173',
   'http://localhost:5174',
@@ -50,7 +69,6 @@ const ACCEPTED_ORIGINS = [
   'http://localhost:8080',
   'http://localhost:1234',
   'http://localhost:5432',
-  process.env.CLIENT_URL,
   'https://pern-fintrack.vercel.app',
 ].filter(Boolean);
 
@@ -77,7 +95,6 @@ app.use(
 // app.use(cors('*'));
 // app.use(cors({ origin: true, credentials: true }));
 // app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' })); // Encabezado para recursos de origen cruzado
-
 //---------------------------------
 app.disable('x-powered-by');
 app.use(express.json({ limit: '10mb' }));
@@ -90,7 +107,18 @@ app.use(useragent.express());
 // 🛣️ TESTING API ROUTING WITH VERCEL
 // ==================================
 // considering backend as root directory in vercel
-// --- TESTING PUBLIC ROUTES:-----------------
+// --- TESTING PUBLIC ROUTES:--------------
+//METRICS
+// Global variable to show number of requests
+let totalRequests = 0;
+
+// Middleware COUNTER
+app.use((req, res, next) => {
+  totalRequests++; // Suma 1 con cada petición del frontend
+  console.log(`Total request received: ${totalRequests}`);
+  next();
+});
+//-------------------------
 //HEALTH
 app.get('/api/health', (req, res) => {
   console.log('✅ /api/health invoked');
@@ -101,7 +129,7 @@ app.get('/api/health', (req, res) => {
     step: 'TESTING ADDING ENDPOINTS. - NOW TEST 09.Enable fintrack routes with auth middleware - .TEST 08:WAS OK.',
   });
 });
-
+//-------------------------
 // DB TEST
 app.get('/api/db-test', async (req, res) => {
   try {
@@ -115,14 +143,16 @@ app.get('/api/db-test', async (req, res) => {
     });
   }
 });
-//------------------------------------------
+
 // =====================
 // 🛣️ API ROUTING
 // =====================
 // api main routes and associated controllers
 // ----------------------
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
+
 app.use('/api', routes); //main app routes
+
 app.use('/api/fintrack', verifyToken, fintrack_routes);
 
 // app.use('/api/cronjob', cronRoutes);

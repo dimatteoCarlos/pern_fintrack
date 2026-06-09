@@ -18,7 +18,7 @@ export function currencyFormat(
   number = 0,
   countryFormat = 'en-US',
 ) {
-  // console.log('currency', chosenCurrency)
+// console.log('currency', chosenCurrency)
   const formatFn = new Intl.NumberFormat(countryFormat, {
     style: 'currency',
     currency: chosenCurrency,
@@ -183,6 +183,8 @@ const validCurrencyCodes = new Set([
   'USD',
   'EUR',
   'COP',
+  'VES',
+  'MXN',
   //'GBP', 'JPY',
   // 'AUD', 'CAD', 'CHF',
   // 'CNY', 'SEK',

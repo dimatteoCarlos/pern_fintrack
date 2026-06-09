@@ -3,9 +3,13 @@ import express from 'express';
 import accountRoutes from './accountRoutes.js';
 import transactionRoutes from './transactionRoute.js';
 import dashboardRoutes from './dashboardRoutes.js';
+import currencyRoutes from './currencyRoutes.js';
 
 //------------------------
 const router = express.Router();
+router.use('/currency',
+ currencyRoutes); //handling currency catalog and exchange rates
+
 router.use('/account',
  accountRoutes); //create, edit and read(get) accounts
 

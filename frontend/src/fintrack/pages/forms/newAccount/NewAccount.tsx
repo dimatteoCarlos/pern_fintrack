@@ -389,9 +389,11 @@ function NewAccount() {
                   setStateData={setAccountData}
                   // disabled={isFormDisabled}
                 />
-                {/* <input
-        style={{ fontSize: '1.25rem', padding: '0 0.75rem' }}
-      /> FIGMA STYLE*/}
+
+           {/* <input
+           style={{ fontSize: '1.25rem', padding: '0 0.75rem' }}
+           /> FIGMA STYLE*/}
+           
               </div>
             )}
           </div>

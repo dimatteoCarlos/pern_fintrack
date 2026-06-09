@@ -4,10 +4,10 @@ import {
   hashed,
   isRight,
   revokeAllUserRefreshTokens,
-} from '../utils/authUtils/authFn.js';
-import { createError } from '../utils/errorHandling.js';
+} from '../../utils/authUtils/authFn.js';
+import { createError } from '../../utils/errorHandling.js';
 
-import { pool } from '../db/config/configDB.js';
+import { pool } from '../../db/config/configDB.js';
 
 import pc from 'picocolors';
 import {

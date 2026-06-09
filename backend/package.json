@@ -7,9 +7,7 @@
     "dev": "nodemon --experimental-specifier-resolution=node src/index.js",
     "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    
     "init-db": "node src/db/run_time_db_init/init-db.js",
-
     "db:bootstrap": "node src/db/migrations/bootstrapping.js",
     "db:reset": "node src/db/migrations/runResetDb.js",
     "db:migrate": "node src/db/migrations/runMigrations.js",
@@ -21,27 +19,28 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "5.1.1",
+    "axios": "^1.8.4",
+    "bcrypt": "6.0.0",
     "cookie-parser": "1.4.7",
     "cors": "2.8.5",
+    "decimal.js": "10.6.0",
     "dotenv": "16.4.7",
-    "express": "4.21.2",
-    "express-rate-limit": "8.2.1",
+    "express": "4.22.2",
+    "express-rate-limit": "8.5.2",
     "express-useragent": "1.0.15",
     "helmet": "8.0.0",
     "jsonwebtoken": "9.0.2",
-    "morgan": "1.10.0",
+    "morgan": "1.10.1",
     "pg": "8.13.3",
-    "picocolors": "^1.1.1",
+    "picocolors": "1.1.1",
     "serverless-http": "4.0.0",
-    "zod": "4.0.10",
-     "uuid": "11.1.0"
+    "zod": "4.0.10"
   },
   "devDependencies": {
     "cross-env": "10.1.0",
     "nodemon": "3.1.9",
     "standard": "17.1.2",
-    "uuid": "11.1.0"
+    "uuid": "11.1.1"
   },
   "eslingConfig": {
     "extends": "standard"

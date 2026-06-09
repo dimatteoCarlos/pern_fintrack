@@ -20,8 +20,14 @@ export const LOCAL_STORAGE_KEY = {
   REMEMBER_ME: 'fintrack_remember_me',
   USER_DATA: 'fintrack_user_data',
 };
-//-------------------------
-export const CURRENCY_OPTIONS = { usd: 'en-US', cop: 'cop-CO', eur: 'en-US' };
+//----------------------------------------
+export const CURRENCY_OPTIONS = {
+  usd: 'en-US',
+  cop: 'cop-CO',
+  eur: 'en-US',
+  ves: 'es-VE',
+  mxn: 'es-MX',
+};
 
 export const SELECT_CURRENCY_OPTIONS = [
   { value: 'usd', label: 'USD - US Dollar' },
@@ -29,7 +35,8 @@ export const SELECT_CURRENCY_OPTIONS = [
   { value: 'cop', label: 'COP - Colombian Peso' },
 ];
 
-export const DEFAULT_CURRENCY: CurrencyType = 'usd';
+
+export const DEFAULT_CURRENCY = import.meta.env.VITE_ACCOUNTING_CURRENCY_CODE || 'usd';
 
 export const DATE_TIME_FORMAT_DEFAULT = 'es-ES';
 

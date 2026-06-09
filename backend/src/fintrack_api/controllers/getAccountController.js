@@ -1,17 +1,17 @@
 // backend/src/fintrack_api/controllers/getAccountController.js
+
+//defined functions here:
 //getAllAccountsByType, getAccounts, getAccountById, getAccountsByCategory
 
 import pc from 'picocolors';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import { pool } from '../../db/config/configDB.js';
 import { respondError, respondSuccess } from '../../utils/responseHelpers.js';
-// import dotenv from 'dotenv';
-// dotenv.config();
 
 const backendColor = 'greenBright';
 const errorColor = 'red';
 
-//COMMON FUNCTIONS
+//BASIC FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
   const backendColor =
     status >= 400 ? 'red' : status >= 300 ? 'yellow' : 'green';

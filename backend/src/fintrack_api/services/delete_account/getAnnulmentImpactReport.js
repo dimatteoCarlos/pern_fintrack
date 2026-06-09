@@ -1,7 +1,7 @@
-// backend/src/fintrack_api/services/accountAnnulmentService.js
+// backend/src/fintrack_api/services/delete_account/accountAnnulmentService.js
 
 import pc from 'picocolors';
-import { pool } from '../../db/config/configDB.js';
+import { pool } from '../../../db/config/configDB.js';
 
 //target account: is the account to delete
 //affected_account: is the affected account which has interacted with the target account
