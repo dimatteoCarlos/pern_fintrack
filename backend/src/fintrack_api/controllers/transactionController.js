@@ -567,7 +567,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountTypeName === 'income_source' ? 'Income Reversal. ' : '';
 
     // Use numericAmount (USD) and accountingCurrencyCode in description
-    const transactionDescription = `${expenseReversalNotePrefix}${incomeReversalNotePrefix}${note ? note + '.' : ''}Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount} ${accountingCurrencyCode} from account "${sourceAccountInfo.acaccount_name} #${sourceAccountInfo.account_id}" (${sourceAccountTypeName}) credited to "${destinationAccountInfo.account_name} # ${destinationAccountInfo.account_id}" (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
+    const transactionDescription = `${expenseReversalNotePrefix}${incomeReversalNotePrefix}${note ? note + '.' : ''}Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount.toFixed(3)} ${accountingCurrencyCode} from account "${sourceAccountInfo.acaccount_name} #${sourceAccountInfo.account_id}" (${sourceAccountTypeName}) credited to "${destinationAccountInfo.account_name} # ${destinationAccountInfo.account_id}" (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
     // console.log(
     //   userId,
     //   transactionDescription,
@@ -606,7 +606,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     await recordTransaction(client, sourceTransactionOption);
     //====================================
     //-----destination transaction--------
-    const transactionDescriptionReceived = `${incomeReversalNotePrefix}${expenseReversalNotePrefix}${note ? note + '.' : ''}Transaction: ${destinationAccountTransactionType}. Received ${numericAmount} ${accountingCurrencyCode} in account "${destinationAccountInfo.account_name} (${destinationAccountTypeName}) # ${destinationAccountInfo.account_id}, from "${sourceAccountInfo.account_name}" # ${sourceAccountInfo.account_id} (${sourceAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
+    const transactionDescriptionReceived = `${incomeReversalNotePrefix}${expenseReversalNotePrefix}${note ? note + '.' : ''}Transaction: ${destinationAccountTransactionType}. Received ${numericAmount.toFixed(2)} ${accountingCurrencyCode} in account "${destinationAccountInfo.account_name} (${destinationAccountTypeName}) # ${destinationAccountInfo.account_id}, from "${sourceAccountInfo.account_name}" # ${sourceAccountInfo.account_id} (${sourceAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
     // console.log(
     //   userId,
     //   transactionDescriptionReceived,

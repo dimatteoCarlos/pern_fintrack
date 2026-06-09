@@ -36,7 +36,9 @@ async function startServer() {
     await initializeDatabase();
     await cleanRevokedTokens();
 
-    //set server
+    //=======================
+    // Set server & Error handling
+    //=======================
     app.listen(PORT, '0.0.0.0', () => {
       console.log(pc.yellowBright(`Server running on port ${PORT}`));
     });
