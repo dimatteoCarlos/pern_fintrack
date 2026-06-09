@@ -10,9 +10,9 @@ import { fxRateDecimal } from './fxRateDecimal.js';
 import { getFallbackRate } from '../exchangeRate_providers/getFallbackRate.js';
 import { FX_STATIC_FALLBACK_TTL_MS } from './fxConfig.js';
 
-// ===============================================
+// ====================================
 // 1. Helper to set memory cache with optional TTL (for static_fallback)
-// ===============================================
+// ====================================
 function setMemoryCacheWithTTL(base, target, rate, source, fetchedAt) {
  
   if (source === 'static_fallback') {
@@ -24,9 +24,9 @@ function setMemoryCacheWithTTL(base, target, rate, source, fetchedAt) {
   }
 }
 
-// ===============================================
+// ====================================
 // 2. Main exported function
-// ===============================================
+// ====================================
 /**
  * Convert an amount from one currency to another (defaults to USD).
  * Uses cascade: memory → DB → external providers → static fallback.
@@ -35,6 +35,8 @@ function setMemoryCacheWithTTL(base, target, rate, source, fetchedAt) {
  * @param {string} toCurrency - Target currency code (default 'usd')
  * @returns {Promise<{amount: Decimal, rate: number, source: string, fetchedAt: Date}>}
  */
+//MAIN FUNCTION: currencyAmountConversion
+// Convert amount with cascade and caching
 export async function currencyAmountConversion(amount, fromCurrency, toCurrency = 'usd') {
   const from = fromCurrency.toLowerCase();
   const to = toCurrency.toLowerCase();
@@ -100,7 +102,7 @@ export async function currencyAmountConversion(amount, fromCurrency, toCurrency 
   };
 }
 
-// ===============================================
+// ====================================
 // 3. Re-export utility for clearing cache (testing/admin)
-// ===============================================
+// ====================================
 export { clearMemoryCache };
