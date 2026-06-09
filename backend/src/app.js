@@ -152,6 +152,7 @@ app.get('/api/db-test', async (req, res) => {
 //MIDDLEWARE ROUTE HANDLING OR ROUTES CONFIGURATION
 
 app.use('/api', routes); //main app routes
+
 app.use('/api/fintrack', verifyToken, fintrack_routes);
 
 // app.use('/api/cronjob', cronRoutes);
