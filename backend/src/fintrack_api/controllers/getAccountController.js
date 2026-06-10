@@ -53,13 +53,17 @@ const getAccountTransactions = async (
   // 📝 TRANSACTIONS QUERY
   const transactionsQuery = {
     text: `
-    SELECT tr.*, mt.movement_type_name, trt.transaction_type_name, ct.currency_code
+    SELECT tr.*, mt.movement_type_name, trt.transaction_type_name,
+    ct.currency_code,
+    oc.currency_code AS original_currency_code 
+
     FROM transactions tr
     JOIN user_accounts ua ON (tr.account_id = ua.account_id AND tr.user_id = ua.user_id)
       JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
       JOIN transaction_types trt ON tr.transaction_type_id = trt.transaction_type_id
       JOIN currencies ct ON tr.currency_id = ct.currency_id
-      WHERE tr.user_id = $1
+      LEFT JOIN currencies oc ON tr.original_currency_id = oc.currency_id 
+     WHERE tr.user_id = $1
         AND tr.account_id = $2
         AND tr.transaction_actual_date BETWEEN $3 AND $4
       ORDER BY tr.transaction_actual_date DESC, tr.created_at DESC
@@ -932,69 +936,76 @@ export const getAccountsByCategory = async (req, res, next) => {
 }; //End of getAccountsByCategory
 
 /*
-example response of getAccountByCategory
+/*
+example response of getAccountByCategory (with FX metadata)
 {
-	"status": 200,
-	"message": "housing account list successfully completed ",
-	"data": {
-		"rows": 3,
-		"accountList": [
-			{
-				"account_id": 11,
-				"user_id": "397ec169-a453-45ce-bf5f-71b3b820b0ee",
-				"account_name": "housing_must",
-				"account_type_id": 5,
-				"currency_id": null,
-				"account_starting_amount": "0.00",
-				"account_balance": "133.30",
-				"account_start_date": "2025-07-05T17:17:48.123Z",
-				"created_at": "2025-07-05T17:17:48.138Z",
-				"updated_at": "2025-07-08T17:26:14.073Z",
-				"category_name": "housing",
-				"category_nature_type_id": 1,
-				"subcategory": "cleaning",
-				"budget": "500.00",
-				"currency_code": "usd",
-				"category_nature_type_name": "must"
-			},
-			{
-				"account_id": 20,
-				"user_id": "397ec169-a453-45ce-bf5f-71b3b820b0ee",
-				"account_name": "housing_need",
-				"account_type_id": 5,
-				"currency_id": null,
-				"account_starting_amount": "0.00",
-				"account_balance": "0.00",
-				"account_start_date": "2025-07-09T17:35:11.247Z",
-				"created_at": "2025-07-09T17:35:11.875Z",
-				"updated_at": "2025-07-09T17:35:11.874Z",
-				"category_name": "housing",
-				"category_nature_type_id": 2,
-				"subcategory": "subcategory of housing",
-				"budget": "654.00",
-				"currency_code": "usd",
-				"category_nature_type_name": "need"
-			},
-			{
-				"account_id": 22,
-				"user_id": "397ec169-a453-45ce-bf5f-71b3b820b0ee",
-				"account_name": "housing_want",
-				"account_type_id": 5,
-				"currency_id": null,
-				"account_starting_amount": "0.00",
-				"account_balance": "0.00",
-				"account_start_date": "2025-07-09T17:39:16.840Z",
-				"created_at": "2025-07-09T17:39:17.557Z",
-				"updated_at": "2025-07-09T17:39:17.557Z",
-				"category_name": "housing",
-				"category_nature_type_id": 4,
-				"subcategory": "housing subcategory",
-				"budget": "768.00",
-				"currency_code": "usd",
-				"category_nature_type_name": "want"
-			}
-		]
-	}
+  "status": 200,
+  "message": "housing account list successfully completed ",
+  "data": {
+    "rows": 3,
+    "accountList": [
+      {
+        "account_id": 11,
+        "user_id": "397ec169-a453-45ce-bf5f-71b3b820b0ee",
+        "account_name": "housing_must",
+        "account_type_id": 5,
+        "currency_id": 1,
+        "account_starting_amount": "0.00",
+        "account_balance": "133.30",
+        "account_start_date": "2025-07-05T17:17:48.123Z",
+        "created_at": "2025-07-05T17:17:48.138Z",
+        "updated_at": "2025-07-08T17:26:14.073Z",
+        "category_name": "housing",
+        "category_nature_type_id": 1,
+        "subcategory": "cleaning",
+        "budget": "500.00",
+        "currency_code": "usd",
+        "category_nature_type_name": "must",
+        "transactions": {
+          "totalTransactions": 5,
+          "summary": {
+            "initialBalance": {
+              "amount": 1010.55,
+              "date": "2025-06-15T22:40:50.140Z",
+              "currency": "usd"
+            },
+            "finalBalance": {
+              "amount": 902.55,
+              "currency": "usd",
+              "date": "2025-06-16T00:55:12.445Z"
+            },
+            "periodStartDate": "2025-05-18",
+            "periodEndDate": "2025-06-18"
+          },
+          "transactions": [
+            {
+              "transaction_id": 23,
+              "user_id": "c109eb15-4139-43b4-b081-8fb9860588af",
+              "description": "Grocery Store",
+              "amount": 25.00,
+              "movement_type_id": 1,
+              "transaction_type_id": 1,
+              "currency_id": 1,
+              "account_id": 21,
+              "account_balance_after_tr": 902.55,
+              "source_account_id": 21,
+              "destination_account_id": 27,
+              "status": "complete",
+              "transaction_actual_date": "2025-06-16T00:55:12.445Z",
+              "created_at": "2025-06-16T04:55:13.424Z",
+              "updated_at": "2025-06-16T04:55:13.424Z",
+              "movement_type_name": "expense",
+              "currency_code": "usd",
+              "original_amount": "100000.00",
+              "original_currency_code": "cop",
+              "exchange_rate": "0.00025000",
+              "exchange_rate_source": "exchange-rate-api",
+              "exchange_rate_timestamp": "2026-06-10T12:00:00.000Z"
+            }
+          ]
+        }
+      }
+    ]
+  }
 }
-
 */
