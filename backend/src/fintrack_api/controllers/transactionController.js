@@ -1,10 +1,12 @@
 // backend/src/fintrack_api/controllers/transactionController.js
 
 //controller:transferBetweenAccounts.js
-// Functions: Handles financial transfers between accounts with balance updates and transaction recording
+// Functions: Handles financial transfers between accounts with balance updates and transaction recording.
+
+//FUNCTION: Get transaction by ID with FX metadata
 
 //declared functions defined here:
-//getAccountTypeId,getAccountInfo, getAccountTypes,getTransactionTypes, balanceMultiplierFn,updateAccountBalance,
+//getAccountTypeId,getAccountInfo, getAccountTypes,getTransactionTypes, balanceMultiplierFn,updateAccountBalance, getTransactionById.
 
 // transferBetweenAccounts.js (Controller)
 // Main controller for financial transfers between accounts
@@ -713,3 +715,80 @@ export const transferBetweenAccounts = async (req, res, next) => {
   }
 };
 //end of transactionController
+
+// ========================================
+// 🎯 FUNCTION: Get transaction by ID with FX metadata
+// ========================================
+//Endpoint GET /api/fintrack/transactions/:id
+export async function getTransactionById(req, res, next) {
+  const client = await pool.connect();
+  try {
+    const { transactionId } = req.params;
+    const userId = req.user.userId;
+
+    if (!transactionId) {
+      return res.status(400).json({ error: 'Transaction ID is required' });
+    }
+
+    const result = await client.query(
+      `SELECT 
+        t.transaction_id,
+        t.user_id,
+        t.description,
+        t.amount,
+        t.movement_type_id,
+        t.transaction_type_id,
+        t.currency_id,
+        t.account_id,
+        t.account_balance_after_tr,
+        t.source_account_id,
+        t.destination_account_id,
+        t.status,
+        t.transaction_actual_date,
+        t.created_at,
+        t.updated_at,
+        t.original_amount,
+        t.original_currency_id,
+        t.exchange_rate,
+        t.exchange_rate_source,
+        t.exchange_rate_timestamp,
+        t.exchange_rate_target_currency_id,
+        c.currency_code,
+        oc.currency_code AS original_currency_code
+      FROM transactions t
+      LEFT JOIN currencies c ON t.currency_id = c.currency_id
+      LEFT JOIN currencies oc ON t.original_currency_id = oc.currency_id
+      WHERE t.transaction_id = $1 AND t.user_id = $2`,
+      [transactionId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+
+    const transaction = result.rows[0];
+
+    res.json({
+      transaction_id: transaction.transaction_id,
+      description: transaction.description,
+      amount: parseFloat(transaction.amount),
+      currency_code: transaction.currency_code,
+      original_amount: transaction.original_amount ? parseFloat(transaction.original_amount) : null,
+      original_currency_code: transaction.original_currency_code,
+      exchange_rate: transaction.exchange_rate ? parseFloat(transaction.exchange_rate) : null,
+      exchange_rate_source: transaction.exchange_rate_source,
+      exchange_rate_timestamp: transaction.exchange_rate_timestamp,
+      transaction_actual_date: transaction.transaction_actual_date,
+      account_id: transaction.account_id,
+      movement_type_id: transaction.movement_type_id,
+      transaction_type_id: transaction.transaction_type_id,
+      status: transaction.status,
+      account_balance_after_tr: parseFloat(transaction.account_balance_after_tr)
+    });
+  } catch (error) {
+    console.error('Error fetching transaction by ID:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
+  }
+}
