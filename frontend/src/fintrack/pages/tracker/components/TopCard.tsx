@@ -1,18 +1,23 @@
 // src/pages/tracker/components/TopCard.tsx
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection';
-import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation';
 import RadioInput, {
-  RadioInputPropsType,
+ RadioInputPropsType,
 } from '../../../general_components/radioInput/RadioInput';
-import { capitalize } from '../../../helpers/functions';
+import Tooltip from '../../../general_components/tooltip/Tooltip';
+
+import { capitalize, numberFormatCurrency } from '../../../helpers/functions';
 
 import {
-  CurrencyType,
-  DropdownOptionType,
-  TopCardElementsType,
+ CurrencyType,
+ DropdownOptionType,
+ TopCardElementsType,
 } from '../../../types/types';
+
 import { ValidationMessagesType } from '../../../validations/types';
+import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation';
+
+import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview'; 
 
 //---------------------------------
 type TopCardPropType<TFormDataType extends Record<string, unknown>> = {
@@ -27,6 +32,7 @@ type TopCardPropType<TFormDataType extends Record<string, unknown>> = {
   updateTrackerData: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
+
   trackerName: string;
 
   currency: CurrencyType;
@@ -64,13 +70,12 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
   isReset,
   isResetDropdown,
   setIsResetDropdown,
-  //-------
   setIsReset,
   //-------
   radioInputProps,
   //-------
   customSelectHandler,
-  //--------------
+  //-------
 }: TopCardPropType<TFormDataType>): JSX.Element => {
   const {
     selectOptions: topCardOptions,
@@ -85,13 +90,15 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
   //---
   const errorMessage = validationMessages[accountFieldName] || '';
   //(topCardElements.value as string).trim() !== '';//new
-
+//-----------------------------
+//console.log('errorMessage:', errorMessage)
+//-----------------------------
   //---show error message
   const shouldShowError = !!validationMessages[accountFieldName];
   // && (topCardElements.value as string).trim() !== ''
-  //---
-  // console.log('desde topcardzod', validationMessages.amount, errorMessage,shouldShowError,(topCardElements.value as string).trim() !== '' )
-
+  //--------------------------
+  //console.log('desde topcard', validationMessages.amount, errorMessage,shouldShowError,(topCardElements.value as string).trim() !== '' )
+//-----------------------------
   //selection handler
   function stateSelectHandler(selectedOption: DropdownOptionType | null) {
     // should get the account_id of the selected account_name. it supposes that account_name is unique too.
@@ -100,10 +107,10 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
       [accountFieldName]: selectedOption?.value || '',
     }));
 
-    // console.log('title2', title2.trim(),'label', selectedOption?.label,'value', selectedOption?.value );
+    // //console.log('title2', title2.trim(),'label', selectedOption?.label,'value', selectedOption?.value );
 
-    //if setValidationMessages is used, then clean the correspondent validation message
-    //aqui sin validar con zod,  se asigna el valor, y se asume que es valido, y entonces, se  borra el mensaje de error asociado al campo que se selecciono.
+//if setValidationMessages is used, then clean the correspondent validation message
+//aqui sin validar con zod,  se asigna el valor, y se asume que es valido, y entonces, se  borra el mensaje de error asociado al campo que se selecciono.
 
     if (setValidationMessages) {
       setValidationMessages((prev) => {
@@ -118,17 +125,57 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
   //**********************************/
   //usage of customSelectHandler if it exists
   const finalSelectHandler = customSelectHandler || stateSelectHandler;
-  //  console.log('isResetDropdown', { isResetDropdown });
-  // console.log('selected value from TopCard:', selectedValue);
+  //  //console.log('isResetDropdown', { isResetDropdown });
+  // //console.log('selected value from TopCard:', selectedValue);
   //-----------------------------------
+   const { targetCurrencyPreview, rate, direction } = useCurrencyPreview(
+   topCardElements.value,
+   currency
+   );
+//--------------------------------
+//console.log('🔍 Preview:', { targetCurrencyPreview, rate, direction,  });
+//--------------------------------
+//  Only treat messages starting with '*' as validation errors
+  const isAmountError = validationMessages.amount && validationMessages.amount.trim().startsWith('*');
+
+  const showPreview = !!targetCurrencyPreview && !isAmountError;
+
+   // const tooltipText = rate && direction ? `${direction}\nrate:${rate.toFixed(2)}` : '';
+
+   const tooltipText = rate && direction 
+  ? `${direction}\nrate: ${numberFormatCurrency(rate, 2, undefined, 'es-ES')}` 
+  : '';
+//---------------------------------
+//console.log('🔍 Tooltip:', tooltipText);//console.log('🔎 showPreview condition:', { targetCurrencyPreview, validationMessagesAmount: validationMessages?.amount, showPreview });
+//------------------------
+// =======================
+// 🧩 RENDER
+// =======================
   return (
-    <>
-      <div className='state__card--top  '>
+   <>
+     <div className='state__card--top  '>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
         <LabelNumberValidation
           formDataNumber={{ keyName: title1, title: title1 }}
           validationMessages={validationMessages}
           variant={variant}
         />
+
+        {showPreview && (
+
+       <Tooltip 
+       tipText={tooltipText} 
+       isActive={false}
+       tooltipClassName="currency-preview-tooltip"
+       >
+        <span className='currency-preview' style={{ fontSize: '0.8rem', color: '#666' }}>
+        {targetCurrencyPreview}
+        </span>
+       </Tooltip>
+        )}
+      </div>
 
         <div className='card__screen'>
           <input
