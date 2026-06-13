@@ -1,0 +1,168 @@
+/* frontend\src\fintrack\pages\overview\components\transactionDetailModal\transactionDetailModal.css */
+
+/* 🎨 STYLES: TransactionDetailModal (dark theme with good contrast) */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background-color: #1a1a2e;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  outline: none;
+  color: #e0e0e0;
+}
+
+/* Scrollbar styling */
+.modal-container::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-container::-webkit-scrollbar-track {
+  background: #2a2a3e;
+  border-radius: 3px;
+}
+.modal-container::-webkit-scrollbar-thumb {
+  background: #5a5a7e;
+  border-radius: 3px;
+}
+
+/* Header */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #33334e;
+  padding-bottom: 0.75rem;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.modal-close-btn-top {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #8888aa;
+  padding: 0.25rem;
+  transition: color 0.2s ease;
+  line-height: 1;
+}
+.modal-close-btn-top:hover {
+  color: #ffffff;
+}
+
+/* Sections */
+.modal-section {
+  background-color: #0f0f1a;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.modal-section-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #7c7caa;
+  margin-bottom: 0.75rem;
+  border-left: 3px solid #4a4a7a;
+  padding-left: 0.5rem;
+}
+
+/* Data rows */
+.modal-data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #22223a;
+}
+.modal-data-row:last-child {
+  border-bottom: none;
+}
+
+.modal-label {
+  font-weight: 500;
+  color: #8888aa;
+  font-size: 0.85rem;
+  min-width: 110px;
+}
+
+.modal-value {
+  font-weight: 400;
+  color: #d0d0e0;
+  font-size: 0.85rem;
+  text-align: right;
+  word-break: break-word;
+  max-width: 60%;
+}
+
+.modal-description {
+  font-style: italic;
+  color: #b0b0c0;
+  text-align: left;
+  max-width: 65%;
+}
+
+.modal-amount,
+.modal-amount-positive{
+  font-weight: 600;
+  color: #4ade80;
+}
+
+.modal-amount-negative {
+  font-weight: 600;
+  color: #f87171;  /* rojo */
+}
+
+.modal-source {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #a0a0c0;
+}
+
+/* Footer */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #33334e;
+  padding-top: 0.75rem;
+}
+
+.modal-close-btn-bottom {
+  background-color: #2d2d4a;
+  color: #ffffff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.modal-close-btn-bottom:hover {
+  background-color: #4a4a7a;
+}

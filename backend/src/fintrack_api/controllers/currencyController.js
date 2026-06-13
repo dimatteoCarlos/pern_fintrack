@@ -1,11 +1,18 @@
 //backend/src/fintrack_api/controllers/currencyController.js
 
-// 💰 CONTROLLER: Currency conversion for frontend preview
+// 💰 CONTROLLER:: Currency rates endpoint
+//  currencyConvert: conversion for frontend preview
+//  getAllRates:get rates listing
 
 import { currencyAmountConversion } from '../services/exchangeRate_service/currencyAmountConversion.js';
 import { getCurrencyId } from '../../utils/currencyLookup.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
+import { supportedCurrencies } from '../config/constants.js';
+import { fetchFromExchangeRateAPI } from '../services/exchangeRate_providers/exchangeRateApiProvider.js';
 
+// ===============================
+// 🎯 FUNCTION: Convert a specific amount (POST)
+// ===============================
 export async function currencyConvert(req, res, next) {
   try {
     const { amount, fromCurrency, toCurrency = ACCOUNTING_CURRENCY_CODE } = req.body;
@@ -38,3 +45,69 @@ export async function currencyConvert(req, res, next) {
     res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }
+
+//----------------------------------
+// =================================
+// 🎯 FUNCTION: Get all exchange rates (GET)
+// =================================
+export async function getAllRates(req, res, next) {
+  const base = req.query.base || ACCOUNTING_CURRENCY_CODE;
+
+  // ------------------------------------
+  // 1. Attempt to fetch full snapshot from ExchangeRate-API (massive)
+  // ------------------------------------
+  // if (base === 'usd')
+  // Optimization only for USD base (most common)
+    try {
+      const snapshot = await fetchFromExchangeRateAPI(base, null); // null means get all rates
+
+      // Validate that snapshot contains all required currencies
+      const requiredCurrencies = supportedCurrencies.filter(c => c !== base);
+      //---DEBUG
+      console.log('c:', c, 'base:', base)
+      //---DEBUG
+
+      const missing = requiredCurrencies.filter(curr => !snapshot.rates[curr]);
+      
+      if (missing.length === 0) {
+      // Build rates object exactly as frontend expects
+        const rates = {};
+        for (const curr of supportedCurrencies) {
+          rates[curr] = curr === base ? 1 : snapshot.rates[curr];
+        }
+        // Added base to log message 
+        console.log(`✅ getAllRates: using massive snapshot from ExchangeRate-API for base ${base}`);
+        return res.json({
+          base,
+          rates,
+          timestamp: snapshot.fetchedAt || new Date().toISOString(),
+        });
+      } else {
+        console.warn(`⚠️ Massive snapshot missing currencies: ${missing.join(', ')}. Falling back to iterative.`);
+      }
+    } catch (err) {
+      console.warn(`⚠️ Massive snapshot failed for base ${base}:`, err.message);
+    }
+  
+
+//-------------------------------------
+// 2. Fallback: original iterative method (one request per currency)
+//----------------------------------
+  const rates = { [base]: 1 };
+  for (const target of supportedCurrencies) {
+    if (target === base) continue;
+    try {
+      const conversion = await currencyAmountConversion(1, base, target);
+      rates[target] = conversion.rate;
+    } catch (err) {
+      console.error(`Failed to get rate for ${target}:`, err.message);
+      rates[target] = null;
+    }
+  }
+  console.log('🔄 getAllRates: using iterative fallback');
+  res.json({
+    base,
+    rates,
+    timestamp: new Date().toISOString(),
+  });
+ }

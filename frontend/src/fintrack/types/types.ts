@@ -210,15 +210,9 @@ export type PocketsToRenderType = {
 //----------------------------------
 export type StatusType = boolean;
 
-export type CurrencyType = 'usd' | 'cop' | 'eur';
+export type CurrencyType = 'usd' | 'cop' | 'eur'| 'ves' | 'mxn';
 
 export type DebtorType = 'debtor' | 'lender';
-
-export type CURRENCY_OPTIONSTYPE = {
-  usd: 'en-US';
-  cop: 'cop-CO';
-  eur: 'en-US';
-};
 
 //LabelInputNumberHandler
 export type FormNumberInputType = { [key: string]: string };
@@ -228,7 +222,12 @@ export type FormNumberInputType = { [key: string]: string };
 
 export type VariantType = 'tracker' | 'form' | 'light' | 'dark';
 
-export type DropdownOptionType = { value: string; label: string };
+// export type DropdownOptionType = { value: string; label: string };
+
+export type DropdownOptionType<T = string> = { 
+  value: T; 
+  label: string; 
+};
 
 //tracker input mask data type
 export type TopCardSelectStateType =

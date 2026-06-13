@@ -9,7 +9,7 @@ export const fixedRates = {
   eur: 0.9215,
   cop: 3600,
   mxn: 16.85,
-  ves: 602, // Projected static rate for VES (2026-01-19) - will be overridden by projection
+  ves: 615, // Projected static rate for VES (2026-06-30) - will be overridden by projection
 };
 
 // ============================================
@@ -17,9 +17,9 @@ export const fixedRates = {
 // Derived from historical BCV data (Jan–May 2026)
 // ============================================
 const VES_PROJECTION = {
-  a: 506.43260997244744, // rate on base date (2026-01-01)
-  b: 0.004667437473948581, // daily growth factor
-  baseDate: new Date('2026-05-13'),
+  a: 556.9345935995726, // rate on base date (2026-01-01)
+  b:0.0035256890195482517, // daily growth factor
+  baseDate: new Date('2026-06-02'),
 };
 
 //========================================

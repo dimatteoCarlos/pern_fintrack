@@ -127,6 +127,8 @@ async function fetchFromExternalProviders(baseCode, targetCode) {
 // 5. Main exported function
 // ============================
 export async function convertAmountToBaseCurrency(amount, fromCurrency, toCurrency = 'usd') {
+console.log('convertAmountToBaseCurrency','exchangeRateService');
+
   const from = fromCurrency.toLowerCase();
   const to = toCurrency.toLowerCase();
 

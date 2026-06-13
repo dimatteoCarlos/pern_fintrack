@@ -31,7 +31,7 @@ export const url_change_password = BASE_URL + `user/change-password`;
 
 export const url_update_user = BASE_URL + 'user/update-profile';
 
-//-----------------------
+//-------------------------
 //FINTRACK ROUTES ENDPOINTS
 //http://localhost:5000/api/fintrack
 export const BASE_URL_APP: string = import.meta.env.VITE_API_URL_APP;
@@ -208,3 +208,13 @@ export const url_report_of_affected_accounts = (
 
 export const url_account_delete = (targetAccountId: string | number) =>
   `${BASE_URL_APP}account/delete/${targetAccountId}`;
+
+// ===================================
+// 🌐 GET FX CURRENCY RATES 
+// ===================================
+export const url_currency_rates = BASE_URL_APP + 'currency/rates';
+
+// ===================================
+// 💰 GET TRANSACTION BY ID
+// ===================================
+export const url_get_transaction_by_id = BASE_URL_APP + 'transaction/';

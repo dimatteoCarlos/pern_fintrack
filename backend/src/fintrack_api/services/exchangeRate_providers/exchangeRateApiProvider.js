@@ -4,26 +4,19 @@
 import axios from 'axios';
 
 // 1. Read environment variables (constants for API configuration)
-const FX_BASE_URL = 'https://v6.exchangerate-api.com/v6';
+const FX_API_KEY = process.env.EXCHANGE_RATE_API_KEY;
+const FX_TIMEOUT_MS = Number(process.env.FX_REQUEST_TIMEOUT_MS || 2000);
 
-// const FX_TIMEOUT_MS = Number(
-//   process.env.FX_REQUEST_TIMEOUT_MS || 4000
-// )*2;
+const FX_BASE_URL = 'https://v6.exchangerate-api.com/v6';
 
 /**
  * Fetch exchange rate from ExchangeRate-API
- * @param {string} baseCode - Base currency code (lowercase)
- * @param {string} targetCode - Target currency code (lowercase)
- * @returns {Promise<{rate: number, source: string, fetchedAt: Date}>}
+ * @param {string} fromCurrencyCode - Base currency code (lowercase)
+ * @param {string|null} toCurrencyCode  - Target currency code (lowercase), or null to get all rates
+ * @returns {Promise<{rate?: number, rates?: object, source: string, fetchedAt: Date}>}
  */
 
-export async function fetchFromExchangeRateAPI(baseCode, targetCode) {
-
- const FX_API_KEY = process.env.EXCHANGE_RATE_API_KEY;
-
-const FX_TIMEOUT_MS = Number(
-  process.env.FX_REQUEST_TIMEOUT_MS || 2000
-)*2;
+export async function fetchFromExchangeRateAPI(fromCurrencyCode, toCurrencyCode ) {
 
  // 2. Validate input parameters and API key configuration
   if (!FX_API_KEY) {
@@ -32,33 +25,56 @@ const FX_TIMEOUT_MS = Number(
   );
 }
 // 3. Validate input parameters
-  if (!baseCode || !targetCode) {
+  if (!fromCurrencyCode ) {
     throw new Error(
-      'Currency codes are required'
+      'Base currency code is required'
     );
   }
-  if (typeof baseCode !== 'string' ||
-  typeof targetCode !== 'string'
-) {
-  throw new Error(
-    'Currency codes must be strings'
-  );
+  if (typeof fromCurrencyCode !== 'string') {
+  throw new Error('Base currency code must be a string');
 }
-  const base = baseCode.toUpperCase();
-  const target = targetCode.toUpperCase();
+// toCurrencyCode  is optional (null means get all rates)
+if (toCurrencyCode  !== null && typeof toCurrencyCode  !== 'string') {
+  throw new Error('Target currency code must be a string or null');
+}
+
+  const base = fromCurrencyCode.toUpperCase();
+  // const target = toCurrencyCode .toUpperCase();
   const url = `${FX_BASE_URL}/${FX_API_KEY}/latest/${base}`;
+
+  console.log("🚀 ~ fetchFromExchangeRateAPI ~ url:", url)
+  //-----------
 
  // 4. Perform request
   const response = await axios.get(url, { timeout: FX_TIMEOUT_MS });
+
+  // console.log("🚀 ~ fetchFromExchangeRateAPI ~ response:", response)
+  //-----------
   
  // 5. Validate response structure
   if (!response.data || response.data.result !== 'success') {
     throw new Error('ExchangeRate-API returned invalid response');
   }
-
+//---------------------
+// 6. If toCurrencyCode is not provided, return the full rates object (snapshot)
+if (!toCurrencyCode ) {
+//---------------
+console.log('response.data.conversion_rates', response.data.conversion_rates)
+//---------------
+return {
+   rates: response.data.conversion_rates,
+   source: 'exchange-rate-api',
+   fetchedAt: response.data.time_last_update_unix
+     ? new Date(response.data.time_last_update_unix * 1000)
+     : new Date(),
+    };
+  }
+//---------------------
+ // 7. For a single target currency
+  const target = toCurrencyCode.toUpperCase();
   const rate = response.data.conversion_rates[target];
 
-// 6. Validate rate value
+// 8. Validate rate value
   if (
     !rate ||
     typeof rate !== 'number' ||
@@ -68,12 +84,10 @@ const FX_TIMEOUT_MS = Number(
     throw new Error(`Invalid rate for ${target} from ExchangeRate-API`);
   }
 
-// 8. Log for debugging (no sensitive data)
-  console.log(
-  `[FX] ExchangeRateAPI ${base} -> ${target}`
-);
-
-// 9. Return normalized response
+// 9. Log for debugging (no sensitive data)
+  console.log(`[FX] ExchangeRateAPI ${base} -> ${target}`);
+//--------------- 
+// 10. Return normalized response
   return {
     rate: Number(rate),
     source: 'exchange-rate-api',

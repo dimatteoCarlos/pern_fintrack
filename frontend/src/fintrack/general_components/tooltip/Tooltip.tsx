@@ -1,13 +1,18 @@
+//frontend\src\fintrack\general_components\tooltip\Tooltip.tsx
+
 import React, { useState } from 'react';
 import './styles/tooltip.css';
 type TooltipPropType = {
   tipText: string;
   children: React.ReactNode;
   isActive: boolean;
+  tooltipClassName?:string;
 };
-const Tooltip = ({ tipText, children, isActive }: TooltipPropType) => {
+
+const Tooltip = ({ tipText, children, isActive, tooltipClassName }: TooltipPropType) => {
   //state
   const [isVisible, setIsVisible] = useState<boolean>(!isActive);
+  
   const handleMouseEnter = () => {
     setIsVisible(true); //console.log('mouseEnter', {isActive}, {isVisible})
   };
@@ -22,7 +27,8 @@ const Tooltip = ({ tipText, children, isActive }: TooltipPropType) => {
       onMouseLeave={handleMouseLeave}
     >
       {!isActive && isVisible && (
-        <div className='tooltip__wrapper--text'>{tipText}</div>
+        <div className={`tooltip__wrapper--text ${tooltipClassName || ''}`}>{tipText}
+        </div>
       )}
 
       {children}

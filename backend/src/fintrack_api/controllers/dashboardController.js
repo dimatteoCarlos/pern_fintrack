@@ -685,7 +685,8 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           ct.currency_code,
           act.account_type_id, act.account_type_name,
           ua.account_starting_amount, ua.account_start_date, 
-          tr.description, tr.transaction_actual_date, tr.amount
+          tr.description, tr.transaction_actual_date, tr.amount,
+          tr.transaction_id
 
           FROM transactions tr 
             JOIN user_accounts ua ON tr.account_id = ua.account_id
@@ -708,7 +709,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
         ct.currency_code, act.account_type_id, act.account_type_name,
         psa.target,psa.desired_date,           
         ua.account_starting_amount, ua.account_start_date, 
-        tr.description, tr.transaction_actual_date, tr.amount
+        tr.description, tr.transaction_actual_date, tr.amount, tr.transaction_id
 
          FROM transactions tr 
           JOIN user_accounts ua ON tr.account_id = ua.account_id
@@ -744,7 +745,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
         dbt.debtor_name,dbt.debtor_lastname, dbt.value,         
         ua.account_starting_amount, ua.account_start_date, 
           tp.transaction_type_name, tr.description, 
-          tr.transaction_actual_date, tr.amount
+          tr.transaction_actual_date, tr.amount, tr.transaction_id
 
         FROM transactions tr 
           JOIN user_accounts ua ON tr.account_id = ua.account_id
@@ -781,7 +782,8 @@ export const dashboardMovementTransactions = async (req, res, next) => {
         text: `SELECT  mt.movement_type_name,ua.account_id, ua.account_name, ua.account_balance,
         ct.currency_code, act.account_type_id, act.account_type_name,
         ua.account_starting_amount, ua.account_start_date, 
-        tp.transaction_type_name, tr.description, tr.transaction_actual_date, tr.amount
+        tp.transaction_type_name, tr.description, tr.transaction_actual_date, tr.amount, tr.transaction_id
+
           FROM transactions tr 
           JOIN user_accounts ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
@@ -1018,7 +1020,8 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
     const movementsResult = await pool.query({
       text: `
   SELECT mt.movement_type_name, ct.currency_code, ua.*, tr.*, trt.transaction_type_name,act.account_type_name,
-  CAST ( ua.account_starting_amount AS FLOAT),  CAST (tr.amount AS FLOAT),CAST(ua.account_balance AS FLOAT)
+  CAST ( ua.account_starting_amount AS FLOAT),  CAST (tr.amount AS FLOAT),
+  CAST(ua.account_balance AS FLOAT)
     FROM transactions tr
       JOIN user_accounts ua ON tr.account_id = ua.account_id
       JOIN account_types act ON ua.account_type_id = act.account_type_id

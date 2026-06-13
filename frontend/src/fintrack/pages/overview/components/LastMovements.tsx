@@ -10,6 +10,7 @@ export type LastMovementType = {
   description: string; //data
   date: Date | string;
   currency: CurrencyType;
+  transactionId: number;
 };
 
 type LastMovementsProps = {
@@ -26,7 +27,7 @@ function LastMovements({ data, title }: LastMovementsProps) {
       record: 0,
       description: 'Description',
       date: new Date(),
-      currency: 'usd',
+      currency: 'usd', transactionId: 0, 
     },
   ];
 

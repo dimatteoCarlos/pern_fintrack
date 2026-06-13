@@ -306,7 +306,7 @@ export async function overviewFetchAll(
     } //end of fulfilled conditional block
     // ✅ Handle rejected promises with detailed logging (network errors, etc.)
     else {
-      // Use logError for all logging (handles dev/prod internally)
+    // Use logError for all logging (handles dev/prod internally)
       const parsedError = parseErrorReason(result.reason);
 
       logError(endpoint.key, {
