@@ -94,6 +94,13 @@ export async function currencyAmountConversion(amount, fromCurrency, toCurrency 
   // 5. Store in memory cache (with different TTL for static_fallback)
   setMemoryCacheWithTTL(from, to, result.rate, result.source, result.fetchedAt);
 
+  console.log('result:', {
+    amount: fxRateDecimal(amount, result.rate),
+    rate: result.rate,
+    source: result.source,
+    fetchedAt: result.fetchedAt,
+  })
+
   return {
     amount: fxRateDecimal(amount, result.rate),
     rate: result.rate,
