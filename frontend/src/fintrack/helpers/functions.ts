@@ -13,6 +13,9 @@
 //-------------------------
 import { CurrencyType, StatusType } from '../types/types';
 import { DATE_TIME_FORMAT_DEFAULT } from './constants';
+
+import { CURRENCY_CYCLE } from './constants';
+
 export function currencyFormat(
   chosenCurrency = 'USD',
   number = 0,
@@ -118,6 +121,7 @@ export function digitRound(n = Number.MIN_VALUE, digit = 2) {
 }
 
 //-------------------------
+//Hardcoded to show just cop and usd.
 export function changeCurrency(currency: CurrencyType) {
   if (currency.toLocaleLowerCase() == 'usd') {
     return 'cop';
@@ -127,8 +131,14 @@ export function changeCurrency(currency: CurrencyType) {
     return 'usd';
   }
 }
-//-------------------------
-
+//--------------------------
+// 🎯 FUNCTION: getNextCurrency - circular cycle through 5 currencies
+export function getNextCurrency(currentCurrency: CurrencyType): CurrencyType {
+  const currentIndex = CURRENCY_CYCLE.indexOf(currentCurrency);
+  const nextIndex = (currentIndex + 1) % CURRENCY_CYCLE.length;
+  return CURRENCY_CYCLE[nextIndex] as CurrencyType;
+}
+//--------------------------
 type OpcType = {
   currentOpc: string; //check any
   opc1: string;
