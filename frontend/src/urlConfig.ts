@@ -213,3 +213,8 @@ export const url_account_delete = (targetAccountId: string | number) =>
 // 🌐 GET FX CURRENCY RATES 
 // ===================================
 export const url_currency_rates = BASE_URL_APP + 'currency/rates';
+
+// ===================================
+// 💰 GET TRANSACTION BY ID
+// ===================================
+export const url_get_transaction_by_id = BASE_URL_APP + 'transaction/';
