@@ -45,12 +45,14 @@ export async function recordTransaction(clientOrPool = null, option) {
       exchange_rate_timestamp,
       exchange_rate_target_currency_id,
     } = option;
-    // console.log('🚀 ~ recordTransaction ~ options:', options);
     
+ //DEBUG
+    console.log('🚀 ~ recordTransaction ~ options:', option);
+ //DEBUG   
 // ===================================
 // Prepare values array with default fallbacks for FX fields
 // ===================================
-const values = [
+    const values = [
       userId,
       description,
       movement_type_id,
@@ -64,10 +66,10 @@ const values = [
       transaction_actual_date,
       account_balance,
       // FX fields with defaults
-      original_amount ?? DEFAULT_ORIGINAL_AMOUNT,
-      original_currency_id ?? accountingCurrencyId,
+      original_amount ?? amount,//DEFAULT_ORIGINAL_AMOUNT,
+      original_currency_id ?? currency_id,// accountingCurrencyId,
       exchange_rate ?? DEFAULT_EXCHANGE_RATE,
-      exchange_rate_source ?? DEFAULT_EXCHANGE_RATE_SOURCE,
+      exchange_rate_source ??  DEFAULT_EXCHANGE_RATE_SOURCE,
       exchange_rate_timestamp ?? new Date(),
       exchange_rate_target_currency_id ?? accountingCurrencyId,
     ];
