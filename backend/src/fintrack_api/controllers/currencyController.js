@@ -63,6 +63,10 @@ export async function getAllRates(req, res, next) {
 
       // Validate that snapshot contains all required currencies
       const requiredCurrencies = supportedCurrencies.filter(c => c !== base);
+      //---DEBUG
+      console.log('c:', c, 'base:', base)
+      //---DEBUG
+
       const missing = requiredCurrencies.filter(curr => !snapshot.rates[curr]);
       
       if (missing.length === 0) {
