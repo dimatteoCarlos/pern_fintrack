@@ -9,6 +9,7 @@ import { fetchFromExternalProviders } from './fxProviderOrchestrator.js';
 import { fxRateDecimal } from './fxRateDecimal.js';
 import { getFallbackRate } from '../exchangeRate_providers/getFallbackRate.js';
 import { FX_STATIC_FALLBACK_TTL_MS } from './fxConfig.js';
+import { ACCOUNTING_CURRENCY_CODE } from '../../config/fintrackConfig.js';
 
 // ====================================
 // 1. Helper to set memory cache with optional TTL (for static_fallback)
@@ -37,7 +38,7 @@ function setMemoryCacheWithTTL(base, target, rate, source, fetchedAt) {
  */
 //MAIN FUNCTION: currencyAmountConversion
 // Convert amount with cascade and caching
-export async function currencyAmountConversion(amount, fromCurrency, toCurrency = 'usd') {
+export async function currencyAmountConversion(amount, fromCurrency, toCurrency = ACCOUNTING_CURRENCY_CODE) {
   const from = fromCurrency.toLowerCase();
   const to = toCurrency.toLowerCase();
 
