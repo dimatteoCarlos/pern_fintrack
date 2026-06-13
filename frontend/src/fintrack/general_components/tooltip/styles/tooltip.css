@@ -30,3 +30,29 @@
   border: 1px solid var(--dark);
   opacity: 1;
 }
+
+/* .tooltip__wrapper:hover .tooltip__wrapper--text:not(.currency-preview-tooltip) {
+  border: 1px solid var(--dark);
+  opacity: 1;
+} */
+
+/* 💰 Tooltip personalizado para preview de moneda (arriba-izquierda, dos líneas) */
+.currency-preview-tooltip {
+  bottom: 6% !important; /* aparece arriba del elemento */
+  left: 0% !important; /* alineado a la izquierda */
+  translate: -46%;
+  margin-bottom: 6px !important;
+  white-space: pre-line !important; /* respeta saltos de línea */
+  font-size: 0.625rem !important;
+  padding: 5px 8px !important;
+  max-width: max-content !important;
+  width: max-content !important;
+
+  text-align: left !important;
+  font-family: monospace !important;
+  background-color: #1e1e2f !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.2) !important;
+  pointer-events: none !important;
+}
