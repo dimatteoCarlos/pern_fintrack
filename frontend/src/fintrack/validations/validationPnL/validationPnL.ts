@@ -200,6 +200,6 @@ export const validateAllFn = <FormDataType extends Record<string, unknown>>(
       }
     }
   } //end of
-  console.log({ data });
+  // console.log({ data });
   return { isValid, fieldErrorMessages, data };
 };
