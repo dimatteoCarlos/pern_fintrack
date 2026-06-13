@@ -27,15 +27,15 @@ export async function fetchFromCotizave(baseCode, targetCode) {
   const target = targetCode.toLowerCase();
 
   // DEBUG LOGS
-  console.log('[FX DEBUG] ENV KEY EXISTS:', !!FZ_API_KEY);
-  console.log('[FX DEBUG] ENV KEY:', FZ_API_KEY);
+  // console.log('[FX DEBUG] ENV KEY EXISTS:', !!FZ_API_KEY);
+  // console.log('[FX DEBUG] ENV KEY:', FZ_API_KEY);
   console.log('[FX DEBUG] REQUEST URL:', COTIZAVE_API_URL);
   //---
-  console.log('==============================');
-  console.log('[FX DEBUG] FINAL REQUEST CHECK');
-  console.log('[FX DEBUG] API KEY LENGTH:', FZ_API_KEY?.length);
-  console.log('[FX DEBUG] API KEY PREFIX:', FZ_API_KEY?.slice(0, 10));
-  console.log('==============================');
+  // console.log('==============================');
+  // console.log('[FX DEBUG] FINAL REQUEST CHECK');
+  // console.log('[FX DEBUG] API KEY LENGTH:', FZ_API_KEY?.length);
+  // console.log('[FX DEBUG] API KEY PREFIX:', FZ_API_KEY?.slice(0, 10));
+  // console.log('==============================');
 
   const res = await fetch(COTIZAVE_API_URL, {
     headers: {
