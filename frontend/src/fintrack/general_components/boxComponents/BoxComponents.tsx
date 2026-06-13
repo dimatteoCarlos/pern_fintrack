@@ -7,15 +7,26 @@ import './styles/boxComponents.css'
 
 // PROPS TYPES
 // =============
-type ChildrenPropType = { children: React.ReactNode, className?:string };
+type ChildrenPropType = { children: React.ReactNode,
+ className?: string;
+  onClick?: () => void;        
+  style?: React.CSSProperties; 
+};
 
 // COMPONENTS
 // ============
 //-----BoxContainer 
-export function BoxContainer({ children, className }: ChildrenPropType) {
-  return <div className={`box-container ${className}`.trim()}>{children}</div>;
+export function BoxContainer({ children, className, onClick, style }: ChildrenPropType) {
+  return (
+    <div 
+      className={`box-container ${className}`.trim()} 
+      onClick={onClick}
+      style={style}
+    >
+      {children}
+    </div>
+  );
 }
-
 //-----BoxRow 
 export function BoxRow({ children , className}: ChildrenPropType) {
   return <div className={`box__row  box-row ${className}`.trim()}>{children}</div>;
