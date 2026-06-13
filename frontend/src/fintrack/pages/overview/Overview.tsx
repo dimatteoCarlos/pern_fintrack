@@ -196,7 +196,7 @@ function Overview() {
                   amount,
                   description,
                   transaction_actual_date,
-                  currency_code,
+                  currency_code, transaction_id,
                 } = movementExpenseTransactionsData[i];
 
                 const obj = {
@@ -204,7 +204,7 @@ function Overview() {
                   record: amount, //data? or title?
                   description: description,
                   date: transaction_actual_date,
-                  currency: currency_code,
+                  currency: currency_code,  transactionId: transaction_id,
                 };
                 return { ...obj };
               },
@@ -224,6 +224,7 @@ function Overview() {
                 description,
                 transaction_actual_date,
                 currency_code,
+                transaction_id,
               } = debt;
 
               return {
@@ -232,6 +233,7 @@ function Overview() {
                 description: description, //data
                 date: transaction_actual_date,
                 currency: currency_code,
+                  transactionId:transaction_id,
               };
             })
           : null;
@@ -251,7 +253,7 @@ function Overview() {
                   amount,
                   description,
                   transaction_actual_date,
-                  currency_code,
+                  currency_code, transaction_id,
                 } = movementIncomeTransactionsData[i];
 
                 const obj = {
@@ -259,7 +261,7 @@ function Overview() {
                   record: amount, //data? or title?
                   description: description,
                   date: transaction_actual_date,
-                  currency: currency_code,
+                  currency: currency_code,  transactionId: transaction_id,
                 };
                 return { ...obj };
               },
@@ -280,7 +282,7 @@ function Overview() {
                   amount,
                   description,
                   transaction_actual_date,
-                  currency_code,
+                  currency_code,  transaction_id,
                 } = movementPocketTransactionsData[i];
 
                 const obj = {
@@ -288,13 +290,14 @@ function Overview() {
                   record: amount, //data? or title?
                   description: description,
                   date: transaction_actual_date,
-                  currency: currency_code,
+                  currency: currency_code, transactionId: transaction_id, 
+
                 };
                 return { ...obj };
               },
             )
           : null;
-        //-------------------------------------------
+        //--------------------------------
         const movementInvestmentTransactionsData =
           result.MovementInvestmentTransactions.status === 'success'
             ? result.MovementInvestmentTransactions?.data?.data
@@ -310,7 +313,7 @@ function Overview() {
                     amount,
                     description,
                     transaction_actual_date,
-                    currency_code,
+                    currency_code,  transaction_id,
                   } = movementInvestmentTransactionsData[i];
 
                   const obj = {
@@ -318,7 +321,7 @@ function Overview() {
                     record: amount, //data? or title?
                     description: description,
                     date: transaction_actual_date,
-                    currency: currency_code,
+                    currency: currency_code,  transactionId: transaction_id,
                   };
                   return { ...obj };
                 },
@@ -339,7 +342,7 @@ function Overview() {
                   amount,
                   description,
                   transaction_actual_date,
-                  currency_code,
+                  currency_code,  transaction_id,
                 } = movementPnLTransactionsData[i];
 
                 const obj = {
@@ -347,7 +350,7 @@ function Overview() {
                   record: amount, //data? or title?
                   description: description,
                   date: transaction_actual_date,
-                  currency: currency_code,
+                  currency: currency_code,  transactionId: transaction_id,
                 };
                 return { ...obj };
               },
