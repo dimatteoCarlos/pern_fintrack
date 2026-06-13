@@ -29,6 +29,16 @@ import { formatDate } from '../../utils/helpers.js';
 import { getCurrencyId } from '../../utils/currencyLookup.js';
 import { currencyAmountConversion } from '../services/exchangeRate_service/currencyAmountConversion.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
+//=========================================
+// 🔧 FX DEBUG UTILITY (centralized)
+// ============================================
+const FX_DEBUG_ENABLED = true; // Cambiar a false para desactivar todos los logs
+
+const fxDebug = (step, data) => {
+  if (!FX_DEBUG_ENABLED) return;
+  console.log(`🔍 [FX DEBUG] ${step}:`, JSON.stringify(data, null, 2));
+};
+//=========================================
 
 //endpoint: put:/api/fintrack/transaction/transfer-between-accounts?movement=expense
 //=======================================
@@ -268,6 +278,15 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const originalAmountValue = parseFloat(amount);
     const originalCurrencyCode = currencyCode;
 
+//------DEBUG-----
+fxDebug('Datos recibidos del frontend', {
+  amountRaw: req.body.amount,
+  currencyCodeRaw: req.body.currency,
+  originalAmountValue,
+  originalCurrencyCode
+});
+//---------DEBUG---------
+
     // Validate amount using original amount
     if (isNaN(originalAmountValue) || originalAmountValue <= 0) {
       const message = 'Amount must be a positive number.';
@@ -288,6 +307,15 @@ export const transferBetweenAccounts = async (req, res, next) => {
     const accountingCurrencyId = await getCurrencyId(pool, ACCOUNTING_CURRENCY_CODE);
     const accountingCurrencyCode = ACCOUNTING_CURRENCY_CODE.toUpperCase();
 
+   //------DEBUG-----
+fxDebug('Comparación de monedas', {
+  originalCurrencyCode,
+  accountingCurrency: ACCOUNTING_CURRENCY_CODE,
+  necesitaConversion: originalCurrencyCode !== ACCOUNTING_CURRENCY_CODE
+});
+//---------DEBUG---------
+ 
+
     // Perform FX conversion to USD
     let convertedAmount = originalAmountValue;
     let exchangeRate = 1.0;
@@ -295,6 +323,15 @@ export const transferBetweenAccounts = async (req, res, next) => {
     let exchangeRateTimestamp = new Date();
 
     if (originalCurrencyCode !== ACCOUNTING_CURRENCY_CODE) {
+
+ //------DEBUG-----
+  fxDebug('Iniciando conversión de moneda', {
+    from: originalCurrencyCode,
+    to: ACCOUNTING_CURRENCY_CODE,
+    amount: originalAmountValue
+  });
+  //---------DEBUG---------
+     
       const conversion = await currencyAmountConversion(
         originalAmountValue,
         originalCurrencyCode,
@@ -305,7 +342,28 @@ export const transferBetweenAccounts = async (req, res, next) => {
       exchangeRate = conversion.rate;
       exchangeRateSource = conversion.source;
       exchangeRateTimestamp = conversion.fetchedAt;
+  //------DEBUG-----
+  fxDebug('Resultado de conversión', {
+    from: originalCurrencyCode,
+    to: ACCOUNTING_CURRENCY_CODE,
+    originalAmount: originalAmountValue,
+    convertedAmount,
+    rate: exchangeRate,
+    source: exchangeRateSource
+  });
+  //---------DEBUG---------
     }
+  //------DEBUG-----
+    fxDebug('Valores finales después de conversión (o sin ella)', {
+      originalAmount: originalAmountValue,
+      convertedAmount,
+      exchangeRate,
+      exchangeRateSource,
+      exchangeRateTimestamp,
+      monedaOriginal: originalCurrencyCode,
+      monedaDestino: ACCOUNTING_CURRENCY_CODE
+    });
+    //---------DEBUG---------  
     //------------------------------
     // Reassign numericAmount to the converted USD value
     // This variable is used throughout the controller for balances, transactions, and descriptions.
@@ -581,6 +639,19 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   destinationAccountId,
     //   transaction_actual_date
     // );
+
+//------DEBUG-----
+    fxDebug('FX metadata que se guardará en la transacción (source)', {
+      original_amount: originalAmountValue,
+      original_currency_id: originalCurrencyId,
+      original_currency_code: originalCurrencyCode,
+      exchange_rate: exchangeRate,
+      exchange_rate_source: exchangeRateSource,
+      exchange_rate_timestamp: exchangeRateTimestamp,
+      exchange_rate_target_currency_id: accountingCurrencyId
+    });
+//---------DEBUG---------
+
     const sourceTransactionOption = {
       userId,
       description: transactionDescription,
@@ -594,6 +665,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destination_account_id: destinationAccountId,
       transaction_actual_date,
       account_balance: parseFloat(updatedSourceAccountInfo.account_balance),
+
      // FX metadata fields for recordTransaction
       original_amount: originalAmountValue,
       original_currency_id: originalCurrencyId,
@@ -633,11 +705,16 @@ export const transferBetweenAccounts = async (req, res, next) => {
       source_account_id: sourceAccountId,
       transaction_type_id: destinationTransactionTypeId, //withdraw or borrow
       destination_account_id: destinationAccountId,
-      // numericAmount * balanceMultiplierFn(destinationAccountTransactionType),
       transaction_actual_date,
       account_balance: parseFloat(
-        updatedDestinationAccountInfo.account_balance,
-      ),
+        updatedDestinationAccountInfo.account_balance),
+    // FX metadata (same as source)
+       original_amount: originalAmountValue,
+       original_currency_id: originalCurrencyId,
+       exchange_rate: exchangeRate,
+       exchange_rate_source: exchangeRateSource,
+       exchange_rate_timestamp: exchangeRateTimestamp,
+       exchange_rate_target_currency_id: accountingCurrencyId,    
     };
     // destinationTransactionOption.movement_type_id;
     await recordTransaction(client, destinationTransactionOption);
@@ -762,12 +839,42 @@ export async function getTransactionById(req, res, next) {
       [transactionId, userId]
     );
 
+ //------DEBUG-----
+console.log('🔍 [FX DEBUG] getTransactionById - raw result:', {
+  transaction_id: result.rows[0]?.transaction_id,
+  original_amount: result.rows[0]?.original_amount,
+  original_amount_type: typeof result.rows[0]?.original_amount,
+  exchange_rate: result.rows[0]?.exchange_rate,
+  original_currency_code: result.rows[0]?.original_currency_code
+});
+
+console.log('🔍 [FX DEBUG] getTransactionById - raw result row:', {
+  transaction_id: result.rows[0]?.transaction_id,
+  original_amount: result.rows[0]?.original_amount,
+  original_amount_type: typeof result.rows[0]?.original_amount,
+  original_currency_id: result.rows[0]?.original_currency_id,
+  exchange_rate: result.rows[0]?.exchange_rate,
+  exchange_rate_type: typeof result.rows[0]?.exchange_rate,
+  original_currency_code: result.rows[0]?.original_currency_code
+});
+
+//---------DEBUG---------   
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
 
     const transaction = result.rows[0];
-
+//------DEBUG-----
+console.log('🔍 [FX DEBUG] getTransactionById - parsed transaction:', {
+  transaction_id: transaction.transaction_id,
+  original_amount: transaction.original_amount,
+  original_amount_parsed: transaction.original_amount ? parseFloat(transaction.original_amount) : null,
+  exchange_rate: transaction.exchange_rate,
+  exchange_rate_parsed: transaction.exchange_rate ? parseFloat(transaction.exchange_rate) : null,
+  original_currency_code: transaction.original_currency_code
+});
+//---------DEBUG---------
     res.json({
       transaction_id: transaction.transaction_id,
       description: transaction.description,
