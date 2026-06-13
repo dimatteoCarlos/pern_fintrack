@@ -14,14 +14,20 @@ import {
 //------------------------
 export const PAGE_LOC_NUM = 3;
 //-------------------------
+export * from './currencyConstants';
+//-------------------------
+
 //useAuth.ts
 export const INITIAL_PAGE_ADDRESS = '/fintrack/tracker/expense';
 export const LOCAL_STORAGE_KEY = {
   REMEMBER_ME: 'fintrack_remember_me',
   USER_DATA: 'fintrack_user_data',
 };
-//----------------------------------------
-export const CURRENCY_OPTIONS = {
+//-------------------------------------
+// 🔄 Order for circular currency toggle (USD → COP → EUR → VES → MXN → USD)
+export const CURRENCY_CYCLE: CurrencyType[] = ['usd',  'cop', 'eur', 'ves', 'mxn'];
+
+export const CURRENCY_OPTIONS:Record<CurrencyType, string> = {
   usd: 'en-US',
   cop: 'cop-CO',
   eur: 'en-US',
@@ -29,14 +35,20 @@ export const CURRENCY_OPTIONS = {
   mxn: 'es-MX',
 };
 
-export const SELECT_CURRENCY_OPTIONS = [
-  { value: 'usd', label: 'USD - US Dollar' },
-  { value: 'eur', label: 'EUR - Euro' },
-  { value: 'cop', label: 'COP - Colombian Peso' },
+const currencyNames = new Intl.DisplayNames(['en'], { type: 'currency' });
+
+
+export const SELECT_CURRENCY_OPTIONS: DropdownOptionType<CurrencyType>[] = [
+  { value: 'usd', label: `USD - ${currencyNames.of('USD')}` },
+  { value: 'cop', label: `COP - ${currencyNames.of('COP')}` },
+  { value: 'eur', label: `EUR - ${currencyNames.of('EUR')}` },
+  { value: 'ves', label: `VES - ${currencyNames.of('VES')}` },
+  { value: 'mxn', label: `MXN - ${currencyNames.of('MXN')}` },
 ];
 
+// console.log(SELECT_CURRENCY_OPTIONS)
 
-export const DEFAULT_CURRENCY = import.meta.env.VITE_ACCOUNTING_CURRENCY_CODE || 'usd';
+export const DEFAULT_CURRENCY = (import.meta.env.VITE_ACCOUNTING_CURRENCY_CODE || 'usd' ) as CurrencyType;
 
 export const DATE_TIME_FORMAT_DEFAULT = 'es-ES';
 
