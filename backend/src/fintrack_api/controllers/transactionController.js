@@ -627,7 +627,9 @@ fxDebug('Comparación de monedas', {
       destinationAccountTypeName === 'income_source' ? 'Income Reversal. ' : '';
 
     // Use numericAmount (USD) and accountingCurrencyCode in description
-    const transactionDescription = `${expenseReversalNotePrefix}${incomeReversalNotePrefix}${note ? note + '.' : ''}Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount.toFixed(3)} ${accountingCurrencyCode} from account "${sourceAccountInfo.acaccount_name} #${sourceAccountInfo.account_id}" (${sourceAccountTypeName}) credited to "${destinationAccountInfo.account_name} # ${destinationAccountInfo.account_id}" (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
+    const transactionDescription = `${expenseReversalNotePrefix}${incomeReversalNotePrefix}${note ? note + '.' : ''}Transaction: ${sourceAccountTransactionType}. Transfered ${numericAmount.toFixed(3)} ${accountingCurrencyCode} from account "${sourceAccountInfo.account_name} #${sourceAccountInfo.account_id}" (${sourceAccountTypeName}) credited to "${destinationAccountInfo.account_name} # ${destinationAccountInfo.account_id}" (${destinationAccountTypeName}). Date: ${formatDate(transaction_actual_date)}`;
+
+    //------DEBUG-----
     // console.log(
     //   userId,
     //   transactionDescription,
@@ -809,12 +811,14 @@ export async function getTransactionById(req, res, next) {
 
     const result = await client.query(
       `SELECT 
+       ua.account_name,
         t.transaction_id,
         t.user_id,
         t.description,
         t.amount,
         t.movement_type_id,
         t.transaction_type_id,
+        trt.transaction_type_name, 
         t.currency_id,
         t.account_id,
         t.account_balance_after_tr,
@@ -832,9 +836,14 @@ export async function getTransactionById(req, res, next) {
         t.exchange_rate_target_currency_id,
         c.currency_code,
         oc.currency_code AS original_currency_code
+
       FROM transactions t
+
       LEFT JOIN currencies c ON t.currency_id = c.currency_id
       LEFT JOIN currencies oc ON t.original_currency_id = oc.currency_id
+      LEFT JOIN user_accounts ua ON t.account_id = ua.account_id
+      LEFT JOIN transaction_types trt ON trt.transaction_type_id = t.transaction_type_id 
+
       WHERE t.transaction_id = $1 AND t.user_id = $2`,
       [transactionId, userId]
     );
@@ -842,14 +851,18 @@ export async function getTransactionById(req, res, next) {
  //------DEBUG-----
 console.log('🔍 [FX DEBUG] getTransactionById - raw result:', {
   transaction_id: result.rows[0]?.transaction_id,
+
   original_amount: result.rows[0]?.original_amount,
   original_amount_type: typeof result.rows[0]?.original_amount,
   exchange_rate: result.rows[0]?.exchange_rate,
-  original_currency_code: result.rows[0]?.original_currency_code
+  original_currency_code: result.rows[0]?.original_currency_code,
+
 });
 
 console.log('🔍 [FX DEBUG] getTransactionById - raw result row:', {
   transaction_id: result.rows[0]?.transaction_id,
+  transaction_type_name: result.rows[0]?. transaction_type_name,
+
   original_amount: result.rows[0]?.original_amount,
   original_amount_type: typeof result.rows[0]?.original_amount,
   original_currency_id: result.rows[0]?.original_currency_id,
@@ -860,14 +873,16 @@ console.log('🔍 [FX DEBUG] getTransactionById - raw result row:', {
 
 //---------DEBUG---------   
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Transaction not found' });
-    }
+  if (result.rows.length === 0) {
+    return res.status(404).json({ error: 'Transaction not found' });
+  }
 
-    const transaction = result.rows[0];
+  const transaction = result.rows[0];
+  
 //------DEBUG-----
 console.log('🔍 [FX DEBUG] getTransactionById - parsed transaction:', {
   transaction_id: transaction.transaction_id,
+  transaction_type_name:transaction.transaction_type_name,
   original_amount: transaction.original_amount,
   original_amount_parsed: transaction.original_amount ? parseFloat(transaction.original_amount) : null,
   exchange_rate: transaction.exchange_rate,
@@ -875,22 +890,24 @@ console.log('🔍 [FX DEBUG] getTransactionById - parsed transaction:', {
   original_currency_code: transaction.original_currency_code
 });
 //---------DEBUG---------
-    res.json({
-      transaction_id: transaction.transaction_id,
-      description: transaction.description,
-      amount: parseFloat(transaction.amount),
-      currency_code: transaction.currency_code,
-      original_amount: transaction.original_amount ? parseFloat(transaction.original_amount) : null,
-      original_currency_code: transaction.original_currency_code,
-      exchange_rate: transaction.exchange_rate ? parseFloat(transaction.exchange_rate) : null,
-      exchange_rate_source: transaction.exchange_rate_source,
-      exchange_rate_timestamp: transaction.exchange_rate_timestamp,
-      transaction_actual_date: transaction.transaction_actual_date,
-      account_id: transaction.account_id,
-      movement_type_id: transaction.movement_type_id,
-      transaction_type_id: transaction.transaction_type_id,
-      status: transaction.status,
-      account_balance_after_tr: parseFloat(transaction.account_balance_after_tr)
+   res.json({
+     transaction_id: transaction.transaction_id,
+     description: transaction.description,
+     amount: parseFloat(transaction.amount),
+     currency_code: transaction.currency_code,
+     original_amount: transaction.original_amount ? parseFloat(transaction.original_amount) : null,
+     original_currency_code: transaction.original_currency_code,
+     exchange_rate: transaction.exchange_rate ? parseFloat(transaction.exchange_rate) : null,
+     exchange_rate_source: transaction.exchange_rate_source,
+     exchange_rate_timestamp: transaction.exchange_rate_timestamp,
+     transaction_actual_date: transaction.transaction_actual_date,
+     account_id: transaction.account_id,
+     account_name: transaction.account_name,
+     movement_type_id: transaction.movement_type_id,
+     transaction_type_id: transaction.transaction_type_id,
+     transaction_type_name:transaction.transaction_type_name,
+     status: transaction.status,
+     account_balance_after_tr: parseFloat(transaction.account_balance_after_tr)
     });
   } catch (error) {
     console.error('Error fetching transaction by ID:', error);
