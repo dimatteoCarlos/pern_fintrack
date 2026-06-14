@@ -82,12 +82,15 @@ type ResponseDataType ={
 
 // Base transaction data interface (reused in multiple places)
 export type TransactionDataType ={
+  transaction_id?: number;
   description: string;
   amount: number;
   movement_type_id: number;
   transaction_type_id: number;
+  transaction_type_name: string;
   currency_id: number;
   account_id: number;
+  account_name?: string;
   source_account_id?: number;
   destination_account_id?: number;
   status: string;
