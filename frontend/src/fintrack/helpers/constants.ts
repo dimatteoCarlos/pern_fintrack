@@ -13,17 +13,18 @@ import {
 
 //------------------------
 export const PAGE_LOC_NUM = 3;
-//-------------------------
-export * from './currencyConstants';
-//-------------------------
 
 //useAuth.ts
 export const INITIAL_PAGE_ADDRESS = '/fintrack/tracker/expense';
 export const LOCAL_STORAGE_KEY = {
-  REMEMBER_ME: 'fintrack_remember_me',
-  USER_DATA: 'fintrack_user_data',
+ REMEMBER_ME: 'fintrack_remember_me',
+ USER_DATA: 'fintrack_user_data',
 };
-//-------------------------------------
+
+//-------------------------
+export * from './currencyConstants';
+//-------------------------
+//=================================
 // 🔄 Order for circular currency toggle (USD → COP → EUR → VES → MXN → USD)
 export const CURRENCY_CYCLE: CurrencyType[] = ['usd',  'cop', 'eur', 'ves', 'mxn'];
 
@@ -49,12 +50,27 @@ export const SELECT_CURRENCY_OPTIONS: DropdownOptionType<CurrencyType>[] = [
 // console.log(SELECT_CURRENCY_OPTIONS)
 
 export const DEFAULT_CURRENCY = (import.meta.env.VITE_ACCOUNTING_CURRENCY_CODE || 'usd' ) as CurrencyType;
+//==================================
 
 export const DATE_TIME_FORMAT_DEFAULT = 'es-ES';
 
 export const VARIANT_DEFAULT: VariantType = 'tracker';
 
 export const VARIANT_FORM: VariantType = 'form';
+
+//=================================
+// 🏷️ Movement type mapping (exactly as stored in DB)
+export const MOVEMENT_TYPES: Record<number, string> = {
+  1: 'expense',
+  2: 'income',
+  3: 'investment',
+  4: 'debt',
+  5: 'pocket',
+  6: 'transfer',
+  7: 'receive',
+  8: 'account-opening',
+  9: 'pnl',
+};
 
 //VALUES WERE USED FOR VISUAL MOCKS
 //tracker/expense
