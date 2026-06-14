@@ -17,14 +17,13 @@ import {
 } from '../../helpers/functions';
 
 import { LastMovementType } from '../../pages/overview/components/LastMovements';
-// import { TransactionDetailModal } from '../../pages/overview/components/transactionDetailModal/TransactionDetailModal';
 
 import { BoxContainer, BoxRow } from '../boxComponents/BoxComponents';
 
 import './styles/listContent-style.css';
 import { authFetch } from '../../../auth/auth_utils/authFetch';
 import { TransactionDataType } from '../../types/responseApiTypes';
-import { TransactionDetailModal } from '../../pages/overview/components/transactionDetailModal/TransactionDetaliModal';
+import { TransactionDetailModal } from '../../pages/overview/components/transactionDetailModal/TransactionDetailModal';
 import { url_get_transaction_by_id } from '../../../urlConfig';
 
 // Default configuration
