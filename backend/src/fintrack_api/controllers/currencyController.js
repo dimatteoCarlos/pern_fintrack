@@ -46,7 +46,6 @@ export async function currencyConvert(req, res, next) {
   }
 }
 
-//----------------------------------
 // =================================
 // 🎯 FUNCTION: Get all exchange rates (GET)
 // =================================
@@ -56,24 +55,24 @@ export async function getAllRates(req, res, next) {
   // ------------------------------------
   // 1. Attempt to fetch full snapshot from ExchangeRate-API (massive)
   // ------------------------------------
-  // if (base === 'usd')
-  // Optimization only for USD base (most common)
     try {
       const snapshot = await fetchFromExchangeRateAPI(base, null); // null means get all rates
 
-      // Validate that snapshot contains all required currencies
-      const requiredCurrencies = supportedCurrencies.filter(c => c !== base);
-      //---DEBUG
-      console.log('c:', c, 'base:', base)
-      //---DEBUG
+     // 🔧 Normalize snapshot keys to lowercase
+     const normalizedRates = {};
+     for (const [key, value] of Object.entries(snapshot.rates)) {
+       normalizedRates[key.toLowerCase()] = value;
+     } 
 
-      const missing = requiredCurrencies.filter(curr => !snapshot.rates[curr]);
-      
+     // Validate that snapshot contains all required currencies
+     const requiredCurrencies = supportedCurrencies.filter(c => c !== base);
+     const missing = requiredCurrencies.filter(curr => !normalizedRates[curr]);
+   
       if (missing.length === 0) {
       // Build rates object exactly as frontend expects
         const rates = {};
         for (const curr of supportedCurrencies) {
-          rates[curr] = curr === base ? 1 : snapshot.rates[curr];
+          rates[curr] = curr === base ? 1 : normalizedRates[curr];
         }
         // Added base to log message 
         console.log(`✅ getAllRates: using massive snapshot from ExchangeRate-API for base ${base}`);
