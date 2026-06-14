@@ -111,7 +111,7 @@ export const determineTransactionType_v1 = (
     return { transactionType: WITHDRAW, counterTransactionType: DEPOSIT };
   }
 };
-//----------------------------------------------------------
+//-------------------------------------------------
 // Helper function to validate required fields
 export function validateRequiredFields(fields, res) {
   const missingFields = Object.entries(fields)

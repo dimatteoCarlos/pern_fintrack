@@ -10,7 +10,7 @@ import path from 'path';
 import pc from 'picocolors';
 import { pool } from '../config/configDB.js';
 
-const MIGRATIONS_DIR = path.join(process.cwd(), 'src/db/migrations'); //
+const MIGRATIONS_DIR = path.join(process.cwd(), 'src/db/migrations/sql_migrations'); //
 
 async function runMigrations() {
   const client = await pool.connect();

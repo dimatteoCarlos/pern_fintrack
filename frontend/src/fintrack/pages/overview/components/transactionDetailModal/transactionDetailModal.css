@@ -1,168 +1,380 @@
-/* frontend\src\fintrack\pages\overview\components\transactionDetailModal\transactionDetailModal.css */
+/* frontend/src/fintrack/pages/overview/components/transactionDetailModal/transactionDetailModal.css */
+/* ====================================================
+   FINTECH MODERN DARK THEME MODAL STYLES - FINAL
+   ==================================================== */
 
-/* 🎨 STYLES: TransactionDetailModal (dark theme with good contrast) */
+:root {
+  --fx-bg-main: #0B0E14;
+  --fx-bg-card: #161C26;
+  --fx-text-title: #FFFFFF;
+  --fx-text-muted: #8F9CAE;
+  --fx-text-desc: #C5D0E0;
+  --fx-accent-green: #00E676;
+  --fx-accent-red: #FF5252;
+  --fx-border: #242F41;
+  --fx-btn-hover: #2B6CB0;
+  --fx-blue-glow: #3182CE;
+  --fx-blue-badge-bg: #1c2a3f;
+  --fx-blue-badge-border: #2c4c7a;
+}
 
-.modal-overlay {
+/* Overlay - always centered */
+.fx-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(4, 6, 10, 0.8);
+  backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
 }
 
-.modal-container {
-  background-color: #1a1a2e;
-  border-radius: 1rem;
-  padding: 1.5rem;
+/* Modal container - centered */
+.fx-modal-container {
+  background-color: var(--fx-bg-main);
   width: 90%;
-  max-width: 480px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
+  max-width: 500px;
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  outline: none;
-  color: #e0e0e0;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: var(--fx-text-title);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Scrollbar styling */
-.modal-container::-webkit-scrollbar {
-  width: 6px;
+/* Scrollbar */
+.fx-modal-container::-webkit-scrollbar {
+  width: 4px;
 }
-.modal-container::-webkit-scrollbar-track {
-  background: #2a2a3e;
-  border-radius: 3px;
+.fx-modal-container::-webkit-scrollbar-track {
+  background: var(--fx-bg-card);
+  border-radius: 2px;
 }
-.modal-container::-webkit-scrollbar-thumb {
-  background: #5a5a7e;
-  border-radius: 3px;
-}
-
-/* Header */
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #33334e;
-  padding-bottom: 0.75rem;
+.fx-modal-container::-webkit-scrollbar-thumb {
+  background: var(--fx-text-muted);
+  border-radius: 2px;
 }
 
-.modal-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0;
-}
-
-.modal-close-btn-top {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  cursor: pointer;
-  color: #8888aa;
-  padding: 0.25rem;
-  transition: color 0.2s ease;
-  line-height: 1;
-}
-.modal-close-btn-top:hover {
-  color: #ffffff;
-}
-
-/* Sections */
-.modal-section {
-  background-color: #0f0f1a;
-  border-radius: 0.75rem;
-  padding: 0.75rem 1rem;
-}
-
-.modal-section-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #7c7caa;
-  margin-bottom: 0.75rem;
-  border-left: 3px solid #4a4a7a;
-  padding-left: 0.5rem;
-}
-
-/* Data rows */
-.modal-data-row {
+/* HEADER */
+.fx-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #22223a;
-}
-.modal-data-row:last-child {
-  border-bottom: none;
+  margin-bottom: 12px;
 }
 
-.modal-label {
-  font-weight: 500;
-  color: #8888aa;
-  font-size: 0.85rem;
-  min-width: 110px;
+.fx-modal-id {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--fx-text-muted);
+  margin: 0 0 10px 0;
 }
 
-.modal-value {
-  font-weight: 400;
-  color: #d0d0e0;
-  font-size: 0.85rem;
-  text-align: right;
-  word-break: break-word;
-  max-width: 60%;
-}
-
-.modal-description {
-  font-style: italic;
-  color: #b0b0c0;
-  text-align: left;
-  max-width: 65%;
-}
-
-.modal-amount,
-.modal-amount-positive{
-  font-weight: 600;
-  color: #4ade80;
-}
-
-.modal-amount-negative {
-  font-weight: 600;
-  color: #f87171;  /* rojo */
-}
-
-.modal-source {
-  font-family: monospace;
-  font-size: 0.75rem;
-  color: #a0a0c0;
-}
-
-/* Footer */
-.modal-footer {
+.fx-badge-container {
   display: flex;
-  justify-content: flex-end;
-  border-top: 1px solid #33334e;
-  padding-top: 0.75rem;
+  gap: 12px;
+  margin-top: 4px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.modal-close-btn-bottom {
-  background-color: #2d2d4a;
-  color: #ffffff;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  font-size: 0.85rem;
-  font-weight: 500;
+/* Movement badge (blue) */
+.fx-movement-badge-large {
+  background-color: var(--fx-blue-badge-bg);
+  border: 1px solid var(--fx-blue-badge-border);
+  color: #58a6ff;
+  padding: 8px 18px;
+  border-radius: 28px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Transaction badge (colored by flow) */
+.fx-modal-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fx-badge-income {
+  background-color: rgba(0, 230, 118, 0.15);
+  color: var(--fx-accent-green);
+  border: 1px solid rgba(0, 230, 118, 0.4);
+}
+
+.fx-badge-expense {
+  background-color: rgba(255, 82, 82, 0.15);
+  color: var(--fx-accent-red);
+  border: 1px solid rgba(255, 82, 82, 0.4);
+}
+
+/* Close button (X) - always visible */
+.fx-modal-close-btn {
+  background: var(--fx-bg-card);
+  border: 1px solid var(--fx-border);
+  color: var(--fx-text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s ease;
 }
-.modal-close-btn-bottom:hover {
-  background-color: #4a4a7a;
+
+.fx-modal-close-btn:hover {
+  background: var(--fx-border);
+  color: var(--fx-text-title);
+}
+
+/* HERO SECTION */
+.fx-modal-hero {
+  text-align: center;
+  padding-top: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--fx-border);
+  margin-bottom: 8px;
+}
+
+.fx-hero-amount {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+
+.fx-amount-positive {
+  color: var(--fx-accent-green);
+}
+
+.fx-amount-negative {
+  color: var(--fx-text-title);
+}
+
+.fx-hero-date {
+  font-size: 0.7rem;
+  color: var(--fx-text-muted);
+}
+
+/* BODY - single column (no grid) */
+.fx-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+/* Core Details Card */
+.fx-details-card {
+  background-color: var(--fx-bg-card);
+  border: 1px solid var(--fx-border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* FX CARD – Premium Style */
+.fx-container {
+  background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 16px;
+  color: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: border 0.3s ease;
+}
+
+.fx-container:hover {
+  border-color: #0070f3;
+}
+
+.fx-header {
+  font-size: 0.75rem;
+  color: #8b949e;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* CONVERSION SECTION (amounts and arrow) – using clamp() */
+.fx-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* gap: clamp(0.5rem, 2vw, 1rem); */
+  font-weight: 600;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.amount-primary,
+.amount-secondary {
+  font-size: clamp(1rem, 4vw, 1.2rem);
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+  /* padding: 6px 12px; */
+  padding:0;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+/* SVG Arrow icon */
+.fx-arrow-icon {
+  color: #58a6ff;
+  width: clamp(20px, 5vw, 24px);
+  height: clamp(20px, 5vw, 24px);
+  margin: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+/* FOOTER of FX card */
+.fx-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.fx-footer-row {
+  display: flex;
+  justify-content: center;
+  font-size: clamp(0.65rem, 2vw, 0.75rem);
+  color: #8b949e;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Ensure first row doesn't wrap on desktop */
+@media (min-width: 600px) {
+  .fx-footer-row:first-child {
+    flex-wrap: wrap;
+  }
+}
+
+.rate-info, .rate-timestamp, .rate-clean {
+  white-space: nowrap;
+}
+
+/* Rate Clean row - centered */
+.rate-clean-row {
+  justify-content: center;
+  text-align: center;
+}
+
+.rate-clean {
+  font-family: monospace;
+  font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+  font-weight: 500;
+  color: #c5d0e0;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 12px;
+  border-radius: 8px;
+  display: inline-block;
+  white-space: normal;
+  word-break: keep-all;
+}
+
+/* Core Details rows */
+.fx-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+}
+
+.fx-info-row.fx-column {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.fx-label {
+  color: var(--fx-text-muted);
+}
+
+.fx-value {
+  color: var(--fx-text-title);
+  font-weight: 500;
+}
+
+.fx-value-description {
+  color: var(--fx-text-desc);
+  font-size: clamp(0.8rem, 2.5vw, 0.85rem);
+  line-height: 1.4;
+  background: var(--fx-bg-main);
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fx-capitalize {
+  text-transform: capitalize;
+}
+
+/* FOOTER - bottom Close button  */
+.fx-modal-footer {
+  margin-top: auto;
+}
+
+.fx-btn-primary {
+  width: 100%;
+  background-color: var(--fx-blue-glow);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 14px;
+  font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.fx-btn-primary:hover {
+  background-color: var(--fx-btn-hover);
+}
+
+/* Responsive adjustments for small heights (reduce padding) */
+@media (max-height: 643px) {
+  .fx-modal-container {
+    padding: 12px;
+  }
+  .fx-modal-body {
+    margin: 10px 0;
+  }
+  .fx-hero-amount {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-height: 770px){
+ .fx-btn-primary {
+display:none;
+}
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
