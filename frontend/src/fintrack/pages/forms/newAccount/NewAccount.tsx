@@ -15,7 +15,7 @@ import CharacterCounter from '../../../general_components/characterCounter/Chara
 
 import {
   ACCOUNT_TYPE_DEFAULT,
-  DEFAULT_CURRENCY,
+  // DEFAULT_CURRENCY,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
 import { url_create_basic_account } from '../../../../urlConfig.ts';
@@ -23,7 +23,7 @@ import { url_create_basic_account } from '../../../../urlConfig.ts';
 import '../styles/forms-styles.css';
 
 import {
-  CurrencyType,
+  // CurrencyType,
   DropdownOptionType,
   FormNumberInputType,
   VariantType,
@@ -43,7 +43,7 @@ import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/na
 // import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
 //------------------------
 //-----handle currency
-const defaultCurrency = DEFAULT_CURRENCY;
+// const defaultCurrency = DEFAULT_CURRENCY;
 
 //---- data config---------
 type AccountDataType = {
@@ -91,7 +91,7 @@ function NewAccount() {
     initialNewAccountData,
   );
 
-  const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
+  // const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
 
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
@@ -184,10 +184,10 @@ function NewAccount() {
     // console.log('selected starting point:', selectedDate);
   }
   //---------
-  function updateDataCurrency(currency: CurrencyType) {
-    setCurrency(currency);
-    setAccountData((acc) => ({ ...acc, currency: currency }));
-  }
+  // function updateDataCurrency(currency: CurrencyType) {
+  //   setCurrency(currency);
+  //   setAccountData((acc) => ({ ...acc, currency: currency }));
+  // }
   //--FORM SUBMISSION --------------------
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
@@ -239,7 +239,7 @@ function NewAccount() {
       setValidationMessages({});
       setFormData(initialFormData);
       setAccountData(initialNewAccountData);
-      setCurrency(defaultCurrency);
+      // setCurrency(defaultCurrency);
       setIsDisabledValue(false);
       setMessageToUser(null);
 
@@ -362,12 +362,18 @@ function NewAccount() {
 
               <div className='account__currency'>
                 <div className='label forms__label'>Currency</div>
-                <CurrencyBadge
+                {/* <CurrencyBadge
                   variant={'form'}
                   updateOutsideCurrencyData={updateDataCurrency}
                   currency={currency}
                   // disabled={isFormDisabled}
-                />
+                /> */}
+              <CurrencyBadge
+             variant={'form'}
+             currency={'usd'}
+             updateOutsideCurrencyData={() => {}} 
+             
+/>
               </div>
             </div>
 
