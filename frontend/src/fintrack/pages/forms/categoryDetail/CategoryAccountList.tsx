@@ -16,6 +16,9 @@ import { CategorySummaryInfoType, CurrencyType } from '../../../types/types.ts';
 import { capitalize } from '../../../helpers/functions.ts';
 
 import { useFetch } from '../../../hooks/useFetch.ts';
+
+import '../styles/forms-styles.css';
+
 //==============================
 function CategoryAccountList() {
   // console.log('CategoryAccountList')
