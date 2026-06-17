@@ -502,8 +502,10 @@ export const createDebtorAccount = async (req, res, next) => {
       return res.status(400).json({ status: 400, message });
     }
     const currencyIdReq = currencyObj.currency_id;
-    // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
-    //do the same for debtorAccountTypeIdReqObj , selectedAccountTypeIdReqObj
+
+    // FX metadata (identity mode, since debtor uses USD as base)
+    const accountingCurrencyId = await getCurrencyId(pool, ACCOUNTING_CURRENCY_CODE);
+
     //---------------------------------------
     //Validation of amount value
     if (parseFloat(amount) < 0) {
@@ -525,13 +527,16 @@ export const createDebtorAccount = async (req, res, next) => {
       !transactionActualDate || transactionActualDate == ''
         ? new Date()
         : transactionActualDate;
-    // console.log(pc.cyan(`userId: ${userId}`));
-    // console.log('dateInput:', transactionActualDate, transaction_actual_date);
+
     //---------------------------------------
     //get all account types and then get the account type id for the account name requested. although id debtor is 3 and id bank is 1.
     const accountTypeQuery = `SELECT * FROM account_types`;
     const accountTypeResult = await pool.query(accountTypeQuery);
     const accountTypeArr = accountTypeResult.rows;
+    
+    // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
+    // console.log(pc.cyan(`userId: ${userId}`));
+    // console.log('dateInput:', transactionActualDate, transaction_actual_date);
     // console.log(
     //   'selected_account_type01',
     //   { selected_account_type }
@@ -553,13 +558,11 @@ export const createDebtorAccount = async (req, res, next) => {
         type.account_type_name.trim().toLowerCase() ==
         selected_account_type.trim().toLowerCase(),
     )[0];
-    // console.log("🚀 ~ createDebtorAccount ~ selectedAccountTypeIdReqObj:", selectedAccountTypeIdReqObj)
     const selectedAccountTypeIdReq =
-      selectedAccountTypeIdReqObj.account_type_id;
-    // console.log(
-    //   '🚀 ~ createAccount ~ selected_account_type_id:',
-    //   selectedAccountTypeIdReq
-    // );
+    selectedAccountTypeIdReqObj.account_type_id;
+
+    // console.log("🚀 ~ createDebtorAccount ~ selectedAccountTypeIdReqObj:", selectedAccountTypeIdReqObj)
+    // console.log('🚀 ~ createAccount ~ selected_account_type_id:', selectedAccountTypeIdReq);
 
     if (selectedAccountTypeIdReq === undefined) {
       throw new Error(
@@ -637,6 +640,13 @@ export const createDebtorAccount = async (req, res, next) => {
     //   { transactionAmount },
     //   { newAccountBalance }
     // );
+
+    // Build FX metadata (identity mode: rate=1, source='identity')
+    const fxMetadata = await buildFxMetadata(
+      transactionAmount,// original amount (positive or negative)
+      currencyIdReq, // original currency ID (USD by default)
+      pool // database pool
+    );
     //------- NEW DEBTOR BASIC ACCOUNT INFO ----------
     await client.query('BEGIN');
     //---INSERT DEBTOR ACCOUNT into user_accounts table
@@ -645,11 +655,12 @@ export const createDebtorAccount = async (req, res, next) => {
       userId,
       newAccountName,
       debtorAccountTypeIdReq,
-      currencyIdReq,
+      accountingCurrencyId,//countable currency ID
       newAccountBalance,
       newAccountBalance,
       account_start_date ?? transaction_actual_date,
     );
+
     const account_id = account_basic_data.account_id;
     // console.log('account_basic_data',account_basic_data)
     //--------------------------------
@@ -659,7 +670,7 @@ export const createDebtorAccount = async (req, res, next) => {
        currency_id,
        selected_account_name, selected_account_id, 
        account_start_date) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7,$8) RETURNING *`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7,$8) RETURNING *`,
       values: [
         account_id,
         debtor_lastname,
@@ -671,6 +682,7 @@ export const createDebtorAccount = async (req, res, next) => {
         account_start_date,
       ],
     };
+
     const debtorAccount = await client.query(debtorInsertQuery);
 
     const debtor_account = {
@@ -697,8 +709,7 @@ export const createDebtorAccount = async (req, res, next) => {
       transactionTypeDescriptionObj.counterTransactionType,
     );
 
-    const { transaction_type_id, countertransaction_type_id } =
-      transactionTypeDescriptionIds;
+    const { transaction_type_id, countertransaction_type_id } = transactionTypeDescriptionIds;
 
     const isToOpenNewAccount = transactionAmount === 0.0 ? true : false;
     const transactionDescription = `Transaction: account-opening. Account: "${newAccountName}" (${debtorAccountType}). Initial-( ${isToOpenNewAccount ? 'account-opening' : debtorTransactionType}). Amount: ${transactionAmount} ${currencyCode}. Reference:${selected_account_name}. Date: ${formatDate(transaction_actual_date)}`;
@@ -718,6 +729,7 @@ export const createDebtorAccount = async (req, res, next) => {
       account_type_name: debtorAccountType,
       account_type_id: account_basic_data.account_type_id,
       account_balance: newAccountBalance,
+      ...fxMetadata,
     };
 
     //--------------------------------
@@ -742,20 +754,21 @@ export const createDebtorAccount = async (req, res, next) => {
       account_name: counterAccountInfo.account.account_name,
       account_type_name: 'bank',
       account_type_id: counterAccountInfo.account.account_type_id,
-      account_balance: newCounterAccountBalance, //counterAccountInfo.account.account_balance
+      account_balance: newCounterAccountBalance, 
+       ...fxMetadata, 
     };
 
     //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
-    // console.log('updateCounterAccountInfo iput ',  newCounterAccountBalance,
-    //   slackCounterAccountInfo.account_id,
-    //   transaction_actual_date)
-
     const updatedCounterAccountInfo = await updateAccountBalance(
       client,
       newCounterAccountBalance, //counterAccountInfo.account.account_balance
       slackCounterAccountInfo.account_id,
       transaction_actual_date,
     );
+
+   // console.log('updateCounterAccountInfo iput ',  newCounterAccountBalance,
+   //   slackCounterAccountInfo.account_id,
+   //   transaction_actual_date)
 
     //--- determine which account serves as a SOURCE OR DESTINATION account
     const { destination_account_id, source_account_id, isAccountOpening } =
@@ -885,6 +898,7 @@ export const createPocketAccount = async (req, res, next) => {
       // sourceAccountId,
       // sourceAccountName,
     } = req.body;
+
     const { currency, date, transactionActualDate, amount } = req.body;
 
     //at creation transactionTypeName must always be deposit or account-opening
@@ -919,7 +933,6 @@ export const createPocketAccount = async (req, res, next) => {
       targetAmount && parseFloat(targetAmount) >= 0
         ? parseFloat(targetAmount)
         : 0.0;
-
     // console.log('target', target, targetAmount);
 
     const transaction_actual_date =
@@ -951,7 +964,6 @@ export const createPocketAccount = async (req, res, next) => {
       (type) => type.account_type_name == account_type_name.trim(),
     )[0];
     const accountTypeIdReq = accountTypeIdReqObj.account_type_id;
-    // console.log('🚀 ~ createAccount ~ account_type_id:', accountTypeIdReq);
     //-------
     const accountExist = await verifyAccountExistence(
       client,
@@ -959,18 +971,19 @@ export const createPocketAccount = async (req, res, next) => {
       newAccountName,
       account_type_name,
     );
-    console.log('🚀 ~ accountExists:', accountExist);
+   
     //---
     //get currency id from currency_code requested
     const currencyQuery = `SELECT * FROM currencies`;
     const currencyResult = await pool.query(currencyQuery);
 
     const currencyArr = currencyResult?.rows;
-
     const currencyIdReq = currencyArr.filter(
-      (currency) => currency.currency_code === currency_code,
+     (currency) => currency.currency_code === currency_code,
     )[0].currency_id;
-    // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
+
+    // FX metadata (identity mode, since pocket uses USD as base)
+    const accountingCurrencyId = await getCurrencyId(pool, ACCOUNTING_CURRENCY_CODE);
 
     //--POCKET_SAVING ACCOUNT -----
     //---pocket_initial_balance
@@ -980,9 +993,17 @@ export const createPocketAccount = async (req, res, next) => {
         : account_starting_amount;
     const account_balance = transactionAmount;
 
-    // console.log('pocketbalance', account_balance)
-
-    //---INSERT basic info of POCKET ACCOUNT into user_accounts table
+   // Build FX metadata (identity mode: rate=1, source='identity')
+   const fxMetadata = await buildFxMetadata(
+    // original amount (positive or negative)
+    transactionAmount,
+    // original currency ID (USD by default)
+    currencyIdReq,
+    // database pool 
+    pool              
+   );
+    
+    //--INSERT basic info of POCKET ACCOUNT into user_accounts table
     //Initiate Transaction
     await client.query('BEGIN');
 
@@ -991,7 +1012,7 @@ export const createPocketAccount = async (req, res, next) => {
       userId,
       newAccountName,
       accountTypeIdReq,
-      currencyIdReq,
+      accountingCurrencyId,//currencyIdReq,
       account_starting_amount,
       account_balance, //initial balance
       account_start_date ?? transaction_actual_date,
@@ -1012,10 +1033,8 @@ export const createPocketAccount = async (req, res, next) => {
       currency_code,
       account_type_name,
     };
-
-    // console.log('checked', pocket_saving_account);
-
-    //---------------------------
+    
+    //----------------------------------------------
     // TYPE FOR NEW POCKET ACCOUNT AND FOR COUNTER ACCOUNT (SLACK)
     const transactionTypeDescriptionObj = determineTransactionType(
       transactionAmount,
@@ -1031,8 +1050,7 @@ export const createPocketAccount = async (req, res, next) => {
       transactionTypeDescriptionObj.counterTransactionType,
     );
 
-    const { transaction_type_id, countertransaction_type_id } =
-      transactionTypeDescriptionIds;
+    const { transaction_type_id, countertransaction_type_id } = transactionTypeDescriptionIds;
 
     const transactionDescription = `Transaction: ${transactionType}. Account: ${newAccountName}. Type: ${account_type_name}. Initial-(${transactionType}). Amount: ${transactionAmount} ${currency_code}. Date: ${formatDate(transaction_actual_date)}`;
 
@@ -1055,10 +1073,16 @@ export const createPocketAccount = async (req, res, next) => {
       account_type_name,
       account_type_id: account_basic_data.account_type_id,
       account_balance: parseFloat(account_balance),
+      ...fxMetadata,
     };
-
+    // console.log('🚀 ~ createAccount ~ account_type_id:', accountTypeIdReq);
+    // console.log('🚀 ~ accountExists:', accountExist);
+    // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
+    // console.log('pocketbalance', account_balance)
+    // console.log('checked', pocket_saving_account);
     // console.log('newAccountInfo', newAccountInfo)
-    //---- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT)------
+    
+  //---- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT)------
     //OLD VERSION EXPLANATION
     //in the original version, a arbigtrary counter account is created to be a counter account of opening account movement,  when initial amount is greater than 0.
     //check whether slack account exists if not create it with start amount and balance = 0
@@ -1079,8 +1103,8 @@ export const createPocketAccount = async (req, res, next) => {
     const counterAccountTransactionAmount = -transactionAmount;
 
     const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name}(bank), number: ${counterAccountInfo.account.account_id}. Amount:${counterAccountTransactionAmount} ${currency_code}. Account reference: ${newAccountInfo.account_name}`;
-    //----------------------------------------------------
-    //-------------SLACK COUNTER ACCOUNT INFO ------
+    //---------------------------------------------
+    //-------------SLACK COUNTER ACCOUNT INFO -----
     const slackCounterAccountInfo = {
       user_id: userId,
       description: counterTransactionDescription,
@@ -1096,14 +1120,15 @@ export const createPocketAccount = async (req, res, next) => {
       account_type_name: 'bank',
       account_type_id: counterAccountInfo.account.account_type_id,
       account_balance: parseFloat(newCounterAccountBalance),
+      ...fxMetadata,
     };
     //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
-    const updatedCounterAccountInfo = await updateAccountBalance(
-      client,
-      newCounterAccountBalance,
-      slackCounterAccountInfo.account_id,
-      transaction_actual_date,
-    );
+    // const updatedCounterAccountInfo = await updateAccountBalance(
+    //   client,
+    //   newCounterAccountBalance,
+    //   slackCounterAccountInfo.account_id,
+    //   transaction_actual_date,
+    // );
     // console.log(
     //   '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
     //   updatedCounterAccountInfo
@@ -1126,7 +1151,7 @@ export const createPocketAccount = async (req, res, next) => {
       client,
       transactionOption,
     );
-    //--------REGISTER COUNTER ACCOUNT (SLACK) TRANSACTION -------------------
+    //-- REGISTER COUNTER ACCOUNT (SLACK) TRANSACTION -------
     const counterTransactionOption = prepareTransactionOption(
       slackCounterAccountInfo,
       source_account_id,
