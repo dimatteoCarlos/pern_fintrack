@@ -8,6 +8,8 @@ import { currencyAmountConversion } from '../services/exchangeRate_service/curre
 import { getCurrencyId } from '../../utils/currencyLookup.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
 import { supportedCurrencies } from '../config/constants.js';
+import { fetchFromFreeCurrencyAPI } from '../services/exchangeRate_providers/freeCurrencyApiProvider.js';
+import { fetchFromGitHubFallback } from '../services/exchangeRate_providers/githubFallback.js';
 import { fetchFromExchangeRateAPI } from '../services/exchangeRate_providers/exchangeRateApiProvider.js';
 
 // ===============================
@@ -56,11 +58,13 @@ export async function getAllRates(req, res, next) {
   // 1. Attempt to fetch full snapshot from ExchangeRate-API (massive)
   // ------------------------------------
     try {
-      const snapshot = await fetchFromExchangeRateAPI(base, null); // null means get all rates
+      //const snapshot = await fetchFromGitHubFallback(base, null); // null means get all rates
+      const snapshot = await fetchFromFreeCurrencyAPI(base, null); // null means get all rates
+      //const snapshot = await fetchFromExchangeRateAPI(base, null); // null means get all rates
 
      // 🔧 Normalize snapshot keys to lowercase
      const normalizedRates = {};
-     for (const [key, value] of Object.entries(snapshot.rates)) {
+     for (const [key, value] of Object.entries(snapshot.rate)) {
        normalizedRates[key.toLowerCase()] = value;
      } 
 
