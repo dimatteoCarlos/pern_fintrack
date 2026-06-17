@@ -47,7 +47,7 @@ export async function recordTransaction(clientOrPool = null, option) {
     } = option;
     
  //DEBUG
-    console.log('🚀 ~ recordTransaction ~ options:', option);
+    // console.log('🚀 ~ recordTransaction ~ options:', option.amount);
  //DEBUG   
 // ===================================
 // Prepare values array with default fallbacks for FX fields
