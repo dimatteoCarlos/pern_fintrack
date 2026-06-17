@@ -15,7 +15,7 @@ import CharacterCounter from '../../../general_components/characterCounter/Chara
 
 import {
   ACCOUNT_TYPE_DEFAULT,
-  // DEFAULT_CURRENCY,
+  DEFAULT_CURRENCY,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
 import { url_create_basic_account } from '../../../../urlConfig.ts';
@@ -23,7 +23,7 @@ import { url_create_basic_account } from '../../../../urlConfig.ts';
 import '../styles/forms-styles.css';
 
 import {
-  // CurrencyType,
+  CurrencyType,
   DropdownOptionType,
   FormNumberInputType,
   VariantType,
@@ -40,10 +40,9 @@ import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
 
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 
-// import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
 //------------------------
 //-----handle currency
-// const defaultCurrency = DEFAULT_CURRENCY;
+const defaultCurrency = DEFAULT_CURRENCY;
 
 //---- data config---------
 type AccountDataType = {
@@ -91,7 +90,9 @@ function NewAccount() {
     initialNewAccountData,
   );
 
-  // const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
+  const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
+
+  const [isCurrencyDisabled, setIsCurrencyDisabled] = useState<boolean>(false);
 
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
@@ -161,13 +162,17 @@ function NewAccount() {
       if (selectedOption.label === 'income_source') {
         amountIncomeSource();
         setIsDisabledValue(true);
-        // return;
+        setCurrency(defaultCurrency);
+        setAccountData(prev => ({ ...prev, currency: defaultCurrency }));
+       setIsCurrencyDisabled(true);         
+        return;
       } else {
         setAccountData((acc: AccountDataType) => ({
           ...acc,
           type: selectedOption?.label,
         }));
         setIsDisabledValue(false);
+        setIsCurrencyDisabled(false);
       }
     } else {
       // console.log(`No option selected for ${'account type'}`);
@@ -176,6 +181,7 @@ function NewAccount() {
         type: undefined,
       }));
       setIsDisabledValue(false);
+      setIsCurrencyDisabled(false);
     }
   }
   //---------
@@ -184,11 +190,11 @@ function NewAccount() {
     // console.log('selected starting point:', selectedDate);
   }
   //---------
-  // function updateDataCurrency(currency: CurrencyType) {
-  //   setCurrency(currency);
-  //   setAccountData((acc) => ({ ...acc, currency: currency }));
-  // }
-  //--FORM SUBMISSION --------------------
+  function updateDataCurrency(currency: CurrencyType) {
+    setCurrency(currency);
+    setAccountData((acc) => ({ ...acc, currency: currency }));
+   }
+   //--FORM SUBMISSION ------------
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     // console.log('On submit Form');
@@ -219,6 +225,7 @@ function NewAccount() {
         amount,
         date,
       } as AccountDataType;
+
       console.log('data to post:', { ...accountData });
 
       //final URL, url is dynamic depending on type variable
@@ -362,18 +369,12 @@ function NewAccount() {
 
               <div className='account__currency'>
                 <div className='label forms__label'>Currency</div>
-                {/* <CurrencyBadge
+                <CurrencyBadge
                   variant={'form'}
                   updateOutsideCurrencyData={updateDataCurrency}
                   currency={currency}
-                  // disabled={isFormDisabled}
-                /> */}
-              <CurrencyBadge
-             variant={'form'}
-             currency={'usd'}
-             updateOutsideCurrencyData={() => {}} 
-             
-/>
+                  disabled={isCurrencyDisabled}
+                />
               </div>
             </div>
 
