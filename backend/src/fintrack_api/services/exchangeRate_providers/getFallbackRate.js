@@ -7,9 +7,9 @@
 export const fixedRates = {
   usd: 1,
   eur: 0.9215,
-  cop: 3600,
+  cop: 3500,
   mxn: 16.85,
-  ves: 615, // Projected static rate for VES (2026-06-30) - will be overridden by projection
+  ves: 650, // Projected static rate for VES (2026-06-30) - will be overridden by projection
 };
 
 // ============================================
