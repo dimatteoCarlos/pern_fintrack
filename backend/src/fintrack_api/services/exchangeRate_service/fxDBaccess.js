@@ -5,6 +5,18 @@ import { pool } from '../../../db/config/configDB.js';
 import { FX_CACHE_TTL_MS, FX_STATIC_FALLBACK_TTL_MS } from './fxConfig.js';
 
 // =================================
+// 📦 NEW FUNCTIONS FOR FX GLOBAL STATE
+// =================================
+/**
+ * Get all exchange rates for a list of currency codes (as a single query)
+ * @param {string[]} currencyCodes - Array of currency codes (lowercase, e.g. ['eur', 'cop'])
+ * @param {number} baseCurrencyId - ID of the base currency (e.g., USD)
+ * @returns {Promise<Object>} - Object with currency codes as keys and rate data as values
+ * @example
+ *   getAllRatesFromDB(['eur', 'cop'], 1)
+ *   // Returns: { eur: { rate: 0.86, source: 'exchange-rate-api', fetchedAt: '2026-06-17T12:00:00Z' }, ... }
+ */
+// =================================
 // 1. Retrieve rate from database
 // =================================
 export async function getRateFromDB(baseId, targetId) {
