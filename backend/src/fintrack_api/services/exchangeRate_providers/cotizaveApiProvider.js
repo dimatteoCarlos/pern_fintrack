@@ -1,16 +1,7 @@
 // backend/src/fintrack_api/services/exchangeRate_providers/cotizaveApiProvider.js
 // 💰 PROVIDER: Cotizave API (Venezuela - official BCV exchange rate)
 
-// console.log(
-//   '[ENV CHECK] API_KEY_COTIZAVE START =',
-//   process.env.API_KEY_COTIZAVE,
-// );
-
 const COTIZAVE_API_URL = 'https://api.cotizave.com/v1/fx/rates';
-
-// const FZ_API_KEY = 'ctz_live_8j7Qf3S8xzFma57CF3XKufuc2e8K5wLK4u3cGv';
-
-// const TIMEOUT_MS = Number(process.env.FX_REQUEST_TIMEOUT_MS || 3000);
 
 export async function fetchFromCotizave(baseCode, targetCode) {
   const FZ_API_KEY = process.env.API_KEY_COTIZAVE;
@@ -28,8 +19,7 @@ export async function fetchFromCotizave(baseCode, targetCode) {
 
   // DEBUG LOGS
   // console.log('[FX DEBUG] ENV KEY EXISTS:', !!FZ_API_KEY);
-  // console.log('[FX DEBUG] ENV KEY:', FZ_API_KEY);
-  console.log('[FX DEBUG] REQUEST URL:', COTIZAVE_API_URL);
+  // console.log('[FX DEBUG] REQUEST URL:', COTIZAVE_API_URL);
   //---
   // console.log('==============================');
   // console.log('[FX DEBUG] FINAL REQUEST CHECK');
@@ -46,13 +36,12 @@ export async function fetchFromCotizave(baseCode, targetCode) {
   const data = await res.json();
 
   // console.log('[FX DEBUG] RAW RESPONSE:', data);
+
   console.log('[FX DEBUG] VES BCV:', data?.rates?.find((r) => r.market === 'reference').mid);
 
   console.log('[FX DEBUG] VES PRL:', data?.rates?.find((r) => r.market === 'parallel').mid);
 
   console.log('[FX DEBUG] VES BNC:', data?.rates?.find((r) => r.market === 'binance').mid);
-
-
 
   const rates = data?.rates;
 
