@@ -43,12 +43,11 @@ if (toCurrencyCode  !== null && typeof toCurrencyCode  !== 'string') {
   const url = `${FX_BASE_URL}/${FX_API_KEY}/latest/${base}`;
 
   console.log("🚀 ~ fetchFromExchangeRateAPI ~ url:", url)
-  //-----------
-
+ //-----------
  // 4. Perform request
   const response = await axios.get(url, { timeout: FX_TIMEOUT_MS });
 
-  // console.log("🚀 ~ fetchFromExchangeRateAPI ~ response:", response)
+  console.log("🚀 ~ fetchFromExchangeRateAPI ~ response:", response)
   //-----------
   
  // 5. Validate response structure
