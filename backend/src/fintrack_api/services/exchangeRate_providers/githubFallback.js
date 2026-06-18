@@ -32,6 +32,8 @@ export async function fetchFromGitHubFallback(baseCode, targetCode) {
   // ===========================
   const response = await axios.get(url, { timeout: FX_TIMEOUT_MS });
 
+  // console.log("🚀 ~ fetchFromGitHubFallback ~ response:", response)
+
   // ===========================
   // 3. Validate response structure
   // ===========================
