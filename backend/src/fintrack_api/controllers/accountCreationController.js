@@ -143,7 +143,6 @@ export const createBasicAccount = async (req, res, next) => {
     //-------debug-----
     console.log("🚀 ~ createBasicAccount ~ currencyIdReq:", currencyIdReq)
     //-----------------
-
     const newaccount_starting_amount = amount ? Math.abs(parseFloat(amount)) : 0.0; 
 
     const isTransfer = newaccount_starting_amount !== 0;
