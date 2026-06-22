@@ -1,5 +1,6 @@
 //frontend/src/pages/forms/newCategory/NewCategory.tsx
 import { useEffect, useState } from 'react';
+// import {  useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import LeftArrowSvg from '../../../../assets/LeftArrowSvg.svg';
@@ -32,9 +33,12 @@ import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
-// import PlusSignSvg from '../../../assets/PlusSignSvg.svg';
-// import { useLocation } from 'react-router-dom';
-//-------data config----------------
+//--get account names for auto complete--
+// import { useFetch } from '../../../hooks/useFetch.ts';
+// import { url_get_accounts_by_type } from '../../../../urlConfig.ts';
+// import type { CategoryBudgetAccountsResponseType } from '../../../types/responseApiTypes.ts';
+
+//-------data config---------------------
 // === TYPE DEFINITIONS AND CONSTANTS ===
 const defaultCurrency = DEFAULT_CURRENCY;
 //----Category Nature Tiles---------------
@@ -104,7 +108,26 @@ function NewCategory() {
       setTimeout(() => navigateTo(AUTH_ROUTE), 5000);
     }
   }, [isAuthenticated, navigateTo]);
-  //------------------------------------
+  //------------------------------------------
+  //-DATALIST OF ACCOUNT FOR NAME AUTOCOMPLETE
+  // === Data fetching hook (GET) ===
+  // const { apiData: categoryAccounts } = useFetch<CategoryBudgetAccountsResponseType>(
+  //   `${url_get_accounts_by_type}/?type=category_budget`
+  // );
+
+  // const existingCategoryNames = useMemo(()=>{
+  //  const accountList = categoryAccounts?.data?.accountList || [];
+
+  //  const accountNames = accountList.map(
+  //   acc=>acc.account_name).filter(Boolean);
+  //   //---DEBUG
+  //   console.log("🚀 ~ NewCategory ~ accountNames:", accountNames)
+
+  //   return Array.from(new Set(accountNames))
+
+  //  }, [categoryAccounts])
+
+  // ------------------------------------------
   // === DATA FETCHING HOOK (POST) ===
   //endpoint: http://localhost:5000/api/fintrack/account/new_account/category_budget
   // === HANDLERS & UTILITIES ===
@@ -180,6 +203,7 @@ Errores inesperados → Van al catch
       setValidationMessages(newValidationMessages);
       return;
     }
+
     //------------------------------------
     //POST TO THE ENDPOINT FOR ACCOUNT DATA HERE
     // new category data into database
