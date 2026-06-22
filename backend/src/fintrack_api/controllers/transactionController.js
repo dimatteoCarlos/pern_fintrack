@@ -27,7 +27,7 @@ import {
 import { recordTransaction } from '../../utils/fintrackUtils/transactionManagement/recordTransaction.js';
 import { formatDate } from '../../utils/helpers.js';
 import { getCurrencyId } from '../../utils/currencyLookup.js';
-import { currencyAmountConversion } from '../services/exchangeRate_service/currencyAmountConversion.js';
+import { currencyAmountConversion } from '../services/fx_services/conversion/currencyAmountConversion.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
 //=========================================
 // 🔧 FX DEBUG UTILITY (centralized)
@@ -270,22 +270,26 @@ export const transferBetweenAccounts = async (req, res, next) => {
     } = req.body; //common fields to all tracker movements.
     //-----------------
     // console.log('body', req.body);
-    console.log({'movementName':movementName},'type',transactionTypeName,
-    accountType,
-    date);
+    console.log(
+      { movementName: movementName },
+      'type',
+      transactionTypeName,
+      accountType,
+      date,
+    );
     //------------------------------------
     //Store original amount and currency (as sent by frontend)
     const originalAmountValue = parseFloat(amount);
     const originalCurrencyCode = currencyCode;
 
-//------DEBUG-----
-fxDebug('Datos recibidos del frontend', {
-  amountRaw: req.body.amount,
-  currencyCodeRaw: req.body.currency,
-  originalAmountValue,
-  originalCurrencyCode
-});
-//---------DEBUG---------
+    //------DEBUG-----
+    fxDebug('Datos recibidos del frontend', {
+      amountRaw: req.body.amount,
+      currencyCodeRaw: req.body.currency,
+      originalAmountValue,
+      originalCurrencyCode,
+    });
+    //---------DEBUG---------
 
     // Validate amount using original amount
     if (isNaN(originalAmountValue) || originalAmountValue <= 0) {
@@ -304,17 +308,19 @@ fxDebug('Datos recibidos del frontend', {
     }
 
     // Get accounting currency ID (e.g., USD)
-    const accountingCurrencyId = await getCurrencyId(pool, ACCOUNTING_CURRENCY_CODE);
+    const accountingCurrencyId = await getCurrencyId(
+      pool,
+      ACCOUNTING_CURRENCY_CODE,
+    );
     const accountingCurrencyCode = ACCOUNTING_CURRENCY_CODE.toUpperCase();
 
-   //------DEBUG-----
-fxDebug('Comparación de monedas', {
-  originalCurrencyCode,
-  accountingCurrency: ACCOUNTING_CURRENCY_CODE,
-  necesitaConversion: originalCurrencyCode !== ACCOUNTING_CURRENCY_CODE
-});
-//---------DEBUG---------
- 
+    //------DEBUG-----
+    fxDebug('Comparación de monedas', {
+      originalCurrencyCode,
+      accountingCurrency: ACCOUNTING_CURRENCY_CODE,
+      necesitaConversion: originalCurrencyCode !== ACCOUNTING_CURRENCY_CODE,
+    });
+    //---------DEBUG---------
 
     // Perform FX conversion to USD
     let convertedAmount = originalAmountValue;
@@ -323,37 +329,36 @@ fxDebug('Comparación de monedas', {
     let exchangeRateTimestamp = new Date();
 
     if (originalCurrencyCode !== ACCOUNTING_CURRENCY_CODE) {
+      //------DEBUG-----
+      fxDebug('Iniciando conversión de moneda', {
+        from: originalCurrencyCode,
+        to: ACCOUNTING_CURRENCY_CODE,
+        amount: originalAmountValue,
+      });
+      //---------DEBUG---------
 
- //------DEBUG-----
-  fxDebug('Iniciando conversión de moneda', {
-    from: originalCurrencyCode,
-    to: ACCOUNTING_CURRENCY_CODE,
-    amount: originalAmountValue
-  });
-  //---------DEBUG---------
-     
       const conversion = await currencyAmountConversion(
         originalAmountValue,
         originalCurrencyCode,
-        ACCOUNTING_CURRENCY_CODE
+        ACCOUNTING_CURRENCY_CODE,
       );
 
       convertedAmount = conversion.amount.toNumber();
       exchangeRate = conversion.rate;
       exchangeRateSource = conversion.source;
       exchangeRateTimestamp = conversion.fetchedAt;
-  //------DEBUG-----
-  fxDebug('Resultado de conversión', {
-    from: originalCurrencyCode,
-    to: ACCOUNTING_CURRENCY_CODE,
-    originalAmount: originalAmountValue,
-    convertedAmount,
-    rate: exchangeRate,
-    source: exchangeRateSource
-  });
-  //---------DEBUG---------
+      //------DEBUG-----
+      fxDebug('Resultado de conversión', {
+        from: originalCurrencyCode,
+        to: ACCOUNTING_CURRENCY_CODE,
+        originalAmount: originalAmountValue,
+        convertedAmount,
+        rate: exchangeRate,
+        source: exchangeRateSource,
+      });
+      //---------DEBUG---------
     }
-  //------DEBUG-----
+    //------DEBUG-----
     fxDebug('Valores finales después de conversión (o sin ella)', {
       originalAmount: originalAmountValue,
       convertedAmount,
@@ -361,9 +366,9 @@ fxDebug('Comparación de monedas', {
       exchangeRateSource,
       exchangeRateTimestamp,
       monedaOriginal: originalCurrencyCode,
-      monedaDestino: ACCOUNTING_CURRENCY_CODE
+      monedaDestino: ACCOUNTING_CURRENCY_CODE,
     });
-    //---------DEBUG---------  
+    //---------DEBUG---------
     //------------------------------
     // Reassign numericAmount to the converted USD value
     // This variable is used throughout the controller for balances, transactions, and descriptions.
@@ -371,7 +376,7 @@ fxDebug('Comparación de monedas', {
 
     // Update currencyIdReq to the accounting currency ID
     let currencyIdReq = accountingCurrencyId;
-//----------------------------------
+    //----------------------------------
     //From the original design, not all tracker movements input data form, have the same input data structure, so, get the data structure configuration strategy based on movementName
     const config = {
       expense: getExpenseConfig(req.body),
@@ -478,7 +483,7 @@ fxDebug('Comparación de monedas', {
     await client.query('BEGIN');
 
     if (movementName === 'pnl') {
-     await checkAndInsertSlackAccount(client, userId);
+      await checkAndInsertSlackAccount(client, userId);
     }
     //-------account info----------------
     // console.log('accountInfo',  useId,
@@ -560,10 +565,8 @@ fxDebug('Comparación de monedas', {
         sourceAccountInfo.account_name !== 'slack') ||
         sourceAccountTypeName === 'investment' ||
         sourceAccountTypeName === 'pocket_saving' ||
-        sourceAccountTypeName === 'category_budget'//reversal of a expense
-       )
-    ) 
-    //----------------------------------
+        sourceAccountTypeName === 'category_budget') //reversal of a expense
+    ) //----------------------------------
     //Use accounting currency code in error message
     //----------------------------------
     {
@@ -583,7 +586,12 @@ fxDebug('Comparación de monedas', {
       parseFloat(sourceAccountBalance) - numericAmount;
 
     const sourceAccountId = sourceAccountInfo.account_id;
-    console.log('transaction actual date (tad):', transaction_actual_date, '#', sourceAccountId);
+    console.log(
+      'transaction actual date (tad):',
+      transaction_actual_date,
+      '#',
+      sourceAccountId,
+    );
 
     const updatedSourceAccountInfo = await updateAccountBalance(
       client,
@@ -642,7 +650,7 @@ fxDebug('Comparación de monedas', {
     //   transaction_actual_date
     // );
 
-//------DEBUG-----
+    //------DEBUG-----
     fxDebug('FX metadata que se guardará en la transacción (source)', {
       original_amount: originalAmountValue,
       original_currency_id: originalCurrencyId,
@@ -650,9 +658,9 @@ fxDebug('Comparación de monedas', {
       exchange_rate: exchangeRate,
       exchange_rate_source: exchangeRateSource,
       exchange_rate_timestamp: exchangeRateTimestamp,
-      exchange_rate_target_currency_id: accountingCurrencyId
+      exchange_rate_target_currency_id: accountingCurrencyId,
     });
-//---------DEBUG---------
+    //---------DEBUG---------
 
     const sourceTransactionOption = {
       userId,
@@ -668,13 +676,13 @@ fxDebug('Comparación de monedas', {
       transaction_actual_date,
       account_balance: parseFloat(updatedSourceAccountInfo.account_balance),
 
-     // FX metadata fields for recordTransaction
+      // FX metadata fields for recordTransaction
       original_amount: originalAmountValue,
       original_currency_id: originalCurrencyId,
       exchange_rate: exchangeRate,
       exchange_rate_source: exchangeRateSource,
       exchange_rate_timestamp: exchangeRateTimestamp,
-      exchange_rate_target_currency_id: accountingCurrencyId,  
+      exchange_rate_target_currency_id: accountingCurrencyId,
     };
 
     //example: Transaction: Deposit of 3.00 USD received from the account "Nueva Cuenta" (Type: Bank Account), credited to "Food_Must" under the budget category "Category_Budget".
@@ -709,14 +717,15 @@ fxDebug('Comparación de monedas', {
       destination_account_id: destinationAccountId,
       transaction_actual_date,
       account_balance: parseFloat(
-        updatedDestinationAccountInfo.account_balance),
-    // FX metadata (same as source)
-       original_amount: originalAmountValue,
-       original_currency_id: originalCurrencyId,
-       exchange_rate: exchangeRate,
-       exchange_rate_source: exchangeRateSource,
-       exchange_rate_timestamp: exchangeRateTimestamp,
-       exchange_rate_target_currency_id: accountingCurrencyId,    
+        updatedDestinationAccountInfo.account_balance,
+      ),
+      // FX metadata (same as source)
+      original_amount: originalAmountValue,
+      original_currency_id: originalCurrencyId,
+      exchange_rate: exchangeRate,
+      exchange_rate_source: exchangeRateSource,
+      exchange_rate_timestamp: exchangeRateTimestamp,
+      exchange_rate_target_currency_id: accountingCurrencyId,
     };
     // destinationTransactionOption.movement_type_id;
     await recordTransaction(client, destinationTransactionOption);
@@ -785,7 +794,7 @@ fxDebug('Comparación de monedas', {
         pc.magentaBright('Unknown error occurred'),
       );
     }
-   // Manejo de errores de PostgreSQL - pg error handling
+    // Manejo de errores de PostgreSQL - pg error handling
     const { code, message } = handlePostgresError(error);
     next(createError(code, message));
   } finally {
@@ -845,69 +854,78 @@ export async function getTransactionById(req, res, next) {
       LEFT JOIN transaction_types trt ON trt.transaction_type_id = t.transaction_type_id 
 
       WHERE t.transaction_id = $1 AND t.user_id = $2`,
-      [transactionId, userId]
+      [transactionId, userId],
     );
 
- //------DEBUG-----
-console.log('🔍 [FX DEBUG] getTransactionById - raw result:', {
-  transaction_id: result.rows[0]?.transaction_id,
+    //------DEBUG-----
+    console.log('🔍 [FX DEBUG] getTransactionById - raw result:', {
+      transaction_id: result.rows[0]?.transaction_id,
 
-  original_amount: result.rows[0]?.original_amount,
-  original_amount_type: typeof result.rows[0]?.original_amount,
-  exchange_rate: result.rows[0]?.exchange_rate,
-  original_currency_code: result.rows[0]?.original_currency_code,
+      original_amount: result.rows[0]?.original_amount,
+      original_amount_type: typeof result.rows[0]?.original_amount,
+      exchange_rate: result.rows[0]?.exchange_rate,
+      original_currency_code: result.rows[0]?.original_currency_code,
+    });
 
-});
+    console.log('🔍 [FX DEBUG] getTransactionById - raw result row:', {
+      transaction_id: result.rows[0]?.transaction_id,
+      transaction_type_name: result.rows[0]?.transaction_type_name,
 
-console.log('🔍 [FX DEBUG] getTransactionById - raw result row:', {
-  transaction_id: result.rows[0]?.transaction_id,
-  transaction_type_name: result.rows[0]?. transaction_type_name,
+      original_amount: result.rows[0]?.original_amount,
+      original_amount_type: typeof result.rows[0]?.original_amount,
+      original_currency_id: result.rows[0]?.original_currency_id,
+      exchange_rate: result.rows[0]?.exchange_rate,
+      exchange_rate_type: typeof result.rows[0]?.exchange_rate,
+      original_currency_code: result.rows[0]?.original_currency_code,
+    });
 
-  original_amount: result.rows[0]?.original_amount,
-  original_amount_type: typeof result.rows[0]?.original_amount,
-  original_currency_id: result.rows[0]?.original_currency_id,
-  exchange_rate: result.rows[0]?.exchange_rate,
-  exchange_rate_type: typeof result.rows[0]?.exchange_rate,
-  original_currency_code: result.rows[0]?.original_currency_code
-});
+    //---------DEBUG---------
 
-//---------DEBUG---------   
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
 
-  if (result.rows.length === 0) {
-    return res.status(404).json({ error: 'Transaction not found' });
-  }
+    const transaction = result.rows[0];
 
-  const transaction = result.rows[0];
-  
-//------DEBUG-----
-console.log('🔍 [FX DEBUG] getTransactionById - parsed transaction:', {
-  transaction_id: transaction.transaction_id,
-  transaction_type_name:transaction.transaction_type_name,
-  original_amount: transaction.original_amount,
-  original_amount_parsed: transaction.original_amount ? parseFloat(transaction.original_amount) : null,
-  exchange_rate: transaction.exchange_rate,
-  exchange_rate_parsed: transaction.exchange_rate ? parseFloat(transaction.exchange_rate) : null,
-  original_currency_code: transaction.original_currency_code
-});
-//---------DEBUG---------
-   res.json({
-     transaction_id: transaction.transaction_id,
-     description: transaction.description,
-     amount: parseFloat(transaction.amount),
-     currency_code: transaction.currency_code,
-     original_amount: transaction.original_amount ? parseFloat(transaction.original_amount) : null,
-     original_currency_code: transaction.original_currency_code,
-     exchange_rate: transaction.exchange_rate ? parseFloat(transaction.exchange_rate) : null,
-     exchange_rate_source: transaction.exchange_rate_source,
-     exchange_rate_timestamp: transaction.exchange_rate_timestamp,
-     transaction_actual_date: transaction.transaction_actual_date,
-     account_id: transaction.account_id,
-     account_name: transaction.account_name,
-     movement_type_id: transaction.movement_type_id,
-     transaction_type_id: transaction.transaction_type_id,
-     transaction_type_name:transaction.transaction_type_name,
-     status: transaction.status,
-     account_balance_after_tr: parseFloat(transaction.account_balance_after_tr)
+    //------DEBUG-----
+    console.log('🔍 [FX DEBUG] getTransactionById - parsed transaction:', {
+      transaction_id: transaction.transaction_id,
+      transaction_type_name: transaction.transaction_type_name,
+      original_amount: transaction.original_amount,
+      original_amount_parsed: transaction.original_amount
+        ? parseFloat(transaction.original_amount)
+        : null,
+      exchange_rate: transaction.exchange_rate,
+      exchange_rate_parsed: transaction.exchange_rate
+        ? parseFloat(transaction.exchange_rate)
+        : null,
+      original_currency_code: transaction.original_currency_code,
+    });
+    //---------DEBUG---------
+    res.json({
+      transaction_id: transaction.transaction_id,
+      description: transaction.description,
+      amount: parseFloat(transaction.amount),
+      currency_code: transaction.currency_code,
+      original_amount: transaction.original_amount
+        ? parseFloat(transaction.original_amount)
+        : null,
+      original_currency_code: transaction.original_currency_code,
+      exchange_rate: transaction.exchange_rate
+        ? parseFloat(transaction.exchange_rate)
+        : null,
+      exchange_rate_source: transaction.exchange_rate_source,
+      exchange_rate_timestamp: transaction.exchange_rate_timestamp,
+      transaction_actual_date: transaction.transaction_actual_date,
+      account_id: transaction.account_id,
+      account_name: transaction.account_name,
+      movement_type_id: transaction.movement_type_id,
+      transaction_type_id: transaction.transaction_type_id,
+      transaction_type_name: transaction.transaction_type_name,
+      status: transaction.status,
+      account_balance_after_tr: parseFloat(
+        transaction.account_balance_after_tr,
+      ),
     });
   } catch (error) {
     console.error('Error fetching transaction by ID:', error);

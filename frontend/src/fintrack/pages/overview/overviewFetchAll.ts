@@ -238,10 +238,10 @@ export async function overviewFetchAll(
       // Log successful response (development only)
       // ✅ Only log in development
       if (isDevelopment) {
-        console.log(`✅ [${endpoint.key}] Request successful`, {
-          url: endpoint.url,
-          status: data?.status,
-        });
+        // console.log(`✅ [${endpoint.key}] Request successful`, {
+        //   url: endpoint.url,
+        //   status: data?.status,
+        // });
       }
 
       if (endpoint.key === 'SavingGoals' && isBalancePocketRespType(data)) {
