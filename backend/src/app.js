@@ -21,14 +21,14 @@ import fintrack_routes from './fintrack_api/routes/index.js';
 import { pool } from './db/config/configDB.js';
 
 //Get currency catalog function
-import { loadCurrencyCatalog } from './fintrack_api/services/fx_currency_catalog/loadCurrencyCatalog.js';
+import { loadCurrencyCatalog } from './fintrack_api/services/fx_services/currency_catalog/loadCurrencyCatalog.js';
 
 // import cronRoutes from './cronjob/cronRoutes.js';
 
 //Environment variables configuration
-// ==================================
+// ================================
 // ⚙️ Express app configuration
-// ==================================
+// ================================
 //app config, global middlewares application, safety, request records and data handling
 const app = express();
 

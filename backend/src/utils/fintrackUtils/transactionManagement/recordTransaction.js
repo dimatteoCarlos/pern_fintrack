@@ -12,16 +12,17 @@ import { getCurrencyIdSync } from '../../../utils/currencyLookup.js';
 
 import { ACCOUNTING_CURRENCY_CODE } from '../../../fintrack_api/config/fintrackConfig.js';
 import {
-  DEFAULT_ORIGINAL_AMOUNT,
+  // DEFAULT_ORIGINAL_AMOUNT,
   DEFAULT_EXCHANGE_RATE,
   DEFAULT_EXCHANGE_RATE_SOURCE,
-} from '../../../fintrack_api/config/constants.js';
+} from '../../../fintrack_api/services/fx_services/core/fxConfig.js';
+
 // ===================================
 // Record a single transaction with optional FX details
 // ===================================
 export async function recordTransaction(clientOrPool = null, option) {
   const dbClient = clientOrPool || pool;
-  const accountingCurrencyId  = getCurrencyIdSync(ACCOUNTING_CURRENCY_CODE);
+  const accountingCurrencyId = getCurrencyIdSync(ACCOUNTING_CURRENCY_CODE);
 
   try {
     const {
@@ -37,7 +38,7 @@ export async function recordTransaction(clientOrPool = null, option) {
       destination_account_id,
       transaction_actual_date,
       account_balance,
-     //FX fields
+      //FX fields
       original_amount,
       original_currency_id,
       exchange_rate,
@@ -45,13 +46,13 @@ export async function recordTransaction(clientOrPool = null, option) {
       exchange_rate_timestamp,
       exchange_rate_target_currency_id,
     } = option;
-    
- //DEBUG
+
+    //DEBUG
     // console.log('🚀 ~ recordTransaction ~ options:', option.amount);
- //DEBUG   
-// ===================================
-// Prepare values array with default fallbacks for FX fields
-// ===================================
+    //DEBUG
+    // ===================================
+    // Prepare values array with default fallbacks for FX fields
+    // ===================================
     const values = [
       userId,
       description,
@@ -66,15 +67,15 @@ export async function recordTransaction(clientOrPool = null, option) {
       transaction_actual_date,
       account_balance,
       // FX fields with defaults
-      original_amount ?? amount,//DEFAULT_ORIGINAL_AMOUNT,
-      original_currency_id ?? currency_id,// accountingCurrencyId,
+      original_amount ?? amount, //DEFAULT_ORIGINAL_AMOUNT,
+      original_currency_id ?? currency_id, // accountingCurrencyId,
       exchange_rate ?? DEFAULT_EXCHANGE_RATE,
-      exchange_rate_source ??  DEFAULT_EXCHANGE_RATE_SOURCE,
+      exchange_rate_source ?? DEFAULT_EXCHANGE_RATE_SOURCE,
       exchange_rate_timestamp ?? new Date(),
       exchange_rate_target_currency_id ?? accountingCurrencyId,
     ];
 
- // Extended INSERT with all FX columns   
+    // Extended INSERT with all FX columns
     const transactionResult = await dbClient.query({
       text: `INSERT INTO transactions (user_id, description, movement_type_id, status, amount,currency_id, account_id, source_account_id,transaction_type_id,destination_account_id, transaction_actual_date, account_balance_after_tr,
       original_amount, original_currency_id, exchange_rate, exchange_rate_source, exchange_rate_timestamp, exchange_rate_target_currency_id

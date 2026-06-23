@@ -34,7 +34,7 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
   fetchRates: async () => {
     // Prevent multiple simultaneous requests
     if (get().isLoading) {
-      console.log('💰 fetchRates already in progress, skipping');
+      // console.log('💰 fetchRates already in progress, skipping');
       return;
     }
 
