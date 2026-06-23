@@ -1,4 +1,4 @@
--- backend\src\db\seeds\001_base_catalogs.sql
+-- backend\src\db\seeds\005_base_catalogs.sql
 -- ======================================
 -- Seed 001: Base catalog data
 -- Purpose:
@@ -16,7 +16,7 @@ INSERT INTO currencies (currency_id, currency_code, currency_name) VALUES
   (2, 'eur', 'Euro'),
   (3, 'cop', 'Pesos col'),
   (4, 'ves', 'Bs'),
-  (5, 'mxn', 'Pesos mxn'),
+  (5, 'mxn', 'Pesos mxn')
 
 ON CONFLICT (currency_id) DO NOTHING;
 

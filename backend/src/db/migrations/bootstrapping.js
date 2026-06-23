@@ -1,5 +1,4 @@
-// 📁 backend/src/db/bootstrapping.js
-
+// 📁 backend/src/db/migrations/bootstrapping.js
 /**
  * Database Bootstrap Script
  *
@@ -9,9 +8,9 @@
  *
  * WHAT IT DOES (IN ORDER):
  * 1. Safety check: prevent accidental production execution
- * 2. Ensure target database exists
+ * 2. Ensure target database exists (using Node.js, not psql)
  * 3. Run all pending migrations
- * 4. Optionally run base seeds (catalog data)
+ * 4. Run base seeds (catalog data)
  *
  * WHAT IT NEVER DOES:
  * - Create admin users
@@ -19,100 +18,97 @@
  * - Run automatically on app start
  *
  * EXECUTION (manual):
- *   node src/db/bootstrap.js
+ *   npm run db:bootstrap
  */
 
+import pg from 'pg';
 import pc from 'picocolors';
+import { getAdminDbConfig, getDbConfig, isProduction } from './dbMigrationConfig.js';
 import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
-import path from 'path';
-import dotenv from 'dotenv';
-// import 'dotenv/config';
 
-dotenv.config();
+const { Client } = pg;
 
 // -------------------------------------
-// 1️⃣ Environment safety checks
+// 1️⃣ Safety checks
 // -------------------------------------
-
-if (process.env.NODE_ENV === 'production') {
-  console.error(
-    pc.red('\n❌ Bootstrap is not allowed in production.\n')
-  );
+if (isProduction()) {
+  console.error(pc.red('\n❌ Bootstrap is not allowed in production.\n'));
   process.exit(1);
 }
 
-// Required env variables
-const {
-  DB_NAME,
-} = process.env;
-
-if (!DB_NAME) {
-  console.error(
-    pc.red('\n❌ DB_NAME must be defined in .env\n')
-  );
-  process.exit(1);
-}
-
-// Resolve project root (ESM-safe)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, '..', '..');
-
 // -------------------------------------
-// 2️⃣ Helper: run shell commands safely
+// 2️⃣ Main function
 // -------------------------------------
-
-function run(command, label) {
-  console.log(pc.cyan(`\n▶ ${label}`));
-  try {
-    execSync(command, {
-      stdio: 'inherit',
-      cwd: projectRoot,
-    });
-  } catch (error) {
-    console.error(pc.red(`\n❌ Failed: ${label}\n`));
-    process.exit(1);
-  }
-}
-
-// -------------------------------------
-// 3️⃣ Bootstrap execution
-// -------------------------------------
-
-(async function bootstrap() {
+async function bootstrap() {
   console.log(pc.green('\n🚀 Starting database bootstrap...\n'));
 
   // ---------------------------------
   // Step 1: Ensure database exists
   // ---------------------------------
-  // NOTE:
-  // We do NOT drop the database here.
-  // Reset is a different, explicit command.
-  run(
-    `psql -U postgres -tc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | findstr 1 || psql -U postgres -c "CREATE DATABASE ${DB_NAME}"`,
-    `Ensuring database "${DB_NAME}" exists`
-  );
+  try {
+    const config = getDbConfig();
+    const targetDbName = config.database;
+
+    // Connect to 'postgres' admin database
+    const adminConfig = getAdminDbConfig();
+    const adminClient = new Client(adminConfig);
+    await adminClient.connect();
+
+    // Check if database exists
+    const result = await adminClient.query(
+      `SELECT 1 FROM pg_database WHERE datname = $1`,
+      [targetDbName]
+    );
+
+    if (result.rows.length === 0) {
+      console.log(pc.yellow(`📦 Database "${targetDbName}" does not exist. Creating...`));
+      await adminClient.query(`CREATE DATABASE "${targetDbName}"`);
+      console.log(pc.green(`✅ Database "${targetDbName}" created.`));
+    } else {
+      console.log(pc.green(`✅ Database "${targetDbName}" already exists.`));
+    }
+
+    await adminClient.end();
+  } catch (error) {
+    console.error(pc.red(`\n❌ Failed to ensure database exists: ${error.message}\n`));
+    process.exit(1);
+  }
 
   // ---------------------------------
   // Step 2: Run migrations
   // ---------------------------------
-  run(
-    `node src/db/runMigrations.js`,
-    'Running migrations'
-  );
+  try {
+    console.log(pc.cyan('\n▶ Running migrations'));
+    execSync('node src/db/migrations/runMigrations.js', {
+      stdio: 'inherit',
+      cwd: process.cwd(),
+    });
+    console.log(pc.green('✅ Migrations completed'));
+  } catch (error) {
+    console.error(pc.red('\n❌ Failed to run migrations\n'));
+    process.exit(1);
+  }
 
   // ---------------------------------
-  // Step 3: Run base seeds (optional)
+  // Step 3: Run base seeds
   // ---------------------------------
-  // Base seeds = static catalogs (currencies, roles, etc.)
-  // Safe to run multiple times (idempotent)
-  run(
-    `node src/db/runSeeds.js base`,
-    'Running base seeds'
-  );
+//   try {
+//     console.log(pc.cyan('\n▶ Running base seeds'));
+//     execSync('node src/db/migrations/runSeeds.js base', {
+//       stdio: 'inherit',
+//       cwd: process.cwd(),
+//     });
+//     console.log(pc.green('✅ Base seeds completed'));
+//   } catch (error) {
+//     console.error(pc.red('\n❌ Failed to run base seeds\n'));
+//     process.exit(1);
+//   }
 
-  console.log(
-    pc.green('\n✅ Database bootstrap completed successfully.\n')
-  );
-})();
+//   console.log(pc.green('\n✅ Database bootstrap completed successfully.\n'));
+//   process.exit(0);
+}
+
+// -------------------------------------
+// 3️⃣ Execute
+// -------------------------------------
+bootstrap();

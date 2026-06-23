@@ -18,7 +18,7 @@ BEGIN;
 -- - user_roles
 -- ======================================
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   user_id UUID PRIMARY KEY ,--PRIMARY KEY = UNIQUE + NOT NULL
   username VARCHAR(50) UNIQUE NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE users (
 -- - currencies
 -- ======================================
 
-CREATE TABLE user_accounts (
+CREATE TABLE IF NOT EXISTS user_accounts (
   account_id SERIAL PRIMARY KEY,
 
   user_id UUID NOT NULL REFERENCES users(user_id)
@@ -96,7 +96,7 @@ CREATE TABLE user_accounts (
 -- Income source accounts
 -- --------------------------------
 
-CREATE TABLE income_source_accounts (
+CREATE TABLE IF NOT EXISTS income_source_accounts (
   account_id INT PRIMARY KEY
     REFERENCES user_accounts(account_id)
     ON DELETE CASCADE,
@@ -114,7 +114,7 @@ CREATE TABLE income_source_accounts (
 -- Category budget accounts (expenses)
 -- --------------------------------
 
-CREATE TABLE category_budget_accounts (
+CREATE TABLE IF NOT EXISTS category_budget_accounts (
   account_id INT PRIMARY KEY
     REFERENCES user_accounts(account_id)
     ON DELETE CASCADE,
@@ -139,7 +139,7 @@ CREATE TABLE category_budget_accounts (
 -- Debtor accounts
 -- --------------------------------
 
-CREATE TABLE debtor_accounts (
+CREATE TABLE IF NOT EXISTS debtor_accounts (
   account_id INT PRIMARY KEY
     REFERENCES user_accounts(account_id)
     ON DELETE CASCADE,
@@ -165,7 +165,7 @@ CREATE TABLE debtor_accounts (
 -- Pocket saving accounts
 -- --------------------------------------
 
-CREATE TABLE pocket_saving_accounts (
+CREATE TABLE IF NOT EXISTS pocket_saving_accounts (
   account_id INT PRIMARY KEY
     REFERENCES user_accounts(account_id)
     ON DELETE CASCADE,

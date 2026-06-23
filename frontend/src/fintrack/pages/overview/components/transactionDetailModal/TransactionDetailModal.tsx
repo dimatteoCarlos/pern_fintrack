@@ -40,8 +40,9 @@ export const TransactionDetailModal = ({ transaction, onClose }: TransactionDeta
   // Valores absolutos para la tarjeta FX (sin signo)
   const absOriginalAmount = Math.abs(transaction.original_amount || 0);
   const absConvertedAmount = Math.abs(transaction.amount);
-  const formattedOriginalAbs = numberFormatCurrency(absOriginalAmount, 2, transaction.original_currency_code || DEFAULT_CURRENCY, 'es-ES');
-  const formattedConvertedAbs = numberFormatCurrency(absConvertedAmount, 2, DEFAULT_CURRENCY, 'es-ES');
+  
+  // const formattedOriginalAbs = numberFormatCurrency(absOriginalAmount, 2, transaction.original_currency_code || DEFAULT_CURRENCY, 'es-ES');
+  // const formattedConvertedAbs = numberFormatCurrency(absConvertedAmount, 2, DEFAULT_CURRENCY, 'es-ES');
 
   // Monto con signo para el hero
   const formattedAmountSigned = numberFormatCurrency(transaction.amount, 2, DEFAULT_CURRENCY, 'es-ES');
@@ -132,14 +133,14 @@ export const TransactionDetailModal = ({ transaction, onClose }: TransactionDeta
               <div className="fx-header">FOREIGN EXCHANGE</div>
               <div className="fx-body">
                 <span className="amount-primary">
-                  {transaction.original_currency_code?.toUpperCase()} {formattedOriginalAbs}
+                  {transaction.original_currency_code?.toUpperCase()} {absOriginalAmount}
                 </span>
                 <svg className="fx-arrow-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                   <polyline points="12 5 19 12 12 19"></polyline>
                 </svg>
                 <span className="amount-secondary">
-                  {DEFAULT_CURRENCY.toUpperCase()} {formattedConvertedAbs}
+                  {DEFAULT_CURRENCY.toUpperCase()} {absConvertedAmount}
                 </span>
               </div>
               <div className="fx-footer">

@@ -1,46 +1,44 @@
 // frontend/src/fintrack/general_components/currencyBadge/CurrencyBadge.tsx
 
 import { CurrencyType, VariantType } from '../../types/types';
-import './styles/currency-style.css';
 import {getNextCurrency } from '../../helpers/functions';
 import { useDebouncedCallback } from '../../hooks/useDebouncedCallback';
+
+import './styles/currency-style.css';
 
 type CurrencyBadgePropType = {
   variant: VariantType;
   currency: CurrencyType;
   updateOutsideCurrencyData?: (currency: CurrencyType) => void;
   setCurrency?: React.Dispatch<React.SetStateAction<CurrencyType>>;
+   disabled?: boolean;
 };
 
 function CurrencyBadge({
   variant,
   updateOutsideCurrencyData,
-  currency,
+  currency, disabled
 }: CurrencyBadgePropType) {
   //----functions------------
-  //Show currencies cop and usd
-  // function toggleCurrency() {
-  //   const newCurrency = changeCurrency(currency);
-  //   updateOutsideCurrencyData!(newCurrency);
-  //   console.log('🚀 ~ toggleCurrency ~ newCurrency:', newCurrency);
-  // } //just cop and usd
-
   // ⚡️ Debounced toggle to prevent rapid multiple updates
   const debouncedToggleCurrency = useDebouncedCallback(() => {
     const newCurrency = getNextCurrency(currency);
     if (updateOutsideCurrencyData) {
       updateOutsideCurrencyData(newCurrency);
     }
-    // console.log('🚀 ~ toggleCurrency ~ newCurrency:', newCurrency);
+
   }, 300);
 
  function handleClick() {
-    // toggleCurrency();
+   if (disabled) return;
     debouncedToggleCurrency();
   }
 
   return (
-    <div className={`icon-currency ${variant}`} onClick={handleClick}>
+    <div className={`icon-currency ${variant} ${disabled ? 'disabled' : ''}`}
+    onClick={handleClick}
+     style={{ cursor: disabled ? 'not-allowed' : 'pointer' }} 
+    >
       {currency.toUpperCase()}
     </div>
   );

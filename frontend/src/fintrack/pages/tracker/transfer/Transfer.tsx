@@ -462,13 +462,26 @@ function Transfer(): JSX.Element {
     setMessageToUser('Processing transaction...');
     //--data validation messages --
     activateAllValidations();
+    
     const { fieldErrors, dataValidated } = validateAll();
+    
+    //-----DEBUG
+    console.log('🔍 [DEBUG] formData.currency:', formData.currency);
+    console.log('🔍 [DEBUG] formData.amount:', formData.amount);
+    console.log('🔍 [DEBUG] fieldErrors completo:', fieldErrors);
+    console.log('🔍 [DEBUG] fieldErrors keys length:', Object.keys(fieldErrors).length);
+    console.log('🔍 [DEBUG] fieldErrors stringified:', JSON.stringify(fieldErrors));
+        
+    //----------
 
     if (formData.origin === formData.destination) {
       fieldErrors.destination = 'Origin and destination must be different';
     }
 
     if (Object.keys(fieldErrors).length > 0) {
+    //DEBUG
+    console.log('🔍 [DEBUG] Entrando al if de fieldErrors');
+    
       setValidationMessages(fieldErrors);
       setMessageToUser('Please correct the fields');
       setTimeout(() => {

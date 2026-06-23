@@ -1,14 +1,20 @@
-// backend/src/fintrack_api/services/fx_currency_catalog/loadCurrencyCatalog.js
+// backend/src/fintrack_api/services/fx_services/currency_catalog/loadCurrencyCatalog.js
 
-// 💰 CURRENCY CATALOG: In-memory cache for currency_id ↔ currency_code (sync access)
-
-import { pool } from '../../../db/config/configDB.js';
-
+// =====================
+// 💰 CURRENCY CATALOG
+// =====================
+/**
+ * In-memory cache for currency_id ↔ currency_code (sync access).
+ * Loaded once at application startup via app.js.
+ * Provides O(1) lookup for currency IDs and codes.
+ */
+import { pool } from "../../../../db/config/configDB.js";
 // ===================================
 // 1. Internal state
 // ===================================
 // Map<currency_code (lowercase), currency_id>
 let currenciesByCode = null;
+
 // Map<currency_id, currency_code (lowercase)>
 let currenciesById = null;
 let isCurrencyLoaded = false;
@@ -83,6 +89,10 @@ export function getCurrencyCodeSync(currencyId) {
 // ===================================
 // 4. Utility to check if catalog is ready
 // ===================================
+/**
+ * Check if the currency catalog is loaded.
+ * @returns {boolean} - True if loaded
+ */
 export function isCurrencyCatalogLoaded() {
   return isCurrencyLoaded;
 }
