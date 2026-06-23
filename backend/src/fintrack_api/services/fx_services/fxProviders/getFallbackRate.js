@@ -198,6 +198,7 @@ export function getFallbackRate(fromCode, toCode = 'usd', nUsados = 5) {
 
   return (1 / rateFromToUsd) * rateUsdToTarget;
 }
+
 //=====================================
 // STANDARDIZED FUNCTIONS (for FX global state)
 //=====================================
@@ -239,8 +240,7 @@ export async function fetchAllRates(baseCurrency, options = { nUsados: 5 }) {
     fetchedAt: now,
   };
 }
-
-//========================
+//===================================
 /**
  * Fetch a specific exchange rate for a currency pair.
  * 
