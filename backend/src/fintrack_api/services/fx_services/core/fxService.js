@@ -245,7 +245,8 @@ export async function convertAmountToBaseCurrency(
 # 1. Crear el archivo en fx_services/core/fxService.js
 
 # 2. Verificar importación
-node -e "import('./src/fintrack_api/services/fx_services/core/fxService.js').then(m => console.log('✅ Exports:', Object.keys(m))).catch(e => console.error('❌', e))"
+node -e "import('./srfxProviderOrchestrator
+c/fintrack_api/services/fx_services/core/fxService.js').then(m => console.log('✅ Exports:', Object.keys(m))).catch(e => console.error('❌', e))"
 
 # 3. Probar ensureFXStateIsFresh (necesita que los providers estén configurados)
 node -e "import('./src/fintrack_api/services/fx_services/core/fxService.js').then(async m => { await m.ensureFXStateIsFresh(); console.log('✅ fxState.rates keys:', Object.keys(m.fxState.rates)); }).catch(e => console.error(e))"
