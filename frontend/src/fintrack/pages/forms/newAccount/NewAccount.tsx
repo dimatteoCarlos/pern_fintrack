@@ -81,8 +81,6 @@ const initialFormData: FormNumberInputType = {
 function NewAccount() {
   const location = useLocation();
   const navigateTo = useNavigate();
-  // const user = import.meta.env.VITE_USER_ID;
-  // console.log('🚀 ~ NewAccount ~ user:', user);
   const { isAuthenticated } = useAuth();
 
   //---states------
@@ -108,7 +106,7 @@ function NewAccount() {
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null,
   );
-
+  //---------------------------
   // 🆕 VERIFICAR AUTENTICACIÓN AL INICIO
   useEffect(() => {
     if (!isAuthenticated) {
@@ -311,6 +309,24 @@ function NewAccount() {
 
         <form className='form__box' autoComplete='off'>
           <div className=' form__container'>
+           
+            <div className='input__box'>
+              <label className='label forms__label'>
+                Account Type &nbsp;
+                <span className='validation__errMsg'>
+                  {validationMessages['type']}
+                </span>
+              </label>
+
+              <DropDownSelection
+                dropDownOptions={accountSelectionProp}
+                updateOptionHandler={accountTypeSelectHandler}
+                isReset={isReset}
+                setIsReset={setIsReset}
+                //disabled={isFormDisabled} // 🆕 DESHABILITAR SI NO AUTENTICADO
+              />
+            </div>
+
             <div className='input__box'>
               <label htmlFor='name' className='label forms__label'>
                 {'Account Name'}
@@ -336,7 +352,7 @@ function NewAccount() {
               />
             </div>
 
-            <div className='input__box'>
+            {/* <div className='input__box'>
               <label className='label forms__label'>
                 Account Type &nbsp;
                 <span className='validation__errMsg'>
@@ -351,7 +367,7 @@ function NewAccount() {
                 setIsReset={setIsReset}
                 //disabled={isFormDisabled} // 🆕 DESHABILITAR SI NO AUTENTICADO
               />
-            </div>
+            </div> */}
 
             <div className='account__dateAndCurrency'>
               <div className='account__date'>
