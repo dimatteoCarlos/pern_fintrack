@@ -66,8 +66,7 @@ export const url_create_category_budget_account: string =
 //get accounts info  by categoryName
 //--endpoint: http://localhost:5000/api/fintrack/budget/category/:categoryName?&user=${user}
 //api response type data:
-export const url_get_accounts_by_category: string =
-  BASE_URL_APP + 'account/category';
+export const url_get_accounts_by_category: string =  BASE_URL_APP + 'account/category';
 
 //------
 //create a pocket_saving account
@@ -93,8 +92,7 @@ export const url_get_account_by_id: string = BASE_URL_APP + 'account';
 
 //---GET ACCOUNT TRANSACTIONS BY ACCOUNT ID
 //--endpoint: http://localhost:5000/api/fintrack/account/transactions/:account_id/?start=&end=&user=c109eb15-4139-43b4-b081-8fb9860588af
-export const url_get_transactions_by_account_id: string =
-  BASE_URL_APP + 'account/transactions';
+export const url_get_transactions_by_account_id: string =  BASE_URL_APP + 'account/transactions';
 //-----------------------------------
 //----GET ALL ACCOUNTS INFO OF A SPECIFIC ACCOUNT TYPE
 //get all accounts info by account type: id, name, type, currency and balance.By user id and account_type but slack account.
@@ -112,8 +110,10 @@ export const url_get_accounting_accounts: string =
 //----------------------------------
 // get all the available accounts, all types,  but slack account
 //endpoint: http://localhost:5000/api/fintrack/account/allAccounts/?
-export const url_get_all_accounting_accounts: string =
-  BASE_URL_APP + 'account/allAccounts/';
+export const url_get_all_accounting_accounts: string =  BASE_URL_APP + 'account/allAccounts/';
+//endpoint: http://localhost:5000/api/fintrack/account/allAccounts/?
+// http://localhost:5173/fintrack/overview/new_account
+export const url_get_all_accounts = `${BASE_URL_APP}account/allAccounts`;
 //----------------------------------
 //GET THE SUM OF BALANCE OF ALL ACCOUNTS OF ONE ACCOUNT TYPE
 //example: total balance is the sum of all bank accounts balance
