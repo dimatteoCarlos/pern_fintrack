@@ -363,7 +363,7 @@ function PnL(): JSX.Element {
     setMessageToUser('Processing transaction...');
     // Evaluate all fields using useFormManager custom hook's validation system
     const { isValid, messages, validatedData } = validateAllPnL();
-    console.log('isValid', isValid, { validatedData });
+    // console.log('isValid', isValid, { validatedData });
 
     if (!isValid || !validatedData) {
       setValidationMessages(messages);
@@ -401,7 +401,7 @@ function PnL(): JSX.Element {
       const response = await requestFn(payload, {
         url: postUrl,
       } as AxiosRequestConfig);
-      console.log('🚀 ~ onSaveHandler ~ response:', { response });
+      // console.log('🚀 ~ onSaveHandler ~ response:', { response });
 
       if (response?.error) {
         throw new Error(
