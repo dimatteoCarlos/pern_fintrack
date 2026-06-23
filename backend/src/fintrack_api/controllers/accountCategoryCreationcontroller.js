@@ -1,5 +1,5 @@
-// backend\src\fintrack_api\controllers\accountCategoryCreationcontroller.js
-//
+// backend/src/fintrack_api/controllers/accountCategoryCreationcontroller.js
+
 import pc from 'picocolors';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import { pool } from '../../db/config/configDB.js';
@@ -13,6 +13,10 @@ import { getTransactionTypeId } from '../../utils/fintrackUtils/accountDataRetri
 import { determineSourceAndDestinationAccounts } from '../../utils/fintrackUtils/accountManagement/determineSourceAndDestinationAccounts.js';
 import { prepareTransactionOption } from '../../utils/fintrackUtils/transactionManagement/prepareTransactionOption.js';
 
+import { buildFxMetadata } from '../../utils/fintrackUtils/transactionManagement/fxMetadataHelper.js';
+import { getCurrencyId } from '../../utils/currencyLookup.js';
+import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
+
 //-----------------
 //endpoint: POST: http://localhost:5000/api/fintrack/account/new_account/category_budget?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c
 //rules
@@ -25,7 +29,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
   console.log(pc.blueBright('createCategoryBudgetAccount'));
   // console.log(req.body, req.params, req.query);
   const client = await pool.connect();
-  //----------------------------------------
+  //-------------------------------------
   try {
     const { userId } = req.user;
     // console.log(req);
@@ -100,18 +104,21 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const currencyResult = await pool.query(currencyQuery);
     const currencyArr = currencyResult?.rows;
     const currencyIdReq = currencyArr.filter(
-      (currency) => currency.currency_code === currency_code,
-    )[0].currency_id;
+      (currency) => currency.currency_code === currency_code)[0].currency_id;
     // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
+
+    // FX metadata (identity mode, since category_budget uses USD as base)
+    const accountingCurrencyId = await getCurrencyId(pool,ACCOUNTING_CURRENCY_CODE);
     //---------------------------------------
     //----- CHECK CATEGORY_BUDGET+ SUBCATEGORY + NATURE, ACCOUNT EXISTENCE ----------------
     // check existence of category AND subcategory and nature,name existence
     const categoryAndSubcategoryAndNatureQuery = {
-      text: `SELECT cba.* FROM category_budget_accounts cba
-    JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
+      text: `SELECT cba.*
+      FROM category_budget_accounts cba
+      JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
 
-    WHERE cba.category_name = $1 AND cnt.category_nature_type_name=$2
-    AND cba.subcategory=$3
+      WHERE cba.category_name = $1 AND cnt.category_nature_type_name=$2
+      AND cba.subcategory=$3
     `,
       values: [category_name, nature_type_name_req, subcategory.trim()],
     };
@@ -165,14 +172,24 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const transactionAmount = account_starting_amount;
     const account_balance = transactionAmount;
 
-    //TRANSACTION BEGIN
+   // Build FX metadata (identity mode: rate=1, source='identity')
+   const fxMetadata = await buildFxMetadata(
+   // original amount (positive)
+   transactionAmount,
+   // original currency ID (USD by default)  
+   currencyIdReq,
+   // database pool      
+   pool                 
+   );
+
+   //TRANSACTION BEGIN
     await client.query('BEGIN');
     const { account_basic_data } = await insertAccount(
       client,
       userId,
       account_name,
       accountTypeIdReq,
-      currencyIdReq,
+      accountingCurrencyId,//accountable currency,
       account_starting_amount,
       account_balance,
       account_start_date ?? transaction_actual_date,
@@ -221,14 +238,14 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
 
     const transactionDescription = `Transaction: ${transactionType}. Account: ${account_name} (${account_type_name}). Initial-(${transactionType}). Amount: ${transactionAmount} ${currency_code}.  Date:${formatDate(transaction_actual_date)}`;
 
-    //------ CATEGORY_BUDGET NEW ACCOUNT INFO ----
+    //---- CATEGORY_BUDGET NEW ACCOUNT INFO -
     const newAccountInfo = {
       user_id: userId,
       description: transactionDescription,
       transaction_type_id,
       transaction_type_name: transactionType,
       amount: parseFloat(transactionAmount),
-      currency_id: currencyIdReq,
+      currency_id: accountingCurrencyId,//countable currency //b4: currencyIdReq,
       account_id: account_basic_data.account_id,
       transaction_actual_date,
       currency_code,
@@ -236,8 +253,10 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       account_type_name,
       account_type_id: account_basic_data.account_type_id,
       account_balance: parseFloat(account_balance),
+      //FX metadata
+      ...fxMetadata,
     };
-    //------- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT)------
+    //-- UPDATE COUNTER ACCOUNT BALANCE (SLACK ACCOUNT)--
     //check whether slack account exists if not create it with start amount and balance = 0
     //slack account or counter account (bridge account), is like a compensation account which serves to check the equilibrium on cash flow like a counter transaction operation
     const counterAccountInfo = await checkAndInsertAccount(
@@ -253,14 +272,14 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
 
     const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} (bank), number: ${counterAccountInfo.account.account_id}. Amount:${currency_code} ${counterAccountTransactionAmount}. Account reference: ${account_name}). Date:${formatDate(transaction_actual_date)}`;
     //-----------------------------
-    //----SLACK COUNTER ACCOUNT INFO ------
+    // SLACK COUNTER ACCOUNT INFO
     const slackCounterAccountInfo = {
       user_id: userId,
       description: counterTransactionDescription,
       transaction_type_id: countertransaction_type_id,
       transaction_type_name: counterTransactionType,
       amount: parseFloat(counterAccountTransactionAmount),
-      currency_id: currencyIdReq,
+      currency_id:accountingCurrencyId, //currencyIdReq,
       account_id: counterAccountInfo.account.account_id,
       transaction_actual_date,
       currency_code,
@@ -268,15 +287,17 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       account_type_name: 'bank',
       account_type_id: counterAccountInfo.account.account_type_id,
       account_balance: parseFloat(newCounterAccountBalance),
+      //FX metadata
+       ...fxMetadata,
     };
 
     //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
-    const updatedCounterAccountInfo = await updateAccountBalance(
-      client,
-      newCounterAccountBalance,
-      slackCounterAccountInfo.account_id,
-      transaction_actual_date,
-    );
+    // const updatedCounterAccountInfo = await updateAccountBalance(
+    //   client,
+    //   newCounterAccountBalance,
+    //   slackCounterAccountInfo.account_id,
+    //   transaction_actual_date,
+    // );
 
     // console.log(
     //   '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
@@ -288,7 +309,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const { destination_account_id, source_account_id, isAccountOpening } =
       determineSourceAndDestinationAccounts(newAccountInfo, counterAccountInfo);
 
-    //--------REGISTER NEW ACCOUNT TRANSACTION -------
+    //---REGISTER NEW ACCOUNT TRANSACTION ----
     //Add deposit transaction
     //movement_type_name:account-opening, movement_type_id: 8,  transaction_type_name:deposit/account-opening, transaction_type_id: 2/5
     //----------------------------------
@@ -300,7 +321,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const movement_type_id = 8; //account opening
     const movement_type_name = 'account opening';
 
-    //--------REGISTER NEW ACCOUNT TRANSACTION -------
+    //--REGISTER NEW ACCOUNT TRANSACTION ----
     const transactionOption = prepareTransactionOption(
       newAccountInfo,
       source_account_id,
@@ -312,7 +333,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       transactionOption,
     );
 
-    //--------REGISTER COUNTER ACCOUNT (SLACK) TRANSACTION ------
+ // REGISTER COUNTER ACCOUNT (SLACK) TRANSACTION 
     const counterTransactionOption = prepareTransactionOption(
       slackCounterAccountInfo,
       source_account_id,

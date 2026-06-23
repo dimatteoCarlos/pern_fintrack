@@ -29,8 +29,24 @@ SEED_BASE=true    ❌
 import fs from 'fs';
 import path from 'path';
 import pc from 'picocolors';
-import { pool } from './configDB.js';
+import { pool } from '../configDB.js';
 import { pathToFileURL } from 'url';
+
+//---Alternativ usgin dbConfig.js
+/*
+import { Client } from 'pg';
+import pc from 'picocolors';
+import { getDbConfig, isProduction } from '../dbConfig.js';
+
+if (isProduction()) {
+  console.error(pc.red('❌ Seeds are not allowed in production'));
+  process.exit(1);
+}
+
+const config = getDbConfig();
+const client = new Client(config);
+
+*/
 //----------------------------
 // Absolute path to seeds directory
 const SEEDS_DIR = path.join(process.cwd(), 'src/db/seeds');

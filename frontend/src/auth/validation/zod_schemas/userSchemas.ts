@@ -1,6 +1,7 @@
 // frontend/src/auth/validation/zod/userSchemas.ts
 import {z} from 'zod';
 import { FIELD_LIMITS, FieldLimitType } from './constants';
+import { SUPPORTED_CURRENCIES } from '../../../fintrack/helpers/currencyConstants';
 
 //Backend zod validation schema replicated
 // ===========================
@@ -58,11 +59,11 @@ const individualFieldSchema = (field:FieldLimitType)=>
    /**
     * Normalizes currency code to lowercase
     */
-   export const currencySchema= z.enum(['usd', 'cop', 'eur'], {
+   export const currencySchema= z.enum(SUPPORTED_CURRENCIES as [string, ...string[]], {
      error: (issue) => {
        if (issue.code === 'invalid_value') {
         return {
-         message: `Currency "${issue.received}" is not supported. Available options: usd, cop, eur`
+         message: `Currency "${issue.received}" is not supported. Available options: ${SUPPORTED_CURRENCIES.join(', ')}`
         };
        } 
        return {message:"Invalid currency input"};

@@ -31,6 +31,7 @@ import {
 import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
 
 import '../styles/forms-styles.css';
+
 import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
 
 //========================

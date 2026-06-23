@@ -4,3 +4,5 @@
 
 // Accounting currency (the currency used for ledger and balances)
 export const ACCOUNTING_CURRENCY_CODE = process.env.ACCOUNTING_CURRENCY_CODE || 'usd';
+
+

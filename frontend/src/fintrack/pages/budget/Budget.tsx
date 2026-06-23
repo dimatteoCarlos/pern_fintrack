@@ -1,3 +1,4 @@
+//frontend\src/fintrack/pages/budget/Budget.tsx
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 
 import { CardTitle } from '../../general_components/CardTitle';
@@ -22,11 +23,20 @@ function Budget() {
       state: { previousRoute: originRoute },
     });
   };
-
+//--------
   return (
     <>
       <section className='content__presentation'>
         <div className='cards__presentation '>
+
+          <OpenAddEditBtn
+            btnFunction={createNewCategory}
+            btnFunctionArg={originRoute}
+            btnPreviousRoute={originRoute}
+          >
+            <div className='open__btn__label'>New Category</div>
+          </OpenAddEditBtn>
+
           <CardTitle>Category List</CardTitle>
 
           <ListCategory previousRoute={originRoute} />

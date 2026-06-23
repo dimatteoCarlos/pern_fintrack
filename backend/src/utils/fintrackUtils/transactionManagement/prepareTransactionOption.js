@@ -10,7 +10,7 @@ export function prepareTransactionOption(
 ) {
   // console.log('userId from prepare:', accountInfo.user_id);
 
-  return {
+  const option = {
     userId: accountInfo.user_id,
     description: accountInfo.description,
     transaction_type_id: accountInfo.transaction_type_id, 
@@ -24,4 +24,15 @@ export function prepareTransactionOption(
     transaction_actual_date: accountInfo.transaction_actual_date,
     account_balance:accountInfo.account_balance 
   };
+
+// Propagate FX metadata if present
+  if (accountInfo.original_amount !== undefined) {
+    option.original_amount = accountInfo.original_amount;
+    option.original_currency_id = accountInfo.original_currency_id;
+    option.exchange_rate = accountInfo.exchange_rate;
+    option.exchange_rate_source = accountInfo.exchange_rate_source;
+    option.exchange_rate_timestamp = accountInfo.exchange_rate_timestamp;
+    option.exchange_rate_target_currency_id = accountInfo.exchange_rate_target_currency_id;
+  }
+ return option;
 }

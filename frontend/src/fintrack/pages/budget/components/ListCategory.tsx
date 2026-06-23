@@ -1,3 +1,5 @@
+//frontend/src/fintrack/pages/budget/components/ListCategory.tsx
+
 import {
   BoxRow,
   StatusSquare,
@@ -13,7 +15,9 @@ import { url_summary_balance_ByType } from '../../../../urlConfig.ts';
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
 import { useFetch } from '../../../hooks/useFetch.ts';
+
 import { Link } from 'react-router-dom';
+
 import {
   CategoryListSummaryType,
   CategoryListType,
@@ -83,12 +87,12 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
           const statusAlert = remain <= 0;
 
           return (
-            <div className='box__container .flx-row-sb' key={indx}>
+           <div className='box__container .flx-row-sb' key={indx}>
               <BoxRow>
                 <Link
                   to={`category/${category_name}`}
                   state={{
-                    categorySummaryDetailed: {
+                   categorySummaryDetailed: {
                       ...category,
                       remain,
                       statusAlert,
@@ -96,8 +100,8 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
                     previousRoute,
                   }}
                 >
-                  <div className='box__title box__title--category__name hover '>
-                    {category_name}{' '}
+                 <div className='box__title box__title--category__name hover '>
+                     {category_name}{' '}
                   </div>
                 </Link>
 

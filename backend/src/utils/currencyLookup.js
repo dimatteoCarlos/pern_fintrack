@@ -2,11 +2,8 @@
 // 🔍 CURRENCY LOOKUP: Async functions to get currency id/code with catalog fallback
 
 import { pool } from '../db/config/configDB.js';
-import {
-  isCurrencyCatalogLoaded,
-  getCurrencyIdSync,
-  getCurrencyCodeSync,
-} from '../fintrack_api/services/fx_currency_catalog/loadCurrencyCatalog.js';
+
+import { isCurrencyCatalogLoaded ,  getCurrencyIdSync, getCurrencyCodeSync} from '../fintrack_api/services/fx_services/currency_catalog/loadCurrencyCatalog.js';
 
 /**
  * Get currency ID from currency code.

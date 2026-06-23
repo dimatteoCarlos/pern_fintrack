@@ -1,6 +1,6 @@
 //src/validations/schemas/expenseSchema.ts
-import {z} from 'zod'
-import { currencySchema, noteSchema, numberSchema, requiredStringSchema } from './commonSchemas'
+import {z} from 'zod';
+import { currencySchema, noteSchema, numberSchema, requiredStringSchema } from './commonSchemas';
 //zod schema validation for ExpenseInputDataType
 //amount, account, category, note, currency
 

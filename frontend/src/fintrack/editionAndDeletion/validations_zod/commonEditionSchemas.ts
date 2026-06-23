@@ -1,6 +1,8 @@
 // frontend/src/editionAndDeletion/validations/commonEditionSchemas.ts
 import { z } from 'zod';
 import { ERROR_MESSAGES } from '../../validations/utils/constants';
+import { SUPPORTED_CURRENCIES } from '../../helpers/currencyConstants';
+import { CurrencyType } from '../../types/types';
 // import { checkNumberFormatValueForSchema } from "../../validations/zod_schemas/commonSchemas";
 
 //repeated here
@@ -149,7 +151,7 @@ export const numberSchema = z
   );
 
 //5. currencySchema
-export const currencySchema = z.enum(['usd', 'cop', 'eur'], {
+export const currencySchema = z.enum(SUPPORTED_CURRENCIES as [CurrencyType, ...CurrencyType[]], {
   error: (issue) => {
     if (issue.code === 'invalid_value') {
       return `Currency ${issue.input} was not found in ${issue.options?.join(',') ?? 'available options'}`;
@@ -162,7 +164,7 @@ export const currencySchemav2 = z.enum(['usd', 'cop', 'eur'], {
   error: (issue) => {
     if (issue.code === 'invalid_value') {
       return {
-        message: `Currency "${issue.received}" is not supported. Available options: usd, cop, eur`,
+        message: `Currency "${issue.received}" is not supported. Available options:  ${SUPPORTED_CURRENCIES.join(', ')}`,
       };
     }
     return 'Invalid currency input';

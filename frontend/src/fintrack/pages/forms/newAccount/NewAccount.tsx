@@ -40,7 +40,6 @@ import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
 
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 
-// import { UserStoreType, useUserStore } from '../../../stores/userStore.ts';
 //------------------------
 //-----handle currency
 const defaultCurrency = DEFAULT_CURRENCY;
@@ -92,6 +91,8 @@ function NewAccount() {
   );
 
   const [currency, setCurrency] = useState<CurrencyType>(defaultCurrency);
+
+  const [isCurrencyDisabled, setIsCurrencyDisabled] = useState<boolean>(false);
 
   const [validationMessages, setValidationMessages] = useState<{
     [key: string]: string;
@@ -161,13 +162,17 @@ function NewAccount() {
       if (selectedOption.label === 'income_source') {
         amountIncomeSource();
         setIsDisabledValue(true);
-        // return;
+        setCurrency(defaultCurrency);
+        setAccountData(prev => ({ ...prev, currency: defaultCurrency }));
+       setIsCurrencyDisabled(true);         
+        return;
       } else {
         setAccountData((acc: AccountDataType) => ({
           ...acc,
           type: selectedOption?.label,
         }));
         setIsDisabledValue(false);
+        setIsCurrencyDisabled(false);
       }
     } else {
       // console.log(`No option selected for ${'account type'}`);
@@ -176,6 +181,7 @@ function NewAccount() {
         type: undefined,
       }));
       setIsDisabledValue(false);
+      setIsCurrencyDisabled(false);
     }
   }
   //---------
@@ -187,8 +193,8 @@ function NewAccount() {
   function updateDataCurrency(currency: CurrencyType) {
     setCurrency(currency);
     setAccountData((acc) => ({ ...acc, currency: currency }));
-  }
-  //--FORM SUBMISSION --------------------
+   }
+   //--FORM SUBMISSION ------------
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     // console.log('On submit Form');
@@ -219,6 +225,7 @@ function NewAccount() {
         amount,
         date,
       } as AccountDataType;
+
       console.log('data to post:', { ...accountData });
 
       //final URL, url is dynamic depending on type variable
@@ -239,7 +246,7 @@ function NewAccount() {
       setValidationMessages({});
       setFormData(initialFormData);
       setAccountData(initialNewAccountData);
-      setCurrency(defaultCurrency);
+      // setCurrency(defaultCurrency);
       setIsDisabledValue(false);
       setMessageToUser(null);
 
@@ -366,7 +373,7 @@ function NewAccount() {
                   variant={'form'}
                   updateOutsideCurrencyData={updateDataCurrency}
                   currency={currency}
-                  // disabled={isFormDisabled}
+                  disabled={isCurrencyDisabled}
                 />
               </div>
             </div>

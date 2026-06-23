@@ -1,3 +1,5 @@
+// frontend/src/fintrack/helpers/constants.ts
+
 import {
   AccountListType,
   PocketListType,

@@ -144,10 +144,10 @@ function NewCategory() {
   >({ url: url_create_category_budget_account, method: 'POST' });
   //  console.log('more data', rest)
   /*
-Errores HTTP (400, 500) → Vienen en responseData con su status y message
-Errores de red → Vienen en requestError
-Errores inesperados → Van al catch
-*/
+  Errores HTTP (400, 500) → Vienen en responseData con su status y message
+  Errores de red → Vienen en requestError
+  Errores inesperados → Van al catch
+  */
   // === HANDLERS & UTILITIES ===
   //event handler hook for number input handling
   const { inputNumberHandlerFn } = useInputNumberHandler(

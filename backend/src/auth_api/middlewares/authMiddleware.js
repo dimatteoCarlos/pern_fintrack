@@ -52,7 +52,8 @@ export const getAuthToken = (req) => {
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
-    console.log('✅ Access Token found  in headers');
+    //DEBUG
+    // console.log('✅ Access Token found  in headers');
     // console.log('✅ Token found in headers:', token);
     return token;
   }

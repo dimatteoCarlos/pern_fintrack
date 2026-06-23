@@ -52,10 +52,10 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
     try {
       const response = await authFetch<TransactionDataType>(`${url_get_transaction_by_id}${transactionId}`);
 //----DEBUG-------------------------------
-console.log('🔍 Respuesta completa:', response);
-console.log('🔍 Datos recibidos (data):', response.data);
-console.log('🔍 original_amount:', response.data?.original_amount);
-console.log('🔍 exchange_rate:', response.data?.exchange_rate);
+// console.log('🔍 Respuesta completa:', response);
+// console.log('🔍 Datos recibidos (data):', response.data);
+// console.log('🔍 original_amount:', response.data?.original_amount);
+// console.log('🔍 exchange_rate:', response.data?.exchange_rate);
 //----DEBUG-------------------------------
 
       setSelectedTransaction(response.data);

@@ -169,11 +169,11 @@ export const patchAccountById = async (req, res, next) => {
     if (userAccountSqlParameters.length > 0) {
       userAccountSqlValues.push(accountId, userId); // $final = accountId
       const userAccountQuery = `
-   UPDATE user_accounts SET 
-   ${userAccountSqlParameters.join(', ')},
-   updated_at = NOW() 
-   WHERE account_id = $${sqlParameter} AND user_id = $${sqlParameter + 1}; 
-   `;
+       UPDATE user_accounts SET 
+       ${userAccountSqlParameters.join(', ')},
+       updated_at = NOW() 
+       WHERE account_id = $${sqlParameter} AND user_id = $${sqlParameter + 1}; 
+       `;
       await client.query(userAccountQuery, userAccountSqlValues);
     }
 
