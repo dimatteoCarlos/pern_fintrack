@@ -15,7 +15,9 @@
  */
 
 // Historical BCV data (used for VES projection)
-export const data = [
+import { bcvData} from "../../../../../archived/tests/projection_usd_ves/bcv_data.js";
+
+export const bcvStat = [
   { fecha: "2026-01-05", y: 304.6796 },
   { fecha: "2026-01-26", y: 355.5528 },
   { fecha: "2026-02-03", y: 372.1057 },
@@ -40,7 +42,11 @@ export const data = [
   { fecha: "2026-06-18", y: 602.33 },
   { fecha: "2026-06-19", y: 607.39 },
   { fecha: "2026-06-22", y: 612.4332 },
+  { fecha: "2026-06-23", y: 617.64 },
+
 ]
+
+const data = bcvStat ?? bcvData 
 
 // =======================================
 // 1. Fixed rates for stable currencies (base = USD)
@@ -54,17 +60,18 @@ export const fixedRates = {
 // Placeholder (overridden by projection in fetchAllRates/fetchRate)
 };
 
-// ============================================
+// =======================================
 // 2. Helper days between two dates
-// ============================================
+// =======================================
 function daysBetween(a, b) {
   const da = new Date(`${a}T00:00:00`);
   const db = new Date(`${b}T00:00:00`);
   return Math.round((da - db) / (1000 * 60 * 60 * 24));
 }
+
 //Exponential regression parameters
-function calcularParametros(datos, nUltimos = 7) {
-  const n = Math.max(1, Math.min(Number(nUltimos) || 7, datos.length));
+function calcularParametros(datos, nUltimos = 5) {
+  const n = Math.max(1, Math.min(Number(nUltimos) || 5, datos.length));
   const muestra = datos.slice(-n);
   
   const baseDate = muestra[0].fecha;
@@ -114,7 +121,7 @@ function calcularParametros(datos, nUltimos = 7) {
 //========================================
 // 3. Helper: Project VES rate for a given date
 // =======================================
-function projectVesRate(date = new Date(), nUsados = 7) {
+function projectVesRate(date = new Date(), nUsados = 5) {
   const params = calcularParametros(data, nUsados);
 
   const fecha = new Date(date);
@@ -126,44 +133,67 @@ function projectVesRate(date = new Date(), nUsados = 7) {
   return rate;
 }
 
-// =========================================
+// =======================================
 // 4. Main function: get fallback rate (with VES projection)
-// =========================================
+// =======================================
 /**
  * Get fallback exchange rate from any currency to USD (or vice versa).
  * For VES, uses dynamic exponential projection; for others, fixed values.
  * @param {string} fromCode - Origin currency code (lowercase)
  * @param {string} toCode - Target currency code (lowercase, default 'usd')
- * @param {number} nUsados - Number of recent data points for VES projection (default 7)
+ * @param {number} nUsados - Number of recent data points for VES projection (default 5)
  * @returns {number}
  */
-export function getFallbackRate(fromCode, toCode = 'usd', nUsados = 7) {
+export function getFallbackRate(fromCode, toCode = 'usd', nUsados = 5) {
+  
+  function getRateFromUsd(target) {
+  if (target === 'usd') return 1;
+
+  if (target === 'ves') {
+    try {
+      const rate = projectVesRate(new Date(), nUsados);
+      // 📝 CHANGE: Validate that the rate is a finite positive number
+      if (Number.isFinite(rate) && rate > 0) {
+        return rate;
+      }
+      console.warn(
+        `⚠️ VES projection returned invalid rate: ${rate}. Falling back to fixedRates.ves (${fixedRates.ves}).`
+      );
+      return fixedRates.ves;
+    } catch (error) {
+      console.warn(
+        `⚠️ VES projection failed: ${error.message}. Falling back to fixedRates.ves (${fixedRates.ves}).`
+      );
+      return fixedRates.ves;
+    }
+  }
+
+  const fixed = fixedRates[target];
+  if (fixed === undefined) throw new Error(`No fallback rate for ${target}`);
+  return fixed;
+ }
+//----Main Logic-------------------
   const from = fromCode.toLowerCase();
   const to = toCode.toLowerCase();
 
+  // Case 1: Same currency → identity (rate = 1)
   if (from === to) return 1.0;
 
-  function getRateFromUsd(target) {
-    if (target === 'usd') return 1;
-    if (target === 'ves') return projectVesRate(new Date(), nUsados);
-
-    const fixed = fixedRates[target];
-
-    if (fixed === undefined) throw new Error(`No fallback rate for ${target}`);
-    return fixed;
-  }
-
+  // Case 2: From USD to any currency → direct rate
   if (from === 'usd') {
-    return getRateFromUsd(to);
+   return getRateFromUsd(to);
   }
 
+  // Case 3: From any currency to USD → inverse rate  
   if (to === 'usd') {
     const rate = getRateFromUsd(from);
     return 1 / rate;
   }
 
+  // Case 4: Cross conversion (non-USD to non-USD) → via USD
+  // 1 fromCurrency = X USD (indirect)
   const rateFromToUsd = getRateFromUsd(from);
-
+  // 1 USD = Y targetCurrency
   const rateUsdToTarget = getRateFromUsd(to);
 
   return (1 / rateFromToUsd) * rateUsdToTarget;
@@ -179,9 +209,9 @@ export function getFallbackRate(fromCode, toCode = 'usd', nUsados = 7) {
  * @param {Object} options - { nUsados: number } for VES projection
  * @returns {Promise<Object>} - { rates: { target: { rate, source, fetchedAt } }, source, fetchedAt }
  */
-export async function fetchAllRates(baseCurrency, options = { nUsados: 7 }) {
+export async function fetchAllRates(baseCurrency, options = { nUsados: 5 }) {
   const base = baseCurrency.toLowerCase();
-  const nUsados = options.nUsados || 7;
+  const nUsados = options.nUsados || 5;
   const now = new Date();
 
   // List of all supported currencies (from fixedRates keys)
@@ -219,12 +249,12 @@ export async function fetchAllRates(baseCurrency, options = { nUsados: 7 }) {
  * @param {Object} options - { nUsados: number } for VES projection
  * @returns {Promise<Object>} - { rate, source, fetchedAt } or null
  */
-export async function fetchRate(baseCurrency, targetCurrency, options = { nUsados: 7 }) {
+export async function fetchRate(baseCurrency, targetCurrency, options = { nUsados: 5 }) {
   try {
     const rate = getFallbackRate(
       baseCurrency,
       targetCurrency,
-      options.nUsados || 7
+      options.nUsados || 5
     );
     return {
       rate,
@@ -255,7 +285,7 @@ const args = parseArgs();
 if (args.from || args.to) {
   const from = args.from || 'ves';
   const to = args.to || 'usd';
-  const nUsados = args.n ? parseInt(args.n, 10) : 7;
+  const nUsados = args.n ? parseInt(args.n, 10) : 5;
   
   const rate = getFallbackRate(from, to, nUsados);
   
@@ -288,6 +318,8 @@ if (args.from || args.to) {
 }
 /*
 /*
+node backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js --from=usd --to=ves
+
 # 1. Verificar importación (desde backend/)
 node -e "import('./src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js').then(m => console.log('✅ Exports:', Object.keys(m))).catch(e => console.error('❌', e))"
 
@@ -301,9 +333,9 @@ node -e "import('./src/fintrack_api/services/fx_services/fxProviders/getFallback
 node -e "import('./backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js').then(async m => { const r = await m.fetchRate('usd', 'ves'); console.log('✅ VES rate:', r); }).catch(e => console.error(e))"
 
 # ============================================
-# CLI: Ejecutar getFallbackRate directamente
+# CLI: Test / Ejecutar getFallbackRate directamente
 # ============================================
-# 1. VES → USD (por defecto con 7 datos)
+# 1. VES → USD (por defecto con 5 datos)
 node backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js --from=ves --to=usd
 
 # 2. EUR → VES
