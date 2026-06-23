@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { ERROR_MESSAGES } from '../../validations/utils/constants';
 import { SUPPORTED_CURRENCIES } from '../../helpers/currencyConstants';
+import { CurrencyType } from '../../types/types';
 // import { checkNumberFormatValueForSchema } from "../../validations/zod_schemas/commonSchemas";
 
 //repeated here
@@ -150,7 +151,7 @@ export const numberSchema = z
   );
 
 //5. currencySchema
-export const currencySchema = z.enum(SUPPORTED_CURRENCIES as [string, ...string[]], {
+export const currencySchema = z.enum(SUPPORTED_CURRENCIES as [CurrencyType, ...CurrencyType[]], {
   error: (issue) => {
     if (issue.code === 'invalid_value') {
       return `Currency ${issue.input} was not found in ${issue.options?.join(',') ?? 'available options'}`;
