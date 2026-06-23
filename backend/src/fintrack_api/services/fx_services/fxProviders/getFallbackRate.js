@@ -5,7 +5,7 @@
 /**
  * Static fallback provider with dynamic VES projection.
  * This is the last line of defense when all other providers fail.
- * 
+ *
  * Features:
  * - Fixed rates for stable currencies (USD, EUR, COP, MXN)
  * - Exponential projection for VES based on historical BCV data
@@ -15,38 +15,38 @@
  */
 
 // Historical BCV data (used for VES projection)
-import { bcvData} from "../../../../../archived/tests/projection_usd_ves/bcv_data.js";
+
+import { bcvData } from './bcv_data.js';
 
 export const bcvStat = [
-  { fecha: "2026-01-05", y: 304.6796 },
-  { fecha: "2026-01-26", y: 355.5528 },
-  { fecha: "2026-02-03", y: 372.1057 },
-  { fecha: "2026-02-27", y: 417.3579 },
-  { fecha: "2026-03-27", y: 468.51 },
-  { fecha: "2026-03-30", y: 471.7004 },
-  { fecha: "2026-05-13", y: 508.6004 },
-  { fecha: "2026-05-25", y: 530.5047 },
-  { fecha: "2026-05-26", y: 535.3853 },
-  { fecha: "2026-05-29", y: 549.3716 },
-  { fecha: "2026-06-02", y: 557.9741 },
-  { fecha: "2026-06-03", y: 558.6436 },
-  { fecha: "2026-06-04", y: 560.3753 },
-  { fecha: "2026-06-05", y: 563.2892 },
-  { fecha: "2026-06-09", y: 567.6828 },
-  { fecha: "2026-06-10", y: 572.6828 },
-  { fecha: "2026-06-11", y: 577.545 },
-  { fecha: "2026-06-12", y: 582.69 },
-  { fecha: "2026-06-15", y: 587.4059 },
-  { fecha: "2026-06-16", y: 592.5163 },
-  { fecha: "2026-06-17", y: 596.78 },
-  { fecha: "2026-06-18", y: 602.33 },
-  { fecha: "2026-06-19", y: 607.39 },
-  { fecha: "2026-06-22", y: 612.4332 },
-  { fecha: "2026-06-23", y: 617.64 },
+  { fecha: '2026-01-05', y: 304.6796 },
+  { fecha: '2026-01-26', y: 355.5528 },
+  { fecha: '2026-02-03', y: 372.1057 },
+  { fecha: '2026-02-27', y: 417.3579 },
+  { fecha: '2026-03-27', y: 468.51 },
+  { fecha: '2026-03-30', y: 471.7004 },
+  { fecha: '2026-05-13', y: 508.6004 },
+  { fecha: '2026-05-25', y: 530.5047 },
+  { fecha: '2026-05-26', y: 535.3853 },
+  { fecha: '2026-05-29', y: 549.3716 },
+  { fecha: '2026-06-02', y: 557.9741 },
+  { fecha: '2026-06-03', y: 558.6436 },
+  { fecha: '2026-06-04', y: 560.3753 },
+  { fecha: '2026-06-05', y: 563.2892 },
+  { fecha: '2026-06-09', y: 567.6828 },
+  { fecha: '2026-06-10', y: 572.6828 },
+  { fecha: '2026-06-11', y: 577.545 },
+  { fecha: '2026-06-12', y: 582.69 },
+  { fecha: '2026-06-15', y: 587.4059 },
+  { fecha: '2026-06-16', y: 592.5163 },
+  { fecha: '2026-06-17', y: 596.78 },
+  { fecha: '2026-06-18', y: 602.33 },
+  { fecha: '2026-06-19', y: 607.39 },
+  { fecha: '2026-06-22', y: 612.4332 },
+  { fecha: '2026-06-23', y: 617.64 },
+];
 
-]
-
-const data = bcvStat ?? bcvData 
+const data = bcvStat ?? bcvData;
 
 // =======================================
 // 1. Fixed rates for stable currencies (base = USD)
@@ -57,7 +57,7 @@ export const fixedRates = {
   cop: 3500,
   ves: 650,
   mxn: 17,
-// Placeholder (overridden by projection in fetchAllRates/fetchRate)
+  // Placeholder (overridden by projection in fetchAllRates/fetchRate)
 };
 
 // =======================================
@@ -73,7 +73,7 @@ function daysBetween(a, b) {
 function calcularParametros(datos, nUltimos = 5) {
   const n = Math.max(1, Math.min(Number(nUltimos) || 5, datos.length));
   const muestra = datos.slice(-n);
-  
+
   const baseDate = muestra[0].fecha;
   const baseY = muestra[0].y;
 
@@ -86,18 +86,18 @@ function calcularParametros(datos, nUltimos = 5) {
       baseDate,
       baseY,
       nUsados: 1,
-      puntos: muestra.map(d => ({ fecha: d.fecha, x: 0, y: d.y }))
+      puntos: muestra.map((d) => ({ fecha: d.fecha, x: 0, y: d.y })),
     };
   }
 
-  const puntos = muestra.map(d => ({
+  const puntos = muestra.map((d) => ({
     fecha: d.fecha,
     x: daysBetween(d.fecha, baseDate),
-    y: d.y
+    y: d.y,
   }));
 
-  const xs = puntos.map(d => d.x);
-  const ys = puntos.map(d => Math.log(d.y));
+  const xs = puntos.map((d) => d.x);
+  const ys = puntos.map((d) => Math.log(d.y));
 
   const sumX = xs.reduce((a, b) => a + b, 0);
   const sumY = ys.reduce((a, b) => a + b, 0);
@@ -114,7 +114,14 @@ function calcularParametros(datos, nUltimos = 5) {
   const r2 = sst === 0 ? 1 : 1 - sse / sst;
 
   return {
-    a, b, lnA, r2, baseDate, baseY, nUsados: n, puntos
+    a,
+    b,
+    lnA,
+    r2,
+    baseDate,
+    baseY,
+    nUsados: n,
+    puntos,
   };
 }
 
@@ -122,6 +129,20 @@ function calcularParametros(datos, nUltimos = 5) {
 // 3. Helper: Project VES rate for a given date
 // =======================================
 function projectVesRate(date = new Date(), nUsados = 5) {
+  //check last updated
+  const lastDate = data[data.length - 1]?.fecha;
+  if (lastDate) {
+    const daysSinceLastData = daysBetween(
+      new Date().toISOString().slice(0, 10),
+      lastDate,
+    );
+    if (daysSinceLastData > 3) {
+      console.info(
+        `⚠️ VES projection data is ${daysSinceLastData} days old. Consider updating bcvStat or bcvData.`,
+      );
+    }
+  }
+  //------------------------------
   const params = calcularParametros(data, nUsados);
 
   const fecha = new Date(date);
@@ -145,34 +166,34 @@ function projectVesRate(date = new Date(), nUsados = 5) {
  * @returns {number}
  */
 export function getFallbackRate(fromCode, toCode = 'usd', nUsados = 5) {
-  
   function getRateFromUsd(target) {
-  if (target === 'usd') return 1;
+    if (target === 'usd') return 1;
 
-  if (target === 'ves') {
-    try {
-      const rate = projectVesRate(new Date(), nUsados);
-      // 📝 CHANGE: Validate that the rate is a finite positive number
-      if (Number.isFinite(rate) && rate > 0) {
-        return rate;
+    if (target === 'ves') {
+      try {
+        const rate = projectVesRate(new Date(), nUsados);
+        // 📝 CHANGE: Validate that the rate is a finite positive number
+        if (Number.isFinite(rate) && rate > 0) {
+          // return rate;
+          return Math.round(rate); //rounded just here.
+        }
+        console.warn(
+          `⚠️ VES projection returned invalid rate: ${rate}. Falling back to fixedRates.ves (${fixedRates.ves}).`,
+        );
+        return Math.round(fixedRates.ves);
+      } catch (error) {
+        console.warn(
+          `⚠️ VES projection failed: ${error.message}. Falling back to fixedRates.ves (${fixedRates.ves}).`,
+        );
+        return fixedRates.ves;
       }
-      console.warn(
-        `⚠️ VES projection returned invalid rate: ${rate}. Falling back to fixedRates.ves (${fixedRates.ves}).`
-      );
-      return fixedRates.ves;
-    } catch (error) {
-      console.warn(
-        `⚠️ VES projection failed: ${error.message}. Falling back to fixedRates.ves (${fixedRates.ves}).`
-      );
-      return fixedRates.ves;
     }
-  }
 
-  const fixed = fixedRates[target];
-  if (fixed === undefined) throw new Error(`No fallback rate for ${target}`);
-  return fixed;
- }
-//----Main Logic-------------------
+    const fixed = fixedRates[target];
+    if (fixed === undefined) throw new Error(`No fallback rate for ${target}`);
+    return fixed;
+  }
+  //----Main Logic-------------------
   const from = fromCode.toLowerCase();
   const to = toCode.toLowerCase();
 
@@ -181,10 +202,10 @@ export function getFallbackRate(fromCode, toCode = 'usd', nUsados = 5) {
 
   // Case 2: From USD to any currency → direct rate
   if (from === 'usd') {
-   return getRateFromUsd(to);
+    return getRateFromUsd(to);
   }
 
-  // Case 3: From any currency to USD → inverse rate  
+  // Case 3: From any currency to USD → inverse rate
   if (to === 'usd') {
     const rate = getRateFromUsd(from);
     return 1 / rate;
@@ -205,7 +226,7 @@ export function getFallbackRate(fromCode, toCode = 'usd', nUsados = 5) {
 /**
  * Fetch all exchange rates for a base currency (massive snapshot).
  * Uses the static fallback rates + dynamic VES projection.
- * 
+ *
  * @param {string} baseCurrency - Base currency code (e.g., 'usd')
  * @param {Object} options - { nUsados: number } for VES projection
  * @returns {Promise<Object>} - { rates: { target: { rate, source, fetchedAt } }, source, fetchedAt }
@@ -229,7 +250,10 @@ export async function fetchAllRates(baseCurrency, options = { nUsados: 5 }) {
         fetchedAt: now,
       };
     } catch (err) {
-      console.warn(`⚠️ Static fallback: no rate for ${base} → ${target}:`, err.message);
+      console.warn(
+        `⚠️ Static fallback: no rate for ${base} → ${target}:`,
+        err.message,
+      );
       // Skip this currency (leave it out)
     }
   }
@@ -243,18 +267,22 @@ export async function fetchAllRates(baseCurrency, options = { nUsados: 5 }) {
 //===================================
 /**
  * Fetch a specific exchange rate for a currency pair.
- * 
+ *
  * @param {string} baseCurrency - Base currency code
  * @param {string} targetCurrency - Target currency code
  * @param {Object} options - { nUsados: number } for VES projection
  * @returns {Promise<Object>} - { rate, source, fetchedAt } or null
  */
-export async function fetchRate(baseCurrency, targetCurrency, options = { nUsados: 5 }) {
+export async function fetchRate(
+  baseCurrency,
+  targetCurrency,
+  options = { nUsados: 5 },
+) {
   try {
     const rate = getFallbackRate(
       baseCurrency,
       targetCurrency,
-      options.nUsados || 5
+      options.nUsados || 5,
     );
     return {
       rate,
@@ -262,7 +290,10 @@ export async function fetchRate(baseCurrency, targetCurrency, options = { nUsado
       fetchedAt: new Date(),
     };
   } catch (error) {
-    console.warn(`⚠️ Static fallback fetchRate failed for ${baseCurrency} → ${targetCurrency}:`, error.message);
+    console.warn(
+      `⚠️ Static fallback fetchRate failed for ${baseCurrency} → ${targetCurrency}:`,
+      error.message,
+    );
     return null;
   }
 }
@@ -274,8 +305,8 @@ function parseArgs() {
   const args = process.argv.slice(2);
   const out = {};
   for (const arg of args) {
-    const [k, v] = arg.split("=");
-    if (k && v !== undefined) out[k.replace(/^--/, "")] = v;
+    const [k, v] = arg.split('=');
+    if (k && v !== undefined) out[k.replace(/^--/, '')] = v;
   }
   return out;
 }
@@ -286,29 +317,41 @@ if (args.from || args.to) {
   const from = args.from || 'ves';
   const to = args.to || 'usd';
   const nUsados = args.n ? parseInt(args.n, 10) : 5;
-  
+
   const rate = getFallbackRate(from, to, nUsados);
-  
+
   console.log(`Fallback Rate: ${from} → ${to}`);
-  console.log(JSON.stringify({
-    from,
-    to,
-    rate,
-    nUsados,
-    timestamp: new Date().toISOString()
-  }, null, 2));
-  
+  console.log(
+    JSON.stringify(
+      {
+        from,
+        to,
+        rate,
+        nUsados,
+        timestamp: new Date().toISOString(),
+      },
+      null,
+      2,
+    ),
+  );
+
   if (from.toLowerCase() === 'ves' || to.toLowerCase() === 'ves') {
     const params = calcularParametros(data, nUsados);
     console.log('\nParámetros VES proyectados:');
-    console.log(JSON.stringify({
-      a: params.a,
-      b: params.b,
-      baseDate: params.baseDate,
-      baseY: params.baseY,
-      r2: params.r2,
-      nUsados: params.nUsados
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          a: params.a,
+          b: params.b,
+          baseDate: params.baseDate,
+          baseY: params.baseY,
+          r2: params.r2,
+          nUsados: params.nUsados,
+        },
+        null,
+        2,
+      ),
+    );
   }
 } else {
   console.log('Uso:');
