@@ -1,4 +1,4 @@
-// backend/src/fintrack_api/services/exchangeRate_providers/getFallbackRate.js
+// backend\src\fintrack_api\services\fx_services\fxProviders\getFallbackRate.js
 // 💰 FALLBACK RATES: Static exchange rates + exponential projection for VES
 //STATIC FALLBACK PROVIDER (Priority 4 – Last resort)
 
@@ -49,8 +49,9 @@ export const fixedRates = {
   usd: 1,
   eur: 0.9,
   cop: 3500,
+  ves: 650,
   mxn: 17,
-  ves: 650,// Placeholder (overridden by projection in fetchAllRates/fetchRate)
+// Placeholder (overridden by projection in fetchAllRates/fetchRate)
 };
 
 // ============================================
@@ -286,53 +287,31 @@ if (args.from || args.to) {
   console.log('node getFallbackRate.js --from=ves --to=usd --n=5');
 }
 /*
-Probar importación desde backend/
-node -e "import('./src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js')..."
-
+/*
+# 1. Verificar importación (desde backend/)
 node -e "import('./src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js').then(m => console.log('✅ Exports:', Object.keys(m))).catch(e => console.error('❌', e))"
 
-# 4. Probar fetchAllRates
+# 2. Probar fetchAllRates
 node -e "import('./src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js').then(async m => { const r = await m.fetchAllRates('usd'); console.log('✅ Rates keys:', Object.keys(r.rates)); }).catch(e => console.error(e))"
 
-# 5. Probar fetchRate desde backend/
+# 3. Probar fetchRate
 node -e "import('./src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js').then(async m => { const r = await m.fetchRate('usd', 'ves'); console.log('✅ VES rate:', r); }).catch(e => console.error(e))"
 
-desde raiz:
+# (Opcional) Desde la raíz del proyecto (pern_fintrack/)
 node -e "import('./backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js').then(async m => { const r = await m.fetchRate('usd', 'ves'); console.log('✅ VES rate:', r); }).catch(e => console.error(e))"
 
-*/
-/*
-Cómo ejecutarlo
-1. VES → USD (por defecto con 7 datos)
-bash
-node backend/src/fintrack_api/services/exchangeRate_providers/getFallbackRate.js --from=ves --to=usd
-2. EUR → VES
-bash
-node backend/src/fintrack_api/services/exchangeRate_providers/getFallbackRate.js --from=eur --to=ves
-3. USD → VES con 5 datos
-bash
-node backend/src/fintrack_api/services/exchangeRate_providers/getFallbackRate.js --from=usd --to=ves --n=5
-4. Por defecto (VES → USD)
-bash
-node backend/src/fintrack_api/services/exchangeRate_providers/getFallbackRate.js
-Salida ejemplo
-json
-Fallback Rate: ves → usd
-{
-  "from": "ves",
-  "to": "usd",
-  "rate": 0.00172,
-  "nUsados": 7,
-  "timestamp": "2026-06-20T16:06:00.000Z"
-}
+# ============================================
+# CLI: Ejecutar getFallbackRate directamente
+# ============================================
+# 1. VES → USD (por defecto con 7 datos)
+node backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js --from=ves --to=usd
 
-Parámetros VES proyectados:
-{
-  "a": 558.6436,
-  "b": 0.0032,
-  "baseDate": "2026-06-03",
-  "baseY": 558.6436,
-  "r2": 0.9614,
-  "nUsados": 7
-}
+# 2. EUR → VES
+node backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js --from=eur --to=ves
+
+# 3. USD → VES con 5 datos
+node backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js --from=usd --to=ves --n=5
+
+# 4. Por defecto (VES → USD)
+node backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js
 */
