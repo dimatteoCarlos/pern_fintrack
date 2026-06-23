@@ -5,6 +5,7 @@ import {ERROR_MESSAGES,
 // VALID_NUMBER_FORMATS_PATTERNS,
 //  INVALID_CHARS_REGEX,
 } from '../utils/constants.ts'
+import { SUPPORTED_CURRENCIES } from "../../helpers/currencyConstants.ts";
 
 //------------
 // Esquema de Zod para validar y transformar entradas numéricas / Zod schema to validate and transform numeric data
@@ -122,10 +123,10 @@ export const requiredStringSchema = z.string({error: (iss) => iss.input === unde
 .min(1, {error:(iss)=>iss.input === ''?`* Please select the ${(iss.path)}`:ERROR_MESSAGES.FIELD_REQUIRED})
 
 //================================
-export const currencySchema = z.enum(['usd', 'cop', 'eur'], {
+export const currencySchema = z.enum(SUPPORTED_CURRENCIES as [string,...string[]], {
   error:(issue)=>{
  if(issue.code === 'invalid_value'){
-  return `Currency ${issue.input} was not found in ${issue.options?.join(', ') ?? 'available options: usd, cop, eur'}`;
+  return `Currency ${issue.input} was not found in ${issue.options?.join(', ') ?? 'available options: usd, cop, eur, ves, mxn'}`;
    }
     return "Invalid currency input"
   }
