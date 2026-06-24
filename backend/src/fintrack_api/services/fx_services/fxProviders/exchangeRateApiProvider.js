@@ -72,7 +72,7 @@ if (toCurrencyCode  !== null && typeof toCurrencyCode  !== 'string') {
  // 4. Perform request
   const response = await axios.get(url, { timeout: FX_TIMEOUT_MS });
 
-  console.log("🚀 ~ fetchFromExchangeRateAPI ~ response:", response)
+  // console.log("🚀 ~ fetchFromExchangeRateAPI ~ response:", response)
   //-----------
   
  // 5. Validate response structure
