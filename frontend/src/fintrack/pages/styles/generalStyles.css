@@ -313,6 +313,14 @@ input[type='number'] {
   width: 100%;
 }
 
+/* Informative message style for non-blocking validation (e.g., duplicate account name) */
+.validation__msg--info {
+  color: #60b1d6; 
+  /* color: #5b8c93;  */
+  letter-spacing: 1px;
+  font-style: normal !important;
+}
+
 .hover:hover {
   color: var(--hoverColor, cyan);
   cursor: pointer;
