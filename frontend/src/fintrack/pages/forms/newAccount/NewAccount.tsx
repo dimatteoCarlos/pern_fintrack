@@ -18,6 +18,7 @@ import {
   DEFAULT_CURRENCY,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
+
 import { url_create_basic_account } from '../../../../urlConfig.ts';
 
 import '../styles/forms-styles.css';
@@ -44,7 +45,7 @@ import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/na
 import { useAccountExistence } from '../../../hooks/useAccountExistence.ts';
 // 📝Import debounced callback hook
 import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.ts';
-//------------------------
+//-------------------------
 //-----handle currency
 const defaultCurrency = DEFAULT_CURRENCY;
 
@@ -137,7 +138,7 @@ function NewAccount() {
     }
   }, [isAuthenticated, navigateTo]);
 
-  //-------------------------------------
+  //---------------------------
   //endpoint: http://localhost:5000/api/fintrack/account/${type}
   //DATA FETCHING
   //OPTION SELECTION: ACCOUNT TYPE
@@ -152,14 +153,14 @@ function NewAccount() {
     AccountDataType
   >({ url: url_create_basic_account, method: 'POST' });
 
-  //--------------------------------------
+  //--------------------------------
   //--used in drop down selection
   const accountSelectionProp = {
     title,
     options: optionsTypeAccounts,
     variant: VARIANT_FORM, //this stablishes the custom styles to use in selection dropdown component
   };
-  //---functions-----
+  //---functions---------------
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
