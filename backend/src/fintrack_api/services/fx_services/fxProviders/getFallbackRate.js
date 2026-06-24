@@ -70,8 +70,8 @@ function daysBetween(a, b) {
 }
 
 //Exponential regression parameters
-function calcularParametros(datos, nUltimos = 5) {
-  const n = Math.max(1, Math.min(Number(nUltimos) || 5, datos.length));
+function calcularParametros(datos, nUltimos = 7) {
+  const n = Math.max(1, Math.min(Number(nUltimos) || 7, datos.length));
   const muestra = datos.slice(-n);
 
   const baseDate = muestra[0].fecha;
@@ -128,7 +128,7 @@ function calcularParametros(datos, nUltimos = 5) {
 //========================================
 // 3. Helper: Project VES rate for a given date
 // =======================================
-function projectVesRate(date = new Date(), nUsados = 5) {
+function projectVesRate(date = new Date(), nUsados = 7) {
   //check last updated
   const lastDate = data[data.length - 1]?.fecha;
   if (lastDate) {
@@ -162,10 +162,10 @@ function projectVesRate(date = new Date(), nUsados = 5) {
  * For VES, uses dynamic exponential projection; for others, fixed values.
  * @param {string} fromCode - Origin currency code (lowercase)
  * @param {string} toCode - Target currency code (lowercase, default 'usd')
- * @param {number} nUsados - Number of recent data points for VES projection (default 5)
+ * @param {number} nUsados - Number of recent data points for VES projection (default 7)
  * @returns {number}
  */
-export function getFallbackRate(fromCode, toCode = 'usd', nUsados = 5) {
+export function getFallbackRate(fromCode, toCode = 'usd', nUsados = 7) {
   function getRateFromUsd(target) {
     if (target === 'usd') return 1;
 
@@ -231,9 +231,9 @@ export function getFallbackRate(fromCode, toCode = 'usd', nUsados = 5) {
  * @param {Object} options - { nUsados: number } for VES projection
  * @returns {Promise<Object>} - { rates: { target: { rate, source, fetchedAt } }, source, fetchedAt }
  */
-export async function fetchAllRates(baseCurrency, options = { nUsados: 5 }) {
+export async function fetchAllRates(baseCurrency, options = { nUsados: 7 }) {
   const base = baseCurrency.toLowerCase();
-  const nUsados = options.nUsados || 5;
+  const nUsados = options.nUsados || 7;
   const now = new Date();
 
   // List of all supported currencies (from fixedRates keys)
@@ -276,13 +276,13 @@ export async function fetchAllRates(baseCurrency, options = { nUsados: 5 }) {
 export async function fetchRate(
   baseCurrency,
   targetCurrency,
-  options = { nUsados: 5 },
+  options = { nUsados: 7 },
 ) {
   try {
     const rate = getFallbackRate(
       baseCurrency,
       targetCurrency,
-      options.nUsados || 5,
+      options.nUsados || 7,
     );
     return {
       rate,
@@ -316,7 +316,7 @@ const args = parseArgs();
 if (args.from || args.to) {
   const from = args.from || 'ves';
   const to = args.to || 'usd';
-  const nUsados = args.n ? parseInt(args.n, 10) : 5;
+  const nUsados = args.n ? parseInt(args.n, 10) : 7;
 
   const rate = getFallbackRate(from, to, nUsados);
 
@@ -357,7 +357,7 @@ if (args.from || args.to) {
   console.log('Uso:');
   console.log('node getFallbackRate.js --from=ves --to=usd');
   console.log('node getFallbackRate.js --from=eur --to=ves');
-  console.log('node getFallbackRate.js --from=ves --to=usd --n=5');
+  console.log('node getFallbackRate.js --from=ves --to=usd --n=7');
 }
 /*
 /*
@@ -378,14 +378,14 @@ node -e "import('./backend/src/fintrack_api/services/fx_services/fxProviders/get
 # ============================================
 # CLI: Test / Ejecutar getFallbackRate directamente
 # ============================================
-# 1. VES → USD (por defecto con 5 datos)
+# 1. VES → USD (por defecto con 7 datos)
 node backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js --from=ves --to=usd
 
 # 2. EUR → VES
 node backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js --from=eur --to=ves
 
-# 3. USD → VES con 5 datos
-node backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js --from=usd --to=ves --n=5
+# 3. USD → VES con 7 datos
+node backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js --from=usd --to=ves --n=7
 
 # 4. Por defecto (VES → USD)
 node backend/src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js
