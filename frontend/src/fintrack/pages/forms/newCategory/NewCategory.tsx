@@ -108,7 +108,7 @@ function NewCategory() {
       setTimeout(() => navigateTo(AUTH_ROUTE), 5000);
     }
   }, [isAuthenticated, navigateTo]);
-  //------------------------------------------
+  //-------------------------------------
   //-DATALIST OF ACCOUNT FOR NAME AUTOCOMPLETE
   // === Data fetching hook (GET) ===
   // const { apiData: categoryAccounts } = useFetch<CategoryBudgetAccountsResponseType>(
@@ -127,7 +127,7 @@ function NewCategory() {
 
   //  }, [categoryAccounts])
 
-  // ------------------------------------------
+  // ------------------------------------
   // === DATA FETCHING HOOK (POST) ===
   //endpoint: http://localhost:5000/api/fintrack/account/new_account/category_budget
   // === HANDLERS & UTILITIES ===
