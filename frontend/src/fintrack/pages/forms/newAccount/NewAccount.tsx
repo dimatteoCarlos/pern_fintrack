@@ -40,6 +40,10 @@ import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
 
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 
+// 📝Import hook for account existence validation
+import { useAccountExistence } from '../../../hooks/useAccountExistence.ts';
+// 📝Import debounced callback hook
+import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.ts';
 //------------------------
 //-----handle currency
 const defaultCurrency = DEFAULT_CURRENCY;
@@ -106,6 +110,23 @@ function NewAccount() {
   const [messageToUser, setMessageToUser] = useState<string | null | undefined>(
     null,
   );
+
+  // 📝Hook for autocomplete and duplicate checking
+   const { getSuggestions, checkDuplicate } = useAccountExistence();
+  
+  // 📝 ADDED: Debounced duplicate check (300ms)
+   const debouncedCheckDuplicate = useDebouncedCallback((name: string, type: string) => {
+     const trimmed = name.trim();
+     if (trimmed.length > 0 && type && checkDuplicate(trimmed, type)) {
+       setValidationMessages(prev => ({
+         ...prev,
+         name: 'ℹ️ This account name already exists for this type'
+       }));
+     } else {
+       setValidationMessages(prev => ({ ...prev, name: '' }));
+     }
+   }, 300);
+
   //---------------------------
   // 🆕 VERIFICAR AUTENTICACIÓN AL INICIO
   useEffect(() => {
@@ -142,8 +163,16 @@ function NewAccount() {
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
+
+   // Update state 
     setAccountData((prev) => ({ ...prev, [name]: value }));
+
+  // Only validate 'name' field for duplicates (with debounce)
+   if (name === 'name') {
+    debouncedCheckDuplicate(value, accountData.type || '');
+   }
   }
+
   //---
   function amountIncomeSource() {
     setIsDisabledValue(true);
@@ -154,7 +183,7 @@ function NewAccount() {
     if (selectedOption) {
       setAccountData((acc: AccountDataType) => ({
         ...acc,
-        type: selectedOption?.label,
+        type: selectedOption?.label,//newType
       }));
 
       if (selectedOption.label === 'income_source') {
@@ -165,15 +194,13 @@ function NewAccount() {
        setIsCurrencyDisabled(true);         
         return;
       } else {
-        setAccountData((acc: AccountDataType) => ({
-          ...acc,
-          type: selectedOption?.label,
+        setAccountData((acc: AccountDataType) => ({ ...acc, type: selectedOption?.label,
         }));
         setIsDisabledValue(false);
         setIsCurrencyDisabled(false);
       }
     } else {
-      // console.log(`No option selected for ${'account type'}`);
+    // console.log(`No option selected for ${'account type'}`);
       setAccountData((acc: AccountDataType) => ({
         ...acc,
         type: undefined,
@@ -181,6 +208,19 @@ function NewAccount() {
       setIsDisabledValue(false);
       setIsCurrencyDisabled(false);
     }
+
+   // 📝 Validate duplicate when type changes (if name is already written)
+  const currentName = accountData.name.trim();
+  if (currentName.length > 0 && selectedOption?.label) {
+    const newType = selectedOption.label;
+    if (checkDuplicate(currentName, newType)) { setValidationMessages(prev => ({
+        ...prev,
+        name: 'ℹ️ This account name already exists for this type'
+      }));
+    } else {
+     setValidationMessages(prev => ({ ...prev, name: '' }));
+    }
+   } 
   }
   //---------
   function changeStartingPoint(selectedDate: Date) {
@@ -335,8 +375,8 @@ function NewAccount() {
                   maxLength={NAME_MAX_LENGTHS.account_name}
                 />
                 &nbsp;
-                <span className='validation__errMsg'>
-                  {validationMessages['name']}
+                <span className={`validation__errMsg ${validationMessages['name']?.includes('ℹ️') ? 'validation__msg--info' : ''}`}>
+                 {validationMessages['name']}
                 </span>
               </label>
 
@@ -349,25 +389,15 @@ function NewAccount() {
                 value={accountData.name}
                 disabled={isFormDisabled} //if not auth
                 maxLength={NAME_MAX_LENGTHS.account_name}
+                list='account-names'
               />
             </div>
 
-            {/* <div className='input__box'>
-              <label className='label forms__label'>
-                Account Type &nbsp;
-                <span className='validation__errMsg'>
-                  {validationMessages['type']}
-                </span>
-              </label>
-
-              <DropDownSelection
-                dropDownOptions={accountSelectionProp}
-                updateOptionHandler={accountTypeSelectHandler}
-                isReset={isReset}
-                setIsReset={setIsReset}
-                //disabled={isFormDisabled} // 🆕 DESHABILITAR SI NO AUTENTICADO
-              />
-            </div> */}
+            <datalist id='account-names'>
+             {getSuggestions(accountData.type || '').map((name) => (
+               <option key={name} value={name} />
+             ))}
+           </datalist>
 
             <div className='account__dateAndCurrency'>
               <div className='account__date'>
@@ -412,10 +442,6 @@ function NewAccount() {
                   setStateData={setAccountData}
                   // disabled={isFormDisabled}
                 />
-
-           {/* <input
-           style={{ fontSize: '1.25rem', padding: '0 0.75rem' }}
-           /> FIGMA STYLE*/}
            
               </div>
             )}
