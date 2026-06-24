@@ -65,7 +65,7 @@ const extractErrorMessage = (err: unknown): string => {
   if (axios.isAxiosError(err) && err.response) {
     const data = err.response.data as Record<string, unknown>;
     //-------------------------------------
-    console.log('extractErrorMessage:', data, err.stack);
+    // console.log('extractErrorMessage:', data, err.stack);
     //-------------------------------------
     // Priority: BE error message
     if (data?.message && typeof data.message === 'string') {
@@ -237,7 +237,7 @@ const useAuth = () => {
         const expiryTime = Date.now() + expiresIn * 1000;
         sessionStorage.setItem('tokenExpiry', expiryTime.toString());
         //-------------
-        console.log('token expiration:', new Date(expiryTime));
+        // console.log('token expiration:', new Date(expiryTime));
       }
 
       // if (accessToken && userFromSignIn) {
@@ -252,10 +252,10 @@ const useAuth = () => {
         };
 
         saveIdentity(identity);
-        console.log('✅ Identity saved for remembered user');
+        // console.log('✅ Identity saved for remembered user');
       } else {
         clearIdentity();
-        console.log('🧹 Identity cleared');
+        // console.log('🧹 Identity cleared');
       }
 
       // ✅ Transform and merge user data
