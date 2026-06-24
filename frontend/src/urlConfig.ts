@@ -111,8 +111,8 @@ export const url_get_accounting_accounts: string =
 // get all the available accounts, all types,  but slack account
 //endpoint: http://localhost:5000/api/fintrack/account/allAccounts/?
 export const url_get_all_accounting_accounts: string =  BASE_URL_APP + 'account/allAccounts/';
-//endpoint: http://localhost:5000/api/fintrack/account/allAccounts/?
-// http://localhost:5173/fintrack/overview/new_account
+//endpoint: http://localhost:5000/api/fintrack/account/allAccounts
+// GET /api/fintrack/account/allAccounts
 export const url_get_all_accounts = `${BASE_URL_APP}account/allAccounts`;
 //----------------------------------
 //GET THE SUM OF BALANCE OF ALL ACCOUNTS OF ONE ACCOUNT TYPE
