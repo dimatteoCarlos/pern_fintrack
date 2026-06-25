@@ -1,6 +1,5 @@
 //frontend/src/pages/forms/newCategory/NewCategory.tsx
-import { useEffect, useState } from 'react';
-// import {  useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import LeftArrowSvg from '../../../../assets/LeftArrowSvg.svg';
@@ -33,10 +32,14 @@ import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
-//--get account names for auto complete--
-// import { useFetch } from '../../../hooks/useFetch.ts';
-// import { url_get_accounts_by_type } from '../../../../urlConfig.ts';
-// import type { CategoryBudgetAccountsResponseType } from '../../../types/responseApiTypes.ts';
+// Import hooks and helpers for autocomplete and duplicate checking
+import { useAccountExistence } from '../../../hooks/useAccountExistence.ts';
+import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.ts';
+import {
+  buildCategoryAccountName,
+  extractCategories,
+  extractSubcategories,
+} from '../../../helpers/newCategoryHelper.ts';
 
 //-------data config---------------------
 // === TYPE DEFINITIONS AND CONSTANTS ===
@@ -83,7 +86,7 @@ function NewCategory() {
   //const user: string = import.meta.env.VITE_USER_ID;
   const { isAuthenticated } = useAuth();
 
-  // === STATE INITIALIZATION ===
+// === STATE INITIALIZATION ===
   const [formData, setFormData] =
     useState<FormNumberInputType>(initialFormData);
 
@@ -100,35 +103,85 @@ function NewCategory() {
   const [messageToUser, setMessageToUser] = useState<
     { message: string; status?: number } | string | null | undefined
   >(null);
+ //-------------------------------------
+ //AUTOCOMPLETE LOGIC
+ //Derived state for account name preview
+const previewAccountName = useMemo(() => {
+  const fullName = buildCategoryAccountName(
+  categoryData.category,
+  categoryData.subcategory,
+  categoryData.nature,
+);
 
-  //✅ CHECK IF USER IS AUTHENTICATED
+  console.log('🔍 fullName:', fullName);
+  return fullName;
+
+}, [categoryData.category, categoryData.subcategory, categoryData.nature]);
+
+  // Helper message for duplicate account name 
+  const [duplicateHelperMessage, setDuplicateHelperMessage] = useState<string>('');
+
+  // 📝 Hook for account existence and duplicate checking
+  const { getSuggestions, checkDuplicate } = useAccountExistence();
+
+  // 📝 Get full account names for category_budget
+  const categoryBudgetNames = useMemo(() => {
+    return getSuggestions('category_budget');
+  }, [getSuggestions]);
+
+  // 📝 Extract unique categories for autocomplete
+  const uniqueCategories = useMemo(() => {
+    return extractCategories(categoryBudgetNames);
+  }, [categoryBudgetNames]);
+
+  // 📝 Extract unique subcategories for autocomplete
+  const uniqueSubcategories = useMemo(() => {
+    return extractSubcategories(categoryBudgetNames);
+  }, [categoryBudgetNames]);
+
+  // 📝 Debounced duplicate check (300ms)
+  const debouncedCheckDuplicate = useDebouncedCallback(() => {
+   console.log('🔍 duplicate check running');
+
+   const fullName = buildCategoryAccountName(
+     categoryData.category,
+     categoryData.subcategory,
+     categoryData.nature
+   );
+
+    //DEBUG
+    console.log('🔍 fullName:', fullName);
+    const exists = checkDuplicate(fullName, 'category_budget');
+    console.log('🔍 duplicate found:', exists);
+    //---
+
+   // If fullName is empty (missing required fields), clear the message
+   if (!fullName) {
+     setDuplicateHelperMessage('');
+     return;
+   }
+
+   // Check if the full name already exists
+   if (checkDuplicate(fullName, 'category_budget')) {
+    
+     setDuplicateHelperMessage('ℹ️ This account name already exists');
+
+   } else {
+     setDuplicateHelperMessage('');
+   }
+    }, 300);
+ 
+//-------------------------------------
+//✅ CHECK IF USER IS AUTHENTICATED
   useEffect(() => {
     if (!isAuthenticated) {
       setMessageToUser('Please log in to create an account');
       setTimeout(() => navigateTo(AUTH_ROUTE), 5000);
     }
   }, [isAuthenticated, navigateTo]);
-  //-------------------------------------
-  //-DATALIST OF ACCOUNT FOR NAME AUTOCOMPLETE
-  // === Data fetching hook (GET) ===
-  // const { apiData: categoryAccounts } = useFetch<CategoryBudgetAccountsResponseType>(
-  //   `${url_get_accounts_by_type}/?type=category_budget`
-  // );
 
-  // const existingCategoryNames = useMemo(()=>{
-  //  const accountList = categoryAccounts?.data?.accountList || [];
-
-  //  const accountNames = accountList.map(
-  //   acc=>acc.account_name).filter(Boolean);
-  //   //---DEBUG
-  //   console.log("🚀 ~ NewCategory ~ accountNames:", accountNames)
-
-  //   return Array.from(new Set(accountNames))
-
-  //  }, [categoryAccounts])
-
-  // ------------------------------------
-  // === DATA FETCHING HOOK (POST) ===
+// ------------------------------------
+// === DATA FETCHING HOOK (POST) ===
   //endpoint: http://localhost:5000/api/fintrack/account/new_account/category_budget
   // === HANDLERS & UTILITIES ===
   //DATA FETCHING POST
@@ -155,7 +208,7 @@ function NewCategory() {
     setValidationMessages,
     setCategoryData,
   );
-  //FUNCTIONS---------
+  //--FUNCTIONS---------
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
@@ -166,26 +219,36 @@ function NewCategory() {
     } else {
       setCategoryData((prev) => ({ ...prev, [name]: value }));
     }
+   
+    // Trigger duplicate check after updating category or subcategory
+    if (name === 'category' || name === 'subcategory') {
+      debouncedCheckDuplicate();
   }
-  //--NEED TO RE DEFINE THIS FUNCTION IN THE FUTURE FOR SUBCATEGORY
-  // function addHandler(e: React.MouseEvent<HTMLButtonElement>) {
-  //   e.preventDefault();
-  //   //adding function
-  //   console.log('addHandler subcategory method PENDING to define');
-  // }
+  }
+
   // Category Nature tile selector handler
   function natureHandler(e: React.MouseEvent<HTMLButtonElement>) {
-    // console.log('natureHandler', e.currentTarget.id);
+  // console.log('natureHandler', e.currentTarget.id);
     e.preventDefault();
     const activeNature = e.currentTarget.id ? e.currentTarget.id : '';
     setActiveNature(activeNature);
     setCategoryData((prev) => ({ ...prev, nature: activeNature }));
+
+    //Trigger duplicate check immediately after nature changes
+    debouncedCheckDuplicate();
   }
 
-  // = FORM SUBMISSION LOGIC (onSubmitForm) ===
+  // FORM SUBMISSION LOGIC (onSubmitForm) 
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    // console.log('🟢 onSubmitForm called');
+  // console.log('🟢 onSubmitForm called');
+   e.preventDefault();
+   console.log('🧹 Clearing duplicate helper before submit');
+
+    setMessageToUser(null);
+
+   // Clear helper before submission
+   // setDuplicateHelperMessage('');
+
     // 🆕 CHECK USER AUTHENTICATION BEFORE SUBMIT
     if (!isAuthenticated) {
       setMessageToUser('Please log in to create an account');
@@ -204,7 +267,7 @@ function NewCategory() {
       return;
     }
 
-    //------------------------------------
+    //----------------------------------
     //POST TO THE ENDPOINT FOR ACCOUNT DATA HERE
     // new category data into database
     //-----------------------------------
@@ -301,7 +364,7 @@ function NewCategory() {
 
           <div className='form__title'>{'New Category'}</div>
         </div>
-        {/* Form Start */}
+        {/* FORM START */}
         <form className='form__box'>
           <div className='container--categoryName form__container'>
             <div className='input__box'>
@@ -325,8 +388,16 @@ function NewCategory() {
                 onChange={inputHandler}
                 value={categoryData.category}
                 maxLength={NAME_MAX_LENGTHS.category_name}
-                // disabled={isFormDisabled}
+                list='category-suggestions' 
+
               />
+     {/* 📝 datalist for category suggestions */}            
+             <datalist id='category-suggestions'>
+             {uniqueCategories
+             .map((name)=>(
+              <option key={name} value={name}/>)
+             )}
+              </datalist> 
             </div>
 
             {/* SUBCATEGORY */}
@@ -351,10 +422,18 @@ function NewCategory() {
                 onChange={inputHandler}
                 value={categoryData.subcategory}
                 maxLength={NAME_MAX_LENGTHS.subcategory}
+                list='subcategory-suggestions'
               />
-            </div>
 
-            {/* Budget Amount Input */}
+      {/* datalist for subcategory suggestions */}
+            <datalist id='subcategory-suggestions'>
+              {uniqueSubcategories.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>      
+           </div>
+
+           {/* BUDGET AMOUNT INPUT */}
             <div className='input__box'>
               <LabelNumberValidation
                 formDataNumber={formDataNumber}
@@ -369,13 +448,14 @@ function NewCategory() {
                 placeholder={formDataNumber.title}
                 value={formData[formDataNumber.keyName]}
                 onChange={inputHandler}
+                autoComplete='off'
               />
             </div>
           </div>
 
-          {/* Nature Selector Tiles */}
-          <div className='container--nature'>
-            <div className='form__title form__title--tiles'>
+          {/* NATURE SELECTOR TILES */}
+          <div className='container--nature input__box'>
+            <div className='form__title form__title--tiles label forms__label'>
               {tileTitle}
               <div className='validation__errMsg'>
                 {validationMessages['nature']}
@@ -392,11 +472,11 @@ function NewCategory() {
                     style={
                       activeNature.toLowerCase() ===
                       label.labelText.toLowerCase()
-                        ? {
-                            backgroundColor: 'var(--creme)',
-                            color: 'var(--dark)',
-                          }
-                        : {}
+                       ? {
+                           backgroundColor: 'var(--creme)',
+                           color: 'var(--dark)',
+                         }
+                       : {}
                     }
                   >
                     {label.labelText}
@@ -405,7 +485,34 @@ function NewCategory() {
               })}
             </div>
           </div>
-          {/* Submit Button */}
+
+        {/* ACCOUNT NAME PREVIEW */}
+         <div className='input__box'>
+           <label className='label forms__label' style={{ color: 'var(--creme)',fontSize:'1rem',fontWeight:'300', opacity: 0.6}}>
+           Account name to be created:
+           </label>
+           <input
+             type='text'
+             className='input__container readonly'
+             readOnly
+             value={previewAccountName || ' category/subcategory/nature'}
+             style={{
+             color: previewAccountName ? 'cyan' : 'var(--secondary)',
+             fontStyle: previewAccountName ? 'normal' : 'italic',
+             backgroundColor: 'rgba(255,255,255,0.03)', opacity:'0.8',fontWeight:'300'
+             }}
+           />
+         </div>
+
+          {/* 📝ACCOUNT DUPLICATE HELPER MESSAGE */}
+          {duplicateHelperMessage && (
+            <div className="duplicate-helper" style={{ margin: '0.5rem 0' }}>
+              <span className="validation__msg--info">
+                {duplicateHelperMessage}
+              </span>
+            </div>
+          )}
+         {/* SUBMIT BUTTON */}
           <div className='submit__btn__container'>
             <FormSubmitBtn onClickHandler={onSubmitForm} disabled={isLoading}>
               save
