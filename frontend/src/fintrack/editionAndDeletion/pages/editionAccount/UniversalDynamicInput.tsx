@@ -112,8 +112,8 @@ export function UniversalDynamicInput<T extends Record<string, unknown>>({
       case 'text':
       case 'number':
       case 'textarea':
-        // 📝 TEXTAREA O INPUTS DE TEXTO/NÚMERO
-        // Si es un textarea, renderiza un <textarea>
+      // 📝 TEXTAREA O INPUTS DE TEXTO/NÚMERO
+       // Si es un textarea, renderiza un <textarea>
         if (fieldConfig.inputType === 'textarea') {
           return (
             <textarea
