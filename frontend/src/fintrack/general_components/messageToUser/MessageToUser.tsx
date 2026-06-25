@@ -43,17 +43,21 @@ export const MessageToUser = ({
           : messageToUser.message;
 
       const status =
-        typeof messageToUser === 'string' ? 200 : (messageToUser.status ?? 200);
+       typeof messageToUser === 'string' ? 200 : (messageToUser.status ?? 200);
 
-      // console.log('📨 Showing toast:', { msg, status, variant });
-
-      // if(variant=='form'){showToastByStatus(msg, status)}
-
+//DEBUG
+      console.log('📨 Showing toast:', {
+      currentMessage: msg,
+      previousMessage: lastMessageRef.current,
+      sameMessage: msg === lastMessageRef.current,
+    });
+//-------
       // Prevent duplicate toasts for the same message
-      if (msg !== lastMessageRef.current) {
+      // if (msg !== lastMessageRef.current) {
+      //   showToastByStatus(msg, status);
+      //   lastMessageRef.current = msg;
+      // }
         showToastByStatus(msg, status);
-        lastMessageRef.current = msg;
-      }
 
       //Clean reference if there is not message
       if (!messageToUser) {
