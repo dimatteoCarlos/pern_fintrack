@@ -11,7 +11,7 @@ export const NAME_MAX_LENGTHS = {
   /** Category name (10 chars) */
   category_name: 11,
   /** Subcategory name (10 chars)*/
-  subcategory: 10,
+  subcategory: 12,
   /** Note/description field (90 chars) */
   note: 90,
   /** Account name (28 chars) */
@@ -25,7 +25,7 @@ export const NAME_MAX_LENGTHS = {
   /** Nature type name (5 chars) */
   nature_type_name: 5,
   /** Default fallback (28 chars) */
-  default: 28,
+  default: 30,
 } as const;
 
 /**
