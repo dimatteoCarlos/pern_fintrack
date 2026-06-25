@@ -49,17 +49,23 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     //category_budget account
     //data from budget new category form
     const {
-      nature: nature_type_name_req,
-      subcategory,
-      name: category_name,
+      nature: nature_type_name_req_raw,
+      subcategory: subcategory_raw,
+      name: category_name_raw,
       budget,
       sourceAccountId,
     } = req.body;
+
+    // Normalize to lowercase and trim
+    const category_name = category_name_raw?.trim().toLowerCase() || '';
+    const subcategory = subcategory_raw?.trim().toLowerCase() || '';
+    const nature_type_name_req = nature_type_name_req_raw?.trim().toLowerCase() || '';
+
     //BUILD ACCOUNT NAME FOR CATEGORY BUDGET
     const account_type_name = 'category_budget';
     const account_name =
       account_type_name === 'category_budget'
-        ? req.body.name + '/' + req.body.subcategory + '/' + req.body.nature
+        ? `${category_name}/${subcategory}/${nature_type_name_req}`
         : req.body.name;
 
     const category_nature_budget = budget ? parseFloat(budget) : 0.0;
@@ -117,10 +123,11 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       FROM category_budget_accounts cba
       JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
 
-      WHERE cba.category_name = $1 AND cnt.category_nature_type_name=$2
-      AND cba.subcategory=$3
+      WHERE LOWER(cba.category_name) = $1 
+      AND LOWER(cnt.category_nature_type_name) = $2
+      AND LOWER(cba.subcategory) = $3
     `,
-      values: [category_name, nature_type_name_req, subcategory.trim()],
+      values: [category_name, nature_type_name_req, subcategory],
     };
     const categoryAndSubcategoryAndNatureExistsResult = await pool.query(
       categoryAndSubcategoryAndNatureQuery,
