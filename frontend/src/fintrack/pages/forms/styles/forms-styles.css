@@ -24,19 +24,15 @@
   padding-bottom: 1rem;
 }
 
-/* form title */
+/* Form title container */
 .page__content .main__title--container {
-  /* all:unset; */
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 0;
   position: relative;
-
-   min-height: 2.5rem; /* Altura mínima para consistencia */
+  min-height: 2.5rem;
   padding: 1rem 0;
   width: 100%;
-  /* border: 1px solid var(--primary); */
 }
 
 .labelText,
@@ -48,101 +44,32 @@ label,
   text-align: left;
 }
 
-/* ======================
-   FORM TITLES (just for page titles)
-   =====================*/
-  .main__title--container .form__title {
+/* ============================================================
+   FORM TITLES (Page Header Scope)
+ ====================== */
+.main__title--container .form__title {
   font-size: 1.25rem;
   font-weight: 600;
-  color:var(--creme, white);
+  color: var(--creme, white);
   text-align: center;
-  max-width: calc(100% - 4rem); /* Deja espacio para la flecha y el menú */
+  max-width: calc(100% - 4rem);
   margin: 0 auto;
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-
   padding: 0 0.5rem;
-
   position: static;
 }
 
-/* =====================
-   FIELD LABELS (para labels inside inputs)
-  ==================== */
-   .input__box .forms__label {
-    text-align: left;
-    margin: 0;
-    padding: 0;
-    white-space: normal;
-    /* overflow: visible;
-    text-overflow: clip; */
-    /* max-width: none; */
-  }
-
-/* - Responsive: forms & account detail -- */
-/* @media (max-width: 480px) {
-  .page__container {
-    min-width: 100%;
-    padding: 0 0.75rem;
-  }
-
-  .page__content {
-    width: 95%;
-  }
-
-  .form__title {
-    max-width: calc(100% - 3rem);
-    font-size: 1rem;
-    color:var(--creme, white)
-  }
-
-  .iconLeftArrow {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .account__dateAndCurrency {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
-
-  .account__date,
-  .account__currency {
-    width: 100%;
-  }
-
-  .form__container {
-    padding: 1rem 0;
-  }
-
-  .input__box {
-    gap: 0.35em;
-  }
-
-  .submit__btn__container {
-    padding-top: 1.5rem;
-  }
+/* ============================================================
+   FIELD LABELS (Form Controls Internal Scope)
+ ====================== */
+.input__box .forms__label {
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  white-space: normal;
 }
-
-@media (max-width: 360px) {
-  .page__content {
-    width: 100%;
-  }
-
-  .form__title {
-    font-size: 0.9rem;
-  }
-
-  .tile__button {
-    min-width: 4.5rem;
-    font-size: 0.8rem;
-  }
-} */
 
 label,
 .labelText {
@@ -155,15 +82,15 @@ label,
   display: flex;
 }
 
-/*--------------*/
-
+/* ============================================================
+   STRUCTURAL LAYOUT CONTAINERS
+ ====================== */
 .container--categoryName,
 .form__container {
   display: flex;
   flex-direction: column;
   padding: 1.5rem 0rem 1rem 0;
   gap: 1rem;
-  /* border: 5px solid var(--primary); */
 }
 
 .input__box {
@@ -171,7 +98,6 @@ label,
   display: flex;
   flex-direction: column;
   gap: 0.5em;
-  /* border: 3px solid var(--primary1, red); */
 }
 
 .input__container {
@@ -180,22 +106,16 @@ label,
   border-radius: 1rem;
   color: var(--creme);
   padding: 0.25rem;
-  /* adjust vertical sizing */
-  resize:vertical;
-  /* new property for adjustment */
-  field-sizing:content;
-
+  box-sizing: border-box;
 }
 
-/*dark forms*/
+/* Dark forms placeholder baseline */
 .input__container::placeholder {
-  /* color: var(--creme); */
   color: rgb(151, 151, 151);
   font-size: 0.875rem;
   padding-left: 0.5em;
   font-weight: 500;
   text-transform: capitalize;
-  /* border: 5px solid var(--primary); */
 }
 
 .input__container.input__container--amount {
@@ -210,7 +130,9 @@ label,
   transform: translateY(-50%);
 }
 
-/*categoryNature*/
+/* ============================================================
+   CATEGORY NATURE TILES SECTION BASE
+ ====================== */
 .form__title--tiles {
   text-align-last: left;
 }
@@ -235,16 +157,24 @@ label,
 .tile__button {
   font-size: 0.875rem;
   font-weight: 600;
-  text-align: center;
   border-radius: 0.75rem;
   border: 2px solid #f7f7f7;
   color: #f7f7f7;
-  padding: 0.5rem 0.375rem;
-  min-width: 5.75rem;
   height: 2.5rem;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-/*------save btn-----------*/
+/* ============================================================
+   ACTION BUTTON SECTION
+   ======================*/
 .submit__btn__container {
   padding-top: 2.5rem;
 }
@@ -255,28 +185,26 @@ label,
   color: var(--dark);
   background-color: var(--creme);
   border-radius: 0.75em;
-  /* font-size: 0.875rem; */
   font-size: 1rem;
   text-align: center;
-  /* font-weight: 600; */
   font-weight: bold;
+  margin-top: 1rem;
 }
 
-/*NewPocket*/
-/*target amount */
+/* ============================================================
+   NEW POCKET SPECIFIC OVERRIDES
+ ====================== */
 .targetAmount.input__container {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 0.25rem 1rem 0.5rem 0.5rem;
   gap: 0.25rem;
-
   height: 4.25rem;
   width: 100%;
-
   text-transform: capitalize;
-  /* background-color: red; */
 }
+
 .label__target {
   flex: 40%;
   font-size: 1rem;
@@ -300,11 +228,6 @@ label,
   border: none;
   outline: none;
   width: 100%;
-
-  /* padding: 0; */
-  /* margin: 0; */
-  /* overflow-y: hidden; */
-  /* background-color: orange; */
 }
 
 .input__targetAmount::placeholder {
@@ -316,35 +239,17 @@ label,
 textarea:invalid {
   border: 1px dashed tomato;
 }
+
 .input__box--datepicker {
   text-align-last: center;
-  /* display: flex;
-  flex-direction: column;
-  gap: 0.5em; */
-  /* border: 3px solid var(--primary1, red); */
 }
 
-/*------------*/
-/*--Date Picker input form--*/
-
- /* .form__datepicker__container {
-  border: 1px solid var(--creme);
-  height: 2.625em;
-  border-radius: 1rem;
-  padding: 0.5rem;
-  width: 100%;
-  background-color: transparent;
-    display: flex;
-  flex-direction: column;
-}  */
-
-/*--New Account--*/
+/* New Account Specific Layout */
 .account__dateAndCurrency {
   display: flex;
   justify-content: space-between;
   align-items: start;
   gap: 1.5rem;
-  /* flex-wrap: wrap; */
 }
 
 .account__date,
@@ -354,20 +259,19 @@ textarea:invalid {
   align-items: start;
   justify-content: start;
   gap: 0.5rem;
-  /* border: 1px solid red; */
 }
 
-/*------------*/
-/*--Account Detail--*/
+/* Account Detail Scope */
 .icon3dots {
   padding: 0.5rem 0 0.5rem 0.5rem;
 }
 
-/*----Pocket Detail----*/
+/* Pocket Detail Scope */
 .inputAmountAndPlusSign {
   display: flex;
   gap: 0.5rem;
 }
+
 .input__container--amount {
   background-color: transparent;
   font-size: 1.25rem;
@@ -383,3 +287,99 @@ textarea:invalid {
   background-color: transparent;
 }
 
+.container--nature {
+  padding: 0.5rem 0 1rem 0;
+}
+
+/* ============================================================
+   📱 RESPONSIVE GRADUAL HEIGHT OPTIMIZATION SYSTEM (Strict Cascade)
+ ====================== */
+
+/* --- LEVEL 1: PREVENTIVE COMFORT ZONE (max-height: 800px) --- */
+@media screen and (max-height: 800px) {
+  #root .page__content {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  #root .form__container {
+    box-sizing: border-box;
+    padding-top: 14px;
+    padding-bottom: 12px;
+    gap: 12px;
+  }
+}
+
+/* --- LEVEL 2: INTERMEDIATE COMPRESSION ZONE (max-height: 733px) --- */
+@media screen and (max-height: 733px) {
+  #root .main__title--container {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    height: auto;
+  }
+
+  #root .form__container {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    gap: 10px;
+  }
+
+  #root .container--nature {
+    margin-top: 4px;
+    margin-bottom: 8px;
+  }
+}
+
+/* --- LEVEL 3: CRITICAL EDGE ZONE (max-height: 646px) --- */
+@media screen and (max-height: 646px) {
+  #root .page__content {
+    padding-top: 4px;
+    padding-bottom: 8px;
+  }
+
+  #root .main__title--container {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  #root .form__container {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    gap: 8px;
+  }
+
+  #root .container--nature {
+    margin-top: 2px;
+    margin-bottom: 4px;
+    padding: 0;
+    width: 100%;
+  }
+
+  #root .nature__tiles,
+  #root .tiles__container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  #root .tile__button {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 4px;
+    padding-right: 4px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  #root .submit__btn__container {
+    margin-top: auto;
+    padding-top: 10px;
+  }
+}
