@@ -11,6 +11,7 @@
   background-color: transparent;
   display: flex;
   flex-direction: column;
+  margin-bottom: 1rem;
 }
 
 .tracker__inside__datepicker,
