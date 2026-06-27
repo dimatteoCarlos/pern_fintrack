@@ -14,17 +14,22 @@ export function validationData<T extends Record<string, unknown>>(
   const nonZeroFields = options?.nonZeroFields || [];
 
   for (const key in stateToValidate) {
-    const value = stateToValidate[key];
+   const value = stateToValidate[key];
 
-    // Validación para valores vacíos/nulos
-    if (value === null || value === undefined || value === '') {
-      errorValidationMessages[key] = `* Please provide the ${capitalize(key)}`;
-      continue;
-    }
-    // console.log('key', key)
+   // 📝 CHANGE: Detect empty values (including whitespace-only strings)
+   const isEmpty = value === null ||
+    value === undefined ||
+    value === '' ||
+    (typeof value === 'string' && value.trim() === '');
 
-    // Validación adicional para números/additional validation for numbers
-    //this accept zero as number input, used by new account creation
+   if (isEmpty) {
+     errorValidationMessages[key] = `* Please provide the ${capitalize(key)}`;
+     continue;
+   }
+   // console.log('key', key)
+
+   // Validación adicional para números/additional validation for numbers
+   //this accept zero as number input, used by new account creation
     if (typeof value === 'number') {
       if (nonZeroFields.includes(key) && value === 0) {
         errorValidationMessages[key] =
