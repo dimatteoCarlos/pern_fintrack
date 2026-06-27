@@ -103,20 +103,27 @@ function NewCategory() {
   const [messageToUser, setMessageToUser] = useState<
     { message: string; status?: number } | string | null | undefined
   >(null);
+
+  // Track which fields have been touched by the user
+  const [touched, setTouched] = useState<{ category: boolean; subcategory: boolean }>({
+    category: false,
+    subcategory: false,
+  });
+
  //-------------------------------------
  //AUTOCOMPLETE LOGIC
  //Derived state for account name preview
-const previewAccountName = useMemo(() => {
-  const fullName = buildCategoryAccountName(
-  categoryData.category,
-  categoryData.subcategory,
-  categoryData.nature,
- );
- 
-   // console.log('🔍 fullName:', fullName);
-   return fullName;
+  const previewAccountName = useMemo(() => {
+    const fullName = buildCategoryAccountName(
+    categoryData.category,
+    categoryData.subcategory,
+    categoryData.nature,
+   );
+   
+     // console.log('🔍 fullName:', fullName);
+     return fullName;
 
-}, [categoryData.category, categoryData.subcategory, categoryData.nature]);
+  }, [categoryData.category, categoryData.subcategory, categoryData.nature]);
 
   // Helper message for duplicate account name 
   const [duplicateHelperMessage, setDuplicateHelperMessage] = useState<string>('');
@@ -140,36 +147,31 @@ const previewAccountName = useMemo(() => {
   }, [categoryBudgetNames]);
 
   // 📝 Debounced duplicate check (300ms)
-  const debouncedCheckDuplicate = useDebouncedCallback(() => {
-   // console.log('🔍 duplicate check running');
+   const debouncedCheckDuplicate = useDebouncedCallback((categoryData
+   : CategoryDataType)  => {
+     const fullName = buildCategoryAccountName(
+       categoryData.category,
+       categoryData.subcategory,
+       categoryData.nature
+     );
 
-   const fullName = buildCategoryAccountName(
-     categoryData.category,
-     categoryData.subcategory,
-     categoryData.nature
-   );
+  console.log('🔍 fullName:', fullName);
 
-    //DEBUG
-    // console.log('🔍 fullName:', fullName);
-    // const exists = checkDuplicate(fullName, 'category_budget');
-    // console.log('🔍 duplicate found:', exists);
-    //---
+  // 📝 CHANGE: simplified - if incomplete, clear and exit immediately
+  if (!fullName) {
+    setDuplicateHelperMessage('');
+    return;
+  }
 
-   // If fullName is empty (missing required fields), clear the message
-   if (!fullName) {
-     setDuplicateHelperMessage('');
-     return;
-   }
+  const exists = checkDuplicate(fullName, 'category_budget');
+  console.log('🔍 duplicate found:', exists);
 
-   // Check if the full name already exists
-   if (checkDuplicate(fullName, 'category_budget')) {
-    
-     setDuplicateHelperMessage('ℹ️ This account name already exists');
-
-   } else {
-     setDuplicateHelperMessage('');
-   }
-    }, 300);
+  if (exists) {
+    setDuplicateHelperMessage('ℹ️ This account name already exists');
+  } else {
+    setDuplicateHelperMessage('');
+  }
+}, 300);
  
 //-------------------------------------
 //✅ CHECK IF USER IS AUTHENTICATED
@@ -201,6 +203,7 @@ const previewAccountName = useMemo(() => {
   Errores de red → Vienen en requestError
   Errores inesperados → Van al catch
   */
+
   // === HANDLERS & UTILITIES ===
   //event handler hook for number input handling
   const { inputNumberHandlerFn } = useInputNumberHandler(
@@ -208,38 +211,79 @@ const previewAccountName = useMemo(() => {
     setValidationMessages,
     setCategoryData,
   );
-  //--FUNCTIONS---------
+ // Helper function to validate a text field (category or subcategory)
+  const validateTextInRealTime = (fieldName: 'category' | 'subcategory', value: string) => {
+    const trimmed = value.trim();
+    const isValid = trimmed !== '';
+
+    setValidationMessages(prev => {
+      const newMessages = { ...prev };
+      if (!isValid && touched[fieldName]) {
+        // Show error only if the field has been touched
+        const label = fieldName === 'category' ? 'Category' : 'Subcategory';
+        newMessages[fieldName] = `* Please provide the ${label}`;
+      } else if (isValid) {
+        delete newMessages[fieldName];
+      }
+      return newMessages;
+    });
+  };
+
+  //--FUNCTIONS-----------------
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     const { name, value } = e.target;
 
     if (name === formDataNumber.keyName) {
-      // console.log('formDataNumber.keyName', formDataNumber.keyName);
+    // console.log('formDataNumber.keyName', formDataNumber.keyName);
       inputNumberHandlerFn(name, value);
     } else {
-      setCategoryData((prev) => ({ ...prev, [name]: value }));
+      const nextData = { ...categoryData, [name]: value };
+      setCategoryData(nextData);
+      
+    if (name === 'category' || name === 'subcategory') {
+    // Mark field as touched
+      setTouched(prev => ({ ...prev, [name]: true }));
+      // Validate and update messages
+      validateTextInRealTime(name as 'category' | 'subcategory', value);
+      // Trigger duplicate check
+      debouncedCheckDuplicate(nextData);
+     }
     }
-// 📝 CHANGE: Clear validation message for category/subcategory if valid
-   if (name === 'category' || name === 'subcategory') {
-    // Check if the field is now valid (not empty and not whitespace-only)
-    if (value.trim() !== '') {
-      setValidationMessages(prev => ({ ...prev, [name]: '' }));
-    }
-    // Trigger duplicate check
-    debouncedCheckDuplicate();
-   }
   }
+
+  //Handle blur to mark field as touched and validate if empty
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === 'category' || name === 'subcategory') {
+      // Mark as touched if not already
+      setTouched(prev => {
+        if (prev[name as 'category' | 'subcategory']) return prev;
+        return { ...prev, [name]: true };
+      });
+
+     // Validate on blur (will show error if field is empty and touched)
+      validateTextInRealTime(name as 'category' | 'subcategory', value);
+      //since onChange happened before, is valid to use categoryData as arg
+      debouncedCheckDuplicate(categoryData);
+    }
+  };
 
   // Category Nature tile selector handler
   function natureHandler(e: React.MouseEvent<HTMLButtonElement>) {
   // console.log('natureHandler', e.currentTarget.id);
     e.preventDefault();
     const activeNature = e.currentTarget.id ? e.currentTarget.id : '';
+
+    //with nextData, the new value before setState is passed directly to validation, w/o depending on async updating the state
+
+    const nextData = { ...categoryData, nature: activeNature };
+
     setActiveNature(activeNature);
-    setCategoryData((prev) => ({ ...prev, nature: activeNature }));
+     setCategoryData(nextData);
 
     //Trigger duplicate check immediately after nature changes
-    debouncedCheckDuplicate();
+    debouncedCheckDuplicate(nextData);
   }
 
   // FORM SUBMISSION LOGIC (onSubmitForm) 
@@ -249,15 +293,19 @@ const previewAccountName = useMemo(() => {
    setMessageToUser(null);
    // console.log('🧹 Clearing duplicate helper before submit');
 
-   // 📝 CHANGE: Validate subcategory is not empty or whitespace-only
-  const subcategoryTrimmed = categoryData.subcategory?.trim() || '';
-  if (!subcategoryTrimmed) {
-    setValidationMessages(prev => ({
-      ...prev,
-      subcategory: '* Please provide the Subcategory'
-    }));
-    return;
-  }
+   // Validate subcategory is not empty or whitespace-only
+   const subcategoryTrimmed = categoryData.subcategory?.trim() || '';
+   if (!subcategoryTrimmed) {
+     setValidationMessages(prev => ({
+       ...prev,
+       subcategory: '* Please provide the Subcategory'
+     }));
+
+     // Also mark as touched so the error persists
+     setTouched(prev => ({ ...prev, subcategory: true }));
+
+     return;
+   }
 
    // 🆕 CHECK USER AUTHENTICATION BEFORE SUBMIT
     if (!isAuthenticated) {
@@ -396,6 +444,7 @@ const previewAccountName = useMemo(() => {
                 placeholder={`Category Name`}
                 name={'category'}
                 onChange={inputHandler}
+                onBlur = {handleBlur}
                 value={categoryData.category}
                 maxLength={NAME_MAX_LENGTHS.category_name}
                 list='category-suggestions' 
@@ -429,6 +478,7 @@ const previewAccountName = useMemo(() => {
                 className={`input__container`}
                 placeholder={`subcategory name`}
                 name={'subcategory'}
+                onBlur={handleBlur}
                 onChange={inputHandler}
                 value={categoryData.subcategory}
                 maxLength={NAME_MAX_LENGTHS.subcategory}

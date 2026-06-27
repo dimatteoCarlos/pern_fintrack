@@ -29,8 +29,9 @@ SEED_BASE=true    ❌
 import fs from 'fs';
 import path from 'path';
 import pc from 'picocolors';
-import { pool } from '../configDB.js';
+
 import { pathToFileURL } from 'url';
+import { pool } from '../config/configDB.js';
 
 //---Alternativ usgin dbConfig.js
 /*
