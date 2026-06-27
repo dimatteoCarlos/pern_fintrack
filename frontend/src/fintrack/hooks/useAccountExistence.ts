@@ -59,7 +59,7 @@ type UseAccountExistenceReturn = {
  */
 export const useAccountExistence = (): UseAccountExistenceReturn => {
 // ===================
-  // 📡 1. DATA FETCHING (ONE-TIME REQUEST)
+// 📡 1. DATA FETCHING (ONE-TIME REQUEST)
 // ===================
   const { apiData, isLoading, error } =
     useFetch<AllAccountsResponse>(url_get_all_accounts);
