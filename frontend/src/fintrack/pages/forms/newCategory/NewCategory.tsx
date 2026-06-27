@@ -111,10 +111,10 @@ const previewAccountName = useMemo(() => {
   categoryData.category,
   categoryData.subcategory,
   categoryData.nature,
-);
-
-  console.log('🔍 fullName:', fullName);
-  return fullName;
+ );
+ 
+   // console.log('🔍 fullName:', fullName);
+   return fullName;
 
 }, [categoryData.category, categoryData.subcategory, categoryData.nature]);
 
@@ -141,7 +141,7 @@ const previewAccountName = useMemo(() => {
 
   // 📝 Debounced duplicate check (300ms)
   const debouncedCheckDuplicate = useDebouncedCallback(() => {
-   console.log('🔍 duplicate check running');
+   // console.log('🔍 duplicate check running');
 
    const fullName = buildCategoryAccountName(
      categoryData.category,
@@ -150,9 +150,9 @@ const previewAccountName = useMemo(() => {
    );
 
     //DEBUG
-    console.log('🔍 fullName:', fullName);
-    const exists = checkDuplicate(fullName, 'category_budget');
-    console.log('🔍 duplicate found:', exists);
+    // console.log('🔍 fullName:', fullName);
+    // const exists = checkDuplicate(fullName, 'category_budget');
+    // console.log('🔍 duplicate found:', exists);
     //---
 
    // If fullName is empty (missing required fields), clear the message
@@ -214,16 +214,20 @@ const previewAccountName = useMemo(() => {
     const { name, value } = e.target;
 
     if (name === formDataNumber.keyName) {
-      console.log('formDataNumber.keyName', formDataNumber.keyName);
+      // console.log('formDataNumber.keyName', formDataNumber.keyName);
       inputNumberHandlerFn(name, value);
     } else {
       setCategoryData((prev) => ({ ...prev, [name]: value }));
     }
-   
-    // Trigger duplicate check after updating category or subcategory
-    if (name === 'category' || name === 'subcategory') {
-      debouncedCheckDuplicate();
-  }
+// 📝 CHANGE: Clear validation message for category/subcategory if valid
+   if (name === 'category' || name === 'subcategory') {
+    // Check if the field is now valid (not empty and not whitespace-only)
+    if (value.trim() !== '') {
+      setValidationMessages(prev => ({ ...prev, [name]: '' }));
+    }
+    // Trigger duplicate check
+    debouncedCheckDuplicate();
+   }
   }
 
   // Category Nature tile selector handler
@@ -242,14 +246,20 @@ const previewAccountName = useMemo(() => {
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
   // console.log('🟢 onSubmitForm called');
    e.preventDefault();
-   console.log('🧹 Clearing duplicate helper before submit');
+   setMessageToUser(null);
+   // console.log('🧹 Clearing duplicate helper before submit');
 
-    setMessageToUser(null);
+   // 📝 CHANGE: Validate subcategory is not empty or whitespace-only
+  const subcategoryTrimmed = categoryData.subcategory?.trim() || '';
+  if (!subcategoryTrimmed) {
+    setValidationMessages(prev => ({
+      ...prev,
+      subcategory: '* Please provide the Subcategory'
+    }));
+    return;
+  }
 
-   // Clear helper before submission
-   // setDuplicateHelperMessage('');
-
-    // 🆕 CHECK USER AUTHENTICATION BEFORE SUBMIT
+   // 🆕 CHECK USER AUTHENTICATION BEFORE SUBMIT
     if (!isAuthenticated) {
       setMessageToUser('Please log in to create an account');
       return;
@@ -287,7 +297,7 @@ const previewAccountName = useMemo(() => {
       // ✅ requestFn devuelve { data: ResponseType | null, error: string | null }
       const { data: responseData, error: requestError } =
         await requestFn(payload);
-      console.log('📦 Response received:', { responseData, requestError });
+      // console.log('📦 Response received:', { responseData, requestError });
       //Los errores del servidor (4xx, 5xx) vienen en data.status
       if (requestError) {
         console.log('🔴 Network error:', requestError);
@@ -300,8 +310,8 @@ const previewAccountName = useMemo(() => {
       }
       // Manejar Respuesta del Servidor (Éxito o Error HTTP)
       if (responseData) {
-        console.log('📊 Server response status:', responseData.status);
-        // ✅ VERIFICAR STATUS CODE AQUÍ MISMO
+       // console.log('📊 Server response status:', responseData.status);
+       // ✅ VERIFICAR STATUS CODE AQUÍ MISMO
         if (responseData.status >= 200 && responseData.status < 300) {
           // SUCCESS
           setMessageToUser({
@@ -323,7 +333,7 @@ const previewAccountName = useMemo(() => {
         }
       }
 
-      if (import.meta.env.VITE_ENVIRONMENT === 'developmentX') {
+      if (import.meta.env.VITE_ENVIRONMENT === 'development') {
         console.log('Data from New Category request:', responseData);
       }
     } catch (error) {
