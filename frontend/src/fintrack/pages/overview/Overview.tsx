@@ -1,7 +1,8 @@
 // frontend/src/pages/overview/Overview.tsx
 //HOOKS
 import { useEffect, useState } from 'react';
-//navigation
+
+//NAVIGATION
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../../auth/hooks/useAuth.ts';
 
@@ -413,15 +414,6 @@ function Overview() {
 
         <MonthlyAverage data={kpiData.MonthlyMovementKPI} />
 
-        {<AccountBalance previousRoute={originRoute} accountType={'bank'} />}
-
-        {
-          <InvestmentAccountBalance
-            previousRoute={originRoute}
-            accountType={'investment'}
-          />
-        }
-
         {
           <OpenAddEditBtn
             btnFunction={createNewAccount}
@@ -430,6 +422,15 @@ function Overview() {
           >
             <div className='open__btn__label'>Add Account</div>
           </OpenAddEditBtn>
+          }
+
+        {<AccountBalance previousRoute={originRoute} accountType={'bank'} />}
+
+        {
+          <InvestmentAccountBalance
+            previousRoute={originRoute}
+            accountType={'investment'}
+          />
         }
 
         <LastMovements

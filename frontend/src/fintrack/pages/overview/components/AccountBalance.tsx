@@ -15,7 +15,7 @@ import {
 import { useEffect, useState } from 'react';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 
-//---------------------------------------
+//----------------------------
 export type AccountPropType = { previousRoute: string; accountType: string };
 
 //--default values------------
@@ -23,22 +23,21 @@ const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 const concept = 'balance';
 
-//-----------
+//----------------------------
 function AccountBalance({
   previousRoute,
   accountType,
-}: AccountPropType): JSX.Element {
-  // const user = import.meta.env.VITE_USER_ID;
+}: AccountPropType) {
 
-  //--STATES---------------------
+ //--STATES---------------------
   const [accountsToRender, setAccountsToRender] = useState<AccountListType[]>(
     [],
   );
 
-  //Check authentication
+ //Check authentication
   const { isAuthenticated, isCheckingAuth } = useAuth();
 
-  //DATA FETCHING
+ //--DATA FETCHING---------------
   const urlGetAccounts =
     !isCheckingAuth && isAuthenticated
       ? `${url_get_accounts_by_type}/?type=${accountType}`
@@ -92,6 +91,8 @@ function AccountBalance({
       </span>
     );
   }
+
+  if (!accountsToRender || isLoading || error) return null; 
   //--------
   return (
     <>

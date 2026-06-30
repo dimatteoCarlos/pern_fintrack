@@ -858,35 +858,32 @@ export async function getTransactionById(req, res, next) {
     );
 
     //------DEBUG-----
-    console.log('🔍 [FX DEBUG] getTransactionById - raw result:', {
-      transaction_id: result.rows[0]?.transaction_id,
+    // console.log('🔍 [FX DEBUG] getTransactionById - raw result:', {
+    //   transaction_id: result.rows[0]?.transaction_id,
 
-      original_amount: result.rows[0]?.original_amount,
-      original_amount_type: typeof result.rows[0]?.original_amount,
-      exchange_rate: result.rows[0]?.exchange_rate,
-      original_currency_code: result.rows[0]?.original_currency_code,
-    });
+    //   original_amount: result.rows[0]?.original_amount,
+    //   original_amount_type: typeof result.rows[0]?.original_amount,
+    //   exchange_rate: result.rows[0]?.exchange_rate,
+    //   original_currency_code: result.rows[0]?.original_currency_code,
+    // });
 
-    console.log('🔍 [FX DEBUG] getTransactionById - raw result row:', {
-      transaction_id: result.rows[0]?.transaction_id,
-      transaction_type_name: result.rows[0]?.transaction_type_name,
+    // console.log('🔍 [FX DEBUG] getTransactionById - raw result row:', {
+    //   transaction_id: result.rows[0]?.transaction_id,
+    //   transaction_type_name: result.rows[0]?.transaction_type_name,
 
-      original_amount: result.rows[0]?.original_amount,
-      original_amount_type: typeof result.rows[0]?.original_amount,
-      original_currency_id: result.rows[0]?.original_currency_id,
-      exchange_rate: result.rows[0]?.exchange_rate,
-      exchange_rate_type: typeof result.rows[0]?.exchange_rate,
-      original_currency_code: result.rows[0]?.original_currency_code,
-    });
+    //   original_amount: result.rows[0]?.original_amount,
+    //   original_amount_type: typeof result.rows[0]?.original_amount,
+    //   original_currency_id: result.rows[0]?.original_currency_id,
+    //   exchange_rate: result.rows[0]?.exchange_rate,
+    //   exchange_rate_type: typeof result.rows[0]?.exchange_rate,
+    //   original_currency_code: result.rows[0]?.original_currency_code,
+    // });
 
     //---------DEBUG---------
-
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
-
     const transaction = result.rows[0];
-
     //------DEBUG-----
     console.log('🔍 [FX DEBUG] getTransactionById - parsed transaction:', {
       transaction_id: transaction.transaction_id,
