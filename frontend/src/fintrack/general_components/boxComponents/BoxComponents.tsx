@@ -13,8 +13,9 @@ type ChildrenPropType = { children: React.ReactNode,
   style?: React.CSSProperties; 
 };
 
+// ===============
 // COMPONENTS
-// ============
+// ===============
 //-----BoxContainer 
 export function BoxContainer({ children, className, onClick, style }: ChildrenPropType) {
   return (
