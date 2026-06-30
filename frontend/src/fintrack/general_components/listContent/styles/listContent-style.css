@@ -93,7 +93,7 @@
 /* ====================================
    📱 RESPONSIVE STYLES - Mobile
    ==================================== */
-@media (max-width: 480px) {
+@media (max-width: 393px) {
   .listContent__details-row {
     flex-direction: column;
     gap: 0.25rem;
