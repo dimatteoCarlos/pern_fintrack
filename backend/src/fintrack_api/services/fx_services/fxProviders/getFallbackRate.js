@@ -354,10 +354,10 @@ if (args.from || args.to) {
     );
   }
 } else {
-  console.log('Uso:');
-  console.log('node getFallbackRate.js --from=ves --to=usd');
-  console.log('node getFallbackRate.js --from=eur --to=ves');
-  console.log('node getFallbackRate.js --from=ves --to=usd --n=7');
+  // console.log('Uso:');
+  // console.log('node getFallbackRate.js --from=ves --to=usd');
+  // console.log('node getFallbackRate.js --from=eur --to=ves');
+  // console.log('node getFallbackRate.js --from=ves --to=usd --n=7');
 }
 /*
 /*

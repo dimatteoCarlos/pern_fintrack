@@ -30,7 +30,6 @@ function InvestmentAccountBalance({
   previousRoute,
   accountType,
 }: AccountPropType) {
-  // const user = import.meta.env.VITE_USER_ID;
 
   //--STATES---------------------
   const [investmentAccountsToRender, setInvestmentAccountsToRender] = useState<
@@ -74,12 +73,15 @@ function InvestmentAccountBalance({
 
   // if (isLoading) {
   // return <span style={{color:'cyan', width:'100%', textAlign:'center'}}>Loading...</span>;  }
-  //-------------------------------------
+
+ // MAIN RENDER ----------------------
+  if (!apiData || isLoading || error) return null; 
+  
   return (
     <>
       {/*ACCOUNTS  */}
       <div className='presentation__card__title__container flx-row-sb'>
-        <CardTitle>Investment</CardTitle>
+       <CardTitle>Investment Accounts</CardTitle>
         <Link className='flx-col-center icon ' to={'edit'}></Link>
       </div>
 
@@ -94,7 +96,7 @@ function InvestmentAccountBalance({
             currency_code,
             account_starting_amount,
           } = account;
-          // console.log('🚀 ~ {investment.map ~ capital:', capital);
+
           const capital = account_starting_amount ?? 0;
           const balance = account_balance;
           let balanceType, percentage;
@@ -113,9 +115,9 @@ function InvestmentAccountBalance({
             balanceType = '% Profit';
             percentage = 0;
           }
-
           // console.log(balance, capital, percentage)
-          //-----------------------------------------
+
+          //--RENDER LINK BUBBLE ---------
           {
             return (
               <Link
@@ -135,7 +137,7 @@ function InvestmentAccountBalance({
                       {subtitle}:
                       <span className='tile__title tile__title--account'>
                         {currencyFormat(
-                          currency_code ?? defaultCurrency,
+                         currency_code ?? defaultCurrency,
                           account_balance,
                           formatNumberCountry,
                         )}
@@ -168,8 +170,10 @@ function InvestmentAccountBalance({
               </Link>
             );
           }
+
         })}
       </article>
+      
     </>
   );
 }
