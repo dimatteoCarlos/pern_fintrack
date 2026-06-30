@@ -11,7 +11,7 @@ import {
 } from '../../helpers/constants';
 
 import {
-  capitalize,
+  // capitalize,
   currencyFormat,
   isDateValid,
 } from '../../helpers/functions';
@@ -36,6 +36,7 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
  // State for modal
   const [selectedTransaction, setSelectedTransaction] =  useState<TransactionDataType | null>(null);
+
   const [isLoadingModal, setIsLoadingModal] = useState(false);
 
   const formatDate = (dateInput: Date | string | number): string => {
@@ -51,6 +52,7 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
     setIsLoadingModal(true);
     try {
       const response = await authFetch<TransactionDataType>(`${url_get_transaction_by_id}${transactionId}`);
+
 //----DEBUG-------------------------------
 // console.log('🔍 Respuesta completa:', response);
 // console.log('🔍 Datos recibidos (data):', response.data);
@@ -72,6 +74,7 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
   return (
     <div className='listContent__container '>
       {listOfItems.map((item, index) => {
+
         const { accountName, record, description, date, currency, transactionId } = item;
 
        return (
@@ -91,12 +94,15 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
 
         {/*  📝 DETAILS ROW: Description and date - */}
          <div className='listContent__details-row'>
-         <p className='listContent__description'>
-         {capitalize(description)}
-         </p>
-         {date && isDateValid(date) && (
-         <time className='listContent__date'>{formatDate(date)}</time>
-         )}
+          <p className='listContent__description'>
+          {(description.split('Transaction')[0])}
+          </p>
+          <p>
+          {date && isDateValid(date) && (
+          <time className='listContent__date'>{formatDate(date)}</time>
+          )}
+
+          </p>
          </div>
         </BoxContainer>
 
