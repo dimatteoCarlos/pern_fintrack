@@ -37,9 +37,9 @@ if (!process.env.VERCEL) {
   dotenv.config();
 }
 
-// ====================================
+// ============================
 // Initialize in-memory currency catalog
-// ====================================
+// ============================
 try {
   await loadCurrencyCatalog();
   console.log('✅ Currency catalog loaded successfully');
@@ -47,9 +47,9 @@ try {
   console.error('❌ Failed to load currency catalog:', err.message);
 }
 
-// ====================================
+// ============================
 // TRUST PROXY only in production (e.g., Render, Vercel)
-// ====================================
+// ============================
 //muchos servicios cloud) usan proxies inversos. Express debe confiar en el proxy para obtener la IP real y el protocolo correcto (HTTP/HTTPS). Se coloca después de const app = express():
 
 if (process.env.NODE_ENV === 'production') {
