@@ -3,7 +3,6 @@
 import { pool } from '../config/configDB.js';
 import pc from 'picocolors';
 // ===================================
-
 export const mainTables = [
   {
     tblName: 'users',

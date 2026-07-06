@@ -260,7 +260,7 @@ const AccountingDashboard = () => {
   };
   //------------------------------------
   // 📋HANDLE VIEW ACCOUNT DETAILS WITH ACCOUNT TYPE DETECTION
-  //------------------------------------
+  //---------------------------------
   const handleViewDetails = (account: AccountListType) => {
     // 🎯 Detect Category Budget Accounts
     if (isCategoryBudgetAccount(account)) {
