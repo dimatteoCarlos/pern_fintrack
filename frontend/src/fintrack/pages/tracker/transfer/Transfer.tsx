@@ -711,5 +711,4 @@ function Transfer(): JSX.Element {
     </>
   );
 }
-
 export default Transfer;
