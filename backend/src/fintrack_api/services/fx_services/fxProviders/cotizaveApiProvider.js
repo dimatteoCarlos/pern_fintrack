@@ -1,5 +1,4 @@
 // backend/src/fintrack_api/services/fx_services/fxProviders/cotizaveApiProvider.js
-
 // ============================
 // 💰 COTIZAVE API PROVIDER
 // ============================
@@ -19,13 +18,76 @@
  * }
  */
 
+import { formatDateToVenezuelanStyle } from "../../../../utils/helpers.js";
+
 // - API key validation (API_KEY_COTIZAVE)
 // - URL: https://api.cotizave.com/v1/fx/rates
 // - Response parsing (reference market)
 // - Both usd→ves and ves→usd pairs
-//============================================
+//=======================================
 const COTIZAVE_API_URL = 'https://api.cotizave.com/v1/fx/rates';
 
+/**
+ * Pure helper function to format and log exchange rate data in Venezuelan local style.
+ * @param {Object} data - The raw JSON response from Cotizave API
+ */
+
+function logFormattedRates(data) {
+  if (!data || !Array.isArray(data?.rates)) return;
+
+  // 1. Format current timestamp dynamically
+  const lastUpdate =
+    new Date(data.rates.find((r) => r.market === 'reference')?.updated_at) ||
+    new Date();
+  const dateStr = formatDateToVenezuelanStyle(lastUpdate).dateStr;
+  const timeStr = formatDateToVenezuelanStyle(lastUpdate).timeStr;
+  //--------------------------
+  const now = new Date();
+  const nowDateStr = formatDateToVenezuelanStyle(now).dateStr;
+  const nowTimeStr = formatDateToVenezuelanStyle(now).timeStr;
+  //--------------------------
+  // 2. Pure formatting function for Venezuelan currency style
+  const formatVES = (val) => {
+    if (typeof val !== 'number') return '0,00';
+    return new Intl.NumberFormat('es-VE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(val);
+  };
+  //---------------------------------
+  // 3. Extract required rates safely
+   const bcv = data.rates.find((r) => r.market === 'reference')?.mid;
+   const parallel = data.rates.find((r) => r.market === 'parallel')?.mid;
+   const binance = data.rates.find((r) => r.market === 'binance')?.mid;
+   const euro = data.rates.find((r) => r.market === 'bcv_eur')?.mid;
+  //---------------------------------
+  // 4. Calculate exchange rate spread dynamically between BCV and Binance
+  const spread = bcv && binance ? ((binance - bcv) / bcv) * 100 : 0;
+
+  // 5. Output formatted dashboard to logs
+  console.log(`\n💸 Dólar ahora » ${nowDateStr}. ${nowTimeStr}`);
+
+  console.log(`📅 Última actualización » ${dateStr}. ${timeStr}\n`);
+
+  console.log('💵 Dólar BCV: Bs.', formatVES(bcv));
+
+  console.log(`💰 Binance USDT: Bs.`, formatVES(binance));
+  
+  console.log('⚖️  Promedio BCV / USDT: Bs.', formatVES((binance + bcv) / 2));
+  
+  console.log(
+    '📊 Brecha cambiaria BCV / USDT:',
+    formatVES(spread) + '%',
+    '',
+  );
+  
+  console.log('\n🤑 Dólar Paralelo: Bs.', formatVES(parallel));
+
+  if (euro) {
+    console.log('💶 Euro BCV: Bs.', formatVES(euro));
+  }
+}
+//-------------------------------------
 export async function fetchFromCotizave(baseCode, targetCode) {
   const FZ_API_KEY = process.env.API_KEY_COTIZAVE;
 
@@ -40,10 +102,11 @@ export async function fetchFromCotizave(baseCode, targetCode) {
   const base = baseCode.toLowerCase();
   const target = targetCode.toLowerCase();
 
+  // console.log('==============================');
   // DEBUG LOGS
   // console.log('[FX DEBUG] ENV KEY EXISTS:', !!FZ_API_KEY);
   // console.log('[FX DEBUG] REQUEST URL:', COTIZAVE_API_URL);
-  //---
+  //------------
   // console.log('==============================');
   // console.log('[FX DEBUG] FINAL REQUEST CHECK');
   // console.log('[FX DEBUG] API KEY LENGTH:', FZ_API_KEY?.length);
@@ -54,18 +117,19 @@ export async function fetchFromCotizave(baseCode, targetCode) {
       'X-API-Key': FZ_API_KEY,
     },
   });
-
   const data = await res.json();
+  // console.log('🚀 ~ fetchFromCotizave ~ data:', data);
 
-//---DEBUG
+  // Execute pure logging function with API response context
+  logFormattedRates(data);
+
+  //---DEBUG--------------------
   // console.log('[FX DEBUG] RAW RESPONSE:', data);
-
-  console.log('[FX DEBUG] VES BCV:', data?.rates?.find((r) => r.market === 'reference').mid);
-
-  console.log('[FX DEBUG] VES PRL:', data?.rates?.find((r) => r.market === 'parallel').mid);
-
-  console.log('[FX DEBUG] VES BNC:', data?.rates?.find((r) => r.market === 'binance').mid);
-//------------------------
+  // console.log('VES BCV:', data?.rates?.find((r) => r.market === 'reference').mid);
+  // console.log('[FX DEBUG] VES PRL:', data?.rates?.find((r) => r.market === 'parallel').mid);
+  // console.log('[FX DEBUG] VES BNC:', data?.rates?.find((r) => r.market === 'binance').mid);
+  // console.log('[FX DEBUG] VES BNC:', data?.rates?.find((r) => r.market === 'binance').mid);
+  //------------------------
   const rates = data?.rates;
 
   if (!Array.isArray(rates)) {
@@ -89,15 +153,16 @@ export async function fetchFromCotizave(baseCode, targetCode) {
     throw new Error(`Unsupported pair: ${base}/${target}`);
   }
 
-  console.log(`[FX] Cotizave API ${base} -> ${target}: ${rate}`);
+  // console.log(`[FX] Cotizave API ${base} -> ${target}: ${rate}`);
 
   return {
     rate,
     source: 'cotizave',
-    fetchedAt: new Date(),
+    fetchedAt:
+      new Date(data.rates.find((r) => r.market === 'reference')?.updated_at) ||
+      new Date(),
   };
 }
-
 //=======================================
 // fetchAllRates (standardized interface)
 export async function fetchAllRates(baseCurrency) {
@@ -122,14 +187,15 @@ export async function fetchAllRates(baseCurrency) {
     return null;
   }
 }
-
 //--------------------------------------
 //-- fetchRate (standardized interface)
 export async function fetchRate(baseCurrency, targetCurrency, options = {}) {
   try {
     const target = targetCurrency.toLowerCase();
+
     if (target !== 'ves') return null;
     const result = await fetchFromCotizave(baseCurrency, target);
+
     if (result && typeof result.rate === 'number') {
       return {
         rate: result.rate,
@@ -143,3 +209,4 @@ export async function fetchRate(baseCurrency, targetCurrency, options = {}) {
     return null;
   }
 }
+//-------------------------------------
