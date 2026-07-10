@@ -29,19 +29,19 @@ import { formatDate } from '../../utils/helpers.js';
 import { getCurrencyId } from '../../utils/currencyLookup.js';
 import { currencyAmountConversion } from '../services/fx_services/conversion/currencyAmountConversion.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
-//=========================================
+//==================================
 // 🔧 FX DEBUG UTILITY (centralized)
-// ============================================
+// ==================================
 const FX_DEBUG_ENABLED = true; // Cambiar a false para desactivar todos los logs
 
 const fxDebug = (step, data) => {
   if (!FX_DEBUG_ENABLED) return;
   console.log(`🔍 [FX DEBUG] ${step}:`, JSON.stringify(data, null, 2));
 };
-//=========================================
+//=====================================
 
 //endpoint: put:/api/fintrack/transaction/transfer-between-accounts?movement=expense
-//=======================================
+//====================================
 //FUNCTIONS DECLARATION
 //get the account_type_id by account_type_name
 export const getAccountTypeId = async (dbClient = pool, accountTypeName) => {
@@ -77,8 +77,8 @@ export const getAccountInfo = async (
   } else {
     //Search by account_name /Buscar por account_name
     accountQuery = `SELECT ua.* FROM user_accounts ua
-      JOIN account_types act ON ua.account_type_id = act.account_type_id
-      WHERE ua.user_id = $1 AND ua.account_name = $2 AND act.account_type_name = $3`;
+     JOIN account_types act ON ua.account_type_id = act.account_type_id
+     WHERE ua.user_id = $1 AND ua.account_name = $2 AND act.account_type_name = $3`;
     queryValues = [userId, accountIdentifier, accountTypeName];
   }
 
