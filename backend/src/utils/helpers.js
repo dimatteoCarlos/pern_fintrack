@@ -20,11 +20,13 @@ dataFormatHelpers:
  validateAndNormalizeDateFn
  formatDateToDDMMYYYY
  formatDate
+ formatDateToVenezuelanStyle
  isValidDate
  convertToISO
  getMonthName
  numberToWords
  capitalize
+
 
 fx function:
  getCurrencyName
@@ -219,6 +221,21 @@ export const formatDate = (date) =>
       minute: '2-digit'
     });
 
+// Pure helper function to format date in Venezuelan local style.
+export function formatDateToVenezuelanStyle(date) {
+  if (!date) return '';
+  const options = { 
+   date:{day: 'numeric', month: 'long', year: 'numeric'} ,
+   time:{ hour: 'numeric', minute: '2-digit', hour12: true,} };
+
+  const dateStr = new Date(date).toLocaleDateString('es-VE', options.date);
+
+  const timeStr = new Date(date).toLocaleTimeString('es-VE', options.time).toLowerCase();
+
+  return {dateStr , timeStr};
+ }
+//------------------------
+
 // El frontend puede validar que la fecha ingresada por el usuario esté en el formato dd-mm-yyyy
 export const isValidDate = (dateString) => {
   const regex = /^\d{2}-\d{2}-\d{4}$/; // Expresión regular para dd-mm-yyyy
@@ -254,7 +271,8 @@ export const convertToISO = (dateString, format) => {
   // Devolver en formato ISO 8601 (YYYY-MM-DD)
   return `${year}-${month}-${day}`;
 };
-//--------------------------------------------
+//--------------------------
+
 export function getMonthName(index) {
   const month_index = parseInt(index);
   if (month_index < 1 || month_index > 12 || isNaN(month_index)) {
@@ -368,6 +386,5 @@ export const getCurrencyName = (currencyCode) => {
 //How to use getCurrencyName to get currency name from code
 // const codigo = 'EUR';
 // const info = currencyCodes.code(codigo); 
-
 // console.log(info.currency); // Imprime: "Euro" (en inglés)
 
