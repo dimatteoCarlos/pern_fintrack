@@ -37,6 +37,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# 🧠 DIFF FILE
+# ==========
+diff.md
+
 # ===============================
 # 🖥️ OS FILES
 # ===============================

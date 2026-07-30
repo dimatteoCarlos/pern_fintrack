@@ -1,11 +1,14 @@
 //backend/src/utils/getAccountById/getAccountByIdController.js
 
 // HTTP controller: retrieves account information by ID and returns formatted JSON response
-
-import { getAccountDataById } from "./getAccountDataById";
+/**
+import { getAccountDataById } from "./getAccountDataById.js";
+import { requireUserId } from '../../authUtils/requireUserId.js';
 
 export const getAccountById = async (req, res, next) => {
-  const userId = req.user.userId || (req.body.user ?? req.query.user);
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
   const { accountId } = req.params;
 
   const result = await getAccountDataById(userId, accountId);
@@ -28,3 +31,4 @@ res.status(200).json({
   message: 'Account updated successfully', 
   data: updatedAccount.data 
 });
+*/

@@ -127,7 +127,7 @@ export const url_get_total_account_balance_by_type: string =
   BASE_URL_APP + 'dashboard/balance/type';
 
 //MOVEMENT TRANSACTION RECORD
-//ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?user=eacef623-6fb0-4168-a27f-fa135de093e1&movement=expense
+//ex: http://localhost:5000/api/fintrack/transaction/transfer-between-accounts/?movement=expense
 export const url_movement_transaction_record: string =
   BASE_URL_APP + 'transaction/transfer-between-accounts';
 
@@ -163,13 +163,13 @@ export const dashboardMovementTransactionsByType: string =
 // insomnia: fintrack dashboardMovementTransactions
 // endpoint:dashboardMovementTransactions
 //example:http://localhost:5000/api/fintrack/dashboard/movements/movement/?movement=pocket&user=${user}
-//http://localhost:5000/api/fintrack/dashboard/movements/movement/?start=&end=&movement=debt&user=eacef623-6fb0-4168-a27f-fa135de093e1
+//http://localhost:5000/api/fintrack/dashboard/movements/movement/?start=&end=&movement=debt
 export const dashboardMovementTransactions: string =
   BASE_URL_APP + 'dashboard/movements/movement/';
 //--------------------------
 //fintrack dashboard movements
 //this is more general since it can search
-//get.http://localhost:5000/api/fintrack/dashboard/movements/search/?start=&end=&search=opening&user=eacef623-6fb0-4168-a27f-fa135de093e1
+//get.http://localhost:5000/api/fintrack/dashboard/movements/search/?start=&end=&search=opening
 // dashboardMovementTransactionsSearch
 export const url_get_transactions_by_search: string =
   BASE_URL_APP + 'dashboard/movements/search/';
