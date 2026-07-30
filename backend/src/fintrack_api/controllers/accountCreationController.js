@@ -7,6 +7,8 @@ import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 
+import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+
 import {
   determineTransactionType,
   formatDate,
@@ -442,13 +444,8 @@ export const createDebtorAccount = async (req, res, next) => {
   // console.log(req.body, req.user, req.params, req.query);
   const client = await pool.connect();
   try {
-    //implement verifyUser middleware and then get userId from res.user
-    const userId = req.user.userId || (req.body.user ?? req.query.user);
-    if (!userId) {
-      const message = 'User ID is required';
-      console.warn(pc.blueBright(message));
-      return res.status(400).json({ status: 400, message });
-    }
+    const userId = requireUserId(req, res);
+    if (!userId) return;
     //data from debt new profile input ui form - frontend fintrack
     const {
       account_type, //refers to debtor account

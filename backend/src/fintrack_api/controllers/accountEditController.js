@@ -5,6 +5,8 @@ import { pool } from '../../db/config/configDB.js';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import { capitalize } from '../../utils/helpers.js';
 
+import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+
 /**
  * 🎯 EDITION LOGIC: PARTIALLY UPDATES AN ACCOUNT
  * This controller will receive a partial payload (only the modified fields
@@ -17,25 +19,26 @@ export const patchAccountById = async (req, res, next) => {
   const client = await pool.connect();
 
   try {
-    const userId = req.user.userId || (req.body.user ?? req.query.user);
+    const userId = requireUserId(req, res);
+    if (!userId) return;
+
     const { accountId } = req.params;
     const payload = req.body;
     console.log('🚀 ~ patchAccountById ~ payload:', payload.account_name);
 
-    if (!userId || !accountId) {
-      return res
-        .status(400)
-        .json({ status: 400, message: 'User ID and Account ID are required.' });
+    if (!accountId) {
+     return res.status(400).json({ status: 400, message: 'Account ID is required.' });
     }
 
     // 1. Get account type by id
     const accountInfoResult = await client.query({
-      text: `SELECT act.account_type_name, ua.account_type_id
-   FROM user_accounts ua
-   JOIN account_types act ON act.account_type_id = ua.account_type_id
-   WHERE ua.account_id = $1 AND
-    ua.user_id = $2`,
-      values: [accountId, userId],
+     text: 
+      `SELECT act.account_type_name, ua.account_type_id
+      FROM user_accounts ua
+      JOIN account_types act ON act.account_type_id = ua.account_type_id
+      WHERE ua.account_id = $1 AND ua.user_id = $2`,
+      
+     values: [accountId, userId],
     });
 
     if (!accountInfoResult || accountInfoResult.rows.length === 0) {

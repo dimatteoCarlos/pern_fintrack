@@ -11,6 +11,7 @@
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
+import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 
 //COMMON FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
@@ -38,11 +39,8 @@ export const dashboardTotalBalanceAccounts = async (req, res, next) => {
   console.log(pc[backendColor](controllerName));
 
   try {
-    const userId = req.user.userId || (req.body.user ?? req.query.user);
-
-    if (!userId) {
-      return RESPONSE(res, 400, 'User ID is required');
-    }
+    const userId = requireUserId(req, res);
+    if (!userId) return;
 
     const successMsg = `Total balance accounts were successfully calculated`;
 
@@ -125,7 +123,8 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
 
   try {
     const { type } = req.query; //bank| investment | income_source | category_budget | debtor | pocket_saving
-    const userId = req.user.userId || (req.body.user ?? req.query.user);
+    const userId = requireUserId(req, res);
+    if (!userId) return;
     // console.log(
     //   '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
     //   userId,
@@ -137,8 +136,8 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     // );
     const accountType = type;
 
-    if (!accountType || !userId) {
-      const message = 'User ID and account TYPE are required';
+    if (!accountType) {
+      const message = 'Account TYPE is required';
       console.log('MESSAGE', message);
       // ERR_RESP(400, message, controllerName);
       return RESPONSE(res, 400, message);
@@ -281,9 +280,8 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
   } catch (error) {
     if (error instanceof Error) {
       console.error(pc.red('Error while getting account by type'));
-      if (process.env.NODE_ENV !== 'development') {
-        //modificado
-        console.log('stack:', error.stack);
+      if (process.env.NODE_ENV == 'development') {
+       console.log('stack:', error.stack);
       }
       next(createError(error.status, error.message));
     } else {
@@ -316,7 +314,8 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
 
   try {
     const { type } = req.query;
-    const userId = req.user.userId || (req.body.user ?? req.query.user);
+    const userId = requireUserId(req, res);
+    if (!userId) return;
     const accountType = req.body.type ?? req.query.type;
 
     // console.log(
@@ -327,8 +326,8 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
     //   type
     // );
 
-    if (!accountType || !userId) {
-      return RESPONSE(res, 400, 'User ID and account TYPE are required');
+    if (!accountType) {
+      return RESPONSE(res, 400, 'Account TYPE is required');
     }
 
     if (!['category_budget', 'debtor', 'pocket_saving'].includes(accountType)) {
@@ -494,7 +493,8 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   //-------------------------------------
   const { movement } = req.query;
   const movement_type_name = movement === 'debts' ? 'debt' : movement;
-  const userId = req.user.userId || (req.body.user ?? req.query.user);
+  const userId = requireUserId(req, res);
+  if (!userId) return;
   // console.log('params:', req.body, req.query);
   console.log('movement', movement, movement_type_name);
   //-----------------------------------
@@ -524,9 +524,8 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   //----------------------------------------
   //later add a function to validate type and movement against the types
   //!account_type_name ||
-  if (!movement_type_name || !userId) {
-    const message =
-      'Missing required parameters: user, account type name, movement type name';
+  if (!movement_type_name) {
+    const message = 'Missing required parameter: movement type name';
     return RESPONSE(res, 400, message);
   }
 
@@ -887,12 +886,9 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
     const daysAgo = _daysAgo.toISOString().split('T')[0];
 
     const { start, end, search } = req.query;
-    const userId = req.user.id ?? req.query.user;
+    const userId = requireUserId(req, res);
+    if (!userId) return;
     //--------------------------------------
-    if (!userId) {
-      const message = 'User Id is required';
-      return RESPONSE(res, 400, message);
-    }
     const startDate = new Date(start || daysAgo);
     const endDate = new Date(end || today.toISOString().split('T')[0]);
 
@@ -935,8 +931,8 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
   `,
       values: [
         userId,
-        startDatetoISOString(),
-        endDatetoISOString(),
+        startDate.toISOString(),
+        endDate.toISOString(),
         search,
         search === 'slack' ? '' : 'slack',
       ],
@@ -1004,10 +1000,12 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
 
     //input data
     const { start, end, transaction_type, movement, account_type } = req.query;
-    const userId = req.user.userId ?? req.query.user;
+    const userId = requireUserId(req, res);
+    if (!userId) return;
 
-    if (!userId || !(movement || transaction_type || account_type)) {
-      const message = 'User Id , movement and transaction_type are required';
+    if (!(movement || transaction_type || account_type)) {
+      const message =
+        'movement, transaction_type or account_type is required';
       return RESPONSE(res, 400, message);
     }
     const startDate = new Date(start || daysAgo);

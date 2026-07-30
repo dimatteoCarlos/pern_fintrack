@@ -8,12 +8,12 @@
 //aunque se requiere solo los valores de promedio mensual del total de los gastos, se hara un procedimiento donde se obtenga primero los gastos por mes por cada cuenta o categoria, y luego con estos datos se calculan los valores agregados o totales. los valores por mes pueden servir de insumo para realizar graficos de gastos por mes.
 //---------------------------------------
 // router.get('/balance/monthly_total_amount_by_type/?type=${type}&', dashboardMonthlyTotalAmountByType);
-//get: //http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?type=${type}&user=eacef623-6fb0-4168-a27f-fa135de093e1
-
+//get: //http://localhost:5000/api/fintrack/dashboard/balance/monthly_total_amount_by_type/?type=${type}
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 import { validate as uuidValidate } from 'uuid';
+import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 
 export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
   //response function
@@ -27,22 +27,13 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
   //-----------------------------------------
   //params validation
   const { startDate, endDate } = req.query;
-  const userId = req.user.userId || (req.body.user ?? req.query.user); //uuid
-  // console.log(
-  //   '🚀 ~ dashboardTotalBalanceAccountByType ~ userId:',
-  //   userId,
-  //   req.query,
-  //   req.body
-  //   // movement_type
-  // );
-  if (!userId) {
-    return RESPONSE(res, 400, 'User ID and account type are required');
-  }
+  const userId = requireUserId(req, res);
+  if (!userId) return;
   // if (!['expense', 'income', 'saving'].includes(movement_type)) {
   //   const msg = 'Movement type must be expense, income or saving';
   //   return RESPONSE(res, 400, msg);
   // }
-
+//this is an assertion to ensure that the userId is a valid UUID format. If not, it returns a 400 response with an error message.
   if (!uuidValidate(userId)) {
     const msg = 'Invalid user ID format';
     return RESPONSE(res, 400, msg);
