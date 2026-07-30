@@ -116,7 +116,7 @@ router.get(
 // DELETE /api/fintrack/account/delete/:accountId
 router.delete(
   '/delete/:targetAccountId',
-  // verifyUser,
+  verifyUser,
   executeAccountDeletion,
 );
 
