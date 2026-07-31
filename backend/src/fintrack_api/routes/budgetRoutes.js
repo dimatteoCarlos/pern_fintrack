@@ -1,7 +1,8 @@
 // backend/src/fintrack_api/routes/budgetRoutes.js
 // 🧩 ROUTES: Budget module
 //
-// Mounted under /api/fintrack, which app.js already guards with verifyToken and globalLimiter. Every handler below resolves identity from the token via
+// Mounted under /api/fintrack, which app.js already guards with verifyToken
+// and globalLimiter. Every handler below resolves identity from the token via
 // requireUserId — no route here accepts a user ID from the client.
 
 import express from 'express';

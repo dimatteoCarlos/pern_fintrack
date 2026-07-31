@@ -1,7 +1,10 @@
 // backend/src/fintrack_api/services/budget_services/services/budgetPolicyService.js
 // Write path for budget policies. Reads live in budgetTransactionRepository.js.
 //
-// Allocations are SCD Type 2: a change never overwrites. The active row is closed (valid_until = NOW()) and a new one opened, so every past budget stays queryable. `valid_until IS NULL` marks the active version — there is no redundant flag to keep in sync.
+// Allocations are SCD Type 2: a change never overwrites. The active row is
+// closed (valid_until = NOW()) and a new one opened, so every past budget
+// stays queryable. `valid_until IS NULL` marks the active version — there is
+// no redundant flag to keep in sync.
 
 import { withTransaction } from '../../../../utils/withTransaction.js';
 
@@ -56,7 +59,8 @@ async function updateBudgetAllocation(
  budgetAmount,
  budgetFrequencyTypeId,
 ) {
- // Mirrors CHECK (budget_amount > 0). Validating here turns a constraint violation into a 400 with a usable message instead of a 500.
+ // Mirrors CHECK (budget_amount > 0). Validating here turns a constraint
+ // violation into a 400 with a usable message instead of a 500.
  if (!Number.isFinite(budgetAmount) || budgetAmount <= 0) {
   throw badRequest('budgetAmount must be a number greater than 0.');
  }
@@ -64,7 +68,8 @@ async function updateBudgetAllocation(
  return withTransaction(pool, async (client) => {
   await lockOwnedPolicy(client, userId, budgetPolicyId);
 
-  // NOW() is transaction-scoped in Postgres, so the close and the open share one timestamp. That is intended: the history has no gap between versions.
+  // NOW() is transaction-scoped in Postgres, so the close and the open share
+  // one timestamp. That is intended: the history has no gap between versions.
   await client.query(
    `UPDATE budget_policy_allocations
        SET valid_until = NOW()
