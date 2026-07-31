@@ -27,7 +27,6 @@ dist-ssr
 *.env*
 *.md.env*
 
-
 # Local Netlify folder
 .netlify
 .vercel
@@ -41,5 +40,7 @@ archived/
 *.tmp
 .cache/
 .env*.local
-
 .depcheckrc/
+
+# Plan files
+plan-docs/

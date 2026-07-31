@@ -94,3 +94,7 @@ storybook-static/
 SCRIPTS
 scripts/
 *scripts"backen/.gitignore" 
+
+# =============================
+#plan docs
+plan-docs/
