@@ -82,6 +82,8 @@ storybook-static/
 # 🔐 CERTS / KEYS (just in case)
 # ===============================
 *.pem
+*.crt
+*.cert
 *.key
 .vercel
 .env*.local
