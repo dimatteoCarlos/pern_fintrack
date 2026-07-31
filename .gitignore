@@ -25,6 +25,8 @@ coverage/
 # ===============================
 .env
 .env.*
+# Applies to root-level files only. backend/ and frontend/ carry their own
+# .gitignore, and the deepest matching file wins — each needs its own negation.
 !.env.example
 
 # ===============================
