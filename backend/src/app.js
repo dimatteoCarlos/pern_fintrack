@@ -17,6 +17,9 @@ import routes from './auth_api/routes/index.js';
 import { verifyToken } from './auth_api/middlewares/authMiddleware.js';
 import fintrack_routes from './fintrack_api/routes/index.js';
 
+//globalLimiter
+import { globalLimiter } from './auth_api/middlewares/rateLimiter.js';
+
 //db test
 import { pool } from './db/config/configDB.js';
 
@@ -153,7 +156,7 @@ app.get('/api/db-test', async (req, res) => {
 
 app.use('/api', routes); //main app routes
 
-app.use('/api/fintrack', verifyToken, fintrack_routes);
+app.use('/api/fintrack', verifyToken, globalLimiter, fintrack_routes);
 
 // app.use('/api/cronjob', cronRoutes);
 
