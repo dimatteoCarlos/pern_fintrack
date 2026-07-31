@@ -6,18 +6,10 @@ import { ipKeyGenerator } from 'express-rate-limit';
 // 🎯 KEY GENERATOR (USER-SPECIFIC LIMITING)
 // =========================================
 const keyGenerator = (req) => {
-  const safeIp = ipKeyGenerator(req);
-  
-  // Versión que mantiene formato similar al original
-  const userId = req.user?.userId;
-  
-  if (userId) {
-    // Formato: "userId_ip" (pero con IP segura)
-    return `${userId}_${safeIp}`;
-  }
-  
-  // Para anónimos: solo IP segura
-  return safeIp;
+ const safeIp = ipKeyGenerator(req);
+ // Versión que mantiene formato similar al original
+ const userId = req.user?.userId;
+ return userId ? `${userId}_${safeIp}` : safeIp;
 };
 
 // =========================================
@@ -36,22 +28,23 @@ retryAfter:Math.ceil(windowMs/1000)//in seconds
 // Limits: 10 attempts per 15 minutes per user is the reference
 const PROFILE_WINDOW_MINUTES =2;
 const PROFILE_MAX_ATTEMPTS = 5;
+
 export const profileUpdateLimiter = rateLimit({
   windowMs: PROFILE_WINDOW_MINUTES * 60 * 1000, // 5 minutes
-  max: PROFILE_MAX_ATTEMPTS, //Maximum REF 10 attempts per window
+  limit: PROFILE_MAX_ATTEMPTS, //Maximum REF 10 attempts per window
 // Key generator: use userId if authenticated, otherwise IP
  keyGenerator,
  standardHeaders: true,// Return rate limit info in headers
  legacyHeaders: false, // Disable legacy headers
- skipSuccessfulRequests: true,// Only Counts failed requests
+ skipSuccessfulRequests: false,// Counts all requests
 
 // Custom handler for rate limit exceeded
-  handler: (req, res) => {
+  handler: (req, res, next, options) => {
     res.status(429).json(
      createRateLimitResponse(
       'RateLimitExceeded',
-      `Security: Too many UPDATE attempts. Try again in ${WINDOW_MINUTES} minutes.`,
-      profileUpdateLimiter.windowMs,
+      `Security: Too many UPDATE attempts. Try again in ${PROFILE_WINDOW_MINUTES} minutes.`,
+      options.windowMs, // Use 'options': windowMs is not attached to the returned middleware
      )
    );
   }
@@ -64,10 +57,11 @@ export const profileUpdateLimiter = rateLimit({
 // Limits: 5 attempts per 15 minutes per user (security-critical) - best practice reference
 const WINDOW_MINUTES = 0.5;
 const MAX_ATTEMPTS = 5;
+
 export const passwordChangeLimiter = rateLimit(
  {
   windowMs: WINDOW_MINUTES  * 60 * 1000,//ms
-  max: MAX_ATTEMPTS,// 🚨 password change attempts
+  limit: MAX_ATTEMPTS,// 🚨 password change attempts
   keyGenerator,
 
   standardHeaders: true,
@@ -92,7 +86,7 @@ export const passwordChangeLimiter = rateLimit(
 // Limits: 5 login attempts per 15 minutes per IP
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,// 5 authentication attempts per window
+  limit: 5,// 5 authentication attempts per window
   message: { 
     success: false,
     error: 'AuthRateLimitExceeded',
@@ -100,15 +94,17 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true, // Don't count successful logins
+  skipSuccessfulRequests: true, // Do not count successful logins toward the limit - login
+
 // Always use IP for auth endpoints (before user is logged in)
   keyGenerator: ipKeyGenerator, // Track by IP address
-  handler: (req, res) => {
+
+  handler: (req, res,  next, options) => {
    res.status(429).json(
    createRateLimitResponse(
     'AuthRateLimitExceeded',
     'Too many login attempts. Please wait before trying again.',
-    authLimiter.windowMs
+    options.windowMs
    ));
   }
 });
@@ -118,18 +114,18 @@ export const authLimiter = rateLimit({
 // =======================================
 export const globalLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 100, // Maximum 100 requests per window per IP
+  limit: 100, // Maximum 100 requests per window per IP
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true,
-  keyGenerator:ipKeyGenerator,
+  skipSuccessfulRequests: false,
+  keyGenerator, // ← userId + IP
   
-  handler: (req, res) => {
+  handler: (req, res, next, options) => {
     res.status(429).json(
       createRateLimitResponse(
         'GlobalRateLimitExceeded',
         'Too many requests to our API. Please slow down.',
-        globalLimiter.windowMs
+        options.windowMs
       )
     );
   }
