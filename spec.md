@@ -23,6 +23,8 @@ PERN_FINTRACK is a full-stack financial tracking application built on the PERN s
 
 ### 3. Git Branching Strategy
 
+- `feat/vercel-serverless`: **Production deploy target on Vercel.** Long-lived, not a feature branch awaiting cleanup. No pushes, rebases, force-pushes, or deletion without explicit approval. Being fully merged into `main` does not make it disposable — merge status answers whether deleting would lose commits, not whether something deploys from the ref.
+- `main`: Integration branch. Feature branches merge here before reaching production.
 - `feat/budget`: Houses the database migrations, core models, and API endpoints for the Budget module.
 - `feat/overview`: Houses the dashboard metrics, card aggregations, date normalization, and `USE_NEW_BUDGET_SYSTEM` flag integration.
 
