@@ -68,10 +68,16 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
         ? `${category_name}/${subcategory}/${nature_type_name_req}`
         : req.body.name;
 
-    const category_nature_budget = budget ? parseFloat(budget) : 0.0;
+    // A category_budget account without a positive budget is not a budget.
+    // Same rule at every layer: the frontend zod schemas, budgetVsActualCalculator,
+    // and CHECK (budget_amount > 0) on budget_policy_allocations.
+    // Number() rather than parseFloat(): parseFloat('12abc') silently returns 12.
+    // Number.isFinite() rather than !isNaN(): the global isNaN coerces first, so
+    // isNaN('') is false, and it also rejects the Infinity that Number('1e999') gives.
+    const category_nature_budget = Number(budget);
 
-    if (budget < 0) {
-      const message = 'Budget amount must be >= 0. Tray again!';
+    if (!Number.isFinite(category_nature_budget) || category_nature_budget <= 0) {
+      const message = 'Budget amount is required and must be greater than 0.';
       console.warn(pc.redBright(message));
       return res.status(400).json({ status: 400, message });
     }

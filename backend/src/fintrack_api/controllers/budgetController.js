@@ -19,7 +19,6 @@ import { budgetPolicyService } from '../services/budget_services/services/budget
 import { pool } from '../../db/config/configDB.js';
 import { getAccountsByType } from '../services/fintrackUtils/accountUtils.js';
 import { convertBudgetResultsToCSV } from '../services/fintrackUtils/exportUtils.js';
-import XLSX from 'xlsx';
 
 // ============================================================
 // GET /budget/summary
@@ -125,7 +124,7 @@ export async function getHistory(req, res, next) {
 export async function exportCSV(req, res, next) {
  try {
   const validated = exportQuerySchema.parse(req.query);
-  const { accountId, frequency, date, startDate, endDate, format = 'csv' } = validated;
+  const { accountId, frequency, date, startDate, endDate } = validated;
 
   let results;
   const accountNamesMap = new Map();
@@ -168,37 +167,12 @@ export async function exportCSV(req, res, next) {
 
   const dateStr = new Date().toISOString().split('T')[0];
 
-  if (format === 'xlsx') {
-   // Prepare data for Excel
-   const excelData = results.map(r => ({
-    'Account Name': accountNamesMap.get(r.budgetPolicy?.accountId) || '',
-    'Subcategory': r.budgetPolicy?.subcategory || '',
-    'Currency': r.currency || '',
-    'Frequency': r.budgetAllocation?.frequency || '',
-    'Period': r.period ? `${r.period.start.toISOString().split('T')[0]} to ${r.period.end.toISOString().split('T')[0]}` : '',
-    'Budgeted': parseFloat(r.budgetAccumulatedAmount?.toFixed(2)) || 0,
-    'Spent': parseFloat(r.actualSpent?.toFixed(2)) || 0,
-    'Remaining': parseFloat(r.remainingBudget?.toFixed(2)) || 0,
-    'Execution %': parseFloat(r.executionPercentage?.toFixed(2)) || 0,
-   }));
-
-   // Create workbook
-   const workbook = XLSX.utils.book_new();
-   const ws = XLSX.utils.json_to_sheet(excelData);
-
-   // Auto-size columns (optional, improves readability)
-   const colWidths = Object.keys(excelData[0] || {}).map(() => ({ wch: 18 }));
-   ws['!cols'] = colWidths;
-
-   XLSX.utils.book_append_sheet(workbook, ws, 'Budget');
-   const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
-   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-   res.setHeader('Content-Disposition', `attachment; filename="budget_export_${dateStr}.xlsx"`);
-   return res.status(200).send(buffer);
-  }
-
-  // CSV (default)
+  // CSV is the only export format. The XLSX branch that lived here was
+  // unreachable — exportQuerySchema declares no `format` field and zod strips
+  // unknown keys, so `format` was always undefined. It also imported xlsx at
+  // module scope, which would have failed the whole router's load once the
+  // package was uninstalled (prototype pollution / ReDoS advisories, no fix
+  // published on npm).
   const csv = convertBudgetResultsToCSV(results, accountNamesMap);
   const filename = `budget_export_${dateStr}.csv`;
   res.setHeader('Content-Type', 'text/csv');
