@@ -1,10 +1,7 @@
 // backend/src/fintrack_api/services/budget_services/services/budgetPolicyService.js
 // Write path for budget policies. Reads live in budgetTransactionRepository.js.
 //
-// Allocations are SCD Type 2: a change never overwrites. The active row is
-// closed (valid_until = NOW()) and a new one opened, so every past budget
-// stays queryable. `valid_until IS NULL` marks the active version — there is
-// no redundant flag to keep in sync.
+// Allocations are SCD Type 2: a change never overwrites. The active row is closed (valid_until = NOW()) and a new one opened, so every past budget stays queryable. `valid_until IS NULL` marks the active version — there is no redundant flag to keep in sync.
 
 import { withTransaction } from '../../../../utils/withTransaction.js';
 
@@ -59,8 +56,7 @@ async function updateBudgetAllocation(
  budgetAmount,
  budgetFrequencyTypeId,
 ) {
- // Mirrors CHECK (budget_amount > 0). Validating here turns a constraint
- // violation into a 400 with a usable message instead of a 500.
+ // Mirrors CHECK (budget_amount > 0). Validating here turns a constraint violation into a 400 with a usable message instead of a 500.
  if (!Number.isFinite(budgetAmount) || budgetAmount <= 0) {
   throw badRequest('budgetAmount must be a number greater than 0.');
  }
@@ -68,8 +64,7 @@ async function updateBudgetAllocation(
  return withTransaction(pool, async (client) => {
   await lockOwnedPolicy(client, userId, budgetPolicyId);
 
-  // NOW() is transaction-scoped in Postgres, so the close and the open share
-  // one timestamp. That is intended: the history has no gap between versions.
+  // NOW() is transaction-scoped in Postgres, so the close and the open share one timestamp. That is intended: the history has no gap between versions.
   await client.query(
    `UPDATE budget_policy_allocations
        SET valid_until = NOW()
@@ -83,11 +78,11 @@ async function updateBudgetAllocation(
       (budget_policy_id, budget_amount, budget_frequency_type_id, valid_from)
     VALUES ($1, $2, $3, NOW())
     RETURNING budget_allocation_id,
-              budget_policy_id,
-              budget_amount,
-              budget_frequency_type_id,
-              valid_from,
-              valid_until`,
+     budget_policy_id,
+     budget_amount,
+     budget_frequency_type_id,
+     valid_from,
+     valid_until`,
    [budgetPolicyId, budgetAmount, budgetFrequencyTypeId],
   );
 
@@ -110,20 +105,20 @@ async function updateBudgetAllocation(
 async function getBudgetAllocationHistory(pool, userId, budgetPolicyId) {
  const { rows } = await pool.query(
   `SELECT a.budget_allocation_id,
-          a.budget_policy_id,
-          a.budget_amount,
-          a.budget_frequency_type_id,
-          bft.budget_frequency_code,
-          a.valid_from,
-          a.valid_until
-     FROM budget_policy_allocations a
-     JOIN budget_policies bp ON bp.budget_policy_id = a.budget_policy_id
-     JOIN user_accounts ua ON ua.account_id = bp.account_id
-     JOIN budget_frequency_types bft
-       ON bft.budget_frequency_type_id = a.budget_frequency_type_id
-    WHERE a.budget_policy_id = $1
-      AND ua.user_id = $2
-    ORDER BY a.valid_from DESC`,
+     a.budget_policy_id,
+     a.budget_amount,
+     a.budget_frequency_type_id,
+     bft.budget_frequency_code,
+     a.valid_from,
+     a.valid_until
+    FROM budget_policy_allocations a
+    JOIN budget_policies bp ON bp.budget_policy_id = a.budget_policy_id
+    JOIN user_accounts ua ON ua.account_id = bp.account_id
+    JOIN budget_frequency_types bft
+      ON bft.budget_frequency_type_id = a.budget_frequency_type_id
+   WHERE a.budget_policy_id = $1
+     AND ua.user_id = $2
+   ORDER BY a.valid_from DESC`,
   [budgetPolicyId, userId],
  );
 
