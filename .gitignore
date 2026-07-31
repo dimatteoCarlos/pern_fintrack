@@ -25,6 +25,8 @@ coverage/
 # ===============================
 .env
 .env.*
+# Applies to root-level files only. backend/ and frontend/ carry their own
+# .gitignore, and the deepest matching file wins — each needs its own negation.
 !.env.example
 
 # ===============================
@@ -36,6 +38,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# 🧠 DIFF FILE
+# ==========
+diff.md
 
 # ===============================
 # 🖥️ OS FILES
@@ -78,6 +84,8 @@ storybook-static/
 # 🔐 CERTS / KEYS (just in case)
 # ===============================
 *.pem
+*.crt
+*.cert
 *.key
 .vercel
 .env*.local
@@ -88,3 +96,7 @@ storybook-static/
 SCRIPTS
 scripts/
 *scripts"backen/.gitignore" 
+
+# =============================
+#plan docs
+plan-docs/

@@ -3,11 +3,9 @@
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-// import dotenv from 'dotenv';
 import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 
-// dotenv.config();
 //------------------------------
 const salt = Number(process.env.SALT_ROUNDS);
 
@@ -47,7 +45,7 @@ export const createToken = (id, role) => {
   const expiresIn =
     process.env.NODE_ENV === 'development'
       ? '1h' // ✅  in development
-      : '1h'; // ✅ 3 in production
+      : '1h'; // ✅  in production
 
   // Consistencia: expiresIn en el token y maxAge en la cookie deben estar sincronizados
   return jwt.sign(

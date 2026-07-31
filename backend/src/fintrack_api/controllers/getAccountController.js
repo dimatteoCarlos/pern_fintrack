@@ -7,6 +7,7 @@ import pc from 'picocolors';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import { pool } from '../../db/config/configDB.js';
 import { respondError, respondSuccess } from '../../utils/responseHelpers.js';
+import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 
 const backendColor = 'greenBright';
 const errorColor = 'red';
@@ -194,11 +195,11 @@ export const getAllAccountsByType = async (req, res, next) => {
   try {
     const { type } = req.query;
     const accountType = type.trim();
-    const userId = req.user.userId || (req.body.user ?? req.query.user);
-    // console.log(userId, req.user, controllerName);
+    const userId = requireUserId(req, res);
+    if (!userId) return;
 
-    if (!accountType || !userId) {
-      const message = `User ID and account type are required.Try again!.`;
+    if (!accountType) {
+      const message = `Account type is required.Try again!.`;
       console.warn(pc[backendColor](message));
       // return res.status(400).json({ status: 400, message });
       return respondError(res, 400, message);
@@ -406,14 +407,8 @@ export const getAccounts = async (req, res, next) => {
   console.log(pc[backendColor]('getAccounts'));
 
   try {
-    // const { user: userId } = req.query;
-    const userId = req.user.userId ?? req.body.user;
-
-    if (!userId) {
-      const message = `User ID is required. Try again.`;
-      console.warn(pc[backendColor](message));
-      return res.status(400).json({ status: 400, message });
-    }
+    const userId = requireUserId(req, res);
+    if (!userId) return;
 
     const accountTypeQuery = {
       all: {
@@ -480,13 +475,8 @@ export const getAccountById = async (req, res, next) => {
   // GET ACCOUNT BY ID
   //----------------------------------
   try {
-    const userId = req.user.userId || (req.body.user ?? req.query.user);
-
-    if (!userId) {
-      const message = 'User ID is required';
-      console.warn(pc.blueBright(message));
-      return res.status(400).json({ status: 400, message });
-    }
+    const userId = requireUserId(req, res);
+    if (!userId) return;
 
     const { accountId } = req.params;
 
@@ -768,13 +758,8 @@ export const getCategoryBudgetFullDataEndpoint = async (req, res, next) => {
   console.log(pc[backendColor]('getCategoryBudgetFullDataEndpoint'));
 
   try {
-    const userId = req.user.userId || (req.body.user ?? req.query.user);
-
-    if (!userId) {
-      const message = 'User ID is required';
-      console.war(pc.blueBright(message));
-      return res.status(400).json({ status: 400, message });
-    }
+    const userId = requireUserId(req, res);
+    if (!userId) return;
 
     const { accountId } = req.params;
     if (!accountId) {
@@ -858,13 +843,9 @@ export const getAccountsByCategory = async (req, res, next) => {
   // );
 
   try {
-    const userId = req.user.userId || (req.body.user ?? req.query.user);
+    const userId = requireUserId(req, res);
+    if (!userId) return;
 
-    if (!userId) {
-      const message = 'User ID is required';
-      console.warn(pc.blueBright(message));
-      return res.status(400).json({ status: 400, message });
-    }
     const { categoryName } = req.params;
 
     if (!categoryName) {

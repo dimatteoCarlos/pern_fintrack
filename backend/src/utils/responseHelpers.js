@@ -10,6 +10,7 @@ export const respondSuccess = (
   console.log(pc.green(`[Success ${status}] ${message}`));
   return res.status(status).json({ status,success:true, message, data });
 };
+
 export const respondError = (
   res,
   status = 400,
@@ -18,10 +19,11 @@ export const respondError = (
   //  errorType: 'validation' | 'business' | 'database' | 'unknown' = 'unknown'
 ) => {
   console.log(pc.red(`[Error ${status}] ${message}, errorDetails,${errorDetails}`));
+
   return res.status(status).json({
     status,
     message,
     errorDetails:
-      process.env.NODE_ENV === 'developmentz' ? errorDetails : undefined,
+      process.env.NODE_ENV === 'development' ? errorDetails : undefined,
   });
 };

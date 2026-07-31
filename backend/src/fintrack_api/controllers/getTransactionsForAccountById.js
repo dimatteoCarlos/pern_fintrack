@@ -6,6 +6,7 @@
 import pc from 'picocolors';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import { pool } from '../../db/config/configDB.js';
+import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 
 export const getTransactionsForAccountById = async (req, res, next) => {
   const backendColor = 'greenBright';
@@ -36,12 +37,8 @@ export const getTransactionsForAccountById = async (req, res, next) => {
   //controller module
   try {
     //validation of input data
-    const userId = req.user.userId || req.body.user || req.query.user;
-    if (!userId) {
-      const message = 'User ID is required.';
-      console.warn(pc[backendColor](message));
-      return RESPONSE(res, 400, message);
-    }
+    const userId = requireUserId(req, res);
+    if (!userId) return;
 
     const { accountId } = req.params;
     if (!accountId) {

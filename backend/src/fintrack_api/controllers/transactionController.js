@@ -17,6 +17,7 @@
 import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
+import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import {
   getExpenseConfig,
   getIncomeConfig,
@@ -166,12 +167,8 @@ export const transferBetweenAccounts = async (req, res, next) => {
     // ================================
     // DATA EXTRACTION and VALIDATION
     // ================================
-    const userId = req.user.userId;
-    if (!userId) {
-      const message = 'User ID is required';
-      console.warn(pc.magentaBright(message));
-      return res.status(400).json({ status: 400, message });
-    }
+    const userId = requireUserId(req, res);
+    if (!userId) return;
     //-------------------------------------
     const { movement } = req.query;
     const movementName = movement === 'debts' ? 'debt' : movement; //debt movement is called as debts in frontend
@@ -812,7 +809,8 @@ export async function getTransactionById(req, res, next) {
   const client = await pool.connect();
   try {
     const { transactionId } = req.params;
-    const userId = req.user.userId;
+    const userId = requireUserId(req, res);
+    if (!userId) return;
 
     if (!transactionId) {
       return res.status(400).json({ error: 'Transaction ID is required' });

@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "checkJs": false,
+    "allowJs": true
+  },
+  "exclude": ["node_modules", "dist"]
+}

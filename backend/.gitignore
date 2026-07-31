@@ -26,7 +26,9 @@ dist-ssr
 .env.local
 *.env*
 *.md.env*
-
+# Must live here, not only in the root .gitignore: git stops at the deepest
+# file that matches, so a parent negation never gets consulted.
+!.env.example
 
 # Local Netlify folder
 .netlify
@@ -41,5 +43,7 @@ archived/
 *.tmp
 .cache/
 .env*.local
-
 .depcheckrc/
+
+# Plan files
+plan-docs/
