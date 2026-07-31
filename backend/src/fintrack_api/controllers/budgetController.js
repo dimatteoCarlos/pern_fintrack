@@ -81,8 +81,7 @@ export async function getMultiSummary(req, res, next) {
   const validated = multiSummaryBodySchema.parse(req.body);
   const { accountIds, frequency, date, startDate, endDate } = validated;
 
-  // Check EVERY element. Validating only the first would let a caller hide
-  // foreign ids behind one of their own.
+  // Check EVERY element. Validating only the first would let a caller hide foreign ids behind one of their own.
   const owned = await getOwnedBudgetAccounts(userId);
   const foreign = accountIds.filter((id) => !owned.has(id));
   if (foreign.length > 0) {
