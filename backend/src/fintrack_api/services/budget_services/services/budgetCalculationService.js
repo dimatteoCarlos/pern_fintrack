@@ -6,11 +6,11 @@
 // Currency is obtained from in-memory catalog (no DB queries).
 // Date normalization moved to dateNormalizer.js.
 
-import { resolvePeriod } from '../../../utils/fintrackUtils/date-utils/periodResolver.js';
-import { normalizeDatesToMonths } from '../../../utils/fintrackUtils/date-utils/dateNormalizer.js';
+import { resolvePeriod } from '../../../../utils/fintrackUtils/date-utils/periodResolver.js';
+import { normalizeDatesToMonths } from '../../../../utils/fintrackUtils/date-utils/dateNormalizer.js';
 import { getBudgetDataForAccounts } from '../db/budgetTransactionRepository.js';
 import { calculateBudgetVsActual } from '../calculators/budgetVsActualCalculator.js';
-import { getCurrencyCodeSync } from '../../../utils/currencyLookup.js';
+import { getCurrencyCodeSync } from '../../../../utils/currencyLookup.js';
 
 /**
  * Budget calculation service – read operations.

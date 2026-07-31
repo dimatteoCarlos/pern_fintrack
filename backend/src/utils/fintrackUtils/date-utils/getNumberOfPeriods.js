@@ -3,7 +3,7 @@
 
 // Pure utility functions for period calculations.
 // Reusable across modules (Budget, Pocket, Insights, etc.).
-import { MONTHS_PER_PERIOD } from "../../../fintrack_api/services/budget_services/core/budgetConfig";
+import { MONTHS_PER_PERIOD } from '../../../fintrack_api/services/budget_services/core/budgetConfig.js';
 
 /**
  * Count complete periods in a date range (no prorating).

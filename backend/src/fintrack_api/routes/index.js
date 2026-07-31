@@ -4,6 +4,7 @@ import accountRoutes from './accountRoutes.js';
 import transactionRoutes from './transactionRoute.js';
 import dashboardRoutes from './dashboardRoutes.js';
 import currencyRoutes from './currencyRoutes.js';
+import budgetRoutes from './budgetRoutes.js';
 
 //------------------------
 const router = express.Router();
@@ -16,8 +17,11 @@ router.use('/account',
 router.use('/transaction',
  transactionRoutes);//movements between accounts
 
-router.use('/dashboard', 
+router.use('/dashboard',
  dashboardRoutes);//overview info
+
+router.use('/budget',
+ budgetRoutes);//budget policies, allocations and summaries
 
 
 export default router;

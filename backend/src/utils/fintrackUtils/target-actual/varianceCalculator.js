@@ -7,7 +7,7 @@
 // It is reusable across financial domains: Budget, Pocket, Investments, etc.
 
 import { MONTHS_PER_PERIOD } from '../../../fintrack_api/services/budget_services/core/budgetConfig.js';
-import { makeBudgetResult } from '../../../fintrack_api/services/budget_services/core/budgetResult.js';
+import { makeBudgetResult } from '../../../fintrack_api/services/budget_services/core/makeBudgetResult.js';
 
 // Internal helper to count how many complete periods fit in a date range.
 // Returns 0 if the range is not a complete period (no prorating in V1).

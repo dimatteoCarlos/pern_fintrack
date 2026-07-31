@@ -1,79 +1,111 @@
-// backend/src/utils/accountUtils.js
-//content: getUserIdFromAccount, getSlackAccountId, getAccountTypeId
-//Actually not used, just for future uses.
+// backend/src/utils/fintrackUtils/accountDataRetrieval/accountUtils.js
+//
+// Account utilities – reusable functions for account-related operations.
+// Used across modules (Budget, Overview, Reports).
+//
+// Consolidated from accountUtilsV2.js. Every query filters deleted_at IS NULL:
+// a soft-deleted account must not count as owned, or it keeps passing
+// ownership checks and keeps appearing in exports.
 
-import { pool } from "../db/configDB.js";
-import { createError } from "../../errorHandling.js";
+import { pool } from '../../../db/config/configDB.js';
+import { createError } from '../../errorHandling.js';
 
-// Helper function to get account type ID
-export async function getAccountTypeId(accountTypeName) {
-  const accountTypeQuery = `SELECT * FROM account_types`;
-  const accountTypeResult = await pool.query(accountTypeQuery);
-  const accountType = accountTypeResult.rows.find(
-    (type) => type.account_type_name === accountTypeName.trim()
-  );
-  return accountType?.account_type_id;
-}
-
-// ⚙️ UTILITY: GET USER ID FROM TARGET ACCOUNT
-
-// 🔑 UTILITY: GET USER ID FROM ACCOUNT ID
-//not used yet
-export const getUserIdFromAccount = async (clientOrPool, targetAccountId)=>{
-const dbClient=clientOrPool.connect?
- await clientOrPool.connect():clientOrPool
-
-let releaseClient = dbClient.connect
- ?()=>dbClient.release()
- :null
-
-// Determine if it is needed to get a new client from the pool or use an existing one
-try {
- const userQuery = `
-  SELECT user_id
-  FROM user_accounts
-  WHERE account_id = $1
-   AND deleted_at IS NULL
- `
- const result = await dbClient.query(userQuery, [targetAccountId]) 
-
- if (!result.rows.length===0){
-  throw createError(404, `Account with ID ${targetAccountId} not found`)
- }
- return result.rows[0].user_id
-} catch (error) {
-  throw error;
-} finally {
-  if (releaseClient) {
-// RELEASE THE CLIENT ONLY IF IT WAS ACQUIRED IN THIS FUNCTION
-   releaseClient(); 
-  }
- }
-}
-//--------------------------------
-// 🔍 UTILITY FOR SLACK ACCOUNT
 /**
-* 💡 Checks for the existence of the 'slack' compensation account and returns its ID. Used for the reporting phase (outside of a transaction).
-*/
-export const getSlackAccountId = async ( userId)=>{
- const accountName = 'slack'
- const accountType = 'bank'
- const slackQuery = `
-  SELECT ua.* FROM user_accounts ua
-   JOIN account_types act
-    ON ua.account_type_id = act.account_type_id
-  WHERE ua.user_id = $1
-   AND ua.account_name = $2
-   AND act.account_type_name=$3
-   AND ua.deleted_at IS NULL; 
-     `;
- const result = await pool.query(slackQuery, [userId,accountName, accountType])
+ * Get account type ID from account type name.
+ * @param {Object} clientOrPool - Database client or pool. Falls back to the shared pool.
+ * @param {string} accountTypeName - e.g. 'category_budget'.
+ * @returns {Promise<number>} account_type_id
+ */
+export async function getAccountTypeId(clientOrPool, accountTypeName) {
+  const db = clientOrPool || pool;
+  const query = 'SELECT account_type_id FROM account_types WHERE account_type_name = $1';
+  const result = await db.query(query, [accountTypeName]);
+  if (result.rows.length === 0) {
+    throw createError(404, `Account type not found: ${accountTypeName}`);
+  }
+  return result.rows[0].account_type_id;
+}
 
- if(result.rows.length===0){
-  throw createError(404, 'The required compensation account "slack" was not found for this user. Please create it first.')
- }
- return result.rows[0]
- // return result.rows[0].account_id
-    
- }
-//------------
+/**
+ * Get user ID from account ID.
+ * @param {Object} clientOrPool - Database client or pool.
+ * @param {number} accountId
+ * @returns {Promise<string>} user_id (UUID)
+ */
+export async function getUserIdFromAccount(clientOrPool, accountId) {
+  const db = clientOrPool || pool;
+  const query = `
+    SELECT user_id
+    FROM user_accounts
+    WHERE account_id = $1
+      AND deleted_at IS NULL
+  `;
+  const result = await db.query(query, [accountId]);
+  if (result.rows.length === 0) {
+    throw createError(404, `Account not found: ${accountId}`);
+  }
+  return result.rows[0].user_id;
+}
+
+/**
+ * Get the 'slack' compensation account ID for a user.
+ * @param {Object} clientOrPool - Database client or pool.
+ * @param {string} userId - User UUID.
+ * @returns {Promise<number>} account_id
+ */
+export async function getSlackAccountId(clientOrPool, userId) {
+  const db = clientOrPool || pool;
+  const query = `
+    SELECT ua.account_id
+    FROM user_accounts ua
+    JOIN account_types act ON ua.account_type_id = act.account_type_id
+    WHERE ua.user_id = $1
+      AND ua.account_name = 'slack'
+      AND act.account_type_name = 'bank'
+      AND ua.deleted_at IS NULL
+  `;
+  const result = await db.query(query, [userId]);
+  if (result.rows.length === 0) {
+    throw createError(
+      404,
+      'The required compensation account "slack" was not found for this user. Please create it first.',
+    );
+  }
+  return result.rows[0].account_id;
+}
+
+/**
+ * Get all accounts of a given type for a user, with subcategory, nature and currency.
+ * Used by the Budget module for ownership checks and exports.
+ *
+ * @param {string} userId - User UUID.
+ * @param {string} accountType - e.g. 'category_budget'.
+ * @returns {Promise<Array<{accountId: number, accountName: string, subcategory: string|null, nature: string|null, currency: string}>>}
+ */
+export async function getAccountsByType(userId, accountType) {
+  const query = `
+    SELECT
+      ua.account_id,
+      ua.account_name,
+      cba.subcategory,
+      cba.nature,
+      cur.currency_code AS currency
+    FROM user_accounts ua
+    JOIN account_types act ON ua.account_type_id = act.account_type_id
+    JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
+    JOIN currencies cur ON ua.currency_id = cur.currency_id
+    WHERE ua.user_id = $1
+      AND act.account_type_name = $2
+      AND ua.account_name != 'slack'
+      AND ua.deleted_at IS NULL
+    ORDER BY ua.account_name ASC
+  `;
+  const result = await pool.query(query, [userId, accountType]);
+  return result.rows.map((row) => ({
+    accountId: row.account_id,
+    accountName: row.account_name,
+    subcategory: row.subcategory || null,
+    nature: row.nature || null,
+    currency: row.currency,
+  }));
+}

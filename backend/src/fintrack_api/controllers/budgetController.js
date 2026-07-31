@@ -17,16 +17,41 @@ import {
 import { budgetCalculationService } from '../services/budget_services/services/budgetCalculationService.js';
 import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
 import { pool } from '../../db/config/configDB.js';
-import { getAccountsByType } from '../services/fintrackUtils/accountUtils.js';
-import { convertBudgetResultsToCSV } from '../services/fintrackUtils/exportUtils.js';
+import { getAccountsByType } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
+import { convertBudgetResultsToCSV } from '../../utils/fintrackUtils/exportUtils.js';
+import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+
+/**
+ * Return the caller's category_budget accounts, keyed by id.
+ *
+ * Every handler that receives an accountId from the client must check it
+ * against this set. verifyToken proves who the caller is; it proves nothing
+ * about which accounts they may read. Without this, passing another user's
+ * accountId returns that user's budget — the same hole A2 closed elsewhere.
+ */
+const getOwnedBudgetAccounts = async (userId) => {
+ const accounts = await getAccountsByType(userId, 'category_budget');
+ return new Map(accounts.map((a) => [a.accountId, a]));
+};
 
 // ============================================================
 // GET /budget/summary
 // ============================================================
 export async function getSummary(req, res, next) {
  try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
   const validated = summaryQuerySchema.parse(req.query);
   const { accountId, frequency, date, startDate, endDate } = validated;
+
+  const owned = await getOwnedBudgetAccounts(userId);
+  if (accountId && !owned.has(accountId)) {
+   return res.status(403).json({
+    status: 403,
+    message: 'Account not found or not owned by the authenticated user.',
+   });
+  }
 
   const result = await budgetCalculationService.getSummary(
    pool,
@@ -50,8 +75,22 @@ export async function getSummary(req, res, next) {
 // ============================================================
 export async function getMultiSummary(req, res, next) {
  try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
   const validated = multiSummaryBodySchema.parse(req.body);
   const { accountIds, frequency, date, startDate, endDate } = validated;
+
+  // Check EVERY element. Validating only the first would let a caller hide
+  // foreign ids behind one of their own.
+  const owned = await getOwnedBudgetAccounts(userId);
+  const foreign = accountIds.filter((id) => !owned.has(id));
+  if (foreign.length > 0) {
+   return res.status(403).json({
+    status: 403,
+    message: `${foreign.length} account(s) not found or not owned by the authenticated user.`,
+   });
+  }
 
   const result = await budgetCalculationService.getMultiSummary(
    pool,
@@ -75,13 +114,20 @@ export async function getMultiSummary(req, res, next) {
 // ============================================================
 export async function updatePolicy(req, res, next) {
  try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
   const params = updatePolicyParamsSchema.parse(req.params);
   const body = updatePolicyBodySchema.parse(req.body);
   const { budgetPolicyId } = params;
   const { budgetAmount, budgetFrequencyTypeId } = body;
 
+  // Ownership is enforced inside the service, in the same transaction as the
+  // write. Checking it here instead would leave a window between the check
+  // and the update.
   const result = await budgetPolicyService.updateBudgetAllocation(
    pool,
+   userId,
    budgetPolicyId,
    budgetAmount,
    budgetFrequencyTypeId
@@ -101,11 +147,15 @@ export async function updatePolicy(req, res, next) {
 // ============================================================
 export async function getHistory(req, res, next) {
  try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
   const params = historyParamsSchema.parse(req.params);
   const { budgetPolicyId } = params;
 
   const history = await budgetPolicyService.getBudgetAllocationHistory(
    pool,
+   userId,
    budgetPolicyId
   );
 
@@ -123,14 +173,25 @@ export async function getHistory(req, res, next) {
 // ============================================================
 export async function exportCSV(req, res, next) {
  try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
   const validated = exportQuerySchema.parse(req.query);
   const { accountId, frequency, date, startDate, endDate } = validated;
 
   let results;
   const accountNamesMap = new Map();
+  const owned = await getOwnedBudgetAccounts(userId);
 
   if (accountId) {
    // Single account
+   if (!owned.has(accountId)) {
+    return res.status(403).json({
+     status: 403,
+     message: 'Account not found or not owned by the authenticated user.',
+    });
+   }
+
    const { result } = await budgetCalculationService.getSummary(
     pool,
     accountId,
@@ -139,20 +200,15 @@ export async function exportCSV(req, res, next) {
     { startDate, endDate }
    );
    results = [result];
-   const accounts = await getAccountsByType(req.user.userId, 'category_budget');
-   const account = accounts.find(a => a.accountId === accountId);
-   if (account) {
-    accountNamesMap.set(accountId, account.accountName);
-   }
+   accountNamesMap.set(accountId, owned.get(accountId).accountName);
   } else {
-   // All user accounts
-   const accounts = await getAccountsByType(req.user.userId, 'category_budget');
-   if (accounts.length === 0) {
+   // All accounts owned by the caller
+   if (owned.size === 0) {
     return res.status(200).send('No budget accounts found');
    }
-   const accountIds = accounts.map(a => a.accountId);
-   accounts.forEach(a => {
-    accountNamesMap.set(a.accountId, a.accountName);
+   const accountIds = [...owned.keys()];
+   owned.forEach((a, id) => {
+    accountNamesMap.set(id, a.accountName);
    });
 
    const { results: multiResults } = await budgetCalculationService.getMultiSummary(
