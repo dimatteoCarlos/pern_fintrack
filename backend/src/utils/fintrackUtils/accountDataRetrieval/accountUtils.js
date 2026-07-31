@@ -78,6 +78,11 @@ export async function getSlackAccountId(clientOrPool, userId) {
  * Get all accounts of a given type for a user, with subcategory, nature and currency.
  * Used by the Budget module for ownership checks and exports.
  *
+ * `nature` is a catalog value, not a column on category_budget_accounts. The
+ * join is LEFT because category_nature_type_id is nullable: an inner join would
+ * silently drop accounts with no nature from the ownership check, turning a
+ * missing label into a 403 on an account the caller does own.
+ *
  * @param {string} userId - User UUID.
  * @param {string} accountType - e.g. 'category_budget'.
  * @returns {Promise<Array<{accountId: number, accountName: string, subcategory: string|null, nature: string|null, currency: string}>>}
@@ -88,12 +93,14 @@ export async function getAccountsByType(userId, accountType) {
       ua.account_id,
       ua.account_name,
       cba.subcategory,
-      cba.nature,
+      cnt.category_nature_type_name AS nature,
       cur.currency_code AS currency
     FROM user_accounts ua
     JOIN account_types act ON ua.account_type_id = act.account_type_id
     JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
     JOIN currencies cur ON ua.currency_id = cur.currency_id
+    LEFT JOIN category_nature_types cnt
+      ON cnt.category_nature_type_id = cba.category_nature_type_id
     WHERE ua.user_id = $1
       AND act.account_type_name = $2
       AND ua.account_name != 'slack'
