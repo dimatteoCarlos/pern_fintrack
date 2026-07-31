@@ -28,7 +28,13 @@ PERN_FINTRACK is a full-stack financial tracking application built on the PERN s
 - `feat/budget`: Houses the database migrations, core models, and API endpoints for the Budget module.
 - `feat/overview`: Houses the dashboard metrics, card aggregations, date normalization, and `USE_NEW_BUDGET_SYSTEM` flag integration.
 
-### 4. Non-Functional & Quality Standards
+### 4. Communication Standards
+
+- Explanations must be clear, direct, and concise. No verbosity, no restating what the code already shows, no filler preamble.
+- State the change, the reason it is needed, and the effect. Nothing else.
+- One edit per intent. Do not mix cosmetic changes (quote style, spacing) into a functional fix — it hides the real change in noise.
+
+### 5. Non-Functional & Quality Standards
 
 - Database Engineering: Safe, reversible migrations with strict schema constraints and indexed foreign keys.
 - Error Handling & Architecture: Domain-driven validation, explicit middleware pipelines, and strict type safety.
