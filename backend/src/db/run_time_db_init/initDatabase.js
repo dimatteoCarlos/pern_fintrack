@@ -11,12 +11,15 @@ import { pool } from '../config/configDB.js';
 import {
   tableExists,
   tblAccountTypes,
+  tblBudgetFrequencyTypes,
   tblCategoryNatureTypes,
   tblCurrencies,
   tblMovementTypes,
   tbltransactionTypes,
   tblUserRoles,
 } from './populateDB.js';
+
+import { ALLOWED_FREQUENCIES } from '../../fintrack_api/services/budget_services/core/budgetConfig.js';
 
 import {
   mainTables,
@@ -29,6 +32,40 @@ import {
 // Set environment variable RESET_EXCHANGE_RATES=true to enable, or change to true manually
 const FORCE_RECREATE_EXCHANGE_RATES =
   process.env.RESET_EXCHANGE_RATES === 'true' || false;
+
+/**
+ * Fail fast if the seeded frequency catalog and MONTHS_PER_PERIOD disagree.
+ *
+ * A frequency code is a lookup key, not a label. A code that validation accepts
+ * but the map lacks makes getNumberOfPeriods return undefined, and the
+ * arithmetic downstream yields NaN with no error raised. A code seeded in the
+ * catalog but absent from the map has the same effect. Both directions are
+ * checked because either one produces silent wrong numbers, not a crash.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+async function assertBudgetFrequenciesMatchConfig(client) {
+ const { rows } = await client.query(
+  'SELECT budget_frequency_code FROM budget_frequency_types',
+ );
+ const seeded = new Set(rows.map((r) => r.budget_frequency_code));
+
+ const missing = ALLOWED_FREQUENCIES.filter((code) => !seeded.has(code));
+ const unexpected = [...seeded].filter(
+  (code) => !ALLOWED_FREQUENCIES.includes(code),
+ );
+
+ if (missing.length > 0 || unexpected.length > 0) {
+  throw new Error(
+   `budget_frequency_types is out of sync with MONTHS_PER_PERIOD. ` +
+    `Missing from catalog: [${missing}]. Not in config: [${unexpected}].`,
+  );
+ }
+
+ console.log(
+  pc.green(`Budget frequency catalog matches config (${seeded.size} codes).`),
+ );
+}
 
 // ===========================
 // 📊 DATA BASE INITIALIZATION
@@ -103,6 +140,16 @@ export async function initializeDatabase() {
     // [FX Migrations execute / Migraciones FX (siempre se ejecutan, son idempotentes)
     // =======================================
     await addFxAuditColumns(client);
+
+    // =======================================
+    // Budget catalog (idempotent, runs on every boot)
+    // =======================================
+    // Placed here rather than with the other seeders above, because those run
+    // before createTables() and each creates its own table. This one depends
+    // on ensureBudgetTables() having already run, and on an existing database
+    // the tables come from migration 010 instead. Both paths reach this point.
+    await tblBudgetFrequencyTypes(client);
+    await assertBudgetFrequenciesMatchConfig(client);
 
     // Recreate exchange_rates if flag is set
     if (FORCE_RECREATE_EXCHANGE_RATES) {

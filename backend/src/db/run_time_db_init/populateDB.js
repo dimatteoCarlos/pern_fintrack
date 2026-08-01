@@ -415,3 +415,76 @@ export async function tbltransactionTypes(client = pool) {
     throw error;
   }
 }
+
+//--
+//budget_frequency_types
+/**
+ * Seed the budget frequency catalog.
+ *
+ * Unlike the other tbl* seeders, this one does NOT create its table. The DDL
+ * already lives in migration 010 and in ensureBudgetTables(); a third copy
+ * here would be a third thing to keep in sync. A missing table means
+ * ensureBudgetTables did not run, and masking that by silently creating one
+ * would hide the real failure.
+ *
+ * Codes must stay identical to the keys of MONTHS_PER_PERIOD in
+ * budgetConfig.js. They are not labels, they are lookup keys.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function tblBudgetFrequencyTypes(client = pool) {
+ const budgetFrequencyValues = [
+  { budget_frequency_type_id: 1, budget_frequency_code: 'monthly', budget_frequency_name: 'Monthly', sort_order: 1 },
+  { budget_frequency_type_id: 2, budget_frequency_code: 'quarterly', budget_frequency_name: 'Quarterly', sort_order: 2 },
+  { budget_frequency_type_id: 3, budget_frequency_code: 'four-month', budget_frequency_name: 'Four-month', sort_order: 3 },
+  { budget_frequency_type_id: 4, budget_frequency_code: 'semiannual', budget_frequency_name: 'Semiannual', sort_order: 4 },
+  { budget_frequency_type_id: 5, budget_frequency_code: 'yearly', budget_frequency_name: 'Yearly', sort_order: 5 },
+ ];
+ const tblName = 'budget_frequency_types';
+ const minCount = budgetFrequencyValues.length;
+
+ try {
+  if (!isValidTableName(tblName)) {
+   throw new Error('Invalid table name');
+  }
+
+  const exists = await tableExists(client, tblName);
+  if (!exists) {
+   throw new Error(
+    `${tblName} does not exist. Run migration 010 or ensureBudgetTables() first.`,
+   );
+  }
+
+  const isPopulated = await isTablePopulated(client, tblName, minCount);
+  if (isPopulated) {
+   console.log(pc.yellowBright(`${tblName} table is already populated.`));
+   return;
+  }
+
+  for (const type of budgetFrequencyValues) {
+   const queryText = `INSERT INTO budget_frequency_types(budget_frequency_type_id,
+      budget_frequency_code, budget_frequency_name, sort_order) VALUES ($1,$2,$3,$4)
+      ON CONFLICT (budget_frequency_code) DO NOTHING`;
+   const values = [
+    type.budget_frequency_type_id,
+    type.budget_frequency_code,
+    type.budget_frequency_name,
+    type.sort_order,
+   ];
+   await client.query(queryText, values);
+   console.log(pc.green(`inserted: ${tblName}, ${type.budget_frequency_code}`));
+  }
+
+  // Explicit IDs do not advance a SERIAL sequence. Without this the first
+  // insert that omits the ID fails with a duplicate primary key.
+  await client.query(
+   `SELECT setval('budget_frequency_types_budget_frequency_type_id_seq',
+     (SELECT MAX(budget_frequency_type_id) FROM budget_frequency_types))`,
+  );
+
+  console.log(pc.yellow('All tuples inserted successfully.'));
+ } catch (error) {
+  console.error('Error inserting tuples:', error);
+  throw error;
+ }
+}
