@@ -60,6 +60,11 @@ export async function getTransactionsByAccountAndPeriod(pool, accountId, startDa
  * Optimized query for multiple accounts (used by getMultiSummary).
  * Returns all necessary data in a single query.
  * Includes currency_id for in-memory catalog lookup.
+ *
+ * budget_frequency_code is joined rather than derived from the id: the id is
+ * meaningless to the caller, and the code is the key into MONTHS_PER_PERIOD.
+ * The join is inner because budget_frequency_type_id is NOT NULL with an
+ * ON DELETE RESTRICT foreign key, so a row without a frequency cannot exist.
  */
 export async function getBudgetDataForAccounts(pool, accountIds, startDate, endDate) {
   if (!accountIds || accountIds.length === 0) {
@@ -73,6 +78,7 @@ export async function getBudgetDataForAccounts(pool, accountIds, startDate, endD
       a.budget_allocation_id,
       a.budget_amount,
       a.budget_frequency_type_id,
+      bft.budget_frequency_code,
       a.valid_from,
       a.valid_until,
       COALESCE(SUM(
@@ -86,6 +92,8 @@ export async function getBudgetDataForAccounts(pool, accountIds, startDate, endD
     FROM budget_policies p
     JOIN budget_policy_allocations a ON p.budget_policy_id = a.budget_policy_id
     JOIN category_budget_accounts cba ON p.account_id = cba.account_id
+    JOIN budget_frequency_types bft
+      ON bft.budget_frequency_type_id = a.budget_frequency_type_id
     LEFT JOIN transactions t ON t.account_id = p.account_id
       AND t.transaction_actual_date >= $2
       AND t.transaction_actual_date < $3
@@ -98,6 +106,7 @@ export async function getBudgetDataForAccounts(pool, accountIds, startDate, endD
       a.budget_allocation_id,
       a.budget_amount,
       a.budget_frequency_type_id,
+      bft.budget_frequency_code,
       a.valid_from,
       a.valid_until,
       cba.currency_id
@@ -109,6 +118,7 @@ export async function getBudgetDataForAccounts(pool, accountIds, startDate, endD
     budgetAllocationId: row.budget_allocation_id,
     budgetAmount: parseFloat(row.budget_amount) || 0,
     budgetFrequencyTypeId: row.budget_frequency_type_id,
+    budgetFrequencyCode: row.budget_frequency_code,
     validFrom: row.valid_from,
     validUntil: row.valid_until,
     actualSpent: parseFloat(row.actual_spent) || 0,
