@@ -245,6 +245,10 @@ export async function createTables(client = pool) {
     // 3. Do migration of FX columns (idempotent) / Ejecutar la migración de columnas FX (idempotente)
     await addFxAuditColumns(client);
 
+    // 4. Budget domain tables. After the array because they depend on
+    // category_budget_accounts, which the array creates.
+    await ensureBudgetTables(client);
+
     console.log('🔥  All FX migrations completed / finalizado');
   } catch (error) {
     console.error(pc.red('Error in table creation process:'), error);
@@ -299,6 +303,79 @@ export async function addFxAuditColumns(client = pool) {
   `);
 
   console.log(pc.green('FX audit columns added/verified successfully.'));
+}
+
+/**
+ * Ensure the budget domain tables exist. Mirrors the DDL of migration
+ * 010_create_budget_tables.sql, without its backfill.
+ *
+ * Deliberately NOT part of the mainTables array: that array is created with
+ * Promise.allSettled, so its order is undefined and a rejected table is only
+ * logged, never thrown. These three tables reference each other, so they need
+ * a guaranteed order — catalog, then policies, then allocations — and a real
+ * failure when one of them cannot be created.
+ *
+ * DDL only. Seeding budget_frequency_types belongs to populateDB.js, and the
+ * legacy backfill belongs to the migration: replaying it on every boot would
+ * resurrect policies for accounts a user has since emptied.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureBudgetTables(client = pool) {
+ console.log(pc.cyan('Ensuring budget domain tables...'));
+
+ const budgetDDL = [
+  `CREATE TABLE IF NOT EXISTS budget_frequency_types (
+    budget_frequency_type_id SERIAL PRIMARY KEY,
+    budget_frequency_code    VARCHAR(20)  NOT NULL UNIQUE,
+    budget_frequency_name    VARCHAR(50)  NOT NULL,
+    sort_order               INTEGER      NOT NULL DEFAULT 0,
+    is_active                BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at               TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP
+   )`,
+
+  `CREATE TABLE IF NOT EXISTS budget_policies (
+    budget_policy_id SERIAL PRIMARY KEY,
+    account_id       INTEGER NOT NULL UNIQUE
+     REFERENCES category_budget_accounts(account_id) ON DELETE CASCADE,
+    created_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+   )`,
+
+  `CREATE TABLE IF NOT EXISTS budget_policy_allocations (
+    budget_allocation_id     SERIAL PRIMARY KEY,
+    budget_policy_id         INTEGER NOT NULL
+     REFERENCES budget_policies(budget_policy_id) ON DELETE CASCADE,
+    budget_amount            DECIMAL(15,2) NOT NULL CHECK (budget_amount > 0),
+    budget_frequency_type_id INTEGER NOT NULL
+     REFERENCES budget_frequency_types(budget_frequency_type_id) ON DELETE RESTRICT,
+    valid_from               TIMESTAMPTZ NOT NULL,
+    valid_until              TIMESTAMPTZ,
+    created_at               TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_allocation_validity
+     CHECK (valid_until IS NULL OR valid_until > valid_from)
+   )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_budget_policies_account_id
+    ON budget_policies(account_id)`,
+
+  `CREATE INDEX IF NOT EXISTS idx_budget_policy_allocations_policy_id
+    ON budget_policy_allocations(budget_policy_id)`,
+
+  // Enforces "valid_until IS NULL means active". Without it two open rows can
+  // coexist and Overview silently double-counts instead of raising an error.
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_budget_allocation_active
+    ON budget_policy_allocations(budget_policy_id)
+    WHERE valid_until IS NULL`,
+ ];
+
+ // Sequential on purpose: each statement depends on the previous one.
+ for (const query of budgetDDL) {
+  await client.query(query);
+ }
+
+ console.log(pc.green('Budget domain tables verified/created.'));
 }
 
 // ===========================================
