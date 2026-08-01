@@ -65,6 +65,13 @@ export async function getTransactionsByAccountAndPeriod(pool, accountId, startDa
  * meaningless to the caller, and the code is the key into MONTHS_PER_PERIOD.
  * The join is inner because budget_frequency_type_id is NOT NULL with an
  * ON DELETE RESTRICT foreign key, so a row without a frequency cannot exist.
+ *
+ * currency_id is COALESCEd across both account tables. It is duplicated:
+ * user_accounts.currency_id is NOT NULL and is what the account creation path
+ * actually writes, while category_budget_accounts.currency_id is nullable and
+ * in practice never populated. Reading only the latter made getCurrencyCodeSync
+ * throw "Currency ID not found: null" for every real account. COALESCE still
+ * honours a budget currency that deliberately differs from the account's.
  */
 export async function getBudgetDataForAccounts(pool, accountIds, startDate, endDate) {
   if (!accountIds || accountIds.length === 0) {
@@ -88,10 +95,11 @@ export async function getBudgetDataForAccounts(pool, accountIds, startDate, endD
           ELSE 0
         END
       ), 0) AS actual_spent,
-      cba.currency_id
+      COALESCE(cba.currency_id, ua.currency_id) AS currency_id
     FROM budget_policies p
     JOIN budget_policy_allocations a ON p.budget_policy_id = a.budget_policy_id
     JOIN category_budget_accounts cba ON p.account_id = cba.account_id
+    JOIN user_accounts ua ON ua.account_id = p.account_id
     JOIN budget_frequency_types bft
       ON bft.budget_frequency_type_id = a.budget_frequency_type_id
     LEFT JOIN transactions t ON t.account_id = p.account_id
@@ -109,7 +117,8 @@ export async function getBudgetDataForAccounts(pool, accountIds, startDate, endD
       bft.budget_frequency_code,
       a.valid_from,
       a.valid_until,
-      cba.currency_id
+      cba.currency_id,
+      ua.currency_id
   `;
   const result = await pool.query(query, [accountIds, startDate, endDate]);
   return result.rows.map(row => ({
