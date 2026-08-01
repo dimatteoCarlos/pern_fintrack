@@ -210,14 +210,20 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const account_id = account_basic_data.account_id;
     //--------
     //INSERT CATEGORY_BUDGET_SUBCATEGORY_NATURE ACCOUNT into category_budget_accounts table
+    // currency_id stores the accounting currency, the same value written to
+    // user_accounts above. It is not currencyIdReq: that one is the origin
+    // currency sent by the client and belongs to the FX metadata only.
+    // Omitting the column left it NULL on every row, which made the budget
+    // summary endpoints fail on getCurrencyCodeSync(null).
     const category_budget_accountQuery = {
-      text: `INSERT INTO category_budget_accounts(account_id, category_name,category_nature_type_id,subcategory,budget,account_start_date ) VALUES($1,$2,$3,$4,$5,$6) RETURNING *`,
+      text: `INSERT INTO category_budget_accounts(account_id, category_name,category_nature_type_id,subcategory,budget,currency_id,account_start_date ) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
       values: [
         account_id,
         category_name,
         category_nature_type_id_req,
         subcategory,
         category_nature_budget,
+        accountingCurrencyId,
         account_start_date,
       ],
     };
