@@ -9,6 +9,7 @@ import express from 'express';
 import {
   getSummary,
   getMultiSummary,
+  getFrequencies,
   updatePolicy,
   getHistory,
   exportCSV,
@@ -21,6 +22,9 @@ router.get('/summary', getSummary);
 
 // POST /api/fintrack/budget/multi-summary  { accountIds: [] , ... }
 router.post('/multi-summary', getMultiSummary);
+
+// GET /api/fintrack/budget/frequencies
+router.get('/frequencies', getFrequencies);
 
 // PUT /api/fintrack/budget/policy/:budgetPolicyId
 router.put('/policy/:budgetPolicyId', updatePolicy);

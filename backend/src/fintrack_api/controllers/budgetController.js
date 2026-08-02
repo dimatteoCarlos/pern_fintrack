@@ -109,6 +109,23 @@ export async function getMultiSummary(req, res, next) {
 }
 
 // ============================================================
+// GET /budget/frequencies
+// ============================================================
+export async function getFrequencies(req, res, next) {
+ try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
+  // A shared catalog, not user data: no ownership check applies.
+  const frequencies = await budgetPolicyService.getFrequencyCatalog(pool);
+
+  res.status(200).json({ frequencies });
+ } catch (error) {
+  next(error);
+ }
+}
+
+// ============================================================
 // PUT /budget/policy/:budgetPolicyId
 // ============================================================
 export async function updatePolicy(req, res, next) {

@@ -145,7 +145,33 @@ async function getBudgetAllocationHistory(pool, userId, budgetPolicyId) {
  }));
 }
 
+/**
+ * The active frequency catalog, in display order.
+ *
+ * Serving it lets the UI build its selector from the database instead of a
+ * hard-coded list of surrogate ids.
+ */
+async function getFrequencyCatalog(pool) {
+ const { rows } = await pool.query(
+  `SELECT budget_frequency_type_id,
+    budget_frequency_code,
+    budget_frequency_name,
+    sort_order
+   FROM budget_frequency_types
+   WHERE is_active = TRUE
+   ORDER BY sort_order ASC`,
+ );
+
+ return rows.map((row) => ({
+  budgetFrequencyTypeId: row.budget_frequency_type_id,
+  budgetFrequencyCode: row.budget_frequency_code,
+  budgetFrequencyName: row.budget_frequency_name,
+  sortOrder: row.sort_order,
+ }));
+}
+
 export const budgetPolicyService = {
  updateBudgetAllocation,
  getBudgetAllocationHistory,
+ getFrequencyCatalog,
 };
