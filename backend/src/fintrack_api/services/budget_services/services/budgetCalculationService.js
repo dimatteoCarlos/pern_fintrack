@@ -138,6 +138,58 @@ const buildResult = (entry, startDate, endDate) => {
 };
 
 /**
+ * Aggregate a set of results into the figures the Overview header shows.
+ *
+ * This exists so the frontend does not add them up itself. Summing on the
+ * client is exactly the arithmetic this module was built to remove, and it
+ * would reappear in a component instead of a service — the same bug in a file
+ * nobody thinks to check.
+ *
+ * The percentage is recomputed from the totals, not averaged across accounts.
+ * An average of percentages weights a category budgeted at 10 the same as one
+ * budgeted at 10,000, which is not what "how much of my budget have I spent"
+ * means.
+ *
+ * Unbudgeted accounts contribute their spending but no budget, so they pull
+ * the totals in the honest direction: money spent with nothing allocated
+ * behind it. budgetedCount lets the caller qualify the figure without
+ * recounting.
+ */
+const makeTotals = (results) => {
+ const totals = results.reduce(
+  (acc, r) => ({
+   budgetAccumulatedAmount: acc.budgetAccumulatedAmount + r.budgetAccumulatedAmount,
+   actualSpent: acc.actualSpent + r.actualSpent,
+  }),
+  { budgetAccumulatedAmount: 0, actualSpent: 0 },
+ );
+
+ const difference = totals.budgetAccumulatedAmount - totals.actualSpent;
+
+ // Currencies are NOT converted here. Budget-level FX is a schema change, not
+ // an aggregate, and inventing a rate at report time would produce a number no
+ // stored row supports. A mixed set reports a null currency and says so.
+ const currencies = new Set(results.map((r) => r.currency));
+
+ return {
+  currency: currencies.size === 1 ? [...currencies][0] : null,
+  accountCount: results.length,
+  budgetedCount: results.filter((r) => r.isBudgeted).length,
+  budgetAccumulatedAmount: totals.budgetAccumulatedAmount,
+  actualSpent: totals.actualSpent,
+  remainingBudget: difference,
+  actualVsBudgetDifference: difference,
+  executionPercentage:
+   totals.budgetAccumulatedAmount !== 0
+    ? (totals.actualSpent / totals.budgetAccumulatedAmount) * 100
+    : 0,
+ };
+};
+
+const MIXED_CURRENCY_NOTICE =
+ 'Totals add amounts in more than one currency and are not converted.';
+
+/**
  * Budget calculation service – read operations.
  * All functions receive a PostgreSQL connection pool as first argument.
  */
@@ -173,7 +225,7 @@ export const budgetCalculationService = {
    */
   async getMultiSummary(pool, accountIds, windowFrequencyCode, referenceDate, options = {}) {
     if (!accountIds || accountIds.length === 0) {
-      return { results: [], meta: { notices: [] } };
+      return { results: [], totals: makeTotals([]), meta: { notices: [] } };
     }
 
     const { startDate, endDate, notices } = resolveWindow(
@@ -183,10 +235,13 @@ export const budgetCalculationService = {
     );
 
     const entries = await getBudgetDataForAccounts(pool, accountIds, startDate, endDate);
+    const results = entries.map((entry) => buildResult(entry, startDate, endDate));
+    const totals = makeTotals(results);
 
-    return {
-      results: entries.map((entry) => buildResult(entry, startDate, endDate)),
-      meta: { notices },
-    };
+    if (totals.currency === null && results.length > 0) {
+      notices.push(MIXED_CURRENCY_NOTICE);
+    }
+
+    return { results, totals, meta: { notices } };
   },
 };
