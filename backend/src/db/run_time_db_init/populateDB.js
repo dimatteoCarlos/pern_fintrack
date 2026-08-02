@@ -39,6 +39,78 @@ async function isTablePopulated(client = pool, tableName, minCount = 1) {
   return parseInt(result.rows[0].count, 10) >= minCount;
 }
 //==========================================
+// Catalogs seeded with explicit IDs.
+//
+// An explicit ID does not advance a SERIAL sequence, so the first insert that
+// omits the ID fails with a duplicate primary key — long after the seed, on the
+// first row a user creates. Only budget_frequency_types was guarded, and only
+// at seed time, which never reaches a database seeded before the guard existed.
+//
+// Not every column below is a SERIAL. pg_get_serial_sequence returns NULL for a
+// plain INT and the realign skips it, so this stays a list of seeded catalogs
+// instead of a list of DDL details to keep in sync.
+const SEEDED_CATALOGS = [
+  ['account_types', 'account_type_id'],
+  ['currencies', 'currency_id'],
+  ['category_nature_types', 'category_nature_type_id'],
+  ['user_roles', 'user_role_id'],
+  ['transaction_types', 'transaction_type_id'],
+  ['movement_types', 'movement_type_id'],
+  ['budget_frequency_types', 'budget_frequency_type_id'],
+];
+
+/**
+ * Realign one catalog's identity sequence with the rows the table holds.
+ *
+ * Identifiers cannot be parameterized, hence the validation before they are
+ * interpolated. The lookup query is separate because MAX(col) FROM tbl fails to
+ * parse when the table is absent, so existence has to be settled first.
+ */
+const resyncSequence = async (client, tableName, columnName) => {
+  if (!isValidTableName(tableName) || !isValidTableName(columnName)) {
+    throw new Error('Invalid identifier');
+  }
+
+  const { rows } = await client.query(
+    `SELECT pg_get_serial_sequence($1, $2) AS seq WHERE to_regclass($1) IS NOT NULL`,
+    [tableName, columnName],
+  );
+
+  if (rows.length === 0 || !rows[0].seq) {
+    return false;
+  }
+
+  await client.query(
+    `SELECT setval($1::regclass, COALESCE((SELECT MAX(${columnName}) FROM ${tableName}), 1))`,
+    [rows[0].seq],
+  );
+
+  return true;
+};
+
+/**
+ * Realign every seeded catalog sequence.
+ *
+ * Idempotent and cheap, so it runs on every boot rather than at seed time. That
+ * placement is the point: the seeders are skipped once app_initialization says
+ * the tables exist, which is exactly the database whose sequences are stale.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function resyncCatalogSequences(client = pool) {
+  let realigned = 0;
+
+  for (const [tableName, columnName] of SEEDED_CATALOGS) {
+    if (await resyncSequence(client, tableName, columnName)) {
+      realigned += 1;
+    }
+  }
+
+  console.log(
+    pc.green(`Catalog sequences realigned (${realigned}/${SEEDED_CATALOGS.length}).`),
+  );
+}
+
 //--
 //currencies
 export async function tblCurrencies(client = pool) {
@@ -475,13 +547,9 @@ export async function tblBudgetFrequencyTypes(client = pool) {
    console.log(pc.green(`inserted: ${tblName}, ${type.budget_frequency_code}`));
   }
 
-  // Explicit IDs do not advance a SERIAL sequence. Without this the first
-  // insert that omits the ID fails with a duplicate primary key.
-  await client.query(
-   `SELECT setval('budget_frequency_types_budget_frequency_type_id_seq',
-     (SELECT MAX(budget_frequency_type_id) FROM budget_frequency_types))`,
-  );
-
+  // The sequence realign that used to live here now runs for every seeded
+  // catalog in resyncCatalogSequences, on every boot rather than only on the
+  // boot that seeds.
   console.log(pc.yellow('All tuples inserted successfully.'));
  } catch (error) {
   console.error('Error inserting tuples:', error);

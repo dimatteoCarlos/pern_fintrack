@@ -9,6 +9,7 @@ import pc from 'picocolors';
 import { pool } from '../config/configDB.js';
 
 import {
+  resyncCatalogSequences,
   tableExists,
   tblAccountTypes,
   tblBudgetFrequencyTypes,
@@ -162,6 +163,11 @@ export async function initializeDatabase() {
 
     await tblBudgetFrequencyTypes(client);
     await assertBudgetFrequenciesMatchConfig(client);
+
+    // Same reason as the two calls above: it must run outside the first-time
+    // block, because the databases with stale sequences are precisely the ones
+    // that skip it.
+    await resyncCatalogSequences(client);
 
     // Recreate exchange_rates if flag is set
     if (FORCE_RECREATE_EXCHANGE_RATES) {
