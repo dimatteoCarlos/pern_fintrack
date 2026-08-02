@@ -8,13 +8,58 @@ import { getNumberOfPeriods } from '../../../../utils/fintrackUtils/date-utils/g
 
 import { makeBudgetResult } from '../core/makeBudgetResult.js';
 
+// First instant of the calendar month a date falls in, in UTC.
+const monthStart = (date) =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1, 0, 0, 0, 0));
+
+/**
+ * Amount an allocation contributes to a window.
+ *
+ * The allocation is priced only over the slice of the window it was actually in
+ * force for, and always with ITS OWN stored frequency. That frequency answers
+ * "this budget recurs every N months"; the frequency in the request answers
+ * "show me this date range". Using the request's — the previous behaviour —
+ * meant a monthly budget of 10 read through a yearly window reported 10 instead
+ * of 120, because the multiplier came from the window rather than from the
+ * budget.
+ *
+ * Validity boundaries are snapped to the month they fall in, so an allocation
+ * opened on the 15th owns that whole month and the one it replaced stops at the
+ * same boundary. The slices are therefore contiguous and non-overlapping: no
+ * month is billed twice and none is skipped.
+ *
+ * Whole periods only, per getNumberOfPeriods. A quarterly allocation covering
+ * two months of the window contributes 0, not two thirds. Proration is a
+ * product decision that has not been taken; inventing it here would put a
+ * different number on screen than the one the user agreed to.
+ */
+const allocationContribution = (allocation, startDate, endDate) => {
+  const effectiveStart = new Date(
+    Math.max(startDate.getTime(), monthStart(allocation.validFrom).getTime()),
+  );
+  const effectiveEnd = allocation.validUntil
+    ? new Date(Math.min(endDate.getTime(), monthStart(allocation.validUntil).getTime()))
+    : endDate;
+
+  if (effectiveEnd <= effectiveStart) {
+    return 0;
+  }
+
+  const periods = getNumberOfPeriods(
+    allocation.budgetFrequencyCode,
+    effectiveStart,
+    effectiveEnd,
+  );
+
+  return allocation.budgetAmount * periods;
+};
+
 /**
  * Calculate budget vs actual metrics for a given period.
  *
  * @param {Object} params
  * @param {Object} params.budgetPolicy - BudgetPolicy domain object (for context)
- * @param {Object} params.budgetAllocation - BudgetAllocation domain object (must have budgetAmount and budgetFrequencyTypeId)
- * @param {string} params.frequencyCode - Frequency code (e.g. 'monthly', 'quarterly')
+ * @param {Array<Object>} params.budgetAllocations - Allocations overlapping the window, oldest first. Each needs budgetAmount, budgetFrequencyCode, validFrom, validUntil
  * @param {Array<{date: Date, amount: number}>} [params.transactions] - Spending transactions (used if actualSpentOverride not provided)
  * @param {number} [params.actualSpentOverride] - Pre-calculated actual spent (signed, optional for optimization)
  * @param {Date} params.startDate - Period start (inclusive, UTC)
@@ -24,8 +69,7 @@ import { makeBudgetResult } from '../core/makeBudgetResult.js';
  */
 export function calculateBudgetVsActual({
   budgetPolicy,
-  budgetAllocation,
-  frequencyCode,
+  budgetAllocations,
   transactions = [],
   actualSpentOverride = null,
   startDate,
@@ -33,14 +77,22 @@ export function calculateBudgetVsActual({
   currency,
 }) {
   // Validations
-  if (!budgetAllocation || typeof budgetAllocation !== 'object') {
-    throw new Error('budgetVsActualCalculator: budgetAllocation is required');
+  if (!Array.isArray(budgetAllocations) || budgetAllocations.length === 0) {
+    throw new Error('budgetVsActualCalculator: budgetAllocations must be a non-empty array');
   }
-  if (typeof budgetAllocation.budgetAmount !== 'number' || budgetAllocation.budgetAmount <= 0) {
-    throw new Error('budgetVsActualCalculator: budgetAllocation.budgetAmount must be a positive number');
-  }
-  if (!frequencyCode || typeof frequencyCode !== 'string') {
-    throw new Error('budgetVsActualCalculator: frequencyCode is required');
+  for (const allocation of budgetAllocations) {
+    if (!allocation || typeof allocation !== 'object') {
+      throw new Error('budgetVsActualCalculator: each allocation must be an object');
+    }
+    if (typeof allocation.budgetAmount !== 'number' || allocation.budgetAmount <= 0) {
+      throw new Error('budgetVsActualCalculator: allocation budgetAmount must be a positive number');
+    }
+    if (!allocation.budgetFrequencyCode || typeof allocation.budgetFrequencyCode !== 'string') {
+      throw new Error('budgetVsActualCalculator: allocation budgetFrequencyCode is required');
+    }
+    if (!(allocation.validFrom instanceof Date) || isNaN(allocation.validFrom.getTime())) {
+      throw new Error('budgetVsActualCalculator: allocation validFrom must be a valid Date');
+    }
   }
   if (!Array.isArray(transactions)) {
     throw new Error('budgetVsActualCalculator: transactions must be an array');
@@ -59,8 +111,14 @@ export function calculateBudgetVsActual({
   }
 
   // Calculate budgetAccumulatedAmount (positive)
-  const numberOfPeriods = getNumberOfPeriods(frequencyCode, startDate, endDate);
-  const budgetAccumulatedAmount = budgetAllocation.budgetAmount * numberOfPeriods;
+  const budgetAccumulatedAmount = budgetAllocations.reduce(
+    (total, allocation) => total + allocationContribution(allocation, startDate, endDate),
+    0,
+  );
+
+  // The allocation in force at the end of the window. It is what the edit form
+  // and the history link act on, so it is the one reported back.
+  const currentAllocation = budgetAllocations[budgetAllocations.length - 1];
 
   // Calculate actual spent (signed, may be positive or negative)
   let actualSpent;
@@ -85,7 +143,7 @@ export function calculateBudgetVsActual({
     currency,
     period: { start: startDate, end: endDate },
     budgetPolicy: budgetPolicy || null,
-    budgetAllocation,
+    budgetAllocation: currentAllocation,
     budgetAccumulatedAmount,
     actualSpent,
     remainingBudget,
