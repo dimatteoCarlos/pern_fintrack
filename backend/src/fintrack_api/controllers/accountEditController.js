@@ -98,7 +98,7 @@ export const patchAccountById = async (req, res, next) => {
 
         break;
 
-      case 'category_budget':
+      case 'category_budget': {
         if (payload.budget !== undefined)
           specificFields.budget = payload.budget;
         console.log('budget:', payload['budget']);
@@ -109,32 +109,81 @@ export const patchAccountById = async (req, res, next) => {
         if (payload.subcategory !== undefined)
           specificFields.subcategory = payload.subcategory;
 
-        // if (payload.nature_type_name !== undefined) specificFields.nature_type_name = payload.nature_type_name;
+        // account_name is derived, but the payload is partial by design.
+        // Rebuilding it from the payload alone turned a PATCH carrying only
+        // budget into "//undefined", with a 200 response. Merging the payload
+        // over the stored parts keeps the name correct in both directions: it
+        // stays the same when no part changed, and it is recomputed when one
+        // did. It also repairs a name corrupted by an earlier partial edit.
+        const stored = await client.query({
+         text:
+          `SELECT cba.category_name, cba.subcategory, cnt.category_nature_type_name
+          FROM category_budget_accounts cba
+          JOIN category_nature_types cnt
+           ON cnt.category_nature_type_id = cba.category_nature_type_id
+          WHERE cba.account_id = $1`,
 
-        userAccountFields.account_name = `${capitalize(payload.category_name)}/${capitalize(payload.subcategory)}/${payload.category_nature_type_name}`;
+         values: [accountId],
+        });
+
+        if (stored.rows.length === 0) {
+         console.warn(
+          pc['red'](
+           `No category_budget_accounts row for account ${accountId}. Leaving account_name untouched.`,
+          ),
+         );
+         break;
+        }
+
+        const current = stored.rows[0];
+        // The nature is not editable through this controller, so it always
+        // comes from the catalog. Taking it from the payload would rename the
+        // account to a nature the specific table never stored.
+        const categoryName = payload.category_name ?? current.category_name;
+        const subcategory = payload.subcategory ?? current.subcategory;
+
+        userAccountFields.account_name = `${capitalize(categoryName)}/${capitalize(subcategory)}/${current.category_nature_type_name}`;
 
         if (payload.account_name !== userAccountFields.account_name) {
           console.log(`Check the input account name`);
         }
 
-        // console.log('category', payload)
-        // console.log('account', userAccountFields.account_name)
-
         break;
+      }
       //----
-      case 'debtor':
+      case 'debtor': {
         if (payload.debtor_name !== undefined)
           specificFields.debtor_name = payload.debtor_name;
 
         if (payload.debtor_lastname !== undefined)
           specificFields.debtor_lastname = payload.debtor_lastname;
 
-        userAccountFields.account_name = `${capitalize(payload.debtor_lastname.trim())}, ${capitalize(payload.debtor_name.trim())}`;
+        // Same defect as category_budget, with a harder failure: a PATCH
+        // without debtor_lastname raised on .trim() of undefined and returned
+        // 500. The stored parts fill whatever the payload omits.
+        const stored = await client.query({
+         text: `SELECT debtor_name, debtor_lastname FROM debtor_accounts WHERE account_id = $1`,
+         values: [accountId],
+        });
 
-        // console.log('debtor', payload)
-        // console.log('account', userAccountFields.account_name)
+        if (stored.rows.length === 0) {
+         console.warn(
+          pc['red'](
+           `No debtor_accounts row for account ${accountId}. Leaving account_name untouched.`,
+          ),
+         );
+         break;
+        }
+
+        const current = stored.rows[0];
+        const debtorName = payload.debtor_name ?? current.debtor_name;
+        const debtorLastname =
+         payload.debtor_lastname ?? current.debtor_lastname;
+
+        userAccountFields.account_name = `${capitalize((debtorLastname ?? '').trim())}, ${capitalize((debtorName ?? '').trim())}`;
 
         break;
+      }
     }
 
     //-----------------
