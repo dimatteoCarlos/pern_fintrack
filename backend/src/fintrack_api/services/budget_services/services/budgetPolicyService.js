@@ -7,6 +7,7 @@
 // no redundant flag to keep in sync.
 
 import { withTransaction } from '../../../../utils/withTransaction.js';
+import { ALLOWED_FREQUENCIES } from '../core/budgetConfig.js';
 
 const forbidden = (message) =>
  Object.assign(new Error(message), { status: 403 });
@@ -57,12 +58,18 @@ async function updateBudgetAllocation(
  userId,
  budgetPolicyId,
  budgetAmount,
- budgetFrequencyTypeId,
+ budgetFrequencyCode,
 ) {
  // Mirrors CHECK (budget_amount > 0). Validating here turns a constraint
  // violation into a 400 with a usable message instead of a 500.
  if (!Number.isFinite(budgetAmount) || budgetAmount <= 0) {
   throw badRequest('budgetAmount must be a number greater than 0.');
+ }
+
+ // The subquery below resolves an unknown code to NULL, which the NOT NULL
+ // column reports as a 500. Checking here turns it into a 400.
+ if (!ALLOWED_FREQUENCIES.includes(budgetFrequencyCode)) {
+  throw badRequest(`budgetFrequencyCode must be one of: ${ALLOWED_FREQUENCIES.join(', ')}.`);
  }
 
  return withTransaction(pool, async (client) => {
@@ -78,17 +85,22 @@ async function updateBudgetAllocation(
    [budgetPolicyId],
   );
 
+  // The code is resolved in the INSERT itself. A separate lookup would be a
+  // second roundtrip for a value the same transaction is about to use.
   const { rows } = await client.query(
    `INSERT INTO budget_policy_allocations
       (budget_policy_id, budget_amount, budget_frequency_type_id, valid_from)
-    VALUES ($1, $2, $3, NOW())
+    VALUES ($1, $2,
+     (SELECT budget_frequency_type_id FROM budget_frequency_types
+       WHERE budget_frequency_code = $3),
+     NOW())
     RETURNING budget_allocation_id,
      budget_policy_id,
      budget_amount,
      budget_frequency_type_id,
      valid_from,
      valid_until`,
-   [budgetPolicyId, budgetAmount, budgetFrequencyTypeId],
+   [budgetPolicyId, budgetAmount, budgetFrequencyCode],
   );
 
   return {
@@ -96,6 +108,7 @@ async function updateBudgetAllocation(
    budgetPolicyId: rows[0].budget_policy_id,
    budgetAmount: parseFloat(rows[0].budget_amount),
    budgetFrequencyTypeId: rows[0].budget_frequency_type_id,
+   budgetFrequencyCode,
    validFrom: rows[0].valid_from,
    validUntil: rows[0].valid_until,
   };

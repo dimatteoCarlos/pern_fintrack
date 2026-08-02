@@ -85,7 +85,7 @@ export const multiSummaryBodySchema = z.object({
 // Update policy (budget amount / frequency)
 /**
  * PUT /budget/policy/:budgetPolicyId
- * Body: budgetAmount (required), budgetFrequencyTypeId (required)
+ * Body: budgetAmount (required), budgetFrequencyCode (required)
  * Params: budgetPolicyId (positive integer)
  */
 export const updatePolicyParamsSchema = z.object({
@@ -94,13 +94,14 @@ export const updatePolicyParamsSchema = z.object({
  }),
 });
 
+// The code, not the surrogate id: it is self-describing, it is the key into
+// MONTHS_PER_PERIOD, and z.enum rejects an unknown one here instead of letting
+// a foreign-key violation surface as a 500.
 export const updatePolicyBodySchema = z.object({
  budgetAmount: z.number().positive({
   message: 'budgetAmount must be a positive number',
  }),
- budgetFrequencyTypeId: z.coerce.number().positive({
-  message: 'budgetFrequencyTypeId must be a positive number',
- }),
+ budgetFrequencyCode: z.enum(ALLOWED_FREQUENCIES),
 });
 
 // History (versions)
