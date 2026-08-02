@@ -36,19 +36,34 @@ const resolveWindow = (windowFrequencyCode, referenceDate, options) => {
 };
 
 /**
- * Result for an account that has no budget in force during the window.
+ * Result for an account with no budget figure to report for this window.
  *
- * A policy created in March says nothing about January. Reporting March's
- * amount for a January window — what selecting only the active allocation did —
- * invents a budget that never existed. A zero accumulated amount with a null
- * allocation states the truth: nothing was budgeted for this range.
+ * Two different situations land here and the response keeps them apart through
+ * isBudgeted:
  *
- * actualSpent is still reported. Money can be spent on a category with no
- * budget behind it, and hiding that would be a second lie in place of the
- * first. The percentage stays 0 because there is no denominator.
+ * - No policy at all. The account is unbudgeted (PLAN_D §1.2): two states, not
+ *   three, so there is no such thing as a null or zero budget.
+ * - A policy whose allocations all fall outside the window. The account IS
+ *   budgeted; a policy created in March simply says nothing about January.
+ *   Reporting March's amount for a January window — what selecting only the
+ *   active allocation used to do — invents a budget that never existed.
+ *
+ * actualSpent is reported in both cases. Money can be spent on a category with
+ * no budget behind it, and hiding that would replace one lie with another. The
+ * percentage stays 0 because there is no denominator.
  */
-const makeNoBudgetResult = ({ budgetPolicy, currency, actualSpent, startDate, endDate }) =>
+const makeNoBudgetResult = ({
+ accountId,
+ isBudgeted,
+ budgetPolicy,
+ currency,
+ actualSpent,
+ startDate,
+ endDate,
+}) =>
  makeBudgetResult({
+  accountId,
+  isBudgeted,
   currency,
   period: { start: startDate, end: endDate },
   budgetPolicy: budgetPolicy ?? null,
@@ -64,6 +79,21 @@ const makeNoBudgetResult = ({ budgetPolicy, currency, actualSpent, startDate, en
  * Turn one repository entry into a BudgetResult.
  */
 const buildResult = (entry, startDate, endDate) => {
+ const currency = getCurrencyCodeSync(entry.currencyId);
+ const isBudgeted = entry.budgetPolicyId !== null;
+
+ if (!isBudgeted) {
+  return makeNoBudgetResult({
+   accountId: entry.accountId,
+   isBudgeted: false,
+   budgetPolicy: null,
+   currency,
+   actualSpent: entry.actualSpent,
+   startDate,
+   endDate,
+  });
+ }
+
  const budgetPolicy = {
   budgetPolicyId: entry.budgetPolicyId,
   accountId: entry.accountId,
@@ -75,10 +105,10 @@ const buildResult = (entry, startDate, endDate) => {
   updatedAt: null,
  };
 
- const currency = getCurrencyCodeSync(entry.currencyId);
-
  if (entry.allocations.length === 0) {
   return makeNoBudgetResult({
+   accountId: entry.accountId,
+   isBudgeted: true,
    budgetPolicy,
    currency,
    actualSpent: entry.actualSpent,
@@ -88,6 +118,7 @@ const buildResult = (entry, startDate, endDate) => {
  }
 
  return calculateBudgetVsActual({
+  accountId: entry.accountId,
   budgetPolicy,
   budgetAllocations: entry.allocations,
   actualSpentOverride: entry.actualSpent,
@@ -113,8 +144,13 @@ export const budgetCalculationService = {
     );
 
     const entries = await getBudgetDataForAccounts(pool, [accountId], startDate, endDate);
+
+    // An owned category_budget account always produces an entry now, budgeted
+    // or not, so this no longer fires for an account the user simply has not
+    // budgeted. What is left is a genuine inconsistency: an id that passed the
+    // caller's ownership check but has no category_budget_accounts row.
     if (entries.length === 0) {
-      throw new Error(`budgetCalculationService: no budget data found for account ${accountId}`);
+      throw new Error(`budgetCalculationService: no budget account found for id ${accountId}`);
     }
 
     return {

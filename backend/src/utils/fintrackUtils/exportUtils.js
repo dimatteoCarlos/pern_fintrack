@@ -55,10 +55,14 @@ export function convertBudgetResultsToCSV(results, accountNamesMap = new Map()) 
 
  const body = rows.map((r) =>
   [
-   accountNamesMap.get(r.budgetPolicy?.accountId) ?? '',
+   // r.accountId, not r.budgetPolicy.accountId: an unbudgeted account has no
+   // policy, and it is exactly the row whose name must still appear.
+   accountNamesMap.get(r.accountId) ?? '',
    r.budgetPolicy?.subcategory ?? '',
    r.currency ?? '',
-   r.budgetAllocation?.frequency ?? '',
+   // The field is budgetFrequencyCode. `frequency` never existed on the
+   // allocation, so this column shipped empty on every export so far.
+   r.budgetAllocation?.budgetFrequencyCode ?? '',
    formatDate(r.period?.start),
    formatDate(r.period?.end),
    formatAmount(r.budgetAccumulatedAmount),

@@ -58,6 +58,7 @@ const allocationContribution = (allocation, startDate, endDate) => {
  * Calculate budget vs actual metrics for a given period.
  *
  * @param {Object} params
+ * @param {number} [params.accountId] - Account the result belongs to
  * @param {Object} params.budgetPolicy - BudgetPolicy domain object (for context)
  * @param {Array<Object>} params.budgetAllocations - Allocations overlapping the window, oldest first. Each needs budgetAmount, budgetFrequencyCode, validFrom, validUntil
  * @param {Array<{date: Date, amount: number}>} [params.transactions] - Spending transactions (used if actualSpentOverride not provided)
@@ -68,6 +69,7 @@ const allocationContribution = (allocation, startDate, endDate) => {
  * @returns {Object} BudgetResult domain object with all metrics
  */
 export function calculateBudgetVsActual({
+  accountId = null,
   budgetPolicy,
   budgetAllocations,
   transactions = [],
@@ -140,6 +142,8 @@ export function calculateBudgetVsActual({
 
   // Build result using makeBudgetResult
   const result = makeBudgetResult({
+    accountId,
+    isBudgeted: true,
     currency,
     period: { start: startDate, end: endDate },
     budgetPolicy: budgetPolicy || null,

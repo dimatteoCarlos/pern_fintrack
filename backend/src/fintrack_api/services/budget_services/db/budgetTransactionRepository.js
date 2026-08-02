@@ -56,22 +56,32 @@ export async function getTransactionsByAccountAndPeriod(pool, accountId, startDa
   }));
 }
 
-// Policy and currency, one row per budgeted account.
+// Policy and currency, one row per REQUESTED account.
+//
+// The join to budget_policies is LEFT on purpose. Driving the query from the
+// policy table meant an account without one simply vanished from the response,
+// and the caller could not tell "this category has no budget" from "the backend
+// dropped it". budget_policy_id comes back NULL and the service reports the
+// account as unbudgeted.
 //
 // currency_id is COALESCEd across both account tables. It is duplicated:
 // user_accounts.currency_id is NOT NULL and is what the account creation path
 // actually writes, while category_budget_accounts.currency_id is populated
 // since db771a4 and backfilled by migration 011. COALESCE still honours a
 // budget currency that deliberately differs from the account's.
+//
+// The join to category_budget_accounts stays INNER: it is what makes this a
+// budget account at all. An id that survives the caller's ownership check but
+// has no row there is a data inconsistency, not an unbudgeted account.
 const ACCOUNTS_QUERY = `
   SELECT
-    p.account_id,
+    ua.account_id,
     p.budget_policy_id,
     COALESCE(cba.currency_id, ua.currency_id) AS currency_id
-  FROM budget_policies p
-  JOIN category_budget_accounts cba ON cba.account_id = p.account_id
-  JOIN user_accounts ua ON ua.account_id = p.account_id
-  WHERE p.account_id = ANY($1)
+  FROM user_accounts ua
+  JOIN category_budget_accounts cba ON cba.account_id = ua.account_id
+  LEFT JOIN budget_policies p ON p.account_id = ua.account_id
+  WHERE ua.account_id = ANY($1)
 `;
 
 // Every allocation whose validity OVERLAPS the requested window, not just the
@@ -133,17 +143,17 @@ const SPENT_QUERY = `
 /**
  * Budget data for a set of accounts over a window.
  *
- * Returns ONE entry per budgeted account, carrying every allocation that was in
- * force at any point inside the window. The caller prices each allocation over
- * the slice of the window it actually covers; picking a single allocation here
- * would force that decision into the repository, where the window semantics are
- * not known.
+ * Returns ONE entry per requested account, budgeted or not, carrying every
+ * allocation that was in force at any point inside the window. The caller
+ * prices each allocation over the slice of the window it actually covers;
+ * picking a single allocation here would force that decision into the
+ * repository, where the window semantics are not known.
  *
  * @param {object} pool - Database pool
  * @param {number[]} accountIds - Accounts to read
  * @param {Date} startDate - Window start (inclusive, UTC)
  * @param {Date} endDate - Window end (exclusive, UTC)
- * @returns {Promise<Array<object>>} one entry per budgeted account
+ * @returns {Promise<Array<object>>} one entry per requested account
  */
 export async function getBudgetDataForAccounts(pool, accountIds, startDate, endDate) {
   if (!accountIds || accountIds.length === 0) {

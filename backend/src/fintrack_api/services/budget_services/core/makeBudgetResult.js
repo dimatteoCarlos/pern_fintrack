@@ -2,11 +2,13 @@
 // 📝 CHANGE: Renamed budgetedAmount → budgetAccumulatedAmount
 
 export function makeBudgetResult({
+  accountId = null,
+  isBudgeted = true,
   currency,
   period,
   budgetPolicy = null,
   budgetAllocation = null,
-  budgetAccumulatedAmount, 
+  budgetAccumulatedAmount,
   actualSpent,
   remainingBudget,
   actualVsBudgetDifference,
@@ -54,6 +56,16 @@ export function makeBudgetResult({
   }
 
   const budgetResult = Object.freeze({
+    // The caller asked about a set of accounts and gets a set of results back.
+    // Without this field the only way to tell them apart was budgetPolicy
+    // .accountId, which is null precisely for the accounts that need
+    // identifying: the ones with no policy.
+    accountId,
+    // Whether a budget_policies row exists for the account. It is not "the
+    // accumulated amount is 0": a budgeted account queried over a window that
+    // precedes its policy also accumulates 0, and the screen must not label it
+    // the same way.
+    isBudgeted,
     currency,
     period: {
       start: period.start,

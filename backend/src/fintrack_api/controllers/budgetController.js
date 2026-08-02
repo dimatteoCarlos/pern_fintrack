@@ -217,7 +217,12 @@ export async function exportCSV(req, res, next) {
     date || new Date(),
     { startDate, endDate }
    );
-   results = multiResults;
+
+   // multi-summary now returns unbudgeted accounts too, so the screen can show
+   // them as such. A CSV has no room for that distinction: the row would be a
+   // line of zeros indistinguishable from a budget that was never spent.
+   // Exporting only budgeted accounts keeps the file meaning what it did.
+   results = multiResults.filter((r) => r.isBudgeted);
   }
 
   const dateStr = new Date().toISOString().split('T')[0];
