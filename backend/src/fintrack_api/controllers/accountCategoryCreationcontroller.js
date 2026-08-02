@@ -16,6 +16,11 @@ import { prepareTransactionOption } from '../../utils/fintrackUtils/transactionM
 import { buildFxMetadata } from '../../utils/fintrackUtils/transactionManagement/fxMetadataHelper.js';
 import { getCurrencyId } from '../../utils/currencyLookup.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
+import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
+import {
+  ALLOWED_FREQUENCIES,
+  DEFAULT_FREQUENCY,
+} from '../services/budget_services/core/budgetConfig.js';
 
 //-----------------
 //endpoint: POST: http://localhost:5000/api/fintrack/account/new_account/category_budget?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c
@@ -53,6 +58,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       subcategory: subcategory_raw,
       name: category_name_raw,
       budget,
+      budgetFrequencyCode,
       sourceAccountId,
     } = req.body;
 
@@ -78,6 +84,19 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
 
     if (!Number.isFinite(category_nature_budget) || category_nature_budget <= 0) {
       const message = 'Budget amount is required and must be greater than 0.';
+      console.warn(pc.redBright(message));
+      return res.status(400).json({ status: 400, message });
+    }
+
+    // The creation form does not offer a frequency selector yet, so monthly is
+    // the default. Validated here rather than in the service because this
+    // controller's catch runs handlePostgresError, which ignores error.status
+    // and would turn a 400 into a 500.
+    const budget_frequency_code =
+      budgetFrequencyCode?.trim().toLowerCase() || DEFAULT_FREQUENCY;
+
+    if (!ALLOWED_FREQUENCIES.includes(budget_frequency_code)) {
+      const message = `budgetFrequencyCode must be one of: ${ALLOWED_FREQUENCIES.join(', ')}.`;
       console.warn(pc.redBright(message));
       return res.status(400).json({ status: 400, message });
     }
@@ -236,6 +255,18 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       currency_code,
     };
     //--------------------
+    // The row above is the account, not the budget. Every read path resolves the
+    // amount from budget_policy_allocations, so an account created without a
+    // policy came back as unbudgeted no matter what the user typed. The legacy
+    // cba.budget column keeps its value and its writer: this is additive.
+    const budget_policy = await budgetPolicyService.createBudgetPolicyForAccount(
+      client,
+      account_id,
+      category_nature_budget,
+      budget_frequency_code,
+      account_start_date ?? transaction_actual_date,
+    );
+    //--------------------
     //DETERMINE THE TRANSACTION TYPE FOR NEW CATEGORY_BUDGET ACCOUNT AND FOR COUNTER ACCOUNT (SLACK)
     const transactionTypeDescriptionObj = determineTransactionType(
       transactionAmount,
@@ -393,6 +424,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
           currency_code,
         },
         new_category_budget_account: category_budget_account,
+        budget_policy,
 
         new_account_data: {
           account_name: newAccountInfo.account_name,

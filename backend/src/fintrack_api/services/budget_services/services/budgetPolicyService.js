@@ -16,6 +16,23 @@ const badRequest = (message) =>
  Object.assign(new Error(message), { status: 400 });
 
 /**
+ * Reject an allocation the database would reject anyway, with a usable message.
+ *
+ * budget_amount mirrors CHECK (budget_amount > 0). The frequency code is
+ * resolved by a subquery that yields NULL for an unknown code, which the NOT
+ * NULL column reports as a 500; checking here makes both a 400.
+ */
+const assertAllocationInput = (budgetAmount, budgetFrequencyCode) => {
+ if (!Number.isFinite(budgetAmount) || budgetAmount <= 0) {
+  throw badRequest('budgetAmount must be a number greater than 0.');
+ }
+
+ if (!ALLOWED_FREQUENCIES.includes(budgetFrequencyCode)) {
+  throw badRequest(`budgetFrequencyCode must be one of: ${ALLOWED_FREQUENCIES.join(', ')}.`);
+ }
+};
+
+/**
  * Resolve a policy the caller owns, locking it for the rest of the transaction.
  *
  * Ownership is proven by joining through to user_accounts.user_id rather than
@@ -60,17 +77,7 @@ async function updateBudgetAllocation(
  budgetAmount,
  budgetFrequencyCode,
 ) {
- // Mirrors CHECK (budget_amount > 0). Validating here turns a constraint
- // violation into a 400 with a usable message instead of a 500.
- if (!Number.isFinite(budgetAmount) || budgetAmount <= 0) {
-  throw badRequest('budgetAmount must be a number greater than 0.');
- }
-
- // The subquery below resolves an unknown code to NULL, which the NOT NULL
- // column reports as a 500. Checking here turns it into a 400.
- if (!ALLOWED_FREQUENCIES.includes(budgetFrequencyCode)) {
-  throw badRequest(`budgetFrequencyCode must be one of: ${ALLOWED_FREQUENCIES.join(', ')}.`);
- }
+ assertAllocationInput(budgetAmount, budgetFrequencyCode);
 
  return withTransaction(pool, async (client) => {
   await lockOwnedPolicy(client, userId, budgetPolicyId);
@@ -113,6 +120,61 @@ async function updateBudgetAllocation(
    validUntil: rows[0].valid_until,
   };
  });
+}
+
+/**
+ * Open a policy and its first allocation for a newly created budget account.
+ *
+ * Takes a client, not a pool: account creation already owns a transaction, and
+ * a policy committed on its own connection would outlive a rollback of the very
+ * account it belongs to.
+ *
+ * validFrom is the account start date, not NOW(). The amount comes into force
+ * when the account does; a backdated account would otherwise report zero budget
+ * for the months between its start and its creation.
+ *
+ * @returns {Promise<object>} the policy and allocation just created.
+ */
+async function createBudgetPolicyForAccount(
+ client,
+ accountId,
+ budgetAmount,
+ budgetFrequencyCode,
+ validFrom,
+) {
+ assertAllocationInput(budgetAmount, budgetFrequencyCode);
+
+ const { rows: policyRows } = await client.query(
+  `INSERT INTO budget_policies (account_id)
+     VALUES ($1)
+  RETURNING budget_policy_id`,
+  [accountId],
+ );
+
+ const budgetPolicyId = policyRows[0].budget_policy_id;
+
+ const { rows } = await client.query(
+  `INSERT INTO budget_policy_allocations
+     (budget_policy_id, budget_amount, budget_frequency_type_id, valid_from)
+   VALUES ($1, $2,
+    (SELECT budget_frequency_type_id FROM budget_frequency_types
+      WHERE budget_frequency_code = $3),
+    $4)
+   RETURNING budget_allocation_id,
+    budget_amount,
+    budget_frequency_type_id,
+    valid_from`,
+  [budgetPolicyId, budgetAmount, budgetFrequencyCode, validFrom],
+ );
+
+ return {
+  budgetPolicyId,
+  budgetAllocationId: rows[0].budget_allocation_id,
+  budgetAmount: parseFloat(rows[0].budget_amount),
+  budgetFrequencyTypeId: rows[0].budget_frequency_type_id,
+  budgetFrequencyCode,
+  validFrom: rows[0].valid_from,
+ };
 }
 
 /**
@@ -184,6 +246,7 @@ async function getFrequencyCatalog(pool) {
 }
 
 export const budgetPolicyService = {
+ createBudgetPolicyForAccount,
  updateBudgetAllocation,
  getBudgetAllocationHistory,
  getFrequencyCatalog,
