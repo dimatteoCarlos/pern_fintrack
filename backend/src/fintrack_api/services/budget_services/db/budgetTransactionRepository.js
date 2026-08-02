@@ -6,6 +6,12 @@
 // movement_type_id = 6 (transfer from category_budget) has negative amount.
 // The SUM with CASE handles the sign correctly.
 // No join to user_accounts is needed because only filter by account_id.
+//
+// Amounts are parsed from the NUMERIC string pg returns, never through
+// parseFloat first: that would degrade the value to a float before the exact
+// arithmetic begins. The public shape stays number.
+
+import { toAmount } from '../core/money.js';
 
 /**
  * Get total net spent for a single account in a period.
@@ -29,7 +35,7 @@ export async function getTotalSpentByAccountAndPeriod(pool, accountId, startDate
       AND movement_type_id IN (1, 6)
   `;
   const result = await pool.query(query, [accountId, startDate, endDate]);
-  return parseFloat(result.rows[0].actual_spent) || 0;
+  return toAmount(result.rows[0].actual_spent ?? 0);
 }
 
 /**
@@ -52,7 +58,7 @@ export async function getTransactionsByAccountAndPeriod(pool, accountId, startDa
   const result = await pool.query(query, [accountId, startDate, endDate]);
   return result.rows.map(row => ({
     date: row.date,
-    amount: parseFloat(row.amount) || 0,
+    amount: toAmount(row.amount ?? 0),
   }));
 }
 
@@ -168,7 +174,7 @@ export async function getBudgetDataForAccounts(pool, accountIds, startDate, endD
   ]);
 
   const spentByAccount = new Map(
-    spent.rows.map((row) => [row.account_id, parseFloat(row.actual_spent) || 0]),
+    spent.rows.map((row) => [row.account_id, toAmount(row.actual_spent ?? 0)]),
   );
 
   const allocationsByAccount = new Map();
@@ -177,7 +183,7 @@ export async function getBudgetDataForAccounts(pool, accountIds, startDate, endD
     list.push({
       budgetAllocationId: row.budget_allocation_id,
       budgetPolicyId: row.budget_policy_id,
-      budgetAmount: parseFloat(row.budget_amount) || 0,
+      budgetAmount: toAmount(row.budget_amount),
       budgetFrequencyTypeId: row.budget_frequency_type_id,
       budgetFrequencyCode: row.budget_frequency_code,
       validFrom: row.valid_from,

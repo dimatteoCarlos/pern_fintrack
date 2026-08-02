@@ -16,6 +16,7 @@ import { normalizeDatesToMonths } from '../../../../utils/fintrackUtils/date-uti
 import { getBudgetDataForAccounts } from '../db/budgetTransactionRepository.js';
 import { calculateBudgetVsActual } from '../calculators/budgetVsActualCalculator.js';
 import { makeBudgetResult } from '../core/makeBudgetResult.js';
+import { money, toAmount, toRate } from '../core/money.js';
 import { getCurrencyCodeSync } from '../../../../utils/currencyLookup.js';
 
 /**
@@ -79,8 +80,8 @@ const makeNoBudgetResult = ({
   budgetAllocation: null,
   budgetAccumulatedAmount: 0,
   actualSpent,
-  remainingBudget: -actualSpent,
-  actualVsBudgetDifference: -actualSpent,
+  remainingBudget: money(actualSpent).negated(),
+  actualVsBudgetDifference: money(actualSpent).negated(),
   executionPercentage: 0,
  });
 
@@ -155,16 +156,20 @@ const buildResult = (entry, startDate, endDate) => {
  * behind it. budgetedCount lets the caller qualify the figure without
  * recounting.
  */
+// The line values are already rounded by makeBudgetResult, and the totals are
+// summed FROM them: the figure on screen must reconcile with the figures above
+// it. Summing the unrounded values instead would let three displayed numbers
+// contradict each other by a cent.
 const makeTotals = (results) => {
  const totals = results.reduce(
   (acc, r) => ({
-   budgetAccumulatedAmount: acc.budgetAccumulatedAmount + r.budgetAccumulatedAmount,
-   actualSpent: acc.actualSpent + r.actualSpent,
+   budgetAccumulatedAmount: acc.budgetAccumulatedAmount.plus(r.budgetAccumulatedAmount),
+   actualSpent: acc.actualSpent.plus(r.actualSpent),
   }),
-  { budgetAccumulatedAmount: 0, actualSpent: 0 },
+  { budgetAccumulatedAmount: money(0), actualSpent: money(0) },
  );
 
- const difference = totals.budgetAccumulatedAmount - totals.actualSpent;
+ const difference = totals.budgetAccumulatedAmount.minus(totals.actualSpent);
 
  // Currencies are NOT converted here. Budget-level FX is a schema change, not
  // an aggregate, and inventing a rate at report time would produce a number no
@@ -175,14 +180,13 @@ const makeTotals = (results) => {
   currency: currencies.size === 1 ? [...currencies][0] : null,
   accountCount: results.length,
   budgetedCount: results.filter((r) => r.isBudgeted).length,
-  budgetAccumulatedAmount: totals.budgetAccumulatedAmount,
-  actualSpent: totals.actualSpent,
-  remainingBudget: difference,
-  actualVsBudgetDifference: difference,
-  executionPercentage:
-   totals.budgetAccumulatedAmount !== 0
-    ? (totals.actualSpent / totals.budgetAccumulatedAmount) * 100
-    : 0,
+  budgetAccumulatedAmount: toAmount(totals.budgetAccumulatedAmount),
+  actualSpent: toAmount(totals.actualSpent),
+  remainingBudget: toAmount(difference),
+  actualVsBudgetDifference: toAmount(difference),
+  executionPercentage: totals.budgetAccumulatedAmount.isZero()
+   ? 0
+   : toRate(totals.actualSpent.dividedBy(totals.budgetAccumulatedAmount).times(100)),
  };
 };
 

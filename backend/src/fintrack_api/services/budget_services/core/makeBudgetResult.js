@@ -1,6 +1,12 @@
 // src/fintrack_api/services/budget_services/core/makeBudgetResult.js
 // 📝 CHANGE: Renamed budgetedAmount → budgetAccumulatedAmount
 
+// The single rounding point of the module. Every result passes through here,
+// including the no-budget ones, so rounding in the calculator instead would
+// leave those unrounded.
+
+import { isFiniteMoney, toAmount, toRate } from './money.js';
+
 export function makeBudgetResult({
   accountId = null,
   isBudgeted = true,
@@ -38,21 +44,22 @@ export function makeBudgetResult({
     throw new Error('BudgetResult: budgetAllocation must be an object or null');
   }
 
-  // Validate numeric metrics
-  if (budgetAccumulatedAmount === undefined || budgetAccumulatedAmount === null || typeof budgetAccumulatedAmount !== 'number') {
-    throw new Error('BudgetResult: budgetAccumulatedAmount must be a number');
+  // Validate numeric metrics. isFiniteMoney, not typeof 'number': the
+  // calculator hands over Decimals so no lossy conversion happens on the way in.
+  if (!isFiniteMoney(budgetAccumulatedAmount)) {
+    throw new Error('BudgetResult: budgetAccumulatedAmount must be a finite amount');
   }
-  if (actualSpent === undefined || actualSpent === null || typeof actualSpent !== 'number') {
-    throw new Error('BudgetResult: actualSpent must be a number');
+  if (!isFiniteMoney(actualSpent)) {
+    throw new Error('BudgetResult: actualSpent must be a finite amount');
   }
-  if (remainingBudget === undefined || remainingBudget === null || typeof remainingBudget !== 'number') {
-    throw new Error('BudgetResult: remainingBudget must be a number');
+  if (!isFiniteMoney(remainingBudget)) {
+    throw new Error('BudgetResult: remainingBudget must be a finite amount');
   }
-  if (actualVsBudgetDifference === undefined || actualVsBudgetDifference === null || typeof actualVsBudgetDifference !== 'number') {
-    throw new Error('BudgetResult: actualVsBudgetDifference must be a number');
+  if (!isFiniteMoney(actualVsBudgetDifference)) {
+    throw new Error('BudgetResult: actualVsBudgetDifference must be a finite amount');
   }
-  if (executionPercentage === undefined || executionPercentage === null || typeof executionPercentage !== 'number') {
-    throw new Error('BudgetResult: executionPercentage must be a number');
+  if (!isFiniteMoney(executionPercentage)) {
+    throw new Error('BudgetResult: executionPercentage must be a finite amount');
   }
 
   const budgetResult = Object.freeze({
@@ -73,11 +80,13 @@ export function makeBudgetResult({
     },
     budgetPolicy,
     budgetAllocation,
-    budgetAccumulatedAmount,  // ← Renombrado
-    actualSpent,
-    remainingBudget,
-    actualVsBudgetDifference,
-    executionPercentage,
+    budgetAccumulatedAmount: toAmount(budgetAccumulatedAmount),  // ← Renombrado
+    actualSpent: toAmount(actualSpent),
+    remainingBudget: toAmount(remainingBudget),
+    actualVsBudgetDifference: toAmount(actualVsBudgetDifference),
+    // A ratio, not money: rounded so the response and the CSV agree, never
+    // summed anywhere.
+    executionPercentage: toRate(executionPercentage),
   });
 
   return budgetResult;

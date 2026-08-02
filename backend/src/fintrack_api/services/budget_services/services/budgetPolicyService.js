@@ -8,6 +8,13 @@
 
 import { withTransaction } from '../../../../utils/withTransaction.js';
 import { ALLOWED_FREQUENCIES, DEFAULT_FREQUENCY } from '../core/budgetConfig.js';
+import {
+ MINIMUM_AMOUNT,
+ isFiniteMoney,
+ isWithinAmountRange,
+ money,
+ toAmount,
+} from '../core/money.js';
 
 const forbidden = (message) =>
  Object.assign(new Error(message), { status: 403 });
@@ -16,20 +23,50 @@ const badRequest = (message) =>
  Object.assign(new Error(message), { status: 400 });
 
 /**
- * Reject an allocation the database would reject anyway, with a usable message.
+ * Validate an allocation and return the amount in its storable form.
+ *
+ * This is the entry boundary of ROUNDING-POLICY.md: the single choke point for
+ * the three write paths, so nothing below it ever sees an unnormalized amount.
  *
  * budget_amount mirrors CHECK (budget_amount > 0). The frequency code is
  * resolved by a subquery that yields NULL for an unknown code, which the NOT
  * NULL column reports as a 500; checking here makes both a 400.
+ *
+ * @returns {number} the amount rounded to the scale of the column.
  */
-const assertAllocationInput = (budgetAmount, budgetFrequencyCode) => {
- if (!Number.isFinite(budgetAmount) || budgetAmount <= 0) {
+const normalizeAllocationInput = (budgetAmount, budgetFrequencyCode) => {
+ if (!isFiniteMoney(budgetAmount)) {
   throw badRequest('budgetAmount must be a number greater than 0.');
+ }
+
+ // Magnitude cannot be normalized, only truncated, so it is rejected (P5).
+ if (!isWithinAmountRange(budgetAmount)) {
+  throw badRequest('budgetAmount exceeds the maximum storable amount.');
+ }
+
+ // Extra decimals are over-specified, not invalid: the form typed no digit
+ // limit. Rounding once here is what lets the no-op guard below compare
+ // exactly, instead of leaving Postgres to round in the cast.
+ const normalizedAmount = toAmount(budgetAmount);
+
+ // Checked after normalizing: 0.004 is positive but stores as 0.00, which the
+ // CHECK constraint would surface as a 500 instead of a message.
+ if (normalizedAmount <= 0) {
+  // Two different mistakes, and "greater than 0" only describes one of them.
+  // A sub-cent amount is positive on screen, so naming the minimum is the only
+  // way the caller learns what to correct.
+  throw badRequest(
+   money(budgetAmount).greaterThan(0)
+    ? `budgetAmount must be at least ${MINIMUM_AMOUNT} in the account currency.`
+    : 'budgetAmount must be a number greater than 0.',
+  );
  }
 
  if (!ALLOWED_FREQUENCIES.includes(budgetFrequencyCode)) {
   throw badRequest(`budgetFrequencyCode must be one of: ${ALLOWED_FREQUENCIES.join(', ')}.`);
  }
+
+ return normalizedAmount;
 };
 
 /**
@@ -107,7 +144,7 @@ const replaceActiveAllocation = async (
  return {
   budgetAllocationId: rows[0].budget_allocation_id,
   budgetPolicyId: rows[0].budget_policy_id,
-  budgetAmount: parseFloat(rows[0].budget_amount),
+  budgetAmount: toAmount(rows[0].budget_amount),
   budgetFrequencyTypeId: rows[0].budget_frequency_type_id,
   budgetFrequencyCode,
   validFrom: rows[0].valid_from,
@@ -130,12 +167,12 @@ async function updateBudgetAllocation(
  budgetAmount,
  budgetFrequencyCode,
 ) {
- assertAllocationInput(budgetAmount, budgetFrequencyCode);
+ const normalizedAmount = normalizeAllocationInput(budgetAmount, budgetFrequencyCode);
 
  return withTransaction(pool, async (client) => {
   await lockOwnedPolicy(client, userId, budgetPolicyId);
 
-  return replaceActiveAllocation(client, budgetPolicyId, budgetAmount, budgetFrequencyCode);
+  return replaceActiveAllocation(client, budgetPolicyId, normalizedAmount, budgetFrequencyCode);
  });
 }
 
@@ -159,7 +196,9 @@ async function createBudgetPolicyForAccount(
  budgetFrequencyCode,
  validFrom,
 ) {
- assertAllocationInput(budgetAmount, budgetFrequencyCode);
+ // Normalizing again when applyAllocationForAccount routes here is harmless:
+ // rounding an already-rounded amount is idempotent.
+ const normalizedAmount = normalizeAllocationInput(budgetAmount, budgetFrequencyCode);
 
  const { rows: policyRows } = await client.query(
   `INSERT INTO budget_policies (account_id)
@@ -181,13 +220,13 @@ async function createBudgetPolicyForAccount(
     budget_amount,
     budget_frequency_type_id,
     valid_from`,
-  [budgetPolicyId, budgetAmount, budgetFrequencyCode, validFrom],
+  [budgetPolicyId, normalizedAmount, budgetFrequencyCode, validFrom],
  );
 
  return {
   budgetPolicyId,
   budgetAllocationId: rows[0].budget_allocation_id,
-  budgetAmount: parseFloat(rows[0].budget_amount),
+  budgetAmount: toAmount(rows[0].budget_amount),
   budgetFrequencyTypeId: rows[0].budget_frequency_type_id,
   budgetFrequencyCode,
   validFrom: rows[0].valid_from,
@@ -251,27 +290,30 @@ async function applyAllocationForAccount(
  const targetCode =
   budgetFrequencyCode ?? current.budget_frequency_code ?? DEFAULT_FREQUENCY;
 
- assertAllocationInput(budgetAmount, targetCode);
+ const normalizedAmount = normalizeAllocationInput(budgetAmount, targetCode);
 
  if (!current.budget_policy_id) {
   return createBudgetPolicyForAccount(
    client,
    accountId,
-   budgetAmount,
+   normalizedAmount,
    targetCode,
    current.account_start_date,
   );
  }
 
+ // Both sides are already at the column's scale, so this compares exactly and
+ // rounds nothing: the incoming amount was normalized on entry, and the stored
+ // one is read through toAmount rather than parseFloat.
  if (
   current.budget_allocation_id
-  && Number(current.budget_amount) === budgetAmount
+  && toAmount(current.budget_amount) === normalizedAmount
   && current.budget_frequency_code === targetCode
  ) {
   return null;
  }
 
- return replaceActiveAllocation(client, current.budget_policy_id, budgetAmount, targetCode);
+ return replaceActiveAllocation(client, current.budget_policy_id, normalizedAmount, targetCode);
 }
 
 /**
@@ -308,7 +350,7 @@ async function getBudgetAllocationHistory(pool, userId, budgetPolicyId) {
  return rows.map((row) => ({
   budgetAllocationId: row.budget_allocation_id,
   budgetPolicyId: row.budget_policy_id,
-  budgetAmount: parseFloat(row.budget_amount),
+  budgetAmount: toAmount(row.budget_amount),
   budgetFrequencyTypeId: row.budget_frequency_type_id,
   budgetFrequencyCode: row.budget_frequency_code,
   validFrom: row.valid_from,

@@ -7,6 +7,7 @@
 import { getNumberOfPeriods } from '../../../../utils/fintrackUtils/date-utils/getNumberOfPeriods.js';
 
 import { makeBudgetResult } from '../core/makeBudgetResult.js';
+import { money } from '../core/money.js';
 
 // First instant of the calendar month a date falls in, in UTC.
 const monthStart = (date) =>
@@ -42,7 +43,7 @@ const allocationContribution = (allocation, startDate, endDate) => {
     : endDate;
 
   if (effectiveEnd <= effectiveStart) {
-    return 0;
+    return money(0);
   }
 
   const periods = getNumberOfPeriods(
@@ -51,7 +52,9 @@ const allocationContribution = (allocation, startDate, endDate) => {
     effectiveEnd,
   );
 
-  return allocation.budgetAmount * periods;
+  // A Decimal, not a number: contributions are summed and the sum is divided,
+  // so rounding here would round once per allocation instead of once per result.
+  return money(allocation.budgetAmount).times(periods);
 };
 
 /**
@@ -114,8 +117,8 @@ export function calculateBudgetVsActual({
 
   // Calculate budgetAccumulatedAmount (positive)
   const budgetAccumulatedAmount = budgetAllocations.reduce(
-    (total, allocation) => total + allocationContribution(allocation, startDate, endDate),
-    0,
+    (total, allocation) => total.plus(allocationContribution(allocation, startDate, endDate)),
+    money(0),
   );
 
   // The allocation in force at the end of the window. It is what the edit form
@@ -125,19 +128,20 @@ export function calculateBudgetVsActual({
   // Calculate actual spent (signed, may be positive or negative)
   let actualSpent;
   if (actualSpentOverride !== null && actualSpentOverride !== undefined) {
-    actualSpent = actualSpentOverride; // Already signed from DB
+    actualSpent = money(actualSpentOverride); // Already signed from DB
   } else {
     // Sum signed amounts (positive for expenses, negative for reversals)
-    actualSpent = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    actualSpent = transactions.reduce((sum, t) => sum.plus(money(t.amount || 0)), money(0));
   }
 
-  // Derived metrics
-  const remainingBudget = budgetAccumulatedAmount - actualSpent;
-  const actualVsBudgetDifference = budgetAccumulatedAmount - actualSpent;
-  let executionPercentage = 0;
+  // Derived metrics. C-b7: the two difference fields are one metric under two
+  // names; remainingBudget goes once the frontend stops reading it.
+  const actualVsBudgetDifference = budgetAccumulatedAmount.minus(actualSpent);
+  const remainingBudget = actualVsBudgetDifference;
+  let executionPercentage = money(0);
 
-  if (budgetAccumulatedAmount !== 0) {
-    executionPercentage = (actualSpent / budgetAccumulatedAmount) * 100;
+  if (!budgetAccumulatedAmount.isZero()) {
+    executionPercentage = actualSpent.dividedBy(budgetAccumulatedAmount).times(100);
   }
 
   // Build result using makeBudgetResult
