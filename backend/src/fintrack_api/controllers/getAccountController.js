@@ -22,6 +22,22 @@ const RESPONSE = (res, status, message, data = null) => {
 };
 //------
 // 🧮 CATEGORY BUDGET METRICS CALCULATOR
+//
+// DEPRECATED — legacy budget calculation, scheduled for removal (Plan C, C8).
+// Do not extend it and do not add callers.
+//
+// It answers a different question from the budget module, not the same one less
+// precisely:
+//  - budgetAccount is cba.budget, the legacy column. The budget endpoints price
+//    from budget_policy_allocations, which carry a frequency and a validity
+//    range, so the two disagree for anything but an unedited monthly budget.
+//  - balanceAccount is the account balance, with no period. remainingBudget in
+//    the new system is the accumulated budget minus what was spent inside the
+//    requested window.
+//  - Math.round drops the cents that the DECIMAL(15,2) column stores.
+//
+// Replacement: GET /api/fintrack/budget/summary, which returns remainingBudget
+// and executionPercentage for an explicit period.
 const calculateBudgetMetrics = (balanceAccount, budgetAccount) => {
   const remain = Math.round(
     parseFloat(budgetAccount) - parseFloat(balanceAccount),
