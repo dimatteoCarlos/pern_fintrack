@@ -245,9 +245,9 @@ export async function createTables(client = pool) {
     // 3. Do migration of FX columns (idempotent) / Ejecutar la migración de columnas FX (idempotente)
     await addFxAuditColumns(client);
 
-    // 4. Budget domain tables. After the array because they depend on
-    // category_budget_accounts, which the array creates.
-    await ensureBudgetTables(client);
+    // Budget domain tables are NOT created here. createTables() only runs on a
+    // virgin database, so an already-initialized one would never get them.
+    // initializeDatabase() calls ensureBudgetTables() on every boot instead.
 
     console.log('🔥  All FX migrations completed / finalizado');
   } catch (error) {

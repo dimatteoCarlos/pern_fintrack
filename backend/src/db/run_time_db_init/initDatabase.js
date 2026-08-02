@@ -25,6 +25,7 @@ import {
   mainTables,
   createTables,
   addFxAuditColumns,
+  ensureBudgetTables,
   recreateExchangeRatesTable,
 } from './createTables.js';
 
@@ -142,12 +143,18 @@ export async function initializeDatabase() {
     await addFxAuditColumns(client);
 
     // =======================================
-    // Budget catalog (idempotent, runs on every boot)
+    // Budget domain (idempotent, runs on every boot)
     // =======================================
-    // Placed here rather than with the other seeders above, because those run
-    // before createTables() and each creates its own table. This one depends
-    // on ensureBudgetTables() having already run, and on an existing database
-    // the tables come from migration 010 instead. Both paths reach this point.
+    // Must run outside the initialization block above. That block is skipped
+    // whenever app_initialization.tables_created is TRUE, which is the case on
+    // every database that already existed before the budget module — production
+    // included. Leaving this inside createTables() meant the tables were only
+    // ever created on a virgin database, and the seeder below then aborted the
+    // boot with "budget_frequency_types does not exist".
+    // Pure CREATE ... IF NOT EXISTS, so it is safe on every boot, exactly like
+    // addFxAuditColumns above.
+    await ensureBudgetTables(client);
+
     await tblBudgetFrequencyTypes(client);
     await assertBudgetFrequenciesMatchConfig(client);
 
