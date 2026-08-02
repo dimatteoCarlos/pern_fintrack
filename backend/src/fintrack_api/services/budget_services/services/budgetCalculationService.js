@@ -24,15 +24,24 @@ import { getCurrencyCodeSync } from '../../../../utils/currencyLookup.js';
  * Explicit dates win and are snapped to calendar months; otherwise the window
  * is the calendar period the reference date falls in, sized by the requested
  * frequency.
+ *
+ * Notices are a list, and `meta` is always an object. A singular `notice` field
+ * can only carry the first thing worth saying, so anything after it is dropped
+ * silently. The caller reads meta.notices and iterates: no null check, and no
+ * shape change the day a second notice appears.
  */
 const resolveWindow = (windowFrequencyCode, referenceDate, options) => {
  if (options.startDate && options.endDate) {
   const normalized = normalizeDatesToMonths(options.startDate, options.endDate);
-  return { startDate: normalized.start, endDate: normalized.end, notice: normalized.notice };
+  return {
+   startDate: normalized.start,
+   endDate: normalized.end,
+   notices: normalized.notice ? [normalized.notice] : [],
+  };
  }
 
  const period = resolvePeriod(windowFrequencyCode, referenceDate);
- return { startDate: period.start, endDate: period.end, notice: null };
+ return { startDate: period.start, endDate: period.end, notices: [] };
 };
 
 /**
@@ -137,7 +146,7 @@ export const budgetCalculationService = {
   * Get budget summary for a single account.
   */
   async getSummary(pool, accountId, windowFrequencyCode, referenceDate, options = {}) {
-    const { startDate, endDate, notice } = resolveWindow(
+    const { startDate, endDate, notices } = resolveWindow(
       windowFrequencyCode,
       referenceDate,
       options,
@@ -155,7 +164,7 @@ export const budgetCalculationService = {
 
     return {
       result: buildResult(entries[0], startDate, endDate),
-      meta: notice ? { notice } : null,
+      meta: { notices },
     };
   },
 
@@ -164,10 +173,10 @@ export const budgetCalculationService = {
    */
   async getMultiSummary(pool, accountIds, windowFrequencyCode, referenceDate, options = {}) {
     if (!accountIds || accountIds.length === 0) {
-      return { results: [], meta: null };
+      return { results: [], meta: { notices: [] } };
     }
 
-    const { startDate, endDate, notice } = resolveWindow(
+    const { startDate, endDate, notices } = resolveWindow(
       windowFrequencyCode,
       referenceDate,
       options,
@@ -177,7 +186,7 @@ export const budgetCalculationService = {
 
     return {
       results: entries.map((entry) => buildResult(entry, startDate, endDate)),
-      meta: notice ? { notice } : null,
+      meta: { notices },
     };
   },
 };
