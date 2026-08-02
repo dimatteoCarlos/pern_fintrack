@@ -60,9 +60,8 @@ export const dashboardTotalBalanceAccounts = async (req, res, next) => {
     if (accountTotalBalanceResult.rows.length === 0) {
       const message = `No available accounts for this user`;
       console.warn(pc[errorColor](message));
-      // return RESPONSE(res, 400, message);
-      // ERR_RESP(400, message, controllerName);
-      RESPONSE(res, 404, message);
+      // Without the return, the 200 below raised ERR_HTTP_HEADERS_SENT.
+      return RESPONSE(res, 404, message);
     }
 
     const accountTotalBalance = accountTotalBalanceResult.rows;
@@ -275,15 +274,16 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     //-----------------------------------------
     //in case accountType does not exist
     const message = `No accounts of type ${accountType} were found`;
-    throw new error(message);
-    // return RESPONSE(res, 400, message);
+    // Was `throw new error(...)`: a ReferenceError masked this message.
+    return RESPONSE(res, 400, message);
   } catch (error) {
     if (error instanceof Error) {
       console.error(pc.red('Error while getting account by type'));
       if (process.env.NODE_ENV == 'development') {
        console.log('stack:', error.stack);
       }
-      next(createError(error.status, error.message));
+      // Returned: the branch below called next() twice for one error.
+      return next(createError(error.status, error.message));
     } else {
       console.error(
         pc.red('Something went wrong'),
@@ -293,7 +293,6 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     // Manejo de errores de PostgreSQL
     const { code, message } = handlePostgresError(error);
     next(createError(code, message));
-    // return RESPONSE(error, next)
   }
 };
 //================================
