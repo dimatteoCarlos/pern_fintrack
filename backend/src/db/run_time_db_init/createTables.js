@@ -65,7 +65,7 @@ export const mainTables = [
     table: `CREATE TABLE IF NOT EXISTS category_budget_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id) ON DELETE CASCADE,
     category_name VARCHAR(50) NOT NULL,category_nature_type_id INT REFERENCES    category_nature_types(category_nature_type_id),
     subcategory VARCHAR(25),
-    budget DECIMAL(15, 2),currency_id INT  REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL)`,
+    budget DECIMAL(15, 2),currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL)`,
   },
 
   {
@@ -376,6 +376,69 @@ export async function ensureBudgetTables(client = pool) {
  }
 
  console.log(pc.green('Budget domain tables verified/created.'));
+}
+
+/**
+ * Make category_budget_accounts.currency_id mandatory on an existing database.
+ *
+ * The runtime counterpart of migration 011. The DDL above only reaches virgin
+ * databases, because CREATE TABLE IF NOT EXISTS never alters a table that is
+ * already there — the same reason addFxAuditColumns() exists.
+ *
+ * The value comes from user_accounts.currency_id, the accounting currency. It
+ * is never the origin currency sent by the client: that one is FX metadata.
+ * The join always resolves, since account_id is a FK to user_accounts and
+ * user_accounts.currency_id is NOT NULL.
+ *
+ * The remaining-NULL count before the ALTER is not redundant. A SET NOT NULL
+ * over a column that still holds NULLs raises, and raising here means
+ * process.exit(1) in index.js: the whole application down over a defect that
+ * only degrades the budget module, which additionally has a COALESCE fallback
+ * in budgetTransactionRepository. So it warns and lets the boot continue.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureCategoryBudgetCurrency(client = pool) {
+ const backfilled = await client.query(`
+  UPDATE category_budget_accounts cba
+  SET currency_id = ua.currency_id
+  FROM user_accounts ua
+  WHERE ua.account_id = cba.account_id
+   AND cba.currency_id IS NULL
+ `);
+
+ if (backfilled.rowCount > 0) {
+  console.log(
+   pc.green(`category_budget_accounts: ${backfilled.rowCount} currency_id backfilled.`),
+  );
+ }
+
+ const { rows } = await client.query(`
+  SELECT
+   (SELECT count(*)::int FROM category_budget_accounts WHERE currency_id IS NULL) AS remaining,
+   (SELECT is_nullable FROM information_schema.columns
+    WHERE table_name = 'category_budget_accounts' AND column_name = 'currency_id') AS is_nullable
+ `);
+ const { remaining, is_nullable } = rows[0];
+
+ if (remaining > 0) {
+  console.warn(
+   pc.yellow(
+    `category_budget_accounts: ${remaining} row(s) still have a NULL currency_id ` +
+     `and no parent currency to resolve them. Leaving the column nullable.`,
+   ),
+  );
+  return;
+ }
+
+ // Skipping when already NOT NULL avoids taking an ACCESS EXCLUSIVE lock on
+ // every boot for a no-op.
+ if (is_nullable === 'YES') {
+  await client.query(
+   'ALTER TABLE category_budget_accounts ALTER COLUMN currency_id SET NOT NULL',
+  );
+  console.log(pc.green('category_budget_accounts.currency_id is now NOT NULL.'));
+ }
 }
 
 // ===========================================

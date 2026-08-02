@@ -26,6 +26,7 @@ import {
   createTables,
   addFxAuditColumns,
   ensureBudgetTables,
+  ensureCategoryBudgetCurrency,
   recreateExchangeRatesTable,
 } from './createTables.js';
 
@@ -154,6 +155,10 @@ export async function initializeDatabase() {
     // Pure CREATE ... IF NOT EXISTS, so it is safe on every boot, exactly like
     // addFxAuditColumns above.
     await ensureBudgetTables(client);
+
+    // Runtime counterpart of migration 011: production is built by this path,
+    // not by the migration runner, so the constraint has to be applied here too.
+    await ensureCategoryBudgetCurrency(client);
 
     await tblBudgetFrequencyTypes(client);
     await assertBudgetFrequenciesMatchConfig(client);
