@@ -7,10 +7,13 @@
 --
 -- Pre-migration audit (local, 2026-07-31):
 --   null_budget: 0 | zero_budget: 0 | negative_budget: 0 | will_migrate: 1 | total: 1
+--
+-- No BEGIN/COMMIT here: runMigrations.js wraps every file in one transaction
+-- together with its INSERT INTO migrations. A COMMIT inside the file closes
+-- that transaction early, leaving the bookkeeping row and every later migration
+-- outside it. Same convention as 011.
 
 -- UP
-
-BEGIN;
 
 CREATE TABLE IF NOT EXISTS budget_frequency_types (
  budget_frequency_type_id SERIAL PRIMARY KEY,
@@ -100,8 +103,6 @@ WHERE cba.budget > 0
   SELECT 1 FROM budget_policy_allocations ba
   WHERE ba.budget_policy_id = bp.budget_policy_id AND ba.valid_until IS NULL
  );
-
-COMMIT;
 
 -- DOWN
 -- Run manually. Safe because the migration is purely additive: dropping these
