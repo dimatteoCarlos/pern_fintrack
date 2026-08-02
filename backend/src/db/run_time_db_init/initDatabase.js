@@ -27,6 +27,7 @@ import {
   createTables,
   addFxAuditColumns,
   ensureBudgetTables,
+  ensureBudgetPolicyBackfill,
   ensureCategoryBudgetCurrency,
   recreateExchangeRatesTable,
 } from './createTables.js';
@@ -163,6 +164,12 @@ export async function initializeDatabase() {
 
     await tblBudgetFrequencyTypes(client);
     await assertBudgetFrequenciesMatchConfig(client);
+
+    // Runtime counterpart of migration 012, for the same reason as the two
+    // calls above: production is built by this path, so a database that never
+    // saw the runner would keep its legacy budgets unmigrated. Runs after the
+    // catalog because the allocation resolves its period by code.
+    await ensureBudgetPolicyBackfill(client);
 
     // Same reason as the two calls above: it must run outside the first-time
     // block, because the databases with stale sequences are precisely the ones

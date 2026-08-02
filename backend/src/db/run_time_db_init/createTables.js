@@ -441,6 +441,58 @@ export async function ensureCategoryBudgetCurrency(client = pool) {
  }
 }
 
+/**
+ * Backfill budget policies from the legacy category_budget_accounts.budget.
+ *
+ * Runtime counterpart of migration 012: production is built by this path, not
+ * by the migration runner, so an account carrying a legacy budget would
+ * otherwise stay invisible to the read path until somebody edited it and
+ * applyAllocationForAccount repaired it.
+ *
+ * Must run after the frequency catalog is seeded: the allocation resolves its
+ * period by code, not by a literal id.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureBudgetPolicyBackfill(client = pool) {
+ const policies = await client.query(`
+  INSERT INTO budget_policies (account_id)
+  SELECT cba.account_id
+  FROM category_budget_accounts cba
+  WHERE cba.budget IS NOT NULL AND cba.budget > 0
+  ON CONFLICT (account_id) DO NOTHING
+ `);
+
+ // The NOT EXISTS guard is what makes a re-run safe: without it every boot
+ // would open a competing allocation and breach uq_budget_allocation_active.
+ const allocations = await client.query(`
+  INSERT INTO budget_policy_allocations
+   (budget_policy_id, budget_amount, budget_frequency_type_id, valid_from)
+  SELECT bp.budget_policy_id,
+   cba.budget,
+   (SELECT budget_frequency_type_id FROM budget_frequency_types
+     WHERE budget_frequency_code = 'monthly'),
+   ua.account_start_date
+  FROM budget_policies bp
+  JOIN category_budget_accounts cba ON cba.account_id = bp.account_id
+  JOIN user_accounts ua ON ua.account_id = bp.account_id
+  WHERE cba.budget > 0
+   AND NOT EXISTS (
+    SELECT 1 FROM budget_policy_allocations ba
+    WHERE ba.budget_policy_id = bp.budget_policy_id AND ba.valid_until IS NULL
+   )
+ `);
+
+ if (policies.rowCount > 0 || allocations.rowCount > 0) {
+  console.log(
+   pc.green(
+    `Budget backfill: ${policies.rowCount} policy(ies), ` +
+     `${allocations.rowCount} allocation(s) created.`,
+   ),
+  );
+ }
+}
+
 // ===========================================
 // 🧩 FUNCTION: Recreate exchange_rates table
 // ===========================================
