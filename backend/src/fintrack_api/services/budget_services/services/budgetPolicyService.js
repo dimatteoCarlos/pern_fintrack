@@ -7,7 +7,7 @@
 // no redundant flag to keep in sync.
 
 import { withTransaction } from '../../../../utils/withTransaction.js';
-import { ALLOWED_FREQUENCIES } from '../core/budgetConfig.js';
+import { ALLOWED_FREQUENCIES, DEFAULT_FREQUENCY } from '../core/budgetConfig.js';
 
 const forbidden = (message) =>
  Object.assign(new Error(message), { status: 403 });
@@ -61,12 +61,65 @@ const lockOwnedPolicy = async (client, userId, budgetPolicyId) => {
 };
 
 /**
- * Replace the active allocation of a policy with a new version.
+ * Close the active allocation of a policy and open its replacement.
  *
- * Closing the old row and opening the new one happen in ONE transaction. Split
- * across two, a failure between them leaves the policy with zero active rows
- * (the budget disappears) or two (getBudgetDataForAccounts returns duplicate
- * rows per account and Overview totals double, with no error raised).
+ * Both statements must run on the same client. Split across two transactions, a
+ * failure between them leaves the policy with zero active rows (the budget
+ * disappears) or two (getBudgetDataForAccounts returns duplicate rows per
+ * account and Overview totals double, with no error raised).
+ *
+ * @returns {Promise<object>} the newly created allocation row.
+ */
+const replaceActiveAllocation = async (
+ client,
+ budgetPolicyId,
+ budgetAmount,
+ budgetFrequencyCode,
+) => {
+ // NOW() is transaction-scoped in Postgres, so the close and the open share
+ // one timestamp. That is intended: the history has no gap between versions.
+ await client.query(
+  `UPDATE budget_policy_allocations
+      SET valid_until = NOW()
+    WHERE budget_policy_id = $1
+      AND valid_until IS NULL`,
+  [budgetPolicyId],
+ );
+
+ // The code is resolved in the INSERT itself. A separate lookup would be a
+ // second roundtrip for a value the same transaction is about to use.
+ const { rows } = await client.query(
+  `INSERT INTO budget_policy_allocations
+     (budget_policy_id, budget_amount, budget_frequency_type_id, valid_from)
+   VALUES ($1, $2,
+    (SELECT budget_frequency_type_id FROM budget_frequency_types
+      WHERE budget_frequency_code = $3),
+    NOW())
+   RETURNING budget_allocation_id,
+    budget_policy_id,
+    budget_amount,
+    budget_frequency_type_id,
+    valid_from,
+    valid_until`,
+  [budgetPolicyId, budgetAmount, budgetFrequencyCode],
+ );
+
+ return {
+  budgetAllocationId: rows[0].budget_allocation_id,
+  budgetPolicyId: rows[0].budget_policy_id,
+  budgetAmount: parseFloat(rows[0].budget_amount),
+  budgetFrequencyTypeId: rows[0].budget_frequency_type_id,
+  budgetFrequencyCode,
+  validFrom: rows[0].valid_from,
+  validUntil: rows[0].valid_until,
+ };
+};
+
+/**
+ * Replace the active allocation of a policy the caller owns.
+ *
+ * Owns its transaction: this is the entry point for PUT /budget/policy/:id,
+ * where no other write is in flight.
  *
  * @returns {Promise<object>} the newly created allocation row.
  */
@@ -82,43 +135,7 @@ async function updateBudgetAllocation(
  return withTransaction(pool, async (client) => {
   await lockOwnedPolicy(client, userId, budgetPolicyId);
 
-  // NOW() is transaction-scoped in Postgres, so the close and the open share
-  // one timestamp. That is intended: the history has no gap between versions.
-  await client.query(
-   `UPDATE budget_policy_allocations
-       SET valid_until = NOW()
-     WHERE budget_policy_id = $1
-       AND valid_until IS NULL`,
-   [budgetPolicyId],
-  );
-
-  // The code is resolved in the INSERT itself. A separate lookup would be a
-  // second roundtrip for a value the same transaction is about to use.
-  const { rows } = await client.query(
-   `INSERT INTO budget_policy_allocations
-      (budget_policy_id, budget_amount, budget_frequency_type_id, valid_from)
-    VALUES ($1, $2,
-     (SELECT budget_frequency_type_id FROM budget_frequency_types
-       WHERE budget_frequency_code = $3),
-     NOW())
-    RETURNING budget_allocation_id,
-     budget_policy_id,
-     budget_amount,
-     budget_frequency_type_id,
-     valid_from,
-     valid_until`,
-   [budgetPolicyId, budgetAmount, budgetFrequencyCode],
-  );
-
-  return {
-   budgetAllocationId: rows[0].budget_allocation_id,
-   budgetPolicyId: rows[0].budget_policy_id,
-   budgetAmount: parseFloat(rows[0].budget_amount),
-   budgetFrequencyTypeId: rows[0].budget_frequency_type_id,
-   budgetFrequencyCode,
-   validFrom: rows[0].valid_from,
-   validUntil: rows[0].valid_until,
-  };
+  return replaceActiveAllocation(client, budgetPolicyId, budgetAmount, budgetFrequencyCode);
  });
 }
 
@@ -175,6 +192,86 @@ async function createBudgetPolicyForAccount(
   budgetFrequencyCode,
   validFrom: rows[0].valid_from,
  };
+}
+
+/**
+ * Apply a budget change made through the account editor, keyed by account.
+ *
+ * Takes a client for the same reason createBudgetPolicyForAccount does: account
+ * edition already owns a transaction, and the amount written to the legacy
+ * cba.budget column must commit or roll back together with the allocation.
+ *
+ * An account with no policy gets one, dated from the account start. That covers
+ * every account created before the policy tables existed and every row the 010
+ * backfill skipped: the first edit repairs them instead of leaving them
+ * invisible to the read path forever.
+ *
+ * @returns {Promise<object|null>} the new allocation, or null when nothing
+ *  changed — the edit form resends the budget on every save, and versioning an
+ *  unchanged amount would add a history row per save and move valid_from
+ *  forward, re-pricing months that were already settled.
+ */
+async function applyAllocationForAccount(
+ client,
+ userId,
+ accountId,
+ budgetAmount,
+ budgetFrequencyCode = null,
+) {
+ // FOR UPDATE OF ua serializes concurrent edits of the same account: without
+ // it two saves could both read one active allocation and both open a
+ // replacement, breaching uq_budget_allocation_active.
+ const { rows } = await client.query(
+  `SELECT ua.account_start_date,
+     p.budget_policy_id,
+     a.budget_allocation_id,
+     a.budget_amount,
+     bft.budget_frequency_code
+    FROM user_accounts ua
+    LEFT JOIN budget_policies p ON p.account_id = ua.account_id
+    LEFT JOIN budget_policy_allocations a
+      ON a.budget_policy_id = p.budget_policy_id
+     AND a.valid_until IS NULL
+    LEFT JOIN budget_frequency_types bft
+      ON bft.budget_frequency_type_id = a.budget_frequency_type_id
+   WHERE ua.account_id = $1
+     AND ua.user_id = $2
+     FOR UPDATE OF ua`,
+  [accountId, userId],
+ );
+
+ if (rows.length === 0) {
+  throw forbidden('Account not found or not owned by the authenticated user.');
+ }
+
+ const current = rows[0];
+ // An edit that does not mention the frequency keeps the one in force. Falling
+ // back to the default instead would silently reset a quarterly budget to
+ // monthly every time the user changed only the amount.
+ const targetCode =
+  budgetFrequencyCode ?? current.budget_frequency_code ?? DEFAULT_FREQUENCY;
+
+ assertAllocationInput(budgetAmount, targetCode);
+
+ if (!current.budget_policy_id) {
+  return createBudgetPolicyForAccount(
+   client,
+   accountId,
+   budgetAmount,
+   targetCode,
+   current.account_start_date,
+  );
+ }
+
+ if (
+  current.budget_allocation_id
+  && Number(current.budget_amount) === budgetAmount
+  && current.budget_frequency_code === targetCode
+ ) {
+  return null;
+ }
+
+ return replaceActiveAllocation(client, current.budget_policy_id, budgetAmount, targetCode);
 }
 
 /**
@@ -247,6 +344,7 @@ async function getFrequencyCatalog(pool) {
 
 export const budgetPolicyService = {
  createBudgetPolicyForAccount,
+ applyAllocationForAccount,
  updateBudgetAllocation,
  getBudgetAllocationHistory,
  getFrequencyCatalog,

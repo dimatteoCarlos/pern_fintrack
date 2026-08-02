@@ -6,6 +6,8 @@ import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import { capitalize } from '../../utils/helpers.js';
 
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
+import { ALLOWED_FREQUENCIES } from '../services/budget_services/core/budgetConfig.js';
 
 /**
  * 🎯 EDITION LOGIC: PARTIALLY UPDATES AN ACCOUNT
@@ -82,6 +84,11 @@ export const patchAccountById = async (req, res, next) => {
 
     const specificFields = {};
 
+    // The budget change is applied after BEGIN, not here: the switch below runs
+    // outside the transaction, and the allocation must commit or roll back with
+    // the cba.budget write it mirrors.
+    let budgetChange = null;
+
     // 3. Set editable specific fields per account type
     switch (account_type_name) {
       case 'pocket_saving':
@@ -99,9 +106,30 @@ export const patchAccountById = async (req, res, next) => {
         break;
 
       case 'category_budget': {
-        if (payload.budget !== undefined)
-          specificFields.budget = payload.budget;
-        console.log('budget:', payload['budget']);
+        if (payload.budget !== undefined) {
+          // Same rule as account creation and as CHECK (budget_amount > 0).
+          // Before, a 0 or a negative went straight into cba.budget; now it
+          // would also reach the allocation and surface as a 500.
+          const amount = Number(payload.budget);
+
+          if (!Number.isFinite(amount) || amount <= 0) {
+            const message = 'Budget amount must be greater than 0.';
+            console.warn(pc['red'](message));
+            return res.status(400).json({ status: 400, message });
+          }
+
+          const frequencyCode =
+            payload.budgetFrequencyCode?.trim().toLowerCase() ?? null;
+
+          if (frequencyCode && !ALLOWED_FREQUENCIES.includes(frequencyCode)) {
+            const message = `budgetFrequencyCode must be one of: ${ALLOWED_FREQUENCIES.join(', ')}.`;
+            console.warn(pc['red'](message));
+            return res.status(400).json({ status: 400, message });
+          }
+
+          specificFields.budget = amount;
+          budgetChange = { amount, frequencyCode };
+        }
 
         if (payload.category_name !== undefined)
           specificFields.category_name = payload.category_name;
@@ -260,6 +288,19 @@ export const patchAccountById = async (req, res, next) => {
       await client.query(specificQuery, specificSqlValues);
     }
 
+    // cba.budget above is the legacy column. No budget endpoint reads it: they
+    // all price from budget_policy_allocations. Without this the amount changed
+    // on the account screen and nowhere else.
+    const budget_policy = budgetChange
+      ? await budgetPolicyService.applyAllocationForAccount(
+          client,
+          userId,
+          accountId,
+          budgetChange.amount,
+          budgetChange.frequencyCode,
+        )
+      : null;
+
     await client.query('COMMIT'); // Commit if both updates were successful
 
     // 5. Deliver updated account to frontend (sync)
@@ -271,7 +312,14 @@ export const patchAccountById = async (req, res, next) => {
     res.status(200).json({
       status: 200,
       message,
-      data: { account_id: accountId, ...userAccountFields, ...specificFields }, //returns partial updated account info
+      data: {
+        account_id: accountId,
+        ...userAccountFields,
+        ...specificFields,
+        // Only when a new version was opened. null would read as "the budget
+        // was cleared" on a PATCH that never touched it.
+        ...(budget_policy ? { budget_policy } : {}),
+      }, //returns partial updated account info
     });
   } catch (error) {
     await client.query('ROLLBACK'); // Rollback in case of error
