@@ -123,14 +123,18 @@ const getCategoryBudgetFullData = async (userId, accountId) => {
     );
 
     // 📋 ACCOUNT BASIC INFO + CATEGORY BUDGET DATA
+    // The query held three faults that never surfaced because the route that
+    // reaches it is commented out in accountRoutes.js: an undefined alias `ui`,
+    // a join on `category_nature` (the table is `category_nature_types`), and
+    // `category_nature_type_name` read off cba, which does not hold it.
     const accountQuery = {
       text: `
-    SELECT 
-      ui.*,
+    SELECT
+      ua.*,
       act.account_type_name,
       ct.currency_code,
       cba.budget,
-      cba.category_nature_type_name
+      cnt.category_nature_type_name
     FROM user_accounts ua
 
     JOIN account_types act ON ua.account_type_id = act.account_type_id
@@ -139,8 +143,8 @@ const getCategoryBudgetFullData = async (userId, accountId) => {
 
     JOIN category_budget_accounts cba ON ua.account_id = cba.account_id
 
-    JOIN category_nature cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
-    
+    JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
+
     WHERE ua.user_id = $1
       AND ua.account_id = $2
       AND act.account_type_name = 'category_budget'
