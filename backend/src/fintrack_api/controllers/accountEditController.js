@@ -7,7 +7,7 @@ import { capitalize } from '../../utils/helpers.js';
 
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
-import { ALLOWED_FREQUENCIES } from '../services/budget_services/core/budgetConfig.js';
+import { ALLOWED_ALLOCATION_FREQUENCIES } from '../services/budget_services/core/budgetConfig.js';
 
 /**
  * 🎯 EDITION LOGIC: PARTIALLY UPDATES AN ACCOUNT
@@ -121,8 +121,11 @@ export const patchAccountById = async (req, res, next) => {
           const frequencyCode =
             payload.budgetFrequencyCode?.trim().toLowerCase() ?? null;
 
-          if (frequencyCode && !ALLOWED_FREQUENCIES.includes(frequencyCode)) {
-            const message = `budgetFrequencyCode must be one of: ${ALLOWED_FREQUENCIES.join(', ')}.`;
+          if (
+            frequencyCode &&
+            !ALLOWED_ALLOCATION_FREQUENCIES.includes(frequencyCode)
+          ) {
+            const message = `budgetFrequencyCode must be one of: ${ALLOWED_ALLOCATION_FREQUENCIES.join(', ')}.`;
             console.warn(pc['red'](message));
             return res.status(400).json({ status: 400, message });
           }

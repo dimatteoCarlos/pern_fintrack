@@ -53,8 +53,13 @@ All mounted under `/api/fintrack/budget`, already behind `verifyToken` and `glob
 | `GET` | `/history/:budgetPolicyId` | Path: `budgetPolicyId` (positive) |
 | `GET` | `/export` | Query: `accountId` (**optional** — omitted means all owned accounts), `frequency`, `date`, `startDate`, `endDate` |
 
-`frequency` accepts `monthly` · `quarterly` · `four-month` · `semiannual` · `yearly`, and
-**defaults to `monthly`** when absent. Always the code, never the surrogate id.
+`frequency` here is the **query window**. It accepts `monthly` · `quarterly` · `four-month` ·
+`semiannual` · `yearly`, and **defaults to `monthly`** when absent. Always the code, never the
+surrogate id.
+
+> **Do not confuse this with the frequency stored on an allocation.** Those are two different
+> lists, deliberately. Any of the five windows may be *requested*; only `monthly` may be
+> *stored*. See §2.4.
 
 `startDate` must be less than or equal to `endDate`; the schema rejects the inverse.
 
@@ -62,7 +67,7 @@ All mounted under `/api/fintrack/budget`, already behind `verifyToken` and `glob
 
 | Method | Path | Body |
 |---|---|---|
-| `PUT` | `/budget/policy/:budgetPolicyId` | `{ budgetAmount: number > 0, budgetFrequencyCode: enum }` |
+| `PUT` | `/budget/policy/:budgetPolicyId` | `{ budgetAmount: number > 0, budgetFrequencyCode: 'monthly' }` |
 
 Ownership is enforced inside the service, in the same transaction as the write, so there is no
 window between the check and the update.
@@ -76,12 +81,42 @@ Two other controllers change a budget. This surprises people and is worth statin
 | Create account | `POST /account/new_account/category_budget` | `budget` (required, > 0) · `budgetFrequencyCode` (optional → `monthly`) |
 | Edit account | account edit `PATCH` | `budget` (> 0) · `budgetFrequencyCode` (**absent means keep the one in force**, never reset to the default) |
 
-There are therefore two ways to change a budget amount. `PUT /budget/policy/:id` is the
-correct one; the account edit path exists because the current form uses it. Plan C §15.2
-leaves open whether the `PATCH` should reject `budget` and point at the policy endpoint.
+There are therefore two ways to change a budget amount. Both version the allocation (SCD Type
+2) in the same transaction as the account write, so neither corrupts history. They differ in
+what they can do:
 
-The creation form has **no frequency selector yet**, so every budget in existence today is
-monthly. This matters — see §7.
+| | `PATCH` account edit | `PUT /budget/policy/:id` |
+|---|---|---|
+| Keeps the legacy `cba.budget` column in step | Yes | No — it drifts |
+| Works on an account that has **no policy yet** | Yes, creates one dated from `account_start_date` | No — needs a policy id that does not exist |
+| Needs the policy id up front | No, keyed by account | Yes |
+
+**No account read endpoint returns `budget_policy_id`.** The only source is
+`GET /budget/summary?accountId=…` → `result.budgetPolicy.budgetPolicyId`, which is `null` for
+an unbudgeted account. Use the `PATCH` path for the account edit form; use the policy endpoint
+where the id is already in hand, such as the history screen.
+
+### 2.4 Allocations are monthly only
+
+`budgetFrequencyCode` on a **stored allocation** accepts `monthly` and nothing else, on all
+three write paths above. A request carrying any other code is rejected with
+`400 budgetFrequencyCode must be one of: monthly.`
+
+This is a **version 1 scope decision, not a limitation of the data model, and not permanent.**
+The `budget_frequency_types` catalog still holds all five codes and the column still references
+it; only what may be written is narrowed.
+
+The reason is aggregation: adding up budgets that recur on different cycles into one per-user
+total has no agreed answer yet, and until the Overview layer has one, a quarterly budget read
+through the default monthly window would report zero budget and a full overspend.
+
+The other four codes are meant to return. Editing the constant in `core/budgetConfig.js` is one
+line, but it is **not sufficient on its own** — the period-counting defect in §7 has to be
+fixed first, or a restored quarterly budget reports zero through the default window. The
+ordered re-activation checklist is kept in `plan-docs/REMARKS.md` R15.
+
+**Consequence for the frontend: do not build a frequency selector in v1.** Create and edit forms
+send either `monthly` or nothing at all.
 
 ---
 
@@ -225,12 +260,17 @@ integers with `Math.round()`.
 
 **2. Two different frequencies, and neither overrides the other.**
 
-| Concept | Source | Answers |
-|---|---|---|
-| Query window | The request (`frequency`, or `startDate`/`endDate`) | Which date range to report on |
-| Multiplier | Each allocation's stored `budgetFrequencyCode` | How often that budget recurs |
+| Concept | Source | Values | Answers |
+|---|---|---|---|
+| Query window | The request (`frequency`, or `startDate`/`endDate`) | All five codes | Which date range to report on |
+| Multiplier | Each allocation's stored `budgetFrequencyCode` | `monthly` only (§2.4) | How often that budget recurs |
 
 A monthly budget of 10 read through a yearly window accumulates **120**, not 10.
+
+Since every allocation is monthly, the accumulated budget for any window is simply the sum of
+the months it covers, and an amount changed mid-window is priced over its own slice: a
+five-month window with a change in month three yields `2 × old + 3 × new`. Custom
+`startDate`/`endDate` ranges are snapped to whole months before this is computed — see rule 7.
 
 **3. Prefer `actualVsBudgetDifference`.** It and `remainingBudget` are one metric under two
 names. `actualVsBudgetDifference` is canonical; `remainingBudget` is kept only until the
@@ -244,6 +284,13 @@ reports `actualVsBudgetDifference: -50`. Money left with nothing behind it, and 
 would replace one lie with another.
 
 **6. `meta.notices` is an array.** Render all of them.
+
+**7. Custom ranges are snapped to whole months, so render `result.period`, not the dates the
+user picked.** `startDate` moves back to the first of its month and `endDate` forward to the
+first of the next month unless it is already there, and a notice is added when anything moved.
+A user picking `Jul 1 – Jul 31` gets `Jul 1 – Aug 1`, one full month — the frontend does **not**
+need to compute end-exclusive dates. But if the label reads `Jul 15 – Aug 20` while the figures
+cover `Jul 1 – Sep 1`, the screen is wrong even though every number in it is right.
 
 ---
 
@@ -262,22 +309,27 @@ The mode is `ROUND_HALF_UP`, matching Postgres `numeric`.
 
 ## 7. Known limits
 
-**R14 — non-monthly budgets are wrong, and currently dormant.** Period counting is unanchored:
-`getNumberOfPeriods` divides a month span rather than identifying periods. A quarterly budget
-of 600 viewed through a one-month window returns `budgetAccumulatedAmount: 0` and reports the
-whole spend as overspend. Custom `startDate`/`endDate` ranges hit the same wall, since an
-arbitrary range rarely contains a whole quarter.
+**R14 — unanchored period counting, now unreachable.** `getNumberOfPeriods` divides a month
+span rather than identifying periods, so a quarterly budget of 600 viewed through a one-month
+window returned `budgetAccumulatedAmount: 0` and reported the whole spend as overspend.
 
-It is dormant only because the creation form has no frequency selector, so every existing
-budget is monthly and the window matches the period.
+Restricting allocations to monthly (§2.4) makes this **unreachable rather than fixed**: with
+`monthsPerPeriod = 1` there is never a remainder to discard, which is the entire failure mode.
+The defect is still in the code and will matter again the day non-monthly allocations return.
 
-> **Sequencing constraint:** do not ship a frequency selector before the Overview comparison
-> layer exists. The first quarterly budget a user creates makes this visible immediately.
+**The resolution is designed but not built,** and is on record for that day. Proration was
+rejected. A window will be answered with the full amount of the periods it touches, compared
+against the spending in those same periods. Two sub-decisions remain open, recorded in Plan C
+§19.3: calendar-anchored versus `validFrom`-anchored periods, and whether spending runs to the
+end of the period or to today.
 
-**The resolution is decided but not built.** Proration was rejected. A window will be answered
-with the full amount of the periods it touches, compared against the spending in those same
-periods. Two sub-decisions remain open, recorded in Plan C §19.3: calendar-anchored versus
-`validFrom`-anchored periods, and whether spending runs to the end of the period or to today.
+**Settled, and not coming back:**
+
+| Question | Answer |
+|---|---|
+| Does unspent budget roll over? | **No.** It resets at the start of the next month |
+| Do allocations expire at year end? | **No.** `valid_until IS NULL` stays in force across the boundary. "One year" is a display default for the accumulated view, which opens on the current calendar year with prior years available from the SCD2 history |
+| Budget against an arbitrary date range? | Out of scope here. Overview handles stored facts and month-against-month; arbitrary ranges belong to Insights / Dashboards |
 
 **The comparison layer moves out of this module.** `budget_services` delivers facts — which
 allocations were in force, with what amount, frequency and validity, and how much was spent.

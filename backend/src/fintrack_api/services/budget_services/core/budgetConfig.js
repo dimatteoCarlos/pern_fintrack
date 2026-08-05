@@ -17,16 +17,29 @@ export const MONTHS_PER_PERIOD = {
   yearly: 12,
 };
 
-// Allowed frequency values for budget policies and versions.
+// Frequency codes accepted as a QUERY WINDOW.
 //
-// Derived rather than declared: a frequency code is not a label, it is a KEY
-// into MONTHS_PER_PERIOD. A code accepted by validation but absent from that
-// map makes getNumberOfPeriods return undefined, and the arithmetic downstream
-// silently yields NaN. Keeping a second hand-written list would let the two
-// drift with nothing to detect it.
+// A window only says which date range to report on, so every code the
+// arithmetic understands may be requested. Derived rather than declared: a
+// code is not a label, it is a KEY into MONTHS_PER_PERIOD. A code accepted by
+// validation but absent from that map makes getNumberOfPeriods return
+// undefined, and the arithmetic downstream silently yields NaN.
+export const ALLOWED_WINDOW_FREQUENCIES = Object.keys(MONTHS_PER_PERIOD);
+
+// Frequency codes accepted on a STORED ALLOCATION.
 //
-// The budget_frequency_types catalog is the third list. It owns referential
-// integrity, display names and sort order — not validation. A startup
-// assertion (Plan B, step B3) fails fast if the seeded codes ever diverge
-// from the keys below.
-export const ALLOWED_FREQUENCIES = Object.keys(MONTHS_PER_PERIOD);
+// Narrowed to monthly on purpose (REMARKS R15). Aggregating budgets that
+// recur on different cycles into one per-user total has no agreed answer yet,
+// and until the Overview layer has one, a non-monthly allocation read through
+// the default monthly window reports zero budget and a full overspend.
+//
+// Monthly also makes the unanchored period counting of R14 unreachable rather
+// than merely unlikely: with monthsPerPeriod = 1 there is never a remainder to
+// discard, so a five-month window is exactly the sum of its five months.
+//
+// Version 1 only. The other four codes are meant to come back, and
+// MONTHS_PER_PERIOD above is left whole so nothing has to be rebuilt for that
+// day. Editing this line is NOT enough on its own: R14 must be fixed first, or
+// a restored quarterly budget reports zero through a monthly window. The full
+// re-activation checklist is in REMARKS R15.
+export const ALLOWED_ALLOCATION_FREQUENCIES = ['monthly'];

@@ -18,7 +18,7 @@ import { getCurrencyId } from '../../utils/currencyLookup.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
 import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
 import {
-  ALLOWED_FREQUENCIES,
+  ALLOWED_ALLOCATION_FREQUENCIES,
   DEFAULT_FREQUENCY,
 } from '../services/budget_services/core/budgetConfig.js';
 
@@ -95,8 +95,8 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const budget_frequency_code =
       budgetFrequencyCode?.trim().toLowerCase() || DEFAULT_FREQUENCY;
 
-    if (!ALLOWED_FREQUENCIES.includes(budget_frequency_code)) {
-      const message = `budgetFrequencyCode must be one of: ${ALLOWED_FREQUENCIES.join(', ')}.`;
+    if (!ALLOWED_ALLOCATION_FREQUENCIES.includes(budget_frequency_code)) {
+      const message = `budgetFrequencyCode must be one of: ${ALLOWED_ALLOCATION_FREQUENCIES.join(', ')}.`;
       console.warn(pc.redBright(message));
       return res.status(400).json({ status: 400, message });
     }

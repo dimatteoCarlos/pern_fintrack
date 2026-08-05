@@ -5,11 +5,16 @@
 // Frequencies are imported from budgetConfig.js (single source of truth).
 
 import { z } from 'zod';
-import { ALLOWED_FREQUENCIES } from '../../fintrack_api/services/budget_services/core/budgetConfig.js';
+import {
+ ALLOWED_WINDOW_FREQUENCIES,
+ ALLOWED_ALLOCATION_FREQUENCIES,
+} from '../../fintrack_api/services/budget_services/core/budgetConfig.js';
 
 // Helper schemas
 // Base fields reused across schemas
-const frequencyField = z.enum(ALLOWED_FREQUENCIES).default('monthly');
+// The query window, not the stored allocation: reporting on a quarter is
+// allowed even though only monthly budgets may be created.
+const frequencyField = z.enum(ALLOWED_WINDOW_FREQUENCIES).default('monthly');
 const dateField = z.coerce.date().optional();
 const startDateField = z.coerce.date().optional();
 const endDateField = z.coerce.date().optional();
@@ -101,7 +106,7 @@ export const updatePolicyBodySchema = z.object({
  budgetAmount: z.number().positive({
   message: 'budgetAmount must be a positive number',
  }),
- budgetFrequencyCode: z.enum(ALLOWED_FREQUENCIES),
+ budgetFrequencyCode: z.enum(ALLOWED_ALLOCATION_FREQUENCIES),
 });
 
 // History (versions)

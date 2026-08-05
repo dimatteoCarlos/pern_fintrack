@@ -20,7 +20,7 @@ import {
   tblUserRoles,
 } from './populateDB.js';
 
-import { ALLOWED_FREQUENCIES } from '../../fintrack_api/services/budget_services/core/budgetConfig.js';
+import { MONTHS_PER_PERIOD } from '../../fintrack_api/services/budget_services/core/budgetConfig.js';
 
 import {
   mainTables,
@@ -40,11 +40,17 @@ const FORCE_RECREATE_EXCHANGE_RATES =
 /**
  * Fail fast if the seeded frequency catalog and MONTHS_PER_PERIOD disagree.
  *
- * A frequency code is a lookup key, not a label. A code that validation accepts
- * but the map lacks makes getNumberOfPeriods return undefined, and the
- * arithmetic downstream yields NaN with no error raised. A code seeded in the
- * catalog but absent from the map has the same effect. Both directions are
- * checked because either one produces silent wrong numbers, not a crash.
+ * A frequency code is a lookup key, not a label. A code seeded in the catalog
+ * but absent from the map makes getNumberOfPeriods return undefined, and the
+ * arithmetic downstream yields NaN with no error raised. A code in the map with
+ * no catalog row breaks the foreign key on budget_policy_allocations. Both
+ * directions are checked because either one produces silent wrong numbers or a
+ * 500, not a clean failure.
+ *
+ * Compared against MONTHS_PER_PERIOD, not the allowed-allocation list. Whether
+ * a code is currently OFFERED to users is a product decision (REMARKS R15) and
+ * boot has no business asserting it; whether a stored code can be priced is an
+ * invariant, and that is what this protects.
  *
  * @param {object} client - Database client (pool or transaction)
  */
@@ -53,11 +59,10 @@ async function assertBudgetFrequenciesMatchConfig(client) {
   'SELECT budget_frequency_code FROM budget_frequency_types',
  );
  const seeded = new Set(rows.map((r) => r.budget_frequency_code));
+ const known = Object.keys(MONTHS_PER_PERIOD);
 
- const missing = ALLOWED_FREQUENCIES.filter((code) => !seeded.has(code));
- const unexpected = [...seeded].filter(
-  (code) => !ALLOWED_FREQUENCIES.includes(code),
- );
+ const missing = known.filter((code) => !seeded.has(code));
+ const unexpected = [...seeded].filter((code) => !known.includes(code));
 
  if (missing.length > 0 || unexpected.length > 0) {
   throw new Error(

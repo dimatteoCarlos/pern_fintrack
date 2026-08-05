@@ -7,7 +7,10 @@
 // no redundant flag to keep in sync.
 
 import { withTransaction } from '../../../../utils/withTransaction.js';
-import { ALLOWED_FREQUENCIES, DEFAULT_FREQUENCY } from '../core/budgetConfig.js';
+import {
+ ALLOWED_ALLOCATION_FREQUENCIES,
+ DEFAULT_FREQUENCY,
+} from '../core/budgetConfig.js';
 import {
  MINIMUM_AMOUNT,
  isFiniteMoney,
@@ -62,8 +65,10 @@ const normalizeAllocationInput = (budgetAmount, budgetFrequencyCode) => {
   );
  }
 
- if (!ALLOWED_FREQUENCIES.includes(budgetFrequencyCode)) {
-  throw badRequest(`budgetFrequencyCode must be one of: ${ALLOWED_FREQUENCIES.join(', ')}.`);
+ if (!ALLOWED_ALLOCATION_FREQUENCIES.includes(budgetFrequencyCode)) {
+  throw badRequest(
+   `budgetFrequencyCode must be one of: ${ALLOWED_ALLOCATION_FREQUENCIES.join(', ')}.`,
+  );
  }
 
  return normalizedAmount;

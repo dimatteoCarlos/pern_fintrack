@@ -7,7 +7,8 @@
 // from a frequency and a reference date.
 // Used by Budget, and may be reused by future modules like Pocket, Insights, Reports.
 
-import { ALLOWED_FREQUENCIES } from '../../../fintrack_api/services/budget_services/core/budgetConfig.js';
+// Windows, not allocations: this module only resolves calendar ranges.
+import { ALLOWED_WINDOW_FREQUENCIES } from '../../../fintrack_api/services/budget_services/core/budgetConfig.js';
 
 // Generic internal helper to get a period range for any number of months.
 // monthsPerPeriod indicates the duration of the period (e.g. 3 for quarterly).
@@ -43,9 +44,9 @@ function getPeriodRange(year, startMonth, monthsPerPeriod) {
  */
 export function resolvePeriod(frequency, referenceDate) {
   // Validation
-  if (!ALLOWED_FREQUENCIES.includes(frequency)) {
+  if (!ALLOWED_WINDOW_FREQUENCIES.includes(frequency)) {
     throw new Error(
-      `resolvePeriod: invalid frequency "${frequency}". Allowed: ${ALLOWED_FREQUENCIES.join(', ')}`
+      `resolvePeriod: invalid frequency "${frequency}". Allowed: ${ALLOWED_WINDOW_FREQUENCIES.join(', ')}`
     );
   }
   if (!(referenceDate instanceof Date) || isNaN(referenceDate.getTime())) {
