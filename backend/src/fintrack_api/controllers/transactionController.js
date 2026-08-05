@@ -58,34 +58,34 @@ export const getAccountTypeId = async (dbClient = pool, accountTypeName) => {
   return accountTypeResult.rows[0]?.account_type_id;
 };
 
-//get the account info by user_id, account_id or account_name and account_type_name
+// Get the account info by user_id, plus either account_id or account_name.
+//
+// Both identifiers are received and the id wins when present. The previous
+// signature packed either one into a single parameter and took a separate
+// useId flag to say which: a flag carried beside the value can disagree with
+// it, and it did.
+//
+// The name branch is transitional and goes away when every caller sends an id.
 export const getAccountInfo = async (
   dbClient = pool,
-  useId = false,
-  accountIdentifier,
-  accountTypeName,
-  userId,
+  { accountId = null, accountName = null, accountTypeName, userId },
 ) => {
-  let accountQuery;
-  let queryValues;
+  // Not truthiness: an accountId of 0 is an invalid id, but it is not absent.
+  // Falling back to a name lookup on a bad id is the silent failure this
+  // function exists to stop making.
+  const byId = accountId !== null && accountId !== undefined && accountId !== '';
 
-  if (useId) {
-    // Search by account_id /Buscar por account_id
-    accountQuery = `SELECT ua.* FROM user_accounts ua
+  const accountQuery = byId
+    ? `SELECT ua.* FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
-      WHERE ua.user_id = $1 AND ua.account_id = $2 AND act.account_type_name = $3`;
-    queryValues = [userId, accountIdentifier, accountTypeName];
-  } else {
-    //Search by account_name /Buscar por account_name
-    accountQuery = `SELECT ua.* FROM user_accounts ua
-     JOIN account_types act ON ua.account_type_id = act.account_type_id
-     WHERE ua.user_id = $1 AND ua.account_name = $2 AND act.account_type_name = $3`;
-    queryValues = [userId, accountIdentifier, accountTypeName];
-  }
+      WHERE ua.user_id = $1 AND ua.account_id = $2 AND act.account_type_name = $3`
+    : `SELECT ua.* FROM user_accounts ua
+      JOIN account_types act ON ua.account_type_id = act.account_type_id
+      WHERE ua.user_id = $1 AND ua.account_name = $2 AND act.account_type_name = $3`;
 
   const accountInfoResult = await dbClient.query({
     text: accountQuery,
-    values: queryValues,
+    values: [userId, byId ? accountId : accountName, accountTypeName],
   });
   return accountInfoResult.rows[0];
 };
@@ -383,12 +383,16 @@ export const transferBetweenAccounts = async (req, res, next) => {
       pnl: getPnLConfig(req.body),
     }[movementName];
     //---
+    // Renamed on the way in: sourceAccountId and destinationAccountId are
+    // already taken further down for the ids of the rows that were found.
+    // These two are what the request asked for, which is not the same thing.
     const {
-      useId,
+      sourceAccountId: requestedSourceAccountId,
       sourceAccountName,
       sourceAccountTypeName,
       sourceAccountTransactionType,
 
+      destinationAccountId: requestedDestinationAccountId,
       destinationAccountName,
       destinationAccountTypeName,
       destinationAccountTransactionType,
@@ -483,34 +487,35 @@ export const transferBetweenAccounts = async (req, res, next) => {
       await checkAndInsertSlackAccount(client, userId);
     }
     //-------account info----------------
-    // console.log('accountInfo',  useId,
-    //   sourceAccountName, parseInt(sourceAccountName),
+    // console.log('accountInfo',
+    //   requestedSourceAccountId, sourceAccountName,
     //   sourceAccountTypeName,
     //   userId)
 
     //source and destination account info
-    const sourceAccountInfo = await getAccountInfo(
-      client,
-      useId,
-      sourceAccountName,
-      sourceAccountTypeName,
+    const sourceAccountInfo = await getAccountInfo(client, {
+      accountId: requestedSourceAccountId,
+      accountName: sourceAccountName,
+      accountTypeName: sourceAccountTypeName,
       userId,
-    );
+    });
 
     if (!sourceAccountInfo) {
       // The identifier searched with, not a field of the row that was not
       // found: dereferencing it raised a TypeError and turned this 404 into a
       // 500 that never named the account.
-      throw createError(404, `Origin account ${sourceAccountName} not found`);
+      throw createError(
+        404,
+        `Origin account ${requestedSourceAccountId ?? sourceAccountName} not found`,
+      );
     }
     //---
-    const destinationAccountInfo = await getAccountInfo(
-      client,
-      useId,
-      destinationAccountName,
-      destinationAccountTypeName,
+    const destinationAccountInfo = await getAccountInfo(client, {
+      accountId: requestedDestinationAccountId,
+      accountName: destinationAccountName,
+      accountTypeName: destinationAccountTypeName,
       userId,
-    );
+    });
     // console.log(
     // '🚀 ~ transferBetweenAccounts ~ destinationAccountInfo:',
     // destinationAccountInfo
@@ -519,7 +524,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
       // Same defect as the origin branch above.
       throw createError(
         404,
-        `Destination account ${destinationAccountName} not found`,
+        `Destination account ${requestedDestinationAccountId ?? destinationAccountName} not found`,
       );
     }
     //----source account-----------------

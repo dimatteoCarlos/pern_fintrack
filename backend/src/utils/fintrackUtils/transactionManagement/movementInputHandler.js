@@ -1,28 +1,30 @@
 //backend/utils/movementInputHandler.js
 
 //Strategies according to type movement tracker.
-//Note: use id if available, if not use name
-//let's assume that if account_id exists, it exists for both accounts, source and destination.
+//Each side reports its id and its name separately, and getAccountInfo prefers
+//the id when it is present. The two no longer have to arrive together, so the
+//frontend can move to ids one screen at a time.
 //===============================
 export const getExpenseConfig = (body) => ({
-  useId:!!body.acountId,
-  sourceAccountName: body.account_id || body.account,
+  sourceAccountId: body.account_id ?? null,
+  sourceAccountName: body.account ?? null,
   sourceAccountTypeName: 'bank',
   sourceAccountTransactionType: 'withdraw',
 
-  destinationAccountName:body.category_account_id || body.category,
+  destinationAccountId: body.category_account_id ?? null,
+  destinationAccountName: body.category ?? null,
   destinationAccountTypeName: 'category_budget',
   destinationAccountTransactionType: 'deposit',
 });
 //===============================
 export const getIncomeConfig = (body) => ({
-  useId:!!body.acountId,
-
-  sourceAccountName: body.source_account_id || body.source,
+  sourceAccountId: body.source_account_id ?? null,
+  sourceAccountName: body.source ?? null,
   sourceAccountTransactionType: 'withdraw',
   sourceAccountTypeName: 'income_source',
 
-  destinationAccountName: body.account_id || body.account,
+  destinationAccountId: body.account_id ?? null,
+  destinationAccountName: body.account ?? null,
   destinationAccountTypeName: 'bank',
   destinationAccountTransactionType: 'deposit',
 });
@@ -30,23 +32,21 @@ export const getIncomeConfig = (body) => ({
 export const getDebtConfig = (body) => {
   const { type, debtor, debtor_id, account, account_id, accountType } = body;
 
-  const useId = !!account_id
-
   const isLend = type === 'lend';
-
-  const accountIdentifier = account_id || account;
-
-  const debtorIdentifier = debtor_id || debtor;
-//---------  
+//---------
+  // Lending moves money out of the user's account into the debtor's; borrowing
+  // is the reverse. Each side carries its own id, so a debtor the frontend
+  // failed to resolve falls back to its name without dragging the other side
+  // onto the name path with it.
   return {
-    useId, 
-
-    sourceAccountName: isLend ? accountIdentifier : debtorIdentifier,
+    sourceAccountId: isLend ? (account_id ?? null) : (debtor_id ?? null),
+    sourceAccountName: isLend ? (account ?? null) : (debtor ?? null),
     sourceAccountTypeName: isLend ? accountType  : 'debtor',
     sourceAccountTransactionType: 'lend',
     // sourceAccountTransactionType: type === 'lend' ? 'withdraw' : 'deposit',
 
-    destinationAccountName: isLend ? debtorIdentifier : accountIdentifier,
+    destinationAccountId: isLend ? (debtor_id ?? null) : (account_id ?? null),
+    destinationAccountName: isLend ? (debtor ?? null) : (account ?? null),
     destinationAccountTypeName: isLend ? 'debtor' : accountType ,
     destinationAccountTransactionType: 'borrow',
     // destinationAccountTransactionType: type === 'lend' ? 'deposit' : 'withdraw',
@@ -67,15 +67,15 @@ export const getTransferConfig = (body) => {
   : body.destinationAccountType;
 //---------    
   return {
-    useId:!!body.origin_account_id,
-
-    destinationAccountName: body.destination_account_id || body.destination,
+    destinationAccountId: body.destination_account_id ?? null,
+    destinationAccountName: body.destination ?? null,
 
     destinationAccountTypeName: destinationAccountType,
 
     destinationAccountTransactionType: 'deposit',
 //--------
-    sourceAccountName: body.origin_account_id ||  body.origin,
+    sourceAccountId: body.origin_account_id ?? null,
+    sourceAccountName: body.origin ?? null,
     sourceAccountTypeName: originAccountType,
     sourceAccountTransactionType: 'withdraw',
   };
@@ -87,12 +87,16 @@ const accountType=body.accountType
 //??body.accountType==''?'bank':body.accountType
 
 return {
-  useId:false,//!!body.origin_account_id,
-
+  // Both sides stay on the name path. One of them is always the slack account,
+  // which has no id of its own to send, and PnL is left unchanged here on
+  // purpose: it already posts account_id, so enabling it is a one-line change
+  // once that id is verified, in its own commit.
+  sourceAccountId: null,
   sourceAccountName: isProfit ? 'slack' : body.account,
   sourceAccountTransactionType: 'withdraw',
   sourceAccountTypeName: isProfit ? 'bank' : accountType,
 
+  destinationAccountId: null,
   destinationAccountName: isProfit ? body.account : 'slack',
   destinationAccountTransactionType: 'deposit',
   destinationAccountTypeName: isProfit ? accountType : 'bank',
