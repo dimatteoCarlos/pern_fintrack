@@ -140,6 +140,31 @@ export const patchAccountById = async (req, res, next) => {
         if (payload.subcategory !== undefined)
           specificFields.subcategory = payload.subcategory;
 
+        // The nature is editable. What identifies an account is its account_id;
+        // account_name is a derived label and may follow. Resolved against the
+        // catalog rather than trusted, so an unknown value is a 400 here and
+        // not a foreign key violation surfacing as a 500.
+        let natureName = null;
+
+        if (payload.category_nature_type_name !== undefined) {
+          natureName = payload.category_nature_type_name.trim().toLowerCase();
+
+          const natureRow = await client.query({
+            text: `SELECT category_nature_type_id FROM category_nature_types
+                    WHERE LOWER(category_nature_type_name) = $1`,
+            values: [natureName],
+          });
+
+          if (natureRow.rows.length === 0) {
+            const message = `category_nature_type_name must be a known nature. Received: ${payload.category_nature_type_name}.`;
+            console.warn(pc['red'](message));
+            return res.status(400).json({ status: 400, message });
+          }
+
+          specificFields.category_nature_type_id =
+            natureRow.rows[0].category_nature_type_id;
+        }
+
         // account_name is derived, but the payload is partial by design.
         // Rebuilding it from the payload alone turned a PATCH carrying only
         // budget into "//undefined", with a 200 response. Merging the payload
@@ -167,13 +192,31 @@ export const patchAccountById = async (req, res, next) => {
         }
 
         const current = stored.rows[0];
-        // The nature is not editable through this controller, so it always
-        // comes from the catalog. Taking it from the payload would rename the
-        // account to a nature the specific table never stored.
         const categoryName = payload.category_name ?? current.category_name;
         const subcategory = payload.subcategory ?? current.subcategory;
+        const nature = natureName ?? current.category_nature_type_name;
 
-        userAccountFields.account_name = `${capitalize(categoryName)}/${capitalize(subcategory)}/${current.category_nature_type_name}`;
+        userAccountFields.account_name = `${capitalize(categoryName)}/${capitalize(subcategory)}/${nature}`;
+
+        // Renaming can land on a name this user already has. Scoped by user_id
+        // and excluding the account being edited: the same name under another
+        // user is not a conflict, and neither is the account matching itself.
+        // Deliberately not the check account creation runs, which omits
+        // user_id and so blocks one user with another user's category.
+        const nameCollision = await client.query({
+          text: `SELECT account_id FROM user_accounts
+                  WHERE user_id = $1
+                    AND LOWER(account_name) = LOWER($2)
+                    AND account_id <> $3
+                    AND deleted_at IS NULL`,
+          values: [userId, userAccountFields.account_name, accountId],
+        });
+
+        if (nameCollision.rows.length > 0) {
+          const message = `An account named ${userAccountFields.account_name} already exists.`;
+          console.warn(pc['red'](message));
+          return res.status(400).json({ status: 400, message });
+        }
 
         if (payload.account_name !== userAccountFields.account_name) {
           console.log(`Check the input account name`);
