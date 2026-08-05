@@ -58,8 +58,9 @@ All mounted under `/api/fintrack/budget`, already behind `verifyToken` and `glob
 surrogate id.
 
 > **Do not confuse this with the frequency stored on an allocation.** Those are two different
-> lists, deliberately. Any of the five windows may be *requested*; only `monthly` may be
-> *stored*. See §2.4.
+> lists, deliberately. The window says which date range to report on; the allocation's code says
+> how often that budget recurs. Both admit the same five codes today, and they are not required
+> to stay in step. See §2.4.
 
 `startDate` must be less than or equal to `endDate`; the schema rejects the inverse.
 
@@ -67,7 +68,7 @@ surrogate id.
 
 | Method | Path | Body |
 |---|---|---|
-| `PUT` | `/budget/policy/:budgetPolicyId` | `{ budgetAmount: number > 0, budgetFrequencyCode: 'monthly' }` |
+| `PUT` | `/budget/policy/:budgetPolicyId` | `{ budgetAmount: number > 0, budgetFrequencyCode: one of the five codes }` |
 
 Ownership is enforced inside the service, in the same transaction as the write, so there is no
 window between the check and the update.
@@ -96,27 +97,31 @@ what they can do:
 an unbudgeted account. Use the `PATCH` path for the account edit form; use the policy endpoint
 where the id is already in hand, such as the history screen.
 
-### 2.4 Allocations are monthly only
+### 2.4 Allocation frequency
 
-`budgetFrequencyCode` on a **stored allocation** accepts `monthly` and nothing else, on all
-three write paths above. A request carrying any other code is rejected with
-`400 budgetFrequencyCode must be one of: monthly.`
+`budgetFrequencyCode` on a **stored allocation** accepts all five codes — `monthly`,
+`quarterly`, `four-month`, `semiannual`, `yearly` — on all three write paths above. Anything
+outside that set is rejected with
+`400 budgetFrequencyCode must be one of: monthly, quarterly, four-month, semiannual, yearly.`
 
-This is a **version 1 scope decision, not a limitation of the data model, and not permanent.**
-The `budget_frequency_types` catalog still holds all five codes and the column still references
-it; only what may be written is narrowed.
+**The restriction to monthly is a frontend rule, not a server one.** Which frequencies the
+product *offers* is a scope decision about the UI; which ones the domain *understands* is a
+property of the schema and the arithmetic. Encoding the first as a server rejection made the API
+describe the state of the frontend roadmap rather than the state of the domain
+(`plan-docs/REMARKS.md` R15).
 
-The reason is aggregation: adding up budgets that recur on different cycles into one per-user
-total has no agreed answer yet, and until the Overview layer has one, a quarterly budget read
-through the default monthly window would report zero budget and a full overspend.
+**What that costs.** The restriction is now a convention, not an invariant. Any client that is
+not our form — Postman, a future mobile app, a defect in the create payload — can store a
+non-monthly allocation, and the period-counting defect in §7 makes that row report zero budgeted
+with the whole spend as overspend through the default monthly window. Accepted deliberately: the
+alternative was an API that lies about what the domain supports.
 
-The other four codes are meant to return. Editing the constant in `core/budgetConfig.js` is one
-line, but it is **not sufficient on its own** — the period-counting defect in §7 has to be
-fixed first, or a restored quarterly budget reports zero through the default window. The
-ordered re-activation checklist is kept in `plan-docs/REMARKS.md` R15.
-
-**Consequence for the frontend: do not build a frequency selector in v1.** Create and edit forms
-send either `monthly` or nothing at all.
+**Consequence for the frontend.** The create form renders the five options with four disabled,
+so the layout is settled for the day the rest are enabled; the edit form shows the frequency
+read-only and never sends the field. An absent `budgetFrequencyCode` on the account `PATCH`
+keeps the allocation in force rather than resetting it to the default (§2.3) — a rule that stops
+being theoretical here, since a non-monthly allocation can now actually exist and a form sending
+`monthly` unconditionally would silently downgrade it.
 
 ---
 
@@ -263,14 +268,17 @@ integers with `Math.round()`.
 | Concept | Source | Values | Answers |
 |---|---|---|---|
 | Query window | The request (`frequency`, or `startDate`/`endDate`) | All five codes | Which date range to report on |
-| Multiplier | Each allocation's stored `budgetFrequencyCode` | `monthly` only (§2.4) | How often that budget recurs |
+| Multiplier | Each allocation's stored `budgetFrequencyCode` | All five codes (§2.4) | How often that budget recurs |
 
 A monthly budget of 10 read through a yearly window accumulates **120**, not 10.
 
-Since every allocation is monthly, the accumulated budget for any window is simply the sum of
-the months it covers, and an amount changed mid-window is priced over its own slice: a
-five-month window with a change in month three yields `2 × old + 3 × new`. Custom
-`startDate`/`endDate` ranges are snapped to whole months before this is computed — see rule 7.
+For a **monthly** allocation — which is every allocation the app itself creates — the
+accumulated budget for any window is simply the sum of the months it covers, and an amount
+changed mid-window is priced over its own slice: a five-month window with a change in month
+three yields `2 × old + 3 × new`. Custom `startDate`/`endDate` ranges are snapped to whole
+months before this is computed — see rule 7. A **non-monthly** allocation, which only a client
+other than our form can create, does not yet accumulate correctly through an arbitrary window;
+see §7.
 
 **3. Prefer `actualVsBudgetDifference`.** It and `remainingBudget` are one metric under two
 names. `actualVsBudgetDifference` is canonical; `remainingBudget` is kept only until the
@@ -309,13 +317,14 @@ The mode is `ROUND_HALF_UP`, matching Postgres `numeric`.
 
 ## 7. Known limits
 
-**R14 — unanchored period counting, now unreachable.** `getNumberOfPeriods` divides a month
-span rather than identifying periods, so a quarterly budget of 600 viewed through a one-month
-window returned `budgetAccumulatedAmount: 0` and reported the whole spend as overspend.
+**R14 — unanchored period counting, latent.** `getNumberOfPeriods` divides a month span rather
+than identifying periods, so a quarterly budget of 600 viewed through a one-month window returns
+`budgetAccumulatedAmount: 0` and reports the whole spend as overspend.
 
-Restricting allocations to monthly (§2.4) makes this **unreachable rather than fixed**: with
-`monthsPerPeriod = 1` there is never a remainder to discard, which is the entire failure mode.
-The defect is still in the code and will matter again the day non-monthly allocations return.
+Every allocation the app creates is monthly, and for a monthly allocation the window and the
+period coincide: with `monthsPerPeriod = 1` there is never a remainder to discard, which is the
+entire failure mode. **That holds by convention, not by enforcement.** Since the API accepts all
+five codes (§2.4), any client other than our form can create the failing row.
 
 **The resolution is designed but not built,** and is on record for that day. Proration was
 rejected. A window will be answered with the full amount of the periods it touches, compared

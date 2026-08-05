@@ -28,18 +28,16 @@ export const ALLOWED_WINDOW_FREQUENCIES = Object.keys(MONTHS_PER_PERIOD);
 
 // Frequency codes accepted on a STORED ALLOCATION.
 //
-// Narrowed to monthly on purpose (REMARKS R15). Aggregating budgets that
-// recur on different cycles into one per-user total has no agreed answer yet,
-// and until the Overview layer has one, a non-monthly allocation read through
-// the default monthly window reports zero budget and a full overspend.
+// All five, deliberately. Which frequencies the product offers is a scope
+// decision about the UI; which ones the domain understands is a property of
+// the schema and the arithmetic. Encoding the first as a server rejection made
+// the API describe the frontend roadmap (REMARKS R15). The restriction to
+// monthly now lives in the create form.
 //
-// Monthly also makes the unanchored period counting of R14 unreachable rather
-// than merely unlikely: with monthsPerPeriod = 1 there is never a remainder to
-// discard, so a five-month window is exactly the sum of its five months.
+// The cost, stated rather than hidden: a non-monthly allocation is possible
+// again, and the unanchored period counting of R14 makes such a row report
+// zero budgeted with the whole spend as overspend through a monthly window.
 //
-// Version 1 only. The other four codes are meant to come back, and
-// MONTHS_PER_PERIOD above is left whole so nothing has to be rebuilt for that
-// day. Editing this line is NOT enough on its own: R14 must be fixed first, or
-// a restored quarterly budget reports zero through a monthly window. The full
-// re-activation checklist is in REMARKS R15.
-export const ALLOWED_ALLOCATION_FREQUENCIES = ['monthly'];
+// Kept separate from ALLOWED_WINDOW_FREQUENCIES though the sets now coincide:
+// a window is a date range, an allocation is a stored recurrence.
+export const ALLOWED_ALLOCATION_FREQUENCIES = Object.keys(MONTHS_PER_PERIOD);
