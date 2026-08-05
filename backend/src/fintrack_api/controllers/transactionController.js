@@ -498,8 +498,10 @@ export const transferBetweenAccounts = async (req, res, next) => {
     );
 
     if (!sourceAccountInfo) {
-      const message = `Origin account ${sourceAccountInfo.account_name} not found`;
-      throw createError(404, message);
+      // The identifier searched with, not a field of the row that was not
+      // found: dereferencing it raised a TypeError and turned this 404 into a
+      // 500 that never named the account.
+      throw createError(404, `Origin account ${sourceAccountName} not found`);
     }
     //---
     const destinationAccountInfo = await getAccountInfo(
@@ -514,8 +516,11 @@ export const transferBetweenAccounts = async (req, res, next) => {
     // destinationAccountInfo
     // );
     if (!destinationAccountInfo) {
-      const message = `Destination account ${destinationAccountInfo.account_name} not found`;
-      throw createError(404, message);
+      // Same defect as the origin branch above.
+      throw createError(
+        404,
+        `Destination account ${destinationAccountName} not found`,
+      );
     }
     //----source account-----------------
     const sourceAccountTypeId = accountTypes.filter(
