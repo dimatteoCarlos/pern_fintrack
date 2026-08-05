@@ -26,6 +26,7 @@ dataFormatHelpers:
  getMonthName
  numberToWords
  capitalize
+ normalizeAccountName
 
 
 fx function:
@@ -45,6 +46,14 @@ export function capitalize(text) {
   const capitalized = lower.replace(/(^\w)|(\. \w)|(\.\w)/g, match => match.toUpperCase());
 
   return capitalized;
+}
+//-----------------------
+// Canonical form of an account name and of the parts it is derived from:
+// trimmed and lowercase. Storage keeps this form so the same name is always
+// the same string; capitalising for display belongs to the frontend.
+export function normalizeAccountName(text) {
+ if (!text) return '';
+ return String(text).trim().toLowerCase();
 }
 //----------
 export const determineTransactionType = (

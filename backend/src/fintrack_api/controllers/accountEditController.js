@@ -3,7 +3,7 @@
 import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
-import { capitalize } from '../../utils/helpers.js';
+import { capitalize, normalizeAccountName } from '../../utils/helpers.js';
 
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
@@ -134,11 +134,14 @@ export const patchAccountById = async (req, res, next) => {
           budgetChange = { amount, frequencyCode };
         }
 
+        // The parts are normalized too, not only the name derived from them.
+        // Storing 'Comida' and deriving 'comida/...' puts the same word in two
+        // forms in the same row, and nothing can then rebuild one from the other.
         if (payload.category_name !== undefined)
-          specificFields.category_name = payload.category_name;
+          specificFields.category_name = normalizeAccountName(payload.category_name);
 
         if (payload.subcategory !== undefined)
-          specificFields.subcategory = payload.subcategory;
+          specificFields.subcategory = normalizeAccountName(payload.subcategory);
 
         // The nature is editable. What identifies an account is its account_id;
         // account_name is a derived label and may follow. Resolved against the
@@ -147,7 +150,7 @@ export const patchAccountById = async (req, res, next) => {
         let natureName = null;
 
         if (payload.category_nature_type_name !== undefined) {
-          natureName = payload.category_nature_type_name.trim().toLowerCase();
+          natureName = normalizeAccountName(payload.category_nature_type_name);
 
           const natureRow = await client.query({
             text: `SELECT category_nature_type_id FROM category_nature_types
@@ -196,7 +199,9 @@ export const patchAccountById = async (req, res, next) => {
         const subcategory = payload.subcategory ?? current.subcategory;
         const nature = natureName ?? current.category_nature_type_name;
 
-        userAccountFields.account_name = `${capitalize(categoryName)}/${capitalize(subcategory)}/${nature}`;
+        userAccountFields.account_name = normalizeAccountName(
+          `${categoryName}/${subcategory}/${nature}`,
+        );
 
         // Renaming can land on a name this user already has. Scoped by user_id
         // and excluding the account being edited: the same name under another
@@ -254,6 +259,8 @@ export const patchAccountById = async (req, res, next) => {
         const debtorLastname =
          payload.debtor_lastname ?? current.debtor_lastname;
 
+        // Still capitalized: normalizing every account name to lowercase is
+        // outside the budget module. Tracked in REMARKS R22.
         userAccountFields.account_name = `${capitalize((debtorLastname ?? '').trim())}, ${capitalize((debtorName ?? '').trim())}`;
 
         break;
