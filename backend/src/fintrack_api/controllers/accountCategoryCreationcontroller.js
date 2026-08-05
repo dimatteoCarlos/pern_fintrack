@@ -143,16 +143,24 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     //---------------------------------------
     //----- CHECK CATEGORY_BUDGET+ SUBCATEGORY + NATURE, ACCOUNT EXISTENCE ----------------
     // check existence of category AND subcategory and nature,name existence
+    // Uniqueness is per user: the same category under another user is not a
+    // conflict. Scoped through user_accounts, which is where ownership lives.
+    // deleted_at IS NULL prepares the ground for honouring soft deletion; it
+    // changes nothing today, since verifyAccountExistence above does not filter
+    // deleted rows either and rejects the request first.
     const categoryAndSubcategoryAndNatureQuery = {
-      text: `SELECT cba.*
+      text: `SELECT 1
       FROM category_budget_accounts cba
       JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
+      JOIN user_accounts ua ON ua.account_id = cba.account_id
 
-      WHERE LOWER(cba.category_name) = $1 
-      AND LOWER(cnt.category_nature_type_name) = $2
-      AND LOWER(cba.subcategory) = $3
+      WHERE ua.user_id = $1
+      AND LOWER(cba.category_name) = $2
+      AND LOWER(cnt.category_nature_type_name) = $3
+      AND LOWER(cba.subcategory) = $4
+      AND ua.deleted_at IS NULL
     `,
-      values: [category_name, nature_type_name_req, subcategory],
+      values: [userId, category_name, nature_type_name_req, subcategory],
     };
     const categoryAndSubcategoryAndNatureExistsResult = await pool.query(
       categoryAndSubcategoryAndNatureQuery,
