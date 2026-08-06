@@ -80,7 +80,7 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
                   goal:{' '}
                   {numberFormatCurrency(
                     target,
-                    0,
+                    2,
                     currency_code ?? DEFAULT_CURRENCY,
                     'en-US',
                   )}
