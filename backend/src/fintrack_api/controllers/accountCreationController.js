@@ -13,6 +13,7 @@ import {
   determineTransactionType,
   formatDate,
   formatDateToDDMMYYYY,
+  normalizePersonName,
 } from '../../utils/helpers.js';
 import { recordTransaction } from '../../utils/fintrackUtils/transactionManagement/recordTransaction.js';
 import { checkAndInsertAccount } from '../../utils/fintrackUtils/accountManagement/checkAndInsertAccount.js';
@@ -473,10 +474,19 @@ export const createDebtorAccount = async (req, res, next) => {
     // Asumimos USD por defecto // let's assume usd by default
     const { currency } = req.body;
     const currencyCode = currency ? currency : 'usd';
-    const newAccountName = `${debtor_lastname}, ${debtor_name}`;
+    // Cleaned once and reused: the composed account_name and the parts stored
+    // in debtor_accounts must be the same strings. Case is left as typed.
+    const debtorLastnameInput = normalizePersonName(debtor_lastname);
+    const debtorNameInput = normalizePersonName(debtor_name);
+    const newAccountName = `${debtorLastnameInput}, ${debtorNameInput}`;
 
     //currency and account_type data, better taken from frontend
-    if (!account_type || !currencyCode || !debtor_lastname || !debtor_name) {
+    if (
+      !account_type ||
+      !currencyCode ||
+      !debtorLastnameInput ||
+      !debtorNameInput
+    ) {
       const message =
         'Currency_code, account name and account type name fields are required';
       //theses fields are required, although, not originally considered in the ui input form frontend.
@@ -672,8 +682,8 @@ export const createDebtorAccount = async (req, res, next) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7,$8) RETURNING *`,
       values: [
         account_id,
-        debtor_lastname,
-        debtor_name,
+        debtorLastnameInput,
+        debtorNameInput,
         newAccountBalance,
         currencyIdReq,
         selected_account_name,

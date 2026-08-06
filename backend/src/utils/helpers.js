@@ -55,6 +55,14 @@ export function normalizeAccountName(text) {
  if (!text) return '';
  return String(text).trim().toLowerCase();
 }
+//-----------------------
+// Canonical form of a person's name: whitespace cleaned, case left alone.
+// Capitalization such as McCartney or O'Connor is user data, not formatting;
+// forcing a case destroys it, and displaying it belongs to the frontend.
+export function normalizePersonName(text) {
+ if (!text) return '';
+ return String(text).trim().replace(/\s+/g, ' ');
+}
 //----------
 export const determineTransactionType = (
   transaction_amount,

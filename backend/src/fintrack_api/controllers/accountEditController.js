@@ -3,7 +3,10 @@
 import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 import { createError, handlePostgresError } from '../../utils/errorHandling.js';
-import { capitalize, normalizeAccountName } from '../../utils/helpers.js';
+import {
+ normalizeAccountName,
+ normalizePersonName,
+} from '../../utils/helpers.js';
 
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
@@ -232,10 +235,12 @@ export const patchAccountById = async (req, res, next) => {
       //----
       case 'debtor': {
         if (payload.debtor_name !== undefined)
-          specificFields.debtor_name = payload.debtor_name;
+          specificFields.debtor_name = normalizePersonName(payload.debtor_name);
 
         if (payload.debtor_lastname !== undefined)
-          specificFields.debtor_lastname = payload.debtor_lastname;
+          specificFields.debtor_lastname = normalizePersonName(
+           payload.debtor_lastname,
+          );
 
         // Same defect as category_budget, with a harder failure: a PATCH
         // without debtor_lastname raised on .trim() of undefined and returned
@@ -259,9 +264,10 @@ export const patchAccountById = async (req, res, next) => {
         const debtorLastname =
          payload.debtor_lastname ?? current.debtor_lastname;
 
-        // Still capitalized: normalizing every account name to lowercase is
-        // outside the budget module. Tracked in REMARKS R22.
-        userAccountFields.account_name = `${capitalize((debtorLastname ?? '').trim())}, ${capitalize((debtorName ?? '').trim())}`;
+        // Rebuilt with the case the user typed. It used to run through
+        // capitalize(), which lowercases first and turned McCartney into
+        // Mccartney on any edit, even one that never touched the name.
+        userAccountFields.account_name = `${normalizePersonName(debtorLastname)}, ${normalizePersonName(debtorName)}`;
 
         break;
       }
