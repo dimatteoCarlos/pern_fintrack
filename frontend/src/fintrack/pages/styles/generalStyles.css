@@ -20,6 +20,11 @@ layout style is stablished by the following elements:
 
   --lightSuccess: lightgreen;
   --success: green;
+
+  /*Signed amounts. Deeper than --squareAlert and --lightSuccess because these
+    are read as small text on the creme card, where those two fall below 4.5:1.*/
+  --amountNegative: #8f4444;
+  --amountPositive: #2a6b45;
   --hoverColor: cyan;
   --secondary: #7f7f7f;
   --bgBodyColor: #1b1b1b;

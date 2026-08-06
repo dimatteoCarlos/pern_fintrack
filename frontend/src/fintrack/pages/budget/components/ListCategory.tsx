@@ -80,11 +80,19 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
           // const { total_remaining } = category;
           // console.log('total_remaining', total_remaining);
 
-          const remain = Math.round(-total_balance + budget);
-
-          // console.log('remain', remain);
+          // Not rounded: the backend already ships two decimals, and rounding
+          // to an integer here made the amount disagree with its own percentage.
+          const remain = -total_balance + budget;
 
           const statusAlert = remain <= 0;
+
+          // What the remaining amount is worth as a share of the budget. The
+          // parenthesis qualifies the figure in front of it, so the same number
+          // reads for both words: 19.6% over, 100.0% left.
+          const remainPercentage =
+            budget === 0
+              ? ''
+              : ((Math.abs(remain) / budget) * 100).toFixed(1) + '%';
 
           return (
            <div className='box__container .flx-row-sb' key={indx}>
@@ -115,15 +123,9 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
                     borderBottom: '0.5px dashed var(--creme)',
                   }}
                 >
-                  Spent: {currencyFormat(currency_code, total_balance, 'en-US')}
-                  &nbsp;
-                  <span style={{ fontSize: '0.75rem' }}>
-                    (
-                    {budget === 0
-                      ? ''
-                      : ((total_balance / budget) * 100).toFixed(1) + '%'}
-                    )
-                  </span>
+                  {currencyFormat(currency_code, total_balance, 'en-US')}
+                  &nbsp;/&nbsp;
+                  {currencyFormat(currency_code, budget, 'en-US')}
                 </div>
               </BoxRow>
 
@@ -133,28 +135,21 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
                     <StatusSquare alert={statusAlert ? 'alert' : ''} />
                     <div className='box__subtitle'>
                       &nbsp;
+                      {/* Absolute value: the word carries the sign, so a minus
+                          in front of it would state the same thing twice. */}
                       {numberFormatCurrency(
-                        remain,
-                        0,
+                        Math.abs(remain),
+                        2,
                         currency_code ?? DEFAULT_CURRENCY,
                         'en-US',
                       )}
-                      &nbsp;
+                      &nbsp;{remain < 0 ? 'over' : 'left'}&nbsp;
                       <span style={{ fontSize: '0.75rem' }}>
-                        (
-                        {budget === 0
-                          ? ''
-                          : ((1 - total_balance / budget) * 100).toFixed(1) +
-                            '%'}
-                        )
+                        ({remainPercentage})
                       </span>
                     </div>
                   </div>
                 </BoxRow>
-
-                <div className='box__subtitle'>
-                  Budget: {currencyFormat(currency_code, budget, 'en-US')}{' '}
-                </div>
               </BoxRow>
             </div>
           );

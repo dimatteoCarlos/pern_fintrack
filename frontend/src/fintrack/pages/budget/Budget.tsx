@@ -37,7 +37,7 @@ function Budget() {
             <div className='open__btn__label'>New Category</div>
           </OpenAddEditBtn>
 
-          <CardTitle>Category List</CardTitle>
+          <CardTitle legend='Spent / Budget'>Category List</CardTitle>
 
           <ListCategory previousRoute={originRoute} />
 

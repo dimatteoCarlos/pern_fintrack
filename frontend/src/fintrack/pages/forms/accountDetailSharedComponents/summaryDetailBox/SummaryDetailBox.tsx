@@ -2,7 +2,6 @@
 import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
 import { DEFAULT_CURRENCY } from '../../../../helpers/constants';
 import {
-  digitRound,
   getCurrencySymbol,
   numberFormatCurrency,
 } from '../../../../helpers/functions';
@@ -29,7 +28,14 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
   const { title, amount, subtitle1, amount1, amount2, status, currency_code } =
     bubleInfo;
 
-  //  console.log('bubleInfo', bubleInfo)
+  // amount2 is what is left of the budget: negative means it was exceeded.
+  const isOver = amount2 < 0;
+
+  // What the remaining amount is worth as a share of the budget. The
+  // parenthesis qualifies the figure in front of it, so the same number reads
+  // for both words: 19.6% over, 100.0% left.
+  const remainPercentage =
+    amount !== 0 ? (Math.abs(amount2) / amount) * 100 : 0;
 
   return (
     <>
@@ -38,11 +44,13 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
         <div className='summary__data'>
           <div className='summary__data--amount'>
             <span> {getCurrencySymbol(currency_code ?? defaultCurrency)}</span>
-            <span>{digitRound(amount)}</span>
+            {/* No currency argument: the symbol is the span above, and passing
+                one here would print it twice. */}
+            <span>{numberFormatCurrency(amount, 2)}</span>
           </div>
 
           <div className='summary__data--subtitle1'>
-            {subtitle1} {numberFormatCurrency(amount1, 1, currency_code)}&nbsp;(
+            {subtitle1} {numberFormatCurrency(amount1, 2, currency_code)}&nbsp;(
             {(amount !== 0 && amount1
               ? Math.abs((amount1! / amount) * 100)
               : 0
@@ -51,16 +59,25 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
           </div>
 
           <div className='summary__data--status '>
-            {/* status: */}
             <StatusSquare alert={status ? 'alert' : ''} />
-            {/* <StatusSquare alert={amount2 >0 ? 'alert' : ''}/> */}
             <div className='summary__data--subtitle2'>
-              {(amount !== 0 && amount2
-                ? 100 - Math.abs((amount1! / amount) * 100)
-                : // Math.abs(amount2!/(amount)*100)
-                  0
-              ).toFixed(1)}
-              %
+              {/* Absolute value: the word carries the sign, so a minus in front
+                  of it would state the same thing twice. */}
+              {numberFormatCurrency(Math.abs(amount2), 2, currency_code)}
+              &nbsp;
+              <span className='summary__remainWord'>
+                {isOver ? 'over' : 'left'}
+              </span>
+              &nbsp;
+              <span
+                className={
+                  isOver
+                    ? 'summary__percentage--over'
+                    : 'summary__percentage--left'
+                }
+              >
+                ({remainPercentage.toFixed(1)}%)
+              </span>
             </div>
           </div>
         </div>

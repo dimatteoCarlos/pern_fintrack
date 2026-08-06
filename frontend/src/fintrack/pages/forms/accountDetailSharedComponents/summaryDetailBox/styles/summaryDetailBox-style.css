@@ -48,3 +48,27 @@
   font-size: 0.75rem;
   text-transform: capitalize;
 }
+
+/*font-size is restated because the universal selector in index.css sets one on
+  every element, so a bare span does not inherit the line it sits in.*/
+.summary__remainWord,
+.summary__percentage--over,
+.summary__percentage--left {
+  font-size: inherit;
+}
+
+/*The word stays as authored, matching the budget lists. Set on the element
+  itself rather than by editing .summary__data--subtitle2, which three separate
+  stylesheets declare at the same specificity: which one wins depends on the
+  order the lazy routes load their CSS.*/
+.summary__remainWord {
+  text-transform: none;
+}
+
+.summary__percentage--over {
+  color: var(--amountNegative);
+}
+
+.summary__percentage--left {
+  color: var(--amountPositive);
+}
