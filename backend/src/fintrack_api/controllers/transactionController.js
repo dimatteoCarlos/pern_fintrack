@@ -75,13 +75,16 @@ export const getAccountInfo = async (
   // function exists to stop making.
   const byId = accountId !== null && accountId !== undefined && accountId !== '';
 
+  // Text values compared in lowercase on both sides: account names are stored
+  // as the user typed them, so an exact match would miss Bancolombia when the
+  // request carries bancolombia. Ids are compared as they are.
   const accountQuery = byId
     ? `SELECT ua.* FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
-      WHERE ua.user_id = $1 AND ua.account_id = $2 AND act.account_type_name = $3`
+      WHERE ua.user_id = $1 AND ua.account_id = $2 AND LOWER(act.account_type_name) = LOWER($3)`
     : `SELECT ua.* FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
-      WHERE ua.user_id = $1 AND ua.account_name = $2 AND act.account_type_name = $3`;
+      WHERE ua.user_id = $1 AND LOWER(ua.account_name) = LOWER($2) AND LOWER(act.account_type_name) = LOWER($3)`;
 
   const accountInfoResult = await dbClient.query({
     text: accountQuery,

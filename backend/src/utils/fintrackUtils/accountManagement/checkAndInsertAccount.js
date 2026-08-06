@@ -25,13 +25,16 @@ export const checkAndInsertAccount = async (
 
   try {
     // 2. Check existence by User, Account Name, AND Account Type
+    // Compared in lowercase on both sides: names are stored as the user typed
+    // them. A case mismatch here does not return empty, it falls through to
+    // the INSERT below and creates a duplicate account with a zero balance.
     const chekAccountResult = await dbClient.query(
       `SELECT ua.* FROM user_accounts ua
      JOIN account_types act ON ua.account_type_id = act.account_type_id
      WHERE ua.user_id =$1
-      AND ua.account_name = $2
-      AND act.account_type_name=$3
-      AND ua.deleted_at IS NULL; 
+      AND LOWER(ua.account_name) = LOWER($2)
+      AND LOWER(act.account_type_name) = LOWER($3)
+      AND ua.deleted_at IS NULL;
       `,
       [userId, accountName, accountType],
     );
@@ -49,7 +52,7 @@ export const checkAndInsertAccount = async (
       //--------------------------
       //Get account_type_id dynamically
       const accountTypeResult = await dbClient.query(
-        'SELECT account_type_id FROM account_types WHERE account_type_name = $1',
+        'SELECT account_type_id FROM account_types WHERE LOWER(account_type_name) = LOWER($1)',
         [accountType],
       );
 
