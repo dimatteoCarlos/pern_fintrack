@@ -3,12 +3,25 @@
 API contract and behaviour of `backend/src/fintrack_api/services/budget_services/`, written
 for the frontend work in Plan D.
 
-**Branch:** `feat/budget` · **Last verified:** 2026-08-02 against the source and a live
+**Branch:** `feat/budget` · **Last verified:** 2026-08-05 against the source and a live
 `fintrack_dev`, not inferred from the plans.
 
-References to `Plan C §…`, `Plan D`, `ROUNDING-POLICY.md` and remark ids (`R9`…`R14`) point
+References to `Plan C §…`, `Plan D`, `ROUNDING-POLICY.md` and remark ids (`R9`…`R23`) point
 into `plan-docs/`, which is deliberately untracked working notes. Everything needed to build
 against this API is in this file; those pointers only say where a decision was argued.
+
+### Changed since 2026-08-02
+
+The frontend work in Plan D was planned against the earlier state. These five landed after it
+and change what the create and edit screens can expect.
+
+| Commit | What changed | Where it shows |
+|---|---|---|
+| `da11f79` | A stored allocation accepts all five frequency codes. The restriction to `monthly` is now a frontend rule | §2.4, §7 |
+| `15042ad` | Category uniqueness is scoped to the user. The same category under another account holder is no longer a conflict | §2.5 |
+| `ff20896` | Account name lookups stopped matching by substring. Names that were refused for resembling an existing one are now accepted | §2.5 |
+| `270d705` | Account names are compared case-insensitively wherever they are looked up | §2.5 |
+| `41219ff` | Debtor account names keep the capitalization the user typed. Category budget names are unaffected: they stay lowercase | §2.5 |
 
 ---
 
@@ -41,9 +54,15 @@ An account with no policy means **not budgeted**. It is not an account with a bu
 
 ### 2.1 Read endpoints
 
-All mounted under `/api/fintrack/budget`, already behind `verifyToken` and `globalLimiter`.
+All mounted under `/api/fintrack/budget`, behind `verifyToken`.
 **No endpoint accepts a user id from the client** — identity comes from the token via
 `requireUserId`. Every `accountId` received is checked against the caller's own accounts.
+
+> **Rate limiting is in revision (`REMARKS.md` R23) and `globalLimiter` is currently off the
+> `/api/fintrack` router.** One counter was measuring a dashboard paint with the same ruler as a
+> password guess, and a normal session exhausted it. Do not design around a request budget in
+> either direction: keep handling `429` with the documented body, and do not assume a screen may
+> fire an unbounded number of calls.
 
 | Method | Path | Parameters |
 |---|---|---|
@@ -122,6 +141,43 @@ read-only and never sends the field. An absent `budgetFrequencyCode` on the acco
 keeps the allocation in force rather than resetting it to the default (§2.3) — a rule that stops
 being theoretical here, since a non-monthly allocation can now actually exist and a form sending
 `monthly` unconditionally would silently downgrade it.
+
+### 2.5 The account name of a category budget
+
+The create and edit screens are budget screens, so the rules the server applies to the name
+belong in this contract.
+
+**It is derived, and the server derives it.** The client sends `category_name`, `subcategory`
+and `category_nature_type_name`. The server trims each one, lowercases it, and composes
+`category/subcategory/nature`. The client never sends `account_name` on this path and should
+never build it for display either — render the `account_name` the response carries. Two
+implementations of one derivation drift, and the frontend's copy is the one that will be wrong,
+because the rule lives here.
+
+**The canonical stored form is trimmed lowercase**, and has been since `edb4614`, with migration
+`013` bringing the existing rows over. Capitalizing for the screen is the frontend's job. This is
+the opposite of the debtor account name, which since `41219ff` keeps the capitalization the user
+typed, because `McCartney` and `O'Connor` are user data and forcing a case destroys them.
+
+**Uniqueness is per user, and checked twice.**
+
+| Guard | Rejects when | Message |
+|---|---|---|
+| Name and type | The same user already has an account with that exact name and type | `An account named "X" of type "Y" already exists. Try again with a different name.` |
+| Category, subcategory and nature | The same user already has that combination | `Can not create a new account since, category X with subcategory Y and nature Z account already exists. Try again` |
+
+Both arrive as `400`. Neither looks at other users: since `15042ad` the same category under
+another account holder is not a conflict.
+
+**Matching is exact, not by resemblance.** Until `ff20896` the first guard compared with
+`ILIKE '%name%'`, which matched any stored name *containing* the one being created. With
+`mercadomini/frutas/need` on file, creating `mini/frutas/need` was refused, and `frutas/need` was
+refused by every account ending in it. Those names are now accepted. Comparison folds case on
+both sides (`270d705`), so `Mercado/Frutas/Need` and `mercado/frutas/need` are the same account
+for every lookup.
+
+**On edit**, the same combination is re-derived and the collision check excludes the account
+being edited, so re-saving a form without changing the name is not a conflict.
 
 ---
 
@@ -222,8 +278,12 @@ than one adjustment — a normalized start *and* an extended end.
 | `400` | `{ status, message }` | Domain guard, e.g. `budgetAmount must be at least 0.01 in the account currency.` |
 | `403` | `{ status, message }` | Account or policy not owned by the caller |
 
-**There is no `404`.** Distinguishing "does not exist" from "not yours" would let a caller
-enumerate other users' ids, so both answer `403`.
+**There is no `404` on the budget endpoints.** Distinguishing "does not exist" from "not yours"
+would let a caller enumerate other users' ids, so both answer `403`.
+
+The account endpoints outside `/budget` do answer `404` when an account is missing (`a9260d0`),
+which matters to the edit screen: after a rename, a sibling screen still holding the old name
+gets a clean `404` instead of a `500`, and a refetch fixes it.
 
 ---
 
@@ -293,6 +353,10 @@ would replace one lie with another.
 
 **6. `meta.notices` is an array.** Render all of them.
 
+**6b. Do not derive `account_name` on the client.** The server composes it from the three parts
+and stores it lowercase (§2.5). A client-side preview is a second implementation of the same
+rule and will disagree with what is saved. Render the name the response carries.
+
 **7. Custom ranges are snapped to whole months, so render `result.period`, not the dates the
 user picked.** `startDate` moves back to the first of its month and `endDate` forward to the
 first of the next month unless it is already there, and a notice is added when anything moved.
@@ -348,5 +412,12 @@ page, so it must not be built as an Overview-only endpoint.
 
 **Other open items**, none of which block frontend work: R9 (FX rounding policy), R10 (float
 arithmetic on account balances, outside this module), R11 (a single amount scale assumed for
-every currency), R12 (`010` and `012` disagree on backfilled `valid_from`), R13 (37
-divergences between the two schema build paths).
+every currency), R12 (`010` and `012` disagree on backfilled `valid_from`, local only — the
+Supabase file writes the account start date), R13 (37 divergences between the two schema build
+paths), R21 (account deletion not audited end to end), R23 (the rate limiters key on the request
+object instead of the IP).
+
+**Closed since the last revision:** R15, the allocation frequency narrowing, reversed in
+`da11f79`; R20, category uniqueness unscoped and matched by substring, closed by `15042ad` and
+`ff20896`; R22, account name normalization, closed on a different premise — normalization is of
+the comparison, not of the storage.
