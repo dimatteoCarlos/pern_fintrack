@@ -261,6 +261,22 @@ body {
   /* border: 1px solid yellowgreen; */
 }
 
+/*CardTitle with a column legend. Only applied when a legend is passed, so a
+  plain CardTitle keeps its block layout.*/
+.presentation__card--title--split {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+/*Second column. Inherits size, weight and colour from the title, so the legend
+  reads as a peer of it and not as a caption.*/
+.presentation__card--legend {
+  flex: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
 /*StatusSquare*/
 .status__square{
   height: 0.75rem;
