@@ -66,11 +66,11 @@ All mounted under `/api/fintrack/budget`, behind `verifyToken`.
 
 | Method | Path | Parameters |
 |---|---|---|
-| `GET` | `/summary` | Query: `accountId` (required, positive), `frequency`, `date`, `startDate`, `endDate` |
-| `POST` | `/multi-summary` | Body: `accountIds[]` (required, min 1, unique, positive), `frequency`, `date`, `startDate`, `endDate` |
+| `GET` | `/summary` | Query: `accountId` (required, positive), `frequency`, `date` |
+| `POST` | `/multi-summary` | Body: `accountIds[]` (required, min 1, unique, positive), `frequency`, `date` |
 | `GET` | `/frequencies` | None |
 | `GET` | `/history/:budgetPolicyId` | Path: `budgetPolicyId` (positive) |
-| `GET` | `/export` | Query: `accountId` (**optional** — omitted means all owned accounts), `frequency`, `date`, `startDate`, `endDate` |
+| `GET` | `/export` | Query: `accountId` (**optional** — omitted means all owned accounts), `frequency`, `date` |
 
 `frequency` here is the **query window**. It accepts `monthly` · `quarterly` · `four-month` ·
 `semiannual` · `yearly`, and **defaults to `monthly`** when absent. Always the code, never the
@@ -81,7 +81,13 @@ surrogate id.
 > how often that budget recurs. Both admit the same five codes today, and they are not required
 > to stay in step. See §2.4.
 
-`startDate` must be less than or equal to `endDate`; the schema rejects the inverse.
+**There is no free date range.** `startDate` and `endDate` were removed: a budget is a property
+of a canonical period, not of a query window, so "what was budgeted between these two dates" has
+no answer. The window is always the calendar period containing `date`, sized by `frequency`.
+These three schemas are **strict** — sending `startDate` returns `400` with
+`code: "unrecognized_keys"` naming the key, rather than silently reporting on a different
+period. Free ranges for transaction listings are unaffected; they live in the report and
+dashboard endpoints.
 
 ### 2.2 Write endpoint
 
@@ -327,7 +333,7 @@ integers with `Math.round()`.
 
 | Concept | Source | Values | Answers |
 |---|---|---|---|
-| Query window | The request (`frequency`, or `startDate`/`endDate`) | All five codes | Which date range to report on |
+| Query window | The request (`frequency` + `date`) | All five codes | Which date range to report on |
 | Multiplier | Each allocation's stored `budgetFrequencyCode` | All five codes (§2.4) | How often that budget recurs |
 
 A monthly budget of 10 read through a yearly window accumulates **120**, not 10.
@@ -335,9 +341,8 @@ A monthly budget of 10 read through a yearly window accumulates **120**, not 10.
 For a **monthly** allocation — which is every allocation the app itself creates — the
 accumulated budget for any window is simply the sum of the months it covers, and an amount
 changed mid-window is priced over its own slice: a five-month window with a change in month
-three yields `2 × old + 3 × new`. Custom `startDate`/`endDate` ranges are snapped to whole
-months before this is computed — see rule 7. A **non-monthly** allocation, which only a client
-other than our form can create, does not yet accumulate correctly through an arbitrary window;
+three yields `2 × old + 3 × new`. A **non-monthly** allocation, which only a client other than
+our form can create, does not yet accumulate correctly through a window of a different size;
 see §7.
 
 **3. Prefer `actualVsBudgetDifference`.** It and `remainingBudget` are one metric under two
@@ -357,12 +362,9 @@ would replace one lie with another.
 and stores it lowercase (§2.5). A client-side preview is a second implementation of the same
 rule and will disagree with what is saved. Render the name the response carries.
 
-**7. Custom ranges are snapped to whole months, so render `result.period`, not the dates the
-user picked.** `startDate` moves back to the first of its month and `endDate` forward to the
-first of the next month unless it is already there, and a notice is added when anything moved.
-A user picking `Jul 1 – Jul 31` gets `Jul 1 – Aug 1`, one full month — the frontend does **not**
-need to compute end-exclusive dates. But if the label reads `Jul 15 – Aug 20` while the figures
-cover `Jul 1 – Sep 1`, the screen is wrong even though every number in it is right.
+**7. Render `result.period`, never a range built on the client.** The server resolves the window
+from `frequency` + `date` and returns it end-exclusive. A screen labelling its own dates while
+the figures cover the server's period is wrong even though every number in it is right.
 
 ---
 

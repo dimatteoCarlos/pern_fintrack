@@ -16,13 +16,21 @@ import {
 // allowed even though only monthly budgets may be created.
 const frequencyField = z.enum(ALLOWED_WINDOW_FREQUENCIES).default('monthly');
 const dateField = z.coerce.date().optional();
-const startDateField = z.coerce.date().optional();
-const endDateField = z.coerce.date().optional();
+
+// The three reporting schemas below are strict.
+//
+// They used to accept startDate/endDate, and zod's default is to strip an
+// unknown key silently. Under that default a caller still sending the retired
+// pair would get a 200 computed over a period it never asked for, with nothing
+// in the response saying so. Strict turns that into a 400 naming the key.
+//
+// .strict() must precede .refine(): the refine returns a ZodEffects, which no
+// longer exposes the method.
 
 // Summary (single account)
 /**
  * GET /budget/summary
- * Query: accountId (required), frequency, date, startDate, endDate
+ * Query: accountId (required), frequency, date
  */
 export const summaryQuerySchema = z.object({
  accountId: z.coerce.number().positive({
@@ -30,26 +38,12 @@ export const summaryQuerySchema = z.object({
  }),
  frequency: frequencyField,
  date: dateField,
- startDate: startDateField,
- endDate: endDateField,
-})
-.refine(
- (data) => {
-  if (data.startDate && data.endDate) {
-   return data.startDate <= data.endDate;
-  }
-  return true;
- },
- {
-  message: 'startDate must be before or equal to endDate',
-  path: ['startDate'],
- }
-);
+}).strict();
 
 // Multi‑summary (multiple accounts)
 /**
  * POST /budget/multi-summary
- * Body: accountIds (array, required), frequency, date, startDate, endDate
+ * Body: accountIds (array, required), frequency, date
  */
 export const multiSummaryBodySchema = z.object({
  accountIds: z.array(
@@ -61,21 +55,8 @@ export const multiSummaryBodySchema = z.object({
  }),
  frequency: frequencyField,
  date: dateField,
- startDate: startDateField,
- endDate: endDateField,
 })
-.refine(
- (data) => {
-  if (data.startDate && data.endDate) {
-   return data.startDate <= data.endDate;
-  }
-  return true;
- },
- {
-  message: 'startDate must be before or equal to endDate',
-  path: ['startDate'],
- }
-)
+.strict()
 .refine(
  (data) => {
   const uniqueIds = new Set(data.accountIds);
@@ -123,7 +104,7 @@ export const historyParamsSchema = z.object({
 // Export CSV
 /**
  * GET /budget/export
- * Query: accountId (optional), frequency, date, startDate, endDate
+ * Query: accountId (optional), frequency, date
  * Same as summaryQuerySchema but accountId is optional.
  */
 export const exportQuerySchema = z.object({
@@ -132,18 +113,4 @@ export const exportQuerySchema = z.object({
  }).optional(),
  frequency: frequencyField,
  date: dateField,
- startDate: startDateField,
- endDate: endDateField,
-})
-.refine(
- (data) => {
-  if (data.startDate && data.endDate) {
-   return data.startDate <= data.endDate;
-  }
-  return true;
- },
- {
-  message: 'startDate must be before or equal to endDate',
-  path: ['startDate'],
- }
-);
+}).strict();

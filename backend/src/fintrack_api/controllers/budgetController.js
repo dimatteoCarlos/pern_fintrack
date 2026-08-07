@@ -63,7 +63,7 @@ export async function getSummary(req, res, next) {
   if (!userId) return;
 
   const validated = summaryQuerySchema.parse(req.query);
-  const { accountId, frequency, date, startDate, endDate } = validated;
+  const { accountId, frequency, date } = validated;
 
   const owned = await getOwnedBudgetAccounts(userId);
   if (accountId && !owned.has(accountId)) {
@@ -77,8 +77,7 @@ export async function getSummary(req, res, next) {
    pool,
    accountId,
    frequency,
-   date || new Date(),
-   { startDate, endDate }
+   date || new Date()
   );
 
   res.status(200).json(result);
@@ -99,7 +98,7 @@ export async function getMultiSummary(req, res, next) {
   if (!userId) return;
 
   const validated = multiSummaryBodySchema.parse(req.body);
-  const { accountIds, frequency, date, startDate, endDate } = validated;
+  const { accountIds, frequency, date } = validated;
 
   // Check EVERY element. Validating only the first would let a caller hide foreign ids behind one of their own.
   const owned = await getOwnedBudgetAccounts(userId);
@@ -115,8 +114,7 @@ export async function getMultiSummary(req, res, next) {
    pool,
    accountIds,
    frequency,
-   date || new Date(),
-   { startDate, endDate }
+   date || new Date()
   );
 
   res.status(200).json(result);
@@ -213,7 +211,7 @@ export async function exportCSV(req, res, next) {
   if (!userId) return;
 
   const validated = exportQuerySchema.parse(req.query);
-  const { accountId, frequency, date, startDate, endDate } = validated;
+  const { accountId, frequency, date } = validated;
 
   let results;
   const accountNamesMap = new Map();
@@ -232,8 +230,7 @@ export async function exportCSV(req, res, next) {
     pool,
     accountId,
     frequency,
-    date || new Date(),
-    { startDate, endDate }
+    date || new Date()
    );
    results = [result];
    accountNamesMap.set(accountId, owned.get(accountId).accountName);
@@ -251,8 +248,7 @@ export async function exportCSV(req, res, next) {
     pool,
     accountIds,
     frequency,
-    date || new Date(),
-    { startDate, endDate }
+    date || new Date()
    );
 
    // multi-summary now returns unbudgeted accounts too, so the screen can show

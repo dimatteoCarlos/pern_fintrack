@@ -3,7 +3,6 @@
 // Budget Calculation Service – Read operations for budget summaries.
 // Orchestrates data fetching, period resolution, and metric calculation.
 // Currency is obtained from in-memory catalog (no DB queries).
-// Date normalization moved to dateNormalizer.js.
 //
 // The word "frequency" names two different things and conflating them was a
 // defect. The frequency in the REQUEST resolves the query window: which date
@@ -12,7 +11,6 @@
 // which is why it never leaves the calculator's parameters here.
 
 import { resolvePeriod } from '../../../../utils/fintrackUtils/date-utils/periodResolver.js';
-import { normalizeDatesToMonths } from '../../../../utils/fintrackUtils/date-utils/dateNormalizer.js';
 import { getBudgetDataForAccounts } from '../db/budgetTransactionRepository.js';
 import { calculateBudgetVsActual } from '../calculators/budgetVsActualCalculator.js';
 import { makeBudgetResult } from '../core/makeBudgetResult.js';
@@ -22,25 +20,21 @@ import { getCurrencyCodeSync } from '../../../../utils/currencyLookup.js';
 /**
  * Resolve the window to report on.
  *
- * Explicit dates win and are snapped to calendar months; otherwise the window
- * is the calendar period the reference date falls in, sized by the requested
- * frequency.
+ * The window is the calendar period the reference date falls in, sized by the
+ * requested frequency. There is no other way to obtain one.
+ *
+ * A budget is a property of a canonical period, not of a query window (PLAN_F
+ * §0). The branch that took an arbitrary startDate/endDate pair answered "what
+ * was budgeted between these two dates" — a question with no answer, because no
+ * budget was ever defined over those dates. The figure it returned was a
+ * prorated invention.
  *
  * Notices are a list, and `meta` is always an object. A singular `notice` field
  * can only carry the first thing worth saying, so anything after it is dropped
  * silently. The caller reads meta.notices and iterates: no null check, and no
  * shape change the day a second notice appears.
  */
-const resolveWindow = (windowFrequencyCode, referenceDate, options) => {
- if (options.startDate && options.endDate) {
-  const normalized = normalizeDatesToMonths(options.startDate, options.endDate);
-  return {
-   startDate: normalized.start,
-   endDate: normalized.end,
-   notices: normalized.notice ? [normalized.notice] : [],
-  };
- }
-
+const resolveWindow = (windowFrequencyCode, referenceDate) => {
  const period = resolvePeriod(windowFrequencyCode, referenceDate);
  return { startDate: period.start, endDate: period.end, notices: [] };
 };
@@ -201,11 +195,10 @@ export const budgetCalculationService = {
  /**
   * Get budget summary for a single account.
   */
-  async getSummary(pool, accountId, windowFrequencyCode, referenceDate, options = {}) {
+  async getSummary(pool, accountId, windowFrequencyCode, referenceDate) {
     const { startDate, endDate, notices } = resolveWindow(
       windowFrequencyCode,
       referenceDate,
-      options,
     );
 
     const entries = await getBudgetDataForAccounts(pool, [accountId], startDate, endDate);
@@ -227,7 +220,7 @@ export const budgetCalculationService = {
   /**
    * Get budget summaries for multiple accounts.
    */
-  async getMultiSummary(pool, accountIds, windowFrequencyCode, referenceDate, options = {}) {
+  async getMultiSummary(pool, accountIds, windowFrequencyCode, referenceDate) {
     if (!accountIds || accountIds.length === 0) {
       return { results: [], totals: makeTotals([]), meta: { notices: [] } };
     }
@@ -235,7 +228,6 @@ export const budgetCalculationService = {
     const { startDate, endDate, notices } = resolveWindow(
       windowFrequencyCode,
       referenceDate,
-      options,
     );
 
     const entries = await getBudgetDataForAccounts(pool, accountIds, startDate, endDate);
