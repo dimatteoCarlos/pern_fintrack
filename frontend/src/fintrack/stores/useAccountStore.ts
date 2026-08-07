@@ -12,11 +12,17 @@ type AccountStoreStateType = {
   allAccounts: AccountListType[];
 };
 
+// What PATCH /account/edit/:id returns: account_id plus only the fields that
+// changed, with the id serialized as text because it comes from the URL.
+export type AccountPatchType = Partial<AccountListType> & {
+  account_id: number | string;
+};
+
 //Action type definitions
 type AccountStoreActionsType = {
   setAllAccounts: (accounts: AccountListType[]) => void;
 
-  updateAccount: (updatedAccount: AccountListType) => void;
+  updateAccount: (updatedAccount: AccountPatchType) => void;
 
   removeAccount: (accountId: number | string) => void;
 };
@@ -33,11 +39,14 @@ export const useAccountStore = create<
     set({ allAccounts: accounts }),
 
   // 🔄 IN-PLACE MUTATION LOGIC FOR EDITION
+  // Merged, not replaced: the response carries only the edited fields, so
+  // overwriting the row would drop the balance, the currency and the type.
   updateAccount: (updatedAccount) =>
     set((state) => ({
       allAccounts: state.allAccounts.map((account) =>
-        account.account_id === updatedAccount.account_id
-          ? updatedAccount
+        // The id arrives as text and the list holds it as a number.
+        String(account.account_id) === String(updatedAccount.account_id)
+          ? { ...account, ...updatedAccount }
           : account,
       ),
     })),
