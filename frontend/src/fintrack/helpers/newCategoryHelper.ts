@@ -66,11 +66,12 @@ export const parseCategoryAccountName = (
  * @param category - The category name (required)
  * @param subcategory - The subcategory name (required)
  * @param nature - The nature (required)
- * @returns The full account name, or empty string if any field is invalid
+ * @returns The full account name in the form the server stores it (lowercase),
+ *          or empty string if any field is invalid
  *
  * @example
  * buildCategoryAccountName("Food", "Restaurants", "Must")
- * // "Food/Restaurants/Must"
+ * // "food/restaurants/must"
  *
  * @example
  * buildCategoryAccountName("Food", "", "Must")
@@ -90,7 +91,9 @@ export const buildCategoryAccountName = (
     return '';
   }
 
-  return `${trimmedCategory}/${trimmedSubcategory}/${trimmedNature}`;
+  // Lowercase because that is the form the server stores: the creation
+  // controller normalizes every part before building the name.
+  return `${trimmedCategory}/${trimmedSubcategory}/${trimmedNature}`.toLowerCase();
 };
 
 /**
