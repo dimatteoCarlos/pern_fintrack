@@ -34,6 +34,26 @@ const getOwnedBudgetAccounts = async (userId) => {
  return new Map(accounts.map((a) => [a.accountId, a]));
 };
 
+/**
+ * Answer a failed validation with the issues that caused it.
+ *
+ * Zod 4 renamed the issue list: ZodError.errors no longer exists, and reading it
+ * yielded undefined, which JSON.stringify drops from the payload. Every 400 this
+ * module returned carried an empty body, telling the caller the request failed
+ * but never which field. The shape matches the one validateRequest.js already
+ * defines for the auth module.
+ */
+const respondWithZodIssues = (res, error) =>
+ res.status(400).json({
+  status: 400,
+  message: 'Validation Error',
+  errors: error.issues.map((issue) => ({
+   field: issue.path.join('.'),
+   message: issue.message,
+   code: issue.code,
+  })),
+ });
+
 // ============================================================
 // GET /budget/summary
 // ============================================================
@@ -64,7 +84,7 @@ export async function getSummary(req, res, next) {
   res.status(200).json(result);
  } catch (error) {
   if (error.name === 'ZodError') {
-   return res.status(400).json({ errors: error.errors });
+   return respondWithZodIssues(res, error);
   }
   next(error);
  }
@@ -102,7 +122,7 @@ export async function getMultiSummary(req, res, next) {
   res.status(200).json(result);
  } catch (error) {
   if (error.name === 'ZodError') {
-   return res.status(400).json({ errors: error.errors });
+   return respondWithZodIssues(res, error);
   }
   next(error);
  }
@@ -152,7 +172,7 @@ export async function updatePolicy(req, res, next) {
   res.status(200).json(result);
  } catch (error) {
   if (error.name === 'ZodError') {
-   return res.status(400).json({ errors: error.errors });
+   return respondWithZodIssues(res, error);
   }
   next(error);
  }
@@ -178,7 +198,7 @@ export async function getHistory(req, res, next) {
   res.status(200).json(history);
  } catch (error) {
   if (error.name === 'ZodError') {
-   return res.status(400).json({ errors: error.errors });
+   return respondWithZodIssues(res, error);
   }
   next(error);
  }
@@ -257,7 +277,7 @@ export async function exportCSV(req, res, next) {
   res.status(200).send(csv);
  } catch (error) {
   if (error.name === 'ZodError') {
-   return res.status(400).json({ errors: error.errors });
+   return respondWithZodIssues(res, error);
   }
   next(error);
  }
