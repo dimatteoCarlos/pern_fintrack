@@ -63,7 +63,7 @@ export async function getSummary(req, res, next) {
   if (!userId) return;
 
   const validated = summaryQuerySchema.parse(req.query);
-  const { accountId, frequency, date } = validated;
+  const { accountId, date } = validated;
 
   const owned = await getOwnedBudgetAccounts(userId);
   if (accountId && !owned.has(accountId)) {
@@ -76,7 +76,6 @@ export async function getSummary(req, res, next) {
   const result = await budgetCalculationService.getSummary(
    pool,
    accountId,
-   frequency,
    date || new Date()
   );
 
@@ -98,7 +97,7 @@ export async function getMultiSummary(req, res, next) {
   if (!userId) return;
 
   const validated = multiSummaryBodySchema.parse(req.body);
-  const { accountIds, frequency, date } = validated;
+  const { accountIds, date } = validated;
 
   // Check EVERY element. Validating only the first would let a caller hide foreign ids behind one of their own.
   const owned = await getOwnedBudgetAccounts(userId);
@@ -113,7 +112,6 @@ export async function getMultiSummary(req, res, next) {
   const result = await budgetCalculationService.getMultiSummary(
    pool,
    accountIds,
-   frequency,
    date || new Date()
   );
 
@@ -211,7 +209,7 @@ export async function exportCSV(req, res, next) {
   if (!userId) return;
 
   const validated = exportQuerySchema.parse(req.query);
-  const { accountId, frequency, date } = validated;
+  const { accountId, date } = validated;
 
   let results;
   const accountNamesMap = new Map();
@@ -229,7 +227,6 @@ export async function exportCSV(req, res, next) {
    const { result } = await budgetCalculationService.getSummary(
     pool,
     accountId,
-    frequency,
     date || new Date()
    );
    results = [result];
@@ -247,7 +244,6 @@ export async function exportCSV(req, res, next) {
    const { results: multiResults } = await budgetCalculationService.getMultiSummary(
     pool,
     accountIds,
-    frequency,
     date || new Date()
    );
 

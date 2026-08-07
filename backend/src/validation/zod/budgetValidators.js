@@ -5,24 +5,22 @@
 // Frequencies are imported from budgetConfig.js (single source of truth).
 
 import { z } from 'zod';
-import {
- ALLOWED_WINDOW_FREQUENCIES,
- ALLOWED_ALLOCATION_FREQUENCIES,
-} from '../../fintrack_api/services/budget_services/core/budgetConfig.js';
+import { ALLOWED_ALLOCATION_FREQUENCIES } from '../../fintrack_api/services/budget_services/core/budgetConfig.js';
 
 // Helper schemas
 // Base fields reused across schemas
-// The query window, not the stored allocation: reporting on a quarter is
-// allowed even though only monthly budgets may be created.
-const frequencyField = z.enum(ALLOWED_WINDOW_FREQUENCIES).default('monthly');
 const dateField = z.coerce.date().optional();
 
 // The three reporting schemas below are strict.
 //
-// They used to accept startDate/endDate, and zod's default is to strip an
-// unknown key silently. Under that default a caller still sending the retired
-// pair would get a 200 computed over a period it never asked for, with nothing
-// in the response saying so. Strict turns that into a 400 naming the key.
+// They used to accept startDate/endDate and frequency, and zod's default is to
+// strip an unknown key silently. Under that default a caller still sending a
+// retired field would get a 200 computed over a period it never asked for, with
+// nothing in the response saying so. Strict turns that into a 400 naming the key.
+//
+// frequency is gone because the period is resolved from the frequency stored on
+// the allocation in force, never from the request. A query locates a period; it
+// does not get to size one.
 //
 // .strict() must precede .refine(): the refine returns a ZodEffects, which no
 // longer exposes the method.
@@ -30,20 +28,19 @@ const dateField = z.coerce.date().optional();
 // Summary (single account)
 /**
  * GET /budget/summary
- * Query: accountId (required), frequency, date
+ * Query: accountId (required), date
  */
 export const summaryQuerySchema = z.object({
  accountId: z.coerce.number().positive({
   message: 'accountId must be a positive number',
  }),
- frequency: frequencyField,
  date: dateField,
 }).strict();
 
 // Multi‑summary (multiple accounts)
 /**
  * POST /budget/multi-summary
- * Body: accountIds (array, required), frequency, date
+ * Body: accountIds (array, required), date
  */
 export const multiSummaryBodySchema = z.object({
  accountIds: z.array(
@@ -53,7 +50,6 @@ export const multiSummaryBodySchema = z.object({
  ).min(1, {
   message: 'accountIds must contain at least one account',
  }),
- frequency: frequencyField,
  date: dateField,
 })
 .strict()
@@ -104,13 +100,12 @@ export const historyParamsSchema = z.object({
 // Export CSV
 /**
  * GET /budget/export
- * Query: accountId (optional), frequency, date
+ * Query: accountId (optional), date
  * Same as summaryQuerySchema but accountId is optional.
  */
 export const exportQuerySchema = z.object({
  accountId: z.coerce.number().positive({
   message: 'accountId must be a positive number',
  }).optional(),
- frequency: frequencyField,
  date: dateField,
 }).strict();

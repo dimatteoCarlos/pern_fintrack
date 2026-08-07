@@ -123,6 +123,32 @@ const ALLOCATIONS_QUERY = `
   ORDER BY p.account_id ASC, a.valid_from ASC
 `;
 
+// The budget frequency in force at one instant, one row per account that has one.
+//
+// A point query, not a window query, and it has to be: this is what resolves the
+// window, so asking for it over a range would be circular.
+//
+// [valid_from, valid_until) is half-open, so the instant test is the same pair of
+// comparisons the window test uses, collapsed onto a single date.
+//
+// DISTINCT ON is defensive rather than necessary. uq_budget_allocation_active
+// forbids two open versions and the closed ones do not overlap, so at most one
+// row can match. It costs nothing here and makes a duplicate impossible to
+// propagate rather than merely unlikely.
+const POLICY_FREQUENCY_QUERY = `
+  SELECT DISTINCT ON (p.account_id)
+    p.account_id,
+    bft.budget_frequency_code
+  FROM budget_policies p
+  JOIN budget_policy_allocations a ON a.budget_policy_id = p.budget_policy_id
+  JOIN budget_frequency_types bft
+    ON bft.budget_frequency_type_id = a.budget_frequency_type_id
+  WHERE p.account_id = ANY($1)
+    AND a.valid_from <= $2
+    AND (a.valid_until IS NULL OR a.valid_until > $2)
+  ORDER BY p.account_id ASC, a.valid_from DESC
+`;
+
 // Spending is aggregated on its own instead of being LEFT JOINed onto the
 // allocations. Joined, an account with N overlapping allocations produced N
 // rows each carrying the FULL period spend, and any sum over those rows
@@ -145,6 +171,29 @@ const SPENT_QUERY = `
     AND t.movement_type_id IN (1, 6)
   GROUP BY t.account_id
 `;
+
+/**
+ * The budget frequency in force for each account at a given instant.
+ *
+ * Returns a Map keyed by accountId holding only the accounts that have an
+ * allocation covering referenceDate. An account with no policy, or one whose
+ * versions all sit on the other side of that date, is simply absent: there is no
+ * frequency to report, and defaulting one here would hide the difference from
+ * the caller, which is the only place that knows what to do about it.
+ *
+ * @param {object} pool - Database pool
+ * @param {number[]} accountIds - Accounts to read
+ * @param {Date} referenceDate - Instant the allocation must be in force at
+ * @returns {Promise<Map<number, string>>} accountId to budget_frequency_code
+ */
+export async function getPolicyFrequenciesForAccounts(pool, accountIds, referenceDate) {
+ if (!accountIds || accountIds.length === 0) {
+  return new Map();
+ }
+
+ const result = await pool.query(POLICY_FREQUENCY_QUERY, [accountIds, referenceDate]);
+ return new Map(result.rows.map((row) => [row.account_id, row.budget_frequency_code]));
+}
 
 /**
  * Budget data for a set of accounts over a window.

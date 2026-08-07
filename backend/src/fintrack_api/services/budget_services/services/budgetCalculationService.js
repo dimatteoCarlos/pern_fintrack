@@ -4,40 +4,22 @@
 // Orchestrates data fetching, period resolution, and metric calculation.
 // Currency is obtained from in-memory catalog (no DB queries).
 //
-// The word "frequency" names two different things and conflating them was a
-// defect. The frequency in the REQUEST resolves the query window: which date
-// range to look at. The frequency stored on each ALLOCATION is the multiplier:
-// how often that budget recurs. Only the second one may reach the arithmetic,
-// which is why it never leaves the calculator's parameters here.
+// The word "frequency" named two different things and conflating them was a
+// defect. There is only one left: the code stored on each ALLOCATION. It is the
+// multiplier — how often that budget recurs — and it also sizes the period the
+// report covers. The request no longer carries one, because a query locates a
+// period and never defines one.
 
 import { resolvePeriod } from '../../../../utils/fintrackUtils/date-utils/periodResolver.js';
-import { getBudgetDataForAccounts } from '../db/budgetTransactionRepository.js';
+import {
+ getBudgetDataForAccounts,
+ getPolicyFrequenciesForAccounts,
+} from '../db/budgetTransactionRepository.js';
 import { calculateBudgetVsActual } from '../calculators/budgetVsActualCalculator.js';
 import { makeBudgetResult } from '../core/makeBudgetResult.js';
 import { money, toAmount, toRate } from '../core/money.js';
+import { DEFAULT_FREQUENCY } from '../core/budgetConfig.js';
 import { getCurrencyCodeSync } from '../../../../utils/currencyLookup.js';
-
-/**
- * Resolve the window to report on.
- *
- * The window is the calendar period the reference date falls in, sized by the
- * requested frequency. There is no other way to obtain one.
- *
- * A budget is a property of a canonical period, not of a query window (PLAN_F
- * §0). The branch that took an arbitrary startDate/endDate pair answered "what
- * was budgeted between these two dates" — a question with no answer, because no
- * budget was ever defined over those dates. The figure it returned was a
- * prorated invention.
- *
- * Notices are a list, and `meta` is always an object. A singular `notice` field
- * can only carry the first thing worth saying, so anything after it is dropped
- * silently. The caller reads meta.notices and iterates: no null check, and no
- * shape change the day a second notice appears.
- */
-const resolveWindow = (windowFrequencyCode, referenceDate) => {
- const period = resolvePeriod(windowFrequencyCode, referenceDate);
- return { startDate: period.start, endDate: period.end, notices: [] };
-};
 
 /**
  * Result for an account with no budget figure to report for this window.
@@ -133,6 +115,55 @@ const buildResult = (entry, startDate, endDate) => {
 };
 
 /**
+ * Read a set of accounts, each over the canonical period its OWN policy defines.
+ *
+ * The frequency comes from the allocation in force at the reference date, never
+ * from the request. A budget belongs to a canonical period, so a query that
+ * sized the window itself was redefining that period: a quarterly budget of 600
+ * read through the default monthly window counted floor(1/3) = 0 whole periods
+ * and reported the entire spend as overspend. The window is now exactly one
+ * period of the policy, so the count is exact by construction.
+ *
+ * An account with no allocation covering the date falls back to
+ * DEFAULT_FREQUENCY. There is no budget in force to take a period from, and
+ * monthly is the finest canonical grain, so the window neither invents a budget
+ * nor hides spending. isBudgeted already tells the two situations apart.
+ *
+ * Accounts are grouped by frequency rather than read one at a time: there are
+ * five codes, so this is at most five reads and in practice one, against the N
+ * of a per-account loop.
+ */
+const readAccountsOverTheirOwnPeriods = async (pool, accountIds, referenceDate) => {
+ const frequencyByAccount = await getPolicyFrequenciesForAccounts(
+  pool,
+  accountIds,
+  referenceDate,
+ );
+
+ const accountsByFrequency = new Map();
+ for (const accountId of accountIds) {
+  const frequencyCode = frequencyByAccount.get(accountId) ?? DEFAULT_FREQUENCY;
+  const group = accountsByFrequency.get(frequencyCode) ?? [];
+  group.push(accountId);
+  accountsByFrequency.set(frequencyCode, group);
+ }
+
+ const groups = await Promise.all(
+  [...accountsByFrequency].map(async ([frequencyCode, ids]) => {
+   const period = resolvePeriod(frequencyCode, referenceDate);
+   const entries = await getBudgetDataForAccounts(pool, ids, period.start, period.end);
+   return entries.map((entry) => buildResult(entry, period.start, period.end));
+  }),
+ );
+
+ // Back into the order the caller asked in. Grouping reorders the results, and a
+ // response whose order depends on which frequencies happened to be present is
+ // not something a caller can pair against its own list.
+ const resultsByAccount = new Map(groups.flat().map((result) => [result.accountId, result]));
+ return accountIds.map((id) => resultsByAccount.get(id)).filter(Boolean);
+};
+
+/**
  * Aggregate a set of results into the figures the Overview header shows.
  *
  * This exists so the frontend does not add them up itself. Summing on the
@@ -187,6 +218,17 @@ const makeTotals = (results) => {
 const MIXED_CURRENCY_NOTICE =
  'Totals add amounts in more than one currency and are not converted.';
 
+// Rows no longer share a window: each covers the period its own policy defines,
+// so a quarterly row and a monthly row land in the same response over different
+// date ranges. Adding them produces a figure nobody can read, and this reports
+// it for the same reason the currency notice does rather than papering over it.
+// The monthly equivalent that replaces the raw sum is a separate change.
+const MIXED_PERIOD_NOTICE =
+ 'Totals add amounts from different budget periods and are not comparable.';
+
+const periodKey = (result) =>
+ `${result.period.start.getTime()}-${result.period.end.getTime()}`;
+
 /**
  * Budget calculation service – read operations.
  * All functions receive a PostgreSQL connection pool as first argument.
@@ -195,49 +237,47 @@ export const budgetCalculationService = {
  /**
   * Get budget summary for a single account.
   */
-  async getSummary(pool, accountId, windowFrequencyCode, referenceDate) {
-    const { startDate, endDate, notices } = resolveWindow(
-      windowFrequencyCode,
-      referenceDate,
-    );
+ async getSummary(pool, accountId, referenceDate) {
+  const results = await readAccountsOverTheirOwnPeriods(pool, [accountId], referenceDate);
 
-    const entries = await getBudgetDataForAccounts(pool, [accountId], startDate, endDate);
+  // An owned category_budget account always produces an entry now, budgeted
+  // or not, so this no longer fires for an account the user simply has not
+  // budgeted. What is left is a genuine inconsistency: an id that passed the
+  // caller's ownership check but has no category_budget_accounts row.
+  if (results.length === 0) {
+   throw new Error(`budgetCalculationService: no budget account found for id ${accountId}`);
+  }
 
-    // An owned category_budget account always produces an entry now, budgeted
-    // or not, so this no longer fires for an account the user simply has not
-    // budgeted. What is left is a genuine inconsistency: an id that passed the
-    // caller's ownership check but has no category_budget_accounts row.
-    if (entries.length === 0) {
-      throw new Error(`budgetCalculationService: no budget account found for id ${accountId}`);
-    }
+  // Notices are a list, and `meta` is always an object. A singular `notice`
+  // field can only carry the first thing worth saying, so anything after it is
+  // dropped silently. The caller reads meta.notices and iterates: no null
+  // check, and no shape change the day a second notice appears.
+  return {
+   result: results[0],
+   meta: { notices: [] },
+  };
+ },
 
-    return {
-      result: buildResult(entries[0], startDate, endDate),
-      meta: { notices },
-    };
-  },
+ /**
+  * Get budget summaries for multiple accounts.
+  */
+ async getMultiSummary(pool, accountIds, referenceDate) {
+  if (!accountIds || accountIds.length === 0) {
+   return { results: [], totals: makeTotals([]), meta: { notices: [] } };
+  }
 
-  /**
-   * Get budget summaries for multiple accounts.
-   */
-  async getMultiSummary(pool, accountIds, windowFrequencyCode, referenceDate) {
-    if (!accountIds || accountIds.length === 0) {
-      return { results: [], totals: makeTotals([]), meta: { notices: [] } };
-    }
+  const results = await readAccountsOverTheirOwnPeriods(pool, accountIds, referenceDate);
+  const totals = makeTotals(results);
+  const notices = [];
 
-    const { startDate, endDate, notices } = resolveWindow(
-      windowFrequencyCode,
-      referenceDate,
-    );
+  if (totals.currency === null && results.length > 0) {
+   notices.push(MIXED_CURRENCY_NOTICE);
+  }
 
-    const entries = await getBudgetDataForAccounts(pool, accountIds, startDate, endDate);
-    const results = entries.map((entry) => buildResult(entry, startDate, endDate));
-    const totals = makeTotals(results);
+  if (new Set(results.map(periodKey)).size > 1) {
+   notices.push(MIXED_PERIOD_NOTICE);
+  }
 
-    if (totals.currency === null && results.length > 0) {
-      notices.push(MIXED_CURRENCY_NOTICE);
-    }
-
-    return { results, totals, meta: { notices } };
-  },
+  return { results, totals, meta: { notices } };
+ },
 };

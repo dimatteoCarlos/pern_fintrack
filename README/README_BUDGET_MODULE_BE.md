@@ -66,28 +66,31 @@ All mounted under `/api/fintrack/budget`, behind `verifyToken`.
 
 | Method | Path | Parameters |
 |---|---|---|
-| `GET` | `/summary` | Query: `accountId` (required, positive), `frequency`, `date` |
-| `POST` | `/multi-summary` | Body: `accountIds[]` (required, min 1, unique, positive), `frequency`, `date` |
+| `GET` | `/summary` | Query: `accountId` (required, positive), `date` |
+| `POST` | `/multi-summary` | Body: `accountIds[]` (required, min 1, unique, positive), `date` |
 | `GET` | `/frequencies` | None |
 | `GET` | `/history/:budgetPolicyId` | Path: `budgetPolicyId` (positive) |
-| `GET` | `/export` | Query: `accountId` (**optional** — omitted means all owned accounts), `frequency`, `date` |
+| `GET` | `/export` | Query: `accountId` (**optional** — omitted means all owned accounts), `date` |
 
-`frequency` here is the **query window**. It accepts `monthly` · `quarterly` · `four-month` ·
-`semiannual` · `yearly`, and **defaults to `monthly`** when absent. Always the code, never the
-surrogate id.
+**The request never sizes the period.** It sends a reference date and nothing else. The period
+is the calendar period containing that date, sized by the frequency stored on the allocation in
+force — the account's own, resolved per row. Two accounts answered by the same request can come
+back on different periods, and each `result.period` says which. An account with no allocation in
+force on that date is reported over the monthly period containing it: there is no budget to take
+a period from, and `isBudgeted` already carries that distinction.
 
-> **Do not confuse this with the frequency stored on an allocation.** Those are two different
-> lists, deliberately. The window says which date range to report on; the allocation's code says
-> how often that budget recurs. Both admit the same five codes today, and they are not required
-> to stay in step. See §2.4.
+**There is no free date range and no `frequency` parameter.** `startDate` and `endDate` went
+first, then `frequency`. A budget is a property of a canonical period, not of a query window, so
+neither "what was budgeted between these two dates" nor "price this quarterly budget as if it
+were monthly" has an answer. These three schemas are **strict** — sending any of the three
+returns `400` with `code: "unrecognized_keys"` naming the key, rather than silently reporting on
+a period the caller never asked for. Free ranges for transaction listings are unaffected; they
+live in the report and dashboard endpoints.
 
-**There is no free date range.** `startDate` and `endDate` were removed: a budget is a property
-of a canonical period, not of a query window, so "what was budgeted between these two dates" has
-no answer. The window is always the calendar period containing `date`, sized by `frequency`.
-These three schemas are **strict** — sending `startDate` returns `400` with
-`code: "unrecognized_keys"` naming the key, rather than silently reporting on a different
-period. Free ranges for transaction listings are unaffected; they live in the report and
-dashboard endpoints.
+> **Coming, not present:** `aggregationLevel` will let a client ask for **N** of those periods
+> at once — a year of a quarterly budget is four periods, exact. It is a property of the query
+> and never redefines the period, which is precisely why it is not called `frequency`. Until it
+> lands, one request means one period per row.
 
 ### 2.2 Write endpoint
 
@@ -329,21 +332,27 @@ the client is exactly what this module exists to remove. Four such sites still e
 listed in Plan C §2.1, including `ListCategory.tsx:83-87`, which also rounds money to whole
 integers with `Math.round()`.
 
-**2. Two different frequencies, and neither overrides the other.**
+**2. One frequency, and it belongs to the budget.**
 
 | Concept | Source | Values | Answers |
 |---|---|---|---|
-| Query window | The request (`frequency` + `date`) | All five codes | Which date range to report on |
-| Multiplier | Each allocation's stored `budgetFrequencyCode` | All five codes (§2.4) | How often that budget recurs |
+| Budget period | The allocation in force at `date`, per account | All five codes (§2.4) | How long the period is, and therefore which dates the row covers |
+| Multiplier | The same code | All five codes | How often that budget recurs |
 
-A monthly budget of 10 read through a yearly window accumulates **120**, not 10.
+They hold the same value because they are the same fact. The request used to carry a second,
+competing frequency; it no longer exists.
 
-For a **monthly** allocation — which is every allocation the app itself creates — the
-accumulated budget for any window is simply the sum of the months it covers, and an amount
-changed mid-window is priced over its own slice: a five-month window with a change in month
-three yields `2 × old + 3 × new`. A **non-monthly** allocation, which only a client other than
-our form can create, does not yet accumulate correctly through a window of a different size;
-see §7.
+For a **monthly** allocation — which is every allocation the app itself creates — the period is
+one month, and an amount changed mid-month is priced cleanly: validity boundaries snap to the
+month they fall in, so the new amount owns that whole month and the one it replaced stops at the
+same boundary. Nothing is double-billed and nothing is skipped. A **non-monthly** allocation
+changed mid-period still reports 0 for that period; see §7.
+
+**2b. Rows in one response may carry different periods.** A quarterly category and a monthly one
+answered by the same `/multi-summary` come back over different date ranges. When that happens
+the `totals` block adds figures that are not comparable and says so through
+`Totals add amounts from different budget periods and are not comparable.` in `meta.notices`.
+Treat that total as provisional until the monthly equivalent replaces it.
 
 **3. Prefer `actualVsBudgetDifference`.** It and `remainingBudget` are one metric under two
 names. `actualVsBudgetDifference` is canonical; `remainingBudget` is kept only until the
@@ -362,9 +371,11 @@ would replace one lie with another.
 and stores it lowercase (§2.5). A client-side preview is a second implementation of the same
 rule and will disagree with what is saved. Render the name the response carries.
 
-**7. Render `result.period`, never a range built on the client.** The server resolves the window
-from `frequency` + `date` and returns it end-exclusive. A screen labelling its own dates while
-the figures cover the server's period is wrong even though every number in it is right.
+**7. Render `result.period`, never a range built on the client.** The server resolves it from the
+account's own budget frequency and the reference date, and returns it end-exclusive. The client
+cannot reconstruct it: it never sent that frequency and does not learn it until the response
+arrives. A screen labelling its own dates while the figures cover the server's period is wrong
+even though every number in it is right.
 
 ---
 
@@ -383,20 +394,24 @@ The mode is `ROUND_HALF_UP`, matching Postgres `numeric`.
 
 ## 7. Known limits
 
-**R14 — unanchored period counting, latent.** `getNumberOfPeriods` divides a month span rather
-than identifying periods, so a quarterly budget of 600 viewed through a one-month window returns
-`budgetAccumulatedAmount: 0` and reports the whole spend as overspend.
+**R14 — unanchored period counting, closed.** The window is the policy's own canonical period
+(§2.1), so `getNumberOfPeriods` always divides a whole multiple and never discards a remainder.
+A quarterly budget of 600 read on any date in August now returns 600 over `Jul 1 – Oct 1`, where
+it used to return 0 and report the whole spend as overspend. Proration was rejected and remains
+rejected: the period is answered with the full amount, compared against the spending inside it.
 
-Every allocation the app creates is monthly, and for a monthly allocation the window and the
-period coincide: with `monthsPerPeriod = 1` there is never a remainder to discard, which is the
-entire failure mode. **That holds by convention, not by enforcement.** Since the API accepts all
-five codes (§2.4), any client other than our form can create the failing row.
+**What is left of it, smaller and structural.** Whole-period counting needs whole periods, and
+an allocation's validity does not yet land on a period boundary — `valid_from` is the account
+start date (migration `012`) or the instant of an edit. A **non-monthly** allocation changed
+mid-period therefore splits that period into two slices, neither of them whole, and both
+contribute 0. A monthly allocation cannot hit this: its slice boundaries are month boundaries,
+and every allocation the app itself creates is monthly. The fix is to snap `valid_from` to the
+period boundary and defer changes to the start of the next period, so that no period is ever
+split between two budgets.
 
-**The resolution is designed but not built,** and is on record for that day. Proration was
-rejected. A window will be answered with the full amount of the periods it touches, compared
-against the spending in those same periods. Two sub-decisions remain open, recorded in Plan C
-§19.3: calendar-anchored versus `validFrom`-anchored periods, and whether spending runs to the
-end of the period or to today.
+**Totals over mixed periods.** With per-row periods, the `totals` block of `/multi-summary` can
+add a quarter to a month. It is reported through `meta.notices` rather than hidden, and the
+figure that replaces the raw sum is a monthly equivalent, labelled as derived.
 
 **Settled, and not coming back:**
 
