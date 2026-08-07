@@ -35,8 +35,16 @@ CREATE TABLE IF NOT EXISTS budget_policies (
  updated_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- SCD Type 2: a new amount closes the previous row (valid_until = NOW()) and
--- inserts a new one. History is never overwritten.
+-- SCD Type 2: a new amount closes the previous row and inserts a new one.
+-- History is never overwritten.
+--
+-- valid_until = valid_from is legal on purpose. Correcting a figure closes the
+-- replaced version at its own start, so it spans zero time and the read
+-- predicate (valid_until > date) can never find it: the record keeps the row
+-- while stating that it never governed anything. close_reason tells the two
+-- closes apart, since otherwise a correction and a forward change leave
+-- identical data.
+--
 -- ON DELETE RESTRICT on the frequency: a catalog entry must not disappear
 -- while historical rows still reference it.
 CREATE TABLE IF NOT EXISTS budget_policy_allocations (
@@ -48,9 +56,12 @@ CREATE TABLE IF NOT EXISTS budget_policy_allocations (
   REFERENCES budget_frequency_types(budget_frequency_type_id) ON DELETE RESTRICT,
  valid_from               TIMESTAMPTZ NOT NULL,
  valid_until              TIMESTAMPTZ,
+ close_reason             VARCHAR(20),
  created_at               TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+ CONSTRAINT chk_allocation_close_reason
+  CHECK (close_reason IN ('corrected', 'superseded')),
  CONSTRAINT chk_allocation_validity
-  CHECK (valid_until IS NULL OR valid_until > valid_from)
+  CHECK (valid_until IS NULL OR valid_until >= valid_from)
 );
 
 CREATE INDEX IF NOT EXISTS idx_budget_policies_account_id

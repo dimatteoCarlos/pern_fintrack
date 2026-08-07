@@ -343,6 +343,9 @@ export async function ensureBudgetTables(client = pool) {
     updated_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
    )`,
 
+  // valid_until = valid_from is legal: a correction closes the replaced version
+  // at its own start, so it spans zero time and no read can find it.
+  // close_reason separates a correction from a forward change.
   `CREATE TABLE IF NOT EXISTS budget_policy_allocations (
     budget_allocation_id     SERIAL PRIMARY KEY,
     budget_policy_id         INTEGER NOT NULL
@@ -352,10 +355,33 @@ export async function ensureBudgetTables(client = pool) {
      REFERENCES budget_frequency_types(budget_frequency_type_id) ON DELETE RESTRICT,
     valid_from               TIMESTAMPTZ NOT NULL,
     valid_until              TIMESTAMPTZ,
+    close_reason             VARCHAR(20),
     created_at               TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_allocation_close_reason
+     CHECK (close_reason IN ('corrected', 'superseded')),
     CONSTRAINT chk_allocation_validity
-     CHECK (valid_until IS NULL OR valid_until > valid_from)
+     CHECK (valid_until IS NULL OR valid_until >= valid_from)
    )`,
+
+  // CREATE TABLE IF NOT EXISTS is a no-op on a database built before these two
+  // existed, so an established install needs them applied explicitly. Same
+  // reasoning as the FX audit columns above.
+  `ALTER TABLE budget_policy_allocations
+    ADD COLUMN IF NOT EXISTS close_reason VARCHAR(20)`,
+
+  `ALTER TABLE budget_policy_allocations
+    DROP CONSTRAINT IF EXISTS chk_allocation_close_reason`,
+
+  `ALTER TABLE budget_policy_allocations
+    ADD CONSTRAINT chk_allocation_close_reason
+    CHECK (close_reason IN ('corrected', 'superseded'))`,
+
+  `ALTER TABLE budget_policy_allocations
+    DROP CONSTRAINT IF EXISTS chk_allocation_validity`,
+
+  `ALTER TABLE budget_policy_allocations
+    ADD CONSTRAINT chk_allocation_validity
+    CHECK (valid_until IS NULL OR valid_until >= valid_from)`,
 
   `CREATE INDEX IF NOT EXISTS idx_budget_policies_account_id
     ON budget_policies(account_id)`,
