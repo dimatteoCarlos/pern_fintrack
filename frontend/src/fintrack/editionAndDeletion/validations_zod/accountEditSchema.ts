@@ -88,7 +88,8 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
 
     {
       fieldName: 'budget',
-      label: 'Monthly Budget Amount',
+      // Not 'Monthly': the allocation carries its own frequency.
+      label: 'Budget Amount',
       inputType: 'number', //
       isEditable: true,
       isRequired: true,

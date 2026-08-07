@@ -47,9 +47,18 @@ export const pocketSavingEditSchema = baseAccountEditSchema.extend({
 
 export type PocketSavingEditFormData = z.infer<typeof pocketSavingEditSchema>;
 
+// Smallest amount the server can store: it rounds to two decimals, so 0.004
+// becomes 0.00 and is rejected. Mirrors MINIMUM_AMOUNT in core/money.js.
+const MINIMUM_BUDGET_AMOUNT = 0.01;
+
 //📊 3. CATEGORY BUDGET SCHEMA
 export const categoryBudgetEditShema = baseAccountEditSchema.extend({
-  budget: numberSchema.optional(),
+  // Checked here rather than in numberSchema, which pocket_saving also uses.
+  budget: numberSchema
+    .refine((amount) => amount >= MINIMUM_BUDGET_AMOUNT, {
+      message: `* Budget must be at least ${MINIMUM_BUDGET_AMOUNT}`,
+    })
+    .optional(),
   //strict limits
   category_name: optionalButNotEmptySchema(DB_MAX_LENGTHS.category_name),
   subcategory: optionalButNotEmptySchema(DB_MAX_LENGTHS.subcategory),
