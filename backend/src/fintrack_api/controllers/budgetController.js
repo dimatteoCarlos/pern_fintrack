@@ -152,7 +152,7 @@ export async function updatePolicy(req, res, next) {
   const params = updatePolicyParamsSchema.parse(req.params);
   const body = updatePolicyBodySchema.parse(req.body);
   const { budgetPolicyId } = params;
-  const { budgetAmount, budgetFrequencyCode } = body;
+  const { budgetAmount, budgetFrequencyCode, intent } = body;
 
   // Ownership is enforced inside the service, in the same transaction as the
   // write. Checking it here instead would leave a window between the check
@@ -162,7 +162,8 @@ export async function updatePolicy(req, res, next) {
    userId,
    budgetPolicyId,
    budgetAmount,
-   budgetFrequencyCode
+   budgetFrequencyCode,
+   intent
   );
 
   res.status(200).json(result);

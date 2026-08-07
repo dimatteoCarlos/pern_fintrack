@@ -5,7 +5,11 @@
 // Frequencies are imported from budgetConfig.js (single source of truth).
 
 import { z } from 'zod';
-import { ALLOWED_ALLOCATION_FREQUENCIES } from '../../fintrack_api/services/budget_services/core/budgetConfig.js';
+import {
+ ALLOCATION_INTENTS,
+ ALLOWED_ALLOCATION_FREQUENCIES,
+ DEFAULT_ALLOCATION_INTENT,
+} from '../../fintrack_api/services/budget_services/core/budgetConfig.js';
 
 // Helper schemas
 // Base fields reused across schemas
@@ -67,7 +71,7 @@ export const multiSummaryBodySchema = z.object({
 // Update policy (budget amount / frequency)
 /**
  * PUT /budget/policy/:budgetPolicyId
- * Body: budgetAmount (required), budgetFrequencyCode (required)
+ * Body: budgetAmount (required), budgetFrequencyCode (required), intent
  * Params: budgetPolicyId (positive integer)
  */
 export const updatePolicyParamsSchema = z.object({
@@ -84,6 +88,9 @@ export const updatePolicyBodySchema = z.object({
   message: 'budgetAmount must be a positive number',
  }),
  budgetFrequencyCode: z.enum(ALLOWED_ALLOCATION_FREQUENCIES),
+ // Optional so a caller written before the field existed keeps working. The
+ // default is the conservative one: it only ever opens the next period.
+ intent: z.enum(ALLOCATION_INTENTS).default(DEFAULT_ALLOCATION_INTENT),
 });
 
 // History (versions)

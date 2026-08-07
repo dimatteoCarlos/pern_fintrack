@@ -10,7 +10,11 @@ import {
 
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
-import { ALLOWED_ALLOCATION_FREQUENCIES } from '../services/budget_services/core/budgetConfig.js';
+import {
+  ALLOCATION_INTENTS,
+  ALLOWED_ALLOCATION_FREQUENCIES,
+  DEFAULT_ALLOCATION_INTENT,
+} from '../services/budget_services/core/budgetConfig.js';
 
 /**
  * 🎯 EDITION LOGIC: PARTIALLY UPDATES AN ACCOUNT
@@ -133,8 +137,20 @@ export const patchAccountById = async (req, res, next) => {
             return res.status(400).json({ status: 400, message });
           }
 
+          // Rejected rather than defaulted when present but unknown: a typo
+          // would otherwise silently become a change the user did not ask for.
+          const intent =
+            payload.budgetIntent?.trim().toLowerCase() ??
+            DEFAULT_ALLOCATION_INTENT;
+
+          if (!ALLOCATION_INTENTS.includes(intent)) {
+            const message = `budgetIntent must be one of: ${ALLOCATION_INTENTS.join(', ')}.`;
+            console.warn(pc['red'](message));
+            return res.status(400).json({ status: 400, message });
+          }
+
           specificFields.budget = amount;
-          budgetChange = { amount, frequencyCode };
+          budgetChange = { amount, frequencyCode, intent };
         }
 
         // The parts are normalized too, not only the name derived from them.
@@ -357,6 +373,7 @@ export const patchAccountById = async (req, res, next) => {
           accountId,
           budgetChange.amount,
           budgetChange.frequencyCode,
+          budgetChange.intent,
         )
       : null;
 

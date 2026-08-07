@@ -41,3 +41,14 @@ export const ALLOWED_WINDOW_FREQUENCIES = Object.keys(MONTHS_PER_PERIOD);
 // Kept separate from ALLOWED_WINDOW_FREQUENCIES though the sets now coincide:
 // a window is a date range, an allocation is a stored recurrence.
 export const ALLOWED_ALLOCATION_FREQUENCIES = Object.keys(MONTHS_PER_PERIOD);
+
+// What a write to an existing allocation means.
+//
+// The two operations are indistinguishable from the data: 600 -> 60 is either a
+// typo or a decision, and no rule over dates or amounts tells them apart. Only
+// the user knows, so the intent travels in the request (PLAN_F 5.1).
+export const ALLOCATION_INTENTS = ['correct', 'change'];
+
+// Applied when the caller omits the intent. A change only opens the next
+// period, so defaulting to it never rewrites one that was already reported.
+export const DEFAULT_ALLOCATION_INTENT = 'change';

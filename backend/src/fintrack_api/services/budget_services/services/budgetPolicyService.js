@@ -2,13 +2,20 @@
 // Write path for budget policies. Reads live in budgetTransactionRepository.js.
 //
 // Allocations are SCD Type 2: a change never overwrites. The active row is
-// closed (valid_until = NOW()) and a new one opened, so every past budget
-// stays queryable. `valid_until IS NULL` marks the active version — there is
-// no redundant flag to keep in sync.
+// closed and a new one opened, so every past budget stays queryable.
+// `valid_until IS NULL` marks the active version — there is no redundant flag
+// to keep in sync.
+//
+// Every boundary written here is a canonical period boundary, never an instant.
+// A budget belongs to a period, so closing one version at NOW() and opening the
+// next at the same instant splits that period in two fragments, and a quarterly
+// budget then prices each fragment at floor(1/3) = 0.
 
 import { withTransaction } from '../../../../utils/withTransaction.js';
+import { resolvePeriod } from '../../../../utils/fintrackUtils/date-utils/periodResolver.js';
 import {
  ALLOWED_ALLOCATION_FREQUENCIES,
+ DEFAULT_ALLOCATION_INTENT,
  DEFAULT_FREQUENCY,
 } from '../core/budgetConfig.js';
 import {
@@ -103,6 +110,30 @@ const lockOwnedPolicy = async (client, userId, budgetPolicyId) => {
 };
 
 /**
+ * The instant where the outgoing version ends and the incoming one begins.
+ *
+ * One boundary for both rows, so the timeline has neither a gap nor an overlap.
+ *
+ * A correction returns the replaced version to its own start: it spans zero
+ * time, the read predicate (valid_until > date) can never find it, and the
+ * record keeps it while stating that it never governed anything (PLAN_F 5.3).
+ * A version not yet in force is closed the same way whatever the intent — there
+ * is nothing to preserve in a period it never priced.
+ *
+ * A change ends the period in progress under the frequency that is governing
+ * it, not the incoming one: a quarter already under way finishes as a quarter.
+ */
+const resolveReplacementBoundary = (active, intent, now) => {
+ if (intent === 'correct' || active.valid_from > now) {
+  return active.valid_from;
+ }
+
+ // end is the first day after the period, which is exactly the next period's
+ // start: the boundary needs no arithmetic of its own.
+ return resolvePeriod(active.budget_frequency_code, now).end;
+};
+
+/**
  * Close the active allocation of a policy and open its replacement.
  *
  * Both statements must run on the same client. Split across two transactions, a
@@ -110,6 +141,8 @@ const lockOwnedPolicy = async (client, userId, budgetPolicyId) => {
  * disappears) or two (getBudgetDataForAccounts returns duplicate rows per
  * account and Overview totals double, with no error raised).
  *
+ * @param {string} intent - 'correct' replaces the version in place, 'change'
+ *  opens the next period. See ALLOCATION_INTENTS.
  * @returns {Promise<object>} the newly created allocation row.
  */
 const replaceActiveAllocation = async (
@@ -117,16 +150,40 @@ const replaceActiveAllocation = async (
  budgetPolicyId,
  budgetAmount,
  budgetFrequencyCode,
+ intent,
 ) => {
- // NOW() is transaction-scoped in Postgres, so the close and the open share
- // one timestamp. That is intended: the history has no gap between versions.
- await client.query(
-  `UPDATE budget_policy_allocations
-      SET valid_until = NOW()
-    WHERE budget_policy_id = $1
-      AND valid_until IS NULL`,
+ const now = new Date();
+
+ // Read before writing: the boundary depends on the outgoing row's own start
+ // and frequency, which the UPDATE is about to overwrite.
+ const { rows: activeRows } = await client.query(
+  `SELECT a.valid_from, bft.budget_frequency_code
+     FROM budget_policy_allocations a
+     JOIN budget_frequency_types bft
+       ON bft.budget_frequency_type_id = a.budget_frequency_type_id
+    WHERE a.budget_policy_id = $1
+      AND a.valid_until IS NULL`,
   [budgetPolicyId],
  );
+
+ const active = activeRows[0] ?? null;
+
+ // No active row means nothing to supersede, so the amount comes into force at
+ // the start of the period containing today, the same rule Create follows.
+ const boundary = active
+  ? resolveReplacementBoundary(active, intent, now)
+  : resolvePeriod(budgetFrequencyCode, now).start;
+
+ if (active) {
+  await client.query(
+   `UPDATE budget_policy_allocations
+       SET valid_until = $2,
+        close_reason = $3
+     WHERE budget_policy_id = $1
+       AND valid_until IS NULL`,
+   [budgetPolicyId, boundary, intent === 'correct' ? 'corrected' : 'superseded'],
+  );
+ }
 
  // The code is resolved in the INSERT itself. A separate lookup would be a
  // second roundtrip for a value the same transaction is about to use.
@@ -136,14 +193,14 @@ const replaceActiveAllocation = async (
    VALUES ($1, $2,
     (SELECT budget_frequency_type_id FROM budget_frequency_types
       WHERE budget_frequency_code = $3),
-    NOW())
+    $4)
    RETURNING budget_allocation_id,
     budget_policy_id,
     budget_amount,
     budget_frequency_type_id,
     valid_from,
     valid_until`,
-  [budgetPolicyId, budgetAmount, budgetFrequencyCode],
+  [budgetPolicyId, budgetAmount, budgetFrequencyCode, boundary],
  );
 
  return {
@@ -154,6 +211,9 @@ const replaceActiveAllocation = async (
   budgetFrequencyCode,
   validFrom: rows[0].valid_from,
   validUntil: rows[0].valid_until,
+  // Echoed so the caller can word the confirmation without re-deriving what it
+  // asked for; validFrom is the date the new amount starts governing.
+  intent,
  };
 };
 
@@ -171,13 +231,20 @@ async function updateBudgetAllocation(
  budgetPolicyId,
  budgetAmount,
  budgetFrequencyCode,
+ intent = DEFAULT_ALLOCATION_INTENT,
 ) {
  const normalizedAmount = normalizeAllocationInput(budgetAmount, budgetFrequencyCode);
 
  return withTransaction(pool, async (client) => {
   await lockOwnedPolicy(client, userId, budgetPolicyId);
 
-  return replaceActiveAllocation(client, budgetPolicyId, normalizedAmount, budgetFrequencyCode);
+  return replaceActiveAllocation(
+   client,
+   budgetPolicyId,
+   normalizedAmount,
+   budgetFrequencyCode,
+   intent,
+  );
  });
 }
 
@@ -190,7 +257,9 @@ async function updateBudgetAllocation(
  *
  * validFrom is the account start date, not NOW(). The amount comes into force
  * when the account does; a backdated account would otherwise report zero budget
- * for the months between its start and its creation.
+ * for the months between its start and its creation. It is snapped to the start
+ * of the period containing that date, because the first version has to cover
+ * the whole period it opens or the account's first quarter prices at zero.
  *
  * @returns {Promise<object>} the policy and allocation just created.
  */
@@ -204,6 +273,10 @@ async function createBudgetPolicyForAccount(
  // Normalizing again when applyAllocationForAccount routes here is harmless:
  // rounding an already-rounded amount is idempotent.
  const normalizedAmount = normalizeAllocationInput(budgetAmount, budgetFrequencyCode);
+
+ // new Date() accepts both the Date the edit path passes and the ISO string the
+ // creation controller reads from the request body.
+ const alignedFrom = resolvePeriod(budgetFrequencyCode, new Date(validFrom)).start;
 
  const { rows: policyRows } = await client.query(
   `INSERT INTO budget_policies (account_id)
@@ -225,7 +298,7 @@ async function createBudgetPolicyForAccount(
     budget_amount,
     budget_frequency_type_id,
     valid_from`,
-  [budgetPolicyId, normalizedAmount, budgetFrequencyCode, validFrom],
+  [budgetPolicyId, normalizedAmount, budgetFrequencyCode, alignedFrom],
  );
 
  return {
@@ -261,6 +334,7 @@ async function applyAllocationForAccount(
  accountId,
  budgetAmount,
  budgetFrequencyCode = null,
+ intent = DEFAULT_ALLOCATION_INTENT,
 ) {
  // FOR UPDATE OF ua serializes concurrent edits of the same account: without
  // it two saves could both read one active allocation and both open a
@@ -310,6 +384,11 @@ async function applyAllocationForAccount(
  // Both sides are already at the column's scale, so this compares exactly and
  // rounds nothing: the incoming amount was normalized on entry, and the stored
  // one is read through toAmount rather than parseFloat.
+ //
+ // Compared against the latest version, which after a deferred change is the
+ // one not yet in force. That is the intended reading: resending the pending
+ // figure asks for nothing new, while resending the one still in force is a
+ // request to drop the pending change, and must version.
  if (
   current.budget_allocation_id
   && toAmount(current.budget_amount) === normalizedAmount
@@ -318,7 +397,13 @@ async function applyAllocationForAccount(
   return null;
  }
 
- return replaceActiveAllocation(client, current.budget_policy_id, normalizedAmount, targetCode);
+ return replaceActiveAllocation(
+  client,
+  current.budget_policy_id,
+  normalizedAmount,
+  targetCode,
+  intent,
+ );
 }
 
 /**
