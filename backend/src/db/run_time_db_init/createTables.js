@@ -452,6 +452,9 @@ export async function ensureCategoryBudgetCurrency(client = pool) {
  * Must run after the frequency catalog is seeded: the allocation resolves its
  * period by code, not by a literal id.
  *
+ * valid_from is aligned to the start of the month, same rule as 010 and 012: a
+ * budget rules a period, and created_at already records when the row was written.
+ *
  * @param {object} client - Database client (pool or transaction)
  */
 export async function ensureBudgetPolicyBackfill(client = pool) {
@@ -472,7 +475,7 @@ export async function ensureBudgetPolicyBackfill(client = pool) {
    cba.budget,
    (SELECT budget_frequency_type_id FROM budget_frequency_types
      WHERE budget_frequency_code = 'monthly'),
-   ua.account_start_date
+   date_trunc('month', ua.account_start_date AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
   FROM budget_policies bp
   JOIN category_budget_accounts cba ON cba.account_id = bp.account_id
   JOIN user_accounts ua ON ua.account_id = bp.account_id

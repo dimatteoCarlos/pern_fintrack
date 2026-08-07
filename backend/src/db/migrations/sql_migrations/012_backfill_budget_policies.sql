@@ -14,12 +14,9 @@
 -- Idempotent by construction: ON CONFLICT on the policy, NOT EXISTS on the
 -- allocation. On a database where 010 already backfilled, it changes nothing.
 --
--- Two deliberate differences from 010's backfill:
---   valid_from is the account start date, not NOW(). A backdated account would
---   otherwise report zero budget for every month between its start and the day
---   this migration ran. Same rule as createBudgetPolicyForAccount.
---   The frequency is resolved by code rather than by the literal id 1, so a
---   catalog renumbering cannot silently assign the wrong period.
+-- One deliberate difference from 010's backfill: the frequency is resolved by
+-- code rather than by the literal id 1, so a catalog renumbering cannot
+-- silently assign the wrong period. valid_from follows the same rule in both.
 --
 -- No BEGIN/COMMIT: runMigrations.js wraps every file in one transaction
 -- together with its INSERT INTO migrations. Same convention as 010 and 011.
@@ -34,13 +31,17 @@ ON CONFLICT (account_id) DO NOTHING;
 
 -- The NOT EXISTS guard is what makes a re-run safe: without it a second pass
 -- would open a competing allocation and breach uq_budget_allocation_active.
+--
+-- valid_from is the start of the month containing account_start_date. The
+-- account start is what puts the budget in force, but a budget rules a period,
+-- not an instant. UTC is explicit so the server zone cannot shift the boundary.
 INSERT INTO budget_policy_allocations
  (budget_policy_id, budget_amount, budget_frequency_type_id, valid_from)
 SELECT bp.budget_policy_id,
  cba.budget,
  (SELECT budget_frequency_type_id FROM budget_frequency_types
    WHERE budget_frequency_code = 'monthly'),
- ua.account_start_date
+ date_trunc('month', ua.account_start_date AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 FROM budget_policies bp
 JOIN category_budget_accounts cba ON cba.account_id = bp.account_id
 JOIN user_accounts ua ON ua.account_id = bp.account_id

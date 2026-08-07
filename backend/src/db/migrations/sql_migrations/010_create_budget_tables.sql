@@ -93,11 +93,19 @@ ON CONFLICT (account_id) DO NOTHING;
 
 -- Frequency 1 = monthly: the legacy table has no frequency column, and monthly
 -- is the only period the legacy system ever produced.
+--
+-- valid_from is the start of that month, not an instant: a budget belongs to a
+-- canonical period, and created_at already records when the row was written.
+-- UTC is explicit so the file writes the same data whatever the server zone is.
 INSERT INTO budget_policy_allocations
  (budget_policy_id, budget_amount, budget_frequency_type_id, valid_from)
-SELECT bp.budget_policy_id, cba.budget, 1, NOW()
+SELECT bp.budget_policy_id,
+ cba.budget,
+ 1,
+ date_trunc('month', ua.account_start_date AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 FROM budget_policies bp
 JOIN category_budget_accounts cba ON cba.account_id = bp.account_id
+JOIN user_accounts ua ON ua.account_id = bp.account_id
 WHERE cba.budget > 0
  AND NOT EXISTS (
   SELECT 1 FROM budget_policy_allocations ba
