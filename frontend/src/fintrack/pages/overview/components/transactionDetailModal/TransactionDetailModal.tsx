@@ -152,7 +152,7 @@ export const TransactionDetailModal = ({ transaction, onClose }: TransactionDeta
                 </div>
                 <div className="fx-footer-row">
                   <span className="rate-clean">
-                    Rate Clean: {formattedExchangeRate} {rateCleanDirection}
+                    Rate Clean: {formattedExchangeRate} x {rateCleanDirection}
                   </span>
                 </div>
               </div>
