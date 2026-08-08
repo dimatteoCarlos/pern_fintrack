@@ -497,6 +497,8 @@ export async function ensureCategoryBudgetCurrency(client = pool) {
  *
  * valid_from is aligned to the start of the month, same rule as 010 and 012: a
  * budget rules a period, and created_at already records when the row was written.
+ * The month is the account owner's, so the boundary matches the one
+ * createBudgetPolicyForAccount persists for a budget created by hand.
  *
  * @param {object} client - Database client (pool or transaction)
  */
@@ -518,10 +520,12 @@ export async function ensureBudgetPolicyBackfill(client = pool) {
    cba.budget,
    (SELECT budget_frequency_type_id FROM budget_frequency_types
      WHERE budget_frequency_code = 'monthly'),
-   date_trunc('month', ua.account_start_date AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+   date_trunc('month', ua.account_start_date AT TIME ZONE u.timezone)
+    AT TIME ZONE u.timezone
   FROM budget_policies bp
   JOIN category_budget_accounts cba ON cba.account_id = bp.account_id
   JOIN user_accounts ua ON ua.account_id = bp.account_id
+  JOIN users u ON u.user_id = ua.user_id
   WHERE cba.budget > 0
    AND NOT EXISTS (
     SELECT 1 FROM budget_policy_allocations ba

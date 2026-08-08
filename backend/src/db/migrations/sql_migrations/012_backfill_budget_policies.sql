@@ -18,6 +18,13 @@
 -- code rather than by the literal id 1, so a catalog renumbering cannot
 -- silently assign the wrong period. valid_from follows the same rule in both.
 --
+-- Known and accepted divergence from the application's resolver: when local
+-- midnight does not exist because the zone springs forward at 00:00 on the 1st,
+-- Postgres normalizes backward into the previous month while zonedDayStart
+-- normalizes forward to the first instant that exists. Measured on
+-- America/Asuncion 2028 and 2034: 03:00Z here, 04:00Z there. It reaches only
+-- backfilled legacy rows, and no later migration repairs it.
+--
 -- No BEGIN/COMMIT: runMigrations.js wraps every file in one transaction
 -- together with its INSERT INTO migrations. Same convention as 010 and 011.
 
@@ -34,17 +41,20 @@ ON CONFLICT (account_id) DO NOTHING;
 --
 -- valid_from is the start of the month containing account_start_date. The
 -- account start is what puts the budget in force, but a budget rules a period,
--- not an instant. UTC is explicit so the server zone cannot shift the boundary.
+-- not an instant. The month is the account owner's, so the boundary matches the
+-- one createBudgetPolicyForAccount persists for a budget created by hand.
 INSERT INTO budget_policy_allocations
  (budget_policy_id, budget_amount, budget_frequency_type_id, valid_from)
 SELECT bp.budget_policy_id,
  cba.budget,
  (SELECT budget_frequency_type_id FROM budget_frequency_types
    WHERE budget_frequency_code = 'monthly'),
- date_trunc('month', ua.account_start_date AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+ date_trunc('month', ua.account_start_date AT TIME ZONE u.timezone)
+  AT TIME ZONE u.timezone
 FROM budget_policies bp
 JOIN category_budget_accounts cba ON cba.account_id = bp.account_id
 JOIN user_accounts ua ON ua.account_id = bp.account_id
+JOIN users u ON u.user_id = ua.user_id
 WHERE cba.budget > 0
  AND NOT EXISTS (
   SELECT 1 FROM budget_policy_allocations ba
