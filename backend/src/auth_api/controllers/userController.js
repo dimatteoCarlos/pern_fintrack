@@ -30,6 +30,7 @@ export const getUserById = async (req, res, next) => {
     u.user_firstname,
     u.user_lastname,
     u.user_contact,
+    u.timezone,
     currencies.currency_name,
     currencies.currency_code as currency,
     user_roles.user_role_name as user_role
@@ -219,6 +220,14 @@ export const updateProfile = async (req, res, next) => {
       values.push(updateData.contact);
       paramCount++;
     }
+    //timezone
+    // Zod already checked it against the set the trigger admits, so no lookup
+    // here: unlike currency, the catalog is not a table this query can join.
+    if (updateData.timezone !== undefined) {
+      updates.push(`timezone = $${paramCount}`);
+      values.push(updateData.timezone);
+      paramCount++;
+    }
 
     //If there are no valid fields to update
     if (updates.length === 0) {
@@ -239,7 +248,7 @@ export const updateProfile = async (req, res, next) => {
    UPDATE users
    SET ${updates.join(', ')}
    WHERE user_id = $${paramCount}
-   RETURNING user_id, username, email, user_firstname, user_lastname, user_contact, currency_id
+   RETURNING user_id, username, email, user_firstname, user_lastname, user_contact, currency_id, timezone
   `;
 
     const updatedUserResult = await client.query(updateQuery, values);
@@ -251,7 +260,7 @@ export const updateProfile = async (req, res, next) => {
       text: `
    SELECT u.user_id, u.username, u.email,
     u.user_firstname, u.user_lastname,
-    u.user_contact, c.currency_code as currency, c.currency_name,
+    u.user_contact, u.timezone, c.currency_code as currency, c.currency_name,
     ur.user_role_name as role
    FROM users u
    JOIN currencies c ON c.currency_id = u.currency_id
@@ -451,6 +460,7 @@ export const changePassword = async (req, res, next) => {
     "user_lastname": "string",
     "user_contact": "string | null",
     "currency": "usd|cop|eur",
+    "timezone": "IANA identifier, e.g. America/Bogota",
     "role": "user|admin|super_admin"
   }
 }

@@ -20,6 +20,7 @@ import {
 import { createError } from '../../utils/errorHandling.js';
 
 import { getCurrencyId } from '../../utils/currencyLookup.js';
+import { isIanaTimeZone } from '../../utils/fintrackUtils/date-utils/ianaTimeZone.js';
 
 // import { getCurrencyId } from '../../fintrack_api/controllers/transactionController.js';
 
@@ -46,7 +47,7 @@ export const signUpUser = async (req, res, next) => {
   try {
     await client.query('BEGIN');
     // ✅ GET CREDENTIALS
-    const { username, user_firstname, user_lastname, email, currency } =
+    const { username, user_firstname, user_lastname, email, currency, timezone } =
       req.body;
     const currency_code = currency ?? 'usd';
     // console.log(req.body);
@@ -62,6 +63,18 @@ export const signUpUser = async (req, res, next) => {
       )
     ) {
       return next(createError(400, 'All fields are required.'));
+    }
+
+    // ✅ TIME ZONE VALIDATION
+    // Absent is fine: the column default applies. Invalid is not — falling back
+    // in silence hands the user a calendar nobody told them about.
+    if (timezone !== undefined && !isIanaTimeZone(timezone)) {
+      return next(
+        createError(
+          400,
+          'Time zone must be a valid IANA identifier, for example America/Bogota',
+        ),
+      );
     }
 
     // ✅ CHECK EXISTENCE OF USER/EMAIL
@@ -106,8 +119,8 @@ export const signUpUser = async (req, res, next) => {
     // ✅ -Insert new user into data base
     const userData = await client.query({
       text: `
-      INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id) VALUES ($1, $2, $3,$4,$5, $6, $7, $8) 
-      RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id;`,
+      INSERT INTO users(user_id, username,email,password_hashed,user_firstname,user_lastname, currency_id, user_role_id, timezone) VALUES ($1, $2, $3,$4,$5, $6, $7, $8, COALESCE($9, 'UTC'))
+      RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id, timezone;`,
       values: [
         newUserId,
         username,
@@ -117,6 +130,9 @@ export const signUpUser = async (req, res, next) => {
         user_lastname,
         currencyId,
         '1',
+        // COALESCE and not the column default: a parameter left out of VALUES is
+        // not the same as one bound to null, and null breaks the NOT NULL.
+        timezone ?? null,
       ],
     });
     // console.log('pwd:', userData.rows);
@@ -183,6 +199,7 @@ export const signUpUser = async (req, res, next) => {
       user_firstname: newUser.user_firstname,
       user_lastname: newUser.user_lastname,
       currency: currency_code,
+      timezone: newUser.timezone,
       role: newUser.user_role_name || 'user',
     };
 
@@ -222,7 +239,7 @@ export const signInUser = async (req, res, next) => {
     // ✅ GET USER DATA FROM DB
     const userData = await client
       .query({
-        text: `SELECT u.username, u.email, u.password_hashed, u.user_id, u.user_firstname, u.user_lastname, u.user_contact, u.user_role_id,
+        text: `SELECT u.username, u.email, u.password_hashed, u.user_id, u.user_firstname, u.user_lastname, u.user_contact, u.user_role_id, u.timezone,
         ur.user_role_name,
         ct.currency_code as currency
         FROM users u
@@ -332,6 +349,7 @@ export const signInUser = async (req, res, next) => {
       user_role_name: user.user_role_name,
       currency: user.currency,
       user_contact: user.user_contact,
+      timezone: user.timezone,
     };
 
     // console.log('🚀 ~ signInUser ~ userResponseData:', userResponseData);
@@ -449,8 +467,8 @@ export const validateSession = async (req, res, next) => {
     console.log('🚀 ~ validateSession ~ userId:', userId);
 
     const userDataResult = await pool.query({
-      text: `SELECT u.user_id, u.username, u.email, u.user_firstname, u.user_contact, u.user_lastname, 
-      u.user_contact, ct.currency_code as currency, 
+      text: `SELECT u.user_id, u.username, u.email, u.user_firstname, u.user_contact, u.user_lastname,
+      u.user_contact, u.timezone, ct.currency_code as currency,
       ur.user_role_name as role
       FROM users u
       JOIN currencies ct ON ct.currency_id = u.currency_id

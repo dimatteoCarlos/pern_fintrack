@@ -2,6 +2,7 @@
 // 🎯 ZOD SCHEMAS FOR USER OPERATIONS (UPDATE PROFILE & PASSWORD CHANGE)
 // All validations based on ACTUAL database schema limits
 import { z } from 'zod';
+import { isIanaTimeZone } from '../../utils/fintrackUtils/date-utils/ianaTimeZone.js';
 // ======================================
 // 🔤 CONSTANTS BASED ON DATABASE SCHEMA
 // ======================================
@@ -49,6 +50,20 @@ export const currencySchema = z.enum(['usd', 'cop', 'eur', 'ves', 'mxn'], {
   }
 })
 .optional();
+
+// ==========================
+// 🌍 TIME ZONE FIELD SCHEMA
+// ==========================
+/**
+ * The IANA zone the user's calendar is read on. Checked against the same set the
+ * database trigger admits, so a wrong value comes back as a 400 and not as the
+ * 500 the trigger would raise.
+ */
+export const timezoneSchema = z.string()
+  .refine(isIanaTimeZone, {
+    message: 'Time zone must be a valid IANA identifier, for example America/Bogota'
+  })
+  .optional();
 
 // ======================================
 // 📝 INDIVIDUAL FIELD SCHEMAS (REUSABLE)
@@ -99,7 +114,8 @@ export const updateProfileSchema = z.object({
   firstname: firstNameSchema.optional(),
   lastname: lastNameSchema.optional(),
   contact: contactSchema,
-  currency: currencySchema.optional()
+  currency: currencySchema.optional(),
+  timezone: timezoneSchema
 })
 // Validate that at least one field is provided
 .refine(
@@ -181,4 +197,5 @@ export default {
   lastNameSchema,
   contactSchema,
   currencySchema,
+  timezoneSchema,
 };
