@@ -9,10 +9,6 @@ import { getNumberOfPeriods } from '../../../../utils/fintrackUtils/date-utils/g
 import { makeBudgetResult } from '../core/makeBudgetResult.js';
 import { money } from '../core/money.js';
 
-// First instant of the calendar month a date falls in, in UTC.
-const monthStart = (date) =>
-  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1, 0, 0, 0, 0));
-
 /**
  * Amount an allocation contributes to a window.
  *
@@ -24,10 +20,11 @@ const monthStart = (date) =>
  * of 120, because the multiplier came from the window rather than from the
  * budget.
  *
- * Validity boundaries are snapped to the month they fall in, so an allocation
- * opened on the 15th owns that whole month and the one it replaced stops at the
- * same boundary. The slices are therefore contiguous and non-overlapping: no
- * month is billed twice and none is skipped.
+ * Validity boundaries are used as stored. Every writer now anchors them to a
+ * canonical period boundary, so the slices are already contiguous and
+ * non-overlapping: no period is billed twice and none is skipped. Snapping them
+ * here used to repair that, but it snapped to the MONTH whatever the frequency,
+ * which was only ever right for one of the five.
  *
  * Whole periods only, per getNumberOfPeriods. A quarterly allocation covering
  * two months of the window contributes 0, not two thirds. Proration is a
@@ -36,10 +33,10 @@ const monthStart = (date) =>
  */
 const allocationContribution = (allocation, startDate, endDate) => {
   const effectiveStart = new Date(
-    Math.max(startDate.getTime(), monthStart(allocation.validFrom).getTime()),
+    Math.max(startDate.getTime(), allocation.validFrom.getTime()),
   );
   const effectiveEnd = allocation.validUntil
-    ? new Date(Math.min(endDate.getTime(), monthStart(allocation.validUntil).getTime()))
+    ? new Date(Math.min(endDate.getTime(), allocation.validUntil.getTime()))
     : endDate;
 
   if (effectiveEnd <= effectiveStart) {
