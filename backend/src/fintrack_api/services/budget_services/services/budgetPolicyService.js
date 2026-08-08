@@ -409,6 +409,10 @@ async function applyAllocationForAccount(
 /**
  * Every version of a policy's allocation, newest first.
  *
+ * closeReason is what makes the list readable. A correction and a forward
+ * change leave the same shape otherwise, and two versions over one period with
+ * nothing saying why is worse than no history at all.
+ *
  * @returns {Promise<Array<object>>}
  */
 async function getBudgetAllocationHistory(pool, userId, budgetPolicyId) {
@@ -419,7 +423,8 @@ async function getBudgetAllocationHistory(pool, userId, budgetPolicyId) {
      a.budget_frequency_type_id,
      bft.budget_frequency_code,
      a.valid_from,
-     a.valid_until
+     a.valid_until,
+     a.close_reason
     FROM budget_policy_allocations a
     JOIN budget_policies bp ON bp.budget_policy_id = a.budget_policy_id
     JOIN user_accounts ua ON ua.account_id = bp.account_id
@@ -427,7 +432,7 @@ async function getBudgetAllocationHistory(pool, userId, budgetPolicyId) {
       ON bft.budget_frequency_type_id = a.budget_frequency_type_id
    WHERE a.budget_policy_id = $1
      AND ua.user_id = $2
-   ORDER BY a.valid_from DESC`,
+   ORDER BY a.valid_from DESC, a.budget_allocation_id DESC`,
   [budgetPolicyId, userId],
  );
 
@@ -446,6 +451,12 @@ async function getBudgetAllocationHistory(pool, userId, budgetPolicyId) {
   validFrom: row.valid_from,
   validUntil: row.valid_until,
   isActive: row.valid_until === null,
+  closeReason: row.close_reason,
+  // A version closed at its own start priced nothing. Derived here rather than
+  // left to the client, which would have to compare two dates to learn it.
+  neverInForce:
+   row.valid_until !== null
+   && row.valid_until.getTime() === row.valid_from.getTime(),
  }));
 }
 
