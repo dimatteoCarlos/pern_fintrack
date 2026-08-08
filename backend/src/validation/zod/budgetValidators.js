@@ -8,12 +8,20 @@ import { z } from 'zod';
 import {
  ALLOCATION_INTENTS,
  ALLOWED_ALLOCATION_FREQUENCIES,
+ ALLOWED_WINDOW_FREQUENCIES,
  DEFAULT_ALLOCATION_INTENT,
 } from '../../fintrack_api/services/budget_services/core/budgetConfig.js';
 
 // Helper schemas
 // Base fields reused across schemas
 const dateField = z.coerce.date().optional();
+
+// How wide a window the caller would like to read over. Optional, and never
+// binding: a level that is not a whole multiple of a policy's period is
+// answered over that policy's period instead, and meta.resolution says so. The
+// enum still rejects a code the arithmetic does not know, which is a different
+// mistake from asking for a width that does not fit.
+const aggregationLevelField = z.enum(ALLOWED_WINDOW_FREQUENCIES).optional();
 
 // The three reporting schemas below are strict.
 //
@@ -32,19 +40,20 @@ const dateField = z.coerce.date().optional();
 // Summary (single account)
 /**
  * GET /budget/summary
- * Query: accountId (required), date
+ * Query: accountId (required), date, aggregationLevel
  */
 export const summaryQuerySchema = z.object({
  accountId: z.coerce.number().positive({
   message: 'accountId must be a positive number',
  }),
  date: dateField,
+ aggregationLevel: aggregationLevelField,
 }).strict();
 
 // Multi‑summary (multiple accounts)
 /**
  * POST /budget/multi-summary
- * Body: accountIds (array, required), date
+ * Body: accountIds (array, required), date, aggregationLevel
  */
 export const multiSummaryBodySchema = z.object({
  accountIds: z.array(
@@ -55,6 +64,7 @@ export const multiSummaryBodySchema = z.object({
   message: 'accountIds must contain at least one account',
  }),
  date: dateField,
+ aggregationLevel: aggregationLevelField,
 })
 .strict()
 .refine(
@@ -107,7 +117,7 @@ export const historyParamsSchema = z.object({
 // Export CSV
 /**
  * GET /budget/export
- * Query: accountId (optional), date
+ * Query: accountId (optional), date, aggregationLevel
  * Same as summaryQuerySchema but accountId is optional.
  */
 export const exportQuerySchema = z.object({
@@ -115,4 +125,5 @@ export const exportQuerySchema = z.object({
   message: 'accountId must be a positive number',
  }).optional(),
  date: dateField,
+ aggregationLevel: aggregationLevelField,
 }).strict();

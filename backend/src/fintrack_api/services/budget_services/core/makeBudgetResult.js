@@ -7,11 +7,24 @@
 
 import { isFiniteMoney, toAmount, toRate } from './money.js';
 
+// How the reported period was arrived at.
+//
+// 'native'     – no aggregation level was asked for; the window is the policy's
+//                own period.
+// 'aggregated' – the level asked for is a whole multiple of that period, so the
+//                window spans several of them exactly.
+// 'resolved'   – the level asked for does not fit, so the window fell back to
+//                the policy's period. The request was honoured as far as it
+//                could be, which is why this is not a 400: a query locates a
+//                period, it never redefines one.
+export const RESOLUTIONS = ['native', 'aggregated', 'resolved'];
+
 export function makeBudgetResult({
   accountId = null,
   isBudgeted = true,
   currency,
   period,
+  resolution = 'native',
   budgetPolicy = null,
   budgetAllocation = null,
   budgetAccumulatedAmount,
@@ -34,6 +47,9 @@ export function makeBudgetResult({
   }
   if (!(period.end instanceof Date) || isNaN(period.end.getTime())) {
     throw new Error('BudgetResult: period.end must be a valid Date');
+  }
+  if (!RESOLUTIONS.includes(resolution)) {
+    throw new Error(`BudgetResult: resolution must be one of ${RESOLUTIONS.join(', ')}`);
   }
 
   // Validate optional objects
@@ -78,6 +94,9 @@ export function makeBudgetResult({
       start: period.start,
       end: period.end,
     },
+    // Per row, not only in meta: a mixed response has to say which rows were
+    // aggregated and which fell back, and a single top-level value cannot.
+    resolution,
     budgetPolicy,
     budgetAllocation,
     budgetAccumulatedAmount: toAmount(budgetAccumulatedAmount),  // ← Renombrado

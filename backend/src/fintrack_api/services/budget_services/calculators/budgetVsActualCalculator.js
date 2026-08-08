@@ -66,6 +66,7 @@ const allocationContribution = (allocation, startDate, endDate) => {
  * @param {Date} params.startDate - Period start (inclusive, UTC)
  * @param {Date} params.endDate - Period end (exclusive, UTC)
  * @param {string} params.currency - Currency code (e.g. 'USD')
+ * @param {string} [params.resolution] - How the window was arrived at. See RESOLUTIONS
  * @returns {Object} BudgetResult domain object with all metrics
  */
 export function calculateBudgetVsActual({
@@ -77,6 +78,7 @@ export function calculateBudgetVsActual({
   startDate,
   endDate,
   currency,
+  resolution,
 }) {
   // Validations
   if (!Array.isArray(budgetAllocations) || budgetAllocations.length === 0) {
@@ -147,6 +149,7 @@ export function calculateBudgetVsActual({
     isBudgeted: true,
     currency,
     period: { start: startDate, end: endDate },
+    resolution,
     budgetPolicy: budgetPolicy || null,
     budgetAllocation: currentAllocation,
     budgetAccumulatedAmount,

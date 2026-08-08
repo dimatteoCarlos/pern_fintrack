@@ -63,7 +63,7 @@ export async function getSummary(req, res, next) {
   if (!userId) return;
 
   const validated = summaryQuerySchema.parse(req.query);
-  const { accountId, date } = validated;
+  const { accountId, date, aggregationLevel } = validated;
 
   const owned = await getOwnedBudgetAccounts(userId);
   if (accountId && !owned.has(accountId)) {
@@ -76,7 +76,8 @@ export async function getSummary(req, res, next) {
   const result = await budgetCalculationService.getSummary(
    pool,
    accountId,
-   date || new Date()
+   date || new Date(),
+   aggregationLevel ?? null
   );
 
   res.status(200).json(result);
@@ -97,7 +98,7 @@ export async function getMultiSummary(req, res, next) {
   if (!userId) return;
 
   const validated = multiSummaryBodySchema.parse(req.body);
-  const { accountIds, date } = validated;
+  const { accountIds, date, aggregationLevel } = validated;
 
   // Check EVERY element. Validating only the first would let a caller hide foreign ids behind one of their own.
   const owned = await getOwnedBudgetAccounts(userId);
@@ -112,7 +113,8 @@ export async function getMultiSummary(req, res, next) {
   const result = await budgetCalculationService.getMultiSummary(
    pool,
    accountIds,
-   date || new Date()
+   date || new Date(),
+   aggregationLevel ?? null
   );
 
   res.status(200).json(result);
@@ -210,7 +212,7 @@ export async function exportCSV(req, res, next) {
   if (!userId) return;
 
   const validated = exportQuerySchema.parse(req.query);
-  const { accountId, date } = validated;
+  const { accountId, date, aggregationLevel } = validated;
 
   let results;
   const accountNamesMap = new Map();
@@ -228,7 +230,8 @@ export async function exportCSV(req, res, next) {
    const { result } = await budgetCalculationService.getSummary(
     pool,
     accountId,
-    date || new Date()
+    date || new Date(),
+    aggregationLevel ?? null
    );
    results = [result];
    accountNamesMap.set(accountId, owned.get(accountId).accountName);
@@ -245,7 +248,8 @@ export async function exportCSV(req, res, next) {
    const { results: multiResults } = await budgetCalculationService.getMultiSummary(
     pool,
     accountIds,
-    date || new Date()
+    date || new Date(),
+    aggregationLevel ?? null
    );
 
    // multi-summary now returns unbudgeted accounts too, so the screen can show

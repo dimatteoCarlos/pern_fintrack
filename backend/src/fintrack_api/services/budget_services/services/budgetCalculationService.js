@@ -18,7 +18,7 @@ import {
 import { calculateBudgetVsActual } from '../calculators/budgetVsActualCalculator.js';
 import { makeBudgetResult } from '../core/makeBudgetResult.js';
 import { money, toAmount, toRate } from '../core/money.js';
-import { DEFAULT_FREQUENCY } from '../core/budgetConfig.js';
+import { DEFAULT_FREQUENCY, MONTHS_PER_PERIOD } from '../core/budgetConfig.js';
 import { getCurrencyCodeSync } from '../../../../utils/currencyLookup.js';
 
 /**
@@ -46,12 +46,14 @@ const makeNoBudgetResult = ({
  actualSpent,
  startDate,
  endDate,
+ resolution,
 }) =>
  makeBudgetResult({
   accountId,
   isBudgeted,
   currency,
   period: { start: startDate, end: endDate },
+  resolution,
   budgetPolicy: budgetPolicy ?? null,
   budgetAllocation: null,
   budgetAccumulatedAmount: 0,
@@ -64,7 +66,7 @@ const makeNoBudgetResult = ({
 /**
  * Turn one repository entry into a BudgetResult.
  */
-const buildResult = (entry, startDate, endDate) => {
+const buildResult = (entry, startDate, endDate, resolution) => {
  const currency = getCurrencyCodeSync(entry.currencyId);
  const isBudgeted = entry.budgetPolicyId !== null;
 
@@ -77,6 +79,7 @@ const buildResult = (entry, startDate, endDate) => {
    actualSpent: entry.actualSpent,
    startDate,
    endDate,
+   resolution,
   });
  }
 
@@ -100,6 +103,7 @@ const buildResult = (entry, startDate, endDate) => {
    actualSpent: entry.actualSpent,
    startDate,
    endDate,
+   resolution,
   });
  }
 
@@ -111,48 +115,93 @@ const buildResult = (entry, startDate, endDate) => {
   startDate,
   endDate,
   currency,
+  resolution,
  });
 };
 
 /**
- * Read a set of accounts, each over the canonical period its OWN policy defines.
+ * Which window one account is read over, and how that window was arrived at.
+ *
+ * The unified rule of PLAN_F §4.1. A query never redefines a policy's budget
+ * period, so an aggregation level is honoured only when it is a whole multiple
+ * of that period; otherwise the canonical period containing the reference date
+ * is reported instead. Neither branch is an error: asking a monthly question
+ * about a quarterly budget is a reasonable thing to do, and answering "that
+ * budget is quarterly, here is its quarter" is more useful than a 400.
+ *
+ * Divisibility in months is the whole test because every canonical period
+ * anchors to January. A quarter is always Jan–Mar, Apr–Jun and so on, so a
+ * yearly window contains exactly four of them with no boundary left straddling.
+ */
+const resolveWindowFor = (policyCode, aggregationLevel) => {
+ if (!aggregationLevel) {
+  return { frequencyCode: policyCode, resolution: 'native' };
+ }
+
+ return MONTHS_PER_PERIOD[aggregationLevel] % MONTHS_PER_PERIOD[policyCode] === 0
+  ? { frequencyCode: aggregationLevel, resolution: 'aggregated' }
+  : { frequencyCode: policyCode, resolution: 'resolved' };
+};
+
+/**
+ * Read a set of accounts, each over the window its own policy allows.
  *
  * The frequency comes from the allocation in force at the reference date, never
  * from the request. A budget belongs to a canonical period, so a query that
  * sized the window itself was redefining that period: a quarterly budget of 600
  * read through the default monthly window counted floor(1/3) = 0 whole periods
- * and reported the entire spend as overspend. The window is now exactly one
- * period of the policy, so the count is exact by construction.
+ * and reported the entire spend as overspend. The window is now either one
+ * period of the policy or a whole number of them, so the count is exact by
+ * construction.
  *
  * An account with no allocation covering the date falls back to
  * DEFAULT_FREQUENCY. There is no budget in force to take a period from, and
  * monthly is the finest canonical grain, so the window neither invents a budget
  * nor hides spending. isBudgeted already tells the two situations apart.
  *
- * Accounts are grouped by frequency rather than read one at a time: there are
- * five codes, so this is at most five reads and in practice one, against the N
- * of a per-account loop.
+ * Accounts are grouped by window frequency rather than read one at a time:
+ * there are five codes, so this is at most five reads and in practice one,
+ * against the N of a per-account loop. The resolution is carried per account,
+ * not per group — a monthly policy aggregated to quarterly and a quarterly
+ * policy that rejected a monthly level share one window and reached it for
+ * opposite reasons.
  */
-const readAccountsOverTheirOwnPeriods = async (pool, accountIds, referenceDate) => {
+const readAccountsOverTheirOwnPeriods = async (
+ pool,
+ accountIds,
+ referenceDate,
+ aggregationLevel = null,
+) => {
  const frequencyByAccount = await getPolicyFrequenciesForAccounts(
   pool,
   accountIds,
   referenceDate,
  );
 
+ const windowByAccount = new Map();
  const accountsByFrequency = new Map();
  for (const accountId of accountIds) {
-  const frequencyCode = frequencyByAccount.get(accountId) ?? DEFAULT_FREQUENCY;
-  const group = accountsByFrequency.get(frequencyCode) ?? [];
+  const policyCode = frequencyByAccount.get(accountId) ?? DEFAULT_FREQUENCY;
+  const window = resolveWindowFor(policyCode, aggregationLevel);
+  windowByAccount.set(accountId, window);
+
+  const group = accountsByFrequency.get(window.frequencyCode) ?? [];
   group.push(accountId);
-  accountsByFrequency.set(frequencyCode, group);
+  accountsByFrequency.set(window.frequencyCode, group);
  }
 
  const groups = await Promise.all(
   [...accountsByFrequency].map(async ([frequencyCode, ids]) => {
    const period = resolvePeriod(frequencyCode, referenceDate);
    const entries = await getBudgetDataForAccounts(pool, ids, period.start, period.end);
-   return entries.map((entry) => buildResult(entry, period.start, period.end));
+   return entries.map((entry) =>
+    buildResult(
+     entry,
+     period.start,
+     period.end,
+     windowByAccount.get(entry.accountId).resolution,
+    ),
+   );
   }),
  );
 
@@ -161,6 +210,20 @@ const readAccountsOverTheirOwnPeriods = async (pool, accountIds, referenceDate) 
  // not something a caller can pair against its own list.
  const resultsByAccount = new Map(groups.flat().map((result) => [result.accountId, result]));
  return accountIds.map((id) => resultsByAccount.get(id)).filter(Boolean);
+};
+
+/**
+ * The one word that describes a whole response, or 'mixed' when there is none.
+ *
+ * A single value would be a lie on a set where some rows aggregated and others
+ * fell back, and dropping the field on those responses would make the caller
+ * branch on its absence. 'mixed' says the answer is per row.
+ */
+const collapseResolution = (results) => {
+ if (results.length === 0) return 'native';
+
+ const distinct = new Set(results.map((r) => r.resolution));
+ return distinct.size === 1 ? [...distinct][0] : 'mixed';
 };
 
 /**
@@ -237,8 +300,13 @@ export const budgetCalculationService = {
  /**
   * Get budget summary for a single account.
   */
- async getSummary(pool, accountId, referenceDate) {
-  const results = await readAccountsOverTheirOwnPeriods(pool, [accountId], referenceDate);
+ async getSummary(pool, accountId, referenceDate, aggregationLevel = null) {
+  const results = await readAccountsOverTheirOwnPeriods(
+   pool,
+   [accountId],
+   referenceDate,
+   aggregationLevel,
+  );
 
   // An owned category_budget account always produces an entry now, budgeted
   // or not, so this no longer fires for an account the user simply has not
@@ -254,19 +322,28 @@ export const budgetCalculationService = {
   // check, and no shape change the day a second notice appears.
   return {
    result: results[0],
-   meta: { notices: [] },
+   meta: { notices: [], resolution: collapseResolution(results) },
   };
  },
 
  /**
   * Get budget summaries for multiple accounts.
   */
- async getMultiSummary(pool, accountIds, referenceDate) {
+ async getMultiSummary(pool, accountIds, referenceDate, aggregationLevel = null) {
   if (!accountIds || accountIds.length === 0) {
-   return { results: [], totals: makeTotals([]), meta: { notices: [] } };
+   return {
+    results: [],
+    totals: makeTotals([]),
+    meta: { notices: [], resolution: 'native' },
+   };
   }
 
-  const results = await readAccountsOverTheirOwnPeriods(pool, accountIds, referenceDate);
+  const results = await readAccountsOverTheirOwnPeriods(
+   pool,
+   accountIds,
+   referenceDate,
+   aggregationLevel,
+  );
   const totals = makeTotals(results);
   const notices = [];
 
@@ -278,6 +355,10 @@ export const budgetCalculationService = {
    notices.push(MIXED_PERIOD_NOTICE);
   }
 
-  return { results, totals, meta: { notices } };
+  return {
+   results,
+   totals,
+   meta: { notices, resolution: collapseResolution(results) },
+  };
  },
 };
