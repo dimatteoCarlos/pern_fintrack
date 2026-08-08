@@ -10,6 +10,7 @@ import {
 
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
+import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import {
   ALLOCATION_INTENTS,
   ALLOWED_ALLOCATION_FREQUENCIES,
@@ -366,6 +367,8 @@ export const patchAccountById = async (req, res, next) => {
     // cba.budget above is the legacy column. No budget endpoint reads it: they
     // all price from budget_policy_allocations. Without this the amount changed
     // on the account screen and nowhere else.
+    // Read on the transaction's client, so the zone the boundary is aligned to
+    // is the one this transaction sees.
     const budget_policy = budgetChange
       ? await budgetPolicyService.applyAllocationForAccount(
           client,
@@ -374,6 +377,7 @@ export const patchAccountById = async (req, res, next) => {
           budgetChange.amount,
           budgetChange.frequencyCode,
           budgetChange.intent,
+          await getUserTimeZone(client, userId),
         )
       : null;
 

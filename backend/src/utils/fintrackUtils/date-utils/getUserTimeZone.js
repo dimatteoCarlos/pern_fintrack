@@ -12,12 +12,13 @@
  * does not exist — and a read must not die on that. The caller has already
  * checked ownership by the time it gets here.
  *
- * @param {import('pg').Pool} pool
+ * @param {import('pg').Pool|import('pg').PoolClient} db - a pool, or the client
+ *  of a transaction in flight so the read shares its snapshot.
  * @param {string} userId - UUID from the token, never from the client body.
  * @returns {Promise<string>} an IANA zone identifier.
  */
-export async function getUserTimeZone(pool, userId) {
- const { rows } = await pool.query(
+export async function getUserTimeZone(db, userId) {
+ const { rows } = await db.query(
   `SELECT timezone FROM users WHERE user_id = $1`,
   [userId],
  );

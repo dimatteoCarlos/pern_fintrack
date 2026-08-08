@@ -17,6 +17,7 @@ import { buildFxMetadata } from '../../utils/fintrackUtils/transactionManagement
 import { getCurrencyId } from '../../utils/currencyLookup.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
 import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
+import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import {
   ALLOWED_ALLOCATION_FREQUENCIES,
   DEFAULT_FREQUENCY,
@@ -267,12 +268,15 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     // amount from budget_policy_allocations, so an account created without a
     // policy came back as unbudgeted no matter what the user typed. The legacy
     // cba.budget column keeps its value and its writer: this is additive.
+    // Read on the transaction's client, so the zone the boundary is aligned to
+    // is the one this transaction sees.
     const budget_policy = await budgetPolicyService.createBudgetPolicyForAccount(
       client,
       account_id,
       category_nature_budget,
       budget_frequency_code,
       account_start_date ?? transaction_actual_date,
+      await getUserTimeZone(client, userId),
     );
     //--------------------
     //DETERMINE THE TRANSACTION TYPE FOR NEW CATEGORY_BUDGET ACCOUNT AND FOR COUNTER ACCOUNT (SLACK)

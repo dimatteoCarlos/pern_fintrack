@@ -168,13 +168,16 @@ export async function updatePolicy(req, res, next) {
   // Ownership is enforced inside the service, in the same transaction as the
   // write. Checking it here instead would leave a window between the check
   // and the update.
+  const timeZone = await getUserTimeZone(pool, userId);
+
   const result = await budgetPolicyService.updateBudgetAllocation(
    pool,
    userId,
    budgetPolicyId,
    budgetAmount,
    budgetFrequencyCode,
-   intent
+   intent,
+   timeZone
   );
 
   res.status(200).json(result);

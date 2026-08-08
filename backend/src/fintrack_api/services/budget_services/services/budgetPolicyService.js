@@ -122,15 +122,19 @@ const lockOwnedPolicy = async (client, userId, budgetPolicyId) => {
  *
  * A change ends the period in progress under the frequency that is governing
  * it, not the incoming one: a quarter already under way finishes as a quarter.
+ *
+ * A correction returns an instant that was already stored, so the zone cannot
+ * reach it. Only the period in progress is resolved, and it is resolved on the
+ * user's calendar.
  */
-const resolveReplacementBoundary = (active, intent, now) => {
+const resolveReplacementBoundary = (active, intent, now, timeZone) => {
  if (intent === 'correct' || active.valid_from > now) {
   return active.valid_from;
  }
 
  // end is the first day after the period, which is exactly the next period's
  // start: the boundary needs no arithmetic of its own.
- return resolvePeriod(active.budget_frequency_code, now).end;
+ return resolvePeriod(active.budget_frequency_code, now, timeZone).end;
 };
 
 /**
@@ -151,6 +155,7 @@ const replaceActiveAllocation = async (
  budgetAmount,
  budgetFrequencyCode,
  intent,
+ timeZone = 'UTC',
 ) => {
  const now = new Date();
 
@@ -171,8 +176,8 @@ const replaceActiveAllocation = async (
  // No active row means nothing to supersede, so the amount comes into force at
  // the start of the period containing today, the same rule Create follows.
  const boundary = active
-  ? resolveReplacementBoundary(active, intent, now)
-  : resolvePeriod(budgetFrequencyCode, now).start;
+  ? resolveReplacementBoundary(active, intent, now, timeZone)
+  : resolvePeriod(budgetFrequencyCode, now, timeZone).start;
 
  if (active) {
   await client.query(
@@ -232,6 +237,7 @@ async function updateBudgetAllocation(
  budgetAmount,
  budgetFrequencyCode,
  intent = DEFAULT_ALLOCATION_INTENT,
+ timeZone = 'UTC',
 ) {
  const normalizedAmount = normalizeAllocationInput(budgetAmount, budgetFrequencyCode);
 
@@ -244,6 +250,7 @@ async function updateBudgetAllocation(
    normalizedAmount,
    budgetFrequencyCode,
    intent,
+   timeZone,
   );
  });
 }
@@ -269,6 +276,7 @@ async function createBudgetPolicyForAccount(
  budgetAmount,
  budgetFrequencyCode,
  validFrom,
+ timeZone = 'UTC',
 ) {
  // Normalizing again when applyAllocationForAccount routes here is harmless:
  // rounding an already-rounded amount is idempotent.
@@ -276,7 +284,7 @@ async function createBudgetPolicyForAccount(
 
  // new Date() accepts both the Date the edit path passes and the ISO string the
  // creation controller reads from the request body.
- const alignedFrom = resolvePeriod(budgetFrequencyCode, new Date(validFrom)).start;
+ const alignedFrom = resolvePeriod(budgetFrequencyCode, new Date(validFrom), timeZone).start;
 
  const { rows: policyRows } = await client.query(
   `INSERT INTO budget_policies (account_id)
@@ -335,6 +343,7 @@ async function applyAllocationForAccount(
  budgetAmount,
  budgetFrequencyCode = null,
  intent = DEFAULT_ALLOCATION_INTENT,
+ timeZone = 'UTC',
 ) {
  // FOR UPDATE OF ua serializes concurrent edits of the same account: without
  // it two saves could both read one active allocation and both open a
@@ -378,6 +387,7 @@ async function applyAllocationForAccount(
    normalizedAmount,
    targetCode,
    current.account_start_date,
+   timeZone,
   );
  }
 
@@ -403,6 +413,7 @@ async function applyAllocationForAccount(
   normalizedAmount,
   targetCode,
   intent,
+  timeZone,
  );
 }
 
