@@ -8,7 +8,7 @@
 import express from 'express';
 import {
   getSummary,
-  getMultiSummary,
+  getBudgetAccountsStatus,
   getFrequencies,
   updatePolicy,
   getHistory,
@@ -20,8 +20,8 @@ const router = express.Router();
 // GET /api/fintrack/budget/summary?accountId=&frequency=&date=&startDate=&endDate=
 router.get('/summary', getSummary);
 
-// POST /api/fintrack/budget/multi-summary  { accountIds: [] , ... }
-router.post('/multi-summary', getMultiSummary);
+// POST /api/fintrack/budget/accounts/status  { accountIds: [] , ... }
+router.post('/accounts/status', getBudgetAccountsStatus);
 
 // GET /api/fintrack/budget/frequencies
 router.get('/frequencies', getFrequencies);

@@ -16,13 +16,13 @@ import {
  getPolicyFrequenciesForAccounts,
 } from '../db/budgetTransactionRepository.js';
 import { calculateBudgetVsActual } from '../calculators/budgetVsActualCalculator.js';
-import { makeBudgetResult } from '../core/makeBudgetResult.js';
+import { makeBudgetAccountStatus } from '../core/makeBudgetAccountStatus.js';
 import { money, toAmount, toRate } from '../core/money.js';
 import { DEFAULT_FREQUENCY, MONTHS_PER_PERIOD } from '../core/budgetConfig.js';
 import { getCurrencyCodeSync } from '../../../../utils/currencyLookup.js';
 
 /**
- * Result for an account with no budget figure to report for this window.
+ * The status of an account with no budget figure to report for this window.
  *
  * Two different situations land here and the response keeps them apart through
  * isBudgeted:
@@ -38,7 +38,7 @@ import { getCurrencyCodeSync } from '../../../../utils/currencyLookup.js';
  * no budget behind it, and hiding that would replace one lie with another. The
  * percentage stays 0 because there is no denominator.
  */
-const makeNoBudgetResult = ({
+const makeAccountStatusWithoutAllocation = ({
  accountId,
  isBudgeted,
  budgetPolicy,
@@ -48,7 +48,7 @@ const makeNoBudgetResult = ({
  endDate,
  resolution,
 }) =>
- makeBudgetResult({
+ makeBudgetAccountStatus({
   accountId,
   isBudgeted,
   currency,
@@ -64,14 +64,14 @@ const makeNoBudgetResult = ({
  });
 
 /**
- * Turn one repository entry into a BudgetResult.
+ * Turn one repository entry into a BudgetAccountStatus.
  */
-const buildResult = (entry, startDate, endDate, resolution) => {
+const buildAccountStatus = (entry, startDate, endDate, resolution) => {
  const currency = getCurrencyCodeSync(entry.currencyId);
  const isBudgeted = entry.budgetPolicyId !== null;
 
  if (!isBudgeted) {
-  return makeNoBudgetResult({
+  return makeAccountStatusWithoutAllocation({
    accountId: entry.accountId,
    isBudgeted: false,
    budgetPolicy: null,
@@ -95,7 +95,7 @@ const buildResult = (entry, startDate, endDate, resolution) => {
  };
 
  if (entry.allocations.length === 0) {
-  return makeNoBudgetResult({
+  return makeAccountStatusWithoutAllocation({
    accountId: entry.accountId,
    isBudgeted: true,
    budgetPolicy,
@@ -195,7 +195,7 @@ const readAccountsOverTheirOwnPeriods = async (
    const period = resolvePeriod(frequencyCode, referenceDate);
    const entries = await getBudgetDataForAccounts(pool, ids, period.start, period.end);
    return entries.map((entry) =>
-    buildResult(
+    buildAccountStatus(
      entry,
      period.start,
      period.end,
@@ -205,11 +205,11 @@ const readAccountsOverTheirOwnPeriods = async (
   }),
  );
 
- // Back into the order the caller asked in. Grouping reorders the results, and a
+ // Back into the order the caller asked in. Grouping reorders the rows, and a
  // response whose order depends on which frequencies happened to be present is
  // not something a caller can pair against its own list.
- const resultsByAccount = new Map(groups.flat().map((result) => [result.accountId, result]));
- return accountIds.map((id) => resultsByAccount.get(id)).filter(Boolean);
+ const statusByAccount = new Map(groups.flat().map((status) => [status.accountId, status]));
+ return accountIds.map((id) => statusByAccount.get(id)).filter(Boolean);
 };
 
 /**
@@ -219,10 +219,10 @@ const readAccountsOverTheirOwnPeriods = async (
  * fell back, and dropping the field on those responses would make the caller
  * branch on its absence. 'mixed' says the answer is per row.
  */
-const collapseResolution = (results) => {
- if (results.length === 0) return 'native';
+const collapseResolution = (accountsStatus) => {
+ if (accountsStatus.length === 0) return 'native';
 
- const distinct = new Set(results.map((r) => r.resolution));
+ const distinct = new Set(accountsStatus.map((r) => r.resolution));
  return distinct.size === 1 ? [...distinct][0] : 'mixed';
 };
 
@@ -237,7 +237,7 @@ const monthsInWindow = (period) =>
  *
  * 600 over a quarter and 250 over a month cannot be added, so the sum in
  * `totals` is only meaningful when every row shares a window. This divides each
- * row by the length of the window it reports and adds the results, which gives
+ * row by the length of the window it reports and adds the quotients, which gives
  * a figure the rows above it reconcile with: a row showing 60 over a year
  * contributes 5, not the 10 its allocation is worth, because 60 is what the
  * screen says.
@@ -247,14 +247,14 @@ const monthsInWindow = (period) =>
  * that figure is a construction rather than money anyone can spend, and it must
  * never be mistaken for a balance.
  */
-const makeMonthlyEquivalentBudget = (results) =>
- results.reduce((acc, r) => {
+const makeMonthlyEquivalentBudget = (accountsStatus) =>
+ accountsStatus.reduce((acc, r) => {
   const months = monthsInWindow(r.period);
   return months > 0 ? acc.plus(money(r.budgetAccumulatedAmount).dividedBy(months)) : acc;
  }, money(0));
 
 /**
- * Aggregate a set of results into the figures the Overview header shows.
+ * Aggregate a set of account statuses into the figures the Overview header shows.
  *
  * This exists so the frontend does not add them up itself. Summing on the
  * client is exactly the arithmetic this module was built to remove, and it
@@ -271,12 +271,12 @@ const makeMonthlyEquivalentBudget = (results) =>
  * behind it. budgetedCount lets the caller qualify the figure without
  * recounting.
  */
-// The line values are already rounded by makeBudgetResult, and the totals are
-// summed FROM them: the figure on screen must reconcile with the figures above
-// it. Summing the unrounded values instead would let three displayed numbers
-// contradict each other by a cent.
-const makeTotals = (results) => {
- const totals = results.reduce(
+// The line values are already rounded by makeBudgetAccountStatus, and the totals
+// are summed FROM them: the figure on screen must reconcile with the figures
+// above it. Summing the unrounded values instead would let three displayed
+// numbers contradict each other by a cent.
+const makeTotals = (accountsStatus) => {
+ const totals = accountsStatus.reduce(
   (acc, r) => ({
    budgetAccumulatedAmount: acc.budgetAccumulatedAmount.plus(r.budgetAccumulatedAmount),
    actualSpent: acc.actualSpent.plus(r.actualSpent),
@@ -289,17 +289,17 @@ const makeTotals = (results) => {
  // Currencies are NOT converted here. Budget-level FX is a schema change, not
  // an aggregate, and inventing a rate at report time would produce a number no
  // stored row supports. A mixed set reports a null currency and says so.
- const currencies = new Set(results.map((r) => r.currency));
+ const currencies = new Set(accountsStatus.map((r) => r.currency));
 
  return {
   currency: currencies.size === 1 ? [...currencies][0] : null,
-  accountCount: results.length,
-  budgetedCount: results.filter((r) => r.isBudgeted).length,
+  accountCount: accountsStatus.length,
+  budgetedCount: accountsStatus.filter((r) => r.isBudgeted).length,
   budgetAccumulatedAmount: toAmount(totals.budgetAccumulatedAmount),
   // Derived, never stored, and named so the screen cannot label it "budget".
   // The UI must render it as "Monthly Equivalent Budget": unlabelled, a
   // normalised figure reads as money available to spend, which it is not.
-  monthlyEquivalentBudget: toAmount(makeMonthlyEquivalentBudget(results)),
+  monthlyEquivalentBudget: toAmount(makeMonthlyEquivalentBudget(accountsStatus)),
   actualSpent: toAmount(totals.actualSpent),
   remainingBudget: toAmount(difference),
   actualVsBudgetDifference: toAmount(difference),
@@ -320,8 +320,8 @@ const MIXED_CURRENCY_NOTICE =
 const MIXED_PERIOD_NOTICE =
  'Totals add amounts from different budget periods and are not comparable.';
 
-const periodKey = (result) =>
- `${result.period.start.getTime()}-${result.period.end.getTime()}`;
+const periodKey = (accountStatus) =>
+ `${accountStatus.period.start.getTime()}-${accountStatus.period.end.getTime()}`;
 
 /**
  * Budget calculation service – read operations.
@@ -329,10 +329,10 @@ const periodKey = (result) =>
  */
 export const budgetCalculationService = {
  /**
-  * Get budget summary for a single account.
+  * Get the budget status of a single account.
   */
  async getSummary(pool, accountId, referenceDate, aggregationLevel = null) {
-  const results = await readAccountsOverTheirOwnPeriods(
+  const accountsStatus = await readAccountsOverTheirOwnPeriods(
    pool,
    [accountId],
    referenceDate,
@@ -343,7 +343,7 @@ export const budgetCalculationService = {
   // or not, so this no longer fires for an account the user simply has not
   // budgeted. What is left is a genuine inconsistency: an id that passed the
   // caller's ownership check but has no category_budget_accounts row.
-  if (results.length === 0) {
+  if (accountsStatus.length === 0) {
    throw new Error(`budgetCalculationService: no budget account found for id ${accountId}`);
   }
 
@@ -352,44 +352,44 @@ export const budgetCalculationService = {
   // dropped silently. The caller reads meta.notices and iterates: no null
   // check, and no shape change the day a second notice appears.
   return {
-   result: results[0],
-   meta: { notices: [], resolution: collapseResolution(results) },
+   budgetAccountStatus: accountsStatus[0],
+   meta: { notices: [], resolution: collapseResolution(accountsStatus) },
   };
  },
 
  /**
-  * Get budget summaries for multiple accounts.
+  * Get the budget status of several accounts, plus the totals over them.
   */
- async getMultiSummary(pool, accountIds, referenceDate, aggregationLevel = null) {
+ async getBudgetAccountsStatus(pool, accountIds, referenceDate, aggregationLevel = null) {
   if (!accountIds || accountIds.length === 0) {
    return {
-    results: [],
+    budgetAccountsStatus: [],
     totals: makeTotals([]),
     meta: { notices: [], resolution: 'native' },
    };
   }
 
-  const results = await readAccountsOverTheirOwnPeriods(
+  const accountsStatus = await readAccountsOverTheirOwnPeriods(
    pool,
    accountIds,
    referenceDate,
    aggregationLevel,
   );
-  const totals = makeTotals(results);
+  const totals = makeTotals(accountsStatus);
   const notices = [];
 
-  if (totals.currency === null && results.length > 0) {
+  if (totals.currency === null && accountsStatus.length > 0) {
    notices.push(MIXED_CURRENCY_NOTICE);
   }
 
-  if (new Set(results.map(periodKey)).size > 1) {
+  if (new Set(accountsStatus.map(periodKey)).size > 1) {
    notices.push(MIXED_PERIOD_NOTICE);
   }
 
   return {
-   results,
+   budgetAccountsStatus: accountsStatus,
    totals,
-   meta: { notices, resolution: collapseResolution(results) },
+   meta: { notices, resolution: collapseResolution(accountsStatus) },
   };
  },
 };

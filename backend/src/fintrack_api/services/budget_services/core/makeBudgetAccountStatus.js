@@ -1,9 +1,8 @@
-// src/fintrack_api/services/budget_services/core/makeBudgetResult.js
-// 📝 CHANGE: Renamed budgetedAmount → budgetAccumulatedAmount
+// src/fintrack_api/services/budget_services/core/makeBudgetAccountStatus.js
 
-// The single rounding point of the module. Every result passes through here,
-// including the no-budget ones, so rounding in the calculator instead would
-// leave those unrounded.
+// The single rounding point of the module. Every account status passes through
+// here, including the no-budget ones, so rounding in the calculator instead
+// would leave those unrounded.
 
 import { isFiniteMoney, toAmount, toRate } from './money.js';
 
@@ -19,7 +18,7 @@ import { isFiniteMoney, toAmount, toRate } from './money.js';
 //                period, it never redefines one.
 export const RESOLUTIONS = ['native', 'aggregated', 'resolved'];
 
-export function makeBudgetResult({
+export function makeBudgetAccountStatus({
   accountId = null,
   isBudgeted = true,
   currency,
@@ -35,51 +34,51 @@ export function makeBudgetResult({
 }) {
   // Validate currency
   if (!currency || typeof currency !== 'string') {
-    throw new Error('BudgetResult: currency is required and must be a string');
+    throw new Error('BudgetAccountStatus: currency is required and must be a string');
   }
 
   // Validate period
   if (!period || typeof period !== 'object') {
-    throw new Error('BudgetResult: period is required and must be an object with start and end');
+    throw new Error('BudgetAccountStatus: period is required and must be an object with start and end');
   }
   if (!(period.start instanceof Date) || isNaN(period.start.getTime())) {
-    throw new Error('BudgetResult: period.start must be a valid Date');
+    throw new Error('BudgetAccountStatus: period.start must be a valid Date');
   }
   if (!(period.end instanceof Date) || isNaN(period.end.getTime())) {
-    throw new Error('BudgetResult: period.end must be a valid Date');
+    throw new Error('BudgetAccountStatus: period.end must be a valid Date');
   }
   if (!RESOLUTIONS.includes(resolution)) {
-    throw new Error(`BudgetResult: resolution must be one of ${RESOLUTIONS.join(', ')}`);
+    throw new Error(`BudgetAccountStatus: resolution must be one of ${RESOLUTIONS.join(', ')}`);
   }
 
   // Validate optional objects
   if (budgetPolicy !== null && typeof budgetPolicy !== 'object') {
-    throw new Error('BudgetResult: budgetPolicy must be an object or null');
+    throw new Error('BudgetAccountStatus: budgetPolicy must be an object or null');
   }
   if (budgetAllocation !== null && typeof budgetAllocation !== 'object') {
-    throw new Error('BudgetResult: budgetAllocation must be an object or null');
+    throw new Error('BudgetAccountStatus: budgetAllocation must be an object or null');
   }
 
   // Validate numeric metrics. isFiniteMoney, not typeof 'number': the
   // calculator hands over Decimals so no lossy conversion happens on the way in.
   if (!isFiniteMoney(budgetAccumulatedAmount)) {
-    throw new Error('BudgetResult: budgetAccumulatedAmount must be a finite amount');
+    throw new Error('BudgetAccountStatus: budgetAccumulatedAmount must be a finite amount');
   }
   if (!isFiniteMoney(actualSpent)) {
-    throw new Error('BudgetResult: actualSpent must be a finite amount');
+    throw new Error('BudgetAccountStatus: actualSpent must be a finite amount');
   }
   if (!isFiniteMoney(remainingBudget)) {
-    throw new Error('BudgetResult: remainingBudget must be a finite amount');
+    throw new Error('BudgetAccountStatus: remainingBudget must be a finite amount');
   }
   if (!isFiniteMoney(actualVsBudgetDifference)) {
-    throw new Error('BudgetResult: actualVsBudgetDifference must be a finite amount');
+    throw new Error('BudgetAccountStatus: actualVsBudgetDifference must be a finite amount');
   }
   if (!isFiniteMoney(executionPercentage)) {
-    throw new Error('BudgetResult: executionPercentage must be a finite amount');
+    throw new Error('BudgetAccountStatus: executionPercentage must be a finite amount');
   }
 
-  const budgetResult = Object.freeze({
-    // The caller asked about a set of accounts and gets a set of results back.
+  const budgetAccountStatus = Object.freeze({
+    // The caller asked about a set of accounts and gets one status per account.
     // Without this field the only way to tell them apart was budgetPolicy
     // .accountId, which is null precisely for the accounts that need
     // identifying: the ones with no policy.
@@ -99,7 +98,7 @@ export function makeBudgetResult({
     resolution,
     budgetPolicy,
     budgetAllocation,
-    budgetAccumulatedAmount: toAmount(budgetAccumulatedAmount),  // ← Renombrado
+    budgetAccumulatedAmount: toAmount(budgetAccumulatedAmount),
     actualSpent: toAmount(actualSpent),
     remainingBudget: toAmount(remainingBudget),
     actualVsBudgetDifference: toAmount(actualVsBudgetDifference),
@@ -108,5 +107,5 @@ export function makeBudgetResult({
     executionPercentage: toRate(executionPercentage),
   });
 
-  return budgetResult;
+  return budgetAccountStatus;
 }

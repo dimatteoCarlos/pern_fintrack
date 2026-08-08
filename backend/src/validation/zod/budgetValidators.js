@@ -50,12 +50,12 @@ export const summaryQuerySchema = z.object({
  aggregationLevel: aggregationLevelField,
 }).strict();
 
-// Multi‑summary (multiple accounts)
+// Budget status of several accounts
 /**
- * POST /budget/multi-summary
+ * POST /budget/accounts/status
  * Body: accountIds (array, required), date, aggregationLevel
  */
-export const multiSummaryBodySchema = z.object({
+export const budgetAccountsStatusBodySchema = z.object({
  accountIds: z.array(
   z.coerce.number().positive({
    message: 'each accountId must be a positive number',

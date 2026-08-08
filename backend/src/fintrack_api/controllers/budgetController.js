@@ -7,7 +7,7 @@
 
 import {
  summaryQuerySchema,
- multiSummaryBodySchema,
+ budgetAccountsStatusBodySchema,
  updatePolicyParamsSchema,
  updatePolicyBodySchema,
  historyParamsSchema,
@@ -18,7 +18,7 @@ import { budgetCalculationService } from '../services/budget_services/services/b
 import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
 import { pool } from '../../db/config/configDB.js';
 import { getAccountsByType } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
-import { convertBudgetResultsToCSV } from '../../utils/fintrackUtils/exportUtils.js';
+import { convertAccountsStatusToCSV } from '../../utils/fintrackUtils/exportUtils.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 
 /**
@@ -90,14 +90,14 @@ export async function getSummary(req, res, next) {
 }
 
 // ============================================================
-// POST /budget/multi-summary
+// POST /budget/accounts/status
 // ============================================================
-export async function getMultiSummary(req, res, next) {
+export async function getBudgetAccountsStatus(req, res, next) {
  try {
   const userId = requireUserId(req, res);
   if (!userId) return;
 
-  const validated = multiSummaryBodySchema.parse(req.body);
+  const validated = budgetAccountsStatusBodySchema.parse(req.body);
   const { accountIds, date, aggregationLevel } = validated;
 
   // Check EVERY element. Validating only the first would let a caller hide foreign ids behind one of their own.
@@ -110,14 +110,14 @@ export async function getMultiSummary(req, res, next) {
    });
   }
 
-  const result = await budgetCalculationService.getMultiSummary(
+  const budgetAccountsStatusResponse = await budgetCalculationService.getBudgetAccountsStatus(
    pool,
    accountIds,
    date || new Date(),
    aggregationLevel ?? null
   );
 
-  res.status(200).json(result);
+  res.status(200).json(budgetAccountsStatusResponse);
  } catch (error) {
   if (error.name === 'ZodError') {
    return respondWithZodIssues(res, error);
@@ -214,7 +214,7 @@ export async function exportCSV(req, res, next) {
   const validated = exportQuerySchema.parse(req.query);
   const { accountId, date, aggregationLevel } = validated;
 
-  let results;
+  let exportedAccountsStatus;
   const accountNamesMap = new Map();
   const owned = await getOwnedBudgetAccounts(userId);
 
@@ -227,13 +227,13 @@ export async function exportCSV(req, res, next) {
     });
    }
 
-   const { result } = await budgetCalculationService.getSummary(
+   const { budgetAccountStatus } = await budgetCalculationService.getSummary(
     pool,
     accountId,
     date || new Date(),
     aggregationLevel ?? null
    );
-   results = [result];
+   exportedAccountsStatus = [budgetAccountStatus];
    accountNamesMap.set(accountId, owned.get(accountId).accountName);
   } else {
    // All accounts owned by the caller
@@ -245,18 +245,18 @@ export async function exportCSV(req, res, next) {
     accountNamesMap.set(id, a.accountName);
    });
 
-   const { results: multiResults } = await budgetCalculationService.getMultiSummary(
+   const { budgetAccountsStatus } = await budgetCalculationService.getBudgetAccountsStatus(
     pool,
     accountIds,
     date || new Date(),
     aggregationLevel ?? null
    );
 
-   // multi-summary now returns unbudgeted accounts too, so the screen can show
-   // them as such. A CSV has no room for that distinction: the row would be a
-   // line of zeros indistinguishable from a budget that was never spent.
-   // Exporting only budgeted accounts keeps the file meaning what it did.
-   results = multiResults.filter((r) => r.isBudgeted);
+   // The read now returns unbudgeted accounts too, so the screen can show them
+   // as such. A CSV has no room for that distinction: the row would be a line
+   // of zeros indistinguishable from a budget that was never spent. Exporting
+   // only budgeted accounts keeps the file meaning what it did.
+   exportedAccountsStatus = budgetAccountsStatus.filter((r) => r.isBudgeted);
   }
 
   const dateStr = new Date().toISOString().split('T')[0];
@@ -267,7 +267,7 @@ export async function exportCSV(req, res, next) {
   // module scope, which would have failed the whole router's load once the
   // package was uninstalled (prototype pollution / ReDoS advisories, no fix
   // published on npm).
-  const csv = convertBudgetResultsToCSV(results, accountNamesMap);
+  const csv = convertAccountsStatusToCSV(exportedAccountsStatus, accountNamesMap);
   const filename = `budget_export_${dateStr}.csv`;
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

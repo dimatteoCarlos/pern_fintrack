@@ -67,7 +67,7 @@ All mounted under `/api/fintrack/budget`, behind `verifyToken`.
 | Method | Path | Parameters |
 |---|---|---|
 | `GET` | `/summary` | Query: `accountId` (required, positive), `date` |
-| `POST` | `/multi-summary` | Body: `accountIds[]` (required, min 1, unique, positive), `date` |
+| `POST` | `/accounts/status` | Body: `accountIds[]` (required, min 1, unique, positive), `date` |
 | `GET` | `/frequencies` | None |
 | `GET` | `/history/:budgetPolicyId` | Path: `budgetPolicyId` (positive) |
 | `GET` | `/export` | Query: `accountId` (**optional** — omitted means all owned accounts), `date` |
@@ -75,7 +75,7 @@ All mounted under `/api/fintrack/budget`, behind `verifyToken`.
 **The request never sizes the period.** It sends a reference date and nothing else. The period
 is the calendar period containing that date, sized by the frequency stored on the allocation in
 force — the account's own, resolved per row. Two accounts answered by the same request can come
-back on different periods, and each `result.period` says which. An account with no allocation in
+back on different periods, and each row's `period` says which. An account with no allocation in
 force on that date is reported over the monthly period containing it: there is no budget to take
 a period from, and `isBudgeted` already carries that distinction.
 
@@ -121,7 +121,7 @@ what they can do:
 | Needs the policy id up front | No, keyed by account | Yes |
 
 **No account read endpoint returns `budget_policy_id`.** The only source is
-`GET /budget/summary?accountId=…` → `result.budgetPolicy.budgetPolicyId`, which is `null` for
+`GET /budget/summary?accountId=…` → `budgetAccountStatus.budgetPolicy.budgetPolicyId`, `null` for
 an unbudgeted account. Use the `PATCH` path for the account edit form; use the policy endpoint
 where the id is already in hand, such as the history screen.
 
@@ -192,9 +192,10 @@ being edited, so re-saving a form without changing the name is not a conflict.
 
 ## 3. Outputs
 
-### 3.1 The result object
+### 3.1 The budget account status object
 
-Returned by `/summary` (as `result`) and inside the `results[]` of `/multi-summary`.
+Returned by `/summary` (as `budgetAccountStatus`) and inside the `budgetAccountsStatus[]` of
+`/accounts/status`.
 
 ```json
 {
@@ -205,6 +206,7 @@ Returned by `/summary` (as `result`) and inside the `results[]` of `/multi-summa
   "start": "2026-08-01T00:00:00.000Z",
   "end":   "2026-09-01T00:00:00.000Z"
  },
+ "resolution": "native",
  "budgetPolicy": {
   "budgetPolicyId": 1,
   "accountId": 17,
@@ -233,6 +235,7 @@ Returned by `/summary` (as `result`) and inside the `results[]` of `/multi-summa
 |---|---|
 | `isBudgeted` | `false` when the account has no policy at all |
 | `period` | The resolved window. **Named `period`, not `startDate`/`endDate`** |
+| `resolution` | How that window was arrived at: `native`, `aggregated` or `resolved`. Per row, because a response can mix them |
 | `budgetAllocation` | The allocation in force at the end of the window — the one the edit form and history link act on. `null` when none applies |
 | `budgetAccumulatedAmount` | Allocation amount × whole periods in the window |
 | `actualSpent` | Signed. Positive for expenses, negative for reversals |
@@ -240,7 +243,7 @@ Returned by `/summary` (as `result`) and inside the `results[]` of `/multi-summa
 | `actualVsBudgetDifference` | `budgetAccumulatedAmount − actualSpent`. Negative means overspent |
 | `executionPercentage` | `actualSpent / budgetAccumulatedAmount × 100`, or `0` when the denominator is zero |
 
-### 3.2 Totals — `/multi-summary` only
+### 3.2 Totals — `/accounts/status` only
 
 ```json
 {
@@ -248,6 +251,7 @@ Returned by `/summary` (as `result`) and inside the `results[]` of `/multi-summa
  "accountCount": 2,
  "budgetedCount": 2,
  "budgetAccumulatedAmount": 30,
+ "monthlyEquivalentBudget": 30,
  "actualSpent": 0,
  "remainingBudget": 30,
  "actualVsBudgetDifference": 30,
@@ -305,7 +309,7 @@ routes/budgetRoutes.js
       -> services/budgetPolicyService       writes: SCD2 versioning, transactions
           -> db/budgetTransactionRepository SQL only
           -> calculators/budgetVsActualCalculator   pure, no I/O
-          -> core/makeBudgetResult          builds every result object
+          -> core/makeBudgetAccountStatus   builds every account status object
           -> core/money.js                  the module's rounding boundary
 ```
 
@@ -349,7 +353,7 @@ same boundary. Nothing is double-billed and nothing is skipped. A **non-monthly*
 changed mid-period still reports 0 for that period; see §7.
 
 **2b. Rows in one response may carry different periods.** A quarterly category and a monthly one
-answered by the same `/multi-summary` come back over different date ranges. When that happens
+answered by the same `/accounts/status` come back over different date ranges. When that happens
 the `totals` block adds figures that are not comparable and says so through
 `Totals add amounts from different budget periods and are not comparable.` in `meta.notices`.
 Treat that total as provisional until the monthly equivalent replaces it.
@@ -358,7 +362,7 @@ Treat that total as provisional until the monthly equivalent replaces it.
 names. `actualVsBudgetDifference` is canonical; `remainingBudget` is kept only until the
 frontend stops reading it, then removed.
 
-**4. Unbudgeted accounts still appear** in `/multi-summary`, with `isBudgeted: false`. They do
+**4. Unbudgeted accounts still appear** in `/accounts/status`, with `isBudgeted: false`. They do
 not vanish and do not raise.
 
 **5. Spending with no budget is a real overspend.** An account with no allocation and 50 spent
@@ -371,7 +375,7 @@ would replace one lie with another.
 and stores it lowercase (§2.5). A client-side preview is a second implementation of the same
 rule and will disagree with what is saved. Render the name the response carries.
 
-**7. Render `result.period`, never a range built on the client.** The server resolves it from the
+**7. Render the row's `period`, never a range built on the client.** The server resolves it from the
 account's own budget frequency and the reference date, and returns it end-exclusive. The client
 cannot reconstruct it: it never sent that frequency and does not learn it until the response
 arrives. A screen labelling its own dates while the figures cover the server's period is wrong
@@ -409,7 +413,7 @@ and every allocation the app itself creates is monthly. The fix is to snap `vali
 period boundary and defer changes to the start of the next period, so that no period is ever
 split between two budgets.
 
-**Totals over mixed periods.** With per-row periods, the `totals` block of `/multi-summary` can
+**Totals over mixed periods.** With per-row periods, the `totals` block of `/accounts/status` can
 add a quarter to a month. It is reported through `meta.notices` rather than hidden, and the
 figure that replaces the raw sum is a monthly equivalent, labelled as derived.
 

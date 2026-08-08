@@ -7,7 +7,7 @@
 // It is reusable across financial domains: Budget, Pocket, Investments, etc.
 
 import { MONTHS_PER_PERIOD } from '../../../fintrack_api/services/budget_services/core/budgetConfig.js';
-import { makeBudgetResult } from '../../../fintrack_api/services/budget_services/core/makeBudgetResult.js';
+import { makeBudgetAccountStatus } from '../../../fintrack_api/services/budget_services/core/makeBudgetAccountStatus.js';
 
 // Internal helper to count how many complete periods fit in a date range.
 // Returns 0 if the range is not a complete period (no prorating in V1).
@@ -40,7 +40,7 @@ function getNumberOfPeriods(frequency, startDate, endDate) {
  * @param {Date} params.startDate - Period start (inclusive, UTC)
  * @param {Date} params.endDate - Period end (exclusive, UTC)
  * @param {string} params.currency - Currency code (e.g. 'USD')
- * @returns {Object} BudgetResult domain object with all metrics
+ * @returns {Object} BudgetAccountStatus domain object with all metrics
  * @throws {Error} If activeVersion is missing required fields or dates are invalid
  *
  * @example
@@ -118,9 +118,7 @@ export function calculateVariance({
     executionPercentage = (actual / expected) * 100;
   }
 
-  // ─── Build and return result ──────────────────────────────────
-
-  const result = makeBudgetResult({
+  const budgetAccountStatus = makeBudgetAccountStatus({
     currency: currency,
     period: {
       start: startDate,
@@ -141,7 +139,7 @@ export function calculateVariance({
     executionPercentage: executionPercentage,
   });
 
-  return result;
+  return budgetAccountStatus;
 }
 
 /**
@@ -149,7 +147,7 @@ export function calculateVariance({
  * Useful when you already have the period boundaries and just need metrics.
  *
  * @param {Object} params - Same as calculateVariance
- * @returns {Object} BudgetResult domain object
+ * @returns {Object} BudgetAccountStatus domain object
  */
 export function calculateVarianceForPeriod(params) {
   return calculateVariance(params);

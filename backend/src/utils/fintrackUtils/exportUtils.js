@@ -38,20 +38,20 @@ const escapeCsvField = (value) => {
 const formatDate = (value) =>
  value instanceof Date ? value.toISOString().split('T')[0] : '';
 
-// toFixed on a non-number throws; budget results are validated upstream by
-// makeBudgetResult, but export must not be the place a bad value surfaces.
+// toFixed on a non-number throws; the values are validated upstream by
+// makeBudgetAccountStatus, but export must not be the place a bad value surfaces.
 const formatAmount = (value) =>
  typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : '';
 
 /**
- * Convert budget results to an RFC 4180 CSV document.
+ * Convert the budget status of a set of accounts to an RFC 4180 CSV document.
  *
- * @param {Array<object>} results - BudgetResult objects from budgetCalculationService.
+ * @param {Array<object>} accountsStatus - BudgetAccountStatus objects from budgetCalculationService.
  * @param {Map<number, string>} accountNamesMap - accountId to display name.
  * @returns {string} CSV text including the header row.
  */
-export function convertBudgetResultsToCSV(results, accountNamesMap = new Map()) {
- const rows = Array.isArray(results) ? results : [];
+export function convertAccountsStatusToCSV(accountsStatus, accountNamesMap = new Map()) {
+ const rows = Array.isArray(accountsStatus) ? accountsStatus : [];
 
  const body = rows.map((r) =>
   [

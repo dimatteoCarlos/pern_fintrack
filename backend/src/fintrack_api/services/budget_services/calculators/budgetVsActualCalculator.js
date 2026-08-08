@@ -6,7 +6,7 @@
 
 import { getNumberOfPeriods } from '../../../../utils/fintrackUtils/date-utils/getNumberOfPeriods.js';
 
-import { makeBudgetResult } from '../core/makeBudgetResult.js';
+import { makeBudgetAccountStatus } from '../core/makeBudgetAccountStatus.js';
 import { money } from '../core/money.js';
 
 /**
@@ -50,7 +50,7 @@ const allocationContribution = (allocation, startDate, endDate) => {
   );
 
   // A Decimal, not a number: contributions are summed and the sum is divided,
-  // so rounding here would round once per allocation instead of once per result.
+  // so rounding here would round once per allocation instead of once per status.
   return money(allocation.budgetAmount).times(periods);
 };
 
@@ -58,7 +58,7 @@ const allocationContribution = (allocation, startDate, endDate) => {
  * Calculate budget vs actual metrics for a given period.
  *
  * @param {Object} params
- * @param {number} [params.accountId] - Account the result belongs to
+ * @param {number} [params.accountId] - Account the status belongs to
  * @param {Object} params.budgetPolicy - BudgetPolicy domain object (for context)
  * @param {Array<Object>} params.budgetAllocations - Allocations overlapping the window, oldest first. Each needs budgetAmount, budgetFrequencyCode, validFrom, validUntil
  * @param {Array<{date: Date, amount: number}>} [params.transactions] - Spending transactions (used if actualSpentOverride not provided)
@@ -67,7 +67,7 @@ const allocationContribution = (allocation, startDate, endDate) => {
  * @param {Date} params.endDate - Period end (exclusive, UTC)
  * @param {string} params.currency - Currency code (e.g. 'USD')
  * @param {string} [params.resolution] - How the window was arrived at. See RESOLUTIONS
- * @returns {Object} BudgetResult domain object with all metrics
+ * @returns {Object} BudgetAccountStatus domain object with all metrics
  */
 export function calculateBudgetVsActual({
   accountId = null,
@@ -143,8 +143,7 @@ export function calculateBudgetVsActual({
     executionPercentage = actualSpent.dividedBy(budgetAccumulatedAmount).times(100);
   }
 
-  // Build result using makeBudgetResult
-  const result = makeBudgetResult({
+  const budgetAccountStatus = makeBudgetAccountStatus({
     accountId,
     isBudgeted: true,
     currency,
@@ -159,5 +158,5 @@ export function calculateBudgetVsActual({
     executionPercentage,
   });
 
-  return result;
+  return budgetAccountStatus;
 }
