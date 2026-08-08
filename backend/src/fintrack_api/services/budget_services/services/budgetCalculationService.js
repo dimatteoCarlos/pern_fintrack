@@ -226,6 +226,33 @@ const collapseResolution = (results) => {
  return distinct.size === 1 ? [...distinct][0] : 'mixed';
 };
 
+// Whole months between two canonical boundaries. Both are period starts, so
+// this is exact and needs no day arithmetic.
+const monthsInWindow = (period) =>
+ (period.end.getUTCFullYear() - period.start.getUTCFullYear()) * 12
+ + (period.end.getUTCMonth() - period.start.getUTCMonth());
+
+/**
+ * The one cross-category figure that survives rows on different frequencies.
+ *
+ * 600 over a quarter and 250 over a month cannot be added, so the sum in
+ * `totals` is only meaningful when every row shares a window. This divides each
+ * row by the length of the window it reports and adds the results, which gives
+ * a figure the rows above it reconcile with: a row showing 60 over a year
+ * contributes 5, not the 10 its allocation is worth, because 60 is what the
+ * screen says.
+ *
+ * Budget only, per PLAN_F §6.3. Normalising the spend would turn a fact into an
+ * average, and there is deliberately no equivalent Remaining: once normalised
+ * that figure is a construction rather than money anyone can spend, and it must
+ * never be mistaken for a balance.
+ */
+const makeMonthlyEquivalentBudget = (results) =>
+ results.reduce((acc, r) => {
+  const months = monthsInWindow(r.period);
+  return months > 0 ? acc.plus(money(r.budgetAccumulatedAmount).dividedBy(months)) : acc;
+ }, money(0));
+
 /**
  * Aggregate a set of results into the figures the Overview header shows.
  *
@@ -269,6 +296,10 @@ const makeTotals = (results) => {
   accountCount: results.length,
   budgetedCount: results.filter((r) => r.isBudgeted).length,
   budgetAccumulatedAmount: toAmount(totals.budgetAccumulatedAmount),
+  // Derived, never stored, and named so the screen cannot label it "budget".
+  // The UI must render it as "Monthly Equivalent Budget": unlabelled, a
+  // normalised figure reads as money available to spend, which it is not.
+  monthlyEquivalentBudget: toAmount(makeMonthlyEquivalentBudget(results)),
   actualSpent: toAmount(totals.actualSpent),
   remainingBudget: toAmount(difference),
   actualVsBudgetDifference: toAmount(difference),
