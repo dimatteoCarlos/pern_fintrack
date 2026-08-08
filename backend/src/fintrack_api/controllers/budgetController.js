@@ -20,6 +20,7 @@ import { pool } from '../../db/config/configDB.js';
 import { getAccountsByType } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 import { convertAccountsStatusToCSV } from '../../utils/fintrackUtils/exportUtils.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 
 /**
  * Return the caller's category_budget accounts, keyed by id.
@@ -73,11 +74,16 @@ export async function getSummary(req, res, next) {
    });
   }
 
+  // Resolved here, not inside the service: the zone is fetched once per request
+  // and the service receives it, rather than going to the users table itself.
+  const timeZone = await getUserTimeZone(pool, userId);
+
   const result = await budgetCalculationService.getSummary(
    pool,
    accountId,
    date || new Date(),
-   aggregationLevel ?? null
+   aggregationLevel ?? null,
+   timeZone
   );
 
   res.status(200).json(result);
@@ -110,11 +116,14 @@ export async function getBudgetAccountsStatus(req, res, next) {
    });
   }
 
+  const timeZone = await getUserTimeZone(pool, userId);
+
   const budgetAccountsStatusResponse = await budgetCalculationService.getBudgetAccountsStatus(
    pool,
    accountIds,
    date || new Date(),
-   aggregationLevel ?? null
+   aggregationLevel ?? null,
+   timeZone
   );
 
   res.status(200).json(budgetAccountsStatusResponse);
@@ -218,6 +227,9 @@ export async function exportCSV(req, res, next) {
   const accountNamesMap = new Map();
   const owned = await getOwnedBudgetAccounts(userId);
 
+  // Once for both branches: the export covers one caller, so one zone.
+  const timeZone = await getUserTimeZone(pool, userId);
+
   if (accountId) {
    // Single account
    if (!owned.has(accountId)) {
@@ -231,7 +243,8 @@ export async function exportCSV(req, res, next) {
     pool,
     accountId,
     date || new Date(),
-    aggregationLevel ?? null
+    aggregationLevel ?? null,
+    timeZone
    );
    exportedAccountsStatus = [budgetAccountStatus];
    accountNamesMap.set(accountId, owned.get(accountId).accountName);
@@ -249,7 +262,8 @@ export async function exportCSV(req, res, next) {
     pool,
     accountIds,
     date || new Date(),
-    aggregationLevel ?? null
+    aggregationLevel ?? null,
+    timeZone
    );
 
    // The read now returns unbudgeted accounts too, so the screen can show them

@@ -165,12 +165,17 @@ const resolveWindowFor = (policyCode, aggregationLevel) => {
  * not per group — a monthly policy aggregated to quarterly and a quarterly
  * policy that rejected a monthly level share one window and reached it for
  * opposite reasons.
+ *
+ * timeZone is what the window is read on. The stored instants never move; the
+ * boundaries do, so an expense late on the last day of the month belongs to the
+ * month the user was living, not the one UTC was.
  */
 const readAccountsOverTheirOwnPeriods = async (
  pool,
  accountIds,
  referenceDate,
  aggregationLevel = null,
+ timeZone = 'UTC',
 ) => {
  const frequencyByAccount = await getPolicyFrequenciesForAccounts(
   pool,
@@ -192,7 +197,7 @@ const readAccountsOverTheirOwnPeriods = async (
 
  const groups = await Promise.all(
   [...accountsByFrequency].map(async ([frequencyCode, ids]) => {
-   const period = resolvePeriod(frequencyCode, referenceDate);
+   const period = resolvePeriod(frequencyCode, referenceDate, timeZone);
    const entries = await getBudgetDataForAccounts(pool, ids, period.start, period.end);
    return entries.map((entry) =>
     buildAccountStatus(
@@ -331,12 +336,13 @@ export const budgetCalculationService = {
  /**
   * Get the budget status of a single account.
   */
- async getSummary(pool, accountId, referenceDate, aggregationLevel = null) {
+ async getSummary(pool, accountId, referenceDate, aggregationLevel = null, timeZone = 'UTC') {
   const accountsStatus = await readAccountsOverTheirOwnPeriods(
    pool,
    [accountId],
    referenceDate,
    aggregationLevel,
+   timeZone,
   );
 
   // An owned category_budget account always produces an entry now, budgeted
@@ -360,7 +366,13 @@ export const budgetCalculationService = {
  /**
   * Get the budget status of several accounts, plus the totals over them.
   */
- async getBudgetAccountsStatus(pool, accountIds, referenceDate, aggregationLevel = null) {
+ async getBudgetAccountsStatus(
+  pool,
+  accountIds,
+  referenceDate,
+  aggregationLevel = null,
+  timeZone = 'UTC',
+ ) {
   if (!accountIds || accountIds.length === 0) {
    return {
     budgetAccountsStatus: [],
@@ -374,6 +386,7 @@ export const budgetCalculationService = {
    accountIds,
    referenceDate,
    aggregationLevel,
+   timeZone,
   );
   const totals = makeTotals(accountsStatus);
   const notices = [];
