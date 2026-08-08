@@ -16,6 +16,7 @@ export const mainTables = [
      user_contact VARCHAR(25),
      password_hashed VARCHAR(255) NOT NULL, 
      currency_id INT REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,
+     timezone TEXT NOT NULL DEFAULT 'UTC',
      google_id VARCHAR(255) UNIQUE,
      display_name VARCHAR(255),
      auth_method VARCHAR(255) DEFAULT 'password',
@@ -23,7 +24,23 @@ export const mainTables = [
      deleted_at TIMESTAMPTZ DEFAULT NULL,
      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
      updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )`,
+      );
+
+     CREATE OR REPLACE FUNCTION assert_iana_timezone()
+     RETURNS TRIGGER AS $$
+     BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_timezone_names WHERE name = NEW.timezone) THEN
+       RAISE EXCEPTION 'Invalid IANA time zone: %', NEW.timezone
+        USING ERRCODE = '22023';
+      END IF;
+      RETURN NEW;
+     END;
+     $$ LANGUAGE plpgsql;
+
+     DROP TRIGGER IF EXISTS trg_users_timezone_is_iana ON users;
+     CREATE TRIGGER trg_users_timezone_is_iana
+      BEFORE INSERT OR UPDATE OF timezone ON users
+      FOR EACH ROW EXECUTE FUNCTION assert_iana_timezone();`,
   },
 
   {

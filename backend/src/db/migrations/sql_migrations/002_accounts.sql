@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS users (
     ON DELETE SET NULL
     ON UPDATE CASCADE,
 
+  -- IANA zone. A period boundary means nothing without the calendar it is read
+  -- on; the 'UTC' default reproduces today's rule exactly.
+  timezone TEXT NOT NULL DEFAULT 'UTC',
+
   google_id VARCHAR(255) UNIQUE,
   display_name VARCHAR(255),
 
@@ -46,6 +50,24 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   deleted_at TIMESTAMPTZ DEFAULT NULL
 );
+
+-- A CHECK cannot consult a catalog (subqueries are not allowed in one), so it
+-- would admit 'UTC-5', which cannot express DST or historical rule changes.
+CREATE OR REPLACE FUNCTION assert_iana_timezone()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_timezone_names WHERE name = NEW.timezone) THEN
+    RAISE EXCEPTION 'Invalid IANA time zone: %', NEW.timezone
+      USING ERRCODE = '22023';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_users_timezone_is_iana ON users;
+CREATE TRIGGER trg_users_timezone_is_iana
+  BEFORE INSERT OR UPDATE OF timezone ON users
+  FOR EACH ROW EXECUTE FUNCTION assert_iana_timezone();
 
 -- ======================================
 -- USER ACCOUNTS (base table)
