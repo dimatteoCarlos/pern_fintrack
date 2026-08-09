@@ -20,11 +20,6 @@ layout style is stablished by the following elements:
 
   --lightSuccess: lightgreen;
   --success: green;
-
-  /*Signed amounts. Deeper than --squareAlert and --lightSuccess because these
-    are read as small text on the creme card, where those two fall below 4.5:1.*/
-  --amountNegative: #8f4444;
-  --amountPositive: #2a6b45;
   --hoverColor: cyan;
   --secondary: #7f7f7f;
   --bgBodyColor: #1b1b1b;
@@ -92,7 +87,14 @@ body {
 .iconContainer {
   padding: 0;
   margin: 0;
+}
 
+.iconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
 }
 
 .p, .paragraph {
@@ -264,22 +266,6 @@ body {
   gap:var(--vertSpace,0.8rem);
   transition: all 0.2s ease;
   /* border: 1px solid yellowgreen; */
-}
-
-/*CardTitle with a column legend. Only applied when a legend is passed, so a
-  plain CardTitle keeps its block layout.*/
-.presentation__card--title--split {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-
-/*Second column. Inherits size, weight and colour from the title, so the legend
-  reads as a peer of it and not as a caption.*/
-.presentation__card--legend {
-  flex: 1;
-  text-align: right;
-  white-space: nowrap;
 }
 
 /*StatusSquare*/
