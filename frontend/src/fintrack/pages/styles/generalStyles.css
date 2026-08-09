@@ -87,7 +87,14 @@ body {
 .iconContainer {
   padding: 0;
   margin: 0;
+}
 
+.iconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
 }
 
 .p, .paragraph {

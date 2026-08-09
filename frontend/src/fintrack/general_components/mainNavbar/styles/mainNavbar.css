@@ -9,19 +9,18 @@
    - Paddings and gaps use spacing system
    - Responsive to height breakpoints
    ============================================ */
-
 .mainNavbar__container {
   width: 88%;
   margin: 0 auto;
   padding: 0.25rem 0.5rem;
-  background-color: var(--light);
   border-radius: 1rem;
+  background-color: var(--light);
 
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
 
-  /* [MODIFIED] Use global variable for height */
+  /* Use global variable for height */
   height: var(--navbar-bottom-height);
   max-height: var(--navbar-bottom-height);
   min-height: var(--navbar-bottom-height);
@@ -35,14 +34,13 @@
 /* ============================================
    🎯 NAVBAR BUTTONS
    ============================================ */
-
 .mainNavbarButton {
   display: flex;
-  justify-content: start;
-  gap: 0.2em;
+  justify-content: center;
   align-items: center;
+  gap: 0.2em;
 
-  /* [MODIFIED] Height based on container minus padding */
+  /* Height based on container minus padding */
   height: calc(var(--navbar-bottom-height) - 0.5rem);
   min-width: 3rem;
 
