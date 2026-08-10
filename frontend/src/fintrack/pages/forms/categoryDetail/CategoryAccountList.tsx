@@ -88,9 +88,9 @@ function CategoryAccountList() {
         summary.total_budget += +accounts[i].budget;
       }
 
-      summary.remain = Math.round(
-        -summary.total_balance + summary.total_budget,
-      );
+      // Not rounded: the backend already ships two decimals, and rounding to an
+      // integer here made the amount disagree with its own percentage.
+      summary.remain = -summary.total_balance + summary.total_budget;
 
       summary.statusAlert = summary.remain <= 0;
       summary.currency_code =
@@ -173,7 +173,7 @@ function CategoryAccountList() {
 
         <SummaryDetailBox bubleInfo={summaryData}></SummaryDetailBox>
 
-        <CardTitle>{`${capitalize(categoryName!)} Accounts`}</CardTitle>
+        <CardTitle legend='Spent / Budget'>{capitalize(categoryName!)}</CardTitle>
 
         <ListAccountOfCategory
           previousRoute={`${budgetPageAddress}/category/${categoryName}`}

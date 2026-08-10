@@ -200,7 +200,7 @@ const UpdateProfileContainer = ({
     ): Promise<NormalizedProfileUpdateResultType> => {
       try {
         // 🚀 Call the actual API function
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const apiResult = await handleUpdateUserProfile(payload);
 
         // 1️⃣ Handle Success Case

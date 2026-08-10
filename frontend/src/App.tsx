@@ -25,13 +25,17 @@ import Transfer from './fintrack/pages/tracker/transfer/Transfer';
 import Debts from './fintrack/pages/tracker/debts/Debts';
 import PnL from './fintrack/pages/tracker/profitNloss/PnL';
 
-// 💰 BUDGET & DEBT PAGES
+// 💰 BUDGET, POCKET & DEBT PAGES
 //(Load immediately - structure)
 import BudgetLayout from './fintrack/pages/budget/BudgetLayout';
+
+import PocketLayout from './fintrack/pages/pocket/PocketLayout';
+
 import DebtsLayout from './fintrack/pages/debts/DebtsLayout';
 
 // These components are loaded only when the route is accessed
 const Budget = lazy(() => import('./fintrack/pages/budget/Budget'));
+const Pocket = lazy(() => import('./fintrack/pages/pocket/Pocket'));
 const Debtors = lazy(() => import('./fintrack/pages/debts/Debtors'));
 
 // 👁️ OVERVIEW & ACCOUNTING PAGES
@@ -198,6 +202,24 @@ function App() {
               ],
             },
 
+            // 📅 POCKET SECTION
+            // bottom menu: navbar pages
+            // /fintrack/
+            {
+              path: 'pocket',
+              element: <PocketLayout />,
+              children: [
+                {
+                  index: true,
+                  element: (
+                    <LazyRoute>
+                      <Pocket />
+                    </LazyRoute>
+                  ),
+                },
+              ],
+            },
+
             // 🏦 DEBTS SECTION
             {
               path: 'debts',
@@ -265,7 +287,7 @@ function App() {
         },
 
         {
-          path: 'budget/new_pocket',
+          path: 'pocket/new_pocket',
           element: (
             <LazyRoute>
               <NewPocket />
@@ -311,7 +333,7 @@ function App() {
           ),
         },
         {
-          path: 'budget/pockets/:pocketId',
+          path: 'pocket/pockets/:pocketId',
           element: (
             <LazyRoute>
               <PocketDetail />

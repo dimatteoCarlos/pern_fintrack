@@ -81,22 +81,15 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
       isEditable: false,
       isRequired: true,
       placeholder: 'Account Name',
-      isDerived: true, // Calculated Field from category/nature/subcategory
-      helpText: 'Generated from Category, Subcategory and Nature.',
-      compute: (data: Record<string, unknown>) => {
-        const name = String(data.category_name || '');
-        const subcat = data.subcategory ? `/${data.subcategory}` : '';
-        const nature = data.category_nature_type_name
-          ? `/${data.category_nature_type_name}`
-          : '';
-
-        return `${name}${subcat}${nature}`.trim();
-      },
+      // No compute here: the server derives and normalizes this name. A copy of
+      // that rule in the client drifts the moment the server's rule changes.
+      helpText: 'Built by the server from Category, Subcategory and Nature.',
     },
 
     {
       fieldName: 'budget',
-      label: 'Monthly Budget Amount',
+      // Not 'Monthly': the allocation carries its own frequency.
+      label: 'Budget Amount',
       inputType: 'number', //
       isEditable: true,
       isRequired: true,

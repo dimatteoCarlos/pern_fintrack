@@ -64,7 +64,7 @@ export const url_create_category_budget_account: string =
   BASE_URL_APP + 'account/new_account/category_budget';
 
 //get accounts info  by categoryName
-//--endpoint: http://localhost:5000/api/fintrack/budget/category/:categoryName?&user=${user}
+//--endpoint: http://localhost:5000/api/fintrack/budget/category/:categoryName
 //api response type data:
 export const url_get_accounts_by_category: string =  BASE_URL_APP + 'account/category';
 

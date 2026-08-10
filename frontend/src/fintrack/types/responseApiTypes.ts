@@ -31,13 +31,27 @@ export type BalancePocketRespType = {
   data: {
     account_name: string | null;
     account_id?: number | null;
+
     total_balance: number | null;
     total_target: number | null;
     total_remaining?: number | null;
     currency_code: CurrencyType;
+
     note?: string | null;
   };
 };
+//----
+export type BalancePocketSavingRespType = {
+  status: number;
+  message: string;
+  data: {
+    total_balance: number | null;
+    total_target: number | null;
+    total_remaining?: number | null;
+    currency_code: CurrencyType;
+  };
+};
+
 //----
 export type BalanceCategoryRespType = {
   status: number;
@@ -49,6 +63,7 @@ export type BalanceCategoryRespType = {
     currency_code: CurrencyType;
   };
 };
+
 //----
 export type DebtorRespType = {
   status: number;
@@ -329,7 +344,6 @@ type RecordTransactionInfoType = {
 };
 //-------------------------------------
 //MONTHLY TOTAL AMOUNT BY MOVEMENT TYPE AND CURRENCY
-
 export type FinancialDataRespType = {
   status: number;
   message: string;
@@ -497,10 +511,5 @@ export type TransactionsAccountApiResponseType = {
 export type DebtorAccountDetailType = AccountBasicDataType & {
   debtor_name: string;
   debtor_lastname: string;
-
 };
-
-
-
-
 //----------------------

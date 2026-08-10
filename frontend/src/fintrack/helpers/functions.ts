@@ -25,8 +25,11 @@ export function currencyFormat(
   const formatFn = new Intl.NumberFormat(countryFormat, {
     style: 'currency',
     currency: chosenCurrency,
-    minimumFractionDigits: 0, // Establece un mínimo de 0 decimales
-    maximumFractionDigits: 1,
+    // Fixed at 2, both ends. The backend stores DECIMAL(15,2), so anything
+    // less discards a cent; a floating minimum varies the decimal count from
+    // row to row and a column of amounts no longer adds up on screen.
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
   return formatFn.format(number);
 }

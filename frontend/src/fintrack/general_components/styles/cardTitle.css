@@ -1,0 +1,32 @@
+/* frontend/src/fintrack/general_components/styles/cardTitle.css */
+
+/* CardTitle is a general component, so its rules travel with it instead of
+   living in the stylesheet of whichever page happens to render it. That split
+   is what let overview-styles.css and debts-styles.css declare the same four
+   properties twice, and what kept the legend variant from reaching pages
+   outside .budgetLayout. */
+
+/* Every CardTitle. */
+.presentation__card--title {
+ color: var(--light);
+ font-size: 1.25rem;
+ font-weight: 600;
+ padding: 1rem 0 1rem 0;
+}
+
+/* Added only when CardTitle receives a legend, always alongside the base class,
+   so it carries the layout and nothing else. */
+.presentation__card--title--split {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+}
+
+/* The legend span sits inside the title but does not carry the base class, so
+   it states these on its own. */
+.presentation__card--legend {
+ color: var(--light);
+ font-size: 1.25rem;
+ font-weight: 600;
+ padding: 1rem 0 1rem 0;
+}

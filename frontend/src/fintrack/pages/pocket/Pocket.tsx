@@ -1,55 +1,54 @@
-//frontend\src/fintrack/pages/budget/Budget.tsx
+//frontend\src/fintrack/pages/pocket/Pocket.tsx
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 
 import { CardTitle } from '../../general_components/CardTitle';
 import OpenAddEditBtn from '../../general_components/OpenAddEditBtn';
-import ListCategory from './components/ListCategory';
-// import ListPocket from './components/ListPocket';
+import ListPocket from './components/ListPocket';
 
-function Budget() {
+function Pocket() {
   const originRoute = useLocation().pathname;
   const navigateTo: NavigateFunction = useNavigate();
-  // console.log('Budget');
+  // console.log('Pocket');
 
   //functions
-  const createNewCategory = (originRoute: string) => {
-    navigateTo(originRoute + '/new_category', {
-      state: { previousRoute: originRoute },
-    });
-  };
-
-  // const createNewPocket = (originRoute: string) => {
-  //   navigateTo(originRoute + '/new_pocket', {
+  // const createNewCategory = (originRoute: string) => {
+  //   navigateTo(originRoute + '/new_category', {
   //     state: { previousRoute: originRoute },
   //   });
   // };
+
+  const createNewPocket = (originRoute: string) => {
+    navigateTo(originRoute + '/new_pocket', {
+      state: { previousRoute: originRoute },
+    });
+  };
 //--------
   return (
     <>
       <section className='content__presentation'>
         <div className='cards__presentation '>
 
-          <OpenAddEditBtn
-            btnFunction={createNewCategory}
+          {/* <OpenAddEditBtn
+            btnFunction={createNewPocket}
             btnFunctionArg={originRoute}
             btnPreviousRoute={originRoute}
           >
-            <div className='open__btn__label'>New Category</div>
-          </OpenAddEditBtn>
+            <div className='open__btn__label'>New Pocket</div>
+          </OpenAddEditBtn> */}
 
-          <CardTitle legend='Spent / Budget'>Category List</CardTitle>
+          {/* <CardTitle legend='Spent / Pocket'>Category List</CardTitle> */}
 
-          <ListCategory previousRoute={originRoute} />
+          {/* <ListCategory previousRoute={originRoute} /> */}
 
           <OpenAddEditBtn
-            btnFunction={createNewCategory}
+            btnFunction={createNewPocket}
             btnFunctionArg={originRoute}
             btnPreviousRoute={originRoute}
           >
-            <div className='open__btn__label'>New Category</div>
+            <div className='open__btn__label'>New Pocket</div>
           </OpenAddEditBtn>
 
-          {/* <CardTitle>Pockets</CardTitle>
+          <CardTitle>Pockets</CardTitle>
 
           <ListPocket previousRoute={originRoute} />
 
@@ -59,11 +58,11 @@ function Budget() {
             btnPreviousRoute={originRoute}
           >
             <div className='open__btn__label'>New Pocket</div>
-          </OpenAddEditBtn> */}
+          </OpenAddEditBtn>
         </div>
       </section>
     </>
   );
 }
 
-export default Budget;
+export default Pocket;

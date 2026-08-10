@@ -69,13 +69,6 @@
  border: none;
 }
 
-.presentation__card--title {
- color: var(--light);
- font-size: 1.25rem;
- font-weight: 600;
- padding: 1rem 0 1rem 0;
-}
-
 a.icon {
  height: 100%;
  width: 2rem;
