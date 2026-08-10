@@ -18,7 +18,11 @@ export type BudgetFrequencyCode =
 
 // Widened on the way in. A closed union here would make a code the server adds
 // unrepresentable and turn every default branch into dead code.
-export type BudgetFrequencyCodeFromApi = BudgetFrequencyCode | (string & {});
+// Record<never, never> is the empty object type spelled in a way ban-types
+// accepts; plain `| string` would collapse the union and lose autocompletion.
+export type BudgetFrequencyCodeFromApi =
+ | BudgetFrequencyCode
+ | (string & Record<never, never>);
 
 // GET /budget/frequencies. Populate every frequency selector from this, never
 // from a literal array: the codes live in a catalog table.

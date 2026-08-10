@@ -21,7 +21,7 @@ import {
 // ======================================
 // MAIN HOOK IMPLEMENTATION
 // ======================================
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export const useFormManagerPnL = <
   FormInputType extends Record<string, unknown>,
   FormValidatedType extends 
