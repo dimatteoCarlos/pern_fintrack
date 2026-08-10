@@ -215,3 +215,17 @@ button.line__container {
 .budgetLayout .tile__right .tile__title {
   font-weight: 500;
 }
+
+.budgetLayout .presentation__card--title--split{
+  display:flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.budgetLayout .presentation__card--title--split,.budgetLayout .presentation__card--legend
+ {
+  color: var(--light);
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding: 1rem 0 1rem 0;
+}

@@ -1,3 +1,5 @@
+// frontend\src\fintrack\general_components\CardTitle.tsx
+
 type ChildrenPropType = {
   children: React.ReactNode;
   // Optional legend pinned to the right of the title, over the column of values
