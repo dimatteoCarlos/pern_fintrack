@@ -1,9 +1,10 @@
-//frontend\src\fintrack\pages\budget\BudgetLayout.tsx
+//frontend\src\fintrack\pages\pocket\PocketLayout.tsx
 import { useEffect, useMemo, useState } from 'react';
 import { url_get_total_account_balance_by_type } from '../../../urlConfig.ts';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import { useFetch } from '../../hooks/useFetch.ts';
-import { BalanceCategoryRespType } from '../../types/responseApiTypes.ts';
+
+import { BalancePocketSavingRespType } from '../../types/responseApiTypes.ts';
 import PocketBigBoxResult from './components/PocketBigBoxResult.tsx';
 
 import './styles/pocket-styles.css';
@@ -17,7 +18,7 @@ function PocketLayout() {
   const pocketUrl = `${url_get_total_account_balance_by_type}?type=pocket_saving`;
 
   const { apiData, isLoading, error } =
-    useFetch<BalanceCategoryRespType>(pocketUrl);
+    useFetch<BalancePocketSavingRespType>(pocketUrl);
 
   useEffect(() => {
     if (error) {
@@ -27,31 +28,31 @@ function PocketLayout() {
     }
   }, [error]);
   //--------------------------------------
-  const { total_balance, total_budget, total_remaining, currency } =
+  const { total_balance, total_target, total_remaining, currency } =
     useMemo(() => {
       return {
         total_balance: apiData?.data.total_balance ?? 0,
-        total_budget: apiData?.data.total_budget ?? 0,
+        total_target: apiData?.data.total_target ?? 0,
         total_remaining: apiData?.data.total_remaining ?? 0,
         currency: apiData?.data.currency_code,
       };
     }, [
       apiData?.data.total_balance,
-      apiData?.data.total_budget,
+      apiData?.data.total_target,
       apiData?.data.total_remaining,
       apiData?.data.currency_code,
     ]);
 
   // const bigScreenInfo = [
   const bigScreenInfo = [
-    { title: 'total budget', amount: total_budget },
+    { title: 'total target', amount: total_target },
     { title: 'Remaining', amount: total_remaining },
     { title: 'expenses', amount: total_balance },
   ];
 
   return (
     <>
-      <div className='budgetLayout'>
+      <div className='pocketLayout'>
         <div className='layout__header'>
           <div className='headerContent__container'>
             <TitleHeader></TitleHeader>
