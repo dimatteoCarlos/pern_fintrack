@@ -28,13 +28,13 @@ function Pocket() {
       <section className='content__presentation'>
         <div className='cards__presentation '>
 
-          <OpenAddEditBtn
+          {/* <OpenAddEditBtn
             btnFunction={createNewPocket}
             btnFunctionArg={originRoute}
             btnPreviousRoute={originRoute}
           >
             <div className='open__btn__label'>New Pocket</div>
-          </OpenAddEditBtn>
+          </OpenAddEditBtn> */}
 
           {/* <CardTitle legend='Spent / Pocket'>Category List</CardTitle> */}
 

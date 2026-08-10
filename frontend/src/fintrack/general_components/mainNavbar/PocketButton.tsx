@@ -1,5 +1,5 @@
 // frontend/src/fintrack/general_components/mainNavbar/PocketButton.tsx
-import DebtsSvg from '../../../assets/mainNavbarSvg/DebtsSvg.svg';
+import PocketSvg from '../../../assets/mainNavbarSvg/PocketSvg.svg';
 import { NavLink, useLocation } from 'react-router-dom';
 import Tooltip from '../tooltip/Tooltip';
 import { capitalize } from '../../helpers/functions';
@@ -26,7 +26,7 @@ function PocketButton() {
           isActive={isBtnActive ? true : false}
         >
           <div className='iconContainer flx-col-center'>
-            <DebtsSvg />
+            <PocketSvg />
           </div>
         </Tooltip>
 

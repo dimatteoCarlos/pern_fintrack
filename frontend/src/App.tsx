@@ -287,7 +287,7 @@ function App() {
         },
 
         {
-          path: 'budget/new_pocket',
+          path: 'pocket/new_pocket',
           element: (
             <LazyRoute>
               <NewPocket />
@@ -333,7 +333,7 @@ function App() {
           ),
         },
         {
-          path: 'budget/pockets/:pocketId',
+          path: 'pocket/pockets/:pocketId',
           element: (
             <LazyRoute>
               <PocketDetail />
