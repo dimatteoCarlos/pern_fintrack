@@ -114,7 +114,24 @@ export const patchAccountById = async (req, res, next) => {
         break;
 
       case 'category_budget': {
-        if (payload.budget !== undefined) {
+        // Either field alone reaches here now: either alone is a change the
+        // user asked for, and a frequency-only request used to answer 200
+        // without versioning anything.
+        if (
+          payload.budget !== undefined ||
+          payload.budgetFrequencyCode !== undefined
+        ) {
+          // The amount is per period, so a new period reinterprets it: keeping
+          // 300 and moving monthly to quarterly cuts the yearly budget to a
+          // third. The user restates the amount instead of the server inferring
+          // it from a number that now means something else.
+          if (payload.budget === undefined) {
+            const message =
+              'budget is required when budgetFrequencyCode changes: the amount applies to one period.';
+            console.warn(pc['red'](message));
+            return res.status(400).json({ status: 400, message });
+          }
+
           // Same rule as account creation and as CHECK (budget_amount > 0).
           // Before, a 0 or a negative went straight into cba.budget; now it
           // would also reach the allocation and surface as a 500.
