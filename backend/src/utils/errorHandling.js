@@ -44,6 +44,13 @@ export const handlePostgresErrorEs = (error) => {
 };
 //-------------------------------
 export const handlePostgresError = (error) => {
+  // An error that already declares its status was built by the application, not
+  // by the driver: a pg error carries .code, never .status. Without this the
+  // switch below never matches it and the default demotes a domain 400 to 500.
+  if (error.status) {
+    return { code: error.status, message: error.message };
+  }
+
   let code = 500; // Default HTTP status code
   let message = error.message || 'Internal server error'; // Default message
 
