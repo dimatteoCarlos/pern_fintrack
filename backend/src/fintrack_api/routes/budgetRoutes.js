@@ -17,10 +17,10 @@ import {
 
 const router = express.Router();
 
-// GET /api/fintrack/budget/summary?accountId=&frequency=&date=&startDate=&endDate=
+// GET /api/fintrack/budget/summary?accountId=&date=&aggregationLevel=
 router.get('/summary', getSummary);
 
-// POST /api/fintrack/budget/accounts/status  { accountIds: [] , ... }
+// POST /api/fintrack/budget/accounts/status  { accountIds: [], date, aggregationLevel }
 router.post('/accounts/status', getBudgetAccountsStatus);
 
 // GET /api/fintrack/budget/frequencies
@@ -32,7 +32,8 @@ router.put('/policy/:budgetPolicyId', updatePolicy);
 // GET /api/fintrack/budget/history/:budgetPolicyId
 router.get('/history/:budgetPolicyId', getHistory);
 
-// GET /api/fintrack/budget/export?accountId=&frequency=...
+// GET /api/fintrack/budget/export?accountId=&date=&aggregationLevel=
+// accountId is optional here and required on /summary; everything else matches.
 router.get('/export', exportCSV);
 
 export default router;
