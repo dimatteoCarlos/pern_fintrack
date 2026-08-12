@@ -52,12 +52,14 @@ export async function getAllocationForMonth(client, accountId, month) {
 }
 
 /**
- * The amount carried into a month by the decision that precedes it.
+ * The last decision taken strictly BEFORE a month.
  *
- * Strictly earlier than the month asked for, which is what lets the write path
- * read the value the current month returns to WITHOUT reading back the row it
- * is about to write. Using `<=` here turns "only this month" into a no-op
- * (§5.1.1).
+ * Uncalled since R41. The write path needs the amount in force AT the month,
+ * which is getAllocationForMonth; reading the month before returns a different
+ * number as soon as a row exists at M, and the terminator restored it (§5.1.1).
+ *
+ * Kept rather than deleted (§9.4): authoring a future month — the V2 boundary —
+ * is what a strictly-earlier lookup would serve.
  *
  * @returns {Promise<number|null>} null when nothing precedes the month.
  */
@@ -99,9 +101,10 @@ export async function writeAllocation(
 ) {
  const month = await resolveCurrentMonth(client, timeZone);
 
- // Read before writing: step 4 is about to overwrite the month this would
- // otherwise resolve to.
- const carried = await getAllocationBefore(client, accountId, month);
+ // The amount in force AT the month, read before the UPSERT overwrites it. Not
+ // the previous month's: once a row exists at M those are different numbers,
+ // and the terminator has to restore what was in force (§5.1.1, R41).
+ const carried = await getAllocationForMonth(client, accountId, month);
 
  // Safe only because V1 lets no user author a future month: the only row that
  // can exist beyond M is a terminator this same routine wrote. Without it, a
