@@ -19,6 +19,7 @@ import {
   SignInCredentialsType,
   SignInResponseType,
   SignUpCredentialsType,
+  SignUpPayloadType,
   UserDataType,
   UserIdentityType,
   UserResponseDataType,
@@ -36,6 +37,7 @@ import {
   clearIdentity,
   saveIdentity,
 } from '../auth_utils/localStorageHandle/authStorage';
+import { detectTimeZone } from '../auth_utils/detectTimeZone';
 import { safeMergeUser } from '../auth_utils/safeMergeUser';
 import { invalidateSession } from '../auth_utils/invalidateSession';
 import { logoutCleanup } from '../auth_utils/logoutCleanup';
@@ -55,6 +57,7 @@ const mapUserResponseToUserData = (
   currency: user.currency,
   role: user.role,
   contact: user.user_contact,
+  timezone: user.timezone,
 });
 
 /* ===============================
@@ -308,11 +311,18 @@ const useAuth = () => {
     setIsLoading(true);
 
     try {
+      // Attached here and not in the form: the zone is read from the device,
+      // not typed by the user, so no sign-up caller has to remember it.
+      const payload: SignUpPayloadType = {
+        ...credentials,
+        timezone: detectTimeZone(),
+      };
+
       const response = await fetch(url_signup, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {

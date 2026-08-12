@@ -25,6 +25,12 @@ export type SignUpCredentialsType = SignInCredentialsType & {
   confirmPassword: string;
 };
 
+// What actually goes over the wire. timezone is detected, not typed, so it is
+// not part of the form's credentials and no caller of handleSignUp supplies it.
+export type SignUpPayloadType = SignUpCredentialsType & {
+  timezone: string;
+};
+
 // ===============
 // 🏪 AUTH STORE TYPES
 // ===============
@@ -80,6 +86,9 @@ export type UserResponseDataType = {
   role: string;
   currency: CurrencyType;
   user_contact: string | null;
+  // Returned by sign-up, sign-in and validateSession. Optional because a
+  // response served by a backend older than d2bd7a9 omits it.
+  timezone?: string;
 };
 
 //input type user info
@@ -93,6 +102,9 @@ export type UserDataType = {
   currency: CurrencyType;
   role: string;
   contact: string | null;
+  // The zone the account's periods are read on. Every date formatter must take
+  // it from here and never from Intl, which reports the device.
+  timezone?: string;
 };
 //-------------------------------
 //sign-in
