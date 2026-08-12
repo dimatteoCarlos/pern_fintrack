@@ -23,12 +23,17 @@ const dateField = z.coerce.date().optional();
 // mistake from asking for a width that does not fit.
 const aggregationLevelField = z.enum(ALLOWED_WINDOW_FREQUENCIES).optional();
 
-// The three reporting schemas below are strict.
+// Every schema in this file is strict.
 //
-// They used to accept startDate/endDate and frequency, and zod's default is to
-// strip an unknown key silently. Under that default a caller still sending a
-// retired field would get a 200 computed over a period it never asked for, with
-// nothing in the response saying so. Strict turns that into a 400 naming the key.
+// The reporting ones used to accept startDate/endDate and frequency, and zod's
+// default is to strip an unknown key silently. Under that default a caller still
+// sending a retired field would get a 200 computed over a period it never asked
+// for, with nothing in the response saying so. Strict turns that into a 400
+// naming the key.
+//
+// The write and params schemas follow for one reason each: a body carrying a
+// misspelt intent must not fall through to the default, and a params object that
+// Express did not build from the route is not a request this API understands.
 //
 // frequency is gone because the period is resolved from the frequency stored on
 // the allocation in force, never from the request. A query locates a period; it
@@ -88,7 +93,7 @@ export const updatePolicyParamsSchema = z.object({
  budgetPolicyId: z.coerce.number().positive({
   message: 'budgetPolicyId must be a positive number',
  }),
-});
+}).strict();
 
 // The code, not the surrogate id: it is self-describing, it is the key into
 // MONTHS_PER_PERIOD, and z.enum rejects an unknown one here instead of letting
@@ -101,7 +106,11 @@ export const updatePolicyBodySchema = z.object({
  // Optional so a caller written before the field existed keeps working. The
  // default is the conservative one: it only ever opens the next period.
  intent: z.enum(ALLOCATION_INTENTS).default(DEFAULT_ALLOCATION_INTENT),
-});
+})
+// Strict because of intent above. A misspelt key is stripped, the default
+// applies, and a caller asking to correct a version silently supersedes it
+// instead: two rows in history where one was meant, and no error anywhere.
+.strict();
 
 // History (versions)
 /**
@@ -112,7 +121,7 @@ export const historyParamsSchema = z.object({
  budgetPolicyId: z.coerce.number().positive({
   message: 'budgetPolicyId must be a positive number',
  }),
-});
+}).strict();
 
 // Export CSV
 /**
