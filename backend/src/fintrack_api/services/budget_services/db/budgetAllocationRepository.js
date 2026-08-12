@@ -18,17 +18,29 @@ import { toAmount } from '../core/money.js';
  * Derived server-side and never accepted from the client: that removes clock
  * skew, the device zone and a tampered month in one move (§7.3).
  *
+ * Returned as text, not as a DATE. A DATE crossing the driver becomes a JS Date
+ * at the node process's local midnight, and sending that back as a parameter
+ * resolves through the session zone — the owner's calendar lost on the way out
+ * and again on the way in. Text has no zone to lose.
+ *
+ * nextMonth comes from the same evaluation of CURRENT_TIMESTAMP rather than
+ * being derived later: two calls could straddle midnight on the last day of a
+ * month and terminate an exception one month away from where it was written.
+ *
  * @param {object} client - Database client (pool or transaction)
  * @param {string} timeZone - IANA zone of the account owner
- * @returns {Promise<Date>} the month, as a DATE
+ * @returns {Promise<{month: string, nextMonth: string}>} both as 'YYYY-MM-DD'
  */
 export async function resolveCurrentMonth(client, timeZone = 'UTC') {
  const { rows } = await client.query(
-  `SELECT date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE $1)::date AS month`,
+  `SELECT
+     date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE $1)::date::text AS month,
+     (date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE $1)
+       + INTERVAL '1 month')::date::text AS next_month`,
   [timeZone],
  );
 
- return rows[0].month;
+ return { month: rows[0].month, nextMonth: rows[0].next_month };
 }
 
 /**
@@ -99,7 +111,7 @@ export async function writeAllocation(
  onlyThisMonth = false,
  timeZone = 'UTC',
 ) {
- const month = await resolveCurrentMonth(client, timeZone);
+ const { month, nextMonth } = await resolveCurrentMonth(client, timeZone);
 
  // The amount in force AT the month, read before the UPSERT overwrites it. Not
  // the previous month's: once a row exists at M those are different numbers,
@@ -123,7 +135,7 @@ export async function writeAllocation(
    ON CONFLICT (account_id, budget_month)
    DO UPDATE SET budget_amount = EXCLUDED.budget_amount,
      updated_at = CURRENT_TIMESTAMP
-   RETURNING budget_allocation_id, account_id, budget_month, budget_amount`,
+   RETURNING budget_allocation_id, account_id, budget_month::text, budget_amount`,
   [accountId, month, budgetAmount],
  );
 
@@ -137,7 +149,7 @@ export async function writeAllocation(
   const { rows: nextRows } = await client.query(
    `INSERT INTO budget_monthly_allocations (account_id, budget_month, budget_amount)
     VALUES ($1, ($2::date + INTERVAL '1 month')::date, $3)
-    RETURNING budget_allocation_id, budget_month, budget_amount`,
+    RETURNING budget_allocation_id, budget_month::text, budget_amount`,
    [accountId, month, carried ?? 0],
   );
 
@@ -157,6 +169,9 @@ export async function writeAllocation(
   // What the following month returns to, so the caller can word the
   // confirmation without resolving it again.
   restoresTo: onlyThisMonth ? (carried ?? 0) : null,
+  // The month that sentence names. Returned rather than computed client-side so
+  // it comes from the same calendar that wrote the row.
+  restoresFrom: nextMonth,
  };
 }
 
@@ -191,7 +206,7 @@ export async function insertFirstAllocation(
    ON CONFLICT (account_id, budget_month)
    DO UPDATE SET budget_amount = EXCLUDED.budget_amount,
      updated_at = CURRENT_TIMESTAMP
-   RETURNING budget_allocation_id, account_id, budget_month, budget_amount`,
+   RETURNING budget_allocation_id, account_id, budget_month::text, budget_amount`,
   [accountId, accountStartDate, timeZone, budgetAmount],
  );
 

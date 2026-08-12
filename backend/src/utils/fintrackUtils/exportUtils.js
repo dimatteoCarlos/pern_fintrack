@@ -1,18 +1,26 @@
 // backend/src/utils/fintrackUtils/exportUtils.js
 // Export helpers for the Budget module. Pure functions, no I/O.
 
+// One Month column, not a Period Start / Period End pair: every row now covers
+// the same calendar month, so two columns would emit the same two values on
+// every line of the file.
+//
+// Frequency stays, as a constant. The column is not information any more, but a
+// file whose columns change between versions breaks whatever the user built on
+// top of it, and "monthly" is the honest value.
 const COLUMNS = [
  'Account Name',
  'Subcategory',
  'Currency',
  'Frequency',
- 'Period Start',
- 'Period End',
+ 'Month',
  'Budgeted',
  'Spent',
  'Remaining',
  'Execution %',
 ];
+
+const FREQUENCY = 'monthly';
 
 /**
  * Escape one CSV field per RFC 4180.
@@ -35,11 +43,11 @@ const escapeCsvField = (value) => {
  return /[",\r\n]/.test(guarded) ? `"${guarded.replace(/"/g, '""')}"` : guarded;
 };
 
-const formatDate = (value) =>
- value instanceof Date ? value.toISOString().split('T')[0] : '';
-
 // toFixed on a non-number throws; the values are validated upstream by
 // makeBudgetAccountStatus, but export must not be the place a bad value surfaces.
+// executionPercentage is null when the budget is 0, and an empty cell is the
+// right rendering of a percentage that does not exist — 0.00 would claim nothing
+// was spent.
 const formatAmount = (value) =>
  typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : '';
 
@@ -47,25 +55,25 @@ const formatAmount = (value) =>
  * Convert the budget status of a set of accounts to an RFC 4180 CSV document.
  *
  * @param {Array<object>} accountsStatus - BudgetAccountStatus objects from budgetCalculationService.
- * @param {Map<number, string>} accountNamesMap - accountId to display name.
+ * @param {string} referenceMonth - the month every row covers, as 'YYYY-MM-DD'.
  * @returns {string} CSV text including the header row.
  */
-export function convertAccountsStatusToCSV(accountsStatus, accountNamesMap = new Map()) {
+export function convertAccountsStatusToCSV(accountsStatus, referenceMonth = '') {
  const rows = Array.isArray(accountsStatus) ? accountsStatus : [];
 
  const body = rows.map((r) =>
   [
-   // r.accountId, not r.budgetPolicy.accountId: an unbudgeted account has no
-   // policy, and it is exactly the row whose name must still appear.
-   accountNamesMap.get(r.accountId) ?? '',
-   r.budgetPolicy?.subcategory ?? '',
+   // The name rides on the status object now. It used to come from a Map the
+   // controller built alongside it, which meant two sources for one fact and a
+   // blank cell whenever they disagreed.
+   r.accountName ?? '',
+   // Read from category_budget_accounts. It used to be read off budgetPolicy,
+   // which never carried it, so this column shipped empty on every export.
+   r.subcategory ?? '',
    r.currency ?? '',
-   // The field is budgetFrequencyCode. `frequency` never existed on the
-   // allocation, so this column shipped empty on every export so far.
-   r.budgetAllocation?.budgetFrequencyCode ?? '',
-   formatDate(r.period?.start),
-   formatDate(r.period?.end),
-   formatAmount(r.budgetAccumulatedAmount),
+   FREQUENCY,
+   referenceMonth,
+   formatAmount(r.budgetAmount),
    formatAmount(r.actualSpent),
    formatAmount(r.remainingBudget),
    formatAmount(r.executionPercentage),

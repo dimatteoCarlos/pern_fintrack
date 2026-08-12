@@ -62,13 +62,31 @@ export async function getTransactionsByAccountAndPeriod(pool, accountId, startDa
   }));
 }
 
-// Policy and currency, one row per REQUESTED account.
+// The month the report is about, and the one after it, both on the account
+// owner's calendar and both as text.
 //
-// The join to budget_policies is LEFT on purpose. Driving the query from the
-// policy table meant an account without one simply vanished from the response,
-// and the caller could not tell "this category has no budget" from "the backend
-// dropped it". budget_policy_id comes back NULL and the service reports the
-// account as unbudgeted.
+// Resolved in SQL and never rebuilt in JS. A DATE crossing the driver becomes a
+// Date at the node process's local midnight, and serializing that back into a
+// ::date cast can land on the neighbouring day — the same class of error §4.5
+// describes, arriving through the driver instead of through a query. Text has
+// no zone to lose.
+//
+// next_month is returned rather than derived so both values come from one
+// evaluation of CURRENT_TIMESTAMP. Two calls could straddle midnight on the last
+// day of a month and report a budget for one month against the spending of
+// another.
+const MONTH_QUERY = `
+  SELECT
+    date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE $1)::date::text AS month,
+    (date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE $1)
+      + INTERVAL '1 month')::date::text AS next_month
+`;
+
+// Account identity and currency, one row per REQUESTED account.
+//
+// No join to any budget table. Whether an account is budgeted is the existence
+// of an allocation in force (§1.9), which ALLOCATION_QUERY answers; asking it
+// here as well would give the service two sources for one fact.
 //
 // currency_id is COALESCEd across both account tables. It is duplicated:
 // user_accounts.currency_id is NOT NULL and is what the account creation path
@@ -79,81 +97,69 @@ export async function getTransactionsByAccountAndPeriod(pool, accountId, startDa
 // The join to category_budget_accounts stays INNER: it is what makes this a
 // budget account at all. An id that survives the caller's ownership check but
 // has no row there is a data inconsistency, not an unbudgeted account.
+//
+// subcategory comes from that same join. It has been in the table since the
+// schema was written; the export read it off budgetPolicy, which never carried
+// it, and shipped the column empty on every file so far.
 const ACCOUNTS_QUERY = `
   SELECT
     ua.account_id,
-    p.budget_policy_id,
+    ua.account_name,
+    cba.subcategory,
     COALESCE(cba.currency_id, ua.currency_id) AS currency_id
   FROM user_accounts ua
   JOIN category_budget_accounts cba ON cba.account_id = ua.account_id
-  LEFT JOIN budget_policies p ON p.account_id = ua.account_id
   WHERE ua.account_id = ANY($1)
 `;
 
-// Every allocation whose validity OVERLAPS the requested window, not just the
-// one that is active today.
+// The allocation in force at one month, for N accounts, in one pass (§4.2).
 //
-// [valid_from, valid_until) and [startDate, endDate) are both half-open, so the
-// overlap test is the standard pair of strict comparisons. Filtering by
-// `valid_until IS NULL` instead — the previous behaviour — answered a different
-// question: it priced a historical window with today's budget, so a window
-// preceding the last edit reported figures that were never in force.
+// The whole of recurrence is `<= $2 ORDER BY budget_month DESC LIMIT 1`: a row
+// rules from its month until a later row replaces it, so the last row at or
+// before the month asked for IS the budget (§3.3). DISTINCT ON applies the LIMIT
+// per account.
 //
-// budget_frequency_code is joined rather than derived from the id: the id is
-// meaningless to the caller, and the code is the key into MONTHS_PER_PERIOD.
-// The join is inner because budget_frequency_type_id is NOT NULL with an
-// ON DELETE RESTRICT foreign key, so a row without a frequency cannot exist.
-const ALLOCATIONS_QUERY = `
-  SELECT
-    p.account_id,
-    a.budget_allocation_id,
-    a.budget_policy_id,
-    a.budget_amount,
-    a.budget_frequency_type_id,
-    bft.budget_frequency_code,
-    a.valid_from,
-    a.valid_until
-  FROM budget_policies p
-  JOIN budget_policy_allocations a ON a.budget_policy_id = p.budget_policy_id
-  JOIN budget_frequency_types bft
-    ON bft.budget_frequency_type_id = a.budget_frequency_type_id
-  WHERE p.account_id = ANY($1)
-    AND a.valid_from < $3
-    AND (a.valid_until IS NULL OR a.valid_until > $2)
-  ORDER BY p.account_id ASC, a.valid_from ASC
-`;
-
-// The budget frequency in force at one instant, one row per account that has one.
-//
-// A point query, not a window query, and it has to be: this is what resolves the
-// window, so asking for it over a range would be circular.
-//
-// [valid_from, valid_until) is half-open, so the instant test is the same pair of
-// comparisons the window test uses, collapsed onto a single date.
-//
-// DISTINCT ON is defensive rather than necessary. uq_budget_allocation_active
-// forbids two open versions and the closed ones do not overlap, so at most one
-// row can match. It costs nothing here and makes a duplicate impossible to
-// propagate rather than merely unlikely.
-const POLICY_FREQUENCY_QUERY = `
-  SELECT DISTINCT ON (p.account_id)
-    p.account_id,
-    bft.budget_frequency_code
-  FROM budget_policies p
-  JOIN budget_policy_allocations a ON a.budget_policy_id = p.budget_policy_id
-  JOIN budget_frequency_types bft
-    ON bft.budget_frequency_type_id = a.budget_frequency_type_id
-  WHERE p.account_id = ANY($1)
-    AND a.valid_from <= $2
-    AND (a.valid_until IS NULL OR a.valid_until > $2)
-  ORDER BY p.account_id ASC, a.valid_from DESC
+// An account with no row at or before the month is absent from the result, not
+// zero. Absence is what "never budgeted" means, and a stored 0 is a decision the
+// user took (§3.5) — collapsing them here would erase the distinction before the
+// service can report it.
+const ALLOCATION_QUERY = `
+  SELECT DISTINCT ON (account_id)
+    account_id,
+    budget_amount
+  FROM budget_monthly_allocations
+  WHERE account_id = ANY($1)
+    AND budget_month <= $2
+  ORDER BY account_id, budget_month DESC
 `;
 
 // Spending is aggregated on its own instead of being LEFT JOINed onto the
-// allocations. Joined, an account with N overlapping allocations produced N
-// rows each carrying the FULL period spend, and any sum over those rows
-// multiplied the real spending by N. Keeping the aggregate separate makes the
-// fan-out impossible rather than merely avoided.
+// allocations. Joined, an account with N allocation rows produced N rows each
+// carrying the FULL period spend, and any sum over those rows multiplied the
+// real spending by N. Keeping the aggregate separate makes the fan-out
+// impossible rather than merely avoided.
+//
+// R42, §4.5: the bounds are LOCAL month boundaries and the column is
+// TIMESTAMPTZ, so each bound is converted to the instant it names on the OWNER's
+// calendar. Compared bare, Postgres resolves them through the SESSION zone,
+// and a purchase at 8pm on 31 August in America/Bogota counts against September
+// while the budget it is compared to is August's. Both sides of the comparison
+// have to live on the same calendar (§1.10).
+//
+// This is the local-date-to-instant direction: exactly one AT TIME ZONE. The
+// opposite direction — an instant to the month it falls in — is what MONTH_QUERY
+// does. Two conversions in either direction is the error.
+//
+// ::timestamp, not ::date, and it is load-bearing. AT TIME ZONE has two forms,
+// and with a date Postgres resolves to the one taking a TIMESTAMPTZ, because
+// that is the preferred type of the category. The bound is then read as an
+// instant in the SESSION zone and converted OUT to local time — the opposite
+// direction — so '2026-08-01' AT TIME ZONE 'America/Bogota' yields
+// 2026-07-31 19:00 instead of 2026-08-01 05:00+00. Measured: the month shifted
+// five hours the wrong way and every boundary transaction landed in the
+// neighbouring month, which is R42 again through a different door. Casting to
+// TIMESTAMP first picks the form that takes a naive local time and returns the
+// instant it names.
 const SPENT_QUERY = `
   SELECT
     t.account_id,
@@ -166,86 +172,75 @@ const SPENT_QUERY = `
     ), 0) AS actual_spent
   FROM transactions t
   WHERE t.account_id = ANY($1)
-    AND t.transaction_actual_date >= $2
-    AND t.transaction_actual_date < $3
+    AND t.transaction_actual_date >= ($2::timestamp AT TIME ZONE $4)
+    AND t.transaction_actual_date <  ($3::timestamp AT TIME ZONE $4)
     AND t.movement_type_id IN (1, 6)
   GROUP BY t.account_id
 `;
 
 /**
- * The budget frequency in force for each account at a given instant.
+ * The budget of a set of accounts for the current month.
  *
- * Returns a Map keyed by accountId holding only the accounts that have an
- * allocation covering referenceDate. An account with no policy, or one whose
- * versions all sit on the other side of that date, is simply absent: there is no
- * frequency to report, and defaulting one here would hide the difference from
- * the caller, which is the only place that knows what to do about it.
+ * Returns ONE entry per requested account, budgeted or not: an account the
+ * caller asked about and did not get back is indistinguishable from one the
+ * backend dropped, and the screen has to be able to say "this category has no
+ * budget" (§3.5).
+ *
+ * budgetAmount is always a number, 0 when no allocation is in force. Whether one
+ * exists is isBudgeted, read off the presence of the row and never off the
+ * magnitude (§1.9): a stored 0 and an absent row are the same arithmetic and
+ * two different sentences on screen.
+ *
+ * nextMonthBudget is the same resolution one month later. It is what tells the
+ * card that this month is an exception, and comparing the two amounts is
+ * deliberate: a terminator repeating the current amount changes nothing anyone
+ * would recognise and correctly shows nothing (§7.4).
  *
  * @param {object} pool - Database pool
  * @param {number[]} accountIds - Accounts to read
- * @param {Date} referenceDate - Instant the allocation must be in force at
- * @returns {Promise<Map<number, string>>} accountId to budget_frequency_code
+ * @param {string} timeZone - IANA zone of the account owner
+ * @returns {Promise<object>} { month, accounts: [...] }
  */
-export async function getPolicyFrequenciesForAccounts(pool, accountIds, referenceDate) {
+export async function getMonthlyStatusForAccounts(pool, accountIds, timeZone = 'UTC') {
+ const { rows: monthRows } = await pool.query(MONTH_QUERY, [timeZone]);
+ const { month, next_month: nextMonth } = monthRows[0];
+
  if (!accountIds || accountIds.length === 0) {
-  return new Map();
+  return { month, accounts: [] };
  }
 
- const result = await pool.query(POLICY_FREQUENCY_QUERY, [accountIds, referenceDate]);
- return new Map(result.rows.map((row) => [row.account_id, row.budget_frequency_code]));
-}
+ const [accounts, current, next, spent] = await Promise.all([
+  pool.query(ACCOUNTS_QUERY, [accountIds]),
+  pool.query(ALLOCATION_QUERY, [accountIds, month]),
+  pool.query(ALLOCATION_QUERY, [accountIds, nextMonth]),
+  pool.query(SPENT_QUERY, [accountIds, month, nextMonth, timeZone]),
+ ]);
 
-/**
- * Budget data for a set of accounts over a window.
- *
- * Returns ONE entry per requested account, budgeted or not, carrying every
- * allocation that was in force at any point inside the window. The caller
- * prices each allocation over the slice of the window it actually covers;
- * picking a single allocation here would force that decision into the
- * repository, where the window semantics are not known.
- *
- * @param {object} pool - Database pool
- * @param {number[]} accountIds - Accounts to read
- * @param {Date} startDate - Window start (inclusive, UTC)
- * @param {Date} endDate - Window end (exclusive, UTC)
- * @returns {Promise<Array<object>>} one entry per requested account
- */
-export async function getBudgetDataForAccounts(pool, accountIds, startDate, endDate) {
-  if (!accountIds || accountIds.length === 0) {
-    return [];
-  }
+ const amountsByAccount = (result) =>
+  new Map(result.rows.map((row) => [row.account_id, toAmount(row.budget_amount)]));
 
-  const params = [accountIds, startDate, endDate];
-  const [accounts, allocations, spent] = await Promise.all([
-    pool.query(ACCOUNTS_QUERY, [accountIds]),
-    pool.query(ALLOCATIONS_QUERY, params),
-    pool.query(SPENT_QUERY, params),
-  ]);
+ const currentByAccount = amountsByAccount(current);
+ const nextByAccount = amountsByAccount(next);
+ const spentByAccount = new Map(
+  spent.rows.map((row) => [row.account_id, toAmount(row.actual_spent ?? 0)]),
+ );
 
-  const spentByAccount = new Map(
-    spent.rows.map((row) => [row.account_id, toAmount(row.actual_spent ?? 0)]),
-  );
-
-  const allocationsByAccount = new Map();
-  for (const row of allocations.rows) {
-    const list = allocationsByAccount.get(row.account_id) ?? [];
-    list.push({
-      budgetAllocationId: row.budget_allocation_id,
-      budgetPolicyId: row.budget_policy_id,
-      budgetAmount: toAmount(row.budget_amount),
-      budgetFrequencyTypeId: row.budget_frequency_type_id,
-      budgetFrequencyCode: row.budget_frequency_code,
-      validFrom: row.valid_from,
-      validUntil: row.valid_until,
-    });
-    allocationsByAccount.set(row.account_id, list);
-  }
-
-  return accounts.rows.map((row) => ({
-    accountId: row.account_id,
-    budgetPolicyId: row.budget_policy_id,
-    currencyId: row.currency_id,
-    actualSpent: spentByAccount.get(row.account_id) ?? 0,
-    allocations: allocationsByAccount.get(row.account_id) ?? [],
-  }));
+ return {
+  month,
+  accounts: accounts.rows.map((row) => ({
+   accountId: row.account_id,
+   accountName: row.account_name,
+   subcategory: row.subcategory ?? null,
+   currencyId: row.currency_id,
+   // Existence and magnitude are reported separately. The amount falls back to
+   // 0 so nothing downstream branches on a null, and isBudgeted keeps the
+   // distinction the amount can no longer carry: a stored 0 is a decision, an
+   // absent row is not.
+   isBudgeted: currentByAccount.has(row.account_id),
+   budgetAmount: currentByAccount.get(row.account_id) ?? 0,
+   nextMonthBudget: nextByAccount.get(row.account_id) ?? 0,
+   // 0 is right for spending too: no matching transaction means none was made.
+   actualSpent: spentByAccount.get(row.account_id) ?? 0,
+  })),
+ };
 }

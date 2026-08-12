@@ -39,21 +39,18 @@ const FORCE_RECREATE_EXCHANGE_RATES =
 /**
  * Fail fast if the seeded frequency catalog and MONTHS_PER_PERIOD disagree.
  *
- * NO LONGER CALLED. budget_frequency_types was removed with the monthly
- * allocation model; this guard is kept, uncalled, until the deletion block that
- * closes the budget module (PLAN_BUDGET_V1 §9.4).
+ * NO LONGER CALLED. The budget stopped reading a frequency when it moved to one
+ * row per calendar month, so nothing prices a code any more. The table it checks
+ * has NOT been dropped, though: budget_frequency_types, budget_policies and
+ * budget_policy_allocations are all still in the schema, still seeded and still
+ * carrying rows. This guard is kept, uncalled, until the migration that drops
+ * them (PLAN_BUDGET_V1 §9.4) removes both at once.
  *
- * A frequency code is a lookup key, not a label. A code seeded in the catalog
- * but absent from the map makes getNumberOfPeriods return undefined, and the
- * arithmetic downstream yields NaN with no error raised. A code in the map with
- * no catalog row breaks the foreign key on budget_policy_allocations. Both
- * directions are checked because either one produces silent wrong numbers or a
- * 500, not a clean failure.
- *
- * Compared against MONTHS_PER_PERIOD, not the allowed-allocation list. Whether
- * a code is currently OFFERED to users is a product decision (REMARKS R15) and
- * boot has no business asserting it; whether a stored code can be priced is an
- * invariant, and that is what this protects.
+ * What it protects while those tables live: a frequency code is a lookup key,
+ * not a label. A code seeded in the catalog but absent from MONTHS_PER_PERIOD
+ * cannot be priced, and a code in the map with no catalog row breaks the foreign
+ * key on budget_policy_allocations. Both directions are checked because either
+ * one produces silent wrong numbers or a 500, not a clean failure.
  *
  * @param {object} client - Database client (pool or transaction)
  */

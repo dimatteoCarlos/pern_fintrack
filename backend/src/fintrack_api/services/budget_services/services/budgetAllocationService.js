@@ -154,7 +154,7 @@ async function applyAllocationForAccount(
  const account = await lockOwnedAccount(client, userId, accountId);
  const normalizedAmount = normalizeAmount(budgetAmount);
 
- const month = await resolveCurrentMonth(client, timeZone);
+ const { month } = await resolveCurrentMonth(client, timeZone);
  const inForce = await getAllocationForMonth(client, accountId, month);
 
  if (inForce === null) {
@@ -176,7 +176,62 @@ async function applyAllocationForAccount(
  return writeAllocation(client, accountId, normalizedAmount, false, timeZone);
 }
 
+/**
+ * Set the budget of one account for the current month, from the budget screen.
+ *
+ * The only write that carries the one-month exception, because the budget screen
+ * is the only place that offers it. The account editor sends a recurring change
+ * and routes to applyAllocationForAccount instead.
+ *
+ * Owns its transaction: the allocation and the terminator that restores the
+ * previous amount are one decision, and a terminator committed without its
+ * allocation reverts a budget nobody changed. The account-editor writes take a
+ * caller-supplied client for the opposite reason — theirs must roll back with
+ * the account row they mirror.
+ *
+ * The month is never taken from the request. Only the current one is writable
+ * (§5.2), so accepting it would give the client a way to name a month the rules
+ * forbid.
+ *
+ * @returns {Promise<object>} the §7.4 body: what was written, and what next
+ *  month returns to.
+ */
+async function setCurrentMonthBudget(
+ pool,
+ userId,
+ accountId,
+ budgetAmount,
+ onlyThisMonth = false,
+ timeZone = 'UTC',
+) {
+ const client = await pool.connect();
+
+ try {
+  await client.query('BEGIN');
+
+  await lockOwnedAccount(client, userId, accountId);
+
+  const written = await writeAllocation(
+   client,
+   accountId,
+   normalizeAmount(budgetAmount),
+   onlyThisMonth,
+   timeZone,
+  );
+
+  await client.query('COMMIT');
+
+  return written;
+ } catch (error) {
+  await client.query('ROLLBACK');
+  throw error;
+ } finally {
+  client.release();
+ }
+}
+
 export const budgetAllocationService = {
  createAllocationForAccount,
  applyAllocationForAccount,
+ setCurrentMonthBudget,
 };

@@ -1,111 +1,91 @@
 // src/fintrack_api/services/budget_services/core/makeBudgetAccountStatus.js
 
 // The single rounding point of the module. Every account status passes through
-// here, including the no-budget ones, so rounding in the calculator instead
+// here, including the unbudgeted ones, so rounding in the calculator instead
 // would leave those unrounded.
+//
+// No monetary field is ever null. An account with no allocation reports a budget
+// of 0 and a real actualSpent, so remainingBudget comes out negative — which is
+// what being in the red means, and what null failed to say. The absence of a
+// budget travels in isBudgeted and nowhere else.
+//
+// executionPercentage is the one exception: zero has no percentage, and its
+// absence is the fact being reported.
 
 import { isFiniteMoney, toAmount, toRate } from './money.js';
 
-// How the reported period was arrived at.
-//
-// 'native'     – no aggregation level was asked for; the window is the policy's
-//                own period.
-// 'aggregated' – the level asked for is a whole multiple of that period, so the
-//                window spans several of them exactly.
-// 'resolved'   – the level asked for does not fit, so the window fell back to
-//                the policy's period. The request was honoured as far as it
-//                could be, which is why this is not a 400: a query locates a
-//                period, it never redefines one.
-export const RESOLUTIONS = ['native', 'aggregated', 'resolved'];
-
 export function makeBudgetAccountStatus({
-  accountId = null,
-  isBudgeted = true,
-  currency,
-  period,
-  resolution = 'native',
-  budgetPolicy = null,
-  budgetAllocation = null,
-  budgetAccumulatedAmount,
+ accountId = null,
+ accountName = null,
+ subcategory = null,
+ currency,
+ isBudgeted,
+ budgetAmount,
+ nextMonthBudget,
+ actualSpent,
+ remainingBudget,
+ executionPercentage,
+ isOverBudget,
+}) {
+ if (!currency || typeof currency !== 'string') {
+  throw new Error('BudgetAccountStatus: currency is required and must be a string');
+ }
+
+ if (typeof isBudgeted !== 'boolean') {
+  throw new Error('BudgetAccountStatus: isBudgeted is required and must be a boolean');
+ }
+
+ if (typeof isOverBudget !== 'boolean') {
+  throw new Error('BudgetAccountStatus: isOverBudget is required and must be a boolean');
+ }
+
+ // isFiniteMoney, not typeof 'number': the service hands over Decimals so no
+ // lossy conversion happens on the way in.
+ for (const [field, value] of Object.entries({
+  budgetAmount,
+  nextMonthBudget,
   actualSpent,
   remainingBudget,
-  actualVsBudgetDifference,
-  executionPercentage,
-}) {
-  // Validate currency
-  if (!currency || typeof currency !== 'string') {
-    throw new Error('BudgetAccountStatus: currency is required and must be a string');
+ })) {
+  if (!isFiniteMoney(value)) {
+   throw new Error(`BudgetAccountStatus: ${field} must be a finite amount`);
   }
+ }
 
-  // Validate period
-  if (!period || typeof period !== 'object') {
-    throw new Error('BudgetAccountStatus: period is required and must be an object with start and end');
-  }
-  if (!(period.start instanceof Date) || isNaN(period.start.getTime())) {
-    throw new Error('BudgetAccountStatus: period.start must be a valid Date');
-  }
-  if (!(period.end instanceof Date) || isNaN(period.end.getTime())) {
-    throw new Error('BudgetAccountStatus: period.end must be a valid Date');
-  }
-  if (!RESOLUTIONS.includes(resolution)) {
-    throw new Error(`BudgetAccountStatus: resolution must be one of ${RESOLUTIONS.join(', ')}`);
-  }
+ if (executionPercentage !== null && !isFiniteMoney(executionPercentage)) {
+  throw new Error('BudgetAccountStatus: executionPercentage must be a finite amount or null');
+ }
 
-  // Validate optional objects
-  if (budgetPolicy !== null && typeof budgetPolicy !== 'object') {
-    throw new Error('BudgetAccountStatus: budgetPolicy must be an object or null');
-  }
-  if (budgetAllocation !== null && typeof budgetAllocation !== 'object') {
-    throw new Error('BudgetAccountStatus: budgetAllocation must be an object or null');
-  }
+ // Being budgeted is the existence of an allocation, never its magnitude: an
+ // account deliberately set to 0 IS budgeted. Only one direction is checkable —
+ // an account with no allocation cannot carry an amount, while a budgeted one is
+ // free to carry 0.
+ if (!isBudgeted && toAmount(budgetAmount) !== 0) {
+  throw new Error('BudgetAccountStatus: an unbudgeted account cannot carry an amount');
+ }
 
-  // Validate numeric metrics. isFiniteMoney, not typeof 'number': the
-  // calculator hands over Decimals so no lossy conversion happens on the way in.
-  if (!isFiniteMoney(budgetAccumulatedAmount)) {
-    throw new Error('BudgetAccountStatus: budgetAccumulatedAmount must be a finite amount');
-  }
-  if (!isFiniteMoney(actualSpent)) {
-    throw new Error('BudgetAccountStatus: actualSpent must be a finite amount');
-  }
-  if (!isFiniteMoney(remainingBudget)) {
-    throw new Error('BudgetAccountStatus: remainingBudget must be a finite amount');
-  }
-  if (!isFiniteMoney(actualVsBudgetDifference)) {
-    throw new Error('BudgetAccountStatus: actualVsBudgetDifference must be a finite amount');
-  }
-  if (!isFiniteMoney(executionPercentage)) {
-    throw new Error('BudgetAccountStatus: executionPercentage must be a finite amount');
-  }
-
-  const budgetAccountStatus = Object.freeze({
-    // The caller asked about a set of accounts and gets one status per account.
-    // Without this field the only way to tell them apart was budgetPolicy
-    // .accountId, which is null precisely for the accounts that need
-    // identifying: the ones with no policy.
-    accountId,
-    // Whether a budget_policies row exists for the account. It is not "the
-    // accumulated amount is 0": a budgeted account queried over a window that
-    // precedes its policy also accumulates 0, and the screen must not label it
-    // the same way.
-    isBudgeted,
-    currency,
-    period: {
-      start: period.start,
-      end: period.end,
-    },
-    // Per row, not only in meta: a mixed response has to say which rows were
-    // aggregated and which fell back, and a single top-level value cannot.
-    resolution,
-    budgetPolicy,
-    budgetAllocation,
-    budgetAccumulatedAmount: toAmount(budgetAccumulatedAmount),
-    actualSpent: toAmount(actualSpent),
-    remainingBudget: toAmount(remainingBudget),
-    actualVsBudgetDifference: toAmount(actualVsBudgetDifference),
-    // A ratio, not money: rounded so the response and the CSV agree, never
-    // summed anywhere.
-    executionPercentage: toRate(executionPercentage),
-  });
-
-  return budgetAccountStatus;
+ return Object.freeze({
+  // The caller asked about a set of accounts and gets one status per account.
+  accountId,
+  accountName,
+  subcategory,
+  currency,
+  // Whether an allocation exists for the reported month. It is NOT
+  // "budgetAmount > 0": an account the user deliberately set to zero is
+  // budgeted, and the screen must not label it the same as one that never was.
+  isBudgeted,
+  budgetAmount: toAmount(budgetAmount),
+  // What next month is already set to. The card shows its exception line by
+  // comparing this against budgetAmount, so a terminator repeating the same
+  // figure correctly shows nothing.
+  nextMonthBudget: toAmount(nextMonthBudget),
+  actualSpent: toAmount(actualSpent),
+  // Negative when more was spent than allocated, including when nothing was
+  // allocated at all. That is the number the user is in the red by.
+  remainingBudget: toAmount(remainingBudget),
+  // A ratio, not money: rounded so the response and the CSV agree, never summed
+  // anywhere. Null when the budget is 0, because there is nothing to divide by.
+  executionPercentage: executionPercentage === null ? null : toRate(executionPercentage),
+  isOverBudget,
+ });
 }
