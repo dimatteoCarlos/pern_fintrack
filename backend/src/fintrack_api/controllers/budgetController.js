@@ -4,13 +4,21 @@
 // Validates requests using Zod schemas from budgetValidators.js, calls services,
 // and returns JSON or CSV.
 //
-// No handler accepts a date. The month is resolved inside the query, on the
-// account owner's calendar, so a request cannot name a month at all.
+// No handler accepts the CURRENT month. It is resolved inside the query, on the
+// account owner's calendar, so a request cannot name it at all and cannot carry
+// the device's clock skew into a budget. A historical range does travel, as
+// from/to, because the server cannot guess which months the user is looking at.
+//
+// There is no 404 in this module. An id that does not exist and an id that
+// belongs to someone else both answer 403: splitting them would let a caller
+// walk the id space and learn which accounts are other users'.
 
 import {
  budgetAccountsStatusBodySchema,
  currentBudgetParamsSchema,
  currentBudgetBodySchema,
+ seriesParamsSchema,
+ seriesQuerySchema,
  exportQuerySchema,
 } from '../../validation/zod/budgetValidators.js';
 
@@ -18,7 +26,7 @@ import { budgetCalculationService } from '../services/budget_services/services/b
 import { budgetAllocationService } from '../services/budget_services/services/budgetAllocationService.js';
 import { pool } from '../../db/config/configDB.js';
 import { getAccountsByType } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
-import { convertAccountsStatusToCSV } from '../../utils/fintrackUtils/exportUtils.js';
+import { convertSeriesToCSV } from '../../utils/fintrackUtils/exportUtils.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 
@@ -130,13 +138,53 @@ export async function setCurrentBudget(req, res, next) {
  }
 }
 
+/** GET /api/fintrack/budget/accounts/:accountId/series */
+export async function getBudgetAccountSeries(req, res, next) {
+ try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
+  const { accountId } = seriesParamsSchema.parse(req.params);
+  const { from, to } = seriesQuerySchema.parse(req.query);
+
+  const owned = await getOwnedBudgetAccounts(userId);
+  if (!owned.has(accountId)) {
+   return res.status(403).json({
+    status: 403,
+    message: 'Account not found or not owned by the authenticated user.',
+   });
+  }
+
+  const timeZone = await getUserTimeZone(pool, userId);
+
+  const response = await budgetCalculationService.getBudgetAccountSeries(
+   pool,
+   accountId,
+   { from, to },
+   timeZone
+  );
+
+  res.status(200).json(response);
+ } catch (error) {
+  if (error.name === 'ZodError') {
+   return respondWithZodIssues(res, error);
+  }
+  // 422 from the range resolver: the query parsed, the values are simply not
+  // answerable together. Anything without a status is unexpected.
+  if (error.status) {
+   return res.status(error.status).json({ status: error.status, message: error.message });
+  }
+  next(error);
+ }
+}
+
 /** GET /api/fintrack/budget/export */
 export async function exportCSV(req, res, next) {
  try {
   const userId = requireUserId(req, res);
   if (!userId) return;
 
-  const { accountId } = exportQuerySchema.parse(req.query);
+  const { accountId, from, to } = exportQuerySchema.parse(req.query);
 
   const owned = await getOwnedBudgetAccounts(userId);
 
@@ -154,27 +202,34 @@ export async function exportCSV(req, res, next) {
   const accountIds = accountId ? [accountId] : [...owned.keys()];
   const timeZone = await getUserTimeZone(pool, userId);
 
-  const { referenceMonth, accounts } = await budgetCalculationService.getBudgetAccountsStatus(
+  // The default span is 1, not the 12 /series uses. An export with no range is
+  // the current month, which is what this endpoint returned before it accepted
+  // one — a default of a year would change the meaning of a request that
+  // already works.
+  const series = await budgetCalculationService.getBudgetAccountsSeries(
    pool,
    accountIds,
-   timeZone
+   { from, to },
+   timeZone,
+   1
   );
 
-  // The read returns unbudgeted accounts too, so the screen can show them as
-  // such. A CSV has no room for that distinction: the row would be a line of
-  // zeros indistinguishable from a budget that was never spent. Exporting only
-  // budgeted accounts keeps the file meaning what it did.
-  const csv = convertAccountsStatusToCSV(accounts.filter((r) => r.isBudgeted), referenceMonth);
+  const csv = convertSeriesToCSV(series.accounts);
 
-  // The month the data is about, not the day it was downloaded. Two exports of
-  // August taken on different days are the same file and should be named alike.
-  const filename = `budget_export_${referenceMonth}.csv`;
+  // The months the data is about, not the day it was downloaded. Two exports of
+  // the same range taken on different days are the same file and are named
+  // alike. A single-month range keeps the name it had.
+  const range = series.from === series.to ? series.from : `${series.from}_${series.to}`;
+  const filename = `budget_export_${range}.csv`;
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.status(200).send(csv);
  } catch (error) {
   if (error.name === 'ZodError') {
    return respondWithZodIssues(res, error);
+  }
+  if (error.status) {
+   return res.status(error.status).json({ status: error.status, message: error.message });
   }
   next(error);
  }

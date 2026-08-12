@@ -1,8 +1,8 @@
 // src/fintrack_api/services/budget_services/core/makeBudgetAccountStatus.js
 
-// The single rounding point of the module. Every account status passes through
-// here, including the unbudgeted ones, so rounding in the calculator instead
-// would leave those unrounded.
+// The rounding point for one account in one month. Every account status passes
+// through here, including the unbudgeted ones, so rounding in the calculator
+// instead would leave those unrounded.
 //
 // No monetary field is ever null. An account with no allocation reports a budget
 // of 0 and a real actualSpent, so remainingBudget comes out negative — which is
@@ -11,8 +11,13 @@
 //
 // executionPercentage is the one exception: zero has no percentage, and its
 // absence is the fact being reported.
+//
+// The arithmetic invariants live in assertBudgetFigures, shared with
+// makeBudgetMonthStatus. What stays here is what only an ACCOUNT has: a currency
+// and a next month.
 
-import { isFiniteMoney, toAmount, toRate } from './money.js';
+import { assertBudgetFigures } from './assertBudgetFigures.js';
+import { toAmount, toRate } from './money.js';
 
 export function makeBudgetAccountStatus({
  accountId = null,
@@ -31,38 +36,11 @@ export function makeBudgetAccountStatus({
   throw new Error('BudgetAccountStatus: currency is required and must be a string');
  }
 
- if (typeof isBudgeted !== 'boolean') {
-  throw new Error('BudgetAccountStatus: isBudgeted is required and must be a boolean');
- }
-
- if (typeof isOverBudget !== 'boolean') {
-  throw new Error('BudgetAccountStatus: isOverBudget is required and must be a boolean');
- }
-
- // isFiniteMoney, not typeof 'number': the service hands over Decimals so no
- // lossy conversion happens on the way in.
- for (const [field, value] of Object.entries({
-  budgetAmount,
-  nextMonthBudget,
-  actualSpent,
-  remainingBudget,
- })) {
-  if (!isFiniteMoney(value)) {
-   throw new Error(`BudgetAccountStatus: ${field} must be a finite amount`);
-  }
- }
-
- if (executionPercentage !== null && !isFiniteMoney(executionPercentage)) {
-  throw new Error('BudgetAccountStatus: executionPercentage must be a finite amount or null');
- }
-
- // Being budgeted is the existence of an allocation, never its magnitude: an
- // account deliberately set to 0 IS budgeted. Only one direction is checkable —
- // an account with no allocation cannot carry an amount, while a budgeted one is
- // free to carry 0.
- if (!isBudgeted && toAmount(budgetAmount) !== 0) {
-  throw new Error('BudgetAccountStatus: an unbudgeted account cannot carry an amount');
- }
+ assertBudgetFigures(
+  'BudgetAccountStatus',
+  { isBudgeted, isOverBudget, executionPercentage },
+  { budgetAmount, nextMonthBudget, actualSpent, remainingBudget },
+ );
 
  return Object.freeze({
   // The caller asked about a set of accounts and gets one status per account.

@@ -244,3 +244,158 @@ export async function getMonthlyStatusForAccounts(pool, accountIds, timeZone = '
   })),
  };
 }
+
+/**
+ * The current month on the account owner's calendar, as 'YYYY-MM-01'.
+ *
+ * Exposed for the range endpoints, which need it before any account is read:
+ * it is the default upper bound of a series and the ceiling `to` is checked
+ * against. Same query as the status path, so "the current month" cannot come
+ * to mean two different things in one module.
+ *
+ * @param {object} pool - Database pool
+ * @param {string} timeZone - IANA zone of the account owner
+ * @returns {Promise<string>} first of the current month, as text
+ */
+export async function getCurrentMonth(pool, timeZone = 'UTC') {
+ const { rows } = await pool.query(MONTH_QUERY, [timeZone]);
+ return rows[0].month;
+}
+
+// One row per (account, month) over the whole range, with the carry-forward
+// already applied (§4.3).
+//
+// generate_series produces the months; the correlated subquery answers, for each
+// one, "what was the budget in force here" with the same
+// `<= month ORDER BY budget_month DESC LIMIT 1` that IS recurrence (§3.3). A
+// month before the account's first allocation gets NULL, which the caller reads
+// as "never budgeted" — the amount is not defaulted to 0 in SQL, because that
+// would erase the distinction between a month with no decision and a month the
+// user set to zero.
+//
+// CROSS JOIN over unnest, not one query per account: the export flattens every
+// budget account the caller owns, and a query per account would turn one report
+// into N round trips. The cost is accounts × months correlated lookups, which is
+// what the 60-month span cap in the service bounds.
+//
+// The months come back as text for the same reason MONTH_QUERY returns text: a
+// pg DATE becomes a JS Date at the node process's local midnight, and the day
+// can shift on the way through the driver.
+const SERIES_QUERY = `
+  SELECT
+    a.account_id,
+    m.month::date::text AS budget_month,
+    (SELECT alloc.budget_amount
+       FROM budget_monthly_allocations alloc
+      WHERE alloc.account_id = a.account_id
+        AND alloc.budget_month <= m.month
+      ORDER BY alloc.budget_month DESC
+      LIMIT 1) AS budget_amount
+  FROM unnest($1::int[]) AS a(account_id)
+  CROSS JOIN generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
+  ORDER BY a.account_id, m.month
+`;
+
+// Spending grouped by account and by the month it falls in, on the OWNER's
+// calendar. Aggregated separately from the allocations for the same reason
+// SPENT_QUERY is: joined, an account with N allocation rows would carry the full
+// period spend N times.
+//
+// Both AT TIME ZONE directions appear here, each exactly once and on a different
+// operand, which is the only combination that is correct:
+//   - the bounds go local boundary -> instant, to be compared against a
+//     TIMESTAMPTZ column;
+//   - date_trunc goes instant -> local date, to decide which month a
+//     transaction belongs to.
+// Two conversions in either direction is the error R42 describes.
+//
+// ::timestamp on the lower bound is load-bearing: with a date, AT TIME ZONE
+// resolves to the TIMESTAMPTZ overload and converts the bound OUT to local time
+// instead of in. The upper bound needs no cast — `date + interval` is already a
+// TIMESTAMP WITHOUT TIME ZONE, so it picks the same overload.
+//
+// $3 is the LAST month of the range, inclusive as a month. The instant window is
+// half-open at the first day of the month after it, matching generate_series,
+// which includes its own upper bound.
+const SPENT_BY_MONTH_QUERY = `
+  SELECT
+    t.account_id,
+    date_trunc('month', t.transaction_actual_date AT TIME ZONE $4)::date::text AS budget_month,
+    COALESCE(SUM(
+      CASE
+        WHEN t.movement_type_id = 1 THEN t.amount
+        WHEN t.movement_type_id = 6 THEN t.amount
+        ELSE 0
+      END
+    ), 0) AS actual_spent
+  FROM transactions t
+  WHERE t.account_id = ANY($1)
+    AND t.transaction_actual_date >= ($2::timestamp AT TIME ZONE $4)
+    AND t.transaction_actual_date <  (($3::date + INTERVAL '1 month') AT TIME ZONE $4)
+    AND t.movement_type_id IN (1, 6)
+  GROUP BY t.account_id, 2
+`;
+
+/**
+ * The month-by-month budget of a set of accounts over a range.
+ *
+ * Returns one entry per requested account, each carrying every month between
+ * `from` and `to` inclusive — no gaps. A gap would make the caller re-derive the
+ * carry-forward, which is the calculation this endpoint exists to centralise.
+ *
+ * budgetAmount is always a number, 0 when no allocation is in force, and
+ * isBudgeted carries whether one exists. Same rule as the status path: a stored
+ * 0 is a decision the user took, an absent row is not, and the amount alone
+ * cannot tell them apart.
+ *
+ * @param {object} pool - Database pool
+ * @param {number[]} accountIds - Accounts to read
+ * @param {string} from - first month of the range, as 'YYYY-MM-01'
+ * @param {string} to - last month of the range, inclusive, as 'YYYY-MM-01'
+ * @param {string} timeZone - IANA zone of the account owner
+ * @returns {Promise<object[]>} one entry per account, with its months
+ */
+export async function getMonthlySeriesForAccounts(pool, accountIds, from, to, timeZone = 'UTC') {
+ if (!accountIds || accountIds.length === 0) {
+  return [];
+ }
+
+ const [accounts, series, spent] = await Promise.all([
+  pool.query(ACCOUNTS_QUERY, [accountIds]),
+  pool.query(SERIES_QUERY, [accountIds, from, to]),
+  pool.query(SPENT_BY_MONTH_QUERY, [accountIds, from, to, timeZone]),
+ ]);
+
+ // Keyed by account then by month. A composite string key would work too, but
+ // the months of one account are read together and a nested Map says so.
+ const spentByAccount = new Map();
+ for (const row of spent.rows) {
+  if (!spentByAccount.has(row.account_id)) {
+   spentByAccount.set(row.account_id, new Map());
+  }
+  spentByAccount.get(row.account_id).set(row.budget_month, toAmount(row.actual_spent ?? 0));
+ }
+
+ const monthsByAccount = new Map();
+ for (const row of series.rows) {
+  if (!monthsByAccount.has(row.account_id)) {
+   monthsByAccount.set(row.account_id, []);
+  }
+  const spentInMonth = spentByAccount.get(row.account_id)?.get(row.budget_month) ?? 0;
+  monthsByAccount.get(row.account_id).push({
+   month: row.budget_month,
+   // NULL from the subquery means no allocation at or before this month.
+   isBudgeted: row.budget_amount !== null,
+   budgetAmount: row.budget_amount === null ? 0 : toAmount(row.budget_amount),
+   actualSpent: spentInMonth,
+  });
+ }
+
+ return accounts.rows.map((row) => ({
+  accountId: row.account_id,
+  accountName: row.account_name,
+  subcategory: row.subcategory ?? null,
+  currencyId: row.currency_id,
+  months: monthsByAccount.get(row.account_id) ?? [],
+ }));
+}

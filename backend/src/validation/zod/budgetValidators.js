@@ -71,12 +71,64 @@ export const currentBudgetBodySchema = z.object({
  onlyThisMonth: z.boolean().default(false),
 }).strict();
 
+// A historical bound, coerced to the first of its month.
+//
+// This is the one place a date DOES travel, and the rule above still holds: the
+// current month is never sent, but the server cannot guess which twelve months
+// the user is looking at.
+//
+// Coerced by truncating the text, never by constructing a Date. A Date parsed
+// from 'YYYY-MM-DD' is UTC midnight, and reading it back through a local getter
+// can land on the previous month — the zone bug §4.5 removed from the queries,
+// re-entering through the validator. Truncation has no zone to lose.
+//
+// The day is accepted and discarded, so 2026-08-17 and 2026-08-01 are the same
+// request. It is not range-checked: 2026-02-31 would be rejected as a date and
+// is meaningless as a month, since the day is thrown away either way.
+//
+// What this schema deliberately does NOT check is the relationship between the
+// bounds, or between a bound and today. from <= to, to <= current month and the
+// 60-month span are 422s raised by the service: the current month is a query on
+// the owner's calendar, and a schema cannot see it.
+const monthBound = z
+ .string()
+ .regex(/^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$/, {
+  message: 'must be a month as YYYY-MM or a date as YYYY-MM-DD',
+ })
+ .transform((value) => `${value.slice(0, 7)}-01`);
+
+/**
+ * GET /budget/accounts/:accountId/series
+ * Params: accountId (positive integer)
+ */
+export const seriesParamsSchema = z.object({
+ accountId: z.coerce.number().positive({
+  message: 'accountId must be a positive number',
+ }),
+}).strict();
+
+/**
+ * GET /budget/accounts/:accountId/series
+ * Query: from, to (both optional — defaults resolve to the last 12 months)
+ */
+export const seriesQuerySchema = z.object({
+ from: monthBound.optional(),
+ to: monthBound.optional(),
+}).strict();
+
 /**
  * GET /budget/export
- * Query: accountId (optional — omitted exports every budget account owned)
+ * Query: accountId, from, to — all optional.
+ *
+ * accountId omitted exports every budget account owned; from/to omitted collapse
+ * the range to the current month, which is what the endpoint did before it
+ * accepted a range. A default of twelve months here would change the meaning of
+ * a request that already works.
  */
 export const exportQuerySchema = z.object({
  accountId: z.coerce.number().positive({
   message: 'accountId must be a positive number',
  }).optional(),
+ from: monthBound.optional(),
+ to: monthBound.optional(),
 }).strict();
