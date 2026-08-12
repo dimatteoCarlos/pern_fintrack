@@ -9,13 +9,8 @@ import {
 } from '../../utils/helpers.js';
 
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
-import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
+import { budgetAllocationService } from '../services/budget_services/services/budgetAllocationService.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
-import {
-  ALLOCATION_INTENTS,
-  ALLOWED_ALLOCATION_FREQUENCIES,
-  DEFAULT_ALLOCATION_INTENT,
-} from '../services/budget_services/core/budgetConfig.js';
 
 /**
  * 🎯 EDITION LOGIC: PARTIALLY UPDATES AN ACCOUNT
@@ -114,27 +109,10 @@ export const patchAccountById = async (req, res, next) => {
         break;
 
       case 'category_budget': {
-        // Either field alone reaches here now: either alone is a change the
-        // user asked for, and a frequency-only request used to answer 200
-        // without versioning anything.
-        if (
-          payload.budget !== undefined ||
-          payload.budgetFrequencyCode !== undefined
-        ) {
-          // The amount is per period, so a new period reinterprets it: keeping
-          // 300 and moving monthly to quarterly cuts the yearly budget to a
-          // third. The user restates the amount instead of the server inferring
-          // it from a number that now means something else.
-          if (payload.budget === undefined) {
-            const message =
-              'budget is required when budgetFrequencyCode changes: the amount applies to one period.';
-            console.warn(pc['red'](message));
-            return res.status(400).json({ status: 400, message });
-          }
-
-          // Same rule as account creation and as CHECK (budget_amount > 0).
-          // Before, a 0 or a negative went straight into cba.budget; now it
-          // would also reach the allocation and surface as a 500.
+        if (payload.budget !== undefined) {
+          // The account editor never writes 0. The database allows it because
+          // that is how "stop budgeting" is expressed, but only the budget
+          // screen's remove action sends it, and it does not come through here.
           const amount = Number(payload.budget);
 
           if (!Number.isFinite(amount) || amount <= 0) {
@@ -143,32 +121,8 @@ export const patchAccountById = async (req, res, next) => {
             return res.status(400).json({ status: 400, message });
           }
 
-          const frequencyCode =
-            payload.budgetFrequencyCode?.trim().toLowerCase() ?? null;
-
-          if (
-            frequencyCode &&
-            !ALLOWED_ALLOCATION_FREQUENCIES.includes(frequencyCode)
-          ) {
-            const message = `budgetFrequencyCode must be one of: ${ALLOWED_ALLOCATION_FREQUENCIES.join(', ')}.`;
-            console.warn(pc['red'](message));
-            return res.status(400).json({ status: 400, message });
-          }
-
-          // Rejected rather than defaulted when present but unknown: a typo
-          // would otherwise silently become a change the user did not ask for.
-          const intent =
-            payload.budgetIntent?.trim().toLowerCase() ??
-            DEFAULT_ALLOCATION_INTENT;
-
-          if (!ALLOCATION_INTENTS.includes(intent)) {
-            const message = `budgetIntent must be one of: ${ALLOCATION_INTENTS.join(', ')}.`;
-            console.warn(pc['red'](message));
-            return res.status(400).json({ status: 400, message });
-          }
-
           specificFields.budget = amount;
-          budgetChange = { amount, frequencyCode, intent };
+          budgetChange = { amount };
         }
 
         // The parts are normalized too, not only the name derived from them.
@@ -381,19 +335,17 @@ export const patchAccountById = async (req, res, next) => {
       await client.query(specificQuery, specificSqlValues);
     }
 
-    // cba.budget above is the legacy column. No budget endpoint reads it: they
-    // all price from budget_policy_allocations. Without this the amount changed
-    // on the account screen and nowhere else.
-    // Read on the transaction's client, so the zone the boundary is aligned to
-    // is the one this transaction sees.
-    const budget_policy = budgetChange
-      ? await budgetPolicyService.applyAllocationForAccount(
+    // cba.budget above is the legacy column, and it is still what the frontend
+    // reads. The allocation is what the budget module reads. Both are written
+    // here so the two agree until the frontend migrates.
+    // Read on the transaction's client, so the month is resolved in the zone
+    // this transaction sees.
+    const budget_allocation = budgetChange
+      ? await budgetAllocationService.applyAllocationForAccount(
           client,
           userId,
           accountId,
           budgetChange.amount,
-          budgetChange.frequencyCode,
-          budgetChange.intent,
           await getUserTimeZone(client, userId),
         )
       : null;
@@ -413,9 +365,9 @@ export const patchAccountById = async (req, res, next) => {
         account_id: accountId,
         ...userAccountFields,
         ...specificFields,
-        // Only when a new version was opened. null would read as "the budget
+        // Only when a row was actually written. null would read as "the budget
         // was cleared" on a PATCH that never touched it.
-        ...(budget_policy ? { budget_policy } : {}),
+        ...(budget_allocation ? { budget_allocation } : {}),
       }, //returns partial updated account info
     });
   } catch (error) {

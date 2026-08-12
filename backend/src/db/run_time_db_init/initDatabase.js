@@ -12,7 +12,6 @@ import {
   resyncCatalogSequences,
   tableExists,
   tblAccountTypes,
-  tblBudgetFrequencyTypes,
   tblCategoryNatureTypes,
   tblCurrencies,
   tblMovementTypes,
@@ -27,7 +26,7 @@ import {
   createTables,
   addFxAuditColumns,
   ensureBudgetTables,
-  ensureBudgetPolicyBackfill,
+  ensureBudgetAllocationBackfill,
   ensureCategoryBudgetCurrency,
   recreateExchangeRatesTable,
 } from './createTables.js';
@@ -39,6 +38,10 @@ const FORCE_RECREATE_EXCHANGE_RATES =
 
 /**
  * Fail fast if the seeded frequency catalog and MONTHS_PER_PERIOD disagree.
+ *
+ * NO LONGER CALLED. budget_frequency_types was removed with the monthly
+ * allocation model; this guard is kept, uncalled, until the deletion block that
+ * closes the budget module (PLAN_BUDGET_V1 §9.4).
  *
  * A frequency code is a lookup key, not a label. A code seeded in the catalog
  * but absent from the map makes getNumberOfPeriods return undefined, and the
@@ -167,14 +170,10 @@ export async function initializeDatabase() {
     // not by the migration runner, so the constraint has to be applied here too.
     await ensureCategoryBudgetCurrency(client);
 
-    await tblBudgetFrequencyTypes(client);
-    await assertBudgetFrequenciesMatchConfig(client);
-
     // Runtime counterpart of migration 012, for the same reason as the two
     // calls above: production is built by this path, so a database that never
-    // saw the runner would keep its legacy budgets unmigrated. Runs after the
-    // catalog because the allocation resolves its period by code.
-    await ensureBudgetPolicyBackfill(client);
+    // saw the runner would keep its legacy budgets unmigrated.
+    await ensureBudgetAllocationBackfill(client);
 
     // Same reason as the two calls above: it must run outside the first-time
     // block, because the databases with stale sequences are precisely the ones

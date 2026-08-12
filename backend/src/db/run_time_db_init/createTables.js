@@ -323,100 +323,35 @@ export async function addFxAuditColumns(client = pool) {
 }
 
 /**
- * Ensure the budget domain tables exist. Mirrors the DDL of migration
+ * Ensure the budget domain table exists. Mirrors the DDL of migration
  * 010_create_budget_tables.sql, without its backfill.
  *
  * Deliberately NOT part of the mainTables array: that array is created with
- * Promise.allSettled, so its order is undefined and a rejected table is only
- * logged, never thrown. These three tables reference each other, so they need
- * a guaranteed order — catalog, then policies, then allocations — and a real
- * failure when one of them cannot be created.
+ * Promise.allSettled, so a rejected table is only logged, never thrown. This
+ * one references category_budget_accounts, so it needs a real failure when it
+ * cannot be created.
  *
- * DDL only. Seeding budget_frequency_types belongs to populateDB.js, and the
- * legacy backfill belongs to the migration: replaying it on every boot would
- * resurrect policies for accounts a user has since emptied.
+ * DDL only. The legacy backfill belongs to ensureBudgetAllocationBackfill.
  *
  * @param {object} client - Database client (pool or transaction)
  */
 export async function ensureBudgetTables(client = pool) {
  console.log(pc.cyan('Ensuring budget domain tables...'));
 
- const budgetDDL = [
-  `CREATE TABLE IF NOT EXISTS budget_frequency_types (
-    budget_frequency_type_id SERIAL PRIMARY KEY,
-    budget_frequency_code    VARCHAR(20)  NOT NULL UNIQUE,
-    budget_frequency_name    VARCHAR(50)  NOT NULL,
-    sort_order               INTEGER      NOT NULL DEFAULT 0,
-    is_active                BOOLEAN      NOT NULL DEFAULT TRUE,
-    created_at               TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP,
-    updated_at               TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP
-   )`,
-
-  `CREATE TABLE IF NOT EXISTS budget_policies (
-    budget_policy_id SERIAL PRIMARY KEY,
-    account_id       INTEGER NOT NULL UNIQUE
-     REFERENCES category_budget_accounts(account_id) ON DELETE CASCADE,
-    created_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-   )`,
-
-  // valid_until = valid_from is legal: a correction closes the replaced version
-  // at its own start, so it spans zero time and no read can find it.
-  // close_reason separates a correction from a forward change.
-  `CREATE TABLE IF NOT EXISTS budget_policy_allocations (
-    budget_allocation_id     SERIAL PRIMARY KEY,
-    budget_policy_id         INTEGER NOT NULL
-     REFERENCES budget_policies(budget_policy_id) ON DELETE CASCADE,
-    budget_amount            DECIMAL(15,2) NOT NULL CHECK (budget_amount > 0),
-    budget_frequency_type_id INTEGER NOT NULL
-     REFERENCES budget_frequency_types(budget_frequency_type_id) ON DELETE RESTRICT,
-    valid_from               TIMESTAMPTZ NOT NULL,
-    valid_until              TIMESTAMPTZ,
-    close_reason             VARCHAR(20),
-    created_at               TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_allocation_close_reason
-     CHECK (close_reason IN ('corrected', 'superseded')),
-    CONSTRAINT chk_allocation_validity
-     CHECK (valid_until IS NULL OR valid_until >= valid_from)
-   )`,
-
-  // CREATE TABLE IF NOT EXISTS is a no-op on a database built before these two
-  // existed, so an established install needs them applied explicitly. Same
-  // reasoning as the FX audit columns above.
-  `ALTER TABLE budget_policy_allocations
-    ADD COLUMN IF NOT EXISTS close_reason VARCHAR(20)`,
-
-  `ALTER TABLE budget_policy_allocations
-    DROP CONSTRAINT IF EXISTS chk_allocation_close_reason`,
-
-  `ALTER TABLE budget_policy_allocations
-    ADD CONSTRAINT chk_allocation_close_reason
-    CHECK (close_reason IN ('corrected', 'superseded'))`,
-
-  `ALTER TABLE budget_policy_allocations
-    DROP CONSTRAINT IF EXISTS chk_allocation_validity`,
-
-  `ALTER TABLE budget_policy_allocations
-    ADD CONSTRAINT chk_allocation_validity
-    CHECK (valid_until IS NULL OR valid_until >= valid_from)`,
-
-  `CREATE INDEX IF NOT EXISTS idx_budget_policies_account_id
-    ON budget_policies(account_id)`,
-
-  `CREATE INDEX IF NOT EXISTS idx_budget_policy_allocations_policy_id
-    ON budget_policy_allocations(budget_policy_id)`,
-
-  // Enforces "valid_until IS NULL means active". Without it two open rows can
-  // coexist and Overview silently double-counts instead of raising an error.
-  `CREATE UNIQUE INDEX IF NOT EXISTS uq_budget_allocation_active
-    ON budget_policy_allocations(budget_policy_id)
-    WHERE valid_until IS NULL`,
- ];
-
- // Sequential on purpose: each statement depends on the previous one.
- for (const query of budgetDDL) {
-  await client.query(query);
- }
+ // See 010 for why the amount allows 0 and why the month check uses EXTRACT.
+ await client.query(`
+  CREATE TABLE IF NOT EXISTS budget_monthly_allocations (
+   budget_allocation_id SERIAL PRIMARY KEY,
+   account_id           INTEGER       NOT NULL
+    REFERENCES category_budget_accounts(account_id) ON DELETE CASCADE,
+   budget_month         DATE          NOT NULL,
+   budget_amount        DECIMAL(15,2) NOT NULL CHECK (budget_amount >= 0),
+   created_at           TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   updated_at           TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   CONSTRAINT uq_budget_allocation_month UNIQUE (account_id, budget_month),
+   CONSTRAINT chk_budget_month_is_first CHECK (EXTRACT(DAY FROM budget_month) = 1)
+  )
+ `);
 
  console.log(pc.green('Budget domain tables verified/created.'));
 }
@@ -485,60 +420,38 @@ export async function ensureCategoryBudgetCurrency(client = pool) {
 }
 
 /**
- * Backfill budget policies from the legacy category_budget_accounts.budget.
+ * Backfill the first monthly allocation from the legacy
+ * category_budget_accounts.budget column.
  *
  * Runtime counterpart of migration 012: production is built by this path, not
  * by the migration runner, so an account carrying a legacy budget would
- * otherwise stay invisible to the read path until somebody edited it and
- * applyAllocationForAccount repaired it.
+ * otherwise stay invisible to the read path until somebody edited it.
  *
- * Must run after the frequency catalog is seeded: the allocation resolves its
- * period by code, not by a literal id.
- *
- * valid_from is aligned to the start of the month, same rule as 010 and 012: a
- * budget rules a period, and created_at already records when the row was written.
- * The month is the account owner's, so the boundary matches the one
- * createBudgetPolicyForAccount persists for a budget created by hand.
+ * The row is written at the account's start month and nothing terminates it,
+ * which is the correct reading of a legacy cba.budget: a standing monthly
+ * amount that recurs until the user changes it.
  *
  * @param {object} client - Database client (pool or transaction)
  */
-export async function ensureBudgetPolicyBackfill(client = pool) {
- const policies = await client.query(`
-  INSERT INTO budget_policies (account_id)
-  SELECT cba.account_id
-  FROM category_budget_accounts cba
-  WHERE cba.budget IS NOT NULL AND cba.budget > 0
-  ON CONFLICT (account_id) DO NOTHING
- `);
-
- // The NOT EXISTS guard is what makes a re-run safe: without it every boot
- // would open a competing allocation and breach uq_budget_allocation_active.
+export async function ensureBudgetAllocationBackfill(client = pool) {
+ // ON CONFLICT is what makes a re-run safe: on every boot after the first this
+ // inserts nothing. See 012 for why there is no second AT TIME ZONE — it would
+ // make the ::date cast read the session's zone instead of the owner's.
  const allocations = await client.query(`
-  INSERT INTO budget_policy_allocations
-   (budget_policy_id, budget_amount, budget_frequency_type_id, valid_from)
-  SELECT bp.budget_policy_id,
-   cba.budget,
-   (SELECT budget_frequency_type_id FROM budget_frequency_types
-     WHERE budget_frequency_code = 'monthly'),
-   date_trunc('month', ua.account_start_date AT TIME ZONE u.timezone)
-    AT TIME ZONE u.timezone
-  FROM budget_policies bp
-  JOIN category_budget_accounts cba ON cba.account_id = bp.account_id
-  JOIN user_accounts ua ON ua.account_id = bp.account_id
-  JOIN users u ON u.user_id = ua.user_id
-  WHERE cba.budget > 0
-   AND NOT EXISTS (
-    SELECT 1 FROM budget_policy_allocations ba
-    WHERE ba.budget_policy_id = bp.budget_policy_id AND ba.valid_until IS NULL
-   )
+  INSERT INTO budget_monthly_allocations (account_id, budget_month, budget_amount)
+  SELECT cba.account_id,
+   date_trunc('month', ua.account_start_date AT TIME ZONE u.timezone)::date,
+   cba.budget
+  FROM category_budget_accounts cba
+  JOIN user_accounts ua ON ua.account_id = cba.account_id
+  JOIN users u          ON u.user_id     = ua.user_id
+  WHERE cba.budget IS NOT NULL AND cba.budget > 0
+  ON CONFLICT (account_id, budget_month) DO NOTHING
  `);
 
- if (policies.rowCount > 0 || allocations.rowCount > 0) {
+ if (allocations.rowCount > 0) {
   console.log(
-   pc.green(
-    `Budget backfill: ${policies.rowCount} policy(ies), ` +
-     `${allocations.rowCount} allocation(s) created.`,
-   ),
+   pc.green(`Budget backfill: ${allocations.rowCount} allocation(s) created.`),
   );
  }
 }

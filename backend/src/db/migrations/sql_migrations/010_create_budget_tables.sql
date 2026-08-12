@@ -1,12 +1,15 @@
 -- 010_create_budget_tables.sql
 --
--- Budget domain: frequency catalog, policies, and SCD Type 2 allocations.
--- Purely additive: category_budget_accounts is never modified. The legacy
--- `budget` column stays in place and keeps serving reads until the new system
--- is verified behind USE_NEW_BUDGET_SYSTEM.
+-- Budget domain: one monthly allocation per user decision.
 --
--- Pre-migration audit (local, 2026-07-31):
---   null_budget: 0 | zero_budget: 0 | negative_budget: 0 | will_migrate: 1 | total: 1
+-- A row is in force from its month onwards until a later row replaces it, so
+-- "this budget recurs" is already encoded as "no later row terminates it".
+-- Storing that as a column would create a second source of truth for one fact,
+-- and the two can disagree. See PLAN_BUDGET_V1 §3.3.
+--
+-- Purely additive: category_budget_accounts is never modified. The legacy
+-- `budget` column stays in place and keeps serving the frontend until the
+-- module's read path is migrated.
 --
 -- No BEGIN/COMMIT here: runMigrations.js wraps every file in one transaction
 -- together with its INSERT INTO migrations. A COMMIT inside the file closes
@@ -15,126 +18,44 @@
 
 -- UP
 
-CREATE TABLE IF NOT EXISTS budget_frequency_types (
- budget_frequency_type_id SERIAL PRIMARY KEY,
- budget_frequency_code    VARCHAR(20)  NOT NULL UNIQUE,
- budget_frequency_name    VARCHAR(50)  NOT NULL,
- sort_order               INTEGER      NOT NULL DEFAULT 0,
- is_active                BOOLEAN      NOT NULL DEFAULT TRUE,
- created_at               TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP,
- updated_at               TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP
-);
-
--- One policy per account. ON DELETE CASCADE: removing an account must remove
--- its budget history, otherwise orphan policies keep appearing in aggregates.
-CREATE TABLE IF NOT EXISTS budget_policies (
- budget_policy_id SERIAL PRIMARY KEY,
- account_id       INTEGER NOT NULL UNIQUE
+-- budget_month is a DATE pinned to the first of the month rather than a
+-- (year, month) pair: `<=` and generate_series then work natively, and ordering
+-- needs no composite comparison.
+--
+-- CHECK (budget_amount >= 0) rather than > 0. Under carry-forward an absent row
+-- terminates nothing — the previous row keeps governing — so the only way to
+-- express "no budget from month M" is a positive marker, and zero is the only
+-- one available. It means "the decision not to budget", not "a budget of zero".
+-- The form still rejects 0; only the explicit remove action writes it (§3.4).
+--
+-- EXTRACT(DAY ...) = 1 rather than date_trunc: date_trunc(text, timestamptz) is
+-- stable, not immutable, so it cannot appear in a CHECK, and the date overload
+-- reaches the immutable version only through an implicit cast.
+--
+-- No currency column: it is inherited from category_budget_accounts.currency_id,
+-- which migration 011 already makes NOT NULL. A copy here can drift.
+--
+-- No extra index: uq_budget_allocation_month is the index the resolution needs,
+-- and Postgres walks its btree backwards for ORDER BY budget_month DESC LIMIT 1.
+CREATE TABLE IF NOT EXISTS budget_monthly_allocations (
+ budget_allocation_id SERIAL PRIMARY KEY,
+ account_id           INTEGER       NOT NULL
   REFERENCES category_budget_accounts(account_id) ON DELETE CASCADE,
- created_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
- updated_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+ budget_month         DATE          NOT NULL,
+ budget_amount        DECIMAL(15,2) NOT NULL CHECK (budget_amount >= 0),
+ created_at           TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ updated_at           TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ CONSTRAINT uq_budget_allocation_month UNIQUE (account_id, budget_month),
+ CONSTRAINT chk_budget_month_is_first CHECK (EXTRACT(DAY FROM budget_month) = 1)
 );
-
--- SCD Type 2: a new amount closes the previous row and inserts a new one.
--- History is never overwritten.
---
--- valid_until = valid_from is legal on purpose. Correcting a figure closes the
--- replaced version at its own start, so it spans zero time and the read
--- predicate (valid_until > date) can never find it: the record keeps the row
--- while stating that it never governed anything. close_reason tells the two
--- closes apart, since otherwise a correction and a forward change leave
--- identical data.
---
--- ON DELETE RESTRICT on the frequency: a catalog entry must not disappear
--- while historical rows still reference it.
-CREATE TABLE IF NOT EXISTS budget_policy_allocations (
- budget_allocation_id     SERIAL PRIMARY KEY,
- budget_policy_id         INTEGER NOT NULL
-  REFERENCES budget_policies(budget_policy_id) ON DELETE CASCADE,
- budget_amount            DECIMAL(15,2) NOT NULL CHECK (budget_amount > 0),
- budget_frequency_type_id INTEGER NOT NULL
-  REFERENCES budget_frequency_types(budget_frequency_type_id) ON DELETE RESTRICT,
- valid_from               TIMESTAMPTZ NOT NULL,
- valid_until              TIMESTAMPTZ,
- close_reason             VARCHAR(20),
- created_at               TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
- CONSTRAINT chk_allocation_close_reason
-  CHECK (close_reason IN ('corrected', 'superseded')),
- CONSTRAINT chk_allocation_validity
-  CHECK (valid_until IS NULL OR valid_until >= valid_from)
-);
-
-CREATE INDEX IF NOT EXISTS idx_budget_policies_account_id
- ON budget_policies(account_id);
-
-CREATE INDEX IF NOT EXISTS idx_budget_policy_allocations_policy_id
- ON budget_policy_allocations(budget_policy_id);
-
--- The constraint that makes SCD Type 2 real rather than a naming convention.
--- Without it, "valid_until IS NULL means active" is an assumption; two open
--- rows would silently double-count in Overview instead of raising an error.
-CREATE UNIQUE INDEX IF NOT EXISTS uq_budget_allocation_active
- ON budget_policy_allocations(budget_policy_id)
- WHERE valid_until IS NULL;
-
--- Catalog seed. Codes must match MONTHS_PER_PERIOD in budgetConfig.js exactly.
-INSERT INTO budget_frequency_types
- (budget_frequency_type_id, budget_frequency_code, budget_frequency_name, sort_order)
-VALUES
- (1, 'monthly',    'Monthly',    1),
- (2, 'quarterly',  'Quarterly',  2),
- (3, 'four-month', 'Four-month', 3),
- (4, 'semiannual', 'Semiannual', 4),
- (5, 'yearly',     'Yearly',     5)
-ON CONFLICT (budget_frequency_code) DO NOTHING;
-
--- Explicit IDs do not advance a SERIAL sequence. Without this, the first
--- insert that omits the ID fails with a duplicate primary key.
-SELECT setval('budget_frequency_types_budget_frequency_type_id_seq',
-              (SELECT MAX(budget_frequency_type_id) FROM budget_frequency_types));
-
--- Backfill: budget > 0 only. Zero is not a budget — the frontend already
--- rejects it, the backend used to manufacture 0.0, and a zero policy would
--- report 0% execution forever.
-INSERT INTO budget_policies (account_id)
-SELECT cba.account_id
-FROM category_budget_accounts cba
-WHERE cba.budget IS NOT NULL AND cba.budget > 0
-ON CONFLICT (account_id) DO NOTHING;
-
--- Frequency 1 = monthly: the legacy table has no frequency column, and monthly
--- is the only period the legacy system ever produced.
---
--- valid_from is the start of that month, not an instant: a budget belongs to a
--- canonical period, and created_at already records when the row was written.
--- The month is the account owner's, not the server's: a boundary aligned in any
--- other zone opens inside the previous period when the owner reads it back.
-INSERT INTO budget_policy_allocations
- (budget_policy_id, budget_amount, budget_frequency_type_id, valid_from)
-SELECT bp.budget_policy_id,
- cba.budget,
- 1,
- date_trunc('month', ua.account_start_date AT TIME ZONE u.timezone)
-  AT TIME ZONE u.timezone
-FROM budget_policies bp
-JOIN category_budget_accounts cba ON cba.account_id = bp.account_id
-JOIN user_accounts ua ON ua.account_id = bp.account_id
-JOIN users u ON u.user_id = ua.user_id
-WHERE cba.budget > 0
- AND NOT EXISTS (
-  SELECT 1 FROM budget_policy_allocations ba
-  WHERE ba.budget_policy_id = bp.budget_policy_id AND ba.valid_until IS NULL
- );
 
 -- DOWN
--- Run manually. Safe because the migration is purely additive: dropping these
--- tables restores the exact pre-010 state. The final DELETE lets db:migrate
--- re-apply the file afterwards.
+-- Run manually. Safe because the migration is purely additive: dropping the
+-- table restores the exact pre-010 state, and the legacy cba.budget column it
+-- was backfilled from is still there. The final DELETE lets db:migrate re-apply
+-- the file afterwards.
 --
 -- BEGIN;
--- DROP INDEX IF EXISTS uq_budget_allocation_active;
--- DROP TABLE IF EXISTS budget_policy_allocations CASCADE;
--- DROP TABLE IF EXISTS budget_policies CASCADE;
--- DROP TABLE IF EXISTS budget_frequency_types CASCADE;
+-- DROP TABLE IF EXISTS budget_monthly_allocations CASCADE;
 -- DELETE FROM migrations WHERE filename = '010_create_budget_tables.sql';
 -- COMMIT;

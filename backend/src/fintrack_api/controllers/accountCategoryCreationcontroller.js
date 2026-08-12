@@ -16,12 +16,8 @@ import { prepareTransactionOption } from '../../utils/fintrackUtils/transactionM
 import { buildFxMetadata } from '../../utils/fintrackUtils/transactionManagement/fxMetadataHelper.js';
 import { getCurrencyId } from '../../utils/currencyLookup.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
-import { budgetPolicyService } from '../services/budget_services/services/budgetPolicyService.js';
+import { budgetAllocationService } from '../services/budget_services/services/budgetAllocationService.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
-import {
-  ALLOWED_ALLOCATION_FREQUENCIES,
-  DEFAULT_FREQUENCY,
-} from '../services/budget_services/core/budgetConfig.js';
 
 //-----------------
 //endpoint: POST: http://localhost:5000/api/fintrack/account/new_account/category_budget?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c
@@ -59,7 +55,6 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       subcategory: subcategory_raw,
       name: category_name_raw,
       budget,
-      budgetFrequencyCode,
       sourceAccountId,
     } = req.body;
 
@@ -76,28 +71,19 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
         : req.body.name;
 
     // A category_budget account without a positive budget is not a budget.
-    // Same rule at every layer: the frontend zod schemas, budgetVsActualCalculator,
-    // and CHECK (budget_amount > 0) on budget_policy_allocations.
+    // The database allows 0 because that is how "stop budgeting" is expressed
+    // later on, but an account is never CREATED that way.
     // Number() rather than parseFloat(): parseFloat('12abc') silently returns 12.
     // Number.isFinite() rather than !isNaN(): the global isNaN coerces first, so
     // isNaN('') is false, and it also rejects the Infinity that Number('1e999') gives.
+    //
+    // Validated here rather than in the service because this controller's catch
+    // runs handlePostgresError, which ignores error.status and would turn a 400
+    // into a 500.
     const category_nature_budget = Number(budget);
 
     if (!Number.isFinite(category_nature_budget) || category_nature_budget <= 0) {
       const message = 'Budget amount is required and must be greater than 0.';
-      console.warn(pc.redBright(message));
-      return res.status(400).json({ status: 400, message });
-    }
-
-    // The creation form does not offer a frequency selector yet, so monthly is
-    // the default. Validated here rather than in the service because this
-    // controller's catch runs handlePostgresError, which ignores error.status
-    // and would turn a 400 into a 500.
-    const budget_frequency_code =
-      budgetFrequencyCode?.trim().toLowerCase() || DEFAULT_FREQUENCY;
-
-    if (!ALLOWED_ALLOCATION_FREQUENCIES.includes(budget_frequency_code)) {
-      const message = `budgetFrequencyCode must be one of: ${ALLOWED_ALLOCATION_FREQUENCIES.join(', ')}.`;
       console.warn(pc.redBright(message));
       return res.status(400).json({ status: 400, message });
     }
@@ -265,16 +251,15 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     };
     //--------------------
     // The row above is the account, not the budget. Every read path resolves the
-    // amount from budget_policy_allocations, so an account created without a
-    // policy came back as unbudgeted no matter what the user typed. The legacy
-    // cba.budget column keeps its value and its writer: this is additive.
-    // Read on the transaction's client, so the zone the boundary is aligned to
-    // is the one this transaction sees.
-    const budget_policy = await budgetPolicyService.createBudgetPolicyForAccount(
+    // amount from budget_monthly_allocations, so an account created without an
+    // allocation came back as unbudgeted no matter what the user typed. The
+    // legacy cba.budget column keeps its value and its writer: this is additive.
+    // Read on the transaction's client, so the month the row is dated to is
+    // resolved in the zone this transaction sees.
+    const budget_allocation = await budgetAllocationService.createAllocationForAccount(
       client,
       account_id,
       category_nature_budget,
-      budget_frequency_code,
       account_start_date ?? transaction_actual_date,
       await getUserTimeZone(client, userId),
     );
@@ -436,7 +421,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
           currency_code,
         },
         new_category_budget_account: category_budget_account,
-        budget_policy,
+        budget_allocation,
 
         new_account_data: {
           account_name: newAccountInfo.account_name,
