@@ -375,17 +375,17 @@ async function applyAllocationForAccount(
  // An edit that does not mention the frequency keeps the one in force. Falling
  // back to the default instead would silently reset a quarterly budget to
  // monthly every time the user changed only the amount.
- const targetCode =
+ const targetFrequencyCode =
   budgetFrequencyCode ?? current.budget_frequency_code ?? DEFAULT_FREQUENCY;
 
- const normalizedAmount = normalizeAllocationInput(budgetAmount, targetCode);
+ const normalizedAmount = normalizeAllocationInput(budgetAmount, targetFrequencyCode);
 
  if (!current.budget_policy_id) {
   return createBudgetPolicyForAccount(
    client,
    accountId,
    normalizedAmount,
-   targetCode,
+   targetFrequencyCode,
    current.account_start_date,
    timeZone,
   );
@@ -402,7 +402,7 @@ async function applyAllocationForAccount(
  if (
   current.budget_allocation_id
   && toAmount(current.budget_amount) === normalizedAmount
-  && current.budget_frequency_code === targetCode
+  && current.budget_frequency_code === targetFrequencyCode
  ) {
   return null;
  }
@@ -411,7 +411,7 @@ async function applyAllocationForAccount(
   client,
   current.budget_policy_id,
   normalizedAmount,
-  targetCode,
+  targetFrequencyCode,
   intent,
   timeZone,
  );

@@ -104,7 +104,6 @@ export type BudgetTotalsType = {
  actualSpent: number;
  remainingBudget: number;
  actualVsBudgetDifference: number;
- executionPercentage: number;
 };
 
 //-----META--------------------

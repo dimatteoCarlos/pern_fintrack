@@ -17,7 +17,7 @@ import {
 } from '../db/budgetTransactionRepository.js';
 import { calculateBudgetVsActual } from '../calculators/budgetVsActualCalculator.js';
 import { makeBudgetAccountStatus } from '../core/makeBudgetAccountStatus.js';
-import { money, toAmount, toRate } from '../core/money.js';
+import { money, toAmount } from '../core/money.js';
 import { DEFAULT_FREQUENCY, MONTHS_PER_PERIOD } from '../core/budgetConfig.js';
 import { getCurrencyCodeSync } from '../../../../utils/currencyLookup.js';
 
@@ -308,9 +308,9 @@ const makeTotals = (accountsStatus) => {
   actualSpent: toAmount(totals.actualSpent),
   remainingBudget: toAmount(difference),
   actualVsBudgetDifference: toAmount(difference),
-  executionPercentage: totals.budgetAccumulatedAmount.isZero()
-   ? 0
-   : toRate(totals.actualSpent.dividedBy(totals.budgetAccumulatedAmount).times(100)),
+  // No aggregate executionPercentage. Its denominator adds amounts that recur
+  // on different periods, so the ratio compares a month of spending against a
+  // sum of months, quarters and years. Per row it is exact and it stays there.
  };
 };
 
