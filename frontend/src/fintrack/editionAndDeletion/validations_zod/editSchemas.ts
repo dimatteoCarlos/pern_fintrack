@@ -54,11 +54,12 @@ const MINIMUM_BUDGET_AMOUNT = 0.01;
 //📊 3. CATEGORY BUDGET SCHEMA
 export const categoryBudgetEditShema = baseAccountEditSchema.extend({
   // Checked here rather than in numberSchema, which pocket_saving also uses.
-  budget: numberSchema
-    .refine((amount) => amount >= MINIMUM_BUDGET_AMOUNT, {
-      message: `* Budget must be at least ${MINIMUM_BUDGET_AMOUNT}`,
-    })
-    .optional(),
+  // Not optional: the field config declares it required, the form preloads it
+  // from the account, and an emptied one has to fail here — the PATCH would
+  // otherwise leave the budget out and report the save as successful.
+  budget: numberSchema.refine((amount) => amount >= MINIMUM_BUDGET_AMOUNT, {
+    message: `* Budget must be at least ${MINIMUM_BUDGET_AMOUNT}`,
+  }),
   //strict limits
   category_name: optionalButNotEmptySchema(DB_MAX_LENGTHS.category_name),
   subcategory: optionalButNotEmptySchema(DB_MAX_LENGTHS.subcategory),
