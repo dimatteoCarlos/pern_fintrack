@@ -120,9 +120,8 @@ const ACCOUNTS_QUERY = `
 // per account.
 //
 // An account with no row at or before the month is absent from the result, not
-// zero. Absence is what "never budgeted" means, and a stored 0 is a decision the
-// user took (§3.5) — collapsing them here would erase the distinction before the
-// service can report it.
+// zero. The caller resolves that absence to an effective budget of 0 (§3.5); the
+// query reports what the table holds and does not invent a row.
 const ALLOCATION_QUERY = `
   SELECT DISTINCT ON (account_id)
     account_id,

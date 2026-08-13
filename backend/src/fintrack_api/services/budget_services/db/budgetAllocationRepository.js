@@ -102,7 +102,7 @@ export async function getAllocationBefore(client, accountId, month) {
  * @param {boolean} onlyThisMonth - true writes the terminator that restores the
  *  previous amount from next month. false leaves the amount recurring, which is
  *  the normal case and has no name in the payload.
- * @returns {Promise<object>} the allocation written, and the terminator if any.
+ * @returns {Promise<object>} the amount written, and what next month returns to.
  */
 export async function writeAllocation(
  client,
@@ -139,29 +139,19 @@ export async function writeAllocation(
   [accountId, month, budgetAmount],
  );
 
- let terminator = null;
-
  if (onlyThisMonth) {
-  // COALESCE to 0 rather than skipping the insert: with nothing to return to,
-  // the next month must read as "no budget", and only a row can stop the
-  // carry-forward. Skipping it would carry this amount forward forever — the
-  // exact opposite of what the caller asked for.
-  const { rows: nextRows } = await client.query(
+  // Falling back to 0 rather than skipping the insert: with nothing to return
+  // to, the next month resolves to an effective budget of 0, and only a row can
+  // stop the carry-forward. Skipping it would carry this amount forward forever
+  // — the exact opposite of what the caller asked for.
+  await client.query(
    `INSERT INTO budget_monthly_allocations (account_id, budget_month, budget_amount)
-    VALUES ($1, ($2::date + INTERVAL '1 month')::date, $3)
-    RETURNING budget_allocation_id, budget_month::text, budget_amount`,
+    VALUES ($1, ($2::date + INTERVAL '1 month')::date, $3)`,
    [accountId, month, carried ?? 0],
   );
-
-  terminator = {
-   budgetAllocationId: nextRows[0].budget_allocation_id,
-   budgetMonth: nextRows[0].budget_month,
-   budgetAmount: toAmount(nextRows[0].budget_amount),
-  };
  }
 
  return {
-  budgetAllocationId: rows[0].budget_allocation_id,
   accountId: rows[0].account_id,
   budgetMonth: rows[0].budget_month,
   budgetAmount: toAmount(rows[0].budget_amount),
@@ -211,7 +201,6 @@ export async function insertFirstAllocation(
  );
 
  return {
-  budgetAllocationId: rows[0].budget_allocation_id,
   accountId: rows[0].account_id,
   budgetMonth: rows[0].budget_month,
   budgetAmount: toAmount(rows[0].budget_amount),
