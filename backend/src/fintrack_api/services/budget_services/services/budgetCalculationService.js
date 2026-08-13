@@ -32,8 +32,8 @@ const MAX_SERIES_MONTHS = 60;
 /**
  * Turn one repository row into a BudgetAccountStatus.
  *
- * Four derived figures, all of them arithmetic on two numbers. There is no
- * branch for the unbudgeted account: its budget is 0, so remaining comes out
+ * Four derived figures, all of them arithmetic on two numbers. An account with
+ * no decision in force needs no branch: its budget is 0, so remaining comes out
  * negative and isOverBudget comes out true, which is exactly its situation.
  * The one thing 0 cannot produce is a percentage.
  */
@@ -47,7 +47,6 @@ const buildAccountStatus = (entry) => {
   accountName: entry.accountName,
   subcategory: entry.subcategory,
   currency: getCurrencyCodeSync(entry.currencyId),
-  isBudgeted: entry.isBudgeted,
   budgetAmount,
   nextMonthBudget: money(entry.nextMonthBudget),
   actualSpent,
@@ -63,9 +62,9 @@ const buildAccountStatus = (entry) => {
  * Turn one repository month into a BudgetMonthStatus.
  *
  * Same four derived figures as an account status, and the same absence of a
- * branch for the unbudgeted case: the month's budget is 0, so remaining comes
- * out negative and isOverBudget comes out true, which is what spending against
- * no budget means.
+ * branch when no decision is in force: the month's budget is 0, so remaining
+ * comes out negative and isOverBudget comes out true, which is what spending
+ * against no budget means.
  */
 const buildMonthStatus = (entry) => {
  const budgetAmount = money(entry.budgetAmount);
@@ -74,7 +73,6 @@ const buildMonthStatus = (entry) => {
 
  return makeBudgetMonthStatus({
   month: entry.month,
-  isBudgeted: entry.isBudgeted,
   budgetAmount,
   actualSpent,
   remainingBudget: budgetAmount.minus(actualSpent),
@@ -182,14 +180,10 @@ const makeSeriesTotals = (months) => {
   executionPercentage: sums.budgetAmount.isZero()
    ? null
    : toRate(sums.actualSpent.dividedBy(sums.budgetAmount).times(HUNDRED)),
-  // A month set to zero counts: budgeted is the existence of the decision, not
-  // its size (§8.2).
-  budgetedMonthCount: months.filter((m) => m.isBudgeted).length,
   monthsOverBudget: months.filter((m) => m.isOverBudget).length,
-  // Divided by EVERY month in the range, not by the budgeted ones. Spending
-  // happens whether or not the account was budgeted, and dividing by the
-  // budgeted months alone reports an average higher than any month actually
-  // spent (§8.2).
+  // Divided by EVERY month in the range. Spending happens whether or not a
+  // decision was in force, and a smaller denominator would report an average
+  // higher than any month actually spent (§8.2).
   averageMonthlySpend:
    months.length === 0 ? 0 : toAmount(sums.actualSpent.dividedBy(months.length)),
  };
@@ -224,7 +218,6 @@ const MIXED_CURRENCY_NOTICE =
 const makeTotals = (accountsStatus) => {
  const currencies = new Set(accountsStatus.map((r) => r.currency));
  const currency = currencies.size === 1 ? [...currencies][0] : null;
- const budgetedAccountCount = accountsStatus.filter((r) => r.isBudgeted).length;
 
  if (accountsStatus.length > 0 && currency === null) {
   return {
@@ -233,7 +226,6 @@ const makeTotals = (accountsStatus) => {
    actualSpent: null,
    remainingBudget: null,
    executionPercentage: null,
-   budgetedAccountCount,
   };
  }
 
@@ -253,7 +245,6 @@ const makeTotals = (accountsStatus) => {
   executionPercentage: sums.budgetAmount.isZero()
    ? null
    : toRate(sums.actualSpent.dividedBy(sums.budgetAmount).times(HUNDRED)),
-  budgetedAccountCount,
  };
 };
 

@@ -7,7 +7,7 @@
 // No monetary field is ever null. An account with no allocation reports a budget
 // of 0 and a real actualSpent, so remainingBudget comes out negative — which is
 // what being in the red means, and what null failed to say. The absence of a
-// budget travels in isBudgeted and nowhere else.
+// decision IS that 0: there is no separate unbudgeted state.
 //
 // executionPercentage is the one exception: zero has no percentage, and its
 // absence is the fact being reported.
@@ -24,7 +24,6 @@ export function makeBudgetAccountStatus({
  accountName = null,
  subcategory = null,
  currency,
- isBudgeted,
  budgetAmount,
  nextMonthBudget,
  actualSpent,
@@ -38,7 +37,7 @@ export function makeBudgetAccountStatus({
 
  assertBudgetFigures(
   'BudgetAccountStatus',
-  { isBudgeted, isOverBudget, executionPercentage },
+  { isOverBudget, executionPercentage },
   { budgetAmount, nextMonthBudget, actualSpent, remainingBudget },
  );
 
@@ -48,10 +47,6 @@ export function makeBudgetAccountStatus({
   accountName,
   subcategory,
   currency,
-  // Whether an allocation exists for the reported month. It is NOT
-  // "budgetAmount > 0": an account the user deliberately set to zero is
-  // budgeted, and the screen must not label it the same as one that never was.
-  isBudgeted,
   budgetAmount: toAmount(budgetAmount),
   // What next month is already set to. The card shows its exception line by
   // comparing this against budgetAmount, so a terminator repeating the same

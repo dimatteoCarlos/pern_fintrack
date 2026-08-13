@@ -181,15 +181,13 @@ const SPENT_QUERY = `
 /**
  * The budget of a set of accounts for the current month.
  *
- * Returns ONE entry per requested account, budgeted or not: an account the
- * caller asked about and did not get back is indistinguishable from one the
- * backend dropped, and the screen has to be able to say "this category has no
- * budget" (§3.5).
+ * Returns ONE entry per requested account: an account the caller asked about and
+ * did not get back is indistinguishable from one the backend dropped, and the
+ * screen has to be able to report a category whose budget is 0 (§3.5).
  *
- * budgetAmount is always a number, 0 when no allocation is in force. Whether one
- * exists is isBudgeted, read off the presence of the row and never off the
- * magnitude (§1.9): a stored 0 and an absent row are the same arithmetic and
- * two different sentences on screen.
+ * budgetAmount is always a number, 0 when no allocation is in force. An absent
+ * decision and a decision of 0 resolve to the same effective budget — the domain
+ * has no separate unbudgeted state (§1.9).
  *
  * nextMonthBudget is the same resolution one month later. It is what tells the
  * card that this month is an exception, and comparing the two amounts is
@@ -232,11 +230,8 @@ export async function getMonthlyStatusForAccounts(pool, accountIds, timeZone = '
    accountName: row.account_name,
    subcategory: row.subcategory ?? null,
    currencyId: row.currency_id,
-   // Existence and magnitude are reported separately. The amount falls back to
-   // 0 so nothing downstream branches on a null, and isBudgeted keeps the
-   // distinction the amount can no longer carry: a stored 0 is a decision, an
-   // absent row is not.
-   isBudgeted: currentByAccount.has(row.account_id),
+   // No decision in force resolves to 0, which is the effective budget the
+   // domain defines for that case and not a null anything has to branch on.
    budgetAmount: currentByAccount.get(row.account_id) ?? 0,
    nextMonthBudget: nextByAccount.get(row.account_id) ?? 0,
    // 0 is right for spending too: no matching transaction means none was made.
@@ -343,10 +338,8 @@ const SPENT_BY_MONTH_QUERY = `
  * `from` and `to` inclusive — no gaps. A gap would make the caller re-derive the
  * carry-forward, which is the calculation this endpoint exists to centralise.
  *
- * budgetAmount is always a number, 0 when no allocation is in force, and
- * isBudgeted carries whether one exists. Same rule as the status path: a stored
- * 0 is a decision the user took, an absent row is not, and the amount alone
- * cannot tell them apart.
+ * budgetAmount is always a number, 0 when no allocation is in force. Same rule
+ * as the status path: the absence of a decision is an effective budget of 0.
  *
  * @param {object} pool - Database pool
  * @param {number[]} accountIds - Accounts to read
@@ -384,8 +377,8 @@ export async function getMonthlySeriesForAccounts(pool, accountIds, from, to, ti
   const spentInMonth = spentByAccount.get(row.account_id)?.get(row.budget_month) ?? 0;
   monthsByAccount.get(row.account_id).push({
    month: row.budget_month,
-   // NULL from the subquery means no allocation at or before this month.
-   isBudgeted: row.budget_amount !== null,
+   // NULL from the subquery means no decision at or before this month, which
+   // resolves to an effective budget of 0.
    budgetAmount: row.budget_amount === null ? 0 : toAmount(row.budget_amount),
    actualSpent: spentInMonth,
   });

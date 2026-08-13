@@ -11,22 +11,17 @@
 //
 // Identity stays with each factory. Only the arithmetic invariants live here.
 
-import { isFiniteMoney, toAmount } from './money.js';
+import { isFiniteMoney } from './money.js';
 
 /**
  * Reject a set of budget figures that cannot be true together.
  *
  * @param {string} label - factory name, so the message says which shape failed
- * @param {object} flags - { isBudgeted, isOverBudget, executionPercentage }
- * @param {object} amounts - every monetary field, keyed by name. budgetAmount is
- *  required: the coherence rule below is stated in terms of it
+ * @param {object} flags - { isOverBudget, executionPercentage }
+ * @param {object} amounts - every monetary field, keyed by name
  */
 export function assertBudgetFigures(label, flags, amounts) {
- const { isBudgeted, isOverBudget, executionPercentage } = flags;
-
- if (typeof isBudgeted !== 'boolean') {
-  throw new Error(`${label}: isBudgeted is required and must be a boolean`);
- }
+ const { isOverBudget, executionPercentage } = flags;
 
  if (typeof isOverBudget !== 'boolean') {
   throw new Error(`${label}: isOverBudget is required and must be a boolean`);
@@ -44,13 +39,5 @@ export function assertBudgetFigures(label, flags, amounts) {
  // "not a finite amount", not as an incoherence it is not the cause of.
  if (executionPercentage !== null && !isFiniteMoney(executionPercentage)) {
   throw new Error(`${label}: executionPercentage must be a finite amount or null`);
- }
-
- // Being budgeted is the existence of an allocation, never its magnitude: an
- // account deliberately set to 0 IS budgeted. Only one direction is checkable —
- // an account with no allocation cannot carry an amount, while a budgeted one is
- // free to carry 0.
- if (!isBudgeted && toAmount(amounts.budgetAmount) !== 0) {
-  throw new Error(`${label}: an unbudgeted entry cannot carry an amount`);
  }
 }

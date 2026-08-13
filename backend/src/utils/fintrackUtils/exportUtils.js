@@ -66,13 +66,9 @@ export function convertSeriesToCSV(accountsSeries) {
  const accounts = Array.isArray(accountsSeries) ? accountsSeries : [];
 
  const body = accounts.flatMap((account) =>
-  // The read returns unbudgeted months too, so the chart can show them as such.
-  // A CSV has no room for that distinction: the row would be a line of zeros
-  // indistinguishable from a budget that was never spent. Exporting only the
-  // budgeted months keeps the file meaning what it did — and over a range it
-  // also keeps an account out of the file for the months before it existed.
+  // Every month of the requested range, including the ones that resolve to 0.
+  // The caller asked for a range and the file answers the range.
   (Array.isArray(account.months) ? account.months : [])
-   .filter((m) => m.isBudgeted)
    .map((m) =>
     [
      // The name rides on the series object. It used to come from a Map the

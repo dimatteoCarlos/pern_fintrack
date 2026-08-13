@@ -25,7 +25,6 @@ const MONTH_PATTERN = /^\d{4}-\d{2}-01$/;
 
 export function makeBudgetMonthStatus({
  month,
- isBudgeted,
  budgetAmount,
  actualSpent,
  remainingBudget,
@@ -38,17 +37,14 @@ export function makeBudgetMonthStatus({
 
  assertBudgetFigures(
   'BudgetMonthStatus',
-  { isBudgeted, isOverBudget, executionPercentage },
+  { isOverBudget, executionPercentage },
   { budgetAmount, actualSpent, remainingBudget },
  );
 
  return Object.freeze({
   month,
   // The carry-forward fill means a month with no allocation in force is still
-  // present in the series. This is what distinguishes it from a month the user
-  // budgeted at zero — the two are the same arithmetic and two different
-  // sentences on screen.
-  isBudgeted,
+  // present in the series, reporting the 0 that absence resolves to.
   budgetAmount: toAmount(budgetAmount),
   actualSpent: toAmount(actualSpent),
   // Negative for a month that was spent against without a budget. That is the
