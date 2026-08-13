@@ -138,11 +138,12 @@ async function createAllocationForAccount(
  * start. That repairs every account created before this table existed and every
  * row the backfill skipped, instead of leaving it invisible to the read path.
  *
- * @returns {Promise<object|null>} the allocation written, or null when the
- *  amount already in force is the one being sent. The edit form resends the
- *  budget on every save, and writing it back would delete a terminator the user
- *  set from the budget screen — silently turning a one-month exception into a
- *  permanent change.
+ * @returns {Promise<object|null>} accountId, budgetMonth and budgetAmount —
+ *  always those three, whichever path wrote the row, so the shape does not
+ *  depend on state the caller cannot see. null when the amount already in force
+ *  is the one being sent: the edit form resends the budget on every save, and
+ *  writing it back would delete a terminator the user set from the budget
+ *  screen — silently turning a one-month exception into a permanent change.
  */
 async function applyAllocationForAccount(
  client,
@@ -173,7 +174,21 @@ async function applyAllocationForAccount(
   return null;
  }
 
- return writeAllocation(client, accountId, normalizedAmount, false, timeZone);
+ const written = await writeAllocation(
+  client,
+  accountId,
+  normalizedAmount,
+  false,
+  timeZone,
+ );
+
+ // Projected to the three contract fields. The editor has no exception control,
+ // so onlyThisMonth is always false and restoresTo always null here (§7.4).
+ return {
+  accountId: written.accountId,
+  budgetMonth: written.budgetMonth,
+  budgetAmount: written.budgetAmount,
+ };
 }
 
 /**
