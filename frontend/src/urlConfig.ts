@@ -187,6 +187,24 @@ export const url_get_account_details_by_id_for_edition: string =
 export const url_patch_account_edit = BASE_URL_APP + 'account/edit';
 
 // ===================================
+// 📊 BUDGET MODULE (PLAN_BUDGET_V1 §7.3)
+// ===================================
+// The current month never travels: the server resolves it from the account
+// owner's timezone. Only a historical range is sent, as from/to.
+
+// POST /api/fintrack/budget/accounts/status  { accountIds: [] }
+export const url_budget_accounts_status: string =
+  BASE_URL_APP + 'budget/accounts/status';
+
+// PUT /api/fintrack/budget/accounts/:accountId/current  { amount, onlyThisMonth }
+export const url_budget_account_current = (accountId: string | number) =>
+  `${BASE_URL_APP}budget/accounts/${accountId}/current`;
+
+// GET /api/fintrack/budget/accounts/:accountId/series?from=&to=
+export const url_budget_account_series = (accountId: string | number) =>
+  `${BASE_URL_APP}budget/accounts/${accountId}/series`;
+
+// ===================================
 //📝 GET IMPACT REPORT URL (RTA-specific)
 // ===================================
 /**
