@@ -20,20 +20,26 @@ import { z } from 'zod';
 
 /**
  * POST /budget/accounts/status
- * Body: accountIds (array, required)
+ * Body: accountIds (array, optional — omitted means every budget account owned)
  */
 export const budgetAccountsStatusBodySchema = z.object({
+ // Optional, and the omission carries meaning: no key at all asks for every
+ // budget account the caller owns, resolved server-side from the ownership set
+ // the controller already builds. min(1) survives for the case where the key IS
+ // present, so an explicit [] stays a 400 — "all of them" and "none of them"
+ // must not collapse into the same request.
  accountIds: z.array(
   z.coerce.number().positive({
    message: 'each accountId must be a positive number',
   })
  ).min(1, {
   message: 'accountIds must contain at least one account',
- }),
+ }).optional(),
 })
 .strict()
 .refine(
  (data) => {
+  if (!data.accountIds) return true;
   const uniqueIds = new Set(data.accountIds);
   return data.accountIds.length === uniqueIds.size;
  },

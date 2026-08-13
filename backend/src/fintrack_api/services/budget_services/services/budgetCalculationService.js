@@ -16,6 +16,7 @@ import {
  getMonthlyStatusForAccounts,
 } from '../db/budgetTransactionRepository.js';
 import { makeBudgetAccountStatus } from '../core/makeBudgetAccountStatus.js';
+import { makeBudgetCategoryStatus } from '../core/makeBudgetCategoryStatus.js';
 import { makeBudgetMonthStatus } from '../core/makeBudgetMonthStatus.js';
 import { money, toAmount, toRate } from '../core/money.js';
 import { getCurrencyCodeSync } from '../../../../utils/currencyLookup.js';
@@ -45,6 +46,7 @@ const buildAccountStatus = (entry) => {
  return makeBudgetAccountStatus({
   accountId: entry.accountId,
   accountName: entry.accountName,
+  categoryName: entry.categoryName,
   subcategory: entry.subcategory,
   currency: getCurrencyCodeSync(entry.currencyId),
   budgetAmount,
@@ -192,6 +194,75 @@ const makeSeriesTotals = (months) => {
 const MIXED_CURRENCY_NOTICE =
  'Totals add amounts in more than one currency and are not converted.';
 
+// A category whose accounts disagree about currency is not a total that cannot
+// be shown: it is a state V1 does not allow, and the response says so by name.
+// Under one accounting currency per installation it cannot happen, so seeing it
+// means the data is wrong, not that the report is limited.
+const mixedCurrencyCategoryNotice = (categoryName) =>
+ `Category "${categoryName}" holds accounts in more than one currency, which V1 does not support. Its totals are not reported; the account rows keep their own amounts.`;
+
+/**
+ * Fold the account statuses into one entry per category.
+ *
+ * The grouping happens here, over rows already in memory, and not in a second
+ * query: the three levels of the budget drill-down — categories, the accounts of
+ * a category, one account — are three readings of the same set, so they are one
+ * request, not three.
+ *
+ * Amounts are summed FROM the rounded account rows for the reason makeTotals
+ * does the same: a group header that does not reconcile with the rows under it
+ * is a bug the user finds before we do.
+ *
+ * Ordered by categoryName so no component sorts. The names are lowercased by
+ * migration 013, so the comparison is on the same form the rows were written in.
+ */
+const makeCategoryGroups = (accountsStatus) => {
+ const groups = new Map();
+
+ for (const row of accountsStatus) {
+  if (!groups.has(row.categoryName)) {
+   groups.set(row.categoryName, []);
+  }
+  groups.get(row.categoryName).push(row);
+ }
+
+ return [...groups.entries()]
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([categoryName, rows]) => {
+   const currencies = new Set(rows.map((r) => r.currency));
+   const currency = currencies.size === 1 ? [...currencies][0] : null;
+
+   if (currency === null) {
+    return makeBudgetCategoryStatus({
+     categoryName,
+     currency: null,
+     accountCount: rows.length,
+    });
+   }
+
+   const sums = rows.reduce(
+    (acc, r) => ({
+     budgetAmount: acc.budgetAmount.plus(r.budgetAmount),
+     actualSpent: acc.actualSpent.plus(r.actualSpent),
+    }),
+    { budgetAmount: money(0), actualSpent: money(0) },
+   );
+
+   return makeBudgetCategoryStatus({
+    categoryName,
+    currency,
+    accountCount: rows.length,
+    budgetAmount: sums.budgetAmount,
+    actualSpent: sums.actualSpent,
+    remainingBudget: sums.budgetAmount.minus(sums.actualSpent),
+    executionPercentage: sums.budgetAmount.isZero()
+     ? null
+     : sums.actualSpent.dividedBy(sums.budgetAmount).times(HUNDRED),
+    isOverBudget: sums.actualSpent.greaterThan(sums.budgetAmount),
+   });
+  });
+};
+
 /**
  * Aggregate a set of account statuses into the figures the Overview header shows.
  *
@@ -260,6 +331,10 @@ export const budgetCalculationService = {
   * about and did not get back is indistinguishable from one the backend dropped,
   * and the screen has to be able to say "this category has no budget".
   *
+  * The same rows are also returned folded by category, so the list of
+  * categories, the accounts of one category and one account's card are three
+  * readings of ONE response instead of three requests.
+  *
   * timeZone decides which month "now" is and which month each transaction falls
   * in. Both sides of the comparison have to live on the same calendar.
   */
@@ -267,6 +342,7 @@ export const budgetCalculationService = {
   const { month, accounts } = await getMonthlyStatusForAccounts(pool, accountIds, timeZone);
 
   const accountsStatus = accounts.map(buildAccountStatus);
+  const categories = makeCategoryGroups(accountsStatus);
   const totals = makeTotals(accountsStatus);
 
   // Notices are a list and meta is always an object. A singular field could
@@ -277,10 +353,18 @@ export const budgetCalculationService = {
   if (accountsStatus.length > 0 && totals.currency === null) {
    notices.push(MIXED_CURRENCY_NOTICE);
   }
+  for (const category of categories) {
+   if (category.currency === null) {
+    notices.push(mixedCurrencyCategoryNotice(category.categoryName));
+   }
+  }
 
   return {
    referenceMonth: month,
    accounts: accountsStatus,
+   // Between accounts and totals because that is the order the screen reads
+   // them in: the rows, the groups they fall into, the header over both.
+   categories,
    totals,
    meta: { notices },
   };

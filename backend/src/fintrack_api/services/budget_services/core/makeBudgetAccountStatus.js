@@ -22,6 +22,7 @@ import { toAmount, toRate } from './money.js';
 export function makeBudgetAccountStatus({
  accountId = null,
  accountName = null,
+ categoryName = null,
  subcategory = null,
  currency,
  budgetAmount,
@@ -45,6 +46,10 @@ export function makeBudgetAccountStatus({
   // The caller asked about a set of accounts and gets one status per account.
   accountId,
   accountName,
+  // The category this account belongs to. It is repeated on every row on
+  // purpose: the row has to be readable on its own, in a list that is not
+  // grouped, without the client joining it back to categories[].
+  categoryName,
   subcategory,
   currency,
   budgetAmount: toAmount(budgetAmount),

@@ -26,12 +26,18 @@ import {
 
 // The month is not a parameter: the server resolves it from the account owner's
 // timezone, so every caller gets the same month the write path uses.
+//
+// accountIds is optional and, when omitted, the key is left OUT of the body
+// rather than sent as undefined: the schema is strict, and the omission is what
+// asks for every budget account the user owns. One such call feeds the category
+// list, the accounts of a category and an account's card — three screens, one
+// request.
 export const getBudgetAccountsStatus = async (
- accountIds: number[],
+ accountIds?: number[],
 ): Promise<BudgetAccountsStatusResponse> => {
  const { data } = await authFetch<BudgetAccountsStatusResponse>(
   url_budget_accounts_status,
-  { method: 'POST', data: { accountIds } },
+  { method: 'POST', data: accountIds ? { accountIds } : {} },
  );
 
  return data;

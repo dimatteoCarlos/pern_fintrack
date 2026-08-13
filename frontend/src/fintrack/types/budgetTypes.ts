@@ -44,6 +44,9 @@ export type AccountBudgetAllocation = {
 export type BudgetAccountStatus = {
  accountId: number;
  accountName: string;
+ // Repeated on every row so a row read outside its group still says what it
+ // belongs to. No component joins it back to categories[].
+ categoryName: string;
  subcategory: string;
  currency: CurrencyType;
  budgetAmount: number;
@@ -69,10 +72,33 @@ export type BudgetStatusTotals = {
  executionPercentage: number | null;
 };
 
+// The accounts above folded by category, summed by the server from the same
+// rounded rows so a group header reconciles with the rows under it.
+//
+// Every field is nullable for ONE case: the category holds accounts in more
+// than one currency, which V1 does not allow. That is an alert, not a limit —
+// meta.notices names the category, and the account rows keep their amounts.
+// Under a single accounting currency the branch is unreachable, so in practice
+// currency is a code and the figures are numbers.
+export type BudgetCategoryStatus = {
+ categoryName: string;
+ currency: CurrencyType | null;
+ // How many accounts the group folds. Served so no component counts them.
+ accountCount: number;
+ budgetAmount: number | null;
+ actualSpent: number | null;
+ remainingBudget: number | null;
+ executionPercentage: number | null;
+ isOverBudget: boolean | null;
+};
+
 export type BudgetAccountsStatusResponse = {
  referenceMonth: string;
- // One entry per REQUESTED account, budgeted or not.
+ // One entry per REQUESTED account, budgeted or not. When the request omits
+ // accountIds, "requested" means every budget account the user owns.
  accounts: BudgetAccountStatus[];
+ // Ordered by categoryName. One entry per category present in accounts[].
+ categories: BudgetCategoryStatus[];
  totals: BudgetStatusTotals;
  meta: BudgetMeta;
 };

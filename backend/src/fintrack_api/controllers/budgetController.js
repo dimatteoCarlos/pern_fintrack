@@ -69,18 +69,27 @@ export async function getBudgetAccountsStatus(req, res, next) {
   const userId = requireUserId(req, res);
   if (!userId) return;
 
-  const { accountIds } = budgetAccountsStatusBodySchema.parse(req.body);
+  const { accountIds: requestedIds } = budgetAccountsStatusBodySchema.parse(req.body);
+
+  const owned = await getOwnedBudgetAccounts(userId);
 
   // Check EVERY element. Validating only the first would let a caller hide
   // foreign ids behind one of their own.
-  const owned = await getOwnedBudgetAccounts(userId);
-  const foreign = accountIds.filter((id) => !owned.has(id));
-  if (foreign.length > 0) {
-   return res.status(403).json({
-    status: 403,
-    message: `${foreign.length} account(s) not found or not owned by the authenticated user.`,
-   });
+  if (requestedIds) {
+   const foreign = requestedIds.filter((id) => !owned.has(id));
+   if (foreign.length > 0) {
+    return res.status(403).json({
+     status: 403,
+     message: `${foreign.length} account(s) not found or not owned by the authenticated user.`,
+    });
+   }
   }
+
+  // An omitted accountIds asks for the whole set, which is derived from the
+  // ownership map itself — so those ids need no ownership check: they came from
+  // it. This is what lets one request serve the three levels of the budget
+  // drill-down instead of one request per level.
+  const accountIds = requestedIds ?? [...owned.keys()];
 
   // Resolved here, not inside the service: the zone is fetched once per request
   // and the service receives it, rather than going to the users table itself.

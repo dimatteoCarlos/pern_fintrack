@@ -101,15 +101,26 @@ const MONTH_QUERY = `
 // subcategory comes from that same join. It has been in the table since the
 // schema was written; the export read it off budgetPolicy, which never carried
 // it, and shipped the column empty on every file so far.
+//
+// category_name comes from the same row and is NOT NULL since 002, normalized to
+// lowercase by 013. It travels so the caller can group without a second query:
+// the grouping is a fold over rows already in memory, not a round trip.
+//
+// ORDER BY is the server's job, not the client's. Without it the order is
+// whatever the planner returns and can differ between two identical requests;
+// with it, no component has to sort, which is the client-side arithmetic this
+// module exists to remove.
 const ACCOUNTS_QUERY = `
   SELECT
     ua.account_id,
     ua.account_name,
+    cba.category_name,
     cba.subcategory,
     COALESCE(cba.currency_id, ua.currency_id) AS currency_id
   FROM user_accounts ua
   JOIN category_budget_accounts cba ON cba.account_id = ua.account_id
   WHERE ua.account_id = ANY($1)
+  ORDER BY cba.category_name, ua.account_name
 `;
 
 // The allocation in force at one month, for N accounts, in one pass (§4.2).
@@ -227,6 +238,7 @@ export async function getMonthlyStatusForAccounts(pool, accountIds, timeZone = '
   accounts: accounts.rows.map((row) => ({
    accountId: row.account_id,
    accountName: row.account_name,
+   categoryName: row.category_name,
    subcategory: row.subcategory ?? null,
    currencyId: row.currency_id,
    // No decision in force resolves to 0, which is the effective budget the
