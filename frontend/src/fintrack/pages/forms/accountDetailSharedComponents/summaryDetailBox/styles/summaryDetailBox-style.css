@@ -72,3 +72,23 @@
 .summary__percentage--left {
   color: var(--amountPositive);
 }
+
+/*The breakdown below is a second row, so the box has to wrap. Set on a modifier
+  and not on .summary__container, which the debtor and pocket stylesheets also
+  declare at this specificity: a flex-wrap there would reach two views this
+  component does not render.*/
+.summary__container--stacked {
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+}
+
+/*The full width is what drops it below the title and the amount, and what puts
+  each of the two readings at its own end of the box. Inside .summary__data they
+  stacked in the right half while the left half sat empty.*/
+.summary__breakdown {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}

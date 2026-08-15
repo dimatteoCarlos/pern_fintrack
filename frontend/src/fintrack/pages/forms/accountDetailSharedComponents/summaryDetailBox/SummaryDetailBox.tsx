@@ -67,7 +67,7 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
 
   return (
     <>
-      <div className='summary__container'>
+      <div className='summary__container summary__container--stacked'>
         <div className='summary__title'>{title}</div>
         <div className='summary__data'>
           <div className='summary__data--amount'>
@@ -76,13 +76,12 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
                 one here would print it twice. */}
             <span>{numberFormatCurrency(amount, 2)}</span>
           </div>
+        </div>
 
-          <div className='summary__data--subtitle1'>
-            {subtitle1} {numberFormatCurrency(amount1, 2, currency_code)}&nbsp;(
-            {spentPercentage.toFixed(1)}
-            %)
-          </div>
-
+        {/* The two readings of the same budget, on a row of their own at the
+            full width of the box. Inside .summary__data they stacked in the
+            right half while the left half sat empty under the title. */}
+        <div className='summary__breakdown'>
           <div className='summary__data--status '>
             <StatusSquare alert={status ? 'alert' : ''} />
             <div className='summary__data--subtitle2'>
@@ -104,6 +103,12 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
                 ({remainPercentage.toFixed(1)}%)
               </span>
             </div>
+          </div>
+
+          <div className='summary__data--subtitle1'>
+            {subtitle1} {numberFormatCurrency(amount1, 2, currency_code)}&nbsp;(
+            {spentPercentage.toFixed(1)}
+            %)
           </div>
         </div>
       </div>
