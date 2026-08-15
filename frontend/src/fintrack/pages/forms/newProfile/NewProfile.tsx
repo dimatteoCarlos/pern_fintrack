@@ -32,7 +32,11 @@ import {
 } from '../../../../urlConfig.ts';
 
 // 🏷️ TYPES & CONSTANTS
-import { CurrencyType, DropdownOptionType } from '../../../types/types.ts';
+import {
+  CurrencyType,
+  DropdownOptionType,
+  FormNumberInputType,
+} from '../../../types/types.ts';
 import {
   AccountByTypeResponseType,
   CreateDebtorAccountApiResponseType,
@@ -93,7 +97,9 @@ const formDataNumber: { keyName: keyof ProfileInputDataType; title: string } = {
   keyName: 'amount',
   title: 'value',
 };
-const initialFormData: Partial<ProfileInputDataType> = {
+// Not Partial<>: the key below is always written, and making it optional only
+// hands an undefined to every reader. Same type the other number forms use.
+const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
 };
 
@@ -112,7 +118,7 @@ function NewProfile() {
 
   // === STATE INITIALIZATION ===
   const [formData, setFormData] =
-    useState<Partial<ProfileInputDataType>>(initialFormData);
+    useState<FormNumberInputType>(initialFormData);
 
   const [profileData, setProfileData] = useState<ProfileInputDataType>(
     initialNewProfileData,
