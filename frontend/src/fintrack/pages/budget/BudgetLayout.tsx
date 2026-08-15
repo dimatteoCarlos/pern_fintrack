@@ -13,6 +13,7 @@ function BudgetLayout() {
   // The module's single request. This header and the category list below are
   // both drawn from it, which is why it is issued here and not in either one.
   const totals = useBudgetStatusStore((state) => state.totals);
+  const notices = useBudgetStatusStore((state) => state.notices);
   const isLoading = useBudgetStatusStore((state) => state.isLoading);
   const error = useBudgetStatusStore((state) => state.error);
   const fetchStatus = useBudgetStatusStore((state) => state.fetchStatus);
@@ -32,21 +33,32 @@ function BudgetLayout() {
   //--------------------------------------
   // Served, never summed here: totals is the server's own fold of the rows the
   // list below renders, so the header and the list cannot disagree.
-  const { budgetAmount, actualSpent, remainingBudget, currency } = useMemo(
+  //
+  // Passed through as they arrive, null included. These used to collapse to 0,
+  // which announced a budget of zero while the answer was still on the wire and
+  // again in the mixed-currency case, where the contract withholds the totals on
+  // purpose rather than adding two currencies at an implicit rate of 1:1.
+  const {
+    budgetAmount,
+    actualSpent,
+    remainingBudget,
+    executionPercentage,
+    currency,
+  } = useMemo(
     () => ({
-      budgetAmount: totals?.budgetAmount ?? 0,
-      actualSpent: totals?.actualSpent ?? 0,
-      remainingBudget: totals?.remainingBudget ?? 0,
+      budgetAmount: totals?.budgetAmount ?? null,
+      actualSpent: totals?.actualSpent ?? null,
+      remainingBudget: totals?.remainingBudget ?? null,
+      executionPercentage: totals?.executionPercentage ?? null,
       currency: totals?.currency ?? undefined,
     }),
     [totals],
   );
 
-  const bigScreenInfo = [
-    { title: 'total budget', amount: budgetAmount },
-    { title: 'Remaining', amount: remainingBudget },
-    { title: 'expenses', amount: actualSpent },
-  ];
+  // Only the totals-level notice belongs in the header. A category-level one
+  // names its category and belongs beside it, in the list below.
+  const notice =
+    totals !== null && totals.currency === null ? notices[0] ?? null : null;
 
   return (
     <>
@@ -71,7 +83,14 @@ function BudgetLayout() {
           </div>
         )}
 
-        <BudgetBigBoxResult bigScreenInfo={bigScreenInfo} currency={currency} />
+        <BudgetBigBoxResult
+          budgetAmount={budgetAmount}
+          actualSpent={actualSpent}
+          remainingBudget={remainingBudget}
+          executionPercentage={executionPercentage}
+          currency={currency}
+          notice={notice}
+        />
 
         {error && (
           <p

@@ -62,6 +62,45 @@
   font-weight: 700;
 }
 
+/* The hero carries three figures now, so it stops borrowing the fixed height of
+   the tracker navbar it shares a class with. Scoped to .budgetLayout: the same
+   .total__container IS that navbar on the tracker page. */
+.budgetLayout .total__container {
+  height: auto;
+  min-height: var(--navbar-top-height);
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+
+/* One row per figure, so the row rule above is reused rather than widened. */
+.budgetLayout .displayScreen__rows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+/* The share of the budget the amount beside it represents. It restates its own
+   font size because index.css sets one on the universal selector, so an inline
+   element does not inherit the size of the line it sits in. */
+.budgetLayout .displayScreen__percentage {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-wide);
+  color: var(--color-content-secondary);
+  margin-left: var(--space-2);
+}
+
+/* Why the figures above read as dashes. Sits on the dark app surface, not on
+   the cream strips. */
+.budgetLayout .displayScreen__notice {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-on-dark-subtle);
+  text-align: center;
+  padding-top: var(--space-2);
+}
+
 /*Budget*/
 /*Category List*/
 .list__main__container {
