@@ -36,3 +36,26 @@
 .page__container--budget .page__content {
  width: 100%;
 }
+
+/* The subcategory and its nature on one line. Declared on a class of its own
+   and not on .box__title, which two other stylesheets already share with the
+   pocket and budget lists. */
+.budgetDetail__accountLabel {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+}
+
+/* Neutral on purpose: the status colours are the budget semaphore, and a
+   'must' painted with them would read as over budget rather than as what the
+   account is for. Not interactive - the row's link is - so it declares no
+   states of its own. */
+.budgetDetail__natureTag {
+ font-size: var(--font-size-xs);
+ font-weight: 400;
+ line-height: 1;
+ color: var(--color-content-on-dark-subtle);
+ border: var(--border-width-thin) solid var(--color-border-inverse);
+ border-radius: var(--radius-full);
+ padding: var(--space-1) var(--space-2);
+}

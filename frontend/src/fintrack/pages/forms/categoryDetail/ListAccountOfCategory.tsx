@@ -7,6 +7,7 @@ import {
 } from '../../../general_components/boxComponents/BoxComponents.tsx';
 
 import {
+  capitalize,
   currencyFormat,
   numberFormatCurrency,
   withMonthParam,
@@ -16,6 +17,8 @@ import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
 import { Link, useSearchParams } from 'react-router-dom';
 import { BudgetAccountStatus } from '../../../types/budgetTypes.ts';
+
+import './styles/categoryDetail-styles.css';
 //-----------------------------
 // RETIRED by commit 9b — remove in the cleanup block (V1 §9.4, D8).
 // Exported but imported nowhere. It described a category row carrying a
@@ -51,6 +54,8 @@ function ListAccountOfCategory({
           const {
             accountId,
             accountName,
+            subcategory,
+            nature,
             currency,
             budgetAmount,
             actualSpent,
@@ -91,9 +96,16 @@ function ListAccountOfCategory({
                     // categoryName
                   }}
                 >
-                  <div className='box__title box__title--category__name hover '>
-                    {accountName}
-                    {''}
+                  {/* The subcategory alone, not the composed account_name: the
+                      category is already the title of this screen. The nature
+                      is a second element and never a slash, which would
+                      recompose by hand the string being taken apart. */}
+                  <div className='box__title box__title--category__name hover budgetDetail__accountLabel'>
+                    {capitalize(subcategory ?? accountName)}
+
+                    {nature && (
+                      <span className='budgetDetail__natureTag'>{nature}</span>
+                    )}
                   </div>
                 </Link>
 

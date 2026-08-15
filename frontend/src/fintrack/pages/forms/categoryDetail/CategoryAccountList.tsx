@@ -175,9 +175,9 @@ function CategoryAccountList() {
 
           {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
 
-          <CardTitle legend='Spent / Budget'>
-            {capitalize(categoryName!)}
-          </CardTitle>
+          {/* A column header, not a title: the name of the category is already
+              stated above, and what the left column holds is the subcategory. */}
+          <CardTitle legend='Spent / Budget'>{'Subcategory'}</CardTitle>
 
           {/* Loading, error and empty are three states, not one fallback: a
               category still on the wire is not a category without accounts. */}
