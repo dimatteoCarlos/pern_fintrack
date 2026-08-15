@@ -36,6 +36,7 @@ import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
 
 import '../styles/forms-styles.css';
 import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
+import './styles/categoryDetail-styles.css';
 
 import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
 
@@ -171,133 +172,147 @@ function CategoryDetail() {
   //===============================
   return (
     <>
-      <section className='page__container'>
+      <section className='page__container page__container--budget'>
         <TopWhiteSpace variant={'dark'} />
-        <div className='page__content'>
-          <div className='main__title--container'>
-            <Link
-              to={withMonthParam(previousRoute, monthParam)}
-              relative='path'
-              className='iconLeftArrow'
+
+        {/* The column that puts this screen's rows at the same x as level 1's.
+            The spacer above stays outside it. */}
+        <div className='budgetDetail__content'>
+          <div className='page__content'>
+            <div className='main__title--container'>
+              <Link
+                to={withMonthParam(previousRoute, monthParam)}
+                relative='path'
+                className='iconLeftArrow'
+              >
+                <LeftArrowLightSvg />
+              </Link>
+
+              <div className='form__title form__title--recordName'>
+                {capitalize(
+                  budgetAccount?.accountName ?? accountRecord?.account_name
+                )}
+              </div>
+
+              {/* <Link to='edit' className='flx-col-center icon3dots'>
+                <Dots3LightSvg />
+              </Link> */}
+
+              <div id='edit' className='flx-col-center icon3dots'>
+                <Dots3LightSvg />
+              </div>
+            </div>
+          </div>
+
+          {/* Read-only, and no chevron: at this level a picker would be a second
+              way to ask what the account's own series answers. The label is the
+              resolved month, so it is a skeleton until the answer lands. */}
+          {referenceMonth ? (
+            <div className='month-badge month-badge--dark'>
+              {formatBudgetMonthLabel(referenceMonth)}
+            </div>
+          ) : (
+            <div
+              className='month-badge month-badge--dark month-badge--skeleton'
+              aria-hidden='true'
+            />
+          )}
+
+          {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
+
+          <article className='form__box'>
+            <div className='form__container'>
+              <div className='input__box'>
+                <label className='label forms__label'>{`Current Balance`}</label>
+
+                <div className='input__container' style={{ padding: '0.5rem' }}>
+                  {currencyFormat(currency_code, accountRecord?.account_balance)}
+                </div>
+              </div>
+
+              <div className='input__box'>
+                <label className='label forms__label'>{'Account Type'}</label>
+
+                <p className='input__container' style={{ padding: '0.5rem' }}>
+                  {accountRecord?.account_type_name}
+                </p>
+              </div>
+
+              <div className='account__dateAndCurrency'>
+                <div className='account__date'>
+                  <label className='label forms__label'>
+                    {'Starting Point'}
+                  </label>
+                  <div
+                    className='form__datepicker__container'
+                    style={{ textAlign: 'center', color: 'white' }}
+                  >
+                    {formatDateToDDMMYYYY(accountRecord?.account_start_date)}
+                  </div>
+                </div>
+
+                <div className='account__currency'>
+                  <div className='label forms__label'>{'Currency'}</div>
+
+                  <CurrencyBadge
+                    variant={VARIANT_FORM}
+                    currency={currency_code}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* --- TRANSACTION STATEMENT SECTION --- */}
+            <div
+              className='account-transactions__container '
+              style={{ margin: '1rem 0' }}
             >
-              <LeftArrowLightSvg />
-            </Link>
+              {/* The month the budget figures above are about, as the server
+                  bounded it on the owner's calendar. */}
+              {summaryAccountBalance && (
+                <>
+                  <div className='period-info'>
+                    <div className='period-info__label'>Period</div>
+                    <span className='period-info__dates  '>
+                      {formatDateToDDMMYYYY(
+                        summaryAccountBalance.periodStartDate
+                      )}
+                      {'  '} / {'  '}{' '}
+                      {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}
+                    </span>
+                  </div>
 
-            <div className='form__title'>
-              {capitalize(budgetAccount?.accountName ?? accountRecord?.account_name)}
+                  <AccountBalanceSummary
+                    summaryAccountBalance={summaryAccountBalance}
+                  />
+                </>
+              )}
+
+              <div className='presentation__card__title__container '>
+                <CardTitle>{'Last Movements'}</CardTitle>
+              </div>
+
+              {/* Loading, error and empty are three states: a month still on the
+                  wire is not a month without movements. */}
+              {isLoading && <CoinSpinner />}
+
+              {!isLoading && !error && transactions.length === 0 && (
+                <p className='box__subtitle'>
+                  No transactions in this account for the period.
+                </p>
+              )}
+
+              {!isLoading && !error && transactions.length > 0 && (
+                <AccountTransactionsList transactions={transactions} />
+              )}
             </div>
+          </article>
 
-            {/* <Link to='edit' className='flx-col-center icon3dots'>
-              <Dots3LightSvg />
-            </Link> */}
-
-            <div id='edit' className='flx-col-center icon3dots'>
-              <Dots3LightSvg />
-            </div>
-          </div>
+          {/* --- END OF TRANSACTION STATEMENT SECTION --- */}
+          {!isLoading && error && (
+            <p className='box__subtitle'>Error fetching account info: {error}</p>
+          )}
         </div>
-
-        {/* Read-only, and no chevron: at this level a picker would be a second
-            way to ask what the account's own series answers. The label is the
-            resolved month, so it is a skeleton until the answer lands. */}
-        {referenceMonth ? (
-          <div className='month-badge month-badge--dark'>
-            {formatBudgetMonthLabel(referenceMonth)}
-          </div>
-        ) : (
-          <div
-            className='month-badge month-badge--dark month-badge--skeleton'
-            aria-hidden='true'
-          />
-        )}
-
-        {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
-
-        <article className='form__box'>
-          <div className='form__container'>
-            <div className='input__box'>
-              <label className='label forms__label'>{`Current Balance`}</label>
-
-              <div className='input__container' style={{ padding: '0.5rem' }}>
-                {currencyFormat(currency_code, accountRecord?.account_balance)}
-              </div>
-            </div>
-
-            <div className='input__box'>
-              <label className='label forms__label'>{'Account Type'}</label>
-
-              <p className='input__container' style={{ padding: '0.5rem' }}>
-                {accountRecord?.account_type_name}
-              </p>
-            </div>
-
-            <div className='account__dateAndCurrency'>
-              <div className='account__date'>
-                <label className='label forms__label'>{'Starting Point'}</label>
-                <div
-                  className='form__datepicker__container'
-                  style={{ textAlign: 'center', color: 'white' }}
-                >
-                  {formatDateToDDMMYYYY(accountRecord?.account_start_date)}
-                </div>
-              </div>
-
-              <div className='account__currency'>
-                <div className='label forms__label'>{'Currency'}</div>
-
-                <CurrencyBadge variant={VARIANT_FORM} currency={currency_code} />
-              </div>
-            </div>
-          </div>
-
-          {/* --- TRANSACTION STATEMENT SECTION --- */}
-          <div
-            className='account-transactions__container '
-            style={{ margin: '1rem 0' }}
-          >
-            {/* The month the budget figures above are about, as the server
-                bounded it on the owner's calendar. */}
-            {summaryAccountBalance && (
-              <>
-                <div className='period-info'>
-                  <div className='period-info__label'>Period</div>
-                  <span className='period-info__dates  '>
-                    {formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}
-                    {'  '} / {'  '}{' '}
-                    {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}
-                  </span>
-                </div>
-
-                <AccountBalanceSummary
-                  summaryAccountBalance={summaryAccountBalance}
-                />
-              </>
-            )}
-
-            <div className='presentation__card__title__container '>
-              <CardTitle>{'Last Movements'}</CardTitle>
-            </div>
-
-            {/* Loading, error and empty are three states: a month still on the
-                wire is not a month without movements. */}
-            {isLoading && <CoinSpinner />}
-
-            {!isLoading && !error && transactions.length === 0 && (
-              <p className='box__subtitle'>
-                No transactions in this account for the period.
-              </p>
-            )}
-
-            {!isLoading && !error && transactions.length > 0 && (
-              <AccountTransactionsList transactions={transactions} />
-            )}
-          </div>
-        </article>
-
-        {/* --- END OF TRANSACTION STATEMENT SECTION --- */}
-        {!isLoading && error && (
-          <p className='box__subtitle'>Error fetching account info: {error}</p>
-        )}
       </section>
     </>
   );

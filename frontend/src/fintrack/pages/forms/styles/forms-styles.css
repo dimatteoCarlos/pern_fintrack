@@ -61,6 +61,14 @@ label,
   position: static;
 }
 
+/* The title is the name of a record — an account, a category — and not the name
+   of a screen. The versal is what tells the reader which of the two is above the
+   form, so it is a modifier and never the base rule: 'New Account' and 'Edit
+   Account' are screen names and stay as authored. */
+.main__title--container .form__title--recordName {
+ text-transform: uppercase;
+}
+
 /* ============================================================
    BUDGET MONTH AND CURRENCY PREVIEW
  ====================== */

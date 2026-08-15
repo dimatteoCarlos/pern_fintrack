@@ -1,0 +1,38 @@
+/* frontend/src/fintrack/pages/forms/categoryDetail/styles/categoryDetail-styles.css
+   The lateral column of budget levels 2 and 3.
+
+   Level 1 insets its rows by applying the content column twice: the dark panel
+   takes it from the viewport, and the list takes it again from the panel. These
+   two screens hang off .page__container instead, which every form in the app
+   shares, so the geometry arrives as a modifier and a column of their own rather
+   than as an edit to forms-styles.css.
+
+   Imported by CategoryAccountList and CategoryDetail. */
+
+/* The panel step: the width and the padding level 1 gives its dark surface. No
+   surface is painted here, because at these levels the app background is the
+   surface and only the geometry is being borrowed. */
+.page__container--budget {
+ width: var(--layout-content-width);
+ padding: 0 var(--space-3);
+}
+
+/* The list step, which is what puts a row at the same x as a row of level 1.
+   TopWhiteSpace stays outside it: it is the top spacer and narrowing it would
+   inset nothing visible.
+
+   Flex column because these children were flex items of .page__container until
+   now, and the month badge centres itself with align-self. */
+.budgetDetail__content {
+ width: var(--layout-content-width);
+ margin: 0 auto;
+ display: flex;
+ flex-direction: column;
+}
+
+/* The title carried a column of its own at 85%, which started it 24px to the
+   right of everything under it. Inside the column it takes the full width, so
+   the title and the rows begin at the same x. */
+.page__container--budget .page__content {
+ width: 100%;
+}

@@ -22,6 +22,7 @@ import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
 
 import '../styles/forms-styles.css';
 import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
+import './styles/categoryDetail-styles.css';
 
 //==============================
 function CategoryAccountList() {
@@ -128,67 +129,78 @@ function CategoryAccountList() {
   //===============================
   return (
     <>
-      <section className='page__container'>
+      <section className='page__container page__container--budget'>
         <TopWhiteSpace variant={'dark'} />
-        <div className='page__content'>
-          <div className='main__title--container'>
-            <Link
-              to={withMonthParam(budgetPageAddress, month)}
-              relative='path'
-              className='iconLeftArrow'
-            >
-              <LeftArrowLightSvg />
-            </Link>
 
-            <div className='form__title'>{capitalize(categoryName!)}</div>
+        {/* The column that puts this screen's rows at the same x as level 1's.
+            The spacer above stays outside it. */}
+        <div className='budgetDetail__content'>
+          <div className='page__content'>
+            <div className='main__title--container'>
+              <Link
+                to={withMonthParam(budgetPageAddress, month)}
+                relative='path'
+                className='iconLeftArrow'
+              >
+                <LeftArrowLightSvg />
+              </Link>
 
-            {/* <Link to='edit' className='flx-col-center icon3dots'>
-              <Dots3LightSvg />
-            </Link> */}
+              <div className='form__title form__title--recordName'>
+                {capitalize(categoryName!)}
+              </div>
 
-            <div id='edit' className='flx-col-center icon3dots'>
-              <Dots3LightSvg />
+              {/* <Link to='edit' className='flx-col-center icon3dots'>
+                <Dots3LightSvg />
+              </Link> */}
+
+              <div id='edit' className='flx-col-center icon3dots'>
+                <Dots3LightSvg />
+              </div>
             </div>
           </div>
+
+          {/* Read-only, and no chevron: the scope is set where the whole board is
+              visible, which is level 1. The label is the resolved month, so it
+              stays a skeleton until the answer lands. */}
+          {referenceMonth ? (
+            <div className='month-badge month-badge--dark'>
+              {formatBudgetMonthLabel(referenceMonth)}
+            </div>
+          ) : (
+            <div
+              className='month-badge month-badge--dark month-badge--skeleton'
+              aria-hidden='true'
+            />
+          )}
+
+          {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
+
+          <CardTitle legend='Spent / Budget'>
+            {capitalize(categoryName!)}
+          </CardTitle>
+
+          {/* Loading, error and empty are three states, not one fallback: a
+              category still on the wire is not a category without accounts. */}
+          {isLoading && <CoinSpinner />}
+
+          {!isLoading && error && (
+            <p className='box__subtitle'>Error loading data: {error}</p>
+          )}
+
+          {!isLoading && !error && categoryAccounts.length === 0 && (
+            <p className='box__subtitle'>
+              This category has no budget accounts this month.
+            </p>
+          )}
+
+          {!isLoading && !error && categoryAccounts.length > 0 && (
+            <ListAccountOfCategory
+              previousRoute={`${budgetPageAddress}/category/${categoryName}`}
+              accounts={categoryAccounts}
+              //categoryName={categoryName}
+            />
+          )}
         </div>
-
-        {/* Read-only, and no chevron: the scope is set where the whole board is
-            visible, which is level 1. The label is the resolved month, so it
-            stays a skeleton until the answer lands. */}
-        {referenceMonth ? (
-          <div className='month-badge month-badge--dark'>
-            {formatBudgetMonthLabel(referenceMonth)}
-          </div>
-        ) : (
-          <div
-            className='month-badge month-badge--dark month-badge--skeleton'
-            aria-hidden='true'
-          />
-        )}
-
-        {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
-
-        <CardTitle legend='Spent / Budget'>{capitalize(categoryName!)}</CardTitle>
-
-        {/* Loading, error and empty are three states, not one fallback: a
-            category still on the wire is not a category without accounts. */}
-        {isLoading && <CoinSpinner />}
-
-        {!isLoading && error && <p className='box__subtitle'>Error loading data: {error}</p>}
-
-        {!isLoading && !error && categoryAccounts.length === 0 && (
-          <p className='box__subtitle'>
-            This category has no budget accounts this month.
-          </p>
-        )}
-
-        {!isLoading && !error && categoryAccounts.length > 0 && (
-          <ListAccountOfCategory
-            previousRoute={`${budgetPageAddress}/category/${categoryName}`}
-            accounts={categoryAccounts}
-            //categoryName={categoryName}
-          />
-        )}
       </section>
     </>
   );
