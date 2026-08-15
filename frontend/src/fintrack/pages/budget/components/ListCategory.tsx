@@ -8,108 +8,128 @@ import {
   currencyFormat,
   numberFormatCurrency,
 } from '../../../helpers/functions.ts';
-import {} from '../../../types/types.ts';
-
-import { url_summary_balance_ByType } from '../../../../urlConfig.ts';
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
-import { useFetch } from '../../../hooks/useFetch.ts';
-
 import { Link } from 'react-router-dom';
 
-import {
-  CategoryListSummaryType,
-  CategoryListType,
-} from '../../../types/responseApiTypes.ts';
+import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
+import { CategorySummaryInfoType } from '../../../types/types.ts';
 //-----------------------------
-export type CategoryToRenderType = CategoryListType & {
-  // currency_code?: CurrencyType;
-  total_budget: number;
-};
+// RETIRED by commit 9 — remove in the cleanup block (V1 §9.4, D8).
+// The shape existed to carry a total_budget this component fabricated from a
+// dashboard balance. categories[] now serves the figure.
+//
+// export type CategoryToRenderType = CategoryListType & {
+//   total_budget: number;
+// };
+//
+// const defaultCategoryBudget: CategoryToRenderType[] = [];
 
 type ListCategoryProp = { previousRoute: string };
 
-const defaultCategoryBudget: CategoryToRenderType[] = [];
+// A figure the server could not compute renders as this, never as a zero.
+const DASH = '—';
 
 //==================================
 function ListCategory({ previousRoute }: ListCategoryProp) {
-  // console.log('component', 'ListCategory')
-
   //++++++++++++++++++++++++++++++++++
-  //DATA FETCHING
-  //List of each category with summary info
-  // CategoryListSummaryType
-  const { apiData, isLoading, error } = useFetch<CategoryListSummaryType>(
-    `${url_summary_balance_ByType}?type=category_budget`,
-  );
-  // console.log(apiData);
-  //--------------------
-  const budgetList: CategoryToRenderType[] =
-    apiData?.data && !isLoading && !error && apiData.data.length > 0
-      ? apiData.data.map((catBudget: CategoryListType) => {
-          const {
-            category_name,
-            total_balance,
-            total_remaining,
-            currency_code,
-          } = catBudget;
+  //DATA
+  // No request of its own: BudgetLayout issues the one call and this reads the
+  // categories slice of it. The server folds the accounts by category from the
+  // same rounded rows level 2 renders, so a group header reconciles with the
+  // accounts under it.
+  const categories = useBudgetStatusStore((state) => state.categories);
 
-          return {
-            category_name,
-            total_balance,
-            total_budget: total_balance + total_remaining,
-            total_remaining,
-            currency_code,
-          };
-        })
-      : defaultCategoryBudget;
   //--------------------------------
   return (
     <>
       {/*LIST CATEGORY  */}
       <article className='list__main__container '>
-        {budgetList.map((category, indx) => {
+        {categories.map((category) => {
           const {
-            category_name,
-            total_balance,
-            total_budget: budget,
-            currency_code,
+            categoryName,
+            actualSpent,
+            budgetAmount,
+            remainingBudget,
+            executionPercentage,
+            isOverBudget,
+            currency,
           } = category;
 
-          // const { total_remaining } = category;
-          // console.log('total_remaining', total_remaining);
+          const currency_code = currency ?? DEFAULT_CURRENCY;
 
-          // Not rounded: the backend already ships two decimals, and rounding
-          // to an integer here made the amount disagree with its own percentage.
-          const remain = -total_balance + budget;
+          // RETIRED by commit 9 — remove in the cleanup block (V1 §9.4, D8).
+          // Four client-side formulas over a dashboard balance, replaced by
+          // budgetAmount, remainingBudget, isOverBudget and executionPercentage.
+          //
+          // const budget = total_balance + total_remaining;
+          // const remain = -total_balance + budget;
+          // const statusAlert = remain <= 0;
+          // const remainPercentage =
+          //   budget === 0 ? '' : ((Math.abs(remain) / budget) * 100).toFixed(1) + '%';
 
-          const statusAlert = remain <= 0;
-
-          // What the remaining amount is worth as a share of the budget. The
-          // parenthesis qualifies the figure in front of it, so the same number
-          // reads for both words: 19.6% over, 100.0% left.
+          // |100 - execution| is the same division as |remaining| / budget,
+          // written so the figure inherits the server's rounding instead of a
+          // second formula over the amounts. It reads as the share left or the
+          // share overspent — the word in front of it says which.
           const remainPercentage =
-            budget === 0
+            executionPercentage === null
               ? ''
-              : ((Math.abs(remain) / budget) * 100).toFixed(1) + '%';
+              : Math.abs(100 - executionPercentage).toFixed(1) + '%';
+
+          // Every figure of a category is nullable for one case: accounts in
+          // more than one currency, which V1 does not allow. Unreachable under
+          // a single accounting currency, and a dash rather than a zero if the
+          // model ever widens.
+          const spentText =
+            actualSpent === null
+              ? DASH
+              : currencyFormat(currency_code, actualSpent, 'en-US');
+
+          const budgetText =
+            budgetAmount === null
+              ? DASH
+              : currencyFormat(currency_code, budgetAmount, 'en-US');
+
+          const remainText =
+            remainingBudget === null
+              ? DASH
+              : numberFormatCurrency(
+                  Math.abs(remainingBudget),
+                  2,
+                  currency_code,
+                  'en-US',
+                );
+
+          const remainWord =
+            remainingBudget === null ? '' : remainingBudget < 0 ? 'over' : 'left';
+
+          // TEMPORARY, removed by commit 9b: level 2 still reads this shape out
+          // of location.state. Fed from the served figures so both levels state
+          // the same numbers while the migration is half done.
+          const categorySummaryDetailed: CategorySummaryInfoType = {
+            category_name: categoryName,
+            currency_code,
+            total_balance: actualSpent ?? 0,
+            total_budget: budgetAmount ?? 0,
+            total_remaining: remainingBudget ?? 0,
+            remain: remainingBudget ?? 0,
+            statusAlert: isOverBudget ?? false,
+          };
 
           return (
-           <div className='box__container .flx-row-sb' key={indx}>
+           <div className='box__container .flx-row-sb' key={categoryName}>
               <BoxRow>
                 <Link
-                  to={`category/${category_name}`}
+                  to={`category/${categoryName}`}
                   state={{
-                   categorySummaryDetailed: {
-                      ...category,
-                      remain,
-                      statusAlert,
-                    },
+                   categorySummaryDetailed,
                     previousRoute,
                   }}
                 >
                  <div className='box__title box__title--category__name hover '>
-                     {category_name}{' '}
+                     {categoryName}{' '}
                   </div>
                 </Link>
 
@@ -123,27 +143,22 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
                     borderBottom: '0.5px dashed var(--creme)',
                   }}
                 >
-                  {currencyFormat(currency_code, total_balance, 'en-US')}
+                  {spentText}
                   &nbsp;/&nbsp;
-                  {currencyFormat(currency_code, budget, 'en-US')}
+                  {budgetText}
                 </div>
               </BoxRow>
 
               <BoxRow>
                 <BoxRow>
                   <div className='flx-row-sb'>
-                    <StatusSquare alert={statusAlert ? 'alert' : ''} />
+                    <StatusSquare alert={isOverBudget ? 'alert' : ''} />
                     <div className='box__subtitle'>
                       &nbsp;
                       {/* Absolute value: the word carries the sign, so a minus
                           in front of it would state the same thing twice. */}
-                      {numberFormatCurrency(
-                        Math.abs(remain),
-                        2,
-                        currency_code ?? DEFAULT_CURRENCY,
-                        'en-US',
-                      )}
-                      &nbsp;{remain < 0 ? 'over' : 'left'}&nbsp;
+                      {remainText}
+                      &nbsp;{remainWord}&nbsp;
                       <span style={{ fontSize: '0.75rem' }}>
                         ({remainPercentage})
                       </span>

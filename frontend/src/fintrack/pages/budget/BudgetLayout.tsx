@@ -1,9 +1,7 @@
 //frontend\src\fintrack\pages\budget\BudgetLayout.tsx
 import { useEffect, useMemo, useState } from 'react';
-import { url_get_total_account_balance_by_type } from '../../../urlConfig.ts';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
-import { useFetch } from '../../hooks/useFetch.ts';
-import { BalanceCategoryRespType } from '../../types/responseApiTypes.ts';
+import { useBudgetStatusStore } from '../../stores/useBudgetStatusStore.ts';
 import BudgetBigBoxResult from './components/BudgetBigBoxResult.tsx';
 import './styles/budget-styles.css';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
@@ -12,10 +10,17 @@ import { Outlet } from 'react-router-dom';
 function BudgetLayout() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const budgetUrl = `${url_get_total_account_balance_by_type}?type=category_budget`;
+  // The module's single request. This header and the category list below are
+  // both drawn from it, which is why it is issued here and not in either one.
+  const totals = useBudgetStatusStore((state) => state.totals);
+  const isLoading = useBudgetStatusStore((state) => state.isLoading);
+  const error = useBudgetStatusStore((state) => state.error);
+  const fetchStatus = useBudgetStatusStore((state) => state.fetchStatus);
 
-  const { apiData, isLoading, error } =
-    useFetch<BalanceCategoryRespType>(budgetUrl);
+  // No month: the server resolves the current one on the owner's calendar.
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
 
   useEffect(() => {
     if (error) {
@@ -25,26 +30,22 @@ function BudgetLayout() {
     }
   }, [error]);
   //--------------------------------------
-  const { total_balance, total_budget, total_remaining, currency } =
-    useMemo(() => {
-      return {
-        total_balance: apiData?.data.total_balance ?? 0,
-        total_budget: apiData?.data.total_budget ?? 0,
-        total_remaining: apiData?.data.total_remaining ?? 0,
-        currency: apiData?.data.currency_code,
-      };
-    }, [
-      apiData?.data.total_balance,
-      apiData?.data.total_budget,
-      apiData?.data.total_remaining,
-      apiData?.data.currency_code,
-    ]);
+  // Served, never summed here: totals is the server's own fold of the rows the
+  // list below renders, so the header and the list cannot disagree.
+  const { budgetAmount, actualSpent, remainingBudget, currency } = useMemo(
+    () => ({
+      budgetAmount: totals?.budgetAmount ?? 0,
+      actualSpent: totals?.actualSpent ?? 0,
+      remainingBudget: totals?.remainingBudget ?? 0,
+      currency: totals?.currency ?? undefined,
+    }),
+    [totals],
+  );
 
-  // const bigScreenInfo = [
   const bigScreenInfo = [
-    { title: 'total budget', amount: total_budget },
-    { title: 'Remaining', amount: total_remaining },
-    { title: 'expenses', amount: total_balance },
+    { title: 'total budget', amount: budgetAmount },
+    { title: 'Remaining', amount: remainingBudget },
+    { title: 'expenses', amount: actualSpent },
   ];
 
   return (
