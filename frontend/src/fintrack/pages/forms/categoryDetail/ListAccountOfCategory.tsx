@@ -14,18 +14,19 @@ import {
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
 import { Link } from 'react-router-dom';
-import {
-  CategoryBudgetAccountListType,
-  CategoryListType,
-} from '../../../types/responseApiTypes.ts';
+import { BudgetAccountStatus } from '../../../types/budgetTypes.ts';
 //-----------------------------
-export type CategoryToRenderType = CategoryListType & {
-  total_budget: number;
-};
+// RETIRED by commit 9b — remove in the cleanup block (V1 §9.4, D8).
+// Exported but imported nowhere. It described a category row carrying a
+// total_budget this module used to fabricate from a dashboard balance.
+//
+// export type CategoryToRenderType = CategoryListType & {
+//   total_budget: number;
+// };
 
 type ListAccountOfCategoryProp = {
   previousRoute: string;
-  accounts: CategoryBudgetAccountListType[];
+  accounts: BudgetAccountStatus[];
   //categoryName:string
 };
 //===============================
@@ -40,42 +41,52 @@ function ListAccountOfCategory({
     <>
       {/*ACCOUNT LIST OF CATEGORY  */}
       <article className='list__main__container '>
-        {accounts.map((account, indx) => {
+        {accounts.map((account) => {
           const {
-            account_name,
-            account_balance: total_balance,
-            budget,
-            currency_code,
-            account_id,
+            accountId,
+            accountName,
+            currency,
+            budgetAmount,
+            actualSpent,
+            remainingBudget,
+            executionPercentage,
+            isOverBudget,
           } = account;
-          //console.log('account', account)
 
-          // Not rounded: the backend already ships two decimals, and rounding
-          // to an integer here made the amount disagree with its own percentage.
-          const remain = -total_balance + budget;
-          const statusAlert = remain <= 0;
+          const currency_code = currency ?? DEFAULT_CURRENCY;
 
-          // What the remaining amount is worth as a share of the budget. The
-          // parenthesis qualifies the figure in front of it, so the same number
-          // reads for both words: 19.6% over, 100.0% left.
+          // RETIRED by commit 9b — remove in the cleanup block (V1 §9.4, D8).
+          // Three client-side formulas over a dashboard balance, replaced by
+          // remainingBudget, isOverBudget and executionPercentage.
+          //
+          // const remain = -total_balance + budget;
+          // const statusAlert = remain <= 0;
+          // const remainPercentage =
+          //   budget === 0 ? '' : ((Math.abs(remain) / budget) * 100).toFixed(1) + '%';
+
+          // |100 - execution| is the same division as |remaining| / budget,
+          // written so the figure inherits the server's rounding instead of a
+          // second formula over the amounts.
           const remainPercentage =
-            budget === 0
+            executionPercentage === null
               ? ''
-              : ((Math.abs(remain) / budget) * 100).toFixed(1) + '%';
+              : Math.abs(100 - executionPercentage).toFixed(1) + '%';
           //-------------------------------
           return (
-            <div className='box__container .flx-row-sb' key={indx}>
+            <div className='box__container .flx-row-sb' key={accountId}>
               <BoxRow>
+                {/* Only the return path travels. The figures used to as well,
+                    which is what made this account render NaN when it was
+                    opened from the accounting dashboard instead of from here. */}
                 <Link
-                  to={`account/${account_id}`}
+                  to={`account/${accountId}`}
                   state={{
-                    detailedData: { ...account, remain, statusAlert },
                     previousRoute,
                     // categoryName
                   }}
                 >
                   <div className='box__title box__title--category__name hover '>
-                    {account_name}
+                    {accountName}
                     {''}
                   </div>
                 </Link>
@@ -90,27 +101,27 @@ function ListAccountOfCategory({
                     borderBottom: '0.5px dashed var(--creme)',
                   }}
                 >
-                  {currencyFormat(currency_code, total_balance, 'en-US')}
+                  {currencyFormat(currency_code, actualSpent, 'en-US')}
                   &nbsp;/&nbsp;
-                  {currencyFormat(currency_code, budget, 'en-US')}
+                  {currencyFormat(currency_code, budgetAmount, 'en-US')}
                 </div>
               </BoxRow>
 
               <BoxRow>
                 <BoxRow>
                   <div className='flx-row-sb'>
-                    <StatusSquare alert={statusAlert ? 'alert' : ''} />
+                    <StatusSquare alert={isOverBudget ? 'alert' : ''} />
                     <div className='box__subtitle'>
                       &nbsp;
                       {/* Absolute value: the word carries the sign, so a minus
                           in front of it would state the same thing twice. */}
                       {numberFormatCurrency(
-                        Math.abs(remain),
+                        Math.abs(remainingBudget),
                         2,
-                        currency_code ?? DEFAULT_CURRENCY,
+                        currency_code,
                         'en-US',
                       )}
-                      &nbsp;{remain < 0 ? 'over' : 'left'}&nbsp;
+                      &nbsp;{remainingBudget < 0 ? 'over' : 'left'}&nbsp;
                       <span style={{ fontSize: '0.75rem' }}>
                         ({remainPercentage})
                       </span>

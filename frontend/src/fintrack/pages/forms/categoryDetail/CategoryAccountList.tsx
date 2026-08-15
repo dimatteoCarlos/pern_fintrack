@@ -1,5 +1,5 @@
 // frontend/src/pages/forms/categoryDetail/CategoryAccountList.tsx
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
@@ -9,141 +9,111 @@ import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpa
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
 import ListAccountOfCategory from './ListAccountOfCategory.tsx';
+import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 
-import { url_get_accounts_by_category } from '../../../../urlConfig.ts';
-import { CategoryBudgetAccountsResponseType } from '../../../types/responseApiTypes.ts';
-import { CategorySummaryInfoType, CurrencyType } from '../../../types/types.ts';
 import { capitalize } from '../../../helpers/functions.ts';
+import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
-import { useFetch } from '../../../hooks/useFetch.ts';
+import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
 
 import '../styles/forms-styles.css';
 
 //==============================
 function CategoryAccountList() {
-  // console.log('CategoryAccountList')
-  //get the info from location state
   const location = useLocation();
   const { categoryName } = useParams();
-  // console.log('category',categoryName)
-  //check location state data from ListCategory
-  // const {
-  //pathname:categoryAccountListPageAddress,
-  //   state:{categorySummaryDetailed},
-  //   state:{previousRoute:budgetPageAddress}}=location
 
+  // Only the return path still travels in location.state. The figures used to
+  // travel with it, which is why a reload straight into this screen rendered a
+  // category summary built out of nothing.
   const state = location.state ?? {};
-  const {
-    categorySummaryDetailed = null,
-    previousRoute: budgetPageAddress = `/fintrack/budget`,
-  } = state as {
-    categorySummaryDetailed?: CategorySummaryInfoType | null;
-    previousRoute: string;
+  const { previousRoute: budgetPageAddress = `/fintrack/budget` } = state as {
+    previousRoute?: string;
   };
-  // console.log('location', location)
-  // console.log("🚀 ~ CategoryAccountList ~ location:",
-  //   //location,
-  //   //  categorySummaryDetailed,
-  //   //  budgetPageAddress,
-  //   categoryAccountListPageAddress
-  // )
-  //--states-------------------------
-  const [categorySummaryInfo, setCategorySummaryInfo] =
-    useState<CategorySummaryInfoType | null>(categorySummaryDetailed ?? null);
 
-  //--Fetch Data to get accounts info associated to categoryName
-  const urlAccountsByCategoryName = `${url_get_accounts_by_category}/${categoryName}`;
+  //--DATA-------------------------
+  // No request of its own: the module's single call is issued at level 1 and
+  // this reads two slices of that one answer.
+  const accounts = useBudgetStatusStore((state) => state.accounts);
+  const categories = useBudgetStatusStore((state) => state.categories);
+  const isLoading = useBudgetStatusStore((state) => state.isLoading);
+  const error = useBudgetStatusStore((state) => state.error);
+  const fetchStatus = useBudgetStatusStore((state) => state.fetchStatus);
 
-  const { apiData, isLoading, error } =
-    useFetch<CategoryBudgetAccountsResponseType>(urlAccountsByCategoryName);
+  // Level 1 normally fills the store before this screen mounts. A reload or a
+  // bookmark landing here does not, so the call is issued from here too: the
+  // store's guard turns it into a no-op when the month is already loaded.
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
 
-  const categoryAccountsExists = apiData && apiData.data.accountList.length > 0;
-
-  const categoryAccounts = useMemo(() => {
-    return categoryAccountsExists ? apiData?.data.accountList : [];
-  }, [categoryAccountsExists, apiData]);
-
-  //console.log("🚀 ~ CategoryAccountList ~ categoryAccounts:", categoryAccounts)
-  //===============================
-  //--functions
-  //--build category summary info
-  const calculateCategorySummaryInfo = useCallback(
-    (
-      accounts: typeof categoryAccounts,
-      categoryName: string,
-      currency_code: CurrencyType = 'usd',
-    ) => {
-      const summary: CategorySummaryInfoType = {
-        category_name: categoryName,
-        currency_code: 'usd',
-        total_balance: 0,
-        total_budget: 0,
-        total_remaining: 0,
-        statusAlert: false,
-        remain: 0,
-      };
-
-      for (let i = 0; i < accounts.length; i++) {
-        summary.total_balance += Number(accounts[i].account_balance);
-        summary.total_budget += +accounts[i].budget;
-      }
-
-      // Not rounded: the backend already ships two decimals, and rounding to an
-      // integer here made the amount disagree with its own percentage.
-      summary.remain = -summary.total_balance + summary.total_budget;
-
-      summary.statusAlert = summary.remain <= 0;
-      summary.currency_code =
-        accounts[0].currency_code ?? (currency_code as CurrencyType);
-      summary.category_name = categoryName;
-
-      return summary;
-    },
-    [],
+  const categoryAccounts = useMemo(
+    () => accounts.filter((account) => account.categoryName === categoryName),
+    [accounts, categoryName],
   );
 
-  // const previousRoute = budgetPageAddress??`/fintrack/budget/${categoryName}`
+  // The server's own fold of the rows listed below, not a sum over them: a
+  // header and the rows under it cannot disagree if only one is computed.
+  const categorySummary = useMemo(
+    () =>
+      categories.find((category) => category.categoryName === categoryName) ??
+      null,
+    [categories, categoryName],
+  );
 
-  //--if summary info of category is not coming from location.state, then it is built
-  //-----------------
-  useEffect(() => {
-    if (!categorySummaryDetailed && categoryAccountsExists) {
-      const summary = calculateCategorySummaryInfo(
-        categoryAccounts,
-        categoryName!,
-        //here currency code is assumed to be the same for every account, not multicurrencies
-        categoryAccounts[0].currency_code,
-      );
-      setCategorySummaryInfo(summary);
-    }
-  }, [
-    categorySummaryDetailed,
-    categoryAccounts,
-    categoryName,
-    categoryAccountsExists,
-    calculateCategorySummaryInfo,
-  ]);
+  //===============================
+  // RETIRED by commit 9b — remove in the cleanup block (V1 §9.4, D8).
+  // It summed account_balance and budget across the accounts of the category
+  // to rebuild what the server already folds, and assumed 'usd' twice while
+  // doing it. categories[] serves the four figures.
+  //
+  // const calculateCategorySummaryInfo = useCallback(
+  //   (accounts, categoryName, currency_code: CurrencyType = 'usd') => {
+  //     const summary: CategorySummaryInfoType = {
+  //       category_name: categoryName, currency_code: 'usd',
+  //       total_balance: 0, total_budget: 0, total_remaining: 0,
+  //       statusAlert: false, remain: 0,
+  //     };
+  //     for (let i = 0; i < accounts.length; i++) {
+  //       summary.total_balance += Number(accounts[i].account_balance);
+  //       summary.total_budget += +accounts[i].budget;
+  //     }
+  //     summary.remain = -summary.total_balance + summary.total_budget;
+  //     summary.statusAlert = summary.remain <= 0;
+  //     summary.currency_code = accounts[0].currency_code ?? currency_code;
+  //     summary.category_name = categoryName;
+  //     return summary;
+  //   }, []);
+  //
+  // And the effect that ran it whenever location.state arrived empty:
+  //
+  // useEffect(() => {
+  //   if (!categorySummaryDetailed && categoryAccountsExists) {
+  //     setCategorySummaryInfo(calculateCategorySummaryInfo(...));
+  //   }
+  // }, [...]);
+  //===============================
 
-  //summary data
-  const summaryData = categorySummaryInfo
-    ? {
-        title: 'Budget',
-        amount: Number(categorySummaryInfo.total_budget),
-        subtitle1: 'Spent',
-        amount1: +categorySummaryInfo.total_balance,
-        status: categorySummaryInfo.statusAlert as boolean,
-        amount2: +categorySummaryInfo.remain,
-        currency_code: categorySummaryInfo.currency_code,
-      }
-    : {
-        title: 'Budget',
-        amount: 0,
-        subtitle1: 'Spent',
-        amount1: 0,
-        status: false,
-        amount2: 0,
-        currency_code: 'usd' as CurrencyType,
-      };
+  // Every category figure is nullable for one case: accounts in more than one
+  // currency, which V1 does not allow. Unreachable under a single accounting
+  // currency, and the box is withheld rather than showing a zero if the model
+  // ever widens.
+  const summaryData =
+    categorySummary &&
+    categorySummary.budgetAmount !== null &&
+    categorySummary.actualSpent !== null &&
+    categorySummary.remainingBudget !== null
+      ? {
+          title: 'Budget',
+          amount: categorySummary.budgetAmount,
+          subtitle1: 'Spent',
+          amount1: categorySummary.actualSpent,
+          status: categorySummary.isOverBudget ?? false,
+          amount2: categorySummary.remainingBudget,
+          currency_code: categorySummary.currency ?? DEFAULT_CURRENCY,
+          executionPercentage: categorySummary.executionPercentage,
+        }
+      : null;
   //===============================
   return (
     <>
@@ -171,17 +141,29 @@ function CategoryAccountList() {
           </div>
         </div>
 
-        <SummaryDetailBox bubleInfo={summaryData}></SummaryDetailBox>
+        {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
 
         <CardTitle legend='Spent / Budget'>{capitalize(categoryName!)}</CardTitle>
 
-        <ListAccountOfCategory
-          previousRoute={`${budgetPageAddress}/category/${categoryName}`}
-          accounts={categoryAccounts}
-          //categoryName={categoryName}
-        />
-        {isLoading && <p>Loading...</p>}
-        {error && <p>Error loading data: {error}</p>}
+        {/* Loading, error and empty are three states, not one fallback: a
+            category still on the wire is not a category without accounts. */}
+        {isLoading && <CoinSpinner />}
+
+        {!isLoading && error && <p className='box__subtitle'>Error loading data: {error}</p>}
+
+        {!isLoading && !error && categoryAccounts.length === 0 && (
+          <p className='box__subtitle'>
+            This category has no budget accounts this month.
+          </p>
+        )}
+
+        {!isLoading && !error && categoryAccounts.length > 0 && (
+          <ListAccountOfCategory
+            previousRoute={`${budgetPageAddress}/category/${categoryName}`}
+            accounts={categoryAccounts}
+            //categoryName={categoryName}
+          />
+        )}
       </section>
     </>
   );

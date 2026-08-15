@@ -1,4 +1,5 @@
 //frontend/src/pages\/orms/categoryDetail/CategoryDetail.tsx
+import { useEffect, useMemo } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
@@ -9,7 +10,9 @@ import AccountTransactionsList from '../accountDetailSharedComponents/accountTra
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
 import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
+import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 
+import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import {
   url_get_account_by_id,
@@ -20,7 +23,6 @@ import {
   CategoryBudgetAccountsResponseType,
   TransactionsAccountApiResponseType,
 } from '../../../types/responseApiTypes.ts';
-import { CurrencyType } from '../../../types/types.ts';
 
 import {
   capitalize,
@@ -50,10 +52,7 @@ function CategoryDetail() {
   //---DETAIL ACCOUNT DATA FETCHER
   const location = useLocation();
   const state = location.state ?? {};
-  const {
-    detailedData: accountDetailedFromState,
-    previousRoute: previousRouteFromState,
-  } = state;
+  const { previousRoute: previousRouteFromState } = state;
 
   const previousRoute =
     previousRouteFromState ??
@@ -61,63 +60,89 @@ function CategoryDetail() {
       ? `/fintrack/budget/category/${categoryName}`
       : '/fintrack/budget');
 
-  const isAccountDetailMissing = !accountDetailedFromState;
+  //--BUDGET FIGURES----------------
+  // Read from the module's payload, never rebuilt here. This screen has two
+  // entry points — the category list and the accounting dashboard — and the
+  // second one arrives with nothing in location.state, which is why the
+  // figures it used to read from there resolved to NaN.
+  const budgetAccounts = useBudgetStatusStore((state) => state.accounts);
+  const referenceMonth = useBudgetStatusStore((state) => state.referenceMonth);
+  const isLoadingStatus = useBudgetStatusStore((state) => state.isLoading);
+  const errorStatus = useBudgetStatusStore((state) => state.error);
+  const fetchStatus = useBudgetStatusStore((state) => state.fetchStatus);
+
+  // Either entry point can be the first screen of the session. The store's
+  // guard makes this a no-op when the month is already loaded.
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  const budgetAccount = useMemo(
+    () =>
+      budgetAccounts.find(
+        (account) => String(account.accountId) === accountId,
+      ) ?? null,
+    [budgetAccounts, accountId],
+  );
   //---
-  // CONDITIONAL FETCH (FALLBACK)
-  const urlAccountByIdConditional = isAccountDetailMissing
-    ? `${url_get_account_by_id}/${accountId}`
-    : null;
+  // ACCOUNT RECORD
+  // The budget contract carries figures, not the account record: the account
+  // type and the opening date are not budget facts. This request exists for
+  // those two fields alone, and is what used to arrive inside location.state.
+  const urlAccountById = `${url_get_account_by_id}/${accountId}`;
 
   const {
     apiData: accountsDataFromFetch,
     isLoading: isLoadingAccount,
     error: errorAccount,
-  } = useFetch<CategoryBudgetAccountsResponseType>(urlAccountByIdConditional);
+  } = useFetch<CategoryBudgetAccountsResponseType>(urlAccountById);
 
-  //Data transforming for rendering
-  const accountDetailed =
-    accountDetailedFromState || accountsDataFromFetch?.data?.accountList[0];
+  const accountRecord = accountsDataFromFetch?.data?.accountList[0];
 
-  // console.log("🚀 ~ CategoryDetail ~ accountDetailed:", accountDetailed)
+  const currency_code =
+    budgetAccount?.currency ?? accountRecord?.currency_code ?? DEFAULT_CURRENCY;
   //-------------------------
   //SUMMARY DATA
-  const summaryData = accountDetailed
+  // Withheld rather than zeroed while the payload is still on the wire: a
+  // budget that has not arrived is not a budget of zero.
+  const summaryData = budgetAccount
     ? {
         title: 'Budget',
-        amount: Number(accountDetailed.budget),
+        amount: budgetAccount.budgetAmount,
         subtitle1: 'Spent',
-        amount1: +accountDetailed.account_balance,
-        status: accountDetailed.statusAlert as boolean,
-        amount2: +accountDetailed.remain,
-        currency_code: accountDetailed.currency_code,
+        amount1: budgetAccount.actualSpent,
+        status: budgetAccount.isOverBudget,
+        amount2: budgetAccount.remainingBudget,
+        currency_code: budgetAccount.currency,
+        executionPercentage: budgetAccount.executionPercentage,
       }
-    : {
-        title: 'Budget',
-        amount: 0,
-        subtitle1: 'Spent',
-        amount1: 0,
-        status: false,
-        amount2: 0,
-        currency_code: 'usd' as CurrencyType,
-      };
+    : null;
   //--------------------------------
-  //DATES PERIOD considering previous number of months and current month transactions
-  const tdy = new Date();
-  const numberOfMonths = 2;
-  const firstDayOfPeriod = new Date(
-    tdy.getFullYear(),
-    tdy.getMonth() - numberOfMonths + 1,
-    1,
-  );
-  const lastDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth() + 1, 0);
-
-  //--YYYY-MM-DD
-  const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0];
-  const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0];
+  //DATES PERIOD
+  //
+  // RETIRED by commit 9b — remove in the cleanup block (V1 §9.4, D8).
+  // A two-month window built from the browser's clock, under a card stating a
+  // single month's budget. The list answered a different question than the
+  // figures above it, and the clock it was built from is not the account
+  // owner's.
+  //
+  // const tdy = new Date();
+  // const numberOfMonths = 2;
+  // const firstDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth() - numberOfMonths + 1, 1);
+  // const lastDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth() + 1, 0);
+  // const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0];
+  // const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0];
+  //
+  // The month the figures above are about, as the server resolved it on the
+  // owner's calendar. Null until the payload lands: with no month the endpoint
+  // falls back to that same legacy window, so the request waits instead.
+  const month = referenceMonth ? referenceMonth.slice(0, 7) : null;
   //--------------------------------
   //--FETCH TRANSACTIONS DATA
   //--account detail transactions
-  const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
+  const urlTransactionsAccountById = month
+    ? `${url_get_transactions_by_account_id}/${accountId}/?month=${month}`
+    : null;
 
   const {
     apiData: transactionAccountApiResponse, //{status, message, data}
@@ -127,12 +152,14 @@ function CategoryDetail() {
 
   const transactions = transactionAccountApiResponse?.data.transactions ?? [];
 
-  const summaryAccountBalance = transactionAccountApiResponse?.data.summary ?? {
-    initialBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },
-    finalBalance: { amount: 0, date: '', currency: DEFAULT_CURRENCY },
-    periodStartDate: '',
-    periodEndDate: '',
-  };
+  // Null, not a zeroed shape: the period line and the balance pair are
+  // withheld until the answer lands rather than stating a balance of 0 on a
+  // period of ''.
+  const summaryAccountBalance =
+    transactionAccountApiResponse?.data.summary ?? null;
+
+  const isLoading = isLoadingStatus || isLoadingAccount || isLoadingTransactions;
+  const error = errorStatus ?? errorAccount ?? errorTransactions;
   //===============================
   return (
     <>
@@ -145,7 +172,7 @@ function CategoryDetail() {
             </Link>
 
             <div className='form__title'>
-              {capitalize(accountDetailed?.account_name)}
+              {capitalize(budgetAccount?.accountName ?? accountRecord?.account_name)}
             </div>
 
             {/* <Link to='edit' className='flx-col-center icon3dots'>
@@ -158,7 +185,7 @@ function CategoryDetail() {
           </div>
         </div>
 
-        <SummaryDetailBox bubleInfo={summaryData}></SummaryDetailBox>
+        {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
 
         <article className='form__box'>
           <div className='form__container'>
@@ -166,10 +193,7 @@ function CategoryDetail() {
               <label className='label forms__label'>{`Current Balance`}</label>
 
               <div className='input__container' style={{ padding: '0.5rem' }}>
-                {currencyFormat(
-                  accountDetailed?.currency_code,
-                  accountDetailed?.account_balance,
-                )}
+                {currencyFormat(currency_code, accountRecord?.account_balance)}
               </div>
             </div>
 
@@ -177,7 +201,7 @@ function CategoryDetail() {
               <label className='label forms__label'>{'Account Type'}</label>
 
               <p className='input__container' style={{ padding: '0.5rem' }}>
-                {accountDetailed?.account_type_name}
+                {accountRecord?.account_type_name}
               </p>
             </div>
 
@@ -188,17 +212,14 @@ function CategoryDetail() {
                   className='form__datepicker__container'
                   style={{ textAlign: 'center', color: 'white' }}
                 >
-                  {formatDateToDDMMYYYY(accountDetailed?.account_start_date)}
+                  {formatDateToDDMMYYYY(accountRecord?.account_start_date)}
                 </div>
               </div>
 
               <div className='account__currency'>
                 <div className='label forms__label'>{'Currency'}</div>
 
-                <CurrencyBadge
-                  variant={VARIANT_FORM}
-                  currency={accountDetailed?.currency_code ?? DEFAULT_CURRENCY}
-                />
+                <CurrencyBadge variant={VARIANT_FORM} currency={currency_code} />
               </div>
             </div>
           </div>
@@ -208,39 +229,48 @@ function CategoryDetail() {
             className='account-transactions__container '
             style={{ margin: '1rem 0' }}
           >
-            <div className='period-info'>
-              <div className='period-info__label'>Period</div>
-              <span className='period-info__dates  '>
-                {formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}
-                {'  '} / {'  '}{' '}
-                {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}
-              </span>
-            </div>
+            {/* The month the budget figures above are about, as the server
+                bounded it on the owner's calendar. */}
+            {summaryAccountBalance && (
+              <>
+                <div className='period-info'>
+                  <div className='period-info__label'>Period</div>
+                  <span className='period-info__dates  '>
+                    {formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}
+                    {'  '} / {'  '}{' '}
+                    {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}
+                  </span>
+                </div>
 
-            <AccountBalanceSummary
-              summaryAccountBalance={summaryAccountBalance}
-            />
+                <AccountBalanceSummary
+                  summaryAccountBalance={summaryAccountBalance}
+                />
+              </>
+            )}
 
             <div className='presentation__card__title__container '>
               <CardTitle>{'Last Movements'}</CardTitle>
             </div>
 
-            {transactions.length === 0 && (
-              <p>No existen transacciones en esta cuenta</p>
+            {/* Loading, error and empty are three states: a month still on the
+                wire is not a month without movements. */}
+            {isLoading && <CoinSpinner />}
+
+            {!isLoading && !error && transactions.length === 0 && (
+              <p className='box__subtitle'>
+                No transactions in this account for the period.
+              </p>
             )}
 
-            {transactions.length > 0 && (
+            {!isLoading && !error && transactions.length > 0 && (
               <AccountTransactionsList transactions={transactions} />
             )}
           </div>
         </article>
 
         {/* --- END OF TRANSACTION STATEMENT SECTION --- */}
-        {(isLoadingAccount || isLoadingTransactions) && <p>Loading...</p>}
-        {(errorAccount || errorTransactions) && (
-          <p>
-            Error fetching account info: {errorAccount ?? errorTransactions}
-          </p>
+        {!isLoading && error && (
+          <p className='box__subtitle'>Error fetching account info: {error}</p>
         )}
       </section>
     </>

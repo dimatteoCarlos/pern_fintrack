@@ -20,22 +20,50 @@ type SummaryDetailPropType = {
     status: string | boolean;
     amount2: number;
     currency_code: CurrencyType;
+    // Served by the budget module, which is the only caller of this component.
+    // Optional so the two percentages keep a definition if a future caller has
+    // no served figure to hand over.
+    executionPercentage?: number | null;
   };
 };
 
 //MAIN UI COMPONENT: SummaryDetailBox.tsx
 function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
-  const { title, amount, subtitle1, amount1, amount2, status, currency_code } =
-    bubleInfo;
+  const {
+    title,
+    amount,
+    subtitle1,
+    amount1,
+    amount2,
+    status,
+    currency_code,
+    executionPercentage,
+  } = bubleInfo;
 
   // amount2 is what is left of the budget: negative means it was exceeded.
   const isOver = amount2 < 0;
 
+  const hasServedPercentage =
+    executionPercentage !== null && executionPercentage !== undefined;
+
+  // What was spent as a share of the budget. |execution| is that same
+  // division, so taking it from the server makes the figure inherit its
+  // rounding instead of a second formula over the amounts.
+  const spentPercentage = hasServedPercentage
+    ? Math.abs(executionPercentage)
+    : amount !== 0 && amount1
+      ? Math.abs((amount1 / amount) * 100)
+      : 0;
+
   // What the remaining amount is worth as a share of the budget. The
   // parenthesis qualifies the figure in front of it, so the same number reads
-  // for both words: 19.6% over, 100.0% left.
-  const remainPercentage =
-    amount !== 0 ? (Math.abs(amount2) / amount) * 100 : 0;
+  // for both words: 19.6% over, 100.0% left. |100 - execution| is the same
+  // division as |remaining| / budget, for every sign of the remainder.
+  const remainPercentage = hasServedPercentage
+    ? Math.abs(100 - executionPercentage)
+    : amount !== 0
+      ? (Math.abs(amount2) / amount) * 100
+      : 0;
 
   return (
     <>
@@ -51,10 +79,7 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
 
           <div className='summary__data--subtitle1'>
             {subtitle1} {numberFormatCurrency(amount1, 2, currency_code)}&nbsp;(
-            {(amount !== 0 && amount1
-              ? Math.abs((amount1! / amount) * 100)
-              : 0
-            ).toFixed(1)}
+            {spentPercentage.toFixed(1)}
             %)
           </div>
 

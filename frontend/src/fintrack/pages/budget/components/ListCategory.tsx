@@ -14,7 +14,6 @@ import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 import { Link } from 'react-router-dom';
 
 import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
-import { CategorySummaryInfoType } from '../../../types/types.ts';
 //-----------------------------
 // RETIRED by commit 9 — remove in the cleanup block (V1 §9.4, D8).
 // The shape existed to carry a total_budget this component fabricated from a
@@ -105,26 +104,15 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
           const remainWord =
             remainingBudget === null ? '' : remainingBudget < 0 ? 'over' : 'left';
 
-          // TEMPORARY, removed by commit 9b: level 2 still reads this shape out
-          // of location.state. Fed from the served figures so both levels state
-          // the same numbers while the migration is half done.
-          const categorySummaryDetailed: CategorySummaryInfoType = {
-            category_name: categoryName,
-            currency_code,
-            total_balance: actualSpent ?? 0,
-            total_budget: budgetAmount ?? 0,
-            total_remaining: remainingBudget ?? 0,
-            remain: remainingBudget ?? 0,
-            statusAlert: isOverBudget ?? false,
-          };
-
           return (
            <div className='box__container .flx-row-sb' key={categoryName}>
               <BoxRow>
+                {/* Only the return path travels. Level 2 reads the same store
+                    this row does, so nothing carried in state could be more
+                    current than what it already holds. */}
                 <Link
                   to={`category/${categoryName}`}
                   state={{
-                   categorySummaryDetailed,
                     previousRoute,
                   }}
                 >
