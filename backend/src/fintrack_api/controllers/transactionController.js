@@ -855,14 +855,41 @@ export async function getTransactionById(req, res, next) {
         t.exchange_rate_timestamp,
         t.exchange_rate_target_currency_id,
         c.currency_code,
-        oc.currency_code AS original_currency_code
+        oc.currency_code AS original_currency_code,
+        act.account_type_name,
+        mt.movement_type_name,
+        sa.account_name AS source_account_name,
+        sat.account_type_name AS source_account_type,
+        da.account_name AS destination_account_name,
+        dat.account_type_name AS destination_account_type,
+        -- The owner's calendar, not the reader's browser: a transaction stamped
+        -- at 23:40 in Bogota must not read as the next day from another device.
+        (t.transaction_actual_date AT TIME ZONE COALESCE(u.timezone, 'UTC'))::date::text AS transaction_local_date,
+        to_char(
+          t.transaction_actual_date AT TIME ZONE COALESCE(u.timezone, 'UTC'),
+          'HH24:MI'
+        ) AS transaction_local_time
 
       FROM transactions t
 
       LEFT JOIN currencies c ON t.currency_id = c.currency_id
       LEFT JOIN currencies oc ON t.original_currency_id = oc.currency_id
       LEFT JOIN user_accounts ua ON t.account_id = ua.account_id
-      LEFT JOIN transaction_types trt ON trt.transaction_type_id = t.transaction_type_id 
+      LEFT JOIN transaction_types trt ON trt.transaction_type_id = t.transaction_type_id
+      LEFT JOIN movement_types mt ON mt.movement_type_id = t.movement_type_id
+      LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
+
+      -- The counterpart accounts of a transfer. Both carry user_id in the join
+      -- and not only the id, so a foreign account can never surface its name.
+      LEFT JOIN user_accounts sa ON sa.account_id = t.source_account_id AND sa.user_id = t.user_id
+      LEFT JOIN account_types sat ON sat.account_type_id = sa.account_type_id
+      LEFT JOIN user_accounts da ON da.account_id = t.destination_account_id AND da.user_id = t.user_id
+      LEFT JOIN account_types dat ON dat.account_type_id = da.account_type_id
+
+      -- Joined instead of read with getUserTimeZone: the zone is one column of a
+      -- row this statement already reaches, and a second round trip to resolve it
+      -- is latency once the database is remote.
+      LEFT JOIN users u ON u.user_id = t.user_id
 
       WHERE t.transaction_id = $1 AND t.user_id = $2`,
       [transactionId, userId],
@@ -925,11 +952,23 @@ export async function getTransactionById(req, res, next) {
       exchange_rate_source: transaction.exchange_rate_source,
       exchange_rate_timestamp: transaction.exchange_rate_timestamp,
       transaction_actual_date: transaction.transaction_actual_date,
+      transaction_local_date: transaction.transaction_local_date,
+      transaction_local_time: transaction.transaction_local_time,
       account_id: transaction.account_id,
       account_name: transaction.account_name,
+      account_type_name: transaction.account_type_name,
       movement_type_id: transaction.movement_type_id,
+      movement_type_name: transaction.movement_type_name,
       transaction_type_id: transaction.transaction_type_id,
       transaction_type_name: transaction.transaction_type_name,
+      // Both ids were already selected and then dropped here, so the consumer
+      // had a name with nothing to link it to.
+      source_account_id: transaction.source_account_id,
+      source_account_name: transaction.source_account_name,
+      source_account_type: transaction.source_account_type,
+      destination_account_id: transaction.destination_account_id,
+      destination_account_name: transaction.destination_account_name,
+      destination_account_type: transaction.destination_account_type,
       status: transaction.status,
       account_balance_after_tr: parseFloat(
         transaction.account_balance_after_tr,
