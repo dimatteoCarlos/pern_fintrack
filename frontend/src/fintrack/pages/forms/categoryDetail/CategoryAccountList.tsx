@@ -1,6 +1,6 @@
 // frontend/src/pages/forms/categoryDetail/CategoryAccountList.tsx
 import { useEffect, useMemo } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
@@ -11,12 +11,17 @@ import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/
 import ListAccountOfCategory from './ListAccountOfCategory.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 
-import { capitalize } from '../../../helpers/functions.ts';
+import {
+  capitalize,
+  formatBudgetMonthLabel,
+  withMonthParam,
+} from '../../../helpers/functions.ts';
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
 import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
 
 import '../styles/forms-styles.css';
+import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
 
 //==============================
 function CategoryAccountList() {
@@ -36,16 +41,22 @@ function CategoryAccountList() {
   // this reads two slices of that one answer.
   const accounts = useBudgetStatusStore((state) => state.accounts);
   const categories = useBudgetStatusStore((state) => state.categories);
+  const referenceMonth = useBudgetStatusStore((state) => state.referenceMonth);
   const isLoading = useBudgetStatusStore((state) => state.isLoading);
   const error = useBudgetStatusStore((state) => state.error);
   const fetchStatus = useBudgetStatusStore((state) => state.fetchStatus);
+
+  // The month is read from this screen's own URL, not inherited: this route is
+  // declared beside the budget layout, so nothing of level 1 is still mounted.
+  const [searchParams] = useSearchParams();
+  const month = searchParams.get('month');
 
   // Level 1 normally fills the store before this screen mounts. A reload or a
   // bookmark landing here does not, so the call is issued from here too: the
   // store's guard turns it into a no-op when the month is already loaded.
   useEffect(() => {
-    fetchStatus();
-  }, [fetchStatus]);
+    fetchStatus(month ?? undefined);
+  }, [fetchStatus, month]);
 
   const categoryAccounts = useMemo(
     () => accounts.filter((account) => account.categoryName === categoryName),
@@ -122,7 +133,7 @@ function CategoryAccountList() {
         <div className='page__content'>
           <div className='main__title--container'>
             <Link
-              to={budgetPageAddress}
+              to={withMonthParam(budgetPageAddress, month)}
               relative='path'
               className='iconLeftArrow'
             >
@@ -140,6 +151,20 @@ function CategoryAccountList() {
             </div>
           </div>
         </div>
+
+        {/* Read-only, and no chevron: the scope is set where the whole board is
+            visible, which is level 1. The label is the resolved month, so it
+            stays a skeleton until the answer lands. */}
+        {referenceMonth ? (
+          <div className='month-badge month-badge--dark'>
+            {formatBudgetMonthLabel(referenceMonth)}
+          </div>
+        ) : (
+          <div
+            className='month-badge month-badge--dark month-badge--skeleton'
+            aria-hidden='true'
+          />
+        )}
 
         {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
 

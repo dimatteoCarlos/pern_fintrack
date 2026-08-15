@@ -7,11 +7,12 @@ import {
 import {
   currencyFormat,
   numberFormatCurrency,
+  withMonthParam,
 } from '../../../helpers/functions.ts';
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
 //-----------------------------
@@ -39,6 +40,12 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
   // same rounded rows level 2 renders, so a group header reconciles with the
   // accounts under it.
   const categories = useBudgetStatusStore((state) => state.categories);
+
+  // Level 2 is a route beside this one, not below it, so it re-reads the month
+  // from its own URL. A link that dropped it would land on a screen quietly
+  // reporting a different month from the row that was clicked.
+  const [searchParams] = useSearchParams();
+  const month = searchParams.get('month');
 
   //--------------------------------
   return (
@@ -111,7 +118,7 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
                     this row does, so nothing carried in state could be more
                     current than what it already holds. */}
                 <Link
-                  to={`category/${categoryName}`}
+                  to={withMonthParam(`category/${categoryName}`, month)}
                   state={{
                     previousRoute,
                   }}

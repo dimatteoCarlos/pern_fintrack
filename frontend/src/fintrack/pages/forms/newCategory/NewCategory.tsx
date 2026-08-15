@@ -13,6 +13,7 @@ import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 
 import '../styles/forms-styles.css';
+import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
 
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
@@ -460,7 +461,7 @@ function NewCategory() {
         </div>
 
         {/* MONTH THE BUDGET LANDS IN */}
-        <div className='month-badge'>{currentBudgetMonth}</div>
+        <div className='month-badge month-badge--dark'>{currentBudgetMonth}</div>
 
         {/* FORM START */}
         <form className='form__box'>

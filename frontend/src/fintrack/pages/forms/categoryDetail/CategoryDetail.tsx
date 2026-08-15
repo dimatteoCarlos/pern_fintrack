@@ -1,6 +1,6 @@
 //frontend/src/pages\/orms/categoryDetail/CategoryDetail.tsx
 import { useEffect, useMemo } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
@@ -27,12 +27,15 @@ import {
 import {
   capitalize,
   currencyFormat,
+  formatBudgetMonthLabel,
   formatDateToDDMMYYYY,
+  withMonthParam,
 } from '../../../helpers/functions.ts';
 
 import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
 
 import '../styles/forms-styles.css';
+import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
 
 import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
 
@@ -71,11 +74,16 @@ function CategoryDetail() {
   const errorStatus = useBudgetStatusStore((state) => state.error);
   const fetchStatus = useBudgetStatusStore((state) => state.fetchStatus);
 
+  // Read from this screen's own URL: this route is declared beside the budget
+  // layout, so nothing above it is still mounted to inherit a month from.
+  const [searchParams] = useSearchParams();
+  const monthParam = searchParams.get('month');
+
   // Either entry point can be the first screen of the session. The store's
   // guard makes this a no-op when the month is already loaded.
   useEffect(() => {
-    fetchStatus();
-  }, [fetchStatus]);
+    fetchStatus(monthParam ?? undefined);
+  }, [fetchStatus, monthParam]);
 
   const budgetAccount = useMemo(
     () =>
@@ -167,7 +175,11 @@ function CategoryDetail() {
         <TopWhiteSpace variant={'dark'} />
         <div className='page__content'>
           <div className='main__title--container'>
-            <Link to={previousRoute} relative='path' className='iconLeftArrow'>
+            <Link
+              to={withMonthParam(previousRoute, monthParam)}
+              relative='path'
+              className='iconLeftArrow'
+            >
               <LeftArrowLightSvg />
             </Link>
 
@@ -184,6 +196,20 @@ function CategoryDetail() {
             </div>
           </div>
         </div>
+
+        {/* Read-only, and no chevron: at this level a picker would be a second
+            way to ask what the account's own series answers. The label is the
+            resolved month, so it is a skeleton until the answer lands. */}
+        {referenceMonth ? (
+          <div className='month-badge month-badge--dark'>
+            {formatBudgetMonthLabel(referenceMonth)}
+          </div>
+        ) : (
+          <div
+            className='month-badge month-badge--dark month-badge--skeleton'
+            aria-hidden='true'
+          />
+        )}
 
         {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
 

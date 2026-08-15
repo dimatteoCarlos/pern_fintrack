@@ -9,11 +9,12 @@ import {
 import {
   currencyFormat,
   numberFormatCurrency,
+  withMonthParam,
 } from '../../../helpers/functions.ts';
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { BudgetAccountStatus } from '../../../types/budgetTypes.ts';
 //-----------------------------
 // RETIRED by commit 9b — remove in the cleanup block (V1 §9.4, D8).
@@ -36,6 +37,11 @@ function ListAccountOfCategory({
   // ,  categoryName
 }: ListAccountOfCategoryProp) {
   // console.log('from ListAccountOfCatgoryProp', previousRoute)
+
+  // Level 3 is another standalone route, so it reads the month from its URL
+  // too. The link is what puts it there.
+  const [searchParams] = useSearchParams();
+  const month = searchParams.get('month');
   // --------------------------------
   return (
     <>
@@ -79,7 +85,7 @@ function ListAccountOfCategory({
                     which is what made this account render NaN when it was
                     opened from the accounting dashboard instead of from here. */}
                 <Link
-                  to={`account/${accountId}`}
+                  to={withMonthParam(`account/${accountId}`, month)}
                   state={{
                     previousRoute,
                     // categoryName

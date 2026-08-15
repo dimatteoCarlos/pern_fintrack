@@ -37,6 +37,10 @@ type BudgetStatusState = {
  // What is in memory, keyed the way it was asked for. 'current' is the omitted
  // month, which is a different key from the current month spelled out.
  loadedMonth: string | null;
+ // What is on the wire, same key. It is what lets a month picked during another
+ // month's request win: the older answer is discarded on arrival instead of the
+ // newer request being refused at the door.
+ requestedMonth: string | null;
  isLoading: boolean;
  error: string | null;
  fetchStatus: (month?: string) => Promise<void>;
@@ -57,6 +61,7 @@ export const useBudgetStatusStore = create<BudgetStatusState>((set, get) => ({
  totals: null,
  notices: [],
  loadedMonth: null,
+ requestedMonth: null,
  isLoading: false,
  error: null,
 
@@ -68,16 +73,24 @@ export const useBudgetStatusStore = create<BudgetStatusState>((set, get) => ({
  fetchStatus: async (month) => {
   const key = monthKey(month);
 
-  // Already answered, or already on the wire. This is what makes the store a
-  // carrier rather than a fetch on every mount: walking into a category and
-  // back must not ask again.
-  if (get().isLoading || get().loadedMonth === key) return;
+  // Already answered, or already on the wire FOR THIS MONTH. This is what makes
+  // the store a carrier rather than a fetch on every mount: walking into a
+  // category and back must not ask again.
+  //
+  // The guard used to refuse any call while one was in flight, which dropped a
+  // month picked during another month's request and left the badge on a month
+  // the user had already moved off.
+  if (get().loadedMonth === key || get().requestedMonth === key) return;
 
-  set({ isLoading: true, error: null });
+  set({ requestedMonth: key, isLoading: true, error: null });
 
   try {
    // No accountIds: the omission is what asks for every budget account owned.
    const data = await getBudgetAccountsStatus(undefined, month);
+
+   // A month picked while this one was on the wire supersedes it. Writing here
+   // would paint one month's figures under another month's badge.
+   if (get().requestedMonth !== key) return;
 
    set({
     referenceMonth: data.referenceMonth,
@@ -91,16 +104,19 @@ export const useBudgetStatusStore = create<BudgetStatusState>((set, get) => ({
     error: null,
    });
   } catch (err: unknown) {
+   if (get().requestedMonth !== key) return;
+
    // loadedMonth is left untouched, so a remount retries instead of serving a
-   // half-written state as if it were the month's answer.
+   // half-written state as if it were the month's answer. requestedMonth IS
+   // cleared: otherwise the failed month could never be asked for again.
    const errorMessage =
     err instanceof Error ? err.message : 'Failed to fetch budget status';
    console.error('📊 Error fetching budget status:', errorMessage);
-   set({ error: errorMessage, isLoading: false });
+   set({ error: errorMessage, isLoading: false, requestedMonth: null });
   }
  },
 
  // Drops the memo without clearing what is on screen, so the next fetchStatus
  // asks again. The budget editor calls it after a write.
- invalidate: () => set({ loadedMonth: null }),
+ invalidate: () => set({ loadedMonth: null, requestedMonth: null }),
 }));

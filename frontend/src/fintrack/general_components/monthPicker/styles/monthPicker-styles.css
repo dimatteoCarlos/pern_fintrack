@@ -1,0 +1,181 @@
+/* frontend/src/fintrack/general_components/monthPicker/styles/monthPicker-styles.css
+   The month badge, and the control it becomes at budget level 1.
+
+   Four screens render it: the new-category form states the month an allocation
+   is written to, and the three budget levels state the month being reported.
+   Only one of the four can change it, and that one carries a chevron.
+
+   Imported by whoever renders the badge, picker or not. */
+
+/* States the month a screen is about. Context, not a heading: an outline rather
+   than a fill, so it does not compete with the title.
+
+   Shape only — the surface picks the colour, because the badge lands on both:
+   the white header at budget level 1, the dark app surface everywhere else. */
+.month-badge {
+ align-self: center;
+ margin-bottom: var(--space-4);
+ padding: var(--space-2) var(--space-6);
+ border: var(--border-width-thin) solid transparent;
+ border-radius: var(--radius-full);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: 0.02em;
+ white-space: nowrap;
+}
+
+/* Two surfaces, two modifiers, each naming where it lands: the white header at
+   budget level 1, the dark app surface on the form and on levels 2 and 3. */
+.month-badge--dark {
+ border-color: var(--color-content-on-dark-muted);
+ color: var(--color-content-on-dark-muted);
+}
+
+.month-badge--light {
+ border-color: var(--color-content-primary);
+ color: var(--color-content-primary);
+}
+
+.month-badge--trigger {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-2);
+ background-color: transparent;
+ cursor: pointer;
+ transition: border-color var(--motion-fast), color var(--motion-fast);
+}
+
+/* Restates its own size: index.css sets font-size on the universal selector, so
+   an inline element does not inherit the size of the line it sits in. */
+.month-badge__label {
+ font-size: inherit;
+ font-weight: inherit;
+}
+
+.month-badge__chevron {
+ font-size: var(--font-size-xs);
+ line-height: 1;
+}
+
+/* The badge inverts instead of turning cyan: the outline it already wears
+   becomes the fill and the text takes the fill's opposite. The app's cyan
+   belongs to links and rows, and here it would read as a third colour on a
+   two-colour object. */
+.month-badge--light.month-badge--trigger:hover {
+ background-color: var(--color-content-primary);
+ border-color: var(--color-content-primary);
+ color: var(--color-accent);
+}
+
+.month-badge--trigger:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-content-primary);
+ outline-offset: var(--border-width-thick);
+}
+
+/* Pressed: the cream fill, one step short of the full inversion above, so the
+   press is legible without the badge moving. A shift would read as a layout
+   jump under the title. */
+.month-badge--light.month-badge--trigger:active {
+ background-color: var(--color-accent);
+ border-color: var(--color-content-primary);
+ color: var(--color-content-primary);
+}
+
+.month-badge--trigger:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The month has not arrived. Its own width, because an empty badge would
+   collapse and the header would jump when the answer lands. */
+.month-badge--skeleton {
+ min-width: calc(var(--space-16) * 2);
+ min-height: var(--size-touch-target);
+ opacity: 0.5;
+}
+
+.monthPicker__popper {
+ z-index: var(--z-dropdown);
+}
+
+/* The library sizes its panel for a day grid of seven columns. A month grid has
+   three, so it comes out narrow enough that a month name wraps.
+
+   The panel also declares its own surface. It used to take it from
+   datepicker-styles.css:81-84, which paints .react-datepicker__month-container
+   globally and is loaded only because some other route imports it — a component
+   whose colours depend on which screens the session has visited. */
+.monthPicker__popper .react-datepicker,
+.monthPicker__popper .react-datepicker__month-container,
+.monthPicker__popper .react-datepicker__header {
+ width: calc(var(--space-16) * 4);
+ background-color: var(--color-surface-app);
+ border-color: var(--color-border-subtle);
+ color: var(--color-content-on-dark);
+}
+
+.monthPicker__popper .react-datepicker__header {
+ width: auto;
+}
+
+.monthPicker__popper .react-datepicker-year-header {
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+}
+
+.monthPicker__popper .react-datepicker__month-wrapper {
+ display: flex;
+ justify-content: space-between;
+ gap: var(--space-1);
+}
+
+.monthPicker__popper .react-datepicker__month-text {
+ flex: 1;
+ padding: var(--space-2) 0;
+ font-size: var(--font-size-sm);
+ border-radius: var(--radius-sm);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+}
+
+/* The library hovers a cell to #f0f0f0 and leaves the text colour inherited, so
+   on this panel the month turned white on white. Cream fill with dark text
+   instead: the app's own two colours, and legible on any surface the popper
+   floats over.
+
+   The :not() mirrors the library's own selector so this wins on specificity
+   rather than on !important. */
+.monthPicker__popper .react-datepicker__month-text:not([aria-disabled='true']):hover {
+ background-color: var(--color-accent);
+ color: var(--color-content-primary);
+}
+
+/* Selected is teal, which is what the day picker has always used for a chosen
+   date (datepicker-styles.css:92-96). Hover and selection therefore read as two
+   different things — the point of the fix — while the two pickers still agree
+   on what "selected" looks like. */
+.monthPicker__popper .react-datepicker__month-text--selected,
+.monthPicker__popper .react-datepicker__month-text--keyboard-selected {
+ background-color: var(--color-status-ok);
+ color: var(--color-content-on-dark);
+ font-weight: var(--font-weight-semibold);
+}
+
+.monthPicker__popper .react-datepicker__month-text:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+}
+
+/* Every month after the current one, which the picker bounds with maxDate. */
+.monthPicker__popper .react-datepicker__month-text--disabled,
+.monthPicker__popper .react-datepicker__month-text[aria-disabled='true'] {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .month-badge--trigger {
+  transition: none;
+ }
+}

@@ -297,6 +297,36 @@ export function getCurrentBudgetMonthLabel(
   });
 }
 
+// The month a budget screen is reporting, as its badge shows it:
+// '2026-08-01' -> 'August 2026'.
+//
+// Built from the parts and NOT from new Date(month). A 'YYYY-MM-DD' string is
+// parsed as UTC midnight, so in any negative offset it renders as the previous
+// month — the exact class of defect the served referenceMonth exists to remove.
+export function formatBudgetMonthLabel(
+  month: string | null | undefined,
+  countryFormat = DATE_TEXT_FORMAT,
+) {
+  if (!month) return '';
+
+  const [year, monthNumber] = month.split('-').map(Number);
+  if (!year || !monthNumber) return '';
+
+  return new Date(year, monthNumber - 1, 1).toLocaleDateString(countryFormat, {
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+// Carries the board's month across a link. The month is a property of the URL,
+// so a link inside the module that drops it lands on a screen that silently
+// falls back to the current month.
+export function withMonthParam(path: string, month: string | null | undefined) {
+  if (!month) return path;
+
+  return path.includes('?') ? `${path}&month=${month}` : `${path}?month=${month}`;
+}
+
 // export const formatDate = (dateInput: Date | string | number): string => {
 //   const date = new Date(dateInput);
 //   return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);

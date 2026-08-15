@@ -72,6 +72,27 @@
   padding: var(--space-3);
 }
 
+/* The badge floats below the title instead of sitting in the header's flow.
+   The header's height is a constant that positions every absolute box under it,
+   so a child that grew it would move the hero and the list with it. */
+.budgetLayout .headerContent__container {
+  position: relative;
+}
+
+.budgetLayout .month-badge {
+  position: absolute;
+  bottom: calc(var(--space-2) * -1);
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 0;
+  background-color: var(--color-surface-inverse);
+}
+
+/* The hero grew by a row, and what follows it is positioned from a constant. */
+.budgetLayout .content__presentation {
+  padding-top: calc(var(--space-16) + var(--space-6));
+}
+
 /* One row per figure, so the row rule above is reused rather than widened. */
 .budgetLayout .displayScreen__rows {
   display: flex;
