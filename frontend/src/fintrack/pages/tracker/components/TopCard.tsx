@@ -4,7 +4,7 @@ import DropDownSelection from '../../../general_components/dropdownSelection/Dro
 import RadioInput, {
  RadioInputPropsType,
 } from '../../../general_components/radioInput/RadioInput';
-import Tooltip from '../../../general_components/tooltip/Tooltip';
+import RateTooltip from '../../../general_components/rateTooltip/RateTooltip';
 
 import { capitalize, numberFormatCurrency } from '../../../helpers/functions';
 
@@ -165,15 +165,14 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
 
         {showPreview && (
 
-       <Tooltip 
-       tipText={tooltipText} 
-       isActive={false}
-       tooltipClassName="currency-preview-tooltip"
+       <RateTooltip
+       tipText={tooltipText}
+       surface="light"
        >
         <span className='currency-preview' style={{ fontSize: '0.8rem', color: '#666' }}>
         {targetCurrencyPreview}
         </span>
-       </Tooltip>
+       </RateTooltip>
         )}
       </div>
 

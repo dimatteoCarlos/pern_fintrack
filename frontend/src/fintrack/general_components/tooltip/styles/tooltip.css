@@ -37,12 +37,14 @@
 } */
 
 /* 💰 Tooltip personalizado para preview de moneda (arriba-izquierda, dos líneas) */
-.currency-preview-tooltip {
-  bottom: 6% !important; /* aparece arriba del elemento */
-  left: 0% !important; /* alineado a la izquierda */
+/* Moved out to rateTooltip/styles/rateTooltip.css, which owns the rate chip.
+   Pending removal once the tracker is verified on screen. See REMARKS R51. */
+/* .currency-preview-tooltip {
+  bottom: 6% !important;
+  left: 0% !important;
   translate: -46%;
   margin-bottom: 6px !important;
-  white-space: pre-line !important; /* respeta saltos de línea */
+  white-space: pre-line !important;
   font-size: 0.625rem !important;
   padding: 5px 8px !important;
   max-width: max-content !important;
@@ -55,4 +57,4 @@
   border-radius: 8px !important;
   box-shadow: 0 2px 18px rgba(0, 0, 0, 0.2) !important;
   pointer-events: none !important;
-}
+} */

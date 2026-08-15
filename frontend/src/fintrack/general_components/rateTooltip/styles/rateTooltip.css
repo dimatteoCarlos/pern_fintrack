@@ -1,0 +1,42 @@
+/*rateTooltip.css*/
+
+/* The chip rides on .tooltip__wrapper--text, which is the mainNavbar tooltip.
+   Every rule below is written as a compound selector so it wins from this file
+   regardless of stylesheet order, without a single !important. */
+
+/* Geometry: two lines, above and to the left of the trigger. Carries no colour,
+   so it composes with either surface modifier. */
+.tooltip__wrapper--text.rateTooltip__chip {
+ bottom: 6%;
+ left: 0%;
+ translate: -46%;
+ margin-bottom: 0.375rem;
+ white-space: pre-line;
+ font-size: 0.625rem;
+ padding: 0.3125rem 0.5rem;
+ max-width: max-content;
+ width: max-content;
+
+ text-align: left;
+ font-family: monospace;
+ border-radius: 0.5rem;
+ box-shadow: 0 0.125rem 1.125rem color-mix(in srgb, var(--dark) 20%, transparent);
+ pointer-events: none;
+}
+
+/* Sits on a light panel, such as the tracker card. Paints itself dark. */
+.tooltip__wrapper--text.rateTooltip__chip--light {
+ background-color: var(--dark);
+ color: var(--light);
+}
+
+/* Sits on the dark body, such as any form over --bgBodyColor. Paints itself light. */
+.tooltip__wrapper--text.rateTooltip__chip--dark {
+ background-color: var(--creme);
+ color: var(--dark);
+}
+
+/* The hover border of the base tooltip is --dark, invisible on a dark chip. */
+.tooltip__wrapper:hover .tooltip__wrapper--text.rateTooltip__chip--light {
+ border-color: var(--light);
+}
