@@ -19,10 +19,10 @@
 
 :root {
  /* COLOR - SURFACE: what a rectangle is painted with */
- --color-surface-app: #1b1b1b;
- /* Deliberately the same value as the app surface: the two answer different
-    questions and a later elevation pass separates them. Do not collapse them. */
- --color-surface-raised: #1b1b1b;
+ --color-surface-app: #0d0f12;
+ /* Separated from the app surface by the elevation pass: a card floating over
+    the page reads one step lighter than the ground it sits on. */
+ --color-surface-raised: #161a22;
  --color-surface-inverse: #ffffff;
  --color-surface-panel: #e8e4da;
  --color-surface-overlay: rgba(17, 24, 39, 0.7);
@@ -55,6 +55,17 @@
  --color-status-info: #60b1d6;
  --color-amount-positive: #5b8c93;
  --color-amount-negative: #c97474;
+
+ /* COLOR - BADGE: the pill that states the direction of a movement.
+    Semi-transparent grounds, so the pill belongs to the surface under it
+    rather than sitting on top as a solid block. Distinct from the semaphore
+    above: that one qualifies a figure, this one names a direction. */
+ --color-badge-positive-surface: rgba(2, 44, 34, 0.4);
+ --color-badge-positive-border: rgba(6, 95, 70, 0.5);
+ --color-badge-positive-content: #34d399;
+ --color-badge-negative-surface: rgba(69, 10, 10, 0.4);
+ --color-badge-negative-border: rgba(153, 27, 27, 0.5);
+ --color-badge-negative-content: #f87171;
 
  /* TYPOGRAPHY
     One typeface, loaded in index.css. The mono family is for account
