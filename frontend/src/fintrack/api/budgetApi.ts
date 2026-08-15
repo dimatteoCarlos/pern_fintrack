@@ -24,20 +24,28 @@ import {
  BudgetWriteResponse,
 } from '../types/budgetTypes.ts';
 
-// The month is not a parameter: the server resolves it from the account owner's
-// timezone, so every caller gets the same month the write path uses.
+// month is past-only and optional. Omitting it is not the same as computing the
+// current one here: the server resolves it from the account owner's timezone, so
+// the read lands on the same month the write path uses. Only a month the user
+// navigated to is ever sent.
 //
-// accountIds is optional and, when omitted, the key is left OUT of the body
-// rather than sent as undefined: the schema is strict, and the omission is what
-// asks for every budget account the user owns. One such call feeds the category
-// list, the accounts of a category and an account's card — three screens, one
-// request.
+// Both arguments are left OUT of the body when absent rather than sent as
+// undefined: the schema is strict, and the omission of accountIds is what asks
+// for every budget account the user owns. One such call feeds the category list,
+// the accounts of a category and an account's card — three screens, one request.
 export const getBudgetAccountsStatus = async (
  accountIds?: number[],
+ month?: string,
 ): Promise<BudgetAccountsStatusResponse> => {
  const { data } = await authFetch<BudgetAccountsStatusResponse>(
   url_budget_accounts_status,
-  { method: 'POST', data: accountIds ? { accountIds } : {} },
+  {
+   method: 'POST',
+   data: {
+    ...(accountIds ? { accountIds } : {}),
+    ...(month ? { month } : {}),
+   },
+  },
  );
 
  return data;

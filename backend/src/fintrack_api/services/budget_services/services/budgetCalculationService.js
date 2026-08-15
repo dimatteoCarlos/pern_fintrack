@@ -48,6 +48,7 @@ const buildAccountStatus = (entry) => {
   accountName: entry.accountName,
   categoryName: entry.categoryName,
   subcategory: entry.subcategory,
+  nature: entry.nature,
   currency: getCurrencyCodeSync(entry.currencyId),
   budgetAmount,
   nextMonthBudget: money(entry.nextMonthBudget),
@@ -105,6 +106,38 @@ const shiftMonths = (month, delta) => {
 
 const rangeError = (message) =>
  Object.assign(new Error(message), { status: 422 });
+
+/**
+ * The month a status request is about, and the one after it.
+ *
+ * Returns undefined when the caller named no month, which is what asks the
+ * repository to resolve the current one and its successor from a single
+ * CURRENT_TIMESTAMP — a guarantee that cannot be made from out here.
+ *
+ * A named month costs the one query the check needs and no more: nextMonth is
+ * derived from the text, so the pair still comes from one source.
+ *
+ * @param {object} pool - Database pool
+ * @param {string|undefined} requestedMonth - 'YYYY-MM-01', already coerced by the validator
+ * @param {string} timeZone - IANA zone of the account owner
+ * @returns {Promise<object|undefined>} { month, nextMonth }, or undefined
+ */
+const resolveStatusMonths = async (pool, requestedMonth, timeZone) => {
+ if (!requestedMonth) return undefined;
+
+ const currentMonth = await getCurrentMonth(pool, timeZone);
+
+ // The same rule a series is held to: V1 has no future to show. A later month
+ // has a budget and no spending to compare it against, so it would report the
+ // whole amount as remaining and read as an underspend.
+ if (requestedMonth > currentMonth) {
+  throw rangeError(
+   `month (${requestedMonth}) must not be later than the current month (${currentMonth}).`,
+  );
+ }
+
+ return { month: requestedMonth, nextMonth: shiftMonths(requestedMonth, 1) };
+};
 
 /**
  * Fill in the range the caller left open and reject the ones that cannot be
@@ -325,7 +358,7 @@ const makeTotals = (accountsStatus) => {
  */
 export const budgetCalculationService = {
  /**
-  * The budget of several accounts for the current month, plus the totals.
+  * The budget of several accounts for one month, plus the totals.
   *
   * One entry per requested account, budgeted or not: an account the caller asked
   * about and did not get back is indistinguishable from one the backend dropped,
@@ -335,11 +368,22 @@ export const budgetCalculationService = {
   * categories, the accounts of one category and one account's card are three
   * readings of ONE response instead of three requests.
   *
+  * requestedMonth is optional and past-only. Omitted, the month is the current
+  * one on the owner's calendar — the only month that is ever WRITABLE, whatever
+  * a read asks for.
+  *
   * timeZone decides which month "now" is and which month each transaction falls
   * in. Both sides of the comparison have to live on the same calendar.
   */
- async getBudgetAccountsStatus(pool, accountIds, timeZone = 'UTC') {
-  const { month, accounts } = await getMonthlyStatusForAccounts(pool, accountIds, timeZone);
+ async getBudgetAccountsStatus(pool, accountIds, timeZone = 'UTC', requestedMonth) {
+  const months = await resolveStatusMonths(pool, requestedMonth, timeZone);
+
+  const { month, accounts } = await getMonthlyStatusForAccounts(
+   pool,
+   accountIds,
+   timeZone,
+   months,
+  );
 
   const accountsStatus = accounts.map(buildAccountStatus);
   const categories = makeCategoryGroups(accountsStatus);

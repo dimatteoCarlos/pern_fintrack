@@ -14,13 +14,38 @@ import { z } from 'zod';
 // nothing in the response saying so. Strict turns that into a 400 naming the key,
 // which is what a frontend mid-migration needs to hear.
 //
-// No schema accepts a date or a period. The month is resolved server-side on the
-// account owner's calendar, and only the current one is writable: a month in the
-// request would be clock skew, the device zone, or a month the rules forbid.
+// No schema accepts a period, and none accepts the CURRENT month: it is resolved
+// server-side on the account owner's calendar, so naming it would be clock skew
+// or the device zone entering a budget. A PAST month does travel, for the reason
+// a historical range does — the server cannot guess which month the user is
+// looking at. Only the current one is writable, whatever a read asks for.
+
+// A historical bound, coerced to the first of its month.
+//
+// Coerced by truncating the text, never by constructing a Date. A Date parsed
+// from 'YYYY-MM-DD' is UTC midnight, and reading it back through a local getter
+// can land on the previous month — the zone bug §4.5 removed from the queries,
+// re-entering through the validator. Truncation has no zone to lose.
+//
+// The day is accepted and discarded, so 2026-08-17 and 2026-08-01 are the same
+// request. It is not range-checked: 2026-02-31 would be rejected as a date and
+// is meaningless as a month, since the day is thrown away either way.
+//
+// What this schema deliberately does NOT check is the relationship between the
+// bounds, or between a bound and today. from <= to, to <= current month and the
+// 60-month span are 422s raised by the service: the current month is a query on
+// the owner's calendar, and a schema cannot see it.
+const monthBound = z
+ .string()
+ .regex(/^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$/, {
+  message: 'must be a month as YYYY-MM or a date as YYYY-MM-DD',
+ })
+ .transform((value) => `${value.slice(0, 7)}-01`);
 
 /**
  * POST /budget/accounts/status
  * Body: accountIds (array, optional — omitted means every budget account owned)
+ *       month (optional — omitted means the current month on the owner's calendar)
  */
 export const budgetAccountsStatusBodySchema = z.object({
  // Optional, and the omission carries meaning: no key at all asks for every
@@ -35,6 +60,10 @@ export const budgetAccountsStatusBodySchema = z.object({
  ).min(1, {
   message: 'accountIds must contain at least one account',
  }).optional(),
+ // Optional, and the omission means the current month. Present, it must not be
+ // later than that — a 422 the service raises, since the schema cannot see the
+ // owner's calendar.
+ month: monthBound.optional(),
 })
 .strict()
 .refine(
@@ -76,32 +105,6 @@ export const currentBudgetBodySchema = z.object({
  // terminator, so nothing the user did not ask for expires.
  onlyThisMonth: z.boolean().default(false),
 }).strict();
-
-// A historical bound, coerced to the first of its month.
-//
-// This is the one place a date DOES travel, and the rule above still holds: the
-// current month is never sent, but the server cannot guess which twelve months
-// the user is looking at.
-//
-// Coerced by truncating the text, never by constructing a Date. A Date parsed
-// from 'YYYY-MM-DD' is UTC midnight, and reading it back through a local getter
-// can land on the previous month — the zone bug §4.5 removed from the queries,
-// re-entering through the validator. Truncation has no zone to lose.
-//
-// The day is accepted and discarded, so 2026-08-17 and 2026-08-01 are the same
-// request. It is not range-checked: 2026-02-31 would be rejected as a date and
-// is meaningless as a month, since the day is thrown away either way.
-//
-// What this schema deliberately does NOT check is the relationship between the
-// bounds, or between a bound and today. from <= to, to <= current month and the
-// 60-month span are 422s raised by the service: the current month is a query on
-// the owner's calendar, and a schema cannot see it.
-const monthBound = z
- .string()
- .regex(/^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$/, {
-  message: 'must be a month as YYYY-MM or a date as YYYY-MM-DD',
- })
- .transform((value) => `${value.slice(0, 7)}-01`);
 
 /**
  * GET /budget/accounts/:accountId/series

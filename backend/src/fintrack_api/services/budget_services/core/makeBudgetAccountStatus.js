@@ -24,6 +24,7 @@ export function makeBudgetAccountStatus({
  accountName = null,
  categoryName = null,
  subcategory = null,
+ nature = null,
  currency,
  budgetAmount,
  nextMonthBudget,
@@ -51,6 +52,10 @@ export function makeBudgetAccountStatus({
   // grouped, without the client joining it back to categories[].
   categoryName,
   subcategory,
+  // What the row is tagged as, from the catalog seeded by 005. It travels per
+  // account and not per category because it varies WITHIN one — which is the
+  // only reason it is worth showing next to a subcategory.
+  nature,
   currency,
   budgetAmount: toAmount(budgetAmount),
   // What next month is already set to. The card shows its exception line by

@@ -6,8 +6,10 @@
 //
 // No handler accepts the CURRENT month. It is resolved inside the query, on the
 // account owner's calendar, so a request cannot name it at all and cannot carry
-// the device's clock skew into a budget. A historical range does travel, as
-// from/to, because the server cannot guess which months the user is looking at.
+// the device's clock skew into a budget. A PAST month does travel — as from/to
+// on a range, as month on a status — because the server cannot guess which
+// months the user is looking at. Reading a past month never makes it writable:
+// only the current one is.
 //
 // There is no 404 in this module. An id that does not exist and an id that
 // belongs to someone else both answer 403: splitting them would let a caller
@@ -69,7 +71,7 @@ export async function getBudgetAccountsStatus(req, res, next) {
   const userId = requireUserId(req, res);
   if (!userId) return;
 
-  const { accountIds: requestedIds } = budgetAccountsStatusBodySchema.parse(req.body);
+  const { accountIds: requestedIds, month } = budgetAccountsStatusBodySchema.parse(req.body);
 
   const owned = await getOwnedBudgetAccounts(userId);
 
@@ -98,13 +100,20 @@ export async function getBudgetAccountsStatus(req, res, next) {
   const response = await budgetCalculationService.getBudgetAccountsStatus(
    pool,
    accountIds,
-   timeZone
+   timeZone,
+   month
   );
 
   res.status(200).json(response);
  } catch (error) {
   if (error.name === 'ZodError') {
    return respondWithZodIssues(res, error);
+  }
+  // 422 from the month resolver: the payload parsed and the month is well
+  // formed, it is simply later than the current one — a relationship no schema
+  // can see. Anything without a status is unexpected.
+  if (error.status) {
+   return res.status(error.status).json({ status: error.status, message: error.message });
   }
   next(error);
  }

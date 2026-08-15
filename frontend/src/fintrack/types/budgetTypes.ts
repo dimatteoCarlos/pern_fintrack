@@ -37,7 +37,12 @@ export type AccountBudgetAllocation = {
  budgetAmount: number;
 };
 
-//-----CURRENT MONTH-----------
+//-----ONE MONTH---------------
+// The four values of category_nature_types, seeded by migration 005 and by the
+// runtime initializer. A closed union rather than string: the level-2 row maps a
+// nature to a tag, and the compiler is what makes that map exhaustive.
+export type BudgetNature = 'must' | 'need' | 'want' | 'other';
+
 // One account in POST /budget/accounts/status. Every monetary field is a number:
 // no budget in force resolves to 0, and spending against it leaves a negative
 // remainingBudget — the amount the user went into the red by.
@@ -47,7 +52,12 @@ export type BudgetAccountStatus = {
  // Repeated on every row so a row read outside its group still says what it
  // belongs to. No component joins it back to categories[].
  categoryName: string;
- subcategory: string;
+ // Both nullable: the columns are, and the level-2 row renders them. A missing
+ // one is a dash, never an empty string the layout collapses.
+ subcategory: string | null;
+ // Per account and not per category, because it varies within one — which is
+ // what makes it worth showing beside a subcategory.
+ nature: BudgetNature | null;
  currency: CurrencyType;
  budgetAmount: number;
  // Renders the "this month only" line when it differs from budgetAmount. The
@@ -93,6 +103,8 @@ export type BudgetCategoryStatus = {
 };
 
 export type BudgetAccountsStatusResponse = {
+ // The month every figure below is about: the one requested, or the current one
+ // on the owner's calendar when none was. Read it rather than assuming "now".
  referenceMonth: string;
  // One entry per REQUESTED account, budgeted or not. When the request omits
  // accountIds, "requested" means every budget account the user owns.

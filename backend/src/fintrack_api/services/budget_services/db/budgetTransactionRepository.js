@@ -106,6 +106,11 @@ const MONTH_QUERY = `
 // lowercase by 013. It travels so the caller can group without a second query:
 // the grouping is a fold over rows already in memory, not a round trip.
 //
+// nature comes from the catalog seeded by 005. The join is LEFT because
+// category_nature_type_id is nullable: an INNER join would silently drop every
+// account whose nature was never set, which is a row missing from a budget
+// report, not a row without a tag.
+//
 // ORDER BY is the server's job, not the client's. Without it the order is
 // whatever the planner returns and can differ between two identical requests;
 // with it, no component has to sort, which is the client-side arithmetic this
@@ -116,9 +121,12 @@ const ACCOUNTS_QUERY = `
     ua.account_name,
     cba.category_name,
     cba.subcategory,
+    cnt.category_nature_type_name AS nature,
     COALESCE(cba.currency_id, ua.currency_id) AS currency_id
   FROM user_accounts ua
   JOIN category_budget_accounts cba ON cba.account_id = ua.account_id
+  LEFT JOIN category_nature_types cnt
+    ON cnt.category_nature_type_id = cba.category_nature_type_id
   WHERE ua.account_id = ANY($1)
   ORDER BY cba.category_name, ua.account_name
 `;
@@ -188,8 +196,17 @@ const SPENT_QUERY = `
   GROUP BY t.account_id
 `;
 
+// The current month and its successor, from ONE evaluation of CURRENT_TIMESTAMP.
+// Kept as the default path rather than derived in the caller: two reads of "now"
+// could straddle midnight on the last day of a month and compare one month's
+// budget against another month's spending.
+const resolveCurrentMonths = async (pool, timeZone) => {
+ const { rows } = await pool.query(MONTH_QUERY, [timeZone]);
+ return { month: rows[0].month, nextMonth: rows[0].next_month };
+};
+
 /**
- * The budget of a set of accounts for the current month.
+ * The budget of a set of accounts for one month.
  *
  * Returns ONE entry per requested account: an account the caller asked about and
  * did not get back is indistinguishable from one the backend dropped, and the
@@ -207,11 +224,11 @@ const SPENT_QUERY = `
  * @param {object} pool - Database pool
  * @param {number[]} accountIds - Accounts to read
  * @param {string} timeZone - IANA zone of the account owner
+ * @param {object} [months] - { month, nextMonth } as 'YYYY-MM-01'; omitted resolves the current month
  * @returns {Promise<object>} { month, accounts: [...] }
  */
-export async function getMonthlyStatusForAccounts(pool, accountIds, timeZone = 'UTC') {
- const { rows: monthRows } = await pool.query(MONTH_QUERY, [timeZone]);
- const { month, next_month: nextMonth } = monthRows[0];
+export async function getMonthlyStatusForAccounts(pool, accountIds, timeZone = 'UTC', months) {
+ const { month, nextMonth } = months ?? (await resolveCurrentMonths(pool, timeZone));
 
  if (!accountIds || accountIds.length === 0) {
   return { month, accounts: [] };
@@ -240,6 +257,9 @@ export async function getMonthlyStatusForAccounts(pool, accountIds, timeZone = '
    accountName: row.account_name,
    categoryName: row.category_name,
    subcategory: row.subcategory ?? null,
+   // Null when the account has no nature set. It is a tag the row may lack, not
+   // a figure, so there is nothing to default it to.
+   nature: row.nature ?? null,
    currencyId: row.currency_id,
    // No decision in force resolves to 0, which is the effective budget the
    // domain defines for that case and not a null anything has to branch on.
