@@ -121,6 +121,56 @@ export type TransactionDataType ={
   updated_at?: Date;
 }
 
+// The answer of GET /transaction/:id, which is what the detail modal reads.
+// Kept apart from TransactionDataType above: that one describes the
+// transaction_data block of an account creation, and one type serving both
+// payloads had to declare currency_id, which this endpoint does not return,
+// while leaving out currency_code, which it does.
+export type TransactionDetailType = {
+  transaction_id: number;
+  description: string;
+  amount: number;
+  // Nullable because the join is a left one. The modal falls back to
+  // DEFAULT_CURRENCY, which until now it wrote unconditionally.
+  currency_code: CurrencyType | null;
+
+  // The whole FX block is null on a transaction with no conversion, which is
+  // most of them. Declaring it required is what made the modal guard by hand.
+  original_amount: number | null;
+  original_currency_code: string | null;
+  exchange_rate: number | null;
+  exchange_rate_source: string | null;
+  exchange_rate_timestamp: string | Date | null;
+
+  transaction_actual_date: string | Date;
+  // Resolved in the owner's time zone by the server. The instant above is the
+  // same moment read on the clock of whoever is looking, so a row must never
+  // be dated from it.
+  transaction_local_date: string;
+  transaction_local_time: string;
+
+  account_id: number;
+  account_name: string | null;
+  account_type_name: string | null;
+
+  movement_type_id: number;
+  movement_type_name: string | null;
+  transaction_type_id: number;
+  transaction_type_name: string | null;
+
+  // Only a transfer has counterparts, so every one of these is absent on an
+  // ordinary deposit or withdrawal.
+  source_account_id: number | null;
+  source_account_name: string | null;
+  source_account_type: string | null;
+  destination_account_id: number | null;
+  destination_account_name: string | null;
+  destination_account_type: string | null;
+
+  status: string;
+  account_balance_after_tr: number;
+};
+
 // Extended transaction info (includes additional fields)
 interface TransactionInfoType extends TransactionDataType {
   transaction_id: number;

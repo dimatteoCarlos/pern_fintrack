@@ -25,7 +25,7 @@ import './styles/listContent-style.css';
 import { authFetch } from '../../../auth/auth_utils/authFetch';
 import { url_get_transaction_by_id } from '../../../urlConfig';
 
-import { TransactionDataType } from '../../types/responseApiTypes';
+import { TransactionDetailType } from '../../types/responseApiTypes';
 import { TransactionDetailModal } from '../../pages/overview/components/transactionDetailModal/TransactionDetailModal';
 
 // Default configuration
@@ -37,7 +37,7 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // ====================================
 function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
  // State for modal
-  const [selectedTransaction, setSelectedTransaction] =  useState<TransactionDataType | null>(null);
+  const [selectedTransaction, setSelectedTransaction] =  useState<TransactionDetailType | null>(null);
 
   const [isLoadingModal, setIsLoadingModal] = useState(false);
 
@@ -53,7 +53,7 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
     if (!transactionId || transactionId === 0) return;
     setIsLoadingModal(true);
     try {
-      const response = await authFetch<TransactionDataType>(`${url_get_transaction_by_id}${transactionId}`);
+      const response = await authFetch<TransactionDetailType>(`${url_get_transaction_by_id}${transactionId}`);
 
 //----DEBUG-------------------------------
 // console.log('🔍 Respuesta completa:', response);

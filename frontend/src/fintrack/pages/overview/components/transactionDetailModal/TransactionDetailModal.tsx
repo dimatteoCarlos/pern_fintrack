@@ -5,11 +5,11 @@ import { useEffect, useRef } from 'react';
 import { numberFormatCurrency, formatDate, capitalize } from '../../../../helpers/functions';
 import { MOVEMENT_TYPES } from '../../../../helpers/constants';
 import { DEFAULT_CURRENCY } from '../../../../helpers/currencyConstants';
-import { TransactionDataType } from '../../../../types/responseApiTypes';
+import { TransactionDetailType } from '../../../../types/responseApiTypes';
 import './transactionDetailModal.css';
 
 type TransactionDetailModalProps = {
-  transaction: TransactionDataType | null;
+  transaction: TransactionDetailType | null;
   onClose: () => void;
 };
 
