@@ -1,0 +1,167 @@
+/* frontend/src/styles/tokens.css
+   The design system's single source of values, specified in
+   docs/design-system/FINTRACK_DESIGN_SYSTEM.md §2. Imported once from main.tsx,
+   before every other stylesheet.
+
+   Naming grammar: --{category}-{role}-{variant}. The role is the semantic
+   function, never the appearance: --color-surface-panel survives a theme
+   change, --color-cream-2 does not.
+
+   Nothing consumes these yet. The legacy names in pages/styles/generalStyles.css
+   stay defined and working; aliasing them onto these is a separate step, and so
+   is migrating any component onto them.
+
+   FinTrack is a dark application with light content panels. The page is
+   near-black while cards, headers and navbars are white or cream with near-black
+   text inside them. Picking a content token without knowing which surface it
+   lands on is the most frequent contrast failure here, which is why every
+   content token below names its valid surfaces. */
+
+:root {
+ /* COLOR - SURFACE: what a rectangle is painted with */
+ --color-surface-app: #1b1b1b;
+ /* Deliberately the same value as the app surface: the two answer different
+    questions and a later elevation pass separates them. Do not collapse them. */
+ --color-surface-raised: #1b1b1b;
+ --color-surface-inverse: #ffffff;
+ --color-surface-panel: #e8e4da;
+ --color-surface-overlay: rgba(17, 24, 39, 0.7);
+ --color-surface-disabled: #cccccc;
+
+ /* COLOR - CONTENT: paired to a surface, named in the comment */
+ --color-content-primary: #141414; /* on inverse, panel */
+ --color-content-secondary: #5b5b5b; /* on panel, inverse */
+ --color-content-on-dark: #ffffff; /* on app, raised */
+ --color-content-on-dark-muted: #e8e4da; /* on app, raised */
+ --color-content-on-dark-subtle: #bdb1b1; /* on app, raised */
+ --color-content-placeholder: #7f7f7f; /* any input */
+
+ /* COLOR - INTERACTIVE */
+ --color-accent: #e8e4da;
+ --color-accent-content: #141414;
+ --color-interactive-hover: #00ffff;
+ --color-border-strong: #141414;
+ --color-border-inverse: #ffffff;
+ --color-border-subtle: rgba(232, 228, 218, 0.26);
+
+ /* COLOR - FEEDBACK AND THE FINANCIAL SEMAPHORE
+    The status square is the signature indicator: teal when a figure is healthy,
+    dusty red when it is not. */
+ --color-status-ok: #5b8c93;
+ --color-status-alert: #c97474;
+ --color-status-error: #fc0c0c;
+ --color-status-warning: #ffa500;
+ --color-status-success: #008000;
+ --color-status-info: #60b1d6;
+ --color-amount-positive: #5b8c93;
+ --color-amount-negative: #c97474;
+
+ /* TYPOGRAPHY
+    One typeface, loaded in index.css. The mono family is for account
+    identifiers and reference codes; monetary amounts use the sans family. */
+ --font-family-sans: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+ --font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo,
+  monospace;
+
+ /* The specification names no token for line height, so none is invented. Each
+    size carries its line height and tracking as a comment instead. */
+ --font-size-2xs: 0.625rem; /* 1.2 / 1px */
+ --font-size-xs: 0.75rem; /* 1.3 / 0 */
+ --font-size-sm: 0.875rem; /* 1.4 / 0.5px - the default UI size */
+ --font-size-base: 1rem; /* 1.625rem / 0 */
+ --font-size-lg: 1.25rem; /* 1.3 / 0 */
+ --font-size-xl: 1.5rem; /* 1.2 / 0 */
+ --font-size-2xl: 2rem; /* 1.1 / 1px */
+
+ /* bold, bolder, lighter and normal are forbidden: keyword aliases defeat the
+    variable font's weight axis. */
+ --font-weight-regular: 400;
+ --font-weight-medium: 500;
+ --font-weight-semibold: 600;
+ --font-weight-bold: 700;
+
+ --letter-spacing-wide: 0.5px; /* labels */
+ --letter-spacing-wider: 1px; /* titles, totals */
+ --letter-spacing-widest: 1.5px; /* the summary amount row */
+
+ /* SPACING
+    Base unit 4px, linear to 8 and then it jumps. Applies to padding, margin,
+    gap and to absolute offsets. It does not apply to width or height, which
+    come from the sizing tokens below. */
+ --space-1: 0.25rem;
+ --space-2: 0.5rem;
+ --space-3: 0.75rem;
+ --space-4: 1rem;
+ --space-5: 1.25rem;
+ --space-6: 1.5rem;
+ --space-8: 2rem;
+ --space-12: 3rem;
+ --space-16: 4rem;
+
+ /* RADIUS */
+ --radius-xs: 0.25rem;
+ --radius-sm: 0.5rem;
+ --radius-md: 0.75rem;
+ /* COLLISION - do not consume this one yet. Three leaves of the account
+    deletion flow write --radius-lg: 0.5rem into the global :root
+    (accountDeletionPage.css:17, loadingReportUI.css:15,
+    impactReportUI.css:19). Those stylesheets ship in a lazy chunk and load
+    after this file, so the value below holds until that route is visited and
+    0.5rem holds for the rest of the session afterwards. Removing those three
+    writes is a cleanup item. */
+ --radius-lg: 0.875rem;
+ --radius-xl: 1rem;
+ --radius-full: 9999px;
+
+ /* BORDERS
+    FinTrack separates by border rather than by shadow, because most of its
+    surfaces are dark on dark. */
+ --border-width-thin: 1px;
+ --border-width-thick: 2px;
+ --border-divider: 1px solid var(--color-border-inverse);
+ --border-dashed: 1px dashed var(--color-border-subtle);
+
+ /* ELEVATION: reserved for content floating over the page. A card gets none. */
+ --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+ --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+ --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+ --shadow-overlay: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+ /* SIZING: fixed dimensions that recur and must not be re-derived */
+ --size-status-square: 0.75rem;
+ --size-icon: 2rem;
+ --size-badge: 2.5rem;
+ --size-control-height: 3.125rem;
+ --size-touch-target: 2.75rem; /* minimum tappable area, 44px */
+
+ /* MOTION
+    Enumerate the properties of a transition; `all` animates ones that were
+    never intended, layout among them. Anything that transitions also ships a
+    prefers-reduced-motion block. */
+ --motion-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+ --motion-normal: 200ms ease;
+ --motion-slow: 300ms ease;
+ --motion-press: 100ms ease-out;
+
+ /* Z-INDEX: a closed scale. An unmanaged z-index is how a modal ends up behind
+    a navbar. */
+ --z-base: 0;
+ --z-raised: 1;
+ --z-navbar: 10;
+ --z-dropdown: 100;
+ --z-overlay: 500;
+ --z-modal: 1000;
+ --z-toast: 1100;
+ --z-tooltip: 2000;
+
+ /* LAYOUT
+    A single column, centred rather than stretched on wide viewports. It never
+    becomes a multi-column desktop layout. */
+ --layout-width-min: 22.5rem; /* the Figma frame, 360px */
+ --layout-width-max: 40rem; /* beyond this the column centres */
+ --layout-content-width: 88%;
+ --layout-top-space: 2.75rem;
+ --layout-header-height: 12.5rem;
+ --layout-navbar-top: 5rem;
+ --layout-navbar-bottom: 3.5rem;
+}
