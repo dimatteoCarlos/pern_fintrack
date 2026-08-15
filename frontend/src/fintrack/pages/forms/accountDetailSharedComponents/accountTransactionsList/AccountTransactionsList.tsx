@@ -24,12 +24,16 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 
 type AccountTransactionsListPropsType = {
   transactions: AccountTransactionType[];
+  // Optional on purpose: only the screen that mounts the detail modal passes it,
+  // so the other three screens sharing this list stay inert.
+  onTransactionClick?: (transactionId: number) => void;
 };
 //==================
 //MAIN COMPONENT
 //==================
 const AccountTransactionsList = ({
   transactions,
+  onTransactionClick,
 }: AccountTransactionsListPropsType) => {
   // const formatDate = (dateInput: Date | string | number): string => {
   //   const date = new Date(dateInput);
@@ -40,8 +44,9 @@ const AccountTransactionsList = ({
     <>
       <div className='list__main__container'>
         {transactions.length > 0 ? (
-          transactions.map((item, indx) => {
+          transactions.map((item) => {
             const {
+              transaction_id,
               movement_type_name,
               amount,
               currency_code,
@@ -50,8 +55,31 @@ const AccountTransactionsList = ({
               // transaction_actual_date,
             } = item;
 
+            const isClickable = Boolean(onTransactionClick);
+            const openDetail = () => onTransactionClick?.(transaction_id);
+
             return (
-              <BoxContainer key={indx} className='transaction-item '>
+              <BoxContainer
+                key={transaction_id}
+                className={`transaction-item ${
+                  isClickable ? 'transaction-item--clickable' : ''
+                }`.trim()}
+                onClick={isClickable ? openDetail : undefined}
+                role={isClickable ? 'button' : undefined}
+                tabIndex={isClickable ? 0 : undefined}
+                onKeyDown={
+                  isClickable
+                    ? (event) => {
+                        // Space scrolls the page by default, which a row acting as
+                        // a button must not do.
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          openDetail();
+                        }
+                      }
+                    : undefined
+                }
+              >
                 <BoxRow className='transaction-header'>
                   <div className='box__title transaction-movement-type'>
                     {capitalize(movement_type_name)}

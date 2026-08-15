@@ -9,20 +9,28 @@ import './styles/boxComponents.css'
 // =============
 type ChildrenPropType = { children: React.ReactNode,
  className?: string;
-  onClick?: () => void;        
-  style?: React.CSSProperties; 
+  onClick?: () => void;
+  style?: React.CSSProperties;
+  // A div takes no focus and announces nothing. A caller that turns a box into a
+  // control passes these so the box is reachable with the keyboard as well.
+  role?: string;
+  tabIndex?: number;
+  onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
 };
 
 // ===============
 // COMPONENTS
 // ===============
 //-----BoxContainer 
-export function BoxContainer({ children, className, onClick, style }: ChildrenPropType) {
+export function BoxContainer({ children, className, onClick, style, role, tabIndex, onKeyDown }: ChildrenPropType) {
   return (
-    <div 
-      className={`box-container ${className}`.trim()} 
+    <div
+      className={`box-container ${className}`.trim()}
       onClick={onClick}
       style={style}
+      role={role}
+      tabIndex={tabIndex}
+      onKeyDown={onKeyDown}
     >
       {children}
     </div>

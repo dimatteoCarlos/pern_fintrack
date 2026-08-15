@@ -12,8 +12,11 @@ import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
 import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 
+import { TransactionDetailModal } from '../../overview/components/transactionDetailModal/TransactionDetailModal.tsx';
+
 import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
+import { useTransactionDetail } from '../../../hooks/useTransactionDetail.ts';
 import {
   url_get_account_by_id,
   url_get_transactions_by_account_id,
@@ -161,6 +164,16 @@ function CategoryDetail() {
 
   const transactions = transactionAccountApiResponse?.data.transactions ?? [];
 
+  //--TRANSACTION DETAIL MODAL
+  // Owned here and not inside the list: the list is shared by three other
+  // screens that must stay presentational.
+  const {
+    selectedTransaction,
+    isLoading: isLoadingTransactionDetail,
+    openTransaction,
+    closeTransaction,
+  } = useTransactionDetail();
+
   // Null, not a zeroed shape: the period line and the balance pair are
   // withheld until the answer lands rather than stating a balance of 0 on a
   // period of ''.
@@ -303,7 +316,10 @@ function CategoryDetail() {
               )}
 
               {!isLoading && !error && transactions.length > 0 && (
-                <AccountTransactionsList transactions={transactions} />
+                <AccountTransactionsList
+                  transactions={transactions}
+                  onTransactionClick={openTransaction}
+                />
               )}
             </div>
           </article>
@@ -314,6 +330,15 @@ function CategoryDetail() {
           )}
         </div>
       </section>
+
+      {/* A click with no answer for the length of a round trip reads as a dead
+          row, so the request states itself before the modal can. */}
+      {isLoadingTransactionDetail && <CoinSpinner />}
+
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        onClose={closeTransaction}
+      />
     </>
   );
 }
