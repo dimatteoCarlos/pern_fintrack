@@ -12,6 +12,7 @@ import FormDatepicker from '../../../general_components/datepicker/Datepicker.ts
 import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
 import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
+import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx';
 
 import {
   ACCOUNT_TYPE_DEFAULT,
@@ -32,10 +33,14 @@ import {
 
 import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 
-import { capitalize } from '../../../helpers/functions.ts';
+import {
+  capitalize,
+  numberFormatCurrency,
+} from '../../../helpers/functions.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
 
@@ -233,6 +238,25 @@ function NewAccount() {
     setCurrency(currency);
     setAccountData((acc) => ({ ...acc, currency: currency }));
    }
+  //---------
+  // States what the backend will actually store for the opening balance. Reads
+  // the rates already held in the store, so it issues no request.
+  const { targetCurrencyPreview, rate, direction } = useCurrencyPreview(
+    formData[formDataNumber.keyName],
+    currency,
+  );
+
+  const isAmountError = !!validationMessages[formDataNumber.keyName]
+    ?.trim()
+    .startsWith('*');
+
+  const showRatePreview = !!targetCurrencyPreview && !isAmountError;
+
+  const rateTooltipText =
+    rate && direction
+      ? `${direction}\nrate: ${numberFormatCurrency(rate, 2, undefined, 'es-ES')}`
+      : '';
+
    //--FORM SUBMISSION ------------
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
@@ -427,11 +451,28 @@ function NewAccount() {
 
             {!isDisabledValue && (
               <div className='input__box'>
-                <LabelNumberValidation
-                  formDataNumber={formDataNumber}
-                  validationMessages={validationMessages}
-                  variant={VARIANT_FORM}
-                />
+                {/* Label and conversion message share a row, as in New Category:
+                    the message states what will be stored, and the rate tooltip
+                    opens over it. */}
+                <div className='form__label-row'>
+                  <LabelNumberValidation
+                    formDataNumber={formDataNumber}
+                    validationMessages={validationMessages}
+                    variant={VARIANT_FORM}
+                  />
+
+                  {showRatePreview && (
+                    <RateTooltip
+                      tipText={rateTooltipText}
+                      surface='dark'
+                      placement='anchor-left'
+                    >
+                      <span className='form__fx-preview'>
+                        {targetCurrencyPreview}
+                      </span>
+                    </RateTooltip>
+                  )}
+                </div>
 
                 <InputNumberFormHandler
                   validationMessages={validationMessages}
