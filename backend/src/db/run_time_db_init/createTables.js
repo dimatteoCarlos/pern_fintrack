@@ -99,12 +99,23 @@ export const mainTables = [
     table: `CREATE TABLE IF NOT EXISTS debtor_accounts (
      account_id INT PRIMARY KEY REFERENCES user_accounts(account_id) ON DELETE CASCADE,
      value DECIMAL(15, 2),
-     currency_id INT REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,
+  --  RESTRICT, not SET NULL: a NULL currency turns value into a number without
+  --  a unit. currency_id states the currency value is expressed in. See 016.
+     currency_id INT REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
      debtor_name VARCHAR(25),
      debtor_lastname VARCHAR(25),
      selected_account_id INT,
      selected_account_name VARCHAR(50),
-     account_start_date TIMESTAMPTZ NOT NULL
+     account_start_date TIMESTAMPTZ NOT NULL,
+  --  FX audit columns. value holds the accounting currency; original_value
+  --  holds what the user typed. The two currency ids take no default: an id has
+  --  no honest fallback. See migration 016.
+     original_value DECIMAL(15,2) NOT NULL DEFAULT 0,
+     original_currency_id INTEGER NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+     exchange_rate DECIMAL(18,8) NOT NULL DEFAULT 1.0 CHECK (exchange_rate > 0),
+     exchange_rate_source VARCHAR(60) NOT NULL DEFAULT 'identity',
+     exchange_rate_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     exchange_rate_target_currency_id INTEGER NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE
      )`,
   },
 

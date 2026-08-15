@@ -471,9 +471,10 @@ export const createDebtorAccount = async (req, res, next) => {
     const debtorAccountType = account_type ?? 'debtor';
     //-------------------------------
     //NEW DEBTOR ACCOUNT BASIC DATA
-    // Asumimos USD por defecto // let's assume usd by default
+    // Falls back to the accounting currency rather than a literal 'usd', which
+    // stops being true the moment the installation is configured otherwise.
     const { currency } = req.body;
-    const currencyCode = currency ? currency : 'usd';
+    const currencyCode = currency ? currency : ACCOUNTING_CURRENCY_CODE;
     // Cleaned once and reused: the composed account_name and the parts stored
     // in debtor_accounts must be the same strings. Case is left as typed.
     const debtorLastnameInput = normalizePersonName(debtor_lastname);
@@ -493,23 +494,20 @@ export const createDebtorAccount = async (req, res, next) => {
       console.warn(pc.blueBright(message));
       return res.status(400).json({ status: 400, message });
     }
-    //get currency id from currencyCode requested
-    //necessary for multi currency app - not this version
-    const currencyQuery = `SELECT * FROM currencies`;
-    const currencyResult = await pool.query(currencyQuery);
-    const currencyArr = currencyResult?.rows;
+    //---
+    // Resolved with the same helper as the accounting currency rather than by
+    // filtering the whole catalogue, which yields undefined when the code does
+    // not match and lets it travel as a NULL into a NOT NULL column.
+    let currencyIdReq;
 
-    const currencyObj = currencyArr.find(
-      (item) => item.currency_code === currencyCode,
-    );
-    if (!currencyObj) {
-      const message = 'Currency code not found';
+    try {
+      currencyIdReq = await getCurrencyId(pool, currencyCode);
+    } catch {
+      const message = `Unknown currency code: ${currencyCode}`;
       console.warn(pc.red(message));
       return res.status(400).json({ status: 400, message });
     }
-    const currencyIdReq = currencyObj.currency_id;
 
-    // FX metadata (identity mode, since debtor uses USD as base)
     const accountingCurrencyId = await getCurrencyId(
       pool,
       ACCOUNTING_CURRENCY_CODE,
@@ -624,13 +622,34 @@ export const createDebtorAccount = async (req, res, next) => {
     //allowed overdraft : DEBTOR TO ANY BANK, slack to any account, income_source to any account
     //not possible transfers: category_budget to any,other than bank to category_budget, any to income_source. Any transaction between debt and other account than bank
 
+    // The bank account this loan is drawn from holds its balance in the
+    // accounting currency, so the amount has to be converted before it can be
+    // compared against it. Comparing the typed figure would block valid loans
+    // and let invalid ones through as soon as the form offers a currency.
+    let convertedValue = value;
+    let exchangeRate = 1.0;
+    let exchangeRateSource = 'identity';
+    let exchangeRateTimestamp = new Date();
+
+    if (currencyCode !== ACCOUNTING_CURRENCY_CODE && value !== 0.0) {
+      const conversion = await currencyAmountConversion(
+        value,
+        currencyCode,
+        ACCOUNTING_CURRENCY_CODE,
+      );
+      convertedValue = conversion.amount.toNumber();
+      exchangeRate = conversion.rate;
+      exchangeRateSource = conversion.source;
+      exchangeRateTimestamp = conversion.fetchedAt;
+    }
+
     const isCheckForFundsRequired =
-      selectedAccountTransactionType === 'lend' && Number(value) > 0;
+      selectedAccountTransactionType === 'lend' && Number(convertedValue) > 0;
     if (
       isCheckForFundsRequired &&
-      counterAccountInfo.account.account_balance < parseFloat(value)
+      counterAccountInfo.account.account_balance < parseFloat(convertedValue)
     ) {
-      const message = `Not enough funds to transfer ${currencyCode} ${parseFloat(value)} from account ${counterAccountInfo.account.account_name} (${currencyCode} ${counterAccountInfo.account.account_balance})`;
+      const message = `Not enough funds to transfer ${ACCOUNTING_CURRENCY_CODE} ${parseFloat(convertedValue)} from account ${counterAccountInfo.account.account_name} (${ACCOUNTING_CURRENCY_CODE} ${counterAccountInfo.account.account_balance})`;
       console.warn(pc.magentaBright(message));
       return res.status(400).json({
         status: 400,
@@ -641,20 +660,20 @@ export const createDebtorAccount = async (req, res, next) => {
     //-------------------------------
     //--DEBTOR ACCOUNT --------
     //--newdebtor_initial_balance
-    const transactionAmount =
-      debtorTransactionType === 'lend' && value !== 0.0 ? value * -1 : value;
+    // Sign is applied to both figures: the audit trail has to keep the same
+    // direction as the balance it explains.
+    const isOutgoing = debtorTransactionType === 'lend' && value !== 0.0;
+    const originalTransactionAmount = isOutgoing ? value * -1 : value;
+    const transactionAmount = isOutgoing ? convertedValue * -1 : convertedValue;
     const newAccountBalance = transactionAmount;
-    // console.log(
-    //   { debtorTransactionType },
-    //   { transactionAmount },
-    //   { newAccountBalance }
-    // );
 
-    // Build FX metadata (identity mode: rate=1, source='identity')
+    // The origin travels on the metadata: the first argument is the figure as
+    // typed, the rate is the one that produced the converted amount.
     const fxMetadata = await buildFxMetadata(
-      transactionAmount, // original amount (positive or negative)
-      currencyIdReq, // original currency ID (USD by default)
-      pool, // database pool
+      originalTransactionAmount,
+      currencyIdReq,
+      pool,
+      { exchangeRate, exchangeRateSource, exchangeRateTimestamp },
     );
     //------- NEW DEBTOR BASIC ACCOUNT INFO ----------
     await client.query('BEGIN');
@@ -677,26 +696,35 @@ export const createDebtorAccount = async (req, res, next) => {
     const debtorInsertQuery = {
       text: `INSERT INTO debtor_accounts (account_id, debtor_lastname, debtor_name, value,
        currency_id,
-       selected_account_name, selected_account_id, 
-       account_start_date) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7,$8) RETURNING *`,
+       selected_account_name, selected_account_id,
+       account_start_date,
+       original_value, original_currency_id, exchange_rate, exchange_rate_source, exchange_rate_timestamp, exchange_rate_target_currency_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
       values: [
         account_id,
         debtorLastnameInput,
         debtorNameInput,
         newAccountBalance,
-        currencyIdReq,
+        accountingCurrencyId,
         selected_account_name,
         selectedAccountExists.accountId,
         account_start_date,
+        originalTransactionAmount,
+        currencyIdReq,
+        exchangeRate,
+        exchangeRateSource,
+        exchangeRateTimestamp,
+        accountingCurrencyId,
       ],
     };
 
     const debtorAccount = await client.query(debtorInsertQuery);
 
+    // currency_code describes value, which is now the converted figure. The
+    // code the user picked is recoverable through original_currency_id.
     const debtor_account = {
       ...debtorAccount.rows[0],
-      currency_code: currencyCode,
+      currency_code: ACCOUNTING_CURRENCY_CODE,
       account_type_name: debtorAccountType,
     };
     //----------------------------------
@@ -722,7 +750,10 @@ export const createDebtorAccount = async (req, res, next) => {
       transactionTypeDescriptionIds;
 
     const isToOpenNewAccount = transactionAmount === 0.0 ? true : false;
-    const transactionDescription = `Transaction: account-opening. Account: "${newAccountName}" (${debtorAccountType}). Initial-( ${isToOpenNewAccount ? 'account-opening' : debtorTransactionType}). Amount: ${transactionAmount} ${currencyCode}. Reference:${selected_account_name}. Date: ${formatDate(transaction_actual_date)}`;
+    // The amount printed is the converted one, so the code printed next to it
+    // is the accounting one. Pairing it with the typed code would state a
+    // figure the user never wrote in a currency they did not pick.
+    const transactionDescription = `Transaction: account-opening. Account: "${newAccountName}" (${debtorAccountType}). Initial-( ${isToOpenNewAccount ? 'account-opening' : debtorTransactionType}). Amount: ${transactionAmount} ${ACCOUNTING_CURRENCY_CODE}. Reference:${selected_account_name}. Date: ${formatDate(transaction_actual_date)}`;
 
     //------ DEBTOR NEW ACCOUNT INFO -----
     const newAccountInfo = {
@@ -731,10 +762,10 @@ export const createDebtorAccount = async (req, res, next) => {
       transaction_type_id,
       transaction_type_name: transactionType,
       amount: parseFloat(transactionAmount),
-      currency_id: currencyIdReq,
+      currency_id: accountingCurrencyId,
       account_id: account_basic_data.account_id,
       transaction_actual_date,
-      currency_code: currencyCode,
+      currency_code: ACCOUNTING_CURRENCY_CODE,
       account_name: newAccountName,
       account_type_name: debtorAccountType,
       account_type_id: account_basic_data.account_type_id,
@@ -748,7 +779,17 @@ export const createDebtorAccount = async (req, res, next) => {
       Number(counterAccountInfo.account.account_balance) +
       counterAccountTransactionAmount;
 
-    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} (${selected_account_type}), number: ${counterAccountInfo.account.account_id}. Amount: ${counterAccountTransactionAmount} ${currencyCode}. Account reference: ${newAccountName}. Date: ${formatDate(transaction_actual_date)}`;
+    // Its own metadata: the counter movement runs in the opposite direction, so
+    // reusing the debtor's would store an origin whose sign contradicts the
+    // amount it is supposed to explain.
+    const counterFxMetadata = await buildFxMetadata(
+      -Number(originalTransactionAmount),
+      currencyIdReq,
+      pool,
+      { exchangeRate, exchangeRateSource, exchangeRateTimestamp },
+    );
+
+    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name} (${selected_account_type}), number: ${counterAccountInfo.account.account_id}. Amount: ${counterAccountTransactionAmount} ${ACCOUNTING_CURRENCY_CODE}. Account reference: ${newAccountName}. Date: ${formatDate(transaction_actual_date)}`;
     //----------------------------------
     //--COUNTER ACCOUNT INFO (SLACK OR SELECTED ACCOUNT ------
     const slackCounterAccountInfo = {
@@ -757,15 +798,15 @@ export const createDebtorAccount = async (req, res, next) => {
       transaction_type_id: countertransaction_type_id,
       transaction_type_name: counterTransactionType,
       amount: parseFloat(counterAccountTransactionAmount),
-      currency_id: currencyIdReq,
+      currency_id: accountingCurrencyId,
       account_id: counterAccountInfo.account.account_id,
       transaction_actual_date,
-      currency_code: currencyCode,
+      currency_code: ACCOUNTING_CURRENCY_CODE,
       account_name: counterAccountInfo.account.account_name,
       account_type_name: 'bank',
       account_type_id: counterAccountInfo.account.account_type_id,
       account_balance: newCounterAccountBalance,
-      ...fxMetadata,
+      ...counterFxMetadata,
     };
 
     //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
@@ -843,7 +884,9 @@ export const createDebtorAccount = async (req, res, next) => {
         account_basic_data: {
           ...account_basic_data,
           account_type_name: debtorAccountType,
-          currency_code: currencyCode,
+          // The row was inserted with accountingCurrencyId, so this is the code
+          // that describes its balance.
+          currency_code: ACCOUNTING_CURRENCY_CODE,
         },
         new_debtor_account: debtor_account,
 

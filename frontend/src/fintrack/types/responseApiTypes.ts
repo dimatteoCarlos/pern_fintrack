@@ -228,6 +228,15 @@ type DebtorAccountType = {
   account_start_date: Date | string; // ISO 8601 format
   currency_code: CurrencyType;
   account_type_name: 'debtor';
+
+  // FX audit fields. value is the accounting currency; original_value is what
+  // the user typed. See migration 016.
+  original_value: number;
+  original_currency_id: number;
+  exchange_rate: number;
+  exchange_rate_source: string;
+  exchange_rate_timestamp: Date | string;
+  exchange_rate_target_currency_id: number;
 };
 //---------------------------
 //CREATE POCKET SAVING ACCOUNT

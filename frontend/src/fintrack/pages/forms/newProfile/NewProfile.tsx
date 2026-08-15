@@ -8,6 +8,8 @@ import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitB
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import InputNumberFormHandler from '../../../general_components/inputNumberHandler/InputNumberFormHandler.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
+import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx';
 
 import '../styles/forms-styles.css';
 
@@ -19,8 +21,9 @@ import { useFetch } from '../../../hooks/useFetch.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 //UTILITIES
-import { capitalize } from '../../../helpers/functions.ts';
+import { capitalize, numberFormatCurrency } from '../../../helpers/functions.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
+import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
 
 // 🏷️ ENPOINTS
 import {
@@ -176,6 +179,32 @@ function NewProfile() {
     CreateDebtorAccountApiResponseType,
     ProfilePayloadType
   >({ url: url_create_debtor_account, method: 'POST' });
+  //---
+  const selectedCurrency = profileData.currency ?? defaultCurrency;
+
+  function updateDataCurrency(currency: CurrencyType) {
+    setProfileData((data) => ({ ...data, currency }));
+  }
+
+  // States what the backend will store as the loan value, which is also the
+  // figure checked against the bank account's funds. Reads the rates already
+  // held in the store, so it issues no request.
+  const { targetCurrencyPreview, rate, direction } = useCurrencyPreview(
+    formData[formDataNumber.keyName],
+    selectedCurrency,
+  );
+
+  const isAmountError = !!validationMessages[formDataNumber.keyName]
+    ?.trim()
+    .startsWith('*');
+
+  const showRatePreview = !!targetCurrencyPreview && !isAmountError;
+
+  const rateTooltipText =
+    rate && direction
+      ? `${direction}\nrate: ${numberFormatCurrency(rate, 2, undefined, 'es-ES')}`
+      : '';
+
   //---functions------------
   // ✨ INPUT HANDLERS
   function inputHandler(e: React.ChangeEvent<HTMLInputElement>) {
@@ -246,7 +275,7 @@ function NewProfile() {
 
       const payload: ProfilePayloadType = {
         account_type,
-        currency: defaultCurrency,
+        currency: selectedCurrency,
         amount: finalAmount,
         //---
         lastname: capitalize(profileData.lastname),
@@ -391,38 +420,63 @@ function NewProfile() {
                 setIsReset={setIsReset}
               />
 
-              <label
-                // htmlFor={formDataNumber.keyName}
-                className='label forms__label'
-              >
-                {capitalize(formDataNumber.title)}&nbsp;
-                <span
-                  className='validation__errMsg'
-                  style={{
-                    color: validationMessages[formDataNumber.keyName]
-                      ?.toLowerCase()
-                      .includes('format:')
-                      ? 'var(--lightSuccess)'
-                      : 'var(--error)',
-                  }}
+              {/* Label and conversion message share a row, as in New Account:
+                  the message states what will be stored, and the rate tooltip
+                  opens over it. The tooltip sits outside the label so hovering
+                  it does not focus the input. */}
+              <div className='form__label-row'>
+                <label
+                  // htmlFor={formDataNumber.keyName}
+                  className='label forms__label'
                 >
-                  {validationMessages[formDataNumber.keyName]?.replace(
-                    'Format:',
-                    '',
-                  )}
-                </span>
-              </label>
+                  {capitalize(formDataNumber.title)}&nbsp;
+                  <span
+                    className='validation__errMsg'
+                    style={{
+                      color: validationMessages[formDataNumber.keyName]
+                        ?.toLowerCase()
+                        .includes('format:')
+                        ? 'var(--lightSuccess)'
+                        : 'var(--error)',
+                    }}
+                  >
+                    {validationMessages[formDataNumber.keyName]?.replace(
+                      'Format:',
+                      '',
+                    )}
+                  </span>
+                </label>
 
-              <InputNumberFormHandler
-                validationMessages={validationMessages}
-                setValidationMessages={setValidationMessages}
-                keyName={formDataNumber.keyName}
-                placeholderText={formDataNumber.title}
-                formData={formData}
-                setFormData={setFormData}
-                setStateData={setProfileData}
-              />
-              {/* style={{ fontSize: '1.25rem', padding: '0 0.75rem' }} */}
+                {showRatePreview && (
+                  <RateTooltip
+                    tipText={rateTooltipText}
+                    surface='dark'
+                    placement='anchor-left'
+                  >
+                    <span className='form__fx-preview'>
+                      {targetCurrencyPreview}
+                    </span>
+                  </RateTooltip>
+                )}
+              </div>
+
+              <div className='form__amount-row'>
+                <InputNumberFormHandler
+                  validationMessages={validationMessages}
+                  setValidationMessages={setValidationMessages}
+                  keyName={formDataNumber.keyName}
+                  placeholderText={formDataNumber.title}
+                  formData={formData}
+                  setFormData={setFormData}
+                  setStateData={setProfileData}
+                />
+
+                <CurrencyBadge
+                  variant={'form'}
+                  updateOutsideCurrencyData={updateDataCurrency}
+                  currency={selectedCurrency}
+                />
+              </div>
             </div>
 
             <div className='input__box'>
