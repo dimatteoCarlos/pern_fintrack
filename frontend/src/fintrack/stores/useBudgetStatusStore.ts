@@ -26,6 +26,10 @@ type BudgetStatusState = {
  // The month every figure below is about, as the server resolved it from the
  // owner's timezone. null until the first answer lands: it is read, not assumed.
  referenceMonth: string | null;
+ // The latest month that may be asked for, on that same calendar. It is the
+ // month selector's upper bound, and it is not referenceMonth: looking at May
+ // does not make May the latest month there is.
+ currentMonth: string | null;
  accounts: BudgetAccountStatus[];
  categories: BudgetCategoryStatus[];
  totals: BudgetStatusTotals | null;
@@ -47,6 +51,7 @@ const monthKey = (month?: string) => month ?? 'current';
 export const useBudgetStatusStore = create<BudgetStatusState>((set, get) => ({
  // Initial state
  referenceMonth: null,
+ currentMonth: null,
  accounts: [],
  categories: [],
  totals: null,
@@ -76,6 +81,7 @@ export const useBudgetStatusStore = create<BudgetStatusState>((set, get) => ({
 
    set({
     referenceMonth: data.referenceMonth,
+    currentMonth: data.meta.currentMonth,
     accounts: data.accounts,
     categories: data.categories,
     totals: data.totals,

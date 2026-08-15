@@ -117,10 +117,14 @@ const rangeError = (message) =>
  * A named month costs the one query the check needs and no more: nextMonth is
  * derived from the text, so the pair still comes from one source.
  *
+ * currentMonth travels back out because the check already had to ask for it. The
+ * response states it (§7.4) and the alternative is a second query for a value
+ * this function is holding.
+ *
  * @param {object} pool - Database pool
  * @param {string|undefined} requestedMonth - 'YYYY-MM-01', already coerced by the validator
  * @param {string} timeZone - IANA zone of the account owner
- * @returns {Promise<object|undefined>} { month, nextMonth }, or undefined
+ * @returns {Promise<object|undefined>} { month, nextMonth, currentMonth }, or undefined
  */
 const resolveStatusMonths = async (pool, requestedMonth, timeZone) => {
  if (!requestedMonth) return undefined;
@@ -136,7 +140,11 @@ const resolveStatusMonths = async (pool, requestedMonth, timeZone) => {
   );
  }
 
- return { month: requestedMonth, nextMonth: shiftMonths(requestedMonth, 1) };
+ return {
+  month: requestedMonth,
+  nextMonth: shiftMonths(requestedMonth, 1),
+  currentMonth,
+ };
 };
 
 /**
@@ -403,6 +411,17 @@ export const budgetCalculationService = {
    }
   }
 
+  // The month reported and the current month are two different facts, and only
+  // the first one is the subject of this response. They coincide on a request
+  // that named no month and diverge on every request that named a past one, so
+  // a client that read the ceiling off referenceMonth would offer the month it
+  // is already looking at as the latest it may ask for. The client cannot
+  // compute it either: its clock is not the account owner's calendar.
+  //
+  // Free in both branches: a named month already paid for this query in the 422
+  // check, and an omitted one resolves to the current month by definition.
+  const currentMonth = months?.currentMonth ?? month;
+
   return {
    referenceMonth: month,
    accounts: accountsStatus,
@@ -410,7 +429,7 @@ export const budgetCalculationService = {
    // them in: the rows, the groups they fall into, the header over both.
    categories,
    totals,
-   meta: { notices },
+   meta: { notices, currentMonth },
   };
  },
 

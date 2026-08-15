@@ -155,6 +155,11 @@ export type BudgetSeriesResponse = {
 // Always an object, and notices is always an array. No null check needed.
 export type BudgetMeta = {
  notices: string[];
+ // The current month on the account owner's calendar, as 'YYYY-MM-01'. It is
+ // NOT referenceMonth: that one is the month being reported, and the two differ
+ // on every request that named a past month. This is the ceiling of the month
+ // selector, and the client cannot derive it — its clock is not that calendar.
+ currentMonth: string;
 };
 
 //-----ERRORS------------------
