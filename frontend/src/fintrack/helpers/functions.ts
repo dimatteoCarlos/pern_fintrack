@@ -12,7 +12,7 @@
 // *   **`isValidCurrencyCode`**: Validation guard that checks strings against supported ISO 4217 codes to ensure application stability.
 //-------------------------
 import { CurrencyType, StatusType } from '../types/types';
-import { DATE_TIME_FORMAT_DEFAULT } from './constants';
+import { DATE_TEXT_FORMAT, DATE_TIME_FORMAT_DEFAULT } from './constants';
 
 import { CURRENCY_CYCLE } from './constants';
 
@@ -281,6 +281,20 @@ export function showDate(date: Date, countryFormat = DATE_TIME_FORMAT_DEFAULT) {
   console.log(formattedDate);
 
   return formattedDate;
+}
+//-----------
+// Month a budget created right now lands in. Resolved in the owner's zone
+// because the server truncates the month there too: on the last day of a month
+// the browser's zone and the owner's can disagree by one month.
+export function getCurrentBudgetMonthLabel(
+  timeZone?: string,
+  countryFormat = DATE_TEXT_FORMAT,
+) {
+  return new Date().toLocaleDateString(countryFormat, {
+    month: 'long',
+    year: 'numeric',
+    timeZone,
+  });
 }
 
 // export const formatDate = (dateInput: Date | string | number): string => {

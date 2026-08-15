@@ -56,6 +56,11 @@ export const DEFAULT_CURRENCY = (import.meta.env.VITE_ACCOUNTING_CURRENCY_CODE |
 
 export const DATE_TIME_FORMAT_DEFAULT = 'es-ES';
 
+// For dates that render a WORD rather than digits. DATE_TIME_FORMAT_DEFAULT only
+// decides separators and order, but a long month name makes the locale the
+// interface language, and the interface is in English.
+export const DATE_TEXT_FORMAT = 'en-US';
+
 export const VARIANT_DEFAULT: VariantType = 'tracker';
 
 export const VARIANT_FORM: VariantType = 'form';

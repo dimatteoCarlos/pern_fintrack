@@ -7,6 +7,8 @@ import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpa
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
+import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx';
 
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 
@@ -15,6 +17,7 @@ import '../styles/forms-styles.css';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
 
 import { url_create_category_budget_account } from '../../../../urlConfig.ts';
 
@@ -25,6 +28,8 @@ import {
   TILE_LABELS,
   VARIANT_FORM,
 } from '../../../helpers/constants.ts';
+
+import { getCurrentBudgetMonthLabel, numberFormatCurrency } from '../../../helpers/functions.ts';
 
 import { CreateCategoryBudgetAccountApiResponseType } from '../../../types/responseApiTypes.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
@@ -84,7 +89,7 @@ function NewCategory() {
   const location = useLocation();
   const navigateTo = useNavigate();
   //const user: string = import.meta.env.VITE_USER_ID;
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userData } = useAuth();
 
 // === STATE INITIALIZATION ===
   const [formData, setFormData] =
@@ -125,7 +130,38 @@ function NewCategory() {
 
   }, [categoryData.category, categoryData.subcategory, categoryData.nature]);
 
-  // Helper message for duplicate account name 
+ //-------------------------------------
+ //CURRENCY AND MONTH
+ //The badge cycles the ORIGIN currency, the one the user thinks in. The backend
+ //converts it before storing, so the preview states what will actually be saved.
+  const selectedCurrency = categoryData.currency ?? defaultCurrency;
+
+  function updateDataCurrency(currency: CurrencyType) {
+    setCategoryData((data) => ({ ...data, currency }));
+  }
+
+  // The form offers no month picker: the allocation is always written to the
+  // month the account starts in, and an account starts when it is created.
+  const currentBudgetMonth = getCurrentBudgetMonthLabel(userData?.timezone);
+
+  // Reads the rates already held in the store, so it issues no request.
+  const { targetCurrencyPreview, rate, direction } = useCurrencyPreview(
+    formData[formDataNumber.keyName],
+    selectedCurrency,
+  );
+
+  const isAmountError = !!validationMessages[formDataNumber.keyName]
+    ?.trim()
+    .startsWith('*');
+
+  const showRatePreview = !!targetCurrencyPreview && !isAmountError;
+
+  const rateTooltipText =
+    rate && direction
+      ? `${direction}\nrate: ${numberFormatCurrency(rate, 2, undefined, 'es-ES')}`
+      : '';
+
+  // Helper message for duplicate account name
   const [duplicateHelperMessage, setDuplicateHelperMessage] = useState<string>('');
 
   // 📝 Hook for account existence and duplicate checking
@@ -422,6 +458,10 @@ function NewCategory() {
 
           <div className='form__title'>{'New Category'}</div>
         </div>
+
+        {/* MONTH THE BUDGET LANDS IN */}
+        <div className='month-badge'>{currentBudgetMonth}</div>
+
         {/* FORM START */}
         <form className='form__box'>
           <div className='container--categoryName form__container'>
@@ -495,21 +535,46 @@ function NewCategory() {
 
            {/* BUDGET AMOUNT INPUT */}
             <div className='input__box'>
-              <LabelNumberValidation
-                formDataNumber={formDataNumber}
-                validationMessages={validationMessages}
-                variant={VARIANT_FORM}
-              />
+              {/* Label and conversion message share a row, as in the tracker:
+                  the message states what will be stored, and the rate tooltip
+                  opens over it. */}
+              <div className='form__label-row'>
+                <LabelNumberValidation
+                  formDataNumber={formDataNumber}
+                  validationMessages={validationMessages}
+                  variant={VARIANT_FORM}
+                />
 
-              <input
-                className={'input__container'}
-                type='text'
-                name={formDataNumber.keyName}
-                placeholder={formDataNumber.title}
-                value={formData[formDataNumber.keyName]}
-                onChange={inputHandler}
-                autoComplete='off'
-              />
+                {showRatePreview && (
+                  <RateTooltip
+                    tipText={rateTooltipText}
+                    surface='dark'
+                    placement='anchor-left'
+                  >
+                    <span className='form__fx-preview'>
+                      {targetCurrencyPreview}
+                    </span>
+                  </RateTooltip>
+                )}
+              </div>
+
+              <div className='form__amount-row'>
+                <input
+                  className={'input__container'}
+                  type='text'
+                  name={formDataNumber.keyName}
+                  placeholder={formDataNumber.title}
+                  value={formData[formDataNumber.keyName]}
+                  onChange={inputHandler}
+                  autoComplete='off'
+                />
+
+                <CurrencyBadge
+                  variant={VARIANT_FORM}
+                  updateOutsideCurrencyData={updateDataCurrency}
+                  currency={selectedCurrency}
+                />
+              </div>
             </div>
           </div>
 

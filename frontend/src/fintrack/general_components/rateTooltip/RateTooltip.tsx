@@ -12,13 +12,27 @@ type RateTooltipPropType = {
  tipText: string;
  // Names the surface the chip sits on, never the colour it paints itself.
  surface: 'light' | 'dark';
+ // Above the trigger by default. 'anchor-left' is for a trigger that sits at
+ // the right edge of a wide row, where a centred chip would overflow it.
+ placement?: 'above' | 'anchor-left';
  children: React.ReactNode;
 };
 
 //-----RateTooltip---------------C
-const RateTooltip = ({ tipText, surface, children }: RateTooltipPropType) => {
+const RateTooltip = ({
+ tipText,
+ surface,
+ placement = 'above',
+ children,
+}: RateTooltipPropType) => {
  // Compound selector so the chip beats the base tooltip rules from another file.
- const chipClassName = `rateTooltip__chip rateTooltip__chip--${surface}`;
+ const chipClassName = [
+  'rateTooltip__chip',
+  `rateTooltip__chip--${surface}`,
+  placement === 'anchor-left' ? 'rateTooltip__chip--anchor-left' : '',
+ ]
+  .filter(Boolean)
+  .join(' ');
 
  return (
   <Tooltip tipText={tipText} isActive={false} tooltipClassName={chipClassName}>

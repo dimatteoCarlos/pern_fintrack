@@ -82,7 +82,16 @@ export const mainTables = [
     table: `CREATE TABLE IF NOT EXISTS category_budget_accounts(account_id INT PRIMARY KEY REFERENCES user_accounts(account_id) ON DELETE CASCADE,
     category_name VARCHAR(50) NOT NULL,category_nature_type_id INT REFERENCES    category_nature_types(category_nature_type_id),
     subcategory VARCHAR(25),
-    budget DECIMAL(15, 2),currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL)`,
+    budget DECIMAL(15, 2),currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE, account_start_date TIMESTAMPTZ NOT NULL,
+
+ --  FX audit columns. budget holds the accounting currency; original_budget
+ --  holds what the user typed. See migration 014.
+    original_budget DECIMAL(15,2) NOT NULL DEFAULT 0,
+    original_currency_id INTEGER NOT NULL DEFAULT 1 REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    exchange_rate DECIMAL(18,8) NOT NULL DEFAULT 1.0 CHECK (exchange_rate > 0),
+    exchange_rate_source VARCHAR(60) NOT NULL DEFAULT 'identity',
+    exchange_rate_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    exchange_rate_target_currency_id INTEGER NOT NULL DEFAULT 1 REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE)`,
   },
 
   {

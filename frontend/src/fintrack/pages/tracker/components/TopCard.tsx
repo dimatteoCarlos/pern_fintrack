@@ -168,6 +168,7 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
        <RateTooltip
        tipText={tooltipText}
        surface="light"
+       placement="anchor-left"
        >
         <span className='currency-preview' style={{ fontSize: '0.8rem', color: '#666' }}>
         {targetCurrencyPreview}

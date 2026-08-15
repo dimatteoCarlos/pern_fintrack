@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { authFetch } from '../../auth/auth_utils/authFetch';
 import { CurrencyType } from '../types/types';
+import { DEFAULT_CURRENCY } from '../helpers/constants';
 import { url_currency_rates } from '../../urlConfig';
 
 // ======================================
@@ -14,6 +15,9 @@ type Rates = Record<CurrencyType, number>;
 
 type CurrencyState = {
   rates: Rates;
+  // Currency every amount is stored in, as the backend declares it. Distinct
+  // from DEFAULT_CURRENCY, which is only what the interface renders in.
+  accountingCurrency: CurrencyType;
   isLoading: boolean;
   error: string | null;
   fetchRates: () => Promise<void>;
@@ -25,6 +29,8 @@ type CurrencyState = {
 export const useCurrencyStore = create<CurrencyState>((set, get) => ({
   // Initial state
   rates: {} as Rates,
+  // Starting value only, replaced by the server's own on the first fetch.
+  accountingCurrency: DEFAULT_CURRENCY,
   isLoading: false,
   error: null,
 
@@ -49,8 +55,12 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
 
       // console.log('💰 Rates fetched successfully:', response.data);
 
+      // base is ACCOUNTING_CURRENCY_CODE, sent on every rates response. Reading
+      // it here costs no request and removes the second source of truth.
       set({
         rates: response.data.rates,
+        accountingCurrency:
+          (response.data.base as CurrencyType) ?? DEFAULT_CURRENCY,
         isLoading: false,
         error: null,
       });

@@ -14,6 +14,7 @@ import { determineSourceAndDestinationAccounts } from '../../utils/fintrackUtils
 import { prepareTransactionOption } from '../../utils/fintrackUtils/transactionManagement/prepareTransactionOption.js';
 
 import { buildFxMetadata } from '../../utils/fintrackUtils/transactionManagement/fxMetadataHelper.js';
+import { currencyAmountConversion } from '../services/fx_services/conversion/currencyAmountConversion.js';
 import { getCurrencyId } from '../../utils/currencyLookup.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
 import { budgetAllocationService } from '../services/budget_services/services/budgetAllocationService.js';
@@ -125,7 +126,8 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       (currency) => currency.currency_code === currency_code)[0].currency_id;
     // console.log('🚀 ~ createAccount ~ currencyIdReq:', currencyIdReq);
 
-    // FX metadata (identity mode, since category_budget uses USD as base)
+    // Target of every conversion below. currencyIdReq is the origin the client
+    // sent and belongs to the FX metadata only.
     const accountingCurrencyId = await getCurrencyId(pool,ACCOUNTING_CURRENCY_CODE);
     //---------------------------------------
     //----- CHECK CATEGORY_BUDGET+ SUBCATEGORY + NATURE, ACCOUNT EXISTENCE ----------------
@@ -196,17 +198,78 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     //initial amount spent in the balance (expense from other accounts) could be considered
     //CHECK WEATHER IT CAN BE SPENT WHEN NO BUDGET HAS BEEN ASSIGNED TO THE ACCOUNT. IT SHOULD NOT BE.
     //CUANDO SE ASIGNA UN BUDGET, ?SE RESERVA ALGUN DINERO EN ALGUNA OTRA CUENTA?
-    const transactionAmount = account_starting_amount;
+    // =============================
+    // 💰 FX CONVERSION
+    // =============================
+    // Runs after the duplicate checks, so a request that is going to be
+    // rejected never asks the FX subsystem for a rate.
+    //
+    // The budget is the reason this block exists. Every other converted figure
+    // records its origin on the transaction that moved it, but a budget did not
+    // move: the opening transaction below is 0.00. Its origin is written to
+    // category_budget_accounts instead.
+    // Resolved with the same helper as the accounting currency rather than with
+    // the ad-hoc filter above, which yields undefined when the code does not
+    // match and lets it travel as a NULL into a NOT NULL column.
+    let originalCurrencyId;
+
+    try {
+      originalCurrencyId = await getCurrencyId(pool, currency_code);
+    } catch {
+      const message = `Unknown currency code: ${currency_code}`;
+      console.warn(pc.redBright(message));
+      return res.status(400).json({ status: 400, message });
+    }
+
+    let convertedBudget = category_nature_budget;
+    let convertedStartingAmount = account_starting_amount;
+    let exchangeRate = 1.0;
+    let exchangeRateSource = 'identity';
+    let exchangeRateTimestamp = new Date();
+
+    if (currency_code !== ACCOUNTING_CURRENCY_CODE) {
+      const budgetConversion = await currencyAmountConversion(
+        category_nature_budget,
+        currency_code,
+        ACCOUNTING_CURRENCY_CODE,
+      );
+
+      convertedBudget = budgetConversion.amount.toNumber();
+      exchangeRate = budgetConversion.rate;
+      exchangeRateSource = budgetConversion.source;
+      exchangeRateTimestamp = budgetConversion.fetchedAt;
+
+      // The frontend sends no opening amount for a category budget, so this is
+      // 0.00 in practice. Converted anyway: a non-zero one would otherwise land
+      // in the ledger denominated in a currency the ledger does not record.
+      if (account_starting_amount !== 0) {
+        const startingConversion = await currencyAmountConversion(
+          account_starting_amount,
+          currency_code,
+          ACCOUNTING_CURRENCY_CODE,
+        );
+
+        convertedStartingAmount = startingConversion.amount.toNumber();
+      }
+    }
+
+    const transactionAmount = convertedStartingAmount;
     const account_balance = transactionAmount;
 
-   // Build FX metadata (identity mode: rate=1, source='identity')
+   // Build FX metadata for the opening transaction, with the rate actually used
    const fxMetadata = await buildFxMetadata(
    // original amount (positive)
-   transactionAmount,
-   // original currency ID (USD by default)  
-   currencyIdReq,
-   // database pool      
-   pool                 
+   account_starting_amount,
+   // original currency ID, as sent by the client
+   originalCurrencyId,
+   // database pool
+   pool,
+   // options
+   {
+     exchangeRate,
+     exchangeRateSource,
+     exchangeRateTimestamp,
+   },
    );
 
    //TRANSACTION BEGIN
@@ -217,7 +280,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       account_name,
       accountTypeIdReq,
       accountingCurrencyId,//accountable currency,
-      account_starting_amount,
+      convertedStartingAmount,
       account_balance,
       account_start_date ?? transaction_actual_date,
     );
@@ -229,16 +292,29 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     // currency sent by the client and belongs to the FX metadata only.
     // Omitting the column left it NULL on every row, which made the budget
     // summary endpoints fail on getCurrencyCodeSync(null).
+    //
+    // budget holds the converted figure, which is what every read path sums.
+    // original_budget holds what the user typed, in the currency they picked.
+    // Storing only one of the two makes the row unauditable: 12.50 with no
+    // record that it was ever 50000 cop cannot be explained back to the user.
     const category_budget_accountQuery = {
-      text: `INSERT INTO category_budget_accounts(account_id, category_name,category_nature_type_id,subcategory,budget,currency_id,account_start_date ) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      text: `INSERT INTO category_budget_accounts(account_id, category_name,category_nature_type_id,subcategory,budget,currency_id,account_start_date,
+      original_budget,original_currency_id,exchange_rate,exchange_rate_source,exchange_rate_timestamp,exchange_rate_target_currency_id )
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
       values: [
         account_id,
         category_name,
         category_nature_type_id_req,
         subcategory,
-        category_nature_budget,
+        convertedBudget,
         accountingCurrencyId,
         account_start_date,
+        category_nature_budget,
+        originalCurrencyId,
+        exchangeRate,
+        exchangeRateSource,
+        exchangeRateTimestamp,
+        accountingCurrencyId,
       ],
     };
     const category_budget_accountResult = await client.query(
@@ -256,10 +332,12 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     // legacy cba.budget column keeps its value and its writer: this is additive.
     // Read on the transaction's client, so the month the row is dated to is
     // resolved in the zone this transaction sees.
+    // Receives the converted figure: allocations are summed against balances,
+    // which are already in the accounting currency.
     const budget_allocation = await budgetAllocationService.createAllocationForAccount(
       client,
       account_id,
-      category_nature_budget,
+      convertedBudget,
       account_start_date ?? transaction_actual_date,
       await getUserTimeZone(client, userId),
     );
@@ -283,7 +361,9 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const { transaction_type_id, countertransaction_type_id } =
       transactionTypeDescriptionIds;
 
-    const transactionDescription = `Transaction: ${transactionType}. Account: ${account_name} (${account_type_name}). Initial-(${transactionType}). Amount: ${transactionAmount} ${currency_code}.  Date:${formatDate(transaction_actual_date)}`;
+    // Reports the amount as the user sent it, so the figure and the currency
+    // code beside it describe the same thing.
+    const transactionDescription = `Transaction: ${transactionType}. Account: ${account_name} (${account_type_name}). Initial-(${transactionType}). Amount: ${account_starting_amount} ${currency_code}.  Date:${formatDate(transaction_actual_date)}`;
 
     //---- CATEGORY_BUDGET NEW ACCOUNT INFO -
     const newAccountInfo = {

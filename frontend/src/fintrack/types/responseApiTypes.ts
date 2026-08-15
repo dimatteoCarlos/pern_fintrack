@@ -171,20 +171,40 @@ export type CreateCategoryBudgetAccountApiResponseType = {
   message: string;
 };
 
-interface CategoryBudgetResponseDataType extends ResponseDataType {
+type CategoryBudgetResponseDataType = ResponseDataType & {
   new_category_budget_account: CategoryBudgetAccountType;
-}
+  budget_allocation: BudgetAllocationType;
+};
 
 type CategoryBudgetAccountType = {
   account_id: number;
   category_name: string;
   category_nature_type_id: number;
   subcategory?: string | null;
+  // The budget in the accounting currency. This is the figure every read path
+  // sums, and it is not what the user typed unless they picked that currency.
   budget: number | string;
   amount?: number;
   account_start_date: Date | string;
   nature_type_name: string;
+  // The origin currency the request carried, not the one budget is stored in.
   currency_code: CurrencyType;
+  // FX audit trail of the conversion that produced budget.
+  original_budget: number | string;
+  original_currency_id: number;
+  exchange_rate: number | string;
+  exchange_rate_source: string;
+  exchange_rate_timestamp: Date | string;
+  exchange_rate_target_currency_id: number;
+};
+
+// The row the server writes to budget_monthly_allocations, which is where every
+// read path resolves the amount from. Camel case: it is built by the service,
+// not spread from a database row.
+type BudgetAllocationType = {
+  accountId: number;
+  budgetMonth: string;
+  budgetAmount: number;
 };
 //----------------------
 //CREATE DEBTOR ACCOUNT

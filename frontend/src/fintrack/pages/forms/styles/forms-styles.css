@@ -62,6 +62,72 @@ label,
 }
 
 /* ============================================================
+   BUDGET MONTH AND CURRENCY PREVIEW
+ ====================== */
+
+/* States the month the allocation is written to. It is context, not a heading:
+   an outline rather than a fill, so it does not compete with the form title.
+   No interactive states because there is nothing to interact with. */
+.month-badge {
+ align-self: center;
+ margin-bottom: 1rem;
+ padding: 0.5rem 1.5rem;
+ border: 1px solid var(--creme);
+ border-radius: 2rem;
+ color: var(--creme);
+ font-size: 0.875rem;
+ font-weight: 500;
+ letter-spacing: 0.02em;
+ white-space: nowrap;
+}
+
+/* Puts the currency badge beside the amount it denominates. */
+.form__amount-row {
+ display: flex;
+ align-items: center;
+ gap: 0.5rem;
+}
+
+.form__amount-row .input__container {
+ flex: 1;
+ min-width: 0;
+}
+
+/* Label on the left, conversion message on the right. Also keeps the tooltip
+   wrapper at the width of its own text: as a direct child of the column it
+   would stretch, and the chip would be positioned off the form. */
+.form__label-row {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: 0.5rem;
+}
+
+/* The shared label declares width: 100%, which inside this row would leave the
+   message no space at all. */
+.form__label-row .forms__label {
+ width: auto;
+ flex: 1 1 auto;
+ min-width: 0;
+}
+
+/* The message keeps its own width, so the tooltip anchors to its text. */
+.form__label-row .tooltip__wrapper {
+ flex: 0 0 auto;
+}
+
+/* The converted figure, which is what the backend will store. Sits under the
+   amount and opens the rate tooltip on hover. */
+.form__fx-preview {
+ font-size: 0.8rem;
+ font-weight: 300;
+ color: var(--creme);
+ opacity: 0.75;
+ white-space: nowrap;
+ cursor: help;
+}
+
+/* ============================================================
    FIELD LABELS (Form Controls Internal Scope)
  ====================== */
 .input__box .forms__label {

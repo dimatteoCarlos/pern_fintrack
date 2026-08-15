@@ -7,7 +7,6 @@
 import { useMemo } from 'react';
 import { useCurrencyStore } from '../stores/useCurrencyStore';
 import { CurrencyType } from '../types/types';
-import { DEFAULT_CURRENCY } from '../helpers/constants';
 import { numberFormatCurrency } from '../helpers/functions';
 
 // ===============================
@@ -16,6 +15,10 @@ import { numberFormatCurrency } from '../helpers/functions';
 export function useCurrencyPreview(amount: number | string, currency: CurrencyType) {
   // 1. Get exchange rates from global store
   const rates = useCurrencyStore((state) => { return state.rates;});
+
+  // Currency the amount will be STORED in, which is the question this preview
+  // answers. Not DEFAULT_CURRENCY: that one is only what the interface renders.
+  const accountingCurrency = useCurrencyStore((state) => { return state.accountingCurrency;});
 
    // console.log("🚀 ~ useCurrencyPreview ~ rates:", rates);
 
@@ -27,8 +30,8 @@ export function useCurrencyPreview(amount: number | string, currency: CurrencyTy
 
   // 3. Calculate preview, rate and direction (if applicable)
   const result = useMemo(() => {
-   // No conversion needed for accounting currency (USD)
-    if (currency === DEFAULT_CURRENCY) {
+   // No conversion needed when the amount is already in the stored currency
+    if (currency === accountingCurrency) {
       return { targetCurrencyPreview: null, rate: null, direction: null };
     }
 
@@ -42,16 +45,14 @@ export function useCurrencyPreview(amount: number | string, currency: CurrencyTy
     const targetCurrencyValue = numericAmount / rate;
     
    // Format preview with 2 decimal places (toFixed(2) as agreed)
-   const preview = `≈ ${numberFormatCurrency(targetCurrencyValue, 2, undefined, 'es-ES')} ${DEFAULT_CURRENCY}`;
-    // const preview = `≈ ${targetCurrencyValue.toFixed(2)} ${DEFAULT_CURRENCY}`;
+   const preview = `≈ ${numberFormatCurrency(targetCurrencyValue, 2, undefined, 'es-ES')} ${accountingCurrency}`;
 
-   // Build direction string: e.g., "cop->usd"
-    const direction = `${DEFAULT_CURRENCY}→${currency}`;
-    // const direction = `${currency}→${DEFAULT_CURRENCY}`;
+   // Direction of the RATE, which reads "1 accounting = rate foreign"
+    const direction = `${accountingCurrency}→${currency}`;
 
     return { targetCurrencyPreview: preview, rate, direction };
 
-  }, [numericAmount, currency, rates]);
+  }, [numericAmount, currency, rates, accountingCurrency]);
 
   // 4. Return object for easy destructuring
    // console.log("🚀 ~ useCurrencyPreview ~ result:", result)
