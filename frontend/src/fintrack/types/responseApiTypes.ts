@@ -530,6 +530,16 @@ export type AccountTransactionType = {
   account_name: string;
   account_starting_amount: number;
   account_start_date: string; // ISO 8601 date string
+  // The two fields below travel only when the request named a month. On the
+  // legacy start/end path they are absent, which is why both are optional.
+  //
+  // The date the transaction falls on in the ACCOUNT OWNER's calendar, resolved
+  // in SQL. Render this instead of slicing transaction_actual_date, which is an
+  // instant and can name the neighbouring day.
+  transaction_local_date?: string; // YYYY-MM-DD
+  // What the account has spent inside the month up to and including this row.
+  // Only movement types 1 and 6 add to it, the same set the budget counts.
+  month_cumulative_spent?: number;
 };
 
 export type AccountTransactionDataType = {
