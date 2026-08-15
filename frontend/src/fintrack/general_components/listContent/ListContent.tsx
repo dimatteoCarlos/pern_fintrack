@@ -3,7 +3,6 @@
 // 🎯 COMPONENT: ListContent
 // ===================================
 
-import { useState } from 'react';
 import {
   CURRENCY_OPTIONS,
   DATE_TIME_FORMAT_DEFAULT,
@@ -22,10 +21,7 @@ import { BoxContainer, BoxRow } from '../boxComponents/BoxComponents';
 
 import './styles/listContent-style.css';
 
-import { authFetch } from '../../../auth/auth_utils/authFetch';
-import { url_get_transaction_by_id } from '../../../urlConfig';
-
-import { TransactionDetailType } from '../../types/responseApiTypes';
+import { useTransactionDetail } from '../../hooks/useTransactionDetail';
 import { TransactionDetailModal } from '../../pages/overview/components/transactionDetailModal/TransactionDetailModal';
 
 // Default configuration
@@ -37,40 +33,13 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // ====================================
 function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
  // State for modal
-  const [selectedTransaction, setSelectedTransaction] =  useState<TransactionDetailType | null>(null);
-
-  const [isLoadingModal, setIsLoadingModal] = useState(false);
+  const { selectedTransaction, isLoading, openTransaction, closeTransaction } =
+    useTransactionDetail();
 
   const formatDate = (dateInput: Date | string | number): string => {
     const date = new Date(dateInput);
     return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
   };
-
-  // Fetch transaction details by ID
-  const handleTransactionClick = async (transactionId: number) => {
-   // console.log('🔍 Click en transacción, ID:', transactionId);
-
-    if (!transactionId || transactionId === 0) return;
-    setIsLoadingModal(true);
-    try {
-      const response = await authFetch<TransactionDetailType>(`${url_get_transaction_by_id}${transactionId}`);
-
-//----DEBUG-------------------------------
-// console.log('🔍 Respuesta completa:', response);
-// console.log('🔍 Datos recibidos (data):', response.data);
-// console.log('🔍 original_amount:', response.data?.original_amount);
-// console.log('🔍 exchange_rate:', response.data?.exchange_rate);
-//----DEBUG-------------------------------
-
-      setSelectedTransaction(response.data);
-    } catch (error) {
-      console.error('Failed to fetch transaction details:', error);
-    } finally {
-      setIsLoadingModal(false);
-    }
-  };
-
-  // console.log('🔍 Modal state:', { selectedTransaction, isLoadingModal });
 
 //==============================
   return (
@@ -81,7 +50,7 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
 
        return (
         <BoxContainer key={index} className='listContent__item '
-          onClick={() => handleTransactionClick(transactionId)}
+          onClick={() => openTransaction(transactionId)}
           style={{ cursor: 'pointer' }}
           >
         {/* -----------------------------------
@@ -114,10 +83,10 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
  {/* Modal */}
       <TransactionDetailModal
         transaction={selectedTransaction}
-        onClose={() => setSelectedTransaction(null)}
+        onClose={closeTransaction}
       />
       {/* Optional loading indicator */}
-      {isLoadingModal && (
+      {isLoading && (
         <div className='modal-loading' style={{ textAlign: 'center', padding: '1rem' }}>
           Loading...
         </div>
