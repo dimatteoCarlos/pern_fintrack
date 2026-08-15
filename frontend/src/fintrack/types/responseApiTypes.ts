@@ -249,6 +249,15 @@ type PocketSavingAccountType = {
   account_start_date: Date | string;
   // currency_code: CurrencyType;
   // account_type_name: pocket_saving
+
+  // FX audit fields. target is the accounting currency; original_target is what
+  // the user typed. See migration 015.
+  original_target: number;
+  original_currency_id: number;
+  exchange_rate: number;
+  exchange_rate_source: string;
+  exchange_rate_timestamp: Date | string;
+  exchange_rate_target_currency_id: number;
 };
 
 //---------------------------------

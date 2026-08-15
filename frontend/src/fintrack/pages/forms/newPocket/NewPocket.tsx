@@ -7,15 +7,19 @@ import '../styles/forms-styles.css';
 // 🛠️ CUSTOM HOOKS & UTILITIES
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
+import { numberFormatCurrency } from '../../../helpers/functions.ts';
 
 // 📦 COMPONENTS
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import FormDatepicker from '../../../general_components/datepicker/Datepicker.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
+import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx';
 
 // 🖼️ ASSETS
 import LeftArrowSvg from '../../../../assets/LeftArrowSvg.svg';
@@ -142,6 +146,31 @@ function NewPocket() {
       desiredDate: selectedDate,
     }));
   }, []);
+  //---
+  const selectedCurrency = pocketData.currency ?? defaultCurrency;
+
+  function updateDataCurrency(currency: CurrencyType) {
+    setPocketData((data) => ({ ...data, currency }));
+  }
+
+  // States what the backend will store as the target, which is the figure the
+  // pocket detail compares against the balance. Reads the rates already held in
+  // the store, so it issues no request.
+  const { targetCurrencyPreview, rate, direction } = useCurrencyPreview(
+    formData[formDataNumber.keyName],
+    selectedCurrency,
+  );
+
+  const isAmountError = !!validationMessages[formDataNumber.keyName]
+    ?.trim()
+    .startsWith('*');
+
+  const showRatePreview = !!targetCurrencyPreview && !isAmountError;
+
+  const rateTooltipText =
+    rate && direction
+      ? `${direction}\nrate: ${numberFormatCurrency(rate, 2, undefined, 'es-ES')}`
+      : '';
 
   // 📤 FORM SUBMISSION LOGIC (onSubmitForm)
   async function onSubmitForm(e: React.MouseEvent<HTMLButtonElement>) {
@@ -365,38 +394,64 @@ function NewPocket() {
 
             {/* 💰 TARGET AMOUNT INPUT */}
             {/* Target Amount */}
-            <label htmlFor={formDataNumber.keyName} className='form__title1'>
-              {'Target Amount'}
+            {/* Label and conversion message share a row, as in New Category and
+                New Account: the message states what will be stored, and the
+                rate tooltip opens over it. The message sits outside the label
+                so hovering it does not focus the input. */}
+            <div className='form__label-row'>
+              <label htmlFor={formDataNumber.keyName} className='form__title1'>
+                {'Target Amount'}
 
-              <CharacterCounter
-                value={formData[formDataNumber.keyName] || ''}
+                <CharacterCounter
+                  value={formData[formDataNumber.keyName] || ''}
+                  maxLength={15}
+                />
+
+                <div
+                  className='validation__errMsg'
+                  style={{
+                    color: validationMessages[formDataNumber.keyName]
+                      ?.toLocaleLowerCase()
+                      .includes('format:')
+                      ? 'var(--lightSuccess'
+                      : 'var(--error',
+                  }}
+                >
+                  {validationMessages[formDataNumber.keyName]}
+                </div>
+              </label>
+
+              {showRatePreview && (
+                <RateTooltip
+                  tipText={rateTooltipText}
+                  surface='dark'
+                  placement='anchor-left'
+                >
+                  <span className='form__fx-preview'>
+                    {targetCurrencyPreview}
+                  </span>
+                </RateTooltip>
+              )}
+            </div>
+
+            <div className='form__amount-row'>
+              <input
+                className={`input__container`}
+                type='text'
+                name={formDataNumber.keyName}
+                placeholder={formDataNumber.keyName}
+                value={formData[formDataNumber.keyName]}
+                onChange={inputHandler}
                 maxLength={15}
+                autoComplete='off'
               />
 
-              <div
-                className='validation__errMsg'
-                style={{
-                  color: validationMessages[formDataNumber.keyName]
-                    ?.toLocaleLowerCase()
-                    .includes('format:')
-                    ? 'var(--lightSuccess'
-                    : 'var(--error',
-                }}
-              >
-                {validationMessages[formDataNumber.keyName]}
-              </div>
-            </label>
-
-            <input
-              className={`input__container`}
-              type='text'
-              name={formDataNumber.keyName}
-              placeholder={formDataNumber.keyName}
-              value={formData[formDataNumber.keyName]}
-              onChange={inputHandler}
-              maxLength={15}
-              autoComplete='off'
-            />
+              <CurrencyBadge
+                variant={'form'}
+                updateOutsideCurrencyData={updateDataCurrency}
+                currency={selectedCurrency}
+              />
+            </div>
 
             {/* 📅 DATE PICKER */}
             <label className='label '>

@@ -983,16 +983,19 @@ export const createPocketAccount = async (req, res, next) => {
     );
 
     //---
-    //get currency id from currency_code requested
-    const currencyQuery = `SELECT * FROM currencies`;
-    const currencyResult = await pool.query(currencyQuery);
+    // Resolved with the same helper as the accounting currency rather than by
+    // filtering the whole catalogue, which yields undefined when the code does
+    // not match and lets it travel as a NULL into a NOT NULL column.
+    let currencyIdReq;
 
-    const currencyArr = currencyResult?.rows;
-    const currencyIdReq = currencyArr.filter(
-      (currency) => currency.currency_code === currency_code,
-    )[0].currency_id;
+    try {
+      currencyIdReq = await getCurrencyId(pool, currency_code);
+    } catch {
+      const message = `Unknown currency code: ${currency_code}`;
+      console.warn(pc.redBright(message));
+      return res.status(400).json({ status: 400, message });
+    }
 
-    // FX metadata (identity mode, since pocket uses USD as base)
     const accountingCurrencyId = await getCurrencyId(
       pool,
       ACCOUNTING_CURRENCY_CODE,
@@ -1004,16 +1007,51 @@ export const createPocketAccount = async (req, res, next) => {
       transaction_type_name === 'withdraw'
         ? account_starting_amount * -1
         : account_starting_amount;
-    const account_balance = transactionAmount;
 
-    // Build FX metadata (identity mode: rate=1, source='identity')
+    // The pocket detail divides the balance by the target to show progress, so
+    // both have to be kept in the same currency. target is that figure in the
+    // accounting currency; original_target keeps what the user typed.
+    let convertedTarget = target;
+    let convertedStartingAmount = account_starting_amount;
+    let exchangeRate = 1.0;
+    let exchangeRateSource = 'identity';
+    let exchangeRateTimestamp = new Date();
+
+    if (currency_code !== ACCOUNTING_CURRENCY_CODE) {
+      const targetConversion = await currencyAmountConversion(
+        target,
+        currency_code,
+        ACCOUNTING_CURRENCY_CODE,
+      );
+      convertedTarget = targetConversion.amount.toNumber();
+      exchangeRate = targetConversion.rate;
+      exchangeRateSource = targetConversion.source;
+      exchangeRateTimestamp = targetConversion.fetchedAt;
+
+      if (account_starting_amount !== 0) {
+        const startingConversion = await currencyAmountConversion(
+          account_starting_amount,
+          currency_code,
+          ACCOUNTING_CURRENCY_CODE,
+        );
+        convertedStartingAmount = startingConversion.amount.toNumber();
+      }
+    }
+
+    const convertedTransactionAmount =
+      transaction_type_name === 'withdraw'
+        ? convertedStartingAmount * -1
+        : convertedStartingAmount;
+
+    const account_balance = convertedTransactionAmount;
+
+    // The origin travels on the metadata: the first argument is the figure as
+    // typed, the rate is the one that produced the converted amount.
     const fxMetadata = await buildFxMetadata(
-      // original amount (positive or negative)
       transactionAmount,
-      // original currency ID (USD by default)
       currencyIdReq,
-      // database pool
       pool,
+      { exchangeRate, exchangeRateSource, exchangeRateTimestamp },
     );
 
     //--INSERT basic info of POCKET ACCOUNT into user_accounts table
@@ -1026,7 +1064,7 @@ export const createPocketAccount = async (req, res, next) => {
       newAccountName,
       accountTypeIdReq,
       accountingCurrencyId, //currencyIdReq,
-      account_starting_amount,
+      convertedStartingAmount,
       account_balance, //initial balance
       account_start_date ?? transaction_actual_date,
     );
@@ -1034,8 +1072,20 @@ export const createPocketAccount = async (req, res, next) => {
     //-------------------------------
     //---INSERT POCKET ACCOUNT into pocket_saving_accounts table
     const pocket_saving_accountQuery = {
-      text: `INSERT INTO pocket_saving_accounts (account_id,target , desired_date, account_start_date, note ) VALUES ($1,$2::FLOAT,$3,$4, $5) RETURNING *`,
-      values: [account_id, target, desired_date, account_start_date, note],
+      text: `INSERT INTO pocket_saving_accounts (account_id, target, desired_date, account_start_date, note, original_target, original_currency_id, exchange_rate, exchange_rate_source, exchange_rate_timestamp, exchange_rate_target_currency_id) VALUES ($1,$2::FLOAT,$3,$4,$5,$6::FLOAT,$7,$8,$9,$10,$11) RETURNING *`,
+      values: [
+        account_id,
+        convertedTarget,
+        desired_date,
+        account_start_date,
+        note,
+        target,
+        currencyIdReq,
+        exchangeRate,
+        exchangeRateSource,
+        exchangeRateTimestamp,
+        accountingCurrencyId,
+      ],
     };
     const pocket_saving_accountResult = await client.query(
       pocket_saving_accountQuery,
@@ -1078,7 +1128,7 @@ export const createPocketAccount = async (req, res, next) => {
       description: transactionDescription,
       transaction_type_id,
       transaction_type_name: transactionType,
-      amount: parseFloat(transactionAmount),
+      amount: parseFloat(convertedTransactionAmount),
       currency_id: currencyIdReq,
       account_id: account_basic_data.account_id,
       transaction_actual_date,
