@@ -12,7 +12,7 @@ import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
 import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 
-import { TransactionDetailModal } from '../../overview/components/transactionDetailModal/TransactionDetailModal.tsx';
+import { AccountTransactionDetailModal } from '../accountDetailSharedComponents/accountTransactionDetailModal/AccountTransactionDetailModal.tsx';
 
 import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
@@ -335,7 +335,7 @@ function CategoryDetail() {
           row, so the request states itself before the modal can. */}
       {isLoadingTransactionDetail && <CoinSpinner />}
 
-      <TransactionDetailModal
+      <AccountTransactionDetailModal
         transaction={selectedTransaction}
         onClose={closeTransaction}
       />

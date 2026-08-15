@@ -1,0 +1,352 @@
+/* frontend/src/fintrack/pages/forms/accountDetailSharedComponents/accountTransactionDetailModal/styles/accountTransactionDetailModal-styles.css
+
+   Written on tokens.css. Scoped to the .transactionDetail block and nothing
+   else: the overview modal's stylesheet defines 14 --fx-* properties on the
+   global :root from a lazily loaded chunk, which is a defect this file does not
+   repeat. The two stylesheets share no selector. */
+
+.transactionDetail {
+ position: fixed;
+ inset: 0;
+ z-index: var(--z-modal);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ padding: var(--space-4);
+ background-color: var(--color-surface-overlay);
+ animation: transactionDetailFadeIn var(--motion-normal);
+}
+
+.transactionDetail__panel {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-4);
+ width: var(--layout-content-width);
+ max-width: var(--layout-width-max);
+ max-height: 90vh;
+ overflow-y: auto;
+ padding: var(--space-5);
+ border-radius: var(--radius-xl);
+ background-color: var(--color-surface-app);
+ box-shadow: var(--shadow-overlay);
+ color: var(--color-content-on-dark);
+ font-family: var(--font-family-sans);
+ scrollbar-width: thin;
+ scrollbar-color: var(--color-content-on-dark-subtle) var(--color-surface-raised);
+}
+
+.transactionDetail__header {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: var(--space-3);
+}
+
+.transactionDetail__title {
+ margin: 0;
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+}
+
+.transactionDetail__close {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ flex-shrink: 0;
+ width: var(--size-icon);
+ height: var(--size-icon);
+ padding: 0;
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-full);
+ background-color: var(--color-surface-raised);
+ color: var(--color-content-on-dark-subtle);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-sm);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.transactionDetail__close:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.transactionDetail__close:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-interactive-hover);
+ outline-offset: var(--border-width-thick);
+}
+
+.transactionDetail__close:active {
+ opacity: 0.7;
+}
+
+.transactionDetail__close:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The pills carry the two facts the hero cannot: what the movement was for, and
+   which way the money went. */
+.transactionDetail__badges {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+}
+
+.transactionDetail__badge {
+ padding: var(--space-2) var(--space-4);
+ border: var(--border-width-thin) solid transparent;
+ border-radius: var(--radius-full);
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-bold);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+}
+
+/* Provisional: built from generic tokens because the badge palette only
+   defines a positive and a negative triad, and the movement is neither. */
+.transactionDetail__badge--movement {
+ background-color: var(--color-surface-raised);
+ border-color: var(--color-border-subtle);
+ color: var(--color-content-on-dark-muted);
+}
+
+.transactionDetail__badge--positive {
+ background-color: var(--color-badge-positive-surface);
+ border-color: var(--color-badge-positive-border);
+ color: var(--color-badge-positive-content);
+}
+
+.transactionDetail__badge--negative {
+ background-color: var(--color-badge-negative-surface);
+ border-color: var(--color-badge-negative-border);
+ color: var(--color-badge-negative-content);
+}
+
+.transactionDetail__hero {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ padding-bottom: var(--space-4);
+ border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+ text-align: center;
+}
+
+/* The colour lives on the modifiers: the financial semaphore, not the badge
+   palette. That one qualifies a figure, the pills above name a direction. */
+.transactionDetail__amount {
+ font-size: var(--font-size-xl);
+ font-weight: var(--font-weight-bold);
+ font-variant-numeric: tabular-nums;
+}
+
+.transactionDetail__amount--positive {
+ color: var(--color-amount-positive);
+}
+
+.transactionDetail__amount--negative {
+ color: var(--color-amount-negative);
+}
+
+.transactionDetail__stamp {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.transactionDetail__body {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-4);
+}
+
+/* Separated by border and not by shadow: elevation is reserved for what floats
+   over the page, and a card inside the panel does not. */
+.transactionDetail__card {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ padding: var(--space-4);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+ background-color: var(--color-surface-raised);
+}
+
+.transactionDetail__cardTitle {
+ margin: 0;
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wider);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.transactionDetail__row {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-3);
+}
+
+.transactionDetail__row--column {
+ flex-direction: column;
+ align-items: stretch;
+ gap: var(--space-2);
+}
+
+.transactionDetail__label {
+ flex-shrink: 0;
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.transactionDetail__value {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ text-align: right;
+ color: var(--color-content-on-dark-muted);
+ font-variant-numeric: tabular-nums;
+}
+
+.transactionDetail__value--mono {
+ font-family: var(--font-family-mono);
+ font-size: var(--font-size-xs);
+}
+
+.transactionDetail__description {
+ margin: 0;
+ padding: var(--space-3);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-app);
+ font-size: var(--font-size-xs);
+ line-height: 1.4;
+ color: var(--color-content-on-dark-muted);
+ white-space: pre-wrap;
+}
+
+.transactionDetail__pathway {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
+/* index.css sets font-size on the universal selector, so an inline element does
+   not inherit the size of the line it sits in and has to restate it. */
+.transactionDetail__arrow {
+ font-size: var(--font-size-lg);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.transactionDetail__footer {
+ margin-top: auto;
+}
+
+.transactionDetail__action {
+ width: 100%;
+ min-height: var(--size-touch-target);
+ padding: var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-md);
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition: opacity var(--motion-fast);
+}
+
+.transactionDetail__action:hover {
+ opacity: 0.85;
+}
+
+.transactionDetail__action:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-interactive-hover);
+ outline-offset: var(--border-width-thick);
+}
+
+.transactionDetail__action:active {
+ opacity: 0.7;
+}
+
+.transactionDetail__action:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+@media (min-width: 480px) {
+ .transactionDetail__panel {
+  padding: var(--space-6);
+ }
+
+ .transactionDetail__amount {
+  font-size: var(--font-size-2xl);
+ }
+}
+
+@media (min-width: 768px) {
+ .transactionDetail__card {
+  padding: var(--space-5);
+ }
+}
+
+/* Short viewports: the panel scrolls, but giving back the padding first keeps
+   the hero and the first card on screen without one. */
+@media (max-height: 735px) {
+ .transactionDetail__panel {
+  gap: var(--space-3);
+  padding: var(--space-4);
+ }
+
+ .transactionDetail__body {
+  gap: var(--space-3);
+ }
+}
+
+@media (max-height: 568px) {
+ .transactionDetail__hero {
+  padding-bottom: var(--space-2);
+ }
+
+ .transactionDetail__amount {
+  font-size: var(--font-size-lg);
+ }
+
+ .transactionDetail__card {
+  gap: var(--space-2);
+  padding: var(--space-3);
+ }
+}
+
+@keyframes transactionDetailFadeIn {
+ from {
+  opacity: 0;
+ }
+
+ to {
+  opacity: 1;
+ }
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .transactionDetail {
+  animation: none;
+ }
+
+ .transactionDetail__close,
+ .transactionDetail__action {
+  transition: none;
+ }
+}
