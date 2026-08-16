@@ -134,13 +134,13 @@ that is teal when a figure is healthy and dusty red when it is not.
 | `--color-amount-positive` | `#5b8c93` | A remaining/left amount |
 | `--color-amount-negative` | `#c97474` | An overspent amount |
 
-> `--color-amount-positive` / `--color-amount-negative` are **deprecated**. They
-> duplicated `--color-financial-positive` / `--color-financial-negative` value
-> for value while saying less about why the colour was chosen, and nothing
-> consumes them any more. They stay defined but commented out; removing them
-> belongs to the cleanup block. `summaryDetailBox-style.css:69,73` still asks for
+> `--color-amount-positive` / `--color-amount-negative` are **live**. They carry
+> the same values as `--color-financial-positive` / `--color-financial-negative`
+> and the duplication is on the list to resolve, but they are the tokens the hero
+> amount of the detail modals reads today, so nothing is removed until a
+> replacement is in place. Separately, `summaryDetailBox-style.css:69,73` asks for
 > `--amountPositive` / `--amountNegative`, which are **not defined anywhere** and
-> render with no colour. That is a separate defect — see §7.1.
+> render with no colour — see §7.1.
 
 #### Financial effect — what a movement did to Net Worth
 
@@ -191,29 +191,32 @@ own accounts:
 | `pnl` | positive **or** negative by the sign of `amount` | A gain and a loss are one type; only the sign separates them |
 | everything else | neutral | Transfers between the owner's own accounts |
 
-#### Movement direction — deliberately colourless
+#### Movement direction — the second pill
 
 A second pill states which way the money went **in this account**: a deposit or a
-withdrawal, a borrow or a lend. It is styled as a neutral outline —
-`--color-surface-raised`, `--color-border-subtle`,
-`--color-content-on-dark-muted` — and consumes no colour of its own.
+withdrawal, a borrow or a lend. It reads `transaction_type_name`, and it carries
+its own colour from the badge family.
 
-This is a hierarchy decision, and it holds for every screen:
+| Token | Value | Meaning |
+| --- | --- | --- |
+| `--color-badge-positive-surface` | `rgba(2, 44, 34, 0.4)` | Money came into this account |
+| `--color-badge-positive-border` | `rgba(6, 95, 70, 0.5)` | |
+| `--color-badge-positive-content` | `#34d399` | |
+| `--color-badge-negative-surface` | `rgba(69, 10, 10, 0.4)` | Money left this account |
+| `--color-badge-negative-border` | `rgba(153, 27, 27, 0.5)` | |
+| `--color-badge-negative-content` | `#f87171` | |
 
-- The direction is **already stated three times**: by the word inside the pill, by
-  the sign of the hero amount, and by the amount's own colour. A fourth statement
-  in a fourth colour adds nothing.
-- Two coloured pills side by side compete. On an expense both would fire at once —
-  negative effect and outgoing direction — in two reds close enough to be
-  indistinguishable, and the very distinction the two families exist to draw would
-  disappear at the moment it matters most.
-- The effect on Net Worth is the heavier fact. **One pill carries colour, one
-  carries the label.**
+**The two pills answer different questions and both are needed.** On a `lend` the
+movement is `debt`, so the effect pill is ochre because a counterparty entered the
+picture, while the direction pill is red because the money left. They disagree on
+purpose, and collapsing them into one would lose whichever fact was dropped.
 
-> A `--color-badge-*` family with semi-transparent grounds preceded this decision
-> and is now orphaned. It stays defined but commented out in `tokens.css`;
-> removing it belongs to the cleanup block. Do not revive it: a new direction
-> colour would reintroduce the collision described above.
+> Direction was briefly styled as a colourless outline, on the argument that the
+> word inside the pill and the sign of the hero amount already state it. That was
+> wrong on screen: in the four movement types whose effect is neutral by design —
+> `pocket`, `transfer`, `investment`, `account-opening` — both pills then read grey
+> and the modal lost every colour cue it had. Reverted. Do not re-derive the
+> argument without checking the neutral case.
 
 ### 2.2 Theming
 
