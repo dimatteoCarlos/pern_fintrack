@@ -1,0 +1,200 @@
+/* frontend/src/fintrack/pages/budget/styles/budgetListControls.css
+   The list controls bar: budget level 1 today, level 2 when it grows its own.
+
+   One surface only. The bar sits inside .budgetLayout, which is the dark app
+   surface, and level 2's stylesheet declares no surface of its own. There is no
+   .light / .dark pair here because there is no light surface to land on yet —
+   writing one before it is needed is a modifier nothing selects.
+
+   It is not sticky. Keeping the controls reachable through a long scroll is its
+   own change, and it lands after the controls are proven to work.
+
+   Imported by BudgetListControls.tsx. */
+
+.budgetListControls {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ margin-bottom: var(--space-3);
+}
+
+/* Mobile first: at 360px the term owns its row and the sort key sits under it,
+   because two fields side by side would leave neither wide enough to read. */
+.budgetListControls__fields {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+}
+
+.budgetListControls__search,
+.budgetListControls__select {
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-3);
+ background-color: var(--color-surface-raised);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ color: var(--color-content-on-dark);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-sm);
+ transition: border-color var(--motion-fast);
+}
+
+/* Allowed to shrink past its content: a flex item defaults to its min-content
+   width, which at 360px pushes the row wider than the viewport. */
+.budgetListControls__search {
+ flex: 1;
+ min-width: 0;
+}
+
+.budgetListControls__search::placeholder {
+ color: var(--color-content-placeholder);
+}
+
+/* WebKit draws its own clear affordance inside a type=search field. It cannot
+   be styled and it would sit beside the Clear button the empty state already
+   offers, so the field keeps one way to be emptied. */
+.budgetListControls__search::-webkit-search-cancel-button {
+ display: none;
+}
+
+.budgetListControls__sort {
+ position: relative;
+ display: flex;
+ color: var(--color-content-on-dark-muted);
+}
+
+/* The arrow a browser draws on a select is painted by the OS and ignores the
+   page's colours, so it is removed and redrawn below. The padding is what keeps
+   the longest key from running under the caret. */
+.budgetListControls__select {
+ width: 100%;
+ padding-right: var(--space-8);
+ appearance: none;
+ cursor: pointer;
+}
+
+/* Inherited rather than given a colour of its own: the caret belongs to the
+   control's text and has to dim with it. */
+.budgetListControls__sort::after {
+ content: '▾';
+ position: absolute;
+ top: 50%;
+ right: var(--space-3);
+ transform: translateY(-50%);
+ font-size: var(--font-size-xs);
+ line-height: 1;
+ pointer-events: none;
+}
+
+/* The dropdown list itself is painted by the OS. Naming the surface keeps the
+   options legible where the browser honours it and costs nothing where it does
+   not. */
+.budgetListControls__select option {
+ background-color: var(--color-surface-raised);
+ color: var(--color-content-on-dark);
+}
+
+.budgetListControls__search:hover,
+.budgetListControls__select:hover {
+ border-color: var(--color-content-on-dark-subtle);
+}
+
+.budgetListControls__search:focus-visible,
+.budgetListControls__select:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+}
+
+.budgetListControls__search:active,
+.budgetListControls__select:active {
+ border-color: var(--color-accent);
+}
+
+.budgetListControls__search:disabled,
+.budgetListControls__select:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The caret is drawn on the wrapper, so it does not inherit the disabled state
+   of the control it belongs to. Only the pseudo-element is dimmed here: dimming
+   the wrapper would apply on top of the select's own 0.5. */
+.budgetListControls__sort:has(.budgetListControls__select:disabled)::after {
+ opacity: 0.5;
+}
+
+/* Holds its line whether or not it has one to say, so the counter appearing on
+   the first keystroke does not push the list down as the reader types. It is
+   allowed to grow taller in the empty state: there is no list left below it. */
+.budgetListControls__status {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: center;
+ gap: var(--space-2);
+ min-height: var(--space-5);
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+}
+
+/* Restates its own size: index.css sets font-size on the universal selector, so
+   an inline element does not inherit the size of the line it sits in. */
+.budgetListControls__message {
+ font-size: inherit;
+}
+
+.budgetListControls__clear {
+ min-height: var(--size-touch-target);
+ padding: var(--space-1) var(--space-4);
+ background-color: transparent;
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-full);
+ color: var(--color-content-on-dark-muted);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition: border-color var(--motion-fast), color var(--motion-fast);
+}
+
+.budgetListControls__clear:hover {
+ border-color: var(--color-content-on-dark-muted);
+ color: var(--color-content-on-dark);
+}
+
+.budgetListControls__clear:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-accent);
+ outline-offset: var(--border-width-thick);
+}
+
+.budgetListControls__clear:active {
+ border-color: var(--color-accent);
+ color: var(--color-accent);
+}
+
+.budgetListControls__clear:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* From 480px both fields fit on one row. The term takes the space the key does
+   not need: the key names are short and fixed, the term is what is read back. */
+@media (min-width: 480px) {
+ .budgetListControls__fields {
+  flex-direction: row;
+  align-items: center;
+ }
+
+ .budgetListControls__sort {
+  flex: 0 0 auto;
+  min-width: calc(var(--space-16) * 3);
+ }
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .budgetListControls__search,
+ .budgetListControls__select,
+ .budgetListControls__clear {
+  transition: none;
+ }
+}
