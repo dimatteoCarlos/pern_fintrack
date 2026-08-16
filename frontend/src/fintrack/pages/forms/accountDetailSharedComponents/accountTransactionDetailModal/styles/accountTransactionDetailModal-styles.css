@@ -106,39 +106,24 @@
  text-transform: uppercase;
 }
 
-/* A triad rather than a tinted border: what the movement did to Net Worth is the
-   heaviest fact in the modal, so it carries the same weight as the direction. */
-.transactionDetail__badge--effectPositive {
- background-color: var(--color-financial-positive-surface);
- border-color: var(--color-financial-positive-border);
- color: var(--color-financial-positive-content);
-}
-
-.transactionDetail__badge--effectNegative {
- background-color: var(--color-financial-negative-surface);
- border-color: var(--color-financial-negative-border);
- color: var(--color-financial-negative-content);
-}
-
-.transactionDetail__badge--effectNeutral {
- background-color: var(--color-financial-neutral-surface);
- border-color: var(--color-financial-neutral-border);
- color: var(--color-financial-neutral-content);
-}
-
-.transactionDetail__badge--effectAttention {
- background-color: var(--color-financial-attention-surface);
- border-color: var(--color-financial-attention-border);
- color: var(--color-financial-attention-content);
-}
-
-/* One rule for both directions, and no colour in it. The word inside the pill
-   already names the direction, and colouring it would put a second red beside
-   the effect's red on every expense. Design system §2.1. */
-.transactionDetail__badge--direction {
+/* Provisional: built from generic tokens because the badge palette only
+   defines a positive and a negative triad, and the movement is neither. */
+.transactionDetail__badge--movement {
  background-color: var(--color-surface-raised);
  border-color: var(--color-border-subtle);
  color: var(--color-content-on-dark-muted);
+}
+
+.transactionDetail__badge--positive {
+ background-color: var(--color-badge-positive-surface);
+ border-color: var(--color-badge-positive-border);
+ color: var(--color-badge-positive-content);
+}
+
+.transactionDetail__badge--negative {
+ background-color: var(--color-badge-negative-surface);
+ border-color: var(--color-badge-negative-border);
+ color: var(--color-badge-negative-content);
 }
 
 .transactionDetail__hero {
@@ -150,9 +135,8 @@
  text-align: center;
 }
 
-/* The hero follows the sign the figure carries in this account, so it can
-   disagree with the movement pill above. That is the point: the pill states
-   what happened to Net Worth, the hero states what happened here. */
+/* The colour lives on the modifiers: the financial semaphore, not the badge
+   palette. That one qualifies a figure, the pills above name a direction. */
 .transactionDetail__amount {
  font-size: var(--font-size-xl);
  font-weight: var(--font-weight-bold);
@@ -160,11 +144,11 @@
 }
 
 .transactionDetail__amount--positive {
- color: var(--color-financial-positive);
+ color: var(--color-amount-positive);
 }
 
 .transactionDetail__amount--negative {
- color: var(--color-financial-negative);
+ color: var(--color-amount-negative);
 }
 
 .transactionDetail__stamp {
