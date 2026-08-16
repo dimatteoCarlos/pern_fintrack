@@ -59,14 +59,7 @@ function BudgetBigBoxResult({
 
   return (
     <div className='total__container flex-col-sb'>
-      {/* Off entirely while there is no answer: an unlit square would claim the
-          budget is healthy when nothing has been measured yet. */}
-      <div className='total__amount'>
-        {isOverBudget !== null && (
-          <StatusSquare alert={isOverBudget ? 'alert' : ''} />
-        )}
-        {amount(budgetAmount)}
-      </div>
+      <div className='total__amount'>{amount(budgetAmount)}</div>
 
       <div className='displayScreen__rows'>
         <div className={`flex-row-sb displayScreen ${'light'}`}>
