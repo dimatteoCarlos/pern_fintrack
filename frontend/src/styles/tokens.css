@@ -53,19 +53,55 @@
  --color-status-warning: #ffa500;
  --color-status-success: #008000;
  --color-status-info: #60b1d6;
- --color-amount-positive: #5b8c93;
- --color-amount-negative: #c97474;
+ /* DEPRECATED - duplicated --color-financial-positive/negative value for value
+    while saying less about why the colour was chosen. No consumer remains.
+    Commented rather than removed: the removal happens in the cleanup block,
+    once the module is verified end to end. */
+ /* --color-amount-positive: #5b8c93; */
+ /* --color-amount-negative: #c97474; */
 
- /* COLOR - BADGE: the pill that states the direction of a movement.
-    Semi-transparent grounds, so the pill belongs to the surface under it
-    rather than sitting on top as a solid block. Distinct from the semaphore
-    above: that one qualifies a figure, this one names a direction. */
- --color-badge-positive-surface: rgba(2, 44, 34, 0.4);
- --color-badge-positive-border: rgba(6, 95, 70, 0.5);
- --color-badge-positive-content: #34d399;
- --color-badge-negative-surface: rgba(69, 10, 10, 0.4);
- --color-badge-negative-border: rgba(153, 27, 27, 0.5);
- --color-badge-negative-content: #f87171;
+ /* COLOR - FINANCIAL EFFECT: what a movement did to Net Worth. The effect is a
+    property of the movement type, not of the sign the figure carries in one
+    account. attention is not a fourth effect: it marks a movement that brings
+    in a counterparty, and debt is the only one that does today. */
+ --color-financial-positive: #5b8c93;
+ --color-financial-negative: #c97474;
+ --color-financial-neutral: #bdb1b1;
+ --color-financial-attention: #c49a5a;
+
+ /* PROVISIONAL - the naming is not frozen. The flat name above is the effect's
+    colour and these are grounds for it, so a pill can carry the effect as a
+    triad while the hero amount keeps reading the colour itself. Opaque on
+    purpose: the pill sits on --color-surface-app, and a semi-transparent tint
+    over that ground reads as black rather than as the colour it names.
+    content is separate from the flat name so raising the pill's legibility
+    does not drag the hero amount up with it. Every pair clears 4.5:1. */
+ --color-financial-positive-surface: #103a42;
+ --color-financial-positive-border: #3da5b8;
+ --color-financial-positive-content: #5fccdd;
+ --color-financial-negative-surface: #4d1614;
+ --color-financial-negative-border: #cc3833;
+ --color-financial-negative-content: #f4837b;
+ --color-financial-neutral-surface: #3a3131;
+ --color-financial-neutral-border: #917978;
+ --color-financial-neutral-content: #d8cdcd;
+ --color-financial-attention-surface: #473515;
+ --color-financial-attention-border: #c48e31;
+ --color-financial-attention-content: #f6bb55;
+
+ /* DEPRECATED - the pill that stated the direction of a movement. Orphaned by
+    the decision that direction carries no colour: the word inside the pill, the
+    sign of the hero amount and that amount's colour already say it, and a
+    second red fires beside the effect's red on every expense. Do not revive
+    these; a direction colour reintroduces that collision. The grounds were also
+    unusable as written — 40% over --color-surface-app composites to #091b18.
+    Removal happens in the cleanup block. Specified in the design system §2.1. */
+ /* --color-badge-positive-surface: rgba(2, 44, 34, 0.4); */
+ /* --color-badge-positive-border: rgba(6, 95, 70, 0.5); */
+ /* --color-badge-positive-content: #34d399; */
+ /* --color-badge-negative-surface: rgba(69, 10, 10, 0.4); */
+ /* --color-badge-negative-border: rgba(153, 27, 27, 0.5); */
+ /* --color-badge-negative-content: #f87171; */
 
  /* TYPOGRAPHY
     One typeface, loaded in index.css. The mono family is for account

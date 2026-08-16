@@ -145,25 +145,40 @@ export const AccountTransactionDetailModal = ({
   transaction.transaction_local_time,
  );
 
- // The catalog stores five transaction types. account-opening is neither an
- // entry nor an exit, so its direction falls back to the sign of the amount.
- const resolveIsIncoming = () => {
-  const type = transaction.transaction_type_name?.toLowerCase();
-  if (type === 'deposit' || type === 'borrow') return true;
-  if (type === 'withdraw' || type === 'lend') return false;
-  return transaction.amount >= 0;
- };
+ // Orphaned by the decision that direction carries no colour, so nothing needs
+ // to resolve which way the money went — the label says it. Commented rather
+ // than removed until the module is verified end to end.
+ // const resolveIsIncoming = () => {
+ //  const type = transaction.transaction_type_name?.toLowerCase();
+ //  if (type === 'deposit' || type === 'borrow') return true;
+ //  if (type === 'withdraw' || type === 'lend') return false;
+ //  return transaction.amount >= 0;
+ // };
+ // const isIncoming = resolveIsIncoming();
 
- const isIncoming = resolveIsIncoming();
- const badgeModifier = isIncoming
-  ? 'transactionDetail__badge--positive'
-  : 'transactionDetail__badge--negative';
  const badgeLabel =
   transaction.transaction_type_name?.toUpperCase() ?? MISSING_VALUE;
 
  // The movement is what the transaction was for, the type is which way the
  // money went. Two different questions, so two pills rather than one.
  const movementLabel = transaction.movement_type_name?.toUpperCase() ?? null;
+
+ // The catalog stores nine movement types and the effect on Net Worth is a
+ // property of the type, so the pill's label and its colour state the same
+ // fact. pnl is the exception: a gain and a loss are one type and only the
+ // sign separates them. Everything not named here moves value between the
+ // owner's own accounts and leaves Net Worth where it was.
+ const resolveNetEffect = () => {
+  const movement = transaction.movement_type_name?.toLowerCase();
+  if (movement === 'income') return 'effectPositive';
+  if (movement === 'expense') return 'effectNegative';
+  if (movement === 'debt') return 'effectAttention';
+  if (movement === 'pnl')
+   return transaction.amount >= 0 ? 'effectPositive' : 'effectNegative';
+  return 'effectNeutral';
+ };
+
+ const movementModifier = `transactionDetail__badge--${resolveNetEffect()}`;
 
  // A conversion happened when the movement was entered in a currency other
  // than the one the account is kept in.
@@ -263,12 +278,12 @@ export const AccountTransactionDetailModal = ({
 
     <div className='transactionDetail__badges'>
      {movementLabel && (
-      <span className='transactionDetail__badge transactionDetail__badge--movement'>
+      <span className={`transactionDetail__badge ${movementModifier}`}>
        {movementLabel}
       </span>
      )}
 
-     <span className={`transactionDetail__badge ${badgeModifier}`}>
+     <span className='transactionDetail__badge transactionDetail__badge--direction'>
       {badgeLabel}
      </span>
     </div>
