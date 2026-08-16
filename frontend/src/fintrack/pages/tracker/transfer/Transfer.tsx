@@ -17,6 +17,7 @@ import useFormManager from '../../../hooks/useFormManager.ts';
 
 // Zustand store
 import useBalanceStore from '../../../stores/useBalanceStore.ts';
+import { notifyTransactionRecorded } from '../../../stores/transactionEvents.ts';
 //---------------------------
 // 🌐Endpoints and constants
 import {
@@ -530,6 +531,9 @@ function Transfer(): JSX.Element {
             'An unexpected error occurred during submission.',
         );
       }
+
+      // Caches holding transaction-derived data are now stale. Issues no request.
+      notifyTransactionRecorded();
 
       if (import.meta.env.VITE_ENVIRONMENT === 'development') {
         // console.log('Data from record transaction request:', response);

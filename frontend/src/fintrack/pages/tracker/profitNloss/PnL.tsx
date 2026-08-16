@@ -17,6 +17,7 @@ import { useFetch } from '../../../hooks/useFetch.ts';
 import { useFormManagerPnL } from '../../../hooks/useFormManagerPnL.ts';
 // Zustand store
 import useBalanceStore from '../../../stores/useBalanceStore.ts';
+import { notifyTransactionRecorded } from '../../../stores/transactionEvents.ts';
 // =====================
 // 🌐 ENDPOINTS
 // =====================
@@ -410,6 +411,9 @@ function PnL(): JSX.Element {
             'An unexpected error occurred during form submission.',
         );
       }
+
+      // Caches holding transaction-derived data are now stale. Issues no request.
+      notifyTransactionRecorded();
 
       if (import.meta.env.VITE_ENVIRONMENT === 'development') {
         console.log('Data from record transaction request:', response);

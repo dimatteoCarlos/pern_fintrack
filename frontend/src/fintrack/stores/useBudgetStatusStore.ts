@@ -13,6 +13,7 @@
 
 import { create } from 'zustand';
 import { getBudgetAccountsStatus } from '../api/budgetApi.ts';
+import { onTransactionRecorded } from './transactionEvents.ts';
 import {
  BudgetAccountStatus,
  BudgetCategoryStatus,
@@ -117,6 +118,14 @@ export const useBudgetStatusStore = create<BudgetStatusState>((set, get) => ({
  },
 
  // Drops the memo without clearing what is on screen, so the next fetchStatus
- // asks again. The budget editor calls it after a write.
+ // asks again. Nulling requestedMonth also discards an answer already on the
+ // wire: it was computed before the write that invalidated it.
  invalidate: () => set({ loadedMonth: null, requestedMonth: null }),
 }));
+
+// Spending is derived from transactions, so any write makes this month's answer
+// obsolete. Dropping the memo costs no request: the refetch happens only if the
+// user opens budget again.
+onTransactionRecorded(() => {
+ useBudgetStatusStore.getState().invalidate();
+});

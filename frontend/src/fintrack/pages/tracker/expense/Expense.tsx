@@ -14,6 +14,7 @@ import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.ts';
 
 // ZUSTAND STORES
 import { useBalanceStore } from '../../../stores/useBalanceStore.ts';
+import { notifyTransactionRecorded } from '../../../stores/transactionEvents.ts';
 //---
 // 🎨 UI COMPONENTS
 import TopCard from '../components/TopCard.tsx';
@@ -421,6 +422,9 @@ function Expense(): JSX.Element {
         // console.log('response.error', errorMsg)
         throw new Error(errorMsg);
       }
+
+      // Caches holding transaction-derived data are now stale. Issues no request.
+      notifyTransactionRecorded();
 
       if (import.meta.env.VITE_ENVIRONMENT === 'development') {
         // console.log('Data from record transaction request:', response);
