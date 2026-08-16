@@ -86,17 +86,42 @@
   flex-wrap: wrap;
 }
 
-/* Movement badge (blue) */
+/* Movement badge. Geometry here, colour on the effect modifiers below: a fixed
+   blue said nothing, and the impact on Net Worth is what this pill is for. */
 .fx-movement-badge-large {
-  background-color: var(--fx-blue-badge-bg);
-  border: 1px solid var(--fx-blue-badge-border);
-  color: #58a6ff;
+  border: 1px solid transparent;
   padding: 8px 18px;
   border-radius: 28px;
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+}
+
+/* The same four effects the account detail modal uses, read from the same
+   tokens. The two modals keep their own structure; the convention is shared. */
+.fx-movement-badge-large--effectPositive {
+  background-color: var(--color-financial-positive-surface);
+  border-color: var(--color-financial-positive-border);
+  color: var(--color-financial-positive-content);
+}
+
+.fx-movement-badge-large--effectNegative {
+  background-color: var(--color-financial-negative-surface);
+  border-color: var(--color-financial-negative-border);
+  color: var(--color-financial-negative-content);
+}
+
+.fx-movement-badge-large--effectNeutral {
+  background-color: var(--color-financial-neutral-surface);
+  border-color: var(--color-financial-neutral-border);
+  color: var(--color-financial-neutral-content);
+}
+
+.fx-movement-badge-large--effectAttention {
+  background-color: var(--color-financial-attention-surface);
+  border-color: var(--color-financial-attention-border);
+  color: var(--color-financial-attention-content);
 }
 
 /* Transaction badge (colored by flow) */

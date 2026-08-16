@@ -106,12 +106,30 @@
  text-transform: uppercase;
 }
 
-/* Provisional: built from generic tokens because the badge palette only
-   defines a positive and a negative triad, and the movement is neither. */
-.transactionDetail__badge--movement {
- background-color: var(--color-surface-raised);
- border-color: var(--color-border-subtle);
- color: var(--color-content-on-dark-muted);
+/* A triad rather than a tinted border: what the movement did to Net Worth is the
+   heaviest fact in the modal, so it carries the same weight as the direction. */
+.transactionDetail__badge--effectPositive {
+ background-color: var(--color-financial-positive-surface);
+ border-color: var(--color-financial-positive-border);
+ color: var(--color-financial-positive-content);
+}
+
+.transactionDetail__badge--effectNegative {
+ background-color: var(--color-financial-negative-surface);
+ border-color: var(--color-financial-negative-border);
+ color: var(--color-financial-negative-content);
+}
+
+.transactionDetail__badge--effectNeutral {
+ background-color: var(--color-financial-neutral-surface);
+ border-color: var(--color-financial-neutral-border);
+ color: var(--color-financial-neutral-content);
+}
+
+.transactionDetail__badge--effectAttention {
+ background-color: var(--color-financial-attention-surface);
+ border-color: var(--color-financial-attention-border);
+ color: var(--color-financial-attention-content);
 }
 
 .transactionDetail__badge--positive {
