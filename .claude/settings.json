@@ -3,7 +3,8 @@
     "allow": [
       "Bash(rm -f package-lock.json)",
       "Bash(git checkout *)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(echo \"=== exit $? ===\")"
     ]
   }
 }
