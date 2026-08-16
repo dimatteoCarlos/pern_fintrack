@@ -31,6 +31,9 @@ import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBad
 import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import AccountTransactionsList from '../accountDetailSharedComponents/accountTransactionsList/AccountTransactionsList.tsx';
+import { AccountTransactionDetailModal } from '../accountDetailSharedComponents/accountTransactionDetailModal/AccountTransactionDetailModal.tsx';
+import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
+import { useTransactionDetail } from '../../../hooks/useTransactionDetail.ts';
 
 import '../styles/forms-styles.css';
 import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
@@ -127,6 +130,16 @@ function PocketDetail() {
     }
   }, [accountsData, accountId, previousRouteFromState]);
 
+  //--TRANSACTION DETAIL MODAL
+  // Owned here and not inside the list: the list is presentational and shared
+  // by the other detail screens.
+  const {
+    selectedTransaction,
+    isLoading: isLoadingTransactionDetail,
+    openTransaction,
+    closeTransaction,
+  } = useTransactionDetail();
+
   //=============================
   return (
     <>
@@ -215,7 +228,10 @@ function PocketDetail() {
               <CardTitle>{'Last Movements'}</CardTitle>
             </div>
 
-            <AccountTransactionsList transactions={transactions} />
+            <AccountTransactionsList
+              transactions={transactions}
+              onTransactionClick={openTransaction}
+            />
           </div>
           {/* --- END TRANSACTION STATEMENT SECTION --- */}
 
@@ -227,6 +243,15 @@ function PocketDetail() {
           <p>Error fetching account info: {error ?? errorTransactions}</p>
         )}
       </section>
+
+      {/* A click with no answer for the length of a round trip reads as a dead
+          row, so the request states itself before the modal can. */}
+      {isLoadingTransactionDetail && <CoinSpinner />}
+
+      <AccountTransactionDetailModal
+        transaction={selectedTransaction}
+        onClose={closeTransaction}
+      />
     </>
   );
 }
