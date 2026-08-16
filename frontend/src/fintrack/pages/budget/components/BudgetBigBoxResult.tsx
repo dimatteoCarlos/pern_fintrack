@@ -3,6 +3,7 @@
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { currencyFormat } from '../../../helpers/functions';
 import { CurrencyType } from '../../../types/types';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
 
 // Named, not positional. The array this replaced was read by index, and its
 // third entry — the spending — was built by the parent and never rendered.
@@ -18,6 +19,9 @@ type BudgetHeroPropType = {
   // there is no percentage of zero, and its absence is the fact.
   executionPercentage: number | null;
   currency: CurrencyType | null | undefined;
+  // Resolved by the parent, so the two squares below cannot disagree. null
+  // while the answer is on the wire and in the mixed-currency case.
+  isOverBudget: boolean | null;
   // Why the figures read as dashes, in the server's own words. null when there
   // is nothing to explain.
   notice: string | null;
@@ -31,6 +35,7 @@ function BudgetBigBoxResult({
   remainingBudget,
   executionPercentage,
   currency,
+  isOverBudget,
   notice,
 }: BudgetHeroPropType) {
   const currency_code = currency ?? DEFAULT_CURRENCY;
@@ -54,7 +59,14 @@ function BudgetBigBoxResult({
 
   return (
     <div className='total__container flex-col-sb'>
-      <div className='total__amount'>{amount(budgetAmount)}</div>
+      {/* Off entirely while there is no answer: an unlit square would claim the
+          budget is healthy when nothing has been measured yet. */}
+      <div className='total__amount'>
+        {isOverBudget !== null && (
+          <StatusSquare alert={isOverBudget ? 'alert' : ''} />
+        )}
+        {amount(budgetAmount)}
+      </div>
 
       <div className='displayScreen__rows'>
         <div className={`flex-row-sb displayScreen ${'light'}`}>
@@ -67,7 +79,12 @@ function BudgetBigBoxResult({
         </div>
 
         <div className={`flex-row-sb displayScreen ${'light'}`}>
-          <div className={`displayScreen--concept ${'dark'}`}>Remaining</div>
+          <div className={`displayScreen--concept ${'dark'}`}>
+            Remaining
+            {isOverBudget !== null && (
+              <StatusSquare alert={isOverBudget ? 'alert' : ''} />
+            )}
+          </div>
 
           <div className={`displayScreen--result ${'dark'}`}>
             {amount(remainingBudget)}

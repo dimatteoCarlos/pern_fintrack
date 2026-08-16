@@ -63,6 +63,7 @@ function BudgetLayout() {
     remainingBudget,
     executionPercentage,
     currency,
+    isOverBudget,
   } = useMemo(
     () => ({
       budgetAmount: totals?.budgetAmount ?? null,
@@ -70,6 +71,10 @@ function BudgetLayout() {
       remainingBudget: totals?.remainingBudget ?? null,
       executionPercentage: totals?.executionPercentage ?? null,
       currency: totals?.currency ?? undefined,
+      // Derived here because BudgetStatusTotals carries no flag: the server
+      // serves isOverBudget per category row, not for the total. Serving it
+      // would remove this derivation, and belongs with commit 9.
+      isOverBudget: totals ? totals.remainingBudget < 0 : null,
     }),
     [totals],
   );
@@ -121,6 +126,7 @@ function BudgetLayout() {
           remainingBudget={remainingBudget}
           executionPercentage={executionPercentage}
           currency={currency}
+          isOverBudget={isOverBudget}
           notice={notice}
         />
 

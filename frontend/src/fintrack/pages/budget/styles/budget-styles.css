@@ -113,6 +113,16 @@
   margin-left: var(--space-2);
 }
 
+/* The square is a bare span with a fixed size, which an inline box ignores. In
+   the list it is a flex child and gets its box from the row; in the hero it
+   sits inside a text line and has to declare one. */
+.budgetLayout .total__amount .status__square,
+.budgetLayout .displayScreen--concept .status__square {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 var(--space-2);
+}
+
 /* Why the figures above read as dashes. Sits on the dark app surface, not on
    the cream strips. */
 .budgetLayout .displayScreen__notice {
