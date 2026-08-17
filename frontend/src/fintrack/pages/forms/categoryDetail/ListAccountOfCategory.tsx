@@ -109,16 +109,7 @@ function ListAccountOfCategory({
                   </div>
                 </Link>
 
-                <div
-                  className='box__title--spent'
-                  style={{
-                    width: 'max-content',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    textAlign: 'right',
-                    borderBottom: '0.5px dashed var(--creme)',
-                  }}
-                >
+                <div className='box__title--spent'>
                   {currencyFormat(currency_code, actualSpent, 'en-US')}
                   &nbsp;/&nbsp;
                   {currencyFormat(currency_code, budgetAmount, 'en-US')}

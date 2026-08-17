@@ -397,8 +397,30 @@
   color: cyan f;
 }
 
+/* The box came from a style attribute written twice, on the level-1 row and on
+   the level-2 one. Moved here verbatim: the underline was reviewed on screen
+   and stays, so this changes where the rule lives and nothing about what it
+   draws.
+
+   One rule reaches both because App.tsx imports BudgetLayout statically, which
+   puts this file in the main bundle rather than in the budget chunk. Level 2
+   never imports it and is styled by it anyway, on a cold landing as much as on
+   a walk down from level 1.
+
+   Two of its five declarations are inert and travel anyway, because removing
+   them is a decision about the design and not about where CSS belongs:
+   justify-content has no free space to distribute under max-content, and
+   text-align does not reach an anonymous flex item sized to its own text.
+
+   0.5px has no token — --border-width-thin is 1px — so it is carried as the
+   literal it already was rather than a token name being invented for it. */
 .box__title--spent {
   letter-spacing: 1.25px;
+  width: max-content;
+  display: flex;
+  justify-content: space-between;
+  text-align: right;
+  border-bottom: 0.5px dashed var(--creme);
 }
 
 .box__subtitle,
