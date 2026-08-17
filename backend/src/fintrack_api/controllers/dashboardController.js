@@ -12,6 +12,7 @@ import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+import { extractNoteFromDescription } from '../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
 
 //COMMON FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
@@ -841,7 +842,15 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     } and ${endDate.toISOString().split('T')[0]}`;
     // console.log(pc[backendColor](message));
 
-    return RESPONSE(res, 200, message, movements);
+    // One point for the six branches above: every one of them selects
+    // tr.description, so the note is split out once rather than per movement
+    // kind. description travels untouched beside it.
+    const movementsWithNote = movements.map((movement) => ({
+      ...movement,
+      note: extractNoteFromDescription(movement.description),
+    }));
+
+    return RESPONSE(res, 200, message, movementsWithNote);
     // return res.status(200).json(movements);
   } catch (error) {
     if (error instanceof Error) {

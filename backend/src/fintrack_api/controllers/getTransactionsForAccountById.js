@@ -8,6 +8,7 @@ import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import { pool } from '../../db/config/configDB.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import { extractNoteFromDescription } from '../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
 
 // A month, as YYYY-MM or YYYY-MM-DD. The day is accepted and discarded.
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$/;
@@ -393,7 +394,13 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         finalBalance: getFinalBalance(),
         ...period,
       },
-      transactions,
+      // The note, split out of the narrative by the side that composes it.
+      // description travels untouched beside it: the detail modal shows the
+      // sentence in full, and only the rows show the note alone.
+      transactions: transactions.map((transaction) => ({
+        ...transaction,
+        note: extractNoteFromDescription(transaction.description),
+      })),
     };
 
     return RESPONSE(
