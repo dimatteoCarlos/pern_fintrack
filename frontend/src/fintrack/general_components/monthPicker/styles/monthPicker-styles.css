@@ -94,6 +94,17 @@
  opacity: 0.5;
 }
 
+/* The library inserts a focus trap beside the wrapper while the panel is open —
+   an empty div, but a flex parent still opens its gap before it, and the budget
+   header is a gapped column. That grew the container and carried the badge down
+   with its bottom edge every time the picker was opened.
+
+   A focus trap has no business taking layout space, so it is taken out of the
+   flow rather than the gap being fought where it lands. */
+.react-datepicker__tab-loop {
+ position: absolute;
+}
+
 .monthPicker__popper {
  z-index: var(--z-dropdown);
 }
