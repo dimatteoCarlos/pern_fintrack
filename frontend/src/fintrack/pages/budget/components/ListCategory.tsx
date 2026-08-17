@@ -175,7 +175,10 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
         state={listState}
       />
 
-      <article className='list__main__container '>
+      {/* A class of its own for the scroll. list__main__container is rendered by
+          six lists across budget, pocket, debts and account detail, and the
+          stylesheets are global — bounding it there would confine all six. */}
+      <article className='list__main__container categoryList'>
         {rows.map((category) => {
           const {
             categoryName,

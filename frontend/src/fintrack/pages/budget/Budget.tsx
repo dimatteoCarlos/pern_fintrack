@@ -28,14 +28,18 @@ function Budget() {
     <>
       <section className='content__presentation'>
         <div className='cards__presentation '>
-
-          <OpenAddEditBtn
+          {/* COMMENTED pending removal (D13). The same action twice, and this
+              copy is the expensive one: it sits above the titles, so its height
+              comes out of the list on a short screen. The one after the list
+              stays — it is outside the scroll, always in view, and the action
+              belongs after the content the reader came to read. */}
+          {/* <OpenAddEditBtn
             btnFunction={createNewCategory}
             btnFunctionArg={originRoute}
             btnPreviousRoute={originRoute}
           >
             <div className='open__btn__label'>New Category</div>
-          </OpenAddEditBtn>
+          </OpenAddEditBtn> */}
 
           {/* Four labels for the four cells of a row: name and amounts on the
               first line, remainder and share on the second. */}

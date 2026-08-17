@@ -65,32 +65,135 @@
 /* The hero carries three figures now, so it stops borrowing the fixed height of
    the tracker navbar it shares a class with. Scoped to .budgetLayout: the same
    .total__container IS that navbar on the tracker page. */
+/* In the flow, so the section below reserves the hero's real height rather than
+   a constant that had to be guessed. The hero grows two ways no constant could
+   follow: the cream panel wraps to a second row below 532px, and the
+   mixed-currency notice adds a line. Both used to land on the column titles.
+
+   The negative margin is the only constant left, and it measures the overlap
+   with the white header rather than the hero. --header-height is
+   .home__header's own height, which that rule writes as a literal 12.5rem — the
+   two have to agree and the literal is the one that rules; --space-3 is
+   .budgetLayout's padding, which the hero now starts after.
+
+   width: 100% because in the flow it is measured against .budgetLayout rather
+   than the page, and 88% of 88% would leave it narrower than the card below. */
 .budgetLayout .total__container {
+  position: static;
+  /* The base rule centres the box by hand: left: 50% with translateX(-50%),
+     which is how an absolute box is centred. left died with the position but a
+     transform applies to any box, so the hero went on being painted half its
+     own width to the left of where the flow had put it. The column centres it
+     now. */
+  transform: none;
+  margin-top: calc(
+    var(--header-total-height) - var(--header-height) - var(--space-3)
+  );
+  width: 100%;
   height: auto;
   min-height: var(--navbar-top-height);
   gap: var(--space-2);
-  padding: var(--space-3);
+  padding: var(--space-2);
 }
 
-/* The badge floats below the title instead of sitting in the header's flow.
-   The header's height is a constant that positions every absolute box under it,
-   so a child that grew it would move the hero and the list with it. */
+/* 1.75rem above the button was set when it followed a list that ended wherever
+   its rows ended. The list is a frame now and stops at a fixed edge, so the gap
+   is measured air rather than separation from a ragged bottom. */
+.budgetLayout button.line__container {
+  margin-top: var(--space-3);
+}
+
 .budgetLayout .headerContent__container {
   position: relative;
 }
 
-.budgetLayout .month-badge {
+/* On the title's own line, at its right, rather than centred on a line of its
+   own below it. Still absolute — a child in the header's flow would grow the
+   header, and the header's height is the constant every absolute box under it
+   is positioned from.
+
+   The move is what lets the hero rise: the band under the title stops being
+   reserved for a badge, so the two rules below can take a notch off both the
+   hero's anchor and the clearance under it, together. */
+/* The wrapper is what moves, not the badge. react-datepicker puts the trigger
+   inside .react-datepicker__input-container, which its own stylesheet already
+   declares position: relative — so a right offset on the badge is measured
+   against that box hugging it and never reaches the header.
+
+   Two selectors because the skeleton has no picker around it: while the month
+   is on the wire, MonthPicker renders the badge on its own. */
+/* Under the title, centred, and floating: it hangs past the container's bottom
+   edge rather than adding a row to it, so the header keeps the height it has
+   whether or not a month is being shown.
+
+   The wrapper is what floats, not the badge. react-datepicker puts the trigger
+   inside .react-datepicker__input-container, which its own stylesheet declares
+   position: relative — so offsets written on the badge are measured against
+   that box hugging it and never reach the header.
+
+   Two selectors because the skeleton has no picker around it: while the month
+   is on the wire, MonthPicker renders the badge on its own. */
+.budgetLayout .headerContent__container > .react-datepicker-wrapper,
+.budgetLayout .headerContent__container > .month-badge--skeleton {
   position: absolute;
   bottom: calc(var(--space-2) * -1);
   left: 50%;
   transform: translateX(-50%);
+}
+
+/* Out of the column's flow now, so the container is as tall as the title alone
+   and 50% of it lands on the title's line. */
+.budgetLayout .month-badge {
   margin-bottom: 0;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
   background-color: var(--color-surface-inverse);
 }
 
-/* The hero grew by a row, and what follows it is positioned from a constant. */
+/* Retired by the move into the flow above: top does nothing on a static box, and
+   the margin there carries the same anchor. Commented rather than cut until the
+   screen is signed off, then it goes with the cleanup block. */
+/* .budgetLayout .total__container {
+  top: var(--header-total-height);
+} */
+
+/* .displayScreen.light already supplies the cream box and the row. This adds
+   the wrap, and the wrap is what replaces a breakpoint: below about 380px the
+   two halves stop fitting on one line and fall back to the stacked shape they
+   had, with nothing declaring where that happens. */
+.budgetLayout .budgetHero__figures {
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-3) var(--space-3);
+}
+
+/* nowrap is load-bearing: it keeps each half's min-content equal to its whole
+   text, which is what makes the pair wrap instead of squeezing into a column
+   too narrow to read. */
+.budgetLayout .budgetHero__figure {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+/* No clearance any more, because there is nothing left to clear: the hero sits
+   above this in the flow and the browser reserves whatever height it actually
+   has — wrapped panel, mixed-currency notice and all. .budgetLayout's own gap is
+   the separation.
+
+   What this replaces was a constant, and it was wrong at this width in both
+   directions: measured at 359x762 the titles sat 15.8px under the hero with the
+   fluid root and 17.6px under it with the root pinned at 16px. It only looked
+   correct below 735px of viewport height, where --topSpaceHeight collapses to 0
+   and the hero rises 38.5px out of the way. */
 .budgetLayout .content__presentation {
-  padding-top: calc(var(--space-16) + var(--space-6));
+  padding-top: 0;
+  /* The bottom is not clearance, only air between the last button and the
+     navbar, and the navbar carries its own. */
+  padding-bottom: var(--space-2);
 }
 
 /* One row per figure, so the row rule above is reused rather than widened. */
@@ -133,6 +236,99 @@
 
 /*Budget*/
 /*Category List*/
+
+/* ── The board is a frame, not a document ────────────────────────────────────
+   One scroll region, and it is the list. Everything else — header, hero, column
+   titles, controls, bottom navbar — holds still because the page is exactly as
+   tall as the viewport and never grows past it.
+
+   Preferred over making the upper elements sticky. Sticky keeps them in view
+   but the page stays taller than the viewport, so the outer scroll survives and
+   the navbar still ends up below the fold. Here that scroll does not exist.
+
+   Scoped with :has() rather than by editing .home__layout, which is the shell
+   of every screen in the app and whose other pages do scroll as documents. The
+   selector reads: this shell, only while it is holding the budget board. */
+.home__layout:has(.budgetLayout) {
+  height: 100dvh;
+  min-height: 0;
+  overflow-y: hidden;
+}
+
+/* The middle of the three children takes what the header and the navbar leave.
+   min-height: 0 is what allows it: a flex item refuses to shrink below its
+   content without it, and the list inside is taller than the screen. */
+.home__layout:has(.budgetLayout) .budgetLayout {
+  flex: 1;
+  min-height: 0;
+}
+
+/* The same handoff, one level at a time, down to the list. Each of these is a
+   general class, so each is scoped to the budget board and leaves the other
+   pages that render them untouched. */
+.budgetLayout .content__presentation,
+.budgetLayout .cards__presentation {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Air, not clearance. This padding sits inside the gap the section above
+   already holds open for the floating hero, so removing it raises the card
+   without moving it under anything. The title below opens its own space. */
+.budgetLayout .cards__presentation {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.budgetLayout .presentation__card--title--stacked {
+  padding-top: var(--space-3);
+}
+
+/* Where the handoff ends. The list takes the leftover height instead of naming
+   a share of the viewport, which is what a share was standing in for.
+
+   Its own class, not .list__main__container: that one is rendered by six lists
+   across budget, pocket, debts and account detail, and the stylesheets are
+   global rather than modules, so a rule there would confine all six.
+
+   No overscroll-behavior. Containing it meant the wheel stopped at the end of
+   the list instead of carrying on, which costs more than the chaining it
+   prevents — and with no outer scroll left there is nothing to chain to. */
+.categoryList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+/* ── Height degradation ──────────────────────────────────────────────────────
+   The board is a frame now, so every rem spent above the list is a rem the list
+   does not get. On a short screen that arithmetic ends with no list at all.
+
+   The two steps are the ones the design system names, 735px and 568px. Nothing
+   here touches --size-touch-target: a control below 44px is one that gets
+   mis-tapped, which costs the reader more than the twelve pixels it saves. */
+@media (max-height: 735px) {
+  .budgetLayout .presentation__card--title--stacked {
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-1);
+  }
+}
+
+@media (max-height: 568px) {
+  .budgetLayout .presentation__card--title--stacked {
+    padding-top: var(--space-2);
+  }
+
+  /* The counter still renders and still reads; it stops holding a row open for
+     itself. The list shifts by one line on the first keystroke, which is the
+     trade this screen size is worth making. */
+  .budgetLayout .budgetListControls__status {
+    min-height: 0;
+  }
+}
 
 /* Not a proper noun. .box__subtitle capitalises every word it holds, which
    printed "Left" and "Over"; the rule is declared here rather than removed

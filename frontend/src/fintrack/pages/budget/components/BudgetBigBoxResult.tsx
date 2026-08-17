@@ -61,27 +61,32 @@ function BudgetBigBoxResult({
     <div className='total__container flex-col-sb'>
       <div className='total__amount'>{amount(budgetAmount)}</div>
 
+      {/* One strip, not two. The pair are the halves of a single budget and now
+          read as a split of it — and the strip that went is height the list
+          gets back. */}
       <div className='displayScreen__rows'>
-        <div className={`flex-row-sb displayScreen ${'light'}`}>
-          <div className={`displayScreen--concept ${'dark'}`}>Spent</div>
+        <div className={`displayScreen budgetHero__figures ${'light'}`}>
+          <div className='budgetHero__figure'>
+            <div className={`displayScreen--concept ${'dark'}`}>Spent</div>
 
-          <div className={`displayScreen--result ${'dark'}`}>
-            {amount(actualSpent)}
-            <span className='displayScreen__percentage'>{spentShare}</span>
-          </div>
-        </div>
-
-        <div className={`flex-row-sb displayScreen ${'light'}`}>
-          <div className={`displayScreen--concept ${'dark'}`}>
-            Remaining
-            {isOverBudget !== null && (
-              <StatusSquare alert={isOverBudget ? 'alert' : ''} />
-            )}
+            <div className={`displayScreen--result ${'dark'}`}>
+              {amount(actualSpent)}
+              <span className='displayScreen__percentage'>{spentShare}</span>
+            </div>
           </div>
 
-          <div className={`displayScreen--result ${'dark'}`}>
-            {amount(remainingBudget)}
-            <span className='displayScreen__percentage'>{remainingShare}</span>
+          <div className='budgetHero__figure'>
+            <div className={`displayScreen--concept ${'dark'}`}>
+              Remaining
+              {isOverBudget !== null && (
+                <StatusSquare alert={isOverBudget ? 'alert' : ''} />
+              )}
+            </div>
+
+            <div className={`displayScreen--result ${'dark'}`}>
+              {amount(remainingBudget)}
+              <span className='displayScreen__percentage'>{remainingShare}</span>
+            </div>
           </div>
         </div>
       </div>
