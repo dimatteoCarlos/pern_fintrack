@@ -199,14 +199,13 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
           // const remainPercentage =
           //   budget === 0 ? '' : ((Math.abs(remain) / budget) * 100).toFixed(1) + '%';
 
-          // |100 - execution| is the same division as |remaining| / budget,
-          // written so the figure inherits the server's rounding instead of a
-          // second formula over the amounts. It reads as the share left or the
-          // share overspent — the word in front of it says which.
-          const remainPercentage =
+          // The share of the budget already used. Served, not derived: it is the
+          // same percentage the sort key orders by and the header names, so a
+          // second division over the amounts could round away from it.
+          const usedText =
             executionPercentage === null
-              ? ''
-              : Math.abs(100 - executionPercentage).toFixed(1) + '%';
+              ? DASH
+              : executionPercentage.toFixed(1) + '%';
 
           // Every figure of a category is nullable for one case: accounts in
           // more than one currency, which V1 does not allow. Unreachable under
@@ -268,22 +267,27 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
                 </div>
               </BoxRow>
 
+              {/* One BoxRow, not two nested: the outer one is the space-between
+                  row that puts the remainder at the left and the share at the
+                  right, and it needs both as siblings to do it. */}
               <BoxRow>
-                <BoxRow>
-                  <div className='flx-row-sb'>
-                    <StatusSquare alert={isOverBudget ? 'alert' : ''} />
-                    <div className='box__subtitle'>
-                      &nbsp;
-                      {/* Absolute value: the word carries the sign, so a minus
-                          in front of it would state the same thing twice. */}
-                      {remainText}
-                      &nbsp;{remainWord}&nbsp;
-                      <span style={{ fontSize: '0.75rem' }}>
-                        ({remainPercentage})
-                      </span>
-                    </div>
+                <div className='flx-row-sb'>
+                  <StatusSquare alert={isOverBudget ? 'alert' : ''} />
+                  <div className='box__subtitle'>
+                    &nbsp;
+                    {/* Absolute value: the word carries the sign, so a minus
+                        in front of it would state the same thing twice. */}
+                    {remainText}
+                    &nbsp;
+                    <span className='categoryRow__remainWord'>{remainWord}</span>
+                    &nbsp;
                   </div>
-                </BoxRow>
+                </div>
+
+                {/* Under the pair on the line above, which is the pair it is a
+                    share of. As a parenthesis after `left` it read as the share
+                    remaining, which is the opposite figure. */}
+                <span className='categoryRow__used'>{usedText}</span>
               </BoxRow>
             </div>
           );

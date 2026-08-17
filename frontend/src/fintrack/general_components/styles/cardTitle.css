@@ -30,3 +30,52 @@
  font-weight: 600;
  padding: 1rem 0 1rem 0;
 }
+
+/* Added when CardTitle receives a second row. The outer box stops being the
+   split row and becomes the stack that holds two of them.
+
+   It also opens more air above itself than the base: two rows of labels read as
+   a block, and a block sitting one rem under the button above it looks attached
+   to the button rather than to the list it introduces. */
+.presentation__card--title--stacked {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ padding-top: var(--space-8);
+}
+
+.presentation__card--row {
+ display: flex;
+ justify-content: space-between;
+ align-items: baseline;
+ gap: var(--space-3);
+}
+
+/* Both halves of a row are one heading and have to read as one. The legend
+   states its own size; the title beside it had none, so index.css's font-size
+   on the universal selector matched it directly and rendered the left column at
+   16px against the right column's 20px. */
+.presentation__card--row > span {
+ font-size: inherit;
+ font-weight: inherit;
+}
+
+/* The legend carries its own vertical padding for the unstacked case, where it
+   is the whole row. Inside a stack the row spaces itself. */
+.presentation__card--title--stacked .presentation__card--legend {
+ padding: 0;
+}
+
+/* Quieter than the row above it: this one is read once, the title every time.
+   The size sits on the spans and not on the row because index.css declares one
+   on the universal selector, which matches a span directly and beats what it
+   would otherwise inherit. */
+.presentation__card--row--sub {
+ color: var(--color-content-on-dark-subtle);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wide);
+}
+
+.presentation__card--row--sub span {
+ font-size: var(--font-size-xs);
+}

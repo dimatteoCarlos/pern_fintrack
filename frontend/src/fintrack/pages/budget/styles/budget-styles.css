@@ -133,6 +133,30 @@
 
 /*Budget*/
 /*Category List*/
+
+/* Not a proper noun. .box__subtitle capitalises every word it holds, which
+   printed "Left" and "Over"; the rule is declared here rather than removed
+   there because the pocket and debt lists render through the same class.
+
+   It restates its size for the reason index.css documents: a font-size on the
+   universal selector matches a span and beats the line it sits in. */
+.categoryRow__remainWord {
+  font-size: inherit;
+  text-transform: lowercase;
+}
+
+/* The share of the budget already used, at the right of the row's second line
+   and under the amounts pair it is a share of. It restates its own size because
+   index.css sets one on the universal selector, which matches a span directly
+   and beats what it would otherwise inherit from the row. */
+.categoryRow__used {
+  flex: 0 0 auto;
+  color: var(--color-content-on-dark-subtle);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-wide);
+}
+
 .list__main__container {
   display: flex;
   flex-direction: column;

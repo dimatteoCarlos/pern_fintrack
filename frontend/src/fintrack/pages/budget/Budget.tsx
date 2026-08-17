@@ -37,7 +37,15 @@ function Budget() {
             <div className='open__btn__label'>New Category</div>
           </OpenAddEditBtn>
 
-          <CardTitle legend='Spent / Budget'>Category List</CardTitle>
+          {/* Four labels for the four cells of a row: name and amounts on the
+              first line, remainder and share on the second. */}
+          <CardTitle
+            legend='Spent / Budget'
+            subtitle='Remaining over / left'
+            subLegend='% of spent budget'
+          >
+            Category List
+          </CardTitle>
 
           <ListCategory previousRoute={originRoute} />
 
