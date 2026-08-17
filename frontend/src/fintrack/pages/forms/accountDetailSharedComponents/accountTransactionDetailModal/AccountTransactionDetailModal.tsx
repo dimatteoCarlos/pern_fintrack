@@ -183,33 +183,38 @@ export const AccountTransactionDetailModal = ({
 
  // A conversion happened when the movement was entered in a currency other
  // than the one the account is kept in.
- const originalCurrency = transaction.original_currency_code;
+ const originalCurrencyCode = transaction.original_currency_code;
  const hasConversion = Boolean(
-  originalCurrency &&
-   originalCurrency.toLowerCase() !== accountingCurrency.toLowerCase(),
+  originalCurrencyCode &&
+   originalCurrencyCode.toLowerCase() !== accountingCurrency.toLowerCase(),
  );
 
- const baseCurrency =
-  hasConversion && originalCurrency ? originalCurrency : accountingCurrency;
- const baseValue =
+ // The amount as it was entered, in the currency it was entered in. Not named
+ // base: here that word is the accounting currency, which is the one this row
+ // does not show whenever a conversion happened.
+ const originalCurrency =
+  hasConversion && originalCurrencyCode
+   ? originalCurrencyCode
+   : accountingCurrency;
+ const originalValue =
   hasConversion && transaction.original_amount !== null
    ? transaction.original_amount
    : transaction.amount;
- const baseAmount = `${numberFormatCurrency(
-  baseValue,
+ const originalAmount = `${numberFormatCurrency(
+  originalValue,
   2,
-  baseCurrency,
+  originalCurrency,
   AMOUNT_LOCALE,
- )} ${baseCurrency.toUpperCase()}`;
+ )} ${originalCurrency.toUpperCase()}`;
 
  // Absolute on both ends: the pathway states a conversion, and its direction is
  // carried by the arrow rather than by a sign repeated twice.
  const pathwayFrom = `${numberFormatCurrency(
   Math.abs(transaction.original_amount ?? 0),
   2,
-  originalCurrency ?? undefined,
+  originalCurrencyCode ?? undefined,
   AMOUNT_LOCALE,
- )} ${(originalCurrency ?? '').toUpperCase()}`;
+ )} ${(originalCurrencyCode ?? '').toUpperCase()}`;
  const pathwayTo = `${numberFormatCurrency(
   Math.abs(transaction.amount),
   2,
@@ -229,7 +234,7 @@ export const AccountTransactionDetailModal = ({
    : null;
  const exchangeRateLabel = directRate
   ? `1 ${accountingCurrency.toUpperCase()} = ${directRate} ${(
-    originalCurrency ?? ''
+    originalCurrencyCode ?? ''
    ).toUpperCase()}`
   : MISSING_VALUE;
 
@@ -240,7 +245,7 @@ export const AccountTransactionDetailModal = ({
    : null;
  const rateCleanLabel = storedRate
   ? `${storedRate} · ${(
-    originalCurrency ?? ''
+    originalCurrencyCode ?? ''
    ).toUpperCase()} → ${accountingCurrency.toUpperCase()}`
   : MISSING_VALUE;
 
@@ -331,7 +336,7 @@ export const AccountTransactionDetailModal = ({
      </section>
 
      <section className='transactionDetail__card'>
-      <DetailRow label='Base Amount' value={baseAmount} />
+      <DetailRow label='Original Amount' value={originalAmount} />
 
       {transaction.description && (
        <div className='transactionDetail__row transactionDetail__row--column'>
