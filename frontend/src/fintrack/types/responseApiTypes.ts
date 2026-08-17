@@ -590,10 +590,11 @@ export type AccountTransactionType = {
   // so a client running ahead of the server renders a dash rather than breaking.
   transaction_local_date?: string; // YYYY-MM-DD
   // What the account has spent inside the month up to and including this row.
-  // Only movement types 1 and 6 add to it, the same set the budget counts.
+  // Only movement types 1 and 6 add to it, the same set the budget counts, so
+  // it is served on category_budget alone and arrives null on every other type.
   // Absent on the legacy start/end path: a rolling window has no month to
   // accumulate inside.
-  month_cumulative_spent?: number;
+  month_cumulative_spent?: number | null;
   // What the owner typed, split out of description by the server. Null when the
   // row carries none, which is every account opening and every counterparty
   // narration. Optional so a client running ahead of the server renders a dash

@@ -72,6 +72,21 @@
   white-space: pre-wrap; /* Preserves line breaks if any in the description */
 }
 
+/* The balance and the accumulated spend share a line and wrap instead of
+   compressing: at 360px the two figures do not fit beside each other. */
+.transaction-item__totals {
+ flex-wrap: wrap;
+ gap: var(--space-2);
+}
+
+/* The month's spend up to and including this row. Smaller than the balance it
+   sits beside: the balance is an accounting fact, this one is an indicator. */
+.transaction-item__accumulated-spent {
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-on-dark-subtle);
+}
+
 /* Balance después de la transacción (BoxRow) */
 .transaction-balance-after {
   /* box__subtitle default styles apply */

@@ -211,15 +211,20 @@ export const getTransactionsForAccountById = async (req, res, next) => {
     //     total up to and including itself chronologically while the list still
     //     renders newest first. Only movement types 1 and 6 add to it, the same
     //     set the budget counts, so a row of any other type is listed without
-    //     moving the total.
+    //     moving the total. That counted set is a category's spend and nothing
+    //     else — on a pocket it would sit at zero and on a bank it would
+    //     undercount — so the figure is served on category_budget alone and
+    //     left NULL everywhere else. An absent figure beats a false zero.
     const TRANSACTIONS_BY_MONTH_QUERY = {
       text: `
       SELECT
         tr.*, mt.movement_type_name, cr.currency_code, ua.account_name, CAST(ua.account_starting_amount AS FLOAT), ua.account_start_date,
         (tr.transaction_actual_date AT TIME ZONE $4)::date::text AS transaction_local_date,
-        CAST(SUM(CASE WHEN tr.movement_type_id IN (1, 6) THEN tr.amount ELSE 0 END)
-          OVER (ORDER BY tr.transaction_actual_date ASC, tr.transaction_id ASC
-                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS FLOAT) AS month_cumulative_spent
+        CASE WHEN act.account_type_name = 'category_budget' THEN
+          CAST(SUM(CASE WHEN tr.movement_type_id IN (1, 6) THEN tr.amount ELSE 0 END)
+            OVER (ORDER BY tr.transaction_actual_date ASC, tr.transaction_id ASC
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS FLOAT)
+        END AS month_cumulative_spent
       FROM
         transactions tr
       JOIN
@@ -230,6 +235,10 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         user_accounts ua ON tr.account_id = ua.account_id
       JOIN
         transaction_types trt ON tr.transaction_type_id= trt.transaction_type_id
+      -- LEFT so a row whose account type is missing still lists, without the
+      -- figure. account_type_id is nullable on user_accounts.
+      LEFT JOIN
+        account_types act ON act.account_type_id = ua.account_type_id
       WHERE
         tr.account_id = $1 AND ua.user_id = $2
         AND tr.transaction_actual_date >= ($3::timestamp AT TIME ZONE $4)

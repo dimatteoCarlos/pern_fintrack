@@ -56,6 +56,7 @@ const AccountTransactionsList = ({
               currency_code,
               note,
               transaction_local_date,
+              month_cumulative_spent,
               account_balance_after_tr,
               // transaction_actual_date,
             } = item;
@@ -136,7 +137,7 @@ const AccountTransactionsList = ({
                 </BoxRow>
 
                 {/* Balance after transacción */}
-                <BoxRow>
+                <BoxRow className='transaction-item__totals'>
                   <div className='box__title transaction-balance-after'>
                     Balance:{' '}
                     {currencyFormat(
@@ -145,6 +146,21 @@ const AccountTransactionsList = ({
                       formatNumberCountry,
                     )}
                   </div>
+
+                  {/* Only category_budget serves this, and only on the month
+                      window. The line is omitted rather than dashed: an account
+                      with no budget has no accumulated spend to withhold. How
+                      far it accumulates is the Date the row already states. */}
+                  {typeof month_cumulative_spent === 'number' && (
+                    <div className='transaction-item__accumulated-spent'>
+                      Accumulated spent:{' '}
+                      {currencyFormat(
+                        currency_code,
+                        month_cumulative_spent,
+                        formatNumberCountry,
+                      )}
+                    </div>
+                  )}
                 </BoxRow>
               </BoxContainer>
             );
