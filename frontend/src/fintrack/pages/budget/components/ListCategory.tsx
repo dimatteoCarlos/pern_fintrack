@@ -11,10 +11,22 @@ import {
 } from '../../../helpers/functions.ts';
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
+import { BudgetCategoryStatus } from '../../../types/budgetTypes.ts';
+import {
+  DEFAULT_SORT_DIRECTION,
+  useBudgetListFilter,
+  type BudgetSortDirection,
+  type BudgetSortKey,
+} from '../hooks/useBudgetListFilter.ts';
+import BudgetListControls, {
+  type BudgetListState,
+  type BudgetSortOption,
+} from './BudgetListControls.tsx';
 //-----------------------------
 // RETIRED by commit 9 — remove in the cleanup block (V1 §9.4, D8).
 // The shape existed to carry a total_budget this component fabricated from a
@@ -31,6 +43,43 @@ type ListCategoryProp = { previousRoute: string };
 // A figure the server could not compute renders as this, never as a zero.
 const DASH = '—';
 
+// Declared out here rather than inside the component: useBudgetListFilter holds
+// both in its dependency array, so a fresh arrow on every render would recompute
+// the memo the hook exists to avoid.
+const searchableText = (category: BudgetCategoryStatus) => [
+  category.categoryName,
+];
+const sortName = (category: BudgetCategoryStatus) => category.categoryName;
+
+// The keys this level can offer. `subcategory` is absent because a category has
+// none — the hook supports it for level 2, which lists accounts.
+//
+// A label names what the key orders, not the field behind it: `name` reads as
+// `Category` here and will read as `Account` on level 2.
+const SORT_OPTIONS: BudgetSortOption[] = [
+  { value: 'name', label: 'Category' },
+  { value: 'spent', label: 'Spent' },
+  { value: 'remaining', label: 'Remaining' },
+  // The header spells the term out as "% of spent budget". The key abbreviates
+  // it because this control is the one where length is read on every render.
+  { value: 'execution', label: '% spent' },
+];
+
+// A URL is typed by anyone. An unrecognised key would leave the select matching
+// no option and showing an empty box, so it falls back to the default.
+const toSortKey = (value: string | null): BudgetSortKey =>
+  SORT_OPTIONS.some((option) => option.value === value)
+    ? (value as BudgetSortKey)
+    : 'name';
+
+// Absent means "the reader has not chosen", not "ascending". Each key opens on
+// the direction that puts the row worth reading first.
+const toSortDirection = (
+  value: string | null,
+  sort: BudgetSortKey,
+): BudgetSortDirection =>
+  value === 'asc' || value === 'desc' ? value : DEFAULT_SORT_DIRECTION[sort];
+
 //==================================
 function ListCategory({ previousRoute }: ListCategoryProp) {
   //++++++++++++++++++++++++++++++++++
@@ -40,19 +89,94 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
   // same rounded rows level 2 renders, so a group header reconciles with the
   // accounts under it.
   const categories = useBudgetStatusStore((state) => state.categories);
+  const isLoading = useBudgetStatusStore((state) => state.isLoading);
+  const error = useBudgetStatusStore((state) => state.error);
 
   // Level 2 is a route beside this one, not below it, so it re-reads the month
   // from its own URL. A link that dropped it would land on a screen quietly
   // reporting a different month from the row that was clicked.
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const month = searchParams.get('month');
+
+  // The filter lives in the URL for the same reason the month does: entering a
+  // category unmounts this list, and a term held in state would not survive the
+  // trip back.
+  // Sliced as well as capped on the input: maxLength stops what is typed into
+  // the field, not what arrives in a hand-written URL.
+  const search = (searchParams.get('q') ?? '').slice(
+    0,
+    NAME_MAX_LENGTHS.category_name,
+  );
+  const sort = toSortKey(searchParams.get('sort'));
+  const direction = toSortDirection(searchParams.get('dir'), sort);
+
+  // Merged, never overwritten: month, q, sort and dir share one query string,
+  // and setSearchParams with a plain object replaces all of it. Replaced rather
+  // than pushed, so typing does not leave one history entry per character.
+  //
+  // Takes a set rather than one key because changing the sort has to clear the
+  // direction in the same write.
+  const setListParams = (values: Record<string, string>) => {
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        Object.entries(values).forEach(([key, value]) => {
+          if (value) next.set(key, value);
+          else next.delete(key);
+        });
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const { rows, matched, total, isFiltered } = useBudgetListFilter({
+    rows: categories,
+    search,
+    sort,
+    direction,
+    // The All / Over budget chips are their own commit. Until then every row
+    // that matches the term passes.
+    quickFilter: 'all',
+    searchableText,
+    sortName,
+  });
+
+  // A failed request and a month holding nothing are the same thing to the bar:
+  // there is nothing to filter, so it takes itself off screen.
+  const listState: BudgetListState = error
+    ? 'unavailable'
+    : isLoading
+    ? 'loading'
+    : 'ready';
 
   //--------------------------------
   return (
     <>
       {/*LIST CATEGORY  */}
+      <BudgetListControls
+        search={search}
+        onSearchChange={(value) => setListParams({ q: value })}
+        searchLabel='Search categories'
+        // A term longer than the longest name that can exist would only ever
+        // match nothing. The search is a substring match, so the cap narrows
+        // how specific a term can be without putting any row out of reach.
+        searchMaxLength={NAME_MAX_LENGTHS.category_name}
+        sort={sort}
+        // The direction is cleared, not carried: each key opens on its own, and
+        // keeping the previous one would open `Category` at Z–A.
+        onSortChange={(value) => setListParams({ sort: value, dir: '' })}
+        sortOptions={SORT_OPTIONS}
+        direction={direction}
+        onDirectionChange={(value) => setListParams({ dir: value })}
+        matched={matched}
+        total={total}
+        isFiltered={isFiltered}
+        state={listState}
+      />
+
       <article className='list__main__container '>
-        {categories.map((category) => {
+        {rows.map((category) => {
           const {
             categoryName,
             actualSpent,

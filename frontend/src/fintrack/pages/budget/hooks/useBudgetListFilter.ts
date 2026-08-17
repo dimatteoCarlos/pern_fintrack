@@ -17,14 +17,30 @@
 import { useMemo } from 'react';
 
 // Sorted by what the reader is looking for, not by the field name. `execution`
-// is the served percentage; `remaining` is what is left, so it ascends and puts
-// the overspent rows first.
+// is the served percentage and `remaining` is what is left.
 export type BudgetSortKey =
  | 'name'
  | 'subcategory'
  | 'spent'
  | 'remaining'
  | 'execution';
+
+export type BudgetSortDirection = 'asc' | 'desc';
+
+// Where each key starts before the reader touches the toggle. They differ
+// because the useful first row does: the biggest spender, the tightest
+// remainder — which is why `remaining` ascends and leads with the overspent —
+// and the fullest budget.
+export const DEFAULT_SORT_DIRECTION: Record<
+ BudgetSortKey,
+ BudgetSortDirection
+> = {
+ name: 'asc',
+ subcategory: 'asc',
+ spent: 'desc',
+ remaining: 'asc',
+ execution: 'desc',
+};
 
 export type BudgetQuickFilter = 'all' | 'over';
 
@@ -42,6 +58,9 @@ type BudgetListFilterInput<Row extends BudgetFilterableRow> = {
  rows: Row[];
  search: string;
  sort: BudgetSortKey;
+ // Chosen by the reader, never derived here. The hook applies it; picking the
+ // starting value for a key is DEFAULT_SORT_DIRECTION's job.
+ direction: BudgetSortDirection;
  quickFilter: BudgetQuickFilter;
  // What a search term is matched against. Level 1 gives the category name,
  // level 2 gives the account name and its subcategory.
@@ -93,6 +112,7 @@ export function useBudgetListFilter<Row extends BudgetFilterableRow>({
  rows,
  search,
  sort,
+ direction,
  quickFilter,
  searchableText,
  sortName,
@@ -114,30 +134,38 @@ export function useBudgetListFilter<Row extends BudgetFilterableRow>({
   const sorted = [...filtered].sort((a, b) => {
    let result = 0;
 
+   // Text compares one way and is negated, amounts take the direction inside
+   // compareNullable — which checks for null before applying it, so a withheld
+   // figure still sorts last in both directions rather than flipping to first.
+   const flip = direction === 'desc' ? -1 : 1;
+
    switch (sort) {
     case 'spent':
-     result = compareNullable(a.actualSpent, b.actualSpent, 'desc');
+     result = compareNullable(a.actualSpent, b.actualSpent, direction);
      break;
     case 'remaining':
-     result = compareNullable(a.remainingBudget, b.remainingBudget, 'asc');
+     result = compareNullable(a.remainingBudget, b.remainingBudget, direction);
      break;
     case 'execution':
      result = compareNullable(
       a.executionPercentage,
       b.executionPercentage,
-      'desc',
+      direction,
      );
      break;
     case 'subcategory':
-     result = compareText(searchableText(a)[1] ?? null, searchableText(b)[1] ?? null);
+     result =
+      compareText(searchableText(a)[1] ?? null, searchableText(b)[1] ?? null) *
+      flip;
      break;
     case 'name':
     default:
-     result = 0;
+     result = compareText(sortName(a), sortName(b)) * flip;
    }
 
-   // The name breaks every tie, so two rows carrying the same figure keep the
-   // same order between renders instead of swapping.
+   // The name breaks every tie, and always ascending: a tiebreaker that turned
+   // with the direction would reorder rows carrying the same figure for no
+   // reason the reader asked for.
    return result !== 0 ? result : compareText(sortName(a), sortName(b));
   });
 
@@ -147,5 +175,5 @@ export function useBudgetListFilter<Row extends BudgetFilterableRow>({
    total: rows.length,
    isFiltered: term.length > 0 || quickFilter !== 'all',
   };
- }, [rows, search, sort, quickFilter, searchableText, sortName]);
+ }, [rows, search, sort, direction, quickFilter, searchableText, sortName]);
 }

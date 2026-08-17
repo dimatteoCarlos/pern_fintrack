@@ -35,9 +35,20 @@ function BudgetLayout() {
 
   // Replaced, not pushed: the month is the scope of the board, not a step the
   // back button should walk through one month at a time.
+  //
+  // Merged rather than written whole: the list below keeps its search term and
+  // sort key in this same query string, and a plain object overwrites it — the
+  // month would silently clear the filter the reader had just typed.
   const selectMonth = useCallback(
     (month: string) => {
-      setSearchParams({ month }, { replace: true });
+      setSearchParams(
+        (previous) => {
+          const next = new URLSearchParams(previous);
+          next.set('month', month);
+          return next;
+        },
+        { replace: true },
+      );
     },
     [setSearchParams],
   );

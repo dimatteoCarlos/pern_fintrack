@@ -23,6 +23,9 @@
  /* Separated from the app surface by the elevation pass: a card floating over
     the page reads one step lighter than the ground it sits on. */
  --color-surface-raised: #161a22;
+ /* The other end of the elevation pass: a rectangle that reads as set into the
+    panel holding it, the way raised reads as floating over the ground. */
+ --color-surface-sunken: #0c0c0c;
  --color-surface-inverse: #ffffff;
  --color-surface-panel: #e8e4da;
  --color-surface-overlay: rgba(17, 24, 39, 0.7);
