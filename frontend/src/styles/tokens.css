@@ -103,6 +103,26 @@
  --font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo,
   monospace;
 
+ /* What every size below is a multiple of, and the one that is not a multiple
+    of anything. index.css pins the root at 16px, so a rem measured the same at
+    360px and at 1024px and the scale could not answer the viewport at all —
+    every screen was drawn for the 360px Figma frame and then shown unchanged on
+    everything wider. The consequence was read on screen: at 360px the page
+    looked heavy, and a component that shrank on its own to escape it stopped
+    matching the ones beside it.
+
+    14px at 360px, 16px from 768px up, straight line between. Applied in
+    index.css rather than here — the pin lives in that file and a declaration
+    has to follow it to win.
+
+    The middle term keeps a rem on purpose. A viewport unit alone ignores the
+    text size the reader set in their browser, which is what WCAG 1.4.4 asks
+    for; with the rem in it, their setting still moves the whole scale.
+
+    The three numbers are read off the two endpoints and have no token of their
+    own — this is the token, and there is nothing above it to express it in. */
+ --font-size-root: clamp(0.875rem, 0.765rem + 0.49vw, 1rem);
+
  /* The specification names no token for line height, so none is invented. Each
     size carries its line height and tracking as a comment instead. */
  --font-size-2xs: 0.625rem; /* 1.2 / 1px */

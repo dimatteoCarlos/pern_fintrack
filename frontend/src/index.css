@@ -18,6 +18,17 @@ body,
 }
 
 :root {
+  /* Undoes the 16px above for the root element only. Every rem in the app —
+     the type scale, the spacing scale, the header and navbar heights — is
+     measured against this, so the whole layout answers the viewport together
+     and no component has to shrink on its own to fit a narrow screen.
+
+     The rule above still pins every *other* element at 16px, so anything that
+     declares no size of its own stays where it was. That is the one thing to
+     look for after this: an element left behind at 16px is one that never
+     declared a size, not one this broke. */
+  font-size: var(--font-size-root);
+
   /* line-height: 1.5; */
   font-synthesis: weight;
   color-scheme: light dark;
