@@ -22,7 +22,8 @@ import './styles/accountTransactionsList-styles.css';
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 
-// A row the owner never annotated renders as this, never as blank space.
+// What the row cannot state renders as this, never as blank space: a note the
+// owner never wrote, or a date the server did not serve.
 const DASH = '—';
 
 type AccountTransactionsListPropsType = {
@@ -53,8 +54,8 @@ const AccountTransactionsList = ({
               movement_type_name,
               amount,
               currency_code,
-              description,
               note,
+              transaction_local_date,
               account_balance_after_tr,
               // transaction_actual_date,
             } = item;
@@ -122,16 +123,14 @@ const AccountTransactionsList = ({
                           the row is not the place to correct them. */}
                       <div className='paragraph'>{note ?? DASH}</div>
 
-                      {/* The date is still cut out of the narrative, so it is
-                          the only half that depends on the narrative existing. */}
-                      {description && (
-                        <div className='paragraph'>
-                          Date:{' '}
-                          {(description.split('Date:')[1] || '')
-                            .split('GMT')[0]
-                            .trim()}
-                        </div>
-                      )}
+                      {/* Resolved in SQL on the account owner's calendar. The
+                          row used to cut this out of the narrative, which broke
+                          whenever the narrative did; deriving it here instead
+                          would be worse, since the stored value is an instant
+                          and would name the neighbouring day near midnight. */}
+                      <div className='paragraph'>
+                        Date: {transaction_local_date ?? DASH}
+                      </div>
                     </div>
                   </BoxRow>
                 </BoxRow>

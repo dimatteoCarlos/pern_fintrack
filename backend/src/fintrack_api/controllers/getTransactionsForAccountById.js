@@ -160,7 +160,11 @@ export const getTransactionsForAccountById = async (req, res, next) => {
     const TRANSACTIONS_BY_ACCOUNT_QUERY = {
       text: `
       SELECT
-        tr.*, mt.movement_type_name, cr.currency_code, ua.account_name, CAST(ua.account_starting_amount AS FLOAT), ua.account_start_date
+        tr.*, mt.movement_type_name, cr.currency_code, ua.account_name, CAST(ua.account_starting_amount AS FLOAT), ua.account_start_date,
+        -- The day the owner lived, not the day UTC saw. COALESCE mirrors the
+        -- WHERE below, which also admits a row by created_at alone.
+        (COALESCE(tr.transaction_actual_date, tr.created_at)
+          AT TIME ZONE COALESCE(u.timezone, 'UTC'))::date::text AS transaction_local_date
       FROM
         transactions tr
       JOIN
@@ -171,6 +175,11 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         user_accounts ua ON tr.account_id = ua.account_id
       JOIN
         transaction_types trt ON tr.transaction_type_id= trt.transaction_type_id
+      -- Joined rather than read with getUserTimeZone: the zone is one column of
+      -- a row this statement already reaches, and the month branch only calls
+      -- that helper because it needs the zone in JavaScript to build its bounds.
+      LEFT JOIN
+        users u ON u.user_id = ua.user_id
       WHERE
         tr.account_id = $1 AND ua.user_id = $2 AND (tr.transaction_actual_date BETWEEN $3 AND $4 OR
        tr.created_at BETWEEN $3 AND $4)

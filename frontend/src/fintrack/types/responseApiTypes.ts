@@ -584,15 +584,15 @@ export type AccountTransactionType = {
   account_name: string;
   account_starting_amount: number;
   account_start_date: string; // ISO 8601 date string
-  // The two fields below travel only when the request named a month. On the
-  // legacy start/end path they are absent, which is why both are optional.
-  //
   // The date the transaction falls on in the ACCOUNT OWNER's calendar, resolved
   // in SQL. Render this instead of slicing transaction_actual_date, which is an
-  // instant and can name the neighbouring day.
+  // instant and can name the neighbouring day. Both windows serve it; optional
+  // so a client running ahead of the server renders a dash rather than breaking.
   transaction_local_date?: string; // YYYY-MM-DD
   // What the account has spent inside the month up to and including this row.
   // Only movement types 1 and 6 add to it, the same set the budget counts.
+  // Absent on the legacy start/end path: a rolling window has no month to
+  // accumulate inside.
   month_cumulative_spent?: number;
   // What the owner typed, split out of description by the server. Null when the
   // row carries none, which is every account opening and every counterparty
