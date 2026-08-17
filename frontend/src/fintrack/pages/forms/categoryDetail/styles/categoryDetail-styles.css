@@ -80,27 +80,20 @@
  min-height: 0;
 }
 
-/* Tighter than the --space-8 a stacked title opens by default. This screen puts
-   a title row, a month badge and the summary box above the list, and every rem
-   spent above it is a rem the list does not get. */
-.budgetCategoryBoard .presentation__card--title--stacked {
- padding-top: var(--space-3);
-}
+/* The --space-8 a stacked title opens by default stands here. Tightening it to
+   --space-3 bought vertical space by hand, and the step below buys it where the
+   height is actually short: at full height the two rows of labels read as one
+   block, and a block sitting close under the summary box attaches to that box
+   instead of introducing the list below it.
 
-/* The board is a frame now, so on a short screen that arithmetic ends with no
-   list at all. The two steps are the ones the design system names. Nothing here
-   touches --size-touch-target: a control below 44px is one that gets
-   mis-tapped, which costs the reader more than the pixels it saves. */
+   One step and not the two the design system names: a second at 568px would
+   restate --space-2 and change nothing. --size-touch-target is untouched - a
+   control below 44px is one that gets mis-tapped, which costs the reader more
+   than the pixels it saves. */
 @media (max-height: 735px) {
  .budgetCategoryBoard .presentation__card--title--stacked {
   padding-top: var(--space-2);
   padding-bottom: var(--space-1);
- }
-}
-
-@media (max-height: 568px) {
- .budgetCategoryBoard .presentation__card--title--stacked {
-  padding-top: var(--space-2);
  }
 }
 
