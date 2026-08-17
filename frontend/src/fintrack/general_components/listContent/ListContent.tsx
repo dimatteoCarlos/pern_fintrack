@@ -28,6 +28,9 @@ import { TransactionDetailModal } from '../../pages/overview/components/transact
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 
+// A row the owner never annotated renders as this, never as blank space.
+const DASH = '—';
+
 // ====================================
 // MAIN COMPONENT
 // ====================================
@@ -46,7 +49,7 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
     <div className='listContent__container '>
       {listOfItems.map((item, index) => {
 
-        const { accountName, record, description, date, currency, transactionId } = item;
+        const { accountName, record, note, date, currency, transactionId } = item;
 
        return (
         <BoxContainer key={index} className='listContent__item '
@@ -65,8 +68,13 @@ function ListContent({ listOfItems }: { listOfItems: LastMovementType[] }) {
 
         {/*  📝 DETAILS ROW: Description and date - */}
          <div className='listContent__details-row'>
+          {/* Served, not split here. The same cut used to live in this line and
+              was wrong three ways: it left an empty paragraph when there was no
+              note, it showed the server's reversal prefix as if the owner had
+              typed it, and it swallowed any note opening with the word
+              Transaction. */}
           <p className='listContent__description'>
-          {(description.split('Transaction')[0])}
+          {note ?? DASH}
           </p>
           <p>
           {date && isDateValid(date) && (

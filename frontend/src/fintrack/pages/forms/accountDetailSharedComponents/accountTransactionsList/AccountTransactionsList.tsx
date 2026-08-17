@@ -22,6 +22,9 @@ import './styles/accountTransactionsList-styles.css';
 const defaultCurrency = DEFAULT_CURRENCY;
 const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 
+// A row the owner never annotated renders as this, never as blank space.
+const DASH = '—';
+
 type AccountTransactionsListPropsType = {
   transactions: AccountTransactionType[];
   // Optional on purpose: only the screen that mounts the detail modal passes it,
@@ -51,6 +54,7 @@ const AccountTransactionsList = ({
               amount,
               currency_code,
               description,
+              note,
               account_balance_after_tr,
               // transaction_actual_date,
             } = item;
@@ -99,30 +103,36 @@ const AccountTransactionsList = ({
                 {/* Description */}
                 <BoxRow>
                   <BoxRow>
-                    {description && (
-                      <div
-                        className='box__subtitle'
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: '200',
-                          lineHeight: '1rem',
-                          letterSpacing: '1px',
-                        }}
-                      >
-                        <div className='paragraph'>
-                          {capitalize(
-                            description.split('Date:')[0] || '',
-                          ).trim()}
-                        </div>
+                    <div
+                      className='box__subtitle'
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: '200',
+                        lineHeight: '1rem',
+                        letterSpacing: '1px',
+                      }}
+                    >
+                      {/* The note alone, served already split from the
+                          narrative. The row used to print the whole sentence
+                          the server composes - account ids, account types and
+                          the amount restated in the accounting currency. That
+                          still exists and the detail modal still shows it.
 
+                          Not capitalized: these are the owner's own words, and
+                          the row is not the place to correct them. */}
+                      <div className='paragraph'>{note ?? DASH}</div>
+
+                      {/* The date is still cut out of the narrative, so it is
+                          the only half that depends on the narrative existing. */}
+                      {description && (
                         <div className='paragraph'>
                           Date:{' '}
                           {(description.split('Date:')[1] || '')
                             .split('GMT')[0]
                             .trim()}
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </BoxRow>
                 </BoxRow>
 

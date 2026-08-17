@@ -482,6 +482,10 @@ export type MovementTransactionDataType = {
   updated_at: string;
   transaction_id: number;
   description: string;
+  // What the owner typed, split out of description by the server. Null when the
+  // row carries none. Optional so a client running ahead of the server renders
+  // a dash rather than breaking.
+  note?: string | null;
   amount: number;
   movement_type_id: number;
   transaction_type_id: number;
@@ -590,6 +594,11 @@ export type AccountTransactionType = {
   // What the account has spent inside the month up to and including this row.
   // Only movement types 1 and 6 add to it, the same set the budget counts.
   month_cumulative_spent?: number;
+  // What the owner typed, split out of description by the server. Null when the
+  // row carries none, which is every account opening and every counterparty
+  // narration. Optional so a client running ahead of the server renders a dash
+  // rather than breaking.
+  note?: string | null;
 };
 
 export type AccountTransactionDataType = {

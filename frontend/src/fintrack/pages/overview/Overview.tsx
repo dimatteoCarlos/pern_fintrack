@@ -196,6 +196,7 @@ function Overview() {
                   account_name,
                   amount,
                   description,
+                  note,
                   transaction_actual_date,
                   currency_code, transaction_id,
                 } = movementExpenseTransactionsData[i];
@@ -204,6 +205,7 @@ function Overview() {
                   accountName: account_name,
                   record: amount, //data? or title?
                   description: description,
+                  note,
                   date: transaction_actual_date,
                   currency: currency_code,  transactionId: transaction_id,
                 };
@@ -223,6 +225,7 @@ function Overview() {
                 account_name,
                 amount,
                 description,
+                note,
                 transaction_actual_date,
                 currency_code,
                 transaction_id,
@@ -232,6 +235,7 @@ function Overview() {
                 accountName: account_name,
                 record: amount, //data or title?
                 description: description, //data
+                note,
                 date: transaction_actual_date,
                 currency: currency_code,
                   transactionId:transaction_id,
@@ -253,6 +257,7 @@ function Overview() {
                   account_name,
                   amount,
                   description,
+                  note,
                   transaction_actual_date,
                   currency_code, transaction_id,
                 } = movementIncomeTransactionsData[i];
@@ -261,6 +266,7 @@ function Overview() {
                   accountName: account_name,
                   record: amount, //data? or title?
                   description: description,
+                  note,
                   date: transaction_actual_date,
                   currency: currency_code,  transactionId: transaction_id,
                 };
@@ -282,6 +288,7 @@ function Overview() {
                   account_name,
                   amount,
                   description,
+                  note,
                   transaction_actual_date,
                   currency_code,  transaction_id,
                 } = movementPocketTransactionsData[i];
@@ -290,6 +297,7 @@ function Overview() {
                   accountName: account_name,
                   record: amount, //data? or title?
                   description: description,
+                  note,
                   date: transaction_actual_date,
                   currency: currency_code, transactionId: transaction_id, 
 
@@ -313,6 +321,7 @@ function Overview() {
                     account_name,
                     amount,
                     description,
+                    note,
                     transaction_actual_date,
                     currency_code,  transaction_id,
                   } = movementInvestmentTransactionsData[i];
@@ -321,6 +330,7 @@ function Overview() {
                     accountName: account_name,
                     record: amount, //data? or title?
                     description: description,
+                    note,
                     date: transaction_actual_date,
                     currency: currency_code,  transactionId: transaction_id,
                   };
@@ -342,6 +352,7 @@ function Overview() {
                   account_name,
                   amount,
                   description,
+                  note,
                   transaction_actual_date,
                   currency_code,  transaction_id,
                 } = movementPnLTransactionsData[i];
@@ -350,6 +361,7 @@ function Overview() {
                   accountName: account_name,
                   record: amount, //data? or title?
                   description: description,
+                  note,
                   date: transaction_actual_date,
                   currency: currency_code,  transactionId: transaction_id,
                 };

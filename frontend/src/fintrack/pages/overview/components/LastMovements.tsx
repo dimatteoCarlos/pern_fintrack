@@ -8,6 +8,10 @@ export type LastMovementType = {
   accountName: string; //category of expense
   record: number; //data or title?
   description: string; //data
+  // What the owner typed, split out of description by the server. Null when the
+  // row carries none. description stays beside it: the modal shows the whole
+  // sentence, the row shows only the note.
+  note?: string | null;
   date: Date | string;
   currency: CurrencyType;
   transactionId: number;
@@ -26,6 +30,9 @@ function LastMovements({ data, title }: LastMovementsProps) {
       accountName: 'Account Name',
       record: 0,
       description: 'Description',
+      // Null rather than a placeholder word: the row paints a dash, which is
+      // what an absent note looks like everywhere else.
+      note: null,
       date: new Date(),
       currency: 'usd', transactionId: 0, 
     },
