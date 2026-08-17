@@ -129,7 +129,11 @@ function CategoryAccountList() {
   //===============================
   return (
     <>
-      <section className='page__container page__container--budget'>
+      {/* budgetCategoryBoard is the hook the frame hangs off. Level 3 renders
+          the two classes beside it and not this one: it is a long form, and a
+          form that cannot scroll as a document is a form with fields under the
+          fold. */}
+      <section className='page__container page__container--budget budgetCategoryBoard'>
         <TopWhiteSpace variant={'dark'} />
 
         {/* The column that puts this screen's rows at the same x as level 1's.
@@ -176,8 +180,16 @@ function CategoryAccountList() {
           {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
 
           {/* A column header, not a title: the name of the category is already
-              stated above, and what the left column holds is the subcategory. */}
-          <CardTitle legend='Spent / Budget'>{'Subcategory'}</CardTitle>
+              stated above, and what the left column holds is the subcategory.
+              Four labels for the four cells of a row, the same pairing level 1
+              states over the same two lines. */}
+          <CardTitle
+            legend='Spent / Budget'
+            subtitle='Remaining over / left'
+            subLegend='% of spent budget'
+          >
+            {'Subcategory'}
+          </CardTitle>
 
           {/* Loading, error and empty are three states, not one fallback: a
               category still on the wire is not a category without accounts. */}

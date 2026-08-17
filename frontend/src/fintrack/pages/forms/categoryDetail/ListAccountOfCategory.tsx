@@ -14,9 +14,20 @@ import {
 } from '../../../helpers/functions.ts';
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 
 import { Link, useSearchParams } from 'react-router-dom';
 import { BudgetAccountStatus } from '../../../types/budgetTypes.ts';
+
+import {
+  DEFAULT_SORT_DIRECTION,
+  useBudgetListFilter,
+  type BudgetSortDirection,
+  type BudgetSortKey,
+} from '../../budget/hooks/useBudgetListFilter.ts';
+import BudgetListControls, {
+  type BudgetSortOption,
+} from '../../budget/components/BudgetListControls.tsx';
 
 import './styles/categoryDetail-styles.css';
 //-----------------------------
@@ -33,6 +44,52 @@ type ListAccountOfCategoryProp = {
   accounts: BudgetAccountStatus[];
   //categoryName:string
 };
+
+// A figure the server could not compute renders as this, never as a zero.
+const DASH = '—';
+
+// Declared out here rather than inside the component: useBudgetListFilter holds
+// both in its dependency array, so a fresh arrow on every render would recompute
+// the memo the hook exists to avoid.
+//
+// Both names are searchable and only one is shown. A reader who remembers the
+// account by its composed name still finds the row that labels itself with the
+// subcategory alone.
+const searchableText = (account: BudgetAccountStatus) => [
+  account.subcategory,
+  account.accountName,
+];
+
+// The visible label, not the stored field: sorting by a string the row does not
+// show would produce an order the reader cannot verify on screen.
+const sortName = (account: BudgetAccountStatus) =>
+  account.subcategory ?? account.accountName;
+
+// The same four keys level 1 offers, and `name` is labelled for what this level
+// puts in the left column. `subcategory` is not among them: here it IS the name
+// key, so offering both would be one column under two headings.
+const SORT_OPTIONS: BudgetSortOption[] = [
+  { value: 'name', label: 'Subcategory' },
+  { value: 'spent', label: 'Spent' },
+  { value: 'remaining', label: 'Remaining' },
+  { value: 'execution', label: '% spent' },
+];
+
+// A URL is typed by anyone. An unrecognised key would leave the select matching
+// no option and showing an empty box, so it falls back to the default.
+const toSortKey = (value: string | null): BudgetSortKey =>
+  SORT_OPTIONS.some((option) => option.value === value)
+    ? (value as BudgetSortKey)
+    : 'name';
+
+// Absent means "the reader has not chosen", not "ascending". Each key opens on
+// the direction that puts the row worth reading first.
+const toSortDirection = (
+  value: string | null,
+  sort: BudgetSortKey,
+): BudgetSortDirection =>
+  value === 'asc' || value === 'desc' ? value : DEFAULT_SORT_DIRECTION[sort];
+
 //===============================
 function ListAccountOfCategory({
   previousRoute,
@@ -43,14 +100,79 @@ function ListAccountOfCategory({
 
   // Level 3 is another standalone route, so it reads the month from its URL
   // too. The link is what puts it there.
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const month = searchParams.get('month');
+
+  // The filter lives in the URL for the same reason the month does: entering an
+  // account unmounts this list, and a term held in state would not survive the
+  // trip back.
+  // Sliced as well as capped on the input: maxLength stops what is typed into
+  // the field, not what arrives in a hand-written URL.
+  const search = (searchParams.get('q') ?? '').slice(
+    0,
+    NAME_MAX_LENGTHS.account_name,
+  );
+  const sort = toSortKey(searchParams.get('sort'));
+  const direction = toSortDirection(searchParams.get('dir'), sort);
+
+  // Merged, never overwritten: month, q, sort and dir share one query string,
+  // and setSearchParams with a plain object replaces all of it. Replaced rather
+  // than pushed, so typing does not leave one history entry per character.
+  const setListParams = (values: Record<string, string>) => {
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        Object.entries(values).forEach(([key, value]) => {
+          if (value) next.set(key, value);
+          else next.delete(key);
+        });
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const { rows, matched, total, isFiltered } = useBudgetListFilter({
+    rows: accounts,
+    search,
+    sort,
+    direction,
+    // The All / Over budget chips are their own commit. Until then every row
+    // that matches the term passes.
+    quickFilter: 'all',
+    searchableText,
+    sortName,
+  });
+
   // --------------------------------
   return (
     <>
+      {/* No `state` prop: the parent owns loading, error and empty, and only
+          mounts this component once there are rows. The bar cannot be asked to
+          report a state the list it sits over can no longer be in. */}
+      <BudgetListControls
+        search={search}
+        onSearchChange={(value) => setListParams({ q: value })}
+        searchLabel='Search accounts'
+        searchMaxLength={NAME_MAX_LENGTHS.account_name}
+        sort={sort}
+        // The direction is cleared, not carried: each key opens on its own, and
+        // keeping the previous one would open `Subcategory` at Z–A.
+        onSortChange={(value) => setListParams({ sort: value, dir: '' })}
+        sortOptions={SORT_OPTIONS}
+        direction={direction}
+        onDirectionChange={(value) => setListParams({ dir: value })}
+        matched={matched}
+        total={total}
+        isFiltered={isFiltered}
+      />
+
       {/*ACCOUNT LIST OF CATEGORY  */}
-      <article className='list__main__container '>
-        {accounts.map((account) => {
+      {/* categoryList carries the scroll, the same class level 1's list takes.
+          list__main__container is rendered by six lists across the app and the
+          stylesheets are global, so bounding it there would confine all six. */}
+      <article className='list__main__container categoryList'>
+        {rows.map((account) => {
           const {
             accountId,
             accountName,
@@ -75,13 +197,14 @@ function ListAccountOfCategory({
           // const remainPercentage =
           //   budget === 0 ? '' : ((Math.abs(remain) / budget) * 100).toFixed(1) + '%';
 
-          // |100 - execution| is the same division as |remaining| / budget,
-          // written so the figure inherits the server's rounding instead of a
-          // second formula over the amounts.
-          const remainPercentage =
+          // The share of the budget already used, the same figure level 1 shows
+          // and the same one the `% spent` key orders by. It used to print
+          // |100 - execution|, which is the share still left: the opposite
+          // reading of the same row.
+          const usedText =
             executionPercentage === null
-              ? ''
-              : Math.abs(100 - executionPercentage).toFixed(1) + '%';
+              ? DASH
+              : executionPercentage.toFixed(1) + '%';
           //-------------------------------
           return (
             <div className='box__container .flx-row-sb' key={accountId}>
@@ -116,27 +239,34 @@ function ListAccountOfCategory({
                 </div>
               </BoxRow>
 
+              {/* One BoxRow, not two nested: the outer one is the space-between
+                  row that puts the remainder at the left and the share at the
+                  right, and it needs both as siblings to do it. */}
               <BoxRow>
-                <BoxRow>
-                  <div className='flx-row-sb'>
-                    <StatusSquare alert={isOverBudget ? 'alert' : ''} />
-                    <div className='box__subtitle'>
-                      &nbsp;
-                      {/* Absolute value: the word carries the sign, so a minus
-                          in front of it would state the same thing twice. */}
-                      {numberFormatCurrency(
-                        Math.abs(remainingBudget),
-                        2,
-                        currency_code,
-                        'en-US',
-                      )}
-                      &nbsp;{remainingBudget < 0 ? 'over' : 'left'}&nbsp;
-                      <span style={{ fontSize: '0.75rem' }}>
-                        ({remainPercentage})
-                      </span>
-                    </div>
+                <div className='flx-row-sb'>
+                  <StatusSquare alert={isOverBudget ? 'alert' : ''} />
+                  <div className='box__subtitle'>
+                    &nbsp;
+                    {/* Absolute value: the word carries the sign, so a minus
+                        in front of it would state the same thing twice. */}
+                    {numberFormatCurrency(
+                      Math.abs(remainingBudget),
+                      2,
+                      currency_code,
+                      'en-US',
+                    )}
+                    &nbsp;
+                    <span className='categoryRow__remainWord'>
+                      {remainingBudget < 0 ? 'over' : 'left'}
+                    </span>
+                    &nbsp;
                   </div>
-                </BoxRow>
+                </div>
+
+                {/* Under the pair on the line above, which is the pair it is a
+                    share of. As a parenthesis after `left` it read as the share
+                    remaining, which is the opposite figure. */}
+                <span className='categoryRow__used'>{usedText}</span>
               </BoxRow>
             </div>
           );

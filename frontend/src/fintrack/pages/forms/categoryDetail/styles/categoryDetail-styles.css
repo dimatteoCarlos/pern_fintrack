@@ -46,6 +46,64 @@
  gap: var(--space-2);
 }
 
+/* ── The category board is a frame, not a document ───────────────────────────
+   The treatment level 1 gets from budget-styles.css, which cannot be reused as
+   written: that one is scoped to .budgetLayout, and this route is declared
+   BESIDE the budget layout rather than under it, so nothing of level 1 is
+   mounted here to match.
+
+   Level 3 is deliberately left out. It renders .page__container--budget too but
+   not this class, because it is a long form and a form that cannot scroll as a
+   document is a form with fields under the fold.
+
+   :has() is Chrome 105+, Safari 15.4+, Firefox 121+. Older browsers keep the
+   document scroll they have today: it degrades, it does not break. */
+.home__layout:has(.budgetCategoryBoard) {
+ height: 100dvh;
+ min-height: 0;
+ overflow-y: hidden;
+}
+
+/* min-height also undoes the 50rem that every form declares through
+   .page__container: on a phone that floor alone is taller than the viewport, so
+   the frame could never close. Undone from this class rather than edited in
+   forms-styles.css, which every other form in the app shares. */
+.home__layout:has(.budgetCategoryBoard) .budgetCategoryBoard {
+ flex: 1;
+ min-height: 0;
+}
+
+/* The handoff, one level at a time, down to the list. .categoryList ends it and
+   is already global - it carries the scroll for level 1's list too. */
+.budgetCategoryBoard .budgetDetail__content {
+ flex: 1;
+ min-height: 0;
+}
+
+/* Tighter than the --space-8 a stacked title opens by default. This screen puts
+   a title row, a month badge and the summary box above the list, and every rem
+   spent above it is a rem the list does not get. */
+.budgetCategoryBoard .presentation__card--title--stacked {
+ padding-top: var(--space-3);
+}
+
+/* The board is a frame now, so on a short screen that arithmetic ends with no
+   list at all. The two steps are the ones the design system names. Nothing here
+   touches --size-touch-target: a control below 44px is one that gets
+   mis-tapped, which costs the reader more than the pixels it saves. */
+@media (max-height: 735px) {
+ .budgetCategoryBoard .presentation__card--title--stacked {
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-1);
+ }
+}
+
+@media (max-height: 568px) {
+ .budgetCategoryBoard .presentation__card--title--stacked {
+  padding-top: var(--space-2);
+ }
+}
+
 /* Neutral on purpose: the status colours are the budget semaphore, and a
    'must' painted with them would read as over budget rather than as what the
    account is for. Not interactive - the row's link is - so it declares no
