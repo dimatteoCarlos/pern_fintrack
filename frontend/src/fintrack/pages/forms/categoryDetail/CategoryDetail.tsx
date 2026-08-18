@@ -319,6 +319,7 @@ function CategoryDetail() {
                 <AccountTransactionsList
                   transactions={transactions}
                   onTransactionClick={openTransaction}
+                  monthBudget={budgetAccount?.budgetAmount}
                 />
               )}
             </div>

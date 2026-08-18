@@ -3,6 +3,7 @@
 import {
   BoxContainer,
   BoxRow,
+  StatusSquare,
 } from '../../../../general_components/boxComponents/BoxComponents';
 import {
   CURRENCY_OPTIONS,
@@ -28,9 +29,12 @@ const DASH = '—';
 
 type AccountTransactionsListPropsType = {
   transactions: AccountTransactionType[];
-  // Optional on purpose: only the screen that mounts the detail modal passes it,
-  // so the other three screens sharing this list stay inert.
+  // Optional on purpose: a screen with no detail to open leaves its rows inert
+  // rather than rendering a control that answers nothing.
   onTransactionClick?: (transactionId: number) => void;
+  // The month's budget, so a row can state its share of it. Only a category has
+  // one, which is the same account type the server serves the accumulator for.
+  monthBudget?: number;
 };
 //==================
 //MAIN COMPONENT
@@ -38,7 +42,26 @@ type AccountTransactionsListPropsType = {
 const AccountTransactionsList = ({
   transactions,
   onTransactionClick,
+  monthBudget,
 }: AccountTransactionsListPropsType) => {
+  // Only a positive budget is a budget: dividing by zero has no reading, and a
+  // budget of zero would make the first spend of the month an overrun.
+  const budget =
+    typeof monthBudget === 'number' && monthBudget > 0 ? monthBudget : null;
+
+  // The accumulator only ever adds, so a month crosses its budget once and
+  // never comes back. The crossing is therefore the oldest row already past it,
+  // and since the list runs newest first, it is the last one that qualifies.
+  const crossingTransactionId =
+    budget === null
+      ? null
+      : transactions.reduce<number | null>((crossing, item) => {
+          const spent = item.month_cumulative_spent;
+          return typeof spent === 'number' && spent > budget
+            ? item.transaction_id
+            : crossing;
+        }, null);
+
   // const formatDate = (dateInput: Date | string | number): string => {
   //   const date = new Date(dateInput);
   //   return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
@@ -64,12 +87,26 @@ const AccountTransactionsList = ({
             const isClickable = Boolean(onTransactionClick);
             const openDetail = () => onTransactionClick?.(transaction_id);
 
+            // What share of the budget the month had consumed by this row. One
+            // decimal, the same as the summary above the list, so the top row
+            // and the summary read as the same figure and not as two.
+            const spentShare =
+              budget !== null && typeof month_cumulative_spent === 'number'
+                ? (month_cumulative_spent / budget) * 100
+                : null;
+
+            const isCrossing = transaction_id === crossingTransactionId;
+
             return (
               <BoxContainer
                 key={transaction_id}
-                className={`transaction-item ${
-                  isClickable ? 'transaction-item--clickable' : ''
-                }`.trim()}
+                className={[
+                  'transaction-item',
+                  isClickable ? 'transaction-item--clickable' : '',
+                  isCrossing ? 'transaction-item--overBudget' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
                 onClick={isClickable ? openDetail : undefined}
                 role={isClickable ? 'button' : undefined}
                 tabIndex={isClickable ? 0 : undefined}
@@ -138,13 +175,17 @@ const AccountTransactionsList = ({
 
                 {/* Balance after transacción */}
                 <BoxRow className='transaction-item__totals'>
-                  <div className='box__title transaction-balance-after'>
-                    Balance:{' '}
-                    {currencyFormat(
-                      currency_code,
-                      account_balance_after_tr,
-                      formatNumberCountry,
-                    )}
+                  <div className='transaction-item__figure'>
+                    <span className='transaction-item__figureLabel'>
+                      Balance
+                    </span>
+                    <div className='box__title transaction-balance-after'>
+                      {currencyFormat(
+                        currency_code,
+                        account_balance_after_tr,
+                        formatNumberCountry,
+                      )}
+                    </div>
                   </div>
 
                   {/* Only category_budget serves this, and only on the month
@@ -152,16 +193,33 @@ const AccountTransactionsList = ({
                       with no budget has no accumulated spend to withhold. How
                       far it accumulates is the Date the row already states. */}
                   {typeof month_cumulative_spent === 'number' && (
-                    <div className='transaction-item__accumulated-spent'>
-                      Accumulated spent:{' '}
-                      {currencyFormat(
-                        currency_code,
-                        month_cumulative_spent,
-                        formatNumberCountry,
-                      )}
+                    <div className='transaction-item__figure'>
+                      <span className='transaction-item__figureLabel'>
+                        Accumulated spent
+                      </span>
+                      <div className='transaction-item__accumulated-spent'>
+                        {currencyFormat(
+                          currency_code,
+                          month_cumulative_spent,
+                          formatNumberCountry,
+                        )}
+                        {spentShare !== null && ` (${spentShare.toFixed(1)}%)`}
+                      </div>
                     </div>
                   )}
                 </BoxRow>
+
+                {/* Only on the row that crossed, not on every row above it:
+                    that the month ended over budget is what the summary says,
+                    and which movement broke it is what only this row can. */}
+                {isCrossing && (
+                  <BoxRow className='transaction-item__breakRow'>
+                    <div className='transaction-item__budgetBreak'>
+                      <StatusSquare alert='alert' />
+                      Budget exceeded here
+                    </div>
+                  </BoxRow>
+                )}
               </BoxContainer>
             );
           })

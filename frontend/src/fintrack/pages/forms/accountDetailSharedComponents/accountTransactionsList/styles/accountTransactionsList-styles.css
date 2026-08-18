@@ -72,19 +72,57 @@
   white-space: pre-wrap; /* Preserves line breaks if any in the description */
 }
 
-/* The balance and the accumulated spend share a line and wrap instead of
-   compressing: at 360px the two figures do not fit beside each other. */
+/* One figure per line instead of two side by side: at 360px the balance and the
+   accumulated spend did not fit on the same row without compressing. */
 .transaction-item__totals {
- flex-wrap: wrap;
- gap: var(--space-2);
+ flex-direction: column;
+ gap: var(--space-1);
 }
 
-/* The month's spend up to and including this row. Smaller than the balance it
-   sits beside: the balance is an accounting fact, this one is an indicator. */
+/* The name at one end, the number at the other, so the two lines read as a
+   column of figures and not as two sentences. */
+.transaction-item__figure {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-2);
+ width: 100%;
+}
+
+/* Restates its size for the reason index.css documents: a font-size on the
+   universal selector matches a span and beats the line it sits in. */
+.transaction-item__figureLabel {
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The month's spend up to and including this row. Smaller than the balance
+   above it: the balance is an accounting fact, this one is an indicator. */
 .transaction-item__accumulated-spent {
  font-size: var(--font-size-xs);
  font-weight: var(--font-weight-regular);
  color: var(--color-content-on-dark-subtle);
+}
+
+/* The row where the month's spend passed its budget. The stripe is what finds
+   it while scrolling a long list; the line below is what explains it. */
+.transaction-item--overBudget {
+ border-left: var(--border-width-thick) solid var(--color-status-alert);
+}
+
+.transaction-item__breakRow {
+ margin-top: var(--space-2);
+}
+
+/* No frame around it: the row is already a card carrying an alert stripe, and a
+   badge here would draw a second border around the same statement. */
+.transaction-item__budgetBreak {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-2);
+ font-size: var(--font-size-xs);
+ color: var(--color-status-alert);
 }
 
 /* Balance después de la transacción (BoxRow) */
