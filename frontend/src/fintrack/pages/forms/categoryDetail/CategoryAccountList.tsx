@@ -196,11 +196,13 @@ function CategoryAccountList() {
           {isLoading && <CoinSpinner />}
 
           {!isLoading && error && (
-            <p className='box__subtitle'>Error loading data: {error}</p>
+            <p className='box__subtitle box__subtitle--message'>
+              Error loading data: {error}
+            </p>
           )}
 
           {!isLoading && !error && categoryAccounts.length === 0 && (
-            <p className='box__subtitle'>
+            <p className='box__subtitle box__subtitle--message'>
               This category has no budget accounts this month.
             </p>
           )}

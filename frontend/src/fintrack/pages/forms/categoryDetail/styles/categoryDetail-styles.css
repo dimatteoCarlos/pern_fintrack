@@ -110,3 +110,14 @@
  border-radius: var(--radius-full);
  padding: var(--space-1) var(--space-2);
 }
+
+/* Full sentences, not labels. .box__subtitle capitalises every word it holds,
+   which printed "No Transactions In This Account For The Period." — a message
+   reads as a paragraph, and only the labels around it are title case.
+
+   A compound selector rather than a bare modifier: .box__subtitle is declared
+   by three stylesheets at one class of specificity, so a single-class override
+   would win or lose depending on which lazy route loaded its CSS first. */
+.box__subtitle.box__subtitle--message {
+ text-transform: none;
+}

@@ -310,7 +310,7 @@ function CategoryDetail() {
               {isLoading && <CoinSpinner />}
 
               {!isLoading && !error && transactions.length === 0 && (
-                <p className='box__subtitle'>
+                <p className='box__subtitle box__subtitle--message'>
                   No transactions in this account for the period.
                 </p>
               )}
@@ -327,7 +327,9 @@ function CategoryDetail() {
 
           {/* --- END OF TRANSACTION STATEMENT SECTION --- */}
           {!isLoading && error && (
-            <p className='box__subtitle'>Error fetching account info: {error}</p>
+            <p className='box__subtitle box__subtitle--message'>
+              Error fetching account info: {error}
+            </p>
           )}
         </div>
       </section>
