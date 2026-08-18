@@ -308,8 +308,9 @@
    does not get. On a short screen that arithmetic ends with no list at all.
 
    The two steps are the ones the design system names, 735px and 568px. Nothing
-   here touches --size-touch-target: a control below 44px is one that gets
-   mis-tapped, which costs the reader more than the twelve pixels it saves. */
+   here touches a control height: the list controls came down to
+   --size-control-sm once, deliberately and at every height, and repeating that
+   here by viewport would give the same control two sizes for one reason. */
 @media (max-height: 735px) {
   .budgetLayout .presentation__card--title--stacked {
     padding-top: var(--space-2);

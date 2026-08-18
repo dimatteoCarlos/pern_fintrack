@@ -2,9 +2,11 @@
 // 🎛️ BUDGET LIST CONTROLS: reaching a row without scrolling to it
 //
 // Level 1 folds a hundred accounts into categories and hands the reader one
-// tool, the scrollbar. This is the other three: a term shortens the list, a key
-// puts the answer on top, and the counter states that what is on screen is a
-// subset of what the month holds.
+// tool, the scrollbar. This is the other four: a term shortens the list, a key
+// puts the answer on top, a switch keeps only the rows that broke their budget,
+// and the counter states that what is on screen is a subset of what the month
+// holds. All four on one line — the row under them exists only while the
+// counter has something to say.
 //
 // It owns no state and issues no request. Every value arrives as a prop so the
 // caller can back them with the URL, and that is why the sort control is a
@@ -37,14 +39,11 @@ export type BudgetSortOption = {
 // and a control over an empty list is an invitation to a dead end.
 export type BudgetListState = 'ready' | 'loading' | 'unavailable';
 
-// Declared here and not handed over by the caller, unlike the sort keys: both
-// levels filter on the same served isOverBudget, so there is nothing a level
-// could reword. No threshold is introduced — `Near limit` needs one and is not
-// part of this control.
-const QUICK_FILTERS: { value: BudgetQuickFilter; label: string }[] = [
- { value: 'all', label: 'All' },
- { value: 'over', label: 'Over budget' },
-];
+// The word the toggle carries to a screen reader and to a tooltip, since it has
+// no room for it on screen. Declared here and not handed over by the caller,
+// unlike the sort keys: both levels filter on the same served isOverBudget, so
+// there is nothing a level could reword.
+const OVER_FILTER_LABEL = 'Over budget';
 
 type IconProps = {
  children: React.ReactNode;
@@ -52,8 +51,8 @@ type IconProps = {
 };
 
 // Drawn here rather than imported: Vite types an .svg import as a string, so an
-// icon cannot travel as a component (R34). The four differ only in their paths,
-// so the shared attributes are written once.
+// icon cannot travel as a component (R34). They differ only in their paths, so
+// the shared attributes are written once.
 //
 // No width or height: the stylesheet sizes them off the control's font size, so
 // an icon never has to be re-tuned when the text is.
@@ -144,7 +143,11 @@ function BudgetListControls({
       className='budgetListControls__search'
       value={search}
       onChange={(event) => onSearchChange(event.target.value)}
-      placeholder={searchLabel}
+      // One word on screen, the caller's whole phrase to a screen reader. They
+      // were the same string until the bar became one row and the phrase
+      // stopped fitting: a placeholder cut mid-word reads as broken, not as
+      // compact. What the field searches is on the title right above it.
+      placeholder='Search'
       aria-label={searchLabel}
       autoComplete='off'
       maxLength={searchMaxLength}
@@ -227,55 +230,55 @@ function BudgetListControls({
       </Icon>
      </button>
     </div>
-   </div>
 
-   {/* The chips and the counter share one row: the counter states how big the
-       subset is, and a chip is one of the two things that produced it. The
-       chips sit OUTSIDE the <p role='status'> on purpose — controls inside a
-       live region get announced again every time the count changes. */}
-   <div className='budgetListControls__filters'>
-    <div
-     className='budgetListControls__chips'
-     role='group'
-     aria-label='Filter by budget status'
+    {/* A switch, not a choice between two things. `All` and `Over budget` are a
+        binary in which one value is the absence of a filter, and a pair of
+        chips for that cost the bar a second row of its own.
+
+        A warning sign rather than a funnel: what this turns on is "show me the
+        problems", and the red it lights in is the one the row's square already
+        uses for the same fact. The word it cannot show lives in aria-label and
+        in title.
+
+        aria-pressed and not a radio group: the pressed state is exactly what a
+        screen reader needs from a toggle, and it needs no arrow-key handling to
+        be reachable. It stays OUTSIDE the <p role='status'> below — a control
+        inside a live region is announced again on every count change. */}
+    <button
+     type='button'
+     className={`budgetListControls__filter${
+      quickFilter === 'over' ? ' is-active' : ''
+     }`}
+     onClick={() =>
+      onQuickFilterChange(quickFilter === 'over' ? 'all' : 'over')
+     }
+     aria-pressed={quickFilter === 'over'}
+     aria-label={OVER_FILTER_LABEL}
+     title={OVER_FILTER_LABEL}
+     disabled={isLoading}
     >
-     {QUICK_FILTERS.map((option) => {
-      const isSelected = option.value === quickFilter;
-
-      return (
-       <button
-        key={option.value}
-        type='button'
-        className={`budgetListControls__chip${isSelected ? ' is-active' : ''}`}
-        onClick={() => onQuickFilterChange(option.value)}
-        // aria-pressed and not a radio group: two buttons need no arrow-key
-        // handling to be reachable, and the pressed state is what a reader
-        // needs to know here.
-        aria-pressed={isSelected}
-        disabled={isLoading}
-       >
-        {option.label}
-       </button>
-      );
-     })}
-    </div>
-
-    {/* Rendered whether or not it has anything to say. A line that appeared on
-        the first keystroke would push the list down as the reader types. */}
-    <p className='budgetListControls__status' role='status'>
-     {isEmpty && (
-      <span className='budgetListControls__message'>
-       {search ? `No results for “${search}”` : 'No results'}
-      </span>
-     )}
-
-     {isSubset && (
-      <span className='budgetListControls__message'>
-       Showing {matched} of {total}
-      </span>
-     )}
-    </p>
+     <Icon>
+      <path d='M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01' />
+     </Icon>
+    </button>
    </div>
+
+   {/* Its own element and not a reserved row: it collapses to nothing while
+       there is nothing to say, so the bar is one line whenever the reader is
+       not filtering. */}
+   <p className='budgetListControls__status' role='status'>
+    {isEmpty && (
+     <span className='budgetListControls__message'>
+      {search ? `No results for “${search}”` : 'No results'}
+     </span>
+    )}
+
+    {isSubset && (
+     <span className='budgetListControls__message'>
+      Showing {matched} of {total}
+     </span>
+    )}
+   </p>
   </div>
  );
 }

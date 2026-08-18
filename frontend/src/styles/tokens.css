@@ -196,6 +196,10 @@
  --size-badge: 2.5rem;
  --size-control-height: 3.125rem;
  --size-touch-target: 2.75rem; /* minimum tappable area, 44px */
+ /* Auxiliary controls that sit in a bar over a list: search, sort, toggles.
+    32px clears the 24px WCAG AA floor (SC 2.5.8) and gives up the 44px of the
+    AAA one (SC 2.5.5), which is the trade a one-row bar costs at 360px. */
+ --size-control-sm: 2rem;
 
  /* MOTION
     Enumerate the properties of a transition; `all` animates ones that were
