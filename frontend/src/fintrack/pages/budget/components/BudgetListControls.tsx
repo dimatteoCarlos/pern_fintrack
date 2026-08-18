@@ -20,6 +20,18 @@
 
 import React from 'react';
 
+// One file each, under `assets/budgetListControlsSvg/`, entering through the
+// '?react' suffix: a bare .svg import is typed `string` and cannot take a
+// className (R34). Each file carries the stroke and the viewBox and no width or
+// height, so the stylesheet keeps sizing them off the control's font size and an
+// icon never has to be re-tuned when the text is.
+import ChevronDownSvg from '../../../../assets/budgetListControlsSvg/ChevronDownSvg.svg?react';
+import ClearSvg from '../../../../assets/budgetListControlsSvg/ClearSvg.svg?react';
+import OverBudgetSvg from '../../../../assets/budgetListControlsSvg/OverBudgetSvg.svg?react';
+import SearchSvg from '../../../../assets/budgetListControlsSvg/SearchSvg.svg?react';
+import SortDirectionSvg from '../../../../assets/budgetListControlsSvg/SortDirectionSvg.svg?react';
+import SortSvg from '../../../../assets/budgetListControlsSvg/SortSvg.svg?react';
+
 import type {
  BudgetQuickFilter,
  BudgetSortDirection,
@@ -44,33 +56,6 @@ export type BudgetListState = 'ready' | 'loading' | 'unavailable';
 // unlike the sort keys: both levels filter on the same served isOverBudget, so
 // there is nothing a level could reword.
 const OVER_FILTER_LABEL = 'Over budget';
-
-type IconProps = {
- children: React.ReactNode;
- className?: string;
-};
-
-// Drawn here rather than imported: Vite types an .svg import as a string, so an
-// icon cannot travel as a component (R34). They differ only in their paths, so
-// the shared attributes are written once.
-//
-// No width or height: the stylesheet sizes them off the control's font size, so
-// an icon never has to be re-tuned when the text is.
-const Icon = ({ children, className }: IconProps) => (
- <svg
-  className={className}
-  viewBox='0 0 24 24'
-  fill='none'
-  stroke='currentColor'
-  strokeWidth='2'
-  strokeLinecap='round'
-  strokeLinejoin='round'
-  aria-hidden='true'
-  focusable='false'
- >
-  {children}
- </svg>
-);
 
 type BudgetListControlsProps = {
  search: string;
@@ -133,10 +118,7 @@ function BudgetListControls({
   <div className='budgetListControls'>
    <div className='budgetListControls__fields'>
     <div className='budgetListControls__query'>
-     <Icon className='budgetListControls__icon'>
-      <circle cx='11' cy='11' r='7' />
-      <line x1='16.5' y1='16.5' x2='21' y2='21' />
-     </Icon>
+     <SearchSvg className='budgetListControls__icon' />
 
      <input
       type='search'
@@ -165,10 +147,7 @@ function BudgetListControls({
        onClick={() => onSearchChange('')}
        aria-label='Clear search'
       >
-       <Icon>
-        <line x1='6' y1='6' x2='18' y2='18' />
-        <line x1='18' y1='6' x2='6' y2='18' />
-       </Icon>
+       <ClearSvg />
       </button>
      )}
     </div>
@@ -178,11 +157,7 @@ function BudgetListControls({
       {/* Bars of falling length, inside the control rather than a word beside
           it: the word cost the search field the width its placeholder needed.
           The select keeps aria-label, which is now the only name it has. */}
-      <Icon className='budgetListControls__icon'>
-       <line x1='4' y1='7' x2='20' y2='7' />
-       <line x1='4' y1='12' x2='15' y2='12' />
-       <line x1='4' y1='17' x2='10' y2='17' />
-      </Icon>
+      <SortSvg className='budgetListControls__icon' />
 
       <select
        className='budgetListControls__select'
@@ -202,9 +177,7 @@ function BudgetListControls({
           OS falls back to and shares no stroke weight with the icons beside
           it. Inside this box and not the group, so it stays over the select
           when the direction button is added after it. */}
-      <Icon className='budgetListControls__icon budgetListControls__icon--trailing'>
-       <polyline points='6 9 12 15 18 9' />
-      </Icon>
+      <ChevronDownSvg className='budgetListControls__icon budgetListControls__icon--trailing' />
      </div>
 
      {/* One control, not two arrows. The select already carries a chevron
@@ -224,10 +197,7 @@ function BudgetListControls({
       }
       disabled={isLoading}
      >
-      <Icon>
-       <line x1='12' y1='4' x2='12' y2='20' />
-       <polyline points='6 14 12 20 18 14' />
-      </Icon>
+      <SortDirectionSvg />
      </button>
     </div>
 
@@ -257,9 +227,7 @@ function BudgetListControls({
      title={OVER_FILTER_LABEL}
      disabled={isLoading}
     >
-     <Icon>
-      <path d='M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01' />
-     </Icon>
+     <OverBudgetSvg />
     </button>
    </div>
 

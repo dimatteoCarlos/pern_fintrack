@@ -28,7 +28,10 @@ export default defineConfig({
         svgo: false,
         titleProp: true,
       },
-      include: '**/*.svg',
+      // Both forms: the bare one keeps the icons already imported that way
+      // working, and '?react' is the only door that carries a React type (R34),
+      // so an icon can take a className.
+      include: ['**/*.svg', '**/*.svg?react'],
     }),
   ],
 });
