@@ -14,6 +14,7 @@ import {
 } from '../../../helpers/functions.ts';
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import { budgetSquareState } from '../../../helpers/budgetStatus.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 
 import { Link, useSearchParams } from 'react-router-dom';
@@ -22,6 +23,7 @@ import { BudgetAccountStatus } from '../../../types/budgetTypes.ts';
 import {
   DEFAULT_SORT_DIRECTION,
   useBudgetListFilter,
+  type BudgetQuickFilter,
   type BudgetSortDirection,
   type BudgetSortKey,
 } from '../../budget/hooks/useBudgetListFilter.ts';
@@ -90,6 +92,12 @@ const toSortDirection = (
 ): BudgetSortDirection =>
   value === 'asc' || value === 'desc' ? value : DEFAULT_SORT_DIRECTION[sort];
 
+// Only the narrowing filter travels in the URL. `all` is the absence of a
+// filter, so writing it would put a parameter in the address bar that says the
+// list is doing what it does by default.
+const toQuickFilter = (value: string | null): BudgetQuickFilter =>
+  value === 'over' ? 'over' : 'all';
+
 //===============================
 function ListAccountOfCategory({
   previousRoute,
@@ -114,6 +122,7 @@ function ListAccountOfCategory({
   );
   const sort = toSortKey(searchParams.get('sort'));
   const direction = toSortDirection(searchParams.get('dir'), sort);
+  const quickFilter = toQuickFilter(searchParams.get('status'));
 
   // Merged, never overwritten: month, q, sort and dir share one query string,
   // and setSearchParams with a plain object replaces all of it. Replaced rather
@@ -137,9 +146,7 @@ function ListAccountOfCategory({
     search,
     sort,
     direction,
-    // The All / Over budget chips are their own commit. Until then every row
-    // that matches the term passes.
-    quickFilter: 'all',
+    quickFilter,
     searchableText,
     sortName,
   });
@@ -162,6 +169,12 @@ function ListAccountOfCategory({
         sortOptions={SORT_OPTIONS}
         direction={direction}
         onDirectionChange={(value) => setListParams({ dir: value })}
+        quickFilter={quickFilter}
+        // 'all' is written as an empty value, which setListParams deletes: the
+        // default filter leaves no parameter behind in the address bar.
+        onQuickFilterChange={(value) =>
+          setListParams({ status: value === 'all' ? '' : value })
+        }
         matched={matched}
         total={total}
         isFiltered={isFiltered}
@@ -244,7 +257,9 @@ function ListAccountOfCategory({
                   right, and it needs both as siblings to do it. */}
               <BoxRow>
                 <div className='flx-row-sb'>
-                  <StatusSquare alert={isOverBudget ? 'alert' : ''} />
+                  <StatusSquare
+                    alert={budgetSquareState(executionPercentage, isOverBudget)}
+                  />
                   <div className='box__subtitle'>
                     &nbsp;
                     {/* Absolute value: the word carries the sign, so a minus

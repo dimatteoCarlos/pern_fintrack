@@ -130,9 +130,18 @@
 /* Tighter around its two glyphs than the search is around its lens: the key is
    a short fixed word, and every pixel this gives up goes to the term, which is
    what has to show a whole category name. */
+/* The left side is wider than the right, and only the left: the icon ends at
+   --space-6, so a padding equal to it started the text against the glyph. This
+   is the same --space-8 the search reserves, and the half rem it costs comes out
+   of the term beside it, which is the only elastic thing in the row.
+
+   Grey rather than white: the value is the app's own state, not what the reader
+   typed, and the field beside it is where their words go. */
 .budgetListControls__select {
  width: auto;
  padding: var(--space-2) var(--space-6);
+ padding-left: var(--space-8);
+ color: var(--color-content-on-dark-subtle);
  appearance: none;
  cursor: pointer;
 }
@@ -190,9 +199,12 @@
    box. That is the uniformity the bar is after: the key reads the same open as
    it does shut. Honoured by Chromium and Firefox; Safari ignores option
    styling entirely and keeps its own. */
+/* The grey follows the closed box for the reason stated above this rule: the key
+   has to read the same open as it does shut, and leaving the list white would
+   make the popup brighter than the control that opens it. */
 .budgetListControls__select option {
  background-color: var(--color-surface-sunken);
- color: var(--color-content-on-dark);
+ color: var(--color-content-on-dark-subtle);
  font-size: var(--font-size-sm);
 }
 
@@ -321,12 +333,82 @@
  font-size: inherit;
 }
 
+/* The chips at one end and the counter at the other. They share a row because
+   the counter states how big the subset is and a chip is one of the two things
+   that produced it; wrapping keeps them legible when both are long. */
+.budgetListControls__filters {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: center;
+ justify-content: space-between;
+ gap: var(--space-2);
+}
+
+.budgetListControls__chips {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+}
+
+/* Keeps the bar's 44px. This list is read with a thumb, and a chip that misses
+   is a filter the reader has to undo. */
+.budgetListControls__chip {
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-4);
+ background-color: transparent;
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-full);
+ color: var(--color-content-on-dark-subtle);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-xs);
+ cursor: pointer;
+ transition: border-color var(--motion-fast), color var(--motion-fast);
+}
+
+/* The chosen one is filled, not merely brighter: on a dark card a difference of
+   text colour alone reads as two states of one control rather than as one
+   picked out of two. */
+.budgetListControls__chip.is-active {
+ background-color: var(--color-surface-panel);
+ border-color: var(--color-surface-panel);
+ color: var(--color-content-primary);
+}
+
+.budgetListControls__chip:hover {
+ border-color: var(--color-content-on-dark-subtle);
+ color: var(--color-content-on-dark);
+}
+
+/* The filled chip keeps its own text colour on hover: the rule above is written
+   for a transparent chip and would put cream text on a cream ground. */
+.budgetListControls__chip.is-active:hover {
+ color: var(--color-content-primary);
+}
+
+.budgetListControls__chip:active {
+ opacity: 0.7;
+}
+
+/* The same departure the fields make, for the same reason: the chip carries its
+   own edge, so a ring on top of it reads as a second line. */
+.budgetListControls__chip:focus-visible {
+ border-color: var(--color-border-inverse);
+ outline: var(--border-width-thin) solid transparent;
+ outline-offset: 0;
+}
+
+.budgetListControls__chip:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
  .budgetListControls__search,
  .budgetListControls__select,
  .budgetListControls__direction,
  .budgetListControls__direction svg,
- .budgetListControls__reset {
+ .budgetListControls__reset,
+ .budgetListControls__chip {
   transition: none;
  }
 }

@@ -1,5 +1,6 @@
 // frontend/src/fintrack/pages/forms/accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx
 import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
+import { budgetSquareState } from '../../../../helpers/budgetStatus';
 import { DEFAULT_CURRENCY } from '../../../../helpers/constants';
 import {
   getCurrencySymbol,
@@ -83,7 +84,11 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
             right half while the left half sat empty under the title. */}
         <div className='summary__breakdown'>
           <div className='summary__data--status '>
-            <StatusSquare alert={status ? 'alert' : ''} />
+            {/* status is the served isOverBudget, typed loosely by this
+                component's prop. Boolean() is what narrows it back. */}
+            <StatusSquare
+              alert={budgetSquareState(executionPercentage, Boolean(status))}
+            />
             <div className='summary__data--subtitle2'>
               {/* Absolute value: the word carries the sign, so a minus in front
                   of it would state the same thing twice. */}

@@ -282,6 +282,14 @@ body {
   background-color: var(--squareAlert, #c97474);
 }
 
+/* The third reading of a budget: spent past the threshold and not yet over.
+   Written on the token rather than on a --square* name like the two above,
+   which consume variables that do not exist and paint by their hex fallback.
+   Correcting those two is the cleanup block's job, not this rule's. */
+.status__square.warning {
+  background-color: var(--color-status-warning);
+}
+
 /*input css rules */
 textarea::placeholder,
 textarea.input__note__description::placeholder,

@@ -19,6 +19,7 @@
 import React from 'react';
 
 import type {
+ BudgetQuickFilter,
  BudgetSortDirection,
  BudgetSortKey,
 } from '../hooks/useBudgetListFilter';
@@ -35,6 +36,15 @@ export type BudgetSortOption = {
 // request and a month holding nothing: either way there is nothing to search,
 // and a control over an empty list is an invitation to a dead end.
 export type BudgetListState = 'ready' | 'loading' | 'unavailable';
+
+// Declared here and not handed over by the caller, unlike the sort keys: both
+// levels filter on the same served isOverBudget, so there is nothing a level
+// could reword. No threshold is introduced — `Near limit` needs one and is not
+// part of this control.
+const QUICK_FILTERS: { value: BudgetQuickFilter; label: string }[] = [
+ { value: 'all', label: 'All' },
+ { value: 'over', label: 'Over budget' },
+];
 
 type IconProps = {
  children: React.ReactNode;
@@ -77,6 +87,8 @@ type BudgetListControlsProps = {
  sortOptions: BudgetSortOption[];
  direction: BudgetSortDirection;
  onDirectionChange: (value: BudgetSortDirection) => void;
+ quickFilter: BudgetQuickFilter;
+ onQuickFilterChange: (value: BudgetQuickFilter) => void;
  matched: number;
  total: number;
  isFiltered: boolean;
@@ -93,6 +105,8 @@ function BudgetListControls({
  sortOptions,
  direction,
  onDirectionChange,
+ quickFilter,
+ onQuickFilterChange,
  matched,
  total,
  isFiltered,
@@ -215,21 +229,53 @@ function BudgetListControls({
     </div>
    </div>
 
-   {/* Rendered whether or not it has anything to say. A line that appeared on
-       the first keystroke would push the list down as the reader types. */}
-   <p className='budgetListControls__status' role='status'>
-    {isEmpty && (
-     <span className='budgetListControls__message'>
-      {search ? `No results for “${search}”` : 'No results'}
-     </span>
-    )}
+   {/* The chips and the counter share one row: the counter states how big the
+       subset is, and a chip is one of the two things that produced it. The
+       chips sit OUTSIDE the <p role='status'> on purpose — controls inside a
+       live region get announced again every time the count changes. */}
+   <div className='budgetListControls__filters'>
+    <div
+     className='budgetListControls__chips'
+     role='group'
+     aria-label='Filter by budget status'
+    >
+     {QUICK_FILTERS.map((option) => {
+      const isSelected = option.value === quickFilter;
 
-    {isSubset && (
-     <span className='budgetListControls__message'>
-      Showing {matched} of {total}
-     </span>
-    )}
-   </p>
+      return (
+       <button
+        key={option.value}
+        type='button'
+        className={`budgetListControls__chip${isSelected ? ' is-active' : ''}`}
+        onClick={() => onQuickFilterChange(option.value)}
+        // aria-pressed and not a radio group: two buttons need no arrow-key
+        // handling to be reachable, and the pressed state is what a reader
+        // needs to know here.
+        aria-pressed={isSelected}
+        disabled={isLoading}
+       >
+        {option.label}
+       </button>
+      );
+     })}
+    </div>
+
+    {/* Rendered whether or not it has anything to say. A line that appeared on
+        the first keystroke would push the list down as the reader types. */}
+    <p className='budgetListControls__status' role='status'>
+     {isEmpty && (
+      <span className='budgetListControls__message'>
+       {search ? `No results for “${search}”` : 'No results'}
+      </span>
+     )}
+
+     {isSubset && (
+      <span className='budgetListControls__message'>
+       Showing {matched} of {total}
+      </span>
+     )}
+    </p>
+   </div>
   </div>
  );
 }

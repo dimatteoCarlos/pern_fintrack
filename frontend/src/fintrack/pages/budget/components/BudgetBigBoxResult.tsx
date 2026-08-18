@@ -4,6 +4,7 @@ import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { currencyFormat } from '../../../helpers/functions';
 import { CurrencyType } from '../../../types/types';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
+import { budgetSquareState } from '../../../helpers/budgetStatus';
 
 // Named, not positional. The array this replaced was read by index, and its
 // third entry — the spending — was built by the parent and never rendered.
@@ -79,7 +80,9 @@ function BudgetBigBoxResult({
             <div className={`displayScreen--concept ${'dark'}`}>
               Remaining
               {isOverBudget !== null && (
-                <StatusSquare alert={isOverBudget ? 'alert' : ''} />
+                <StatusSquare
+                  alert={budgetSquareState(executionPercentage, isOverBudget)}
+                />
               )}
             </div>
 
