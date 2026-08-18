@@ -4,7 +4,11 @@ import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { currencyFormat } from '../../../helpers/functions';
 import { CurrencyType } from '../../../types/types';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
-import { budgetSquareState } from '../../../helpers/budgetStatus';
+import {
+  budgetRemainWord,
+  budgetSquareState,
+  isUnbudgeted,
+} from '../../../helpers/budgetStatus';
 
 // Named, not positional. The array this replaced was read by index, and its
 // third entry — the spending — was built by the parent and never rendered.
@@ -47,16 +51,53 @@ function BudgetBigBoxResult({
       ? MISSING
       : currencyFormat(currency_code, value, formatNumberCountry);
 
-  // The remaining share is derived from the served percentage rather than
-  // recomputed over the amounts: |100 - execution| is the same figure and it
-  // inherits the server's rounding instead of introducing a second one.
   const share = (value: number | null) =>
     value === null ? MISSING : `${Math.abs(value).toFixed(1)}%`;
 
-  const spentShare = share(executionPercentage);
-  const remainingShare = share(
-    executionPercentage === null ? null : 100 - executionPercentage,
+  // Neither half states a share and neither states a side: a dash says a figure
+  // was withheld, and here there is no figure to withhold. The two amounts
+  // stay, because a spend of zero against a budget of zero is what happened.
+  const unbudgeted = isUnbudgeted(budgetAmount, actualSpent);
+
+  const spentShare = unbudgeted ? null : share(executionPercentage);
+
+  // Derived from the served percentage rather than recomputed over the amounts:
+  // |100 - execution| is the same figure and it inherits the server's rounding
+  // instead of introducing a second one.
+  //
+  // Parenthesised because the word in front of it is what qualifies it: the
+  // same number reads as 61.3% over or 38.7% left. Bare, it stated its own
+  // opposite. Same shape as SummaryDetailBox, the level-3 hero.
+  const remainingShare = unbudgeted
+    ? null
+    : executionPercentage === null
+      ? MISSING
+      : `(${share(100 - executionPercentage)})`;
+
+  const remainWord = budgetRemainWord(
+    budgetAmount,
+    actualSpent,
+    remainingBudget,
   );
+
+  const remainingAmount =
+    remainingBudget === null ? MISSING : amount(Math.abs(remainingBudget));
+
+  // The server withheld every total and said why. The sentence is the answer,
+  // so it stands where the figures would: printing four dashes above it repeats
+  // in symbols what the line below is about to say in words, and a dash cannot
+  // tell the reader which of the three absences it is.
+  //
+  // Guarded on the sentence, not on the withheld figures: if the contract ever
+  // withholds them without explaining, the dashes are all there is and they
+  // stay.
+  if (notice) {
+    return (
+      <div className='total__container flex-col-sb'>
+        <p className='displayScreen__notice'>{notice}</p>
+      </div>
+    );
+  }
 
   return (
     <div className='total__container flex-col-sb'>
@@ -72,14 +113,20 @@ function BudgetBigBoxResult({
 
             <div className={`displayScreen--result ${'dark'}`}>
               {amount(actualSpent)}
-              <span className='displayScreen__percentage'>{spentShare}</span>
+              {spentShare && (
+                <span className='displayScreen__percentage'>{spentShare}</span>
+              )}
             </div>
           </div>
 
           <div className='budgetHero__figure'>
             <div className={`displayScreen--concept ${'dark'}`}>
               Remaining
-              {isOverBudget !== null && (
+              {/* Nothing budgeted and nothing spent is not a healthy budget,
+                  it is no budget. isOverBudget arrives false there — 0 > 0 —
+                  so the square would paint its neutral state and claim a
+                  reading over something nobody measured. */}
+              {!unbudgeted && isOverBudget !== null && (
                 <StatusSquare
                   alert={budgetSquareState(executionPercentage, isOverBudget)}
                 />
@@ -87,14 +134,19 @@ function BudgetBigBoxResult({
             </div>
 
             <div className={`displayScreen--result ${'dark'}`}>
-              {amount(remainingBudget)}
-              <span className='displayScreen__percentage'>{remainingShare}</span>
+              {remainingAmount}
+              {remainWord && (
+                <span className='budgetHero__remainWord'>&nbsp;{remainWord}</span>
+              )}
+              {remainingShare && (
+                <span className='displayScreen__percentage'>
+                  {remainingShare}
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
-
-      {notice && <p className='displayScreen__notice'>{notice}</p>}
     </div>
   );
 }

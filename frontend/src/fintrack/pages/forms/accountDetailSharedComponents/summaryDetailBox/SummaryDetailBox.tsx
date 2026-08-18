@@ -1,6 +1,10 @@
 // frontend/src/fintrack/pages/forms/accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx
 import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents';
-import { budgetSquareState } from '../../../../helpers/budgetStatus';
+import {
+  budgetRemainWord,
+  budgetSquareState,
+  isUnbudgeted,
+} from '../../../../helpers/budgetStatus';
 import { DEFAULT_CURRENCY } from '../../../../helpers/constants';
 import {
   getCurrencySymbol,
@@ -44,6 +48,14 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
   // amount2 is what is left of the budget: negative means it was exceeded.
   const isOver = amount2 < 0;
 
+  // amount is the budget and amount1 the spend, under this component's older
+  // positional names. Nothing budgeted and nothing spent: no square, no word,
+  // no share. This box printed the fullest version of the wrong claim —
+  // `$0.00 left (0.0%)` — because its own fallback fabricated that 0.0 rather
+  // than reading the null the server sends.
+  const unbudgeted = isUnbudgeted(amount, amount1);
+  const remainWord = budgetRemainWord(amount, amount1, amount2);
+
   const hasServedPercentage =
     executionPercentage !== null && executionPercentage !== undefined;
 
@@ -86,27 +98,31 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
           <div className='summary__data--status '>
             {/* status is the served isOverBudget, typed loosely by this
                 component's prop. Boolean() is what narrows it back. */}
-            <StatusSquare
-              alert={budgetSquareState(executionPercentage, Boolean(status))}
-            />
+            {!unbudgeted && (
+              <StatusSquare
+                alert={budgetSquareState(executionPercentage, Boolean(status))}
+              />
+            )}
             <div className='summary__data--subtitle2'>
               {/* Absolute value: the word carries the sign, so a minus in front
                   of it would state the same thing twice. */}
               {numberFormatCurrency(Math.abs(amount2), 2, currency_code)}
               &nbsp;
-              <span className='summary__remainWord'>
-                {isOver ? 'over' : 'left'}
-              </span>
-              &nbsp;
-              <span
-                className={
-                  isOver
-                    ? 'summary__percentage--over'
-                    : 'summary__percentage--left'
-                }
-              >
-                ({remainPercentage.toFixed(1)}%)
-              </span>
+              {remainWord && (
+                <>
+                  <span className='summary__remainWord'>{remainWord}</span>
+                  &nbsp;
+                  <span
+                    className={
+                      isOver
+                        ? 'summary__percentage--over'
+                        : 'summary__percentage--left'
+                    }
+                  >
+                    ({remainPercentage.toFixed(1)}%)
+                  </span>
+                </>
+              )}
             </div>
           </div>
 

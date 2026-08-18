@@ -14,7 +14,11 @@ import {
 } from '../../../helpers/functions.ts';
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
-import { budgetSquareState } from '../../../helpers/budgetStatus.ts';
+import {
+  budgetRemainWord,
+  budgetSquareState,
+  isUnbudgeted,
+} from '../../../helpers/budgetStatus.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 
 import { Link, useSearchParams } from 'react-router-dom';
@@ -210,14 +214,20 @@ function ListAccountOfCategory({
           // const remainPercentage =
           //   budget === 0 ? '' : ((Math.abs(remain) / budget) * 100).toFixed(1) + '%';
 
+          // Nothing budgeted and nothing spent: no square, no word, no share.
+          // Decided in budgetStatus.ts so this row, the row on level 1 and the
+          // two heroes cannot disagree about an unmeasured budget.
+          const unbudgeted = isUnbudgeted(budgetAmount, actualSpent);
+
           // The share of the budget already used, the same figure level 1 shows
           // and the same one the `% spent` key orders by. It used to print
           // |100 - execution|, which is the share still left: the opposite
           // reading of the same row.
-          const usedText =
-            executionPercentage === null
-              ? DASH
-              : executionPercentage.toFixed(1) + '%';
+          const usedText = unbudgeted
+            ? ''
+            : executionPercentage === null
+            ? DASH
+            : executionPercentage.toFixed(1) + '%';
           //-------------------------------
           return (
             <div className='box__container .flx-row-sb' key={accountId}>
@@ -257,9 +267,14 @@ function ListAccountOfCategory({
                   right, and it needs both as siblings to do it. */}
               <BoxRow>
                 <div className='flx-row-sb'>
-                  <StatusSquare
-                    alert={budgetSquareState(executionPercentage, isOverBudget)}
-                  />
+                  {!unbudgeted && (
+                    <StatusSquare
+                      alert={budgetSquareState(
+                        executionPercentage,
+                        isOverBudget,
+                      )}
+                    />
+                  )}
                   <div className='box__subtitle'>
                     &nbsp;
                     {/* Absolute value: the word carries the sign, so a minus
@@ -272,7 +287,11 @@ function ListAccountOfCategory({
                     )}
                     &nbsp;
                     <span className='categoryRow__remainWord'>
-                      {remainingBudget < 0 ? 'over' : 'left'}
+                      {budgetRemainWord(
+                        budgetAmount,
+                        actualSpent,
+                        remainingBudget,
+                      )}
                     </span>
                     &nbsp;
                   </div>
@@ -281,7 +300,9 @@ function ListAccountOfCategory({
                 {/* Under the pair on the line above, which is the pair it is a
                     share of. As a parenthesis after `left` it read as the share
                     remaining, which is the opposite figure. */}
-                <span className='categoryRow__used'>{usedText}</span>
+                {usedText && (
+                  <span className='categoryRow__used'>{usedText}</span>
+                )}
               </BoxRow>
             </div>
           );

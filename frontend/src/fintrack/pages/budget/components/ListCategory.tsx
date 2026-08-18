@@ -11,7 +11,11 @@ import {
 } from '../../../helpers/functions.ts';
 
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
-import { budgetSquareState } from '../../../helpers/budgetStatus.ts';
+import {
+  budgetRemainWord,
+  budgetSquareState,
+  isUnbudgeted,
+} from '../../../helpers/budgetStatus.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 
 import { Link, useSearchParams } from 'react-router-dom';
@@ -215,13 +219,19 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
           // const remainPercentage =
           //   budget === 0 ? '' : ((Math.abs(remain) / budget) * 100).toFixed(1) + '%';
 
+          // Nothing budgeted and nothing spent: no square, no word, no share.
+          // Decided in budgetStatus.ts so this row and the header above it
+          // cannot disagree about what an unmeasured budget looks like.
+          const unbudgeted = isUnbudgeted(budgetAmount, actualSpent);
+
           // The share of the budget already used. Served, not derived: it is the
           // same percentage the sort key orders by and the header names, so a
           // second division over the amounts could round away from it.
-          const usedText =
-            executionPercentage === null
-              ? DASH
-              : executionPercentage.toFixed(1) + '%';
+          const usedText = unbudgeted
+            ? ''
+            : executionPercentage === null
+            ? DASH
+            : executionPercentage.toFixed(1) + '%';
 
           // Every figure of a category is nullable for one case: accounts in
           // more than one currency, which V1 does not allow. Unreachable under
@@ -247,8 +257,11 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
                   'en-US',
                 );
 
-          const remainWord =
-            remainingBudget === null ? '' : remainingBudget < 0 ? 'over' : 'left';
+          const remainWord = budgetRemainWord(
+            budgetAmount,
+            actualSpent,
+            remainingBudget,
+          );
 
           return (
            <div className='box__container .flx-row-sb' key={categoryName}>
@@ -279,9 +292,14 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
                   right, and it needs both as siblings to do it. */}
               <BoxRow>
                 <div className='flx-row-sb'>
-                  <StatusSquare
-                    alert={budgetSquareState(executionPercentage, isOverBudget)}
-                  />
+                  {!unbudgeted && (
+                    <StatusSquare
+                      alert={budgetSquareState(
+                        executionPercentage,
+                        isOverBudget,
+                      )}
+                    />
+                  )}
                   <div className='box__subtitle'>
                     &nbsp;
                     {/* Absolute value: the word carries the sign, so a minus
@@ -296,7 +314,9 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
                 {/* Under the pair on the line above, which is the pair it is a
                     share of. As a parenthesis after `left` it read as the share
                     remaining, which is the opposite figure. */}
-                <span className='categoryRow__used'>{usedText}</span>
+                {usedText && (
+                  <span className='categoryRow__used'>{usedText}</span>
+                )}
               </BoxRow>
             </div>
           );

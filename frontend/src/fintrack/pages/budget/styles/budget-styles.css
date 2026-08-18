@@ -216,6 +216,15 @@
   margin-left: var(--space-2);
 }
 
+/* The word that says which side of the budget the remainder falls on. It takes
+   the colour and weight of the amount it belongs to, so it declares neither.
+
+   It restates its size for the reason index.css documents: a font-size on the
+   universal selector matches a span directly and beats the line it sits in. */
+.budgetLayout .budgetHero__remainWord {
+  font-size: inherit;
+}
+
 /* The square is a bare span with a fixed size, which an inline box ignores. In
    the list it is a flex child and gets its box from the row; in the hero it
    sits inside a text line and has to declare one. */
@@ -225,13 +234,21 @@
   margin: 0 var(--space-2);
 }
 
-/* Why the figures above read as dashes. Sits on the dark app surface, not on
-   the cream strips. */
+/* Why there are no figures. Sits on the dark app surface, not on the cream
+   strips. */
 .budgetLayout .displayScreen__notice {
   font-size: var(--font-size-xs);
   color: var(--color-content-on-dark-subtle);
   text-align: center;
   padding-top: var(--space-2);
+}
+
+/* Alone in the hero, which is what it is whenever the server withheld the
+   totals: there is no strip above it any more, so the padding that separated
+   the two goes and the sentence takes the middle of the box it now owns. */
+.budgetLayout .displayScreen__notice:only-child {
+  padding-top: 0;
+  margin: auto 0;
 }
 
 /*Budget*/
