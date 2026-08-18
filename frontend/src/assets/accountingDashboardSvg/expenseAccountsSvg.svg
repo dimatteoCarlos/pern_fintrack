@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Estructura del Carrito Geométrico -->
-  <path d="M3 5h4l3 16h16l3-10H8" />
-  <!-- Ruedas Minimalistas (Círculos) -->
-  <circle cx="11" cy="27" r="2" fill="none" stroke="#000000" />
-  <circle cx="23" cy="27" r="2" fill="none" stroke="#000000" />
-  <!-- Manillar -->
-  <path d="M6 5l-2-2" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+ <!-- Geometric cart structure -->
+ <path d="M3 5h4l3 16h16l3-10H8" />
+ <!-- Minimalist wheels (circles) -->
+ <circle cx="11" cy="27" r="2" fill="none" stroke="currentColor" />
+ <circle cx="23" cy="27" r="2" fill="none" stroke="currentColor" />
+ <!-- Handle -->
+ <path d="M6 5l-2-2" />
 </svg>
