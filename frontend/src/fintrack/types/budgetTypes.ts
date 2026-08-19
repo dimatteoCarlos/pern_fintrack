@@ -11,21 +11,40 @@
 import { CurrencyType } from './types.ts';
 
 //-----WRITE-------------------
-// PUT /budget/accounts/:accountId/current, sent { amount, onlyThisMonth }. The
-// only write that offers the one-month exception, because the budget screen is
-// the only place that offers it.
+// PUT /budget/accounts/:accountId/current, sent { amount, month, appliesUntil }.
+// The only write that can bound a budget to a range, because the budget screen
+// is the only place that offers it.
+
+// The one value of appliesUntil that is not a month. Declared once rather than
+// written at each call site: it is a term of the wire contract, and a repeated
+// literal is one typo away from a 400 nothing here would catch.
+export const OPEN_ENDED = 'openEnded';
+
+export type BudgetWriteRequest = {
+ amount: number;
+ // First month the amount applies to, as 'YYYY-MM-01'.
+ month: string;
+ // Last month it applies to, or OPEN_ENDED. Neither bound is defaulted: the
+ // server refuses to guess how far a save reaches, and so does the client.
+ appliesUntil: string;
+};
+
 export type BudgetWriteResponse = {
  accountId: number;
  // The month written, always the first of the month as text: 2026-08-01.
  budgetMonth: string;
  budgetAmount: number;
- onlyThisMonth: boolean;
- // What next month goes back to. null when onlyThisMonth is false — nothing was
- // terminated — and 0 when the account had no previous budget.
+ // Echoed back in the request's vocabulary — OPEN_ENDED rather than the null
+ // the repository stores — so the response reads back as what was sent.
+ appliesUntil: string;
+ // What the month after the range goes back to, and which month that is. Both
+ // null together on an open-ended save, which terminates nothing. restoresTo
+ // is 0 when no amount governed that month.
  restoresTo: number | null;
- // Always budgetMonth + 1. Returned rather than computed here so the month name
- // on screen comes from the same calendar that wrote the row.
- restoresFrom: string;
+ restoresFrom: string | null;
+ // The months whose stored decision this write replaced, ascending. Empty when
+ // the write replaced none, never absent.
+ overwrittenMonths: string[];
 };
 
 // The budget_allocation key of POST /accounts and PATCH /accounts/:accountId.

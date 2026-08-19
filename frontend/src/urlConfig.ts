@@ -196,7 +196,7 @@ export const url_patch_account_edit = BASE_URL_APP + 'account/edit';
 export const url_budget_accounts_status: string =
   BASE_URL_APP + 'budget/accounts/status';
 
-// PUT /api/fintrack/budget/accounts/:accountId/current  { amount, onlyThisMonth }
+// PUT /api/fintrack/budget/accounts/:accountId/current  { amount, month, appliesUntil }
 export const url_budget_account_current = (accountId: string | number) =>
   `${BASE_URL_APP}budget/accounts/${accountId}/current`;
 

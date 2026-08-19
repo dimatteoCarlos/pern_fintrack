@@ -21,6 +21,7 @@ import {
 import {
  BudgetAccountsStatusResponse,
  BudgetSeriesResponse,
+ BudgetWriteRequest,
  BudgetWriteResponse,
 } from '../types/budgetTypes.ts';
 
@@ -51,17 +52,19 @@ export const getBudgetAccountsStatus = async (
  return data;
 };
 
-// onlyThisMonth is the one-month exception, and it defaults to false because a
-// budget is recurring by definition: it stays in force until a later month
-// replaces it.
+// The three fields travel as one object and not as positionals: month and
+// appliesUntil are both 'YYYY-MM-01' strings in a row, which is how a caller
+// swaps them without anything noticing.
+//
+// Neither bound is defaulted. The server refuses to guess how far a save
+// reaches, and a default here would answer that question on its behalf.
 export const setCurrentBudget = async (
  accountId: number,
- amount: number,
- onlyThisMonth = false,
+ allocation: BudgetWriteRequest,
 ): Promise<BudgetWriteResponse> => {
  const { data } = await authFetch<BudgetWriteResponse>(
   url_budget_account_current(accountId),
-  { method: 'PUT', data: { amount, onlyThisMonth } },
+  { method: 'PUT', data: allocation },
  );
 
  return data;
