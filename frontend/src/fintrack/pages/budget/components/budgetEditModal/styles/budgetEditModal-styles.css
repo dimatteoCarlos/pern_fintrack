@@ -1,0 +1,369 @@
+/* frontend/src/fintrack/pages/budget/components/budgetEditModal/styles/budgetEditModal-styles.css
+
+   The budget editor's panel. Structure follows the transaction detail modal —
+   fixed overlay, centred panel, header with a close control — because that is
+   the modal the app already has and two shapes for one idea is one too many.
+
+   --radius-lg is deliberately absent. tokens.css:168-175 records it as a
+   collision: three leaves of the account deletion flow write --radius-lg: 0.5rem
+   into the global :root from a lazy chunk that loads after tokens.css, so its
+   value flips for the rest of the session once that route is visited.
+
+   Controls take --size-touch-target, not the --size-control-sm the list bar
+   uses. Those 32px bought a one-row bar at 360px and gave up the WCAG AAA
+   target; a panel has the room and pays nothing for the 44px. */
+
+.budgetEdit {
+ position: fixed;
+ inset: 0;
+ z-index: var(--z-modal);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ padding: var(--space-4);
+ background-color: var(--color-surface-overlay);
+}
+
+.budgetEdit__panel {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-4);
+ width: var(--layout-content-width);
+ max-width: var(--layout-width-max);
+ max-height: 90dvh;
+ overflow-y: auto;
+ padding: var(--space-5);
+ border-radius: var(--radius-xl);
+ background-color: var(--color-surface-raised);
+ box-shadow: var(--shadow-overlay);
+ color: var(--color-content-on-dark);
+ font-family: var(--font-family-sans);
+}
+
+.budgetEdit__panel:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(-1 * var(--border-width-thick));
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.budgetEdit__header {
+ display: flex;
+ align-items: flex-start;
+ justify-content: space-between;
+ gap: var(--space-3);
+}
+
+.budgetEdit__title {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ margin: 0;
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+}
+
+/* Restates its size because index.css sets one on the universal selector, which
+   matches a span directly and beats the line it sits in. */
+.budgetEdit__month {
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.budgetEdit__close {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ flex-shrink: 0;
+ width: var(--size-touch-target);
+ height: var(--size-touch-target);
+ padding: 0;
+ border: none;
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-base);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.budgetEdit__close:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.budgetEdit__close:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.budgetEdit__close:active {
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+.budgetEdit__close:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* ── The figures the amount is decided against ────────────────────────────── */
+
+.budgetEdit__context {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ margin: 0;
+ padding: var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-md);
+}
+
+.budgetEdit__contextRow {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-3);
+}
+
+.budgetEdit__contextLabel {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.budgetEdit__contextValue {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+}
+
+/* ── The form ─────────────────────────────────────────────────────────────── */
+
+.budgetEdit__form {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+}
+
+.budgetEdit__label {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.budgetEdit__input {
+ height: var(--size-touch-target);
+ padding: 0 var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-sunken);
+ color: var(--color-content-on-dark);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-base);
+ transition: border-color var(--motion-fast);
+}
+
+.budgetEdit__input::placeholder {
+ color: var(--color-content-placeholder);
+}
+
+.budgetEdit__input:hover {
+ border-color: var(--color-content-on-dark-subtle);
+}
+
+.budgetEdit__input:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.budgetEdit__input:active {
+ border-color: var(--color-accent);
+}
+
+.budgetEdit__input:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.budgetEdit__hint {
+ margin: 0;
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* ── How far the amount reaches ───────────────────────────────────────────── */
+
+.budgetEdit__range {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ margin: 0;
+ padding: 0;
+ border: none;
+}
+
+/* A label is not a form control, so :disabled never reaches it and the text
+   would stay bright while the radio beside it dims. */
+.budgetEdit__range:disabled .budgetEdit__rangeOption {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* legend carries UA padding the shared label class does not clear. */
+.budgetEdit__legend {
+ padding: 0;
+}
+
+.budgetEdit__rangeRow {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: center;
+ gap: var(--space-2);
+}
+
+.budgetEdit__rangeOption {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ min-height: var(--size-touch-target);
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark);
+ cursor: pointer;
+}
+
+.budgetEdit__radio {
+ width: var(--size-status-square);
+ height: var(--size-status-square);
+ accent-color: var(--color-accent);
+ cursor: pointer;
+}
+
+.budgetEdit__radio:hover {
+ accent-color: var(--color-content-on-dark);
+}
+
+.budgetEdit__radio:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.budgetEdit__radio:active {
+ accent-color: var(--color-content-on-dark-subtle);
+}
+
+.budgetEdit__radio:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The shell of __input: two field shapes in one panel is one too many. */
+.budgetEdit__select {
+ height: var(--size-touch-target);
+ padding: 0 var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-sunken);
+ color: var(--color-content-on-dark);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-sm);
+ cursor: pointer;
+ transition: border-color var(--motion-fast);
+}
+
+.budgetEdit__select:hover {
+ border-color: var(--color-content-on-dark-subtle);
+}
+
+.budgetEdit__select:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.budgetEdit__select:active {
+ border-color: var(--color-accent);
+}
+
+.budgetEdit__select:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.budgetEdit__error {
+ margin: 0;
+ font-size: var(--font-size-xs);
+ color: var(--color-status-error);
+}
+
+/* ── Actions ──────────────────────────────────────────────────────────────── */
+
+.budgetEdit__actions {
+ display: flex;
+ justify-content: flex-end;
+ gap: var(--space-2);
+ padding-top: var(--space-2);
+}
+
+.budgetEdit__button {
+ min-height: var(--size-touch-target);
+ padding: 0 var(--space-5);
+ border: var(--border-width-thin) solid transparent;
+ border-radius: var(--radius-md);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast),
+  border-color var(--motion-fast);
+}
+
+.budgetEdit__button:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.budgetEdit__button:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.budgetEdit__button--primary {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.budgetEdit__button--primary:hover {
+ background-color: var(--color-content-on-dark);
+}
+
+.budgetEdit__button--primary:active {
+ background-color: var(--color-content-on-dark-subtle);
+}
+
+.budgetEdit__button--secondary {
+ border-color: var(--color-border-subtle);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+}
+
+.budgetEdit__button--secondary:hover {
+ border-color: var(--color-content-on-dark-subtle);
+}
+
+.budgetEdit__button--secondary:active {
+ border-color: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .budgetEdit__close,
+ .budgetEdit__input,
+ .budgetEdit__select,
+ .budgetEdit__button {
+  transition: none;
+ }
+}
