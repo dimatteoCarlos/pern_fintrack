@@ -50,23 +50,23 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
 
   // amount is the budget and amount1 the spend, under this component's older
   // positional names. Nothing budgeted and nothing spent: no square, no word,
-  // no share. This box printed the fullest version of the wrong claim —
-  // `$0.00 left (0.0%)` — because its own fallback fabricated that 0.0 rather
-  // than reading the null the server sends.
+  // no share.
   const unbudgeted = isUnbudgeted(amount, amount1);
   const remainWord = budgetRemainWord(amount, amount1, amount2);
 
   const hasServedPercentage =
     executionPercentage !== null && executionPercentage !== undefined;
 
+  // Both shares are null when the server withholds the execution: a zero
+  // budget has no denominator, so the parentheses below hide rather than
+  // fabricate the `(0.0%)` a local division used to print over it.
+
   // What was spent as a share of the budget. |execution| is that same
   // division, so taking it from the server makes the figure inherit its
   // rounding instead of a second formula over the amounts.
   const spentPercentage = hasServedPercentage
     ? Math.abs(executionPercentage)
-    : amount !== 0 && amount1
-      ? Math.abs((amount1 / amount) * 100)
-      : 0;
+    : null;
 
   // What the remaining amount is worth as a share of the budget. The
   // parenthesis qualifies the figure in front of it, so the same number reads
@@ -74,9 +74,7 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
   // division as |remaining| / budget, for every sign of the remainder.
   const remainPercentage = hasServedPercentage
     ? Math.abs(100 - executionPercentage)
-    : amount !== 0
-      ? (Math.abs(amount2) / amount) * 100
-      : 0;
+    : null;
 
   return (
     <>
@@ -111,25 +109,30 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
               {remainWord && (
                 <>
                   <span className='summary__remainWord'>{remainWord}</span>
-                  &nbsp;
-                  <span
-                    className={
-                      isOver
-                        ? 'summary__percentage--over'
-                        : 'summary__percentage--left'
-                    }
-                  >
-                    ({remainPercentage.toFixed(1)}%)
-                  </span>
+                  {remainPercentage !== null && (
+                    <>
+                      &nbsp;
+                      <span
+                        className={
+                          isOver
+                            ? 'summary__percentage--over'
+                            : 'summary__percentage--left'
+                        }
+                      >
+                        ({remainPercentage.toFixed(1)}%)
+                      </span>
+                    </>
+                  )}
                 </>
               )}
             </div>
           </div>
 
           <div className='summary__data--subtitle1'>
-            {subtitle1} {numberFormatCurrency(amount1, 2, currency_code)}&nbsp;(
-            {spentPercentage.toFixed(1)}
-            %)
+            {subtitle1} {numberFormatCurrency(amount1, 2, currency_code)}
+            {spentPercentage !== null && (
+              <>&nbsp;({spentPercentage.toFixed(1)}%)</>
+            )}
           </div>
         </div>
       </div>
