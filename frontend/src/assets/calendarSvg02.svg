@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+ <!-- Outer container -->
+ <rect x="3.5" y="3.5" width="25" height="25" rx="8.5" />
+
+ <!-- Top rings -->
+ <line x1="10.5" y1="1.5" x2="10.5" y2="5.5" stroke-width="2" />
+ <line x1="21.5" y1="1.5" x2="21.5" y2="5.5" stroke-width="2" />
+
+ <!-- Header divider -->
+ <line x1="3.5" y1="12" x2="28.5" y2="12" stroke-width="1.5" />
+
+ <!-- Day grid -->
+ <g fill="currentColor" stroke="none">
+  <circle cx="10.5" cy="17" r="1.2" />
+  <circle cx="16" cy="17" r="1.2" />
+  <circle cx="21.5" cy="17" r="1.2" />
+  <circle cx="10.5" cy="22.5" r="1.2" />
+  <circle cx="16" cy="22.5" r="1.2" />
+  <circle cx="21.5" cy="22.5" r="1.2" />
+ </g>
+</svg>
