@@ -23,24 +23,18 @@ import { toAmount } from '../core/money.js';
  * resolves through the session zone — the owner's calendar lost on the way out
  * and again on the way in. Text has no zone to lose.
  *
- * nextMonth comes from the same evaluation of CURRENT_TIMESTAMP rather than
- * being derived later: two calls could straddle midnight on the last day of a
- * month and terminate an exception one month away from where it was written.
- *
  * @param {object} client - Database client (pool or transaction)
  * @param {string} timeZone - IANA zone of the account owner
- * @returns {Promise<{month: string, nextMonth: string}>} both as 'YYYY-MM-DD'
+ * @returns {Promise<{month: string}>} as 'YYYY-MM-DD'
  */
 export async function resolveCurrentMonth(client, timeZone = 'UTC') {
  const { rows } = await client.query(
-  `SELECT
-     date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE $1)::date::text AS month,
-     (date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE $1)
-       + INTERVAL '1 month')::date::text AS next_month`,
+  `SELECT date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE $1)::date::text
+            AS month`,
   [timeZone],
  );
 
- return { month: rows[0].month, nextMonth: rows[0].next_month };
+ return { month: rows[0].month };
 }
 
 /**
@@ -90,64 +84,99 @@ export async function getAllocationBefore(client, accountId, month) {
 }
 
 /**
- * Write the budget for the current month, optionally as a one-month exception.
+ * The month after a bound.
  *
- * The six steps of §5.1, in order. Every one of them fails silently if dropped,
- * and the failure only surfaces a month later — §5.1.1 records what each guards
- * against.
+ * Derived in SQL so month arithmetic stays in the language that owns the
+ * calendar, and returned as text for the reason resolveCurrentMonth is: a DATE
+ * crossing the driver loses the zone it was computed in.
+ */
+async function monthAfter(client, month) {
+ const { rows } = await client.query(
+  `SELECT ($1::date + INTERVAL '1 month')::date::text AS month`,
+  [month],
+ );
+
+ return rows[0].month;
+}
+
+/**
+ * Write a budget over a closed range of months, or from one month onwards.
  *
- * Must run on a caller-supplied client: the two writes are one decision, and a
- * terminator committed without its allocation reverts a budget nobody changed.
+ * A row is in force until a later row replaces it, so a bounded change needs no
+ * column of its own: overwrite the range, then state again at the far edge what
+ * the months beyond it were already worth.
  *
- * @param {boolean} onlyThisMonth - true writes the terminator that restores the
- *  previous amount from next month. false leaves the amount recurring, which is
- *  the normal case and has no name in the payload.
- * @returns {Promise<object>} the amount written, and what next month returns to.
+ *  1. read the amount that governs the month after `to`, BEFORE anything is
+ *     written — steps 2 and 3 both destroy the evidence.
+ *  2. delete the decisions inside the range, which this one replaces.
+ *  3. write the new amount at `from`.
+ *  4. restore step 1's amount at `to` + 1, so the change stops there.
+ *
+ * With `to` null there is no far edge: steps 1 and 4 do not run and step 2 loses
+ * its ceiling, which is what "from this month on" means — every later decision
+ * goes. That is the one destructive branch, and asking before taking it is the
+ * caller's job, not this one's.
+ *
+ * Must run on a caller-supplied client: the four statements are one decision,
+ * and a terminator committed without its allocation reverts a budget nobody
+ * changed.
+ *
+ * @param {string} from - first month in force, as 'YYYY-MM-01'
+ * @param {string|null} to - last month in force, or null for no end
+ * @returns {Promise<object>} the amount written, what the range gives back to,
+ *  and the months whose stored decision this write replaced.
  */
 export async function writeAllocation(
  client,
  accountId,
  budgetAmount,
- onlyThisMonth = false,
- timeZone = 'UTC',
+ from,
+ to,
 ) {
- const { month, nextMonth } = await resolveCurrentMonth(client, timeZone);
+ // Read AT `to` + 1, not at `from`: a row already sitting on the far edge states
+ // what that month is worth, and carrying `from`'s amount there would overwrite
+ // a decision this write was never asked to touch.
+ const restoresFrom = to === null ? null : await monthAfter(client, to);
+ const restoresTo =
+  restoresFrom === null
+   ? null
+   : await getAllocationForMonth(client, accountId, restoresFrom);
 
- // The amount in force AT the month, read before the UPSERT overwrites it. Not
- // the previous month's: once a row exists at M those are different numbers,
- // and the terminator has to restore what was in force (§5.1.1, R41).
- const carried = await getAllocationForMonth(client, accountId, month);
-
- // Safe only because V1 lets no user author a future month: the only row that
- // can exist beyond M is a terminator this same routine wrote. Without it, a
- // save that switches an exception back to recurring leaves the old terminator
- // in place and next month silently reverts. §13 records this as the V2 line.
- await client.query(
+ // The ceiling IS the condition: bounded by `to` when there is one, unbounded
+ // when there is not. COALESCE rather than two statements, so the months removed
+ // come back the same way whichever branch ran.
+ const { rows: overwritten } = await client.query(
   `DELETE FROM budget_monthly_allocations
     WHERE account_id = $1
-      AND budget_month > $2`,
-  [accountId, month],
+      AND budget_month > $2::date
+      AND budget_month <= COALESCE($3::date, 'infinity'::date)
+    RETURNING budget_month::text`,
+  [accountId, from, to],
  );
 
  const { rows } = await client.query(
   `INSERT INTO budget_monthly_allocations (account_id, budget_month, budget_amount)
-   VALUES ($1, $2, $3)
+   VALUES ($1, $2::date, $3)
    ON CONFLICT (account_id, budget_month)
    DO UPDATE SET budget_amount = EXCLUDED.budget_amount,
      updated_at = CURRENT_TIMESTAMP
    RETURNING budget_allocation_id, account_id, budget_month::text, budget_amount`,
-  [accountId, month, budgetAmount],
+  [accountId, from, budgetAmount],
  );
 
- if (onlyThisMonth) {
-  // Falling back to 0 rather than skipping the insert: with nothing to return
-  // to, the next month resolves to an effective budget of 0, and only a row can
-  // stop the carry-forward. Skipping it would carry this amount forward forever
-  // — the exact opposite of what the caller asked for.
+ if (restoresFrom !== null) {
+  // DO NOTHING, not DO UPDATE: a row on the far edge is the decision being
+  // restored, and step 1 already read its amount. Writing it back is a no-op at
+  // best, and the statement would otherwise raise 23505 the moment one exists.
+  //
+  // Falling back to 0 when nothing governed that month: with no amount to return
+  // to, the months after the range would carry this one forward forever, which
+  // is the opposite of a bounded change. Only a row stops the carry-forward.
   await client.query(
    `INSERT INTO budget_monthly_allocations (account_id, budget_month, budget_amount)
-    VALUES ($1, ($2::date + INTERVAL '1 month')::date, $3)`,
-   [accountId, month, carried ?? 0],
+    VALUES ($1, $2::date, $3)
+    ON CONFLICT (account_id, budget_month) DO NOTHING`,
+   [accountId, restoresFrom, restoresTo ?? 0],
   );
  }
 
@@ -155,13 +184,15 @@ export async function writeAllocation(
   accountId: rows[0].account_id,
   budgetMonth: rows[0].budget_month,
   budgetAmount: toAmount(rows[0].budget_amount),
-  onlyThisMonth,
-  // What the following month returns to, so the caller can word the
-  // confirmation without resolving it again.
-  restoresTo: onlyThisMonth ? (carried ?? 0) : null,
-  // The month that sentence names. Returned rather than computed client-side so
-  // it comes from the same calendar that wrote the row.
-  restoresFrom: nextMonth,
+  // What the month after the range gives back, and which month that is, so the
+  // caller can word the confirmation without resolving either again. Both null
+  // when the change has no end.
+  restoresTo: restoresFrom === null ? null : (restoresTo ?? 0),
+  restoresFrom,
+  // The months whose stored decision this write replaced, ascending. Sorted
+  // here because DELETE ... RETURNING takes no ORDER BY, and text sorts
+  // chronologically since every bound is a first of month.
+  overwrittenMonths: overwritten.map((row) => row.budget_month).sort(),
  };
 }
 

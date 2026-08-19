@@ -126,7 +126,7 @@ export async function setCurrentBudget(req, res, next) {
   if (!userId) return;
 
   const { accountId } = currentBudgetParamsSchema.parse(req.params);
-  const { amount, onlyThisMonth } = currentBudgetBodySchema.parse(req.body);
+  const { amount, month, appliesUntil } = currentBudgetBodySchema.parse(req.body);
 
   // Ownership is enforced inside the service, in the same transaction as the
   // write. Checking it here instead would leave a window between the check and
@@ -137,8 +137,7 @@ export async function setCurrentBudget(req, res, next) {
    pool,
    userId,
    accountId,
-   amount,
-   onlyThisMonth,
+   { amount, month, appliesUntil },
    timeZone
   );
 
@@ -147,7 +146,7 @@ export async function setCurrentBudget(req, res, next) {
   if (error.name === 'ZodError') {
    return respondWithZodIssues(res, error);
   }
-  // The service raises 400 and 403 with a status already attached; anything
+  // The service raises 400, 403 and 422 with a status already attached; anything
   // without one is unexpected and belongs to the error handler.
   if (error.status) {
    return res.status(error.status).json({ status: error.status, message: error.message });

@@ -14,11 +14,16 @@ import { z } from 'zod';
 // nothing in the response saying so. Strict turns that into a 400 naming the key,
 // which is what a frontend mid-migration needs to hear.
 //
-// No schema accepts a period, and none accepts the CURRENT month: it is resolved
-// server-side on the account owner's calendar, so naming it would be clock skew
-// or the device zone entering a budget. A PAST month does travel, for the reason
-// a historical range does — the server cannot guess which month the user is
-// looking at. Only the current one is writable, whatever a read asks for.
+// No schema accepts a period. Months do travel, on reads and on writes alike:
+// the server cannot guess which month the user is looking at, and a write that
+// could only ever land on today would have no way to correct a past one. What no
+// schema checks is whether a month is ALLOWED — later than today, earlier than
+// the account, or an end before its start are 422s the service raises, because
+// each of them is a relationship with a row or a calendar.
+
+// The shape a month arrives in, shared by the two bounds below so they cannot
+// drift apart. No global flag, so .test() carries no state between calls.
+const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$/;
 
 // A historical bound, coerced to the first of its month.
 //
@@ -37,10 +42,30 @@ import { z } from 'zod';
 // the owner's calendar, and a schema cannot see it.
 const monthBound = z
  .string()
- .regex(/^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$/, {
+ .regex(MONTH_PATTERN, {
   message: 'must be a month as YYYY-MM or a date as YYYY-MM-DD',
  })
  .transform((value) => `${value.slice(0, 7)}-01`);
+
+// The value appliesUntil takes when the amount is meant to keep recurring with
+// no end. Exported because the service has to recognise it: it is the one value
+// of that field which is not a month, and a second copy of the literal is a
+// second thing to keep in step with this one.
+export const OPEN_ENDED = 'openEnded';
+
+// The upper bound of a write: a month, or the sentinel for "no end".
+//
+// A refine over the same pattern rather than a union of the two, so a wrong
+// value gets one message naming both forms instead of the nested list a failed
+// union reports.
+const appliesUntilBound = z
+ .string()
+ .refine((value) => value === OPEN_ENDED || MONTH_PATTERN.test(value), {
+  message: `must be '${OPEN_ENDED}' or a month as YYYY-MM`,
+ })
+ .transform((value) =>
+  value === OPEN_ENDED ? OPEN_ENDED : `${value.slice(0, 7)}-01`,
+ );
 
 /**
  * POST /budget/accounts/status
@@ -90,7 +115,7 @@ export const currentBudgetParamsSchema = z.object({
 
 /**
  * PUT /budget/accounts/:accountId/current
- * Body: amount (required, >= 0), onlyThisMonth
+ * Body: amount (required, >= 0), month, appliesUntil
  */
 export const currentBudgetBodySchema = z.object({
  // Zero is accepted here, unlike the old positive-only rule: it is how "stop
@@ -100,10 +125,16 @@ export const currentBudgetBodySchema = z.object({
  amount: z.number().nonnegative({
   message: 'amount must be zero or a positive number',
  }),
- // Optional because the recurring case is the normal one and has no name in the
- // payload. Defaulting to false is the conservative branch: it writes no
- // terminator, so nothing the user did not ask for expires.
- onlyThisMonth: z.boolean().default(false),
+ // The month the amount comes into force. Required, with no default: the screen
+ // always knows which month it is showing, and a default would quietly write
+ // somewhere else on the day the field went missing.
+ month: monthBound,
+ // The last month it stays in force. Equal to month writes one month; a later
+ // one writes a closed range; OPEN_ENDED leaves it recurring. Required for the
+ // same reason as month, and more sharply: every default here destroys something
+ // in one direction or the other — OPEN_ENDED erases the decisions that follow,
+ // and month alone expires an amount the user meant to keep.
+ appliesUntil: appliesUntilBound,
 }).strict();
 
 /**

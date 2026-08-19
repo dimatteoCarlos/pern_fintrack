@@ -22,7 +22,8 @@ const router = express.Router();
 // POST /api/fintrack/budget/accounts/status  { accountIds: [] }
 router.post('/accounts/status', getBudgetAccountsStatus);
 
-// PUT /api/fintrack/budget/accounts/:accountId/current  { amount, onlyThisMonth }
+// PUT /api/fintrack/budget/accounts/:accountId/current
+// { amount, month, appliesUntil } — appliesUntil is a month or 'openEnded'.
 router.put('/accounts/:accountId/current', setCurrentBudget);
 
 // GET /api/fintrack/budget/accounts/:accountId/series?from=&to=
