@@ -10,6 +10,7 @@ import {
   DEFAULT_CURRENCY,
   // DATE_TIME_FORMAT_DEFAULT,
 } from '../../../../helpers/constants';
+import { BUDGET_NEAR_LIMIT_PERCENT } from '../../../../helpers/budgetStatus';
 import {
   capitalize,
   currencyFormat,
@@ -68,6 +69,32 @@ const AccountTransactionsList = ({
             : crossing;
         }, null);
 
+  // The other half of the same story. The list said where the month broke but
+  // never where it started to be at risk, so a month that ends under budget
+  // reads exactly like one that never came close.
+  //
+  // Same technique for the same reason: the accumulator only adds, so the
+  // threshold is crossed once and the oldest qualifying row is the crossing.
+  //
+  // A zero budget is excluded here although it is included above: 75% of zero
+  // is zero, so every row would qualify and the marker would state nothing.
+  // Spending against zero is still a real overrun, which is why the row above
+  // keeps it — the proximity is what has no meaning, not the excess.
+  const nearThreshold =
+    budget !== null && budget > 0
+      ? budget * (BUDGET_NEAR_LIMIT_PERCENT / 100)
+      : null;
+
+  const nearTransactionId =
+    nearThreshold === null
+      ? null
+      : transactions.reduce<number | null>((near, item) => {
+          const spent = item.month_cumulative_spent;
+          return typeof spent === 'number' && spent >= nearThreshold
+            ? item.transaction_id
+            : near;
+        }, null);
+
   // const formatDate = (dateInput: Date | string | number): string => {
   //   const date = new Date(dateInput);
   //   return new Intl.DateTimeFormat(DATE_TIME_FORMAT_DEFAULT).format(date);
@@ -109,6 +136,11 @@ const AccountTransactionsList = ({
 
             const isCrossing = transaction_id === crossingTransactionId;
 
+            // A row that jumps straight past the budget is the crossing and
+            // nothing else. Marking it twice would print two verdicts on one
+            // movement, and the overrun is the one that matters.
+            const isNear = transaction_id === nearTransactionId && !isCrossing;
+
             return (
               <BoxContainer
                 key={transaction_id}
@@ -116,6 +148,7 @@ const AccountTransactionsList = ({
                   'transaction-item',
                   isClickable ? 'transaction-item--clickable' : '',
                   isCrossing ? 'transaction-item--overBudget' : '',
+                  isNear ? 'transaction-item--nearBudget' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -229,6 +262,19 @@ const AccountTransactionsList = ({
                     <div className='transaction-item__budgetBreak'>
                       <StatusSquare alert='alert' />
                       Budget exceeded here
+                    </div>
+                  </BoxRow>
+                )}
+
+                {/* The percentage is read from the constant, not written into
+                    the sentence: the threshold is a business rule and it lives
+                    in budgetStatus.ts, where the square and the pill read it
+                    from too. */}
+                {isNear && (
+                  <BoxRow className='transaction-item__nearRow'>
+                    <div className='transaction-item__budgetNear'>
+                      <StatusSquare alert='warning' />
+                      {BUDGET_NEAR_LIMIT_PERCENT}% of budget reached here
                     </div>
                   </BoxRow>
                 )}

@@ -111,7 +111,15 @@
  border-left: var(--border-width-thick) solid var(--color-status-alert);
 }
 
-.transaction-item__breakRow {
+/* The same stripe in the warning token. What changes between the two rows is
+   which side of the budget the month is on, not how loudly the row states it,
+   so the weight and the position are deliberately identical. */
+.transaction-item--nearBudget {
+ border-left: var(--border-width-thick) solid var(--color-status-warning);
+}
+
+.transaction-item__breakRow,
+.transaction-item__nearRow {
  margin-top: var(--space-2);
 }
 
@@ -123,6 +131,15 @@
  gap: var(--space-2);
  font-size: var(--font-size-xs);
  color: var(--color-status-alert);
+}
+
+/* Same rule, same reason it carries no frame. Only the token differs. */
+.transaction-item__budgetNear {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-2);
+ font-size: var(--font-size-xs);
+ color: var(--color-status-warning);
 }
 
 /* Balance después de la transacción (BoxRow) */
