@@ -47,28 +47,37 @@
 }
 
 /* ── The category board is a frame, not a document ───────────────────────────
-   The treatment level 1 gets from budget-styles.css, which cannot be reused as
-   written: that one is scoped to .budgetLayout, and this route is declared
-   BESIDE the budget layout rather than under it, so nothing of level 1 is
-   mounted here to match.
+   Level 1 gets this frame from .home__layout, the shell Layout renders around
+   every screen it holds. This route is declared BESIDE Layout and not under it
+   (App.tsx:345), so no .home__layout is mounted here: the shell is the page's
+   own, and it carries the navbar for the same reason.
 
-   Level 3 is deliberately left out. It renders .page__container--budget too but
-   not this class, because it is a long form and a form that cannot scroll as a
-   document is a form with fields under the fold.
+   Level 3 is deliberately left out, and leaving it out now costs it the navbar
+   as well as the frame. It renders .page__container--budget too but not this
+   shell, because it is a long form and a form that cannot scroll as a document
+   is a form with fields under the fold; a navbar pinned over it would take yet
+   more of the height those fields need. Decided, not inherited.
 
-   :has() is Chrome 105+, Safari 15.4+, Firefox 121+. Older browsers keep the
-   document scroll they have today: it degrades, it does not break. */
-.home__layout:has(.budgetCategoryBoard) {
+   The measurements are restated from .home__layout rather than inherited: the
+   navbar is a child of this shell, so it is this shell that decides how wide it
+   sits and how far it clears the bottom edge. */
+.budgetCategoryShell {
+ display: flex;
+ flex-direction: column;
  height: 100dvh;
- min-height: 0;
+ width: 100%;
+ max-width: var(--layout-width-max);
+ margin: 0 auto;
+ padding-bottom: var(--space-4);
  overflow-y: hidden;
 }
 
-/* min-height also undoes the 50rem that every form declares through
-   .page__container: on a phone that floor alone is taller than the viewport, so
-   the frame could never close. Undone from this class rather than edited in
-   forms-styles.css, which every other form in the app shares. */
-.home__layout:has(.budgetCategoryBoard) .budgetCategoryBoard {
+/* The middle child takes what the board's own header and the navbar leave.
+   min-height is also what undoes the 50rem floor that every form declares
+   through .page__container: on a phone that floor alone is taller than the
+   viewport, so the frame could never close. Undone from here rather than edited
+   in forms-styles.css, which every other form in the app shares. */
+.budgetCategoryShell .budgetCategoryBoard {
  flex: 1;
  min-height: 0;
 }
@@ -78,6 +87,21 @@
 .budgetCategoryBoard .budgetDetail__content {
  flex: 1;
  min-height: 0;
+}
+
+/* The one link of that handoff that had to be taken back. Below an 800px
+   viewport, forms-styles.css:361-367 gives every .page__content height: 100%,
+   which is comfort on a form whose fields fill the screen. On this board it is
+   the whole column claimed by an element that holds the title row alone, and
+   the list under it measured zero on any laptop.
+
+   #root .budgetCategoryBoard scores 1,2,0 against that rule's 1,1,0, which is
+   what it takes to reach it: the id has to be restated, not because this screen
+   needs one, but because the rule being narrowed carries it. */
+@media screen and (max-height: 800px) {
+ #root .budgetCategoryBoard .page__content {
+  height: auto;
+ }
 }
 
 /* The --space-8 a stacked title opens by default stands here. Tightening it to
@@ -120,4 +144,132 @@
    would win or lose depending on which lazy route loaded its CSS first. */
 .box__subtitle.box__subtitle--message {
  text-transform: none;
+}
+
+/* ── The budget editor's door ─────────────────────────────────────────────────
+   A column wrapping SummaryDetailBox rather than a rule inside it: that box is
+   rendered by two screens and only this one writes a budget. */
+.budgetDetail__summary {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+}
+
+.budgetDetail__summaryActions {
+ display: flex;
+ align-items: center;
+ justify-content: flex-end;
+ gap: var(--space-2);
+}
+
+/* States what the figure above does next month, so it reads as a caption of the
+   box and not as a control.
+
+   text-transform is inherited, and this span sits inside .box__subtitle, which
+   capitalises every word it holds - it printed "This Month Only" beside a "left"
+   its neighbour .categoryRow__remainWord had already lowercased. `none` and not
+   `lowercase`: the literal is already lowercase, so it only has to be left
+   alone. */
+.budgetDetail__exception {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+ text-transform: none;
+}
+
+/* Sits inside SummaryDetailBox's title row, which is the cream panel — so it
+   takes the panel's content colours and not the app surface's.
+
+   Box at --size-control-sm and not the 44px touch target: beside a 1.25rem
+   title a 44px square sets the row's height by itself, so the glyph reads as
+   floating rather than as the title's control. The target is traded for the
+   alignment, and only here — the marker below it is not a control. */
+.budgetDetail__editBudget {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--size-control-sm);
+ height: var(--size-control-sm);
+ padding: 0;
+ border: none;
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-primary);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+/* The glyph fills its box the way the navbar icons do: the squircle is the
+   frame, so leaving 8px of air around it drew a small pencil in a large empty
+   button instead of a framed control. */
+.budgetDetail__editBudget svg {
+ width: var(--font-size-xl);
+ height: var(--font-size-xl);
+}
+
+.budgetDetail__editBudget:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+/* Ring in the panel's own dark, not --color-border-inverse: that one is meant
+   for the app surface and would be invisible against cream. */
+.budgetDetail__editBudget:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-content-primary);
+ outline-offset: var(--border-width-thick);
+}
+
+.budgetDetail__editBudget:active {
+ background-color: var(--color-content-primary);
+ color: var(--color-accent-content);
+}
+
+.budgetDetail__editBudget:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The level-2 row, on the app surface. The modifier names the surface the
+   button sits on and not its own colour; the rules above are the cream panel's,
+   which is where level 3 mounts the same control. A `.light` alias for that one
+   belongs to the cleanup block, not to this change. */
+.budgetDetail__editBudget.dark {
+ color: var(--color-content-on-dark);
+}
+
+/* Restated, not inherited. The hover rule above fills with --color-accent and
+   darkens the glyph, but it and this modifier carry the same specificity, so
+   the modifier's white wins on source order alone and paints white on cream.
+   The fill is light on both surfaces, so the glyph is dark on both. */
+.budgetDetail__editBudget.dark:hover {
+ color: var(--color-accent-content);
+}
+
+/* --color-border-inverse is the ring meant for the app surface — the same one
+   the cream rule above rejects for being invisible against cream. */
+.budgetDetail__editBudget.dark:focus-visible {
+ outline-color: var(--color-border-inverse);
+}
+
+/* Darker than the hover fill, so a press reads as a press. The cream rule's
+   active paints --color-content-primary under --color-accent-content and the
+   two are the same hex, which leaves its glyph invisible while held; recorded
+   for the cleanup block rather than corrected inside this change. */
+.budgetDetail__editBudget.dark:active {
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+/* Keeps the BoxRow at two children. .box-row is space-between, so the button as
+   a third child would push the spent/budget pair to the middle of the line. */
+.budgetDetail__rowAmounts {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .budgetDetail__editBudget {
+  transition: none;
+ }
 }

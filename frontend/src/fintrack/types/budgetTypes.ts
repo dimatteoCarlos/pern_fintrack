@@ -21,7 +21,13 @@ import { CurrencyType } from './types.ts';
 export const OPEN_ENDED = 'openEnded';
 
 export type BudgetWriteRequest = {
+ // The figure as typed, in `currency` — NOT converted here. The server owns the
+ // rate, and a client that converted first would decide the stored amount with
+ // a rate the server never saw.
  amount: number;
+ // The currency the amount is stated in. Required, with no default: sending
+ // none is what made the server read 50000 cop as 50000 usd.
+ currency: CurrencyType;
  // First month the amount applies to, as 'YYYY-MM-01'.
  month: string;
  // Last month it applies to, or OPEN_ENDED. Neither bound is defaulted: the
@@ -33,7 +39,16 @@ export type BudgetWriteResponse = {
  accountId: number;
  // The month written, always the first of the month as text: 2026-08-01.
  budgetMonth: string;
+ // What was stored, in the account's currency.
  budgetAmount: number;
+ // What was typed and in which currency, plus the rate between them. The two
+ // differ whenever the badge names a currency the account is not kept in, and
+ // stating only the stored figure makes the save read as a correction the user
+ // did not make.
+ originalAmount: number;
+ originalCurrency: CurrencyType;
+ currency: CurrencyType;
+ exchangeRate: number;
  // Echoed back in the request's vocabulary — OPEN_ENDED rather than the null
  // the repository stores — so the response reads back as what was sent.
  appliesUntil: string;

@@ -24,6 +24,11 @@ import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/na
 import { Link, useSearchParams } from 'react-router-dom';
 import { BudgetAccountStatus } from '../../../types/budgetTypes.ts';
 
+// '?react' and not a bare import: a bare .svg is typed `string` and cannot take
+// a className (R34). The same glyph level 3 draws, imported from the same asset
+// rather than redrawn, so the two levels cannot diverge.
+import EditSvg from '../../../../assets/pencil02Svg.svg?react';
+
 import {
   DEFAULT_SORT_DIRECTION,
   useBudgetListFilter,
@@ -48,6 +53,11 @@ import './styles/categoryDetail-styles.css';
 type ListAccountOfCategoryProp = {
   previousRoute: string;
   accounts: BudgetAccountStatus[];
+  // The row owns the control, the parent owns the panel: this list is rendered
+  // inside a frame with its own scroll, and a modal opened from here would
+  // scroll with the rows instead of over them.
+  onEditAccount: (accountId: number) => void;
+  canEdit: boolean;
   //categoryName:string
 };
 
@@ -106,6 +116,8 @@ const toQuickFilter = (value: string | null): BudgetQuickFilter =>
 function ListAccountOfCategory({
   previousRoute,
   accounts,
+  onEditAccount,
+  canEdit,
   // ,  categoryName
 }: ListAccountOfCategoryProp) {
   // console.log('from ListAccountOfCatgoryProp', previousRoute)
@@ -197,6 +209,7 @@ function ListAccountOfCategory({
             nature,
             currency,
             budgetAmount,
+            nextMonthBudget,
             actualSpent,
             remainingBudget,
             executionPercentage,
@@ -255,10 +268,35 @@ function ListAccountOfCategory({
                   </div>
                 </Link>
 
-                <div className='box__title--spent'>
-                  {currencyFormat(currency_code, actualSpent, 'en-US')}
-                  &nbsp;/&nbsp;
-                  {currencyFormat(currency_code, budgetAmount, 'en-US')}
+                {/* The pair and the button travel together, and the BoxRow
+                    stays at two children: .box-row is space-between
+                    (boxComponents.css:15-20), so a third child would push the
+                    spent/budget pair to the middle of the line.
+
+                    The button is outside the <Link> above and not inside it: a
+                    button nested in an anchor is invalid markup, and the click
+                    would navigate instead of opening the panel. */}
+                <div className='budgetDetail__rowAmounts'>
+                  <div className='box__title--spent'>
+                    {currencyFormat(currency_code, actualSpent, 'en-US')}
+                    &nbsp;/&nbsp;
+                    {currencyFormat(currency_code, budgetAmount, 'en-US')}
+                  </div>
+
+                  <button
+                    type='button'
+                    className='budgetDetail__editBudget dark'
+                    onClick={() => onEditAccount(accountId)}
+                    disabled={!canEdit}
+                    aria-label={`Edit budget for ${subcategory ?? accountName}`}
+                    title={
+                      canEdit
+                        ? 'Edit budget'
+                        : 'Only the current month can be edited'
+                    }
+                  >
+                    <EditSvg />
+                  </button>
                 </div>
               </BoxRow>
 
@@ -294,6 +332,18 @@ function ListAccountOfCategory({
                       )}
                     </span>
                     &nbsp;
+                    {/* Inside this subtitle and after the word, because that is
+                        the sentence it qualifies. The comparison is on the two
+                        amounts and not on whether a row exists at M+1, the
+                        condition budgetTypes.ts:97-99 documents. */}
+                    {nextMonthBudget !== budgetAmount && (
+                      <span
+                        className='budgetDetail__exception'
+                        title='This amount applies to this month only'
+                      >
+                        this month only
+                      </span>
+                    )}
                   </div>
                 </div>
 

@@ -1,108 +1,134 @@
 /* frontend/src/fintrack/pages/budget/components/budgetEditModal/styles/budgetEditModal-styles.css
 
-   The budget editor's panel. Structure follows the transaction detail modal —
-   fixed overlay, centred panel, header with a close control — because that is
-   the modal the app already has and two shapes for one idea is one too many.
+   The budget editor's dialog, built to §4's Modal anatomy: scrim on
+   --color-surface-overlay at --z-overlay, dialog on --color-surface-inverse at
+   --z-modal, --radius-md, --shadow-overlay, max-width 32rem, margin --space-4.
+
+   White and not dark, which is the app alternating rather than contradicting
+   itself: §363 reserves elevation for what floats over the page, and white is
+   already the app's floating surface — the header and the bottom navbar are
+   white. Inside it the two read-only blocks are cream panels with near-black
+   text, which is the pairing level 3 states the same figures in.
+
+   Type ladder. Five steps, one job each, so a new element takes the step its
+   role already has instead of being sized by eye:
+
+     --font-size-xl    the figure being written — the amount input, and nothing
+                       else. It is what the panel exists to change.
+     --font-size-lg    the panel heading and the subcategory name. Titles.
+     --font-size-base  every field label and caption, and the figures in the
+                       context strip. Same step, told apart by weight and by the
+                       rule under the values.
+     --font-size-sm    the labels inside the strip, and the text of every
+                       control — tiles, buttons, the confirmation's first line.
+     --font-size-xs    meta that qualifies something above it: the month, the
+                       nature tag, the sub-cent hint, errors, the select.
 
    --radius-lg is deliberately absent. tokens.css:168-175 records it as a
    collision: three leaves of the account deletion flow write --radius-lg: 0.5rem
    into the global :root from a lazy chunk that loads after tokens.css, so its
    value flips for the rest of the session once that route is visited.
 
-   Controls take --size-touch-target, not the --size-control-sm the list bar
-   uses. Those 32px bought a one-row bar at 360px and gave up the WCAG AAA
-   target; a panel has the room and pays nothing for the 44px. */
+   The close control keeps --size-touch-target. The range tiles and the two
+   actions take --size-control-sm, the 32px the list bar uses: at 44px they
+   read as three stacked slabs over a panel whose point is the figure above
+   them. The trade is the WCAG AAA target, made deliberately and only for the
+   controls that repeat across a row. */
 
 .budgetEdit {
  position: fixed;
  inset: 0;
- z-index: var(--z-modal);
+ z-index: var(--z-overlay);
  display: flex;
  align-items: center;
  justify-content: center;
- padding: var(--space-4);
  background-color: var(--color-surface-overlay);
 }
 
 .budgetEdit__panel {
  display: flex;
  flex-direction: column;
- gap: var(--space-4);
- width: var(--layout-content-width);
- max-width: var(--layout-width-max);
+ gap: var(--space-3);
+ z-index: var(--z-modal);
+ /* Level 3 nests --layout-content-width twice — .page__container--budget holds
+    .budgetDetail__content, each taking 88% of its parent — and this panel opens
+    over that column, so it must not be wider than it. The 88 restates the token
+    rather than replacing it: CSS cannot multiply one percentage by another, and
+    the scrim is fixed to the viewport so there is no column to inherit it from.
+    The cap is §4's. */
+ width: calc(var(--layout-content-width) * 88 / 100);
+ max-width: 32rem;
+ margin: var(--space-4);
  max-height: 90dvh;
  overflow-y: auto;
- padding: var(--space-5);
- border-radius: var(--radius-xl);
- background-color: var(--color-surface-raised);
+ padding: var(--space-4);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-inverse);
  box-shadow: var(--shadow-overlay);
- color: var(--color-content-on-dark);
+ color: var(--color-content-primary);
  font-family: var(--font-family-sans);
 }
 
 .budgetEdit__panel:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline: var(--border-width-thick) solid var(--color-border-strong);
  outline-offset: calc(-1 * var(--border-width-thick));
 }
 
-/* ── Header ───────────────────────────────────────────────────────────────── */
+/* The app's header: the title centred on the panel and the control at the edge,
+   the way level 1 centres 'Budget' over its back arrow. A grid and not a flex
+   row, so the title is centred on the panel rather than on what is left of it
+   after the button — the two are not the same line, and it shows.
 
+   Ruled in cream because a white bar over a white panel has nothing else to
+   separate it; on the page that job is done by the dark ground behind it. */
 .budgetEdit__header {
- display: flex;
- align-items: flex-start;
- justify-content: space-between;
- gap: var(--space-3);
+ display: grid;
+ grid-template-columns: var(--size-touch-target) 1fr var(--size-touch-target);
+ align-items: center;
+ padding-bottom: var(--space-2);
+ border-bottom: var(--border-width-thin) solid var(--color-surface-panel);
 }
 
-.budgetEdit__title {
- display: flex;
- flex-direction: column;
- gap: var(--space-1);
- margin: 0;
+.budgetEdit__heading {
+ grid-column: 2;
+ text-align: center;
  font-size: var(--font-size-lg);
- font-weight: var(--font-weight-semibold);
- color: var(--color-content-on-dark);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-primary);
 }
 
-/* Restates its size because index.css sets one on the universal selector, which
-   matches a span directly and beats the line it sits in. */
-.budgetEdit__month {
- font-size: var(--font-size-xs);
- font-weight: var(--font-weight-regular);
- letter-spacing: var(--letter-spacing-wide);
- color: var(--color-content-on-dark-subtle);
+.budgetEdit__close {
+ grid-column: 3;
 }
 
 .budgetEdit__close {
  display: flex;
  align-items: center;
  justify-content: center;
- flex-shrink: 0;
  width: var(--size-touch-target);
  height: var(--size-touch-target);
  padding: 0;
  border: none;
  border-radius: var(--radius-full);
  background-color: transparent;
- color: var(--color-content-on-dark-subtle);
+ color: var(--color-content-primary);
  font-size: var(--font-size-base);
  cursor: pointer;
  transition: background-color var(--motion-fast), color var(--motion-fast);
 }
 
 .budgetEdit__close:hover {
- background-color: var(--color-accent);
- color: var(--color-accent-content);
+ background-color: var(--color-surface-panel);
 }
 
 .budgetEdit__close:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline: var(--border-width-thick) solid var(--color-border-strong);
  outline-offset: var(--border-width-thick);
 }
 
 .budgetEdit__close:active {
- background-color: var(--color-content-on-dark-subtle);
- color: var(--color-accent-content);
+ background-color: var(--color-content-primary);
+ color: var(--color-content-on-dark);
 }
 
 .budgetEdit__close:disabled {
@@ -110,36 +136,128 @@
  pointer-events: none;
 }
 
-/* ── The figures the amount is decided against ────────────────────────────── */
-
-.budgetEdit__context {
+.budgetEdit__title {
  display: flex;
  flex-direction: column;
- gap: var(--space-2);
+ gap: var(--space-1);
  margin: 0;
- padding: var(--space-3);
- border: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+/* The caption and the month share a line, pushed to opposite edges: two facts
+   about the same row, and neither is worth a line of its own. */
+.budgetEdit__captionRow {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-2);
+}
+
+/* Same weight and size as .budgetEdit__label: both name the value under them,
+   and the heading is one of them even though it is an h2. */
+.budgetEdit__caption {
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-primary);
+}
+
+/* A cream panel and not bare text: it names the row the panel is about, and the
+   same figures below it are stated on that surface too. */
+/* The name and its tag sit at the two edges, on the same axis as the caption
+   and the month above them, so the block reads as two rows of one grid rather
+   than four things loose in a box. */
+.budgetEdit__name {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: var(--space-2);
+ padding: var(--space-3) var(--space-4);
  border-radius: var(--radius-md);
+ background-color: var(--color-surface-panel);
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-primary);
+}
+
+/* Neutral on purpose, like the level-2 row's tag: the status colours are the
+   budget semaphore, and a 'must' painted with them would read as over budget
+   rather than as what the account is for. */
+.budgetEdit__nature {
+ padding: var(--space-1) var(--space-2);
+ border: var(--border-width-thin) solid var(--color-border-strong);
+ border-radius: var(--radius-full);
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-medium);
+ line-height: 1;
+ text-transform: capitalize;
+ color: var(--color-content-primary);
+}
+
+/* Restates its size because index.css sets one on the universal selector, which
+   matches a span directly and beats the line it sits in. */
+.budgetEdit__month {
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-secondary);
+}
+
+/* ── The figures the amount is decided against ────────────────────────────── */
+
+/* The cream panel level 3 states these same three figures on, so the modal
+   opens showing the box it is about to edit rather than a second styling of
+   it. One wrapping line and not a column: the box above it is one line too. */
+.budgetEdit__context {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-2) var(--space-4);
+ margin: 0;
+ padding: var(--space-3) var(--space-4);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-panel);
 }
 
 .budgetEdit__contextRow {
  display: flex;
  align-items: baseline;
- justify-content: space-between;
- gap: var(--space-3);
+ gap: var(--space-2);
 }
 
 .budgetEdit__contextLabel {
- font-size: var(--font-size-xs);
- letter-spacing: var(--letter-spacing-wide);
- color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-sm);
+ color: var(--color-content-secondary);
 }
 
+/* The only label carrying a mark. Flex on this one alone, so the other two keep
+   the baseline the row is laid out on. */
+.budgetEdit__contextLabel--status {
+ display: flex;
+ align-items: center;
+ gap: var(--space-1);
+}
+
+/* The square is a bare span, and a span takes no width until it stops being
+   inline. flex: none keeps it square when the label wraps. */
+.budgetEdit__contextLabel--status .status__square {
+ display: inline-block;
+ flex: none;
+}
+
+/* Underlined rather than boxed: the figure is the point of the row, and a rule
+   under it is how level 3 marks the one number a screen is about. */
 .budgetEdit__contextValue {
  margin: 0;
- font-size: var(--font-size-sm);
- font-weight: var(--font-weight-semibold);
- color: var(--color-content-on-dark);
+ border-bottom: var(--border-width-thin) solid var(--color-border-strong);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-primary);
+}
+
+/* The same token the budget lists mark an exceeded row with, so one budget
+   reads the same on every screen that states it. */
+.budgetEdit__contextValue--over {
+ border-bottom-color: var(--color-status-alert);
+ color: var(--color-status-alert);
 }
 
 /* ── The form ─────────────────────────────────────────────────────────────── */
@@ -150,22 +268,51 @@
  gap: var(--space-3);
 }
 
+/* width is restated because forms-styles.css:39-45 gives every bare `label`
+   width: 100%, and this panel loads that sheet. Left alone it fills the row and
+   pushes whatever shares the line onto the next one. */
 .budgetEdit__label {
- font-size: var(--font-size-xs);
- letter-spacing: var(--letter-spacing-wide);
- color: var(--color-content-on-dark-subtle);
+ width: auto;
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-primary);
 }
 
+.budgetEdit__amountRow {
+ display: flex;
+ align-items: center;
+ gap: var(--space-3);
+}
+
+/* The field takes the leftover width instead of the whole line, which left the
+   badge no room to share it. */
+.budgetEdit__amountRow .budgetEdit__input {
+ flex: 1;
+ min-width: 0;
+}
+
+/* A rule under the figure and not a box around it: the amount is the one thing
+   this panel writes, and the box was competing with the two cream panels. */
 .budgetEdit__input {
  height: var(--size-touch-target);
- padding: 0 var(--space-3);
- border: var(--border-width-thin) solid var(--color-border-subtle);
- border-radius: var(--radius-md);
- background-color: var(--color-surface-sunken);
- color: var(--color-content-on-dark);
+ padding: 0;
+ border: none;
+ border-bottom: var(--border-width-thick) solid var(--color-border-strong);
+ border-radius: 0;
+ background-color: transparent;
+ color: var(--color-content-primary);
  font-family: var(--font-family-sans);
- font-size: var(--font-size-base);
+ font-size: var(--font-size-xl);
+ font-weight: var(--font-weight-semibold);
  transition: border-color var(--motion-fast);
+}
+
+/* §4 requires number inputs without spinners. They also cost the field about a
+   digit and a half of width, on the one control whose whole job is a figure. */
+.budgetEdit__input::-webkit-outer-spin-button,
+.budgetEdit__input::-webkit-inner-spin-button {
+ appearance: none;
+ margin: 0;
 }
 
 .budgetEdit__input::placeholder {
@@ -173,16 +320,12 @@
 }
 
 .budgetEdit__input:hover {
- border-color: var(--color-content-on-dark-subtle);
+ border-color: var(--color-content-secondary);
 }
 
 .budgetEdit__input:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline: var(--border-width-thick) solid var(--color-border-strong);
  outline-offset: var(--border-width-thick);
-}
-
-.budgetEdit__input:active {
- border-color: var(--color-accent);
 }
 
 .budgetEdit__input:disabled {
@@ -190,10 +333,32 @@
  pointer-events: none;
 }
 
-.budgetEdit__hint {
+/* The approximation follows the label rather than being pushed to the far edge:
+   it qualifies that label, and across a whole row the two stop reading as one
+   phrase. */
+.budgetEdit__labelRow {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: baseline;
+ gap: var(--space-3);
+}
+
+/* What TopCard.tsx renders inline as { fontSize: '0.8rem', color: '#666' },
+   spelled with tokens instead: same size step and same muted role, without the
+   raw hex the design system forbids. */
+.budgetEdit__rate {
+ font-size: var(--font-size-sm);
+ color: var(--color-content-secondary);
+}
+
+/* The one line under the field: what the typed amount would leave, why Save is
+   dark, or that it would round to zero. Always rendered, so it holds this line
+   whether or not there is anything to say — three blocks that each appeared as
+   the amount was typed made the panel grow and shrink under the pointer. */
+.budgetEdit__note {
  margin: 0;
  font-size: var(--font-size-xs);
- color: var(--color-content-on-dark-subtle);
+ color: var(--color-content-secondary);
 }
 
 /* ── How far the amount reaches ───────────────────────────────────────────── */
@@ -207,90 +372,146 @@
  border: none;
 }
 
-/* A label is not a form control, so :disabled never reaches it and the text
-   would stay bright while the radio beside it dims. */
-.budgetEdit__range:disabled .budgetEdit__rangeOption {
- opacity: 0.5;
+/* A legend is not a flex item, so the fieldset's gap never reaches it and the
+   label sat against the tiles. The margin is what spaces it. It also carries UA
+   padding the shared label class does not clear. */
+.budgetEdit__legend {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: baseline;
+ gap: var(--space-3);
+ padding: 0;
+ margin-bottom: var(--space-2);
+}
+
+/* A grid and not a wrapping flex row: the picker below is one of its items, and
+   only a grid can put that item under the tile that reveals it. Three columns
+   at every width — the three answers are one question and read as a set. */
+.budgetEdit__tiles {
+ display: grid;
+ grid-template-columns: repeat(3, 1fr);
+ gap: var(--space-2) var(--space-3);
+}
+
+/* Mobile-first at the step below the other controls: at 360px a third of the
+   panel does not hold 'Every month' at --font-size-sm, and a tile that shrinks
+   under its own label is worse than a tile one step smaller. */
+.budgetEdit__tile {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ min-width: 0;
+ min-height: var(--size-control-sm);
+ padding: 0 var(--space-2);
+ border: var(--border-width-thin) solid var(--color-border-strong);
+ border-radius: var(--radius-full);
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-bold);
+ white-space: nowrap;
+ color: var(--color-content-primary);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), border-color var(--motion-fast);
+}
+
+/* The radio is present and focusable, only not drawn: opacity keeps it in the
+   tab order and under the screen reader, which display:none would not. */
+.budgetEdit__tileInput {
+ position: absolute;
+ width: var(--border-width-thin);
+ height: var(--border-width-thin);
+ opacity: 0;
  pointer-events: none;
 }
 
-/* legend carries UA padding the shared label class does not clear. */
-.budgetEdit__legend {
- padding: 0;
+/* Filled cream with no outline: the chosen tile reads as a solid, and keeping
+   its border would make it a different shape from the two beside it. */
+.budgetEdit__tile:has(.budgetEdit__tileInput:checked) {
+ border-color: transparent;
+ background-color: var(--color-surface-panel);
 }
 
-.budgetEdit__rangeRow {
- display: flex;
- flex-wrap: wrap;
- align-items: center;
- gap: var(--space-2);
+.budgetEdit__tile:hover {
+ background-color: var(--color-surface-panel);
 }
 
-.budgetEdit__rangeOption {
- display: flex;
- align-items: center;
- gap: var(--space-2);
- min-height: var(--size-touch-target);
- font-size: var(--font-size-sm);
- color: var(--color-content-on-dark);
- cursor: pointer;
-}
-
-.budgetEdit__radio {
- width: var(--size-status-square);
- height: var(--size-status-square);
- accent-color: var(--color-accent);
- cursor: pointer;
-}
-
-.budgetEdit__radio:hover {
- accent-color: var(--color-content-on-dark);
-}
-
-.budgetEdit__radio:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
+.budgetEdit__tile:has(.budgetEdit__tileInput:focus-visible) {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
  outline-offset: var(--border-width-thick);
 }
 
-.budgetEdit__radio:active {
- accent-color: var(--color-content-on-dark-subtle);
+.budgetEdit__tile:active {
+ background-color: var(--color-content-primary);
+ color: var(--color-content-on-dark);
 }
 
-.budgetEdit__radio:disabled {
+.budgetEdit__range:disabled .budgetEdit__tile {
  opacity: 0.5;
  pointer-events: none;
 }
 
-/* The shell of __input: two field shapes in one panel is one too many. */
+/* Column 2 is the 'Until…' tile: the picker it opens sits under it and at its
+   width, so the pair reads as one control on two lines. Height matches the
+   tiles — a control revealed by one of them cannot be taller than the row that
+   opened it. */
 .budgetEdit__select {
- height: var(--size-touch-target);
+ grid-column: 2;
+ height: var(--size-control-sm);
  padding: 0 var(--space-3);
- border: var(--border-width-thin) solid var(--color-border-subtle);
- border-radius: var(--radius-md);
- background-color: var(--color-surface-sunken);
- color: var(--color-content-on-dark);
+ border: var(--border-width-thin) solid var(--color-border-strong);
+ border-radius: var(--radius-full);
+ background-color: var(--color-surface-inverse);
+ color: var(--color-content-primary);
  font-family: var(--font-family-sans);
- font-size: var(--font-size-sm);
+ font-size: var(--font-size-xs);
  cursor: pointer;
  transition: border-color var(--motion-fast);
 }
 
 .budgetEdit__select:hover {
- border-color: var(--color-content-on-dark-subtle);
+ border-color: var(--color-content-secondary);
 }
 
 .budgetEdit__select:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline: var(--border-width-thick) solid var(--color-border-strong);
  outline-offset: var(--border-width-thick);
-}
-
-.budgetEdit__select:active {
- border-color: var(--color-accent);
 }
 
 .budgetEdit__select:disabled {
  opacity: 0.5;
  pointer-events: none;
+}
+
+/* Hidden and not removed: the row it sits on is reserved whichever tile is
+   chosen, so picking one does not move the two buttons under the pointer.
+   visibility also takes it out of the accessible tree, which display:none would
+   do at the cost of the space. */
+.budgetEdit__select--idle {
+ visibility: hidden;
+}
+
+/* The list the browser draws is not styled by the rule above: index.css sets a
+   size on the universal selector, which matches each option directly and beats
+   the select it drops out of. Without this the trigger is xs and its list is
+   16px. */
+.budgetEdit__select option {
+ background-color: var(--color-surface-inverse);
+ color: var(--color-content-primary);
+ font-size: inherit;
+}
+
+/* The month in force reads like the tile in force. Only the checked row is
+   ours: the band that follows the pointer is drawn by the platform and no
+   declaration here reaches it. */
+.budgetEdit__select option:checked {
+ background-color: var(--color-surface-panel);
+}
+
+/* Room for the step the rest of the controls are on. */
+@media (min-width: 480px) {
+ .budgetEdit__tile {
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-sm);
+ }
 }
 
 .budgetEdit__error {
@@ -299,31 +520,105 @@
  color: var(--color-status-error);
 }
 
+/* Where the form says what did or did not happen to it. One box, four states,
+   and the same two lines in all of them: a title that names the outcome and a
+   sentence that explains it. The rail on the left is what carries the state,
+   so the box never changes shape between them. */
+.budgetEdit__report {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ padding: var(--space-2) var(--space-3);
+ border-left: var(--border-width-thick) solid var(--color-border-strong);
+ border-radius: var(--radius-xs);
+ background-color: var(--color-surface-panel);
+}
+
+/* The teal half of the semaphore: a figure that is now in force is the same
+   kind of fact a healthy status square states. */
+.budgetEdit__report--ok {
+ border-left-color: var(--color-status-ok);
+}
+
+.budgetEdit__report--ok .budgetEdit__reportTitle {
+ color: var(--color-status-ok);
+}
+
+/* Nothing happened and nothing can: the standing explanation of a dark Save.
+   Neutral, because it reports no failure — the form simply holds what is
+   already stored. */
+.budgetEdit__report--idle .budgetEdit__reportTitle {
+ color: var(--color-content-secondary);
+}
+
+/* A question, not an outcome: amber and not the alert red, because nothing has
+   gone wrong yet — the red in this module belongs to a budget already exceeded,
+   and reusing it here would say the removal already failed. */
+.budgetEdit__report--warn {
+ border-left-color: var(--color-status-warning);
+}
+
+.budgetEdit__report--warn .budgetEdit__reportTitle {
+ color: var(--color-status-warning);
+}
+
+/* Hidden, not removed: visibility keeps the box in the flow so the two buttons
+   below it stay where the pointer left them. display:none would give the space
+   back and move them the moment a save lands. */
+.budgetEdit__report--empty {
+ visibility: hidden;
+}
+
+.budgetEdit__reportTitle {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-primary);
+}
+
+.budgetEdit__reportDetail {
+ margin: 0;
+ font-size: var(--font-size-xs);
+ color: var(--color-content-secondary);
+}
+
+/* The other half of the semaphore, for a refusal no field claimed. */
+.budgetEdit__report--error {
+ border-left-color: var(--color-status-error);
+}
+
+.budgetEdit__report--error .budgetEdit__reportTitle {
+ color: var(--color-status-error);
+}
+
 /* ── Actions ──────────────────────────────────────────────────────────────── */
 
+/* Wraps because the row holds three buttons while a removal is on offer. At
+   360px the trio does not fit on one line, and squeezing it would cut the two
+   longest labels rather than move the one that is optional. */
 .budgetEdit__actions {
  display: flex;
- justify-content: flex-end;
- gap: var(--space-2);
- padding-top: var(--space-2);
+ flex-wrap: wrap;
+ gap: var(--space-3);
+ padding-top: var(--space-1);
 }
 
 .budgetEdit__button {
- min-height: var(--size-touch-target);
- padding: 0 var(--space-5);
+ flex: 1;
+ min-height: var(--size-control-sm);
+ padding: 0 var(--space-4);
  border: var(--border-width-thin) solid transparent;
- border-radius: var(--radius-md);
+ border-radius: var(--radius-full);
  font-family: var(--font-family-sans);
  font-size: var(--font-size-sm);
- font-weight: var(--font-weight-semibold);
- letter-spacing: var(--letter-spacing-wide);
+ font-weight: var(--font-weight-bold);
  cursor: pointer;
- transition: background-color var(--motion-fast), color var(--motion-fast),
-  border-color var(--motion-fast);
+ transition: background-color var(--motion-fast), border-color var(--motion-fast),
+  color var(--motion-fast);
 }
 
 .budgetEdit__button:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline: var(--border-width-thick) solid var(--color-border-strong);
  outline-offset: var(--border-width-thick);
 }
 
@@ -333,36 +628,55 @@
 }
 
 .budgetEdit__button--primary {
- background-color: var(--color-accent);
- color: var(--color-accent-content);
+ background-color: var(--color-surface-panel);
+ color: var(--color-content-primary);
 }
 
 .budgetEdit__button--primary:hover {
- background-color: var(--color-content-on-dark);
-}
-
-.budgetEdit__button--primary:active {
- background-color: var(--color-content-on-dark-subtle);
-}
-
-.budgetEdit__button--secondary {
- border-color: var(--color-border-subtle);
- background-color: transparent;
+ background-color: var(--color-content-primary);
  color: var(--color-content-on-dark);
 }
 
+.budgetEdit__button--primary:active {
+ background-color: var(--color-content-secondary);
+ color: var(--color-content-on-dark);
+}
+
+.budgetEdit__button--secondary {
+ border-color: var(--color-border-strong);
+ background-color: transparent;
+ color: var(--color-content-primary);
+}
+
 .budgetEdit__button--secondary:hover {
- border-color: var(--color-content-on-dark-subtle);
+ background-color: var(--color-surface-panel);
+}
+
+/* The only destructive control in the panel. Outlined and not filled: a filled
+   red beside a filled Save gives the row two emphasised buttons and the eye
+   picks the louder one, which is the wrong one. It fills on hover, so the
+   commitment is stated by the pointer already being on it. */
+.budgetEdit__button--danger {
+ border-color: var(--color-status-alert);
+ background-color: transparent;
+ color: var(--color-status-alert);
+}
+
+.budgetEdit__button--danger:hover {
+ background-color: var(--color-status-alert);
+ color: var(--color-surface-panel);
 }
 
 .budgetEdit__button--secondary:active {
- border-color: var(--color-accent);
+ background-color: var(--color-content-primary);
+ color: var(--color-content-on-dark);
 }
 
 @media (prefers-reduced-motion: reduce) {
  .budgetEdit__close,
  .budgetEdit__input,
  .budgetEdit__select,
+ .budgetEdit__tile,
  .budgetEdit__button {
   transition: none;
  }

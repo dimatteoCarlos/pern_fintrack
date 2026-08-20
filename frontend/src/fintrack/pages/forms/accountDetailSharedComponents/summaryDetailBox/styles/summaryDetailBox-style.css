@@ -10,6 +10,15 @@
   align-items: start;
   justify-content: space-between;
 }
+/* Holds the title and whatever the caller hands over as `action`. Declares no
+   colours: the slot's contents sit on the cream panel and style themselves
+   against it. */
+.summary__titleRow {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+}
+
 .summary__title {
   font-size: 1.25rem;
   color: var(--dark);

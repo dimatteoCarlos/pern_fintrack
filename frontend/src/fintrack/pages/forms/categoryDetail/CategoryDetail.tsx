@@ -1,5 +1,5 @@
 //frontend/src/pages\/orms/categoryDetail/CategoryDetail.tsx
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
@@ -13,8 +13,21 @@ import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 
 import { AccountTransactionDetailModal } from '../accountDetailSharedComponents/accountTransactionDetailModal/AccountTransactionDetailModal.tsx';
+import BudgetEditModal from '../../budget/components/budgetEditModal/BudgetEditModal.tsx';
 
+// '?react' and not a bare import: a bare .svg is typed `string` and cannot take
+// a className (R34). The glyph is the app's edit icon, not a budget one — what
+// names this button is where it sits and what it is labelled.
+import EditSvg from '../../../../assets/pencil02Svg.svg?react';
+
+import { setCurrentBudget } from '../../../api/budgetApi.ts';
+import { normalizeBudgetError } from '../../../helpers/normalizeBudgetError.ts';
+import {
+  BudgetErrorResponse,
+  BudgetWriteRequest,
+} from '../../../types/budgetTypes.ts';
 import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
+import { useCurrencyStore } from '../../../stores/useCurrencyStore.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import { useTransactionDetail } from '../../../hooks/useTransactionDetail.ts';
 import {
@@ -74,9 +87,11 @@ function CategoryDetail() {
   // figures it used to read from there resolved to NaN.
   const budgetAccounts = useBudgetStatusStore((state) => state.accounts);
   const referenceMonth = useBudgetStatusStore((state) => state.referenceMonth);
+  const currentMonth = useBudgetStatusStore((state) => state.currentMonth);
   const isLoadingStatus = useBudgetStatusStore((state) => state.isLoading);
   const errorStatus = useBudgetStatusStore((state) => state.error);
   const fetchStatus = useBudgetStatusStore((state) => state.fetchStatus);
+  const refreshStatus = useBudgetStatusStore((state) => state.refreshStatus);
 
   // Read from this screen's own URL: this route is declared beside the budget
   // layout, so nothing above it is still mounted to inherit a month from.
@@ -89,6 +104,18 @@ function CategoryDetail() {
     fetchStatus(monthParam ?? undefined);
   }, [fetchStatus, monthParam]);
 
+  //--EXCHANGE RATES----------------
+  // CurrencyInitializer is mounted inside <Layout />, and this route is declared
+  // beside it (App.tsx:150 against :338), so nothing has asked for the rates by
+  // the time this screen renders on a reload. Without them the editor's
+  // conversion preview resolves to null and says nothing about why.
+  const rates = useCurrencyStore((state) => state.rates);
+  const fetchRates = useCurrencyStore((state) => state.fetchRates);
+
+  useEffect(() => {
+    if (Object.keys(rates).length === 0) fetchRates();
+  }, [rates, fetchRates]);
+
   const budgetAccount = useMemo(
     () =>
       budgetAccounts.find(
@@ -96,6 +123,61 @@ function CategoryDetail() {
       ) ?? null,
     [budgetAccounts, accountId],
   );
+  //--BUDGET EDITOR-----------------
+  // A boolean and not an id: this screen holds one account, so the flag has no
+  // row to name.
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  // The whole envelope, not a sentence: the modal puts each issue beside the
+  // field it names, and a 400's own message is the constant 'Validation Error'.
+  const [saveError, setSaveError] = useState<BudgetErrorResponse | null>(null);
+
+  // 'YYYY-MM-01' text on both sides, so >= compares them correctly. No
+  // new Date(): that string parses as UTC midnight and renders the previous
+  // month west of Greenwich, which is the defect this module removed.
+  //
+  // The server accepts writing a past month; this is what refuses to offer it.
+  const canEdit =
+    referenceMonth !== null &&
+    currentMonth !== null &&
+    referenceMonth >= currentMonth;
+
+  const closeEditor = () => {
+    setIsEditingBudget(false);
+    setSaveError(null);
+  };
+
+  // Does NOT close the modal on success: the modal is what decides whether
+  // there is a confirmation to render, and closing here makes that unreachable.
+  const handleSaveBudget = async ({
+    amount,
+    currency,
+    month,
+    appliesUntil,
+  }: BudgetWriteRequest) => {
+    if (!budgetAccount) return null;
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const response = await setCurrentBudget(budgetAccount.accountId, {
+        amount,
+        currency,
+        month,
+        appliesUntil,
+      });
+
+      await refreshStatus();
+
+      return response;
+    } catch (err: unknown) {
+      setSaveError(normalizeBudgetError(err));
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  };
   //---
   // ACCOUNT RECORD
   // The budget contract carries figures, not the account record: the account
@@ -231,7 +313,44 @@ function CategoryDetail() {
             />
           )}
 
-          {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
+          {/* The control travels into the box's title row: it acts on the word
+              'Budget', and a button floating under the panel does not say which
+              figure it edits. The marker stays below — it is a caption, not a
+              control, and it qualifies the amount rather than the label. */}
+          {summaryData && budgetAccount && (
+            <div className='budgetDetail__summary'>
+              <SummaryDetailBox
+                bubleInfo={summaryData}
+                action={
+                  <button
+                    type='button'
+                    className='budgetDetail__editBudget'
+                    onClick={() => setIsEditingBudget(true)}
+                    disabled={!canEdit}
+                    aria-label={`Edit budget for ${budgetAccount.subcategory ?? budgetAccount.accountName}`}
+                    title={
+                      canEdit
+                        ? 'Edit budget'
+                        : 'Only the current month can be edited'
+                    }
+                  >
+                    <EditSvg />
+                  </button>
+                }
+              />
+
+              {budgetAccount.nextMonthBudget !== budgetAccount.budgetAmount && (
+                <div className='budgetDetail__summaryActions'>
+                  <span
+                    className='budgetDetail__exception'
+                    title='This amount applies to this month only'
+                  >
+                    this month only
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           <article className='form__box'>
             <div className='form__container'>
@@ -342,6 +461,27 @@ function CategoryDetail() {
         transaction={selectedTransaction}
         onClose={closeTransaction}
       />
+
+      {/* Mounted outside <section>: the board is a frame with its own scroll,
+          and a panel inside it would scroll with the list instead of over it. */}
+      {isEditingBudget && budgetAccount && (
+        <BudgetEditModal
+          accountName={budgetAccount.subcategory ?? budgetAccount.accountName}
+          nature={budgetAccount.nature}
+          month={referenceMonth ?? ''}
+          currency={budgetAccount.currency}
+          currentAmount={budgetAccount.budgetAmount}
+          nextMonthBudget={budgetAccount.nextMonthBudget}
+          actualSpent={budgetAccount.actualSpent}
+          remainingBudget={budgetAccount.remainingBudget}
+          executionPercentage={budgetAccount.executionPercentage}
+          isOverBudget={budgetAccount.isOverBudget}
+          isSaving={isSaving}
+          error={saveError}
+          onClose={closeEditor}
+          onSave={handleSaveBudget}
+        />
+      )}
     </>
   );
 }

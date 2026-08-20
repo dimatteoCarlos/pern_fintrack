@@ -1,5 +1,5 @@
 // frontend/src/pages/forms/categoryDetail/CategoryAccountList.tsx
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
@@ -7,9 +7,11 @@ import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
+import MainNavbar from '../../../general_components/mainNavbar/MainNavbar.tsx';
 import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
 import ListAccountOfCategory from './ListAccountOfCategory.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
+import BudgetEditModal from '../../budget/components/budgetEditModal/BudgetEditModal.tsx';
 
 import {
   capitalize,
@@ -17,8 +19,16 @@ import {
   withMonthParam,
 } from '../../../helpers/functions.ts';
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import { normalizeBudgetError } from '../../../helpers/normalizeBudgetError.ts';
+
+import { setCurrentBudget } from '../../../api/budgetApi.ts';
+import {
+  BudgetErrorResponse,
+  BudgetWriteRequest,
+} from '../../../types/budgetTypes.ts';
 
 import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
+import { useCurrencyStore } from '../../../stores/useCurrencyStore.ts';
 
 import '../styles/forms-styles.css';
 import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
@@ -43,9 +53,11 @@ function CategoryAccountList() {
   const accounts = useBudgetStatusStore((state) => state.accounts);
   const categories = useBudgetStatusStore((state) => state.categories);
   const referenceMonth = useBudgetStatusStore((state) => state.referenceMonth);
+  const currentMonth = useBudgetStatusStore((state) => state.currentMonth);
   const isLoading = useBudgetStatusStore((state) => state.isLoading);
   const error = useBudgetStatusStore((state) => state.error);
   const fetchStatus = useBudgetStatusStore((state) => state.fetchStatus);
+  const refreshStatus = useBudgetStatusStore((state) => state.refreshStatus);
 
   // The month is read from this screen's own URL, not inherited: this route is
   // declared beside the budget layout, so nothing of level 1 is still mounted.
@@ -59,10 +71,87 @@ function CategoryAccountList() {
     fetchStatus(month ?? undefined);
   }, [fetchStatus, month]);
 
+  //--EXCHANGE RATES----------------
+  // Same reason as level 3: CurrencyInitializer is mounted inside <Layout />
+  // and this route is declared beside it (App.tsx:345), so on a reload straight
+  // into this screen nothing has asked for the rates by the time the editor
+  // opens, and its conversion preview resolves to null without saying why.
+  const rates = useCurrencyStore((state) => state.rates);
+  const fetchRates = useCurrencyStore((state) => state.fetchRates);
+
+  useEffect(() => {
+    if (Object.keys(rates).length === 0) fetchRates();
+  }, [rates, fetchRates]);
+
   const categoryAccounts = useMemo(
     () => accounts.filter((account) => account.categoryName === categoryName),
     [accounts, categoryName],
   );
+
+  //--BUDGET EDITOR-----------------
+  // An id and not a boolean: this screen lists several accounts, so the flag
+  // has to name which row was pressed. Level 3 holds one account and uses a
+  // boolean for the same state.
+  const [editingAccountId, setEditingAccountId] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  // The whole envelope, not a sentence: the modal puts each issue beside the
+  // field it names, and a 400's own message is the constant 'Validation Error'.
+  const [saveError, setSaveError] = useState<BudgetErrorResponse | null>(null);
+
+  // Read back out of the payload rather than copied into state when the modal
+  // opens: after a save the rows are refetched, and a copy would keep showing
+  // the figures the write replaced.
+  const editingAccount =
+    categoryAccounts.find(
+      (account) => account.accountId === editingAccountId,
+    ) ?? null;
+
+  // 'YYYY-MM-01' text on both sides, so >= compares them correctly. No
+  // new Date(): that string parses as UTC midnight and renders the previous
+  // month west of Greenwich, which is the defect this module removed.
+  //
+  // The server accepts writing a past month; this is what refuses to offer it.
+  const canEdit =
+    referenceMonth !== null &&
+    currentMonth !== null &&
+    referenceMonth >= currentMonth;
+
+  const closeEditor = () => {
+    setEditingAccountId(null);
+    setSaveError(null);
+  };
+
+  // Does NOT close the modal on success: the modal is what decides whether
+  // there is a confirmation to render, and closing here makes that unreachable.
+  const handleSaveBudget = async ({
+    amount,
+    currency,
+    month,
+    appliesUntil,
+  }: BudgetWriteRequest) => {
+    if (!editingAccount) return null;
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const response = await setCurrentBudget(editingAccount.accountId, {
+        amount,
+        currency,
+        month,
+        appliesUntil,
+      });
+
+      await refreshStatus();
+
+      return response;
+    } catch (err: unknown) {
+      setSaveError(normalizeBudgetError(err));
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // The server's own fold of the rows listed below, not a sum over them: a
   // header and the rows under it cannot disagree if only one is computed.
@@ -133,89 +222,118 @@ function CategoryAccountList() {
           the two classes beside it and not this one: it is a long form, and a
           form that cannot scroll as a document is a form with fields under the
           fold. */}
-      <section className='page__container page__container--budget budgetCategoryBoard'>
-        <TopWhiteSpace variant={'dark'} />
+      {/* The shell Layout gives every other screen. This route is declared
+          beside Layout and not under it (App.tsx:345), so it renders neither
+          .home__layout nor the navbar unless it renders them itself. */}
+      <div className='budgetCategoryShell'>
+        <section className='page__container page__container--budget budgetCategoryBoard'>
+          <TopWhiteSpace variant={'dark'} />
 
-        {/* The column that puts this screen's rows at the same x as level 1's.
-            The spacer above stays outside it. */}
-        <div className='budgetDetail__content'>
-          <div className='page__content'>
-            <div className='main__title--container'>
-              <Link
-                to={withMonthParam(budgetPageAddress, month)}
-                relative='path'
-                className='iconLeftArrow'
-              >
-                <LeftArrowLightSvg />
-              </Link>
+          {/* The column that puts this screen's rows at the same x as level 1's.
+              The spacer above stays outside it. */}
+          <div className='budgetDetail__content'>
+            <div className='page__content'>
+              <div className='main__title--container'>
+                <Link
+                  to={withMonthParam(budgetPageAddress, month)}
+                  relative='path'
+                  className='iconLeftArrow'
+                >
+                  <LeftArrowLightSvg />
+                </Link>
 
-              <div className='form__title form__title--recordName'>
-                {capitalize(categoryName!)}
-              </div>
+                <div className='form__title form__title--recordName'>
+                  {capitalize(categoryName!)}
+                </div>
 
-              {/* <Link to='edit' className='flx-col-center icon3dots'>
-                <Dots3LightSvg />
-              </Link> */}
+                {/* <Link to='edit' className='flx-col-center icon3dots'>
+                  <Dots3LightSvg />
+                </Link> */}
 
-              <div id='edit' className='flx-col-center icon3dots'>
-                <Dots3LightSvg />
+                <div id='edit' className='flx-col-center icon3dots'>
+                  <Dots3LightSvg />
+                </div>
               </div>
             </div>
+
+            {/* Read-only, and no chevron: the scope is set where the whole board is
+                visible, which is level 1. The label is the resolved month, so it
+                stays a skeleton until the answer lands. */}
+            {referenceMonth ? (
+              <div className='month-badge month-badge--dark'>
+                {formatBudgetMonthLabel(referenceMonth)}
+              </div>
+            ) : (
+              <div
+                className='month-badge month-badge--dark month-badge--skeleton'
+                aria-hidden='true'
+              />
+            )}
+
+            {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
+
+            {/* A column header, not a title: the name of the category is already
+                stated above, and what the left column holds is the subcategory.
+                Four labels for the four cells of a row, the same pairing level 1
+                states over the same two lines. */}
+            <CardTitle
+              legend='Spent / Budget'
+              subtitle='Remaining over / left'
+              subLegend='% of spent budget'
+            >
+              {'Subcategory'}
+            </CardTitle>
+
+            {/* Loading, error and empty are three states, not one fallback: a
+                category still on the wire is not a category without accounts. */}
+            {isLoading && <CoinSpinner />}
+
+            {!isLoading && error && (
+              <p className='box__subtitle box__subtitle--message'>
+                Error loading data: {error}
+              </p>
+            )}
+
+            {!isLoading && !error && categoryAccounts.length === 0 && (
+              <p className='box__subtitle box__subtitle--message'>
+                This category has no budget accounts this month.
+              </p>
+            )}
+
+            {!isLoading && !error && categoryAccounts.length > 0 && (
+              <ListAccountOfCategory
+                previousRoute={`${budgetPageAddress}/category/${categoryName}`}
+                accounts={categoryAccounts}
+                onEditAccount={setEditingAccountId}
+                canEdit={canEdit}
+                //categoryName={categoryName}
+              />
+            )}
           </div>
+        </section>
+        <MainNavbar />
+      </div>
 
-          {/* Read-only, and no chevron: the scope is set where the whole board is
-              visible, which is level 1. The label is the resolved month, so it
-              stays a skeleton until the answer lands. */}
-          {referenceMonth ? (
-            <div className='month-badge month-badge--dark'>
-              {formatBudgetMonthLabel(referenceMonth)}
-            </div>
-          ) : (
-            <div
-              className='month-badge month-badge--dark month-badge--skeleton'
-              aria-hidden='true'
-            />
-          )}
-
-          {summaryData && <SummaryDetailBox bubleInfo={summaryData} />}
-
-          {/* A column header, not a title: the name of the category is already
-              stated above, and what the left column holds is the subcategory.
-              Four labels for the four cells of a row, the same pairing level 1
-              states over the same two lines. */}
-          <CardTitle
-            legend='Spent / Budget'
-            subtitle='Remaining over / left'
-            subLegend='% of spent budget'
-          >
-            {'Subcategory'}
-          </CardTitle>
-
-          {/* Loading, error and empty are three states, not one fallback: a
-              category still on the wire is not a category without accounts. */}
-          {isLoading && <CoinSpinner />}
-
-          {!isLoading && error && (
-            <p className='box__subtitle box__subtitle--message'>
-              Error loading data: {error}
-            </p>
-          )}
-
-          {!isLoading && !error && categoryAccounts.length === 0 && (
-            <p className='box__subtitle box__subtitle--message'>
-              This category has no budget accounts this month.
-            </p>
-          )}
-
-          {!isLoading && !error && categoryAccounts.length > 0 && (
-            <ListAccountOfCategory
-              previousRoute={`${budgetPageAddress}/category/${categoryName}`}
-              accounts={categoryAccounts}
-              //categoryName={categoryName}
-            />
-          )}
-        </div>
-      </section>
+      {/* Mounted outside <section>: the board is a frame with its own scroll,
+          and a panel inside it would scroll with the list instead of over it. */}
+      {editingAccount && (
+        <BudgetEditModal
+          accountName={editingAccount.subcategory ?? editingAccount.accountName}
+          nature={editingAccount.nature}
+          month={referenceMonth ?? ''}
+          currency={editingAccount.currency}
+          currentAmount={editingAccount.budgetAmount}
+          nextMonthBudget={editingAccount.nextMonthBudget}
+          actualSpent={editingAccount.actualSpent}
+          remainingBudget={editingAccount.remainingBudget}
+          executionPercentage={editingAccount.executionPercentage}
+          isOverBudget={editingAccount.isOverBudget}
+          isSaving={isSaving}
+          error={saveError}
+          onClose={closeEditor}
+          onSave={handleSaveBudget}
+        />
+      )}
     </>
   );
 }

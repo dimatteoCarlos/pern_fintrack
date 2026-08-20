@@ -30,10 +30,15 @@ type SummaryDetailPropType = {
     // no served figure to hand over.
     executionPercentage?: number | null;
   };
+  // Rendered beside the title, which is the word the control acts on. A slot
+  // and not an onEdit callback: this component stays presentational, and only
+  // the caller knows whether its box names something editable — level 2's box
+  // is a category total, which no single write governs.
+  action?: React.ReactNode;
 };
 
 //MAIN UI COMPONENT: SummaryDetailBox.tsx
-function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
+function SummaryDetailBox({ bubleInfo, action }: SummaryDetailPropType) {
   const {
     title,
     amount,
@@ -79,7 +84,10 @@ function SummaryDetailBox({ bubleInfo }: SummaryDetailPropType) {
   return (
     <>
       <div className='summary__container summary__container--stacked'>
-        <div className='summary__title'>{title}</div>
+        <div className='summary__titleRow'>
+          <div className='summary__title'>{title}</div>
+          {action}
+        </div>
         <div className='summary__data'>
           <div className='summary__data--amount'>
             <span> {getCurrencySymbol(currency_code ?? defaultCurrency)}</span>
