@@ -44,10 +44,16 @@ const AccountTransactionsList = ({
   onTransactionClick,
   monthBudget,
 }: AccountTransactionsListPropsType) => {
-  // Only a positive budget is a budget: dividing by zero has no reading, and a
-  // budget of zero would make the first spend of the month an overrun.
+  // Zero IS a budget, and spending against it IS an overrun — the summary above
+  // this list says exactly that, with the served isOverBudget and a red square.
+  // Requiring a positive one here made the rows contradict it: the panel read
+  // "Over $43.71" while no row admitted to having crossed anything.
+  //
+  // What zero really lacks is a denominator, and that is a separate question,
+  // settled at spentShare below. The two were one test, so the missing
+  // percentage took the marker down with it.
   const budget =
-    typeof monthBudget === 'number' && monthBudget > 0 ? monthBudget : null;
+    typeof monthBudget === 'number' && monthBudget >= 0 ? monthBudget : null;
 
   // The accumulator only ever adds, so a month crosses its budget once and
   // never comes back. The crossing is therefore the oldest row already past it,
@@ -90,8 +96,14 @@ const AccountTransactionsList = ({
             // What share of the budget the month had consumed by this row. One
             // decimal, the same as the summary above the list, so the top row
             // and the summary read as the same figure and not as two.
+            //
+            // A budget of zero has no share: the division yields Infinity, and
+            // the row would print '(Infinity%)'. Withheld the same way the
+            // server withholds executionPercentage over the same denominator.
             const spentShare =
-              budget !== null && typeof month_cumulative_spent === 'number'
+              budget !== null &&
+              budget > 0 &&
+              typeof month_cumulative_spent === 'number'
                 ? (month_cumulative_spent / budget) * 100
                 : null;
 
