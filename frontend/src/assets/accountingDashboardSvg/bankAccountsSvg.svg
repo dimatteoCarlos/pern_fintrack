@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
- <!-- Geometric base and columns -->
- <path d="M4 26h24M6 26V14h4v12m2-12h4v12m2-12h4v12m2-12h4v12M3 14h26M3 10l13-7 13 7" />
- <!-- Central door detail -->
- <path d="M14 26v-6h4v6" />
-</svg>
