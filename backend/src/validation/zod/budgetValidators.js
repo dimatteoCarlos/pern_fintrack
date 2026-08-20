@@ -5,6 +5,10 @@
 // controller.
 
 import { z } from 'zod';
+// The one list of codes the FX state can price. Imported rather than repeated:
+// a schema that accepted a code the converter cannot resolve would turn a
+// typo into a 500 at write time.
+import { SUPPORTED_CURRENCIES } from '../../fintrack_api/services/fx_services/core/fxConfig.js';
 
 // Every schema in this file is strict.
 //
@@ -125,6 +129,17 @@ export const currentBudgetBodySchema = z.object({
  amount: z.number().nonnegative({
   message: 'amount must be zero or a positive number',
  }),
+ // The currency the amount is stated in, which is not necessarily the one it is
+ // stored in. Required, with no default: a default is what let this endpoint
+ // read every figure as the accounting currency and store 50000 cop as 50000
+ // usd — the defect migration 014 documents and 017 closes for this table.
+ currency: z
+  .string()
+  .trim()
+  .toLowerCase()
+  .refine((code) => SUPPORTED_CURRENCIES.includes(code), {
+   message: `currency must be one of: ${SUPPORTED_CURRENCIES.join(', ')}`,
+  }),
  // The month the amount comes into force. Required, with no default: the screen
  // always knows which month it is showing, and a default would quietly write
  // somewhere else on the day the field went missing.

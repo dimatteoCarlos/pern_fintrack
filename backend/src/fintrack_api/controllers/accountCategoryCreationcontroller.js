@@ -340,6 +340,10 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       convertedBudget,
       account_start_date ?? transaction_actual_date,
       await getUserTimeZone(client, userId),
+      // The accounting currency, matching what category_budget_accounts stores
+      // in currency_id — not currencyIdReq, which is the origin this row does
+      // not carry. Required by migration 017.
+      accountingCurrencyId,
     );
     //--------------------
     //DETERMINE THE TRANSACTION TYPE FOR NEW CATEGORY_BUDGET ACCOUNT AND FOR COUNTER ACCOUNT (SLACK)

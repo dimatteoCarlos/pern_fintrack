@@ -126,7 +126,10 @@ export async function setCurrentBudget(req, res, next) {
   if (!userId) return;
 
   const { accountId } = currentBudgetParamsSchema.parse(req.params);
-  const { amount, month, appliesUntil } = currentBudgetBodySchema.parse(req.body);
+  // The parsed object is forwarded whole rather than rebuilt field by field: a
+  // field the schema validates and the hand-written literal omits reaches the
+  // service as undefined, which is how currency was lost between the two.
+  const allocation = currentBudgetBodySchema.parse(req.body);
 
   // Ownership is enforced inside the service, in the same transaction as the
   // write. Checking it here instead would leave a window between the check and
@@ -137,7 +140,7 @@ export async function setCurrentBudget(req, res, next) {
    pool,
    userId,
    accountId,
-   { amount, month, appliesUntil },
+   allocation,
    timeZone
   );
 

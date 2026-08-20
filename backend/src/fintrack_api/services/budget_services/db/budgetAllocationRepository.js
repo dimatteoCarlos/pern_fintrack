@@ -121,8 +121,14 @@ async function monthAfter(client, month) {
  * and a terminator committed without its allocation reverts a budget nobody
  * changed.
  *
+ * @param {number} budgetAmount - the amount in the account's currency, already
+ *  converted and normalized by the service.
  * @param {string} from - first month in force, as 'YYYY-MM-01'
  * @param {string|null} to - last month in force, or null for no end
+ * @param {object} fx - the conversion that produced budgetAmount:
+ *  { originalAmount, originalCurrencyId, rate, source, fetchedAt, targetCurrencyId }.
+ *  Required, with no default: a default identity here is exactly the silence
+ *  migration 014 was written to end.
  * @returns {Promise<object>} the amount written, what the range gives back to,
  *  and the months whose stored decision this write replaced.
  */
@@ -132,6 +138,7 @@ export async function writeAllocation(
  budgetAmount,
  from,
  to,
+ fx,
 ) {
  // Read AT `to` + 1, not at `from`: a row already sitting on the far edge states
  // what that month is worth, and carrying `from`'s amount there would overwrite
@@ -154,14 +161,39 @@ export async function writeAllocation(
   [accountId, from, to],
  );
 
+ // budget_amount is the converted figure; the six columns beside it are what
+ // make it auditable. Every one of them is overwritten on conflict: a month
+ // rewritten in a new currency whose old FX metadata survived would describe a
+ // figure that is no longer there.
  const { rows } = await client.query(
-  `INSERT INTO budget_monthly_allocations (account_id, budget_month, budget_amount)
-   VALUES ($1, $2::date, $3)
+  `INSERT INTO budget_monthly_allocations (
+     account_id, budget_month, budget_amount,
+     original_budget_amount, original_currency_id,
+     exchange_rate, exchange_rate_source, exchange_rate_timestamp,
+     exchange_rate_target_currency_id)
+   VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9)
    ON CONFLICT (account_id, budget_month)
    DO UPDATE SET budget_amount = EXCLUDED.budget_amount,
+     original_budget_amount = EXCLUDED.original_budget_amount,
+     original_currency_id = EXCLUDED.original_currency_id,
+     exchange_rate = EXCLUDED.exchange_rate,
+     exchange_rate_source = EXCLUDED.exchange_rate_source,
+     exchange_rate_timestamp = EXCLUDED.exchange_rate_timestamp,
+     exchange_rate_target_currency_id = EXCLUDED.exchange_rate_target_currency_id,
      updated_at = CURRENT_TIMESTAMP
-   RETURNING budget_allocation_id, account_id, budget_month::text, budget_amount`,
-  [accountId, from, budgetAmount],
+   RETURNING budget_allocation_id, account_id, budget_month::text, budget_amount,
+     original_budget_amount, exchange_rate`,
+  [
+   accountId,
+   from,
+   budgetAmount,
+   fx.originalAmount,
+   fx.originalCurrencyId,
+   fx.rate,
+   fx.source,
+   fx.fetchedAt,
+   fx.targetCurrencyId,
+  ],
  );
 
  if (restoresFrom !== null) {
@@ -172,11 +204,20 @@ export async function writeAllocation(
   // Falling back to 0 when nothing governed that month: with no amount to return
   // to, the months after the range would carry this one forward forever, which
   // is the opposite of a bounded change. Only a row stops the carry-forward.
+  //
+  // Identity FX, in the account's own currency: this amount was read out of
+  // this table, so it is already the accounting figure and nobody typed it.
+  // Recording the origin currency of the write above would claim a user stated
+  // this month in a currency they never saw.
   await client.query(
-   `INSERT INTO budget_monthly_allocations (account_id, budget_month, budget_amount)
-    VALUES ($1, $2::date, $3)
+   `INSERT INTO budget_monthly_allocations (
+      account_id, budget_month, budget_amount,
+      original_budget_amount, original_currency_id,
+      exchange_rate, exchange_rate_source, exchange_rate_timestamp,
+      exchange_rate_target_currency_id)
+    VALUES ($1, $2::date, $3, $3, $4, 1.0, 'identity', CURRENT_TIMESTAMP, $4)
     ON CONFLICT (account_id, budget_month) DO NOTHING`,
-   [accountId, restoresFrom, restoresTo ?? 0],
+   [accountId, restoresFrom, restoresTo ?? 0, fx.targetCurrencyId],
   );
  }
 
@@ -184,6 +225,11 @@ export async function writeAllocation(
   accountId: rows[0].account_id,
   budgetMonth: rows[0].budget_month,
   budgetAmount: toAmount(rows[0].budget_amount),
+  // The figure as it was typed, and the rate that turned it into the one above.
+  // Returned so the caller can confirm the conversion instead of leaving the
+  // user to wonder why the amount they entered reads differently (014).
+  originalAmount: toAmount(rows[0].original_budget_amount),
+  exchangeRate: Number(rows[0].exchange_rate),
   // What the month after the range gives back, and which month that is, so the
   // caller can word the confirmation without resolving either again. Both null
   // when the change has no end.
@@ -214,21 +260,32 @@ export async function insertFirstAllocation(
  budgetAmount,
  accountStartDate,
  timeZone = 'UTC',
+ currencyId,
 ) {
  // Same expression as the backfill in 012, so an account created by hand and
  // one migrated from the legacy column land on the same month. One AT TIME ZONE
  // only: a second would return a timestamptz, and casting that to date reads
  // the session's zone rather than the owner's.
+ // Identity FX in the account's own currency, and not the conversion the
+ // account creation performed. That conversion IS recorded — on
+ // category_budget_accounts, by migration 014, which owns the origin of the
+ // figure this row mirrors. Repeating it here would be a second copy to keep in
+ // step, and 010 already refused a currency column for that reason.
  const { rows } = await client.query(
-  `INSERT INTO budget_monthly_allocations (account_id, budget_month, budget_amount)
+  `INSERT INTO budget_monthly_allocations (
+     account_id, budget_month, budget_amount,
+     original_budget_amount, original_currency_id,
+     exchange_rate, exchange_rate_source, exchange_rate_timestamp,
+     exchange_rate_target_currency_id)
    VALUES ($1,
     date_trunc('month', $2::timestamptz AT TIME ZONE $3)::date,
-    $4)
+    $4, $4, $5, 1.0, 'identity', CURRENT_TIMESTAMP, $5)
    ON CONFLICT (account_id, budget_month)
    DO UPDATE SET budget_amount = EXCLUDED.budget_amount,
+     original_budget_amount = EXCLUDED.original_budget_amount,
      updated_at = CURRENT_TIMESTAMP
    RETURNING budget_allocation_id, account_id, budget_month::text, budget_amount`,
-  [accountId, accountStartDate, timeZone, budgetAmount],
+  [accountId, accountStartDate, timeZone, budgetAmount, currencyId],
  );
 
  return {

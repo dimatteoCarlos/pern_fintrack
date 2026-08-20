@@ -28,6 +28,7 @@ import {
   ensureBudgetTables,
   ensureBudgetAllocationBackfill,
   ensureCategoryBudgetCurrency,
+  ensureCategoryBudgetFxColumns,
   recreateExchangeRatesTable,
 } from './createTables.js';
 
@@ -166,6 +167,10 @@ export async function initializeDatabase() {
     // Runtime counterpart of migration 011: production is built by this path,
     // not by the migration runner, so the constraint has to be applied here too.
     await ensureCategoryBudgetCurrency(client);
+
+    // Runtime counterpart of migration 014. After the call above, not before:
+    // its backfill reads currency_id, which is what that call guarantees.
+    await ensureCategoryBudgetFxColumns(client);
 
     // Runtime counterpart of migration 012, for the same reason as the two
     // calls above: production is built by this path, so a database that never

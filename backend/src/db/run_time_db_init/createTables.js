@@ -378,8 +378,33 @@ export async function ensureBudgetTables(client = pool) {
    budget_amount        DECIMAL(15,2) NOT NULL CHECK (budget_amount >= 0),
    created_at           TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
    updated_at           TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+   -- FX audit columns. budget_amount holds the accounting currency;
+   -- original_budget_amount holds what the user typed. The two currency ids
+   -- take no default: an id has no honest fallback. See migration 017.
+   --
+   -- The CHECKs are named after 017 rather than left to the auto-generated
+   -- name, so 017's guarded DO block finds them and stays a no-op on a
+   -- database this DDL built.
+   original_budget_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+   original_currency_id   INTEGER       NOT NULL
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+   exchange_rate          DECIMAL(18,8) NOT NULL DEFAULT 1.0,
+   exchange_rate_source   VARCHAR(60)   NOT NULL DEFAULT 'identity',
+   exchange_rate_timestamp TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   -- Named, and shorter than its siblings: the auto-generated
+   -- ..._exchange_rate_target_currency_id_fkey is 64 characters and Postgres
+   -- would store a truncated 63. See 017 for the full reasoning.
+   exchange_rate_target_currency_id INTEGER NOT NULL
+    CONSTRAINT budget_monthly_allocations_exchange_rate_target_fkey
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+
    CONSTRAINT uq_budget_allocation_month UNIQUE (account_id, budget_month),
-   CONSTRAINT chk_budget_month_is_first CHECK (EXTRACT(DAY FROM budget_month) = 1)
+   CONSTRAINT chk_budget_month_is_first CHECK (EXTRACT(DAY FROM budget_month) = 1),
+   CONSTRAINT budget_monthly_allocations_exchange_rate_check
+    CHECK (exchange_rate > 0),
+   CONSTRAINT budget_monthly_allocations_original_amount_check
+    CHECK (original_budget_amount >= 0)
   )
  `);
 
@@ -450,6 +475,143 @@ export async function ensureCategoryBudgetCurrency(client = pool) {
 }
 
 /**
+ * Add the FX audit columns of migration 014 to category_budget_accounts.
+ *
+ * The runtime counterpart of 014, and the reason it is needed is the one
+ * addFxAuditColumns() states for transactions: the columns are declared in the
+ * mainTables DDL, but that is a CREATE TABLE IF NOT EXISTS and it only runs
+ * inside the tables_created block, so on a database that already has the table
+ * neither path ever adds them. 014 reaches only databases that met the runner.
+ *
+ * Order matters. The backfill reads currency_id, so this must run after
+ * ensureCategoryBudgetCurrency().
+ *
+ * The two currency ids take no default: an id has no honest fallback. So the
+ * columns are added nullable, backfilled from the currency the row already
+ * carries, and only then made NOT NULL — the same three steps as 014, in the
+ * same order, so both build paths land on the same schema.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureCategoryBudgetFxColumns(client = pool) {
+ await client.query(`
+  ALTER TABLE category_budget_accounts
+   ADD COLUMN IF NOT EXISTS original_budget DECIMAL(15,2),
+   ADD COLUMN IF NOT EXISTS original_currency_id INTEGER,
+   ADD COLUMN IF NOT EXISTS exchange_rate DECIMAL(18,8),
+   ADD COLUMN IF NOT EXISTS exchange_rate_source VARCHAR(60),
+   ADD COLUMN IF NOT EXISTS exchange_rate_timestamp TIMESTAMPTZ,
+   ADD COLUMN IF NOT EXISTS exchange_rate_target_currency_id INTEGER
+ `);
+
+ // Historic rows were written without conversion, so the stored budget IS the
+ // original and the rate that produced it was 1. Only untouched rows are
+ // written, so every boot after the first changes nothing.
+ const backfilled = await client.query(`
+  UPDATE category_budget_accounts
+  SET original_budget = COALESCE(budget, 0),
+   original_currency_id = currency_id,
+   exchange_rate = 1.0,
+   exchange_rate_source = 'identity',
+   exchange_rate_timestamp = account_start_date,
+   exchange_rate_target_currency_id = currency_id
+  WHERE original_currency_id IS NULL
+ `);
+
+ if (backfilled.rowCount > 0) {
+  console.log(
+   pc.green(`category_budget_accounts: ${backfilled.rowCount} FX row(s) backfilled.`),
+  );
+ }
+
+ await client.query(`
+  ALTER TABLE category_budget_accounts
+   ALTER COLUMN original_budget SET DEFAULT 0,
+   ALTER COLUMN exchange_rate SET DEFAULT 1.0,
+   ALTER COLUMN exchange_rate_source SET DEFAULT 'identity',
+   ALTER COLUMN exchange_rate_timestamp SET DEFAULT CURRENT_TIMESTAMP
+ `);
+
+ // A row whose currency_id is still NULL leaves both ids NULL here, and a
+ // SET NOT NULL over it raises — which means process.exit(1) in index.js, the
+ // whole application down over a defect that only degrades the budget module.
+ // Same reasoning as ensureCategoryBudgetCurrency: warn and let the boot go on.
+ //
+ // is_nullable is read for the same reason it is read there: skipping the ALTER
+ // when the column is already NOT NULL avoids an ACCESS EXCLUSIVE lock on every
+ // boot for a no-op. One column answers for all six, since they are set
+ // together and never separately.
+ const { rows } = await client.query(`
+  SELECT
+   (SELECT count(*)::int FROM category_budget_accounts
+    WHERE original_currency_id IS NULL
+     OR exchange_rate_target_currency_id IS NULL) AS remaining,
+   (SELECT is_nullable FROM information_schema.columns
+    WHERE table_name = 'category_budget_accounts'
+     AND column_name = 'original_currency_id') AS is_nullable
+ `);
+ const { remaining, is_nullable } = rows[0];
+
+ if (remaining > 0) {
+  console.warn(
+   pc.yellow(
+    `category_budget_accounts: ${remaining} row(s) have no currency to resolve ` +
+     `their FX origin. Leaving the FX columns nullable.`,
+   ),
+  );
+  return;
+ }
+
+ if (is_nullable === 'YES') {
+  await client.query(`
+   ALTER TABLE category_budget_accounts
+    ALTER COLUMN original_budget SET NOT NULL,
+    ALTER COLUMN original_currency_id SET NOT NULL,
+    ALTER COLUMN exchange_rate SET NOT NULL,
+    ALTER COLUMN exchange_rate_source SET NOT NULL,
+    ALTER COLUMN exchange_rate_timestamp SET NOT NULL,
+    ALTER COLUMN exchange_rate_target_currency_id SET NOT NULL
+  `);
+  console.log(pc.green('category_budget_accounts: FX columns are now NOT NULL.'));
+ }
+
+ // Guarded so the function stays idempotent: ADD CONSTRAINT has no
+ // IF NOT EXISTS. Names copied from 014 verbatim, so a database built by the
+ // runner and one built by this path are indistinguishable.
+ await client.query(`
+  DO $$
+  BEGIN
+   IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'category_budget_accounts_exchange_rate_check'
+   ) THEN
+    ALTER TABLE category_budget_accounts
+     ADD CONSTRAINT category_budget_accounts_exchange_rate_check
+     CHECK (exchange_rate > 0);
+   END IF;
+
+   IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'category_budget_accounts_original_currency_id_fkey'
+   ) THEN
+    ALTER TABLE category_budget_accounts
+     ADD CONSTRAINT category_budget_accounts_original_currency_id_fkey
+     FOREIGN KEY (original_currency_id) REFERENCES currencies(currency_id)
+     ON DELETE RESTRICT ON UPDATE CASCADE;
+   END IF;
+
+   IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'category_budget_accounts_exchange_rate_target_currency_id_fkey'
+   ) THEN
+    ALTER TABLE category_budget_accounts
+     ADD CONSTRAINT category_budget_accounts_exchange_rate_target_currency_id_fkey
+     FOREIGN KEY (exchange_rate_target_currency_id) REFERENCES currencies(currency_id)
+     ON DELETE RESTRICT ON UPDATE CASCADE;
+   END IF;
+  END
+  $$;
+ `);
+}
+
+/**
  * Backfill the first monthly allocation from the legacy
  * category_budget_accounts.budget column.
  *
@@ -467,11 +629,23 @@ export async function ensureBudgetAllocationBackfill(client = pool) {
  // ON CONFLICT is what makes a re-run safe: on every boot after the first this
  // inserts nothing. See 012 for why there is no second AT TIME ZONE — it would
  // make the ::date cast read the session's zone instead of the owner's.
+ //
+ // The FX columns 017 added are written here, not left to their defaults: the
+ // two currency ids have none, and original_budget_amount would default to 0
+ // and claim the user typed nothing. A legacy cba.budget was stored without
+ // conversion, so its origin IS the amount and its currency IS cba.currency_id.
+ // exchange_rate and exchange_rate_source keep their defaults, which record
+ // exactly that: an identity conversion at rate 1.
  const allocations = await client.query(`
-  INSERT INTO budget_monthly_allocations (account_id, budget_month, budget_amount)
+  INSERT INTO budget_monthly_allocations (
+   account_id, budget_month, budget_amount,
+   original_budget_amount, original_currency_id, exchange_rate_target_currency_id)
   SELECT cba.account_id,
    date_trunc('month', ua.account_start_date AT TIME ZONE u.timezone)::date,
-   cba.budget
+   cba.budget,
+   cba.budget,
+   cba.currency_id,
+   cba.currency_id
   FROM category_budget_accounts cba
   JOIN user_accounts ua ON ua.account_id = cba.account_id
   JOIN users u          ON u.user_id     = ua.user_id

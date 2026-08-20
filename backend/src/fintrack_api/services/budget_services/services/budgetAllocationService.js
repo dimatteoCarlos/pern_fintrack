@@ -24,6 +24,15 @@ import {
 // repeated here: it is a term of the wire contract, and a second copy is a
 // second thing to keep in step.
 import { OPEN_ENDED } from '../../../../validation/zod/budgetValidators.js';
+// The same converter every other write path in the API uses. Migration 014
+// records what happens when one of them skips it: a budget typed as 50000 cop
+// stored as 50000 usd, an error of three orders of magnitude the schema cannot
+// detect afterwards. 017 gives this table the columns to prove it did not.
+import { currencyAmountConversion } from '../../fx_services/conversion/currencyAmountConversion.js';
+import {
+ getCurrencyCodeSync,
+ getCurrencyId,
+} from '../../../../utils/currencyLookup.js';
 
 const forbidden = (message) =>
  Object.assign(new Error(message), { status: 403 });
@@ -97,11 +106,18 @@ const normalizeAmount = (budgetAmount) => {
  */
 const lockOwnedAccount = async (client, userId, accountId, timeZone = 'UTC') => {
  const { rows } = await client.query(
+  // currency_id joined from category_budget_accounts, which 010 made the single
+  // owner of it and 011 made NOT NULL. It is the currency the stored amount is
+  // expressed in, so it is both the conversion target and the FK the allocation
+  // records. Read here rather than in the repository: the lock is already
+  // holding the row this answer comes from.
   `SELECT ua.account_id,
           ua.account_start_date,
+          cba.currency_id,
           date_trunc('month', ua.account_start_date AT TIME ZONE $3)::date::text
             AS account_start_month
      FROM user_accounts ua
+     JOIN category_budget_accounts cba ON cba.account_id = ua.account_id
     WHERE ua.account_id = $1
       AND ua.user_id = $2
       FOR UPDATE OF ua`,
@@ -125,6 +141,12 @@ const lockOwnedAccount = async (client, userId, accountId, timeZone = 'UTC') => 
  * No ownership check: the caller just created the account inside this same
  * transaction, so there is no id to verify against.
  *
+ * budgetAmount arrives already converted: the creation controller runs it
+ * through currencyAmountConversion and records the origin on the account row
+ * itself (migration 014). This one only mirrors the result, so currencyId is
+ * the account's currency and the row records an identity conversion.
+ *
+ * @param {number} currencyId - the account's currency, required by 017.
  * @returns {Promise<object>} the allocation created.
  */
 async function createAllocationForAccount(
@@ -133,6 +155,7 @@ async function createAllocationForAccount(
  budgetAmount,
  accountStartDate,
  timeZone = 'UTC',
+ currencyId,
 ) {
  return insertFirstAllocation(
   client,
@@ -140,6 +163,7 @@ async function createAllocationForAccount(
   normalizeAmount(budgetAmount),
   accountStartDate,
   timeZone,
+  currencyId,
  );
 }
 
@@ -186,6 +210,7 @@ async function applyAllocationForAccount(
    normalizedAmount,
    account.account_start_date,
    timeZone,
+   account.currency_id,
   );
  }
 
@@ -195,12 +220,23 @@ async function applyAllocationForAccount(
   return null;
  }
 
+ // Identity FX: the account editor hands over an amount already converted to
+ // the accounting currency, and its origin is recorded on the account row by
+ // migration 014. Only the budget screen states an origin currency of its own.
  const written = await writeAllocation(
   client,
   accountId,
   normalizedAmount,
   month,
   null,
+  {
+   originalAmount: normalizedAmount,
+   originalCurrencyId: account.currency_id,
+   rate: 1,
+   source: 'identity',
+   fetchedAt: new Date(),
+   targetCurrencyId: account.currency_id,
+  },
  );
 
  // Projected to the three contract fields. The editor writes no end, so nothing
@@ -231,8 +267,9 @@ async function applyAllocationForAccount(
  * it begins. A month is a text bound of the form 'YYYY-MM-01', so `<` and `>`
  * compare chronologically and nothing below parses a date.
  *
- * @param {object} allocation - { amount, month, appliesUntil }, already coerced
- *  by the validator. appliesUntil is a month or OPEN_ENDED.
+ * @param {object} allocation - { amount, currency, month, appliesUntil }, already
+ *  coerced by the validator. currency is the code the amount is typed in, not
+ *  the one it is stored in; appliesUntil is a month or OPEN_ENDED.
  * @returns {Promise<object>} what was written, what the range gives back to, and
  *  the months it replaced.
  */
@@ -243,7 +280,7 @@ async function setCurrentMonthBudget(
  allocation,
  timeZone = 'UTC',
 ) {
- const { amount, month, appliesUntil } = allocation;
+ const { amount, currency, month, appliesUntil } = allocation;
 
  // Checked before a connection is taken: it reads no row and no calendar, so a
  // range that contradicts itself costs nothing to reject.
@@ -279,13 +316,53 @@ async function setCurrentMonthBudget(
    );
   }
 
+  // Converted before it is normalized, not after: the scale of the column
+  // belongs to the stored currency, and rounding the origin figure first would
+  // apply the rate to an amount the user never typed.
+  //
+  // An identity conversion when the two codes match, so an account already kept
+  // in the currency the user thinks in costs no rate lookup and still records
+  // what it did.
+  const accountCurrency = getCurrencyCodeSync(account.currency_id);
+  const converted = await currencyAmountConversion(
+   amount,
+   currency,
+   accountCurrency,
+  );
+
+  const normalizedAmount = normalizeAmount(converted.amount.toNumber());
+
   const written = await writeAllocation(
    client,
    accountId,
-   normalizeAmount(amount),
+   normalizedAmount,
    month,
    appliesUntil === OPEN_ENDED ? null : appliesUntil,
+   {
+    // The figure as typed, at the column's scale. Normalized on its own and not
+    // taken from the converted one: it is a different amount in a different
+    // currency, and one rounding does not answer for the other.
+    originalAmount: normalizeAmount(amount),
+    // Resolved on this transaction's client, not the pool: the write is inside
+    // BEGIN, and a lookup on a second connection would not see a currency row
+    // added by an uncommitted migration on this one.
+    originalCurrencyId: await getCurrencyId(client, currency),
+    rate: converted.rate,
+    source: converted.source,
+    fetchedAt: converted.fetchedAt,
+    targetCurrencyId: account.currency_id,
+   },
   );
+
+  // cba.budget is the standing monthly amount, which is what the accounting
+  // dashboard sums. Only an open-ended save has no far edge, so it is the only
+  // one whose amount is still in force after a bounded range would have expired.
+  if (appliesUntil === OPEN_ENDED) {
+   await client.query(
+    `UPDATE category_budget_accounts SET budget = $1 WHERE account_id = $2`,
+    [normalizedAmount, accountId],
+   );
+  }
 
   await client.query('COMMIT');
 
@@ -295,6 +372,14 @@ async function setCurrentMonthBudget(
    accountId: written.accountId,
    budgetMonth: written.budgetMonth,
    budgetAmount: written.budgetAmount,
+   // What was typed and what it became. The screen shows an amount in a
+   // currency the user chose and stores it in another, so the response has to
+   // state both — otherwise the figure that comes back reads as a correction
+   // nobody made.
+   originalAmount: written.originalAmount,
+   originalCurrency: currency,
+   currency: accountCurrency,
+   exchangeRate: written.exchangeRate,
    appliesUntil,
    restoresTo: written.restoresTo,
    restoresFrom: written.restoresFrom,
