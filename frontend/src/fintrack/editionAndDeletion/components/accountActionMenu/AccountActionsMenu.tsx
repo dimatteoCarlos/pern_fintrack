@@ -1,8 +1,13 @@
-//frontend/src/edition/components/accountActionMenu/AccountActionsMenu.tsx
-//Parent: /frontend/src/pages/accountingDashboard/AccountingDashboard.tsx
+//frontend/src/fintrack/editionAndDeletion/components/accountActionMenu/AccountActionsMenu.tsx
+//Parent: /frontend/src/fintrack/pages/accountingDashboard/AccountingDashboard.tsx
 
 import { useRef } from 'react';
 import { useClickOutside } from '../../hooks/useClickOutside.ts';
+// '?react' and not a bare import: a bare .svg is typed `string` and cannot take
+// a className, so only that form carries a React component type.
+import DeleteAccountSvg from '../../../../assets/accountActionsMenuSvg/deleteAccountSvg.svg?react';
+import EditAccountSvg from '../../../../assets/accountActionsMenuSvg/editAccountSvg.svg?react';
+import ViewAccountSvg from '../../../../assets/accountActionsMenuSvg/viewAccountSvg.svg?react';
 import './account-actions-menu-styles.css';
 
 // 🎯 PROPS TYPE FOR DEFINITION
@@ -24,7 +29,6 @@ type AccountActionsMenuPropType = {
   onDeleteAccount: () => void;
 };
 //account type detail page
-//=================================
 // 🏦 ACCOUNT ACTIONS MENU COMPONENT
 export function AccountActionsMenu({
   accountName,
@@ -59,35 +63,43 @@ export function AccountActionsMenu({
 
         {/* 📋 MENU OPTIONS */}
         <div className='account-actions-menu__options'>
-          {/* 👁️ VIEW DETAILS OPTION — rendered only where it leads somewhere
-              else. The dashboard passes it; a detail screen does not. */}
+          {/* Rendered only where it leads somewhere else. The dashboard passes
+              it; a detail screen does not.
+
+              The icons are aria-hidden in the asset: each row already carries
+              its own text label, so announcing the glyph would read the action
+              out twice. */}
           {onViewDetails && (
             <button
+              type='button'
               className='account-actions-menu__option'
               onClick={onViewDetails}
             >
-              <span className='account-actions-menu__icon'>👁️</span>
+              <ViewAccountSvg className='account-actions-menu__icon' />
 
               <span className='account-actions-menu__text'>View Details</span>
             </button>
           )}
 
-          {/* ✏️ EDIT ACCOUNT OPTION */}
           <button
+            type='button'
             className='account-actions-menu__option'
             onClick={onEditAccount}
           >
-            <span className='account-actions-menu__icon'>✏️</span>
+            <EditAccountSvg className='account-actions-menu__icon' />
 
             <span className='account-actions-menu__text'>Edit Account</span>
           </button>
 
-          {/* 🗑️ DELETE ACCOUNT OPTION */}
+          {/* Singular '--delete'. The class was written plural here and
+              singular in the stylesheet, so the destructive row has never once
+              turned red under the cursor. */}
           <button
-            className='account-actions-menu__option account-actions-menu__options--delete'
+            type='button'
+            className='account-actions-menu__option account-actions-menu__option--delete'
             onClick={onDeleteAccount}
           >
-            <span className='account-actions-menu__icon'>🗑️</span>
+            <DeleteAccountSvg className='account-actions-menu__icon' />
 
             <span className='account-actions-menu__text'>Delete Account</span>
           </button>
