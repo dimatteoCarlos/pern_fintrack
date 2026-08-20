@@ -86,17 +86,21 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
       helpText: 'Built by the server from Category, Subcategory and Nature.',
     },
 
-    {
-      fieldName: 'budget',
-      // Not 'Monthly': the allocation carries its own frequency.
-      label: 'Budget Amount',
-      inputType: 'number', //
-      isEditable: true,
-      isRequired: true,
-      placeholder: 'Amount',
-      helpText: 'Changing this will update the remaining amount.',
-      isCritical: true, //
-    },
+    // Replaced by the budget block EditAccount.tsx renders below the form,
+    // which writes through PUT /budget/accounts/:accountId/current instead of
+    // this PATCH (PLAN_EditAccount.md, unit U1). Commented rather than
+    // deleted until the cleanup block removes it (D13).
+    // {
+    //   fieldName: 'budget',
+    //   // Not 'Monthly': the allocation carries its own frequency.
+    //   label: 'Budget Amount',
+    //   inputType: 'number', //
+    //   isEditable: true,
+    //   isRequired: true,
+    //   placeholder: 'Amount',
+    //   helpText: 'Changing this will update the remaining amount.',
+    //   isCritical: true, //
+    // },
 
     {
       fieldName: 'category_name',

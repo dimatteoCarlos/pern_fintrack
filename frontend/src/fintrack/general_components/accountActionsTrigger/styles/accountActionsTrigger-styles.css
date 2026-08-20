@@ -1,0 +1,109 @@
+/* frontend/src/fintrack/general_components/accountActionsTrigger/styles/accountActionsTrigger-styles.css
+   The control that opens the account actions menu.
+
+   What it replaces declared padding and nothing else — no hover, no focus ring,
+   no pressed state, no disabled state — and did it twice, in two page
+   stylesheets, in hardcoded rems. Those two rules are still there; they are
+   the cleanup block's to remove (D13), not this file's.
+
+   The modifiers name the SURFACE the button sits on, never its own colour,
+   which is what lets one component land on the dark app background and on a
+   cream panel without either caller knowing what the other looks like. */
+
+.accountActionsTrigger {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ /* The full tappable area, unlike the budget pencil that trades it to sit
+    inside a box's title row. This one is a top-level control of the screen's
+    own header, so nothing constrains its height. */
+ width: var(--size-touch-target);
+ height: var(--size-touch-target);
+ flex-shrink: 0;
+ padding: 0;
+ border: none;
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+/* Height only, width auto: the asset is a vertical ellipsis at a 4:16 ratio,
+   and a square box would letterbox it into a column of its own width. */
+.accountActionsTrigger__glyph {
+ height: var(--font-size-xl);
+ width: auto;
+}
+
+/* The asset hardcodes stroke='#F7F7F7' — near-white, and a stroke rather than
+   a fill — so neither surface modifier reaches it on its own.
+
+   Overridden here and not in the file: six screens render that same asset on
+   dark surfaces where near-white is what they want, and one of them
+   (AccountingBox) is explicitly out of this plan's scope. Editing the asset to
+   currentColor would repaint all six from whatever colour their parent
+   happens to carry. */
+.accountActionsTrigger__glyph path {
+ stroke: currentColor;
+}
+
+.accountActionsTrigger:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* ── On the dark app surface ────────────────────────────────────────────────
+   Where all five detail screens mount it. */
+.accountActionsTrigger--dark {
+ color: var(--color-content-on-dark);
+}
+
+/* The fill is light on both surfaces, so the glyph goes dark on both. */
+.accountActionsTrigger--dark:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+/* --color-border-inverse is the ring meant for the app surface. */
+.accountActionsTrigger--dark:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+/* Darker than the hover fill, so a press reads as a press. */
+.accountActionsTrigger--dark:active {
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+/* ── On a cream panel or a white header ─────────────────────────────────────
+   No caller yet: the dashboard's own trigger is out of scope here
+   (PLAN_EDIT_BLOCK.md §2). Declared because the component is shared and a
+   modifier added later, under pressure, is a modifier written against one
+   screen. */
+.accountActionsTrigger--light {
+ color: var(--color-content-primary);
+}
+
+.accountActionsTrigger--light:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+/* Ring in the panel's own dark: --color-border-inverse is meant for the app
+   surface and would be invisible against cream. */
+.accountActionsTrigger--light:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-content-primary);
+ outline-offset: var(--border-width-thick);
+}
+
+.accountActionsTrigger--light:active {
+ background-color: var(--color-content-primary);
+ color: var(--color-accent-content);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .accountActionsTrigger {
+  transition: none;
+ }
+}

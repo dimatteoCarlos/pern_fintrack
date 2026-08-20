@@ -49,17 +49,20 @@ export type PocketSavingEditFormData = z.infer<typeof pocketSavingEditSchema>;
 
 // Smallest amount the server can store: it rounds to two decimals, so 0.004
 // becomes 0.00 and is rejected. Mirrors MINIMUM_AMOUNT in core/money.js.
-const MINIMUM_BUDGET_AMOUNT = 0.01;
+// Unused while categoryBudgetEditShema's budget key stays commented (D13) —
+// left in place because the value it describes is not this schema's to drop.
+// const MINIMUM_BUDGET_AMOUNT = 0.01;
 
 //📊 3. CATEGORY BUDGET SCHEMA
 export const categoryBudgetEditShema = baseAccountEditSchema.extend({
-  // Checked here rather than in numberSchema, which pocket_saving also uses.
-  // Not optional: the field config declares it required, the form preloads it
-  // from the account, and an emptied one has to fail here — the PATCH would
-  // otherwise leave the budget out and report the save as successful.
-  budget: numberSchema.refine((amount) => amount >= MINIMUM_BUDGET_AMOUNT, {
-    message: `* Budget must be at least ${MINIMUM_BUDGET_AMOUNT}`,
-  }),
+  // Replaced by the budget block EditAccount.tsx renders below the form,
+  // which writes through PUT /budget/accounts/:accountId/current instead of
+  // this PATCH (PLAN_EditAccount.md, unit U1). Commented rather than deleted
+  // until the cleanup block removes it (D13); accountEditSchema.ts's field
+  // config was commented out to match, so no form ever asks for this key.
+  // budget: numberSchema.refine((amount) => amount >= MINIMUM_BUDGET_AMOUNT, {
+  //   message: `* Budget must be at least ${MINIMUM_BUDGET_AMOUNT}`,
+  // }),
   //strict limits
   category_name: optionalButNotEmptySchema(DB_MAX_LENGTHS.category_name),
   subcategory: optionalButNotEmptySchema(DB_MAX_LENGTHS.subcategory),

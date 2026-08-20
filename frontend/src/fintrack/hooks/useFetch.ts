@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { authFetch } from '../../auth/auth_utils/authFetch';
 
 export type FetchResponseType<R> = {
@@ -7,6 +7,14 @@ export type FetchResponseType<R> = {
   isLoading: boolean;
   error: string | null;
   status: number | null;
+  // Asks for the same URL again. Additive: every existing caller destructures a
+  // subset of this object and is unaffected by a key it does not name.
+  //
+  // A failed GET had no way back before this — the effect keys on [url], and a
+  // url that did not change does not re-run it. That left every screen using
+  // this hook with a dead end on error, which is the state the project's own
+  // frontend rule forbids: an error is a message AND a retry.
+  refetch: () => void;
 };
 /**
  * 🎯 useFetch - Hook para GET requests con autenticación
@@ -16,12 +24,23 @@ export type FetchResponseType<R> = {
 export function useFetch<R>(url: string | null): FetchResponseType<R> {
   // console.warn('url from useFetch', url)
 
-  const [state, setState] = useState<FetchResponseType<R>>({
+  const [state, setState] = useState<
+    Omit<FetchResponseType<R>, 'refetch'>
+  >({
     apiData: null,
     isLoading: false,
     error: null,
     status: null,
   });
+
+  // What the effect keys on besides the url. Bumping it re-runs the same
+  // request without touching the url itself: a cache-busting query parameter
+  // would be a different request, and the server never asked for one.
+  const [attempt, setAttempt] = useState(0);
+
+  const refetch = useCallback(() => {
+    setAttempt((previous) => previous + 1);
+  }, []);
 
   useEffect(() => {
     if (!url) {
@@ -105,7 +124,7 @@ export function useFetch<R>(url: string | null): FetchResponseType<R> {
     };
 
     fetchData();
-  }, [url]);
+  }, [url, attempt]);
 
-  return state;
+  return { ...state, refetch };
 }

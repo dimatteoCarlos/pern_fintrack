@@ -1,0 +1,230 @@
+/* frontend/src/fintrack/editionAndDeletion/pages/editionAccount/styles/editAccount-styles.css
+   The budget block EditAccount renders below the form for category_budget
+   accounts (PLAN_EditAccount.md, unit U1). The module had no stylesheet of
+   its own before this.
+
+   The editor sits on the dark app surface only — the same surface
+   CategoryDetail's level-2 row does — so the edit trigger below is painted
+   for that one surface directly instead of through a .light/.dark pair: it
+   never lands on the cream panel level 3 uses. */
+
+/* ── The account's three fetch states ────────────────────────────────────────
+   Loading was a yellow paragraph and error a red one, both written inline, in
+   two colours the palette does not hold. There was no empty state and no way
+   back from a failed request. */
+
+/* The form's shape, stated while it is on the wire. Four bars because that is
+   the shortest field list the module renders; a fifth would make the wait
+   longer-looking than the form it stands in for. */
+.editAccount__formSkeleton {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-4);
+ padding: var(--space-4) 0;
+}
+
+.editAccount__skeletonField {
+ height: var(--size-touch-target);
+ border-radius: var(--radius-sm);
+ background-color: var(--color-content-on-dark-subtle);
+ opacity: 0.25;
+}
+
+.editAccount__fetchError {
+ display: flex;
+ flex-direction: column;
+ align-items: flex-start;
+ gap: var(--space-3);
+ padding: var(--space-4) 0;
+}
+
+.editAccount__fetchErrorText {
+ margin: 0;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+}
+
+/* Full-height target, unlike the budget block's own retry: this one is the
+   only control on screen when it shows, so nothing constrains its row. */
+.editAccount__retry {
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-5);
+ border: var(--border-width-thin) solid var(--color-border-inverse);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.editAccount__retry:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.editAccount__retry:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.editAccount__retry:active {
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+.editAccount__retry:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* A full sentence, so it is not title-cased and not styled as a label. */
+.editAccount__emptyState {
+ margin: 0;
+ padding: var(--space-4) 0;
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-sm);
+ text-transform: none;
+}
+
+.editAccount__budgetBlock {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ margin-bottom: var(--space-6);
+}
+
+/* Same footprint as the SummaryDetailBox it precedes, so the page does not
+   jump once the real figures replace it. */
+.editAccount__budgetSkeleton {
+ min-height: var(--size-touch-target);
+ border-radius: var(--radius-lg);
+ background-color: var(--creme);
+ opacity: 0.5;
+}
+
+.editAccount__budgetError {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: var(--space-2);
+}
+
+.editAccount__budgetError .error-message {
+ margin: 0;
+}
+
+.editAccount__budgetRetry {
+ flex-shrink: 0;
+ padding: var(--space-1) var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-inverse);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-xs);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.editAccount__budgetRetry:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.editAccount__budgetRetry:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.editAccount__budgetRetry:active {
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+/* Sits inside SummaryDetailBox's title row, which is the cream panel — so
+   this one control takes the panel's content colours rather than the app
+   surface's, the same trade categoryDetail-styles.css's editBudget control
+   makes at its own level 2. */
+.editAccount__editBudgetBtn {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--size-control-sm);
+ height: var(--size-control-sm);
+ padding: 0;
+ border: none;
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-primary);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.editAccount__editBudgetBtn svg {
+ width: var(--font-size-xl);
+ height: var(--font-size-xl);
+}
+
+.editAccount__editBudgetBtn:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.editAccount__editBudgetBtn:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-content-primary);
+ outline-offset: var(--border-width-thick);
+}
+
+.editAccount__editBudgetBtn:active {
+ background-color: var(--color-content-primary);
+ color: var(--color-accent-content);
+}
+
+.editAccount__editBudgetBtn:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The month the figures below are about, at the panel's right edge so it reads
+   as their qualifier and not as a heading of its own. A row and not a bare
+   span, because the span alone would stretch to the column's width and its
+   text would start at the left, under the panel's own title. */
+.editAccount__budgetCaption {
+ display: flex;
+ align-items: baseline;
+ justify-content: flex-end;
+ padding: 0 var(--space-1);
+}
+
+/* font-size is restated because index.css sets one on the universal selector,
+   so a bare span does not inherit the line it sits in. */
+.editAccount__budgetMonth {
+ flex-shrink: 0;
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+ text-transform: none;
+}
+
+.editAccount__budgetActions {
+ display: flex;
+ align-items: center;
+ justify-content: flex-end;
+}
+
+/* States what the figure above does next month, so it reads as a caption
+   rather than a control — same wording and role as
+   categoryDetail-styles.css's .budgetDetail__exception. */
+.editAccount__budgetException {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .editAccount__editBudgetBtn,
+ .editAccount__budgetRetry,
+ .editAccount__retry {
+  transition: none;
+ }
+}

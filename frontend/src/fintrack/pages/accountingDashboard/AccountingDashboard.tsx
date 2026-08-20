@@ -396,7 +396,7 @@ const AccountingDashboard = () => {
         {/*🆕 ACCOUNT ACTIONS MENU */}
         {menuState.isOpen && menuState.account && (
           <AccountActionsMenu
-            account={menuState.account}
+            accountName={menuState.account.account_name}
             isOpen={menuState.isOpen}
             onClose={handleCloseMenu}
             previousRoute={previousRoute}

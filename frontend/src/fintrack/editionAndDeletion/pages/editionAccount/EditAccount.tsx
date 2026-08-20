@@ -7,6 +7,8 @@ import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 
 // 📚 HOOKS AND STORES - CUSTOM REACT HOOKS AND STATE MANAGEMENT
 import { useAccountStore } from '../../../stores/useAccountStore.ts';
+import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
+import { notifyAccountChanged } from '../../../stores/transactionEvents.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import {
@@ -19,6 +21,11 @@ import {
   AccountByTypeResponseType,
   AccountListType,
 } from '../../../types/responseApiTypes.ts';
+import {
+  BudgetAccountStatus,
+  BudgetErrorResponse,
+  BudgetWriteRequest,
+} from '../../../types/budgetTypes.ts';
 import { ValidationMessagesType } from '../../../validations/types.ts';
 import { DropdownOptionType } from '../../../types/types.ts';
 
@@ -35,21 +42,32 @@ import {
   url_get_account_details_by_id_for_edition,
   url_patch_account_edit,
 } from '../../../../urlConfig.ts';
+// Sits outside pages/: the account editor and the budget page are in
+// different trees (budgetApi.ts's own header).
+import { getBudgetAccountsStatus, setCurrentBudget } from '../../../api/budgetApi.ts';
 
 // 🧱 UI COMPONENTS - REUSABLE PRESENTATION COMPONENTS
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import UniversalDynamicInput from './UniversalDynamicInput.tsx';
+import SummaryDetailBox from '../../../pages/forms/accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
+import BudgetEditModal from '../../../pages/budget/components/budgetEditModal/BudgetEditModal.tsx';
 
 // 🎨 ASSETS AND STYLES - VISUAL RESOURCES AND CSS
 import LeftArrowSvg from '../../../../assets/LeftArrowSvg.svg';
+// '?react' and not a bare import: a bare .svg is typed `string` and cannot
+// take a className (R34).
+import EditSvg from '../../../../assets/pencil02Svg.svg?react';
 
 import '../../../pages/forms/styles/forms-styles.css';
+import './styles/editAccount-styles.css';
 
 // 🔧 UTILITIES - DATE PARSING AND DATA TRANSFORMATION
 
 import { parsePostgresDate } from '../../utils/dateUtils.ts';
+import { normalizeBudgetError } from '../../../helpers/normalizeBudgetError.ts';
+import { formatBudgetMonthLabel } from '../../../helpers/functions.ts';
 // import { debounce } from '../../utils/debounce.ts';
 //----------------------------
 // 🛠️ INTERNAL UTILITY - VALUE COMPARISON (KISS)
@@ -88,6 +106,7 @@ export function EditAccount(): JSX.Element {
     apiData,
     isLoading: isFetching,
     error: fetchError,
+    refetch: refetchAccount,
   } = useFetch<AccountByTypeResponseType>(fetchUrl);
 
   const accountData = apiData?.data?.accountList[0];
@@ -287,6 +306,11 @@ export function EditAccount(): JSX.Element {
     if (result.data) {
       // ✅ SUCCESS FLOW - UPDATE GLOBAL STATE AND NAVIGATE
       updateAccount(result.data); // update and syncronize with accounting dashboard
+      // Announced, not invalidated directly: this screen has no business
+      // knowing which caches hold an answer this write made stale. The budget
+      // block does its own invalidate() for the amount; this covers a rename, a
+      // category change or a nature change, which the amount path never sees.
+      notifyAccountChanged();
       setUserMessage({ message: 'Account updated successfully!', status: 200 });
       setTimeout(() => {
         navigateTo(previousRoute); //should be previous route
@@ -296,6 +320,98 @@ export function EditAccount(): JSX.Element {
   //---------------------------------
   const isFormDisabled = isFetching || isSaving || !accountData || !schema;
   const finalError = fetchError || saveError;
+
+  // 💵 BUDGET BLOCK - category_budget ACCOUNTS ONLY
+  // Replaces the bare amount field the PATCH used to carry (unit U1). Writes
+  // through PUT /budget/accounts/:accountId/current instead, which is the
+  // only door that can state an FX origin and a range.
+  const isCategoryBudget = accountType === 'category_budget';
+  const numericAccountId = accountId ? Number(accountId) : null;
+
+  const [budgetAccountStatus, setBudgetAccountStatus] =
+    useState<BudgetAccountStatus | null>(null);
+  // The month the status above is about, as the server resolved it — never
+  // read from useBudgetStatusStore's referenceMonth, which answers for
+  // whatever month the budget screens have on screen, not this one.
+  const [budgetReferenceMonth, setBudgetReferenceMonth] = useState<
+    string | null
+  >(null);
+  const [isBudgetLoading, setIsBudgetLoading] = useState(false);
+  const [budgetFetchError, setBudgetFetchError] = useState<string | null>(
+    null,
+  );
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [isSavingBudget, setIsSavingBudget] = useState(false);
+  const [budgetSaveError, setBudgetSaveError] =
+    useState<BudgetErrorResponse | null>(null);
+
+  // No month argument: the server resolves the current one from the owner's
+  // timezone, the same month the write path writes. [accountIds] scopes the
+  // request to this one account instead of every budget account the user owns.
+  const fetchBudgetAccountStatus = useCallback(async () => {
+    if (!isCategoryBudget || numericAccountId === null) return;
+
+    setIsBudgetLoading(true);
+    setBudgetFetchError(null);
+
+    try {
+      const response = await getBudgetAccountsStatus([numericAccountId]);
+      setBudgetAccountStatus(response.accounts[0] ?? null);
+      setBudgetReferenceMonth(response.referenceMonth);
+    } catch (err: unknown) {
+      setBudgetFetchError(
+        err instanceof Error ? err.message : 'Failed to load the budget.',
+      );
+    } finally {
+      setIsBudgetLoading(false);
+    }
+  }, [isCategoryBudget, numericAccountId]);
+
+  useEffect(() => {
+    fetchBudgetAccountStatus();
+  }, [fetchBudgetAccountStatus]);
+
+  const closeBudgetEditor = () => {
+    setIsEditingBudget(false);
+    setBudgetSaveError(null);
+  };
+
+  // Does NOT close the modal on success, matching CategoryDetail.tsx's
+  // caller: the modal decides whether a confirmation renders, and closing
+  // here makes that branch unreachable.
+  const handleSaveBudget = async ({
+    amount,
+    currency,
+    month,
+    appliesUntil,
+  }: BudgetWriteRequest) => {
+    if (numericAccountId === null) return null;
+
+    setIsSavingBudget(true);
+    setBudgetSaveError(null);
+
+    try {
+      const response = await setCurrentBudget(numericAccountId, {
+        amount,
+        currency,
+        month,
+        appliesUntil,
+      });
+
+      // This block's own copy is stale the moment the write lands; the
+      // shared store's memo is invalidated too, so a budget screen opened
+      // afterwards does not read what this write just replaced.
+      await fetchBudgetAccountStatus();
+      useBudgetStatusStore.getState().invalidate();
+
+      return response;
+    } catch (err: unknown) {
+      setBudgetSaveError(normalizeBudgetError(err));
+      return null;
+    } finally {
+      setIsSavingBudget(false);
+    }
+  };
 
   //-------------------------------
   // 🎨 PAGE RENDERING - MAIN COMPONENT UI STRUCTURE
@@ -317,29 +433,164 @@ export function EditAccount(): JSX.Element {
             <div className='form__title'>{'Edit Account'}</div>
           </Link>
 
-          {/* 📋 FORM CONTENT - CONDITIONAL RENDERING BASED ON LOADING STATE */}
+          {/* 📋 FORM CONTENT — loading, error and empty are three states, not
+              two paragraphs. The colours used to be written inline, in yellow
+              and red, which are not tokens and are not the app's palette.
+
+              A skeleton and not a sentence: the form is a known shape, so the
+              wait can state that shape instead of describing itself. */}
           {isFetching && (
-            <p
-              className='loading__text'
-              style={{ color: 'yellow', opacity: '0.5' }}
-            >
-              Loading account data...
+            <div className='editAccount__formSkeleton' aria-hidden='true'>
+              <span className='editAccount__skeletonField' />
+              <span className='editAccount__skeletonField' />
+              <span className='editAccount__skeletonField' />
+              <span className='editAccount__skeletonField' />
+            </div>
+          )}
+
+          {/* A message and a way out. Without the retry the screen was a dead
+              end: the only recovery was a manual reload, which also loses the
+              route the editor was opened from. */}
+          {!isFetching && fetchError && (
+            <div className='editAccount__fetchError' role='alert'>
+              <p className='editAccount__fetchErrorText'>
+                The account could not be loaded: {fetchError}
+              </p>
+              <button
+                type='button'
+                className='editAccount__retry'
+                onClick={refetchAccount}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Answered, and there is nothing there. Distinct from the error
+              above: the request succeeded, the id just names no account of
+              this user. */}
+          {!isFetching && !fetchError && !accountData && (
+            <p className='editAccount__emptyState'>
+              This account no longer exists, or it is not yours to edit.
             </p>
           )}
 
-          {fetchError && (
-            <p style={{ color: 'red' }} className='error-message'>
-              Error loading data: {fetchError}
+          {/* The account exists but the module has no field list for its type.
+              A configuration gap, not a fetch state — it keeps its own line. */}
+          {!isFetching && accountType && accountFields.length === 0 && (
+            <p className='editAccount__emptyState'>
+              This account type cannot be edited yet: {accountType}
             </p>
           )}
 
-          {accountType && accountFields.length === 0 && !isFetching && (
-            <p className='error-message'>
-              Configuration not found for account type: {accountType}
-            </p>
+          {/* 💵 BUDGET BLOCK — above the form, not under it.
+              Save Changes has to be the last thing on the page, because a
+              submit button that leaves editable content below it reads as
+              saving that content too — and this block is written by a
+              different endpoint, on a different user action.
+
+              It is also where the reader already knows to look for it:
+              CategoryDetail puts the same SummaryDetailBox with the same
+              pencil above its own fields.
+
+              Three fetch states of its own: a skeleton while the status is on
+              the wire, a message and a retry if it fails, the figures once it
+              lands. */}
+          {isCategoryBudget && (
+            <div className='editAccount__budgetBlock'>
+              {isBudgetLoading && !budgetAccountStatus && (
+                <div
+                  className='editAccount__budgetSkeleton'
+                  aria-hidden='true'
+                />
+              )}
+
+              {!isBudgetLoading && budgetFetchError && !budgetAccountStatus && (
+                <div className='editAccount__budgetError'>
+                  <p className='error-message'>
+                    Could not load the budget: {budgetFetchError}
+                  </p>
+                  <button
+                    type='button'
+                    className='editAccount__budgetRetry'
+                    onClick={fetchBudgetAccountStatus}
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {budgetAccountStatus && (
+                <>
+                  {/* Which month these figures are about — and only that.
+                      The account is named once on this screen, by the
+                      subcategory field of the form below, which is also where
+                      it is edited. A second copy up here would state the saved
+                      name while the field states the one being typed: the same
+                      fact twice, disagreeing, for as long as the edit lasts.
+
+                      A label and NOT a picker. This screen writes the current
+                      month and only the current one, so a control offering
+                      another would let the reader pick a month the save cannot
+                      land on: the server refuses a future one outright, and no
+                      screen in the app offers writing a past one — level 2
+                      disables its own pencil below the current month. Reaching
+                      forward is expressed by the modal's appliesUntil, not by
+                      moving this anchor.
+
+                      Unlabelled it was worse than absent: a reader arriving
+                      from May on the budget screen had nothing telling them
+                      these are this month's figures. */}
+                  <div className='editAccount__budgetCaption'>
+                    <span className='editAccount__budgetMonth'>
+                      {formatBudgetMonthLabel(budgetReferenceMonth)}
+                    </span>
+                  </div>
+
+                  <SummaryDetailBox
+                    bubleInfo={{
+                      title: 'Budget',
+                      amount: budgetAccountStatus.budgetAmount,
+                      subtitle1: 'Spent',
+                      amount1: budgetAccountStatus.actualSpent,
+                      status: budgetAccountStatus.isOverBudget,
+                      amount2: budgetAccountStatus.remainingBudget,
+                      currency_code: budgetAccountStatus.currency,
+                      executionPercentage:
+                        budgetAccountStatus.executionPercentage,
+                    }}
+                    action={
+                      <button
+                        type='button'
+                        className='editAccount__editBudgetBtn'
+                        onClick={() => setIsEditingBudget(true)}
+                        aria-label={`Edit budget for ${budgetAccountStatus.subcategory ?? budgetAccountStatus.accountName}`}
+                        title='Edit budget'
+                      >
+                        <EditSvg />
+                      </button>
+                    }
+                  />
+
+                  {budgetAccountStatus.nextMonthBudget !==
+                    budgetAccountStatus.budgetAmount && (
+                    <div className='editAccount__budgetActions'>
+                      <span
+                        className='editAccount__budgetException'
+                        title='This amount applies to this month only'
+                      >
+                        this month only
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           )}
 
-          {!!accountType && accountFields.length > 0 && (
+          {/* The account's own fields, and the button that writes them. Last on
+              the page: what it submits ends here. */}
+          {!isFetching && !!accountType && accountFields.length > 0 && (
             <form className='form__box'>
               <div className='form__input__group'>
                 {/* 🎨 DYNAMIC RENDERING OF FORM */}
@@ -371,6 +622,30 @@ export function EditAccount(): JSX.Element {
           )}
         </div>
       </section>
+
+      {/* Mounted outside <section>: matches CategoryDetail's own panel, which
+          is portalled and must not scroll with any frame under it. */}
+      {isEditingBudget && budgetAccountStatus && (
+        <BudgetEditModal
+          accountName={
+            budgetAccountStatus.subcategory ?? budgetAccountStatus.accountName
+          }
+          nature={budgetAccountStatus.nature}
+          month={budgetReferenceMonth ?? ''}
+          currency={budgetAccountStatus.currency}
+          currentAmount={budgetAccountStatus.budgetAmount}
+          nextMonthBudget={budgetAccountStatus.nextMonthBudget}
+          actualSpent={budgetAccountStatus.actualSpent}
+          remainingBudget={budgetAccountStatus.remainingBudget}
+          executionPercentage={budgetAccountStatus.executionPercentage}
+          isOverBudget={budgetAccountStatus.isOverBudget}
+          isSaving={isSavingBudget}
+          error={budgetSaveError}
+          onClose={closeBudgetEditor}
+          onSave={handleSaveBudget}
+        />
+      )}
+
       <section className='Toastify'>
         <MessageToUser
           isLoading={isSaving}

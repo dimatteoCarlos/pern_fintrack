@@ -2,7 +2,6 @@
 //Parent: /frontend/src/pages/accountingDashboard/AccountingDashboard.tsx
 
 import { useRef } from 'react';
-import { AccountListType } from '../../../types/responseApiTypes.ts';
 import { useClickOutside } from '../../hooks/useClickOutside.ts';
 import './account-actions-menu-styles.css';
 
@@ -10,10 +9,17 @@ import './account-actions-menu-styles.css';
 type AccountActionsMenuPropType = {
   onClose: () => void;
   isOpen: boolean;
-  account: AccountListType;
+  // The name alone, not the whole account. This menu renders one string from
+  // that object and nothing else, and the detail screens that now open it hold
+  // their own types — PocketDetail and DebtorDetail would have had to assemble
+  // an AccountListType they never received, only to have it read once.
+  accountName: string;
   previousRoute?: string;
   // functions need no params
-  onViewDetails: () => void;
+  //
+  // Optional, and omitting it is what removes the option. Opened from a detail
+  // screen, 'View Details' is a door to the room the reader is standing in.
+  onViewDetails?: () => void;
   onEditAccount: () => void;
   onDeleteAccount: () => void;
 };
@@ -21,7 +27,7 @@ type AccountActionsMenuPropType = {
 //=================================
 // 🏦 ACCOUNT ACTIONS MENU COMPONENT
 export function AccountActionsMenu({
-  account,
+  accountName,
   isOpen,
   onClose,
   onViewDetails,
@@ -47,21 +53,24 @@ export function AccountActionsMenu({
         {/* 🎯 MENU HEADER WITH ACCOUNT NAME */}
         <div className='account-actions-menu__header'>
           <span className='account-actions-menu__account-name'>
-            {account.account_name}
+            {accountName}
           </span>
         </div>
 
         {/* 📋 MENU OPTIONS */}
         <div className='account-actions-menu__options'>
-          {/* 👁️ VIEW DETAILS OPTION */}
-          <button
-            className='account-actions-menu__option'
-            onClick={onViewDetails}
-          >
-            <span className='account-actions-menu__icon'>👁️</span>
+          {/* 👁️ VIEW DETAILS OPTION — rendered only where it leads somewhere
+              else. The dashboard passes it; a detail screen does not. */}
+          {onViewDetails && (
+            <button
+              className='account-actions-menu__option'
+              onClick={onViewDetails}
+            >
+              <span className='account-actions-menu__icon'>👁️</span>
 
-            <span className='account-actions-menu__text'>View Details</span>
-          </button>
+              <span className='account-actions-menu__text'>View Details</span>
+            </button>
+          )}
 
           {/* ✏️ EDIT ACCOUNT OPTION */}
           <button
