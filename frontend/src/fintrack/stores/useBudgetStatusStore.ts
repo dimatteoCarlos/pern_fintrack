@@ -13,7 +13,7 @@
 
 import { create } from 'zustand';
 import { getBudgetAccountsStatus } from '../api/budgetApi.ts';
-import { onTransactionRecorded } from './transactionEvents.ts';
+import { onAccountChanged, onTransactionRecorded } from './transactionEvents.ts';
 import {
  BudgetAccountStatus,
  BudgetCategoryStatus,
@@ -45,6 +45,11 @@ type BudgetStatusState = {
  isLoading: boolean;
  error: string | null;
  fetchStatus: (month?: string) => Promise<void>;
+ // Asks again for the month already on screen, guard and all. A write knows its
+ // own answer is obsolete, and laundering that through invalidate() + a call
+ // fetchStatus is free to refuse made correctness depend on the caller getting
+ // two statements in the right order.
+ refreshStatus: () => Promise<void>;
  invalidate: () => void;
 };
 
@@ -121,11 +126,33 @@ export const useBudgetStatusStore = create<BudgetStatusState>((set, get) => ({
  // asks again. Nulling requestedMonth also discards an answer already on the
  // wire: it was computed before the write that invalidated it.
  invalidate: () => set({ loadedMonth: null, requestedMonth: null }),
+
+ // The month to ask for is the one already loaded, not one the caller passes:
+ // a write changes the month on screen, and a caller that guessed a different
+ // key would refresh a month nobody is looking at.
+ //
+ // 'current' is the omitted month, so it maps back to undefined — sending the
+ // literal string would be a month the server cannot parse.
+ refreshStatus: async () => {
+  const key = get().loadedMonth ?? get().requestedMonth;
+
+  set({ loadedMonth: null, requestedMonth: null });
+
+  await get().fetchStatus(key === null || key === 'current' ? undefined : key);
+ },
 }));
 
 // Spending is derived from transactions, so any write makes this month's answer
 // obsolete. Dropping the memo costs no request: the refetch happens only if the
 // user opens budget again.
 onTransactionRecorded(() => {
+ useBudgetStatusStore.getState().invalidate();
+});
+
+// An account edit changes what this payload reports about — the row's name, its
+// category, its nature — none of which the amount path ever sees. The editor's
+// budget block invalidates on its own after writing an amount; this covers every
+// other field it can change, which is why both exist rather than one.
+onAccountChanged(() => {
  useBudgetStatusStore.getState().invalidate();
 });

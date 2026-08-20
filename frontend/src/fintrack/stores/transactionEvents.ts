@@ -36,3 +36,36 @@ export const notifyTransactionRecorded = (): void => {
   listener();
  });
 };
+
+// 📣 ACCOUNT WRITE SIGNAL
+//
+// The second thing that makes a held answer stop being true. A transaction
+// changes what was spent; an account edit changes what it was spent against —
+// its name, its category, its nature. Neither signal implies the other, so they
+// carry separate listener sets rather than one: a cache holding only spending
+// has no reason to drop its memo because an account was renamed.
+//
+// It lives in this file and not in one of its own, despite the file's name,
+// because the direction the header describes is what matters: this module still
+// imports nothing, and a second file would only duplicate that guarantee.
+
+type AccountChangedListener = () => void;
+
+const accountListeners = new Set<AccountChangedListener>();
+
+export const onAccountChanged = (
+ listener: AccountChangedListener,
+): (() => void) => {
+ accountListeners.add(listener);
+ return () => {
+  accountListeners.delete(listener);
+ };
+};
+
+// Called from an account editor once a write is confirmed. Same contract as
+// above: no payload, no named consumer, no request issued here.
+export const notifyAccountChanged = (): void => {
+ accountListeners.forEach((listener) => {
+  listener();
+ });
+};
