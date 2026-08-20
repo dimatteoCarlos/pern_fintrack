@@ -350,13 +350,15 @@ const AccountingDashboard = () => {
       return (
         <div className='account-group' key={accountType}>
           <h3 className='account-group__title'>
-            {/* Decorative: the heading beside it already names the group, so
-                announcing the glyph would read the type out twice. */}
-            <AccountTypeIcon
-              className='account-group__icon'
-              aria-hidden='true'
-              focusable='false'
-            />
+            {/* Decorative, and the frame says so: no hover and no pointer,
+                or a ring beside a real 3-dots button would promise a click. */}
+            <span className='account-group__icon-frame'>
+              <AccountTypeIcon
+                className='account-group__icon'
+                aria-hidden='true'
+                focusable='false'
+              />
+            </span>
 
             <span className='account-group__name'>
               {formatAccountTypeName(accountTypeData.name as AccountType)}{' '}

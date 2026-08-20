@@ -8,9 +8,11 @@
   <!-- Pediment -->
   <path d="M3 10l13-7 13 7" />
 
+  <!-- Interior detail at half the structural weight, so the columns read as
+       texture instead of merging into the solid band they became at 2. -->
   <!-- Columns, spaced to leave the central bay clear -->
-  <path d="M6 26V14h3v12 M10.5 26V14h3v12 M18.5 26V14h3v12 M23 26V14h3v12" />
+  <path d="M6 26V14h3v12 M10.5 26V14h3v12 M18.5 26V14h3v12 M23 26V14h3v12" stroke-width="1" />
 
   <!-- Central doorway -->
-  <path d="M14 26v-6h4v6" />
+  <path d="M14 26v-6h4v6" stroke-width="1" />
 </svg>

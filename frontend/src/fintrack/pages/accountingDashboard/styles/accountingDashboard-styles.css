@@ -90,6 +90,21 @@
   justify-content: center;
   gap: 0.5rem;
 }
+/* A rounded square and not a circle: --radius-full is the pill and avatar
+   shape. Border and glyph both land at 2px, so the frame and the drawing it
+   holds carry one weight. Inert on purpose: the heading answers no click,
+   and a reactive ring would promise one. */
+.account-group__icon-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-badge);
+  height: var(--size-badge);
+  flex-shrink: 0;
+  border: var(--border-width-thick) solid currentColor;
+  border-radius: var(--radius-sm);
+}
+
 /* A box and not a font size: font-size dimensions a character, not an SVG.
    The stroke takes its colour from .account-group__title through currentColor,
    so the glyph and the words beside it are the same creme. */
@@ -97,6 +112,16 @@
   width: var(--font-size-xl);
   height: var(--font-size-xl);
   flex-shrink: 0;
+  /* 2 real pixels, the same weight as the frame and as the AccountActionsMenu
+     icons. Without non-scaling-stroke a 32 viewBox drawn at 24px would scale
+     this by 0.75 and land at 1.5px. */
+  stroke-width: 2;
+}
+
+/* vector-effect is not an inherited property, so it has to name the paths
+   rather than ride down from the svg root like stroke-width does. */
+.account-group__icon path {
+  vector-effect: non-scaling-stroke;
 }
 
 .account-group__name {
