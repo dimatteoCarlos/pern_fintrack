@@ -9,6 +9,14 @@ import { url_get_all_accounting_accounts } from '../../../urlConfig';
 import AccountingBox from './AccountingBox';
 import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace';
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
+// '?react' and not a bare import: only that specifier carries a React
+// component type, so the icon can take a className.
+import BankAccountSvg from '../../../assets/accountingDashboardSvg/bankAccountSvg.svg?react';
+import DebtsAccountsSvg from '../../../assets/accountingDashboardSvg/debtsAccountsSvg.svg?react';
+import ExpenseAccountsSvg from '../../../assets/accountingDashboardSvg/expenseAccountsSvg.svg?react';
+import IncomeAccountsSvg from '../../../assets/accountingDashboardSvg/incomeAccountsSvg.svg?react';
+import InvestmentAccountsSvg from '../../../assets/accountingDashboardSvg/investmentAccountsSvg.svg?react';
+import PocketsAccountsSvg from '../../../assets/accountingDashboardSvg/pocketsAccountsSvg.svg?react';
 import Toast from '../../editionAndDeletion/components/toast/Toast';
 import AccountActionsMenu from '../../editionAndDeletion/components/accountActionMenu/AccountActionsMenu';
 //---
@@ -28,15 +36,17 @@ import './styles/accountingDashboard-styles.css';
 
 //--------------------------------
 // ACCOUNT TYPE CONFIGURATION
+// Drawings and not emoji: an emoji renders in the OS emoji font, so it never
+// takes the colour of the heading it sits in.
 const ACCOUNT_TYPE_DATA = {
-  bank: { emoji: '🏦', name: 'bank' },
-  investment: { emoji: '📈', name: 'investment' },
-  debtor: { emoji: '👥', name: 'debtor' },
-  pocket_saving: { emoji: '💰', name: 'pocket_saving' },
-  category_budget: { emoji: '🛒', name: 'category_budget' },
-  income_source: { emoji: '💼', name: 'income_source' },
-  other: { emoji: '📁', name: 'other' },
-  // category_budget: { emoji: '📊', name: 'category_budget' },
+  bank: { Icon: BankAccountSvg, name: 'bank' },
+  investment: { Icon: InvestmentAccountsSvg, name: 'investment' },
+  debtor: { Icon: DebtsAccountsSvg, name: 'debtor' },
+  pocket_saving: { Icon: PocketsAccountsSvg, name: 'pocket_saving' },
+  category_budget: { Icon: ExpenseAccountsSvg, name: 'category_budget' },
+  income_source: { Icon: IncomeAccountsSvg, name: 'income_source' },
+  // No drawing of its own yet, so it borrows the debtor glyph by decision.
+  other: { Icon: DebtsAccountsSvg, name: 'other' },
 };
 
 // ROUTE CONFIGURATION
@@ -175,8 +185,8 @@ const AccountingDashboard = () => {
   //-----------------------------
   //============================
   // 🆕 ACCOUNT TYPE UTILITIES
-  // 🎨 GET EMOJI AND NAME FOR ACCOUNT TYPE FUNCTION
-  const getAccountTypeEmojiAndName = (accountType: AccountType) => {
+  // 🎨 GET ICON AND NAME FOR ACCOUNT TYPE FUNCTION
+  const getAccountTypeIconAndName = (accountType: AccountType) => {
     return ACCOUNT_TYPE_DATA[accountType] || ACCOUNT_TYPE_DATA['other'];
   };
   //---
@@ -332,14 +342,21 @@ const AccountingDashboard = () => {
     //------
     return Object.entries(groupedAccounts).map(([accountType, accounts]) => {
       const safeAccountType = accountType as AccountType;
-      const accountTypeData = getAccountTypeEmojiAndName(safeAccountType);
+      const accountTypeData = getAccountTypeIconAndName(safeAccountType);
+      // A capitalised binding: JSX reads a lowercase tag as an HTML element, so
+      // accountTypeData.Icon cannot be rendered where it stands.
+      const AccountTypeIcon = accountTypeData.Icon;
 
       return (
         <div className='account-group' key={accountType}>
           <h3 className='account-group__title'>
-            <span className='account-group__emoji'>
-              {accountTypeData.emoji}
-            </span>
+            {/* Decorative: the heading beside it already names the group, so
+                announcing the glyph would read the type out twice. */}
+            <AccountTypeIcon
+              className='account-group__icon'
+              aria-hidden='true'
+              focusable='false'
+            />
 
             <span className='account-group__name'>
               {formatAccountTypeName(accountTypeData.name as AccountType)}{' '}

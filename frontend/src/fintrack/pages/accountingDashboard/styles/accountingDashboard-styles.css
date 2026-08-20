@@ -90,10 +90,13 @@
   justify-content: center;
   gap: 0.5rem;
 }
-.account-group__emoji {
-  font-size: 1.5rem;
-  /* flex-shrink: 0; */
-  /* margin-bottom: 0.5rem; */
+/* A box and not a font size: font-size dimensions a character, not an SVG.
+   The stroke takes its colour from .account-group__title through currentColor,
+   so the glyph and the words beside it are the same creme. */
+.account-group__icon {
+  width: var(--font-size-xl);
+  height: var(--font-size-xl);
+  flex-shrink: 0;
 }
 
 .account-group__name {
