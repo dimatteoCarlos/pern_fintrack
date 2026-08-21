@@ -25,10 +25,10 @@ import { toAmount } from '../../budget_services/core/money.js';
 // returned, so two figures that are a subset of one another would disagree over
 // a refund.
 //
-// transactionCount does NOT net. D20 scoped itself to totalAmount, and E2 is
-// "COUNT(*) with E1's filter" as the catalog literally states it: a reversal is
-// not an expense the user made, so counting it would inflate "how many expenses
-// did I record this month" by one for every refund.
+// transactionCount carries no filter of its own (D21). The catalog defines E2 as
+// COUNT(*) over E1's rows, so when D20 moved E1 to IN (1, 6) the count moved with
+// it. Counting type 1 alone made the card report 23 while the list under it
+// showed the 26 rows the total is made of — the disagreement §4.2 forbids.
 //
 // R42, §4.5: exactly one AT TIME ZONE per operand and in opposite directions —
 // the bounds go local month boundary -> instant to meet a TIMESTAMPTZ column,
@@ -45,7 +45,7 @@ const MONTHLY_EXPENSE_QUERY = `
         ELSE 0
       END
     ), 0) AS total_amount,
-    COUNT(t.transaction_id) FILTER (WHERE t.movement_type_id = 1) AS transaction_count
+    COUNT(t.transaction_id) AS transaction_count
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
   LEFT JOIN transactions t
     ON t.account_id = ANY($1::int[])
