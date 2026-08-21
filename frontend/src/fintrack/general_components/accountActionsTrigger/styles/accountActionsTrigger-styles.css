@@ -31,7 +31,9 @@
 /* Height only, width auto: the asset is a vertical ellipsis at a 4:16 ratio,
    and a square box would letterbox it into a column of its own width. */
 .accountActionsTrigger__glyph {
- height: var(--font-size-xl);
+ /* The asset's own 16px: it is drawn at a 1.5 stroke for that size, and scaling
+    it up thickens the dots without making them read any better. */
+ height: var(--font-size-base);
  width: auto;
 }
 
