@@ -22,7 +22,6 @@
 import {
  overviewDomainParamsSchema,
  overviewDomainQuerySchema,
- IMPLEMENTED_OVERVIEW_DOMAINS,
 } from '../../validation/zod/overviewValidators.js';
 
 import { overviewExpenseService } from '../services/overview_services/services/overviewExpenseService.js';
@@ -83,7 +82,9 @@ export async function getOverviewDomain(req, res, next) {
   const { domain } = overviewDomainParamsSchema.parse(req.params);
   const { month, page, pageSize } = overviewDomainQuerySchema.parse(req.query);
 
-  if (!IMPLEMENTED_OVERVIEW_DOMAINS.includes(domain)) {
+  const calculator = DOMAIN_CALCULATORS[domain];
+
+  if (!calculator) {
    return res.status(501).json({
     status: 501,
     message: `The ${domain} calculator is not implemented yet.`,
@@ -110,12 +111,7 @@ export async function getOverviewDomain(req, res, next) {
   // chances to disagree about which month a page is reporting.
   const window = makeReportingWindow(month ?? currentMonth);
 
-  const data = await DOMAIN_CALCULATORS[domain](
-   pool,
-   userId,
-   { window, page, pageSize },
-   timeZone,
-  );
+  const data = await calculator(pool, userId, { window, page, pageSize }, timeZone);
 
   res.status(200).json({
    status: 200,

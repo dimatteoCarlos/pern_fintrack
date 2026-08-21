@@ -27,11 +27,11 @@ export const OVERVIEW_DOMAINS = [
  'pnl',
 ];
 
-// The domains this phase actually computes. Kept separate from the list above so
-// the URL space matches the frozen contract while the controller can answer 501
-// for a domain whose calculator is not written yet — a 400 there would tell the
-// caller the domain is invalid, which is a different and false statement.
-export const IMPLEMENTED_OVERVIEW_DOMAINS = ['expense', 'income', 'pnl'];
+// Which of them have a calculator is not stated here. A second list saying so
+// could only drift from the dispatch map that actually decides, so the
+// controller asks the map, which cannot be wrong about itself. The 501 branch
+// stays: it is the correct answer the day a seventh domain joins the contract
+// before its calculator exists.
 
 // Pagination defaults and ceiling for the transaction list.
 //
