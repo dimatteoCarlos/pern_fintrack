@@ -76,6 +76,105 @@
  opacity: 0.7;
 }
 
+/* The inventory filter. Full width like the groups under it, so the field and
+   the column it filters share one left edge. */
+.accountingSearch {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ width: 100%;
+ padding: 0 var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ background-color: var(--color-surface-raised);
+ color: var(--color-content-on-dark-subtle);
+ transition: border-color var(--motion-fast), color var(--motion-fast);
+}
+
+/* :focus-within and not :focus: the caret is in the field, but the frame that
+   has to answer it is drawn by the wrapper. */
+.accountingSearch:focus-within {
+ border-color: var(--color-border-inverse);
+ color: var(--color-content-on-dark);
+}
+
+.accountingSearch__icon {
+ width: var(--font-size-lg);
+ height: var(--font-size-lg);
+ flex-shrink: 0;
+}
+
+.accountingSearch__field {
+ flex: 1;
+ min-width: 0;
+ height: var(--size-control-height);
+ padding: 0;
+ border: none;
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ /* index.css sizes the universal selector and an input inherits neither the
+    family nor the size from the box around it. */
+ font-family: inherit;
+ font-size: var(--font-size-base);
+}
+
+.accountingSearch__field::placeholder {
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The wrapper already answers the focus with its border; a ring on the field
+   would draw a second frame inside the first. */
+.accountingSearch__field:focus-visible {
+ outline: none;
+}
+
+.accountingSearch__field:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.accountingSearch__clear {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--size-control-sm);
+ height: var(--size-control-sm);
+ flex-shrink: 0;
+ padding: 0;
+ border: none;
+ border-radius: var(--radius-xs);
+ background-color: transparent;
+ color: inherit;
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.accountingSearch__clear:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+/* index.css sets `button { outline: none }`, so the ring has to be restated. */
+.accountingSearch__clear:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.accountingSearch__clear:active {
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+.accountingSearch__clear:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.accountingSearch__clear-glyph {
+ width: var(--font-size-base);
+ height: var(--font-size-base);
+}
+
 .account-groups__container {
  display: flex;
  flex-direction: column;
@@ -84,6 +183,11 @@
 }
 
 .account-group {
+ /* .accounting__container centres its children, so without a width the
+    group shrink-wrapped its widest card: every group measured differently,
+    and auto-fit resolves to a single track when the grid's width is
+    indefinite, which is why the desktop grid never used its columns. */
+ width: 100%;
  padding: var(--space-4);
  border: var(--border-width-thin) solid var(--color-border-subtle);
  /* --dark-light is defined nowhere, so this computed to unset and the group
@@ -118,7 +222,9 @@
 }
 
 .account-group__title {
- margin: 0;
+ /* .account-group is a block box, so the heading and the grid under it sat
+    flush. The margin is what separates them. */
+ margin: 0 0 var(--space-1) 0;
  color: var(--color-content-on-dark-muted);
  font-size: var(--font-size-base);
  font-weight: var(--font-weight-semibold);
@@ -128,9 +234,14 @@
 /* The heading is the group's disclosure control. The whole row answers the
    click, so nothing inside it declares a state of its own. */
 .account-group__toggle {
- display: flex;
+ /* A grid and not a flex row: centring a flex row centres the whole
+    cluster, so the icon began at a different x in every group. Three of
+    these four tracks measure the same in every group, so icon, count and
+    chevron line up down the page and only the name track takes up the
+    slack. */
+ display: grid;
+ grid-template-columns: var(--size-badge) 1fr auto auto;
  align-items: center;
- justify-content: center;
  gap: var(--space-2);
  width: 100%;
  padding: var(--space-2);
@@ -174,10 +285,15 @@
  align-items: center;
  justify-content: center;
  flex-shrink: 0;
+ /* A square with rounded corners and not a pill: --radius-full is the
+    avatar shape, and the count is a sibling of the icon frame beside it,
+    one step smaller and carrying the same corner. min-width rather than
+    width so a three-digit group grows sideways instead of clipping. */
  min-width: var(--size-control-sm);
- padding: 0 var(--space-2);
+ height: var(--size-control-sm);
+ padding: 0 var(--space-1);
  border: var(--border-width-thin) solid currentColor;
- border-radius: var(--radius-full);
+ border-radius: var(--radius-sm);
  /* index.css sizes the universal selector, so an inline element does not
     inherit the size of the line it sits in. */
  font-size: var(--font-size-sm);
@@ -217,9 +333,16 @@
  vector-effect: non-scaling-stroke;
 }
 
+/* Shrinkable and truncating. With flex-shrink: 0 a long type name grew the
+   row past the button, and since the row centres it spilled on both sides:
+   the icon frame left of the group, the chevron right of it. */
 .account-group__name {
- flex-shrink: 0;
+ min-width: 0;
+ overflow: hidden;
  font-size: var(--font-size-lg);
+ white-space: nowrap;
+ text-align: center;
+ text-overflow: ellipsis;
 }
 
 /* Points down while the group is shut and turns over once it opens. */
@@ -244,8 +367,12 @@
  display: grid;
  grid-template-columns: 1fr;
  justify-content: center;
+ justify-items: center;
  gap: var(--space-4);
  width: 100%;
+ /* A grid track's automatic minimum is min-content, so a card that cannot
+    shrink pushes the track past the group and the row overflows sideways. */
+ min-width: 0;
 }
 
 /* display: none and not the [hidden] attribute: the grid declares
@@ -257,9 +384,14 @@
 .account-card {
  position: relative;
  overflow: hidden;
- /* The Figma frame, and a cap rather than a fixed width: at 360px the card was
-    wider than the 360px viewport once the container padding was counted. */
- max-width: var(--layout-width-min);
+ /* Explicit and not the grid's default stretch: justify-items: center
+    sizes an item by its content, so without this each card took the
+    width of the account name it happened to hold. */
+ width: 100%;
+ /* A cap rather than a fixed width: at 360px the card was wider than the
+    viewport once the container padding was counted. */
+ max-width: var(--layout-card-width);
+ min-width: 0;
  border-radius: var(--radius-md);
  cursor: pointer;
  /* Named and not `all`: the shorthand also animated the outline of the trigger
@@ -289,7 +421,9 @@ button {
  flex-direction: column;
  gap: var(--space-4);
  width: 100%;
- max-width: var(--layout-width-min);
+ /* Fills the height its grid row hands the card, so siblings end level. */
+ height: 100%;
+ max-width: var(--layout-card-width);
  padding: var(--space-4);
  border: var(--border-width-thin) solid var(--color-border-subtle);
  /* KEPT LITERAL: the card sits one elevation step above the group holding it,
@@ -310,7 +444,9 @@ button {
    carried .accountingBox__menu, the same class as the button inside it. */
 .accountingBox__header {
  display: flex;
- align-items: center;
+ /* flex-start and not center: a two-line name would otherwise centre the
+    trigger against both lines. It belongs beside the first one. */
+ align-items: flex-start;
  justify-content: space-between;
  gap: var(--space-2);
  width: 100%;
@@ -324,6 +460,10 @@ button {
  color: var(--color-content-on-dark);
  font-size: var(--font-size-base);
  font-weight: var(--font-weight-semibold);
+ /* Two lines reserved whatever the name measures, so the bubble under it
+    starts at the same offset on every card. 1.3 is the line-height this
+    rule already declares, not a new value. */
+ min-height: calc(var(--font-size-base) * 1.3 * 2);
  line-height: 1.3;
  text-align: left;
 }
@@ -344,7 +484,9 @@ button {
  width: 100%;
  height: var(--size-control-height);
  padding: 0 var(--space-3);
- margin-top: var(--space-2);
+ /* auto and not a fixed gap: the bubble is the card's floor, so it stays
+    level with its siblings even when a title runs long. */
+ margin-top: auto;
  background-color: var(--color-surface-inverse);
  border-radius: var(--radius-sm);
 }
@@ -444,7 +586,7 @@ button {
      fill the row and grew back past the cap .account-card declares. auto-fit
      collapses the empty tracks so the row can centre instead of hugging the
      left edge. */
-  grid-template-columns: repeat(auto-fit, var(--layout-width-min));
+  grid-template-columns: repeat(auto-fit, var(--layout-card-width));
   gap: var(--space-5);
  }
 
@@ -459,6 +601,8 @@ button {
  }
 
  .accounting__header--icon,
+ .accountingSearch,
+ .accountingSearch__clear,
  .account-group__toggle,
  .account-group__chevron,
  .account-card,

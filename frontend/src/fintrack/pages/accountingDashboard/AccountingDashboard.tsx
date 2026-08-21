@@ -20,6 +20,10 @@ import PocketsAccountsSvg from '../../../assets/accountingDashboardSvg/pocketsAc
 // The disclosure affordance of every group heading. One asset, rotated when
 // the group opens, rather than a second drawing for the open state.
 import ArrowDownLightSvg from '../../../assets/ArrowDownLightSvg.svg?react';
+// The two halves of the filter field. Both draw with currentColor, so they
+// take the field's colour rather than declaring one.
+import SearchSvg from '../../../assets/budgetListControlsSvg/SearchSvg.svg?react';
+import ClearSvg from '../../../assets/budgetListControlsSvg/ClearSvg.svg?react';
 import Toast from '../../editionAndDeletion/components/toast/Toast';
 import AccountActionsMenu from '../../editionAndDeletion/components/accountActionMenu/AccountActionsMenu';
 //---
@@ -66,6 +70,16 @@ type AccountType = keyof typeof ACCOUNT_TYPE_DATA;
 type ToastMessageType = 'success' | 'error' | 'info' | 'warning';
 
 //--- FUNCTIONS DECLARATION
+// 🔎 SEARCH NORMALISATION
+// Strips the accents and the case so an account typed 'Café' answers to
+// 'cafe'. localeCompare has a sensitivity option that does this for sorting,
+// but there is no equivalent for a substring test.
+const normalizeForSearch = (value: string): string =>
+ value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
+
 // 🎯 ACCOUNT GROUPING
 const groupAccountsBytype = (
   accounts: AccountListType[],
@@ -86,6 +100,18 @@ const groupAccountsBytype = (
 
     (groups[accountType] ||= []).push(account);
   });
+
+  // Alphabetical and not by balance: a group runs past a hundred accounts in
+  // production, where the only navigable order is the one that matches the
+  // name being looked for. 'es' with base sensitivity so ñ and á land where a
+  // reader expects them, whatever collation the database happens to carry.
+  Object.values(groups).forEach((accountsOfType) =>
+    accountsOfType?.sort((first, second) =>
+      first.account_name.localeCompare(second.account_name, 'es', {
+        sensitivity: 'base',
+      }),
+    ),
+  );
 
   return groups;
 };
@@ -236,6 +262,35 @@ const AccountingDashboard = () => {
     }
     return groupAccountsBytype(apiData?.data?.accountList);
   }, [apiData?.data.accountList]);
+  //---------------------------------
+  // 🔎 SEARCH
+  // Filtered in the client and not asked of the server: the inventory already
+  // arrives whole in one payload, so the filter costs no request and answers
+  // on the keystroke.
+  const [searchTerm, setSearchTerm] = useState('');
+  const searchQuery = normalizeForSearch(searchTerm.trim());
+
+  const visibleGroups = useMemo(() => {
+    if (!searchQuery) {
+      return groupedAccounts;
+    }
+
+    const matches: Partial<Record<AccountType, AccountListType[]>> = {};
+
+    Object.entries(groupedAccounts).forEach(([accountType, accounts]) => {
+      const hits = accounts?.filter((account) =>
+        normalizeForSearch(account.account_name).includes(searchQuery),
+      );
+
+      // A group with no hit is dropped rather than shown empty: the heading
+      // would otherwise claim a type that matched nothing.
+      if (hits?.length) {
+        matches[accountType as AccountType] = hits;
+      }
+    });
+
+    return matches;
+  }, [groupedAccounts, searchQuery]);
   //---------------------------------
   // 🎯 FOCUS GROUP EXPANSION
   // The anchored card arrives inside a collapsed group, so the group has to
@@ -426,19 +481,29 @@ const AccountingDashboard = () => {
     // }
     //--------------------------------------
     //NO ACCOUNTS INFO
-    if (Object.keys(groupedAccounts).length === 0 && !isLoading) {
+    // Two different empty states: an inventory with nothing in it asks for an
+    // account, a filter that matched nothing asks for another word.
+    if (Object.keys(visibleGroups).length === 0 && !isLoading) {
+      const isFiltered = Boolean(searchQuery);
+
       return (
         <div className='accounting-empty'>
-          <div className='accounting-empty__emoji'>📁</div>
-          <h3 className='accounting-empty__title'>No Accounts Found</h3>
+          <div className='accounting-empty__emoji'>
+            {isFiltered ? '🔎' : '📁'}
+          </div>
+          <h3 className='accounting-empty__title'>
+            {isFiltered ? 'No matching accounts' : 'No Accounts Found'}
+          </h3>
           <p className='accounting-empty__message'>
-            Get started by creating your first account to manage your finances.
+            {isFiltered
+              ? `No account name contains "${searchTerm.trim()}".`
+              : 'Get started by creating your first account to manage your finances.'}
           </p>
         </div>
       );
     }
     //------
-    return Object.entries(groupedAccounts).map(([accountType, accounts]) => {
+    return Object.entries(visibleGroups).map(([accountType, accounts]) => {
       const safeAccountType = accountType as AccountType;
       const accountTypeData = getAccountTypeIconAndName(safeAccountType);
       // A capitalised binding: JSX reads a lowercase tag as an HTML element, so
@@ -447,7 +512,10 @@ const AccountingDashboard = () => {
       // Bound once so the heading's aria-controls and the grid's id cannot
       // drift apart.
       const gridId = `account-group-grid-${accountType}`;
-      const isExpanded = expandedGroups.has(accountType);
+      // A search opens every group it matched: leaving them shut would hide
+      // the very rows the filter just selected.
+      const isExpanded =
+        Boolean(searchQuery) || expandedGroups.has(accountType);
 
       return (
         <div className='account-group' key={accountType}>
@@ -470,8 +538,7 @@ const AccountingDashboard = () => {
             </span>
 
             <span className='account-group__name'>
-             {formatAccountTypeName(accountTypeData.name as AccountType)}{' '}
-             accounts
+             {formatAccountTypeName(accountTypeData.name as AccountType)}
             </span>
 
             {/* What a shut group has left to say about its size. */}
@@ -535,6 +602,40 @@ const AccountingDashboard = () => {
             </div>
             <div className='accounting__title'>{'Accounting'}</div>
           </Link>
+
+          {/* Always rendered, whatever the inventory holds: a field that
+              appears past a threshold shifts every group down the moment
+              it arrives. type='text' and not 'search' so the browser does
+              not draw a second clear button beside ours. */}
+          <div className='accountingSearch'>
+            <SearchSvg
+              className='accountingSearch__icon'
+              aria-hidden='true'
+              focusable='false'
+            />
+            <input
+              type='text'
+              className='accountingSearch__field'
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder='Search accounts'
+              aria-label='Search accounts by name'
+            />
+            {searchTerm && (
+              <button
+                type='button'
+                className='accountingSearch__clear'
+                onClick={() => setSearchTerm('')}
+                aria-label='Clear search'
+              >
+                <ClearSvg
+                  className='accountingSearch__clear-glyph'
+                  aria-hidden='true'
+                  focusable='false'
+                />
+              </button>
+            )}
+          </div>
 
           {renderAccountGroups()}
         </div>
