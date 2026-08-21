@@ -28,7 +28,9 @@
    centring is the layout, not a side effect of it. */
 .account-actions-menu {
  width: var(--layout-content-width);
- max-width: var(--layout-width-max);
+ /* The card it was opened from, not the viewport: at --layout-width-max the
+    panel was 640px against a 360px card and read as a different screen. */
+ max-width: var(--layout-width-min);
  overflow: hidden;
  border: var(--border-width-thin) solid var(--color-border-subtle);
  border-radius: var(--radius-md);
