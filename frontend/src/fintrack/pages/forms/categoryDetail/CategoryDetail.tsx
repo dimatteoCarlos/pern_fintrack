@@ -324,15 +324,13 @@ function CategoryDetail() {
                 action={
                   <button
                     type='button'
-                    className='budgetDetail__editBudget'
+                    className={`budgetDetail__editBudget${
+                      canEdit ? '' : ' budgetDetail__editBudget--hidden'
+                    }`}
                     onClick={() => setIsEditingBudget(true)}
                     disabled={!canEdit}
                     aria-label={`Edit budget for ${budgetAccount.subcategory ?? budgetAccount.accountName}`}
-                    title={
-                      canEdit
-                        ? 'Edit budget'
-                        : 'Only the current month can be edited'
-                    }
+                    title='Edit budget'
                   >
                     <EditSvg />
                   </button>

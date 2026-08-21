@@ -229,6 +229,13 @@
  pointer-events: none;
 }
 
+/* A past month is not editable, and a control that renders only to refuse is
+   noise. Hidden and not unmounted so the amounts keep their column: the row is
+   space-between and removing the button moves the figures month to month. */
+.budgetDetail__editBudget--hidden {
+ visibility: hidden;
+}
+
 /* The level-2 row, on the app surface. The modifier names the surface the
    button sits on and not its own colour; the rules above are the cream panel's,
    which is where level 3 mounts the same control. A `.light` alias for that one

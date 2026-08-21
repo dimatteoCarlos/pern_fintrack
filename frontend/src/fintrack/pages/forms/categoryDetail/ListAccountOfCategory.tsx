@@ -285,15 +285,13 @@ function ListAccountOfCategory({
 
                   <button
                     type='button'
-                    className='budgetDetail__editBudget dark'
+                    className={`budgetDetail__editBudget dark${
+                      canEdit ? '' : ' budgetDetail__editBudget--hidden'
+                    }`}
                     onClick={() => onEditAccount(accountId)}
                     disabled={!canEdit}
                     aria-label={`Edit budget for ${subcategory ?? accountName}`}
-                    title={
-                      canEdit
-                        ? 'Edit budget'
-                        : 'Only the current month can be edited'
-                    }
+                    title='Edit budget'
                   >
                     <EditSvg />
                   </button>
