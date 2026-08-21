@@ -28,6 +28,10 @@ body,
      look for after this: an element left behind at 16px is one that never
      declared a size, not one this broke. */
   font-size: var(--font-size-root);
+  /* Reserves the scrollbar's track whether or not it is showing. Without
+     it, a section that grows past the viewport narrows the page by the
+     scrollbar's width and every centred layout shifts as it appears. */
+  scrollbar-gutter: stable;
 
   /* line-height: 1.5; */
   font-synthesis: weight;
