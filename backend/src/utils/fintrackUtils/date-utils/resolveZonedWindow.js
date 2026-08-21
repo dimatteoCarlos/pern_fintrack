@@ -39,7 +39,7 @@ const DEFAULT_LOOKBACK_DAYS = 30;
  * @param {string} timeZone - IANA identifier
  * @returns {string} YYYY-MM-DD
  */
-const todayIn = (timeZone) =>
+export const todayInZone = (timeZone) =>
  new Intl.DateTimeFormat('en-CA', {
   timeZone,
   year: 'numeric',
@@ -64,7 +64,7 @@ const shiftDays = (calendarDate, days) => {
   .slice(0, 10);
 };
 
-const isCalendarDate = (value) =>
+export const isCalendarDate = (value) =>
  typeof value === 'string' && CALENDAR_DATE.test(value);
 
 /**
@@ -88,7 +88,7 @@ export function resolveZonedWindow({
  let zone = timeZone || 'UTC';
 
  try {
-  todayIn(zone);
+  todayInZone(zone);
  } catch {
   zone = 'UTC';
  }
@@ -96,7 +96,7 @@ export function resolveZonedWindow({
  // The end day anchors the window. An explicit start with no end still gets a
  // sensible ceiling, and an explicit end with no start gets its floor measured
  // back from the day that was asked for rather than from today.
- const endDate = isCalendarDate(end) ? end : todayIn(zone);
+ const endDate = isCalendarDate(end) ? end : todayInZone(zone);
  const startDate = isCalendarDate(start)
   ? start
   : shiftDays(endDate, -(lookbackDays - 1));
