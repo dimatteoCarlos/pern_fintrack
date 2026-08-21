@@ -209,6 +209,17 @@ export async function getPocketAccountIds(pool, userId) {
 }
 
 /**
+ * The investment accounts of a user — the set every V figure is read over.
+ *
+ * @param {object} pool - Database pool
+ * @param {string} userId - UUID from the token
+ * @returns {Promise<number[]>} account ids, ascending
+ */
+export async function getInvestmentAccountIds(pool, userId) {
+ return getAccountIdsByType(pool, userId, 'investment');
+}
+
+/**
  * The local date the user's oldest account was created, or null if they have none.
  *
  * @param {object} pool - Database pool

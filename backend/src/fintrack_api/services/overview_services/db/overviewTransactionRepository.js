@@ -215,6 +215,47 @@ const POCKET_COUNT_QUERY = `
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
 `;
 
+// Investment lists every movement that touched an investment account, with no
+// movement filter at all, and that is the one list in this file whose rows are
+// NOT the rows of a figure.
+//
+// The card of §6 has no transactionCount to reconcile against, so D21 does not
+// apply here — there is nothing for the list to agree or disagree with. What the
+// list has to agree with is the account statement the user can already open
+// elsewhere: hiding a transfer between two investment accounts because no V
+// figure counts it would make the same account show two different histories on
+// two screens.
+const INVESTMENT_PAGE_QUERY = `
+  SELECT
+    tr.*,
+    mt.movement_type_name,
+    trt.transaction_type_name,
+    act.account_type_name,
+    cr.currency_code,
+    ua.account_name,
+    ua.account_type_id,
+    (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS transaction_local_date
+  FROM transactions tr
+  JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
+  JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
+  JOIN currencies cr ON cr.currency_id = tr.currency_id
+  JOIN user_accounts ua ON ua.account_id = tr.account_id
+  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
+  WHERE tr.account_id = ANY($1::int[])
+    AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
+    AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
+  ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
+  LIMIT $4 OFFSET $5
+`;
+
+const INVESTMENT_COUNT_QUERY = `
+  SELECT COUNT(*) AS total_rows
+  FROM transactions tr
+  WHERE tr.account_id = ANY($1::int[])
+    AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
+    AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
+`;
+
 /**
  * Run a page statement and its count, and read both.
  *
@@ -362,6 +403,27 @@ export async function getPocketTransactionsPage(pool, accountIds, month, timeZon
  return readTransactionsPage(
   pool,
   { page: POCKET_PAGE_QUERY, count: POCKET_COUNT_QUERY },
+  accountIds,
+  month,
+  timeZone,
+  paging,
+ );
+}
+
+/**
+ * One page of everything that touched an investment account in a month.
+ *
+ * @param {object} pool - Database pool
+ * @param {number[]} accountIds - the user's investment accounts
+ * @param {string} month - the month to list, as 'YYYY-MM-01'
+ * @param {string} timeZone - IANA zone of the account owner
+ * @param {object} paging - { page, pageSize, includeRows }
+ * @returns {Promise<{rows: object[], totalRows: number}>}
+ */
+export async function getInvestmentTransactionsPage(pool, accountIds, month, timeZone, paging) {
+ return readTransactionsPage(
+  pool,
+  { page: INVESTMENT_PAGE_QUERY, count: INVESTMENT_COUNT_QUERY },
   accountIds,
   month,
   timeZone,

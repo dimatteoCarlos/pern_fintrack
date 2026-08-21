@@ -29,6 +29,7 @@ import { overviewIncomeService } from '../services/overview_services/services/ov
 import { overviewPnlService } from '../services/overview_services/services/overviewPnlService.js';
 import { overviewDebtService } from '../services/overview_services/services/overviewDebtService.js';
 import { overviewPocketService } from '../services/overview_services/services/overviewPocketService.js';
+import { overviewInvestmentService } from '../services/overview_services/services/overviewInvestmentService.js';
 import { makeReportingWindow } from '../services/overview_services/core/monthArithmetic.js';
 import { getCurrentMonth } from '../services/budget_services/db/budgetTransactionRepository.js';
 import { pool } from '../../db/config/configDB.js';
@@ -48,6 +49,7 @@ const DOMAIN_CALCULATORS = {
  pnl: (...args) => overviewPnlService.getPnlDomainData(...args),
  debt: (...args) => overviewDebtService.getDebtDomainData(...args),
  pocket: (...args) => overviewPocketService.getPocketDomainData(...args),
+ investment: (...args) => overviewInvestmentService.getInvestmentDomainData(...args),
 };
 
 /**
