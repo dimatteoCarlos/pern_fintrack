@@ -318,6 +318,31 @@ export function formatBudgetMonthLabel(
   });
 }
 
+// A calendar date as the pocket board serves it: '2026-12-31' -> 'Dec 31, 2026'.
+//
+// Built from the parts and NOT from new Date(day), for the reason
+// formatBudgetMonthLabel is: a 'YYYY-MM-DD' string parses as UTC midnight, so
+// west of UTC it renders as the previous day — which would move a deadline the
+// server resolved on the owner's own calendar.
+//
+// The locale is the app's constant rather than a literal. Two hardcoded and
+// disagreeing locales in one row is exactly what this replaces.
+export function formatCalendarDate(
+  day: string | null | undefined,
+  countryFormat = DATE_TEXT_FORMAT,
+) {
+  if (!day) return '';
+
+  const [year, month, date] = day.split('-').map(Number);
+  if (!year || !month || !date) return '';
+
+  return new Date(year, month - 1, date).toLocaleDateString(countryFormat, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 // Carries the board's month across a link. The month is a property of the URL,
 // so a link inside the module that drops it lands on a screen that silently
 // falls back to the current month.

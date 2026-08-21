@@ -215,3 +215,130 @@ button.line__container {
 .pocketLayout .tile__right .tile__title {
   font-weight: 500;
 }
+
+/* ── The board's three fetch states ──────────────────────────────────────────
+   Loading, error and empty are three different answers and they render as
+   three different things. All three used to render the same blank list, which
+   told the reader nothing about which one had happened.
+
+   Written against tokens only. The rules above this block predate the token
+   system and hold raw hex, raw rem and an !important; they are not the model
+   for anything added here. */
+
+/* Why the hero has no figures, in the server's own words. Sits on the dark app
+   surface, not on the cream strip. Mirrors the budget hero's notice. */
+.pocketLayout .displayScreen__notice {
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+ text-align: center;
+ padding-top: var(--space-2);
+}
+
+.pocketLayout .displayScreen__notice:only-child {
+ padding-top: 0;
+ margin: auto 0;
+}
+
+/* The error and empty states share the box; only their content differs. */
+.pocketList__state {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ gap: var(--space-4);
+ padding: var(--space-8) var(--space-4);
+ text-align: center;
+}
+
+.pocketList__stateText {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* Retry, which is what separates an error state from an empty one: the reader
+   can do something about it. */
+.pocketList__retry {
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-6);
+ border: var(--border-width-thin) solid var(--color-border-inverse);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ font-family: inherit;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.pocketList__retry:hover {
+ background-color: var(--color-surface-inverse);
+ color: var(--color-content-primary);
+}
+
+.pocketList__retry:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketList__retry:active {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.pocketList__retry:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The loading state occupies the space the rows will take, so the page does not
+   jump when the answer lands. aria-hidden in the markup: a screen reader gains
+   nothing from three empty bars. */
+.pocketList__skeleton {
+ pointer-events: none;
+}
+
+.pocketList__skeletonBar {
+ width: 60%;
+ height: var(--font-size-sm);
+ margin: var(--space-1) 0;
+ border-radius: var(--radius-xs);
+ background-color: var(--color-border-subtle);
+ animation: pocketList__pulse var(--motion-slow) ease-in-out infinite alternate;
+}
+
+.pocketList__skeletonBar--title {
+ width: 80%;
+ height: var(--font-size-base);
+}
+
+@keyframes pocketList__pulse {
+ from {
+  opacity: 0.5;
+ }
+ to {
+  opacity: 1;
+ }
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .pocketList__skeletonBar {
+  animation: none;
+ }
+
+ .pocketList__retry {
+  transition: none;
+ }
+}
+
+/* Mobile-first from 360px. The state box takes more air once there is room for
+   it; nothing below reflows the list itself. */
+@media (min-width: 480px) {
+ .pocketList__state {
+  padding: var(--space-12) var(--space-6);
+ }
+}

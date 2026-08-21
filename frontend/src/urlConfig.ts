@@ -236,3 +236,13 @@ export const url_currency_rates = BASE_URL_APP + 'currency/rates';
 // 💰 GET TRANSACTION BY ID
 // ===================================
 export const url_get_transaction_by_id = BASE_URL_APP + 'transaction/';
+// ===================================
+// 🐷 POCKET MODULE (POCKET_INDICATORS §5)
+// ===================================
+// One request feeds the whole board: the header totals and the list below it
+// are two readings of the same answer, which is what keeps them from
+// disagreeing. It takes no parameters — the board is every pocket the caller
+// owns, and identity comes from the token.
+
+// GET /api/fintrack/pocket/board
+export const url_pocket_board: string = BASE_URL_APP + 'pocket/board';
