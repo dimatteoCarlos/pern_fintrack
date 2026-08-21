@@ -35,6 +35,13 @@ import { currencyAmountConversion } from '../services/fx_services/conversion/cur
 
 import { buildFxMetadata } from '../../utils/fintrackUtils/transactionManagement/fxMetadataHelper.js';
 
+//Pocket deadline rules: this is the authority, the browser schema only mirrors them.
+import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import {
+  checkDesiredDate,
+  defaultDesiredDate,
+} from '../../utils/fintrackUtils/date-utils/pocketDeadline.js';
+
 //--------------------------------
 //endpoint: post: /api/fintrack/account/new_account/account_type_name?user=UUID
 //use this only for bank, income_source and investment accounts
@@ -993,12 +1000,32 @@ export const createPocketAccount = async (req, res, next) => {
         ? new Date()
         : transactionActualDate;
 
-    //if there is not a desired date then consider one year from now
+    //The deadline, on the owner's calendar and not on the caller's device.
+    //Absent, it is defaulted to one month after the start: the column is NOT
+    //NULL, and a one-month horizon expires soon enough to ask the user for the
+    //date the pace figures actually need.
+    const timeZone = await getUserTimeZone(client, userId);
+
     let { desired_date } = req.body;
     if (!desired_date || desired_date == '') {
-      const newDate = new Date(account_start_date);
-      newDate.setFullYear(newDate.getFullYear() + 1);
-      desired_date = newDate.toISOString();
+      desired_date = defaultDesiredDate(account_start_date).toISOString();
+    } else {
+      //422 and not 400: the field parsed and is well formed. What fails is a
+      //relationship no schema can see, which is how the budget module answers
+      //the same class of failure.
+      const { ok, day, today } = checkDesiredDate(desired_date, timeZone);
+
+      if (day === null) {
+        const message = 'Desired date is not a valid date.';
+        console.warn(pc.redBright(message));
+        return res.status(400).json({ status: 400, message });
+      }
+
+      if (!ok) {
+        const message = `Desired date must not be earlier than today (${today}). Received ${day}.`;
+        console.warn(pc.redBright(message));
+        return res.status(422).json({ status: 422, message });
+      }
     }
     //----------------------------------
     //currency and account_type data, are better defined by frontend

@@ -34,9 +34,13 @@ export const pocketSavingEditSchema = baseAccountEditSchema.extend({
     ])
     .refine(
       (date) => {
+        // >= and not >: today is a valid deadline. Under > the answer depended
+        // on the time of day the picker stamped — a date picked as today at
+        // 14:00 passed and the same day at 00:00 failed. The server holds the
+        // same rule on the owner's calendar, which is the one that decides.
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        return date > today;
+        return date >= today;
       },
       {
         message: ERROR_MESSAGES.INVALID_DATE_FUTURE,

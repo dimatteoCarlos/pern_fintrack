@@ -24,7 +24,7 @@ export const ERROR_MESSAGES = {
   INVALID_CHARS: (chars: string) => `Invalid chars: ${chars}.`,
 // Add other common messages as needed
   INVALID_DATE: 'Invalid date format.',
-  INVALID_DATE_FUTURE:'Date must be in the future',
+  INVALID_DATE_FUTURE: 'Date must be today or later',
   INVALID_SELECTION: 'Please select an option.',
 
 };
