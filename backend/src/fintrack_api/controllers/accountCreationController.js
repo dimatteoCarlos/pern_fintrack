@@ -1007,8 +1007,11 @@ export const createPocketAccount = async (req, res, next) => {
     const timeZone = await getUserTimeZone(client, userId);
 
     let { desired_date } = req.body;
+    let desired_date_source = 'user';
+
     if (!desired_date || desired_date == '') {
       desired_date = defaultDesiredDate(account_start_date).toISOString();
+      desired_date_source = 'default';
     } else {
       //422 and not 400: the field parsed and is well formed. What fails is a
       //relationship no schema can see, which is how the budget module answers
@@ -1142,11 +1145,12 @@ export const createPocketAccount = async (req, res, next) => {
     //-------------------------------
     //---INSERT POCKET ACCOUNT into pocket_saving_accounts table
     const pocket_saving_accountQuery = {
-      text: `INSERT INTO pocket_saving_accounts (account_id, target, desired_date, account_start_date, note, original_target, original_currency_id, exchange_rate, exchange_rate_source, exchange_rate_timestamp, exchange_rate_target_currency_id) VALUES ($1,$2::FLOAT,$3,$4,$5,$6::FLOAT,$7,$8,$9,$10,$11) RETURNING *`,
+      text: `INSERT INTO pocket_saving_accounts (account_id, target, desired_date, desired_date_source, account_start_date, note, original_target, original_currency_id, exchange_rate, exchange_rate_source, exchange_rate_timestamp, exchange_rate_target_currency_id) VALUES ($1,$2::FLOAT,$3,$4,$5,$6,$7::FLOAT,$8,$9,$10,$11,$12) RETURNING *`,
       values: [
         account_id,
         convertedTarget,
         desired_date,
+        desired_date_source,
         account_start_date,
         note,
         target,

@@ -332,6 +332,9 @@ JOIN currencies ct ON ua.currency_id = ct.currency_id
    SELECT ua.account_id, ua.account_name,
     CAST(ua.account_balance AS FLOAT),
     act.account_type_name, ct.currency_code, ps.target, ps.desired_date,
+    -- 'user' or 'default'. A defaulted deadline is not a deadline the user
+    -- chose, and no pace figure derived from it may read as one.
+    ps.desired_date_source,
     ps.account_start_date, 
     ua.account_starting_amount,
     ua.account_start_date

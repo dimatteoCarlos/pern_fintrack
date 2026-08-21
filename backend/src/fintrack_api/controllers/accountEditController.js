@@ -320,10 +320,31 @@ export const patchAccountById = async (req, res, next) => {
       const specificSqlValues = [];
       let specificSqlParameters = 1;
 
+      // The placeholder desired_date landed on, so the provenance below can
+      // compare against the very value being written.
+      let desiredDateParameter = null;
+
       for (const key in specificFields) {
         specificUpdateSqlParameters.push(`${key} = $${specificSqlParameters}`);
         specificSqlValues.push(specificFields[key]);
+
+        if (key === 'desired_date') desiredDateParameter = specificSqlParameters;
+
         specificSqlParameters++;
+      }
+
+      // A deadline the user actually changed is a deadline the user chose, so
+      // the row stops claiming the controller invented it.
+      //
+      // Guarded on the value differing, not on the field being present: the
+      // editor resubmits the whole form, so a save that only touched the note
+      // still carries desired_date, and flipping on presence would relabel a
+      // default nobody looked at. Every SET expression reads the OLD row, so
+      // the bare column name on the left of IS DISTINCT FROM is what is stored.
+      if (desiredDateParameter !== null && tableName === 'pocket_saving_accounts') {
+        specificUpdateSqlParameters.push(
+          `desired_date_source = CASE WHEN desired_date IS DISTINCT FROM $${desiredDateParameter}::timestamptz THEN 'user' ELSE desired_date_source END`,
+        );
       }
 
       specificSqlValues.push(accountId); // $final = accountId

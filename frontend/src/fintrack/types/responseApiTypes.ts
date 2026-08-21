@@ -2,7 +2,7 @@
 //API RESPONSE TYPES FROM BACKEND
 
 //API RESPONSE TYPE DEFINITIONS
-import { CurrencyType } from './types';
+import { CurrencyType, DesiredDateSourceType } from './types';
 
 //ACCOUNT BALANCE BY TYPE
 export type BalanceBankRespType = {
@@ -386,6 +386,10 @@ account_id: number;
   target: number;
   note: string;
   desired_date: Date | string;
+  // Where desired_date came from. 'default' means the controller invented it
+  // because the caller sent none, and no pace figure derived from it may be
+  // rendered as one the user asked for. See migration 018.
+  desired_date_source: DesiredDateSourceType;
   user_id:string;
 // account_starting_amount: number;
 // account_start_date: Date | string;

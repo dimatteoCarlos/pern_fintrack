@@ -126,6 +126,13 @@ export const mainTables = [
     desired_date TIMESTAMPTZ NOT NULL,
     account_start_date TIMESTAMPTZ NOT NULL,
 
+ -- Where desired_date came from. The column is NOT NULL, so a caller that
+ -- sends no deadline still gets one written, and every pace figure divides by
+ -- it. 'default' is what lets the board say "deadline not set" instead of
+ -- reporting a pace built on a date nobody chose. See migration 018.
+    desired_date_source VARCHAR(20) NOT NULL DEFAULT 'user'
+      CHECK (desired_date_source IN ('user', 'default')),
+
  --  FX audit columns. target holds the accounting currency; original_target
  --  holds what the user typed. The two currency ids take no default: an id has
  --  no honest fallback. See migration 015.
