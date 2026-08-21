@@ -83,20 +83,102 @@
   color: var(--creme);
   font-weight: 600;
   margin: 0;
-  flex: 1;
-  text-align: center;
   letter-spacing: 0.75px;
-  padding: 0.5rem;
-    /* border:11px solid red; */
-  display:flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
 }
+
+/* The heading is the group's disclosure control. The whole row answers the
+   click, so nothing inside it declares a state of its own. */
+.account-group__toggle {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ gap: var(--space-2);
+ width: 100%;
+ padding: var(--space-2);
+ border: none;
+ border-radius: var(--radius-sm);
+ background-color: transparent;
+ color: inherit;
+ font-family: inherit;
+ /* index.css sizes the universal selector, so a button inherits neither the
+    heading's size nor its weight without being told to. */
+ font-size: inherit;
+ font-weight: inherit;
+ letter-spacing: inherit;
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+/* The page ground, one step below the panel the heading sits on, so the row
+   reads as pressed into the group rather than painted over it. */
+.account-group__toggle:hover {
+ background-color: var(--color-surface-app);
+}
+
+.account-group__toggle:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.account-group__toggle:active {
+ background-color: var(--color-surface-sunken);
+}
+
+.account-group__toggle:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* What a shut group has left to say about its size. */
+.account-group__count {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ flex-shrink: 0;
+ min-width: var(--size-control-sm);
+ padding: 0 var(--space-2);
+ border: var(--border-width-thin) solid currentColor;
+ border-radius: var(--radius-full);
+ /* index.css sizes the universal selector, so an inline element does not
+    inherit the size of the line it sits in. */
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+}
+
+/* Points down while the group is shut and turns over once it opens. */
+.account-group__chevron {
+ width: var(--font-size-lg);
+ height: var(--font-size-lg);
+ flex-shrink: 0;
+ transition: transform var(--motion-normal);
+}
+
+/* The asset hardcodes its stroke, so neither the heading's colour nor the
+   button's reaches it without this. */
+.account-group__chevron path {
+ stroke: currentColor;
+}
+
+.account-group__toggle.is-active .account-group__chevron {
+ transform: rotate(180deg);
+}
+
+/* display: none and not the [hidden] attribute: the grid declares
+   display: grid, which outranks the user-agent rule the attribute carries. */
+.account-group__grid--collapsed {
+ display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .account-group__toggle,
+ .account-group__chevron {
+  transition: none;
+ }
+}
+
 /* A rounded square and not a circle: --radius-full is the pill and avatar
    shape. Border and glyph both land at 2px, so the frame and the drawing it
-   holds carry one weight. Inert on purpose: the heading answers no click,
-   and a reactive ring would promise one. */
+   holds carry one weight. */
 .account-group__icon-frame {
   display: flex;
   align-items: center;

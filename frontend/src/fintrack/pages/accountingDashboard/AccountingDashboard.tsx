@@ -17,6 +17,9 @@ import ExpenseAccountsSvg from '../../../assets/accountingDashboardSvg/expenseAc
 import IncomeAccountsSvg from '../../../assets/accountingDashboardSvg/incomeAccountsSvg.svg?react';
 import InvestmentAccountsSvg from '../../../assets/accountingDashboardSvg/investmentAccountsSvg.svg?react';
 import PocketsAccountsSvg from '../../../assets/accountingDashboardSvg/pocketsAccountsSvg.svg?react';
+// The disclosure affordance of every group heading. One asset, rotated when
+// the group opens, rather than a second drawing for the open state.
+import ArrowDownLightSvg from '../../../assets/ArrowDownLightSvg.svg?react';
 import Toast from '../../editionAndDeletion/components/toast/Toast';
 import AccountActionsMenu from '../../editionAndDeletion/components/accountActionMenu/AccountActionsMenu';
 //---
@@ -124,6 +127,28 @@ const AccountingDashboard = () => {
   // );
   // console.log('apiDataCategory',apiDataCategory )
   //=============================
+  // 📂 GROUP COLLAPSE STATE
+  // Collapsed is the default: the dashboard is an index of account types, and
+  // every group open at once is the long scroll this replaces. A Set and not a
+  // record so a type absent from the inventory carries no entry at all.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+   () => new Set(),
+  );
+
+  const toggleGroup = (accountType: string) => {
+   setExpandedGroups((previous) => {
+    const next = new Set(previous);
+
+    if (next.has(accountType)) {
+     next.delete(accountType);
+    } else {
+     next.add(accountType);
+    }
+
+    return next;
+   });
+  };
+  //=============================
   // 🆕 MENU STATE
   const [menuState, setMenuState] = useState<{
     isOpen: boolean;
@@ -214,10 +239,40 @@ const AccountingDashboard = () => {
     return groupAccountsBytype(apiData?.data?.accountList);
   }, [apiData?.data.accountList]);
   //---------------------------------
+  // 🎯 FOCUS GROUP EXPANSION
+  // The anchored card arrives inside a collapsed group, so the group has to
+  // open before the scroll effect below can find the card in the DOM. Setting
+  // state here is what gives that effect the second pass it needs.
+  useEffect(() => {
+   if (!focusedAccountId) {
+    return;
+   }
+
+   const groupHoldingFocus = Object.entries(groupedAccounts).find(
+    ([, accounts]) =>
+     accounts?.some(
+      (account) => String(account.account_id) === focusedAccountId,
+     ),
+   )?.[0];
+
+   if (!groupHoldingFocus) {
+    return;
+   }
+
+   // Returning the same Set when it already holds the group: a fresh one every
+   // pass would re-render forever.
+   setExpandedGroups((previous) =>
+    previous.has(groupHoldingFocus)
+     ? previous
+     : new Set(previous).add(groupHoldingFocus),
+   );
+  }, [focusedAccountId, groupedAccounts]);
+  //---------------------------------
   // 🎯 RETURN ANCHOR
   // Brings the acted-on card back into view and hands it the keyboard. It
   // waits on groupedAccounts because the card is not in the DOM until the
-  // inventory request resolves.
+  // inventory request resolves, and on expandedGroups because a collapsed
+  // group renders no card to scroll to.
   useEffect(() => {
     if (!focusedAccountId || Object.keys(groupedAccounts).length === 0) {
       return;
@@ -240,6 +295,7 @@ const AccountingDashboard = () => {
   }, [
     focusedAccountId,
     groupedAccounts,
+    expandedGroups,
     location.pathname,
     location.state,
     navigateTo,
@@ -390,28 +446,58 @@ const AccountingDashboard = () => {
       // A capitalised binding: JSX reads a lowercase tag as an HTML element, so
       // accountTypeData.Icon cannot be rendered where it stands.
       const AccountTypeIcon = accountTypeData.Icon;
+      // Bound once so the heading's aria-controls and the grid's id cannot
+      // drift apart.
+      const gridId = `account-group-grid-${accountType}`;
+      const isExpanded = expandedGroups.has(accountType);
 
       return (
         <div className='account-group' key={accountType}>
           <h3 className='account-group__title'>
-            {/* Decorative, and the frame says so: no hover and no pointer,
-                or a ring beside a real 3-dots button would promise a click. */}
+           <button
+            type='button'
+            className={`account-group__toggle${isExpanded ? ' is-active' : ''}`}
+            onClick={() => toggleGroup(accountType)}
+            aria-expanded={isExpanded}
+            aria-controls={gridId}
+           >
+            {/* Decorative: the button around it is what answers the click, so
+                the frame still declares no state of its own. */}
             <span className='account-group__icon-frame'>
-              <AccountTypeIcon
-                className='account-group__icon'
-                aria-hidden='true'
-                focusable='false'
-              />
+             <AccountTypeIcon
+              className='account-group__icon'
+              aria-hidden='true'
+              focusable='false'
+             />
             </span>
 
             <span className='account-group__name'>
-              {formatAccountTypeName(accountTypeData.name as AccountType)}{' '}
-              accounts
+             {formatAccountTypeName(accountTypeData.name as AccountType)}{' '}
+             accounts
             </span>
+
+            {/* What a shut group has left to say about its size. */}
+            <span className='account-group__count'>{accounts!.length}</span>
+
+            <ArrowDownLightSvg
+             className='account-group__chevron'
+             aria-hidden='true'
+             focusable='false'
+            />
+           </button>
           </h3>
 
-          <div className='account-group__grid'>
-            {accounts!.map((account) => (
+          <div
+           className={`account-group__grid${
+            isExpanded ? '' : ' account-group__grid--collapsed'
+           }`}
+           id={gridId}
+          >
+            {/* Not rendered at all while shut, rather than hidden with CSS: a
+                hidden card is still findable by id, and the return anchor
+                would spend itself on one it can neither scroll to nor focus. */}
+            {isExpanded &&
+             accounts!.map((account) => (
               <div
                 className='account-card'
                 id={`account-card-${account.account_id}`}
@@ -429,7 +515,7 @@ const AccountingDashboard = () => {
                   }
                 />
               </div>
-            ))}
+             ))}
           </div>
         </div>
       );
