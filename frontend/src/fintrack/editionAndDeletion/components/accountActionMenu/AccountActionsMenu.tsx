@@ -1,7 +1,7 @@
 //frontend/src/fintrack/editionAndDeletion/components/accountActionMenu/AccountActionsMenu.tsx
 //Parent: /frontend/src/fintrack/pages/accountingDashboard/AccountingDashboard.tsx
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useClickOutside } from '../../hooks/useClickOutside.ts';
 // '?react' and not a bare import: a bare .svg is typed `string` and cannot take
 // a className, so only that form carries a React component type.
@@ -43,9 +43,53 @@ export function AccountActionsMenu({
   //http://localhost:5173/fintrack/overview/accounts/:accountId
   //-------------------------------
   const menuRef = useRef<HTMLDivElement>(null);
+  // The control that opened the menu, so closing can hand the keyboard back to
+  // where it came from instead of dropping it on <body>.
+  const triggerRef = useRef<HTMLElement | null>(null);
 
   // 🎯 CLOSE MENU WHEN CLICKING OUTSIDE
   useClickOutside(menuRef, onClose);
+
+  // ⎋ CLOSE ON ESCAPE
+  // On the document and not on the panel: the key has to work from the moment
+  // the menu paints, before focus has finished moving into it.
+  useEffect(() => {
+   if (!isOpen) {
+    return;
+   }
+
+   const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+     onClose();
+    }
+   };
+
+   document.addEventListener('keydown', handleKeyDown);
+
+   return () => {
+    document.removeEventListener('keydown', handleKeyDown);
+   };
+  }, [isOpen, onClose]);
+
+  // 🎯 FOCUS IN ON OPEN, BACK TO THE TRIGGER ON CLOSE
+  // onClose is deliberately not a dependency: it is a fresh closure on every
+  // parent render, and the cleanup would then pull focus back mid-session.
+  useEffect(() => {
+   if (!isOpen) {
+    return;
+   }
+
+   triggerRef.current = document.activeElement as HTMLElement | null;
+   menuRef.current?.querySelector('button')?.focus();
+
+   return () => {
+    // isConnected: an option that navigates away takes the trigger out of the
+    // document with it, and focusing a detached node does nothing useful.
+    if (triggerRef.current?.isConnected) {
+     triggerRef.current.focus();
+    }
+   };
+  }, [isOpen]);
 
   if (!isOpen) return null;
   //---------
