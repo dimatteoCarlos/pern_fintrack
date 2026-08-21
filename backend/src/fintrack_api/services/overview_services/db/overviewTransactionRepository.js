@@ -277,9 +277,10 @@ const readTransactionsPage = async (pool, statements, accountIds, month, timeZon
  const ids = accountIds ?? [];
  const offset = (page - 1) * pageSize;
 
- // A caller that wants the count and forbids the rows skips the page statement
- // rather than fetching rows and dropping them, which would obey the return type
- // and not the obligation behind it.
+ // GET /overview needs the count and forbids the rows (§11: no transaction rows
+ // travel outside recentActivity). Skipping the page statement is how that is
+ // honoured — not by fetching rows and dropping them, which would obey the type
+ // and not the obligation.
  if (!includeRows) {
   const total = await pool.query(statements.count, [ids, month, timeZone]);
   return { rows: [], totalRows: Number(total.rows[0]?.total_rows ?? 0) };
@@ -375,7 +376,7 @@ export async function getPnlTransactionsPage(pool, accountIds, month, timeZone, 
  * @param {number[]} accountIds - the user's debtor accounts
  * @param {string} month - the month to list, as 'YYYY-MM-01'
  * @param {string} timeZone - IANA zone of the account owner
- * @param {object} paging - { page, pageSize }
+ * @param {object} paging - { page, pageSize, includeRows }
  * @returns {Promise<{rows: object[], totalRows: number}>}
  */
 export async function getDebtTransactionsPage(pool, accountIds, month, timeZone, paging) {
@@ -396,7 +397,7 @@ export async function getDebtTransactionsPage(pool, accountIds, month, timeZone,
  * @param {number[]} accountIds - the user's pocket_saving accounts
  * @param {string} month - the month to list, as 'YYYY-MM-01'
  * @param {string} timeZone - IANA zone of the account owner
- * @param {object} paging - { page, pageSize }
+ * @param {object} paging - { page, pageSize, includeRows }
  * @returns {Promise<{rows: object[], totalRows: number}>}
  */
 export async function getPocketTransactionsPage(pool, accountIds, month, timeZone, paging) {

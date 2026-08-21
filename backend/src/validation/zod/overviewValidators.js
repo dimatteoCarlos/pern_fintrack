@@ -53,6 +53,19 @@ export const overviewDomainParamsSchema = z.object({
 }).strict();
 
 /**
+ * GET /overview
+ * Query: month (optional, past only)
+ *
+ * No page and no pageSize, and the schema is strict, so sending either answers
+ * 400 naming the key. That is the obligation of §11 enforced at the door: the
+ * page carries no paginated list, so a caller asking for page 2 of it is asking
+ * for something that does not exist and deserves to be told so.
+ */
+export const overviewPageQuerySchema = z.object({
+ month: monthBound.optional(),
+}).strict();
+
+/**
  * GET /overview/:domain
  * Query: month (optional, past only), page, pageSize
  *

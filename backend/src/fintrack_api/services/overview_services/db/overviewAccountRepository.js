@@ -81,10 +81,10 @@ const PNL_ACCOUNT_IDS_QUERY = `
   ORDER BY ua.account_id
 `;
 
-// The accounts of one type, slack excluded — the set Debt and Pocket are each
-// read over.
+// The accounts of one type, slack excluded — the set Debt, Pocket and
+// Investment are each read over.
 //
-// One statement with the type as a bind parameter, not two. A type name is a
+// One statement with the type as a bind parameter, not three. A type name is a
 // value the catalog already holds, not a piece of SQL structure, so this is not
 // the template with holes the module argues against elsewhere: the shape of the
 // statement is fixed and only the value moves.

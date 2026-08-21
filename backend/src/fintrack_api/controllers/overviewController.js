@@ -22,7 +22,10 @@
 import {
  overviewDomainParamsSchema,
  overviewDomainQuerySchema,
+ overviewPageQuerySchema,
 } from '../../validation/zod/overviewValidators.js';
+
+import { overviewPageService } from '../services/overview_services/services/overviewPageService.js';
 
 import { overviewExpenseService } from '../services/overview_services/services/overviewExpenseService.js';
 import { overviewIncomeService } from '../services/overview_services/services/overviewIncomeService.js';
@@ -79,6 +82,66 @@ const respondWithZodIssues = (res, error) =>
   })),
  });
 
+/**
+ * Resolve the reporting window, or answer 422.
+ *
+ * Shared by both handlers because the month ceiling is a property of the
+ * request, not of a domain: two handlers each holding their own copy of "later
+ * than the current month" would be two places to fix it, and only one of them
+ * would get fixed.
+ *
+ * Returns null after writing the 422 — the same shape as requireUserId, so both
+ * guards read alike at the call site.
+ *
+ * @returns {Promise<object|null>} the window, or null when a 422 was sent
+ */
+const resolveWindowOr422 = async (res, timeZone, month) => {
+ const currentMonth = await getCurrentMonth(pool, timeZone);
+
+ // 422 and not 400: the request parsed and the month is well formed, it is
+ // simply later than any month that exists on the owner's calendar. That is a
+ // relationship with a calendar, which no schema can see.
+ if (month && month > currentMonth) {
+  res.status(422).json({
+   status: 422,
+   message: `month ${month.slice(0, 7)} is later than the current month ${currentMonth.slice(0, 7)}.`,
+  });
+  return null;
+ }
+
+ return makeReportingWindow(month ?? currentMonth);
+};
+
+/** GET /api/fintrack/overview */
+export async function getOverview(req, res, next) {
+ try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
+  const { month } = overviewPageQuerySchema.parse(req.query);
+
+  const timeZone = await getUserTimeZone(pool, userId);
+  const window = await resolveWindowOr422(res, timeZone, month);
+  if (!window) return;
+
+  const data = await overviewPageService.getOverviewPage(pool, userId, { window }, timeZone);
+
+  res.status(200).json({
+   status: 200,
+   message: 'Overview retrieved successfully',
+   data,
+  });
+ } catch (error) {
+  if (error.name === 'ZodError') {
+   return respondWithZodIssues(res, error);
+  }
+  if (error.status) {
+   return res.status(error.status).json({ status: error.status, message: error.message });
+  }
+  next(error);
+ }
+}
+
 /** GET /api/fintrack/overview/:domain */
 export async function getOverviewDomain(req, res, next) {
  try {
@@ -98,24 +161,12 @@ export async function getOverviewDomain(req, res, next) {
   }
 
   // Resolved here rather than inside the service: the zone is read once per
-  // request and passed down, so no service resolves identity on its own.
+  // request and passed down, so no service resolves identity on its own. The
+  // window follows for the same reason — six calculators each shifting their own
+  // months would be six chances to disagree about which month a page reports.
   const timeZone = await getUserTimeZone(pool, userId);
-  const currentMonth = await getCurrentMonth(pool, timeZone);
-
-  // 422 and not 400: the request parsed and the month is well formed, it is
-  // simply later than any month that exists on the owner's calendar. That is a
-  // relationship with a calendar, which no schema can see.
-  if (month && month > currentMonth) {
-   return res.status(422).json({
-    status: 422,
-    message: `month ${month.slice(0, 7)} is later than the current month ${currentMonth.slice(0, 7)}.`,
-   });
-  }
-
-  // One window for the whole request. Resolved here for the same reason the
-  // zone is: six calculators each shifting their own months would be six
-  // chances to disagree about which month a page is reporting.
-  const window = makeReportingWindow(month ?? currentMonth);
+  const window = await resolveWindowOr422(res, timeZone, month);
+  if (!window) return;
 
   const data = await calculator(pool, userId, { window, page, pageSize }, timeZone);
 

@@ -39,7 +39,12 @@ export const overviewPnlService = {
   * @param {string} timeZone - IANA zone of the account owner
   * @returns {Promise<object>} GetOverviewDomainData for domain 'pnl'
   */
- async getPnlDomainData(pool, userId, { window, page, pageSize }, timeZone = 'UTC') {
+ async getPnlDomainData(
+  pool,
+  userId,
+  { window, page, pageSize, includeTransactionRows = true },
+  timeZone = 'UTC',
+ ) {
   const { referenceMonth, priorMonth, trendStart } = window;
 
   // Read once and passed to both consumers, so the figure and the list are the
@@ -52,7 +57,11 @@ export const overviewPnlService = {
   const [months, oldestAccountDate, transactions] = await Promise.all([
    getMonthlyPnl(pool, accountIds, trendStart, referenceMonth, timeZone),
    getOldestAccountDate(pool, userId, timeZone),
-   getPnlTransactionsPage(pool, accountIds, referenceMonth, timeZone, { page, pageSize }),
+   getPnlTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
+    page,
+    pageSize,
+    includeRows: includeTransactionRows,
+   }),
   ]);
 
   const { currentPoint, delta, canCompare } = makePeriodDelta({

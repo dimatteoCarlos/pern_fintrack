@@ -47,7 +47,12 @@ export const overviewExpenseService = {
   * @param {string} timeZone - IANA zone of the account owner
   * @returns {Promise<object>} GetOverviewDomainData for domain 'expense'
   */
- async getExpenseDomainData(pool, userId, { window, page, pageSize }, timeZone = 'UTC') {
+ async getExpenseDomainData(
+  pool,
+  userId,
+  { window, page, pageSize, includeTransactionRows = true },
+  timeZone = 'UTC',
+ ) {
   const { referenceMonth, priorMonth, trendStart } = window;
 
   // The id set every figure on this page is computed over, deleted categories
@@ -59,7 +64,11 @@ export const overviewExpenseService = {
   const [months, oldestAccountDate, transactions, budgetStatus] = await Promise.all([
    getMonthlyExpense(pool, accountIds, trendStart, referenceMonth, timeZone),
    getOldestAccountDate(pool, userId, timeZone),
-   getExpenseTransactionsPage(pool, accountIds, referenceMonth, timeZone, { page, pageSize }),
+   getExpenseTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
+    page,
+    pageSize,
+    includeRows: includeTransactionRows,
+   }),
    budgetCalculationService.getBudgetAccountsStatus(pool, accountIds, timeZone, referenceMonth),
   ]);
 

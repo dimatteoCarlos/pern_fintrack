@@ -3,15 +3,18 @@
 // Overview routes. Mounted under /api/fintrack/overview, already behind
 // verifyToken and globalLimiter in app.js — no guard is restated here.
 //
-// GET /overview itself (§11 of the contract) is not routed yet: this phase
-// builds the per-domain endpoint only. Declaring the path now with no handler
-// would answer 404 on a URL the contract promises, which is worse than not
-// declaring it.
+// Both endpoints of the contract are routed: the page of §11 and the per-domain
+// drill-down of §12.
 
 import express from 'express';
-import { getOverviewDomain } from '../controllers/overviewController.js';
+import { getOverview, getOverviewDomain } from '../controllers/overviewController.js';
 
 const router = express.Router();
+
+// The page. Declared before the parameterised route for readability only — '/'
+// and '/:domain' cannot match the same request, so the order carries no
+// behaviour.
+router.get('/', getOverview);
 
 // The domain is a path segment and not a query parameter because it selects the
 // calculator, not a filter over one result set.

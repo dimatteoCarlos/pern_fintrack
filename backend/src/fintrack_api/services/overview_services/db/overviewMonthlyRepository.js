@@ -117,6 +117,36 @@ const MONTHLY_PNL_QUERY = `
   ORDER BY m.month
 `;
 
+// Pocket, as a monthly NET rather than a balance.
+//
+// This is not the pocket card's figure — that one is a stock, and the balance
+// repository serves it. This is what MS1/MS2/MS3 need (D28): the amount that
+// moved into pockets in a month, so the snapshot's four entries are all the same
+// kind of quantity and MS4 subtracts like from like.
+//
+// No movement filter. Every row on a pocket account moved that pocket's balance,
+// so summing them all is exactly the change in balance over the month — which is
+// why this figure and the diff of two consecutive points of the balance series
+// are the same number by construction, not by agreement.
+//
+// The count is what makes an "active month" decidable. A month where a deposit
+// and an equal withdrawal cancel nets to 0 and is still a month with activity;
+// judging it by the amount alone would push it into MS2/MS3's denominator
+// exclusion and quietly raise the average.
+const MONTHLY_POCKET_NET_QUERY = `
+  SELECT
+    m.month::date::text AS month,
+    COALESCE(SUM(t.amount), 0) AS total_amount,
+    COUNT(t.transaction_id) AS transaction_count
+  FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
+  LEFT JOIN transactions t
+    ON t.account_id = ANY($1::int[])
+   AND t.transaction_actual_date >= (m.month AT TIME ZONE $4)
+   AND t.transaction_actual_date <  ((m.month + INTERVAL '1 month') AT TIME ZONE $4)
+  GROUP BY m.month
+  ORDER BY m.month
+`;
+
 /**
  * Run one of the monthly statements and read its rows.
  *
@@ -192,4 +222,18 @@ export async function getMonthlyIncome(pool, accountIds, from, to, timeZone = 'U
  */
 export async function getMonthlyPnl(pool, accountIds, from, to, timeZone = 'UTC') {
  return readMonthlyRows(pool, MONTHLY_PNL_QUERY, accountIds, from, to, timeZone);
+}
+
+/**
+ * The net amount that moved into a set of pocket accounts, month by month.
+ *
+ * @param {object} pool - Database pool
+ * @param {number[]} accountIds - the user's pocket_saving accounts
+ * @param {string} from - first month of the window, as 'YYYY-MM-01'
+ * @param {string} to - last month, inclusive, as 'YYYY-MM-01'
+ * @param {string} timeZone - IANA zone of the account owner
+ * @returns {Promise<Array<{month: string, totalAmount: number, transactionCount: number}>>}
+ */
+export async function getMonthlyPocketNet(pool, accountIds, from, to, timeZone = 'UTC') {
+ return readMonthlyRows(pool, MONTHLY_POCKET_NET_QUERY, accountIds, from, to, timeZone);
 }

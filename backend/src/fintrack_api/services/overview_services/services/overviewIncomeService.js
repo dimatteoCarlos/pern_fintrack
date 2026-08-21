@@ -42,7 +42,12 @@ export const overviewIncomeService = {
   * @param {string} timeZone - IANA zone of the account owner
   * @returns {Promise<object>} GetOverviewDomainData for domain 'income'
   */
- async getIncomeDomainData(pool, userId, { window, page, pageSize }, timeZone = 'UTC') {
+ async getIncomeDomainData(
+  pool,
+  userId,
+  { window, page, pageSize, includeTransactionRows = true },
+  timeZone = 'UTC',
+ ) {
   const { referenceMonth, priorMonth, trendStart } = window;
 
   // The id set every figure on this page is computed over. Read once and passed
@@ -53,7 +58,11 @@ export const overviewIncomeService = {
   const [months, oldestAccountDate, transactions] = await Promise.all([
    getMonthlyIncome(pool, accountIds, trendStart, referenceMonth, timeZone),
    getOldestAccountDate(pool, userId, timeZone),
-   getIncomeTransactionsPage(pool, accountIds, referenceMonth, timeZone, { page, pageSize }),
+   getIncomeTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
+    page,
+    pageSize,
+    includeRows: includeTransactionRows,
+   }),
   ]);
 
   const { currentPoint, delta, canCompare } = makePeriodDelta({
