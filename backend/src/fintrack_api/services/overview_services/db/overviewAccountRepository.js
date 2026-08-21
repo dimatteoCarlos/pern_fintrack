@@ -81,6 +81,30 @@ const PNL_ACCOUNT_IDS_QUERY = `
   ORDER BY ua.account_id
 `;
 
+// The accounts of one type, slack excluded — the set Debt and Pocket are each
+// read over.
+//
+// One statement with the type as a bind parameter, not two. A type name is a
+// value the catalog already holds, not a piece of SQL structure, so this is not
+// the template with holes the module argues against elsewhere: the shape of the
+// statement is fixed and only the value moves.
+//
+// No deleted_at filter, for the same reason the expense set has none and the
+// catalog's D1/P1/H1 state none: a soft-deleted account still owns the balance
+// it held in the months before it was closed, and the balance series would bend
+// at the month of the deletion if those rows vanished. Closing an account writes
+// a compensating movement (R212's annulment rows), so a closed account
+// contributes 0 to today's figure without being filtered out of yesterday's.
+const ACCOUNT_IDS_BY_TYPE_QUERY = `
+  SELECT ua.account_id
+  FROM user_accounts ua
+  JOIN account_types act ON act.account_type_id = ua.account_type_id
+  WHERE ua.user_id = $1
+    AND act.account_type_name = $2
+    AND ua.account_name != 'slack'
+  ORDER BY ua.account_id
+`;
+
 // The oldest account the user owns, on the owner's calendar.
 //
 // This is the E3 guard: a delta is only reported when a COMPLETE prior period
@@ -143,6 +167,45 @@ export async function getPnlAccountIds(pool, userId) {
 
  const { rows } = await pool.query(PNL_ACCOUNT_IDS_QUERY, [userId]);
  return rows.map((row) => row.account_id);
+}
+
+/**
+ * The accounts of one type belonging to a user, slack excluded.
+ *
+ * @param {object} pool - Database pool
+ * @param {string} userId - UUID from the token, never from the client body
+ * @param {string} accountTypeName - a name from the account_types catalog
+ * @returns {Promise<number[]>} account ids, ascending
+ */
+async function getAccountIdsByType(pool, userId, accountTypeName) {
+ if (!userId) {
+  throw createError(400, `A user id is required to read ${accountTypeName} accounts.`);
+ }
+
+ const { rows } = await pool.query(ACCOUNT_IDS_BY_TYPE_QUERY, [userId, accountTypeName]);
+ return rows.map((row) => row.account_id);
+}
+
+/**
+ * The debtor accounts of a user — the set the net debt position is read over.
+ *
+ * @param {object} pool - Database pool
+ * @param {string} userId - UUID from the token
+ * @returns {Promise<number[]>} account ids, ascending
+ */
+export async function getDebtAccountIds(pool, userId) {
+ return getAccountIdsByType(pool, userId, 'debtor');
+}
+
+/**
+ * The pocket_saving accounts of a user — the set the pocket balance is read over.
+ *
+ * @param {object} pool - Database pool
+ * @param {string} userId - UUID from the token
+ * @returns {Promise<number[]>} account ids, ascending
+ */
+export async function getPocketAccountIds(pool, userId) {
+ return getAccountIdsByType(pool, userId, 'pocket_saving');
 }
 
 /**

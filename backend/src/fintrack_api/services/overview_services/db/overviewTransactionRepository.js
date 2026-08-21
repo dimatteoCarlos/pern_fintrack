@@ -149,6 +149,72 @@ const PNL_COUNT_QUERY = `
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
 `;
 
+const DEBT_PAGE_QUERY = `
+  SELECT
+    tr.*,
+    mt.movement_type_name,
+    trt.transaction_type_name,
+    act.account_type_name,
+    cr.currency_code,
+    ua.account_name,
+    ua.account_type_id,
+    (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS transaction_local_date
+  FROM transactions tr
+  JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
+  JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
+  JOIN currencies cr ON cr.currency_id = tr.currency_id
+  JOIN user_accounts ua ON ua.account_id = tr.account_id
+  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
+  WHERE tr.account_id = ANY($1::int[])
+    AND tr.movement_type_id = 4
+    AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
+    AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
+  ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
+  LIMIT $4 OFFSET $5
+`;
+
+const DEBT_COUNT_QUERY = `
+  SELECT COUNT(*) AS total_rows
+  FROM transactions tr
+  WHERE tr.account_id = ANY($1::int[])
+    AND tr.movement_type_id = 4
+    AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
+    AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
+`;
+
+const POCKET_PAGE_QUERY = `
+  SELECT
+    tr.*,
+    mt.movement_type_name,
+    trt.transaction_type_name,
+    act.account_type_name,
+    cr.currency_code,
+    ua.account_name,
+    ua.account_type_id,
+    (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS transaction_local_date
+  FROM transactions tr
+  JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
+  JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
+  JOIN currencies cr ON cr.currency_id = tr.currency_id
+  JOIN user_accounts ua ON ua.account_id = tr.account_id
+  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
+  WHERE tr.account_id = ANY($1::int[])
+    AND tr.movement_type_id = 5
+    AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
+    AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
+  ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
+  LIMIT $4 OFFSET $5
+`;
+
+const POCKET_COUNT_QUERY = `
+  SELECT COUNT(*) AS total_rows
+  FROM transactions tr
+  WHERE tr.account_id = ANY($1::int[])
+    AND tr.movement_type_id = 5
+    AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
+    AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
+`;
+
 /**
  * Run a page statement and its count, and read both.
  *
@@ -162,12 +228,21 @@ const PNL_COUNT_QUERY = `
  * @param {number[]} accountIds - the set that selects the leg
  * @param {string} month - the month to list, as 'YYYY-MM-01'
  * @param {string} timeZone - IANA zone of the account owner
- * @param {object} paging - { page, pageSize }, both already validated as positive integers
+ * @param {object} paging - { page, pageSize, includeRows }, the first two already
+ *   validated as positive integers; includeRows defaults to true
  * @returns {Promise<{rows: object[], totalRows: number}>}
  */
-const readTransactionsPage = async (pool, statements, accountIds, month, timeZone, { page, pageSize }) => {
+const readTransactionsPage = async (pool, statements, accountIds, month, timeZone, { page, pageSize, includeRows = true }) => {
  const ids = accountIds ?? [];
  const offset = (page - 1) * pageSize;
+
+ // A caller that wants the count and forbids the rows skips the page statement
+ // rather than fetching rows and dropping them, which would obey the return type
+ // and not the obligation behind it.
+ if (!includeRows) {
+  const total = await pool.query(statements.count, [ids, month, timeZone]);
+  return { rows: [], totalRows: Number(total.rows[0]?.total_rows ?? 0) };
+ }
 
  // Both statements in flight at once: the count does not depend on the page and
  // the page does not depend on the count, so serialising them would pay for the
@@ -245,6 +320,48 @@ export async function getPnlTransactionsPage(pool, accountIds, month, timeZone, 
  return readTransactionsPage(
   pool,
   { page: PNL_PAGE_QUERY, count: PNL_COUNT_QUERY },
+  accountIds,
+  month,
+  timeZone,
+  paging,
+ );
+}
+
+/**
+ * One page of the debt movements of a month, plus the size of the whole set.
+ *
+ * @param {object} pool - Database pool
+ * @param {number[]} accountIds - the user's debtor accounts
+ * @param {string} month - the month to list, as 'YYYY-MM-01'
+ * @param {string} timeZone - IANA zone of the account owner
+ * @param {object} paging - { page, pageSize }
+ * @returns {Promise<{rows: object[], totalRows: number}>}
+ */
+export async function getDebtTransactionsPage(pool, accountIds, month, timeZone, paging) {
+ return readTransactionsPage(
+  pool,
+  { page: DEBT_PAGE_QUERY, count: DEBT_COUNT_QUERY },
+  accountIds,
+  month,
+  timeZone,
+  paging,
+ );
+}
+
+/**
+ * One page of the pocket movements of a month, plus the size of the whole set.
+ *
+ * @param {object} pool - Database pool
+ * @param {number[]} accountIds - the user's pocket_saving accounts
+ * @param {string} month - the month to list, as 'YYYY-MM-01'
+ * @param {string} timeZone - IANA zone of the account owner
+ * @param {object} paging - { page, pageSize }
+ * @returns {Promise<{rows: object[], totalRows: number}>}
+ */
+export async function getPocketTransactionsPage(pool, accountIds, month, timeZone, paging) {
+ return readTransactionsPage(
+  pool,
+  { page: POCKET_PAGE_QUERY, count: POCKET_COUNT_QUERY },
   accountIds,
   month,
   timeZone,
