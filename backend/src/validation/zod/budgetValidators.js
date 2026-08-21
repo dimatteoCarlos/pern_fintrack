@@ -44,7 +44,11 @@ const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$/;
 // bounds, or between a bound and today. from <= to, to <= current month and the
 // 60-month span are 422s raised by the service: the current month is a query on
 // the owner's calendar, and a schema cannot see it.
-const monthBound = z
+// Exported so overviewValidators.js consumes this rule instead of restating it.
+// A second copy of the regex and the truncation is a second thing that can drift
+// from this one, and the drift would be a month landing in the wrong period on
+// one endpoint and not the other.
+export const monthBound = z
  .string()
  .regex(MONTH_PATTERN, {
   message: 'must be a month as YYYY-MM or a date as YYYY-MM-DD',

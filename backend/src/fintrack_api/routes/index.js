@@ -5,6 +5,7 @@ import transactionRoutes from './transactionRoute.js';
 import dashboardRoutes from './dashboardRoutes.js';
 import currencyRoutes from './currencyRoutes.js';
 import budgetRoutes from './budgetRoutes.js';
+import overviewRoutes from './overviewRoutes.js';
 
 //------------------------
 const router = express.Router();
@@ -22,6 +23,12 @@ router.use('/dashboard',
 
 router.use('/budget',
  budgetRoutes);//budget policies, allocations and summaries
+
+//Mounted beside /dashboard, not inside it: /dashboard is the legacy aggregate
+//Overview is being moved off (D6), and the two have to answer at the same time
+//while the frontend switches screen by screen.
+router.use('/overview',
+ overviewRoutes);//per-domain overview calculators
 
 
 export default router;
