@@ -402,12 +402,16 @@
  justify-content: center;
  min-width: 0;
  min-height: var(--size-control-sm);
- padding: 0 var(--space-2);
+ padding: var(--space-1) var(--space-2);
  border: var(--border-width-thin) solid var(--color-border-strong);
  border-radius: var(--radius-full);
  font-size: var(--font-size-xs);
  font-weight: var(--font-weight-bold);
- white-space: nowrap;
+ /* The label wraps rather than holding one line. A 1fr track narrower than its
+    own text made the centred content spill out of both sides of the pill, which
+    is what nowrap produced here; min-height is a floor, so a second line grows
+    the row and the three tiles stay level. */
+ text-align: center;
  color: var(--color-content-primary);
  cursor: pointer;
  transition: background-color var(--motion-fast), border-color var(--motion-fast);
