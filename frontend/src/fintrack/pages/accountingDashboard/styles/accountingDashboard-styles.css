@@ -147,8 +147,9 @@
   transition: all 0.3s ease;
   border-radius: 12px;
   overflow: hidden;
-  max-width: 360px;
-  width: 360px;
+ /* The Figma frame, and a cap rather than a fixed width: at 360px the card was
+    wider than the 360px viewport once the container padding was counted. */
+ max-width: var(--layout-width-min);
       /* border:11px solid red; */
 }
 
@@ -174,7 +175,7 @@ button{
   padding: 1.25rem;
   border-radius: 12px;
   width: 100%;
-  max-width: 360px;
+ max-width: var(--layout-width-min);
   background-color: #272d35;
   gap: 1rem;
   display: flex;
