@@ -68,7 +68,10 @@
 
 /* 📊 ACCOUNT GROUP STYLES */
 .account-group {
-  background: var(--dark-light);
+ /* --dark-light is defined nowhere, so this computed to unset and the group
+    has never had a background of its own. --color-surface-raised is the
+    elevation step above the page it floats on. */
+ background-color: var(--color-surface-raised);
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
