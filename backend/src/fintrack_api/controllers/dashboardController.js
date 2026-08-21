@@ -13,6 +13,8 @@ import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { extractNoteFromDescription } from '../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
+import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import { resolveZonedWindow } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 
 //COMMON FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
@@ -499,22 +501,19 @@ export const dashboardMovementTransactions = async (req, res, next) => {
   console.log('movement', movement, movement_type_name);
   //-----------------------------------
   //date period input
-  //take care of ddbb server date
-  const today = new Date();
-  today.setDate(today.getDate() + 1);
-  today.setHours(23, 59, 59, 999);
-
-  const _daysAgo = new Date(today);
-  _daysAgo.setDate(today.getDate() - 31); // 30 days period by default
-  const daysAgo = _daysAgo.toISOString().split('T')[0];
-
+  // The window is resolved in the account owner's zone and leaves as two
+  // calendar dates. Every predicate below turns them into instants with one
+  // AT TIME ZONE, so no bound is measured on the server's clock. What this
+  // replaces pushed its ceiling to tomorrow, which let a transaction dated
+  // forward into a window that claims to end today, and read the day of the
+  // month after that shift, which made the default span 32 days, not 30.
   const { start, end } = req.query;
 
-  const startDate = new Date(start || daysAgo);
-  startDate.setHours(0, 0, 0, 0); //start of the day
-  const endDate = new Date(end || today.toISOString().split('T')[0]);
-
-  endDate.setHours(23, 59, 59, 999);
+  const { startDate, endDate, timeZone } = resolveZonedWindow({
+    start,
+    end,
+    timeZone: await getUserTimeZone(pool, userId),
+  });
   // console.log('date range', startDate, endDate);
 
   //   console.log('Used Dates:', {
@@ -586,8 +585,10 @@ export const dashboardMovementTransactions = async (req, res, next) => {
               AND tr.amount !=0
 
             AND (
-              (tr.transaction_actual_date BETWEEN $4 AND $5)
-              )  
+              tr.transaction_actual_date >= ($4::timestamp AT TIME ZONE $6)
+              AND tr.transaction_actual_date <
+                (($5::date + INTERVAL '1 day') AT TIME ZONE $6)
+              )
 
             ORDER BY tr.transaction_actual_date DESC
           `,
@@ -595,9 +596,13 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           userId,
           accountTypeMap.expense,
           'slack',
-          //PostgreSQL espera strings en formato ISO.
-          startDate.toISOString(),
-          endDate.toISOString(),
+          // Calendar dates and not instants. The ::timestamp cast on the lower
+          // bound is load-bearing: with a bare date AT TIME ZONE picks the
+          // TIMESTAMPTZ overload and converts it the wrong way. The upper bound
+          // needs no cast, date + interval is already a TIMESTAMP.
+          startDate,
+          endDate,
+          timeZone,
         ],
       };
       break;
@@ -637,8 +642,10 @@ export const dashboardMovementTransactions = async (req, res, next) => {
            AND tr.amount !=0
 
             AND (
-              (tr.transaction_actual_date BETWEEN $4 AND $5)
-              )  
+              tr.transaction_actual_date >= ($4::timestamp AT TIME ZONE $6)
+              AND tr.transaction_actual_date <
+                (($5::date + INTERVAL '1 day') AT TIME ZONE $6)
+              )
 
             ORDER BY tr.transaction_actual_date DESC
           `,
@@ -646,9 +653,13 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           userId,
           accountTypeMap.income,
           'slack',
-          //PostgreSQL espera strings en formato ISO.
-          startDate.toISOString(),
-          endDate.toISOString(),
+          // Calendar dates and not instants. The ::timestamp cast on the lower
+          // bound is load-bearing: with a bare date AT TIME ZONE picks the
+          // TIMESTAMPTZ overload and converts it the wrong way. The upper bound
+          // needs no cast, date + interval is already a TIMESTAMP.
+          startDate,
+          endDate,
+          timeZone,
         ],
       };
       // queryModel = {
@@ -719,7 +730,15 @@ export const dashboardMovementTransactions = async (req, res, next) => {
             WHERE ua.user_id = $1
               AND (act.account_type_name = $2) AND ua.account_name != $3
                AND( mt.movement_type_name = $4  OR mt.movement_type_name=$7)
-                  AND (tr.transaction_actual_date BETWEEN $5 AND $6 OR tr.created_at BETWEEN $5 AND $6  )
+                  AND (
+                    (tr.transaction_actual_date >= ($5::timestamp AT TIME ZONE $8)
+                      AND tr.transaction_actual_date <
+                        (($6::date + INTERVAL '1 day') AT TIME ZONE $8))
+                    OR
+                    (tr.created_at >= ($5::timestamp AT TIME ZONE $8)
+                      AND tr.created_at <
+                        (($6::date + INTERVAL '1 day') AT TIME ZONE $8))
+                  )
             ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
           `,
         values: [
@@ -727,9 +746,10 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           accountTypeMap.pocket,
           'slack',
           'pocket',
-          startDate.toISOString(),
-          endDate.toISOString(),
+          startDate,
+          endDate,
           'account-opening',
+          timeZone,
         ],
       };
       break;
@@ -837,9 +857,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       //   message: `No info encountered for movement: ${movement_type_name} and type: ${accountTypeMap[movement_type_name]}`,
       // });
     }
-    const message = `${movements.length} transaction(s) found. Period between ${
-      startDate.toISOString().split('T')[0]
-    } and ${endDate.toISOString().split('T')[0]}`;
+    const message = `${movements.length} transaction(s) found. Period between ${startDate} and ${endDate}`;
     // console.log(pc[backendColor](message));
 
     // One point for the six branches above: every one of them selects
@@ -888,17 +906,18 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
   console.log(pc[backendColor]('dashboardMovementTransactionsSearch'));
   //---------------------------------------
   try {
-    const today = new Date();
-    const _daysAgo = new Date(today);
-    _daysAgo.setDate(today.getDate() - 30);
-    const daysAgo = _daysAgo.toISOString().split('T')[0];
-
     const { start, end, search } = req.query;
     const userId = requireUserId(req, res);
     if (!userId) return;
     //--------------------------------------
-    const startDate = new Date(start || daysAgo);
-    const endDate = new Date(end || today.toISOString().split('T')[0]);
+    // Same zoned half-open window as the other movement endpoints. What this
+    // replaces put no time of day on either bound, so the ceiling landed on the
+    // end day's 00:00 UTC and dropped everything the owner did after that hour.
+    const { startDate, endDate, timeZone } = resolveZonedWindow({
+      start,
+      end,
+      timeZone: await getUserTimeZone(pool, userId),
+    });
 
     // console.log(
     //   '🚀 ~ dashboardMovementTransactionByPeriod ~ _daysAgo:',
@@ -923,7 +942,13 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
           JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
           JOIN transaction_types trt ON tr.transaction_type_id = trt.transaction_type_id
   WHERE ua.user_id = $1 
-  AND (tr.transaction_actual_date BETWEEN $2 AND $3 OR tr.created_at BETWEEN $2 AND $3 )
+  AND (
+   (tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $6)
+     AND tr.transaction_actual_date < (($3::date + INTERVAL '1 day') AT TIME ZONE $6))
+   OR
+   (tr.created_at >= ($2::timestamp AT TIME ZONE $6)
+     AND tr.created_at < (($3::date + INTERVAL '1 day') AT TIME ZONE $6))
+  )
   AND (ua.account_name != $5)
   AND (
    tr.description ILIKE '%'||$4||'%' 
@@ -939,10 +964,11 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
   `,
       values: [
         userId,
-        startDate.toISOString(),
-        endDate.toISOString(),
+        startDate,
+        endDate,
         search,
         search === 'slack' ? '' : 'slack',
+        timeZone,
       ],
     });
 
@@ -1001,11 +1027,6 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
   console.log(pc[backendColor]('dashboardMovementTransactionsByType'));
   //------------------------------
   try {
-    const today = new Date();
-    const _daysAgo = new Date(today);
-    _daysAgo.setDate(today.getDate() - 30); // 30 days period by default
-    const daysAgo = _daysAgo.toISOString().split('T')[0];
-
     //input data
     const { start, end, transaction_type, movement, account_type } = req.query;
     const userId = requireUserId(req, res);
@@ -1016,8 +1037,14 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
         'movement, transaction_type or account_type is required';
       return RESPONSE(res, 400, message);
     }
-    const startDate = new Date(start || daysAgo);
-    const endDate = new Date(end || today.toISOString().split('T')[0]);
+    // Same zoned half-open window as the other movement endpoints. What this
+    // replaces put no time of day on either bound, so the ceiling landed on the
+    // end day's 00:00 UTC and dropped everything the owner did after that hour.
+    const { startDate, endDate, timeZone } = resolveZonedWindow({
+      start,
+      end,
+      timeZone: await getUserTimeZone(pool, userId),
+    });
 
     // console.log(
     //   '🚀 ~ dashboardMovementTransactionByPeriod ~ _daysAgo:',
@@ -1036,7 +1063,17 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
       JOIN transaction_types trt ON tr.transaction_type_id = trt.transaction_type_id
     WHERE ua.user_id = $1 
 
-    AND (tr.transaction_actual_date BETWEEN $2 AND $3 OR tr.created_at BETWEEN $2 AND $3 AND ua.account_name !=$4)
+    AND (
+      (tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $9)
+        AND tr.transaction_actual_date < (($3::date + INTERVAL '1 day') AT TIME ZONE $9))
+      OR
+      (tr.created_at >= ($2::timestamp AT TIME ZONE $9)
+        AND tr.created_at < (($3::date + INTERVAL '1 day') AT TIME ZONE $9))
+    )
+    -- Its own term and no longer trailing the OR. AND binds tighter, so the
+    -- slack exclusion used to apply to the created_at branch alone and a slack
+    -- row still came through on its transaction_actual_date.
+    AND ua.account_name != $4
 
     AND (mt.movement_type_name = $6 OR mt.movement_type_name = $8 )
     AND (trt.transaction_type_name = $5 OR act.account_type_name = $7)
@@ -1054,6 +1091,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
         movement === 'debt' || movement === 'pocket'
           ? 'account-opening'
           : movement,
+        timeZone,
       ],
     });
 
@@ -1070,11 +1108,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
       return RESPONSE(res, 404, message);
     }
 
-    const message = `${
-      movementsResult.rows.length
-    } transaction(s) found. Period between ${
-      startDate.toISOString().split('T')[0]
-    } and ${endDate.toISOString().split('T')[0]}`;
+    const message = `${movementsResult.rows.length} transaction(s) found. Period between ${startDate} and ${endDate}`;
     // console.log(pc[backendColor](message));
 
     return RESPONSE(res, 200, message, movementsResult.rows);

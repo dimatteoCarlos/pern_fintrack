@@ -352,7 +352,9 @@
    to light belongs to the container. What is left per control is the glyph, and
    only where the glyph is the whole control. */
 .budgetListControls__direction:hover,
+.budgetListControls__direction:active,
 .budgetListControls__filter:hover,
+.budgetListControls__filter:active,
 .budgetListControls__reset:hover,
 .budgetListControls__reset:active {
  color: var(--color-content-on-dark);
@@ -361,7 +363,8 @@
 /* The lit filter keeps its red on hover: the rule above is written for an unlit
    control and would put the neutral back over the colour that says the filter
    is on. */
-.budgetListControls__filter.is-active:hover {
+.budgetListControls__filter.is-active:hover,
+.budgetListControls__filter.is-active:active {
  color: var(--color-status-alert);
 }
 

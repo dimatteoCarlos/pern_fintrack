@@ -302,3 +302,29 @@ a.icon {
    Description: Specific styles for movement list items */
 
    
+
+/* The year beside the monthly average, on the card that already names the
+   movement. Scoped to .overviewLayout like every rule above it, so the class
+   cannot reach a tile on another screen. */
+.overviewLayout .monthlyAverage__year {
+ display: flex;
+ align-items: baseline;
+ gap: var(--space-2);
+ margin-top: var(--space-1);
+}
+
+/* index.css sizes the universal selector, so a span does not inherit the size
+   of the line it sits in and has to state its own. */
+.overviewLayout .monthlyAverage__year-label {
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-sm);
+ letter-spacing: var(--letter-spacing-wide);
+}
+
+.overviewLayout .monthlyAverage__year-amount {
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ /* The three cards sit side by side, so their figures line up column-wise. */
+ font-variant-numeric: tabular-nums;
+}

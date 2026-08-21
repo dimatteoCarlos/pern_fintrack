@@ -29,6 +29,7 @@ import {
   BalancePocketRespType,
   FinancialDataRespType,
   LastMovementRespType,
+  YearlyTotalsType,
 } from '../../types/responseApiTypes.ts';
 // import { CurrencyType } from '../../types/types.ts';
 
@@ -69,6 +70,7 @@ type KPIEndpointType = {
 type KPIDataStateType = {
   SavingGoals: BalancePocketRespType | null; //??
   MonthlyMovementKPI: ResultType | null;
+  YearlyTotals: YearlyTotalsType | null;
   LastExpenseMovements: LastMovementType[] | null;
   LastDebtMovements: LastMovementType[] | null;
   LastIncomeMovements: LastMovementType[] | null;
@@ -133,6 +135,7 @@ function Overview() {
   const [kpiData, setKpiData] = useState<KPIDataStateType>({
     SavingGoals: null,
     MonthlyMovementKPI: null,
+    YearlyTotals: null,
     LastExpenseMovements: null,
     LastDebtMovements: null,
     LastIncomeMovements: null,
@@ -181,6 +184,13 @@ function Overview() {
         const totalAndMonthlyAmount = monthlyAmounts
           ? calculateMonthlyAverage(monthlyAmounts)
           : null;
+
+        // Same payload, no extra request: the year's totals ride beside the
+        // months they were computed from.
+        const yearlyTotals =
+          result.MonthlyTotalAmountByType.status === 'success'
+            ? (result.MonthlyTotalAmountByType?.data?.data.yearlyTotals ?? null)
+            : null;
 
         //-------------------
         const movementExpenseTransactionsData =
@@ -373,6 +383,7 @@ function Overview() {
         setKpiData({
           SavingGoals: savingGoalsData,
           MonthlyMovementKPI: totalAndMonthlyAmount,
+          YearlyTotals: yearlyTotals,
           LastExpenseMovements: movementExpenseTransactions,
           LastDebtMovements: movementDebtTransactions,
           LastIncomeMovements: movementIncomeTransactions,
@@ -424,7 +435,10 @@ function Overview() {
         <SavingGoals data={kpiData.SavingGoals} />
         {/*  */}
 
-        <MonthlyAverage data={kpiData.MonthlyMovementKPI} />
+        <MonthlyAverage
+          data={kpiData.MonthlyMovementKPI}
+          yearlyTotals={kpiData.YearlyTotals}
+        />
 
         {
           <OpenAddEditBtn

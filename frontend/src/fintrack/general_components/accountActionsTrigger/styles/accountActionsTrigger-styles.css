@@ -14,24 +14,40 @@
  display: flex;
  align-items: center;
  justify-content: center;
- /* The full tappable area, unlike the budget pencil that trades it to sit
-    inside a box's title row. This one is a top-level control of the screen's
-    own header, so nothing constrains its height. */
- width: var(--size-touch-target);
- height: var(--size-touch-target);
+ /* Anchors the ::after that gives the tappable area back below. */
+ position: relative;
+ /* The painted box: the glyph plus --space-1 on each side. Squared off the same
+    sum rather than a literal 24px, and the asset is 4:16, so the horizontal
+    padding is what keeps the highlight from collapsing into a column. */
+ width: calc(var(--font-size-base) + var(--space-1) * 2);
+ height: calc(var(--font-size-base) + var(--space-1) * 2);
  flex-shrink: 0;
- padding: 0;
+ padding: var(--space-1);
  border: none;
- border-radius: var(--radius-full);
+ border-radius: var(--radius-xs);
  background-color: transparent;
  cursor: pointer;
  transition: background-color var(--motion-fast), color var(--motion-fast);
 }
 
+/* The tappable area the smaller highlight gave up. Unpainted and hit-testable,
+   so the pointer still gets --size-touch-target while only the square shows.
+   It clears .account-card's overflow: hidden: the extension reaches
+   --space-1 * 2.5 past the box and .accountingBox__container pads by more. */
+.accountActionsTrigger::after {
+ content: '';
+ position: absolute;
+ inset: calc(
+  (var(--size-touch-target) - var(--font-size-base) - var(--space-1) * 2) / -2
+ );
+}
+
 /* Height only, width auto: the asset is a vertical ellipsis at a 4:16 ratio,
    and a square box would letterbox it into a column of its own width. */
 .accountActionsTrigger__glyph {
- height: var(--font-size-xl);
+ /* The asset's own 16px: it is drawn at a 1.5 stroke for that size, and scaling
+    it up thickens the dots without making them read any better. */
+ height: var(--font-size-base);
  width: auto;
 }
 
@@ -54,8 +70,10 @@
 
 /* ── On the dark app surface ────────────────────────────────────────────────
    Where all five detail screens mount it. */
+/* Creme and not white: the dots sit on the dark card beside headings that
+   read in creme, and a white glyph was the only pure white left there. */
 .accountActionsTrigger--dark {
- color: var(--color-content-on-dark);
+ color: var(--color-content-on-dark-muted);
 }
 
 /* The fill is light on both surfaces, so the glyph goes dark on both. */

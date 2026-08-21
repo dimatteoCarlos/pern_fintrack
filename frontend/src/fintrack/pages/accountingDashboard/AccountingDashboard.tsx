@@ -9,6 +9,21 @@ import { url_get_all_accounting_accounts } from '../../../urlConfig';
 import AccountingBox from './AccountingBox';
 import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace';
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
+// '?react' and not a bare import: only that specifier carries a React
+// component type, so the icon can take a className.
+import BankAccountSvg from '../../../assets/accountingDashboardSvg/bankAccountSvg.svg?react';
+import DebtsAccountsSvg from '../../../assets/accountingDashboardSvg/debtsAccountsSvg.svg?react';
+import ExpenseAccountsSvg from '../../../assets/accountingDashboardSvg/expenseAccountsSvg.svg?react';
+import IncomeAccountsSvg from '../../../assets/accountingDashboardSvg/incomeAccountsSvg.svg?react';
+import InvestmentAccountsSvg from '../../../assets/accountingDashboardSvg/investmentAccountsSvg.svg?react';
+import PocketsAccountsSvg from '../../../assets/accountingDashboardSvg/pocketsAccountsSvg.svg?react';
+// The disclosure affordance of every group heading. One asset, rotated when
+// the group opens, rather than a second drawing for the open state.
+import ArrowDownLightSvg from '../../../assets/ArrowDownLightSvg.svg?react';
+// The two halves of the filter field. Both draw with currentColor, so they
+// take the field's colour rather than declaring one.
+import SearchSvg from '../../../assets/budgetListControlsSvg/SearchSvg.svg?react';
+import ClearSvg from '../../../assets/budgetListControlsSvg/ClearSvg.svg?react';
 import Toast from '../../editionAndDeletion/components/toast/Toast';
 import AccountActionsMenu from '../../editionAndDeletion/components/accountActionMenu/AccountActionsMenu';
 //---
@@ -28,15 +43,17 @@ import './styles/accountingDashboard-styles.css';
 
 //--------------------------------
 // ACCOUNT TYPE CONFIGURATION
+// Drawings and not emoji: an emoji renders in the OS emoji font, so it never
+// takes the colour of the heading it sits in.
 const ACCOUNT_TYPE_DATA = {
-  bank: { emoji: '🏦', name: 'bank' },
-  investment: { emoji: '📈', name: 'investment' },
-  debtor: { emoji: '👥', name: 'debtor' },
-  pocket_saving: { emoji: '💰', name: 'pocket_saving' },
-  category_budget: { emoji: '🛒', name: 'category_budget' },
-  income_source: { emoji: '💼', name: 'income_source' },
-  other: { emoji: '📁', name: 'other' },
-  // category_budget: { emoji: '📊', name: 'category_budget' },
+  bank: { Icon: BankAccountSvg, name: 'bank' },
+  investment: { Icon: InvestmentAccountsSvg, name: 'investment' },
+  debtor: { Icon: DebtsAccountsSvg, name: 'debtor' },
+  pocket_saving: { Icon: PocketsAccountsSvg, name: 'pocket_saving' },
+  category_budget: { Icon: ExpenseAccountsSvg, name: 'category_budget' },
+  income_source: { Icon: IncomeAccountsSvg, name: 'income_source' },
+  // No drawing of its own yet, so it borrows the debtor glyph by decision.
+  other: { Icon: DebtsAccountsSvg, name: 'other' },
 };
 
 // ROUTE CONFIGURATION
@@ -53,6 +70,16 @@ type AccountType = keyof typeof ACCOUNT_TYPE_DATA;
 type ToastMessageType = 'success' | 'error' | 'info' | 'warning';
 
 //--- FUNCTIONS DECLARATION
+// 🔎 SEARCH NORMALISATION
+// Strips the accents and the case so an account typed 'Café' answers to
+// 'cafe'. localeCompare has a sensitivity option that does this for sorting,
+// but there is no equivalent for a substring test.
+const normalizeForSearch = (value: string): string =>
+ value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
+
 // 🎯 ACCOUNT GROUPING
 const groupAccountsBytype = (
   accounts: AccountListType[],
@@ -74,6 +101,18 @@ const groupAccountsBytype = (
     (groups[accountType] ||= []).push(account);
   });
 
+  // Alphabetical and not by balance: a group runs past a hundred accounts in
+  // production, where the only navigable order is the one that matches the
+  // name being looked for. 'es' with base sensitivity so ñ and á land where a
+  // reader expects them, whatever collation the database happens to carry.
+  Object.values(groups).forEach((accountsOfType) =>
+    accountsOfType?.sort((first, second) =>
+      first.account_name.localeCompare(second.account_name, 'es', {
+        sensitivity: 'base',
+      }),
+    ),
+  );
+
   return groups;
 };
 //============================
@@ -86,7 +125,16 @@ const AccountingDashboard = () => {
   //previous route to accounting
   const originRoute = location.state?.originRoute || INITIAL_PAGE_ADDRESS;
 
-  const previousRoute = location.pathname; // this works as a previous route to account detail view, edit and delete
+  // The return route handed to the six destination screens. The acted-on
+  // account rides in the query string and not in location.state: every
+  // destination forwards this string verbatim into a <Link to> or a
+  // navigateTo, so anchoring the return costs those screens no change.
+  const buildReturnRoute = (accountId: number | string) =>
+    `${location.pathname}?focus=${accountId}`;
+
+  // The card to come back to, read from the URL the destination sent us to.
+  // A one-shot instruction, so it is not held in state.
+  const focusedAccountId = new URLSearchParams(location.search).get('focus');
   // -----------------------------
   // console.log('location', {location},'previousRoute', {previousRoute},'state', location.state, 'originRoute', location.state?.originRoute)
 
@@ -102,6 +150,28 @@ const AccountingDashboard = () => {
   // `${url_get_category_budget_full_data}`
   // );
   // console.log('apiDataCategory',apiDataCategory )
+  //=============================
+  // 📂 GROUP COLLAPSE STATE
+  // Collapsed is the default: the dashboard is an index of account types, and
+  // every group open at once is the long scroll this replaces. A Set and not a
+  // record so a type absent from the inventory carries no entry at all.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+   () => new Set(),
+  );
+
+  const toggleGroup = (accountType: string) => {
+   setExpandedGroups((previous) => {
+    const next = new Set(previous);
+
+    if (next.has(accountType)) {
+     next.delete(accountType);
+    } else {
+     next.add(accountType);
+    }
+
+    return next;
+   });
+  };
   //=============================
   // 🆕 MENU STATE
   const [menuState, setMenuState] = useState<{
@@ -175,8 +245,8 @@ const AccountingDashboard = () => {
   //-----------------------------
   //============================
   // 🆕 ACCOUNT TYPE UTILITIES
-  // 🎨 GET EMOJI AND NAME FOR ACCOUNT TYPE FUNCTION
-  const getAccountTypeEmojiAndName = (accountType: AccountType) => {
+  // 🎨 GET ICON AND NAME FOR ACCOUNT TYPE FUNCTION
+  const getAccountTypeIconAndName = (accountType: AccountType) => {
     return ACCOUNT_TYPE_DATA[accountType] || ACCOUNT_TYPE_DATA['other'];
   };
   //---
@@ -192,6 +262,97 @@ const AccountingDashboard = () => {
     }
     return groupAccountsBytype(apiData?.data?.accountList);
   }, [apiData?.data.accountList]);
+  //---------------------------------
+  // 🔎 SEARCH
+  // Filtered in the client and not asked of the server: the inventory already
+  // arrives whole in one payload, so the filter costs no request and answers
+  // on the keystroke.
+  const [searchTerm, setSearchTerm] = useState('');
+  const searchQuery = normalizeForSearch(searchTerm.trim());
+
+  const visibleGroups = useMemo(() => {
+    if (!searchQuery) {
+      return groupedAccounts;
+    }
+
+    const matches: Partial<Record<AccountType, AccountListType[]>> = {};
+
+    Object.entries(groupedAccounts).forEach(([accountType, accounts]) => {
+      const hits = accounts?.filter((account) =>
+        normalizeForSearch(account.account_name).includes(searchQuery),
+      );
+
+      // A group with no hit is dropped rather than shown empty: the heading
+      // would otherwise claim a type that matched nothing.
+      if (hits?.length) {
+        matches[accountType as AccountType] = hits;
+      }
+    });
+
+    return matches;
+  }, [groupedAccounts, searchQuery]);
+  //---------------------------------
+  // 🎯 FOCUS GROUP EXPANSION
+  // The anchored card arrives inside a collapsed group, so the group has to
+  // open before the scroll effect below can find the card in the DOM. Setting
+  // state here is what gives that effect the second pass it needs.
+  useEffect(() => {
+   if (!focusedAccountId) {
+    return;
+   }
+
+   const groupHoldingFocus = Object.entries(groupedAccounts).find(
+    ([, accounts]) =>
+     accounts?.some(
+      (account) => String(account.account_id) === focusedAccountId,
+     ),
+   )?.[0];
+
+   if (!groupHoldingFocus) {
+    return;
+   }
+
+   // Returning the same Set when it already holds the group: a fresh one every
+   // pass would re-render forever.
+   setExpandedGroups((previous) =>
+    previous.has(groupHoldingFocus)
+     ? previous
+     : new Set(previous).add(groupHoldingFocus),
+   );
+  }, [focusedAccountId, groupedAccounts]);
+  //---------------------------------
+  // 🎯 RETURN ANCHOR
+  // Brings the acted-on card back into view and hands it the keyboard. It
+  // waits on groupedAccounts because the card is not in the DOM until the
+  // inventory request resolves, and on expandedGroups because a collapsed
+  // group renders no card to scroll to.
+  useEffect(() => {
+    if (!focusedAccountId || Object.keys(groupedAccounts).length === 0) {
+      return;
+    }
+
+    const card = document.getElementById(`account-card-${focusedAccountId}`);
+    if (!card) {
+      return;
+    }
+
+    // No `behavior`: the default defers to the scrolling box's own
+    // scroll-behavior, so a reduced-motion setting is still honoured.
+    card.scrollIntoView({ block: 'center' });
+    // The card is a div; its trigger is the only focusable node inside it.
+    card.querySelector('button')?.focus({ preventScroll: true });
+
+    // Consume the anchor: a refresh must not scroll again, and the id is not
+    // part of an address worth sharing.
+    navigateTo(location.pathname, { replace: true, state: location.state });
+  }, [
+    focusedAccountId,
+    groupedAccounts,
+    expandedGroups,
+    location.pathname,
+    location.state,
+    navigateTo,
+  ]);
   //=================================
   // 🎯 ACCOUNT ACTION HANDLERS
   //=================================
@@ -231,10 +392,11 @@ const AccountingDashboard = () => {
       '/fintrack/overview/accounts';
 
     const detailRoute = `${baseRoute}/${account.account_id}`;
-    console.log('regular', { detailRoute }, { account }, { previousRoute });
+    const returnRoute = buildReturnRoute(account.account_id);
+    console.log('regular', { detailRoute }, { account }, { returnRoute });
 
     navigateTo(detailRoute, {
-      state: { previousRoute, detailedData: account },
+      state: { previousRoute: returnRoute, detailedData: account },
     });
   };
   //---
@@ -243,6 +405,7 @@ const AccountingDashboard = () => {
     account: CategoryBudgetAccountListType,
   ) => {
     const categoryDetailRoute = `${ACCOUNT_TYPE_DETAIL_PAGE[account.account_type_name]}/${account.account_id}`;
+    const returnRoute = buildReturnRoute(account.account_id);
 
     console.log(
       'categoryRoute',
@@ -250,12 +413,12 @@ const AccountingDashboard = () => {
       { account },
       'id',
       account.account_id,
-      { previousRoute },
+      { returnRoute },
     );
 
     // 🧭 NAVIGATE TO CATEGORY DETAIL
     navigateTo(categoryDetailRoute, {
-      state: { detailedData: null, previousRoute },
+      state: { detailedData: null, previousRoute: returnRoute },
     });
   };
   //------------------------------------
@@ -281,7 +444,7 @@ const AccountingDashboard = () => {
     navigateTo(editRoute, {
       state: {
         accountData: account,
-        previousRoute: previousRoute,
+        previousRoute: buildReturnRoute(account.account_id),
         originRoute: originRoute,
       },
     });
@@ -296,7 +459,7 @@ const AccountingDashboard = () => {
     navigateTo(deleteAccountPage, {
       state: {
         accountData: account,
-        previousRoute: previousRoute,
+        previousRoute: buildReturnRoute(account.account_id),
         originRoute: originRoute,
       },
     });
@@ -318,47 +481,106 @@ const AccountingDashboard = () => {
     // }
     //--------------------------------------
     //NO ACCOUNTS INFO
-    if (Object.keys(groupedAccounts).length === 0 && !isLoading) {
+    // Two different empty states: an inventory with nothing in it asks for an
+    // account, a filter that matched nothing asks for another word.
+    if (Object.keys(visibleGroups).length === 0 && !isLoading) {
+      const isFiltered = Boolean(searchQuery);
+
       return (
         <div className='accounting-empty'>
-          <div className='accounting-empty__emoji'>📁</div>
-          <h3 className='accounting-empty__title'>No Accounts Found</h3>
+          <div className='accounting-empty__emoji'>
+            {isFiltered ? '🔎' : '📁'}
+          </div>
+          <h3 className='accounting-empty__title'>
+            {isFiltered ? 'No matching accounts' : 'No Accounts Found'}
+          </h3>
           <p className='accounting-empty__message'>
-            Get started by creating your first account to manage your finances.
+            {isFiltered
+              ? `No account name contains "${searchTerm.trim()}".`
+              : 'Get started by creating your first account to manage your finances.'}
           </p>
         </div>
       );
     }
     //------
-    return Object.entries(groupedAccounts).map(([accountType, accounts]) => {
+    return Object.entries(visibleGroups).map(([accountType, accounts]) => {
       const safeAccountType = accountType as AccountType;
-      const accountTypeData = getAccountTypeEmojiAndName(safeAccountType);
+      const accountTypeData = getAccountTypeIconAndName(safeAccountType);
+      // A capitalised binding: JSX reads a lowercase tag as an HTML element, so
+      // accountTypeData.Icon cannot be rendered where it stands.
+      const AccountTypeIcon = accountTypeData.Icon;
+      // Bound once so the heading's aria-controls and the grid's id cannot
+      // drift apart.
+      const gridId = `account-group-grid-${accountType}`;
+      // A search opens every group it matched: leaving them shut would hide
+      // the very rows the filter just selected.
+      const isExpanded =
+        Boolean(searchQuery) || expandedGroups.has(accountType);
 
       return (
         <div className='account-group' key={accountType}>
           <h3 className='account-group__title'>
-            <span className='account-group__emoji'>
-              {accountTypeData.emoji}
+           <button
+            type='button'
+            className={`account-group__toggle${isExpanded ? ' is-active' : ''}`}
+            onClick={() => toggleGroup(accountType)}
+            aria-expanded={isExpanded}
+            aria-controls={gridId}
+           >
+            {/* Decorative: the button around it is what answers the click, so
+                the frame still declares no state of its own. */}
+            <span className='account-group__icon-frame'>
+             <AccountTypeIcon
+              className='account-group__icon'
+              aria-hidden='true'
+              focusable='false'
+             />
             </span>
 
             <span className='account-group__name'>
-              {formatAccountTypeName(accountTypeData.name as AccountType)}{' '}
-              accounts
+             {formatAccountTypeName(accountTypeData.name as AccountType)}
             </span>
+
+            {/* What a shut group has left to say about its size. */}
+            <span className='account-group__count'>{accounts!.length}</span>
+
+            <ArrowDownLightSvg
+             className='account-group__chevron'
+             aria-hidden='true'
+             focusable='false'
+            />
+           </button>
           </h3>
 
-          <div className='account-group__grid'>
-            {accounts!.map((account) => (
-              <div className='account-card' key={account.account_id}>
+          <div
+           className={`account-group__grid${
+            isExpanded ? '' : ' account-group__grid--collapsed'
+           }`}
+           id={gridId}
+          >
+            {/* Not rendered at all while shut, rather than hidden with CSS: a
+                hidden card is still findable by id, and the return anchor
+                would spend itself on one it can neither scroll to nor focus. */}
+            {isExpanded &&
+             accounts!.map((account) => (
+              <div
+                className='account-card'
+                id={`account-card-${account.account_id}`}
+                key={account.account_id}
+              >
                 <AccountingBox
                   title={account.account_name.toUpperCase()}
                   amount={account.account_balance}
                   currency={account.currency_code}
                   account_type={`(${capitalize(account.account_type_name.split('_')[0])})`}
-                  onMenuClick={(e) => handleMenuClick(account, e)} // 🆕 PASANDO HANDLER
+                  onMenuClick={(e) => handleMenuClick(account, e)}
+                  isMenuOpen={
+                    menuState.isOpen &&
+                    menuState.account?.account_id === account.account_id
+                  }
                 />
               </div>
-            ))}
+             ))}
           </div>
         </div>
       );
@@ -381,6 +603,40 @@ const AccountingDashboard = () => {
             <div className='accounting__title'>{'Accounting'}</div>
           </Link>
 
+          {/* Always rendered, whatever the inventory holds: a field that
+              appears past a threshold shifts every group down the moment
+              it arrives. type='text' and not 'search' so the browser does
+              not draw a second clear button beside ours. */}
+          <div className='accountingSearch'>
+            <SearchSvg
+              className='accountingSearch__icon'
+              aria-hidden='true'
+              focusable='false'
+            />
+            <input
+              type='text'
+              className='accountingSearch__field'
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder='Search accounts'
+              aria-label='Search accounts by name'
+            />
+            {searchTerm && (
+              <button
+                type='button'
+                className='accountingSearch__clear'
+                onClick={() => setSearchTerm('')}
+                aria-label='Clear search'
+              >
+                <ClearSvg
+                  className='accountingSearch__clear-glyph'
+                  aria-hidden='true'
+                  focusable='false'
+                />
+              </button>
+            )}
+          </div>
+
           {renderAccountGroups()}
         </div>
 
@@ -399,7 +655,6 @@ const AccountingDashboard = () => {
             accountName={menuState.account.account_name}
             isOpen={menuState.isOpen}
             onClose={handleCloseMenu}
-            previousRoute={previousRoute}
             // 👁‍🗨 onViewDetail
             onViewDetails={() => handleViewDetails(menuState.account!)}
             // ✏️ onEditAccount

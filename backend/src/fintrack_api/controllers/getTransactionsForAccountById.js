@@ -8,6 +8,10 @@ import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import { pool } from '../../db/config/configDB.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import {
+  isCalendarDate,
+  resolveZonedWindow,
+} from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { extractNoteFromDescription } from '../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
 
 // A month, as YYYY-MM or YYYY-MM-DD. The day is accepted and discarded.
@@ -133,26 +137,24 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         timeZone: await getUserTimeZone(pool, userId),
       };
     } else {
-      const today = new Date();
-      today.setHours(23, 59, 59, 999); //end of today
-
-      const _daysAgo = new Date(today);
-      _daysAgo.setDate(today.getDate() - 30);
-      _daysAgo.setHours(0, 0, 0, 0); //start of the day
-
-      const daysAgoDate = _daysAgo.toISOString();
-      const startDate = new Date(start || daysAgoDate);
-      const endDate = new Date(end || today.toISOString());
-
-      // Date validation - check if a helper exists
-      if (isNaN(startDate.getTime())) {
-        return RESPONSE(res, 400, 'Invalid start date format. Use YYYY-MM-DD.');
-      }
-      if (isNaN(endDate.getTime())) {
-        return RESPONSE(res, 400, 'Invalid end date format. Use YYYY-MM-DD.');
+      // Refused rather than coerced. new Date() accepted an ISO instant, and
+      // casting one to a date resolves it in the session's zone, which is the
+      // thing this branch stopped doing.
+      if ((start && !isCalendarDate(start)) || (end && !isCalendarDate(end))) {
+        return RESPONSE(res, 400, 'Invalid date format. Use YYYY-MM-DD.');
       }
 
-      window = { mode: 'range', startDate, endDate };
+      // Resolved in the owner's zone, like the month branch above. What this
+      // replaces built both bounds from new Date(), so the thirty days it
+      // answered for belonged to whatever zone the server happened to run in.
+      window = {
+        mode: 'range',
+        ...resolveZonedWindow({
+          start,
+          end,
+          timeZone: await getUserTimeZone(pool, userId),
+        }),
+      };
     }
     //-------------------------------
     //--main query for transactions by account_id and user_id getting account_balance_after_tr
@@ -181,13 +183,20 @@ export const getTransactionsForAccountById = async (req, res, next) => {
       LEFT JOIN
         users u ON u.user_id = ua.user_id
       WHERE
-        tr.account_id = $1 AND ua.user_id = $2 AND (tr.transaction_actual_date BETWEEN $3 AND $4 OR
-       tr.created_at BETWEEN $3 AND $4)
+        tr.account_id = $1 AND ua.user_id = $2
+        AND (
+          (tr.transaction_actual_date >= ($3::timestamp AT TIME ZONE $5)
+            AND tr.transaction_actual_date <
+              (($4::date + INTERVAL '1 day') AT TIME ZONE $5))
+          OR
+          (tr.created_at >= ($3::timestamp AT TIME ZONE $5)
+            AND tr.created_at < (($4::date + INTERVAL '1 day') AT TIME ZONE $5))
+        )
 
       ORDER BY
        tr.transaction_actual_date DESC , tr.created_at DESC
        `,
-      values: [accountId, userId, window.startDate, window.endDate],
+      values: [accountId, userId, window.startDate, window.endDate, window.timeZone],
     };
 
     // The same rows, for one calendar month on the owner's calendar. Written as
@@ -264,8 +273,8 @@ export const getTransactionsForAccountById = async (req, res, next) => {
       window.mode === 'month'
         ? monthBounds(window.month)
         : {
-            periodStartDate: formatDate(window.startDate),
-            periodEndDate: formatDate(window.endDate),
+            periodStartDate: window.startDate,
+            periodEndDate: window.endDate,
           };
 
     // The last balance known BEFORE the month, with the date it was struck.
@@ -380,7 +389,7 @@ export const getTransactionsForAccountById = async (req, res, next) => {
               accountInfoNeededResult[0].account_starting_amount,
           ),
           currency: oldestTransaction.currency_code,
-          date: formatDate(window.startDate),
+          date: window.startDate,
         };
       }
 

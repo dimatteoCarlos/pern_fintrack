@@ -1,379 +1,623 @@
-/* frontend/src/pages/accountingDashboard/styles/accounting-styles.css */
-/* 🏦 ENHANCED ACCOUNTING DASHBOARD STYLES */
+/* frontend/src/fintrack/pages/accountingDashboard/styles/accountingDashboard-styles.css
+   The accounting dashboard: the page frame, the account-type groups and the
+   card each account renders into.
+
+   Moved onto tokens. What it replaces carried two literal hexes for the card,
+   four rgba() hairlines, px radii, a hand-written rem scale, `transition: all`
+   on two elevating surfaces, commented-out debug borders, and a set of
+   max-width queries that drew the desktop first and shrank from there. The
+   scale is now mobile-first from 360px, growing at 480 and 768.
+
+   Three values kept their literal, each marked at its declaration: the card's
+   two greys, which sit one elevation step above --color-surface-raised and
+   have no token, and the container's desktop cap. */
 
 .accounting__layout {
-  padding: 2.75rem 0 1rem 0;
-  min-height: 100vh;
-  background: var(--dark);
+ min-height: 100vh;
+ padding: var(--space-8) 0 var(--space-4) 0;
+ background-color: var(--color-surface-app);
+ scroll-behavior: smooth;
 }
 
 .accounting__container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  gap: 2rem;
-  padding: 0 1rem;
-  /* border:1px solid red; */
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ width: 100%;
+ /* No token above --layout-width-max (40rem), and that one centres a single
+    reading column rather than capping a multi-track grid. */
+ max-width: 1200px;
+ margin: 0 auto;
+ gap: var(--space-6);
+ padding: 0 var(--space-2);
 }
 
-/* 📱 ACCOUNTING HEADER */
 .accounting__header {
-  max-width: 370px;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  padding: 1rem 0;
-  margin-bottom: 1rem;
-  /* border:1px solid red; */
+ position: relative;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: 100%;
+ max-width: var(--layout-width-min);
+ padding: var(--space-4) 0;
+ margin-bottom: var(--space-4);
+}
+
+/* The row is a Link, so the ring belongs to it. The rule it replaces put
+   :focus on the icon div inside, which never receives focus. */
+.accounting__header:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+ border-radius: var(--radius-sm);
 }
 
 .accounting__title {
-  color: var(--light);
-  font-size: 1.75rem;
-  font-weight: 700;
-  text-transform: capitalize;
-  text-align: center;
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-bold);
+ text-transform: capitalize;
+ text-align: center;
 }
 
 .accounting__header--icon {
-  position: absolute;
-  left:0%;
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding: 1rem;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
+ position: absolute;
+ left: 0;
+ display: flex;
+ align-items: center;
+ height: 100%;
+ padding: var(--space-4);
+ color: var(--color-content-on-dark-muted);
+ cursor: pointer;
+ transition: opacity var(--motion-normal);
 }
 
-.accounting__header--icon:hover, 
-.accounting__header--icon:active, 
-.accounting__header--icon:focus {
-  opacity: 0.7;
+/* The asset hardcodes its stroke, so the colour above only reaches the
+   drawing by naming the path. */
+.accounting__header--icon path {
+ stroke: currentColor;
 }
 
-/* 🏦 ACCOUNT GROUPS CONTAINER */
+/* The scale names no opacity token, so the dimming stays a literal. */
+.accounting__header--icon:hover,
+.accounting__header--icon:active {
+ opacity: 0.7;
+}
+
+/* The inventory filter. Full width like the groups under it, so the field and
+   the column it filters share one left edge. */
+.accountingSearch {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ width: 100%;
+ padding: 0 var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ background-color: var(--color-surface-raised);
+ color: var(--color-content-on-dark-subtle);
+ transition: border-color var(--motion-fast), color var(--motion-fast);
+}
+
+/* :focus-within and not :focus: the caret is in the field, but the frame that
+   has to answer it is drawn by the wrapper. */
+.accountingSearch:focus-within {
+ border-color: var(--color-border-inverse);
+ color: var(--color-content-on-dark-muted);
+}
+
+.accountingSearch__icon {
+ width: var(--font-size-lg);
+ height: var(--font-size-lg);
+ flex-shrink: 0;
+}
+
+.accountingSearch__field {
+ flex: 1;
+ min-width: 0;
+ height: var(--size-control-height);
+ padding: 0;
+ border: none;
+ background-color: transparent;
+ color: var(--color-content-on-dark-muted);
+ /* index.css sizes the universal selector and an input inherits neither the
+    family nor the size from the box around it. */
+ font-family: inherit;
+ font-size: var(--font-size-base);
+}
+
+.accountingSearch__field::placeholder {
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The wrapper already answers the focus with its border; a ring on the field
+   would draw a second frame inside the first. */
+.accountingSearch__field:focus-visible {
+ outline: none;
+}
+
+.accountingSearch__field:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.accountingSearch__clear {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--size-control-sm);
+ height: var(--size-control-sm);
+ flex-shrink: 0;
+ padding: 0;
+ border: none;
+ border-radius: var(--radius-xs);
+ background-color: transparent;
+ color: inherit;
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.accountingSearch__clear:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+/* index.css sets `button { outline: none }`, so the ring has to be restated. */
+.accountingSearch__clear:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.accountingSearch__clear:active {
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+.accountingSearch__clear:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.accountingSearch__clear-glyph {
+ width: var(--font-size-base);
+ height: var(--font-size-base);
+}
+
 .account-groups__container {
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
-  width: 100%;
-
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-12);
+ width: 100%;
 }
 
-/* 📊 ACCOUNT GROUP STYLES */
 .account-group {
-  background: var(--dark-light);
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-/* border:11px solid red; */
+ /* .accounting__container centres its children, so without a width the
+    group shrink-wrapped its widest card: every group measured differently,
+    and auto-fit resolves to a single track when the grid's width is
+    indefinite, which is why the desktop grid never used its columns. */
+ width: 100%;
+ padding: var(--space-4);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ /* --dark-light is defined nowhere, so this computed to unset and the group
+    has never had a background of its own. --color-surface-raised is the
+    elevation step above the page it floats on. */
+ background-color: var(--color-surface-raised);
+ border-radius: var(--radius-md);
+ box-shadow: var(--shadow-lg);
+ animation: fadeInUp var(--motion-slow) ease-out;
+}
+
+/* The scale names no delay token; a stagger is the one thing it does not
+   measure. */
+.account-group:nth-child(1) {
+ animation-delay: 0.1s;
+}
+
+.account-group:nth-child(2) {
+ animation-delay: 0.2s;
+}
+
+.account-group:nth-child(3) {
+ animation-delay: 0.3s;
+}
+
+.account-group:nth-child(4) {
+ animation-delay: 0.4s;
+}
+
+.account-group__header {
+ margin-bottom: var(--space-5);
 }
 
 .account-group__title {
-  color: var(--creme);
-  font-weight: 600;
-  margin: 0;
-  flex: 1;
-  text-align: center;
-  letter-spacing: 0.75px;
-  padding: 0.5rem;
-    /* border:11px solid red; */
-  display:flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-.account-group__emoji {
-  font-size: 1.5rem;
-  /* flex-shrink: 0; */
-  /* margin-bottom: 0.5rem; */
+ /* .account-group is a block box, so the heading and the grid under it sat
+    flush. The margin is what separates them. */
+ margin: 0 0 var(--space-1) 0;
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wider);
 }
 
+/* The heading is the group's disclosure control. The whole row answers the
+   click, so nothing inside it declares a state of its own. */
+.account-group__toggle {
+ /* A grid and not a flex row: centring a flex row centres the whole
+    cluster, so the icon began at a different x in every group. Three of
+    these four tracks measure the same in every group, so icon, count and
+    chevron line up down the page and only the name track takes up the
+    slack. */
+ display: grid;
+ grid-template-columns: var(--size-badge) 1fr auto auto;
+ align-items: center;
+ gap: var(--space-2);
+ width: 100%;
+ padding: var(--space-2);
+ border: none;
+ border-radius: var(--radius-sm);
+ background-color: transparent;
+ color: inherit;
+ font-family: inherit;
+ /* index.css sizes the universal selector, so a button inherits neither the
+    heading's size nor its weight without being told to. */
+ font-size: inherit;
+ font-weight: inherit;
+ letter-spacing: inherit;
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+/* The page ground, one step below the panel the heading sits on, so the row
+   reads as pressed into the group rather than painted over it. */
+.account-group__toggle:hover {
+ background-color: var(--color-surface-app);
+}
+
+.account-group__toggle:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.account-group__toggle:active {
+ background-color: var(--color-surface-sunken);
+}
+
+.account-group__toggle:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* What a shut group has left to say about its size. */
+.account-group__count {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ flex-shrink: 0;
+ /* A square with rounded corners and not a pill: --radius-full is the
+    avatar shape, and the count is a sibling of the icon frame beside it,
+    one step smaller and carrying the same corner. min-width rather than
+    width so a three-digit group grows sideways instead of clipping. */
+ min-width: var(--size-control-sm);
+ height: var(--size-control-sm);
+ padding: 0 var(--space-1);
+ border: var(--border-width-thin) solid currentColor;
+ border-radius: var(--radius-sm);
+ /* index.css sizes the universal selector, so an inline element does not
+    inherit the size of the line it sits in. */
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+}
+
+/* A rounded square and not a circle: --radius-full is the pill and avatar
+   shape. Border and glyph both land at 2px, so the frame and the drawing it
+   holds carry one weight. */
+.account-group__icon-frame {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--size-badge);
+ height: var(--size-badge);
+ flex-shrink: 0;
+ border: var(--border-width-thick) solid currentColor;
+ border-radius: var(--radius-sm);
+}
+
+/* A box and not a font size: font-size dimensions a character, not an SVG.
+   The stroke takes its colour from .account-group__title through currentColor,
+   so the glyph and the words beside it are the same creme. */
+.account-group__icon {
+ width: var(--font-size-xl);
+ height: var(--font-size-xl);
+ flex-shrink: 0;
+ /* 2 real pixels, the same weight as the frame and as the AccountActionsMenu
+    icons. Without non-scaling-stroke a 32 viewBox drawn at 24px would scale
+    this by 0.75 and land at 1.5px. */
+ stroke-width: 2;
+}
+
+/* vector-effect is not an inherited property, so it has to name the paths
+   rather than ride down from the svg root like stroke-width does. */
+.account-group__icon path {
+ vector-effect: non-scaling-stroke;
+}
+
+/* Shrinkable and truncating. With flex-shrink: 0 a long type name grew the
+   row past the button, and since the row centres it spilled on both sides:
+   the icon frame left of the group, the chevron right of it. */
 .account-group__name {
-  font-size: 1.375rem;
-  flex-shrink: 0;
-  /* border: 10px solid blue; */
+ min-width: 0;
+ overflow: hidden;
+ font-size: var(--font-size-lg);
+ white-space: nowrap;
+ text-align: center;
+ text-overflow: ellipsis;
+}
 
+/* Points down while the group is shut and turns over once it opens. */
+.account-group__chevron {
+ width: var(--font-size-lg);
+ height: var(--font-size-lg);
+ flex-shrink: 0;
+ transition: transform var(--motion-normal);
+}
+
+/* The asset hardcodes its stroke, so neither the heading's colour nor the
+   button's reaches it without this. */
+.account-group__chevron path {
+ stroke: currentColor;
+}
+
+.account-group__toggle.is-active .account-group__chevron {
+ transform: rotate(180deg);
 }
 
 .account-group__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.25rem;
-  width: 100%;
+ display: grid;
+ grid-template-columns: 1fr;
+ justify-content: center;
+ justify-items: center;
+ gap: var(--space-4);
+ width: 100%;
+ /* A grid track's automatic minimum is min-content, so a card that cannot
+    shrink pushes the track past the group and the row overflows sideways. */
+ min-width: 0;
 }
 
-/* 💳 ACCOUNT CARD STYLES */
+/* display: none and not the [hidden] attribute: the grid declares
+   display: grid, which outranks the user-agent rule the attribute carries. */
+.account-group__grid--collapsed {
+ display: none;
+}
+
 .account-card {
-  position: relative;
-  transition: all 0.3s ease;
-  border-radius: 12px;
-  overflow: hidden;
-  max-width: 360px;
-  width: 360px;
-      /* border:11px solid red; */
-}
-
-/* .account-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-} */
-
-/* 🎯 3-DOTS MENU BUTTON */
-.account-card__menu {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 10;
-
-}
-/****************/
-.account-card__menu-btn {
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  opacity:1;
-}
-
-.accountingBox__menu-btn:hover {
-  background: var(--light);
-  transform: scale(1.1);
-}
-
-.accountingBox__menu-btn:active {
-  transform: scale(0.95);
-}
-button{
-  border:none;
-}
-.icon3dots {
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border:none;
-}
-
-/****************/
-/* 📦 ACCOUNTING BOX ENHANCED */
-.accountingBox__container {
-  padding: 1.25rem;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 360px;
-  background-color: #272d35;
-  gap: 1rem;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.account-card:hover .accountingBox__container {
-  background-color: #2d343e;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.accountingBox__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.accountingBox__title {
-  color: var(--light);
-  text-align: left;
-  width: 100%;
-  font-size: 1.25rem;
-  font-weight: 600;
-  line-height: 1.3;
-  margin: 0;
-  flex: 1;
-  padding-right: 2rem;
-}
-
-.accountingBox__type {
-  color: var(--creme);
-  font-size: 0.875rem;
-  font-weight: 500;
-  opacity: 0.8;
-  flex-shrink: 0;
-}
-
-.bubble.light {
-  background-color: var(--light);
-  width: 100%;
-  border-radius: 10px;
-  height: 3.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 1rem;
-  margin-top: 0.5rem;
-}
-
-.bubble--result {
-  color: var(--dark);
-  font-weight: 700;
-  font-size: 1.125rem;
-  letter-spacing: 0.5px;
-}
-
-.bubble--currency {
-  color: var(--dark);
-  font-weight: 600;
-  font-size: 0.875rem;
-  opacity: 0.8;
-}
-
-/* 🚨 EMPTY STATE */
-.accounting-empty {
-  text-align: center;
-  padding: 3rem 2rem;
-  color: var(--creme);
-}
-
-.accounting-empty__emoji {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.accounting-empty__title {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  color: var(--light);
-  /* border:1px solid red;  */
-}
-
-.accounting-empty__message {
-  opacity: 0.8;
-  font-size: 1rem;
-  line-height: 1.5;
-}
-
-/* 📱 RESPONSIVE DESIGN */
-/* @media (max-width: 1024px) {
-  .account-group__grid {
-    grid-template-columns: repeat(auto-fill, minmax(412px,1fr));
-    gap: 1rem;
-  }
-} */
-
-@media (max-width: 768px) {
-  .accounting__container {
-    padding: 0 0.5rem;
-    gap: 1.5rem;
-  }
-  
-  .accounting__title {
-    font-size: 1.5rem;
-     }
-  
-  .account-group {
-    padding: 1.25rem;
-  }
-  
-  .account-group__grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .account-group__header {
-    margin-bottom: 1.25rem;
-  }
-  
-  .account-group__title {
-    font-size: 1.25rem;
-  }
-  
-  .accountingBox__container {
-    padding: 1rem;
-  }
-  
-  .account-card__menu-btn {
-    opacity: 1; /* Always visible on mobile */
-  }
-}
-/***********************/
-@media (max-width: 480px) {
-  .accounting__layout {
-    padding: 2rem 0 1rem 0;
-  }
-  
-  .accounting__title {
-    font-size: 1.375rem;
-  }
-  
-  .account-group {
-    padding: 1rem;
-    border-radius: 12px;
-  }
-  
-  .account-group__title {
-    font-size: 1.125rem;
-  }
-  
-  .accountingBox__title {
-    font-size: 1.125rem;
-  }
-  
-  .bubble.light {
-    height: 3rem;
-    padding: 0 0.75rem;
-  }
-  
-  .bubble--result {
-    font-size: 1rem;
-  }
-}
-
-/* 🎨 SMOOTH SCROLLING */
-.accounting__layout {
-  scroll-behavior: smooth;
-}
-
-/* 🔥 ENHANCED INTERACTIONS */
-.account-card {
-  cursor: pointer;
+ position: relative;
+ overflow: hidden;
+ /* Explicit and not the grid's default stretch: justify-items: center
+    sizes an item by its content, so without this each card took the
+    width of the account name it happened to hold. */
+ width: 100%;
+ /* A cap rather than a fixed width: at 360px the card was wider than the
+    viewport once the container padding was counted. */
+ max-width: var(--layout-card-width);
+ min-width: 0;
+ border-radius: var(--radius-md);
+ cursor: pointer;
+ /* Named and not `all`: the shorthand also animated the outline of the trigger
+    inside the card, so the focus ring arrived late. */
+ transition: transform var(--motion-slow);
 }
 
 .account-card:active {
-  transform: scale(0.98);
+ transform: scale(0.98);
 }
 
-/* ✨ SUBTLE ANIMATIONS */
+button {
+ border: none;
+}
+
+.icon3dots {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ padding: var(--space-2);
+ border: none;
+}
+
+.accountingBox__container {
+ position: relative;
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-4);
+ width: 100%;
+ /* Fills the height its grid row hands the card, so siblings end level. */
+ height: 100%;
+ max-width: var(--layout-card-width);
+ padding: var(--space-4);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ /* KEPT LITERAL: the card sits one elevation step above the group holding it,
+    and the scale stops at --color-surface-raised. */
+ background-color: #272d35;
+ border-radius: var(--radius-md);
+ transition: background-color var(--motion-slow),
+  border-color var(--motion-slow);
+}
+
+.account-card:hover .accountingBox__container {
+ /* KEPT LITERAL: the hover step above the grey named above, same reason. */
+ background-color: #2d343e;
+ border-color: var(--color-border-inverse);
+}
+
+/* The card's title row. It was declared here and never rendered: the row
+   carried .accountingBox__menu, the same class as the button inside it. */
+.accountingBox__header {
+ display: flex;
+ /* flex-start and not center: a two-line name would otherwise centre the
+    trigger against both lines. It belongs beside the first one. */
+ align-items: flex-start;
+ justify-content: space-between;
+ gap: var(--space-2);
+ width: 100%;
+}
+
+.accountingBox__title {
+ flex: 1;
+ width: 100%;
+ margin: 0;
+ padding-right: var(--space-8);
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+ /* Two lines reserved whatever the name measures, so the bubble under it
+    starts at the same offset on every card. 1.3 is the line-height this
+    rule already declares, not a new value. */
+ min-height: calc(var(--font-size-base) * 1.3 * 2);
+ line-height: 1.3;
+ text-align: left;
+}
+
+.accountingBox__type {
+ flex-shrink: 0;
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ opacity: 0.8;
+}
+
+/* .light names the surface the bubble lands on, not its own colour. */
+.bubble.light {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ width: 100%;
+ height: var(--size-control-height);
+ padding: 0 var(--space-3);
+ /* auto and not a fixed gap: the bubble is the card's floor, so it stays
+    level with its siblings even when a title runs long. */
+ margin-top: auto;
+ background-color: var(--color-surface-inverse);
+ border-radius: var(--radius-sm);
+}
+
+.bubble--result {
+ color: var(--color-content-primary);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-bold);
+ letter-spacing: var(--letter-spacing-wide);
+}
+
+.bubble--currency {
+ color: var(--color-content-primary);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ opacity: 0.8;
+}
+
+.accounting-empty {
+ padding: var(--space-12) var(--space-8);
+ color: var(--color-content-on-dark-muted);
+ text-align: center;
+}
+
+.accounting-empty__emoji {
+ margin-bottom: var(--space-4);
+ font-size: var(--font-size-2xl);
+}
+
+.accounting-empty__title {
+ margin-bottom: var(--space-2);
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-xl);
+}
+
+.accounting-empty__message {
+ font-size: var(--font-size-base);
+ line-height: 1.5;
+ opacity: 0.8;
+}
+
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+ from {
+  opacity: 0;
+  transform: translateY(var(--space-5));
+ }
+
+ to {
+  opacity: 1;
+  transform: translateY(0);
+ }
 }
 
-.account-group {
-  animation: fadeInUp 0.5s ease-out;
+@media (min-width: 480px) {
+ .accounting__layout {
+  padding: var(--layout-top-space) 0 var(--space-4) 0;
+ }
+
+ .accounting__title {
+  font-size: var(--font-size-xl);
+ }
+
+ .account-group {
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+ }
+
+ .accountingBox__title {
+  font-size: var(--font-size-lg);
+ }
+
+ .bubble.light {
+  padding: 0 var(--space-4);
+ }
+
+ .bubble--result {
+  font-size: var(--font-size-lg);
+ }
 }
 
-.account-group:nth-child(1) { animation-delay: 0.1s; }
-.account-group:nth-child(2) { animation-delay: 0.2s; }
-.account-group:nth-child(3) { animation-delay: 0.3s; }
-.account-group:nth-child(4) { animation-delay: 0.4s; }
+@media (min-width: 768px) {
+ .accounting__container {
+  gap: var(--space-8);
+  padding: 0 var(--space-4);
+ }
+
+ .accounting__title {
+  font-size: var(--font-size-2xl);
+ }
+
+ .account-group {
+  padding: var(--space-6);
+ }
+
+ .account-group__grid {
+  /* A fixed track and not minmax(..., 1fr): with 1fr the cards stretched to
+     fill the row and grew back past the cap .account-card declares. auto-fit
+     collapses the empty tracks so the row can centre instead of hugging the
+     left edge. */
+  grid-template-columns: repeat(auto-fit, var(--layout-card-width));
+  gap: var(--space-5);
+ }
+
+ .accountingBox__container {
+  padding: var(--space-5);
+ }
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .accounting__layout {
+  scroll-behavior: auto;
+ }
+
+ .accounting__header--icon,
+ .accountingSearch,
+ .accountingSearch__clear,
+ .account-group__toggle,
+ .account-group__chevron,
+ .account-card,
+ .accountingBox__container {
+  transition: none;
+ }
+
+ .account-group {
+  animation: none;
+ }
+}

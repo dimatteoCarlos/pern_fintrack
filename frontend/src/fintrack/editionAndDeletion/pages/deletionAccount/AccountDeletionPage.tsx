@@ -2,7 +2,13 @@
 import './accountDeletionPage.css';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router-dom';
 
 import {
   defaultLanguage,
@@ -11,6 +17,7 @@ import {
   languages,
 } from '../../utils/languages.ts';
 import { ModalStatusType } from '../../types/deletionTypes.ts';
+import { AccountListType } from '../../../types/responseApiTypes.ts';
 
 import { useLanguageTranslation } from '../../hooks/useLangTranslation.ts';
 import { useRTAImpactAndDeletion } from '../../hooks/useRTAImpactAndDeletion.ts';
@@ -26,17 +33,25 @@ import { RTAConfirmationModal } from './UIComponents/confirmationModalUI/RTAConf
 import ReportErrorUI from './UIComponents/reportErrorUI/ReportErrorUI.tsx';
 import ProceedButtonUI from './UIComponents/proceedButtonUI/ProceedButtonUI.tsx';
 import PostOperationView from './UIComponents/postOperationView/PostOperationView.tsx';
+// Where a reader with no navigation state belongs. Named once so the guard
+// below and the back navigation cannot disagree about it.
+const ACCOUNTING_DASHBOARD_ROUTE = '/fintrack/tracker/accounting';
+
+type AccountDeletionViewPropType = {
+  accountData: AccountListType;
+  previousRoute: string;
+};
+
 // =======================================
 // 🖥️ MAIN COMPONENT: AccountDeletionPage
 // =======================================
-export const AccountDeletionPage = () => {
+const AccountDeletionView = ({
+  accountData,
+  previousRoute,
+}: AccountDeletionViewPropType) => {
   const navigateTo = useNavigate();
-  //GET ACCOUNT INFO: from params and location state
+  //GET ACCOUNT INFO: from params
   const { accountId } = useParams();
-  const {
-    state: { accountData },
-    state: { previousRoute },
-  } = useLocation();
 
   // EXTRACT ACCOUNT INFORMATION
   const targetAccountType = accountData.account_type_name;
@@ -205,8 +220,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
     setIsModalOpen(false);
 
     // 🎯 3. Navigate back
-    const targetRoute = previousRoute || '/fintrack/tracker/accounting';
-    navigateTo(targetRoute);
+    navigateTo(previousRoute);
   }, [resetDeletionState, previousRoute, navigateTo]);
 
   // =============================
@@ -343,6 +357,27 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
         affectedAccountsReportCount={affectedAccountReport.length}
       />
     </div>
+  );
+};
+
+// The route is only ever entered from an account's actions menu, which carries
+// the account in location.state. A reload carries none, so this sends the
+// reader back to the dashboard instead of throwing on the destructure. It is a
+// separate component and not an early return inside the view: the view's hooks
+// must not be skipped on the pass that redirects.
+export const AccountDeletionPage = () => {
+  const location = useLocation();
+  const state = location.state as Partial<AccountDeletionViewPropType> | null;
+
+  if (!state?.accountData) {
+    return <Navigate to={ACCOUNTING_DASHBOARD_ROUTE} replace />;
+  }
+
+  return (
+    <AccountDeletionView
+      accountData={state.accountData}
+      previousRoute={state.previousRoute ?? ACCOUNTING_DASHBOARD_ROUTE}
+    />
   );
 };
 

@@ -1,115 +1,155 @@
-/* frontend/src/edition/components/account-actions-menu-styles.css */
-/* 🎯 ACCOUNT ACTIONS MENU STYLES */
-/* 🎯 OVERLAY that covers all the screen */
+/* frontend/src/fintrack/editionAndDeletion/components/accountActionMenu/account-actions-menu-styles.css
+   The account actions menu, rebuilt on the token scale.
+
+   What it replaces consumed no token at all: a literal black panel, a literal
+   #ef4444 for delete, two rgba() overlays and a raw z-index of 1000 declared
+   twice. It also had no :focus-visible and no :disabled, so the menu could be
+   opened by keyboard and then not be followed by one.
+
+   The rows answer the cursor with the same fill as AccountActionsTrigger, the
+   button that opens this menu, so pointing at the trigger and pointing at a row
+   read as the same gesture. */
+
+/* The overlay owns the stacking context; the panel inside it needs no z-index
+   of its own, which is why the pair of 1000s collapses to one token. */
 .account-actions-menu__overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5); /* Fondo semi-transparente */
-  backdrop-filter: blur(2px);
+ position: fixed;
+ inset: 0;
+ z-index: var(--z-modal);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ background-color: var(--color-surface-overlay);
+ backdrop-filter: blur(2px);
 }
-/* 🎯 AUTHOMATICALLY CENTERED MODAL */
+
+/* Not position: fixed. A fixed child is out of flow and only lands centred
+   because the flex container happens to set its static position; in flow the
+   centring is the layout, not a side effect of it. */
 .account-actions-menu {
-  position: fixed;
-  z-index: 1000;
-  /* background: var(--dark-light); */
-  background-color: black;
-  /* border: 1px solid rgba(255, 255, 255, 0.1); */
-  border: 3px solid var(--creme, white);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(40px);
-  min-width: 300px;
-  animation: menuSlideIn 0.2s ease-out;
-  overflow: hidden;
+ width: var(--layout-content-width);
+ /* The card it was opened from, not the viewport: at --layout-width-max the
+    panel was 640px against a 360px card and read as a different screen. */
+ max-width: var(--layout-width-min);
+ overflow: hidden;
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-raised);
+ box-shadow: var(--shadow-overlay);
+ animation: account-actions-menu-in var(--motion-normal);
 }
 
-/* 🎯 MENU HEADER */
 .account-actions-menu__header {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+ padding: var(--space-3) var(--space-4);
+ border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
 }
 
+/* Was 1.5rem, the same size as the options below it, so nothing marked the
+   name as the heading of the list. */
 .account-actions-menu__account-name {
-  color: var(--light);
-  font-size: 1.5rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
+ display: block;
+ overflow: hidden;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-semibold);
+ white-space: nowrap;
+ text-overflow: ellipsis;
 }
 
-/* 📋 MENU OPTIONS */
 .account-actions-menu__options {
-  padding: 0.5rem;
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ padding: var(--space-2);
 }
 
 .account-actions-menu__option {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: none;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: var(--light);
-  
-  font-size: 0.875rem;
-  text-align: left;
-  /* border:1px solid red; */
+ display: flex;
+ align-items: center;
+ gap: var(--space-3);
+ width: 100%;
+ min-height: var(--size-touch-target);
+ padding: var(--space-3) var(--space-4);
+ border: none;
+ border-radius: var(--radius-sm);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-medium);
+ text-align: left;
+ cursor: pointer;
+ /* Named properties, not `all`: a shorthand transition also animates the
+    outline and makes the focus ring arrive late. */
+ transition: background-color var(--motion-fast), color var(--motion-fast);
 }
 
 .account-actions-menu__option:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateX(2px);
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+/* index.css sets `button { outline: none }`, so the ring has to be declared
+   here or the keyboard user gets nothing. */
+.account-actions-menu__option:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
 }
 
 .account-actions-menu__option:active {
-  transform: scale(0.98);
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
 }
 
-/* 🗑️ DELETE OPTION STYLES */
-.account-actions-menu__option--delete {
-  color: #ef4444;
+.account-actions-menu__option:disabled {
+ opacity: 0.5;
+ pointer-events: none;
 }
 
+/* The destructive row reads like the other two until it is aimed at, so the
+   list has one voice at rest. Red replaces the cream fill on hover and darkens
+   on press: the escalation is the feedback, since the row no longer moves. */
 .account-actions-menu__option--delete:hover {
-  background: rgba(239, 68, 68, 0.1);
+ background-color: var(--color-status-alert);
+ color: var(--color-accent-content);
 }
 
-/* 🎨 ICONS AND TEXT */
+.account-actions-menu__option--delete:active {
+ background-color: var(--color-status-error);
+ color: var(--color-accent-content);
+}
+
+/* Sized in rem and not em: index.css sets font-size on the universal selector,
+   so an em here would resolve against 16px rather than against the row. */
 .account-actions-menu__icon {
-  font-size: 1.5rem;
-  width: 40px;
-  display: flex;
-  justify-content: center;
+ width: var(--font-size-xl);
+ height: var(--font-size-xl);
+ flex-shrink: 0;
 }
 
+/* Same trap, the other way round: the universal selector hands this span 16px,
+   so it has to ask the row for its size back. */
 .account-actions-menu__text {
-  flex: 1;
-  font-weight: 500;
-  font-size: 1.5rem;
+ flex: 1;
+ font-size: inherit;
 }
 
-/* 🎬 ANIMATIONS */
-@keyframes menuSlideIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+@keyframes account-actions-menu-in {
+ from {
+  opacity: 0;
+  transform: scale(0.95) translateY(-10px);
+ }
+ to {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+ }
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .account-actions-menu {
+  animation: none;
+ }
+
+ .account-actions-menu__option {
+  transition: none;
+ }
 }

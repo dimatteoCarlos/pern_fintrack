@@ -1,8 +1,13 @@
-//frontend/src/edition/components/accountActionMenu/AccountActionsMenu.tsx
-//Parent: /frontend/src/pages/accountingDashboard/AccountingDashboard.tsx
+//frontend/src/fintrack/editionAndDeletion/components/accountActionMenu/AccountActionsMenu.tsx
+//Parent: /frontend/src/fintrack/pages/accountingDashboard/AccountingDashboard.tsx
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useClickOutside } from '../../hooks/useClickOutside.ts';
+// '?react' and not a bare import: a bare .svg is typed `string` and cannot take
+// a className, so only that form carries a React component type.
+import DeleteAccountSvg from '../../../../assets/accountActionsMenuSvg/deleteAccountSvg.svg?react';
+import EditAccountSvg from '../../../../assets/accountActionsMenuSvg/editAccountSvg.svg?react';
+import ViewAccountSvg from '../../../../assets/accountActionsMenuSvg/viewAccountSvg.svg?react';
 import './account-actions-menu-styles.css';
 
 // 🎯 PROPS TYPE FOR DEFINITION
@@ -14,7 +19,6 @@ type AccountActionsMenuPropType = {
   // their own types — PocketDetail and DebtorDetail would have had to assemble
   // an AccountListType they never received, only to have it read once.
   accountName: string;
-  previousRoute?: string;
   // functions need no params
   //
   // Optional, and omitting it is what removes the option. Opened from a detail
@@ -24,7 +28,6 @@ type AccountActionsMenuPropType = {
   onDeleteAccount: () => void;
 };
 //account type detail page
-//=================================
 // 🏦 ACCOUNT ACTIONS MENU COMPONENT
 export function AccountActionsMenu({
   accountName,
@@ -39,9 +42,53 @@ export function AccountActionsMenu({
   //http://localhost:5173/fintrack/overview/accounts/:accountId
   //-------------------------------
   const menuRef = useRef<HTMLDivElement>(null);
+  // The control that opened the menu, so closing can hand the keyboard back to
+  // where it came from instead of dropping it on <body>.
+  const triggerRef = useRef<HTMLElement | null>(null);
 
   // 🎯 CLOSE MENU WHEN CLICKING OUTSIDE
   useClickOutside(menuRef, onClose);
+
+  // ⎋ CLOSE ON ESCAPE
+  // On the document and not on the panel: the key has to work from the moment
+  // the menu paints, before focus has finished moving into it.
+  useEffect(() => {
+   if (!isOpen) {
+    return;
+   }
+
+   const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+     onClose();
+    }
+   };
+
+   document.addEventListener('keydown', handleKeyDown);
+
+   return () => {
+    document.removeEventListener('keydown', handleKeyDown);
+   };
+  }, [isOpen, onClose]);
+
+  // 🎯 FOCUS IN ON OPEN, BACK TO THE TRIGGER ON CLOSE
+  // onClose is deliberately not a dependency: it is a fresh closure on every
+  // parent render, and the cleanup would then pull focus back mid-session.
+  useEffect(() => {
+   if (!isOpen) {
+    return;
+   }
+
+   triggerRef.current = document.activeElement as HTMLElement | null;
+   menuRef.current?.querySelector('button')?.focus();
+
+   return () => {
+    // isConnected: an option that navigates away takes the trigger out of the
+    // document with it, and focusing a detached node does nothing useful.
+    if (triggerRef.current?.isConnected) {
+     triggerRef.current.focus();
+    }
+   };
+  }, [isOpen]);
 
   if (!isOpen) return null;
   //---------
@@ -59,35 +106,43 @@ export function AccountActionsMenu({
 
         {/* 📋 MENU OPTIONS */}
         <div className='account-actions-menu__options'>
-          {/* 👁️ VIEW DETAILS OPTION — rendered only where it leads somewhere
-              else. The dashboard passes it; a detail screen does not. */}
+          {/* Rendered only where it leads somewhere else. The dashboard passes
+              it; a detail screen does not.
+
+              The icons are aria-hidden in the asset: each row already carries
+              its own text label, so announcing the glyph would read the action
+              out twice. */}
           {onViewDetails && (
             <button
+              type='button'
               className='account-actions-menu__option'
               onClick={onViewDetails}
             >
-              <span className='account-actions-menu__icon'>👁️</span>
+              <ViewAccountSvg className='account-actions-menu__icon' />
 
               <span className='account-actions-menu__text'>View Details</span>
             </button>
           )}
 
-          {/* ✏️ EDIT ACCOUNT OPTION */}
           <button
+            type='button'
             className='account-actions-menu__option'
             onClick={onEditAccount}
           >
-            <span className='account-actions-menu__icon'>✏️</span>
+            <EditAccountSvg className='account-actions-menu__icon' />
 
             <span className='account-actions-menu__text'>Edit Account</span>
           </button>
 
-          {/* 🗑️ DELETE ACCOUNT OPTION */}
+          {/* Singular '--delete'. The class was written plural here and
+              singular in the stylesheet, so the destructive row has never once
+              turned red under the cursor. */}
           <button
-            className='account-actions-menu__option account-actions-menu__options--delete'
+            type='button'
+            className='account-actions-menu__option account-actions-menu__option--delete'
             onClick={onDeleteAccount}
           >
-            <span className='account-actions-menu__icon'>🗑️</span>
+            <DeleteAccountSvg className='account-actions-menu__icon' />
 
             <span className='account-actions-menu__text'>Delete Account</span>
           </button>

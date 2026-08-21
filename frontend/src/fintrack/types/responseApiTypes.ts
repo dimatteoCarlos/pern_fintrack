@@ -440,7 +440,22 @@ export type FinancialDataRespType = {
 export interface FinancialDataType {
   dateRange: DateRange;
   monthlyAmounts: MonthlyDataType[] | null;
+  // The year's figure per movement type, served rather than folded from the
+  // twelve months above: a total summed on screen and the same total served by
+  // the backend end up a cent apart. amount and currency are both null when a
+  // type's months span more than one currency, which is not an addition the
+  // backend is willing to invent.
+  yearlyTotals: YearlyTotalsType | null;
 }
+
+export type YearlyTotalType = {
+  amount: number | null;
+  currency: CurrencyType | null;
+};
+
+export type YearlyTotalsType = Partial<Record<MovementKindType, YearlyTotalType>>;
+
+export type MovementKindType = 'expense' | 'income' | 'saving' | 'other';
 
 export interface DateRange {
   start: string | Date;

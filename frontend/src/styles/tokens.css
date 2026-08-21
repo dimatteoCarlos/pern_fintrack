@@ -225,6 +225,7 @@
     A single column, centred rather than stretched on wide viewports. It never
     becomes a multi-column desktop layout. */
  --layout-width-min: 22.5rem; /* the Figma frame, 360px */
+ --layout-card-width: 21.875rem; /* the account card, 350px */
  --layout-width-max: 40rem; /* beyond this the column centres */
  --layout-content-width: 88%;
  --layout-top-space: 2.75rem;

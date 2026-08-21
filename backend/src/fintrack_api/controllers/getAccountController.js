@@ -8,6 +8,8 @@ import { createError, handlePostgresError } from '../../utils/errorHandling.js';
 import { pool } from '../../db/config/configDB.js';
 import { respondError, respondSuccess } from '../../utils/responseHelpers.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import { todayInZone } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 
 const backendColor = 'greenBright';
 const errorColor = 'red';
@@ -54,18 +56,32 @@ const getAccountTransactions = async (
   startDate,
   endDate,
 ) => {
-  // 🗓️ DEFAULT PERIOD: Last 2 months + current month
+  // 🗓️ DEFAULT PERIOD: the previous month and the current one.
+  //
+  // Both bounds were written `new Date().getMonth`, with no call parentheses,
+  // so the expression was a function minus a number: NaN. new Date(y, NaN, 1)
+  // is an Invalid Date and toISOString throws RangeError on it. The only
+  // caller passes no dates, so the defaults always ran and this function threw
+  // on every request.
+  //
+  // The month is read on the owner's calendar. A boundary struck on the
+  // server's clock puts the first and the last day of the window in the wrong
+  // month for anyone the server does not share a zone with.
+  const timeZone = await getUserTimeZone(pool, userId);
+  const [currentYear, currentMonth] = todayInZone(timeZone)
+    .split('-')
+    .map(Number);
+
   const defaultStartDate =
     startDate ||
-    new Date(new Date().getFullYear(), new Date().getMonth - 1, 1)
+    new Date(Date.UTC(currentYear, currentMonth - 2, 1))
       .toISOString()
-      .split('T')[0];
+      .slice(0, 10);
 
+  // Day 0 of the next month is the last day of this one.
   const defaultEndDate =
     endDate ||
-    new Date(new Date().getFullYear(), new Date().getMonth + 1, 0)
-      .toISOString()
-      .split('T')[0];
+    new Date(Date.UTC(currentYear, currentMonth, 0)).toISOString().slice(0, 10);
 
   // 📝 TRANSACTIONS QUERY
   const transactionsQuery = {
@@ -82,10 +98,12 @@ const getAccountTransactions = async (
       LEFT JOIN currencies oc ON tr.original_currency_id = oc.currency_id 
      WHERE tr.user_id = $1
         AND tr.account_id = $2
-        AND tr.transaction_actual_date BETWEEN $3 AND $4
+        AND tr.transaction_actual_date >= ($3::timestamp AT TIME ZONE $5)
+        AND tr.transaction_actual_date <
+          (($4::date + INTERVAL '1 day') AT TIME ZONE $5)
       ORDER BY tr.transaction_actual_date DESC, tr.created_at DESC
     `,
-    values: [userId, accountId, defaultStartDate, defaultEndDate],
+    values: [userId, accountId, defaultStartDate, defaultEndDate, timeZone],
   };
 
   const transactionsResult = await pool.query(transactionsQuery);

@@ -14,6 +14,49 @@ import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 import { validate as uuidValidate } from 'uuid';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import {
+  isCalendarDate,
+  todayInZone,
+} from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
+
+/**
+ * The year's total for each movement type, served rather than folded.
+ *
+ * The rule the budget module holds (§10.8.3) is that the client never sums a
+ * total it was not given: a figure folded on screen and the same figure served
+ * by the backend end up a cent apart. Overview already asks for this payload,
+ * so the yearly figure rides in it and costs no request.
+ *
+ * Currencies are not converted, for the reason makeTotals refuses to: adding
+ * USD to COP is a conversion at an implicit rate of 1:1. A type whose rows span
+ * more than one currency reports null, and the months underneath keep their own
+ * amounts, so nothing is lost except the bad addition.
+ *
+ * The amounts arrive as FLOAT from the query, so the sum is rounded to the two
+ * decimals the DECIMAL(15,2) column stores rather than carried at full width.
+ */
+const makeYearlyTotals = (rows) => {
+  const byType = {};
+
+  for (const row of rows) {
+    const bucket = (byType[row.type] ??= { amount: 0, currencies: new Set() });
+    bucket.amount += Number(row.amount) || 0;
+    bucket.currencies.add(row.currency_code);
+  }
+
+  return Object.fromEntries(
+    Object.entries(byType).map(([type, { amount, currencies }]) => [
+      type,
+      currencies.size === 1
+        ? {
+            amount: Math.round(amount * 100) / 100,
+            currency: [...currencies][0],
+          }
+        : { amount: null, currency: null },
+    ]),
+  );
+};
 
 export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
   //response function
@@ -40,25 +83,26 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
   }
 
   //time period to evaluate
-  const currentYear = new Date().getFullYear();
-  let dateRange = {
-    start: new Date(currentYear, 0, 1), //January 1st of the year
-    end: new Date(currentYear, 11, 31, 23, 59, 59), //December 31st of the year
-  };
+  // The year the owner is living, not the one the server's clock reads. On the
+  // night of 31 December those are two different years, and every month this
+  // endpoint reports is a month of one of them.
+  const timeZone = await getUserTimeZone(pool, userId);
 
-  if (startDate && endDate) {
-    const parsedStart = new Date(startDate);
-    const parsedEnd = new Date(endDate);
-
-    if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
-      return RESPONSE(res, 400, 'Invalid date format. Use YYYY-MM-DD');
-    }
-
-    dateRange = {
-      start: parsedStart,
-      end: parsedEnd,
-    };
+  if (startDate && endDate && !(isCalendarDate(startDate) && isCalendarDate(endDate))) {
+    // Refused rather than coerced: new Date() accepted an ISO instant, and
+    // casting one to a date resolves it in the session's zone, which is the
+    // very thing this endpoint stopped doing.
+    return RESPONSE(res, 400, 'Invalid date format. Use YYYY-MM-DD');
   }
+
+  const currentYear = todayInZone(timeZone).slice(0, 4);
+
+  // Two calendar dates, never instants. The query turns them into instants
+  // with one AT TIME ZONE per bound.
+  const dateRange =
+    startDate && endDate
+      ? { start: startDate, end: endDate }
+      : { start: `${currentYear}-01-01`, end: `${currentYear}-12-31` };
   //-----get expense, saving or income data by month and currency --------
   //functions definition
   async function getFinancialData(userId) {
@@ -69,8 +113,8 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
     try {
       const queryText = `
      WITH financial_data AS (
-      SELECT CAST(EXTRACT(MONTH FROM tr.transaction_actual_date) AS INTEGER) AS month_index,
-          TRIM(TO_CHAR(tr.transaction_actual_date, 'month')) AS month_name,
+      SELECT CAST(EXTRACT(MONTH FROM (tr.transaction_actual_date AT TIME ZONE $4)) AS INTEGER) AS month_index,
+          TRIM(TO_CHAR((tr.transaction_actual_date AT TIME ZONE $4), 'month')) AS month_name,
           tr.movement_type_id,
           tr.transaction_type_id,
           COALESCE(cba.category_name, ua.account_name) AS name,
@@ -91,7 +135,9 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
           JOIN currencies ct ON tr.currency_id = ct.currency_id
       
         WHERE ua.user_id = $1
-            AND tr.transaction_actual_date BETWEEN $2 AND $3
+            AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $4)
+            AND tr.transaction_actual_date <
+              (($3::date + INTERVAL '1 day') AT TIME ZONE $4)
             AND (
               (tr.movement_type_id = 1 AND tr.transaction_type_id = 2) -- Expense
               OR
@@ -101,8 +147,8 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
             )
               
         GROUP BY 
-            EXTRACT(MONTH FROM tr.transaction_actual_date),
-            TO_CHAR(tr.transaction_actual_date, 'month'),
+            EXTRACT(MONTH FROM (tr.transaction_actual_date AT TIME ZONE $4)),
+            TO_CHAR((tr.transaction_actual_date AT TIME ZONE $4), 'month'),
             tr.movement_type_id,
             tr.transaction_type_id,
             cba.category_name,
@@ -117,6 +163,7 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
         userId,
         dateRange.start,
         dateRange.end,
+        timeZone,
       ]);
       return result.rows;
     } catch (error) {
@@ -139,13 +186,20 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
     }
 
     const responseData = {
+      // Calendar dates and no longer instants. DateRange on the client is
+      // typed string | Date, so YYYY-MM-DD satisfies it, and no screen reads
+      // this field today.
       dateRange: {
-        start: dateRange.start.toISOString(),
-        end: dateRange.end.toISOString(),
+        start: dateRange.start,
+        end: dateRange.end,
       },
       // currency: dataArr.length > 0 ? dataArr[0].currency_code : 'usd', //Asume USD by default
 
       monthlyAmounts: dataArr,
+
+      // The year's figure for each type, so Overview can print it without
+      // summing the twelve months itself.
+      yearlyTotals: makeYearlyTotals(dataArr),
     };
     return RESPONSE(
       res,
