@@ -99,8 +99,6 @@ const AccountingDashboard = () => {
   //previous route to accounting
   const originRoute = location.state?.originRoute || INITIAL_PAGE_ADDRESS;
 
-  const previousRoute = location.pathname; // this works as a previous route to account detail view, edit and delete
-
   // The return route handed to the six destination screens. The acted-on
   // account rides in the query string and not in location.state: every
   // destination forwards this string verbatim into a <Link to> or a
@@ -556,7 +554,6 @@ const AccountingDashboard = () => {
             accountName={menuState.account.account_name}
             isOpen={menuState.isOpen}
             onClose={handleCloseMenu}
-            previousRoute={previousRoute}
             // 👁‍🗨 onViewDetail
             onViewDetails={() => handleViewDetails(menuState.account!)}
             // ✏️ onEditAccount

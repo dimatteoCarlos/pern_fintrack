@@ -19,7 +19,6 @@ type AccountActionsMenuPropType = {
   // their own types — PocketDetail and DebtorDetail would have had to assemble
   // an AccountListType they never received, only to have it read once.
   accountName: string;
-  previousRoute?: string;
   // functions need no params
   //
   // Optional, and omitting it is what removes the option. Opened from a detail
