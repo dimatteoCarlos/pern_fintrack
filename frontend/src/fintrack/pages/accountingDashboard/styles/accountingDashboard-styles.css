@@ -52,7 +52,7 @@
 }
 
 .accounting__title {
- color: var(--color-content-on-dark);
+ color: var(--color-content-on-dark-muted);
  font-size: var(--font-size-lg);
  font-weight: var(--font-weight-bold);
  text-transform: capitalize;
@@ -66,8 +66,15 @@
  align-items: center;
  height: 100%;
  padding: var(--space-4);
+ color: var(--color-content-on-dark-muted);
  cursor: pointer;
  transition: opacity var(--motion-normal);
+}
+
+/* The asset hardcodes its stroke, so the colour above only reaches the
+   drawing by naming the path. */
+.accounting__header--icon path {
+ stroke: currentColor;
 }
 
 /* The scale names no opacity token, so the dimming stays a literal. */
@@ -95,7 +102,7 @@
    has to answer it is drawn by the wrapper. */
 .accountingSearch:focus-within {
  border-color: var(--color-border-inverse);
- color: var(--color-content-on-dark);
+ color: var(--color-content-on-dark-muted);
 }
 
 .accountingSearch__icon {
@@ -111,7 +118,7 @@
  padding: 0;
  border: none;
  background-color: transparent;
- color: var(--color-content-on-dark);
+ color: var(--color-content-on-dark-muted);
  /* index.css sizes the universal selector and an input inherits neither the
     family nor the size from the box around it. */
  font-family: inherit;
@@ -457,7 +464,7 @@ button {
  width: 100%;
  margin: 0;
  padding-right: var(--space-8);
- color: var(--color-content-on-dark);
+ color: var(--color-content-on-dark-muted);
  font-size: var(--font-size-base);
  font-weight: var(--font-weight-semibold);
  /* Two lines reserved whatever the name measures, so the bubble under it
@@ -518,7 +525,7 @@ button {
 
 .accounting-empty__title {
  margin-bottom: var(--space-2);
- color: var(--color-content-on-dark);
+ color: var(--color-content-on-dark-muted);
  font-size: var(--font-size-xl);
 }
 

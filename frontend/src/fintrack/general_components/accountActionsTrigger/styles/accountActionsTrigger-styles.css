@@ -70,8 +70,10 @@
 
 /* ── On the dark app surface ────────────────────────────────────────────────
    Where all five detail screens mount it. */
+/* Creme and not white: the dots sit on the dark card beside headings that
+   read in creme, and a white glyph was the only pure white left there. */
 .accountActionsTrigger--dark {
- color: var(--color-content-on-dark);
+ color: var(--color-content-on-dark-muted);
 }
 
 /* The fill is light on both surfaces, so the glyph goes dark on both. */
