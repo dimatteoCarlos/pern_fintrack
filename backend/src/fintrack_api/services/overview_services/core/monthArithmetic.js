@@ -54,3 +54,29 @@ export const monthEndDate = (month) => {
  const [year, index] = month.split('-').map(Number);
  return new Date(Date.UTC(year, index, 0)).toISOString().split('T')[0];
 };
+
+// D18 — six points, the window the developer chose. Not MS2's three, too short
+// to read a direction from, and not MS3's twelve, sized for a statistical
+// stability a visual series does not need.
+export const TREND_MONTHS = 6;
+
+/**
+ * The three months every domain calculator reads from, derived once.
+ *
+ * A calculator that shifted these itself would be free to disagree with the
+ * next one about how far back a trend reaches or which month a delta compares
+ * against — two answers to a question the contract asks once. The window is
+ * resolved where the request is, and travels down.
+ *
+ * A domain that publishes no trend still gets trendStart: the delta needs the
+ * prior month in the same series as the reference one, and a series long enough
+ * for six points is no more expensive to fetch than one long enough for two.
+ *
+ * @param {string} referenceMonth - 'YYYY-MM-01', already checked against the ceiling
+ * @returns {{referenceMonth: string, priorMonth: string, trendStart: string}}
+ */
+export const makeReportingWindow = (referenceMonth) => Object.freeze({
+ referenceMonth,
+ priorMonth: shiftMonths(referenceMonth, -1),
+ trendStart: shiftMonths(referenceMonth, -(TREND_MONTHS - 1)),
+});

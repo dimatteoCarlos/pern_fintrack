@@ -37,6 +37,50 @@ const EXPENSE_ACCOUNT_IDS_QUERY = `
   ORDER BY ua.account_id
 `;
 
+// The accounts an income figure is read over: the ones that hold real money.
+//
+// I1 sums the leg that lands in the user's own account, not the one that leaves
+// income_source, and this set is what selects it. Filtering by
+// transaction_type_id instead would be a second condition saying the same thing,
+// free to drift from the account set the count and the list are built on — the
+// disagreement §4.2 forbids, and the reason the catalog's own annotation had the
+// direction inverted until it was checked against getIncomeConfig.
+//
+// slack is excluded by name because it is a bank account by type: it is the
+// internal counterparty of pnl, income and expense, and no figure calls it the
+// user's money.
+//
+// cash (account_type_id 7) is deliberately absent. The catalog leaves it out
+// until the phase 2b probe says whether it has real writes, and inventing its
+// inclusion here would be this module deciding a question the catalog holds
+// open.
+const INCOME_ACCOUNT_IDS_QUERY = `
+  SELECT ua.account_id
+  FROM user_accounts ua
+  JOIN account_types act ON act.account_type_id = ua.account_type_id
+  WHERE ua.user_id = $1
+    AND act.account_type_name IN ('bank', 'investment', 'debtor', 'pocket_saving')
+    AND ua.account_name != 'slack'
+  ORDER BY ua.account_id
+`;
+
+// The accounts a realized P/L figure is read over: every account the user owns
+// except slack.
+//
+// No account type filter, because PL1 states none. It covers movement_type_id 9
+// across all accounts, which is what separates it from Investment.V3 — the same
+// movement narrowed to investment accounts. In practice a pnl row only ever
+// touches a bank or an investment account and slack, so the broader set returns
+// the same rows; it is written broad anyway, because narrowing it here would be
+// this module asserting something PL1 does not.
+const PNL_ACCOUNT_IDS_QUERY = `
+  SELECT ua.account_id
+  FROM user_accounts ua
+  WHERE ua.user_id = $1
+    AND ua.account_name != 'slack'
+  ORDER BY ua.account_id
+`;
+
 // The oldest account the user owns, on the owner's calendar.
 //
 // This is the E3 guard: a delta is only reported when a COMPLETE prior period
@@ -66,6 +110,38 @@ export async function getExpenseAccountIds(pool, userId) {
  }
 
  const { rows } = await pool.query(EXPENSE_ACCOUNT_IDS_QUERY, [userId]);
+ return rows.map((row) => row.account_id);
+}
+
+/**
+ * The real money accounts of a user, slack excluded — the set income is read over.
+ *
+ * @param {object} pool - Database pool
+ * @param {string} userId - UUID from the token, never from the client body
+ * @returns {Promise<number[]>} account ids, ascending
+ */
+export async function getIncomeAccountIds(pool, userId) {
+ if (!userId) {
+  throw createError(400, 'A user id is required to read income accounts.');
+ }
+
+ const { rows } = await pool.query(INCOME_ACCOUNT_IDS_QUERY, [userId]);
+ return rows.map((row) => row.account_id);
+}
+
+/**
+ * Every account of a user except slack — the set realized P/L is read over.
+ *
+ * @param {object} pool - Database pool
+ * @param {string} userId - UUID from the token, never from the client body
+ * @returns {Promise<number[]>} account ids, ascending
+ */
+export async function getPnlAccountIds(pool, userId) {
+ if (!userId) {
+  throw createError(400, 'A user id is required to read pnl accounts.');
+ }
+
+ const { rows } = await pool.query(PNL_ACCOUNT_IDS_QUERY, [userId]);
  return rows.map((row) => row.account_id);
 }
 

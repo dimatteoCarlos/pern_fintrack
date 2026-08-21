@@ -16,8 +16,6 @@
 // module for its private helpers would open the contract D6 freezes.
 
 import { budgetCalculationService } from '../../budget_services/services/budgetCalculationService.js';
-import { getCurrentMonth } from '../../budget_services/db/budgetTransactionRepository.js';
-import { money, toAmount } from '../../budget_services/core/money.js';
 import {
  getExpenseAccountIds,
  getOldestAccountDate,
@@ -25,67 +23,32 @@ import {
 import { getMonthlyExpense } from '../db/overviewMonthlyRepository.js';
 import { getExpenseTransactionsPage } from '../db/overviewTransactionRepository.js';
 import {
- makeExpenseCard,
- NO_BUDGET_NOTICE,
+ makePeriodDelta,
  NO_PRIOR_PERIOD_NOTICE,
-} from '../core/makeExpenseCard.js';
+} from '../core/makeDomainCard.js';
+import { makeExpenseCard, NO_BUDGET_NOTICE } from '../core/makeExpenseCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
 import { makeCategoryBreakdown } from '../core/makeCategoryBreakdown.js';
-import { shiftMonths, monthEndDate } from '../core/monthArithmetic.js';
+import { monthEndDate } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
-
-// D18 — six points, the window the developer chose. Not MS2's three, too short
-// to read a direction from, and not MS3's twelve, sized for a statistical
-// stability a visual series does not need.
-const TREND_MONTHS = 6;
-
-// 422 and not 400: the request parsed and the month is well formed, it is simply
-// later than any month that exists on the owner's calendar. That is a
-// relationship with a calendar, which no schema can see.
-const rangeError = (message) => Object.assign(new Error(message), { status: 422 });
-
-/**
- * Whether a full prior month existed to compare this one against (E3, Option A).
- *
- * The rule is the account's age, not the presence of transactions: a month in
- * which the user owned an account and spent nothing IS a complete period worth
- * comparing against, and reporting no delta for it would hide a real drop to
- * zero. What must never happen is a comparison against a month the user did not
- * yet exist for, which would read as a rise from nothing.
- *
- * A user with no accounts resolves to false for the same reason: there is no
- * prior period, not a prior period of zero.
- */
-const hasCompletePriorPeriod = (oldestAccountDate, priorMonth) =>
- oldestAccountDate !== null && oldestAccountDate < priorMonth;
 
 export const overviewExpenseService = {
  /**
   * Everything GET /overview/expense returns, for one month and one page.
   *
-  * requestedMonth is optional and past-only, the same rule as
-  * POST /budget/accounts/status: omitted resolves to the current month on the
-  * owner's calendar, which is the only month the server can name without
-  * borrowing the client's clock.
+  * The window arrives resolved. The month ceiling is a relationship with the
+  * owner's calendar, so it is checked once where the request is rather than
+  * inside each calculator — otherwise six domains would each hold their own
+  * copy of the same rule.
   *
   * @param {object} pool - Database pool
   * @param {string} userId - UUID from the token, never from the client body
-  * @param {object} request - { month, page, pageSize } already validated
+  * @param {object} request - { window, page, pageSize }
   * @param {string} timeZone - IANA zone of the account owner
   * @returns {Promise<object>} GetOverviewDomainData for domain 'expense'
   */
- async getExpenseDomainData(pool, userId, { month, page, pageSize }, timeZone = 'UTC') {
-  const currentMonth = await getCurrentMonth(pool, timeZone);
-
-  if (month && month > currentMonth) {
-   throw rangeError(
-    `month ${month.slice(0, 7)} is later than the current month ${currentMonth.slice(0, 7)}.`,
-   );
-  }
-
-  const referenceMonth = month ?? currentMonth;
-  const priorMonth = shiftMonths(referenceMonth, -1);
-  const trendStart = shiftMonths(referenceMonth, -(TREND_MONTHS - 1));
+ async getExpenseDomainData(pool, userId, { window, page, pageSize }, timeZone = 'UTC') {
+  const { referenceMonth, priorMonth, trendStart } = window;
 
   // The id set every figure on this page is computed over, deleted categories
   // included (D19). Read once and passed to all three consumers: if categories
@@ -103,17 +66,12 @@ export const overviewExpenseService = {
   // The reference month is the last point of the same series the chart draws, so
   // the card and the chart cannot disagree about it (§4.2). generate_series
   // guarantees the row exists even when nothing happened in it.
-  const currentPoint = months.find((entry) => entry.month === referenceMonth);
-  const priorPoint = months.find((entry) => entry.month === priorMonth);
-
-  const canCompare = hasCompletePriorPeriod(oldestAccountDate, priorMonth);
-
-  // priorPoint is inside the window for every request, since the window is six
-  // months and the delta reaches back one. The guard is on the calendar, not on
-  // the row: a missing row would be a bug in the series, not a young account.
-  const delta = canCompare && priorPoint
-   ? toAmount(money(currentPoint.totalAmount).minus(priorPoint.totalAmount))
-   : null;
+  const { currentPoint, delta, canCompare } = makePeriodDelta({
+   months,
+   referenceMonth,
+   priorMonth,
+   oldestAccountDate,
+  });
 
   // "No budget in force" is not "a budget of 0". makeTotals sums to 0 in both
   // cases — no allocation anywhere, and allocations that are all zero — so the

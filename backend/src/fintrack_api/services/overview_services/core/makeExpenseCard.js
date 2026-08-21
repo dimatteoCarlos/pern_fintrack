@@ -1,10 +1,15 @@
 // src/fintrack_api/services/overview_services/core/makeExpenseCard.js
 
-// The ExpenseCard of §5 and §12 of the contract: E1-E3 plus E4/E5 (D16).
+// The ExpenseCard of §5 and §12 of the contract: the shared base plus E4/E5 (D16).
 //
 // Nothing here queries. The eight figures arrive already computed — the three
 // from the monthly repository, the two from budgetCalculationService — and this
-// builds the two that are pure arithmetic on them and freezes the result.
+// builds the two that are pure arithmetic on them, hands the shared ones to
+// makeDomainCard, and freezes the result.
+//
+// The three fields every domain card carries are not restated here. They belong
+// to DomainCardBase, which §5 declares once for five cards, and NO_PRIOR_PERIOD
+// travels with them.
 //
 // The card carries two spend figures on purpose, and they are NOT the same
 // universe (D16). totalAmount is every expense leg of the period; budgetAmount
@@ -16,17 +21,13 @@
 // a subtraction.
 
 import { money, toAmount } from '../../budget_services/core/money.js';
+import { makeDomainCard } from './makeDomainCard.js';
 
 // Said when the period has no budget in force anywhere, so budgetVariance has no
 // second operand. It is a different statement from "your budget is 0": one is an
 // absent decision, the other is a decision to spend nothing.
 export const NO_BUDGET_NOTICE =
  'No category has a budget in force for this period, so the budget figures are not reported.';
-
-// Said when E3 has no complete prior period to compare against — the guard the
-// catalog states as "nunca comparar contra un periodo que no existió".
-export const NO_PRIOR_PERIOD_NOTICE =
- 'There is no complete prior period to compare against, so the change against it is not reported.';
 
 // Said when spending exists that no live category accounts for. Structurally
 // this cannot be created today (transactionController.js:516-532 rejects a write
@@ -81,29 +82,23 @@ export const makeExpenseCard = ({
  // true is the harder half of that pair to notice.
  const cardNotices = hasUncategorizedExpense
   ? [...notices, UNCATEGORIZED_EXPENSE_NOTICE]
-  : [...notices];
+  : notices;
 
- return Object.freeze({
+ return makeDomainCard({
   domain: 'expense',
   totalAmount,
   transactionCount,
   delta,
-  budgetAmount,
-  categorizedExpense,
-  budgetVariance: hasBudgetFigures
-   ? toAmount(money(budgetAmount).minus(categorizedExpense))
-   : null,
-  hasUncategorizedExpense,
   currency,
   window,
-  // Always an object with an array in it, never absent and never a bare string:
-  // a caller that iterates needs no null check, and the shape does not change
-  // the day a second notice appears. provenance is null until D7's accounting
-  // and display currencies can diverge — the field is reserved now so the
-  // contract does not break on the day they do.
-  meta: Object.freeze({
-   notices: Object.freeze(cardNotices),
-   provenance: null,
-  }),
+  notices: cardNotices,
+  domainFields: {
+   budgetAmount,
+   categorizedExpense,
+   budgetVariance: hasBudgetFigures
+    ? toAmount(money(budgetAmount).minus(categorizedExpense))
+    : null,
+   hasUncategorizedExpense,
+  },
  });
 };

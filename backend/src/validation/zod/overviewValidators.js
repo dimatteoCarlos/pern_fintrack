@@ -31,7 +31,7 @@ export const OVERVIEW_DOMAINS = [
 // the URL space matches the frozen contract while the controller can answer 501
 // for a domain whose calculator is not written yet — a 400 there would tell the
 // caller the domain is invalid, which is a different and false statement.
-export const IMPLEMENTED_OVERVIEW_DOMAINS = ['expense'];
+export const IMPLEMENTED_OVERVIEW_DOMAINS = ['expense', 'income', 'pnl'];
 
 // Pagination defaults and ceiling for the transaction list.
 //
