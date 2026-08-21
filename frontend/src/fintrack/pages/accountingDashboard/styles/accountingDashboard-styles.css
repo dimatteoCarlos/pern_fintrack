@@ -136,7 +136,11 @@
 
 .account-group__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+ /* A fixed track and not minmax(..., 1fr): with 1fr the cards stretched to
+    fill the row and grew back past 300px. auto-fit collapses the empty
+    tracks so the row can centre instead of hugging the left edge. */
+ grid-template-columns: repeat(auto-fit, 300px);
+ justify-content: center;
   gap: 1.25rem;
   width: 100%;
 }
