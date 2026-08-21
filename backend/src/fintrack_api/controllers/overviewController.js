@@ -54,13 +54,21 @@ const DOMAIN_CALCULATORS = {
  * JSON.stringify drops, and every 400 goes out with an empty body telling the
  * caller the request failed but never which field. Same shape as
  * budgetController.js:57-66 so both modules report a rejection alike.
+ *
+ * An unrecognized key is the one issue whose path is EMPTY — the offending key
+ * is not on the path, it is in issue.keys — so `path.join('.')` yields "" and
+ * the response names nothing. That is exactly the case the strict schemas exist
+ * to report: overviewValidators states that a retired parameter answers 400
+ * naming the key, and without this branch it did not.
  */
 const respondWithZodIssues = (res, error) =>
  res.status(400).json({
   status: 400,
   message: 'Validation Error',
   errors: error.issues.map((issue) => ({
-   field: issue.path.join('.'),
+   field: issue.path.length > 0
+    ? issue.path.join('.')
+    : (issue.keys ?? []).join(', '),
    message: issue.message,
    code: issue.code,
   })),
