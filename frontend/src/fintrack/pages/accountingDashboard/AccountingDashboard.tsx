@@ -97,6 +97,17 @@ const AccountingDashboard = () => {
   const originRoute = location.state?.originRoute || INITIAL_PAGE_ADDRESS;
 
   const previousRoute = location.pathname; // this works as a previous route to account detail view, edit and delete
+
+  // The return route handed to the six destination screens. The acted-on
+  // account rides in the query string and not in location.state: every
+  // destination forwards this string verbatim into a <Link to> or a
+  // navigateTo, so anchoring the return costs those screens no change.
+  const buildReturnRoute = (accountId: number | string) =>
+    `${location.pathname}?focus=${accountId}`;
+
+  // The card to come back to, read from the URL the destination sent us to.
+  // A one-shot instruction, so it is not held in state.
+  const focusedAccountId = new URLSearchParams(location.search).get('focus');
   // -----------------------------
   // console.log('location', {location},'previousRoute', {previousRoute},'state', location.state, 'originRoute', location.state?.originRoute)
 
@@ -202,6 +213,37 @@ const AccountingDashboard = () => {
     }
     return groupAccountsBytype(apiData?.data?.accountList);
   }, [apiData?.data.accountList]);
+  //---------------------------------
+  // 🎯 RETURN ANCHOR
+  // Brings the acted-on card back into view and hands it the keyboard. It
+  // waits on groupedAccounts because the card is not in the DOM until the
+  // inventory request resolves.
+  useEffect(() => {
+    if (!focusedAccountId || Object.keys(groupedAccounts).length === 0) {
+      return;
+    }
+
+    const card = document.getElementById(`account-card-${focusedAccountId}`);
+    if (!card) {
+      return;
+    }
+
+    // No `behavior`: the default defers to the scrolling box's own
+    // scroll-behavior, so a reduced-motion setting is still honoured.
+    card.scrollIntoView({ block: 'center' });
+    // The card is a div; its trigger is the only focusable node inside it.
+    card.querySelector('button')?.focus({ preventScroll: true });
+
+    // Consume the anchor: a refresh must not scroll again, and the id is not
+    // part of an address worth sharing.
+    navigateTo(location.pathname, { replace: true, state: location.state });
+  }, [
+    focusedAccountId,
+    groupedAccounts,
+    location.pathname,
+    location.state,
+    navigateTo,
+  ]);
   //=================================
   // 🎯 ACCOUNT ACTION HANDLERS
   //=================================
@@ -241,10 +283,11 @@ const AccountingDashboard = () => {
       '/fintrack/overview/accounts';
 
     const detailRoute = `${baseRoute}/${account.account_id}`;
-    console.log('regular', { detailRoute }, { account }, { previousRoute });
+    const returnRoute = buildReturnRoute(account.account_id);
+    console.log('regular', { detailRoute }, { account }, { returnRoute });
 
     navigateTo(detailRoute, {
-      state: { previousRoute, detailedData: account },
+      state: { previousRoute: returnRoute, detailedData: account },
     });
   };
   //---
@@ -253,6 +296,7 @@ const AccountingDashboard = () => {
     account: CategoryBudgetAccountListType,
   ) => {
     const categoryDetailRoute = `${ACCOUNT_TYPE_DETAIL_PAGE[account.account_type_name]}/${account.account_id}`;
+    const returnRoute = buildReturnRoute(account.account_id);
 
     console.log(
       'categoryRoute',
@@ -260,12 +304,12 @@ const AccountingDashboard = () => {
       { account },
       'id',
       account.account_id,
-      { previousRoute },
+      { returnRoute },
     );
 
     // 🧭 NAVIGATE TO CATEGORY DETAIL
     navigateTo(categoryDetailRoute, {
-      state: { detailedData: null, previousRoute },
+      state: { detailedData: null, previousRoute: returnRoute },
     });
   };
   //------------------------------------
@@ -291,7 +335,7 @@ const AccountingDashboard = () => {
     navigateTo(editRoute, {
       state: {
         accountData: account,
-        previousRoute: previousRoute,
+        previousRoute: buildReturnRoute(account.account_id),
         originRoute: originRoute,
       },
     });
@@ -306,7 +350,7 @@ const AccountingDashboard = () => {
     navigateTo(deleteAccountPage, {
       state: {
         accountData: account,
-        previousRoute: previousRoute,
+        previousRoute: buildReturnRoute(account.account_id),
         originRoute: originRoute,
       },
     });
@@ -368,7 +412,11 @@ const AccountingDashboard = () => {
 
           <div className='account-group__grid'>
             {accounts!.map((account) => (
-              <div className='account-card' key={account.account_id}>
+              <div
+                className='account-card'
+                id={`account-card-${account.account_id}`}
+                key={account.account_id}
+              >
                 <AccountingBox
                   title={account.account_name.toUpperCase()}
                   amount={account.account_balance}
