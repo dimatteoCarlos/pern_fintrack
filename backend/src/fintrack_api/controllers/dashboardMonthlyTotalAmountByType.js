@@ -20,6 +20,44 @@ import {
   todayInZone,
 } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 
+/**
+ * The year's total for each movement type, served rather than folded.
+ *
+ * The rule the budget module holds (§10.8.3) is that the client never sums a
+ * total it was not given: a figure folded on screen and the same figure served
+ * by the backend end up a cent apart. Overview already asks for this payload,
+ * so the yearly figure rides in it and costs no request.
+ *
+ * Currencies are not converted, for the reason makeTotals refuses to: adding
+ * USD to COP is a conversion at an implicit rate of 1:1. A type whose rows span
+ * more than one currency reports null, and the months underneath keep their own
+ * amounts, so nothing is lost except the bad addition.
+ *
+ * The amounts arrive as FLOAT from the query, so the sum is rounded to the two
+ * decimals the DECIMAL(15,2) column stores rather than carried at full width.
+ */
+const makeYearlyTotals = (rows) => {
+  const byType = {};
+
+  for (const row of rows) {
+    const bucket = (byType[row.type] ??= { amount: 0, currencies: new Set() });
+    bucket.amount += Number(row.amount) || 0;
+    bucket.currencies.add(row.currency_code);
+  }
+
+  return Object.fromEntries(
+    Object.entries(byType).map(([type, { amount, currencies }]) => [
+      type,
+      currencies.size === 1
+        ? {
+            amount: Math.round(amount * 100) / 100,
+            currency: [...currencies][0],
+          }
+        : { amount: null, currency: null },
+    ]),
+  );
+};
+
 export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
   //response function
   const backendColor = 'yellow';
@@ -158,6 +196,10 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
       // currency: dataArr.length > 0 ? dataArr[0].currency_code : 'usd', //Asume USD by default
 
       monthlyAmounts: dataArr,
+
+      // The year's figure for each type, so Overview can print it without
+      // summing the twelve months itself.
+      yearlyTotals: makeYearlyTotals(dataArr),
     };
     return RESPONSE(
       res,

@@ -3,6 +3,7 @@ import { StatusSquare } from '../../../general_components/boxComponents/BoxCompo
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { CurrencyType } from '../../../types/types';
 import { ResultType, MovementType } from '../CalculateMonthlyAverage';
+import { YearlyTotalsType } from '../../../types/responseApiTypes';
 
 // Configuración por defecto
 const defaultCurrency = DEFAULT_CURRENCY;
@@ -43,7 +44,33 @@ data:ResultType = {
 }
     */
 
-function MonthlyAverage({ data }: { data: ResultType | null }) {
+function MonthlyAverage({
+  data,
+  yearlyTotals,
+}: {
+  data: ResultType | null;
+  yearlyTotals: YearlyTotalsType | null;
+}) {
+  // The year beside the monthly average, on the card that already names the
+  // movement. A dash and never a zero when the backend withheld the figure:
+  // a withheld total is one it refused to invent, not one that came to nothing.
+  const yearToDate = (movement: MovementType) => {
+    const total = yearlyTotals?.[movement];
+
+    if (!total || total.amount === null || total.currency === null) {
+      return '—';
+    }
+
+    // Income is stored as a withdrawal from its source account, so it arrives
+    // negative. The same factor the averages above already apply.
+    const sign = movement === 'income' ? -1 : 1;
+
+    return currencyFormat(
+      total.currency,
+      sign * total.amount,
+      CURRENCY_OPTIONS[total.currency],
+    );
+  };
   //convert input data structure into data to render structure
   const convertMovementData = (
     movement: MovementType,
@@ -93,7 +120,10 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
   // console.log('🚀 ~ MonthlyAverage ~ saving:', saving[0].amount);
 
   //HACER ESTE RESPONSIVE lt 428 una cell , despues de 633 3 cells
-  const renderCardFinancialData = (items: DataToRenderType[]) => (
+  const renderCardFinancialData = (
+    items: DataToRenderType[],
+    movement: MovementType,
+  ) => (
     <div className='monthly__card tile__container tile__container__col tile__container__col--goalInfo '>
       {items.map((item, indx) => (
         <article className='' key={indx}>
@@ -102,6 +132,13 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
             {currencyFormat(item.currency, item.amount, formatNumberCountry)}
             {` (m:${item.months ?? 0})`}
           </div>
+          <div className='monthlyAverage__year'>
+            <span className='monthlyAverage__year-label'>Year to date</span>
+            <span className='monthlyAverage__year-amount'>
+              {yearToDate(movement)}
+            </span>
+          </div>
+
           <div className='tile__status__container flx-row-start '>
             <StatusSquare
               alert={0.5 - Math.random() < 0 ? 'alert' : ''} // temporary values needs to define rule to apply
@@ -118,9 +155,9 @@ function MonthlyAverage({ data }: { data: ResultType | null }) {
   return (
     <div className='tiles__container flx-row-sb '>
       {/* Monthly info row */}
-      {renderCardFinancialData(income)}
-      {renderCardFinancialData(expense)}
-      {renderCardFinancialData(saving)}
+      {renderCardFinancialData(income, 'income')}
+      {renderCardFinancialData(expense, 'expense')}
+      {renderCardFinancialData(saving, 'saving')}
     </div>
   );
 }
