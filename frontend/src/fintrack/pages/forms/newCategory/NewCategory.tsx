@@ -19,6 +19,7 @@ import useAuth from '../../../../auth/hooks/useAuth.ts';
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
 import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
+import { notifyAccountChanged } from '../../../stores/transactionEvents.ts';
 
 import { url_create_category_budget_account } from '../../../../urlConfig.ts';
 
@@ -408,6 +409,10 @@ function NewCategory() {
           setValidationMessages({});
           setFormData(initialFormData);
           setCategoryData(initialNewCategoryData);
+
+          // Announced, not invalidated here: this form has no business
+          // knowing which caches a new budget account made stale.
+          notifyAccountChanged();
         } else {
           console.log('❌ Server error - setting message');
           // ❌ ERROR DEL SERVIDOR (4xx, 5xx) - Viene en responseData
