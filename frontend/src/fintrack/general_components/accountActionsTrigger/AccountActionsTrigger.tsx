@@ -12,9 +12,8 @@
 // which one won would depend on the order the lazy routes loaded their CSS.
 // The two old rules stay where they are until the cleanup block (D13).
 //
-// AccountingBox.tsx is deliberately NOT a caller: PLAN_EDIT_BLOCK.md §2 puts
-// the dashboard's own trigger out of scope, and PLAN_ACTIONS_MENU.md owns its
-// restyle.
+// AccountingBox.tsx is its first caller. The developer opened the
+// PLAN_EDIT_BLOCK.md §2 boundary on 2026-08-20.
 
 // '?react' and not the bare form: only that door carries a React type, so the
 // glyph can take a className (R34). The bare import is typed as a string.
@@ -22,7 +21,9 @@ import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg?react';
 import './styles/accountActionsTrigger-styles.css';
 
 type AccountActionsTriggerPropType = {
- onClick: () => void;
+ // Carries the event: a caller whose whole card is clickable needs it to stop
+ // the bubble, or the menu opens twice on one press.
+ onClick: (event: React.MouseEvent) => void;
  // Names the account in the accessible label. A bare "Account actions" repeated
  // down a list says nothing about which row it belongs to.
  accountName: string;

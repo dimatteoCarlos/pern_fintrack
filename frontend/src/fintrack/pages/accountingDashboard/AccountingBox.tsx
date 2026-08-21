@@ -3,7 +3,7 @@
 
 import { numberFormatCurrency } from '../../helpers/functions';
 import { CurrencyType } from '../../types/types';
-import Dots3LightSvg from '../../../assets/Dots3LightSvg.svg';
+import AccountActionsTrigger from '../../general_components/accountActionsTrigger/AccountActionsTrigger';
 
 type AccountingBoxPropType = {
   title: string;
@@ -11,6 +11,8 @@ type AccountingBoxPropType = {
   currency?: CurrencyType;
   account_type?: string;
   onMenuClick?: (event: React.MouseEvent) => void;
+  // Whether this card's own menu is open. Announced by the trigger, not styled.
+  isMenuOpen?: boolean;
 };
 //----------------------------------
 export function AccountingBox({
@@ -19,25 +21,18 @@ export function AccountingBox({
   currency,
   account_type,
   onMenuClick,
+  isMenuOpen,
 }: AccountingBoxPropType) {
   return (
     <div className='accountingBox__container flex-col-sb' onClick={onMenuClick}>
-      {/* 🆕 3 DOTS BUTTON - ALWAYS VISIBLE */}
-      <div
-        className='accountingBox__menu'
-        style={{ display: 'flex', width: '100%' }}
-      >
-        <div className='accountingBox__title'>{title}</div>
+      <div className='accountingBox__header'>
+       <div className='accountingBox__title'>{title}</div>
 
-        <button
-          className='accountingBox__menu'
-          onClick={onMenuClick}
-          aria-label='Account options'
-        >
-          <div className='flx-col-center icon3dots'>
-            <Dots3LightSvg />
-          </div>
-        </button>
+       <AccountActionsTrigger
+        onClick={(event) => onMenuClick?.(event)}
+        accountName={title}
+        isOpen={isMenuOpen}
+       />
       </div>
 
       <div className='bubble light'>

@@ -374,7 +374,11 @@ const AccountingDashboard = () => {
                   amount={account.account_balance}
                   currency={account.currency_code}
                   account_type={`(${capitalize(account.account_type_name.split('_')[0])})`}
-                  onMenuClick={(e) => handleMenuClick(account, e)} // 🆕 PASANDO HANDLER
+                  onMenuClick={(e) => handleMenuClick(account, e)}
+                  isMenuOpen={
+                    menuState.isOpen &&
+                    menuState.account?.account_id === account.account_id
+                  }
                 />
               </div>
             ))}
