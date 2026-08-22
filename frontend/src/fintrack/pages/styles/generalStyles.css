@@ -22,7 +22,7 @@ layout style is stablished by the following elements:
   --success: green;
   --hoverColor: cyan;
   --secondary: #7f7f7f;
-  --bgBodyColor: #1b1b1b;
+  --bgBodyColor: var(--color-surface-app);
 }
 
 /* =========================================
