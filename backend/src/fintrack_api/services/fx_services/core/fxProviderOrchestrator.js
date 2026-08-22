@@ -9,7 +9,8 @@
  * 
  * Responsibilities:
  * - Inject the base currency locally (rate = 1).
- * - Iterate through providers in order: Cotizave → ExchangeRate → FreeCurrency → GitHub → Static.
+ * - Iterate through providers in order: Banrep TRM → Cotizave → ExchangeRate → FreeCurrency → GitHub → Static.
+ * - The first two are authoritative single-currency sources (COP, VES); the rest are aggregators.
  * - Fill missing currencies without overwriting existing ones.
  * - Calculate oldestFetchedAt = MIN(fetchedAt) across all currencies (excluding base).
  * - Determine stateTTL based on the lowest-priority provider used.
@@ -23,6 +24,7 @@ import {
   SUPPORTED_CURRENCIES,
 } from './fxConfig.js';
 
+import * as banrep from '../fxProviders/banrepTrmProvider.js';
 import * as cotizave from '../fxProviders/cotizaveApiProvider.js';
 import * as exchangeRate from '../fxProviders/exchangeRateApiProvider.js';
 import * as freeCurrency from '../fxProviders/freeCurrencyApiProvider.js';
@@ -32,6 +34,7 @@ import * as staticFallback from '../fxProviders/getFallbackRate.js';
 // ─── Provider list in priority order ──
 
 const PROVIDERS = [
+  { name: 'banrep-trm', fn: banrep.fetchAllRates, ttl: FX_CACHE_TTL_MS },
   { name: 'cotizave', fn: cotizave.fetchAllRates, ttl: FX_CACHE_TTL_MS },
   { name: 'exchange-rate-api', fn: exchangeRate.fetchAllRates, ttl: FX_CACHE_TTL_MS },
   { name: 'free-currency-api', fn: freeCurrency.fetchAllRates, ttl: FX_CACHE_TTL_MS },

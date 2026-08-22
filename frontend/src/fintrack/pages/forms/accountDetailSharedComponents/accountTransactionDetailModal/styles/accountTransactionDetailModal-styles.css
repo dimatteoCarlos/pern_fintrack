@@ -259,10 +259,12 @@
  font-variant-numeric: tabular-nums;
 }
 
-/* index.css sets font-size on the universal selector, so an inline element does
-   not inherit the size of the line it sits in and has to restate it. */
+/* Sized as a box, not as text: the glyph it replaces rendered far smaller than
+   its em box. Same 1.5rem as the arrow in the overview transaction modal. */
 .transactionDetail__arrow {
- font-size: var(--font-size-lg);
+ width: var(--space-6);
+ height: var(--space-6);
+ flex-shrink: 0;
  color: var(--color-content-on-dark-subtle);
 }
 

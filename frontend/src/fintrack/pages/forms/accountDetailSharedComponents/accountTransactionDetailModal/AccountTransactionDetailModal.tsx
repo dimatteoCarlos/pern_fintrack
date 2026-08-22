@@ -354,9 +354,19 @@ export const AccountTransactionDetailModal = ({
 
        <div className='transactionDetail__pathway'>
         <span>{pathwayFrom}</span>
-        <span className='transactionDetail__arrow' aria-hidden='true'>
-         →
-        </span>
+        <svg
+         className='transactionDetail__arrow'
+         aria-hidden='true'
+         viewBox='0 0 24 24'
+         fill='none'
+         stroke='currentColor'
+         strokeWidth='2'
+         strokeLinecap='round'
+         strokeLinejoin='round'
+        >
+         <line x1='5' y1='12' x2='19' y2='12' />
+         <polyline points='12 5 19 12 12 19' />
+        </svg>
         <span>{pathwayTo}</span>
        </div>
 
