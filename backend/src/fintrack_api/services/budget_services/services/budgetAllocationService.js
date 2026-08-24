@@ -15,7 +15,6 @@ import {
  toAmount,
 } from '../core/money.js';
 import {
- getAllocationForMonth,
  insertFirstAllocation,
  resolveCurrentMonth,
  writeAllocation,
@@ -168,98 +167,17 @@ async function createAllocationForAccount(
 }
 
 /**
- * Apply a budget change made through the account editor.
- *
- * Recurrent by definition: the account editor has no control for choosing how
- * long the amount lasts, so every change it makes runs from the current month
- * with no end. Bounded changes belong to the budget screen, which sends them to
- * PUT /budget/accounts/:accountId/current.
- *
- * Takes a client for the same reason createAllocationForAccount does: the
- * allocation must commit or roll back together with the cba.budget write it
- * mirrors.
- *
- * An account with no allocation gets its first one, dated from the account
- * start. That repairs every account created before this table existed and every
- * row the backfill skipped, instead of leaving it invisible to the read path.
- *
- * @returns {Promise<object|null>} accountId, budgetMonth and budgetAmount —
- *  always those three, whichever path wrote the row, so the shape does not
- *  depend on state the caller cannot see. null when the amount already in force
- *  is the one being sent: the edit form resends the budget on every save, and
- *  writing it back would delete a terminator the user set from the budget
- *  screen — silently turning a one-month exception into a permanent change.
- */
-async function applyAllocationForAccount(
- client,
- userId,
- accountId,
- budgetAmount,
- timeZone = 'UTC',
-) {
- const account = await lockOwnedAccount(client, userId, accountId, timeZone);
- const normalizedAmount = normalizeAmount(budgetAmount);
-
- const { month } = await resolveCurrentMonth(client, timeZone);
- const inForce = await getAllocationForMonth(client, accountId, month);
-
- if (inForce === null) {
-  return createAllocationForAccount(
-   client,
-   accountId,
-   normalizedAmount,
-   account.account_start_date,
-   timeZone,
-   account.currency_id,
-  );
- }
-
- // Both sides are already at the column's scale, so this compares exactly and
- // rounds nothing.
- if (inForce === normalizedAmount) {
-  return null;
- }
-
- // Identity FX: the account editor hands over an amount already converted to
- // the accounting currency, and its origin is recorded on the account row by
- // migration 014. Only the budget screen states an origin currency of its own.
- const written = await writeAllocation(
-  client,
-  accountId,
-  normalizedAmount,
-  month,
-  null,
-  {
-   originalAmount: normalizedAmount,
-   originalCurrencyId: account.currency_id,
-   rate: 1,
-   source: 'identity',
-   fetchedAt: new Date(),
-   targetCurrencyId: account.currency_id,
-  },
- );
-
- // Projected to the three contract fields. The editor writes no end, so nothing
- // is restored and restoresTo is always null here (§7.4).
- return {
-  accountId: written.accountId,
-  budgetMonth: written.budgetMonth,
-  budgetAmount: written.budgetAmount,
- };
-}
-
-/**
  * Set the budget of one account over a range of months, from the budget screen.
  *
  * The only write that carries a range, because the budget screen is the only
- * place that asks how long the amount should last. The account editor has no
- * such control and routes to applyAllocationForAccount instead.
+ * place that asks how long the amount should last — and the only write of a
+ * budget after the first one, since the account editor no longer touches it.
  *
  * Owns its transaction: the allocation and the row that restores the previous
  * amount at the far edge are one decision, and a restore committed without its
- * allocation reverts a budget nobody changed. The account-editor writes take a
- * caller-supplied client for the opposite reason — theirs must roll back with
- * the account row they mirror.
+ * allocation reverts a budget nobody changed. createAllocationForAccount takes a
+ * caller-supplied client for the opposite reason — it must roll back with the
+ * account row it mirrors.
  *
  * The month IS taken from the request, and the three rules a schema cannot check
  * are enforced here: it may not be later than today on the owner's calendar, it
@@ -395,6 +313,5 @@ async function setCurrentMonthBudget(
 
 export const budgetAllocationService = {
  createAllocationForAccount,
- applyAllocationForAccount,
  setCurrentMonthBudget,
 };
