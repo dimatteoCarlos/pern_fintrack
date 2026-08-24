@@ -222,6 +222,10 @@ function BudgetEditModal({
  useEffect(() => {
   const root = document.getElementById('root');
   const previousOverflow = document.body.style.overflow;
+  // The control that opened the panel, captured before inert blurs whatever it
+  // covers. It rides in this effect and not one of its own because the restore
+  // has to be sequenced against the removeAttribute below.
+  const previouslyFocused = document.activeElement;
 
   root?.setAttribute('inert', '');
   document.body.style.overflow = 'hidden';
@@ -229,6 +233,9 @@ function BudgetEditModal({
   return () => {
    root?.removeAttribute('inert');
    document.body.style.overflow = previousOverflow;
+   // After removeAttribute and never before: focus() on a node still inside
+   // inert content is a no-op.
+   if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
   };
  }, []);
 

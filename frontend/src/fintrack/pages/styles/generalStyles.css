@@ -6,23 +6,23 @@ layout style is stablished by the following elements:
 
 :root {
   /*figma*/
-  --figmaWidth: 22.5rem;
-  --topSpaceHeight: 2.75rem;
+  --figmaWidth: var(--layout-width-min);
+  --topSpaceHeight: var(--layout-top-space);
   --dark: #141414;
   --light: white;
   --creme: #e8e4da;
   --textColor: #141414;
 
-  --square: #5b8c93; /*status square*/
-  --squareAlert: #c97474; /*status square alert*/
-  --error: #fc0c0c;
+  --square: var(--color-status-ok); /*status square*/
+  --squareAlert: var(--color-status-alert); /*status square alert*/
+  --error: var(--color-status-error);
   --warn: orange;
 
   --lightSuccess: lightgreen;
-  --success: green;
-  --hoverColor: cyan;
-  --secondary: #7f7f7f;
-  --bgBodyColor: #1b1b1b;
+  --success: var(--color-status-success);
+  --hoverColor: var(--color-interactive-hover);
+  --secondary: var(--color-content-placeholder);
+  --bgBodyColor: var(--color-surface-app);
 }
 
 /* =========================================
@@ -38,9 +38,9 @@ layout style is stablished by the following elements:
 
   :root{
 /* Navigation bars - scalable */
-  --header-height: 12.5rem;
-  --navbar-top-height: 5rem;/* TrackerNavbar - default 64px */
-  --navbar-bottom-height: 3.5rem;/* MainNavbar - default 56px */
+  --header-height: var(--layout-header-height);
+  --navbar-top-height: var(--layout-navbar-top);/* TrackerNavbar - default 64px */
+  --navbar-bottom-height: var(--layout-navbar-bottom);/* MainNavbar - default 56px */
 
 /* Constants for layout calculation */
   --header-content-height: 6.8rem;

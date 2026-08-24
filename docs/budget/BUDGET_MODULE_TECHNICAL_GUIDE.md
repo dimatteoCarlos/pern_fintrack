@@ -506,29 +506,23 @@ return to, the next month must read as "no budget". Only a row can stop the
 carry-forward; skipping the insert would carry the exception amount forward
 forever — the exact opposite of what the caller asked.
 
-### 8.3 The other two write paths
+### 8.3 The other write path
 
 | Path | Function | Month it writes | Exception? |
 |---|---|---|---|
 | Account creation | `createAllocationForAccount` → `insertFirstAllocation` | The **account's start month**, not the current one | No — the creation form has no checkbox (decision 5) |
-| Account editor | `applyAllocationForAccount` | Current month, recurrent | No — the editor has no checkbox |
 | Budget screen | `setCurrentMonthBudget` → `writeAllocation` | Current month | **Yes** |
 
 `insertFirstAllocation` dates the row at the account's start month so a backdated
 account does not report "no budget" for the months between its start and its
 creation.
 
-`applyAllocationForAccount` has a guard that is easy to miss and load-bearing:
-
-```js
- if (inForce === normalizedAmount) {
-  return null;
- }
-```
-
-The edit form resends the budget on every save. Writing it back would run step 3
-and **delete a terminator the user set from the budget screen**, silently turning
-a one-month exception into a permanent change.
+There is no third path. The account editor used to carry one — it wrote the
+amount with no conversion and left the FX columns describing the account's
+creation, which is the failure migration 014 exists to prevent — and it was
+retired once the budget block took over the amount. An account created before
+`budget_monthly_allocations` existed is repaired by the backfill, migration 012
+and its runtime twin `ensureBudgetAllocationBackfill`, not by an edit.
 
 ### 8.4 Transaction ownership
 
@@ -536,7 +530,6 @@ a one-month exception into a permanent change.
 |---|---|---|
 | `setCurrentMonthBudget` | a **pool**, opens its own transaction | The allocation and its terminator are one decision; a terminator committed without its allocation reverts a budget nobody changed |
 | `createAllocationForAccount` | a **client** | Account creation already owns a transaction; an allocation on its own connection would outlive a rollback of the account it belongs to |
-| `applyAllocationForAccount` | a **client** | Must commit or roll back with the `cba.budget` write it mirrors |
 
 ---
 
@@ -1428,10 +1421,9 @@ rule depends on it.
 | | | `respondWithZodIssues` | all four | `ZodError` | `400` body |
 | Validator | `validation/zod/budgetValidators.js` | 5 schemas + `monthBound` | controller | raw req parts | parsed, or throws |
 | Service (W) | `…/services/budgetAllocationService.js` | `setCurrentMonthBudget` | controller | pool, ids, amount, flag, tz | §15.2 body |
-| | | `applyAllocationForAccount` | `accountEditController:344` | client, … | allocation or **`null`** |
 | | | `createAllocationForAccount` | `accountCategoryCreationcontroller:259` | client, … | allocation (4 fields) |
-| | | `normalizeAmount` (private) | the three above | number | rounded number, or `400` |
-| | | `lockOwnedAccount` (private) | two of them | client, userId, accountId | row, or `403` |
+| | | `normalizeAmount` (private) | the two above | number | rounded number, or `400` |
+| | | `lockOwnedAccount` (private) | `setCurrentMonthBudget` | client, userId, accountId | row, or `403` |
 | Service (R) | `…/services/budgetCalculationService.js` | `getBudgetAccountsStatus` | controller | pool, ids, tz | §15.1 |
 | | | `getBudgetAccountSeries` | controller | pool, id, range, tz | §15.3 |
 | | | `getBudgetAccountsSeries` | controller (export) | pool, ids, range, tz, defaultMonths | `{from, to, accounts[]}` |
@@ -1440,7 +1432,7 @@ rule depends on it.
 | Repo (W) | `…/db/budgetAllocationRepository.js` | `resolveCurrentMonth` | service, `writeAllocation` | client, tz | `{month, nextMonth}` |
 | | | `getAllocationForMonth` | service, `writeAllocation` | client, id, month | `number \| null` |
 | | | `getAllocationBefore` | **nobody** (§9.4) | — | — |
-| | | `writeAllocation` | `setCurrentMonthBudget`, `applyAllocationForAccount` | client, id, amount, flag, tz | §15.2 body |
+| | | `writeAllocation` | `setCurrentMonthBudget` | client, id, amount, flag, tz | §15.2 body |
 | | | `insertFirstAllocation` | `createAllocationForAccount` | client, id, amount, startDate, tz | 4 fields |
 | | | `deleteAllocationsForAccount` | **nobody** — see F-07 | — | rowCount |
 | Repo (R) | `…/db/budgetTransactionRepository.js` | `getMonthlyStatusForAccounts` | calc service | pool, ids, tz | `{month, accounts[]}` |
@@ -1948,7 +1940,7 @@ Nothing below was fixed. Each is evidence-backed.
 |---|---|---|---|---|---|---|
 | **F-01** | `writeAllocation` builds a `terminator` object that is never returned; the `@returns` doc promises it | `budgetAllocationRepository.js:105,142-161` | Dead local + misleading doc | none | Low | Open |
 | **F-02** | The PUT response ships `budgetAllocationId`; §7.4 does not list it | `:164` vs `PLAN_BUDGET_V1:554-561` | The type either lies or omits a shipped field | §7.4 | Medium | Open |
-| **F-03** | Account creation/edit returns `budget_allocation` in **three** shapes: absent, 4 fields, 7 fields | `accountEditController.js:370`, `accountCategoryCreationcontroller.js:424`, repository `:213,:163` | Uncovered by any frozen shape | §7.4 | Medium | Open |
+| **F-03** | Account creation returns `budget_allocation` with 4 fields where the PUT returns 7, and no frozen shape covers either | `accountCategoryCreationcontroller.js:424`, repository `:213,:163` | Uncovered by any frozen shape | §7.4 | Medium | Open — narrowed: the account PATCH no longer returns the key |
 | **F-04** | §7.4 states *"exactly one field is nullable"*. Four nullable sites exist: `executionPercentage`, `subcategory`, `restoresTo`, and the whole `totals` block under mixed currencies | `PLAN_BUDGET_V1:605`; `makeBudgetAccountStatus.js:29`, repository `:233`, `:171`, `budgetCalculationService.js:229` | A type written from the prose is wrong | §7.4 | Medium | Open |
 | **F-05** | `makeTotals([])` returns `currency: null` with **numeric** amounts, so `currency === null` is not a valid mixed-currency discriminator. Unreachable via HTTP (`accountIds.min(1)`), reachable in-process | `budgetCalculationService.js:226,229` | A client discriminating on `currency` mis-renders | §7.4 | Low | Open |
 | **F-06** | §7.4's example prints `"USD"`; the catalog stores lowercase (`usd`, `eur`, `cop`, `ves`, `mxn`) and `CurrencyType` is lowercase | `PLAN_BUDGET_V1:580`, `005_base_catalogs.sql`, `types.ts:213` | A doc typo that a literal union would encode as a bug | §7.4 | Low | Open |

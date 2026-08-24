@@ -27,6 +27,32 @@ rules stand on their own if that file is absent.
 - Do not imitate neighbouring CSS. It holds catalogued defects: undefined tokens, duplicate declarations, and an inverted `prefers-color-scheme` query.
 - Trap: `index.css` sets `font-size` on the universal selector, so an inline element does not inherit the size of the line it sits in and must restate `font-size: inherit`.
 
+## Answering the Developer
+
+These rules govern every reply in chat. They are not style preferences; a reply
+that breaks them costs the developer a file read to follow an argument.
+
+- **Straight to it.** No preamble. Open with the decision or the problem.
+- **Specific.** Name the exact file, line, function and variable. No generalities.
+- **One recommendation.** When there is more than one option, say which is best
+  and why, in one sentence. Never hand over an unranked list.
+- **Concept before identifier.** An id is a label, not an argument. `K6`,
+  `QP-13`, `P-2`, `R42`, a plan section number — none of them mean anything to a
+  reader without the document open. State what the thing IS in words, then put
+  the id in parentheses at the end. Write "the count of debtors whose balance is
+  zero, computed and never rendered (K6)", never "K6 is open".
+- **No filler.** Do not repeat what the developer just said. Do not summarise the
+  context unless asked.
+- **Close with a direct question** when a decision is needed.
+
+Marks: bold for key concepts, `code` for files, functions and variables, `-` for
+lists, and a table only when more than three items are being compared. The Gate
+tables of the commit workflow are exempt from the length rule, not from the rest.
+
+This section binds subagents too: every subagent prompt carries the
+concept-before-identifier rule as an output rule, or its report comes back as a
+list of ids that is unreadable without the plan beside it.
+
 ## Refactoring & Safety Rules
 
 - Gradual Execution: Never perform destructive changes. Use feature flags (`USE_NEW_BUDGET_SYSTEM`) to isolate new functionality.

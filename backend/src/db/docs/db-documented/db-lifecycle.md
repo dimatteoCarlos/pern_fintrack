@@ -17,7 +17,7 @@ The database lifecycle depends on the environment:
 |------------|------------|-----------|------------|-------|
 | Development | Manual / CI | Automatic | Manual only | Allowed |
 | Staging | Automatic | Automatic | Manual only | Restricted |
-| Production | Automatic | Automatic | Manual only | ❌ Never |
+| Production | Manual, see `db-migration-procedure.md` | Automatic | Manual only | ❌ Never |
 
 ---
 
@@ -46,7 +46,7 @@ They are **idempotent** and tracked in the `migrations` table.
 ### Location
 
 ```
-src/db/migrations/
+src/db/migrations/sql_migrations/
 ```
 
 ### Execution
@@ -76,7 +76,7 @@ They insert **contextual or sensitive data** that must not run automatically.
 ### Location
 
 ```
-src/db/seeds/
+src/db/migrations/sql_seeds/
 ```
 
 ### Naming Convention

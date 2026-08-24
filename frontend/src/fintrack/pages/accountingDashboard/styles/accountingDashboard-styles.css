@@ -24,9 +24,11 @@
  flex-direction: column;
  align-items: center;
  width: 100%;
- /* No token above --layout-width-max (40rem), and that one centres a single
-    reading column rather than capping a multi-track grid. */
- max-width: 1200px;
+ /* The same cap .accounting__header already takes, so the back arrow, the title,
+    the search and the groups all end on one edge. It was 1200px, which left the
+    header centred in a 360px column while everything under it ran to the
+    viewport. One column, one width. */
+ max-width: var(--layout-width-min);
  margin: 0 auto;
  gap: var(--space-6);
  padding: 0 var(--space-2);
@@ -577,7 +579,6 @@ button {
 @media (min-width: 768px) {
  .accounting__container {
   gap: var(--space-8);
-  padding: 0 var(--space-4);
  }
 
  .accounting__title {
@@ -588,12 +589,11 @@ button {
   padding: var(--space-6);
  }
 
+ /* The fixed auto-fit track this rule used to declare is gone with the column
+    cap: a 350px track does not fit inside 360px minus two paddings, and auto-fit
+    would lay it anyway and overflow the group sideways. One column at every
+    width now, so only the gap belongs here. */
  .account-group__grid {
-  /* A fixed track and not minmax(..., 1fr): with 1fr the cards stretched to
-     fill the row and grew back past the cap .account-card declares. auto-fit
-     collapses the empty tracks so the row can centre instead of hugging the
-     left edge. */
-  grid-template-columns: repeat(auto-fit, var(--layout-card-width));
   gap: var(--space-5);
  }
 
