@@ -1,5 +1,5 @@
 //frontend/src/pages\/orms/categoryDetail/CategoryDetail.tsx
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
@@ -11,6 +11,7 @@ import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBad
 import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
 import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
+import MonthPicker from '../../../general_components/monthPicker/MonthPicker.tsx';
 
 import { AccountTransactionDetailModal } from '../accountDetailSharedComponents/accountTransactionDetailModal/AccountTransactionDetailModal.tsx';
 import BudgetEditModal from '../../budget/components/budgetEditModal/BudgetEditModal.tsx';
@@ -43,7 +44,6 @@ import {
 import {
   capitalize,
   currencyFormat,
-  formatBudgetMonthLabel,
   formatDateToDDMMYYYY,
   withMonthParam,
 } from '../../../helpers/functions.ts';
@@ -95,8 +95,20 @@ function CategoryDetail() {
 
   // Read from this screen's own URL: this route is declared beside the budget
   // layout, so nothing above it is still mounted to inherit a month from.
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const monthParam = searchParams.get('month');
+
+  // The picker writes the month into the URL and the effect below reads it back.
+  // replace, so browsing five months does not bury the previous screen under
+  // five history entries.
+  const selectMonth = useCallback(
+    (month: string) => {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('month', month);
+      setSearchParams(nextParams, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
 
   // Either entry point can be the first screen of the session. The store's
   // guard makes this a no-op when the month is already loaded.
@@ -195,6 +207,19 @@ function CategoryDetail() {
 
   const currency_code =
     budgetAccount?.currency ?? accountRecord?.currency_code ?? DEFAULT_CURRENCY;
+
+  // The account cannot report a month it did not exist in. Parsed by parts and
+  // never through new Date on a string: an ISO midnight is the previous day west
+  // of Greenwich, and on the first of a month that is the previous month.
+  // Null means the record has not landed yet, and nothing else.
+  const accountStartMonth = (() => {
+    const raw = accountRecord?.account_start_date;
+    if (!raw) return null;
+
+    if (typeof raw === 'string') return raw.slice(0, 7);
+
+    return `${raw.getFullYear()}-${String(raw.getMonth() + 1).padStart(2, '0')}`;
+  })();
   //-------------------------
   //SUMMARY DATA
   // Withheld rather than zeroed while the payload is still on the wire: a
@@ -299,19 +324,16 @@ function CategoryDetail() {
             </div>
           </div>
 
-          {/* Read-only, and no chevron: at this level a picker would be a second
-              way to ask what the account's own series answers. The label is the
-              resolved month, so it is a skeleton until the answer lands. */}
-          {referenceMonth ? (
-            <div className='month-badge month-badge--dark'>
-              {formatBudgetMonthLabel(referenceMonth)}
-            </div>
-          ) : (
-            <div
-              className='month-badge month-badge--dark month-badge--skeleton'
-              aria-hidden='true'
-            />
-          )}
+          {/* The month is a control here, not a label: it writes the URL and the
+              effect refetches. Dark, because it lands on the app surface. The
+              picker renders its own skeleton while the answer is in flight. */}
+          <MonthPicker
+            month={referenceMonth}
+            currentMonth={currentMonth}
+            minMonth={accountStartMonth}
+            surface='dark'
+            onSelect={selectMonth}
+          />
 
           {/* The control travels into the box's title row: it acts on the word
               'Budget', and a button floating under the panel does not say which
@@ -321,6 +343,7 @@ function CategoryDetail() {
             <div className='budgetDetail__summary'>
               <SummaryDetailBox
                 bubleInfo={summaryData}
+                surface='dark'
                 action={
                   <button
                     type='button'
@@ -353,10 +376,26 @@ function CategoryDetail() {
           <article className='form__box'>
             <div className='form__container'>
               <div className='input__box'>
-                <label className='label forms__label'>{`Current Balance`}</label>
+                {/* The balance at the close of the month being reported, not
+                    today's. The month is selectable now, and a figure that
+                    ignores it states another month's fact under this one. */}
+                <label className='label forms__label'>
+                  {summaryAccountBalance
+                    ? `Balance (${formatDateToDDMMYYYY(
+                        summaryAccountBalance.finalBalance.date,
+                      )})`
+                    : 'Balance'}
+                </label>
 
                 <div className='input__container' style={{ padding: '0.5rem' }}>
-                  {currencyFormat(currency_code, accountRecord?.account_balance)}
+                  {/* A dash and not a zero: a balance still on the wire is not
+                      a balance of nothing. */}
+                  {summaryAccountBalance
+                    ? currencyFormat(
+                        currency_code,
+                        summaryAccountBalance.finalBalance.amount,
+                      )
+                    : '—'}
                 </div>
               </div>
 

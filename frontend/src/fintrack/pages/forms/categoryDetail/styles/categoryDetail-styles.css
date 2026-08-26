@@ -22,12 +22,31 @@
    inset nothing visible.
 
    Flex column because these children were flex items of .page__container until
-   now, and the month badge centres itself with align-self. */
+   now, and because the month is centred from here — see the rule below. */
 .budgetDetail__content {
  width: var(--layout-content-width);
  margin: 0 auto;
  display: flex;
  flex-direction: column;
+}
+
+/* The month control is placed by this column, not by itself. react-datepicker
+   wraps the trigger in .react-datepicker-wrapper, so the flex child here is the
+   wrapper and the badge's own align-self and margin no longer reach the column.
+   The wrapper takes both, and the trigger inside it gives its margin back.
+
+   Only the trigger's margin is undone, and this is why: level 2 renders the same
+   badge with no picker around it, as a direct child of this same column, and so
+   does the skeleton on this screen while the month is on the wire. For both of
+   those the base rule still works, which is what keeps the loading state and the
+   loaded state on the same line. */
+.budgetDetail__content > .react-datepicker-wrapper {
+ align-self: center;
+ margin-bottom: var(--space-4);
+}
+
+.budgetDetail__content .month-badge--trigger {
+ margin-bottom: 0;
 }
 
 /* The title carried a column of its own at 85%, which started it 24px to the
