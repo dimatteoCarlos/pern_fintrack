@@ -189,11 +189,15 @@ label,
    padding and the two borders as well; without them the content box came out
    two pixels short of the fourth line and the widest note clipped at 360px. */
 
-/* Typed rather than BEM: the same class dresses an input, a textarea and the
-   read-only div of the detail screens, and only the last two are multiline.
-   A modifier class would have to be remembered at every future call site. */
+/* Two hooks, because the element type only settles half of it.
+   Every textarea wearing this class is a note: the four edit schemas declare
+   inputType textarea for the note field alone. A div is not so lucky — the
+   detail screens dress the current balance and the desired date in the same
+   class, and giving every div four lines made three one-line values three
+   times taller than their content. The read-only note asks for the height by
+   name instead. */
 textarea.input__container,
-div.input__container {
+.input__container--note {
   height: calc(4lh + var(--space-2) + var(--border-width-thin) * 2);
 }
 
