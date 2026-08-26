@@ -56,6 +56,12 @@ import './styles/categoryDetail-styles.css';
 
 import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
 
+// Feature flag. The budget pencil stays wired but out of reach while the account
+// editor is the single write path for a budget. Flip to true to restore it — and
+// give the button the `dark` modifier, because the box around it is no longer the
+// cream panel its colours were written for.
+const SHOW_BUDGET_PENCIL = false;
+
 //========================
 // MAIN COMPONENT CATEGORY DETAIL
 //========================
@@ -150,6 +156,7 @@ function CategoryDetail() {
   //
   // The server accepts writing a past month; this is what refuses to offer it.
   const canEdit =
+    SHOW_BUDGET_PENCIL &&
     referenceMonth !== null &&
     currentMonth !== null &&
     referenceMonth >= currentMonth;
