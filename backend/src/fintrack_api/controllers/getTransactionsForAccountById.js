@@ -368,12 +368,9 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         text: `
       SELECT
         CAST(tr.account_balance_after_tr AS FLOAT) AS balance,
-        (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS local_date,
-        cr.currency_code
+        (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS local_date
       FROM
         transactions tr
-      JOIN
-        currencies cr ON cr.currency_id = tr.currency_id
       WHERE
         tr.account_id = $1
         AND tr.transaction_actual_date < ($2::timestamp AT TIME ZONE $3)
@@ -402,7 +399,7 @@ export const getTransactionsForAccountById = async (req, res, next) => {
 
       return {
         amount: prior.balance,
-        currency: prior.currency_code,
+        currency: accountInfoNeededResult[0].currency_code,
         date: prior.local_date,
       };
     };
@@ -449,6 +446,13 @@ export const getTransactionsForAccountById = async (req, res, next) => {
     // account_balance_before_tr, a column that exists nowhere, so the || fell
     // through on every call and reported the opening amount on the window's
     // start day, which in the common case precedes the account itself.
+    //
+    // Both ends take their currency from the account and never from the row
+    // that produced the figure. A balance is denominated in the accounting
+    // currency of its account; a movement carries the currency it was typed in
+    // on its FX columns, and asking it instead let the two halves of the panel
+    // disagree — measured as "$0.00" over "COP 0.00" on a pocket whose opening
+    // row had been written with the typed currency.
     const getInitialBalance = async () => {
       if (window.mode !== 'month') {
         return getBalanceCarriedIntoPeriod(period.periodStartDate);
@@ -458,14 +462,14 @@ export const getTransactionsForAccountById = async (req, res, next) => {
 
       return {
         amount: parseFloat(oldestTransaction.account_balance_after_tr),
-        currency: oldestTransaction.currency_code,
+        currency: accountInfoNeededResult[0].currency_code,
         date: oldestTransaction.transaction_local_date,
       };
     };
 
     const getFinalBalance = () => ({
       amount: parseFloat(transactions[0].account_balance_after_tr),
-      currency: transactions[0].currency_code,
+      currency: accountInfoNeededResult[0].currency_code,
       date:
         transactions[0].transaction_local_date ??
         formatDate(
