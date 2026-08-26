@@ -262,7 +262,23 @@ const AccountTransactionsList = ({
                           month_cumulative_spent,
                           formatNumberCountry,
                         )}
-                        {spentShare !== null && ` (${spentShare.toFixed(1)}%)`}
+                        {/* Coloured by the same rule as the summary above the
+                            list: past the budget is red, short of it is teal.
+                            One fact, one reading, wherever it is printed. */}
+                        {spentShare !== null && (
+                          <>
+                            {' '}
+                            <span
+                              className={`transaction-item__spentShare ${
+                                spentShare > 100
+                                  ? 'transaction-item__spentShare--over'
+                                  : 'transaction-item__spentShare--left'
+                              }`}
+                            >
+                              ({spentShare.toFixed(1)}%)
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}

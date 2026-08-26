@@ -370,6 +370,25 @@
   letter-spacing: var(--letter-spacing-wide);
 }
 
+/* The three readings of the semaphore, on the same three tokens the square at
+   the other end of the row already uses. Both come from one call to
+   budgetStatusLevel, so the number and the square cannot light differently for
+   the same row — which is the contradiction budgetStatus.ts exists to prevent.
+
+   Level 2 renders this same class from its own screen, so the colour lands on
+   both drill-down levels from one declaration. */
+.categoryRow__used--ok {
+  color: var(--color-status-ok);
+}
+
+.categoryRow__used--near {
+  color: var(--color-status-warning);
+}
+
+.categoryRow__used--over {
+  color: var(--color-status-alert);
+}
+
 .list__main__container {
   display: flex;
   flex-direction: column;

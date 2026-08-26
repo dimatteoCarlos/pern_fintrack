@@ -14,6 +14,7 @@ import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 import {
   budgetRemainWord,
   budgetSquareState,
+  budgetStatusLevel,
   isUnbudgeted,
 } from '../../../helpers/budgetStatus.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
@@ -314,8 +315,18 @@ function ListCategory({ previousRoute }: ListCategoryProp) {
                 {/* Under the pair on the line above, which is the pair it is a
                     share of. As a parenthesis after `left` it read as the share
                     remaining, which is the opposite figure. */}
+                {/* Coloured from the same call the square at the other end of
+                    the row makes, so the number and the square cannot light
+                    differently for one row. */}
                 {usedText && (
-                  <span className='categoryRow__used'>{usedText}</span>
+                  <span
+                    className={`categoryRow__used categoryRow__used--${budgetStatusLevel(
+                      executionPercentage,
+                      isOverBudget,
+                    )}`}
+                  >
+                    {usedText}
+                  </span>
                 )}
               </BoxRow>
             </div>

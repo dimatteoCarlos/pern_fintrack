@@ -105,6 +105,25 @@
  color: var(--color-content-on-dark-subtle);
 }
 
+/* The share of the budget the month had consumed by this row. Same tokens and
+   same threshold as the summary box above the list, so the top row of the list
+   and the summary never disagree on a colour.
+
+   font-size is restated because index.css sets one on the universal selector:
+   an inline element does not inherit the size of the line it sits in. */
+.transaction-item__spentShare {
+ font-size: inherit;
+ font-weight: inherit;
+}
+
+.transaction-item__spentShare--over {
+ color: var(--color-financial-negative);
+}
+
+.transaction-item__spentShare--left {
+ color: var(--color-financial-positive);
+}
+
 /* The row where the month's spend passed its budget. The stripe is what finds
    it while scrolling a long list; the line below is what explains it. */
 .transaction-item--overBudget {
