@@ -166,7 +166,15 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         -- The day the owner lived, not the day UTC saw. COALESCE mirrors the
         -- WHERE below, which also admits a row by created_at alone.
         (COALESCE(tr.transaction_actual_date, tr.created_at)
-          AT TIME ZONE COALESCE(u.timezone, 'UTC'))::date::text AS transaction_local_date
+          AT TIME ZONE COALESCE(u.timezone, 'UTC'))::date::text AS transaction_local_date,
+        -- The hour of that same day, on that same calendar. The row used to
+        -- carry the day alone, so a list showing a time had to read the raw
+        -- instant on the reader's clock and could disagree with its own date.
+        to_char(
+          COALESCE(tr.transaction_actual_date, tr.created_at)
+            AT TIME ZONE COALESCE(u.timezone, 'UTC'),
+          'HH24:MI'
+        ) AS transaction_local_time
       FROM
         transactions tr
       JOIN
@@ -229,6 +237,12 @@ export const getTransactionsForAccountById = async (req, res, next) => {
       SELECT
         tr.*, mt.movement_type_name, cr.currency_code, ua.account_name, CAST(ua.account_starting_amount AS FLOAT), ua.account_start_date,
         (tr.transaction_actual_date AT TIME ZONE $4)::date::text AS transaction_local_date,
+        -- The hour of that same day, on that same calendar. Same pair the
+        -- transaction detail already serves.
+        to_char(
+          tr.transaction_actual_date AT TIME ZONE $4,
+          'HH24:MI'
+        ) AS transaction_local_time,
         CASE WHEN act.account_type_name = 'category_budget' THEN
           CAST(SUM(CASE WHEN tr.movement_type_id IN (1, 6) THEN tr.amount ELSE 0 END)
             OVER (ORDER BY tr.transaction_actual_date ASC, tr.transaction_id ASC

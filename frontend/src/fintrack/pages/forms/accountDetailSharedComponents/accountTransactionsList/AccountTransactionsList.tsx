@@ -14,6 +14,7 @@ import { BUDGET_NEAR_LIMIT_PERCENT } from '../../../../helpers/budgetStatus';
 import {
   capitalize,
   currencyFormat,
+  formatDateToDDMMYYYY,
   // isDateValid,
 } from '../../../../helpers/functions';
 import { AccountTransactionType } from '../../../../types/responseApiTypes';
@@ -112,6 +113,7 @@ const AccountTransactionsList = ({
               currency_code,
               note,
               transaction_local_date,
+              transaction_local_time,
               month_cumulative_spent,
               account_balance_after_tr,
               // transaction_actual_date,
@@ -212,7 +214,19 @@ const AccountTransactionsList = ({
                           would be worse, since the stored value is an instant
                           and would name the neighbouring day near midnight. */}
                       <div className='paragraph'>
-                        Date: {transaction_local_date ?? DASH}
+                        {/* Day and hour both resolved by the server on the
+                            owner's calendar, so the two halves of this stamp
+                            cannot name different days. The time is omitted, not
+                            dashed: a row that predates the column still has a
+                            date worth reading. */}
+                        Date:{' '}
+                        {transaction_local_date
+                          ? `${formatDateToDDMMYYYY(transaction_local_date)}${
+                              transaction_local_time
+                                ? ` · ${transaction_local_time}`
+                                : ''
+                            }`
+                          : DASH}
                       </div>
                     </div>
                   </BoxRow>
