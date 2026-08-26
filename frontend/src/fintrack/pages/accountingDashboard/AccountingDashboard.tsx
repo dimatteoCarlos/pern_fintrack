@@ -652,45 +652,50 @@ const AccountingDashboard = () => {
         <TopWhiteSpace variant={'dark'} />
 
         <div className='accounting__container'>
-          <Link to={originRoute} className='accounting__header'>
-            <div className='accounting__header--icon'>
-              <LeftArrowSvg />
-            </div>
-            <div className='accounting__title'>{'Accounting'}</div>
-          </Link>
+          {/* The title and the filter travel as one pinned box. Two sticky
+              siblings would need the second offset by the first's height, and
+              that height is not a constant. */}
+          <div className='accounting__stickyHead'>
+            <Link to={originRoute} className='accounting__header'>
+              <div className='accounting__header--icon'>
+                <LeftArrowSvg />
+              </div>
+              <div className='accounting__title'>{'Accounting'}</div>
+            </Link>
 
-          {/* Always rendered, whatever the inventory holds: a field that
-              appears past a threshold shifts every group down the moment
-              it arrives. type='text' and not 'search' so the browser does
-              not draw a second clear button beside ours. */}
-          <div className='accountingSearch'>
-            <SearchSvg
-              className='accountingSearch__icon'
-              aria-hidden='true'
-              focusable='false'
-            />
-            <input
-              type='text'
-              className='accountingSearch__field'
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder='Search accounts'
-              aria-label='Search accounts by name'
-            />
-            {searchTerm && (
-              <button
-                type='button'
-                className='accountingSearch__clear'
-                onClick={() => setSearchTerm('')}
-                aria-label='Clear search'
-              >
-                <ClearSvg
-                  className='accountingSearch__clear-glyph'
-                  aria-hidden='true'
-                  focusable='false'
-                />
-              </button>
-            )}
+            {/* Always rendered, whatever the inventory holds: a field that
+                appears past a threshold shifts every group down the moment
+                it arrives. type='text' and not 'search' so the browser does
+                not draw a second clear button beside ours. */}
+            <div className='accountingSearch'>
+              <SearchSvg
+                className='accountingSearch__icon'
+                aria-hidden='true'
+                focusable='false'
+              />
+              <input
+                type='text'
+                className='accountingSearch__field'
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder='Search accounts'
+                aria-label='Search accounts by name'
+              />
+              {searchTerm && (
+                <button
+                  type='button'
+                  className='accountingSearch__clear'
+                  onClick={() => setSearchTerm('')}
+                  aria-label='Clear search'
+                >
+                  <ClearSvg
+                    className='accountingSearch__clear-glyph'
+                    aria-hidden='true'
+                    focusable='false'
+                  />
+                </button>
+              )}
+            </div>
           </div>
 
           {renderAccountGroups()}

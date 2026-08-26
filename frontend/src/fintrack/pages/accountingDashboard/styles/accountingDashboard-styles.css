@@ -36,6 +36,32 @@
  padding: 0 var(--space-2);
 }
 
+/* The title and the filter, pinned. The scroll happens over the cards, so the
+   control that filters them stays reachable however far the list runs.
+
+   Opaque on purpose: a transparent sticky box lets the cards scroll visibly
+   through it. --z-raised is enough because this route mounts outside <Layout />,
+   so nothing else on the screen is pinned.
+
+   The gap restates what .accounting__container gave these two as siblings, so
+   pinning them changes what scrolls and not what the header looks like. */
+.accounting__stickyHead {
+ position: sticky;
+ top: 0;
+ z-index: var(--z-raised);
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ width: 100%;
+ gap: var(--space-6);
+ padding-bottom: var(--space-3);
+ background-color: var(--color-surface-app);
+ /* The edge the cards pass under. Opacity alone reads as a seam only while
+    something is moving behind it; the line says where the pinned block ends
+    when the list is still. */
+ border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
 .accounting__header {
  position: relative;
  display: flex;
@@ -44,7 +70,9 @@
  width: 100%;
  max-width: var(--layout-width-min);
  padding: var(--space-4) 0;
- margin-bottom: var(--space-4);
+ /* No margin-bottom: .accounting__stickyHead separates the title from the
+    search with its own gap. A margin here would stack on top of that gap and
+    make the pinned block taller than the two rows need. */
 }
 
 /* The row is a Link, so the ring belongs to it. The rule it replaces put
