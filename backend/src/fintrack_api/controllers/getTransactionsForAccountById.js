@@ -9,8 +9,10 @@ import { pool } from '../../db/config/configDB.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import {
+  dayInZone,
   isCalendarDate,
   resolveZonedWindow,
+  todayInZone,
 } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { extractNoteFromDescription } from '../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
 
@@ -29,6 +31,23 @@ const monthBounds = (month) => {
     periodEndDate: new Date(Date.UTC(year, index, 0)).toISOString().split('T')[0],
   };
 };
+
+// The stretch of the month this account actually spans.
+//
+// A statement is bounded by the life of the thing it reports on. The month's own
+// bounds open before the account existed for the month it was created in, and
+// close on a day that has not happened for the month in course — and the panel
+// then contradicts itself, heading balances dated the 20th with a period running
+// to the 31st.
+//
+// Both sides are YYYY-MM-DD, so the comparisons are lexicographic and correct.
+const clampToAccountLife = (bounds, accountStartDay, today) => ({
+  periodStartDate:
+    bounds.periodStartDate < accountStartDay
+      ? accountStartDay
+      : bounds.periodStartDate,
+  periodEndDate: bounds.periodEndDate > today ? today : bounds.periodEndDate,
+});
 
 export const getTransactionsForAccountById = async (req, res, next) => {
   const backendColor = 'greenBright';
@@ -156,6 +175,46 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         }),
       };
     }
+
+    // The period this screen states. Resolved here and not beside the response
+    // so a month the account cannot report on is refused before the queries run.
+    //
+    // Only the month path is bounded. The legacy start/end path is left as it
+    // is because narrowing what it answers would change what three screens
+    // outside budget display today, not because it is going away: two of those
+    // three are pocket and debtor, whose histories are continuous and have no
+    // month to be bounded by.
+    let period;
+
+    if (window.mode === 'month') {
+      const accountStartDay = dayInZone(
+        accountInfoNeededResult[0].account_start_date,
+        window.timeZone,
+      );
+
+      period = clampToAccountLife(
+        monthBounds(window.month),
+        accountStartDay,
+        todayInZone(window.timeZone),
+      );
+
+      // The two bounds crossed: the month falls entirely before the account was
+      // opened, or entirely ahead of today. Neither is a statement this account
+      // can produce, and answering 200 with zeroes is what printed a January
+      // period over balances dated in August.
+      if (period.periodStartDate > period.periodEndDate) {
+        return RESPONSE(
+          res,
+          422,
+          `This account has no statement for ${window.month.slice(0, 7)}. It was opened on ${accountStartDay}.`,
+        );
+      }
+    } else {
+      period = {
+        periodStartDate: window.startDate,
+        periodEndDate: window.endDate,
+      };
+    }
     //-------------------------------
     //--main query for transactions by account_id and user_id getting account_balance_after_tr
     //--rule: there must exist at least one transaction (account-opening). It should not be possible for an account to exist without this single recorded transaction
@@ -281,15 +340,6 @@ export const getTransactionsForAccountById = async (req, res, next) => {
 
     // Función para formatear fechas consistentemente/consistent date format
     const formatDate = (date) => date.toISOString().split('T')[0];
-
-    // The period labels: the month's own bounds, or the requested range.
-    const period =
-      window.mode === 'month'
-        ? monthBounds(window.month)
-        : {
-            periodStartDate: window.startDate,
-            periodEndDate: window.endDate,
-          };
 
     // The last balance known BEFORE the month, with the date it was struck.
     //
