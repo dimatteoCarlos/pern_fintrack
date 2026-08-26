@@ -15,14 +15,21 @@
 
   /* background-color: red; */
   gap: 1rem;
-  top: 7.5rem;
   width: 81.11%; /*ORIGINAL*/
   width: 88%; /*CHANGED*/
-  padding: 0.75rem;
+  /* None. The horizontal inset made the hero 21.6px narrower than the panel, so
+     the panel's top edge showed on both sides of the card and read as a seam
+     crossing it. The vertical one was breathing room for a fill that no longer
+     paints; all it did was displace the hero, and it is what forced this board's
+     anchor to carry a --space-3 the other two boards' did not. */
+  padding: 0;
   /* border:1px solid red; */
   margin: 0 auto;
   align-self: center;
-  background-color: #1b1b1b;
+  /* The frame stops painting: its fill only ever showed as a 10.8px band around
+     the content, and that band was the seam. The two halves below carry the
+     surface now. */
+  background-color: transparent;
 }
 
 /*afecta solo a budget*/
@@ -78,22 +85,15 @@
 
    width: 100% because in the flow it is measured against .budgetLayout rather
    than the page, and 88% of 88% would leave it narrower than the card below. */
+/* Position, height and anchor come from the shared board-hero rule in
+   generalStyles.css, so the four boards cannot drift apart again. */
 .budgetLayout .total__container {
-  position: static;
-  /* The base rule centres the box by hand: left: 50% with translateX(-50%),
-     which is how an absolute box is centred. left died with the position but a
-     transform applies to any box, so the hero went on being painted half its
-     own width to the left of where the flow had put it. The column centres it
-     now. */
-  transform: none;
-  margin-top: calc(
-    var(--header-total-height) - var(--header-height) - var(--space-3)
-  );
   width: 100%;
-  height: auto;
-  min-height: var(--navbar-top-height);
   gap: var(--space-2);
   padding: var(--space-2);
+  /* The upper half of one card cut in two. Square at the bottom, where the cut
+     is; the lower half closes the shape. */
+  background-color: var(--color-surface-deep);
 }
 
 /* 1.75rem above the button was set when it followed a list that ended wherever
@@ -194,6 +194,12 @@
   /* The bottom is not clearance, only air between the last button and the
      navbar, and the navbar carries its own. */
   padding-bottom: var(--space-2);
+  /* The lower half of the card, and what closes it. The sides restore the inset
+     the panel gave up. */
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+  background-color: var(--color-surface-deep);
+  border-radius: 0 0 1rem 1rem;
 }
 
 /* One row per figure, so the row rule above is reused rather than widened. */
@@ -213,7 +219,17 @@
   font-weight: var(--font-weight-regular);
   letter-spacing: var(--letter-spacing-wide);
   color: var(--color-content-secondary);
-  margin-left: var(--space-2);
+  margin-left: var(--space-1);
+}
+
+/* The strip was the only place on the board where a figure outweighed its own
+   label: labels at 600, figures at 700. The label is what the eye should find
+   first, so the figures drop to regular and the labels keep their weight.
+
+   Scoped, because tracker and pocket wear displayScreen--result too. */
+.budgetLayout .displayScreen--result,
+.budgetLayout .budgetHero__remainWord {
+  font-weight: var(--font-weight-regular);
 }
 
 /* The word that says which side of the budget the remainder falls on. It takes
