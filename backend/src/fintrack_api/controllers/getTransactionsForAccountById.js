@@ -127,11 +127,10 @@ export const getTransactionsForAccountById = async (req, res, next) => {
     //           those are not monthly domains — a savings pocket's history is a
     //           continuum. It stays until those three screens are revisited.
     //
-    // Legacy note: on the start/end path initialBalance is NOT the balance at
-    // the start of the window. It reads account_balance_before_tr, which is not
-    // a column anywhere, so the || always falls through to the account's opening
-    // amount. Left in place deliberately: fixing it here would silently change
-    // what three screens outside budget display.
+    // Both paths report a period bounded by the life of the account and an
+    // initial balance dated by something that happened. What still differs is
+    // which figure "initial" names, and the comment above getInitialBalance says
+    // why the window decides that.
     const { start, end, month } = req.query;
 
     // Explicit over silent precedence: a request naming both windows has not
@@ -177,21 +176,20 @@ export const getTransactionsForAccountById = async (req, res, next) => {
     }
 
     // The period this screen states. Resolved here and not beside the response
-    // so a month the account cannot report on is refused before the queries run.
+    // so a window the account cannot report on is refused before the queries run.
     //
-    // Only the month path is bounded. The legacy start/end path is left as it
-    // is because narrowing what it answers would change what three screens
-    // outside budget display today, not because it is going away: two of those
-    // three are pocket and debtor, whose histories are continuous and have no
-    // month to be bounded by.
+    // Both paths are bounded now. A continuum needs it as much as a month does:
+    // the start/end window comes from the browser's clock, so it opened a
+    // pocket's period before the pocket existed and closed it on a day that has
+    // not happened.
+    const accountStartDay = dayInZone(
+      accountInfoNeededResult[0].account_start_date,
+      window.timeZone,
+    );
+
     let period;
 
     if (window.mode === 'month') {
-      const accountStartDay = dayInZone(
-        accountInfoNeededResult[0].account_start_date,
-        window.timeZone,
-      );
-
       period = clampToAccountLife(
         monthBounds(window.month),
         accountStartDay,
@@ -210,10 +208,27 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         );
       }
     } else {
-      period = {
-        periodStartDate: window.startDate,
-        periodEndDate: window.endDate,
-      };
+      // The clamp bounds what is REPORTED, not what is queried: no row can be
+      // dated outside the life of its account, so narrowing the WHERE below
+      // would exclude nothing and would touch a statement that works.
+      period = clampToAccountLife(
+        {
+          periodStartDate: window.startDate,
+          periodEndDate: window.endDate,
+        },
+        accountStartDay,
+        todayInZone(window.timeZone),
+      );
+
+      // Same crossing as the month branch: a window lying entirely before the
+      // account was opened is not a statement this account can produce.
+      if (period.periodStartDate > period.periodEndDate) {
+        return RESPONSE(
+          res,
+          422,
+          `This account has no statement for ${window.startDate} to ${window.endDate}. It was opened on ${accountStartDay}.`,
+        );
+      }
     }
     //-------------------------------
     //--main query for transactions by account_id and user_id getting account_balance_after_tr
@@ -341,14 +356,14 @@ export const getTransactionsForAccountById = async (req, res, next) => {
     // Función para formatear fechas consistentemente/consistent date format
     const formatDate = (date) => date.toISOString().split('T')[0];
 
-    // The last balance known BEFORE the month, with the date it was struck.
+    // The last balance known BEFORE the boundary, with the date it was struck.
     //
-    // A month with no movements is not a month with no money. Reporting the
-    // account's opening amount on a fabricated boundary date, which is what the
-    // legacy branch does, tells the user something that never happened; the
-    // balance they actually carried into the month is the one left by the last
-    // transaction before it.
-    const getBalanceCarriedIntoMonth = async () => {
+    // A period with no movements is not a period with no money, and the balance
+    // carried in is the one the last transaction before the boundary left.
+    //
+    // The boundary is a parameter because both windows have one: the month's
+    // first day, or the clamped start of the range.
+    const getBalanceCarriedIntoPeriod = async (boundaryDay) => {
       const PRIOR_BALANCE_QUERY = {
         text: `
       SELECT
@@ -365,7 +380,7 @@ export const getTransactionsForAccountById = async (req, res, next) => {
       ORDER BY
         tr.transaction_actual_date DESC, tr.transaction_id DESC
       LIMIT 1`,
-        values: [accountId, window.month, window.timeZone],
+        values: [accountId, boundaryDay, window.timeZone],
       };
 
       const [prior] = await queryFn(
@@ -373,8 +388,8 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         PRIOR_BALANCE_QUERY.values,
       );
 
-      // No transaction before the month means the account had not moved yet, so
-      // its opening amount and its start date ARE the real answer here.
+      // No transaction before the boundary means the account had not moved yet,
+      // so its opening amount and its start date ARE the real answer here.
       if (!prior) {
         return {
           amount: parseFloat(accountInfoNeededResult[0].account_starting_amount),
@@ -394,26 +409,16 @@ export const getTransactionsForAccountById = async (req, res, next) => {
 
     //NO TRANSACTIONS
     if (transactions.length === 0) {
-      // Both balances are the same figure: nothing moved, so nothing changed.
-      const carried =
-        window.mode === 'month'
-          ? await getBalanceCarriedIntoMonth()
-          : {
-              amount: parseFloat(
-                accountInfoNeededResult[0].account_starting_amount,
-              ),
-              currency: accountInfoNeededResult[0].currency_code,
-              date: period.periodStartDate,
-            };
+      // Both balances are the same figure AND the same date: nothing moved, so
+      // nothing changed, and re-dating the closing one to the period's edge
+      // would put a balance on a day no movement touched.
+      const carried = await getBalanceCarriedIntoPeriod(period.periodStartDate);
 
       const data = {
         totalTransactions: 0,
         summary: {
           initialBalance: carried,
-          finalBalance:
-            window.mode === 'month'
-              ? carried
-              : { ...carried, date: period.periodEndDate },
+          finalBalance: carried,
           ...period,
         },
         transactions: [],
@@ -429,33 +434,27 @@ export const getTransactionsForAccountById = async (req, res, next) => {
 
     //Funciones para obtener balances usando accountInfoNeededResult ================
     //
-    // Both ends name a movement that really happened, and both amounts are the
-    // stored account_balance_after_tr of that movement — an audit fact written
-    // at transaction time, never re-derived here. The rows arrive newest first,
-    // so the last element is the month's first transaction.
+    // The window decides which question "initial" answers, and the two answers
+    // are not interchangeable.
     //
-    // "Initial" is therefore the balance left BY the month's first movement, not
-    // the one carried into the month. V1 decision 45: every figure on this panel
-    // has to be a row that exists, and no stored column holds the balance before
-    // a transaction.
+    // month: the balance left BY the month's first movement, read from the
+    // stored account_balance_after_tr of a row that exists. V1 decision 45 — no
+    // stored column holds the balance before a transaction. The rows arrive
+    // newest first, so the last element is that first movement.
     //
-    // The range branch is the legacy one, unchanged including its defect: it
-    // reads a column that does not exist, so it always reports the account's
-    // opening amount on the window's start date. Three screens outside budget
-    // display that today and this commit does not move them.
-    const getInitialBalance = () => {
-      const oldestTransaction = transactions[transactions.length - 1];
-
+    // range: the balance carried INTO the window, which is what the label says
+    // and what a continuous history — a pocket, a debtor — needs. It reads the
+    // movement before the boundary rather than the first one inside it, so
+    // decision 45 does not bind it. What this replaces read
+    // account_balance_before_tr, a column that exists nowhere, so the || fell
+    // through on every call and reported the opening amount on the window's
+    // start day, which in the common case precedes the account itself.
+    const getInitialBalance = async () => {
       if (window.mode !== 'month') {
-        return {
-          amount: parseFloat(
-            oldestTransaction.account_balance_before_tr ||
-              accountInfoNeededResult[0].account_starting_amount,
-          ),
-          currency: oldestTransaction.currency_code,
-          date: window.startDate,
-        };
+        return getBalanceCarriedIntoPeriod(period.periodStartDate);
       }
+
+      const oldestTransaction = transactions[transactions.length - 1];
 
       return {
         amount: parseFloat(oldestTransaction.account_balance_after_tr),
@@ -481,7 +480,7 @@ export const getTransactionsForAccountById = async (req, res, next) => {
     const data = {
       totalTransactions: transactions.length,
       summary: {
-        initialBalance: getInitialBalance(),
+        initialBalance: await getInitialBalance(),
         finalBalance: getFinalBalance(),
         ...period,
       },
