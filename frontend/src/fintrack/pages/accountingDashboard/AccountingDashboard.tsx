@@ -275,7 +275,6 @@ const AccountingDashboard = () => {
   const groupResponseMessage = useMemo(
     () => ({
       error: `Error loading accounts:`,
-      isLoading: `...loading`,
       notFound: `No accounts found. Create first account! 🎯`,
     }),
     [],
@@ -289,14 +288,13 @@ const AccountingDashboard = () => {
       showToast(`${groupResponseMessage.error} ${error}`, 'error');
     }
 
-    if (isLoading) {
-      showToast(`${groupResponseMessage.isLoading}`, 'info');
-    }
+    // No loading toast: the skeleton already reports the wait, and a toast for
+    // it fires on every mount and covers the jump button while it shows.
 
     if (apiData?.data.accountList.length === 0) {
       showToast(`${groupResponseMessage.notFound}`, 'warning');
     }
-  }, [isLoading, error, apiData, showToast, groupResponseMessage]);
+  }, [error, apiData, showToast, groupResponseMessage]);
   //-----------------------------
   //============================
   // 🆕 ACCOUNT TYPE UTILITIES
@@ -425,7 +423,6 @@ const AccountingDashboard = () => {
       account,
     });
 
-    showToast(`Menu opened for ${account.account_name}`, 'info');
     //----------
     // console.log(
     //   'Menu clicked for account:',
