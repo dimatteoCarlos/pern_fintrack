@@ -16,7 +16,9 @@
  min-height: 100vh;
  padding: var(--space-8) 0 var(--space-4) 0;
  background-color: var(--color-surface-app);
- scroll-behavior: smooth;
+ /* No scroll-behavior here: this element declares no overflow, so it is not a
+    scrolling box and the property is ignored on it. It lives on :root in
+    index.css, which is the box that actually scrolls this route. */
 }
 
 .accounting__container {
@@ -602,11 +604,74 @@ button {
  }
 }
 
-@media (prefers-reduced-motion: reduce) {
- .accounting__layout {
-  scroll-behavior: auto;
- }
+/* ── The jump to either end of the inventory ─────────────────────────────────
+   fixed and not sticky: it is anchored to the window, not to a scroll box, and
+   it must not move with the column it floats over. Bottom right because that is
+   where a thumb reaches on a phone, and this route mounts outside <Layout />, so
+   there is no navbar to clear.
 
+   Round and 44px: the shape every icon control in the app takes, at the sizing
+   scale's minimum tappable area. Filled rather than outlined — it floats over
+   the cards and an outline would read as one more card edge. */
+.accounting__scrollJump {
+ position: fixed;
+ right: var(--space-4);
+ bottom: var(--space-4);
+ z-index: var(--z-dropdown);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--size-touch-target);
+ height: var(--size-touch-target);
+ padding: 0;
+ border: none;
+ border-radius: var(--radius-full);
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+ box-shadow: var(--shadow-md);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), transform var(--motion-fast);
+}
+
+.accounting__scrollJump:hover {
+ background-color: var(--color-content-on-dark);
+}
+
+.accounting__scrollJump:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.accounting__scrollJump:active {
+ background-color: var(--color-content-on-dark-subtle);
+}
+
+.accounting__scrollJump:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* One drawing for both directions, the same asset the group headings rotate.
+   A second file would be the same arrow upside down. */
+.accounting__scrollJump-glyph {
+ width: var(--size-icon);
+ height: var(--size-icon);
+ transition: transform var(--motion-fast);
+}
+
+.accounting__scrollJump-glyph--up {
+ transform: rotate(180deg);
+}
+
+/* The asset hardcodes its stroke, so the button's colour only reaches the
+   drawing by naming the path. */
+.accounting__scrollJump-glyph path {
+ stroke: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .accounting__scrollJump,
+ .accounting__scrollJump-glyph,
  .accounting__header--icon,
  .accountingSearch,
  .accountingSearch__clear,

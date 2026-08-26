@@ -139,6 +139,61 @@ const AccountingDashboard = () => {
   // console.log('location', {location},'previousRoute', {previousRoute},'state', location.state, 'originRoute', location.state?.originRoute)
 
   // -----------------------------
+  // ⬆️⬇️ SCROLL JUMP
+  // One control, two destinations. Which one it offers is decided by where the
+  // reader already is: past a screenful, the way back is up; before it, the far
+  // end is what a long inventory makes expensive to reach.
+  //
+  // Half of what can actually be scrolled, not half a viewport: on a list barely
+  // taller than the window the bottom is reached before a viewport is travelled,
+  // so a viewport-relative threshold leaves the arrow pointing down at the end
+  // of the list and the click does nothing.
+  const [jumpsToTop, setJumpsToTop] = useState(false);
+  // Nothing to scroll is also nothing to jump to, and the control takes itself
+  // off screen rather than offering a trip of zero pixels.
+  const [canJump, setCanJump] = useState(false);
+
+  useEffect(() => {
+    const decideDirection = () => {
+      // innerHeight is fractional on a zoomed viewport, so a document that does
+      // not scroll can still report a fraction of a pixel of distance.
+      const scrollableDistance =
+        document.documentElement.scrollHeight - window.innerHeight;
+
+      setCanJump(scrollableDistance >= 1);
+      setJumpsToTop(window.scrollY > scrollableDistance / 2);
+    };
+
+    decideDirection();
+    window.addEventListener('scroll', decideDirection, { passive: true });
+    // Rotating the device changes innerHeight and expanding a group changes
+    // scrollHeight. Neither fires a scroll event, and both move the threshold.
+    window.addEventListener('resize', decideDirection);
+
+    const watchDocumentHeight = new ResizeObserver(decideDirection);
+    watchDocumentHeight.observe(document.documentElement);
+
+    return () => {
+      window.removeEventListener('scroll', decideDirection);
+      window.removeEventListener('resize', decideDirection);
+      watchDocumentHeight.disconnect();
+    };
+  }, []);
+
+  const jumpToEdge = useCallback(() => {
+    // Honoured here and not only in CSS: scroll-behavior does not govern a
+    // programmatic scroll that names its own behavior.
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+
+    window.scrollTo({
+      top: jumpsToTop ? 0 : document.documentElement.scrollHeight,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
+  }, [jumpsToTop]);
+
+  // -----------------------------
   // 🔄 FETCHING - ACCOUNTS LIST
   //get all basic info accounts
   const { apiData, isLoading, error } = useFetch<AccountByTypeResponseType>(
@@ -336,8 +391,9 @@ const AccountingDashboard = () => {
       return;
     }
 
-    // No `behavior`: the default defers to the scrolling box's own
-    // scroll-behavior, so a reduced-motion setting is still honoured.
+    // No `behavior`: the default defers to the scrolling box, which for this
+    // route is the document, and :root in index.css declares smooth there —
+    // with the reduced-motion override beside it, so the setting is honoured.
     card.scrollIntoView({ block: 'center' });
     // The card is a div; its trigger is the only focusable node inside it.
     card.querySelector('button')?.focus({ preventScroll: true });
@@ -639,6 +695,30 @@ const AccountingDashboard = () => {
 
           {renderAccountGroups()}
         </div>
+
+        {/* Sits outside the container so its offsets are measured against the
+            viewport and not against a column that is capped and centred.
+            Unmounted rather than hidden: a control that cannot act should not
+            hold a tab stop either. */}
+        {canJump && (
+          <button
+            type='button'
+            className='accounting__scrollJump'
+            onClick={jumpToEdge}
+            aria-label={
+              jumpsToTop ? 'Scroll to top of list' : 'Scroll to bottom of list'
+            }
+            title={jumpsToTop ? 'Back to top' : 'Go to the end'}
+          >
+            <ArrowDownLightSvg
+              className={`accounting__scrollJump-glyph${
+                jumpsToTop ? ' accounting__scrollJump-glyph--up' : ''
+              }`}
+              aria-hidden='true'
+              focusable='false'
+            />
+          </button>
+        )}
 
         {/* 🚨 TOAST NOTIFICATION */}
         <Toast
