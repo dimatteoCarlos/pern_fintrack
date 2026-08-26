@@ -58,7 +58,7 @@
 
 .transaction-date {
   /* box__subtitle default styles apply */
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
   color: #a0a0a0;
   margin-left: 0.8rem; /* Space before the date */
 }
@@ -92,7 +92,7 @@
 /* Restates its size for the reason index.css documents: a font-size on the
    universal selector matches a span and beats the line it sits in. */
 .transaction-item__figureLabel {
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-sm);
  font-weight: var(--font-weight-regular);
  color: var(--color-content-on-dark-subtle);
 }
@@ -100,7 +100,7 @@
 /* The month's spend up to and including this row. Smaller than the balance
    above it: the balance is an accounting fact, this one is an indicator. */
 .transaction-item__accumulated-spent {
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-sm);
  font-weight: var(--font-weight-regular);
  color: var(--color-content-on-dark-subtle);
 }
@@ -148,7 +148,7 @@
  display: inline-flex;
  align-items: center;
  gap: var(--space-2);
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-sm);
  color: var(--color-status-alert);
 }
 
@@ -157,7 +157,7 @@
  display: inline-flex;
  align-items: center;
  gap: var(--space-2);
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-sm);
  color: var(--color-status-warning);
 }
 
