@@ -19,7 +19,8 @@ This is the only kind that is written from now on.
 
 ### The one-shot — `src/db/migrations/supabase/`
 
-`001_production_alignment.sql`, executed against production on 2026-08-21.
+`001_production_alignment.sql`, **written 2026-08-21, rehearsed 2026-08-26,
+and not yet executed against production.**
 
 It exists because production was created before migrations `007` to `017` were
 written. It held the owner's data but not the structure those files add, and the
@@ -31,8 +32,15 @@ The file reproduces the **effect** the chain would have had, guarded step by
 step, and writes the ledger rows itself. It carries its own `BEGIN`/`COMMIT`
 because `runMigrations.js` is not what executes it.
 
-**It is history, not a tool. It is never run again.** After it, production and
-local share the same chain.
+**Production is still unaligned today.** The dump taken 2026-08-21 at 23:04 has
+110 columns across 17 tables, no `budget_monthly_allocations` and an empty
+ledger — exactly the state this file is written to correct. No deployment since
+has changed that, and none can: a `CREATE TABLE IF NOT EXISTS` over a table that
+already exists is a no-op, so only the `ALTER TABLE`s in this file move it.
+
+**It runs once, by hand, and only then is it history.** The rehearsal of
+2026-08-26 against a restored copy says it will run clean; section 5 is what
+remains to be done. After it, production and local share the same chain.
 
 ---
 
@@ -118,8 +126,9 @@ Production is Supabase. The connection string lives in `backend/.env` as
 `DATABASE_URI_SUPABASE`, commented out on purpose, and in the Vercel project as
 `DATABASE_URI`.
 
-The procedure below is what was executed on 2026-08-21. Each step exists because
-of something that can go wrong; none of them is ceremony.
+The procedure below is what the alignment file was rehearsed against on
+2026-08-26, and what its execution has to follow. Each step exists because of
+something that can go wrong; none of them is ceremony.
 
 ### 5.1 Rehearse on a copy of production data
 

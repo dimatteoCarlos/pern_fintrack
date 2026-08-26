@@ -25,8 +25,16 @@
 -- (110 columns) and a database built by the chain (141). It is not a
 -- transcription of migrations 010 to 017: those carry starting assumptions that
 -- hold on a database the chain built and are false here. See step 2.
--- Known limit of that measurement: it compared columns, not constraints,
--- indexes, triggers or defaults. Those are verified separately.
+-- That measurement compared columns only. The rest was verified on 2026-08-26,
+-- by diffing the rehearsed copy against the chain-built database on constraints,
+-- indexes, triggers and defaults: triggers identical, nothing missing. Three
+-- differences, none of them a defect:
+--   account_name_case_backup_013 exists only on the chain — migration 013 is
+--     deliberately not reproduced here; see step 8.
+--   app_initialization exists only on the aligned copy — createTables.js makes
+--     it at runtime, which is why production has it and the chain does not.
+--   user_roles' CHECK renders differently (ARRAY[...]::text[] against one cast
+--     per element) and accepts the same four strings.
 --
 -- BEGIN/COMMIT ARE IN THIS FILE, unlike 010 to 017. Nothing wraps it —
 -- runMigrations.js is not what executes it. Do not remove them.
@@ -40,6 +48,16 @@
 --   6 before 7 — step 7 makes two currency-id columns NOT NULL with no default,
 --     so step 6's three-column INSERT would fail once they exist. A second run
 --     is that same situation, which is why step 6 skips with NOT EXISTS.
+--
+-- REHEARSED 2026-08-26, against a copy restored from the production dump of
+-- 2026-08-21 23:04. All eight steps ran as one transaction through to COMMIT
+-- with ON_ERROR_STOP=1 and no errors: 110 columns across 17 tables became 141
+-- across 18. Step 2 filled 94 rows, step 3 dated 94, step 4 one pocket, step 5
+-- none, step 6 created the table with 94 allocations, step 7 updated 94, step 8
+-- wrote the 17 ledger rows. A second pass returned zero on every statement and
+-- left 141 columns, so the idempotency above is measured, not asserted.
+-- What the rehearsal could NOT exercise: step 5, because debtor_accounts holds
+-- no rows in production. It is verified structurally and nothing further.
 
 -- UP
 
@@ -50,13 +68,15 @@ BEGIN;
 -- ---------------------------------------------------------------------------
 -- A period boundary means nothing without the calendar it is read on.
 --
--- DECISION REQUIRED BEFORE RUNNING. DEFAULT 'UTC' reproduces exactly what the
--- code does today, and it is also what step 6 uses to decide which month each
--- backfilled budget lands in. If the owner's real zone is not UTC, add the
--- statement below to this step so it runs inside this same transaction:
---   UPDATE users SET timezone = 'America/Caracas';
--- The pre-flight query in the plan says whether any of the 94 accounts actually
--- shifts month. If none does, leave this alone.
+-- DECIDED 2026-08-26: DEFAULT 'UTC' stands and no UPDATE is added here.
+-- The default reproduces exactly what the code does today, and it is also what
+-- step 6 uses to decide which month each backfilled budget lands in. The
+-- pre-flight query was run on the restored copy: of the 94 budgeted accounts,
+-- not one changes month under America/Caracas or America/Bogota. Naming a zone
+-- would therefore move no data while asserting an owner zone the app has never
+-- asked for. If a future measurement does shift a month, the statement to add
+-- to this step, inside this same transaction, is:
+--   UPDATE users SET timezone = '<IANA zone>';
 ALTER TABLE users
  ADD COLUMN IF NOT EXISTS timezone TEXT NOT NULL DEFAULT 'UTC';
 
