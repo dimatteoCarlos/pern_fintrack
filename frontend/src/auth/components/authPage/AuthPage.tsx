@@ -39,8 +39,6 @@ import { useAuthStore } from '../../stores/useAuthStore';
 
 import styles from './styles/authPage.module.css';
 
-import fintrackDemo from '../../../assets/fintrackDemo.png';
-
 //--MAIN COMPONENT AUTHENTICACION ACCESS PAGE - AuthPage.tsx
 export default function AuthPage() {
  
@@ -262,23 +260,13 @@ useEffect(() => {
 // 🎨 RENDER
 // =============
   return (
-    <div className={styles.authPageContainer}
-    
-    style={{
-    backgroundImage: `
-       linear-gradient(
-        rgba(0,0,0,var(--opacidad-black-start)),
-        rgba(0,0,0,var(--opacidad-black-end))
-      ),
-      url(${fintrackDemo})
-    `
-  }}
-    
-    >
+    <div className={styles.authPageContainer}>
       {/* {Navbar} */}
       <nav className={styles.navbar}>
        <div className={styles.logoContainer} onClick={openSigninModalHandler}>
-        <span><Logo /></span>
+        {/* No wrapper: a span puts the svg back on a text baseline and the mark
+            rides 2px above the menu button it is meant to line up with. */}
+        <Logo />
        </div>
 
         <button
@@ -296,12 +284,24 @@ useEffect(() => {
           }
          `}
         >
-          <li className={styles.navItem} onClick={openSigninModalHandler}>
-            Sign in
+          <li>
+            <button
+              type='button'
+              className={styles.navItem}
+              onClick={openSigninModalHandler}
+            >
+              Sign in
+            </button>
           </li>
 
-          <li className={styles.navItem} onClick={openSignupModalHandler}>
-            Sign up
+          <li>
+            <button
+              type='button'
+              className={styles.navItem}
+              onClick={openSignupModalHandler}
+            >
+              Sign up
+            </button>
           </li>
         </ul>
       </nav>
