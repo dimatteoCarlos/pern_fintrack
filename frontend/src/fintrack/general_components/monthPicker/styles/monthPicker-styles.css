@@ -3,7 +3,8 @@
 
    Four screens render it: the new-category form states the month an allocation
    is written to, and the three budget levels state the month being reported.
-   Only one of the four can change it, and that one carries a chevron.
+   Two of them change it — budget level 1 and the account detail of level 3 — and
+   those two carry a chevron.
 
    Imported by whoever renders the badge, picker or not. */
 
@@ -67,9 +68,21 @@
  color: var(--color-accent);
 }
 
+/* The same inversion on the app surface, where the outline is already light. */
+.month-badge--dark.month-badge--trigger:hover {
+ background-color: var(--color-accent);
+ border-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
 .month-badge--trigger:focus-visible {
  outline: var(--border-width-thick) solid var(--color-content-primary);
  outline-offset: var(--border-width-thick);
+}
+
+/* The ring above is #141414 on a #0d0f12 surface. Only its colour changes. */
+.month-badge--dark.month-badge--trigger:focus-visible {
+ outline-color: var(--color-border-inverse);
 }
 
 /* Pressed: the cream fill, one step short of the full inversion above, so the
@@ -79,6 +92,14 @@
  background-color: var(--color-accent);
  border-color: var(--color-content-primary);
  color: var(--color-content-primary);
+}
+
+/* The dark badge's hover is already the cream fill, so its press goes the other
+   way: dimmer than the hover, never lighter. */
+.month-badge--dark.month-badge--trigger:active {
+ background-color: var(--color-content-on-dark-subtle);
+ border-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
 }
 
 .month-badge--trigger:disabled {

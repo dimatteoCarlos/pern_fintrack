@@ -23,20 +23,20 @@ function SummaryDebtorDetailBox({ bubleInfo }: SummaryDetailPropType) {
 
   return (
     <>
-      <div className='summary__container'>
-        <div className='summary__title'>{title}</div>
-        <div className='summary__data'>
-          <div className='summary__data--amount'>
+      <div className='summaryDebtor__container'>
+        <div className='summaryDebtor__title'>{title}</div>
+        <div className='summaryDebtor__data'>
+          <div className='summaryDebtor__data--amount'>
             <span> {getCurrencySymbol(currency_code ?? defaultCurrency)}</span>
             <span>{Number(amount).toFixed(2)}</span>
           </div>
 
-          <div className='summary__data--subtitle1'>{subtitle1}</div>
+          <div className='summaryDebtor__data--subtitle1'>{subtitle1}</div>
 
-          <div className='summary__data--status '>
+          <div className='summaryDebtor__data--status '>
             {/* status: */}
             <StatusSquare alert={type == 'Lender' ? 'alert' : ''} />
-            <div className='summary__data--subtitle2'>{type}</div>
+            <div className='summaryDebtor__data--subtitle2'>{type}</div>
           </div>
         </div>
       </div>

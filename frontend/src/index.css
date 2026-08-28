@@ -32,6 +32,11 @@ body,
      it, a section that grows past the viewport narrows the page by the
      scrollbar's width and every centred layout shifts as it appears. */
   scrollbar-gutter: stable;
+  /* Governs only the jumps the code fires — scrollIntoView, scrollTo, an
+     anchor — never the wheel or the finger. It lives here because the document
+     is the scrolling box for every route; a page element that declares no
+     overflow is not one, and the property is ignored on it. */
+  scroll-behavior: smooth;
 
   /* line-height: 1.5; */
   font-synthesis: weight;
@@ -40,6 +45,13 @@ body,
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* The reader asked the system for no animation, and a glide is one. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
 }
 
 a {

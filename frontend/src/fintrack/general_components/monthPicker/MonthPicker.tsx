@@ -18,19 +18,23 @@ import './styles/monthPicker-styles.css';
 import { formatBudgetMonthLabel } from '../../helpers/functions';
 
 type MonthPickerProps = {
- // First of the month being reported, as the server resolved it. null while the
- // answer is on the wire: there is no month to show yet, so there is no month
- // to guess either.
+ // First of the month being reported, as the server resolved it.
  month: string | null;
- // The latest month that may be asked for. null holds the picker open-ended
- // rather than inventing a ceiling.
+ // The latest month that may be asked for.
  currentMonth: string | null;
+ // The earliest month that may be asked for. Optional because not every caller
+ // has one: the budget board covers every account, so it has no single opening
+ // date to bound itself by.
+ minMonth?: string | null;
+ // The surface the badge lands on, not its own colour.
+ surface?: 'dark' | 'light';
  onSelect: (month: string) => void;
 };
 
-// The floor the project's existing picker already uses. There is no lower bound
-// in the contract: a month before the first allocation resolves to the empty
-// state, which is owed anyway.
+// The floor when the caller names none. A month before the first allocation
+// resolves to the empty state, which is owed anyway — but a caller holding one
+// account does have a real floor, and offering a month before it promises a
+// reading of an account that did not exist.
 const MIN_MONTH = new Date(1900, 0, 1);
 
 // Parsed by parts. new Date('2026-08-01') is UTC midnight, which west of UTC is
@@ -49,19 +53,35 @@ const toDate = (month: string | null) => {
 const toMonthParam = (date: Date) =>
  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-// react-datepicker clones this element with its own onClick and ref. It is a
+// react-datepicker clones this element with its own handlers and ref. It is a
 // button and not the read-only input the day picker uses: this one opens a
 // menu, and a chevron is what tells the two badges of the drill-down apart —
-// levels 2 and 3 show the same month and cannot change it.
+// level 2 shows the month and cannot change it.
+//
+// The keyboard handlers are forwarded and not swallowed: Escape closes the panel
+// through the library's own onKeyDown, so a trigger that accepts onClick alone
+// opens a menu the keyboard cannot dismiss. They are named one by one rather
+// than spread, because the library also injects input-only attributes that a
+// button cannot carry.
 const MonthTrigger = React.forwardRef<
  HTMLButtonElement,
- { label?: string; onClick?: () => void }
->(({ label = '', onClick }, ref) => (
+ {
+  label?: string;
+  surface?: 'dark' | 'light';
+  onClick?: () => void;
+  onKeyDown?: React.KeyboardEventHandler<HTMLButtonElement>;
+  onFocus?: React.FocusEventHandler<HTMLButtonElement>;
+  onBlur?: React.FocusEventHandler<HTMLButtonElement>;
+ }
+>(({ label = '', surface = 'light', onClick, onKeyDown, onFocus, onBlur }, ref) => (
  <button
   type='button'
   ref={ref}
   onClick={onClick}
-  className='month-badge month-badge--light month-badge--trigger'
+  onKeyDown={onKeyDown}
+  onFocus={onFocus}
+  onBlur={onBlur}
+  className={`month-badge month-badge--${surface} month-badge--trigger`}
   aria-label={`Change month, currently ${label}`}
  >
   <span className='month-badge__label'>{label}</span>
@@ -73,9 +93,16 @@ const MonthTrigger = React.forwardRef<
 
 MonthTrigger.displayName = 'MonthTrigger';
 
-function MonthPicker({ month, currentMonth, onSelect }: MonthPickerProps) {
+function MonthPicker({
+ month,
+ currentMonth,
+ minMonth,
+ surface = 'light',
+ onSelect,
+}: MonthPickerProps) {
  const selected = toDate(month);
  const maxDate = toDate(currentMonth);
+ const minDate = toDate(minMonth ?? null) ?? MIN_MONTH;
 
  const handleChange = React.useCallback(
   (date: Date | null) => {
@@ -90,7 +117,7 @@ function MonthPicker({ month, currentMonth, onSelect }: MonthPickerProps) {
  if (!selected) {
   return (
    <div
-    className='month-badge month-badge--light month-badge--skeleton'
+    className={`month-badge month-badge--${surface} month-badge--skeleton`}
     aria-hidden='true'
    />
   );
@@ -103,11 +130,13 @@ function MonthPicker({ month, currentMonth, onSelect }: MonthPickerProps) {
    showMonthYearPicker
    showFullMonthYearPicker
    dateFormat='MMMM yyyy'
-   minDate={MIN_MONTH}
+   minDate={minDate}
    maxDate={maxDate ?? undefined}
    shouldCloseOnSelect
    popperClassName='monthPicker__popper'
-   customInput={<MonthTrigger label={formatBudgetMonthLabel(month)} />}
+   customInput={
+    <MonthTrigger label={formatBudgetMonthLabel(month)} surface={surface} />
+   }
   />
  );
 }

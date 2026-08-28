@@ -48,16 +48,30 @@
 --   6 before 7 — step 7 makes two currency-id columns NOT NULL with no default,
 --     so step 6's three-column INSERT would fail once they exist. A second run
 --     is that same situation, which is why step 6 skips with NOT EXISTS.
+--   8 before 9 — step 9 records 003_transactions.sql as applied. That claim is
+--     only true once the foreign keys it declares match, which is step 8. In
+--     the other order the ledger states a schema the database does not have.
 --
 -- REHEARSED 2026-08-26, against a copy restored from the production dump of
--- 2026-08-21 23:04. All eight steps ran as one transaction through to COMMIT
--- with ON_ERROR_STOP=1 and no errors: 110 columns across 17 tables became 141
--- across 18. Step 2 filled 94 rows, step 3 dated 94, step 4 one pocket, step 5
--- none, step 6 created the table with 94 allocations, step 7 updated 94, step 8
--- wrote the 17 ledger rows. A second pass returned zero on every statement and
--- left 141 columns, so the idempotency above is measured, not asserted.
+-- 2026-08-21 23:04. Every step ran as one transaction through to COMMIT with
+-- ON_ERROR_STOP=1 and no errors: 110 columns across 17 tables became 141 across
+-- 18. Step 2 filled 94 rows, step 3 dated 94, step 4 one pocket, step 5 none,
+-- step 6 created the table with 94 allocations, step 7 updated 94, and the
+-- ledger step wrote its 17 rows. A second pass returned zero on every statement
+-- and left 141 columns, so the idempotency above is measured, not asserted.
 -- What the rehearsal could NOT exercise: step 5, because debtor_accounts holds
 -- no rows in production. It is verified structurally and nothing further.
+-- The rehearsal predates step 8: the file had eight steps then, the ledger was
+-- the eighth, and the foreign-key step did not yet exist.
+--
+-- STEP 8 NEVER RAN FROM THIS FILE, and never will. It was added 2026-08-27,
+-- five days after this file was applied to Supabase on 2026-08-22, and
+-- runMigrations.js skips any filename already in its ledger. The change reached
+-- production as chain migration
+-- 018_alter_transactions_account_fks_to_restrict.sql, applied 2026-08-27.
+-- The step is kept here so this file still builds a correct database from a
+-- production-shaped copy; it is no longer the path by which the live database
+-- receives anything.
 
 -- UP
 
@@ -510,7 +524,59 @@ END
 $$;
 
 -- ---------------------------------------------------------------------------
--- 8. The ledger, last
+-- 8. transactions -> user_accounts: CASCADE becomes RESTRICT
+-- ---------------------------------------------------------------------------
+-- The three foreign keys are declared inside CREATE TABLE IF NOT EXISTS, in
+-- 003_transactions.sql and in createTables.js. Production's table exists, so
+-- both statements are skipped and the corrected rule never arrives: IF NOT
+-- EXISTS protects the table, not its constraints. Only ALTER TABLE moves it.
+--
+-- Why it matters: a cascade from user_accounts deleted the counterparty's own
+-- ledger rows, not just the deleted account's. Three accounts in the local
+-- database no longer reconcile against their own rows for that reason.
+-- RESTRICT is a guard rail, not the integrity mechanism - integrity comes from
+-- the deletion engine. All it guarantees is that nothing reaches a physical
+-- delete without passing through that engine, which detaches every reference
+-- before it drops the row.
+--
+-- The other six foreign keys to user_accounts stay untouched: they are 1:1
+-- extension tables and their cascade is correct.
+ALTER TABLE transactions
+ DROP CONSTRAINT IF EXISTS transactions_account_id_fkey,
+ DROP CONSTRAINT IF EXISTS transactions_source_account_id_fkey,
+ DROP CONSTRAINT IF EXISTS transactions_destination_account_id_fkey;
+
+ALTER TABLE transactions
+ ADD CONSTRAINT transactions_account_id_fkey
+  FOREIGN KEY (account_id) REFERENCES user_accounts(account_id)
+  ON DELETE RESTRICT ON UPDATE CASCADE,
+ ADD CONSTRAINT transactions_source_account_id_fkey
+  FOREIGN KEY (source_account_id) REFERENCES user_accounts(account_id)
+  ON DELETE RESTRICT ON UPDATE CASCADE,
+ ADD CONSTRAINT transactions_destination_account_id_fkey
+  FOREIGN KEY (destination_account_id) REFERENCES user_accounts(account_id)
+  ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Asserts three, and only three. The constraint names above are PostgreSQL's
+-- defaults, measured on the local database; if production named them anything
+-- else the DROP finds nothing and the ADD leaves the old CASCADE constraint in
+-- place beside the new one, which counts six and aborts here.
+DO $$
+BEGIN
+ IF (SELECT count(*) FROM pg_constraint
+      WHERE conrelid = 'transactions'::regclass
+       AND confrelid = 'user_accounts'::regclass) <> 3
+ OR (SELECT count(*) FROM pg_constraint
+      WHERE conrelid = 'transactions'::regclass
+       AND confrelid = 'user_accounts'::regclass
+       AND confdeltype = 'r') <> 3 THEN
+  RAISE EXCEPTION
+   'transactions foreign keys to user_accounts are not exactly three RESTRICT';
+ END IF;
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- 9. The ledger, last
 -- ---------------------------------------------------------------------------
 -- Production's migrations table is empty with its sequence at 5, so a runner
 -- pointed here would consider every chain file pending. These rows record that
@@ -572,6 +638,24 @@ COMMIT;
 --  '017_budget_allocation_fx_columns.sql',
 --  'supabase/001_production_alignment.sql'
 -- );
+--
+-- The foreign keys return to CASCADE. This is the one DOWN statement that
+-- restores a defect rather than a state: it re-opens the path that deletes a
+-- counterparty's own ledger rows. Run it only to undo the whole file.
+-- ALTER TABLE transactions
+--  DROP CONSTRAINT IF EXISTS transactions_account_id_fkey,
+--  DROP CONSTRAINT IF EXISTS transactions_source_account_id_fkey,
+--  DROP CONSTRAINT IF EXISTS transactions_destination_account_id_fkey;
+-- ALTER TABLE transactions
+--  ADD CONSTRAINT transactions_account_id_fkey
+--   FOREIGN KEY (account_id) REFERENCES user_accounts(account_id)
+--   ON DELETE CASCADE ON UPDATE CASCADE,
+--  ADD CONSTRAINT transactions_source_account_id_fkey
+--   FOREIGN KEY (source_account_id) REFERENCES user_accounts(account_id)
+--   ON DELETE CASCADE ON UPDATE CASCADE,
+--  ADD CONSTRAINT transactions_destination_account_id_fkey
+--   FOREIGN KEY (destination_account_id) REFERENCES user_accounts(account_id)
+--   ON DELETE CASCADE ON UPDATE CASCADE;
 --
 -- DROP TABLE IF EXISTS budget_monthly_allocations CASCADE;
 --

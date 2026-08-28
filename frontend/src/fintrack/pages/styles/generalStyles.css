@@ -223,6 +223,42 @@ body {
  /*test*/ /*try calc or clap and put height, Top and Bottom as a function of topSpaceHeight and head layout height*/
 }
 
+/* The hero of a board: the slab that begins where the header's content ends and
+   crosses the white header's bottom edge into the dark body. Four boards, two
+   component class names, one rule — it lives here and not in each page because
+   the anchor is built entirely from the two header tokens above, and four copies
+   of it drifted: Budget and Pocket used the tokens, Debts and Overview a literal
+   7.5rem, which left them 10px lower at 650px of viewport height and 29px lower
+   at 852px, since a literal does not follow --topSpaceHeight between the bands.
+
+   .total__container is only Budget's and Pocket's hero, .bigBox__container only
+   Debts' and Overview's; neither reaches any other screen. The selectors are
+   scoped by layout anyway, to hold (0,2,0) — each page's stylesheet is imported
+   by its own layout component, so their injection order depends on the route the
+   session entered by, and a class-level rule here would win or lose that race
+   against the absolute positioning in tracker-style.css.
+
+   margin-top cancels the header's fixed height to land on --header-total-height.
+   min-height is the distance from there to the header's bottom edge plus one gap,
+   so a hero crosses however little it carries: Budget's declared minimum was
+   --navbar-top-height, the same 70px Pocket's hero measures, so neither crossed
+   by rule — only Budget's content happened to be tall enough. */
+.budgetLayout .total__container,
+.pocketLayout .total__container,
+.debtsLayout .bigBox__container,
+.overviewLayout .bigBox__container {
+ position: static;
+ /* The base rules centre the box the way an absolute box is centred, with
+    left: 50% and a translate. left dies with the position; a transform does not,
+    and would go on painting the hero half its own width to the left. */
+ transform: none;
+ height: auto;
+ margin-top: calc(var(--header-total-height) - var(--header-height));
+ min-height: calc(
+  var(--header-height) - var(--header-total-height) + var(--space-4)
+ );
+}
+
 .content__presentation {
   display: flex;
   flex-direction: column;

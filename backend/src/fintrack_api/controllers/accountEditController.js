@@ -9,8 +9,6 @@ import {
 } from '../../utils/helpers.js';
 
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
-import { budgetAllocationService } from '../services/budget_services/services/budgetAllocationService.js';
-import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 
 /**
  * 🎯 EDITION LOGIC: PARTIALLY UPDATES AN ACCOUNT
@@ -87,11 +85,6 @@ export const patchAccountById = async (req, res, next) => {
 
     const specificFields = {};
 
-    // The budget change is applied after BEGIN, not here: the switch below runs
-    // outside the transaction, and the allocation must commit or roll back with
-    // the cba.budget write it mirrors.
-    let budgetChange = null;
-
     // 3. Set editable specific fields per account type
     switch (account_type_name) {
       case 'pocket_saving':
@@ -109,21 +102,9 @@ export const patchAccountById = async (req, res, next) => {
         break;
 
       case 'category_budget': {
-        if (payload.budget !== undefined) {
-          // The account editor never writes 0. The database allows it because
-          // that is how "stop budgeting" is expressed, but only the budget
-          // screen's remove action sends it, and it does not come through here.
-          const amount = Number(payload.budget);
-
-          if (!Number.isFinite(amount) || amount <= 0) {
-            const message = 'Budget amount must be greater than 0.';
-            console.warn(pc['red'](message));
-            return res.status(400).json({ status: 400, message });
-          }
-
-          specificFields.budget = amount;
-          budgetChange = { amount };
-        }
+        // The budget is not edited here. It is a four-part decision — amount,
+        // currency, month and range — owned by PUT /budget/accounts/:id/current,
+        // so a budget key in this payload is ignored.
 
         // The parts are normalized too, not only the name derived from them.
         // Storing 'Comida' and deriving 'comida/...' puts the same word in two
@@ -335,21 +316,6 @@ export const patchAccountById = async (req, res, next) => {
       await client.query(specificQuery, specificSqlValues);
     }
 
-    // cba.budget above is the legacy column, and it is still what the frontend
-    // reads. The allocation is what the budget module reads. Both are written
-    // here so the two agree until the frontend migrates.
-    // Read on the transaction's client, so the month is resolved in the zone
-    // this transaction sees.
-    const budget_allocation = budgetChange
-      ? await budgetAllocationService.applyAllocationForAccount(
-          client,
-          userId,
-          accountId,
-          budgetChange.amount,
-          await getUserTimeZone(client, userId),
-        )
-      : null;
-
     await client.query('COMMIT'); // Commit if both updates were successful
 
     // 5. Deliver updated account to frontend (sync)
@@ -365,9 +331,6 @@ export const patchAccountById = async (req, res, next) => {
         account_id: accountId,
         ...userAccountFields,
         ...specificFields,
-        // Only when a row was actually written. null would read as "the budget
-        // was cleared" on a PATCH that never touched it.
-        ...(budget_allocation ? { budget_allocation } : {}),
       }, //returns partial updated account info
     });
   } catch (error) {

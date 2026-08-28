@@ -1,6 +1,6 @@
 /* frontend/src/fintrack/pages/forms/debtorDetail/summaryDebtorDetailBox/styles/summaryDebtorDetailBox-style.css */
 
-.summary__container {
+.summaryDebtor__container {
   background-color: var(--creme);
   color: var(--dark);
   font-weight: 600;
@@ -10,13 +10,13 @@
   align-items: start;
   justify-content: space-between;
 }
-.summary__title {
+.summaryDebtor__title {
   font-size: 1.25rem;
   color: var(--dark);
   font-weight: 500;
   text-transform: capitalize;
 }
-.summary__data {
+.summaryDebtor__data {
   width: 50%;
   display: flex;
   flex-direction: column;
@@ -24,25 +24,25 @@
   gap: 0.25rem;
 }
 
-.summary__data--amount {
+.summaryDebtor__data--amount {
   display: flex;
   justify-content: space-between;
   width: 85%;
   letter-spacing: 1.5px;
   border-bottom: 1px solid #141414;
 }
-.summary__data--subtitle1 {
+.summaryDebtor__data--subtitle1 {
   color: #5b5b5b;
   font-size: 0.75rem;
 }
-.summary__data--status {
+.summaryDebtor__data--status {
   display: flex;
   gap: 0.5rem;
   align-items: center;
   justify-content: center;
 }
 
-.summary__data--subtitle2 {
+.summaryDebtor__data--subtitle2 {
   color: #5b5b5b;
   font-size: 0.75rem;
   text-transform: capitalize;

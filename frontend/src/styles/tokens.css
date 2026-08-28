@@ -26,6 +26,9 @@
  /* The other end of the elevation pass: a rectangle that reads as set into the
     panel holding it, the way raised reads as floating over the ground. */
  --color-surface-sunken: #0c0c0c;
+ /* The floor of the elevation scale, below sunken. The board cards use it, and
+    sunken cannot: sunken already fills the controls that sit on top of them. */
+ --color-surface-deep: #000000;
  --color-surface-inverse: #ffffff;
  --color-surface-panel: #e8e4da;
  --color-surface-overlay: rgba(17, 24, 39, 0.7);
@@ -53,7 +56,10 @@
  --color-status-ok: #5b8c93;
  --color-status-alert: #c97474;
  --color-status-error: #fc0c0c;
- --color-status-warning: #ffa500;
+ /* Was the CSS keyword `orange`, full saturation, which carried 10.63:1 against
+    the board card while ok and alert carried 5.62 and 6.23 — so the warning read
+    louder than the alert. Muted to 6.73:1 to sit between its two siblings. */
+ --color-status-warning: #b8894e;
  --color-status-success: #008000;
  --color-status-info: #60b1d6;
  --color-amount-positive: #5b8c93;

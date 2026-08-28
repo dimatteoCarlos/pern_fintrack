@@ -2,7 +2,13 @@
 
 // 🎯 IMPORTS - REACT, ROUTING, EXTERNAL DEPENDENCIES AND TYPES
 import { ZodType } from 'zod';
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 
 // 📚 HOOKS AND STORES - CUSTOM REACT HOOKS AND STATE MANAGEMENT
@@ -218,6 +224,12 @@ export function EditAccount(): JSX.Element {
     [formData, accountFields, runFieldValidation, setFormData],
   );
 
+  // 📸 THE VALUES AS THEY WERE SERVED
+  // A ref and not state: it is written once per load, and nothing on screen
+  // should re-render because it changed. It is the left-hand side of the
+  // comparison that decides whether there is anything to save.
+  const pristineDataRef = useRef<GenericEditFormData | null>(null);
+
   // 🚀 INITIAL DATA LOADING - SYNC API RESPONSE TO FORM STATE
   useEffect(() => {
     if (accountData && accountFields.length > 0) {
@@ -234,9 +246,25 @@ export function EditAccount(): JSX.Element {
               : (val as GenericEditFormData[keyof GenericEditFormData]);
         }
       });
+      pristineDataRef.current = initialData;
       setFormData(initialData);
     }
   }, [accountData, accountFields, setFormData]);
+
+  // ✍️ IS THERE ANYTHING TO SAVE
+  // By value against the snapshot, not a "has been touched" flag: a field
+  // edited and put back to its original value is not a change. areValuesEqual
+  // is the same helper the derived fields use, and it already resolves Date,
+  // which the effect above parses out of a string.
+  const isDirty = useMemo(() => {
+    const pristine = pristineDataRef.current;
+    if (!pristine) return false;
+
+    return accountFields.some(
+      (field: FieldConfigType) =>
+        !areValuesEqual(formData[field.fieldName], pristine[field.fieldName]),
+    );
+  }, [formData, accountFields]);
 
   // 🎮 INPUT HANDLER FACTORIES - HIGHER-ORDER FUNCTIONS FOR FIELD TYPES
   const handleTextChange = useCallback(
@@ -264,6 +292,12 @@ export function EditAccount(): JSX.Element {
   // 📤 FORM SUBMISSION HANDLER - VALIDATION AND API CALL
   const onSubmitForm = async (e: React.MouseEvent) => {
     e.preventDefault();
+
+    // The button is already disabled in this case. This covers the paths the
+    // button does not: a submit fired from the keyboard reaches the handler
+    // whatever the control looks like.
+    if (!isDirty) return;
+
     if (!accountType) {
       console.error('Submission failed: account type is not defined.');
       return;
@@ -613,7 +647,7 @@ export function EditAccount(): JSX.Element {
               <div className='submit__btn__container'>
                 <FormSubmitBtn
                   onClickHandler={onSubmitForm}
-                  disabled={isFormDisabled || !accountId}
+                  disabled={isFormDisabled || !accountId || !isDirty}
                 >
                   Save Changes
                 </FormSubmitBtn>

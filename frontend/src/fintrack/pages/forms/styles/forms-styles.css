@@ -171,6 +171,45 @@ label,
   box-sizing: border-box;
 }
 
+/* An account note holds 90 characters and the rule above gives it one line, so
+   from character 27 the text was drawn past the bottom border. Four lines is
+   what those 90 need at 360px, measured with the width of the 0 glyph: the
+   digit is wider than any lowercase letter in Outfit, so no combination of
+   characters overflows. The box only widens above 360px, so four lines cover
+   every breakpoint.
+
+   Fixed rather than elastic, on purpose: the box looks the same empty as full,
+   which is what tells a form field apart from a block of text.
+
+   lh is one line box, so the height follows the font instead of restating a
+   pixel count that would have to be kept in step with it. Where lh is not
+   supported the declaration is dropped and the box keeps today's height.
+
+   The rule above sets box-sizing: border-box, so the height has to carry the
+   padding and the two borders as well; without them the content box came out
+   two pixels short of the fourth line and the widest note clipped at 360px. */
+
+/* Two hooks, because the element type only settles half of it.
+   Every textarea wearing this class is a note: the four edit schemas declare
+   inputType textarea for the note field alone. A div is not so lucky — the
+   detail screens dress the current balance and the desired date in the same
+   class, and giving every div four lines made three one-line values three
+   times taller than their content. The read-only note asks for the height by
+   name instead. */
+textarea.input__container,
+.input__container--note {
+  height: calc(4lh + var(--space-2) + var(--border-width-thin) * 2);
+}
+
+textarea.input__container {
+  /* The height is fixed by decision, and the browser default of `both` also
+     lets the control be dragged out of the form's width. */
+  resize: none;
+  /* maxLength stops a 91st character, but a manual line break can still push
+     the text past four lines. */
+  overflow-y: auto;
+}
+
 /* Dark forms placeholder baseline */
 .input__container::placeholder {
   color: rgb(151, 151, 151);

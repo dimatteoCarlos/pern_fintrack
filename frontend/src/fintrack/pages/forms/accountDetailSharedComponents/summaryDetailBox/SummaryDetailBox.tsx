@@ -35,10 +35,17 @@ type SummaryDetailPropType = {
   // the caller knows whether its box names something editable — level 2's box
   // is a category total, which no single write governs.
   action?: React.ReactNode;
+  // The surface the box lands on, not its own colour: the cream panel of the
+  // budget levels, the dark app surface of the account detail.
+  surface?: 'dark' | 'light';
 };
 
 //MAIN UI COMPONENT: SummaryDetailBox.tsx
-function SummaryDetailBox({ bubleInfo, action }: SummaryDetailPropType) {
+function SummaryDetailBox({
+  bubleInfo,
+  action,
+  surface = 'light',
+}: SummaryDetailPropType) {
   const {
     title,
     amount,
@@ -83,7 +90,9 @@ function SummaryDetailBox({ bubleInfo, action }: SummaryDetailPropType) {
 
   return (
     <>
-      <div className='summary__container summary__container--stacked'>
+      <div
+        className={`summary__container summary__container--${surface} summary__container--stacked`}
+      >
         <div className='summary__titleRow'>
           <div className='summary__title'>{title}</div>
           {action}
@@ -121,11 +130,11 @@ function SummaryDetailBox({ bubleInfo, action }: SummaryDetailPropType) {
                     <>
                       &nbsp;
                       <span
-                        className={
+                        className={`summary__percentage ${
                           isOver
                             ? 'summary__percentage--over'
                             : 'summary__percentage--left'
-                        }
+                        }`}
                       >
                         ({remainPercentage.toFixed(1)}%)
                       </span>
@@ -139,7 +148,21 @@ function SummaryDetailBox({ bubleInfo, action }: SummaryDetailPropType) {
           <div className='summary__data--subtitle1'>
             {subtitle1} {numberFormatCurrency(amount1, 2, currency_code)}
             {spentPercentage !== null && (
-              <>&nbsp;({spentPercentage.toFixed(1)}%)</>
+              <>
+                &nbsp;
+                {/* The same colours and the same condition as the remainder's
+                    share: one fact, one reading. Grey on this half while the
+                    other half was red said the row disagreed with itself. */}
+                <span
+                  className={`summary__percentage ${
+                    isOver
+                      ? 'summary__percentage--over'
+                      : 'summary__percentage--left'
+                  }`}
+                >
+                  ({spentPercentage.toFixed(1)}%)
+                </span>
+              </>
             )}
           </div>
         </div>

@@ -58,7 +58,7 @@
 
 .transaction-date {
   /* box__subtitle default styles apply */
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
   color: #a0a0a0;
   margin-left: 0.8rem; /* Space before the date */
 }
@@ -92,7 +92,7 @@
 /* Restates its size for the reason index.css documents: a font-size on the
    universal selector matches a span and beats the line it sits in. */
 .transaction-item__figureLabel {
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-sm);
  font-weight: var(--font-weight-regular);
  color: var(--color-content-on-dark-subtle);
 }
@@ -100,9 +100,28 @@
 /* The month's spend up to and including this row. Smaller than the balance
    above it: the balance is an accounting fact, this one is an indicator. */
 .transaction-item__accumulated-spent {
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-sm);
  font-weight: var(--font-weight-regular);
  color: var(--color-content-on-dark-subtle);
+}
+
+/* The share of the budget the month had consumed by this row. Same tokens and
+   same threshold as the summary box above the list, so the top row of the list
+   and the summary never disagree on a colour.
+
+   font-size is restated because index.css sets one on the universal selector:
+   an inline element does not inherit the size of the line it sits in. */
+.transaction-item__spentShare {
+ font-size: inherit;
+ font-weight: inherit;
+}
+
+.transaction-item__spentShare--over {
+ color: var(--color-financial-negative);
+}
+
+.transaction-item__spentShare--left {
+ color: var(--color-financial-positive);
 }
 
 /* The row where the month's spend passed its budget. The stripe is what finds
@@ -129,7 +148,7 @@
  display: inline-flex;
  align-items: center;
  gap: var(--space-2);
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-sm);
  color: var(--color-status-alert);
 }
 
@@ -138,7 +157,7 @@
  display: inline-flex;
  align-items: center;
  gap: var(--space-2);
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-sm);
  color: var(--color-status-warning);
 }
 

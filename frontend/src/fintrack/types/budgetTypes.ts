@@ -62,9 +62,8 @@ export type BudgetWriteResponse = {
  overwrittenMonths: string[];
 };
 
-// The budget_allocation key of POST /accounts and PATCH /accounts/:accountId.
-// Three fields whichever path wrote the row; the key is absent when the save
-// wrote none, which is the case where the amount sent is already in force.
+// The budget_allocation key of POST /accounts. The account PATCH no longer
+// writes a budget, so it no longer returns this key.
 export type AccountBudgetAllocation = {
  accountId: number;
  budgetMonth: string;
