@@ -201,7 +201,12 @@
  --size-icon: 2rem;
  --size-badge: 2.5rem;
  --size-control-height: 3.125rem;
- --size-touch-target: 2.75rem; /* minimum tappable area, 44px */
+ /* Minimum tappable area. In px on purpose: it is bounded by a finger, not by
+    the type scale, so it must not follow --font-size-root, which clamps 14-16px
+    and only reaches 16 at a 767px viewport. As 2.75rem this resolved to 38.5px
+    on a 360px phone and 44px on a desktop -- smallest exactly where a finger
+    is the input device. */
+ --size-touch-target: 44px;
  /* Auxiliary controls that sit in a bar over a list: search, sort, toggles.
     32px clears the 24px WCAG AA floor (SC 2.5.8) and gives up the 44px of the
     AAA one (SC 2.5.5), which is the trade a one-row bar costs at 360px. */
