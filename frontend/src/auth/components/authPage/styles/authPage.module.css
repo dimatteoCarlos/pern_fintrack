@@ -147,50 +147,55 @@ button {
   opacity: 0.5;
   pointer-events: none;
 }
-/*MODAL*/
+/* MODAL
+   Scrim and panel anatomy from the budget editor (budgetEditModal-styles.css:
+   1-70): scrim on --color-surface-overlay at --z-overlay, panel at --z-modal.
+
+   The card is the Tracker's, not an invention: .cards__presentation--tracker
+   in tracker-style.css:128-134 is white with a 1rem radius, and that is what
+   tokens.css:14-18 prescribes for the whole product -- a near-black page with
+   white or cream cards on it. The paper texture that rule also carries is
+   deliberately left out: it is a 43KB request on the first paint of the app,
+   and it signals a surface you write entries on, which a gate is not.
+
+   No border. A white card on a scrimmed page separates by luminance, and the
+   shadow, which read as nothing when the panel was dark, does work here.
+
+   The panel owns the padding. It used to be split between this rule and
+   .auth-container, which declared a second card inside this one -- its own
+   border, its own #f9f9f9 ground and its own radius -- so the two paddings
+   stacked and a grey rectangle showed through the gap. */
 .modalOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.26);
+  inset: 0;
+  z-index: var(--z-overlay);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 100;
+  background-color: var(--color-surface-overlay);
   backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 
 .modalContent {
-  background-color: #fff;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-  width: 90%; /* Ajusta el ancho según necesites */
-  max-width: 400px;
+  z-index: var(--z-modal);
+  width: var(--layout-content-width);
+  max-width: 26rem;
+  margin: var(--space-4);
+  max-height: 90dvh;
+  overflow-y: auto;
+  /* Less at the top than at the sides: the header row sits there and its own
+     touch target already carries the space. */
+  padding: var(--space-3) var(--space-5) var(--space-5);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-inverse);
+  box-shadow: var(--shadow-overlay);
+  color: var(--color-content-primary);
 }
 
-.modalContent h2 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  text-align: center;
-  color: #333;
-}
-
-.closeButton {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  font-size: 1rem;
-  margin-top: 1rem;
-}
-.closeButton:hover {
-  background-color: #c82333;
-}
+/* The title had two owners: this descendant selector and
+   .auth-container__title. This one won on specificity, so the class that
+   names the element was the one being ignored. The class owns it now. */
 
 /* Media query para pantallas más pequeñas */
 @media (max-width: 480px) {
@@ -249,13 +254,16 @@ button {
   }
 
 
-  /***************/
+  /* Near full width, still a card. The panel keeps a side padding: at 360px the
+     fields would otherwise touch both screen edges. The radius and the margin
+     stay, so the modal reads as a card on the phone too instead of as half a
+     sheet -- it used to drop both while keeping a 90dvh cap, which left a strip
+     of navbar above and a strip of the photo below and committed to neither. */
   .modalContent {
     width: 100%;
     max-width: 100%;
-    padding: 0;
-    margin: 0;
-    border-radius: 0;
+    margin: var(--space-3);
+    padding: var(--space-3) var(--space-4) var(--space-4);
   }
 }
 

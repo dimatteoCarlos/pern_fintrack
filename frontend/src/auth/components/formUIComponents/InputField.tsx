@@ -46,6 +46,11 @@ export type InputFieldProps = {
   /** 🔧 Extra CSS class names */
   className?: string;
 
+  /** 🎨 How the field is drawn. Not a colour and not a surface: both the auth
+   * modal and the profile menu sit on white, what differs is that the auth one
+   * is filled. Defaults to default, which is every consumer outside auth. */
+  variant?: 'default' | 'filled';
+
   /** 🎨 Inline styles */
   style?: React.CSSProperties;
 
@@ -83,6 +88,7 @@ const InputField: React.FC<InputFieldProps> = React.memo(
     helpText,
     id,
     className = '',
+    variant = 'default',
     style,
     showContentToggle = false,
     isContentVisible = false,
@@ -122,7 +128,7 @@ const InputField: React.FC<InputFieldProps> = React.memo(
     ================================ 🌟 */
     return (
       <div
-        className={`${styles.inputContainer} ${className} ${
+        className={`${styles.inputContainer} ${styles[variant]} ${className} ${
           hasError ? styles.hasError : ''
         }`}
         style={style}

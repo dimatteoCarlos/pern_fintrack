@@ -45,35 +45,78 @@ Prevents layout shift when messages appear/disappear*/
   pointer-events: none; /* Prevents interaction when hidden */
 }
 /********************/
+/* The form, not a card. It used to paint a second card inside .modalContent --
+   its own border, its own #f9f9f9 ground, its own radius, padding, width cap
+   and scroller -- so two paddings stacked, two width caps competed and the grey
+   rectangle showed through the gap. The panel owns all of that now; what is
+   left here is the column and its rhythm. */
 .auth-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.5rem; 
-  background-color: #f9f9f9;
-  
-  width: 95%; 
-  
+  width: 100%;
   box-sizing: border-box;
-  margin: 0rem auto;
-  
-  height: auto; 
-  max-height: 100vh;
-  max-height: 100dvh;
-  overflow-y:auto;
-
-  max-width: 24rem;
-  padding:  1.25rem; 
-  gap:0.75rem;
+  gap: var(--space-3);
 }
 
+/* HEADER
+   The brand mark on the left, closing on the right, one row, inside the card.
+   Closing used to be a disc pinned to the viewport corner, which put it over
+   the landing navbar -- outside the panel it closes, aligned with the page
+   behind the scrim rather than with anything in the modal. Here the alignment
+   is structural and holds at every viewport.
+
+   The visible "Sign In" / "Sign Up" heading is gone with it: the submit button
+   and the toggle link below both name the mode, and both are above the fold.
+   The heading survives for assistive technology only, in .auth-container__title
+   below, so the dialog is not left unnamed. */
+.auth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--space-3);
+}
+
+/* The mark keeps its intrinsic 104x24 and its own #141414, which is exactly
+   --color-content-primary, so nothing is restated here and no size is invented
+   for it. The wrapper only stops the inline box from adding a descender gap. */
+.auth-header__logo {
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* The rule separates chrome from form, so it has to reach the panel edges.
+   Inset by the panel padding it reads as a divider between two content blocks,
+   which is not what it is. */
+.auth-header__rule {
+  height: var(--border-width-thin);
+  background-color: var(--color-border-strong);
+  opacity: 0.15;
+  margin-inline: calc(-1 * var(--space-5));
+  width: calc(100% + var(--space-5) * 2);
+}
+
+/* The heading the screen reader gets. Every field is required, so the six
+   identical stars said nothing; this line says it once. */
 .auth-container__title {
-  font-size: 1.8rem; /* 1.8 * 16px = 28.8px */
-  color: #333;
-  font-weight: 600;
-  text-align: center;
-  line-height: 1.2;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.auth-container__note {
+  width: 100%;
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-style: italic;
+  color: var(--color-content-secondary);
 }
 
 .auth-container__errorMsg {
@@ -97,16 +140,31 @@ Prevents layout shift when messages appear/disappear*/
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin-bottom:1rem;
-  gap:0.75rem;
+  margin-bottom: var(--space-4);
+  gap: var(--space-3);
 }
 /*-----------------*/
 .auth-form__remember-me{
  display: flex;
  align-items: center;
- gap:0.75rem;
+ gap: var(--space-3);
  cursor: pointer;
  user-select:none;
+}
+
+/* The Tracker's perforation (.bar, tracker-style.css:108-109), splitting the
+   sign up form where it actually changes subject: credentials above, the
+   person's name below. Six identical rows in a column read as one striped
+   block, which is what this breaks.
+
+   Its side notches (.circleL / .circleR) do not come across: they are painted
+   in --bgBodyColor to fake a cut in the card, and behind a modal the ground is
+   the scrim over the landing photo, which has no flat colour to paint with. */
+.auth-form__separator {
+  width: 100%;
+  height: 0;
+  border-bottom: var(--border-width-thick) dashed var(--color-surface-panel);
+  margin-block: var(--space-2);
 }
 
 /*Name and Lastname fields*/
@@ -114,7 +172,7 @@ Prevents layout shift when messages appear/disappear*/
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 0.75rem;  
+  gap: var(--space-3);
 }
 
 /*------------------------------*/
@@ -138,77 +196,111 @@ Estilo por defecto del checkbox
   
   /* Initial transparent background and custom border */
   background-color: transparent;
-  border: 2px solid #ccc;
-  border-radius: 4px;
-  
+  border: var(--border-width-thick) solid var(--color-content-primary);
+  border-radius: var(--radius-xs);
+
   /* Maintain pointer cursor (removed quotes as they are invalid in CSS) */
   cursor: pointer;
-  
+
   /* Define the accent color for the checked state */
-  accent-color: rgb(16, 163, 127);
-  
+  accent-color: var(--color-content-primary);
+
   /* Layout to center the checkmark */
   display: inline-grid;
   place-content: center;
   vertical-align: middle;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition: background-color var(--motion-normal), border-color var(--motion-normal);
 }
 
 /* Styles when the checkbox is checked */
 .auth-form__checkbox:checked {
-  background-color: rgb(16, 163, 127);
-  border-color: rgb(16, 163, 127);
+  background-color: var(--color-content-primary);
+  border-color: var(--color-content-primary);
 }
 
-/* Draws the white checkmark using clip-path when checked */
+.auth-form__checkbox:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline-offset: var(--border-width-thick);
+}
+
+.auth-form__checkbox:active {
+  transform: scale(0.98);
+}
+
+.auth-form__checkbox:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Draws the checkmark using clip-path when checked. The glyph is white because
+   the fill under it is the near-black content colour. */
 .auth-form__checkbox:checked::before {
   content: "";
   width: .6rem;
   height: .6rem;
-  background-color: white;
+  background-color: var(--color-surface-inverse);
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
 }
 
 /*--------------------------------*/
 .auth-form__label-checkbox{
- font-size: 0.95rem;
- color: #666;
+ font-size: var(--font-size-sm);
+ color: var(--color-content-secondary);
  cursor: pointer;
 }
 
+/* The primary action. rgb(16,163,127) was a green that appears on no other
+   screen in the product. It takes the content colour, not the accent: the
+   accent is cream, the six fields above are already cream, and a cream button
+   under them reads as a seventh field.
+
+   .submit__btn in formSubmitBtn-style.css:10-23 is the product's own labelled
+   submit and it is full width, so the width matches. Its 3.125rem height does
+   not: no token carries 50px, so this sits at the touch target, 6px shorter.
+   The radius matches the field, not .submit__btn, so button and inputs share
+   one corner in the same column. */
 .auth-form__button {
   width:100%;
-  background-color: #007bff;
-  background-color: rgb(16, 163, 127);
-  color: white;
+  background-color: var(--color-content-primary);
+  color: var(--color-surface-inverse);
 
-  padding: 0.875rem 1rem; 
-  border-radius: 0.5rem;
-  
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  min-height: var(--size-touch-target);
+
   border: none;
   cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;   
-  transition: background-color 0.3s ease;
-  
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  transition: background-color var(--motion-slow), color var(--motion-slow);
+
   /*Internal centered */
   display: flex;
   justify-content: center;
   align-items: center;
  }
- 
-.auth-form__button:active {
-  transform: scale(0.98); /* Feedback when pressed */
+
+/* The block is already the darkest thing on the card, so both states lift
+   rather than deepen. Active adds the scale so it stays distinct from hover. */
+.auth-form__button:hover {
+  background-color: var(--color-content-secondary);
 }
 
-.auth-form__button:hover {
-  background-color: #0056b3;
-  background-color: rgb(5, 122, 93);
+.auth-form__button:active {
+  transform: scale(0.98); /* Feedback when pressed */
+  background-color: var(--color-content-secondary);
+}
+
+/* index.css:76 sets `button { outline: none }`, so the ring has to be declared
+   here or the keyboard user gets no feedback at all. */
+.auth-form__button:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline-offset: var(--border-width-thick);
 }
 
 .auth-form__button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .auth-actions {
@@ -216,25 +308,42 @@ Estilo por defecto del checkbox
   flex-direction: column;
   align-items: center;
   width: 100%;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .auth-actions__toggle-button {
   background: none;
   border: none;
-  color: #007bff;
+  color: var(--color-content-secondary);
   cursor: pointer;
 
-  font-size: 0.95rem;
-  padding: 0.5rem 0.75rem;
-  font-weight: 500;
+  font-size: var(--font-size-sm);
+  padding: var(--space-2) var(--space-3);
+  min-height: var(--size-touch-target);
+  font-weight: var(--font-weight-medium);
 
-  transition: color 0.3s ease;
+  transition: color var(--motion-slow);
 }
 
 .auth-actions__toggle-button:hover {
-  color: #0056b3;
+  color: var(--color-content-primary);
   text-decoration: underline;
+}
+
+.auth-actions__toggle-button:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-content-primary);
+  outline-offset: var(--border-width-thick);
+}
+
+.auth-actions__toggle-button:active {
+  transform: scale(0.98);
+}
+
+/* It is disabled while a submission is in flight (AuthUI.tsx:156), so this
+   state is reachable and was undeclared. */
+.auth-actions__toggle-button:disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 /* ===== SOCIAL SECTION - ELIMINADA TEMPORALMENTE ===== */
@@ -317,72 +426,102 @@ Estilo por defecto del checkbox
   font-size: 0.9rem;
 }
 
-.closeButton {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background-color: transparent;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
-  color: #666;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: color 0.2s ease;
-  font-weight: 500;
-  display: block; 
+/* Closing. It was a full width text button at the bottom of the column, which
+   made three stacked actions of equal weight down there, and below 735px of
+   height it turned into a disc pinned to the viewport corner -- over the
+   landing navbar, outside the panel it closes. It lives in the header now, one
+   disc, at every height, aligned with the brand mark.
 
+   Its hover was #d32f2f, the alert red: closing this form discards nothing and
+   destroys nothing, so the red was reading a danger the action does not carry.
+   It fills with the field colour instead. */
+.closeButton {
+  width: var(--size-touch-target);
+  height: var(--size-touch-target);
+  flex-shrink: 0;
+  padding: 0;
+  background-color: transparent;
+  border: var(--border-width-thin) solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  color: var(--color-content-primary);
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--motion-normal), color var(--motion-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+/* The label is for assistive technology; the glyph is what is drawn. */
+.closeButton span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.closeButton::before {
+  content: "\2715";
+  display: block;
+  font-weight: var(--font-weight-regular);
+}
+
 .closeButton:hover {
-  background-color: #d32f2f;
-  border-color: #999;
-  color:#ffff;
+  background-color: var(--color-surface-panel);
+}
+
+.closeButton:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-content-primary);
+  outline-offset: var(--border-width-thick);
+}
+
+.closeButton:active {
+  transform: scale(0.98);
+}
+
+.closeButton:disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 /**RESPONSIVE**/
 @media (max-width: 480px) {
+  /* The panel owns the width, the padding, the radius and the scroller now, so
+     all this rule has left to do at 360px is tighten the rhythm. The title
+     override went with it: it set 1.5rem, which is what --font-size-xl already
+     is, and a margin-bottom !important that the column gap makes unnecessary. */
   .auth-container {
-    width: 100%;
-    max-width: 100vw;
-    min-height: auto;
-    max-height: calc(100dvh - 1px);
-    
-    margin: 0;
-    padding: 1.5rem 0.75rem 1.0rem 0.75rem;
-    gap:0.4rem;
-
-    left: 0;
-    right: 0;
-    position: relative;
-    box-sizing: border-box;
-
-    border-radius: 0;
-    border: none;
+    gap: var(--space-2);
   }
 
-  .auth-container__title {
-    font-size: 1.5rem;
-    margin-top: 0;
-    margin-bottom: 0.5rem !important;
+  /* The panel drops to --space-4 of padding here, so the bleed has to follow it
+     or the rule overshoots the card and gets clipped by the scroller. */
+  .auth-header__rule {
+    margin-inline: calc(-1 * var(--space-4));
+    width: calc(100% + var(--space-4) * 2);
   }
 
   .auth-form {
-    gap:0.5rem;
+    gap: var(--space-2);
   }
 
   .auth-form__remember-me {
-     gap: 0.5rem; 
+     gap: var(--space-2);
   }
-  
+
    .extraFieldsGroup {
-    gap: 0.375rem;
+    gap: var(--space-2);
   }
 
   /* Assure min height for touch button */
   .auth-form__button,
   .auth-actions__toggle-button,
-  .google-signin-button,
-  .closeButton {
-    font-size: 1rem;/* Avoid auto zoom in iOS */
-    padding: 8px 12px; 
+  .google-signin-button {
+    font-size: var(--font-size-base);/* Avoid auto zoom in iOS */
+    padding: var(--space-2) var(--space-3);
   }
 
   .messageArea {
@@ -394,10 +533,12 @@ Estilo por defecto del checkbox
 
   }
 
+  /* `max-height: none,!important` was here: the comma makes the declaration
+     invalid, so the parser dropped it and it never applied. .isVisible already
+     sets max-height: none, so removing it changes nothing on screen. */
   .messageArea.isVisible{
-   font-size: 0.75rem !important;
+   font-size: var(--font-size-xs) !important;
    line-height: 1.2 !important;
-   max-height: none,!important;
    min-height: auto;
    width: 100%;
    text-align: center;
@@ -406,24 +547,15 @@ Estilo por defecto del checkbox
   .messageArea.isVisible div,
   .messageArea.isVisible p,
   .messageArea.isVisible span {
-    font-size: 0.75rem !important;
+    font-size: var(--font-size-xs) !important;
   }
 /* close normal button at the end of page */
   .auth-form__button{
-   margin-top: 0.25rem;
-   padding: 0.375rem 0.875rem;
-   min-height: 2.5rem;
-   font-size: 0.9375rem;
+   margin-top: var(--space-1);
   }
 
   .auth-actions {
     margin-bottom: 0rem;
-  }
-
-  .auth-actions__toggle-button {
-    padding: 0.5rem 0.75rem; 
-    min-height: 2.5rem; 
-    font-size: 0.875rem;
   }
 
 
@@ -449,31 +581,22 @@ Estilo por defecto del checkbox
 
 }
 
-/* Tablet adjustments */
-@media (min-width: 481px) and (max-width: 768px) {
-  .auth-container {
-    padding:1.5rem;
-    max-width: 26rem; 
-    gap:0.75rem;
-  }
-  
-  .auth-form {
-    gap:0.75rem;
-  }
-}
+/* The tablet block that sat here only restated the base: it set the form column
+   back to its own default gap, and gave .auth-container a padding and a 26rem
+   cap that .modalContent now owns. Nothing in it survived the card collapse. */
 
 /* Larger screens */
 @media (min-width: 600px) {
   .extraFieldsGroup {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: var(--space-4);
     align-items: start;
   }
 
    .messageArea.isVisible {
     max-height: none;
-    font-size: 0.875rem;
+    font-size: var(--font-size-sm);
   }
 }
 
@@ -484,77 +607,38 @@ Estilo por defecto del checkbox
    max-height:none;
   }
 
+  /* Was 0.5rem, which resolves to 7px at this width because the root is fluid.
+     --font-size-2xs is the smallest size the scale defines. */
   .messageArea.isVisible{
    min-height: auto;
    max-height: none;
-   font-size: 0.5rem !important;
-   margin-bottom: 0.25rem;
+   font-size: var(--font-size-2xs) !important;
+   margin-bottom: var(--space-1);
   }
-  
-  /* .auth-container {
-    padding-top: 3rem;
-  } */
 
 }
 
-@media (min-width: 1024px) {
-  .auth-container {
-    max-width: 28rem;
-    padding: 1.5rem;
-    gap:0.875rem;
-  }
-}
-/* */
-@media (max-height:775px) {
-/*MOBILE: X floating button*/
-.closeButton {
-  position: fixed;
-  top: 0.75rem;
-  right: 0.5rem;
+/* The 1024px block that sat here gave .auth-container a 28rem cap and a padding
+   that .modalContent now owns, so the panel is 26rem at every width. */
 
-  width: 2rem; 
-  height: 2rem;
-  min-height: auto;
+/* The short-screen block that sat here pinned Close to the viewport corner
+   below 735px of height. The header owns closing now, at every height, so the
+   whole override is gone rather than duplicated. */
 
-  padding: 0;
-  border-radius: 50%;
-  background-color: #d32f2f;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+/* Everything above that transitions is decoration on a state change, so it is
+   all safe to drop for a reader who asked not to be moved. */
+@media (prefers-reduced-motion: reduce) {
+ .messageArea,
+ .auth-form__checkbox,
+ .auth-form__button,
+ .auth-actions__toggle-button,
+ .closeButton {
+  transition: none;
+ }
 
-  font-size: 0; 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  margin: 0;
-  transition: opacity 0.3s ease;
-}
-
-.closeButton span{
- display:none;
-}
-  
-/* 3. La X usando pseudo-elemento */
-.closeButton::before {
-  content: "✕";
-  font-size: 1.25rem;
-  line-height: 1;
-  font-weight: 300;
-  display: block;
-}
-  
-/* 4. Hover en mobile (feedback táctil) */
-.closeButton:active {
-  transform: scale(0.95);
-  background-color:  #b71c1c;  
-}
-
-.closeButton:hover {
-  transform: scale(0.95);
-  background-color:  #ec3131;  
+ .auth-form__button:active,
+ .auth-actions__toggle-button:active,
+ .closeButton:active {
+  transform: none;
  }
 }

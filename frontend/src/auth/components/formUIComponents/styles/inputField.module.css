@@ -245,3 +245,119 @@
     padding: 0.3125rem 0.5rem;
   }
 }
+
+/* ===== VARIANTS =====
+   The field is drawn one of two ways, and the difference is not the surface it
+   sits on: the auth modal and the profile menu are both white cards. What
+   differs is that the auth one is filled, the way the Tracker draws a field --
+   .card__screen in tracker-style.css:188-191 is a creme rectangle with no
+   border at all, on a white card. The fill is the whole affordance there, so
+   the contour that the default variant needs is redundant here.
+
+   `default` is every rule above this line, unchanged, which is what
+   ChangePasswordForm and UpdateProfileForm render. It carries color-scheme so
+   the browser draws its own parts -- the autofill wash, the caret, the
+   scrollbar -- in the same range as the field. */
+.inputContainer.default {
+  color-scheme: light;
+}
+
+.inputContainer.filled {
+  color-scheme: light;
+  gap: var(--space-1);
+}
+
+.inputContainer.filled .inputLabel {
+  /* .card--title, tracker-style.css:165-170 */
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-content-primary);
+}
+
+/* Every field of both auth forms is required, so a marker that never varies
+   carries no information. The `required` attribute stays on the input, which is
+   what validation and assistive technology read; what goes is the six identical
+   red stars. The note under the header says it once. */
+.inputContainer.filled .requiredIndicator {
+  display: none;
+}
+
+.inputContainer.filled .inputField {
+  background-color: var(--color-surface-panel);
+  color: var(--color-content-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  /* The base rule has no min-height, so the field resolved to 30px against a
+     44px button in the same column, under the project's own touch target. */
+  min-height: var(--size-touch-target);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-base);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inputContainer.filled .inputField::placeholder {
+  color: var(--color-content-secondary);
+  opacity: 0.75;
+}
+
+/* With no border to recolour, focus has to be the ring. index.css:76 kills the
+   UA outline on buttons and the base rule replaces this one with a blue glow
+   that belongs to no palette here. */
+.inputContainer.filled .inputField:focus,
+.inputContainer.filled .inputField:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline-offset: var(--border-width-thick);
+  box-shadow: none;
+}
+
+.inputContainer.filled .inputField:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  background-color: var(--color-surface-panel);
+}
+
+/* An inset shadow rather than a border: a border would change the field's
+   height and shift the column the moment a message appears. */
+.inputContainer.filled .inputField[aria-invalid='true'] {
+  box-shadow: inset 0 0 0 var(--border-width-thick) var(--color-status-alert);
+}
+
+.inputContainer.filled .inputField[aria-invalid='true']:focus,
+.inputContainer.filled .inputField[aria-invalid='true']:focus-visible {
+  outline-color: var(--color-status-alert);
+  box-shadow: inset 0 0 0 var(--border-width-thick) var(--color-status-alert);
+}
+
+.inputContainer.filled .toggleButton {
+  color: var(--color-content-primary);
+}
+
+.inputContainer.filled .toggleButton:hover {
+  color: var(--color-content-secondary);
+}
+
+.inputContainer.filled .toggleButton:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline-offset: var(--border-width-thick);
+}
+
+.inputContainer.filled .toggleButton:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.inputContainer.filled .errorMessage {
+  color: var(--color-status-alert);
+}
+
+.inputContainer.filled .helpText {
+  color: var(--color-content-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inputContainer.filled .inputField,
+  .inputContainer.filled .toggleButton {
+    transition: none;
+  }
+}

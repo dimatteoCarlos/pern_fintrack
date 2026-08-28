@@ -68,7 +68,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
   return (
     <>
       {/* Username */}
-      <InputField
+      <InputField variant='filled'
         label="Username"
         type="text"
         placeholder="your_username"
@@ -81,7 +81,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
       />
 
       {/* Email */}
-      <InputField
+      <InputField variant='filled'
         label="Email"
         type="email"
         placeholder="email"
@@ -95,7 +95,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
 
       {/* Password */}
       <div className={styles.extraFieldsGroup}>
-       <InputField
+       <InputField variant='filled'
          label="Password"
          type={isPasswordVisible ? 'text' : 'password'}
          placeholder="password"
@@ -110,7 +110,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
          onToggleContent={togglePasswordVisibility}
        />
        {/* Confirm Password */}
-       <InputField
+       <InputField variant='filled'
          label="Confirm Password"
          type={isConfirmVisible ? 'text' : 'password'}
          placeholder="confirm password"
@@ -126,24 +126,29 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
        />
       </div>
 
+      {/* The form changes subject here: credentials above, the person below */}
+      <div className={styles['auth-form__separator']} />
+
       {/* First Name */}
       <div className={styles.extraFieldsGroup}>
-       <InputField
+       <InputField variant='filled'
          label="First Name"
          value={formData.user_firstname}
          onChange={handleInputChange('user_firstname')}
          error={validationErrors.user_firstname}
          touched={touchedFields.has('user_firstname')}
+         placeholder="first name"
          required
          disabled={isLoading}
        />
        {/* Last Name */}
-       <InputField
+       <InputField variant='filled'
          label="Last Name"
          value={formData.user_lastname}
          onChange={handleInputChange('user_lastname')}
          error={validationErrors.user_lastname}
          touched={touchedFields.has('user_lastname')}
+         placeholder="last name"
          required
          disabled={isLoading}
        />

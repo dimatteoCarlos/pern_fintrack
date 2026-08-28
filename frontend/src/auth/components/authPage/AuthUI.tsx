@@ -10,6 +10,7 @@
  =============================== */
 import { useEffect, useMemo, useRef, useState } from 'react';
 // import GoogleLogo from '../../../assets/auth/GoogleLogo';
+import Logo from '../../../assets/logo.svg';
 import Message, { MessageType } from '../formUIComponents/Message';
 import { SignInFormDataType, SignUpFormDataType } from '../../validation/zod_schemas/authSchemas';
 import SignInForm from '../signInForm/SignInForm';
@@ -100,6 +101,27 @@ const initialFormStateRef = useRef({
 // =============
  return (
   <form autoComplete='off' className={styles['auth-container']}>
+    {/* 🏷️ Header: brand mark on the left, closing on the right */}
+    <div className={styles['auth-header']}>
+      {/* The svg module is typed as taking no props, so the class rides on a
+          wrapper rather than on the mark itself. */}
+      <span className={styles['auth-header__logo']} aria-hidden='true'>
+        <Logo />
+      </span>
+
+      {onClose && (
+        <button
+          type='button'
+          onClick={handleCloseClick}
+          className={styles.closeButton}
+        >
+          <span>Close</span>
+        </button>
+      )}
+    </div>
+
+    <div className={styles['auth-header__rule']} />
+
     {/* 📢 Message Area with close button */}
     <div
       className={`${styles.messageArea} ${
@@ -122,9 +144,13 @@ const initialFormStateRef = useRef({
       )}
     </div>
 
+    {/* The heading is read, not seen: the submit button and the toggle link
+        below both name the mode. It stays in the tree so the dialog has one. */}
     <h2 className={styles['auth-container__title']}>
       {isSignIn ? 'Sign In' : 'Sign Up'}
     </h2>
+
+    <p className={styles['auth-container__note']}>All fields are required</p>
 
     {/* Conditional Form Rendering */}
     {isSignIn ? (
@@ -160,6 +186,9 @@ const initialFormStateRef = useRef({
           : 'Already have an account? Sign in'}
       </button>
 
+      {/* Closing moved to the header, where it aligns with the brand mark and
+          sits inside the panel it closes. */}
+
       {/* Google Sign-In Placeholder */}
       {/* <div className={styles.socialSection}>
         <div className={styles.separator}>
@@ -170,13 +199,6 @@ const initialFormStateRef = useRef({
           Continue with Google
         </button>
       </div> */}
-      
-{/* Close button with unsaved guard */}
-      {onClose && (
-        <button type="button" onClick={handleCloseClick} className={styles.closeButton}>
-         <span>Close</span>
-        </button>
-      )}
     </div>
   </form>
  );

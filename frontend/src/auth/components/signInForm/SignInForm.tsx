@@ -69,7 +69,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
   return (
     <>
       {/* Username */}
-      <InputField
+      <InputField variant='filled'
         label="Username"
         type="text"
         placeholder="your_username"
@@ -83,7 +83,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
       />
  
       {/* Email */}
-      <InputField
+      <InputField variant='filled'
         label="Email"
         type="email"
         placeholder="email"
@@ -97,7 +97,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
       />
 
       {/* Password */}
-      <InputField
+      <InputField variant='filled'
         label="Password"
         type="password"
         placeholder="password"
