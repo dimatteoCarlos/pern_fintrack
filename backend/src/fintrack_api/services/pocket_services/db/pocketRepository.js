@@ -167,3 +167,126 @@ export async function getPocketHistory(db, userId, pocketId, timeZone) {
 
  return rows;
 }
+
+/**
+ * Write a new pocket and answer with its id.
+ *
+ * The pocket lands with no money and no source account: allocating is a separate
+ * decision the screen offers next. target_amount is already in the accounting
+ * currency; the six origin columns record what was typed and the rate that
+ * produced it, so the conversion can be shown and re-checked afterwards.
+ *
+ * @param {import('pg').PoolClient|import('pg').Pool} db
+ * @param {string} userId - UUID from the token
+ * @param {object} pocket - amounts already converted and normalized
+ * @returns {Promise<number>} the new pocket_id
+ */
+export async function insertPocket(db, userId, pocket) {
+ const { rows } = await db.query(
+  `
+  INSERT INTO pockets (
+   user_id, name, note, target_amount, currency_id, desired_date,
+   original_target, original_currency_id, exchange_rate, exchange_rate_source,
+   exchange_rate_timestamp, exchange_rate_target_currency_id
+  )
+  VALUES ($1, $2, $3, $4, $5, $6::date, $7, $8, $9, $10, $11, $12)
+  RETURNING pocket_id AS "pocketId"
+  `,
+  [
+   userId,
+   pocket.name,
+   pocket.note,
+   pocket.targetAmount,
+   pocket.currencyId,
+   pocket.desiredDate,
+   pocket.originalTarget,
+   pocket.originalCurrencyId,
+   pocket.exchangeRate,
+   pocket.exchangeRateSource,
+   pocket.exchangeRateTimestamp,
+   pocket.exchangeRateTargetCurrencyId,
+  ],
+ );
+
+ return rows[0].pocketId;
+}
+
+/**
+ * Overwrite the plan of one pocket.
+ *
+ * A target and a date are the current statement of a plan and are overwritten;
+ * an allocation is a decision about money and is appended. That line decides
+ * every column here: no history table, no revision row, no valid-from.
+ *
+ * COALESCE per column, with an explicit "was this key sent" flag beside each
+ * amount that can legitimately arrive as null. Without the flag, clearing a note
+ * and leaving it alone are the same request.
+ *
+ * The five FX columns move together with the target or not at all: a rate left
+ * behind by a previous target would claim to have produced the new one.
+ *
+ * @param {import('pg').PoolClient|import('pg').Pool} db
+ * @param {string} userId - UUID from the token
+ * @param {number} pocketId
+ * @param {object} fields - undefined for every value the caller did not send
+ * @returns {Promise<boolean>} whether a row was updated
+ */
+export async function updatePocket(db, userId, pocketId, fields) {
+ const hasTarget = fields.targetAmount !== undefined;
+
+ const { rowCount } = await db.query(
+  `
+  UPDATE pockets
+     SET name          = COALESCE($3, name),
+         note          = CASE WHEN $4::boolean THEN $5 ELSE note END,
+         target_amount = COALESCE($6, target_amount),
+         desired_date  = COALESCE($7::date, desired_date),
+         original_target                  = COALESCE($8, original_target),
+         original_currency_id             = COALESCE($9, original_currency_id),
+         exchange_rate                    = COALESCE($10, exchange_rate),
+         exchange_rate_source             = COALESCE($11, exchange_rate_source),
+         exchange_rate_timestamp          = COALESCE($12, exchange_rate_timestamp),
+         updated_at    = now()
+   WHERE pocket_id = $1
+     AND user_id = $2
+  `,
+  [
+   pocketId,
+   userId,
+   fields.name ?? null,
+   fields.noteWasSent,
+   fields.note ?? null,
+   hasTarget ? fields.targetAmount : null,
+   fields.desiredDate ?? null,
+   hasTarget ? fields.originalTarget : null,
+   hasTarget ? fields.originalCurrencyId : null,
+   hasTarget ? fields.exchangeRate : null,
+   hasTarget ? fields.exchangeRateSource : null,
+   hasTarget ? fields.exchangeRateTimestamp : null,
+  ],
+ );
+
+ return rowCount > 0;
+}
+
+/**
+ * Delete one pocket and, by cascade, its ledger.
+ *
+ * Refused at no net. An allocation never moved money, so deleting the ledger
+ * destroys no financial fact: the cash simply stops being committed and returns
+ * to each source account's unassigned cash. No balance is written and no
+ * transaction is recorded, because none was ever wrong.
+ *
+ * @param {import('pg').PoolClient|import('pg').Pool} db
+ * @param {string} userId - UUID from the token
+ * @param {number} pocketId
+ * @returns {Promise<boolean>} whether a row was deleted
+ */
+export async function deletePocket(db, userId, pocketId) {
+ const { rowCount } = await db.query(
+  `DELETE FROM pockets WHERE pocket_id = $1 AND user_id = $2`,
+  [pocketId, userId],
+ );
+
+ return rowCount > 0;
+}

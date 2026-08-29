@@ -17,7 +17,12 @@ import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import { pocketBoardService } from '../services/pocket_services/services/pocketBoardService.js';
 import { pocketDetailService } from '../services/pocket_services/services/pocketDetailService.js';
-import { pocketParamsSchema } from '../../validation/zod/pocketValidators.js';
+import { pocketWriteService } from '../services/pocket_services/services/pocketWriteService.js';
+import {
+ pocketParamsSchema,
+ createPocketBodySchema,
+ updatePocketBodySchema,
+} from '../../validation/zod/pocketValidators.js';
 
 /**
  * Answer a failed validation with the issues that caused it.
@@ -103,6 +108,69 @@ export async function getPocketDetail(req, res, next) {
   return res.status(200).json({
    status: 200,
    message: 'Pocket retrieved successfully',
+   data: detail,
+  });
+ } catch (error) {
+  return respondWithServiceError(res, next, error);
+ }
+}
+
+/** POST /api/fintrack/pocket */
+export async function createPocket(req, res, next) {
+ try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
+  const body = createPocketBodySchema.parse(req.body);
+
+  const pocketId = await pocketWriteService.createPocket(userId, body);
+
+  // The whole detail payload, not just the id. The screen that follows a
+  // creation is the detail screen, and a second request for a pocket this
+  // handler just wrote is a round trip with nothing to learn.
+  const timeZone = await getUserTimeZone(pool, userId);
+  const detail = await pocketDetailService.getDetail(
+   pool,
+   userId,
+   pocketId,
+   timeZone,
+  );
+
+  return res.status(201).json({
+   status: 201,
+   message: 'Pocket created successfully',
+   data: detail,
+  });
+ } catch (error) {
+  return respondWithServiceError(res, next, error);
+ }
+}
+
+/** PATCH /api/fintrack/pocket/:pocketId */
+export async function editPocket(req, res, next) {
+ try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
+  const { pocketId } = pocketParamsSchema.parse(req.params);
+  const body = updatePocketBodySchema.parse(req.body);
+
+  await pocketWriteService.editPocket(userId, pocketId, body);
+
+  // The recomputed figures come back with the write. A new target moves the gap
+  // and the monthly pace it implies, and that pace is the figure the owner is
+  // actually choosing — derived here, never on the client.
+  const timeZone = await getUserTimeZone(pool, userId);
+  const detail = await pocketDetailService.getDetail(
+   pool,
+   userId,
+   pocketId,
+   timeZone,
+  );
+
+  return res.status(200).json({
+   status: 200,
+   message: 'Pocket updated successfully',
    data: detail,
   });
  } catch (error) {
