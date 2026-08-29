@@ -236,6 +236,15 @@ background-color: white;
   outline: none;
   resize: vertical;
   transition: max-height 0.2s ease;
+  /* Fills the row instead of sizing itself, so the height below governs. */
+  height: 100%;
+}
+
+/* Five lines: what the 90 characters of maxLength occupy at the narrowest
+   supported width, where the field is 244px and fits 22 characters a line.
+   Where they do not fit, the card scrolls rather than the field shrinking. */
+.note--description {
+ min-height: calc(5 * 1.2em + 1rem);
 }
 
 textarea:invalid {
@@ -422,22 +431,20 @@ textarea:invalid {
 }
 @media (max-height: 800px) {
   /* ---------- NOTE SECTION ---------- */
-  /* Note from 3 to 2 lines visual */
+  /* The field keeps the five lines it declares above: clamping it here cut the
+     text while the space it needed sat empty under the row. */
   .input__note__description {
-    max-height: 2.4rem;
     overflow-y: auto;
     padding: 0.5rem 0 0 0.5rem;
-  }
-  .note--description {
-    min-height: 2.4rem;
-    max-height: 2.4rem;
   }
   .card__screen.description {
     height: 100%;
     padding: 0.1rem 0.5rem;
   }
+  /* The row is taller than the button now, so the button sits at its foot
+     instead of being centred against a field five lines deep. */
   .btn__container {
-    height: 2.4rem;
+    align-self: flex-end;
     display: flex;
     align-items: center;
   }
@@ -451,8 +458,10 @@ textarea:invalid {
   }
 
   /* ---------- AMOUNT INPUT SECTION ---------- */
-  /* Values scale linearly between 700px and var(--MHB,800px) */
-  .card__screen {
+  /* Values scale linearly between 700px and var(--MHB,800px).
+     :not(.description) because the note shares this class and was being cut by
+     a clamp written for the amount field. */
+  .card__screen:not(.description) {
     height: calc(
       2.2rem + (2.8rem - 2.2rem) *
         min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
