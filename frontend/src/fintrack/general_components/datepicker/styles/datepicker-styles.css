@@ -115,9 +115,11 @@
  transition: background-color var(--motion-fast);
 }
 
+/* The day text above is pinned to white, and the teal semaphore ground carried
+   only 3.74:1 under it. The sunken surface takes that pair to 19.56:1. */
 .react-datepicker__day.react-datepicker__day--selected,
 .react-datepicker__day--keyboard-selected {
- background-color: var(--color-status-ok) !important;
+ background-color: var(--color-surface-sunken) !important;
  border-radius: 50% !important;
 }
 
