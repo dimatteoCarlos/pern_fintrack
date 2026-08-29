@@ -10,6 +10,7 @@ import { respondError, respondSuccess } from '../../utils/responseHelpers.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import { todayInZone } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
+import { accountAllocationService } from '../services/pocket_services/services/accountAllocationService.js';
 
 const backendColor = 'greenBright';
 const errorColor = 'red';
@@ -768,6 +769,36 @@ export const getAccountById = async (req, res, next) => {
       data.accountList[0].statusAlert = statusAlert;
 
       // console.log('remain and statusAlert',data.accountList[0].remain, data.accountList[0].statusAlert,'data', data )
+    }
+    //----------------------------
+    // 🎯 ENRICH A CASH-HOLDING ACCOUNT WITH ITS POCKET COMMITMENTS
+    //
+    // account_balance stays what it has always been: real money, the figure that
+    // ties to the bank statement. What is added beside it is how much of that
+    // money is committed to pockets and how much is not, plus the goals it backs.
+    //
+    // The remainder is unassignedCash and never "available balance": a pocket
+    // blocks no spend, the available balance is still the whole account_balance,
+    // and calling the remainder available would tell the owner they cannot spend
+    // money they can. It may be negative, which is a state the screen reports and
+    // does not correct.
+    //
+    // Null for every other account type, and the three lines are simply absent
+    // there: unassigned cash means nothing on an investment account whose balance
+    // is a market valuation, nor on a debtor account.
+    const pocketAllocation =
+      await accountAllocationService.getAccountAllocation(
+        pool,
+        userId,
+        data.accountList[0].account_id,
+        account_type_name,
+      );
+
+    if (pocketAllocation) {
+      data.accountList[0].allocated = pocketAllocation.allocated;
+      data.accountList[0].unassignedCash = pocketAllocation.unassignedCash;
+      data.accountList[0].isOverAllocated = pocketAllocation.isOverAllocated;
+      data.accountList[0].pockets = pocketAllocation.pockets;
     }
     //----------------------------
     const message = `Get account successfully!`;

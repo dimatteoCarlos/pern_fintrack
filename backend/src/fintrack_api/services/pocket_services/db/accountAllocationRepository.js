@@ -95,6 +95,42 @@ export async function getPocketSourceHoldings(db, userId, pocketId = null) {
 }
 
 /**
+ * The pockets one account is backing, and how much of it each one holds.
+ *
+ * The account screen's answer to "what is this money committed to". It lists
+ * the goal by name rather than by id, because the line is read by the owner and
+ * an id names nothing to them.
+ *
+ * A pocket whose net from this account has fallen to zero is absent: it no
+ * longer draws on the account, and the pocket's own history keeps the trace.
+ *
+ * @param {import('pg').Pool|import('pg').PoolClient} db
+ * @param {string} userId - UUID from the token
+ * @param {number} accountId
+ * @returns {Promise<object[]>} { pocketId, name, heldFromThisAccount } as text
+ */
+export async function getPocketsForAccount(db, userId, accountId) {
+ const { rows } = await db.query(
+  `
+  SELECT
+   p.pocket_id            AS "pocketId",
+   p.name                 AS name,
+   SUM(pa.amount)::text   AS "heldFromThisAccount"
+  FROM pocket_allocations pa
+  JOIN pockets p ON p.pocket_id = pa.pocket_id
+  WHERE pa.user_id = $1
+   AND pa.source_account_id = $2
+  GROUP BY p.pocket_id, p.name
+  HAVING SUM(pa.amount) <> 0
+  ORDER BY p.name ASC
+  `,
+  [userId, accountId],
+ );
+
+ return rows;
+}
+
+/**
  * What each account gets back when one pocket is deleted.
  *
  * Read BEFORE the delete and inside the same transaction: afterwards the ledger
