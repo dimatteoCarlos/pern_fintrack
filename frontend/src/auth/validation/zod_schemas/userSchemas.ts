@@ -2,6 +2,7 @@
 import {z} from 'zod';
 import { FIELD_LIMITS, FieldLimitType } from './constants';
 import { SUPPORTED_CURRENCIES } from '../../../fintrack/helpers/currencyConstants';
+import { isIanaTimeZone } from '../../auth_utils/timeZoneOptions';
 
 //Backend zod validation schema replicated
 // ===========================
@@ -71,6 +72,19 @@ const individualFieldSchema = (field:FieldLimitType)=>
    })
    .optional();
 
+   // =========================
+   // 📝 TIME ZONE FIELD SCHEMA
+   // =========================
+   /**
+    * Checked against the same catalog the backend admits, so a value this form
+    * accepts can never make the database trigger raise.
+    */
+   export const timezoneSchema = z.string()
+     .refine(isIanaTimeZone, {
+       message: 'Time zone must be a valid IANA identifier, for example America/Bogota'
+     })
+     .optional();
+
 // ==========================
 // 🎯 UPDATE PROFILE SCHEMA
 // ==========================
@@ -79,7 +93,8 @@ export const updateProfileSchema = z.object(
   firstname: firstNameSchema.optional(),
   lastname: lastNameSchema.optional(),
   contact: contactSchema,
-  currency: currencySchema.optional()
+  currency: currencySchema.optional(),
+  timezone: timezoneSchema
 })
 // Validate that at least one field is provided
 .refine(
@@ -156,6 +171,7 @@ export default {
  lastNameSchema,
  contactSchema,
  currencySchema,
+ timezoneSchema,
 }
 
 // =====================

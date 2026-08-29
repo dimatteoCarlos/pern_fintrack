@@ -10,6 +10,7 @@ import {
   UpdateProfileResponseUserType,
   UserDataType,
 } from '../types/authTypes';
+import { DEFAULT_TIME_ZONE } from './timeZoneOptions';
 
 /**
  * 📝 Form data structure for the profile form
@@ -25,6 +26,7 @@ export type ProfileApiPayloadType = {
   lastname?: string;
   currency?: CurrencyType;
   contact?: string | null;
+  timezone?: string;
 };
 
 /* 🌟 ===============================
@@ -49,6 +51,9 @@ export const storeToForm = (
   currency:
     (userData?.currency?.toLowerCase() as CurrencyType) || DEFAULT_CURRENCY,
   contact: userData?.contact ?? null,
+  // Falls back to the column default, not to the device zone: seeding the form
+  // from Intl would offer to move the account every time the owner travels.
+  timezone: userData?.timezone || DEFAULT_TIME_ZONE,
 });
 
 /**
@@ -81,6 +86,10 @@ export const formToApi = (
 
   if (formData.contact !== undefined) {
     payload.contact = formData.contact === '' ? null : formData.contact;
+  }
+
+  if (formData.timezone) {
+    payload.timezone = formData.timezone;
   }
 
   return payload;
@@ -116,6 +125,9 @@ export const apiToStore = (
   }
   if (apiData.user_contact !== undefined) {
     storeData.contact = apiData.user_contact;
+  }
+  if (apiData.timezone !== undefined) {
+    storeData.timezone = apiData.timezone;
   }
 
   return storeData;

@@ -441,3 +441,62 @@
     flex-direction: column;
   }
 }
+
+/* Time zone selector. Scoped here rather than in selectField.module.css so the
+   currency select beside it is untouched: this one carries ~420 options whose
+   labels are far longer than a currency code. */
+.timeZoneField {
+ width: 100%;
+ min-width: 0;
+}
+
+.timeZoneField select {
+ width: 100%;
+ max-width: 100%;
+ /* A zone id plus its offset overruns 360px; the control must clip rather than
+    widen the form. */
+ text-overflow: ellipsis;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ color: var(--color-content-primary);
+ background-color: var(--color-surface-inverse);
+ border: var(--border-width-thin) solid var(--color-content-secondary);
+ border-radius: var(--radius-xs);
+ padding: var(--space-2) var(--space-8) var(--space-2) var(--space-3);
+ min-height: var(--size-touch-target);
+ cursor: pointer;
+ transition: border-color var(--motion-fast), background-color var(--motion-fast);
+}
+
+.timeZoneField select:hover {
+ border-color: var(--color-border-strong);
+}
+
+/* index.css clears the outline on buttons and inputs, so the ring is declared
+   per component or the keyboard user gets nothing. */
+.timeZoneField select:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.timeZoneField select:active {
+ background-color: var(--color-surface-panel);
+}
+
+.timeZoneField select:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The zone id is the primary element and the help line under it is secondary,
+   so the option list stays at the default UI size. */
+.timeZoneField option {
+ font-size: var(--font-size-sm);
+ color: var(--color-content-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .timeZoneField select {
+  transition: none;
+ }
+}

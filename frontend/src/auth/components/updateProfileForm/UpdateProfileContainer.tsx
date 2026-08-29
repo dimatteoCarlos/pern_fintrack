@@ -40,6 +40,10 @@ import {
 import { DEFAULT_CURRENCY } from '../../../fintrack/helpers/constants';
 import { CurrencyType } from '../../../fintrack/types/types';
 import { updateProfileSchema } from '../../validation/zod_schemas/userSchemas';
+import {
+  buildTimeZoneOptions,
+  DEFAULT_TIME_ZONE,
+} from '../../auth_utils/timeZoneOptions';
 
 /* 🌟 ===============================
 🏷️ TYPE DEFINITIONS (LOCALS)
@@ -61,6 +65,11 @@ export type CurrencyOptionType = {
   value: CurrencyType;
 };
 
+export type TimeZoneSelectOptionType = {
+  label: string;
+  value: string;
+};
+
 /* 🌟 ===============================
 🏷️ CONSTANT (LOCAL)
 =============================== 🌟 */
@@ -69,6 +78,7 @@ const DEFAULT_USER_FORM_DATA: UpdateProfileFormDataType = {
   lastname: '',
   currency: DEFAULT_CURRENCY,
   contact: null,
+  timezone: DEFAULT_TIME_ZONE,
 };
 
 // 🎨 UI CONSTANT
@@ -83,7 +93,12 @@ const PROFILE_FIELD_MAPPING = {
   user_lastname: 'lastname',
   currency: 'currency',
   contact: 'contact',
+  timezone: 'timezone',
 } as const;
+
+// Built once per module: the ICU catalog does not change while the tab lives,
+// and it is around 420 entries.
+const timeZoneOptions = buildTimeZoneOptions();
 
 //Text for global messages
 // const globalTextMessage = {success:'', failed:''}
@@ -431,6 +446,7 @@ const UpdateProfileContainer = ({
         successMessage={formLogic.successMessage}
         // 🎨 UI CONFIGURATION
         currencyOptions={currencyOptions}
+        timeZoneOptions={timeZoneOptions}
         // ⏰ RATE LIMIT INFO (🆕)
         retryAfter={retryAfter}
       />

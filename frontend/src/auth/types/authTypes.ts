@@ -151,6 +151,9 @@ export type UpdateProfileFormDataType = {
   lastname: string;
   currency: CurrencyType;
   contact: string | null;
+  // The IANA zone the account's periods are read on. Always a string: the
+  // column is NOT NULL and defaults to UTC, so the form never holds an absence.
+  timezone: string;
 };
 
 export type UpdateProfileResponseUserType = {
@@ -163,6 +166,8 @@ export type UpdateProfileResponseUserType = {
   currency_id: number;
   currency: CurrencyType;
   role: string;
+  // Returned by the update endpoint. Optional so an older backend still parses.
+  timezone?: string;
 };
 // ===============
 // 🚨 ERROR TYPES
@@ -296,6 +301,7 @@ export type ProfileUpdatePayloadType = Partial<{
   lastname: string;
   contact: string | null;
   currency: CurrencyType;
+  timezone: string;
 }>;
 // ------------------------------
 // Normalized response for Update Profile

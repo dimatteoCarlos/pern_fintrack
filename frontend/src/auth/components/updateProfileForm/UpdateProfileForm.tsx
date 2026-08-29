@@ -19,7 +19,10 @@ import styles from './styles/updateProfileForm.module.css';
 import { UpdateProfileFormDataType } from '../../types/authTypes';
 import { CurrencyType } from '../../../fintrack/types/types';
 import { ProfileFormErrorsType } from '../../hooks/useUpdateProfileFormLogic';
-import { CurrencyOptionType } from './UpdateProfileContainer';
+import {
+  CurrencyOptionType,
+  TimeZoneSelectOptionType,
+} from './UpdateProfileContainer';
 import { DEFAULT_CURRENCY } from '../../../fintrack/helpers/constants';
 
 /* 🌟 ===============================
@@ -45,6 +48,7 @@ type UpdateProfileFormPropsType = {
   apiErrorMessage?: string | null;
   successMessage?: string | null;
   currencyOptions?: CurrencyOptionType[];
+  timeZoneOptions?: TimeZoneSelectOptionType[];
   className?: string;
 
   retryAfter?: number | null;
@@ -68,6 +72,7 @@ const UpdateProfileForm = ({
   apiErrorMessage,
   successMessage,
   currencyOptions,
+  timeZoneOptions,
   className = '',
   retryAfter,
 }: UpdateProfileFormPropsType) => {
@@ -93,6 +98,13 @@ const UpdateProfileForm = ({
   const handleCurrencyChange = React.useCallback(
     (value: CurrencyType) => {
       onChange('currency', value);
+    },
+    [onChange],
+  );
+
+  const handleTimeZoneChange = React.useCallback(
+    (value: string) => {
+      onChange('timezone', value);
     },
     [onChange],
   );
@@ -241,6 +253,18 @@ const UpdateProfileForm = ({
               disabled={isLoading || isSuccess}
               placeholder="Select currency"
             /> */}
+
+            <SelectField
+              label='Time Zone'
+              value={formData.timezone}
+              options={timeZoneOptions || []}
+              onChange={handleTimeZoneChange}
+              error={getFieldError('timezone')}
+              disabled={isLoading || isSuccess}
+              placeholder='Select time zone'
+              className={styles.timeZoneField}
+              helpText='Sets the day your movements and budget periods are counted in'
+            />
 
             <InputField
               label='Contact Information'
