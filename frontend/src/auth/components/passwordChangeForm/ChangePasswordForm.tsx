@@ -143,6 +143,7 @@ export default function ChangePasswordForm({
     <div className={styles.passwordFieldsContainer}>
      {/* 🔐 Current Password */}
      <InputField
+      variant="filled"
       label="Current Password"
       type={visibility.currentPassword ? 'text' : 'password'}
       value={formData.currentPassword}
@@ -158,6 +159,7 @@ export default function ChangePasswordForm({
 
      {/* 🔑 New Password */}
      <InputField
+      variant="filled"
       label="New Password"
       type={visibility.newPassword ? 'text' : 'password'}
       value={formData.newPassword}
@@ -173,6 +175,7 @@ export default function ChangePasswordForm({
 
      {/* 🔒 Confirm Password */}
      <InputField
+      variant="filled"
       label="Confirm Password"
       type={visibility.confirmPassword ? 'text' : 'password'}
       value={formData.confirmPassword}
@@ -202,10 +205,11 @@ export default function ChangePasswordForm({
         <div className={styles.countdownContainer}>
          <div className={styles.countdownBar}>
           <div
-           className={styles.countdownProgress}
+           className={`${styles.countdownProgress} ${
+            status === 'rate_limited' ? styles.countdownProgressLocked : ''
+           }`}
            style={{
             width: `${(countdown / (totalCountdown ?? (TOTAL_COUNTDOWN_SECONDS + 0.01))) * 100}%`,
-            backgroundColor: status === 'rate_limited' ? '#f59e0b' : '#28a745'
            }}
           />
          </div>
