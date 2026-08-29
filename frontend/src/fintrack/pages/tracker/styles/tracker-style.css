@@ -514,7 +514,9 @@ textarea:invalid {
   }
 }
 
-@media (max-height: 700px) {
+/* 701 and not 700: this cap is the only thing bounding the card below the
+   breakpoint now, so it has to cover the same range the removed bottom did. */
+@media (max-height: 701px) {
   .cards__presentation--tracker {
     max-height: calc(
       100dvh - var(--header-total-height) - var(--navbar-top-height) -
@@ -537,8 +539,10 @@ textarea:invalid {
 }
 
 @media (max-height: 701px) {
+  /* No bottom: with top already set, giving the card a bottom too stops being a
+     position and becomes an imposed height, and the card spans the whole gap
+     however short its content is. The max-height above bounds it instead. */
   .cards__presentation--tracker {
-    bottom: calc(var(--navbar-bottom-height) + 1rem);
     overflow-y: auto;
   }
 
