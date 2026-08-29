@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS pockets (
  original_target                   DECIMAL(15,2) NOT NULL,
  original_currency_id              INT NOT NULL
   REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
- exchange_rate                     DECIMAL(20,10) NOT NULL,
+ exchange_rate                     DECIMAL(20,10) NOT NULL CHECK (exchange_rate > 0),
  exchange_rate_source              VARCHAR(50)   NOT NULL,
  exchange_rate_timestamp           TIMESTAMPTZ   NOT NULL,
  exchange_rate_target_currency_id  INT NOT NULL
@@ -157,7 +157,7 @@ CREATE TABLE IF NOT EXISTS pocket_allocations (
  original_amount                   DECIMAL(15,2) NOT NULL,
  original_currency_id              INT NOT NULL
   REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
- exchange_rate                     DECIMAL(20,10) NOT NULL,
+ exchange_rate                     DECIMAL(20,10) NOT NULL CHECK (exchange_rate > 0),
  exchange_rate_source              VARCHAR(50)   NOT NULL,
  exchange_rate_timestamp           TIMESTAMPTZ   NOT NULL,
  exchange_rate_target_currency_id  INT NOT NULL
