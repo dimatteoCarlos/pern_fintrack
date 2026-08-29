@@ -1,4 +1,4 @@
--- 018_pocket_desired_date_source.sql
+-- 019_pocket_desired_date_source.sql
 --
 -- Records where a pocket's desired_date came from.
 --
@@ -74,5 +74,5 @@ $$;
 --  DROP CONSTRAINT IF EXISTS pocket_saving_accounts_desired_date_source_check;
 -- ALTER TABLE pocket_saving_accounts
 --  DROP COLUMN IF EXISTS desired_date_source;
--- DELETE FROM migrations WHERE filename = '018_pocket_desired_date_source.sql';
+-- DELETE FROM migrations WHERE filename = '019_pocket_desired_date_source.sql';
 -- COMMIT;
