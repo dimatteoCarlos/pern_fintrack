@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useFetch } from '../../hooks/useFetch.ts';
 import { DebtorRespType } from '../../types/responseApiTypes.ts';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
-import Debtors from './Debtors.tsx';
+import { Outlet } from 'react-router-dom';
 import './styles/debts-styles.css';
 
 //default values------------
@@ -126,7 +126,11 @@ function DebtsLayout() {
           {errorMessage}
         </p>
       )}
-      <Debtors />
+      {/* The board comes from the route table, like every other section's
+          layout. Rendering it here directly left the two declared child
+          routes inert, so both debts URLs painted the same screen and no
+          redirect between them could ever run. */}
+      <Outlet />
     </div>
   );
 }

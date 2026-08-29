@@ -225,13 +225,13 @@ function App() {
               path: 'debts',
               element: <DebtsLayout />,
               children: [
+                // One canonical debts URL. The two used to render the same
+                // board while every control under it was built for
+                // /fintrack/debts/debtors, so the section worked or failed
+                // depending on which of the two the user had reached.
                 {
                   index: true,
-                  element: (
-                    <LazyRoute>
-                      <Debtors />
-                    </LazyRoute>
-                  ),
+                  element: <Navigate to='debtors' replace />,
                 },
                 //fintrack/debts/
                 {
