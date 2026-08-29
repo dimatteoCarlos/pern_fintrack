@@ -8,7 +8,7 @@ import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetailSharedComponents/accountTransactionsList/AccountTransactionsList.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
-import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
+import AccountEditLink from '../../../general_components/accountEditLink/AccountEditLink.tsx';
 import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 import MonthPicker from '../../../general_components/monthPicker/MonthPicker.tsx';
@@ -321,13 +321,19 @@ function CategoryDetail() {
                 )}
               </div>
 
-              {/* <Link to='edit' className='flx-col-center icon3dots'>
-                <Dots3LightSvg />
-              </Link> */}
-
-              <div id='edit' className='flx-col-center icon3dots'>
-                <Dots3LightSvg />
-              </div>
+              {/* The month lives in the query string, so the return address
+                  carries it: coming back without it would drop the month the
+                  user was looking at. */}
+              {accountId && (
+                <AccountEditLink
+                  accountId={accountId}
+                  returnRoute={`${location.pathname}${location.search}`}
+                  accountName={String(
+                    budgetAccount?.accountName ?? accountRecord?.account_name ?? '',
+                  )}
+                  originRoute={previousRoute}
+                />
+              )}
             </div>
           </div>
 
