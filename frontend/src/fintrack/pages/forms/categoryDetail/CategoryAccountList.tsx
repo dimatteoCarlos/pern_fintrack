@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
-import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
@@ -246,13 +245,6 @@ function CategoryAccountList() {
                   {capitalize(categoryName!)}
                 </div>
 
-                {/* <Link to='edit' className='flx-col-center icon3dots'>
-                  <Dots3LightSvg />
-                </Link> */}
-
-                <div id='edit' className='flx-col-center icon3dots'>
-                  <Dots3LightSvg />
-                </div>
               </div>
             </div>
 
