@@ -9,10 +9,24 @@ import {
   numberFormatCurrency,
 } from '../../../helpers/functions.ts';
 import { usePocketBoardStore } from '../../../stores/usePocketBoardStore.ts';
+import { PocketStatus } from '../../../types/pocketTypes.ts';
 
 // A figure the contract withheld. Never 0 and never an empty cell: a dash says
 // the answer is absent, where 0 would state an amount.
 const DASH = '—';
+
+// Which of the square's three readings a pocket carries. Reached the goal is
+// the default, a deadline already passed is the alert, and still running sits
+// between them.
+//
+// The two flags are mutually exclusive on this contract — overdue requires the
+// committed amount to be below the goal and funded requires the opposite — so
+// the three readings partition the board with no gap and no overlap.
+const statusMark = (pocket: PocketStatus): string => {
+  if (pocket.funded) return '';
+
+  return pocket.overdue ? 'alert' : 'warning';
+};
 
 // How many placeholder rows the loading state draws. Enough to occupy the list
 // so the page does not jump when the real rows land, few enough not to claim a
@@ -100,7 +114,6 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
           note,
           allocated,
           target,
-          remaining,
           desiredDate,
           currency,
         } = pocket;
@@ -141,12 +154,11 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
                   &nbsp;
                 </span>
 
-                {/* Served, not subtracted here. The rule itself is unchanged and
-                    still marks every unfinished pocket — that is P-4, and it is
-                    replaced when the status arrives with the pace figures. */}
-                <StatusSquare
-                  alert={remaining > 0 ? 'alert' : ''}
-                />
+                {/* Read off the two flags the server serves. Derived from the
+                    shortfall, this square marked a pocket three months ahead of
+                    schedule identically to one whose deadline has passed, since
+                    both are short of the goal. */}
+                <StatusSquare alert={statusMark(pocket)} />
               </div>
             </div>
           </Link>

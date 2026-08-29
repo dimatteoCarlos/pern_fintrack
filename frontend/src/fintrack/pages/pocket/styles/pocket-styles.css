@@ -40,9 +40,11 @@
 }
 
 /* The upper half of one card cut in two. Position, height and anchor come from
-   the shared board-hero rule in generalStyles.css; this hero carries one row
-   against the budget hero's two, so without its min-height it stopped 9.8px
-   short of the white header's edge and the seam fell on white. */
+   the shared board-hero rule in generalStyles.css. That rule's min-height was
+   what carried this hero when it held a single row; it now holds a 2x2 tile
+   grid through 768px and one row of four above, so the content clears the
+   minimum on its own and the seam no longer falls on white. The minimum stays
+   as the floor for the notice state, which is still one line. */
 .pocketLayout .total__container {
   width: 100%;
   background-color: var(--color-surface-deep);
@@ -376,5 +378,113 @@ button.line__container {
 @media (min-width: 480px) {
  .pocketList__state {
   padding: var(--space-12) var(--space-6);
+ }
+}
+
+/* ── The board's header, four tiles ──────────────────────────────────────────
+   The summary serves ten figures and the header printed two, one of which was
+   the wrong one: the goal total stood where the committed amount belongs. Four
+   tiles answer the four questions the board exists to answer — how much is
+   committed, how many pockets are still running, which deadline falls first,
+   and how far the whole board has come.
+
+   Extends the token block above rather than replacing it. Nothing here reads
+   the legacy half's raw values or the light-surface token it names and
+   tokens.css does not define. */
+
+.pocketHero {
+ display: grid;
+ grid-template-columns: repeat(2, minmax(0, 1fr));
+ gap: var(--space-2);
+ width: 100%;
+ padding: var(--space-3) 0;
+}
+
+.pocketHero__tile {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ /* Without it a long pocket name blows the grid column out instead of being
+    truncated by the value rule below. */
+ min-width: 0;
+ padding: var(--space-2) var(--space-3);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-raised);
+}
+
+/* The committed amount is the headline, so it takes the row and its figure is
+   the only one at display size. */
+.pocketHero__tile--headline {
+ grid-column: 1 / -1;
+}
+
+.pocketHero__label {
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.pocketHero__value {
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wider);
+ color: var(--color-content-on-dark);
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+.pocketHero__tile--headline .pocketHero__value {
+ font-size: var(--font-size-2xl);
+}
+
+.pocketHero__meta {
+ /* Reserved whether or not it carries text, so a tile that has nothing to add
+    keeps the height of the three that do and the row stays level. */
+ min-height: var(--font-size-base);
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* A tile with nothing to report dims its dash instead of inventing a figure. */
+.pocketHero__tile.is-empty .pocketHero__value {
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* A linear bar and not a ring: one value, no second token to position a stroke
+   against, and it reads the same at 360px as at 1024px. */
+.pocketHero__bar {
+ height: var(--space-1);
+ margin-top: var(--space-1);
+ border-radius: var(--radius-full);
+ background-color: var(--color-border-subtle);
+ overflow: hidden;
+}
+
+.pocketHero__barFill {
+ height: 100%;
+ border-radius: var(--radius-full);
+ background-color: var(--color-accent);
+ transition: width var(--motion-slow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .pocketHero__barFill {
+  transition: none;
+ }
+}
+
+/* From 768px the four tiles fit one row and the headline stops spanning. */
+@media (min-width: 768px) {
+ .pocketHero {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+ }
+
+ .pocketHero__tile--headline {
+  grid-column: auto;
  }
 }

@@ -16,6 +16,7 @@ function PocketLayout() {
   // two requests for one screen, and the two could disagree: the header's query
   // grouped by currency and its handler read the first row.
   const summary = usePocketBoardStore((state) => state.summary);
+  const pockets = usePocketBoardStore((state) => state.pockets);
   const notices = usePocketBoardStore((state) => state.notices);
   const isLoading = usePocketBoardStore((state) => state.isLoading);
   const error = usePocketBoardStore((state) => state.error);
@@ -33,16 +34,12 @@ function PocketLayout() {
     }
   }, [error]);
   //--------------------------------------
-  // Passed through as they arrive, null included. These used to collapse to 0,
-  // which announced a target of zero while the answer was still on the wire, and
-  // again in the mixed-currency case where the contract withholds the totals on
-  // purpose rather than adding two currencies at an implicit rate of 1:1.
+  // The summary and the rows go through whole, nulls included. Narrowing them
+  // to three fields here is what left six of the ten figures the server folds
+  // unreachable by the header, the committed amount among them.
   //
-  // Nothing is summed here: the server folds the same rows the list renders, so
-  // the header and the list cannot disagree.
-  const totalTarget = summary?.totalTarget ?? null;
-  const totalRemaining = summary?.totalRemaining ?? null;
-  const currency = summary?.currency ?? null;
+  // Nothing is summed here either: the server folds the same rows the list
+  // renders, so the header and the list cannot disagree.
 
   // Raised only when the board holds pockets it could not fold. An empty board
   // also serves a null currency, and that is not a mix — it is the empty state
@@ -76,9 +73,8 @@ function PocketLayout() {
         )}
 
         <PocketBigBoxResult
-          totalTarget={totalTarget}
-          totalRemaining={totalRemaining}
-          currency={currency}
+          summary={summary}
+          pockets={pockets}
           notice={notice}
         />
 
