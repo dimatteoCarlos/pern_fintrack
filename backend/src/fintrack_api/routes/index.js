@@ -5,6 +5,7 @@ import transactionRoutes from './transactionRoute.js';
 import dashboardRoutes from './dashboardRoutes.js';
 import currencyRoutes from './currencyRoutes.js';
 import budgetRoutes from './budgetRoutes.js';
+import pocketRoutes from './pocketRoutes.js';
 
 //------------------------
 const router = express.Router();
@@ -22,6 +23,9 @@ router.use('/dashboard',
 
 router.use('/budget',
  budgetRoutes);//budget policies, allocations and summaries
+
+router.use('/pocket',
+ pocketRoutes);//the savings board: every pocket of the caller, folded once
 
 
 export default router;

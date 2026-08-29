@@ -64,6 +64,16 @@ const initialNewPocketData: PocketDataType = {
   currency: defaultCurrency,
 };
 
+// The floor the calendar offers, read from the device. It is ergonomics, not
+// the rule: the server refuses a past deadline on the OWNER's calendar, which
+// is the only calendar that can settle it. Today itself is offered, because a
+// goal due this month is a real goal.
+const startOfToday = (): Date => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+};
+
 const formDataNumber = { keyName: 'amount', title: 'target' };
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
@@ -466,6 +476,7 @@ function NewPocket() {
                 changeDate={changeDesiredDate} //onChange
                 date={pocketData.desiredDate}
                 variant={'form'}
+                minDate={startOfToday()}
                 popperClassName='pocket-datepicker-popper'
               />
             </div>

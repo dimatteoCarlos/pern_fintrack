@@ -126,6 +126,13 @@ export const mainTables = [
     desired_date TIMESTAMPTZ NOT NULL,
     account_start_date TIMESTAMPTZ NOT NULL,
 
+ -- Where desired_date came from. The column is NOT NULL, so a caller that
+ -- sends no deadline still gets one written, and every pace figure divides by
+ -- it. 'default' is what lets the board say "deadline not set" instead of
+ -- reporting a pace built on a date nobody chose. See migration 018.
+    desired_date_source VARCHAR(20) NOT NULL DEFAULT 'user'
+      CHECK (desired_date_source IN ('user', 'default')),
+
  --  FX audit columns. target holds the accounting currency; original_target
  --  holds what the user typed. The two currency ids take no default: an id has
  --  no honest fallback. See migration 015.
@@ -411,6 +418,96 @@ export async function ensureBudgetTables(client = pool) {
  `);
 
  console.log(pc.green('Budget domain tables verified/created.'));
+}
+
+/**
+ * Ensure the pocket domain tables exist. Mirrors the DDL of migration
+ * 020_create_pocket_tables.sql, without its data steps.
+ *
+ * Deliberately NOT part of the mainTables array, for the same reason
+ * ensureBudgetTables is not: that array runs under Promise.allSettled, so a
+ * rejected table is only logged. pocket_allocations references pockets and
+ * user_accounts, so it needs a real failure when it cannot be created.
+ *
+ * DDL only. The account-to-pocket conversion of 020 belongs to the migration
+ * runner: it deletes financial rows and reports what it acted on, which is not
+ * something a boot may do unattended.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensurePocketTables(client = pool) {
+ console.log(pc.cyan('Ensuring pocket domain tables...'));
+
+ // See 020 for why there is no status column, why desired_date is required, and
+ // why the origin currency pair is audit metadata rather than a second unit.
+ await client.query(`
+  CREATE TABLE IF NOT EXISTS pockets (
+   pocket_id      SERIAL PRIMARY KEY,
+   user_id        UUID NOT NULL
+    REFERENCES users(user_id) ON DELETE CASCADE,
+   name           VARCHAR(50)  NOT NULL,
+   note           VARCHAR(155),
+   target_amount  DECIMAL(15,2) NOT NULL CHECK (target_amount > 0),
+   currency_id    INT NOT NULL
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+   desired_date   DATE NOT NULL,
+
+   -- FX audit pair: what was typed, in which currency, and the rate between them.
+   original_target                   DECIMAL(15,2) NOT NULL,
+   original_currency_id              INT NOT NULL
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+   exchange_rate                     DECIMAL(20,10) NOT NULL CHECK (exchange_rate > 0),
+   exchange_rate_source              VARCHAR(50)   NOT NULL,
+   exchange_rate_timestamp           TIMESTAMPTZ   NOT NULL,
+   exchange_rate_target_currency_id  INT NOT NULL
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+
+   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+  )
+ `);
+
+ // Append-only, hence no updated_at: a correction is a new row of the opposite
+ // sign, never an edit. source_account_id RESTRICTs so deleting an account stays
+ // a decision taken in a service with an impact report.
+ await client.query(`
+  CREATE TABLE IF NOT EXISTS pocket_allocations (
+   allocation_id     BIGSERIAL PRIMARY KEY,
+   user_id           UUID NOT NULL
+    REFERENCES users(user_id) ON DELETE CASCADE,
+   pocket_id         INT NOT NULL
+    REFERENCES pockets(pocket_id) ON DELETE CASCADE,
+   source_account_id INT NOT NULL
+    REFERENCES user_accounts(account_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+   amount            DECIMAL(15,2) NOT NULL CHECK (amount <> 0),
+
+   -- The date the decision was taken. Mirrors transactions.transaction_actual_date.
+   allocation_actual_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+   -- FX audit pair, same six columns, same meaning.
+   original_amount                   DECIMAL(15,2) NOT NULL,
+   original_currency_id              INT NOT NULL
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+   exchange_rate                     DECIMAL(20,10) NOT NULL CHECK (exchange_rate > 0),
+   exchange_rate_source              VARCHAR(50)   NOT NULL,
+   exchange_rate_timestamp           TIMESTAMPTZ   NOT NULL,
+   exchange_rate_target_currency_id  INT NOT NULL
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+
+   created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+  )
+ `);
+
+ // One index per aggregate the module reads: the pocket's own total, and the
+ // account's committed total the allocate form validates against.
+ await client.query(
+  `CREATE INDEX IF NOT EXISTS idx_pocket_allocations_pocket ON pocket_allocations(pocket_id)`,
+ );
+ await client.query(
+  `CREATE INDEX IF NOT EXISTS idx_pocket_allocations_account ON pocket_allocations(source_account_id)`,
+ );
+
+ console.log(pc.green('Pocket domain tables verified/created.'));
 }
 
 /**

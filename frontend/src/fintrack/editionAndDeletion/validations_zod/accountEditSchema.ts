@@ -170,7 +170,7 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
       inputType: 'date',
       isEditable: true,
       isRequired: true,
-      helpText: 'Must be a future date.',
+      helpText: 'Today or a later date.',
       isCritical: true,
     },
     {

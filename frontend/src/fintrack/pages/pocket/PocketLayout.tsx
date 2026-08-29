@@ -1,10 +1,7 @@
 //frontend\src\fintrack\pages\pocket\PocketLayout.tsx
-import { useEffect, useMemo, useState } from 'react';
-import { url_get_total_account_balance_by_type } from '../../../urlConfig.ts';
+import { useEffect, useState } from 'react';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
-import { useFetch } from '../../hooks/useFetch.ts';
-
-import { BalancePocketSavingRespType } from '../../types/responseApiTypes.ts';
+import { usePocketBoardStore } from '../../stores/usePocketBoardStore.ts';
 import PocketBigBoxResult from './components/PocketBigBoxResult.tsx';
 
 import './styles/pocket-styles.css';
@@ -14,11 +11,19 @@ import { Outlet } from 'react-router-dom';
 function PocketLayout() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  //total pocket balance
-  const pocketUrl = `${url_get_total_account_balance_by_type}?type=pocket_saving`;
+  // The module's single request. This header and the list below are both drawn
+  // from it, which is why it is issued here and not in either one. It used to be
+  // two requests for one screen, and the two could disagree: the header's query
+  // grouped by currency and its handler read the first row.
+  const summary = usePocketBoardStore((state) => state.summary);
+  const notices = usePocketBoardStore((state) => state.notices);
+  const isLoading = usePocketBoardStore((state) => state.isLoading);
+  const error = usePocketBoardStore((state) => state.error);
+  const fetchBoard = usePocketBoardStore((state) => state.fetchBoard);
 
-  const { apiData, isLoading, error } =
-    useFetch<BalancePocketSavingRespType>(pocketUrl);
+  useEffect(() => {
+    fetchBoard();
+  }, [fetchBoard]);
 
   useEffect(() => {
     if (error) {
@@ -28,27 +33,24 @@ function PocketLayout() {
     }
   }, [error]);
   //--------------------------------------
-  const { total_balance, total_target, total_remaining, currency } =
-    useMemo(() => {
-      return {
-        total_balance: apiData?.data.total_balance ?? 0,
-        total_target: apiData?.data.total_target ?? 0,
-        total_remaining: apiData?.data.total_remaining ?? 0,
-        currency: apiData?.data.currency_code,
-      };
-    }, [
-      apiData?.data.total_balance,
-      apiData?.data.total_target,
-      apiData?.data.total_remaining,
-      apiData?.data.currency_code,
-    ]);
+  // Passed through as they arrive, null included. These used to collapse to 0,
+  // which announced a target of zero while the answer was still on the wire, and
+  // again in the mixed-currency case where the contract withholds the totals on
+  // purpose rather than adding two currencies at an implicit rate of 1:1.
+  //
+  // Nothing is summed here: the server folds the same rows the list renders, so
+  // the header and the list cannot disagree.
+  const totalTarget = summary?.totalTarget ?? null;
+  const totalRemaining = summary?.totalRemaining ?? null;
+  const currency = summary?.currency ?? null;
 
-  // const bigScreenInfo = [
-  const bigScreenInfo = [
-    { title: 'total target', amount: total_target },
-    { title: 'Remaining', amount: total_remaining },
-    { title: 'expenses', amount: total_balance },
-  ];
+  // Raised only when the board holds pockets it could not fold. An empty board
+  // also serves a null currency, and that is not a mix — it is the empty state
+  // the list below renders.
+  const notice =
+    summary !== null && summary.pocketCount > 0 && summary.currency === null
+      ? notices[0] ?? null
+      : null;
 
   return (
     <>
@@ -73,7 +75,12 @@ function PocketLayout() {
           </div>
         )}
 
-        <PocketBigBoxResult bigScreenInfo={bigScreenInfo} currency={currency} />
+        <PocketBigBoxResult
+          totalTarget={totalTarget}
+          totalRemaining={totalRemaining}
+          currency={currency}
+          notice={notice}
+        />
 
         {error && (
           <p
@@ -85,7 +92,6 @@ function PocketLayout() {
               zIndex: '150',
             }}
           >
-            {/* Error:  */}
             {errorMessage}
           </p>
         )}
