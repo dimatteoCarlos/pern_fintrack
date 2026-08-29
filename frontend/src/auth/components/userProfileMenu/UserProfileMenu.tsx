@@ -323,7 +323,7 @@ const UserProfileMenu = () => {
                   aria-label='Close profile menu'
                 >
                   <CloseSvg
-                    className={`${styles.closeIcon} ${styles.light}`}
+                    className={styles.closeIcon}
                     aria-hidden='true'
                   />
                 </button>
@@ -341,7 +341,7 @@ const UserProfileMenu = () => {
                 aria-label='Edit user profile'
               >
                 <EditSvg
-                  className={`${styles.menuItemIcon} ${styles.light}`}
+                  className={styles.menuItemIcon}
                   aria-hidden='true'
                 />
                 <span className={styles.menuItemText}>Edit Profile</span>
@@ -353,7 +353,7 @@ const UserProfileMenu = () => {
                 aria-label='Change password'
               >
                 <LockSvg
-                  className={`${styles.menuItemIcon} ${styles.light}`}
+                  className={styles.menuItemIcon}
                   aria-hidden='true'
                 />
                 <span className={styles.menuItemText}>Change Password</span>

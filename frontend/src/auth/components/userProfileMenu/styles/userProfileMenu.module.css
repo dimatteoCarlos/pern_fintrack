@@ -42,14 +42,16 @@
 
 .menuContainer {
  cursor: default;
- background-color: var(--color-surface-inverse);
+ background-color: var(--color-surface-raised);
  border-radius: var(--radius-sm);
  /* Mobile-first: the card spans the viewport minus one gutter each side. */
- width: calc(100vw - var(--space-8));
- margin: 0 var(--space-4);
- /* No sizing token covers these two bounds; the scale stops at the card. */
+ /* The same width the account card takes, so the menu reads as a card of
+    that family and not as a panel with a size of its own. */
+ width: var(--layout-content-width);
+ margin: 0 auto;
+ /* No token covers the floor; the ceiling is the account card's own width. */
  min-width: 240px;
- max-width: 380px;
+ max-width: var(--layout-card-width);
  box-shadow: var(--shadow-overlay);
  overflow: hidden;
  z-index: var(--z-raised);
@@ -72,8 +74,8 @@
    PROFILE MENU
 ==================== */
 
-/* Cream over the white body is what separates the header; it carried a
-   hairline border before and the surface change now does that job. */
+/* A creme band on the dark card. The surface change is the separator -- the
+   two grounds sit 13.73:1 apart -- so no hairline is drawn on top of it. */
 .menuHeader {
  display: flex;
  align-items: center;
@@ -91,7 +93,7 @@
 .menuAvatar {
  width: var(--size-badge);
  height: var(--size-badge);
- background-color: var(--color-surface-inverse);
+ background-color: var(--color-surface-app);
  border: var(--border-width-thick) solid var(--color-border-strong);
  border-radius: var(--radius-sm);
  display: flex;
@@ -99,9 +101,9 @@
  justify-content: center;
  /* The design system names no display family, so the script face stays. */
  font-family: "Style Script", cursive;
- font-size: var(--font-size-base);
+ font-size: var(--font-size-lg);
  font-weight: var(--font-weight-bold);
- color: var(--color-content-primary);
+ color: var(--color-content-on-dark);
  flex-shrink: 0;
 }
 
@@ -113,7 +115,7 @@
 }
 
 .menuUserName {
- font-size: var(--font-size-sm);
+ font-size: var(--font-size-base);
  font-weight: var(--font-weight-semibold);
  color: var(--color-content-primary);
  white-space: nowrap;
@@ -122,7 +124,7 @@
 }
 
 .menuUserEmail {
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-sm);
  color: var(--color-content-secondary);
  white-space: nowrap;
  overflow: hidden;
@@ -143,28 +145,34 @@
  line-height: 1;
  color: var(--color-content-primary);
  cursor: pointer;
- padding: var(--space-1) var(--space-2);
- border-radius: var(--radius-xs);
+ padding: var(--space-2);
+ border-radius: 50%;
  flex-shrink: 0;
  transition: background-color var(--motion-normal),
   color var(--motion-normal), transform var(--motion-press);
 }
 
+/* A dulled creme, not the accent: this control sits ON the creme band, so the
+   fill the rows use would paint the colour it already stands on. The two
+   grounds sit 1.64:1 apart, which reads on a non-text surface.
+   NOTE the token is a content one doing surface duty -- the palette declares no
+   muted-creme surface, and no name is invented here to supply one. */
 .closeButton:hover {
- background-color: var(--color-accent);
- color: var(--color-accent-content);
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-content-primary);
 }
 
 /* index.css strips the outline from every button, so a component that does not
-   declare its own ring leaves a keyboard user with no focus indication. */
+   declare its own ring leaves a keyboard user with no focus indication.
+   This one sits on the creme band, not on the card. */
 .closeButton:focus-visible {
  outline: var(--border-width-thick) solid var(--color-border-strong);
  outline-offset: var(--border-width-thick);
 }
 
 .closeButton:active {
- background-color: var(--color-accent);
- color: var(--color-accent-content);
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-content-primary);
  transform: scale(0.95);
 }
 
@@ -178,7 +186,7 @@
 .closeIcon {
  width: 1em;
  height: 1em;
- font-size: var(--font-size-lg);
+ font-size: var(--font-size-xl);
  flex-shrink: 0;
 }
 
@@ -200,11 +208,13 @@
    MENU CONTENT
 ==================== */
 
-/* The system names no border token for a light surface; the cream panel colour
-   is what draws the hairline between sections. */
+/* On the raised surface the subtle border token applies as declared -- it is
+   calibrated for dark grounds. It replaces the cream hairline, which measured
+   1.27:1 on white and was carried only because no light-surface border token
+   exists. */
 .menuDivider {
  height: var(--border-width-thin);
- background-color: var(--color-surface-panel);
+ background-color: var(--color-border-subtle);
  margin: 0;
 }
 
@@ -218,8 +228,8 @@
  background-color: transparent;
  cursor: pointer;
  text-align: left;
- font-size: var(--font-size-sm);
- color: var(--color-content-primary);
+ font-size: var(--font-size-base);
+ color: var(--color-content-on-dark);
  gap: var(--space-3);
  transition: background-color var(--motion-normal),
   color var(--motion-normal), transform var(--motion-press);
@@ -232,7 +242,7 @@
 
 /* Same reason as the close button: index.css removes the browser ring. */
 .menuItem:focus-visible {
- outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
  outline-offset: var(--border-width-thick);
  background-color: var(--color-accent);
  color: var(--color-accent-content);
@@ -253,7 +263,7 @@
 .menuItemIcon {
  width: 1em;
  height: 1em;
- font-size: var(--font-size-lg);
+ font-size: var(--font-size-xl);
  flex-shrink: 0;
 }
 
@@ -271,14 +281,19 @@
 .menuFooter {
  padding: var(--space-3) var(--space-4);
  text-align: center;
- background-color: var(--color-surface-inverse);
+ /* Two badges on one line, wrapping together rather than one under the other. */
+ display: flex;
+ flex-wrap: wrap;
+ justify-content: center;
+ gap: var(--space-2);
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
 }
 
 .currencyBadge {
  display: inline-flex;
  align-items: center;
  gap: var(--space-2);
- font-size: var(--font-size-xs);
+ font-size: var(--font-size-sm);
  color: var(--color-content-secondary);
  padding: var(--space-1) var(--space-2);
  background-color: var(--color-surface-panel);
