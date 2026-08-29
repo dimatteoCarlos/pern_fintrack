@@ -11,6 +11,7 @@
  * Single-currency provider, same shape as cotizaveApiProvider for VES:
  * - fetchAllRates(baseCurrency) → { rates: { cop: {...} }, source, fetchedAt }
  * - fetchRate(baseCurrency, targetCurrency) → { rate, source, fetchedAt } or null
+ * - fetchTrmForDate(date) → { rate, source, effectiveDate, ... } — the historical arm
  *
  * Dataset row:
  * { valor: '3048.12', unidad: 'COP', vigenciadesde: '2026-08-22T00:00:00.000',
@@ -27,6 +28,7 @@ const FX_TIMEOUT_MS = Number(process.env.FX_REQUEST_TIMEOUT_MS || 2000);
 
 // Colombia has no DST, so the dataset's naked timestamps are always UTC-05:00.
 const COLOMBIA_UTC_OFFSET = '-05:00';
+const COLOMBIA_OFFSET_MS = 5 * 60 * 60 * 1000;
 
 // A published TRM older than this is treated as unusable rather than served stale.
 const MAX_TRM_AGE_DAYS = 7;
@@ -96,6 +98,113 @@ export async function fetchTrm() {
  return {
   rate,
   source: 'banrep-trm',
+  fetchedAt: new Date(),
+  publishedAt,
+ };
+}
+
+/**
+ * Normalize a requested day to the dataset's calendar day, 'YYYY-MM-DD'.
+ * Colombia has no DST, so a Date is read at a fixed UTC-05:00 offset.
+ * @param {string|Date} value - 'YYYY-MM-DD', an ISO timestamp, or a Date
+ * @returns {string|null}
+ */
+function toColombianDay(value) {
+ let day = null;
+
+ if (value instanceof Date) {
+  if (Number.isNaN(value.getTime())) return null;
+  day = new Date(value.getTime() - COLOMBIA_OFFSET_MS).toISOString().slice(0, 10);
+ } else if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+  day = value.slice(0, 10);
+ }
+
+ if (!day) return null;
+
+ // Rejects a well-formed but impossible day such as '2026-02-31'.
+ const parsed = new Date(`${day}T00:00:00.000Z`);
+
+ if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== day) {
+  return null;
+ }
+
+ return day;
+}
+
+/**
+ * Fetch the TRM in force on a past day.
+ *
+ * The TRM is published on trading days only, so the query is not an equality:
+ * it takes the most recent row whose validity starts on or before the requested
+ * day, which is how a Sunday or a holiday resolves in a single call. The row's
+ * own vigenciahasta then confirms the day really falls inside its validity.
+ *
+ * effectiveDate is the day that actually supplied the rate and differs from the
+ * requested day on every non-trading day; the caller stores it as provenance.
+ *
+ * @param {string|Date} date - The requested day, 'YYYY-MM-DD' or a Date
+ * @returns {Promise<{rate: number, source: string, requestedDate: string, effectiveDate: string, effectiveUntil: string, fetchedAt: Date, publishedAt: Date}>}
+ * @throws {Error} - On an invalid day, network failure, malformed payload or no rate in force
+ */
+export async function fetchTrmForDate(date) {
+ const day = toColombianDay(date);
+
+ if (!day) {
+  throw new Error(`Invalid TRM date requested: ${date}`);
+ }
+
+ const headers = {};
+
+ // Optional: raises the anonymous Socrata rate limit. Not required.
+ if (process.env.DATOS_GOV_APP_TOKEN) {
+  headers['X-App-Token'] = process.env.DATOS_GOV_APP_TOKEN;
+ }
+
+ const response = await axios.get(TRM_DATASET_URL, {
+  timeout: FX_TIMEOUT_MS,
+  headers,
+  params: {
+   // The day is validated above, so it cannot carry a SoQL fragment.
+   '$where': `vigenciadesde <= '${day}T23:59:59.999'`,
+   '$order': 'vigenciadesde DESC',
+   '$limit': 1,
+  },
+ });
+
+ const row = Array.isArray(response.data) ? response.data[0] : null;
+
+ if (!row) {
+  throw new Error(`No TRM published on or before ${day}`);
+ }
+
+ const rate = Number(row.valor);
+
+ if (!Number.isFinite(rate) || rate <= 0) {
+  throw new Error(`Invalid TRM value for ${day}: ${row.valor}`);
+ }
+
+ const publishedAt = parseColombianDate(row.vigenciadesde);
+
+ if (!publishedAt) {
+  throw new Error(`Invalid TRM vigenciadesde for ${day}: ${row.vigenciadesde}`);
+ }
+
+ const effectiveDate = String(row.vigenciadesde).slice(0, 10);
+ const effectiveUntil = String(row.vigenciahasta || '').slice(0, 10);
+
+ // Guards a day past the published series: the last row must still cover it.
+ if (effectiveUntil && effectiveUntil < day) {
+  throw new Error(`No TRM in force on ${day}; last one ended ${effectiveUntil}`);
+ }
+
+ console.log(`[FX] Banrep TRM usd -> cop for ${day}: ${rate} (effective ${effectiveDate})`);
+
+ return {
+  rate,
+  source: 'banrep-trm',
+  requestedDate: day,
+  effectiveDate,
+  effectiveUntil,
   fetchedAt: new Date(),
   publishedAt,
  };
