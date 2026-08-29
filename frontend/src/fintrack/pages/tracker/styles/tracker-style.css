@@ -234,17 +234,35 @@ background-color: white;
   width: 100%;
   border: none;
   outline: none;
-  resize: vertical;
+  /* The box is sized to the text below, so a drag handle offers nothing. */
+  resize: none;
   transition: max-height 0.2s ease;
   /* Fills the row instead of sizing itself, so the height below governs. */
   height: 100%;
 }
 
-/* Five lines: what the 90 characters of maxLength occupy at the narrowest
-   supported width, where the field is 244px and fits 22 characters a line.
-   Where they do not fit, the card scrolls rather than the field shrinking. */
+/* The floor is the field's own line box, 0.875rem at 1.2, plus its 0.5rem top
+   padding and the 0.1rem the container adds above and below. Measuring 1.2em
+   here instead would take the inherited 1rem and over-allocate every line.
+
+   The line count follows capacity, not the widest case: the 90 characters of
+   maxLength need five lines while a line holds 18 to 22 characters, four from
+   23, and three from 28. Those thresholds were measured at 440px and 600px of
+   viewport, and they move if the field's type or the card's width changes. */
 .note--description {
- min-height: calc(5 * 1.2em + 1rem);
+ min-height: calc(5 * (0.875rem * 1.2) + 0.8rem);
+}
+
+@media (min-width: 440px) {
+ .note--description {
+  min-height: calc(4 * (0.875rem * 1.2) + 0.8rem);
+ }
+}
+
+@media (min-width: 600px) {
+ .note--description {
+  min-height: calc(3 * (0.875rem * 1.2) + 0.8rem);
+ }
 }
 
 textarea:invalid {
