@@ -69,4 +69,50 @@ export const accountAllocationService = {
    })),
   };
  },
+
+ /**
+  * The same two figures for a whole list of accounts, in one query.
+  *
+  * Written for the picker that chooses which account funds a pocket: it shows
+  * the balance, what is committed and what is unassigned side by side, so that
+  * no single one of them can be called "available". One query for the list
+  * rather than one per row, because the underlying read already takes an array.
+  *
+  * The goals each account backs are deliberately NOT attached here. That is one
+  * query per account and the picker asks a different question — which account
+  * has room, not what its money is already promised to. The account's own
+  * screen answers that one.
+  *
+  * An account the allocation read filters out — the internal account, or a
+  * soft-deleted one — is simply absent from the map. The caller leaves its
+  * figures unset rather than writing zeros: a zero would state that nothing is
+  * committed to an account this query could not answer for.
+  *
+  * @param {import('pg').Pool|import('pg').PoolClient} db
+  * @param {string} userId - from the token
+  * @param {number[]} accountIds - already proven to be the caller's
+  * @returns {Promise<Map<number, object>>} keyed by account id
+  */
+ async getAllocationsByAccountId(db, userId, accountIds) {
+  if (accountIds.length === 0) {
+   return new Map();
+  }
+
+  const rows = await getAccountAllocations(db, userId, accountIds);
+
+  return new Map(
+   rows.map((row) => {
+    const account = makeAccountAllocation(row);
+
+    return [
+     account.accountId,
+     {
+      allocated: account.accountAllocated,
+      unassignedCash: account.accountUnassignedCash,
+      isOverAllocated: account.isOverAllocated,
+     },
+    ];
+   }),
+  );
+ },
 };

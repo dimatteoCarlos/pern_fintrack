@@ -409,10 +409,43 @@ ORDER BY ps.target DESC,  ABS(ua.account_balance) DESC
 
     const accountList = accountListResult.rows;
 
+    // The picker that chooses which account funds a pocket needs three figures
+    // beside each other — the balance, what is committed to pockets, and what
+    // is not — precisely so that no single one of them gets called "available".
+    // Attached from the same service the commit path validates against, in one
+    // query for the whole list, so the business rule and the number on screen
+    // cannot drift apart.
+    //
+    // Bank only. No route creates a cash account, unassigned cash means nothing
+    // on an investment balance that is a market valuation nor on a debtor, and
+    // a mixed type would carry the figures on some rows and not others — which
+    // reads worse than carrying them nowhere.
+    if (accountType === 'bank') {
+      const allocationByAccountId =
+        await accountAllocationService.getAllocationsByAccountId(
+          pool,
+          userId,
+          accountList.map((account) => account.account_id),
+        );
+
+      for (const account of accountList) {
+        const allocation = allocationByAccountId.get(account.account_id);
+
+        // Absent means the allocation read filtered the row out. Left unset
+        // rather than zeroed: a zero would state that nothing is committed to
+        // an account this query could not answer for.
+        if (!allocation) continue;
+
+        account.allocated = allocation.allocated;
+        account.unassignedCash = allocation.unassignedCash;
+        account.isOverAllocated = allocation.isOverAllocated;
+      }
+    }
+
     //devolver el nombre de la cuenta, (balance actual), currency_code
     const data = {
       rows: accountList.length,
-      accountList: accountListResult.rows,
+      accountList,
     };
 
     const message = `Accounts retrieved successfully for accounts type "${accountType}"`;
