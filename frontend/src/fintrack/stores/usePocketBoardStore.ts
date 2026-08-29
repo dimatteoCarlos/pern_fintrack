@@ -64,12 +64,14 @@ export const usePocketBoardStore = create<PocketBoardState>((set, get) => ({
   set({ isRequested: true, isLoading: true, error: null });
 
   try {
-   const response = await getPocketBoard();
+   // The payload, not the envelope: the client unwraps the transport layer so
+   // the store never reaches through a status and a message to find pockets.
+   const board = await getPocketBoard();
 
    set({
-    summary: response.data.summary,
-    pockets: response.data.pockets,
-    notices: response.data.meta.notices,
+    summary: board.summary,
+    pockets: board.pockets,
+    notices: board.meta.notices,
     isLoaded: true,
     isLoading: false,
     error: null,

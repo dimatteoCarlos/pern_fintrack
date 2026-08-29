@@ -83,7 +83,7 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
       <article className='list__main__container pocketList'>
         <div className='pocketList__state'>
           <p className='pocketList__stateText'>
-            No pockets yet. Create one to start saving towards a goal.
+            No pockets yet. Create one to plan towards a goal.
           </p>
         </div>
       </article>
@@ -95,10 +95,10 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
     <article className='list__main__container pocketList'>
       {pockets.map((pocket) => {
         const {
-          accountId,
-          accountName,
+          pocketId,
+          name,
           note,
-          saved,
+          allocated,
           target,
           remaining,
           desiredDate,
@@ -112,23 +112,20 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
         // renders as the previous day west of UTC.
         const deadlineText = formatCalendarDate(desiredDate);
 
-        // Nullable column: a pocket is allowed to have no goal, and the row
-        // says so instead of printing a goal of zero.
-        const goalText =
-          target === null
-            ? DASH
-            : numberFormatCurrency(target, 2, currency_code);
+        // The goal is required and positive on this contract, so there is no
+        // absent case left to render as a dash.
+        const goalText = numberFormatCurrency(target, 2, currency_code);
 
         return (
           <Link
-            to={`pockets/${accountId}`}
+            to={`pockets/${pocketId}`}
             state={{ previousRoute }}
             className='card__tile__pocket line__container'
-            key={`pocket-${accountId}`}
+            key={`pocket-${pocketId}`}
           >
             {/* <PocketLeftTile> */}
             <div className='tile__left'>
-              <div className='tile__title'>{accountName}</div>
+              <div className='tile__title'>{name}</div>
               <div className='tile__subtitle'>{note ?? DASH}</div>
               <div className='tile__subtitle'>{`(${deadlineText})`}</div>
             </div>
@@ -136,7 +133,7 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
             {/* <PocketRightTile> */}
             <div className='tile__right'>
               <div className='tile__title'>
-                saved: {currencyFormat(currency_code, saved)}
+                allocated: {currencyFormat(currency_code, allocated)}
               </div>
               <div className='tile__subtitle flx-row-sb'>
                 <span className='tile__subtitle tile__subtitle--opc'>
@@ -148,7 +145,7 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
                     still marks every unfinished pocket — that is P-4, and it is
                     replaced when the status arrives with the pace figures. */}
                 <StatusSquare
-                  alert={remaining !== null && remaining > 0 ? 'alert' : ''}
+                  alert={remaining > 0 ? 'alert' : ''}
                 />
               </div>
             </div>

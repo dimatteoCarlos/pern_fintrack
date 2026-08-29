@@ -11,15 +11,21 @@
 
 import { authFetch } from '../../auth/auth_utils/authFetch.ts';
 import { url_pocket_board } from '../../urlConfig.ts';
-import { PocketBoardResponse } from '../types/pocketTypes.ts';
+import { PocketBoardPayload, PocketBoardResponse } from '../types/pocketTypes.ts';
 
 // No arguments, and that is the contract: the board is every pocket the caller
 // owns. There is nothing for a screen to name and therefore nothing it can name
 // wrongly.
-export const getPocketBoard = async (): Promise<PocketBoardResponse> => {
- const { data } = await authFetch<PocketBoardResponse>(url_pocket_board, {
+//
+// It returns the payload, not the envelope. The status and message of
+// { status, message, data } are transport, and handing them to a store would
+// make every consumer reach through a wrapper that says nothing about pockets.
+// The double destructure is the two layers: axios wraps the HTTP body, and the
+// API wraps its payload.
+export const getPocketBoard = async (): Promise<PocketBoardPayload> => {
+ const { data: body } = await authFetch<PocketBoardResponse>(url_pocket_board, {
   method: 'GET',
  });
 
- return data;
+ return body.data;
 };
