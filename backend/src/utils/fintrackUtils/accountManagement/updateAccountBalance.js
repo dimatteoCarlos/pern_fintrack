@@ -1,7 +1,7 @@
 //backend/src/utils/updateAccountBalance.js
 
-// Updates account balance in user_accounts table after a transaction
-// Records the new balance and timestamp for audit trail
+// Updates account balance in user_accounts table after a transaction.
+// updated_at records when the row was last touched, never the movement date.
 
 import pc from 'picocolors';
 import { pool } from '../../../db/config/configDB.js';
@@ -14,12 +14,11 @@ export const updateAccountBalance = async (
   clientOrPool = null,
   newBalance,
   accountId,
-  transactionActualDate = new Date(),
 ) => {
   const db = clientOrPool || pool;
   const insertBalanceQuery = {
-    text: `UPDATE user_accounts SET account_balance=$1, updated_at = $2 WHERE account_id = $3 RETURNING *`,
-    values: [newBalance, transactionActualDate, accountId],
+    text: `UPDATE user_accounts SET account_balance=$1, updated_at = NOW() WHERE account_id = $2 RETURNING *`,
+    values: [newBalance, accountId],
   };
 
   try {

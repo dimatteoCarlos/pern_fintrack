@@ -249,7 +249,6 @@ const processRTAAnnulment = async (
         dbClient,
         newAffectedBalance,
         affectedAccountId,
-        new Date(),
       );
 
       // Prepare annulment data

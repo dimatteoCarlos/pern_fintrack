@@ -814,7 +814,6 @@ export const createDebtorAccount = async (req, res, next) => {
       client,
       newCounterAccountBalance, //counterAccountInfo.account.account_balance
       slackCounterAccountInfo.account_id,
-      transaction_actual_date,
     );
 
     // console.log('updateCounterAccountInfo iput ',  newCounterAccountBalance,

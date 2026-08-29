@@ -4,11 +4,11 @@ import { createError, handlePostgresError } from '../../errorHandling.js';
 
 //this function must be used in a transactional context
 // * 🛡️ Checks for the existence of a specific account (e.g., 'slack') by name and type.
+// updated_at records when the row was last touched, never the movement date.
 export const updateAffectedAccountBalance = async (
   dbClient,
   newBalance,
   accountId,
-  transactionActualDate,
 ) => {
   if (!dbClient || !dbClient.query) {
     throw createError(
@@ -25,10 +25,10 @@ export const updateAffectedAccountBalance = async (
     );
 
     const updateAffectedAccountBalanceQuery = {
-      text: `UPDATE user_accounts SET account_balance=$1, updated_at=$2 
-WHERE account_id=$3 RETURNING *
+      text: `UPDATE user_accounts SET account_balance=$1, updated_at=NOW() 
+WHERE account_id=$2 RETURNING *
 `,
-      values: [newBalance, transactionActualDate ?? new Date(), accountId],
+      values: [newBalance, accountId],
     };
 
     //Execute using the transactional client

@@ -122,21 +122,19 @@ export const balanceMultiplierFn = (transactionTypeName) => {
 };
 
 //update account balance in user_accounts table
+// updated_at records when the row was last touched, not when the movement
+// happened; that is what the transactions say. NOW() is the pattern
+// accountEditController.js:282 already uses.
 export const updateAccountBalance = async (
   clientOrPool,
   newBalance,
   accountId,
-  transactionActualDate,
 ) => {
   const dbClient = clientOrPool || pool;
-  console.log(
-    'updateAccountBalance Transaction Actual Date:',
-    transactionActualDate,
-  );
   //assure first the existence of updatedAccountResult?
   const insertBalanceQuery = {
-    text: `UPDATE user_accounts SET account_balance=$1, updated_at = $2 WHERE account_id = $3 RETURNING *`,
-    values: [newBalance, transactionActualDate ?? new Date(), accountId],
+    text: `UPDATE user_accounts SET account_balance=$1, updated_at = NOW() WHERE account_id = $2 RETURNING *`,
+    values: [newBalance, accountId],
   };
   //request
   const updatedAccountResult = await dbClient.query(insertBalanceQuery);
@@ -607,7 +605,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
       client,
       newSourceAccountBalance,
       sourceAccountId,
-      transaction_actual_date,
     );
     // console.log(
     //   '🚀 ~ updatedSourceAccountInfo:',
@@ -629,7 +626,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
       client,
       newDestinationAccountBalance,
       destinationAccountId,
-      transaction_actual_date,
     );
     // console.log(
     //   '🚀 ~ updatedDestinationAccountInfo:',
