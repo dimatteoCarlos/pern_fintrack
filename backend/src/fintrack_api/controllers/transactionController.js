@@ -28,6 +28,12 @@ import {
 import { recordTransaction } from '../../utils/fintrackUtils/transactionManagement/recordTransaction.js';
 import { formatDate } from '../../utils/helpers.js';
 import { getCurrencyId } from '../../utils/currencyLookup.js';
+import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import {
+  dayInZone,
+  isCalendarDate,
+  todayInZone,
+} from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { currencyAmountConversion } from '../services/fx_services/conversion/currencyAmountConversion.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
 //==================================
@@ -467,18 +473,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   err.status = 400;
     //   throw err;
     // }
-    //validate input date
     const { transactionActualDate: actualDate } = req.body;
-
-    const transaction_actual_date =
-      !actualDate || actualDate === '' || !date || actualDate === ''
-        ? new Date()
-        : new Date(actualDate ?? date);
-
-    // console.log(
-    // '🚀 ~ transferBetweenAccounts ~ transactionActualDate:',
-    //   date, actualDate, transaction_actual_date,
-    // );
 
     // =============================
     //=== Begin transaction========
@@ -527,6 +522,66 @@ export const transferBetweenAccounts = async (req, res, next) => {
         404,
         `Destination account ${requestedDestinationAccountId ?? destinationAccountName} not found`,
       );
+    }
+
+    // The movement's date. Absent or empty means now, which is what every form
+    // sends today. It is validated here, below both lookups, because the lower
+    // bound is the later of the two accounts' opening days.
+    const timeZone = await getUserTimeZone(client, userId);
+    const requestedDay = typeof actualDate === 'string' ? actualDate.trim() : '';
+    let transaction_actual_date = new Date();
+
+    if (requestedDay !== '') {
+      if (!isCalendarDate(requestedDay)) {
+        throw createError(
+          400,
+          `transactionActualDate must be a calendar day, YYYY-MM-DD`,
+        );
+      }
+
+      const today = todayInZone(timeZone);
+
+      if (requestedDay > today) {
+        throw createError(
+          422,
+          `A movement cannot be dated after today, ${today}`,
+        );
+      }
+
+      // Calendar days on both sides, never instants. account_start_date holds an
+      // arbitrary wall-clock time, so an account opened at 20:00 would refuse a
+      // movement on its own opening day once that day is anchored at noon.
+      const openings = [
+        [
+          sourceAccountInfo.account_name,
+          dayInZone(sourceAccountInfo.account_start_date, timeZone),
+        ],
+        [
+          destinationAccountInfo.account_name,
+          dayInZone(destinationAccountInfo.account_start_date, timeZone),
+        ],
+      ];
+      const [openedName, openedDay] = openings.reduce((later, current) =>
+        current[1] > later[1] ? current : later,
+      );
+
+      if (requestedDay < openedDay) {
+        throw createError(
+          422,
+          `A movement cannot be dated before ${openedName} was opened on ${openedDay}`,
+        );
+      }
+
+      // Composed once, in SQL, and reused by both legs so the two halves of one
+      // entry cannot land in different months. A past day is anchored at noon in
+      // the owner's zone; today keeps the real current instant.
+      if (requestedDay < today) {
+        const composed = await client.query({
+          text: `SELECT (($1::date + TIME '12:00') AT TIME ZONE $2) AS instant`,
+          values: [requestedDay, timeZone],
+        });
+        transaction_actual_date = composed.rows[0].instant;
+      }
     }
     //----source account-----------------
     const sourceAccountTypeId = accountTypes.filter(
