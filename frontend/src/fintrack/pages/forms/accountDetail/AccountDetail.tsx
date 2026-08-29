@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useFetch } from '../../../hooks/useFetch.ts';
 
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
-import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
+import AccountEditLink from '../../../general_components/accountEditLink/AccountEditLink.tsx';
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
@@ -186,13 +186,16 @@ function AccountDetail() {
                 : 'Loading...'}
             </div>
 
-            {/* <Link to='edit' className='flx-col-center icon3dots'>
-            <Dots3LightSvg />
-          </Link> */}
-
-            <div id='edit' className='flx-col-center icon3dots'>
-              <Dots3LightSvg />
-            </div>
+            {/* The editor returns to this card, not to the list the user came
+                from: it is where they were standing. */}
+            {accountId && (
+              <AccountEditLink
+                accountId={accountId}
+                returnRoute={location.pathname}
+                accountName={accountDetail.account_name}
+                originRoute={previousRoute}
+              />
+            )}
           </div>
 
           <form className='form__box'>
