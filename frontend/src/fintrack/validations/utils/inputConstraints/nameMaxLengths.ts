@@ -12,12 +12,12 @@ export const NAME_MAX_LENGTHS = {
   category_name: 11,
   /** Subcategory name (10 chars)*/
   subcategory: 12,
-  /** Note/description field (90 chars) */
-  note: 90,
+  /** Note/description field (155 chars, matching the server) */
+  note: 155,
   /** Account name (28 chars) */
   account_name: 28,
-  /** Pocket name (28 chars) */
-  pocket_name: 28,
+  /** Pocket name (50 chars, matching the server) */
+  pocket_name: 50,
   /** Debtor first name ( chars) */
   debtor_name: 13,
   /** Debtor last name ( chars) */

@@ -1,17 +1,22 @@
 //frontend/src/pages/forms/newPocket/NewPocket.tsx/NewPocket.tsx
 // 🎯 IMPORTS
-import { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useCallback, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../styles/forms-styles.css';
 
 // 🛠️ CUSTOM HOOKS & UTILITIES
 import useInputNumberHandler from '../../../hooks/useInputNumberHandler.ts';
-import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 import { normalizeError } from '../../../helpers/normalizeError.ts';
-import { numberFormatCurrency } from '../../../helpers/functions.ts';
+import {
+  numberFormatCurrency,
+  toCalendarDay,
+} from '../../../helpers/functions.ts';
+import { createPocket } from '../../../api/pocketApi.ts';
+import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
+import { usePocketBoardStore } from '../../../stores/usePocketBoardStore.ts';
 
 // 📦 COMPONENTS
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
@@ -26,11 +31,9 @@ import LeftArrowSvg from '../../../../assets/LeftArrowSvg.svg';
 
 // 🏷️ TYPES & CONSTANTS
 import { CurrencyType, FormNumberInputType } from '../../../types/types.ts';
-import { CreatePocketSavingAccountApiResponseType } from '../../../types/responseApiTypes.ts';
+import { CreatePocketBody } from '../../../types/pocketTypes.ts';
 import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 
-// 🏷️ ENPOINTS
-import { url_create_pocket_saving_account } from '../../../../urlConfig.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 import CharacterCounter from '../../../general_components/characterCounter/CharacterCounter.tsx';
 
@@ -41,17 +44,6 @@ type PocketDataType = {
   currency?: CurrencyType;
   desiredDate: Date;
   amount?: number | '';
-};
-
-type PocketSavingPayloadType = {
-  name: string;
-  note: string;
-  type: 'pocket_saving';
-  target: number | '';
-  desired_date: Date | string;
-  currency?: CurrencyType;
-  user?: string;
-  // saved?: number;
 };
 
 // ⚙️ CONSTANTS & INITIAL STATES
@@ -83,6 +75,7 @@ const initialFormData: FormNumberInputType = {
 // =============================
 function NewPocket() {
   const location = useLocation();
+  const navigateTo = useNavigate();
   // console.log("🚀 ~ NewPocket ~ location:", location)
   //-------------------------------------
 
@@ -104,13 +97,14 @@ function NewPocket() {
     { message: string; status?: number } | string | null | undefined
   >(null);
 
-  // 🌐 DATA FETCHING HOOK
-  //POST: NEW ACCOUNT DATA
-  //endpoint: http://localhost:5000/api/fintrack/account/new_account/pocket_saving
-  const { data, isLoading, error, requestFn } = useFetchLoad<
-    CreatePocketSavingAccountApiResponseType,
-    PocketSavingPayloadType
-  >({ url: url_create_pocket_saving_account, method: 'POST' });
+  // 🌐 SUBMISSION STATE
+  // POST /api/fintrack/pocket, through the module's own client.
+  //
+  // Local state rather than useFetchLoad, because the answer is not data this
+  // screen renders: it is the next screen's payload, handed to the detail store
+  // on its way past. A hook that holds the response would keep a copy of a
+  // pocket this component no longer shows.
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   //-----------------------------------
   // 🎮 EVENT HANDLER HOOKS
   //event handler hook for number input handling
@@ -119,21 +113,6 @@ function NewPocket() {
     setValidationMessages,
     setPocketData,
   );
-  //-------------------------
-  // 🧹 MESSAGE CLEANUP EFFECT
-  // Clear message after 5 seconds
-  useEffect(() => {
-    if (data && !isLoading && !error) {
-      //success response
-      setMessageToUser(
-        data.message || 'New Pocket account successfully created!',
-      );
-      // console.log('Received data:', data);
-    } else if (!isLoading && error) {
-      setMessageToUser(error);
-    }
-  }, [messageToUser, data, error, isLoading]);
-
   //---------------------------------------
   // ✨ INPUT HANDLERS
   function inputHandler(
@@ -208,85 +187,53 @@ function NewPocket() {
     }
 
     // 🚀 API REQUEST EXECUTION
-    //POST the new pocket data into database
-    //Prepare and send payload
+    setIsSubmitting(true);
+    setMessageToUser(null);
+
     try {
-      const payload: PocketSavingPayloadType = {
+      // The five keys the strict schema accepts. `type` and `user` are gone:
+      // the type belonged to the retired account model, and identity comes
+      // from the token — sending either is now a 400, not a field ignored.
+      const payload: CreatePocketBody = {
         name: pocketData.name.toLowerCase().trim(),
-        note: pocketData.note,
-        type: 'pocket_saving',
-        currency: pocketData.currency ?? defaultCurrency, //default
-        target:
-          pocketData.amount !== undefined && pocketData.amount !== ''
-            ? pocketData.amount
-            : '',
-        desired_date: pocketData.desiredDate, // ISO format
-        // user,
+        currency: pocketData.currency ?? defaultCurrency,
+        targetAmount: Number(pocketData.amount),
+        // The day the user pointed at, on the user's own calendar. Converted
+        // exactly once, here, and never sent as an instant.
+        desiredDate: toCalendarDay(pocketData.desiredDate),
       };
 
-      // ✅ requestFn delivers { data: ResponseType | null, error: string | null }
-      const { data: responseData, error: requestError } =
-        await requestFn(payload);
-      // console.log('📦 Response received:', { responseData, requestError });
+      // Omitted rather than sent empty: the column is nullable and '' is a note
+      // nobody wrote.
+      const note = pocketData.note.trim();
+      if (note) payload.note = note;
 
-      // ✅ VALIDATION BEFORE SUBMITTING
-      // ❌ REQUEST ERROR HANDLING
-      if (requestError) {
-        console.log('🔴 Network error:', requestError);
-        // Error del request (network, etc.).Error de red/axios
-        setMessageToUser({
-          message: requestError,
-          status: 500,
-        });
-        return;
-      }
+      const detail = await createPocket(payload);
 
-      //✅ HANDLING SERVER RESPONSE (SUCCESS OR ERROR)
-      if (responseData) {
-        // console.log('📊 Server response status:', responseData.status, responseData.message, responseData.data);
-        // ✅ CHECK STATUS CODE
-        if (responseData.status >= 200 && responseData.status < 300) {
-          //SUCCESS
-          // console.log('message', { message:responseData.message || 'New Pocket account successfully created!', status:responseData.status
-          // })
+      // 🔄 RESET FORM ON SUCCESS
+      setValidationMessages({});
+      setFormData(initialFormData);
+      setPocketData(initialNewPocketData);
 
-          setMessageToUser({
-            message:
-              responseData.message ||
-              'New Pocket account successfully created!',
-            status: responseData.status,
-          });
+      // The 201 carried the whole detail payload, so the screen it opens is
+      // already answered and asks for nothing. The board is only marked stale:
+      // it refetches if and when the user goes back to it.
+      usePocketDetailStore.getState().setDetail(detail);
+      usePocketBoardStore.getState().invalidate();
 
-          // 🔄 RESET FORM ON SUCCESS
-          // setIsReset(true);
-          setValidationMessages({});
-          setFormData(initialFormData);
-          setPocketData(initialNewPocketData);
-          // setIsDisabledValue(false);
-          setMessageToUser(null);
-          // setTimeout(() => setIsReset(false), 1500);
-        } else {
-          console.error('❌ Server error - setting message');
-          setMessageToUser({
-            message:
-              responseData.message ||
-              'Server error when creating new Pocket account',
-            status: responseData.status,
-          });
-        }
-      }
-
-      if (import.meta.env.VITE_ENVIRONMENT === 'developmentx') {
-        console.log('Data from New Pocket request:', responseData);
-      }
+      navigateTo(`/fintrack/pocket/pockets/${detail.pocket.pocketId}`, {
+        state: { previousRoute: '/fintrack/pocket' },
+      });
     } catch (error) {
-      // 🚨 UNEXPECTED ERROR HANDLING
-      console.error(
-        '🔥 Unexpected error when submitting new Pocket accoung',
-        error,
-      );
+      // 🚨 ERROR HANDLING
+      // One path for every failure. The client throws on a refused request as
+      // well as on a network fault, so a 400 from the strict schema and a lost
+      // connection land in the same place and both leave the form filled in.
+      console.error('🔥 Error creating the pocket', error);
       const { message, status } = normalizeError(error);
       setMessageToUser({ message, status });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -315,7 +262,7 @@ function NewPocket() {
         <div className='page__content'>
           <div style={{ textAlign: 'center', padding: '2rem' }}>
             <h3>Authentication Required</h3>
-            <p>Please log in to create a new Pocket account.</p>
+            <p>Please log in to create a new pocket.</p>
           </div>
         </div>
       </section>
@@ -485,7 +432,7 @@ function NewPocket() {
           {/* 💾 SUBMIT BUTTON */}
           <FormSubmitBtn
             onClickHandler={onSubmitForm}
-            disabled={isLoading || isFormDisabled}
+            disabled={isSubmitting || isFormDisabled}
           >
             save
           </FormSubmitBtn>
@@ -493,8 +440,7 @@ function NewPocket() {
 
         {/* 💬 USER MESSAGES */}
         <MessageToUser
-          isLoading={isLoading}
-          error={error}
+          isLoading={isSubmitting}
           messageToUser={messageToUser}
           variant='form'
         />

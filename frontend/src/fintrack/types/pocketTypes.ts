@@ -190,3 +190,21 @@ export type PocketDetailResponse = {
  message: string;
  data: PocketDetailPayload;
 };
+
+// The body POST /pocket accepts, and nothing else: the schema behind it is
+// strict, so an extra key is a 400 rather than a field the server ignores. The
+// form used to send `type` and `user`, both of which that schema now rejects —
+// identity comes from the token.
+//
+// note is omitted rather than sent empty: the column is nullable and an empty
+// string is a note the user never wrote.
+export type CreatePocketBody = {
+ name: string;
+ note?: string;
+ targetAmount: number;
+ currency: CurrencyType;
+ // YYYY-MM-DD on the OWNER's calendar, never an instant. A Date sent over the
+ // wire serialises to UTC, which is the previous day west of UTC for every
+ // deadline typed in the evening.
+ desiredDate: string;
+};

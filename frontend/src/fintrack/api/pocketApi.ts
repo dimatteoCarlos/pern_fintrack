@@ -10,8 +10,13 @@
 // call at the point of display, not here.
 
 import { authFetch } from '../../auth/auth_utils/authFetch.ts';
-import { url_pocket_board, url_pocket_detail } from '../../urlConfig.ts';
 import {
+ url_pocket_board,
+ url_pocket_create,
+ url_pocket_detail,
+} from '../../urlConfig.ts';
+import {
+ CreatePocketBody,
  PocketBoardPayload,
  PocketBoardResponse,
  PocketDetailPayload,
@@ -55,4 +60,20 @@ export const getPocketDetail = async (
  );
 
  return body.data;
+};
+
+// Creates a pocket and returns the screen that follows it.
+//
+// The response is the detail payload, not an id: the handler builds it because
+// it has just written the row, so the caller can hand it to the detail store
+// and navigate without a second request for something the server already said.
+export const createPocket = async (
+ body: CreatePocketBody,
+): Promise<PocketDetailPayload> => {
+ const { data: responseBody } = await authFetch<PocketDetailResponse>(
+  url_pocket_create,
+  { method: 'POST', data: body },
+ );
+
+ return responseBody.data;
 };

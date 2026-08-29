@@ -343,6 +343,23 @@ export function formatCalendarDate(
   });
 }
 
+// The inverse of formatCalendarDate: takes the Date a picker produced and
+// returns the YYYY-MM-DD label of the day it names on the device's calendar.
+//
+// This is the one conversion between an instant and a calendar day, and it
+// happens here rather than at each call site. A Date is a moment in time; a
+// deadline is a label on a calendar. Handing the Date itself to the server
+// serialises it to UTC, so a deadline picked in the evening west of UTC arrives
+// as the following day — and toISOString().slice(0, 10) has the same defect,
+// because it reads the UTC parts and not the local ones.
+export function toCalendarDay(instant: Date): string {
+  const year = instant.getFullYear();
+  const month = String(instant.getMonth() + 1).padStart(2, '0');
+  const day = String(instant.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
 // Carries the board's month across a link. The month is a property of the URL,
 // so a link inside the module that drops it lands on a screen that silently
 // falls back to the current month.

@@ -247,6 +247,16 @@ export const url_get_transaction_by_id = BASE_URL_APP + 'transaction/';
 // GET /api/fintrack/pocket/board
 export const url_pocket_board: string = BASE_URL_APP + 'pocket/board';
 
+// POST /api/fintrack/pocket
+// Creates a pocket. Not to be confused with url_create_pocket_saving_account
+// above, which writes an account of the retired pocket_saving type — a row the
+// board cannot read, because the board reads the pockets table. That endpoint
+// stays mounted until the type itself is withdrawn.
+//
+// It answers 201 with the whole detail payload rather than an id, so the screen
+// that follows a creation is served by the request that made it.
+export const url_pocket_create: string = BASE_URL_APP + 'pocket';
+
 // GET /api/fintrack/pocket/:pocketId
 // One pocket, everything its screen shows, one request: the hero, the accounts
 // funding it and the allocation history are three views of the same rows, and
