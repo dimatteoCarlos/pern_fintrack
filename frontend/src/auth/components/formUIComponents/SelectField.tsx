@@ -22,8 +22,10 @@ type SelectOption<T> = {
  * 📝 Select field props
  */
 type SelectFieldProps <T extends string> = {
-  /** 🏷️ Label for the select field */
-  label: string;
+  /** 🏷️ Label for the select field. A node, not only a string, so a caller can
+   * put a glyph in front of the words. The id below still needs text, so it
+   * falls back when the label is not one. */
+  label: React.ReactNode;
   
   /** 📝 Current value */
   value: T;
@@ -115,7 +117,13 @@ const SelectFieldInner=<T extends string>({
   /**
    * 🆔 Generate unique ID if not provided
    */
-  const selectId = id || `select-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  const selectId =
+    id ||
+    `select-${
+      typeof label === 'string'
+        ? label.toLowerCase().replace(/\s+/g, '-')
+        : 'field'
+    }`;
   
   /**
    * 🎨 Determine if field has error

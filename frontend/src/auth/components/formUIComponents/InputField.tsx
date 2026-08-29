@@ -10,8 +10,10 @@ import styles from './styles/inputField.module.css';
 🏷️ TYPE DEFINITIONS
 =============================== 🌟 */
 export type InputFieldProps = {
-  /** 🏷️ Label for the input field */
-  label: string;
+  /** 🏷️ Label for the input field. A node, not only a string, so a caller can
+   * put a glyph in front of the words. The id below still needs text, so it
+   * falls back when the label is not one. */
+  label: React.ReactNode;
 
   /** 📝 Current value */
   value: string;
@@ -113,7 +115,13 @@ const InputField: React.FC<InputFieldProps> = React.memo(
     /* 🌟 ===============================
     🎨 COMPUTED VALUES
     ================================ 🌟 */
-    const inputId = id || `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
+    const inputId =
+      id ||
+      `input-${
+        typeof label === 'string'
+          ? label.toLowerCase().replace(/\s+/g, '-')
+          : 'field'
+      }`;
     const hasError = !!error;
 
     /* 🌟 ===============================
