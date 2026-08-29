@@ -152,7 +152,7 @@ button {
    1-70): scrim on --color-surface-overlay at --z-overlay, panel at --z-modal.
 
    The card is the Tracker's, not an invention: .cards__presentation--tracker
-   in tracker-style.css:128-134 is white with a 1rem radius, and that is what
+   in tracker-style.css:124-130 is white with a 1rem radius, and that is what
    tokens.css:14-18 prescribes for the whole product -- a near-black page with
    white or cream cards on it. The paper texture that rule also carries is
    deliberately left out: it is a 43KB request on the first paint of the app,

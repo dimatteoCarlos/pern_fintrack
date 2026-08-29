@@ -250,7 +250,7 @@
    The field is drawn one of two ways, and the difference is not the surface it
    sits on: the auth modal and the profile menu are both white cards. What
    differs is that the auth one is filled, the way the Tracker draws a field --
-   .card__screen in tracker-style.css:188-191 is a creme rectangle with no
+   .card__screen in tracker-style.css:183-186 is a creme rectangle with no
    border at all, on a white card. The fill is the whole affordance there, so
    the contour that the default variant needs is redundant here.
 
@@ -268,7 +268,7 @@
 }
 
 .inputContainer.filled .inputLabel {
-  /* .card--title, tracker-style.css:165-170 */
+  /* .card--title, tracker-style.css:160-165 */
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   color: var(--color-content-primary);
