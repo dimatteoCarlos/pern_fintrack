@@ -100,6 +100,17 @@ export function EditAccount(): JSX.Element {
   const previousRoute =
     location.state?.previousRoute || '/fintrack/tracker/accounting'; // fallback
 
+  // Where the caller's own module starts. It is carried, not consumed: a detail
+  // card derives its back arrow from what it is handed, so returning without
+  // this makes that card forget where the user came from and fall through to
+  // its own default. Both return paths below hand it back.
+  const originRoute = location.state?.originRoute;
+
+  // The state every return to previousRoute carries. previousRoute is restated
+  // as the origin because one step back from the card is the module it opened
+  // from, not the editor that was just closed.
+  const returnState = { previousRoute: originRoute, originRoute };
+
   // 🗄️ GLOBAL STATE - ACCOUNT STORE FOR DATA PERSISTENCE
   const { updateAccount } = useAccountStore();
 
@@ -347,7 +358,7 @@ export function EditAccount(): JSX.Element {
       notifyAccountChanged();
       setUserMessage({ message: 'Account updated successfully!', status: 200 });
       setTimeout(() => {
-        navigateTo(previousRoute); //should be previous route
+        navigateTo(previousRoute, { state: returnState });
       }, 500);
     }
   };
@@ -459,6 +470,7 @@ export function EditAccount(): JSX.Element {
           {/* 🔙 NAVIGATION HEADER - BACK LINK WITH ICON AND TITLE */}
           <Link
             to={previousRoute}
+            state={returnState}
             className='form__header main__title--container '
           >
             <div className='form__header--icon iconLeftArrow'>
