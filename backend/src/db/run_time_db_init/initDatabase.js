@@ -26,6 +26,7 @@ import {
   createTables,
   addFxAuditColumns,
   ensureBudgetTables,
+  ensurePocketTables,
   ensureBudgetAllocationBackfill,
   ensureCategoryBudgetCurrency,
   ensureCategoryBudgetFxColumns,
@@ -163,6 +164,19 @@ export async function initializeDatabase() {
     // Pure CREATE ... IF NOT EXISTS, so it is safe on every boot, exactly like
     // addFxAuditColumns above.
     await ensureBudgetTables(client);
+
+    // =======================================
+    // Pocket domain (idempotent, runs on every boot)
+    // =======================================
+    // Same reason as the budget call above: production is built by this path and
+    // never sees the migration runner, so a table created only inside the
+    // first-time block would never reach it. Pure CREATE ... IF NOT EXISTS.
+    //
+    // The data steps of 020 — copying pocket accounts into pockets, restoring
+    // the funding balances and deleting the accounts — are NOT mirrored here.
+    // They delete financial rows and report what they acted on, which belongs to
+    // an attended migration run, not to a boot.
+    await ensurePocketTables(client);
 
     // Runtime counterpart of migration 011: production is built by this path,
     // not by the migration runner, so the constraint has to be applied here too.
