@@ -500,3 +500,38 @@
   transition: none;
  }
 }
+
+/* A glyph in front of a field's words. The label is a node now, so the two sit
+   on one inline-flex line rather than the glyph breaking to its own. */
+.labelWithIcon {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-2);
+ font-size: inherit;
+}
+
+/* Sized in em off a token, never in px: index.css pins font-size on every
+   element, so the em basis is restated here or it resolves against 16px. */
+.labelIcon {
+ width: 1em;
+ height: 1em;
+ font-size: var(--font-size-base);
+ flex-shrink: 0;
+}
+
+/* The glyph and the words on one line. A class of its own, applied beside
+   .formTitle, so the legacy title block is not touched by this change. */
+.titleWithIcon {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-2);
+}
+
+/* Sized in em off a token: index.css pins font-size on every element, so the
+   em basis is restated here or it resolves against 16px. */
+.titleIcon {
+ width: 1em;
+ height: 1em;
+ font-size: var(--font-size-xl);
+ flex-shrink: 0;
+}

@@ -10,6 +10,11 @@ import React from 'react';
 import Message from '../formUIComponents/Message';
 import SelectField from '../formUIComponents/SelectField';
 import InputField from '../formUIComponents/InputField';
+import CoinsSvg from '../../../assets/userProfileMenuSvg/coinsSvg.svg?react';
+import TimezoneSvg from '../../../assets/userProfileMenuSvg/timezoneSvg.svg?react';
+import PhoneSvg from '../../../assets/userProfileMenuSvg/phoneSvg.svg?react';
+import UserSvg from '../../../assets/userProfileMenuSvg/userSvg.svg?react';
+import EditSvg from '../../../assets/userProfileMenuSvg/editSvg.svg?react';
 import SubmitButton from '../formUIComponents/SubmitButton';
 
 // 🎨 STYLES
@@ -154,7 +159,10 @@ const UpdateProfileForm = ({
   return (
     <div className={`${styles.formContainer} ${className}`}>
       <header className={styles.formHeader}>
-        <h2 className={styles.formTitle}>Update Your Profile</h2>
+        <h2 className={`${styles.formTitle} ${styles.titleWithIcon}`}>
+         <EditSvg className={styles.titleIcon} aria-hidden='true' />
+         Update Your Profile
+        </h2>
         <p className={styles.formSubtitle}>
           Manage your personal information and preferences
         </p>
@@ -205,7 +213,13 @@ const UpdateProfileForm = ({
           </legend>
           <div className={styles.personalInfoGrid}>
             <InputField
-              label='First Name'
+             variant="filled"
+              label={
+               <span className={styles.labelWithIcon}>
+                <UserSvg className={styles.labelIcon} aria-hidden='true' />
+                First Name
+               </span>
+              }
               value={formData.firstname}
               onChange={handleTextChange('firstname')}
               error={getFieldError('firstname')}
@@ -214,7 +228,13 @@ const UpdateProfileForm = ({
               disabled={isLoading || isSuccess}
             />
             <InputField
-              label='Last Name'
+             variant="filled"
+              label={
+               <span className={styles.labelWithIcon}>
+                <UserSvg className={styles.labelIcon} aria-hidden='true' />
+                Last Name
+               </span>
+              }
               value={formData.lastname}
               onChange={handleTextChange('lastname')}
               error={getFieldError('lastname')}
@@ -230,7 +250,12 @@ const UpdateProfileForm = ({
           <legend className={styles.fieldsetLegend}>Preferences</legend>
           <div className={styles.preferencesSection}>
             <SelectField
-              label='Preferred Currency'
+              label={
+               <span className={styles.labelWithIcon}>
+                <CoinsSvg className={styles.labelIcon} aria-hidden='true' />
+                Preferred Currency
+               </span>
+              }
               value={
                 formData.currency === DEFAULT_CURRENCY
                   ? formData.currency
@@ -255,7 +280,12 @@ const UpdateProfileForm = ({
             /> */}
 
             <SelectField
-              label='Time Zone'
+              label={
+               <span className={styles.labelWithIcon}>
+                <TimezoneSvg className={styles.labelIcon} aria-hidden='true' />
+                Time Zone
+               </span>
+              }
               value={formData.timezone}
               options={timeZoneOptions || []}
               onChange={handleTimeZoneChange}
@@ -267,7 +297,13 @@ const UpdateProfileForm = ({
             />
 
             <InputField
-              label='Contact Information'
+             variant="filled"
+              label={
+               <span className={styles.labelWithIcon}>
+                <PhoneSvg className={styles.labelIcon} aria-hidden='true' />
+                Contact Information
+               </span>
+              }
               value={formData.contact || ''}
               onChange={handleContactChange}
               error={getFieldError('contact')}

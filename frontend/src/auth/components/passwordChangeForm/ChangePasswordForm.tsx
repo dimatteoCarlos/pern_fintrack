@@ -13,6 +13,7 @@ import Message from '../formUIComponents/Message';
 import SubmitButton from '../formUIComponents/SubmitButton';
 import ResetButton from '../formUIComponents/Resetbutton';
 
+import LockSvg from '../../../assets/userProfileMenuSvg/lockSvg.svg?react';
 import styles from './styles/passwordChangeForm.module.css';
 import { FormStatusType, TOTAL_COUNTDOWN_SECONDS } from './ChangePasswordContainer';
 
@@ -117,7 +118,10 @@ export default function ChangePasswordForm({
   <div className={styles.passwordFormContainer}>
    {/* 🏷️ Header */}
    <header className={styles.passwordFormHeader}>
-    <h2 className={styles.formTitle}>Change Password</h2>
+    <h2 className={`${styles.formTitle} ${styles.titleWithIcon}`}>
+     <LockSvg className={styles.titleIcon} aria-hidden='true' />
+     Change Password
+    </h2>
     <p className={styles.passwordFormSubtitle}>
      Ensure your account is using a long, random password to stay secure.
     </p>
