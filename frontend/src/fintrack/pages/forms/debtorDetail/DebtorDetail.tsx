@@ -2,7 +2,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
-import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
+import AccountEditLink from '../../../general_components/accountEditLink/AccountEditLink.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 
 import {
@@ -202,12 +202,16 @@ function DebtorDetail() {
             <div className='form__title'>
               {String(bubleInfo.account_name).toUpperCase()}
             </div>
-            {/* <Link to='edit' className='flx-col-center icon3dots'>
-              <Dots3LightSvg />
-            </Link> */}
-            <div id='edit' className='flx-col-center icon3dots'>
-              <Dots3LightSvg />
-            </div>
+            {/* The editor returns to this card, not to the list the user came
+                from: it is where they were standing. */}
+            {accountId && (
+              <AccountEditLink
+                accountId={accountId}
+                returnRoute={location.pathname}
+                accountName={String(bubleInfo.account_name)}
+                originRoute={previousRoute}
+              />
+            )}
           </div>
 
           <SummaryDebtorDetailBox
