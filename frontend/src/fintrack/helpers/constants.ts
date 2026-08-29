@@ -2,7 +2,6 @@
 
 import {
   AccountListType,
-  PocketListType,
   PocketSavingAccountListType,
   TransactionsAccountApiResponseType,
 } from '../types/responseApiTypes';
@@ -180,31 +179,6 @@ export const ACCOUNT_DEFAULT: AccountListType[] = [
   //       account_starting_amount:0,
   //    account_start_date:new Date()
   // },
-];
-
-//pages/budget/ListPocket.tsx
-//just a DEMO
-export const DEFAULT_POCKET_LIST: PocketListType[] = [
-  {
-    account_id: Infinity,
-    account_name: '',
-    note: '',
-    balance: 0,
-    target: 0,
-    currency_code: DEFAULT_CURRENCY,
-    desired_date: new Date(),
-    account_start_date: new Date(),
-  },
-  // {
-  // account_name: 'pocket name example',
-  // note: 'note example',
-  // balance: 0,
-  // target:140,
-  // currency_code:DEFAULT_CURRENCY,
-  // account_id: 1,
-  // desired_date:new Date(),
-  //     account_start_date:new Date()
-  //       }
 ];
 
 export const DEFAULT_POCKET_ACCOUNT_LIST: PocketSavingAccountListType[] = [
