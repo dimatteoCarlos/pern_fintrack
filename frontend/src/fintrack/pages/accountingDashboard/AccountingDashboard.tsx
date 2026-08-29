@@ -7,7 +7,6 @@ import { INITIAL_PAGE_ADDRESS } from '../../helpers/constants';
 import { url_get_all_accounting_accounts } from '../../../urlConfig';
 //---
 import AccountingBox from './AccountingBox';
-import TopWhiteSpace from '../../general_components/topWhiteSpace/TopWhiteSpace';
 import LeftArrowSvg from '../../../assets/LeftArrowSvg.svg';
 // '?react' and not a bare import: only that specifier carries a React
 // component type, so the icon can take a className.
@@ -645,9 +644,9 @@ const AccountingDashboard = () => {
   //=========================
   return (
     <>
+      {/* No TopWhiteSpace here: the top space is inside .accounting__stickyHead
+          so the header docks from the first pixel instead of travelling to it. */}
       <section className='accounting__layout'>
-        <TopWhiteSpace variant={'dark'} />
-
         <div className='accounting__container'>
           {/* The title and the filter travel as one pinned box. Two sticky
               siblings would need the second offset by the first's height, and

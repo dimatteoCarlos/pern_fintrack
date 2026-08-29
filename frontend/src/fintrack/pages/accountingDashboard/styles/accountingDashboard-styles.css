@@ -14,7 +14,9 @@
 
 .accounting__layout {
  min-height: 100vh;
- padding: var(--space-8) 0 var(--space-4) 0;
+ /* No top padding: the space above the title belongs to .accounting__stickyHead
+    now, so the pinned box starts at zero and docks without travelling. */
+ padding: 0 0 var(--space-4) 0;
  background-color: var(--color-surface-app);
  /* No scroll-behavior here: this element declares no overflow, so it is not a
     scrolling box and the property is ignored on it. It lives on :root in
@@ -48,6 +50,9 @@
 .accounting__stickyHead {
  position: sticky;
  top: 0;
+ /* The space TopWhiteSpace and the layout's top padding used to hold, carried
+    inside the box so it survives the dock instead of scrolling away above it. */
+ padding-top: calc(var(--layout-top-space) + var(--space-8));
  z-index: var(--z-raised);
  display: flex;
  flex-direction: column;
@@ -580,8 +585,10 @@ button {
 }
 
 @media (min-width: 480px) {
- .accounting__layout {
-  padding: var(--layout-top-space) 0 var(--space-4) 0;
+ /* Wider screens gave the layout a taller top space; it now lands on the pinned
+    box, which is where the space lives. */
+ .accounting__stickyHead {
+  padding-top: calc(var(--layout-top-space) * 2);
  }
 
  .accounting__title {
