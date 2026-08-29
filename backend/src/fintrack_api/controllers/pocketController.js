@@ -223,6 +223,29 @@ const writeAllocation = async (direction, req, res, next) => {
  }
 };
 
+/** DELETE /api/fintrack/pocket/:pocketId */
+export async function deletePocketById(req, res, next) {
+ try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
+  const { pocketId } = pocketParamsSchema.parse(req.params);
+
+  const result = await pocketWriteService.removePocket(userId, pocketId);
+
+  // What each account gets back travels in the answer, so the result states the
+  // same thing the confirmation promised. There is no impact report to run
+  // first: deleting a pocket moves no money.
+  return res.status(200).json({
+   status: 200,
+   message: 'Pocket deleted successfully',
+   data: result,
+  });
+ } catch (error) {
+  return respondWithServiceError(res, next, error);
+ }
+}
+
 /** POST /api/fintrack/pocket/:pocketId/allocations */
 export const allocateToPocket = (req, res, next) =>
  writeAllocation('allocate', req, res, next);

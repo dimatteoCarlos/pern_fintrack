@@ -13,6 +13,7 @@ import {
  editPocket,
  allocateToPocket,
  releaseFromPocket,
+ deletePocketById,
 } from '../controllers/pocketController.js';
 
 const router = express.Router();
@@ -50,6 +51,12 @@ router.post('/:pocketId/allocations', allocateToPocket);
 // the server. The ceiling is what this pocket holds from that one account, not
 // what it holds in total.
 router.post('/:pocketId/releases', releaseFromPocket);
+
+// DELETE /api/fintrack/pocket/:pocketId
+// Never refused for a non-zero net: the cash was only ever committed, so it
+// stops being committed. The answer names each source account and the amount
+// that returns to its unassigned cash.
+router.delete('/:pocketId', deletePocketById);
 
 // GET /api/fintrack/pocket/:pocketId
 // The whole detail screen from one request: the hero, the source breakdown and

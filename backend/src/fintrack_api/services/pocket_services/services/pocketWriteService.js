@@ -19,6 +19,7 @@ import {
  isWithinAmountRange,
  toAmount,
 } from '../../budget_services/core/money.js';
+import { getFreedCashByAccount } from '../db/accountAllocationRepository.js';
 // The same converter every other write path in the API uses. Migration 014
 // records what happens when one of them skips it: a figure typed as 50000 cop
 // stored as 50000 usd, an error of three orders of magnitude the schema cannot
@@ -29,6 +30,7 @@ import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 import {
  insertPocket,
  updatePocket,
+ deletePocket,
  getPocketForUser,
 } from '../db/pocketRepository.js';
 
@@ -224,7 +226,66 @@ async function editPocket(userId, pocketId, body) {
  }
 }
 
+/**
+ * Delete a pocket, at any net, and answer with what each account gets back.
+ *
+ * Never refused for a non-zero net. An allocation never moved money, so deleting
+ * the ledger with the pocket destroys no financial fact: the cash simply stops
+ * being committed and returns to each source account's unassigned cash. No
+ * balance is written and no transaction is recorded, because none was ever
+ * wrong — which is exactly what separates this from deleting an account, where
+ * money really did move and an impact report has to precede it.
+ *
+ * There is no close operation and no archive. A pocket that no longer applies is
+ * deleted, which is why the schema carries no status column for one to live in.
+ *
+ * The freed figures are read inside the transaction, before the delete:
+ * afterwards the ledger is gone by cascade. They are what the confirmation
+ * promised, so the confirmation and the result state the same thing.
+ *
+ * @throws {Error & {status: 403}} when the pocket is missing or not the caller's
+ */
+async function removePocket(userId, pocketId) {
+ const client = await pool.connect();
+
+ try {
+  await client.query('BEGIN');
+
+  const existing = await getPocketForUser(client, userId, pocketId);
+
+  if (existing === null) {
+   throw forbidden('Pocket not found or not owned by the authenticated user.');
+  }
+
+  const freed = await getFreedCashByAccount(client, userId, pocketId);
+
+  const deleted = await deletePocket(client, userId, pocketId);
+
+  if (!deleted) {
+   throw forbidden('Pocket not found or not owned by the authenticated user.');
+  }
+
+  await client.query('COMMIT');
+
+  return {
+   pocketId,
+   name: existing.name,
+   freed: freed.map((row) => ({
+    accountId: row.accountId,
+    accountName: row.accountName,
+    freedCash: toAmount(row.freedCash),
+   })),
+  };
+ } catch (error) {
+  await client.query('ROLLBACK');
+  throw error;
+ } finally {
+  client.release();
+ }
+}
+
 export const pocketWriteService = {
  createPocket,
  editPocket,
+ removePocket,
 };

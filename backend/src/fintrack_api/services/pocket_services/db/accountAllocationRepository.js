@@ -95,6 +95,40 @@ export async function getPocketSourceHoldings(db, userId, pocketId = null) {
 }
 
 /**
+ * What each account gets back when one pocket is deleted.
+ *
+ * Read BEFORE the delete and inside the same transaction: afterwards the ledger
+ * is gone by cascade and there is nothing left to report. It carries the account
+ * name because the answer is read by a human — a list of ids does not tell the
+ * owner which cash came back where.
+ *
+ * @param {import('pg').PoolClient} client - inside BEGIN
+ * @param {string} userId - UUID from the token
+ * @param {number} pocketId
+ * @returns {Promise<object[]>} { accountId, accountName, freedCash } as text
+ */
+export async function getFreedCashByAccount(client, userId, pocketId) {
+ const { rows } = await client.query(
+  `
+  SELECT
+   pa.source_account_id   AS "accountId",
+   ua.account_name        AS "accountName",
+   SUM(pa.amount)::text   AS "freedCash"
+  FROM pocket_allocations pa
+  JOIN user_accounts ua ON ua.account_id = pa.source_account_id
+  WHERE pa.user_id = $1
+   AND pa.pocket_id = $2
+  GROUP BY pa.source_account_id, ua.account_name
+  HAVING SUM(pa.amount) <> 0
+  ORDER BY ua.account_name ASC
+  `,
+  [userId, pocketId],
+ );
+
+ return rows;
+}
+
+/**
  * Resolve a source account the caller owns, locking it for the rest of the
  * transaction, and report what is already committed against it.
  *
