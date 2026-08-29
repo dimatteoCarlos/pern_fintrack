@@ -22,41 +22,36 @@
  * ❌ Error type message
  */
 .messageError {
-  background-color: #fee;
-  border: 1px solid #f66;
-  color: #c00;
-   /* box-shadow: 0 2px 4px rgba(244, 67, 54, 0.1); */
+  background-color: var(--color-feedback-error-surface);
+  border: var(--border-width-thin) solid var(--color-feedback-error-border);
+  color: var(--color-feedback-error-content);
 }
 
 /**
  * ✅ Success type message
  */
 .messageSuccess {
-  background-color: #efe;
-  border: 1px solid #6c6;
-  color: #090;
-   /* box-shadow: 0 2px 4px rgba(76, 175, 80, 0.1); */
+  background-color: var(--color-feedback-success-surface);
+  border: var(--border-width-thin) solid var(--color-feedback-success-border);
+  color: var(--color-feedback-success-content);
 }
 
 /**
  * ⚠️ Warning type message
  */
 .messageWarning {
-  background-color: #ffd;
-  border: 1px solid #fc6;
-  color: #960;
-  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.1);
+  background-color: var(--color-feedback-warning-surface);
+  border: var(--border-width-thin) solid var(--color-feedback-warning-border);
+  color: var(--color-feedback-warning-content);
 }
 
 /**
  * ℹ️ Info type message
  */
 .messageInfo {
-  background-color: #eef;
-  border: 1px solid #66c;
-  color: #009;
-  color:#1565c0;
-   /* box-shadow: 0 2px 4px rgba(33, 150, 243, 0.1); */
+  background-color: var(--color-feedback-info-surface);
+  border: var(--border-width-thin) solid var(--color-feedback-info-border);
+  color: var(--color-feedback-info-content);
 }
 
 /**

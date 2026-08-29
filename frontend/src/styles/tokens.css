@@ -62,6 +62,25 @@
  --color-status-warning: #b8894e;
  --color-status-success: #008000;
  --color-status-info: #60b1d6;
+
+ /* COLOR - FEEDBACK ON A LIGHT SURFACE: the banner triad, valid on inverse and
+    on panel. Separate from the semaphore above because those scalars are
+    calibrated against the app surface and drop to 1.89:1 on the cream panel.
+    Each content value is measured against its own surface value, not against
+    the page: error 5.25, success 4.94, warning 4.84, info 5.01. */
+ --color-feedback-error-content: #cc0000;
+ --color-feedback-error-surface: #ffeeee;
+ --color-feedback-error-border: #ff6666;
+ --color-feedback-success-content: #008000;
+ --color-feedback-success-surface: #eeffee;
+ --color-feedback-success-border: #66cc66;
+ --color-feedback-warning-content: #996600;
+ --color-feedback-warning-surface: #ffffdd;
+ --color-feedback-warning-border: #ffcc66;
+ --color-feedback-info-content: #1565c0;
+ --color-feedback-info-surface: #eeeeff;
+ --color-feedback-info-border: #6666cc;
+
  --color-amount-positive: #5b8c93;
  --color-amount-negative: #c97474;
 
