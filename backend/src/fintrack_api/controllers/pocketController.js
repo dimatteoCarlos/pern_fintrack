@@ -2,18 +2,64 @@
 
 // Pocket module – HTTP request handlers.
 //
-// One handler so far. It takes no parameters at all: the board is every pocket
-// the caller owns, and identity comes from the token. There is nothing for a
-// client to name, and therefore nothing it can name wrongly.
-//
 // The owner's time zone is resolved here, once per request, and passed down —
 // no service resolves identity on its own. That is what puts the deadline and
-// the start date on the user's calendar instead of the server's.
+// the allocation dates on the user's calendar instead of the server's.
+//
+// There is no 404 in this module. A pocket id that does not exist and one that
+// belongs to someone else both answer 403: splitting them would let a caller
+// walk the id space and learn which pockets are other users'. The rest of the
+// shape is the budget module's — 400 is what a schema can see, 422 is what it
+// cannot, and 401 is the absent session.
 
 import { pool } from '../../db/config/configDB.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import { pocketBoardService } from '../services/pocket_services/services/pocketBoardService.js';
+import { pocketDetailService } from '../services/pocket_services/services/pocketDetailService.js';
+import { pocketParamsSchema } from '../../validation/zod/pocketValidators.js';
+
+/**
+ * Answer a failed validation with the issues that caused it.
+ *
+ * Zod 4 renamed the issue list: ZodError.errors no longer exists, and reading it
+ * yields undefined, which JSON.stringify drops from the payload — a 400 telling
+ * the caller the request failed but never which field. Same shape the budget
+ * module and validateRequest.js already use.
+ */
+const respondWithZodIssues = (res, error) =>
+ res.status(400).json({
+  status: 400,
+  message: 'Validation Error',
+  errors: error.issues.map((issue) => ({
+   field: issue.path.join('.'),
+   message: issue.message,
+   code: issue.code,
+  })),
+ });
+
+/**
+ * Turn a service error into its response.
+ *
+ * A service raises an Error carrying a status when the failure is a decision the
+ * domain took — 403 for a pocket that is not the caller's, 422 for a rule a
+ * schema cannot check. Anything with no status is unexpected and goes to the
+ * error middleware, which is what keeps a real defect from being reported as a
+ * business rule.
+ */
+const respondWithServiceError = (res, next, error) => {
+ if (error.name === 'ZodError') {
+  return respondWithZodIssues(res, error);
+ }
+
+ if (error.status) {
+  return res
+   .status(error.status)
+   .json({ status: error.status, message: error.message });
+ }
+
+ return next(error);
+};
 
 /** GET /api/fintrack/pocket/board */
 export async function getPocketBoard(req, res, next) {
@@ -35,5 +81,31 @@ export async function getPocketBoard(req, res, next) {
   });
  } catch (error) {
   return next(error);
+ }
+}
+
+/** GET /api/fintrack/pocket/:pocketId */
+export async function getPocketDetail(req, res, next) {
+ try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
+  const { pocketId } = pocketParamsSchema.parse(req.params);
+
+  const timeZone = await getUserTimeZone(pool, userId);
+  const detail = await pocketDetailService.getDetail(
+   pool,
+   userId,
+   pocketId,
+   timeZone,
+  );
+
+  return res.status(200).json({
+   status: 200,
+   message: 'Pocket retrieved successfully',
+   data: detail,
+  });
+ } catch (error) {
+  return respondWithServiceError(res, next, error);
  }
 }
