@@ -73,12 +73,12 @@
 }
 
 /*----CARD SEPARATOR COMPONENT-----*/
+/* In flow, not absolute: out of flow it landed at half the card's height, which
+   is not where the seam between the top and the bottom sub-card is. */
 .separator__container {
- width: 100%;
- position: absolute;
- left: 0%;
- top: 50%;
- transform: translateY(-40%);
+ width: auto;
+ margin-left: calc(var(--card-padding-x) * -1);
+ margin-right: calc(var(--space-2) * -1);
  background-color: transparent;
 }
 
@@ -122,10 +122,14 @@ article {
 /*---TRACKER CARD PRESENTATION---*/
 
 .cards__presentation--tracker {
+ /* The card's own horizontal padding, named once so the separator can bleed
+    back out by exactly the same amount instead of repeating the number. */
+ --card-padding-x: 1.625rem;
+
  width: var(--layout-content-width);
  margin: 0 auto;
  border-radius: var(--radius-xl);
- padding: var(--space-4) 1.625rem;
+ padding: var(--space-4) var(--card-padding-x);
  background-color: white;
  background: url('../../../../assets/cardBgTexture.png') repeat;
 
@@ -608,13 +612,6 @@ textarea:invalid {
   );
 
   overflow-y: auto;
- }
-
- .separator__container {
-  position: static;
-  transform: none;
-  width: calc(100% + 2.25rem);
-  margin-left: -1.625rem;
  }
 
  .card--title--top {
