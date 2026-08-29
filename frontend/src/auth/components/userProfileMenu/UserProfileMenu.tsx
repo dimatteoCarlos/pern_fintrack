@@ -14,6 +14,14 @@ import UpdateProfileContainer from '../updateProfileForm/UpdateProfileContainer'
 
 // 🎨 Component-specific CSS Module
 import styles from './styles/userProfileMenu.module.css';
+
+// '?react' suffix: a bare .svg import is typed `string` and cannot take a
+// className, so the glyph could not inherit the row's colour.
+import CloseSvg from '../../../assets/userProfileMenuSvg/closeSvg.svg?react';
+import CoinsSvg from '../../../assets/userProfileMenuSvg/coinsSvg.svg?react';
+import EditSvg from '../../../assets/userProfileMenuSvg/editSvg.svg?react';
+import LockSvg from '../../../assets/userProfileMenuSvg/lockSvg.svg?react';
+
 import { CurrencyType } from '../../../fintrack/types/types';
 import { DEFAULT_CURRENCY } from '../../../fintrack/helpers/constants';
 import ChangePasswordContainer from '../passwordChangeForm/ChangePasswordContainer';
@@ -314,7 +322,10 @@ const UserProfileMenu = () => {
                   onClick={handleCloseCurrentModal}
                   aria-label='Close profile menu'
                 >
-                  ✕
+                  <CloseSvg
+                    className={`${styles.closeIcon} ${styles.light}`}
+                    aria-hidden='true'
+                  />
                 </button>
               </div>
 
@@ -329,7 +340,10 @@ const UserProfileMenu = () => {
                 }}
                 aria-label='Edit user profile'
               >
-                <span className={styles.menuItemIcon}>✏️</span>
+                <EditSvg
+                  className={`${styles.menuItemIcon} ${styles.light}`}
+                  aria-hidden='true'
+                />
                 <span className={styles.menuItemText}>Edit Profile</span>
               </button>
 
@@ -338,7 +352,10 @@ const UserProfileMenu = () => {
                 onClick={handleChangePassword}
                 aria-label='Change password'
               >
-                <span className={styles.menuItemIcon}>🔐</span>
+                <LockSvg
+                  className={`${styles.menuItemIcon} ${styles.light}`}
+                  aria-hidden='true'
+                />
                 <span className={styles.menuItemText}>Change Password</span>
               </button>
 
@@ -347,6 +364,10 @@ const UserProfileMenu = () => {
               {/* ℹ️ ADDITIONAL INFORMATION */}
               <div className={styles.menuFooter}>
                 <span className={styles.currencyBadge}>
+                  <CoinsSvg
+                    className={`${styles.currencyIcon} ${styles.light}`}
+                    aria-hidden='true'
+                  />
                   Currency: <strong>{userInfo.currency.toLowerCase()}</strong>
                 </span>
               </div>

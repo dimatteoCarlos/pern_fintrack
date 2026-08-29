@@ -1,193 +1,267 @@
-/* 📁 frontend/src/auth/components/userProfile/UserProfileMenu.module.css */
-/* 🎨 Component-specific styles for UserProfileMenu */
+/* frontend/src/auth/components/userProfileMenu/styles/userProfileMenu.module.css
+   The menu is a white card floating over a dark overlay, so every content token
+   here is the light-surface pair (primary/secondary), never the on-dark one. */
 
 /* ====================
    MODAL OVERLAYS
 ==================== */
 
-/* Menu overlay */
 .menuOverlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  z-index: 998;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.3s ease;
+ position: fixed;
+ inset: 0;
+ background-color: var(--color-surface-overlay);
+ z-index: var(--z-overlay);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ animation: fadeIn var(--motion-slow);
 }
 
-/* Form modal overlay */
+/* Sits above the menu overlay so the form is always the topmost of the two.
+   Asegura que el formulario esté SIEMPRE por encima del menú. */
 .modalOverlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.3s ease;
+ position: fixed;
+ inset: 0;
+ background-color: var(--color-surface-overlay);
+ z-index: var(--z-modal);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ animation: fadeIn var(--motion-slow);
+}
+
+/* The menu keeps its box while a form is open, so reopening it costs no
+   remount and the overlay behind the form does not shift. */
+.hidden {
+ visibility: hidden;
 }
 
 /* ====================
    MODAL CONTAINERS
 ==================== */
 
-/* Menu container */
 .menuContainer {
-  cursor: default;
-  border: 5px solid greenyellow;
-  background-color: white;
-  border-radius: 8px;
-  min-width: 240px;
-  max-width: 380px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-  z-index: 1000;
-  user-select: none;
-  touch-action: none;
+ cursor: default;
+ background-color: var(--color-surface-inverse);
+ border-radius: var(--radius-sm);
+ /* Mobile-first: the card spans the viewport minus one gutter each side. */
+ width: calc(100vw - var(--space-8));
+ margin: 0 var(--space-4);
+ /* No sizing token covers these two bounds; the scale stops at the card. */
+ min-width: 240px;
+ max-width: 380px;
+ box-shadow: var(--shadow-overlay);
+ overflow: hidden;
+ z-index: var(--z-raised);
+ user-select: none;
+ touch-action: none;
 }
 
-/* Modal container for forms */
+/* Mobile-first: the form fills the phone screen and floats from 480px up. */
 .modalContainer {
-  background: white;
-  border-radius: 8px;
-  max-width: 90%;
-  max-height: 90svh;
-  overflow-y: auto;
-  /* box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); */
-  animation: slideUp 0.5s ease;
+ background-color: var(--color-surface-inverse);
+ width: 100vw;
+ min-width: 100%;
+ height: 100svh;
+ border-radius: 0;
+ overflow-y: auto;
+ animation: slideUp var(--motion-slow);
 }
 
 /* ====================
    PROFILE MENU
 ==================== */
 
-/* Menu header */
+/* Cream over the white body is what separates the header; it carried a
+   hairline border before and the surface change now does that job. */
 .menuHeader {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #eee;
+ display: flex;
+ align-items: center;
+ gap: var(--space-3);
+ padding: var(--space-4);
+ background-color: var(--color-surface-panel);
+}
+
+/* The header takes focus (tabIndex 0) and had no ring of its own. */
+.menuHeader:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: calc(var(--border-width-thick) * -1);
 }
 
 .menuAvatar {
-  width: 40px;
-  height: 40px;
-  background-color: rgb(16, 163, 127);
-  border: 2px solid #000;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: "Style Script", cursive;
-  font-size: 16px;
-  font-weight: bold;
-  color: #000;
-  flex-shrink: 0;
+ width: var(--size-badge);
+ height: var(--size-badge);
+ background-color: var(--color-surface-inverse);
+ border: var(--border-width-thick) solid var(--color-border-strong);
+ border-radius: var(--radius-sm);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ /* The design system names no display family, so the script face stays. */
+ font-family: "Style Script", cursive;
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-primary);
+ flex-shrink: 0;
 }
 
 .menuUserInfo {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  flex: 1;
+ display: flex;
+ flex-direction: column;
+ overflow: hidden;
+ flex: 1;
 }
 
 .menuUserName {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-primary);
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
 }
 
 .menuUserEmail {
-  font-size: 12px;
-  color: #666;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+ font-size: var(--font-size-xs);
+ color: var(--color-content-secondary);
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
 }
 
 /* ====================
    MENU CONTROLS
 ==================== */
 
-/* Close button */
 .closeButton {
-  margin-left: auto;
-  background: transparent;
-  border: none;
-  font-size: 18px;
-  font-weight: bold;
-  line-height: 1;
-  color: #666;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+ margin-left: auto;
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ background-color: transparent;
+ border: none;
+ line-height: 1;
+ color: var(--color-content-primary);
+ cursor: pointer;
+ padding: var(--space-1) var(--space-2);
+ border-radius: var(--radius-xs);
+ flex-shrink: 0;
+ transition: background-color var(--motion-normal),
+  color var(--motion-normal), transform var(--motion-press);
 }
 
 .closeButton:hover {
-  background-color: #f0f0f0;
-  color: #000;
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
 }
 
+/* index.css strips the outline from every button, so a component that does not
+   declare its own ring leaves a keyboard user with no focus indication. */
 .closeButton:focus-visible {
-  outline: 2px solid rgb(16, 163, 127);
-  outline-offset: 2px;
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.closeButton:active {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+ transform: scale(0.95);
+}
+
+.closeButton:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The glyph is sized in em off a token size: the universal selector in
+   index.css pins font-size on every element, so the basis is restated here. */
+.closeIcon {
+ width: 1em;
+ height: 1em;
+ font-size: var(--font-size-lg);
+ flex-shrink: 0;
+}
+
+/* ====================
+   GLYPH SURFACE MODIFIERS
+==================== */
+
+/* The glyphs stroke in currentColor, so the modifier names the ground they sit
+   on rather than a colour of their own; the same asset serves both surfaces. */
+.light {
+ color: var(--color-content-primary);
+}
+
+.dark {
+ color: var(--color-content-on-dark);
 }
 
 /* ====================
    MENU CONTENT
 ==================== */
 
-/* Divider */
+/* The system names no border token for a light surface; the cream panel colour
+   is what draws the hairline between sections. */
 .menuDivider {
-  height: 1px;
-  background-color: #eee;
-  margin: 0;
+ height: var(--border-width-thin);
+ background-color: var(--color-surface-panel);
+ margin: 0;
 }
 
-/* Menu items */
 .menuItem {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 12px 16px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  text-align: left;
-  font-size: 14px;
-  color: #333;
-  gap: 10px;
-  transition: background-color 0.2s ease;
-  /* background-color: orange; */
-
+ display: flex;
+ align-items: center;
+ width: 100%;
+ min-height: var(--size-touch-target);
+ padding: var(--space-3) var(--space-4);
+ border: none;
+ background-color: transparent;
+ cursor: pointer;
+ text-align: left;
+ font-size: var(--font-size-sm);
+ color: var(--color-content-primary);
+ gap: var(--space-3);
+ transition: background-color var(--motion-normal),
+  color var(--motion-normal), transform var(--motion-press);
 }
 
 .menuItem:hover {
-  background-color: #f5f5f5;
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
 }
 
+/* Same reason as the close button: index.css removes the browser ring. */
 .menuItem:focus-visible {
-  outline: none;
-  background-color: #f0f0f0;
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
 }
 
+.menuItem:active {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+ transform: scale(0.99);
+}
+
+.menuItem:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* Same em basis as the close glyph, restated against the universal selector. */
 .menuItemIcon {
-  font-size: 16px;
-  width: 20px;
-  text-align: center;
+ width: 1em;
+ height: 1em;
+ font-size: var(--font-size-lg);
+ flex-shrink: 0;
 }
 
+/* index.css pins every element at 16px, so this span does not inherit the
+   row's size unless it says so. */
 .menuItemText {
-  flex: 1;
+ flex: 1;
+ font-size: inherit;
 }
 
 /* ====================
@@ -195,23 +269,35 @@
 ==================== */
 
 .menuFooter {
-  padding: 12px 16px;
-  text-align: center;
-  background-color: #fff;
+ padding: var(--space-3) var(--space-4);
+ text-align: center;
+ background-color: var(--color-surface-inverse);
 }
 
 .currencyBadge {
-  font-size: 12px;
-  color: #666;
-  padding: 4px 8px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  display: inline-block;
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-2);
+ font-size: var(--font-size-xs);
+ color: var(--color-content-secondary);
+ padding: var(--space-1) var(--space-2);
+ background-color: var(--color-surface-panel);
+ border-radius: var(--radius-xs);
 }
 
+.currencyIcon {
+ width: 1em;
+ height: 1em;
+ font-size: var(--font-size-base);
+ flex-shrink: 0;
+}
+
+/* Nested inline element: without the restatement it renders at the universal
+   selector's 16px inside a badge set to 12px. */
 .currencyBadge strong {
-  color: #333;
-  font-weight: 600;
+ color: var(--color-content-primary);
+ font-weight: var(--font-weight-semibold);
+ font-size: inherit;
 }
 
 /* ====================
@@ -219,89 +305,86 @@
 ==================== */
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+ from { opacity: 0; }
+ to { opacity: 1; }
 }
 
 @keyframes slideUp {
-  from { 
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to { 
-    opacity: 1;
-    transform: translateY(0);
-  }
+ from {
+  opacity: 0;
+  transform: translateY(var(--space-5));
+ }
+ to {
+  opacity: 1;
+  transform: translateY(0);
+ }
+}
+
+/* The reader asked the system for no animation, and an entrance is one. */
+@media (prefers-reduced-motion: reduce) {
+ .menuOverlay,
+ .modalOverlay,
+ .modalContainer {
+  animation: none;
+ }
+
+ .closeButton,
+ .menuItem {
+  transition: none;
+ }
+
+ .closeButton:active,
+ .menuItem:active {
+  transform: none;
+ }
 }
 
 /* ====================
    RESPONSIVE DESIGN
 ==================== */
 
-/* Tablets */
+/* From 480px the form stops filling the screen and floats as a card. */
+@media (min-width: 480px) {
+ .modalContainer {
+  width: auto;
+  min-width: 0;
+  height: auto;
+  max-width: 90%;
+  max-height: 90svh;
+  border-radius: var(--radius-sm);
+ }
+}
+
 @media (min-width: 768px) {
-  .menuContainer {
-    min-width: 280px;
-  }
-  
-  .menuAvatar {
-    width: 44px;
-    height: 44px;
-    font-size: 18px;
-  }
-  
-  .menuUserName {
-    font-size: 15px;
-  }
-  
-  .menuItem {
-    padding: 14px 16px;
-    font-size: 15px;
-  }
+ .menuContainer {
+  width: auto;
+  margin: 0;
+  min-width: 280px;
+ }
+
+ .menuAvatar {
+  font-size: var(--font-size-lg);
+ }
+
+ .menuUserName {
+  font-size: var(--font-size-base);
+ }
+
+ .menuItem {
+  padding: var(--space-4);
+  font-size: var(--font-size-base);
+ }
 }
 
-/* Mobile */
-@media (max-width: 640px) {
-  .menuContainer {
-    width: calc(100vw - 32px);
-    margin: 0 16px;
-  }
-}
-@media (max-width: 480px){
-/* Modal container for forms */
-.modalContainer {
-  min-width: 100%;
-  height: 100svh;
-  width: 100vw;
-  overflow-y: auto;
-  border-radius: 0;
-
-}}
-
-/* Desktop */
 @media (min-width: 1024px) {
-  .menuContainer {
-    min-width: 320px;
-  }
+ .menuContainer {
+  min-width: 320px;
+ }
 }
 
-/* Touch devices */
+/* A coarse pointer gets the full row padding whatever the viewport width. */
 @media (hover: none) and (pointer: coarse) {
-  .menuItem {
-    padding: 16px;
-  }
-}
-/*******************************/
-/*soft hidening*/
-.hidden {
-  visibility: hidden; /* O visibility: hidden; si quieres preservar el espacio */
-}
-
-/* Opcional: Si quieres que el menú se vea detrás del modal con un efecto de desenfoque */
-.menuOverlay {
-  z-index: 998;
-}
-
-.modalOverlay {
-  z-index: 2000; /* Assure form over menu / Asegura que el formulario esté SIEMPRE por encima del menú */
+ .menuItem {
+  padding: var(--space-4);
+ }
 }
