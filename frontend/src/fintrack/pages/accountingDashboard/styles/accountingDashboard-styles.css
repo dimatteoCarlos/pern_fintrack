@@ -51,8 +51,11 @@
  position: sticky;
  top: 0;
  /* The space TopWhiteSpace and the layout's top padding used to hold, carried
-    inside the box so it survives the dock instead of scrolling away above it. */
- padding-top: calc(var(--layout-top-space) + var(--space-8));
+    inside the box so it survives the dock instead of scrolling away above it.
+    It reads --topSpaceHeight, not the raw token, because generalStyles.css:452
+    collapses that variable to 0rem below 735px of viewport height and budget's
+    header follows the collapse. */
+ padding-top: calc(var(--topSpaceHeight) + var(--space-5));
  z-index: var(--z-raised);
  display: flex;
  flex-direction: column;
@@ -585,11 +588,8 @@ button {
 }
 
 @media (min-width: 480px) {
- /* Wider screens gave the layout a taller top space; it now lands on the pinned
-    box, which is where the space lives. */
- .accounting__stickyHead {
-  padding-top: calc(var(--layout-top-space) * 2);
- }
+ /* No .accounting__stickyHead override here any more: --topSpaceHeight already
+    carries the wider-screen step, and budget's header does not grow at 480px. */
 
  .accounting__title {
   font-size: var(--font-size-xl);
