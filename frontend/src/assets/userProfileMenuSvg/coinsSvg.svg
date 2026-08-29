@@ -1,8 +1,17 @@
-<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
- <ellipse cx="16" cy="10" rx="8" ry="3.20" />
- <path d="M 8 10 V 22" />
- <path d="M 24 10 V 22" />
- <path d="M 8 14 A 8 3.20 0 0 0 24 14" />
- <path d="M 8 18 A 8 3.20 0 0 0 24 18" />
- <path d="M 8 22 A 8 3.20 0 0 0 24 22" />
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+ <circle cx="12" cy="12" r="10.4" />
+ <g fill="currentColor" stroke="none">
+  <circle cx="19.40" cy="12.00" r="0.55" />
+  <circle cx="17.23" cy="6.77" r="0.55" />
+  <circle cx="12.00" cy="4.60" r="0.55" />
+  <circle cx="6.77" cy="6.77" r="0.55" />
+  <circle cx="4.60" cy="12.00" r="0.55" />
+  <circle cx="6.77" cy="17.23" r="0.55" />
+  <circle cx="12.00" cy="19.40" r="0.55" />
+  <circle cx="17.23" cy="17.23" r="0.55" />
+ </g>
+ <path d="M 7.6 11.2 L 12 8.4 L 16.4 11.2" />
+ <path d="M 7.2 15.6 H 16.8" />
+ <path d="M 10.2 11.6 V 15.2" />
+ <path d="M 13.8 11.6 V 15.2" />
 </svg>
