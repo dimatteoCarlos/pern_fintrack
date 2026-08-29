@@ -104,8 +104,13 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
           return (
             <BoxContainer key={indx}>
               <BoxRow>
+                {/* Absolute on purpose. The detail route is declared once, at
+                    /fintrack/debts/debtors/:debtorId, and a relative `to`
+                    resolves against whichever route currently renders this
+                    list — a destination that moves when the list is mounted
+                    somewhere else. */}
                 <Link
-                  to={`debtors/${account_id}`}
+                  to={`/fintrack/debts/debtors/${account_id}`}
                   state={{ previousRoute, debtorDetailedData: debtor }}
                 >
                   <div className='debtor box__title hover'>{account_name}</div>
