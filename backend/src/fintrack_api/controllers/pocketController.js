@@ -18,10 +18,12 @@ import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTim
 import { pocketBoardService } from '../services/pocket_services/services/pocketBoardService.js';
 import { pocketDetailService } from '../services/pocket_services/services/pocketDetailService.js';
 import { pocketWriteService } from '../services/pocket_services/services/pocketWriteService.js';
+import { pocketAllocationService } from '../services/pocket_services/services/pocketAllocationService.js';
 import {
  pocketParamsSchema,
  createPocketBodySchema,
  updatePocketBodySchema,
+ allocationBodySchema,
 } from '../../validation/zod/pocketValidators.js';
 
 /**
@@ -177,3 +179,54 @@ export async function editPocket(req, res, next) {
   return respondWithServiceError(res, next, error);
  }
 }
+
+/**
+ * Commit money to a pocket, or release it back, and answer with the whole
+ * detail screen.
+ *
+ * One handler for both, because the two requests are the same decision with
+ * opposite effect and only the endpoint distinguishes them. The client sends a
+ * positive amount either way and never a sign.
+ *
+ * The response is the detail payload rather than the row written: one decision
+ * changes the hero, the source breakdown and the history at once, and a client
+ * that patched one of them from the row would be deriving the other two.
+ */
+const writeAllocation = async (direction, req, res, next) => {
+ try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
+  const { pocketId } = pocketParamsSchema.parse(req.params);
+  const body = allocationBodySchema.parse(req.body);
+
+  await pocketAllocationService[direction](userId, pocketId, body);
+
+  const timeZone = await getUserTimeZone(pool, userId);
+  const detail = await pocketDetailService.getDetail(
+   pool,
+   userId,
+   pocketId,
+   timeZone,
+  );
+
+  return res.status(201).json({
+   status: 201,
+   message:
+    direction === 'allocate'
+     ? 'Funds allocated successfully'
+     : 'Funds released successfully',
+   data: detail,
+  });
+ } catch (error) {
+  return respondWithServiceError(res, next, error);
+ }
+};
+
+/** POST /api/fintrack/pocket/:pocketId/allocations */
+export const allocateToPocket = (req, res, next) =>
+ writeAllocation('allocate', req, res, next);
+
+/** POST /api/fintrack/pocket/:pocketId/releases */
+export const releaseFromPocket = (req, res, next) =>
+ writeAllocation('release', req, res, next);

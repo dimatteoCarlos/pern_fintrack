@@ -93,3 +93,131 @@ export async function getPocketSourceHoldings(db, userId, pocketId = null) {
 
  return rows;
 }
+
+/**
+ * Resolve a source account the caller owns, locking it for the rest of the
+ * transaction, and report what is already committed against it.
+ *
+ * Ownership is proven by joining to user_accounts.user_id rather than trusting
+ * the accountId. FOR UPDATE closes the window between the check and the write:
+ * two simultaneous allocations would otherwise both read the same unassigned
+ * cash, both pass, and together commit more than the account holds.
+ *
+ * The committed total is read here rather than in a second call, because the
+ * lock is already holding the row the answer is about. Reading it afterwards on
+ * another connection would read it outside the lock, which is the same race with
+ * an extra step.
+ *
+ * Deliberately not 404 when there is no row. Distinguishing "does not exist"
+ * from "not yours" would let a caller enumerate other users' account ids.
+ *
+ * @param {import('pg').PoolClient} client - inside BEGIN; a pool would release
+ *  the lock the moment this query returned
+ * @param {string} userId - UUID from the token
+ * @param {number} accountId
+ * @returns {Promise<object|null>} the row, or null when there is none
+ */
+export async function lockOwnedSourceAccount(client, userId, accountId) {
+ const { rows } = await client.query(
+  `
+  SELECT
+   ua.account_id                     AS "accountId",
+   ua.account_name                   AS "accountName",
+   act.account_type_name             AS "accountType",
+   ua.account_balance::text          AS "accountBalance",
+   ua.currency_id                    AS "currencyId",
+   ua.deleted_at                     AS "deletedAt",
+   COALESCE((
+    SELECT SUM(pa.amount)
+      FROM pocket_allocations pa
+     WHERE pa.source_account_id = ua.account_id
+   ), 0)::text                       AS "accountAllocated"
+  FROM user_accounts ua
+  JOIN account_types act ON act.account_type_id = ua.account_type_id
+  WHERE ua.account_id = $1
+   AND ua.user_id = $2
+  FOR UPDATE OF ua
+  `,
+  [accountId, userId],
+ );
+
+ return rows[0] ?? null;
+}
+
+/**
+ * The net one pocket holds from one account, read inside the lock.
+ *
+ * This is the figure a release is measured against: releasing is not "release
+ * 400 from this pocket" but "release 400 of what this pocket holds FROM CASH",
+ * and the running sum of that pair may never go below zero.
+ *
+ * @param {import('pg').PoolClient} client - inside BEGIN
+ * @param {string} userId - UUID from the token
+ * @param {number} pocketId
+ * @param {number} accountId
+ * @returns {Promise<string>} the net as text, '0' when the pair has no rows
+ */
+export async function getHeldByPocketFromAccount(
+ client,
+ userId,
+ pocketId,
+ accountId,
+) {
+ const { rows } = await client.query(
+  `
+  SELECT COALESCE(SUM(pa.amount), 0)::text AS held
+    FROM pocket_allocations pa
+   WHERE pa.user_id = $1
+     AND pa.pocket_id = $2
+     AND pa.source_account_id = $3
+  `,
+  [userId, pocketId, accountId],
+ );
+
+ return rows[0].held;
+}
+
+/**
+ * Append one row to the ledger.
+ *
+ * The only write this table ever takes. There is no UPDATE and no DELETE path
+ * anywhere in this module: +300 becomes +250 by writing -50, and the rows are
+ * the history.
+ *
+ * amount arrives already signed by the service — positive for an allocation,
+ * negative for a release. The client never sends a sign.
+ *
+ * @param {import('pg').PoolClient} client - inside BEGIN, holding the account lock
+ * @returns {Promise<object>} the row written
+ */
+export async function insertAllocation(client, userId, allocation) {
+ const { rows } = await client.query(
+  `
+  INSERT INTO pocket_allocations (
+   user_id, pocket_id, source_account_id, amount, allocation_actual_date,
+   original_amount, original_currency_id, exchange_rate, exchange_rate_source,
+   exchange_rate_timestamp, exchange_rate_target_currency_id
+  )
+  VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, CURRENT_TIMESTAMP),
+          $6, $7, $8, $9, $10, $11)
+  RETURNING allocation_id::text AS "allocationId",
+            amount::text        AS amount,
+            allocation_actual_date AS "allocationActualDate"
+  `,
+  [
+   userId,
+   allocation.pocketId,
+   allocation.sourceAccountId,
+   allocation.amount,
+   allocation.allocationDate ?? null,
+   allocation.originalAmount,
+   allocation.originalCurrencyId,
+   allocation.exchangeRate,
+   allocation.exchangeRateSource,
+   allocation.exchangeRateTimestamp,
+   allocation.exchangeRateTargetCurrencyId,
+  ],
+ );
+
+ return rows[0];
+}

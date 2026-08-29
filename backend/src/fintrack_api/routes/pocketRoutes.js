@@ -11,6 +11,8 @@ import {
  getPocketDetail,
  createPocket,
  editPocket,
+ allocateToPocket,
+ releaseFromPocket,
 } from '../controllers/pocketController.js';
 
 const router = express.Router();
@@ -36,6 +38,18 @@ router.post('/', createPocket);
 // own currency is not editable: restating it would restate every past
 // allocation.
 router.patch('/:pocketId', editPocket);
+
+// POST /api/fintrack/pocket/:pocketId/allocations
+// { sourceAccountId, amount, currency, allocationDate? }
+// A positive amount, always. The ceiling is the source account's unassigned
+// cash, checked inside the row lock and named in the 422 when it is exceeded.
+router.post('/:pocketId/allocations', allocateToPocket);
+
+// POST /api/fintrack/pocket/:pocketId/releases
+// The same body, and a positive amount again: the row is written negative on
+// the server. The ceiling is what this pocket holds from that one account, not
+// what it holds in total.
+router.post('/:pocketId/releases', releaseFromPocket);
 
 // GET /api/fintrack/pocket/:pocketId
 // The whole detail screen from one request: the hero, the source breakdown and
