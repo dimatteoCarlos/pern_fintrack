@@ -246,3 +246,14 @@ export const url_get_transaction_by_id = BASE_URL_APP + 'transaction/';
 
 // GET /api/fintrack/pocket/board
 export const url_pocket_board: string = BASE_URL_APP + 'pocket/board';
+
+// GET /api/fintrack/pocket/:pocketId
+// One pocket, everything its screen shows, one request: the hero, the accounts
+// funding it and the allocation history are three views of the same rows, and
+// three requests would let them disagree about what the pocket holds.
+//
+// A function and not a string, so the id is joined here rather than in each
+// caller. It takes a pocket id — never an account id, which is a different
+// id space that happens to start at 1 as well.
+export const url_pocket_detail = (pocketId: number | string): string =>
+ BASE_URL_APP + `pocket/${pocketId}`;

@@ -10,8 +10,13 @@
 // call at the point of display, not here.
 
 import { authFetch } from '../../auth/auth_utils/authFetch.ts';
-import { url_pocket_board } from '../../urlConfig.ts';
-import { PocketBoardPayload, PocketBoardResponse } from '../types/pocketTypes.ts';
+import { url_pocket_board, url_pocket_detail } from '../../urlConfig.ts';
+import {
+ PocketBoardPayload,
+ PocketBoardResponse,
+ PocketDetailPayload,
+ PocketDetailResponse,
+} from '../types/pocketTypes.ts';
 
 // No arguments, and that is the contract: the board is every pocket the caller
 // owns. There is nothing for a screen to name and therefore nothing it can name
@@ -26,6 +31,28 @@ export const getPocketBoard = async (): Promise<PocketBoardPayload> => {
  const { data: body } = await authFetch<PocketBoardResponse>(url_pocket_board, {
   method: 'GET',
  });
+
+ return body.data;
+};
+
+// One pocket and everything its screen shows.
+//
+// The parameter is named pocketId and typed, because the screen this feeds
+// used to rename the route parameter to accountId and spend it against the
+// account endpoints — which answered with another record entirely. Pocket ids
+// and account ids are separate sequences that both start at 1, so the mistake
+// had no symptom to catch it.
+//
+// A pocket that is not the caller's and a pocket id that does not exist both
+// answer 403. The two are not told apart on purpose: separating them would let
+// a caller walk the id space and learn which pockets belong to other users.
+export const getPocketDetail = async (
+ pocketId: number,
+): Promise<PocketDetailPayload> => {
+ const { data: body } = await authFetch<PocketDetailResponse>(
+  url_pocket_detail(pocketId),
+  { method: 'GET' },
+ );
 
  return body.data;
 };

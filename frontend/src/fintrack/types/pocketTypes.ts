@@ -103,3 +103,90 @@ export type PocketBoardResponse = {
  message: string;
  data: PocketBoardPayload;
 };
+
+// ---------------------------------------------------------------------------
+// The detail of one pocket.
+//
+// Measured against the service that answers it
+// (backend/.../services/pocketDetailService.js:96-131). The same five shapes
+// serve five endpoints, not one: create, edit, allocate and release all answer
+// with this payload, so typing it once types every write's response too.
+// ---------------------------------------------------------------------------
+
+// The pocket itself, on its own screen.
+//
+// Every field of the board row EXCEPT the count of funding accounts, which the
+// service deletes on purpose (pocketDetailService.js:123): the sources table
+// below lists those accounts one by one, and a count beside the table would be
+// a second answer to a question the rows already answer. Derived from the row
+// type rather than restated, so a change to the row cannot leave the two
+// disagreeing.
+export type PocketDetailPocket = Omit<PocketStatus, 'sourceCount'>;
+
+// One account funding this pocket.
+//
+// Four fields are nullable together, and the null is not "zero": it means the
+// allocation ledger names an account the account read cannot resolve — one the
+// owner soft-deleted, or the internal account the read filters out. What that
+// account holds for this pocket is still real and still counted, so the row is
+// served with the figures it has no answer for left null.
+//
+// An account whose net fell to zero after a full release is absent from this
+// list entirely. It stopped contributing, and listing it would put a source on
+// screen that holds nothing; the history keeps the trace of the one that left.
+export type PocketSource = {
+ accountId: number;
+ accountName: string | null;
+ accountType: string | null;
+ // What THIS account has committed to THIS pocket.
+ heldByThisPocket: number;
+ // What the account has committed across every pocket it funds.
+ accountAllocated: number | null;
+ accountBalance: number | null;
+ // The balance minus everything committed. Never called "available": a pocket
+ // blocks no spending, so this is the cash no plan has claimed yet.
+ accountUnassignedCash: number | null;
+ // The ACCOUNT's own state, not this pocket's share of it. False means the
+ // account no longer covers everything committed to it. The missing amount
+ // belongs to the account and is never split across the pockets drawing on it,
+ // because any split would need a policy the app would have to invent.
+ covered: boolean | null;
+};
+
+// One decision in the pocket's history.
+//
+// The sign is the decision: positive committed cash to the goal, negative
+// released it back to the account's unassigned cash. Neither ever moved a
+// balance, so the screen prints the word beside the sign — colour alone
+// survives neither colour blindness nor print.
+export type PocketAllocationEntry = {
+ allocationId: number;
+ amount: number;
+ // YYYY-MM-DD on the OWNER's calendar. When the decision was taken, never when
+ // the row was written: one agreed on Friday and typed on Monday is Friday's.
+ allocationDate: string;
+ sourceAccountId: number;
+ sourceAccountName: string | null;
+ // Audit metadata proving the conversion ran, never a second unit to do
+ // arithmetic in.
+ originalAmount: number;
+ originalCurrency: CurrencyType;
+ // Not an amount: it keeps the ten decimals of its column so the rate that
+ // produced the stored figure can be re-applied and checked against it.
+ exchangeRate: number;
+ exchangeRateSource: string;
+ exchangeRateTimestamp: string;
+};
+
+export type PocketDetailPayload = {
+ pocket: PocketDetailPocket;
+ sources: PocketSource[];
+ history: PocketAllocationEntry[];
+ meta: { notices: string[] };
+};
+
+export type PocketDetailResponse = {
+ status: number;
+ message: string;
+ data: PocketDetailPayload;
+};

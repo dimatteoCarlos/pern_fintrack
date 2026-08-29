@@ -1,0 +1,196 @@
+/* frontend/src/fintrack/pages/forms/pocketDetail/styles/pocketDetail-styles.css
+   The pocket detail screen: its three fetch states, and the two lists that
+   replace the transaction statement it used to render.
+
+   Its own sheet rather than more rules in forms-styles.css, which is imported
+   by every form in the module: a selector added there for one screen is a
+   selector every other screen has to survive. Nothing here is shared, so
+   nothing here is named for reuse.
+
+   The screen sits on the dark app surface, so the text tokens are the on-dark
+   set. The panel inside it is cream and paints its own, which is why the two
+   sets appear in one file. */
+
+/* ── The three fetch states ────────────────────────────────────────────────── */
+
+.pocketDetail__state {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ gap: var(--space-4);
+ padding: var(--space-8) var(--space-4);
+ text-align: center;
+}
+
+.pocketDetail__stateText {
+ color: var(--color-content-on-dark-muted);
+ font-size: var(--font-size-sm);
+ margin: 0;
+}
+
+/* One rule for the button and the link, because the two states differ in what
+   they offer and not in what they look like: a request that failed offers to
+   retry, an id that is not a pocket offers the way back. */
+.pocketDetail__retry {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-5);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ text-decoration: none;
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.pocketDetail__retry:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.pocketDetail__retry:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketDetail__retry:active {
+ background-color: var(--color-content-on-dark-subtle);
+ color: var(--color-accent-content);
+}
+
+.pocketDetail__retry:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* Placeholders, not spinners: they occupy what the answer will occupy, so the
+   page does not jump when it lands. They claim no figure, which is the point —
+   a 0 on screen while a request is in flight is a pocket reporting that nothing
+   was ever committed to it. */
+.pocketDetail__skeletonHero {
+ height: var(--space-16);
+ width: 100%;
+ border-radius: var(--radius-lg);
+ background-color: var(--color-surface-raised);
+}
+
+.pocketDetail__skeletonRow {
+ height: var(--space-8);
+ width: 100%;
+ margin-bottom: var(--space-3);
+ border-radius: var(--radius-sm);
+ background-color: var(--color-surface-raised);
+}
+
+/* ── The two lists ─────────────────────────────────────────────────────────── */
+
+.pocketDetail__section {
+ margin-top: var(--space-6);
+}
+
+.pocketDetail__list {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ margin: 0;
+ padding: 0;
+ list-style: none;
+}
+
+.pocketDetail__row {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: var(--space-4);
+ padding: var(--space-3) var(--space-4);
+ border-radius: var(--radius-sm);
+ background-color: var(--color-surface-raised);
+}
+
+.pocketDetail__rowLeft {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ min-width: 0;
+}
+
+.pocketDetail__rowRight {
+ display: flex;
+ flex-direction: column;
+ align-items: flex-end;
+ gap: var(--space-1);
+ flex-shrink: 0;
+}
+
+.pocketDetail__rowTitle {
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+}
+
+.pocketDetail__rowSubtitle {
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-xs);
+ font-variant-numeric: tabular-nums;
+}
+
+/* Tabular figures so a column of amounts lines up on the decimal. */
+.pocketDetail__rowAmount {
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ font-variant-numeric: tabular-nums;
+}
+
+/* A release. The row already says the word, so the colour repeats it rather
+   than carrying it alone. */
+.pocketDetail__rowAmount--negative {
+ color: var(--color-financial-negative);
+}
+
+/* The account no longer covers everything committed to it — its own state, not
+   this pocket's share of it. The attention colour and not the error one:
+   nothing failed. */
+.pocketDetail__flag {
+ padding: 0 var(--space-2);
+ border-radius: var(--radius-full);
+ background-color: var(--color-financial-attention-surface);
+ color: var(--color-financial-attention-content);
+ /* index.css sets font-size on the universal selector, so an inline element
+    does not inherit the size of the line it sits in and has to restate one. */
+ font-size: var(--font-size-2xs);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ white-space: nowrap;
+}
+
+.pocketDetail__empty {
+ margin: 0;
+ padding: var(--space-4);
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-sm);
+ text-align: center;
+}
+
+/* The cream panel's own value boxes. They carry dark text because the panel
+   they sit on is cream, which is the one place on this screen where the
+   on-dark set would be unreadable. */
+.pocketDetail__value {
+ padding: var(--space-2);
+ color: var(--color-content-primary);
+ font-size: var(--font-size-sm);
+}
+
+@media (min-width: 480px) {
+ .pocketDetail__row {
+  padding: var(--space-3) var(--space-5);
+ }
+}

@@ -1,49 +1,140 @@
-/*frontend/src/fintrack/pages/forms/pocketDetail/summaryPocketDetailBox/styles/summaryDetailBox-style.css*/
+/* frontend/src/fintrack/pages/forms/pocketDetail/summaryPocketDetailBox/styles/summaryDetailBox-style.css
+   The hero of the pocket detail screen.
+
+   Rewritten 2026-08-29 with its component. What was here declared the cream
+   surface as var(--creme) and its text as var(--dark) — neither token is
+   defined in styles/tokens.css, so both resolved to nothing and the panel
+   inherited whatever sat behind it. Every other value was a literal: 0.875rem,
+   1.25rem, #141414, #5b5b5b.
+
+   The block is a data panel, so it is cream with dark text, and it declares
+   both rather than inheriting them: it mounts on the dark app surface, where an
+   unpainted panel is invisible.
+
+   Not a shared component and no surface modifiers: it has exactly one consumer,
+   PocketDetail.tsx, and a modifier written for a caller that does not exist is
+   a modifier written against no screen at all. */
+
 .summaryPocket__container {
-  background-color: var(--creme);
-  color: var(--dark);
-  font-weight: 600;
-  border-radius: 0.875rem;
-  padding: 0.5rem 1.75rem;
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ background-color: var(--color-surface-panel);
+ color: var(--color-content-primary);
+ border-radius: var(--radius-lg);
+ padding: var(--space-4) var(--space-5);
+ width: 100%;
 }
+
 .summaryPocket__title {
-  font-size: 1.25rem;
-  color: var(--dark);
-  font-weight: 500;
-  text-transform: capitalize;
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-medium);
+ color: var(--color-content-secondary);
+ text-transform: uppercase;
+ letter-spacing: var(--letter-spacing-wide);
 }
+
 .summaryPocket__data {
-  width: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: end;
-  gap: 0.25rem;
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
 }
 
+/* The committed figure, and the largest thing on the screen: it is the answer
+   to the question the screen exists to ask. Tabular figures so it does not
+   reflow by a fraction of a character as the amount changes. */
 .summaryPocket__data--amount {
-  display: flex;
-  justify-content: space-between;
-  width: 85%;
-  letter-spacing: 1.5px;
-  border-bottom: 1px solid #141414;
-}
-.summaryPocket__data--subtitle1 {
-  color: #5b5b5b;
-  font-size: 0.75rem;
-}
-.summaryPocket__data--status {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  justify-content: center;
+ font-size: var(--font-size-2xl);
+ font-weight: var(--font-weight-semibold);
+ line-height: 1.1;
+ font-variant-numeric: tabular-nums;
 }
 
- 
+.summaryPocket__data--subtitle1 {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-secondary);
+ font-variant-numeric: tabular-nums;
+}
+
+/* The bar's track. Its own element rather than a background on the fill, so the
+   unfilled part is visible and the proportion can be read without the number. */
+.summaryPocket__track {
+ height: var(--space-2);
+ width: 100%;
+ margin-top: var(--space-2);
+ border-radius: var(--radius-full);
+ background-color: var(--color-content-primary);
+ /* The track is the darker of the two, at a fraction, so the fill reads as the
+    filled part on a cream panel where a light fill would disappear. */
+ opacity: 0.16;
+ overflow: hidden;
+}
+
+/* Painted on top of the track rather than inside it, because the track carries
+   an opacity and a child would inherit it. */
+.summaryPocket__fill {
+ height: var(--space-2);
+ width: 0;
+ margin-top: calc(var(--space-2) * -1);
+ border-radius: var(--radius-full);
+ background-color: var(--color-status-ok);
+ transition: width var(--motion-normal);
+}
+
+.summaryPocket__data--status {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ margin-top: var(--space-2);
+}
+
 .summaryPocket__data--subtitle2 {
-  color: #5b5b5b;
-  font-size: 0.75rem;
-  text-transform: capitalize;
+ font-size: var(--font-size-xs);
+ color: var(--color-content-secondary);
+ font-variant-numeric: tabular-nums;
+}
+
+.summaryPocket__separator {
+ font-size: var(--font-size-xs);
+ color: var(--color-content-secondary);
+}
+
+/* The deadline reading, in all three of its states. A sentence, so it is set at
+   the reading size and not at the caption size the figures use. */
+.summaryPocket__pace {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ color: var(--color-content-primary);
+}
+
+.summaryPocket__days {
+ font-size: var(--font-size-xs);
+ color: var(--color-content-secondary);
+}
+
+/* The funding accounts no longer cover what is committed. Not the error colour:
+   nothing failed and no request was refused — the plan and the cash behind it
+   disagree, which is the attention case, not the failure case. */
+.summaryPocket__warning {
+ margin-top: var(--space-1);
+ padding: var(--space-2) var(--space-3);
+ border-radius: var(--radius-sm);
+ border-left: var(--border-width-thick) solid
+  var(--color-financial-attention);
+ background-color: var(--color-feedback-warning-surface);
+ color: var(--color-feedback-warning-content);
+ font-size: var(--font-size-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .summaryPocket__fill {
+  transition: none;
+ }
+}
+
+@media (min-width: 480px) {
+ .summaryPocket__container {
+  padding: var(--space-5) var(--space-6);
+ }
 }

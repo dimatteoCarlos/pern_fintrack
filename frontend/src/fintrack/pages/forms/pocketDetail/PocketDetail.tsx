@@ -1,264 +1,309 @@
 //frontend/src/fintrack/pages/forms/pocketDetail/PocketDetail.tsx
+//
+// One pocket, from the endpoint that answers for pockets.
+//
+// Rewritten 2026-08-29. What was here renamed the route parameter — `const
+// { pocketId: accountId } = useParams()` — and spent that id against the
+// account endpoints, so the screen rendered another record's name, balance and
+// full statement under a pocket's title. Pocket ids and account ids are
+// separate sequences that both start at 1, so the substitution had no symptom
+// to catch it. It was unreachable only while the pockets table could hold no
+// rows; migration 020 converted four accounts into pockets and armed it.
+//
+// The statement is gone with it, and that is a change of meaning rather than a
+// regression: a pocket has no transactions of its own. No money ever moved into
+// one. What it has is a set of accounts that committed cash to it, and a
+// history of those decisions — both served in the same payload as the hero.
+
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
-import Dots3LightSvg from '../../../../assets/Dots3LightSvg.svg';
+import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
 import {
-  DEFAULT_ACCOUNT_TRANSACTIONS,
-  DEFAULT_CURRENCY,
-  DEFAULT_POCKET_ACCOUNT_LIST,
-  VARIANT_FORM,
-} from '../../../helpers/constants.ts';
-import {
-  PocketSavingAccountsResponseType,
-  AccountSummaryBalanceType,
-  AccountTransactionType,
-  PocketListType,
-  TransactionsAccountApiResponseType,
-} from '../../../types/responseApiTypes.ts';
-import {
-  url_get_account_by_id,
-  url_get_transactions_by_account_id,
-} from '../../../../urlConfig.ts';
-import { useFetch } from '../../../hooks/useFetch.ts';
-import {
-  capitalize,
-  formatDateToDDMMYYYY,
+ capitalize,
+ formatCalendarDate,
+ numberFormatCurrency,
 } from '../../../helpers/functions.ts';
 import SummaryPocketDetailBox from './summaryPocketDetailBox/SummaryPocketDetailBox.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
-import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
-import AccountTransactionsList from '../accountDetailSharedComponents/accountTransactionsList/AccountTransactionsList.tsx';
-import { AccountTransactionDetailModal } from '../accountDetailSharedComponents/accountTransactionDetailModal/AccountTransactionDetailModal.tsx';
-import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
-import { useTransactionDetail } from '../../../hooks/useTransactionDetail.ts';
+import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
 
 import '../styles/forms-styles.css';
-import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
+import './styles/pocketDetail-styles.css';
 
-//---
+// A figure the contract withheld. Never 0 and never an empty cell: a dash says
+// the answer is absent, where 0 would state an amount.
+const DASH = '—';
+
+// How many placeholder rows each list draws while the answer is on the wire.
+const SKELETON_ROWS = 3;
+
 type LocationStateType = {
-  pocketData: PocketListType;
-  previousRoute: string;
+ previousRoute?: string;
 };
-//DATA INITIALIZING
-const initialPocketDetail = DEFAULT_POCKET_ACCOUNT_LIST[0];
 
-const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
 //=============================
 // MAIN COMPONENT POCKET DETAIL
 //=============================
 function PocketDetail() {
-  const location = useLocation();
-  const state = location.state as LocationStateType | null;
+ const location = useLocation();
+ const state = location.state as LocationStateType | null;
 
-  const previousRouteFromState = state?.previousRoute ?? '/fintrack/budget';
-  const { pocketId: accountId } = useParams();
-  //------------------------
-  //data from endpoint request for info account, and for api transactions by pocket account id
+ // The board, not the budget module. A pocket is reached from the pocket board
+ // and the arrow goes back where the user came from.
+ const previousRoute = state?.previousRoute ?? '/fintrack/pocket';
 
-  //--STATES
-  //--state for account detail global info
-  const [accountDetail, setAccountDetail] = useState(initialPocketDetail);
+ // The parameter keeps its name. Renaming it here is what let the old screen
+ // hand a pocket id to the account endpoints.
+ const { pocketId } = useParams();
+ const parsedPocketId = Number(pocketId);
+ const hasValidId = Number.isInteger(parsedPocketId) && parsedPocketId > 0;
 
-  const [previousRoute, setPreviousRoute] =
-    useState<string>('/fintrack/overview');
-  //----------
-  //--state for account transactions data
-  const [transactions, setTransactions] = useState<AccountTransactionType[]>(
-    initialAccountTransactionsData.transactions,
-  );
+ const pocket = usePocketDetailStore((store) => store.pocket);
+ const sources = usePocketDetailStore((store) => store.sources);
+ const history = usePocketDetailStore((store) => store.history);
+ const isLoading = usePocketDetailStore((store) => store.isLoading);
+ const isLoaded = usePocketDetailStore((store) => store.isLoaded);
+ const error = usePocketDetailStore((store) => store.error);
+ const fetchDetail = usePocketDetailStore((store) => store.fetchDetail);
+ const refreshDetail = usePocketDetailStore((store) => store.refreshDetail);
+ const clear = usePocketDetailStore((store) => store.clear);
 
-  const [summaryAccountBalance, setSummaryAccountBalance] =
-    useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary);
-  //---------------------------
-  //--Fetch Data
-  //--account detail global info
-  const urlAccountById = `${url_get_account_by_id}/${accountId}`;
-  const {
-    apiData: accountsData,
-    isLoading,
-    error,
-  } = useFetch<PocketSavingAccountsResponseType>(urlAccountById);
+ useEffect(() => {
+  if (!hasValidId) return;
 
-  // console.log('accountsData', accountsData)
-  //--------------------------------
-  //period dates considering previous number of months and current month transactions
-  const tdy = new Date();
-  const numberOfMonths = 2;
-  const firstDayOfPeriod = new Date(
-    tdy.getFullYear(),
-    tdy.getMonth() - numberOfMonths + 1,
-    1,
-  );
-  const lastDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth() + 1, 0);
+  void fetchDetail(parsedPocketId);
 
-  //--YYYY-MM-DD
-  const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0];
-  const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0];
+  // Emptied on the way out, so the next pocket opened cannot flash this one's
+  // figures under its own title while its request is in flight.
+  return () => {
+   clear();
+  };
+ }, [parsedPocketId, hasValidId, fetchDetail, clear]);
 
-  //--Fetch Data
-  //--account detail transactions
-  const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
+ const currency = pocket?.currency ?? DEFAULT_CURRENCY;
+ const amount = (value: number) => numberFormatCurrency(value, 2, currency);
 
-  const {
-    apiData: transactionAccountApiResponse, //{status, message, data}
-    isLoading: isLoadingTransactions,
-    error: errorTransactions,
-  } = useFetch<TransactionsAccountApiResponseType>(urlTransactionsAccountById);
-  //---------------------------
-  useEffect(() => {
-    if (transactionAccountApiResponse?.data.transactions) {
-      setTransactions(transactionAccountApiResponse?.data.transactions);
-      setSummaryAccountBalance(transactionAccountApiResponse?.data.summary);
-    }
-    //else keep the initial values
-  }, [transactionAccountApiResponse]);
+ // A figure the payload may withhold. numberFormatCurrency(null) does not print
+ // a dash: parseFloat('null') is NaN, and it returns the literal string
+ // 'Not a valid number, please try again' into the space where an amount
+ // belonged. So the absence is answered here, before the formatter sees it.
+ const amountOrDash = (value: number | null) =>
+  value === null ? DASH : amount(value);
 
-  //--------------------------------
-  useEffect(() => {
-    if (previousRouteFromState) setPreviousRoute(previousRouteFromState);
+ //--------------------------------------------
+ const header = (
+  <div className='page__content'>
+   <div className='main__title--container'>
+    <Link to={previousRoute} className='iconLeftArrow'>
+     <LeftArrowLightSvg />
+    </Link>
 
-    if (accountsData?.data?.accountList) {
-      const account = accountsData?.data?.accountList[0];
+    <div className='form__title'>
+     {pocket ? capitalize(pocket.name).toUpperCase() : ''}
+    </div>
+   </div>
+  </div>
+ );
 
-      if (account) {
-        setAccountDetail(account);
-      }
-    }
-  }, [accountsData, accountId, previousRouteFromState]);
-
-  //--TRANSACTION DETAIL MODAL
-  // Owned here and not inside the list: the list is presentational and shared
-  // by the other detail screens.
-  const {
-    selectedTransaction,
-    isLoading: isLoadingTransactionDetail,
-    openTransaction,
-    closeTransaction,
-  } = useTransactionDetail();
-
-  //=============================
+ //--------------------------------------------
+ // Three states, and they are not degrees of one another: a failed request is
+ // not a pocket still loading, and neither is an id that is not a number.
+ if (!hasValidId) {
   return (
-    <>
-      <section className='page__container'>
-        <TopWhiteSpace variant={'dark'} />
-        <div className='page__content'>
-          <div className='main__title--container'>
-            <Link to={previousRoute} relative='path' className='iconLeftArrow'>
-              <LeftArrowLightSvg />
-            </Link>
-            <div className='form__title'>
-              {capitalize(accountDetail?.account_name).toUpperCase()}
-            </div>
+   <section className='page__container'>
+    <TopWhiteSpace variant={'dark'} />
+    {header}
 
-            {/* <Link to='edit' className='flx-col-center icon3dots'>
-              <Dots3LightSvg />
-            </Link> */}
+    <div className='pocketDetail__state'>
+     <p className='pocketDetail__stateText'>
+      That is not a pocket this page can open.
+     </p>
 
-            <div id='edit' className='flx-col-center icon3dots'>
-              <Dots3LightSvg />
-            </div>
-          </div>
-        </div>
-
-        <SummaryPocketDetailBox
-          bubleInfo={accountDetail}
-        ></SummaryPocketDetailBox>
-
-        <article className='form__box'>
-          <div className='form__container'>
-            <div className='input__box'>
-              <label className='label forms__label'>{'Note'}</label>
-              {/* The modifier asks for the note's four lines. The base class
-                  alone is one line, which is what the value boxes below want. */}
-              <div
-                className='input__container input__container--note'
-                style={{ padding: '0.5rem' }}
-              >
-                {accountDetail?.note}
-              </div>
-            </div>
-
-            <div className='input__box'>
-              <label className='label forms__label'>{'Desired Date'}</label>
-              <div className='input__container' style={{ padding: '0.5rem' }}>
-                {formatDateToDDMMYYYY(accountDetail?.desired_date)}
-              </div>
-            </div>
-
-            <div className='account__dateAndCurrency'>
-              <div className='account__date'>
-                <label className='label forms__label'>{'Starting Point'}</label>
-                <div
-                  className='form__datepicker__container'
-                  style={{ textAlign: 'center', color: 'white' }}
-                >
-                  {formatDateToDDMMYYYY(accountDetail.account_start_date)}
-                </div>
-              </div>
-
-              <div className='account__currency'>
-                <div className='label forms__label'>{'Currency'}</div>
-
-                <CurrencyBadge
-                  variant={VARIANT_FORM}
-                  currency={accountDetail.currency_code ?? DEFAULT_CURRENCY}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* --- TRANSACTION STATEMENT SECTION --- */}
-          <div
-            className='account-transactions__container '
-            style={{ margin: '1rem 0' }}
-          >
-            <div className='period-info'>
-              <div className='period-info__label'>Period</div>
-              <span className='period-info__dates  '>
-                {formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}
-                {'  '} / {'  '}{' '}
-                {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}
-              </span>
-            </div>
-
-            <AccountBalanceSummary
-              summaryAccountBalance={summaryAccountBalance}
-            />
-
-            <div className='presentation__card__title__container '>
-              <CardTitle>{'Last Movements'}</CardTitle>
-            </div>
-
-            <AccountTransactionsList
-              transactions={transactions}
-              onTransactionClick={openTransaction}
-            />
-          </div>
-          {/* --- END TRANSACTION STATEMENT SECTION --- */}
-
-          {/* <ListContent listOfItems={lastMovements} /> */}
-        </article>
-
-        {(isLoading || isLoadingTransactions) && <p>Loading...</p>}
-        {(error || errorTransactions) && (
-          <p>Error fetching account info: {error ?? errorTransactions}</p>
-        )}
-      </section>
-
-      {/* A click with no answer for the length of a round trip reads as a dead
-          row, so the request states itself before the modal can. */}
-      {isLoadingTransactionDetail && <CoinSpinner />}
-
-      <AccountTransactionDetailModal
-        transaction={selectedTransaction}
-        onClose={closeTransaction}
-      />
-    </>
+     <Link to='/fintrack/pocket' className='pocketDetail__retry'>
+      Back to the board
+     </Link>
+    </div>
+   </section>
   );
+ }
+
+ if (error) {
+  return (
+   <section className='page__container'>
+    <TopWhiteSpace variant={'dark'} />
+    {header}
+
+    <div className='pocketDetail__state'>
+     <p className='pocketDetail__stateText'>
+      This pocket could not be loaded.
+     </p>
+
+     <button
+      type='button'
+      className='pocketDetail__retry'
+      onClick={() => {
+       void refreshDetail();
+      }}
+     >
+      Try again
+     </button>
+    </div>
+   </section>
+  );
+ }
+
+ if (isLoading || !isLoaded || pocket === null) {
+  return (
+   <section className='page__container'>
+    <TopWhiteSpace variant={'dark'} />
+    {header}
+
+    <div className='pocketDetail__skeletonHero' aria-hidden='true'></div>
+
+    <article className='form__box'>
+     {Array.from({ length: SKELETON_ROWS }, (_, index) => (
+      <div
+       className='pocketDetail__skeletonRow'
+       key={`pocket-detail-skeleton-${index}`}
+       aria-hidden='true'
+      ></div>
+     ))}
+    </article>
+   </section>
+  );
+ }
+
+ //--------------------------------------------
+ return (
+  <section className='page__container'>
+   <TopWhiteSpace variant={'dark'} />
+   {header}
+
+   <SummaryPocketDetailBox pocket={pocket} />
+
+   <article className='form__box'>
+    <div className='form__container'>
+     <div className='input__box'>
+      <label className='label forms__label'>{'Note'}</label>
+      {/* The modifier asks for the note's four lines. The base class alone is
+          one line, which is what the value boxes below want. */}
+      <div className='input__container input__container--note pocketDetail__value'>
+       {pocket.note ?? DASH}
+      </div>
+     </div>
+
+     <div className='account__dateAndCurrency'>
+      <div className='account__date'>
+       <label className='label forms__label'>{'Desired Date'}</label>
+       {/* Built from the parts of a YYYY-MM-DD label the server resolved on
+           the owner's calendar. new Date() on one of these is UTC midnight and
+           renders as the previous day west of UTC. */}
+       <div className='form__datepicker__container pocketDetail__value'>
+        {formatCalendarDate(pocket.desiredDate)}
+       </div>
+      </div>
+
+      <div className='account__currency'>
+       <div className='label forms__label'>{'Currency'}</div>
+       <CurrencyBadge variant={VARIANT_FORM} currency={currency} />
+      </div>
+     </div>
+    </div>
+
+    {/* --- THE ACCOUNTS FUNDING THIS POCKET --- */}
+    <div className='pocketDetail__section'>
+     <div className='presentation__card__title__container'>
+      <CardTitle>{'Funded by'}</CardTitle>
+     </div>
+
+     {sources.length === 0 ? (
+      <p className='pocketDetail__empty'>
+       No account has committed cash to this pocket yet.
+      </p>
+     ) : (
+      <ul className='pocketDetail__list'>
+       {sources.map((source) => (
+        <li className='pocketDetail__row' key={`source-${source.accountId}`}>
+         <div className='pocketDetail__rowLeft'>
+          {/* The allocation ledger names an account the account read cannot
+              resolve: it was removed, or it is internal. What it holds is
+              still real and still counted, so the row is served. */}
+          <span className='pocketDetail__rowTitle'>
+           {source.accountName ?? 'Account no longer available'}
+          </span>
+
+          <span className='pocketDetail__rowSubtitle'>
+           unassigned cash: {amountOrDash(source.accountUnassignedCash)}
+          </span>
+         </div>
+
+         <div className='pocketDetail__rowRight'>
+          <span className='pocketDetail__rowAmount'>
+           {amount(source.heldByThisPocket)}
+          </span>
+
+          {/* The ACCOUNT's own state, not this pocket's share of it. */}
+          {source.covered === false && (
+           <span className='pocketDetail__flag'>over-committed</span>
+          )}
+         </div>
+        </li>
+       ))}
+      </ul>
+     )}
+    </div>
+
+    {/* --- WHAT WAS DECIDED, AND WHEN --- */}
+    <div className='pocketDetail__section'>
+     <div className='presentation__card__title__container'>
+      <CardTitle>{'History'}</CardTitle>
+     </div>
+
+     {history.length === 0 ? (
+      <p className='pocketDetail__empty'>Nothing has been committed yet.</p>
+     ) : (
+      <ul className='pocketDetail__list'>
+       {history.map((entry) => (
+        <li
+         className='pocketDetail__row'
+         key={`allocation-${entry.allocationId}`}
+        >
+         <div className='pocketDetail__rowLeft'>
+          {/* The word beside the sign, never the colour alone: colour
+              survives neither colour blindness nor print. */}
+          <span className='pocketDetail__rowTitle'>
+           {entry.amount < 0 ? 'Released' : 'Allocated'}
+          </span>
+
+          <span className='pocketDetail__rowSubtitle'>
+           {entry.sourceAccountName ?? DASH}
+           {' · '}
+           {formatCalendarDate(entry.allocationDate)}
+          </span>
+         </div>
+
+         <div className='pocketDetail__rowRight'>
+          <span
+           className={
+            entry.amount < 0
+             ? 'pocketDetail__rowAmount pocketDetail__rowAmount--negative'
+             : 'pocketDetail__rowAmount'
+           }
+          >
+           {amount(entry.amount)}
+          </span>
+         </div>
+        </li>
+       ))}
+      </ul>
+     )}
+    </div>
+   </article>
+  </section>
+ );
 }
 
 export default PocketDetail;
