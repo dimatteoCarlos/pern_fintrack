@@ -152,7 +152,7 @@ Prevents layout shift when messages appear/disappear*/
  user-select:none;
 }
 
-/* The Tracker's perforation (.bar, tracker-style.css:108-109), splitting the
+/* The Tracker's perforation (.bar, tracker-style.css:106-107), splitting the
    sign up form where it actually changes subject: credentials above, the
    person's name below. Six identical rows in a column read as one striped
    block, which is what this breaks.

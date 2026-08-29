@@ -1,244 +1,259 @@
-/* frontend\src\pages\tracker\styles\tracker-style.css */
+/* frontend\src\fintrack\pages\tracker\styles\tracker-style.css */
 /*---------------------*/
 /*possible conflict w displayScreen*/
 .displayScreen.light {
-  border-radius: 0.75rem;
-  /* width: 85%; */
-  width: 100%;
-  background-color: var(--creme);
-  padding: 0.5em 0.75em;
-  border: none;
+ border-radius: var(--radius-md);
+ /* width: 85%; */
+ width: 100%;
+ background-color: var(--color-surface-panel);
+ padding: 0.5em 0.75em;
+ border: none;
 
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
 }
 
 /* hay conflicto con .displayScreen--concept/result*/
 /*probar usando module.css*/
 .displayScreen--concept.dark,
 .displayScreen--result.dark {
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-align: left;
-  color: var(--dark);
-  /* border: 5px solid red; */
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wider);
+ text-align: left;
+ color: var(--color-content-primary);
+ /* border: 5px solid red; */
 }
 
 .displayScreen--result {
-  color: var(--dark);
-  font-weight: 700;
-  align-items: center;
-  /* border: 1px solid red; */
+ color: var(--color-content-primary);
+ font-weight: var(--font-weight-bold);
+ align-items: center;
+ /* border: 1px solid red; */
 }
 
 /*---------------*/
 /*trackerNavbar*/
 .trackerNavbar__container,
 .total__container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
 
-  border-radius: 1rem 1rem 0 0 !important;
-  /*width: 80%;*/ /*original figma*/
-  width: 88%; /*changed*/
+ border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+ /*width: 80%;*/ /*original figma*/
+ width: var(--layout-content-width); /*changed*/
 
-  margin: 0 auto;
-  align-self: center;
-  background-color: #1b1b1b;
-  gap: 0.15rem;
+ margin: 0 auto;
+ align-self: center;
+ gap: 0.15rem;
 
-  /*contolled over position*/
-  /* ajustar el factor 0.2 para lograr el offset visual deseado. Prueba con 0.2 (20% de la altura del navbar) y luego ajusta. */
+ /*contolled over position*/
+ /* ajustar el factor 0.2 para lograr el offset visual deseado. Prueba con 0.2 (20% de la altura del navbar) y luego ajusta. */
 
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 0;
-  height: var(--navbar-top-height);
-  padding: 0.75rem;
+ left: 50%;
+ transform: translateX(-50%);
+ z-index: var(--z-base);
+ height: var(--layout-navbar-top);
+ padding: var(--space-3);
 
-  background-color: #252525;
+ background-color: #252525;
 }
 
 .trackerNavbar__container,
 .total__container {
-  position: absolute;
-  /*figma*/
-  /* top: 20%; */
-  /*Position fixed based on topSpaceHeight height + 16% */
-  /* top: calc(var(--topSpaceHeight) * 1 + 16%); */
-  /*Variable position based on header total height + gap*/
-  top: calc(var(--header-total-height) + var(--gap-between));
+ position: absolute;
+ /*figma*/
+ /* top: 20%; */
+ /*Position fixed based on topSpaceHeight height + 16% */
+ /* top: calc(var(--topSpaceHeight) * 1 + 16%); */
+ /*Variable position based on header total height + gap*/
+ top: calc(var(--header-total-height) + var(--gap-between));
 }
-/* =============================== */
+
 /*----CARD SEPARATOR COMPONENT-----*/
-/* =============================== */
 .separator__container {
-  width: 100%;
-  position: absolute;
-  left: 0%;
-  top: 50%;
-  transform: translateY(-40%);
-  background-color: transparent;
+ width: 100%;
+ position: absolute;
+ left: 0%;
+ top: 50%;
+ transform: translateY(-40%);
+ background-color: transparent;
 }
 
 .stack__sep {
-  display: flex;
-  justify-content: start;
-  background-color: transparent;
-  /* border: 10px solid yellow; */
+ display: flex;
+ justify-content: start;
+ background-color: transparent;
+ /* border: 10px solid yellow; */
 }
 
 .circleL,
 .circleR {
-  --radio: 1.15rem;
-  height: var(--radio);
-  width: calc(var(--radio) * 0.65);
+ --radio: 1.15rem;
+ height: var(--radio);
+ width: calc(var(--radio) * 0.65);
 
-  border-top-right-radius: var(--radio);
-  border-bottom-right-radius: var(--radio);
-  background-color: var(--bgBodyColor);
+ border-top-right-radius: var(--radio);
+ border-bottom-right-radius: var(--radio);
+ background-color: var(--color-surface-app);
 }
 .circleR {
-  border-radius: var(--radio) 0 0 var(--radio);
+ border-radius: var(--radio) 0 0 var(--radio);
 }
 
 .bar {
-  border-bottom: 2px dashed var(--creme);
+ border-bottom: var(--border-width-thick) dashed var(--color-surface-panel);
 
-  transform: translateY(-45%);
-  width: 100%;
+ transform: translateY(-45%);
+ width: 100%;
 
-  border-radius: var(--radio);
+ border-radius: var(--radio);
 }
 /*---------------------*/
 section {
-  border: none;
+ border: none;
 }
 article {
-  border: none;
+ border: none;
 }
 
-/* ============================= */
 /*---TRACKER CARD PRESENTATION---*/
-/* ============================= */
 
 .cards__presentation--tracker {
-  width: 88%;
-  margin: 0 auto;
-  border-radius: 1rem;
-  padding: 1rem 1.625rem;
-background-color: white;
-  background: url('../../../../assets/cardBgTexture.png') repeat;
+ width: var(--layout-content-width);
+ margin: 0 auto;
+ border-radius: var(--radius-xl);
+ padding: var(--space-4) 1.625rem;
+ background-color: white;
+ background: url('../../../../assets/cardBgTexture.png') repeat;
 
-  /*figma*/
-  left: 50%;
-  transform: translateX(-50%);
-  position: absolute;
+ /*figma*/
+ left: 50%;
+ transform: translateX(-50%);
+ position: absolute;
 
-  /* border: 5px solid orange; */
+ /* border: 5px solid orange; */
 }
 
 .cards__presentation--tracker {
-  /* [MODIFIED] Position based on header + navbar + two gaps */
-  top: calc(
-    var(--header-total-height) + var(--navbar-top-height) +
-      (var(--gap-between) * 2)
-  );
+ /* [MODIFIED] Position based on header + navbar + two gaps */
+ top: calc(
+  var(--header-total-height) + var(--layout-navbar-top) +
+   (var(--gap-between) * 2)
+ );
 
-  /* SCROLL */
-  /* overflow-y: auto; */
-  overflow-y: visible;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-  padding-right: 0.5rem;
-
+ /* SCROLL */
+ /* overflow-y: auto; */
+ overflow-y: visible;
+ overflow-x: hidden;
+ scroll-behavior: smooth;
+ padding-right: var(--space-2);
 }
 
 .state__card--top,
 .state__card--bottom {
-  border: 0px solid rgb(35, 56, 3);
+ border: 0px solid rgb(35, 56, 3);
 }
 
 .card--title {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  font-weight: 600;
-  padding: 0.5rem 0;
-  color: var(--dark);
+ font-size: var(--font-size-sm);
+ line-height: 1.25rem;
+ font-weight: var(--font-weight-semibold);
+ padding: var(--space-2) 0;
+ color: var(--color-content-primary);
 }
 
 /***********/
 .account.card--title {
-  /* background-color: orange; */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  width: 100%;
+ /* background-color: orange; */
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+ width: 100%;
 }
 /***********/
 .card--title--top {
-  padding: 2rem 0 0.5rem 0;
+ padding: var(--space-8) 0 var(--space-2) 0;
 }
 
 .card__screen {
-  background-color: var(--creme);
-  border-radius: 0.75rem;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--dark);
+ background-color: var(--color-surface-panel);
+ border-radius: var(--radius-md);
+ padding: var(--space-2);
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ color: var(--color-content-primary);
 
-  height: 100%;
+ height: 100%;
+}
+
+/* The converted amount beside the label. Was inline on the span in TopCard.tsx,
+   where no token could reach it. */
+.currency-preview {
+ font-size: 0.8rem;
+ color: var(--color-content-secondary);
 }
 
 .inputNumber {
-  font-size: 1.5rem;
-  line-height: 2em;
-  font-weight: 700;
-  width: 90%;
-  padding-right: 0.5rem;
-  text-align: right;
-  background-color: transparent;
-  color: var(--dark);
+ font-size: var(--font-size-xl);
+ line-height: 2em;
+ font-weight: var(--font-weight-bold);
+ width: 90%;
+ padding-right: var(--space-2);
+ text-align: right;
+ background-color: transparent;
+ color: var(--color-content-primary);
 }
 
 .inputNumber::placeholder {
-  color: var(--secondary, gray);
-  font-weight: 200;
-  font-size: 1.5rem;
-  text-align: center;
-  padding-left: 12%;
+ color: var(--color-content-placeholder);
+ font-weight: 200;
+ font-size: var(--font-size-xl);
+ text-align: center;
+ padding-left: 12%;
+}
+
+/* index.css clears the outline on every input, so the keyboard ring has to be
+   declared here or it does not exist. Dark ring: the field sits on cream. */
+.inputNumber:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+ border-radius: var(--radius-xs);
+}
+
+.inputNumber:disabled {
+ opacity: 0.5;
+ pointer-events: none;
 }
 
 /*------------------------*/
 .icon--arrow {
-  width: fit-content;
+ width: fit-content;
 }
 
 /*-----CardNote---------------*/
 .input__note__description {
-  font-size: 0.875rem;
-  line-height: 1.2em;
-  letter-spacing: 1px;
-  font-weight: 600;
-  max-width: 100%;
-  text-align: left;
-  background-color: transparent;
-  color: var(--dark);
-  width: 100%;
-  border: none;
-  outline: none;
-  /* The box is sized to the text below, so a drag handle offers nothing. */
-  resize: none;
-  transition: max-height 0.2s ease;
-  /* Fills the row instead of sizing itself, so the height below governs. */
-  height: 100%;
+ font-size: var(--font-size-sm);
+ line-height: 1.2em;
+ letter-spacing: var(--letter-spacing-wider);
+ font-weight: var(--font-weight-semibold);
+ max-width: 100%;
+ text-align: left;
+ background-color: transparent;
+ color: var(--color-content-primary);
+ width: 100%;
+ border: none;
+ outline: none;
+ /* The box is sized to the text below, so a drag handle offers nothing. */
+ resize: none;
+ transition: max-height var(--motion-normal);
+ /* Fills the row instead of sizing itself, so the height below governs. */
+ height: 100%;
 }
 
 /* The floor is the field's own line box, 0.875rem at 1.2, plus its 0.5rem top
@@ -248,368 +263,424 @@ background-color: white;
    The line count follows capacity, not the widest case: the 90 characters of
    maxLength need five lines while a line holds 18 to 22 characters, four from
    23, and three from 28. Those thresholds were measured at 440px and 600px of
-   viewport, and they move if the field's type or the card's width changes. */
+   viewport, and they move if the field's type or the card's width changes.
+
+   --font-size-sm is the 0.875rem the field declares above, so the floor and the
+   type stay tied to one value. */
 .note--description {
- min-height: calc(5 * (0.875rem * 1.2) + 0.8rem);
+ min-height: calc(5 * (var(--font-size-sm) * 1.2) + 0.8rem);
 }
 
 @media (min-width: 440px) {
  .note--description {
-  min-height: calc(4 * (0.875rem * 1.2) + 0.8rem);
+  min-height: calc(4 * (var(--font-size-sm) * 1.2) + 0.8rem);
  }
 }
 
 @media (min-width: 600px) {
  .note--description {
-  min-height: calc(3 * (0.875rem * 1.2) + 0.8rem);
+  min-height: calc(3 * (var(--font-size-sm) * 1.2) + 0.8rem);
  }
 }
 
 textarea:invalid {
-  border: 1px dashed tomato;
+ border: 1px dashed tomato;
 }
 
 .input__note__description::placeholder {
-  color: var(--dark);
-  font-weight: 600;
+ color: var(--color-content-primary);
+ font-weight: var(--font-weight-semibold);
 }
+
+/* The note clears its own outline above, so the ring is restored here. Scoped
+   to the tracker card: the class is also styled from generalStyles.css. */
+.cards__presentation--tracker .input__note__description:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+ border-radius: var(--radius-xs);
+}
+
+.cards__presentation--tracker .input__note__description:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
 /*--------------*/
 /*-- bottom card for investment and debts--*/
 .card__typeDate__container {
-  display: flex;
-  align-items: start;
-  width: 100%;
-  justify-content: space-between;
-  /* border:1px solid orange; */
+ display: flex;
+ align-items: start;
+ width: 100%;
+ justify-content: space-between;
+ /* border:1px solid orange; */
 }
 
 .card__typeDate--type,
 .card__typeDate--date,
 .card__typeDate--element {
-  display: flex;
-  flex-direction: column;
-  align-items: start;
-  width: 50%;
-  padding: 1.51rem 0 0rem 0;
+ display: flex;
+ flex-direction: column;
+ align-items: start;
+ width: 50%;
+ padding: 1.51rem 0 0rem 0;
 
-  /* border:1px solid red; */
+ /* border:1px solid red; */
 }
 
 .card__typeDate--type {
-  width: 40%;
+ width: 40%;
 }
 
 .card__screen--type {
-  border: 2px solid var(--dark);
-  padding: 0.58rem 0;
-  border-radius: 0.75rem;
-  width: 100%;
-  cursor: pointer;
-  /* border:1px solid red; */
+ border: var(--border-width-thick) solid var(--color-border-strong);
+ padding: 0.58rem 0;
+ border-radius: var(--radius-md);
+ width: 100%;
+ cursor: pointer;
+ transition: background-color var(--motion-fast), border-color var(--motion-fast);
+ /* border:1px solid red; */
+}
+
+.card__screen--type:hover {
+ background-color: var(--color-surface-panel);
+}
+
+.card__screen--type:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.card__screen--type:active {
+ background-color: var(--color-accent);
+}
+
+.card__screen--type:disabled,
+.card__screen--type.is-disabled {
+ opacity: 0.5;
+ pointer-events: none;
 }
 
 .card__typeDate--type .screen--concept {
-  font-weight: 600;
-  font-size: 1rem;
-  /*font-size: 0.875rem;*/
-  text-transform: capitalize;
-  width: fit-content;
+ font-weight: var(--font-weight-semibold);
+ font-size: var(--font-size-base);
+ /*font-size: 0.875rem;*/
+ text-transform: capitalize;
+ width: fit-content;
 
-  padding: 0;
-  margin: 0 auto;
-  color: var(--dark);
-  /* border:1px solid blue; */
+ padding: 0;
+ margin: 0 auto;
+ color: var(--color-content-primary);
+ /* border:1px solid blue; */
 }
 
 .card__screen--date {
-  background-color: var(--creme);
-  border-radius: 0.75rem;
-  padding: 0.6rem;
-  width: 100%;
-  text-align: center;
-  cursor: pointer;
-  /* border:1px solid red; */
+ background-color: var(--color-surface-panel);
+ border-radius: var(--radius-md);
+ padding: 0.6rem;
+ width: 100%;
+ text-align: center;
+ cursor: pointer;
+ transition: background-color var(--motion-fast);
+ /* border:1px solid red; */
+}
+
+.card__screen--date:hover {
+ background-color: var(--color-accent);
+}
+
+.card__screen--date:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.card__screen--date:active {
+ background-color: var(--color-surface-disabled);
+}
+
+.card__screen--date:disabled,
+.card__screen--date.is-disabled {
+ opacity: 0.5;
+ pointer-events: none;
 }
 
 /*-----------*/
 /* Responsive style for To:*/
 .account-label {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  font-weight: 600;
-  color: var(--dark);
-  white-space: nowrap;
-  flex-shrink: 0;
+ font-size: var(--font-size-sm);
+ line-height: 1.25rem;
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-primary);
+ white-space: nowrap;
+ flex-shrink: 0;
 }
 
 .radio-input__options {
+ flex: 1;
+ min-width: 0;
+ display: flex;
+ justify-content: flex-end;
+}
+
+/* TRANSFER MOBILE OPTIMIZATION (width <=470px) */
+@media screen and (max-width: 470px) {
+ .transfer .account.card--title {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+ }
+
+ .transfer .account-label {
+  margin-bottom: 0;
+  width: auto;
+  flex-shrink: 0;
+ }
+}
+
+/* TRANSFER CHIP ROW (width <=470px) */
+@media screen and (max-width: 470px) {
+ /* Ensure chips take remaining space */
+ .transfer .radio-input__options--chip {
   flex: 1;
   min-width: 0;
+ }
+
+ /* Force exact height for chip container */
+ .transfer .radio-input__options--chip {
+  height: 0.95rem;
+  min-height: 0.95rem;
+  max-height: 0.95rem;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
   display: flex;
-  justify-content: flex-end;
-}
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--space-1);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+ }
 
-/* ========================================
-   📱 TRANSFER MOBILE OPTIMIZATION (width ≤470px)
-====================================== */
-@media screen and (max-width: 470px) {
-  .transfer .account.card--title {
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: nowrap;
-    gap: 0.5rem;
-  }
+ /* Hide scrollbar in Chrome/Safari */
+ .transfer .radio-input__options--chip::-webkit-scrollbar {
+  display: none;
+ }
 
-  .transfer .account-label {
-    margin-bottom: 0;
-    width: auto;
-    flex-shrink: 0;
-  }
-}
+ /* chips */
+ .transfer .radio-input__options--chip .radio-input__label {
+  padding: 0.0625rem 0.375rem;
+  font-size: var(--font-size-2xs);
+  line-height: 1rem; /* 16px */
+  border-width: 0.5px;
+  border-radius: var(--radius-md); /* 12px */
+  white-space: nowrap;
+ }
 
-/* ========================================
-   📱 TRANSFER CHIP ROW (width ≤470px)
-====================================== */
-@media screen and (max-width: 470px) {
-  /* Ensure chips take remaining space */
-  .transfer .radio-input__options--chip {
-    flex: 1;
-    min-width: 0;
-  }
+ /* labelID label */
+ .transfer .account-label {
+  font-size: var(--font-size-sm); /* 10px */
+  line-height: 1rem; /* 16px */
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+ }
 
-  /* Force exact height for chip container */
-  .transfer .radio-input__options--chip {
-    height: 0.95rem;
-    min-height: 0.95rem;
-    max-height: 0.95rem;
+ .transfer .radio-input__options--chip .radio-input__label {
+  font-size: var(--font-size-sm);
+ }
 
-    overflow-x: auto;
-    overflow-y: hidden;
+ /* Reduce vertical spacing in cards */
+ .transfer .state__card--top,
+ .transfer .state__card--bottom {
+  padding-top: var(--space-1);
+  padding-bottom: var(--space-1);
+ }
 
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-    gap: 0.25rem;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  /* Hide scrollbar in Chrome/Safari */
-  .transfer .radio-input__options--chip::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* chips */
-  .transfer .radio-input__options--chip .radio-input__label {
-    padding: 0.0625rem 0.375rem;
-    font-size: 0.625rem;
-    line-height: 1rem; /* 16px */
-    border-width: 0.5px;
-    border-radius: 0.75rem; /* 12px */
-    white-space: nowrap;
-  }
-
-  /* labelID label */
-  .transfer .account-label {
-    font-size: 0.875rem; /* 10px */
-    line-height: 1rem; /* 16px */
-    margin: 0;
-    padding: 0;
-    flex-shrink: 0;
-  }
-
-  .transfer .radio-input__options--chip .radio-input__label {
-    font-size: 0.875rem;
-  }
-
-  /* Reduce vertical spacing in cards */
-  .transfer .state__card--top,
-  .transfer .state__card--bottom {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-  }
-
-  /* Compact separator */
-  .transfer .separator__container {
-    height: 0.5rem; /* 8px */
-  }
+ /* Compact separator */
+ .transfer .separator__container {
+  height: var(--space-2); /* 8px */
+ }
 }
 
 @media screen and (max-width: 370px) {
-  .transfer .radio-input__options--chip .radio-input__label {
-    font-size: 0.72rem;
-  }
+ .transfer .radio-input__options--chip .radio-input__label {
+  font-size: 0.72rem;
+ }
 }
 
-/* ========================================
-   📱 HEIGHT-BASED NOTE & AMOUNT OPTIMIZATION (≤var(--MHB800px))
-   ====================================== */
+/* HEIGHT-BASED NOTE & AMOUNT OPTIMIZATION (<= --MHB 800px) */
 :root {
-  --MHB: 800px;
+ --MHB: 800px;
 }
 @media (max-height: 800px) {
-  /* ---------- NOTE SECTION ---------- */
-  /* The field keeps the five lines it declares above: clamping it here cut the
-     text while the space it needed sat empty under the row. */
-  .input__note__description {
-    overflow-y: auto;
-    padding: 0.5rem 0 0 0.5rem;
-  }
-  .card__screen.description {
-    height: 100%;
-    padding: 0.1rem 0.5rem;
-  }
-  /* The row is taller than the button now, so the button sits at its foot
-     instead of being centred against a field five lines deep. */
-  .btn__container {
-    align-self: flex-end;
-    display: flex;
-    align-items: center;
-  }
-  .plus__btn {
-    height: 2.8rem;
-    width: 2.8rem;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+ /* ---------- NOTE SECTION ---------- */
+ /* The field keeps the five lines it declares above: clamping it here cut the
+    text while the space it needed sat empty under the row. */
+ .input__note__description {
+  overflow-y: auto;
+  padding: var(--space-2) 0 0 var(--space-2);
+ }
+ .card__screen.description {
+  height: 100%;
+  padding: 0.1rem var(--space-2);
+ }
+ /* The row is taller than the button now, so the button sits at its foot
+    instead of being centred against a field five lines deep. */
+ .btn__container {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+ }
+ .plus__btn {
+  height: 2.8rem;
+  width: 2.8rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+ }
 
-  /* ---------- AMOUNT INPUT SECTION ---------- */
-  /* Values scale linearly between 700px and var(--MHB,800px).
-     :not(.description) because the note shares this class and was being cut by
-     a clamp written for the amount field. */
-  .card__screen:not(.description) {
-    height: calc(
-      2.2rem + (2.8rem - 2.2rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
-    ) !important;
-    padding: calc(
-        0.15rem + (0.5rem - 0.15rem) *
-          min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
-      )
-      calc(
-        0.35rem + (0.5rem - 0.35rem) *
-          min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
-      ) !important;
-  }
+ /* ---------- AMOUNT INPUT SECTION ---------- */
+ /* Values scale linearly between 700px and var(--MHB,800px).
+    :not(.description) because the note shares this class and was being cut by
+    a clamp written for the amount field. */
+ .card__screen:not(.description) {
+  height: calc(
+   2.2rem + (2.8rem - 2.2rem) *
+    min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
+  ) !important;
+  padding: calc(
+    0.15rem + (0.5rem - 0.15rem) *
+     min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
+   )
+   calc(
+    0.35rem + (0.5rem - 0.35rem) *
+     min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
+   ) !important;
+ }
 
-  .inputNumber {
-    font-size: calc(
-      1.1rem + (1.5rem - 1.1rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
-    ) !important;
-    line-height: calc(
-      1.3rem + (2rem - 1.3rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
-    ) !important;
-  }
+ .inputNumber {
+  font-size: calc(
+   1.1rem + (1.5rem - 1.1rem) *
+    min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
+  ) !important;
+  line-height: calc(
+   1.3rem + (2rem - 1.3rem) *
+    min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
+  ) !important;
+ }
 
-  /* Currency badge - slightly smaller than container */
-  .icon-currency {
-    height: calc(
-      1.8rem + (2.4rem - 1.8rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
-    ) !important;
-    width: calc(
-      1.8rem + (2.4rem - 1.8rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
-    ) !important;
-    font-size: calc(
-      0.55rem + (0.875rem - 0.65rem) *
-        min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
-    ) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-shrink: 0 !important;
-  }
+ /* Currency badge - slightly smaller than container */
+ .icon-currency {
+  height: calc(
+   1.8rem + (2.4rem - 1.8rem) *
+    min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
+  ) !important;
+  width: calc(
+   1.8rem + (2.4rem - 1.8rem) *
+    min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
+  ) !important;
+  font-size: calc(
+   0.55rem + (0.875rem - 0.65rem) *
+    min(1, max(0, (100svh - 700px) / (var(--MHB, 800px) - 700px)))
+  ) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+ }
 
-  .icon-currency {
-    border-radius: 0.8em !important;
-    border: 2px solid var(--dark);
-    /* background-color: orange; */
-  }
+ .icon-currency {
+  border-radius: 0.8em !important;
+  border: var(--border-width-thick) solid var(--color-border-strong);
+  /* background-color: orange; */
+ }
 }
 
 /* 701 and not 700: this cap is the only thing bounding the card below the
    breakpoint now, so it has to cover the same range the removed bottom did. */
 @media (max-height: 701px) {
-  .cards__presentation--tracker {
-    max-height: calc(
-      100dvh - var(--header-total-height) - var(--navbar-top-height) -
-        var(--navbar-bottom-height) - (var(--gap-between) * 3)
-    );
+ .cards__presentation--tracker {
+  max-height: calc(
+   100dvh - var(--header-total-height) - var(--layout-navbar-top) -
+    var(--layout-navbar-bottom) - (var(--gap-between) * 3)
+  );
 
-    overflow-y: auto;
-  }
+  overflow-y: auto;
+ }
 
-  .separator__container {
-    position: static;
-    transform: none;
-    width: calc(100% + 2.25rem);
-    margin-left: -1.625rem;
-  }
+ .separator__container {
+  position: static;
+  transform: none;
+  width: calc(100% + 2.25rem);
+  margin-left: -1.625rem;
+ }
 
-  .card--title--top {
-    padding: 1.5rem 0 0.4rem 0;
-  }
+ .card--title--top {
+  padding: var(--space-6) 0 0.4rem 0;
+ }
 }
 
 @media (max-height: 701px) {
-  /* No bottom: with top already set, giving the card a bottom too stops being a
-     position and becomes an imposed height, and the card spans the whole gap
-     however short its content is. The max-height above bounds it instead. */
-  .cards__presentation--tracker {
-    overflow-y: auto;
-  }
-
-  .account.card--title {
-    gap: 0.15rem;
-  }
-
-   .card--title {
-   padding-top: 0.25rem;
-   padding-bottom: 0.15rem;
+ /* No bottom: with top already set, giving the card a bottom too stops being a
+    position and becomes an imposed height, and the card spans the whole gap
+    however short its content is. The max-height above bounds it instead. */
+ .cards__presentation--tracker {
+  overflow-y: auto;
  }
 
-  .card--title--top {
-    padding-top: 0.35rem;
-    padding-bottom: 0.15rem;
-  }
-
+ .account.card--title {
+  gap: 0.15rem;
  }
 
- /* ====================================
-   📱 PNL ULTRA COMPACT MODE
-==================================== */
+ .card--title {
+  padding-top: var(--space-1);
+  padding-bottom: 0.15rem;
+ }
+
+ .card--title--top {
+  padding-top: 0.35rem;
+  padding-bottom: 0.15rem;
+ }
+}
+
+/* PNL ULTRA COMPACT MODE */
 
 @media (max-height: 701px) {
+ .pnl .card__typeDate--type,
+ .pnl .card__typeDate--date,
+ .pnl .card__typeDate--element {
+  padding-top: 0.35rem;
+ }
 
-  .pnl .card__typeDate--type,
-  .pnl .card__typeDate--date,
-  .pnl .card__typeDate--element {
-    padding-top: 0.35rem;
-  }
+ .pnl .card__screen--type {
+  padding: 0.28rem 0;
+  min-height: 2rem;
+ }
 
-  .pnl .card__screen--type {
-    padding: 0.28rem 0;
-    min-height: 2rem;
-  }
+ .pnl .card__screen--date {
+  padding: 0.28rem;
+  min-height: 2rem;
+ }
 
-  .pnl .card__screen--date {
-    padding: 0.28rem;
-    min-height: 2rem;
-  }
+ .pnl .screen--concept {
+  font-size: var(--font-size-sm);
+  line-height: 1rem;
+ }
 
-  .pnl .screen--concept {
-    font-size: 0.875rem;
-    line-height: 1rem;
-  }
+ .pnl .card--title {
+  padding-top: 0.15rem;
+  padding-bottom: 0.1rem;
+ }
+}
 
-  .pnl .card--title {
-    padding-top: 0.15rem;
-    padding-bottom: 0.1rem;
-  }
-
+/* The note's max-height glide and the two pressable screens are the only things
+   that move here; the reader asked for none. */
+@media (prefers-reduced-motion: reduce) {
+ .input__note__description,
+ .card__screen--type,
+ .card__screen--date {
+  transition: none;
+ }
 }
