@@ -1,203 +1,142 @@
-/* 📁 frontend/src/auth/components/formUIComponents/styles/submitButton.module.css
-/* 🌟 ===============================
-🎨 SUBMIT BUTTON STYLES
-=============================== 🌟 */
+/* frontend/src/auth/components/formUIComponents/styles/submitButton.module.css
+   The button of the two profile-modal forms, ChangePasswordForm and
+   UpdateProfileForm. Both land on white, so it declares no surface modifier:
+   the only content tokens it uses are the ones valid on inverse. */
 
-/**
- * 🎯 Submit button base styles
- */
 .submitButton {
-  position: relative;
-  padding: 10px 24px;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.5;
-  color: #fff;
-  background-color: #007bff;
-  border: 1px solid #007bff;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  font-family: inherit;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 40px;
-  text-align: center;
-  user-select: none;
-  vertical-align: middle;
-  white-space: nowrap;
+ position: relative;
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ gap: var(--space-2);
+ /* The blue this replaces was #007bff, 3.98:1 with white text. The near-black
+    reads 18.42:1 and matches the button the sign-in card already renders. */
+ color: var(--color-content-on-dark);
+ background-color: var(--color-content-primary);
+ border: var(--border-width-thin) solid var(--color-content-primary);
+ border-radius: var(--radius-sm);
+ padding: var(--space-3) var(--space-6);
+ min-height: var(--size-touch-target);
+ font-family: inherit;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ line-height: 1.5;
+ text-align: center;
+ white-space: nowrap;
+ vertical-align: middle;
+ user-select: none;
+ cursor: pointer;
+ transition: background-color var(--motion-normal), border-color var(--motion-normal);
 }
 
-/**
- * 🎯 Submit button hover state
- */
 .submitButton:not(:disabled):hover {
-  background-color: #0069d9;
-  border-color: #0062cc;
-  text-decoration: none;
+ background-color: var(--color-content-secondary);
+ border-color: var(--color-content-secondary);
+ text-decoration: none;
 }
 
-/**
- * 🎯 Submit button focus state
- */
-.submitButton:focus {
-  outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.5);
+/* index.css:76 sets outline:none on every button, so the ring has to be
+   declared here or the keyboard user gets nothing. */
+.submitButton:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-content-primary);
+ outline-offset: var(--border-width-thick);
 }
 
-/**
- * 🎯 Submit button active state
- */
-.submitButton:active {
-  background-color: #0062cc;
-  border-color: #005cbf;
+.submitButton:not(:disabled):active {
+ background-color: var(--color-surface-sunken);
+ border-color: var(--color-surface-sunken);
 }
 
-/**
- * 🎯 Submit button disabled state
- */
 .submitButton:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-  background-color: #007bff;
-  border-color: #007bff;
+ opacity: 0.5;
+ pointer-events: none;
 }
 
-/**
- * 🎯 Loading state
- */
 .submitButton.loading {
-  color: transparent;
-  pointer-events: none;
+ color: transparent;
+ pointer-events: none;
 }
 
-/**
- * 📝 Button content
- */
+/* index.css:12 pins font-size on the universal selector, so an inline element
+   does not inherit the size of the line it sits in and must restate it. */
 .buttonContent {
-  display: inline-block;
-  transition: opacity 0.2s;
+ display: inline-block;
+ font-size: inherit;
+ transition: opacity var(--motion-normal);
 }
 
-/**
- * 📝 Button content in loading state
- */
 .submitButton.loading .buttonContent {
-  opacity: 0;
+ opacity: 0;
 }
 
-/**
- * 🌀 Loading spinner container
- */
 .loadingSpinner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
+ position: absolute;
+ top: 50%;
+ left: 50%;
+ transform: translate(-50%, -50%);
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ gap: var(--space-1);
 }
 
-/**
- * ⚪ Loading spinner dots
- */
 .spinnerDot {
-  width: 6px;
-  height: 6px;
-  background-color: currentColor;
-  border-radius: 50%;
-  animation: bounce 1.4s infinite ease-in-out both;
+ width: var(--space-2);
+ height: var(--space-2);
+ background-color: currentColor;
+ border-radius: var(--radius-full);
+ animation: bounce 1.4s infinite ease-in-out both;
 }
 
-/**
- * ⚪ Second dot animation delay
- */
 .spinnerDot:nth-child(2) {
-  animation-delay: -0.32s;
+ animation-delay: -0.32s;
 }
 
-/**
- * ⚪ Third dot animation delay
- */
 .spinnerDot:nth-child(3) {
-  animation-delay: -0.16s;
+ animation-delay: -0.16s;
 }
 
-/**
- * 🎬 Bounce animation
- */
 @keyframes bounce {
-  0%, 80%, 100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
+ 0%, 80%, 100% {
+  transform: scale(0);
+ }
+ 40% {
+  transform: scale(1);
+ }
 }
 
-/**
- * 👁️ Screen reader only text
- */
 .srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+ position: absolute;
+ width: 1px;
+ height: 1px;
+ padding: 0;
+ margin: -1px;
+ overflow: hidden;
+ clip: rect(0, 0, 0, 0);
+ white-space: nowrap;
+ border: 0;
 }
 
-/**
- * 🎯 Button variants (optional extensions)
- */
-.submitButton.success {
-  background-color: #28a745;
-  border-color: #28a745;
+/* The .success and .danger variants are gone: neither consumer applied them, and
+   the destructive tone has no token that reaches 4.5:1 on white. It gets defined
+   when a screen actually needs it. */
+
+/* Mobile first: the base rule above is the small screen, and the wider one only
+   trims the touch padding back. The rule this replaces was a max-width query. */
+@media (min-width: 768px) {
+ .submitButton {
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--font-size-xs);
+ }
 }
 
-.submitButton.success:not(:disabled):hover {
-  background-color: #218838;
-  border-color: #1e7e34;
-}
-
-.submitButton.danger {
-  background-color: #dc3545;
-  border-color: #dc3545;
-}
-
-.submitButton.danger:not(:disabled):hover {
-  background-color: #c82333;
-  border-color: #bd2130;
-}
-
-/**
- * 📱 Responsive adjustments
- */
-@media (max-width: 768px) {
-  .submitButton {
-    padding: 12px 20px;
-    font-size: 16px; /* Better for mobile touch */
-    min-height: 44px;
-  }
-}
-
-/**
- * 🎯 Reduced motion support
- */
 @media (prefers-reduced-motion: reduce) {
-  .submitButton {
-    transition: none;
-  }
-  
-  .spinnerDot {
-    animation: none;
-    opacity: 0.6;
-  }
+ .submitButton {
+  transition: none;
+ }
+
+ .spinnerDot {
+  animation: none;
+  opacity: 0.6;
+ }
 }
