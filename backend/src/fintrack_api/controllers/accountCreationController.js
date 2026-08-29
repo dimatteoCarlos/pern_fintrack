@@ -1203,7 +1203,11 @@ export const createPocketAccount = async (req, res, next) => {
       transaction_type_id,
       transaction_type_name: transactionType,
       amount: parseFloat(convertedTransactionAmount),
-      currency_id: currencyIdReq,
+      // The accounting currency, because the amount beside it is the converted
+      // one. What the user typed travels on fxMetadata, which is where the
+      // origin belongs; storing it here labelled a converted figure with the
+      // currency it was converted out of.
+      currency_id: accountingCurrencyId,
       account_id: account_basic_data.account_id,
       transaction_actual_date,
       currency_code,
@@ -1235,12 +1239,17 @@ export const createPocketAccount = async (req, res, next) => {
       userId,
       'slack',
     );
+    // The slack account's balance is held in the accounting currency, so what
+    // is subtracted from it has to be the converted figure. Subtracting the
+    // typed one moved the balance by a number of pesos read as dollars.
     const newCounterAccountBalance =
-      counterAccountInfo.account.account_balance - transactionAmount;
+      counterAccountInfo.account.account_balance - convertedTransactionAmount;
 
-    const counterAccountTransactionAmount = -transactionAmount;
+    const counterAccountTransactionAmount = -convertedTransactionAmount;
 
-    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name}(bank), number: ${counterAccountInfo.account.account_id}. Amount:${counterAccountTransactionAmount} ${currency_code}. Account reference: ${newAccountInfo.account_name}`;
+    // The narrative states what the owner typed, like the pocket leg's own
+    // description above, so it keeps the typed amount beside the typed code.
+    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account: ${counterAccountInfo.account.account_name}(bank), number: ${counterAccountInfo.account.account_id}. Amount:${-transactionAmount} ${currency_code}. Account reference: ${newAccountInfo.account_name}`;
     //---------------------------------------------
     //-------------SLACK COUNTER ACCOUNT INFO -----
     const slackCounterAccountInfo = {
@@ -1250,7 +1259,8 @@ export const createPocketAccount = async (req, res, next) => {
       transaction_type_name:
         transactionTypeDescriptionObj.counterTransactionType,
       amount: parseFloat(counterAccountTransactionAmount),
-      currency_id: currencyIdReq,
+      // The accounting currency, for the same reason as the pocket leg above.
+      currency_id: accountingCurrencyId,
       account_id: counterAccountInfo.account.account_id,
       transaction_actual_date,
       currency_code,

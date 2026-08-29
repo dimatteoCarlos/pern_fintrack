@@ -608,6 +608,10 @@ export type AccountTransactionType = {
   // instant and can name the neighbouring day. Both windows serve it; optional
   // so a client running ahead of the server renders a dash rather than breaking.
   transaction_local_date?: string; // YYYY-MM-DD
+  // The hour of that same day, on that same calendar, served beside it. Optional
+  // for the same reason: a client running ahead of the server renders the date
+  // alone rather than breaking.
+  transaction_local_time?: string | null; // HH:MM
   // What the account has spent inside the month up to and including this row.
   // Only movement types 1 and 6 add to it, the same set the budget counts, so
   // it is served on category_budget alone and arrives null on every other type.

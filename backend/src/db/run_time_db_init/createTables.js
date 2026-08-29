@@ -158,14 +158,16 @@ export const mainTables = [
       transaction_type_id INTEGER NOT NULL,
       currency_id INTEGER NOT NULL, 
 
--- 🔴 FK PRINCIPAL REINCORPORADA Y CON CASCADE
-     account_id INTEGER NOT NULL REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE,
+-- 🔴 OWNING FK: RESTRICT, so no physical delete reaches the ledger without
+-- passing through the deletion engine that settles the account first.
+     account_id INTEGER NOT NULL REFERENCES user_accounts(account_id) ON DELETE RESTRICT ON UPDATE CASCADE,
 
       account_balance_after_tr DECIMAL(15,2) NOT NULL DEFAULT 0.00,
 
--- ✅ FKs DE TRANSFERENCIA (ON DELETE CASCADE)
-     source_account_id INT REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE,
-     destination_account_id INT REFERENCES user_accounts(account_id) ON DELETE CASCADE ON UPDATE CASCADE,
+-- ✅ TRANSFER FKs (ON DELETE RESTRICT)
+-- A cascade here deleted the counterparty's own rows, not just this account's.
+     source_account_id INT REFERENCES user_accounts(account_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+     destination_account_id INT REFERENCES user_accounts(account_id) ON DELETE RESTRICT ON UPDATE CASCADE,
 
      status VARCHAR(50) NOT NULL, 
      transaction_actual_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

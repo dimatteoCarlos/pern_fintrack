@@ -25,23 +25,23 @@ function SummaryPocketDetailBox({ bubleInfo }: SummaryDetailPropType) {
 
   return (
     <>
-      <div className='summary__container'>
-        <div className='summary__title'>{title}</div>
-        <div className='summary__data'>
-          <div className='summary__data--amount'>
+      <div className='summaryPocket__container'>
+        <div className='summaryPocket__title'>{title}</div>
+        <div className='summaryPocket__data'>
+          <div className='summaryPocket__data--amount'>
             <span> {getCurrencySymbol(currency_code ?? defaultCurrency)}</span>
             <span>{target}</span>
           </div>
 
-          <div className='summary__data--subtitle1'>
+          <div className='summaryPocket__data--subtitle1'>
             {subtitle1}{' '}
             {numberFormatCurrency(account_balance, 2, currency_code)}
           </div>
 
-          <div className='summary__data--status '>
+          <div className='summaryPocket__data--status '>
             {/* status: */}
             <StatusSquare alert={remaining > 0 ? 'alert' : ''} />
-            <div className='summary__data--subtitle2'>
+            <div className='summaryPocket__data--subtitle2'>
               {(target !== 0
                 ? Math.abs((remaining / target) * 100)
                 : 0

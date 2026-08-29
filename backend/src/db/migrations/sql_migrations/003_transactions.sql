@@ -34,21 +34,23 @@ CREATE TABLE transactions (
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
 
--- 🔴 FK WITH CASCADE
+-- 🔴 OWNING FK: RESTRICT, so no physical delete reaches the ledger without
+-- passing through the deletion engine that settles the account first.
    account_id INTEGER NOT NULL
    REFERENCES user_accounts(account_id)
-   ON DELETE CASCADE ON UPDATE CASCADE
+   ON DELETE RESTRICT ON UPDATE CASCADE
    ,
 
    account_balance_after_tr DECIMAL(15,2) NOT NULL DEFAULT 0.00,
 
--- ✅ FKs OF TRANSFER (ON DELETE CASCADE)
+-- ✅ FKs OF TRANSFER (ON DELETE RESTRICT)
+-- A cascade here deleted the counterparty's own rows, not just this account's.
    source_account_id INT
     REFERENCES user_accounts(account_id)
-     ON DELETE CASCADE ON UPDATE CASCADE,
+     ON DELETE RESTRICT ON UPDATE CASCADE,
    destination_account_id INT
     REFERENCES user_accounts(account_id)
-     ON DELETE CASCADE ON UPDATE CASCADE,
+     ON DELETE RESTRICT ON UPDATE CASCADE,
 
    status TEXT NOT NULL, 
    

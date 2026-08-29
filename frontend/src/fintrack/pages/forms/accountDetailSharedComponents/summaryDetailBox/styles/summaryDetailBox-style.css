@@ -1,18 +1,35 @@
 /* frontend/src/fintrack/pages/forms/accountDetailSharedComponents/summaryDetailBox/styles/summaryDetailBox-style.css */
 
+/*Shape only. The two modifiers below carry the surface, the way .month-badge
+  does: this box lands on the cream panel and on the app surface.*/
+/*baseline and not start: the title is 1.25rem and the amount 1rem, so hanging
+  both boxes from the same top edge left their baselines apart. The third row is
+  100% wide and wraps to a line of its own, where baseline is a no-op.*/
 .summary__container {
-  background-color: var(--creme);
-  color: var(--dark);
   font-weight: 600;
   border-radius: 0.875rem;
   padding: 0.5rem 1.75rem;
   display: flex;
-  align-items: start;
+  align-items: baseline;
   justify-content: space-between;
 }
-/* Holds the title and whatever the caller hands over as `action`. Declares no
-   colours: the slot's contents sit on the cream panel and style themselves
-   against it. */
+
+/*The cream panel of budget levels 2 and 3.*/
+.summary__container--light {
+  background-color: var(--creme);
+  color: var(--dark);
+}
+
+/*The app surface. Matches .input__container on the same screen: no fill, a
+  cream outline, cream text.*/
+.summary__container--dark {
+  background-color: transparent;
+  border: var(--border-width-thin) solid var(--color-content-on-dark-muted);
+  color: var(--color-content-on-dark-muted);
+}
+
+/*Holds the title and whatever the caller hands over as `action`. Declares no
+  colours: the slot's contents style themselves against the surface.*/
 .summary__titleRow {
  display: flex;
  align-items: center;
@@ -21,9 +38,17 @@
 
 .summary__title {
   font-size: 1.25rem;
-  color: var(--dark);
   font-weight: 500;
   text-transform: capitalize;
+}
+
+.summary__container--light .summary__title {
+  color: var(--dark);
+}
+
+/*White, like .forms__label on the fields below it.*/
+.summary__container--dark .summary__title {
+  color: var(--color-content-on-dark);
 }
 .summary__data {
   width: 50%;
@@ -38,12 +63,21 @@
   justify-content: space-between;
   width: 85%;
   letter-spacing: 1.5px;
-  border-bottom: 1px solid #141414;
+  border-bottom: var(--border-width-thin) solid var(--color-content-primary);
 }
+
+.summary__container--dark .summary__data--amount {
+  border-bottom-color: var(--color-content-on-dark-muted);
+}
+
+/*--font-size-sm is what the token file calls the default UI size. At 0.75rem the
+  row read as switched off next to the figure above it, and the contrast was
+  never the problem: #bdb1b1 on the app surface is 9.3:1.*/
 .summary__data--subtitle1 {
-  color: #5b5b5b;
-  font-size: 0.75rem;
+  color: var(--color-content-secondary);
+  font-size: var(--font-size-sm);
 }
+
 .summary__data--status {
   display: flex;
   gap: 0.5rem;
@@ -51,41 +85,45 @@
   justify-content: center;
 }
 
- 
 .summary__data--subtitle2 {
-  color: #5b5b5b;
-  font-size: 0.75rem;
+  color: var(--color-content-secondary);
+  font-size: var(--font-size-sm);
   text-transform: capitalize;
+}
+
+/*#5b5b5b is a panel colour and disappears on the app surface.*/
+.summary__container--dark .summary__data--subtitle1,
+.summary__container--dark .summary__data--subtitle2 {
+  color: var(--color-content-on-dark-subtle);
 }
 
 /*font-size is restated because the universal selector in index.css sets one on
   every element, so a bare span does not inherit the line it sits in.*/
 .summary__remainWord,
-.summary__percentage--over,
-.summary__percentage--left {
+.summary__percentage {
   font-size: inherit;
 }
 
-/*The word stays as authored, matching the budget lists. Set on the element
-  itself rather than by editing .summary__data--subtitle2, which three separate
-  stylesheets declare at the same specificity: which one wins depends on the
-  order the lazy routes load their CSS.*/
+/*Lowercase inside .summary__data--subtitle2, which capitalises every word it
+  holds. Matches the budget lists.*/
 .summary__remainWord {
   text-transform: none;
 }
 
+/*--amountNegative and --amountPositive were never defined anywhere, so both
+  percentages rendered in the subtitle's grey. Same hexes as the budget
+  semaphore two lines above them.*/
 .summary__percentage--over {
-  color: var(--amountNegative);
+  color: var(--color-financial-negative);
 }
 
 .summary__percentage--left {
-  color: var(--amountPositive);
+  color: var(--color-financial-positive);
 }
 
-/*The breakdown below is a second row, so the box has to wrap. Set on a modifier
-  and not on .summary__container, which the debtor and pocket stylesheets also
-  declare at this specificity: a flex-wrap there would reach two views this
-  component does not render.*/
+/*The breakdown below is a second row, so the box wraps. The modifier no longer
+  isolates anything — the debtor and pocket boxes now carry their own block — and
+  every caller passes it, so it can fold into .summary__container.*/
 .summary__container--stacked {
   flex-wrap: wrap;
   row-gap: var(--space-1);
@@ -97,21 +135,30 @@
 .summary__breakdown {
   width: 100%;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
 }
 
+/*Each reading is one unit. Without this the row runs out of width and breaks
+  the right half between its label and its figure — "Spent" on one line and the
+  amount on the next — which is the pair this row exists to keep together. They
+  wrap against each other instead: side by side while both fit, one per line
+  when they do not.*/
+.summary__breakdown > .summary__data--status,
+.summary__breakdown > .summary__data--subtitle1 {
+  white-space: nowrap;
+}
+
 /*Below 400px the right half stops fitting on one line and splits Spent from its
   figure, which is the pair this row exists to keep together.
 
-  Written as a descendant of .summary__breakdown, which only this component
-  renders: the two classes below are declared by three stylesheets at the same
-  specificity, so a bare rule would depend on which lazy route loaded first and
-  would reach the pocket and debtor boxes as well.*/
+  The descendant no longer isolates anything: both classes live inside
+  .summary__breakdown.*/
 @media (max-width: 400px) {
   .summary__breakdown .summary__data--subtitle1,
   .summary__breakdown .summary__data--subtitle2 {
-    font-size: var(--font-size-2xs);
+    font-size: var(--font-size-xs);
   }
 }

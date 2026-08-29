@@ -33,19 +33,31 @@ const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_LOOKBACK_DAYS = 30;
 
 /**
- * The day the user is living, not the day the server is.
+ * The calendar day an instant falls on in a given zone.
  * 'en-CA' is the locale whose numeric format is already YYYY-MM-DD.
  *
+ * A TIMESTAMPTZ read with toISOString() names the day in UTC, which is the
+ * previous one for anybody west of Greenwich for part of every day.
+ *
+ * @param {Date|string|number} instant
  * @param {string} timeZone - IANA identifier
  * @returns {string} YYYY-MM-DD
  */
-export const todayInZone = (timeZone) =>
+export const dayInZone = (instant, timeZone) =>
  new Intl.DateTimeFormat('en-CA', {
   timeZone,
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',
- }).format(new Date());
+ }).format(new Date(instant));
+
+/**
+ * The day the user is living, not the day the server is.
+ *
+ * @param {string} timeZone - IANA identifier
+ * @returns {string} YYYY-MM-DD
+ */
+export const todayInZone = (timeZone) => dayInZone(new Date(), timeZone);
 
 /**
  * Day arithmetic on a naive calendar date. Date.UTC is safe here precisely

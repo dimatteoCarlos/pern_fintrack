@@ -5,12 +5,29 @@
 /*---BigBoxResult--*/
 /*bigBox__container styles come from overview bigBox container*/
 
+/* The board is shorter than the viewport and the shell spreads its three
+   children with space-between, so it used to float to the middle while the hero
+   stayed anchored — 142px of dead air between them that no padding explained.
+   Taking the height the header and the navbar leave puts the board back under
+   the header and keeps the navbar on the floor. */
+.home__layout:has(.debtsLayout) .debtsLayout {
+ flex: 1;
+ min-height: 0;
+}
+
+.debtsLayout {
+ display: flex;
+ flex-direction: column;
+ gap: 1rem;
+}
+
+/* Into the flow, like the other three boards: the card below then reserves the
+   hero's real height instead of clearing a constant. Position and anchor come
+   from the shared board-hero rule in generalStyles.css — the literal 7.5rem this
+   replaces did not follow --topSpaceHeight, so it sat 10px below the budget hero
+   at 650px of viewport height and 29px below it at 852px. */
 .debtsLayout .bigBox__container {
- position: absolute;
- top: 7.5rem;/* 120px Figma */
- left: 50%;
- transform: translateX(-50%);
- z-index: 2;/* encima del header (layout__header tiene z-index: 1) */
+ align-self: center;
 }
 
 .bigBox__mainInfo {
@@ -84,7 +101,16 @@
 }
 .debtsLayout .content__presentation {
   /* background-color: orange; */
-  padding-top: 5rem;
+  /* The 5rem was clearance for the absolute hero and has nothing left to clear. */
+  padding-top: 0;
+}
+
+/* The board is a card of its own here, not half of one: the hero above is a
+   cream panel of a different kind, so this closes on all four corners. */
+.debtsLayout .debts.cards__presentation {
+  background-color: var(--color-surface-deep);
+  border-radius: 1rem;
+  padding: var(--space-3);
 }
 
 a.icon {

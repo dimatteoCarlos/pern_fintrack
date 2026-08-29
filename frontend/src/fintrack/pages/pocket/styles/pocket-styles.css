@@ -15,15 +15,51 @@
 
   /* background-color: red; */
   gap: 1rem;
-  top: 7.5rem;
   width: 81.11%; /*ORIGINAL*/
   width: 88%; /*CHANGED*/
-  padding: 0.75rem;
+  /* None, so the two halves below measure the same width as the panel and no
+     edge of it shows beside them. The vertical one was breathing room for a fill
+     that no longer paints; all it did was displace the hero, and it is what
+     forced this board's anchor to carry a --space-3 the other two did not. */
+  padding: 0;
   /* border:1px solid red; */
    margin: 0 auto;
-   align-self: center; 
-   background-color: #1b1b1b;
+   align-self: center;
+   /* The frame stops painting; the hero and the content carry the surface. */
+   background-color: transparent;
 
+}
+
+/* The board is shorter than the viewport and the shell spreads its three
+   children with space-between, so it floated 23.1px down the taller band while
+   the header stayed put — enough to break the alignment with the budget board.
+   Taking the height the header and the navbar leave anchors it. */
+.home__layout:has(.pocketLayout) .pocketLayout {
+ flex: 1;
+ min-height: 0;
+}
+
+/* The upper half of one card cut in two. Position, height and anchor come from
+   the shared board-hero rule in generalStyles.css; this hero carries one row
+   against the budget hero's two, so without its min-height it stopped 9.8px
+   short of the white header's edge and the seam fell on white. */
+.pocketLayout .total__container {
+  width: 100%;
+  background-color: var(--color-surface-deep);
+}
+
+/* The budget board's list starts flush against the top of the lower half. This
+   one added a rem the other did not, which read as a deeper seam. */
+.pocketLayout .cards__presentation {
+  padding: 0;
+}
+
+/* The lower half, and what closes the shape. The 4rem it drops was clearance for
+   an absolute hero and has nothing left to clear. */
+.pocketLayout .content__presentation {
+  padding: 0 var(--space-3) var(--space-2);
+  background-color: var(--color-surface-deep);
+  border-radius: 0 0 1rem 1rem;
 }
 
 /*afecta solo a pocket*/

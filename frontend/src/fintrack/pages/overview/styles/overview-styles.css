@@ -21,12 +21,21 @@
 
 }
 
+/* Into the flow, like the other three boards. Position and anchor come from the
+   shared board-hero rule in generalStyles.css; the literal 7.5rem this replaces
+   did not follow --topSpaceHeight, so it sat 10px below the budget hero at 650px
+   of viewport height and 29px below it at 852px.
+
+   z-index went with the position, which ignores it once static. It was there to
+   clear .layout__header, and the hero starts 17.5px after that header ends. */
 .overviewLayout .bigBox__container {
- position: absolute;
- top: 7.5rem;/* 120px Figma */
- left: 50%;
- transform: translateX(-50%);
- z-index: 2;/* encima del header (layout__header tiene z-index: 1) */
+ margin-inline: auto;
+}
+
+/* The 4rem was clearance for the absolute hero and has nothing left to clear;
+   the section below now sits one gap under it, like the other three boards. */
+.overviewLayout .content__presentation {
+ padding-top: 0;
 }
 
 /* .overviewLayout .layout__header {

@@ -16,17 +16,20 @@
    The bar used to lean on a reserved status row for the gap over the list, and
    that row is gone — it collapses now whenever there is no count to report.
 
-   The two margins are written unequal and land equal, 24px on each side. The
+   The two margins are written unequal and land equal, 16px on each side. The
    title above already puts a rem of its own padding under itself (cardTitle.css
-   --title), so --space-2 completes that side while the other needs the whole
-   --space-6. Declaring --space-6 twice would read as symmetric and render as 40
-   above against 24 below. */
+   --title), so this side needs nothing while the other carries the whole
+   --space-4. Declaring --space-4 twice would read as symmetric and render as 32
+   above against 16 below.
+
+   Both were a step wider until the board was measured: 24px on each side spent
+   height the list needed, and the strip reads as belonging to the title at 16. */
 .budgetListControls {
  display: flex;
  flex-direction: column;
  gap: var(--space-2);
- margin-top: var(--space-2);
- margin-bottom: var(--space-6);
+ margin-top: 0;
+ margin-bottom: var(--space-4);
 }
 
 /* The step the design system names at 735px, taken here rather than in the two

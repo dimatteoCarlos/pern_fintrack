@@ -172,7 +172,12 @@ function PocketDetail() {
           <div className='form__container'>
             <div className='input__box'>
               <label className='label forms__label'>{'Note'}</label>
-              <div className='input__container' style={{ padding: '0.5rem' }}>
+              {/* The modifier asks for the note's four lines. The base class
+                  alone is one line, which is what the value boxes below want. */}
+              <div
+                className='input__container input__container--note'
+                style={{ padding: '0.5rem' }}
+              >
                 {accountDetail?.note}
               </div>
             </div>

@@ -59,15 +59,22 @@ function BudgetBigBoxResult({
   // stay, because a spend of zero against a budget of zero is what happened.
   const unbudgeted = isUnbudgeted(budgetAmount, actualSpent);
 
-  const spentShare = unbudgeted ? null : share(executionPercentage);
+  // Parenthesised like its neighbour below. Both shares are glosses of the
+  // amount beside them, and they sit in one column with one class and one
+  // colour, so a mark on only one read as an inconsistency, not a distinction.
+  const spentShare = unbudgeted
+    ? null
+    : executionPercentage === null
+      ? MISSING
+      : `(${share(executionPercentage)})`;
 
   // Derived from the served percentage rather than recomputed over the amounts:
   // |100 - execution| is the same figure and it inherits the server's rounding
   // instead of introducing a second one.
   //
-  // Parenthesised because the word in front of it is what qualifies it: the
-  // same number reads as 61.3% over or 38.7% left. Bare, it stated its own
-  // opposite. Same shape as SummaryDetailBox, the level-3 hero.
+  // The parenthesis carries a second job here: the word in front of it is what
+  // qualifies it, and the same number reads as 61.3% over or 38.7% left. Bare,
+  // it stated its own opposite. Same shape as SummaryDetailBox, the level-3 hero.
   const remainingShare = unbudgeted
     ? null
     : executionPercentage === null
