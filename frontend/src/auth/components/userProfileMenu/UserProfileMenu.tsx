@@ -21,6 +21,7 @@ import CloseSvg from '../../../assets/userProfileMenuSvg/closeSvg.svg?react';
 import CoinsSvg from '../../../assets/userProfileMenuSvg/coinsSvg.svg?react';
 import EditSvg from '../../../assets/userProfileMenuSvg/editSvg.svg?react';
 import LockSvg from '../../../assets/userProfileMenuSvg/lockSvg.svg?react';
+import TimezoneSvg from '../../../assets/userProfileMenuSvg/timezoneSvg.svg?react';
 
 import { CurrencyType } from '../../../fintrack/types/types';
 import { DEFAULT_CURRENCY } from '../../../fintrack/helpers/constants';
@@ -42,6 +43,7 @@ type UserInfoType = {
   userName?: string;
   userEmail?: string;
   currency: CurrencyType;
+  timeZone: string;
 };
 
 /* 🌟 ============================
@@ -100,6 +102,7 @@ const UserProfileMenu = () => {
       return {
         initial: 'U',
         currency: DEFAULT_CURRENCY,
+        timeZone: '',
       };
     }
 
@@ -111,6 +114,9 @@ const UserProfileMenu = () => {
       userName: userData.username,
       userEmail: userData.email,
       currency: userData.currency || DEFAULT_CURRENCY,
+      // The account's own zone. The city segment alone: the badge sits beside
+      // the currency one and 'America/Bogota' would push it onto a second line.
+      timeZone: (userData.timezone || '').split('/').pop()?.replace(/_/g, ' ') ?? '',
     };
   }, [userData]);
 
@@ -370,6 +376,16 @@ const UserProfileMenu = () => {
                   />
                   Currency: <strong>{userInfo.currency.toLowerCase()}</strong>
                 </span>
+
+                {userInfo.timeZone && (
+                 <span className={styles.currencyBadge}>
+                  <TimezoneSvg
+                   className={`${styles.currencyIcon} ${styles.light}`}
+                   aria-hidden='true'
+                  />
+                  Time Zone: <strong>{userInfo.timeZone}</strong>
+                 </span>
+                )}
               </div>
             </div>
           </div>
