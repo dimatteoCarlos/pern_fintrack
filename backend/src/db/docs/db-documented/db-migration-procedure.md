@@ -11,16 +11,34 @@ Companion documents: `db-lifecycle.md` (what migrations, seeds and resets are),
 
 ### The chain — `src/db/migrations/sql_migrations/`
 
-Numbered files, `001` to `017` today. They build a database **from zero**, in
-order: `002_accounts.sql` creates the tables that `014_category_budget_fx_columns.sql`
-later alters. A file assumes every lower-numbered file already ran.
+Numbered files, `001` to `020` today, with no gap; the next free number is
+`021`. They build a database **from zero**, in order: `002_accounts.sql` creates
+the tables that `014_category_budget_fx_columns.sql` later alters. A file assumes
+every lower-numbered file already ran.
 
 This is the only kind that is written from now on.
 
 ### The one-shot — `src/db/migrations/supabase/`
 
-`001_production_alignment.sql`, **written 2026-08-21, rehearsed 2026-08-26,
-and not yet executed against production.**
+`001_production_alignment.sql`, written 2026-08-21 and rehearsed 2026-08-26.
+
+**Whether it has run against production is disputed, and this document was the
+one carrying the oldest answer.** It said "not yet executed"; two later, tracked
+sources say otherwise:
+
+- the header of `sql_migrations/018_alter_transactions_account_fks_to_restrict.sql`
+  states that the alignment file **ran on Supabase on 2026-08-22** and that its
+  name is in the ledger, so the runner will never execute it again;
+- the same header records the three transaction foreign keys as **measured on
+  production 2026-08-27**, which is a reading of the live database and not of a
+  dump.
+
+Nothing in this repository can settle it from here, and neither can this
+document: only a connection to production can. **One question decides it — does
+the `timezone` column exist on the users table there?** The alignment file adds
+it, every login query selects it, and no other file creates it. Run the
+read-only probe, then correct whichever of the three documents is wrong; the
+planning notes name the other two.
 
 It exists because production was created before migrations `007` to `017` were
 written. It held the owner's data but not the structure those files add, and the
@@ -32,15 +50,19 @@ The file reproduces the **effect** the chain would have had, guarded step by
 step, and writes the ledger rows itself. It carries its own `BEGIN`/`COMMIT`
 because `runMigrations.js` is not what executes it.
 
-**Production is still unaligned today.** The dump taken 2026-08-21 at 23:04 has
-110 columns across 17 tables, no `budget_monthly_allocations` and an empty
-ledger — exactly the state this file is written to correct. No deployment since
-has changed that, and none can: a `CREATE TABLE IF NOT EXISTS` over a table that
-already exists is a no-op, so only the `ALTER TABLE`s in this file move it.
+**The state this file was written to correct**, read from the dump taken
+2026-08-21 at 23:04: 110 columns across 17 tables, no
+`budget_monthly_allocations`, and an empty ledger. A deployment cannot move it,
+and that part is not in dispute: a `CREATE TABLE IF NOT EXISTS` over a table
+that already exists is a no-op, so only the `ALTER TABLE`s in this file reach a
+populated database. That is also why the chain migration `018` exists as an
+`ALTER` rather than as a rule declared inside a `CREATE TABLE`.
 
 **It runs once, by hand, and only then is it history.** The rehearsal of
-2026-08-26 against a restored copy says it will run clean; section 5 is what
-remains to be done. After it, production and local share the same chain.
+2026-08-26 against a restored copy says it runs clean. If the reading recorded
+in the `018` header is right, that run already happened on 2026-08-22 and
+production and local already share the same chain; section 5 then describes what
+was done rather than what remains. Confirm before treating it as either.
 
 ---
 
