@@ -26,6 +26,7 @@ import {
   createTables,
   addFxAuditColumns,
   ensureBudgetTables,
+  ensureDailyExchangeRatesTable,
   ensurePocketTables,
   ensureBudgetAllocationBackfill,
   ensureCategoryBudgetCurrency,
@@ -151,6 +152,19 @@ export async function initializeDatabase() {
     // [FX Migrations execute / Migraciones FX (siempre se ejecutan, son idempotentes)
     // =======================================
     await addFxAuditColumns(client);
+
+    // =======================================
+    // Historical rate store (idempotent, runs on every boot)
+    // =======================================
+    // Runtime counterpart of migration 021, for the same reason as the budget
+    // and pocket calls below: production is built by this path and never sees
+    // the migration runner. Pure CREATE ... IF NOT EXISTS.
+    //
+    // Before the FORCE_RECREATE_EXCHANGE_RATES block further down on purpose,
+    // and unaffected by it: that flag resets the current-rate cache, and the
+    // rate history must survive a cache reset. They are separate tables so
+    // that the flag cannot reach this one.
+    await ensureDailyExchangeRatesTable(client);
 
     // =======================================
     // Budget domain (idempotent, runs on every boot)

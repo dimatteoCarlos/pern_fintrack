@@ -783,3 +783,52 @@ export async function recreateExchangeRatesTable(client = pool) {
   await client.query(exchangeRatesDef.table);
   console.log(pc.green('✅ exchange_rates recreated with final structure.'));
 }
+
+// ===========================================
+// 🧩 FUNCTION: Historical rate store
+// ===========================================
+/**
+ * Ensure the historical rate store exists. Mirrors the DDL of migration
+ * 021_create_daily_exchange_rates.sql.
+ *
+ * Deliberately NOT part of the mainTables array, for the same reason
+ * ensureBudgetTables is not: that array runs under Promise.allSettled, so a
+ * rejected table is only logged, never thrown. This one references currencies,
+ * so it needs a real failure when it cannot be created.
+ *
+ * Separate from exchange_rates on purpose, and it has to stay that way.
+ * exchange_rates caches the CURRENT rate and is designed to be discarded: the
+ * createTables path above drops it unconditionally and recreateExchangeRatesTable
+ * below drops it on demand. This table is the append-only history a back-dated
+ * movement is valued from, so a reset of the cache must not touch it. See 021
+ * for the third reason — the unique key of exchange_rates is the contract two
+ * live ON CONFLICT upserts depend on.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureDailyExchangeRatesTable(client = pool) {
+ console.log(pc.cyan('Ensuring historical rate store...'));
+
+ // See 021 for why rate_date and fetched_at are both kept, why no row is ever
+ // written for a day the provider did not quote, and why the unique constraint
+ // is a correctness rule rather than index tuning.
+ await client.query(`
+  CREATE TABLE IF NOT EXISTS daily_exchange_rates (
+   daily_rate_id      SERIAL PRIMARY KEY,
+   base_currency_id   INTEGER NOT NULL
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+   target_currency_id INTEGER NOT NULL
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+   rate_date          DATE          NOT NULL,
+   exchange_rate      DECIMAL(18,8) NOT NULL CHECK (exchange_rate > 0),
+   source             VARCHAR(30)   NOT NULL,
+   fetched_at         TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   created_at         TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+   CONSTRAINT uq_daily_exchange_rate
+    UNIQUE (base_currency_id, target_currency_id, rate_date)
+  )
+ `);
+
+ console.log(pc.green('Historical rate store verified/created.'));
+}
