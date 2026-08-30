@@ -175,26 +175,6 @@ export const patchAccountById = async (req, res, next) => {
           `${categoryName}/${subcategory}/${nature}`,
         );
 
-        // Renaming can land on a name this user already has. Scoped by user_id
-        // and excluding the account being edited: the same name under another
-        // user is not a conflict, and neither is the account matching itself.
-        // Deliberately not the check account creation runs, which omits
-        // user_id and so blocks one user with another user's category.
-        const nameCollision = await client.query({
-          text: `SELECT account_id FROM user_accounts
-                  WHERE user_id = $1
-                    AND LOWER(account_name) = LOWER($2)
-                    AND account_id <> $3
-                    AND deleted_at IS NULL`,
-          values: [userId, userAccountFields.account_name, accountId],
-        });
-
-        if (nameCollision.rows.length > 0) {
-          const message = `An account named ${userAccountFields.account_name} already exists.`;
-          console.warn(pc['red'](message));
-          return res.status(400).json({ status: 400, message });
-        }
-
         if (payload.account_name !== userAccountFields.account_name) {
           console.log(`Check the input account name`);
         }
@@ -239,6 +219,45 @@ export const patchAccountById = async (req, res, next) => {
         userAccountFields.account_name = `${normalizePersonName(debtorLastname)}, ${normalizePersonName(debtorName)}`;
 
         break;
+      }
+    }
+
+    // 3b. Reject a rename that lands on a name this user already holds.
+    // Creation refuses a duplicate for every account type; edition only did it
+    // inside the category_budget arm, so two accounts could be made to share a
+    // name by renaming one of them, through a door creation keeps shut.
+    //
+    // Placed after the switch because the name is not always the payload's:
+    // category_budget composes it from category, subcategory and nature, and
+    // debtor from lastname and name, both above.
+    //
+    // The key is the name plus the account type, per user, the same key
+    // verifyAccountExistence enforces at creation: the same name under another
+    // user is not a conflict, and a bank account and a pocket may share one.
+    // An account never collides with itself, so an edit that leaves the name
+    // untouched is accepted, and a soft-deleted account does not hold its name.
+    if (userAccountFields.account_name !== undefined) {
+      const nameCollision = await client.query({
+        text: `SELECT ua.account_id FROM user_accounts ua
+                JOIN account_types act
+                  ON act.account_type_id = ua.account_type_id
+                WHERE ua.user_id = $1
+                  AND LOWER(ua.account_name) = LOWER($2)
+                  AND LOWER(act.account_type_name) = LOWER($3)
+                  AND ua.account_id <> $4
+                  AND ua.deleted_at IS NULL`,
+        values: [
+          userId,
+          userAccountFields.account_name,
+          account_type_name,
+          accountId,
+        ],
+      });
+
+      if (nameCollision.rows.length > 0) {
+        const message = `An account named ${userAccountFields.account_name} already exists.`;
+        console.warn(pc['red'](message));
+        return res.status(400).json({ status: 400, message });
       }
     }
 
