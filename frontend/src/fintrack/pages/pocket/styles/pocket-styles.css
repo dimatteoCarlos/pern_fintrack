@@ -401,41 +401,212 @@ button.line__container {
    the legacy half's raw values or the light-surface token it names and
    tokens.css does not define. */
 
+/* Rewritten 2026-08-30. It was a grid of four raised tiles: the committed
+   amount, a count of active pockets, the nearest target and the progress. Four
+   boxes gave four figures the same weight and none of them the board's own
+   question, which is how much of every target is committed.
+
+   container-type, because the composition below turns on its OWN width. This
+   column stops growing at --layout-width-max, so a viewport query fires while
+   the column holding the two figures is still 640px and the layout is judged
+   at a width it never has. */
 .pocketHero {
- display: grid;
- grid-template-columns: repeat(2, minmax(0, 1fr));
- gap: var(--space-2);
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-4);
  width: 100%;
  padding: var(--space-3) 0;
+ container-type: inline-size;
+ container-name: pocketHero;
+}
+
+/* Committed and still-to-commit, with a rule between them: they are two halves
+   of one statement, not two tiles. Stacked under 480px of container, side by
+   side above it, and the divider turns with the layout. */
+.pocketHero__equation {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
 }
 
 .pocketHero__tile {
  display: flex;
  flex-direction: column;
  gap: var(--space-1);
- /* Without it a long pocket name blows the grid column out instead of being
-    truncated by the value rule below. */
+ /* Without it a long figure blows the column out instead of wrapping. */
  min-width: 0;
- padding: var(--space-2) var(--space-3);
- border-radius: var(--radius-md);
- background-color: var(--color-surface-raised);
 }
 
-/* The committed amount is the headline, so it takes the row and its figure is
-   the only one at display size. */
-.pocketHero__tile--headline {
- grid-column: 1 / -1;
+.pocketHero__equation .pocketHero__tile + .pocketHero__tile {
+ padding-top: var(--space-3);
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
 }
 
-/* So does the progress, and for a different reason: it is the fourth of four
-   tiles in a two-column grid, so left in one column it sat alone beside an
-   empty cell and read as a tile that had lost its pair. Spanning makes the
-   board's own reading the closing line of the block, which is what it is. */
-.pocketHero__tile--progress {
- grid-column: 1 / -1;
-}
+/* The two span rules that were here went with the tiles they belonged to: the
+   hero is a column, so nothing spans a grid track any more. */
 
 .pocketHero__label {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* No ellipsis and no nowrap: both figures are amounts now, and an amount cut
+   off at the column edge is a wrong number rather than a shortened name. */
+.pocketHero__value {
+ font-weight: var(--font-weight-bold);
+ letter-spacing: var(--letter-spacing-wider);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+ overflow-wrap: anywhere;
+}
+
+/* The committed figure at the top of the scale and the remainder one clear step
+   below it. The scale declares nothing between those two, so this is the whole
+   decision the hierarchy can express. */
+.pocketHero__tile--committed .pocketHero__value {
+ font-size: var(--font-size-2xl);
+ line-height: 1.1;
+}
+
+.pocketHero__tile--remaining .pocketHero__value {
+ font-size: var(--font-size-xl);
+ line-height: 1.2;
+}
+
+.pocketHero__meta {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-on-dark-subtle);
+ line-height: 1.4;
+}
+
+/* ── Level 2: the two cards ──────────────────────────────────────────────── */
+
+.pocketHero__cards {
+ display: grid;
+ grid-template-columns: repeat(2, minmax(0, 1fr));
+ gap: var(--space-3);
+}
+
+.pocketHero__card {
+ position: relative;
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ /* Without it a long pocket name blows its grid track out instead of wrapping
+    inside it. */
+ min-width: 0;
+ padding: var(--space-3);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-raised);
+ text-decoration: none;
+ color: inherit;
+}
+
+/* Room for the chevron, so a two-word name does not run under it. */
+.pocketHero__card--link {
+ padding-right: var(--space-6);
+}
+
+.pocketHero__card--empty .pocketHero__cardValue {
+ color: var(--color-content-on-dark-subtle);
+}
+
+.pocketHero__cardValue {
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-bold);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
+/* A NAME, not an amount, so it breaks between words and never inside one: the
+   reference split "ahorro" across two lines as "ahorr" and "o". Two lines at
+   most, and past that an ellipsis — a third line would push this card taller
+   than the one beside it. */
+.pocketHero__cardValue--name {
+ display: -webkit-box;
+ -webkit-line-clamp: 2;
+ -webkit-box-orient: vertical;
+ overflow: hidden;
+ overflow-wrap: normal;
+ word-break: keep-all;
+ font-variant-numeric: normal;
+ line-height: 1.2;
+}
+
+/* Drawn in CSS rather than imported: it is two borders on a rotated square, and
+   an asset for that is a request the page has to wait for. */
+.pocketHero__chevron {
+ position: absolute;
+ top: var(--space-4);
+ right: var(--space-3);
+ width: var(--space-2);
+ height: var(--space-2);
+ border-top: var(--border-width-thick) solid var(--color-content-on-dark-subtle);
+ border-right: var(--border-width-thick) solid
+  var(--color-content-on-dark-subtle);
+ transform: rotate(45deg);
+}
+
+.pocketHero__card--link:hover .pocketHero__chevron,
+.pocketHero__card--link:focus-visible .pocketHero__chevron {
+ border-color: var(--color-content-on-dark);
+}
+
+/* A ring drawn inside the card, not a second background: the system declares
+   one raised surface, so a hover fill would have to be a colour of its own. */
+.pocketHero__card--link:hover {
+ box-shadow: inset 0 0 0 var(--border-width-thin) var(--color-border-subtle);
+}
+
+.pocketHero__card--link:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+/* ── The board's own reading ─────────────────────────────────────────────── */
+
+.pocketHero__progress {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+}
+
+.pocketHero__progressRow {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-3);
+}
+
+.pocketHero__pct {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
+/* ── The state counts ────────────────────────────────────────────────────── */
+
+/* Inside the active-pockets card, under its figure. Reserved height whether or
+   not a count is present, so a board with no exception keeps the card level
+   with the one beside it instead of standing a line shorter. */
+.pocketHero__marks {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-1) var(--space-3);
+ min-height: var(--font-size-base);
+ margin: 0;
+}
+
+.pocketHero__mark {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
  font-size: var(--font-size-2xs);
  font-weight: var(--font-weight-medium);
  letter-spacing: var(--letter-spacing-wide);
@@ -443,42 +614,22 @@ button.line__container {
  color: var(--color-content-on-dark-subtle);
 }
 
-.pocketHero__value {
- font-size: var(--font-size-base);
- font-weight: var(--font-weight-semibold);
- letter-spacing: var(--letter-spacing-wider);
- color: var(--color-content-on-dark);
- white-space: nowrap;
- overflow: hidden;
- text-overflow: ellipsis;
+/* index.css sets font-size on the universal selector, so this span does not
+   inherit the size of the line it sits in and has to restate it. */
+.pocketHero__mark > span {
+ font-size: inherit;
 }
 
-.pocketHero__tile--headline .pocketHero__value {
- font-size: var(--font-size-2xl);
-}
-
-.pocketHero__meta {
- /* Reserved whether or not it carries text, so a tile that has nothing to add
-    keeps the height of the three that do and the row stays level. */
- min-height: var(--font-size-base);
- font-size: var(--font-size-2xs);
- font-weight: var(--font-weight-regular);
- letter-spacing: var(--letter-spacing-wide);
- color: var(--color-content-on-dark-subtle);
-}
-
-/* A tile with nothing to report dims its dash instead of inventing a figure. */
-.pocketHero__tile.is-empty .pocketHero__value {
- color: var(--color-content-on-dark-subtle);
+.pocketHero__mark .status__square {
+ flex-shrink: 0;
 }
 
 /* A linear bar and not a ring: one value, no second token to position a stroke
    against, and it reads the same at 360px as at 1024px. */
 .pocketHero__bar {
- height: var(--space-1);
- margin-top: var(--space-1);
+ height: var(--space-2);
  border-radius: var(--radius-full);
- background-color: var(--color-border-subtle);
+ background-color: var(--color-surface-raised);
  overflow: hidden;
 }
 
@@ -495,15 +646,29 @@ button.line__container {
  }
 }
 
-/* From 768px the four tiles fit one row and neither of the two spans. */
-@media (min-width: 768px) {
- .pocketHero {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+/* The guard is the CONTAINER and not the viewport, which is the correction this
+   rewrite carries: the page column stops growing at --layout-width-max, so a
+   viewport query at 768px fired while the column holding these two figures was
+   still 640px wide.
+
+   Above 480px of container the equation turns into two columns and the rule
+   between the halves turns with it. */
+@container pocketHero (min-width: 480px) {
+ .pocketHero__equation {
+  flex-direction: row;
+  align-items: stretch;
+  gap: var(--space-6);
  }
 
- .pocketHero__tile--headline,
- .pocketHero__tile--progress {
-  grid-column: auto;
+ .pocketHero__equation .pocketHero__tile {
+  flex: 1 1 0;
+ }
+
+ .pocketHero__equation .pocketHero__tile + .pocketHero__tile {
+  padding-top: 0;
+  padding-left: var(--space-6);
+  border-top: none;
+  border-left: var(--border-width-thin) solid var(--color-border-subtle);
  }
 }
 
