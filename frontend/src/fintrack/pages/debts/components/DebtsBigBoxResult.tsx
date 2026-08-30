@@ -27,7 +27,13 @@ export function DebtsBigBoxResult({
   const debtorCount = bigScreenInfo[2].amount;
 
   const payable = bigScreenInfo[3].title;
-  const payableAmount = bigScreenInfo[3].amount;
+
+  // The magnitude of what is owed, and only here. The server sums the negative
+  // balances and serves the payable negative, which is the accounting truth and
+  // does not move; the label beside this figure already carries the direction in
+  // words, so printing the sign as well asks the reader to apply two conventions
+  // at once. Presentation is not accounting representation.
+  const payableAmount = Math.abs(bigScreenInfo[3].amount);
 
   const lenders = bigScreenInfo[4].title;
   const creditorCount = bigScreenInfo[4].amount;
