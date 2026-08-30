@@ -12,7 +12,8 @@
  * history a back-dated movement is valued from, so it has to survive that
  * reset. The two never share a table and neither reads the other's.
  *
- * Nothing imports this module yet. The cascade resolver is its first caller.
+ * Its caller is the cascade resolver, core/historicalRateResolver.js, which
+ * both reads from here and writes back every row a provider range returned.
  */
 
 import { pool } from '../../../../db/config/configDB.js';
@@ -211,4 +212,45 @@ export async function persistDailyRates(
  );
 
  return rowCount;
+}
+
+/**
+ * The most recent day, on or before the requested one, that any source has
+ * actually published a rate for — in any pair, not just the one being valued.
+ *
+ * This is how a business day is known without a holiday calendar. Banca
+ * d'Italia is the app's business-day oracle: it answers nothing on a day with
+ * no market, so every rate_date in this table is a day some market was open,
+ * and the set of them accumulates across currencies as movements are valued.
+ *
+ * Its one caller is the CDN arm of the cascade, which may only be asked for an
+ * effective date that a real source established. Reading that date out of this
+ * table is what keeps the rule intact: the CDN never fabricates a date, it is
+ * handed one that another provider published. When the table holds nothing
+ * inside the bound, the answer is null and that arm simply does not run.
+ *
+ * @param {Date|string} requestedDate
+ * @param {number} [maxAgeDays=MAX_RATE_AGE_DAYS]
+ * @returns {Promise<string|null>} 'YYYY-MM-DD', or null when no day is known.
+ */
+export async function findLatestBusinessDay(
+ requestedDate,
+ maxAgeDays = MAX_RATE_AGE_DAYS,
+) {
+ const day = toCalendarDay(requestedDate);
+ if (!day) {
+  throw new Error(`Invalid requested date for business day lookup: ${requestedDate}`);
+ }
+
+ const { rows } = await pool.query(
+  `
+    SELECT TO_CHAR(MAX(rate_date), 'YYYY-MM-DD') AS rate_date
+      FROM daily_exchange_rates
+     WHERE rate_date <= $1::date
+       AND rate_date >= $1::date - $2::int
+    `,
+  [day, maxAgeDays],
+ );
+
+ return rows[0]?.rate_date || null;
 }

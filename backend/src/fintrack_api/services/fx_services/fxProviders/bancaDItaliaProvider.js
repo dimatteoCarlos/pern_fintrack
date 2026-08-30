@@ -17,6 +17,11 @@
  *
  * - fetchBancaDItaliaRate(currency, date, options)
  *     → { rate, source, requestedDate, effectiveDate, stepsWalkedBack, ... }
+ * - fetchBancaDItaliaRange(currency, startDate, endDate, options)
+ *     → [ { rateDate, rate, source }, ... ], one row per published day
+ *
+ * The walk-back serves one figure; the range serves the store. Neither
+ * replaces the other and both are called.
  *
  * Payload row:
  * { isoCode: 'VES', avgRate: '510.1488', referenceDate: '2026-05-14',
@@ -234,4 +239,135 @@ export async function fetchBancaDItaliaRate(currency, date, options = {}) {
  throw new Error(
   `No Banca d'Italia rate for ${isoCode} within ${MAX_WALK_BACK_STEPS} days back from ${requestedDate}`
  );
+}
+
+// The same portal's range endpoint: one call answers a whole span of days.
+const TIME_SERIES_URL =
+ 'https://tassidicambio.bancaditalia.it/terzevalute-wf-web/rest/v1.0/dailyTimeSeries';
+
+/**
+ * Fetch every published rate of one currency against the US dollar between two
+ * days, inclusive.
+ *
+ * Why this exists beside fetchBancaDItaliaRate instead of replacing it: the
+ * walk-back asks one day per request and stops at the first answer, which is
+ * the right shape when a single figure is wanted and the wrong shape when the
+ * answer is going to be stored. One range call costs the same round trip as one
+ * walk-back step and brings the rest of the span back with it, so the days the
+ * caller has not needed yet are already recorded when it needs them. The
+ * walk-back stays: it is the natural second attempt if this endpoint errors.
+ *
+ * Rows come back in the shape the historical store writes - rateDate, rate,
+ * source - so the caller hands the array straight to persistDailyRates. The
+ * rate stays the provider's own string; parsing it here would round the figure
+ * at the module boundary, before the ledger has chosen its precision.
+ *
+ * A day the market was closed is simply absent from the answer, and no row is
+ * invented for it. The effective date always comes from the source that
+ * supplied the rate.
+ *
+ * The quote convention is checked once on the envelope, not per row: this
+ * endpoint states exchangeConventionCode in resultsInfo and gives each row only
+ * the human legend, which is the reverse of the single-day endpoint above.
+ *
+ * @param {string} currency - Target currency code, e.g. 'eur' (case-insensitive)
+ * @param {string} startDate - First day of the span, 'YYYY-MM-DD'
+ * @param {string} endDate - Last day of the span, 'YYYY-MM-DD'
+ * @param {Object} [options] - Time budget
+ * @param {number} [options.deadlineAt] - Absolute epoch ms the cascade may not pass
+ * @param {number} [options.timeoutMs] - Call timeout, defaults to FX_REQUEST_TIMEOUT_MS
+ * @returns {Promise<Array<{rateDate: string, rate: string, source: string}>>}
+ * @throws {Error} - On an unsupported currency, an invalid span, network failure,
+ *  an exceeded deadline, a malformed payload or an unexpected quote convention
+ */
+export async function fetchBancaDItaliaRange(currency, startDate, endDate, options = {}) {
+ const code = typeof currency === 'string' ? currency.toLowerCase() : '';
+
+ if (!SUPPORTED_CURRENCIES.includes(code)) {
+  throw new Error(`Banca d'Italia does not serve currency: ${currency}`);
+ }
+
+ const from = toCalendarDay(startDate);
+ const to = toCalendarDay(endDate);
+
+ if (!from || !to) {
+  throw new Error(`Invalid Banca d'Italia span requested: ${startDate}..${endDate}`);
+ }
+
+ if (from > to) {
+  throw new Error(`Banca d'Italia span ends before it starts: ${from}..${to}`);
+ }
+
+ const isoCode = code.toUpperCase();
+
+ let timeoutMs =
+  Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : FX_TIMEOUT_MS;
+
+ // One call, so the cascade budget caps it once instead of per step.
+ if (Number.isFinite(options.deadlineAt)) {
+  const remainingMs = options.deadlineAt - Date.now();
+
+  if (remainingMs <= 0) {
+   throw new Error(`Banca d'Italia aborted for ${isoCode}: cascade deadline reached`);
+  }
+
+  timeoutMs = Math.min(timeoutMs, remainingMs);
+ }
+
+ const response = await axios.get(TIME_SERIES_URL, {
+  timeout: timeoutMs,
+  headers: { Accept: 'application/json' },
+  params: {
+   startDate: from,
+   endDate: to,
+   baseCurrencyIsoCode: isoCode,
+   currencyIsoCode: 'USD',
+   lang: 'en',
+  },
+ });
+
+ const payload = response.data;
+ const rows = payload && Array.isArray(payload.rates) ? payload.rates : null;
+
+ if (!rows) {
+  throw new Error(
+   `Banca d'Italia returned a malformed payload for ${isoCode} on ${from}..${to}`
+  );
+ }
+
+ // An empty span is a valid answer: no day in it was published. Whether that
+ // counts as a miss is the caller's call, not this function's.
+ if (rows.length === 0) {
+  console.log(`[FX] Banca d'Italia usd -> ${code} for ${from}..${to}: no published day`);
+  return [];
+ }
+
+ const convention = payload.resultsInfo?.exchangeConventionCode;
+
+ if (convention !== USD_BASE_CONVENTION) {
+  throw new Error(
+   `Banca d'Italia quoted ${isoCode} on ${from}..${to} as '${convention}', not per-USD`
+  );
+ }
+
+ const series = [];
+
+ for (const row of rows) {
+  const rateDate = toCalendarDay(row.referenceDate);
+
+  // A row the source did not date cannot be stored under a date this app made
+  // up, so it is dropped rather than assigned one.
+  if (!rateDate) {
+   console.warn(`Skipping undated Banca d'Italia row for ${isoCode}: ${row.referenceDate}`);
+   continue;
+  }
+
+  series.push({ rateDate, rate: String(row.avgRate), source: 'bancaditalia' });
+ }
+
+ console.log(
+  `[FX] Banca d'Italia usd -> ${code} for ${from}..${to}: ${series.length} published day(s)`
+ );
+
+ return series;
 }
