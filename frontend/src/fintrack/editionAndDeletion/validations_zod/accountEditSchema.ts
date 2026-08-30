@@ -172,11 +172,18 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
       isRequired: false,
       isDerived: true, // Calculated field (Name + LastName)
       helpText: 'Generated from Debtor Name and Lastname.',
+      // The separator both write paths use is a comma: creation composes
+      // `${lastname}, ${name}` and so does the debtor branch of the editor, on
+      // the server. Previewing a space showed 'Palacios Lucila' for an account
+      // the list, the heading and the database all read as 'Palacios, Lucila'.
+      //
+      // Joined on the parts that are filled, so a half-typed form previews a
+      // lastname and not a dangling separator.
       compute: (data: Record<string, unknown>) => {
-        const name = String(data.debtor_name ? data.debtor_name : '');
-        const lastname = String(data.debtor_lastname!);
-        return `${lastname} ${name}`.trim();
-        // return `${capitalize(String(lastname))} ${capitalize(String(name))}`
+        const name = String(data.debtor_name ?? '').trim();
+        const lastname = String(data.debtor_lastname ?? '').trim();
+
+        return [lastname, name].filter(Boolean).join(', ');
       },
     },
     {
