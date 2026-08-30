@@ -5,16 +5,11 @@ import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import AccountEditLink from '../../../general_components/accountEditLink/AccountEditLink.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 
-import {
-  DEFAULT_ACCOUNT_TRANSACTIONS,
-  DEFAULT_CURRENCY,
-  VARIANT_FORM,
-} from '../../../helpers/constants.ts';
+import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
 import {
   AccountByTypeResponseType,
   AccountListType,
   AccountSummaryBalanceType,
-  AccountTransactionDataType,
   AccountTransactionType,
   DebtorListType,
   TransactionsAccountApiResponseType,
@@ -39,6 +34,7 @@ import { useTransactionDetail } from '../../../hooks/useTransactionDetail.ts';
 
 import '../styles/forms-styles.css';
 import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
+import './styles/debtorDetail-styles.css';
 
 //---------------
 // const user = import.meta.env.VITE_USER_ID;
@@ -65,22 +61,6 @@ function getBubleInfoFromAccountDetail(
     debtor: accountDetail.account_balance >= 0 ? 1 : 0,
   };
 }
-// let initialAccountDetail:AccountListType
-const initialAccountDetail: AccountListType = {
-  account_name: 'Lastname, name example',
-  account_id: 1000, //| null;
-  currency_code: 'usd',
-  account_balance: 10, //| null;
-  account_type_name: 'debtor',
-  account_type_id: 3,
-  account_starting_amount: 0,
-  account_start_date: new Date(),
-};
-
-const initialAccountTransactionsData: AccountTransactionDataType =
-  DEFAULT_ACCOUNT_TRANSACTIONS['data'];
-
-// console.log('initialAccountTransactions', initialAccountTransactionsData)
 
 //---------------------------
 function DebtorDetail() {
@@ -90,44 +70,47 @@ function DebtorDetail() {
   const previousRouteFromState =
     state?.previousRoute ?? '/fintrack/debts/debtors';
   const { debtorId: accountId } = useParams();
-  // console.log('location',  accountId,'useParams', useParams(), {debtorDetailedData})
-  //------------------------
-  //initial state values
-  // initialBubleInfo:DebtorListType
-  const initialBubleInfo: DebtorListType =
-    debtorDetailedData ?? getBubleInfoFromAccountDetail(initialAccountDetail);
 
   //--states
-  //--state for account detail global info
-  const [accountDetail, setAccountDetail] =
-    useState<AccountListType>(initialAccountDetail);
+  // Nothing is seeded. The screen used to open on a sample account —
+  // 'Lastname, name example' owing 10.00, with a statement running from
+  // 2025-05-18 — which the fetch overwrote only on success, so a failed or
+  // missing account left the sample standing as if it were the debtor.
+  const [accountDetail, setAccountDetail] = useState<AccountListType | null>(
+    null,
+  );
   const [previousRoute, setPreviousRoute] = useState<string>(
     '/fintrack/debts/debtors',
   );
-  const [bubleInfo, setBubleInfo] = useState<DebtorListType>(initialBubleInfo);
-
-  //--state for account transactions data
-  const [transactions, setTransactions] = useState<AccountTransactionType[]>(
-    initialAccountTransactionsData.transactions,
+  // The row the list handed over in the link state. Real data for this debtor,
+  // so it paints at once; null on a direct load or a refresh, where the fetch
+  // is the only source.
+  const [bubleInfo, setBubleInfo] = useState<DebtorListType | null>(
+    debtorDetailedData ?? null,
   );
 
+  //--state for account transactions data
+  // null is "no answer yet"; an empty array is "the window holds no movement".
+  const [transactions, setTransactions] = useState<
+    AccountTransactionType[] | null
+  >(null);
+
   const [summaryAccountBalance, setSummaryAccountBalance] =
-    useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary);
+    useState<AccountSummaryBalanceType | null>(null);
 
   //-------------------------------------
   //--Fetch Data
   //--account detail global info
-  // console.log('urlDesg', url_get_account_by_id, accountId, user)
-
   const urlAccountById = `${url_get_account_by_id}/${accountId}`;
 
   const {
     apiData: accountsData,
     isLoading,
     error,
+    status,
+    refetch,
   } = useFetch<AccountByTypeResponseType>(urlAccountById);
 
-  // console.log('accountsData', accountsData,'url',  urlAccountById)
   //--account transaction api response
   //--how to handle dates period
   const tdy = new Date();
@@ -150,6 +133,8 @@ function DebtorDetail() {
     apiData: transactionAccountApiResponse, //{status, message, data}
     isLoading: isLoadingTransactions,
     error: errorTransactions,
+    status: statusTransactions,
+    refetch: refetchTransactions,
   } = useFetch<TransactionsAccountApiResponseType>(urlTransactionsAccountById);
   //-------------------------------------
   //--
@@ -157,7 +142,6 @@ function DebtorDetail() {
     if (previousRouteFromState) setPreviousRoute(previousRouteFromState);
     if (accountsData?.data?.accountList?.length) {
       const account = accountsData.data.accountList[0];
-      //  const account = accountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
       if (account) {
         setAccountDetail(account);
 
@@ -170,11 +154,10 @@ function DebtorDetail() {
 
   //-------------------------------------
   useEffect(() => {
-    if (transactionAccountApiResponse?.data.transactions) {
-      setTransactions(transactionAccountApiResponse?.data.transactions);
-      setSummaryAccountBalance(transactionAccountApiResponse?.data.summary);
+    if (transactionAccountApiResponse?.data) {
+      setTransactions(transactionAccountApiResponse.data.transactions);
+      setSummaryAccountBalance(transactionAccountApiResponse.data.summary);
     }
-    //else keep the initial values
   }, [transactionAccountApiResponse]);
 
   //--TRANSACTION DETAIL MODAL
@@ -188,8 +171,26 @@ function DebtorDetail() {
   } = useTransactionDetail();
 
   //--------------------------------------
+  //--FETCH STATES
+  // The hook starts idle and raises isLoading inside its effect, so a status or
+  // an error is what says an answer has actually come back.
+  const hasAccountAnswer = status !== null || error !== null;
 
-  // console.log('account detail', accountDetail)
+  // A debtor that answers 404 is gone — deleted here or in another tab. That is
+  // its own state: not an empty screen, and never the sample account this
+  // screen used to fall back to.
+  const isAccountMissing = status === 404;
+  const hasAccountFailed = Boolean(error) && !isAccountMissing;
+  const isAccountPending =
+    !isAccountMissing && !hasAccountFailed && (isLoading || !hasAccountAnswer);
+
+  const hasStatementAnswer =
+    statusTransactions !== null || errorTransactions !== null;
+  const hasStatementFailed = Boolean(errorTransactions);
+  const isStatementPending =
+    !hasStatementFailed && (isLoadingTransactions || !hasStatementAnswer);
+
+  //--------------------------------------
   return (
     <>
       <section className='page__container'>
@@ -200,101 +201,185 @@ function DebtorDetail() {
               <LeftArrowLightSvg />
             </Link>
             <div className='form__title'>
-              {String(bubleInfo.account_name).toUpperCase()}
+              {/* The name of an account that is gone, or of one that failed to
+                  load, is not a fact this screen may state. */}
+              {bubleInfo && !isAccountMissing && !hasAccountFailed ? (
+                String(bubleInfo.account_name).toUpperCase()
+              ) : (
+                <span
+                  className='debtorDetail__skeletonBar debtorDetail__skeletonBar--title'
+                  aria-hidden='true'
+                ></span>
+              )}
             </div>
             {/* The editor returns to this card, not to the list the user came
-                from: it is where they were standing. */}
-            {accountId && (
+                from: it is where they were standing. Offered only once the
+                account is known to exist. */}
+            {accountId && accountDetail && (
               <AccountEditLink
                 accountId={accountId}
                 returnRoute={location.pathname}
-                accountName={String(bubleInfo.account_name)}
+                accountName={String(accountDetail.account_name)}
                 originRoute={previousRoute}
               />
             )}
           </div>
 
-          <SummaryDebtorDetailBox
-            bubleInfo={bubleInfo}
-          ></SummaryDebtorDetailBox>
+          {isAccountMissing ? (
+            <article className='form__box debtorDetail__state'>
+              <p className='debtorDetail__stateText'>
+                This debtor no longer exists. It may have been deleted from
+                another screen.
+              </p>
 
-          <article className='form__box'>
-            <div className='form__container'>
-              <div className='input__box'>
-                <label className='label forms__label'>{`Current Balance`}</label>
+              <Link to={previousRoute} className='debtorDetail__stateLink'>
+                Back to the debtor list
+              </Link>
+            </article>
+          ) : hasAccountFailed ? (
+            <article className='form__box debtorDetail__state'>
+              <p className='debtorDetail__stateText'>
+                This debtor could not be loaded.
+              </p>
 
-                <div className='input__container' style={{ padding: '0.5rem' }}>
-                  {numberFormatCurrency(accountDetail?.account_balance)}
-                </div>
-              </div>
+              <button
+                type='button'
+                className='debtorDetail__retry'
+                onClick={refetch}
+              >
+                Try again
+              </button>
+            </article>
+          ) : isAccountPending || !accountDetail || !bubleInfo ? (
+            <article
+              className='form__box debtorDetail__skeleton'
+              aria-hidden='true'
+            >
+              <div className='debtorDetail__skeletonBar debtorDetail__skeletonBar--amount'></div>
+              <div className='debtorDetail__skeletonBar'></div>
+              <div className='debtorDetail__skeletonBar'></div>
+              <div className='debtorDetail__skeletonBar debtorDetail__skeletonBar--wide'></div>
+            </article>
+          ) : (
+            <>
+              <SummaryDebtorDetailBox
+                bubleInfo={bubleInfo}
+              ></SummaryDebtorDetailBox>
 
-              <div className='input__box'>
-                <label className='label forms__label'>{'Account Type'}</label>
+              <article className='form__box'>
+                <div className='form__container'>
+                  <div className='input__box'>
+                    <label className='label forms__label'>{`Current Balance`}</label>
 
-                <p className='input__container' style={{ padding: '0.5rem' }}>
-                  {capitalize(
-                    accountDetail.account_type_name!.toLocaleString(),
-                  )}
-                </p>
-              </div>
+                    <div
+                      className='input__container'
+                      style={{ padding: '0.5rem' }}
+                    >
+                      {numberFormatCurrency(accountDetail.account_balance)}
+                    </div>
+                  </div>
 
-              <div className='account__dateAndCurrency'>
-                <div className='account__date'>
-                  <label className='label forms__label'>
-                    {'Starting Point'}
-                  </label>
-                  <div
-                    className='form__datepicker__container'
-                    style={{ textAlign: 'center', color: 'white' }}
-                  >
-                    {formatDateToDDMMYYYY(accountDetail.account_start_date)}
+                  <div className='input__box'>
+                    <label className='label forms__label'>
+                      {'Account Type'}
+                    </label>
+
+                    <p
+                      className='input__container'
+                      style={{ padding: '0.5rem' }}
+                    >
+                      {capitalize(
+                        accountDetail.account_type_name!.toLocaleString(),
+                      )}
+                    </p>
+                  </div>
+
+                  <div className='account__dateAndCurrency'>
+                    <div className='account__date'>
+                      <label className='label forms__label'>
+                        {'Starting Point'}
+                      </label>
+                      <div
+                        className='form__datepicker__container'
+                        style={{ textAlign: 'center', color: 'white' }}
+                      >
+                        {formatDateToDDMMYYYY(accountDetail.account_start_date)}
+                      </div>
+                    </div>
+
+                    <div className='account__currency'>
+                      <div className='label forms__label'>{'Currency'}</div>
+
+                      <CurrencyBadge
+                        variant={VARIANT_FORM}
+                        currency={accountDetail.currency_code ?? DEFAULT_CURRENCY}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className='account__currency'>
-                  <div className='label forms__label'>{'Currency'}</div>
+                {/* --- TRANSACTION STATEMENT SECTION --- */}
+                {/* Its own three states. The statement is a second request and
+                    can fail while the account itself is on screen. */}
+                <div
+                  className='account-transactions__container '
+                  style={{ margin: '1rem 0' }}
+                >
+                  {hasStatementFailed ? (
+                    <div className='debtorDetail__state'>
+                      <p className='debtorDetail__stateText'>
+                        The statement could not be loaded.
+                      </p>
 
-                  <CurrencyBadge
-                    variant={VARIANT_FORM}
-                    currency={accountDetail.currency_code ?? DEFAULT_CURRENCY}
-                  />
+                      <button
+                        type='button'
+                        className='debtorDetail__retry'
+                        onClick={refetchTransactions}
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  ) : isStatementPending ||
+                    !summaryAccountBalance ||
+                    !transactions ? (
+                    <div className='debtorDetail__skeleton' aria-hidden='true'>
+                      <div className='debtorDetail__skeletonBar debtorDetail__skeletonBar--wide'></div>
+                      <div className='debtorDetail__skeletonBar'></div>
+                      <div className='debtorDetail__skeletonBar'></div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className='period-info'>
+                        <div className='period-info__label'>Period</div>
+                        <span className='period-info__dates  '>
+                          {formatDateToDDMMYYYY(
+                            summaryAccountBalance.periodStartDate,
+                          )}
+                          {'  '} / {'  '}{' '}
+                          {formatDateToDDMMYYYY(
+                            summaryAccountBalance.periodEndDate,
+                          )}
+                        </span>
+                      </div>
+
+                      <AccountBalanceSummary
+                        summaryAccountBalance={summaryAccountBalance}
+                      />
+
+                      <div className='presentation__card__title__container '>
+                        <CardTitle>{'Last Movements'}</CardTitle>
+                      </div>
+
+                      <AccountTransactionsList
+                        transactions={transactions}
+                        onTransactionClick={openTransaction}
+                      />
+                    </>
+                  )}
                 </div>
-              </div>
-            </div>
-
-            {/* --- TRANSACTION STATEMENT SECTION --- */}
-            <div
-              className='account-transactions__container '
-              style={{ margin: '1rem 0' }}
-            >
-              <div className='period-info'>
-                <div className='period-info__label'>Period</div>
-                <span className='period-info__dates  '>
-                  {formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}
-                  {'  '} / {'  '}{' '}
-                  {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}
-                </span>
-              </div>
-
-              <AccountBalanceSummary
-                summaryAccountBalance={summaryAccountBalance}
-              />
-
-              <div className='presentation__card__title__container '>
-                <CardTitle>{'Last Movements'}</CardTitle>
-              </div>
-
-              <AccountTransactionsList
-                transactions={transactions}
-                onTransactionClick={openTransaction}
-              />
-            </div>
-            {/* --- END TRANSACTION STATEMENT SECTION --- */}
-          </article>
-
-          {(isLoading || isLoadingTransactions) && <p>Loading...</p>}
-          {(error || errorTransactions) && (
-            <p>Error fetching account info: {error ?? errorTransactions}</p>
+                {/* --- END TRANSACTION STATEMENT SECTION --- */}
+              </article>
+            </>
           )}
         </div>
       </section>
