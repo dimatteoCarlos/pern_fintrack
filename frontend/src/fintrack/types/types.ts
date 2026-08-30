@@ -138,7 +138,7 @@ export type MovementInputDataType = {
 };
 
 export type TransferAccountType=
-  'bank' | 'investment' | 'pocket'| 'pocket_saving' |'category_budget' | 'income_source' ;
+  'bank' | 'investment' |'category_budget' | 'income_source' ;
 
 // export type MovementTransaction = 'deposit' | 'withdraw';
 //---

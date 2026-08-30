@@ -102,7 +102,6 @@ const inputRadioOptionsAccountTopCard: RadioOptionType<TransferAccountType>[] =
   [
     { value: 'bank', label: 'Bank' },
     { value: 'investment', label: 'Invest' },
-    { value: 'pocket', label: 'Pocket' },
     { value: 'category_budget', label: 'Rev.Expense' },
   ];
 
@@ -110,16 +109,15 @@ const inputRadioOptionsAccountBottomCard: RadioOptionType<TransferAccountType>[]
   [
     { value: 'bank', label: 'Bank' },
     { value: 'investment', label: 'Invest' },
-    { value: 'pocket', label: 'Pocket' },
     { value: 'income_source', label: 'Rev. Income' },
   ];
 //==============================
 // ⚛️ MAIN COMPONENT: TRANSFER
 //==============================
 //--Transfer Tracker Movement between accounts--
-//-- account types allowed: investment, bank and  pocket_saving accounts -----
+//-- account types allowed: investment and bank accounts -----
 function Transfer(): JSX.Element {
-  //rules: only investment, bank, pocket_saving account types are used.
+  //rules: only investment and bank account types are used.
   //slack account is not used.
   // 🗺️ Router and User configuration
   const router = useLocation();
@@ -182,12 +180,7 @@ function Transfer(): JSX.Element {
   // 📡 API DATA FETCHING (REACTIVO)
   // ================================
   // Prepare data and url for Fetching origin accounts
-  const originAccountTypeFromDb =
-    formData.originAccountType === 'pocket'
-      ? 'pocket_saving'
-      : formData.originAccountType;
-
-  const fetchOriginAccountUrl = `${url_get_accounts_by_type}?type=${originAccountTypeFromDb}&reload=${reloadTrigger}`;
+  const fetchOriginAccountUrl = `${url_get_accounts_by_type}?type=${formData.originAccountType}&reload=${reloadTrigger}`;
 
   //GET: AVAILABLE ACCOUNTS BY TYPE for Origin account
   const {
@@ -259,14 +252,9 @@ function Transfer(): JSX.Element {
   //-------------------------------------
   //DATA FETCHING
   // Prepare data and url for Fetching destination accounts
-  const destinationAccTypeDb =
-    formData.destinationAccountType === 'pocket'
-      ? 'pocket_saving'
-      : formData.destinationAccountType;
-
   //GET: AVAILABLE ACCOUNTS BY TYPE for Destination account
-  const fetchDestinationAccountUrl = destinationAccTypeDb
-    ? `${url_get_accounts_by_type}?type=${destinationAccTypeDb}&${reloadTrigger}`
+  const fetchDestinationAccountUrl = formData.destinationAccountType
+    ? `${url_get_accounts_by_type}?type=${formData.destinationAccountType}&${reloadTrigger}`
     : undefined;
   // console.log(fetchOriginAccountUrl, fetchDestinationAccountUrl);
 

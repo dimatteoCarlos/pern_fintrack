@@ -30,8 +30,8 @@ export const transferSchema = z.object({
   amount: numberSchema,
   origin: requiredStringSchema,
   destination: requiredStringSchema,
-  originAccountType: z.enum(['bank', 'investment', 'pocket','category_budget']),
-  destinationAccountType: z.enum(['bank', 'investment', 'pocket', 'income_source']),
+  originAccountType: z.enum(['bank', 'investment','category_budget']),
+  destinationAccountType: z.enum(['bank', 'investment', 'income_source']),
   note: noteSchema,
   currency: currencySchema
 }).refine(
