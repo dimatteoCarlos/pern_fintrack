@@ -488,3 +488,371 @@ button.line__container {
   grid-column: auto;
  }
 }
+
+/* ── The list's own scroll ───────────────────────────────────────────────────
+   The rows used to push the page: the container was a flex column with a gap,
+   no height bound and no overflow, so a board of ten pockets grew past the
+   panel instead of scrolling inside it and carried the create control off the
+   bottom with it.
+
+   The height is handed down rather than named: the shell already takes what
+   the header and the navbars leave, and each step below only passes the
+   remainder on. Naming a share of the viewport here would be a second answer
+   to a question the shell has already answered.
+
+   Every step is scoped by :has(.pocketList) so it reaches the board and not
+   the pocket detail or the creation form, which render through the same two
+   generic section classes under this same layout. */
+.pocketLayout .content__presentation:has(.pocketList),
+.pocketLayout .cards__presentation:has(.pocketList) {
+ display: flex;
+ flex-direction: column;
+ flex: 1;
+ min-height: 0;
+}
+
+/* Where the handoff ends. Scoped by layout and not written on
+   .list__main__container: that class is rendered by six lists across budget,
+   pocket, debts and account detail, and the stylesheets are global rather than
+   modules, so a rule there would confine all six — the budget board's category
+   list among them.
+
+   The padding is scroll clearance, not air: overflow-y computes overflow-x to
+   clip as well, so without it the focus ring of a card at either edge is cut
+   off by its own scroller. */
+.pocketLayout .pocketList {
+ display: grid;
+ grid-template-columns: minmax(0, 1fr);
+ align-content: start;
+ gap: var(--space-3);
+ flex: 1;
+ min-height: 0;
+ padding: var(--space-1);
+ overflow-y: auto;
+}
+
+/* The error and empty boxes are the only child, so they take the row rather
+   than half of it once the grid opens a second column. */
+.pocketLayout .pocketList__state {
+ grid-column: 1 / -1;
+}
+
+/* A single state box reads as centred in the space the list would fill, which
+   is where the reader is already looking. Cards keep starting at the top. */
+.pocketLayout .pocketList:has(.pocketList__state) {
+ align-content: center;
+}
+
+/* ── The board's card ────────────────────────────────────────────────────────
+   The row printed six of the fourteen fields its contract carries: the pace
+   still required, how far along it is, how long is left and whether the
+   funding accounts still cover it were all served and dropped.
+
+   Its own block rather than the .card__tile__pocket / .tile__left pair it used
+   to render. Those three names are declared at equal specificity in this sheet
+   and in budget-styles.css, so which copy won depended on the order the lazy
+   routes loaded their CSS, and their fixed 6.25rem height fits one line of
+   figures and not six. The legacy rules stay where they are; nothing renders
+   them from this board any more.
+
+   Extends the token block above rather than replacing it, and reads none of
+   the legacy half's raw values. */
+.pocketCard {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ padding: var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-raised);
+ color: var(--color-content-on-dark);
+ text-decoration: none;
+ transition: border-color var(--motion-fast),
+  background-color var(--motion-fast);
+}
+
+/* The one reading that is orthogonal to the other three: a pocket can be
+   funded and still uncovered, so it marks the frame instead of the status
+   word. Declared before the states so hover and focus still answer the
+   pointer. */
+.pocketCard--uncovered {
+ border-color: var(--color-status-alert);
+}
+
+.pocketCard:hover {
+ border-color: var(--color-interactive-hover);
+}
+
+.pocketCard:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketCard:active {
+ background-color: var(--color-surface-sunken);
+}
+
+/* Declared for the day the card is rendered as a control. It is an anchor
+   today and the selector cannot match one, but a card that becomes a button
+   without this rule loses the state silently. */
+.pocketCard:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.pocketCard__head {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: var(--space-2);
+}
+
+.pocketCard__name {
+ /* Without it a long name pushes the status word out of the card instead of
+    being truncated. */
+ min-width: 0;
+ margin: 0;
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark);
+ text-transform: capitalize;
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+/* The square and the word together. Colour alone survives neither colour
+   blindness nor a monochrome print, so the reading is spelled out beside it. */
+.pocketCard__status {
+ display: flex;
+ align-items: center;
+ flex: 0 0 auto;
+ gap: var(--space-1);
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+}
+
+.pocketCard__status--ok {
+ color: var(--color-status-ok);
+}
+
+.pocketCard__status--warning {
+ color: var(--color-status-warning);
+}
+
+.pocketCard__status--alert {
+ color: var(--color-status-alert);
+}
+
+.pocketCard__note {
+ margin: 0;
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wider);
+ color: var(--color-content-on-dark-subtle);
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+/* A linear bar and not a ring: one value to place instead of four, and it
+   reads the same at 360px as at 1024px. Same shape as the hero's. */
+.pocketCard__bar {
+ height: var(--space-1);
+ border-radius: var(--radius-full);
+ background-color: var(--color-border-subtle);
+ overflow: hidden;
+}
+
+.pocketCard__barFill {
+ height: 100%;
+ border-radius: var(--radius-full);
+ background-color: var(--color-accent);
+ transition: width var(--motion-slow);
+}
+
+.pocketCard__barFill--ok {
+ background-color: var(--color-status-ok);
+}
+
+.pocketCard__barFill--warning {
+ background-color: var(--color-status-warning);
+}
+
+.pocketCard__barFill--alert {
+ background-color: var(--color-status-alert);
+}
+
+.pocketCard__amounts {
+ display: flex;
+ align-items: baseline;
+ gap: var(--space-2);
+ margin: 0;
+}
+
+/* The committed amount, which is what the module exists to report, so it is
+   the only figure on the card at heading size. */
+.pocketCard__allocated {
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wider);
+ color: var(--color-content-on-dark);
+}
+
+.pocketCard__target {
+ min-width: 0;
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+.pocketCard__percent {
+ margin-left: auto;
+ flex: 0 0 auto;
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+}
+
+.pocketCard__percent--ok {
+ color: var(--color-status-ok);
+}
+
+.pocketCard__percent--warning {
+ color: var(--color-status-warning);
+}
+
+.pocketCard__percent--alert {
+ color: var(--color-status-alert);
+}
+
+/* Four answers in two columns: what is still short or already past the goal,
+   the pace per month the deadline still asks for, the deadline itself, and how
+   long is left against it. */
+.pocketCard__facts {
+ display: grid;
+ grid-template-columns: repeat(2, minmax(0, 1fr));
+ gap: var(--space-1) var(--space-3);
+ margin: 0;
+}
+
+.pocketCard__fact {
+ display: flex;
+ flex-direction: column;
+ min-width: 0;
+}
+
+.pocketCard__factLabel {
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The margin reset is the point of the rule as much as the type is: a dd
+   carries a user-agent indent that would step every value in from its label. */
+.pocketCard__factValue {
+ margin: 0;
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-muted);
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+.pocketCard__factValue--ok {
+ color: var(--color-status-ok);
+}
+
+.pocketCard__factValue--alert {
+ color: var(--color-status-alert);
+}
+
+.pocketCard__sources {
+ margin: 0;
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The most alarming thing the card can say, so it is the only line that paints
+   a ground of its own. It is not a fourth status: a funded pocket reaches this
+   line too. */
+.pocketCard__uncovered {
+ margin: 0;
+ padding: var(--space-1) var(--space-2);
+ border-radius: var(--radius-xs);
+ background-color: var(--color-financial-negative-surface);
+ color: var(--color-financial-negative-content);
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wide);
+}
+
+/* The placeholder takes the shape of the card it stands in for, so the board
+   does not jump when the rows land. Widths and heights are read off the
+   elements above: name, note, bar and the two-row fact grid. */
+.pocketList__skeletonBar--note {
+ width: 90%;
+ height: var(--font-size-2xs);
+}
+
+.pocketList__skeletonBar--bar {
+ width: 100%;
+ height: var(--space-1);
+}
+
+.pocketList__skeletonBar--facts {
+ width: 100%;
+ height: var(--space-12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .pocketCard {
+  transition: none;
+ }
+
+ .pocketCard__barFill {
+  transition: none;
+ }
+}
+
+/* Two cards per row from 768px, inside the unchanged 40rem column. Below it a
+   card carrying seven figures at roughly 300px is where the collision risk at
+   360px reappears at a wider viewport. */
+@media (min-width: 768px) {
+ .pocketLayout .pocketList {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+ }
+}
+
+/* ── Height degradation ──────────────────────────────────────────────────────
+   The list takes what is left, so every rem the card spends on air is a rem
+   fewer rows fit. The two steps are the ones the design system names. Nothing
+   here drops a figure: the card says the same things, closer together. */
+@media (max-height: 735px) {
+ .pocketCard {
+  gap: var(--space-1);
+ }
+}
+
+@media (max-height: 568px) {
+ .pocketCard {
+  padding: var(--space-2);
+ }
+
+ .pocketLayout .pocketList__state {
+  padding: var(--space-4);
+ }
+}
