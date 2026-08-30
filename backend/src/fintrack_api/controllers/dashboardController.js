@@ -15,6 +15,12 @@ import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { extractNoteFromDescription } from '../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import { resolveZonedWindow } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
+import { derivedAccountBalanceSql } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+
+// The dashboard's totals come from the ledger, like every list beneath them.
+// Summing the stored column here while the lists derive would put a headline
+// figure above a list that contradicts it.
+const DERIVED_BALANCE = derivedAccountBalanceSql('ua');
 
 //COMMON FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
@@ -48,7 +54,7 @@ export const dashboardTotalBalanceAccounts = async (req, res, next) => {
     const successMsg = `Total balance accounts were successfully calculated`;
 
     const TOTAL_BALANCE_QUERY = {
-      text: `SELECT act.account_type_name, CAST(SUM(ua.account_balance) AS FLOAT) as total_balance, ct.currency_code FROM user_accounts ua
+      text: `SELECT act.account_type_name, CAST(SUM(${DERIVED_BALANCE}) AS FLOAT) as total_balance, ct.currency_code FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
       JOIN currencies ct ON ua.currency_id = ct.currency_id
       WHERE user_id = $1 AND ua.account_name!=$2
@@ -168,7 +174,7 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
     const TOTAL_BALANCE_QUERY = {
       text: `
    SELECT 
-    CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,
+    CAST(SUM(${DERIVED_BALANCE}) AS FLOAT ) AS total_balance,
     CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
       FROM user_accounts ua
       JOIN account_types act
@@ -185,8 +191,8 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
       category_budget: {
         text: `
       SELECT
-       CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,  CAST(SUM(st.budget) AS FLOAT ) AS total_budget,
-      (CAST(SUM(st.budget) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining,CAST(COUNT(*) AS INTEGER) AS accounts,
+       CAST(SUM(${DERIVED_BALANCE}) AS FLOAT ) AS total_balance,  CAST(SUM(st.budget) AS FLOAT ) AS total_budget,
+      (CAST(SUM(st.budget) AS FLOAT ) - CAST(SUM(${DERIVED_BALANCE}) AS FLOAT)) AS total_remaining,CAST(COUNT(*) AS INTEGER) AS accounts,
       ct.currency_code FROM user_accounts ua
         JOIN account_types act ON ua.account_type_id = act.account_type_id
         JOIN currencies ct ON ua.currency_id = ct.currency_id
@@ -199,9 +205,9 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
       //-----------
       pocket_saving: {
         text: `SELECT 
-  CAST(SUM(ua.account_balance) AS FLOAT ) AS total_balance,
+  CAST(SUM(${DERIVED_BALANCE}) AS FLOAT ) AS total_balance,
   CAST(SUM(st.target) AS FLOAT ) AS total_target,
-  (CAST(SUM(st.target) AS FLOAT ) - CAST(SUM(ua.account_balance) AS FLOAT)) AS total_remaining, 
+  (CAST(SUM(st.target) AS FLOAT ) - CAST(SUM(${DERIVED_BALANCE}) AS FLOAT)) AS total_remaining, 
   CAST(COUNT(*) AS INTEGER) AS accounts, ct.currency_code
   FROM user_accounts ua
    JOIN account_types act ON ua.account_type_id = act.account_type_id
@@ -215,11 +221,11 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
 
       debtor: {
         text: `
-      SELECT CAST(SUM(ua.account_balance) AS FLOAT ) AS total_debt_balance, CAST(SUM(CASE WHEN ua.account_balance > 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_receivable,  CAST(SUM(CASE WHEN ua.account_balance < 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_payable, 
+      SELECT CAST(SUM(${DERIVED_BALANCE}) AS FLOAT ) AS total_debt_balance, CAST(SUM(CASE WHEN ${DERIVED_BALANCE} > 0 THEN ${DERIVED_BALANCE} ELSE 0 END) AS FLOAT ) AS debt_receivable,  CAST(SUM(CASE WHEN ${DERIVED_BALANCE} < 0 THEN ${DERIVED_BALANCE} ELSE 0 END) AS FLOAT ) AS debt_payable, 
 
-        CAST(COUNT(CASE WHEN ua.account_balance>0 THEN 1 ELSE NULL END) AS FLOAT) AS debtors, 
-        CAST(COUNT(*) FILTER (WHERE ua.account_balance<0) AS FLOAT) AS lenders, 
-        CAST(COUNT(*) FILTER (WHERE ua.account_balance=0) AS FLOAT) AS debtors_without_Debt, ct.currency_code
+        CAST(COUNT(CASE WHEN ${DERIVED_BALANCE}>0 THEN 1 ELSE NULL END) AS FLOAT) AS debtors, 
+        CAST(COUNT(*) FILTER (WHERE ${DERIVED_BALANCE}<0) AS FLOAT) AS lenders, 
+        CAST(COUNT(*) FILTER (WHERE ${DERIVED_BALANCE}=0) AS FLOAT) AS debtors_without_Debt, ct.currency_code
 
       FROM user_accounts ua
         JOIN account_types act ON ua.account_type_id = act.account_type_id
@@ -346,8 +352,8 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
       category_budget: {
         text: `
         SELECT cba.category_name,  ct.currency_code, 
-          SUM(ua.account_balance)::FLOAT AS total_balance, 
-          (COALESCE(SUM(cba.budget), 0) - SUM(ua.account_balance))::FLOAT AS total_remaining
+          SUM(${DERIVED_BALANCE})::FLOAT AS total_balance, 
+          (COALESCE(SUM(cba.budget), 0) - SUM(${DERIVED_BALANCE}))::FLOAT AS total_remaining
           
           FROM user_accounts ua
           
@@ -368,7 +374,7 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
       //for pocket_saving and debtor account,  is like listing the account balance of each account.grouping by currency.
 
       pocket_saving: {
-        text: `SELECT ua.account_name, ua.account_id,ua.account_start_date, CAST((ua.account_balance) AS FLOAT ) AS balance, CAST((st.target) AS FLOAT ) AS target,  ct.currency_code, st.note, st.desired_date
+        text: `SELECT ua.account_name, ua.account_id,ua.account_start_date, CAST((${DERIVED_BALANCE}) AS FLOAT ) AS balance, CAST((st.target) AS FLOAT ) AS target,  ct.currency_code, st.note, st.desired_date
           FROM user_accounts ua
             JOIN account_types act ON ua.account_type_id = act.account_type_id
             JOIN pocket_saving_accounts st ON ua.account_id = st.account_id
@@ -381,10 +387,10 @@ export const dashboardAccountSummaryList = async (req, res, next) => {
       },
 
       debtor: {
-        text: `SELECT ua.account_name, ua.account_id, CAST((ua.account_balance) AS FLOAT ) AS total_debt_balance, CAST((CASE WHEN ua.account_balance > 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_receivable,  CAST((CASE WHEN ua.account_balance < 0 THEN ua.account_balance ELSE 0 END) AS FLOAT ) AS debt_payable,
+        text: `SELECT ua.account_name, ua.account_id, CAST((${DERIVED_BALANCE}) AS FLOAT ) AS total_debt_balance, CAST((CASE WHEN ${DERIVED_BALANCE} > 0 THEN ${DERIVED_BALANCE} ELSE 0 END) AS FLOAT ) AS debt_receivable,  CAST((CASE WHEN ${DERIVED_BALANCE} < 0 THEN ${DERIVED_BALANCE} ELSE 0 END) AS FLOAT ) AS debt_payable,
 
-        CAST(COUNT(CASE WHEN ua.account_balance>0 THEN 1 ELSE NULL END) AS FLOAT) AS debtor, 
-        CAST(COUNT(*) FILTER (WHERE ua.account_balance<0) AS FLOAT) AS creditor, 
+        CAST(COUNT(CASE WHEN ${DERIVED_BALANCE}>0 THEN 1 ELSE NULL END) AS FLOAT) AS debtor, 
+        CAST(COUNT(*) FILTER (WHERE ${DERIVED_BALANCE}<0) AS FLOAT) AS creditor, 
         ct.currency_code
         
         FROM user_accounts ua
@@ -560,7 +566,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
         SELECT
           ua.account_id,
           ua.account_name,
-          ua.account_balance,
+          ${DERIVED_BALANCE} AS account_balance,
 
           act.account_type_id,
           act.account_type_name,
@@ -615,7 +621,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
         SELECT
           ua.account_id,
           ua.account_name,
-          ua.account_balance,
+          ${DERIVED_BALANCE} AS account_balance,
 
           act.account_type_id,
           act.account_type_name,
@@ -691,7 +697,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       queryModel = {
         text: `
         SELECT 
-          ua.account_id, ua.account_name, ua.account_balance,
+          ua.account_id, ua.account_name, ${DERIVED_BALANCE} AS account_balance,
           ct.currency_code,
           act.account_type_id, act.account_type_name,
           ua.account_starting_amount, ua.account_start_date, 
@@ -706,7 +712,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           WHERE ua.user_id = $1
             AND (act.account_type_name = $2) AND ua.account_name != $3
 
-          ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
+          ORDER BY tr.transaction_actual_date DESC, ${DERIVED_BALANCE} DESC, ua.account_name ASC
           `,
         values: [userId, accountTypeMap.investment, 'slack'],
       };
@@ -715,7 +721,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
     case 'pocket':
       tableName = 'pocket_saving_accounts'; //pocket source/destination account
       queryModel = {
-        text: `SELECT  mt.movement_type_name, ua.account_id, ua.account_name, ua.account_balance,
+        text: `SELECT  mt.movement_type_name, ua.account_id, ua.account_name, ${DERIVED_BALANCE} AS account_balance,
         ct.currency_code, act.account_type_id, act.account_type_name,
         psa.target,psa.desired_date,           
         ua.account_starting_amount, ua.account_start_date, 
@@ -739,7 +745,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
                       AND tr.created_at <
                         (($6::date + INTERVAL '1 day') AT TIME ZONE $8))
                   )
-            ORDER BY tr.transaction_actual_date DESC, ua.account_balance DESC, ua.account_name ASC
+            ORDER BY tr.transaction_actual_date DESC, ${DERIVED_BALANCE} DESC, ua.account_name ASC
           `,
         values: [
           userId,
@@ -758,7 +764,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       tableName = 'debtor_accounts'; //debtor account source/destination account
       queryModel = {
         text: `SELECT  mt.movement_type_name,
-        ua.account_id, ua.account_name, ua.account_balance,
+        ua.account_id, ua.account_name, ${DERIVED_BALANCE} AS account_balance,
         ct.currency_code, act.account_type_id, act.account_type_name,
 
         dbt.debtor_name,dbt.debtor_lastname, dbt.value,         
@@ -798,7 +804,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
       // case transfer:
       tableName = 'transactions'; //all account types but slack
       queryModel = {
-        text: `SELECT  mt.movement_type_name,ua.account_id, ua.account_name, ua.account_balance,
+        text: `SELECT  mt.movement_type_name,ua.account_id, ua.account_name, ${DERIVED_BALANCE} AS account_balance,
         ct.currency_code, act.account_type_id, act.account_type_name,
         ua.account_starting_amount, ua.account_start_date, 
         tp.transaction_type_name, tr.description, tr.transaction_actual_date, tr.amount, tr.transaction_id
@@ -815,7 +821,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
 
           ORDER BY tr.transaction_actual_date DESC,
           tr.created_at DESC,tr.updated_at DESC,
-          ua.account_balance DESC, ua.account_name ASC
+          ${DERIVED_BALANCE} DESC, ua.account_name ASC
           `,
         values: [userId, 'slack', movement_type_name],
       };
@@ -934,7 +940,7 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
     const movementsResult = await pool.query({
       text: `
   SELECT mt.movement_type_name, ct.currency_code,ua.*, tr.*, trt.transaction_type_name,
-    CAST(tr.amount AS FLOAT), CAST(ua.account_balance AS FLOAT), CAST(ua.account_starting_amount AS FLOAT)
+    CAST(tr.amount AS FLOAT), CAST(${DERIVED_BALANCE} AS FLOAT), CAST(ua.account_starting_amount AS FLOAT)
   FROM transactions tr
           JOIN user_accounts ua ON tr.account_id = ua.account_id
           JOIN account_types act ON ua.account_type_id = act.account_type_id
@@ -1054,7 +1060,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
       text: `
   SELECT mt.movement_type_name, ct.currency_code, ua.*, tr.*, trt.transaction_type_name,act.account_type_name,
   CAST ( ua.account_starting_amount AS FLOAT),  CAST (tr.amount AS FLOAT),
-  CAST(ua.account_balance AS FLOAT)
+  CAST(${DERIVED_BALANCE} AS FLOAT)
     FROM transactions tr
       JOIN user_accounts ua ON tr.account_id = ua.account_id
       JOIN account_types act ON ua.account_type_id = act.account_type_id
