@@ -24,7 +24,10 @@
  flex-shrink: 0;
  padding: var(--space-1);
  border: none;
- border-radius: var(--radius-xs);
+ /* Round and not the square it was. The box is already a square of the glyph
+    plus --space-1 a side, so a full radius inscribes a circle in it, and a
+    circle is what an icon-only control reads as beside a centred title. */
+ border-radius: var(--radius-full);
  background-color: transparent;
  cursor: pointer;
  transition: background-color var(--motion-fast), color var(--motion-fast);
@@ -76,10 +79,19 @@
  color: var(--color-content-on-dark-muted);
 }
 
-/* The fill is light on both surfaces, so the glyph goes dark on both. */
+/* Attenuated cream, not the solid fill it was. Solid, the hover was the
+   brightest object in a dark header and pulled the eye off the title it sits
+   beside; at this alpha it reads as the control lighting up, not as a badge.
+
+   Open token question: --color-border-subtle IS the accent cream at 0.26
+   alpha, which is exactly the value wanted, but its name says border. The
+   system declares no attenuated-surface token. Borrowed, not invented.
+
+   The glyph keeps the light ink: the fill no longer covers the ground, so
+   dark text on it would be dark text on the dark header. */
 .accountActionsTrigger--dark:hover {
- background-color: var(--color-accent);
- color: var(--color-accent-content);
+ background-color: var(--color-border-subtle);
+ color: var(--color-content-on-dark);
 }
 
 /* --color-border-inverse is the ring meant for the app surface. */
