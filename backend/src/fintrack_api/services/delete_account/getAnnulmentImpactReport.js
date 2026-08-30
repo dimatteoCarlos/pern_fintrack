@@ -2,6 +2,11 @@
 
 import pc from 'picocolors';
 import { pool } from '../../../db/config/configDB.js';
+import { derivedAccountBalanceSql } from '../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+
+// The account's opening amount plus its movements. What the stored column was
+// supposed to hold and no longer does.
+const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'FLOAT');
 
 //target account: is the account to delete
 //affected_account: is the affected account which has interacted with the target account
@@ -52,7 +57,11 @@ export const getAnnulmentImpactReport = async (userId, targetAccountId) => {
 -- SUM of the Target's signed amounts is the required PnL adjustment for the Affected Account
   SUM(tat.amount) AS   net_adjustment_amount,
   ua.account_name AS affected_account_name,
-  ua.account_balance AS affected_account_current_balance,
+-- Derived, not the stored column. This figure is what the owner is shown when
+-- deciding whether to delete an account, beside the adjustment that deletion
+-- would apply to it. Reading the stored column showed a balance the ledger does
+-- not hold, so the two numbers on that screen described different accounts.
+  ${DERIVED_BALANCE} AS affected_account_current_balance,
   ua.currency_id,
   ct.currency_code,
   acctype.account_type_name AS affected_account_type_name
@@ -68,9 +77,14 @@ export const getAnnulmentImpactReport = async (userId, targetAccountId) => {
   JOIN
   account_types acctype ON ua.account_type_id = acctype.account_type_id
 
+-- account_id and account_starting_amount replace account_balance here because
+-- the derivation above reads those two. The grouping itself does not change:
+-- the join pins ua.account_id to tat.affected_account_id, which is already
+-- grouped, so every ua column was already one value per group.
  GROUP BY
   tat.affected_account_id,
-  ua.account_name, ua.account_balance, ua.currency_id, ct.currency_code,
+  ua.account_id, ua.account_starting_amount,
+  ua.account_name, ua.currency_id, ct.currency_code,
   acctype.account_type_name
 
 -- HAVING SUM(tat.amount) !=0;
