@@ -48,6 +48,15 @@
 .pocketLayout .total__container {
   width: 100%;
   background-color: var(--color-surface-deep);
+  /* Without this the hero overflows onto the first card, and the mechanism is
+     not the minimum above — it is that this box is a flex item in a column
+     whose height is capped by the shell. A flex item shrinks by default, so
+     the browser compressed the box back to that minimum while the tile grid
+     inside kept its own height and painted straight over the list.
+
+     The minimum was calibrated when the hero was one row. It is now a 2x2 grid
+     through 768px, so the box has to take the height of what it holds. */
+  flex-shrink: 0;
 }
 
 /* The budget board's list starts flush against the top of the lower half. This
@@ -418,6 +427,14 @@ button.line__container {
  grid-column: 1 / -1;
 }
 
+/* So does the progress, and for a different reason: it is the fourth of four
+   tiles in a two-column grid, so left in one column it sat alone beside an
+   empty cell and read as a tile that had lost its pair. Spanning makes the
+   board's own reading the closing line of the block, which is what it is. */
+.pocketHero__tile--progress {
+ grid-column: 1 / -1;
+}
+
 .pocketHero__label {
  font-size: var(--font-size-2xs);
  font-weight: var(--font-weight-medium);
@@ -478,13 +495,14 @@ button.line__container {
  }
 }
 
-/* From 768px the four tiles fit one row and the headline stops spanning. */
+/* From 768px the four tiles fit one row and neither of the two spans. */
 @media (min-width: 768px) {
  .pocketHero {
   grid-template-columns: repeat(4, minmax(0, 1fr));
  }
 
- .pocketHero__tile--headline {
+ .pocketHero__tile--headline,
+ .pocketHero__tile--progress {
   grid-column: auto;
  }
 }

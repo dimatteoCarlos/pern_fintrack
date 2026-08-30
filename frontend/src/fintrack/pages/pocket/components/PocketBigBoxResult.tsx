@@ -104,14 +104,18 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
     </div>
 
     <div className={`pocketHero__tile ${nextGoal === null ? 'is-empty' : ''}`}>
-     <span className='pocketHero__label'>Next goal</span>
+     {/* Target and not goal. The frozen vocabulary lets the word goal name
+         the figure a pocket aims at, never the object itself — and a tile
+         headed "next goal" over a pocket's NAME says the opposite, which is
+         how two nouns for one object get onto a screen. */}
+     <span className='pocketHero__label'>Next target</span>
      <span className='pocketHero__value'>{nextGoal?.name ?? MISSING}</span>
      <span className='pocketHero__meta'>
       {nextGoal === null ? '' : percent(nextGoal.progress)}
      </span>
     </div>
 
-    <div className='pocketHero__tile'>
+    <div className='pocketHero__tile pocketHero__tile--progress'>
      <span className='pocketHero__label'>Overall progress</span>
      <span className='pocketHero__value'>{percent(overallProgress)}</span>
      <div
