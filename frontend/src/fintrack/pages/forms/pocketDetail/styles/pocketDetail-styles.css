@@ -93,6 +93,14 @@
  margin-top: var(--space-6);
 }
 
+/* A rule under the heading, so the section reads as a band with a top edge
+   rather than as a line of text floating above a list. On the title's own
+   container: it already holds the heading and nothing else. */
+.pocketDetail__section .presentation__card__title__container {
+ padding-bottom: var(--space-2);
+ border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
 .pocketDetail__list {
  display: flex;
  flex-direction: column;
@@ -172,12 +180,15 @@
  white-space: nowrap;
 }
 
+/* Left, not centred. Centred it read as a decorative placeholder in the middle
+   of nothing; on the same left edge as the rows that will replace it, it reads
+   as the first line of the list. */
 .pocketDetail__empty {
  margin: 0;
- padding: var(--space-4);
+ padding: var(--space-3) 0;
  color: var(--color-content-on-dark-subtle);
  font-size: var(--font-size-sm);
- text-align: center;
+ line-height: 1.5;
 }
 
 /* The cream panel's own value boxes. They carry dark text because the panel
@@ -255,6 +266,150 @@
  gap: var(--space-3);
  justify-content: center;
  margin-top: var(--space-6);
+}
+
+/* The state readings, moved out of the hero panel on 2026-08-30. Inside it the
+   panel changed height with the number of states a pocket happened to be in,
+   and the control row above moved 70px between a healthy pocket and one
+   carrying two. Here they grow downward against reading blocks only, so the
+   controls keep one position on every pocket.
+
+   They sit on the app surface now, not on the cream panel, so the sentence is
+   set in the on-dark ink rather than the panel's. */
+.pocketDetail__readings {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ margin-top: var(--space-4);
+}
+
+/* Colour is never the only channel here: each reading names its own state in
+   words, and the border repeats it. On this surface the status colours are the
+   ones calibrated against the dark ground, not the panel's. */
+.pocketDetail__reading {
+ display: flex;
+ align-items: flex-start;
+ gap: var(--space-2);
+ padding: var(--space-1) var(--space-3);
+ border-left: var(--border-width-thick) solid
+  var(--color-content-on-dark-subtle);
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-xs);
+ line-height: 1.4;
+}
+
+/* The square keeps its size against a sentence that wraps to three lines, and
+   sits on the first line rather than centred on the whole block. */
+.pocketDetail__reading .status__square,
+.pocketDetail__paceVerdict .status__square {
+ flex-shrink: 0;
+ margin-top: var(--space-1);
+}
+
+/* The glyph names the state a third time, after the square and the sentence.
+   currentColor, so it takes the ink of the line and adds no colour of its own;
+   the square is where the hue lives. */
+.pocketDetail__readingIcon {
+ width: var(--font-size-base);
+ height: var(--font-size-base);
+ flex-shrink: 0;
+}
+
+/* ── The pace card ──────────────────────────────────────────────────────────
+   Raised off the app surface rather than bordered like the readings above it:
+   it is a block of figures, not a sentence about the pocket's state. */
+.pocketDetail__pace {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ margin-top: var(--space-4);
+ padding: var(--space-3) var(--space-4);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-raised);
+}
+
+/* The verdict of the comparison: the only line that answers the question the
+   two figures raise, so it leads. The square carries the tone, never the text. */
+.pocketDetail__paceVerdict {
+ display: flex;
+ align-items: flex-start;
+ gap: var(--space-2);
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+ line-height: 1.45;
+}
+
+/* Border and not bullets: the two figures exist to be compared, and a bullet
+   between them separates them where they have to be read together. */
+.pocketDetail__paceFigures {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: var(--space-3) var(--space-4);
+ margin: 0;
+ padding-top: var(--space-3);
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+.pocketDetail__paceFigure {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ min-width: 0;
+}
+
+.pocketDetail__paceFigure dt {
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.pocketDetail__paceFigure dd {
+ margin: 0;
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
+.pocketDetail__paceProjection {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-3);
+ margin: 0;
+ font-size: var(--font-size-xs);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* index.css sets font-size on the universal selector, so these do not inherit
+   the size of the line they sit in and have to restate it. */
+.pocketDetail__paceProjection > span {
+ font-size: inherit;
+ font-variant-numeric: tabular-nums;
+}
+
+/* index.css sets font-size on the universal selector, so this span does not
+   inherit the size of the line it sits in and has to restate it. */
+.pocketDetail__readingText {
+ font-size: inherit;
+}
+
+.pocketDetail__reading--warning {
+ border-left-color: var(--color-status-warning);
+}
+
+.pocketDetail__reading--alert {
+ border-left-color: var(--color-status-alert);
+}
+
+.pocketDetail__reading--ok {
+ border-left-color: var(--color-status-ok);
+}
+
+.pocketDetail__reading--neutral {
+ border-left-color: var(--color-content-on-dark-subtle);
 }
 
 .pocketDetail__action {

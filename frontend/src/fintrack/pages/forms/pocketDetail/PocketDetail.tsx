@@ -15,7 +15,7 @@
 // one. What it has is a set of accounts that committed cash to it, and a
 // history of those decisions — both served in the same payload as the hero.
 
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
@@ -26,13 +26,22 @@ import {
  numberFormatCurrency,
 } from '../../../helpers/functions.ts';
 import SummaryPocketDetailBox from './summaryPocketDetailBox/SummaryPocketDetailBox.tsx';
-import PocketEditLink from './PocketEditLink.tsx';
+import AccountActionsTrigger from '../../../general_components/accountActionsTrigger/AccountActionsTrigger.tsx';
+import AccountActionsMenu from '../../../editionAndDeletion/components/accountActionMenu/AccountActionsMenu.tsx';
 import DeletePocketModal from './deletePocketModal/DeletePocketModal.tsx';
 import AllocationEntryModal from './allocationEntryModal/AllocationEntryModal.tsx';
 import PocketCashModal, {
  PocketCashDirection,
 } from './pocketCashModal/PocketCashModal.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
+import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
+import {
+ PocketStatusLevel,
+ pocketDateLevel,
+ pocketReadingModifier,
+ pocketSquareClass,
+} from '../../../helpers/pocketStatus.ts';
+import PocketReadingIcon from './PocketReadingIcon.tsx';
 import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
 import { PocketAllocationEntry } from '../../../types/pocketTypes.ts';
 
@@ -83,6 +92,13 @@ function PocketDetail() {
  const [isConfirmingDeletion, setIsConfirmingDeletion] =
   useState<boolean>(false);
 
+ // The overflow menu in the header. Its own flag and not folded into the one
+ // above: the menu closes before the confirmation opens, so for one frame both
+ // would have to be true, and a single piece of state cannot say that.
+ const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+ const navigate = useNavigate();
+
  // Which money decision is open, or none. One piece of state and not two
  // flags: the two are alternatives, and two booleans would admit a state
  // where both panels are open at once.
@@ -131,14 +147,18 @@ function PocketDetail() {
     </div>
 
     {/* Rendered only once the pocket is in hand, because the control names it
-        in its accessible label and an editor opened for a pocket the screen
-        cannot name yet has nothing to edit. The editor returns to this card,
-        not to the board the user came from: this is where they are standing. */}
+        in its accessible label and a menu opened for a pocket the screen
+        cannot name yet has nothing to act on.
+
+        A menu and not the pencil it replaces. Editing and deleting are both
+        operations on the pocket as an object, and they belong together behind
+        one overflow control; the two money decisions stay as visible buttons
+        under the hero, because those are the task the screen exists for. */}
     {pocket && (
-     <PocketEditLink
-      pocketId={pocket.pocketId}
-      returnRoute={location.pathname}
-      pocketName={pocket.name}
+     <AccountActionsTrigger
+      accountName={pocket.name}
+      isOpen={isMenuOpen}
+      onClick={() => setIsMenuOpen(true)}
      />
     )}
    </div>
@@ -213,6 +233,48 @@ function PocketDetail() {
   );
  }
 
+ // Built after the guards, where the pocket is known to have arrived: the three
+ // states below all read fields off it.
+ //
+ // The date reading, in its three states, and the null is not the zero. A
+ // required rate of exactly 0 means the goal is covered and there is no pace
+ // left to keep; null means the date passed while money is still short, so
+ // there is no monthly figure that answers anything. Branching on falsiness
+ // collapses the two, because 0 is falsy in JavaScript.
+ // The colour of the square and of the border come from this one level, so the
+ // two cannot state different things about the same pocket.
+ const dateLevel = pocketDateLevel(pocket);
+
+ // The pace card, and the one block of this screen that is still waiting on the
+ // server. The rate the plan REQUIRES is served; the rate actually achieved
+ // needs the monthly transaction series, and POCKET_DECISIONS.md section 2.2
+ // rules out deriving a lifetime average from what is served — a pocket funded
+ // once eleven months ago would read identically to one funded every month.
+ // Until that endpoint lands, the achieved rate and the projected date print a
+ // dash, which says the answer is absent where a 0 would state a figure.
+ //
+ // Omitted entirely once the date has passed: requiredMonthly is null there,
+ // and a card whose every cell is a dash invites reading figures that do not
+ // exist. The reading above has already stated the passed date and the gap.
+ const requiredMonthly = pocket.requiredMonthly;
+
+ const pace =
+  requiredMonthly === null
+   ? null
+   : {
+      level: (pocket.funded ? 'funded' : 'onPlan') as PocketStatusLevel,
+      verdict: pocket.funded
+       ? 'The target is covered, so there is no rate left to keep.'
+       : `${amount(requiredMonthly)} a month keeps this target on its date.`,
+      requiredRate: pocket.funded ? DASH : `${amount(requiredMonthly)} / month`,
+     };
+
+ const dateText = pocket.funded
+  ? `Goal covered. Desired date ${formatCalendarDate(pocket.desiredDate)}.`
+  : pocket.requiredMonthly === null
+    ? `The desired date passed on ${formatCalendarDate(pocket.desiredDate)}. ${amount(pocket.remaining)} still to commit.`
+    : `Desired date ${formatCalendarDate(pocket.desiredDate)}, ${pocket.daysRemaining} ${pocket.daysRemaining === 1 ? 'day' : 'days'} away. ${amount(pocket.requiredMonthly)} per month to stay on pace.`;
+
  //--------------------------------------------
  return (
   <section className='page__container'>
@@ -221,6 +283,97 @@ function PocketDetail() {
 
    <SummaryPocketDetailBox pocket={pocket} />
 
+   {/* The state readings, between the hero and the controls: they say what is
+       true about the pocket, and the two buttons are what can be done about
+       it, so the sentence comes before the response to it.
+
+       Outside the cream panel and not inside it. In the panel they made it
+       grow with the number of states a pocket happened to be in; out here the
+       panel keeps one height.
+
+       Coverage leads when both are present. The criterion is not which hurts
+       more but which contradicts the figures above: an account that no longer
+       holds what is committed makes the hero's number unbacked, while a passed
+       date leaves it true. */}
+   <div className='pocketDetail__readings'>
+    {pocket.uncovered && (
+     <p
+      className={`pocketDetail__reading ${pocketReadingModifier('offPlan')}`}
+      role='status'
+     >
+      <StatusSquare alert={pocketSquareClass('offPlan')} />
+      <PocketReadingIcon level='offPlan' className='pocketDetail__readingIcon' />
+      <span className='pocketDetail__readingText'>
+       The funding accounts no longer hold what is committed here.
+      </span>
+     </p>
+    )}
+
+    <p className={`pocketDetail__reading ${pocketReadingModifier(dateLevel)}`}>
+     <StatusSquare alert={pocketSquareClass(dateLevel)} />
+     <PocketReadingIcon level={dateLevel} className='pocketDetail__readingIcon' />
+     <span className='pocketDetail__readingText'>{dateText}</span>
+    </p>
+   </div>
+
+   {/* The two decisions the module exists for, lifted out of the article on
+       2026-08-30 so they answer the hero directly instead of sitting past two
+       empty states.
+
+       Release is disabled and not hidden: a pocket with nothing committed still
+       has two things that can be done to it, and a control that appears only
+       after the first commitment teaches the pair by surprise. Disabled it
+       keeps the row's shape between an empty pocket and a funded one. */}
+   <div className='pocketDetail__actions'>
+    <button
+     type='button'
+     className='pocketDetail__action pocketDetail__action--primary'
+     onClick={() => setCashDirection('allocate')}
+    >
+     Commit cash
+    </button>
+
+    <button
+     type='button'
+     className='pocketDetail__action'
+     onClick={() => setCashDirection('release')}
+     disabled={sources.length === 0}
+    >
+     Release cash
+    </button>
+   </div>
+
+   {/* Two figures that exist to be compared, so they are a description list and
+       not bullets: a bullet between them separates them at the moment they have
+       to be read together. The verdict leads, because neither figure answers
+       the question on its own — one states what the plan asks, the other what
+       is happening. */}
+   {pace && (
+    <div className='pocketDetail__pace'>
+     <p className='pocketDetail__paceVerdict'>
+      <StatusSquare alert={pocketSquareClass(pace.level)} />
+      <span className='pocketDetail__readingText'>{pace.verdict}</span>
+     </p>
+
+     <dl className='pocketDetail__paceFigures'>
+      <div className='pocketDetail__paceFigure'>
+       <dt>Required rate</dt>
+       <dd>{pace.requiredRate}</dd>
+      </div>
+
+      <div className='pocketDetail__paceFigure'>
+       <dt>Actual rate</dt>
+       <dd>{DASH}</dd>
+      </div>
+     </dl>
+
+     <p className='pocketDetail__paceProjection'>
+      <span>Projected completion</span>
+      <span>{DASH}</span>
+     </p>
+    </div>
+   )}
+
    <article className='form__box'>
     {/* What the pocket carries besides its figures. Read-only, and it now looks
         it: these three borrowed the form's own input classes, so a bordered box
@@ -228,46 +381,27 @@ function PocketDetail() {
         the title is this screen's one editing affordance, and a value dressed
         as a control competes with it.
 
-        The note takes its own paragraph and the other two sit side by side: a
-        date and a currency code are short, and a full row each spreads four
-        words down the screen. */}
+        The desired date and the currency both left this block on 2026-08-30.
+        They are labelled figures in the hero now, beside the target they
+        qualify; printed in two places they were two facts the reader had to
+        reconcile. What stays is the one field that is prose. */}
     <div className='pocketDetail__meta'>
      <div className='pocketDetail__metaItem'>
       <span className='pocketDetail__metaLabel'>Note</span>
       <p className='pocketDetail__metaNote'>{pocket.note ?? DASH}</p>
-     </div>
-
-     <div className='pocketDetail__metaRow'>
-      <div className='pocketDetail__metaItem'>
-       <span className='pocketDetail__metaLabel'>Desired date</span>
-       {/* Built from the parts of a YYYY-MM-DD label the server resolved on
-           the owner's calendar. new Date() on one of these is UTC midnight and
-           renders as the previous day west of UTC. */}
-       <span className='pocketDetail__metaValue'>
-        {formatCalendarDate(pocket.desiredDate)}
-       </span>
-      </div>
-
-      <div className='pocketDetail__metaItem'>
-       <span className='pocketDetail__metaLabel'>Currency</span>
-       {/* The code as text, not the badge. That badge is a control built to
-           change a currency, and a pocket's own currency is not editable —
-           restating it would restate every commitment already made against
-           it. */}
-       <span className='pocketDetail__metaValue'>{currency.toUpperCase()}</span>
-      </div>
      </div>
     </div>
 
     {/* --- THE ACCOUNTS FUNDING THIS POCKET --- */}
     <div className='pocketDetail__section'>
      <div className='presentation__card__title__container'>
-      <CardTitle>{'Funded by'}</CardTitle>
+      <CardTitle>{'Money sources'}</CardTitle>
      </div>
 
      {sources.length === 0 ? (
       <p className='pocketDetail__empty'>
-       No account has committed cash to this pocket yet.
+       No account has committed cash to this pocket yet. Committing from one
+       adds it here.
       </p>
      ) : (
       <ul className='pocketDetail__list'>
@@ -305,11 +439,13 @@ function PocketDetail() {
     {/* --- WHAT WAS DECIDED, AND WHEN --- */}
     <div className='pocketDetail__section'>
      <div className='presentation__card__title__container'>
-      <CardTitle>{'History'}</CardTitle>
+      <CardTitle>{'Pocket allocation history'}</CardTitle>
      </div>
 
      {history.length === 0 ? (
-      <p className='pocketDetail__empty'>Nothing has been committed yet.</p>
+      <p className='pocketDetail__empty'>
+       Nothing has been committed or released yet.
+      </p>
      ) : (
       <ul className='pocketDetail__list'>
        {history.map((entry) => (
@@ -357,40 +493,11 @@ function PocketDetail() {
      )}
     </div>
 
-    {/* The two decisions the module exists for. Releasing is offered only
-        when something is actually held: a control that can only refuse is
-        worse than one that is not there. */}
-    <div className='pocketDetail__actions'>
-     <button
-      type='button'
-      className='pocketDetail__action pocketDetail__action--primary'
-      onClick={() => setCashDirection('allocate')}
-     >
-      Commit cash
-     </button>
-
-     {sources.length > 0 && (
-      <button
-       type='button'
-       className='pocketDetail__action'
-       onClick={() => setCashDirection('release')}
-      >
-       Release cash
-      </button>
-     )}
-    </div>
-
-    {/* Last on the screen and not in the header beside the editor. Deleting is
-        the one action here that cannot be undone by repeating it, so it sits
-        past everything the owner came to read rather than one stray tap from
-        the title. */}
-    <button
-     type='button'
-     className='pocketDetail__delete'
-     onClick={() => setIsConfirmingDeletion(true)}
-    >
-     Delete this pocket
-    </button>
+    {/* The delete button that stood here until 2026-08-30 moved into the
+        overflow menu in the header, next to editing. It is still two steps from
+        the deletion — the menu, then the confirmation — so it is no closer to a
+        stray tap than it was at the bottom of the page, and the screen no
+        longer ends on its most destructive control. */}
    </article>
 
    {openEntry && (
@@ -420,6 +527,27 @@ function PocketDetail() {
      onClose={() => setIsConfirmingDeletion(false)}
     />
    )}
+
+   {/* The object actions, behind the header's overflow control. Each closes
+       the menu before it acts: the editor navigates away, and the confirmation
+       is a second panel that must not open under this one. */}
+   <AccountActionsMenu
+    isOpen={isMenuOpen}
+    accountName={capitalize(pocket.name)}
+    onClose={() => setIsMenuOpen(false)}
+    editLabel='Edit pocket'
+    deleteLabel='Delete pocket'
+    onEditAccount={() => {
+     setIsMenuOpen(false);
+     navigate(`/fintrack/pocket/pockets/${pocket.pocketId}/edit`, {
+      state: { previousRoute: location.pathname },
+     });
+    }}
+    onDeleteAccount={() => {
+     setIsMenuOpen(false);
+     setIsConfirmingDeletion(true);
+    }}
+   />
   </section>
  );
 }

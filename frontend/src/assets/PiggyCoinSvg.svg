@@ -1,0 +1,59 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Moneda circular con $ exacto -->
+  <g id="coin">
+    <circle cx="18" cy="5.8" r="2.8" stroke="currentColor" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Trazo vertical principal -->
+    <line x1="18" y1="3.8" x2="18" y2="7.8" stroke="currentColor" stroke-width="0.32" stroke-linecap="round"/>
+    <!-- S curvada continua -->
+    <path d="M 19.1 4.7 
+             C 18.8 4.3, 17.2 4.3, 17.2 5.1 
+             C 17.2 6.0, 18.8 5.6, 18.8 6.5 
+             C 18.8 7.3, 17.2 7.3, 16.9 6.9" 
+          stroke="currentColor" 
+          stroke-width="0.32" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" 
+          fill="none"/>
+  </g>
+  
+  <!-- Ranura curva -->
+  <path d="M 14.8 11.2 A 10 8 0 0 1 21.2 11.2" stroke="currentColor" stroke-width="0.35" stroke-linecap="round"/>
+
+  <!-- Diana (Target) con el círculo central ampliado a r="0.9" -->
+  <circle cx="20.5" cy="17.0" r="3.2" stroke="currentColor" stroke-width="0.35"/>
+  <circle cx="20.5" cy="17.0" r="2.0" stroke="currentColor" stroke-width="0.3"/>
+  <circle cx="20.5" cy="17.0" r="0.9" stroke="currentColor" stroke-width="0.3"/>
+
+  <!-- Flecha desde el centro -->
+  <line x1="20.5" y1="17.0" x2="24.0" y2="13.5" stroke="currentColor" stroke-width="0.3" stroke-linecap="round"/>
+  
+  <!-- Plumas en lados opuestos con inclinación hacia la derecha (eje inclinado) -->
+  <!-- Pluma Superior (Izquierda del eje) -->
+  <path d="M 23.3 14.2 L 22.8 13.0 L 23.5 13.2 L 23.8 13.7 Z" stroke="currentColor" stroke-width="0.25" fill="none" stroke-linejoin="round"/>
+  <!-- Pluma Inferior (Derecha del eje) -->
+  <path d="M 23.8 13.7 L 25.0 14.2 L 24.8 13.5 L 24.3 13.2 Z" stroke="currentColor" stroke-width="0.25" fill="none" stroke-linejoin="round"/>
+
+  <!-- Oreja -->
+  <path d="M 10.2 11.2 C 9.0 5.5, 12.2 4.8, 13.5 8.8" stroke="currentColor" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Ojo circular -->
+  <circle cx="10.8" cy="14.0" r="0.75" stroke="currentColor" stroke-width="0.35"/>
+
+  <!-- Rabo en curva envolvente hacia arriba -->
+  <path d="M 27.0 17.0 C 28.5 16.5, 29.5 14.8, 28.2 13.8 C 27.0 13.0, 26.2 14.5, 27.2 15.2" stroke="currentColor" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Cuerpo en Óvalo Regular con Hocico y Patas en trapecio -->
+  <path d="M 13.5 9.15 
+           A 10 8 0 0 1 27.0 17.0
+           A 10 8 0 0 1 22.8 23.8
+           L 22.3 26.5 H 20.3 L 20.0 24.8
+           H 17.2
+           L 16.9 26.5 H 14.9 L 14.3 24.8
+           A 10 8 0 0 1 7.15 18.2
+           L 4.5 17.8 V 14.2 L 7.02 13.8
+           A 10 8 0 0 1 10.2 11.2" 
+        stroke="currentColor" 
+        stroke-width="0.35" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+</svg>

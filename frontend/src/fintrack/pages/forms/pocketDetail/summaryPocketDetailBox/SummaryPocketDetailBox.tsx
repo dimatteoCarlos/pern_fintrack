@@ -1,6 +1,11 @@
 // SummaryPocketDetailBox.tsx
-// The hero of the pocket detail screen: what is committed, against what goal,
-// and whether the plan is on pace.
+// The hero of the pocket detail screen: what is committed and against what
+// goal. It states one reading and keeps one height.
+//
+// The state readings — the date, the pace and the coverage warning — left this
+// panel on 2026-08-30. Inside it they made the panel grow with the number of
+// states a pocket happened to be in, which moved the control row 70px between
+// one pocket and another. They now sit under the controls, in PocketDetail.
 //
 // Rewritten 2026-08-29 against the server that answers. The previous version
 // read an account — it destructured account_balance and subtracted the goal
@@ -12,8 +17,14 @@
 // It says "allocated", never "saved": no money moved and nothing was set aside.
 // The cash is still in the funding account, claimed by a plan.
 
-import { numberFormatCurrency } from '../../../../helpers/functions';
+import {
+ formatCalendarDate,
+ numberFormatCurrency,
+} from '../../../../helpers/functions';
 import { PocketDetailPocket } from '../../../../types/pocketTypes';
+// '?react' and not the bare form: only that door carries a React type, so the
+// glyph can take a className and inherit the panel's ink through currentColor.
+import PiggyCoinSvg from '../../../../../assets/PiggyCoinSvg.svg?react';
 import './styles/summaryDetailBox-style.css';
 
 type SummaryPocketDetailPropType = {
@@ -26,12 +37,9 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
   allocated,
   remaining,
   progress,
-  requiredMonthly,
-  daysRemaining,
   funded,
-  overdue,
-  uncovered,
   currency,
+  desiredDate,
  } = pocket;
 
  const amount = (value: number) => numberFormatCurrency(value, 2, currency);
@@ -40,36 +48,48 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
  // read over 100%. Clamping the number too would hide an over-funded pocket.
  const barWidth = Math.min(Math.max(progress, 0), 100);
 
- // Three outcomes, and the null is not the zero. A monthly pace of exactly 0
- // means the goal is already covered; null means the deadline passed, so there
- // is no pace left to state. Branching on falsiness collapses the two, because
- // 0 is falsy in JavaScript.
- // The shortfall is not repeated here. The line above already states it as
- // "to go", and saying it again as "short" spends the one line that carries
- // something the reader cannot get anywhere else on the card.
- const paceText =
-  funded
-   ? 'Goal covered'
-   : requiredMonthly === null
-     ? 'Deadline passed'
-     : `${amount(requiredMonthly)} per month to stay on pace`;
-
  // Negative remaining is over-funding, which is a fact and not an error.
  const excess = remaining < 0 ? Math.abs(remaining) : null;
 
+ // One statement of the gap, where there were three. "of $25.50", "0.0%" and
+ // "$25.50 to go" all said the same thing while nothing was committed, and the
+ // percentage restates the bar, which exists so the number does not have to be
+ // read at all.
+ const gapText =
+  excess !== null
+   ? `${amount(excess)} over`
+   : funded
+     ? 'Nothing left to commit'
+     : `Still to commit ${amount(remaining)}`;
+
  return (
   <div className='summaryPocket__container'>
-   {/* The two figures the card is about, named as the pair they are. "Of goal"
-       read as a preposition looking for a noun it never got, and target is what
-       the field is called everywhere else — goal names the figure, never the
-       object. */}
-   <div className='summaryPocket__title'>allocated / target</div>
+   {/* One figure is headlined, so the label names that one. */}
+   <div className='summaryPocket__title'>allocated</div>
+
+   <PiggyCoinSvg className='summaryPocket__glyph' aria-hidden='true' />
 
    <div className='summaryPocket__data'>
     <div className='summaryPocket__data--amount'>{amount(allocated)}</div>
 
+    {/* Two labelled figures, not a sentence. What was here read "committed to
+        this goal, of $25.50": the phrase named neither quantity, and the date
+        the plan is measured against was three blocks further down the page. */}
     <div className='summaryPocket__data--subtitle1'>
-     of {amount(target)}
+     <span className='summaryPocket__figureLabel'>Target</span>{' '}
+     <span className='summaryPocket__figureValue'>{amount(target)}</span>{' '}
+     {/* The code, which used to sit three blocks down as a metadata field of
+         its own. It belongs against the figure it denominates. */}
+     <span className='summaryPocket__figureLabel'>
+      {currency.toUpperCase()}
+     </span>
+     <span className='summaryPocket__separator' aria-hidden='true'>
+      {' · '}
+     </span>
+     <span className='summaryPocket__figureLabel'>By</span>{' '}
+     <span className='summaryPocket__figureValue'>
+      {formatCalendarDate(desiredDate)}
+     </span>
     </div>
 
     <div
@@ -86,44 +106,19 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
      ></div>
     </div>
 
+    {/* The share leads, because it is the bar's own reading: below the bar and
+        after a sentence it was a bare "0.0%" with nothing naming what it
+        measured. The amount follows as the figure the share resolves to. */}
     <div className='summaryPocket__data--status'>
-     <span className='summaryPocket__data--subtitle2'>
-      {progress.toFixed(1)}%
-     </span>
+     <span className='summaryPocket__data--share'>{progress.toFixed(1)}%</span>
 
      <span className='summaryPocket__separator' aria-hidden='true'>
       ·
      </span>
 
-     <span className='summaryPocket__data--subtitle2'>
-      {excess === null
-       ? `${amount(remaining)} to go`
-       : `${amount(excess)} over`}
-     </span>
+     <span className='summaryPocket__data--subtitle2'>{gapText}</span>
     </div>
    </div>
-
-   {/* The deadline reading. Its own line rather than a badge, because it is a
-       sentence in every one of its three states and none of them fits a chip. */}
-   <div className='summaryPocket__pace'>{paceText}</div>
-
-   {/* Days are printed only while they are still a countdown. Once the date has
-       passed the line above already says so, and a negative day count beside it
-       would state the same fact twice in a unit nobody plans in. */}
-   {!overdue && !funded && (
-    <div className='summaryPocket__days'>
-     {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left
-    </div>
-   )}
-
-   {/* The accounts funding this pocket no longer hold what they committed to
-       it. Folded by the server across accounts, because no single account's row
-       can answer it. */}
-   {uncovered && (
-    <div className='summaryPocket__warning' role='status'>
-     The funding accounts no longer cover what is committed here.
-    </div>
-   )}
   </div>
  );
 }

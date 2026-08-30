@@ -16,6 +16,7 @@
    a modifier written against no screen at all. */
 
 .summaryPocket__container {
+ position: relative;
  display: flex;
  flex-direction: column;
  gap: var(--space-2);
@@ -24,6 +25,24 @@
  border-radius: var(--radius-lg);
  padding: var(--space-4) var(--space-5);
  width: 100%;
+}
+
+/* Taken out of the flow rather than given a column of its own: a reserved slot
+   on the data column narrows everything under it, and in the mockup that cut
+   the progress bar to two thirds of the panel. Decorative, so aria-hidden.
+
+   Open token question: --space-16 is a SPACING token used as a size, borrowed
+   because the scale of declared sizes stops at --size-badge (2.5rem) and the
+   proposal draws the illustration at about this. The module needs an
+   illustration-size token; it is not invented here. */
+.summaryPocket__glyph {
+ position: absolute;
+ top: var(--space-4);
+ right: var(--space-5);
+ width: var(--space-16);
+ height: var(--space-16);
+ color: var(--color-content-secondary);
+ pointer-events: none;
 }
 
 .summaryPocket__title {
@@ -57,28 +76,54 @@
  font-variant-numeric: tabular-nums;
 }
 
+/* index.css sets font-size on the universal selector, so these spans do not
+   inherit the size of the line they sit in and have to restate it. */
+.summaryPocket__figureLabel {
+ font-size: inherit;
+ text-transform: uppercase;
+ letter-spacing: var(--letter-spacing-wide);
+}
+
+/* The value carries the weight, not a colour: the label says what it is and the
+   ink says it matters, so neither figure depends on hue to be read. */
+.summaryPocket__figureValue {
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-primary);
+}
+
 /* The bar's track. Its own element rather than a background on the fill, so the
-   unfilled part is visible and the proportion can be read without the number. */
+   unfilled part is visible and the proportion can be read without the number.
+
+   It carried opacity: 0.16 until 2026-08-30, and the fill is its child. Opacity
+   opens a stacking context that the whole subtree inherits, so the fill was
+   painted at a sixth of itself; and the fill pulled itself up by its own height
+   with a negative margin, which put it entirely outside this element's clip.
+   Between them the bar never drew a fill at any percentage. The track is a flat
+   value now and the fill sits inside it.
+
+   Borrowed value: the system declares no token for the unfilled part of a meter
+   on a light panel. --color-surface-disabled is the nearest declared colour and
+   is used as a stand-in — its name says disabled, and a progress track is not.
+   Recorded as an open token question, not invented. */
 .summaryPocket__track {
  height: var(--space-2);
  width: 100%;
  margin-top: var(--space-2);
  border-radius: var(--radius-full);
- background-color: var(--color-content-primary);
- /* The track is the darker of the two, at a fraction, so the fill reads as the
-    filled part on a cream panel where a light fill would disappear. */
- opacity: 0.16;
+ background-color: var(--color-surface-disabled);
  overflow: hidden;
 }
 
-/* Painted on top of the track rather than inside it, because the track carries
-   an opacity and a child would inherit it. */
+/* Ink, not a status colour. Measured against this track, the ok green reaches
+   2.13:1 and the alert red 2.10:1, both under the 3:1 a graphical object needs;
+   ink holds 11.7:1. The state is carried by the readings under the controls,
+   where it has a word, a border and a sentence and never colour alone. */
 .summaryPocket__fill {
- height: var(--space-2);
+ height: 100%;
  width: 0;
- margin-top: calc(var(--space-2) * -1);
  border-radius: var(--radius-full);
- background-color: var(--color-status-ok);
+ background-color: var(--color-content-primary);
  transition: width var(--motion-normal);
 }
 
@@ -95,37 +140,27 @@
  font-variant-numeric: tabular-nums;
 }
 
-.summaryPocket__separator {
+/* The bar's reading, in the panel's ink rather than the secondary grey: it
+   leads the row now, and a leading figure set lighter than the sentence after
+   it reads as the caption of that sentence. */
+.summaryPocket__data--share {
  font-size: var(--font-size-xs);
- color: var(--color-content-secondary);
-}
-
-/* The deadline reading, in all three of its states. A sentence, so it is set at
-   the reading size and not at the caption size the figures use. */
-.summaryPocket__pace {
- font-size: var(--font-size-sm);
- font-weight: var(--font-weight-medium);
+ font-weight: var(--font-weight-semibold);
  color: var(--color-content-primary);
+ font-variant-numeric: tabular-nums;
 }
 
-.summaryPocket__days {
- font-size: var(--font-size-xs);
+/* inherit and not a step of its own: it now sits in two rows set at different
+   sizes, and a fixed value would print the dot larger than the line under it.
+   index.css sets font-size on the universal selector, so it has to be said. */
+.summaryPocket__separator {
+ font-size: inherit;
  color: var(--color-content-secondary);
 }
 
-/* The funding accounts no longer cover what is committed. Not the error colour:
-   nothing failed and no request was refused — the plan and the cash behind it
-   disagree, which is the attention case, not the failure case. */
-.summaryPocket__warning {
- margin-top: var(--space-1);
- padding: var(--space-2) var(--space-3);
- border-radius: var(--radius-sm);
- border-left: var(--border-width-thick) solid
-  var(--color-financial-attention);
- background-color: var(--color-feedback-warning-surface);
- color: var(--color-feedback-warning-content);
- font-size: var(--font-size-xs);
-}
+/* The date reading, the pace and the coverage warning were declared here until
+   2026-08-30. They now render under the control row and their rules live with
+   them, in pocketDetail-styles.css. Nothing else consumed these three names. */
 
 @media (prefers-reduced-motion: reduce) {
  .summaryPocket__fill {
