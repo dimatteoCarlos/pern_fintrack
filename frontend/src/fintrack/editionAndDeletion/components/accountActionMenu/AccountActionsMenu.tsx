@@ -26,6 +26,14 @@ type AccountActionsMenuPropType = {
   onViewDetails?: () => void;
   onEditAccount: () => void;
   onDeleteAccount: () => void;
+  // What the two rows are called. Optional and defaulted to what every current
+  // caller already renders, so adding them changes no existing screen.
+  //
+  // They exist because this menu now opens over a pocket as well, and a pocket
+  // is not an account: "Delete Account" on a pocket's card names the wrong
+  // object, and on this one the wrong object is a real bank account.
+  editLabel?: string;
+  deleteLabel?: string;
 };
 //account type detail page
 // 🏦 ACCOUNT ACTIONS MENU COMPONENT
@@ -36,6 +44,8 @@ export function AccountActionsMenu({
   onViewDetails,
   onEditAccount,
   onDeleteAccount,
+  editLabel = 'Edit Account',
+  deleteLabel = 'Delete Account',
 }: AccountActionsMenuPropType) {
   //--------------------------------
   //ROUTES FOR MENU ACTIONS
@@ -131,7 +141,7 @@ export function AccountActionsMenu({
           >
             <EditAccountSvg className='account-actions-menu__icon' />
 
-            <span className='account-actions-menu__text'>Edit Account</span>
+            <span className='account-actions-menu__text'>{editLabel}</span>
           </button>
 
           {/* Singular '--delete'. The class was written plural here and
@@ -144,7 +154,7 @@ export function AccountActionsMenu({
           >
             <DeleteAccountSvg className='account-actions-menu__icon' />
 
-            <span className='account-actions-menu__text'>Delete Account</span>
+            <span className='account-actions-menu__text'>{deleteLabel}</span>
           </button>
         </div>
       </div>
