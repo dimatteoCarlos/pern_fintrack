@@ -14,6 +14,7 @@ import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.ts';
 
 // ZUSTAND STORES
 import { useBalanceStore } from '../../../stores/useBalanceStore.ts';
+import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
 import { notifyTransactionRecorded } from '../../../stores/transactionEvents.ts';
 //---
 // 🎨 UI COMPONENTS
@@ -41,7 +42,6 @@ import {
 import {
   AccountByTypeResponseType,
   BalanceBankRespType,
-  CategoryBudgetAccountsResponseType,
   MovementTransactionResponseType,
 } from '../../../types/responseApiTypes.ts';
 
@@ -62,6 +62,8 @@ import {
   ValidationMessagesType,
 } from '../../../validations/types.ts';
 import { handleError } from '../../../helpers/handleError.ts';
+import { currencyFormat } from '../../../helpers/functions.ts';
+import { isUnbudgeted } from '../../../helpers/budgetStatus.ts';
 import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
 //-----------------------------
 // 📝DATA TYPE DEFINITIONS
@@ -186,35 +188,95 @@ function Expense(): JSX.Element {
   };
   //--------
   //CATEGORY OPTIONS
-  //GET: ACCOUNTS OF TYPE CATEGORY_BUDGET AVAILABLE
-  // 📡 Data Fetching: Category budget Accounts
-  const {
-    apiData: CategoryBudgetAccountsResponse,
-    isLoading: isLoadingCategoryBudgetAccounts,
-    error: fetchedErrorCategoryBudgetAccounts,
-  } = useFetch<CategoryBudgetAccountsResponseType>(
-    `${url_get_accounts_by_type}/?type=category_budget&reload=${reloadTrigger}`,
+  // 📡 Data: this month's spend against this month's budget, per category
+  // account. The status payload carries accountName and currency as well as the
+  // two figures, so it REPLACES the account/type fetch instead of joining it —
+  // the screen still issues one request for its category list.
+  //
+  // The figure it retires was ua.account_balance, a lifetime accumulator: what
+  // the category has consumed since it opened, printed beside a budget that only
+  // ever meant this month.
+  //
+  // The month the label reports on. A constant while the tracker has no date
+  // control; once the back-dating datepicker lands it becomes the month of the
+  // date in the form, and only this line changes. Undefined travels as an
+  // omitted month, which is what asks the server to resolve the current one on
+  // the owner's calendar — a browser clock lands on the wrong month for part of
+  // every day.
+  const budgetMonth: string | undefined = undefined;
+
+  const budgetAccounts = useBudgetStatusStore((state) => state.accounts);
+  const isLoadingCategoryBudgetAccounts = useBudgetStatusStore(
+    (state) => state.isLoading,
   );
-  // console.log('catBudgetResp', {
-  //   CategoryBudgetAccountsResponse,
-  //   isLoadingCategoryBudgetAccounts,
-  //   fetchedErrorCategoryBudgetAccounts,
-  // });
+  const fetchedErrorCategoryBudgetAccounts = useBudgetStatusStore(
+    (state) => state.error,
+  );
+  // Nothing has been answered yet, which is not the same as an empty answer.
+  // Without it the first frame — before the effect below runs — reads as a user
+  // with no budget categories at all.
+  const isBudgetStatusLoaded = useBudgetStatusStore(
+    (state) => state.loadedMonth !== null,
+  );
+  const fetchBudgetStatus = useBudgetStatusStore((state) => state.fetchStatus);
+  const refreshBudgetStatus = useBudgetStatusStore(
+    (state) => state.refreshStatus,
+  );
+
+  // The store's own guard makes this free when budget or the transfer screen has
+  // already asked for the same month. reloadTrigger is a dependency because a
+  // recorded movement invalidates the memo, and this is what asks again for it.
+  useEffect(() => {
+    void fetchBudgetStatus(budgetMonth);
+  }, [fetchBudgetStatus, budgetMonth, reloadTrigger]);
+
   //Category Data Transformation -
   // 🧠 Memoización: category dropdown options
+  //
+  // Option identity is not option status. A name carried over while another
+  // month is on the wire is still the same account; its figures are not, and
+  // showing them under a different month is the very defect this replaces.
   const optionsExpenseCategories = useMemo(() => {
-    const categoryList =
-      CategoryBudgetAccountsResponse?.data?.accountList || [];
     if (fetchedErrorCategoryBudgetAccounts) {
       return CATEGORY_OPTIONS_DEFAULT;
     }
-    return categoryList.map((cat) => ({
-      value: cat.account_name,
-      label: `${cat.account_name} (${cat.currency_code} ${cat.account_balance})`,
-    }));
+
+    return budgetAccounts.map((account) => {
+      const hasFigures =
+        !isLoadingCategoryBudgetAccounts &&
+        Number.isFinite(account.actualSpent) &&
+        Number.isFinite(account.budgetAmount) &&
+        // Nothing budgeted and nothing spent is no budget at all, not a budget
+        // met. The four budget screens print nothing there and this must not
+        // contradict them about the same account on the same day.
+        !isUnbudgeted(account.budgetAmount, account.actualSpent);
+
+      if (!hasFigures) {
+        return { value: account.accountName, label: account.accountName };
+      }
+
+      // The currency travels once: currencyFormat emits the symbol itself, so
+      // the loose currency code the old label prefixed said it twice.
+      const spent = currencyFormat(
+        account.currency,
+        account.actualSpent,
+        'en-US',
+      );
+      const budget = currencyFormat(
+        account.currency,
+        account.budgetAmount,
+        'en-US',
+      );
+
+      return {
+        value: account.accountName,
+        label: `${account.accountName} (${spent} / ${budget})`,
+      };
+    });
   }, [
-    CategoryBudgetAccountsResponse?.data?.accountList,
+    budgetAccounts,
     fetchedErrorCategoryBudgetAccounts,
+    isLoadingCategoryBudgetAccounts,
   ]);
   //--------------------------
   const categoryOptions = {
@@ -607,6 +669,56 @@ function Expense(): JSX.Element {
     selectOptions: accountOptions,
   };
   // ------------------------------------
+  // The category list's three fetch states, and only its states. The option
+  // label is a string and can carry neither a skeleton nor a button, so they
+  // need a surface of their own — one that never repeats a figure the label
+  // already shows.
+  //
+  // They degrade the one control that failed. The whole form used to go with it:
+  // the category error was wired into the screen-level MessageToUser blocks, so
+  // a budget-service outage took expense entry down with it.
+  function renderCategoryStatus(): JSX.Element | null {
+   if (fetchedErrorCategoryBudgetAccounts) {
+    return (
+     <div className='categoryStatus categoryStatus--error' role='alert'>
+      <span className='categoryStatus__text'>
+       Budget status could not be loaded.
+      </span>
+
+      <button
+       type='button'
+       className='categoryStatus__retry'
+       onClick={() => {
+        void refreshBudgetStatus();
+       }}
+      >
+       Retry
+      </button>
+     </div>
+    );
+   }
+
+   if (isLoadingCategoryBudgetAccounts || !isBudgetStatusLoaded) {
+    return (
+     <div className='categoryStatus' aria-hidden='true'>
+      <span className='categoryStatus__skeleton'></span>
+     </div>
+    );
+   }
+
+   if (optionsExpenseCategories.length === 0) {
+    return (
+     <div className='categoryStatus'>
+      <span className='categoryStatus__text'>
+       No budget categories yet. Create one to record an expense.
+      </span>
+     </div>
+    );
+   }
+
+   return null;
+  }
+  // ------------------------------------
   // 🧱 RENDER LOGIC
   // ------------------------------------
   // Separate UI of "checking" and "not authenticated"
@@ -617,11 +729,7 @@ function Expense(): JSX.Element {
           isLoading={true}
           messageToUser={messageToUser}
           variant='tracker'
-          error={
-            postError ||
-            fetchedErrorCategoryBudgetAccounts ||
-            fetchedErrorBankAccounts
-          }
+          error={postError || fetchedErrorBankAccounts}
         />
         <CoinSpinner />
       </div>
@@ -638,11 +746,7 @@ function Expense(): JSX.Element {
             'Session not active or expired. Redirecting to sign-in...'
           } // MODIFICACIÓN: fallback mensaje
           variant='tracker'
-          error={
-            postError ||
-            fetchedErrorCategoryBudgetAccounts ||
-            fetchedErrorBankAccounts
-          }
+          error={postError || fetchedErrorBankAccounts}
         />
       </div>
     );
@@ -697,6 +801,8 @@ function Expense(): JSX.Element {
             setIsReset={setIsReset}
           />
 
+          {renderCategoryStatus()}
+
           <CardNoteSave
             title={'note'}
             validationMessages={validationMessages}
@@ -723,11 +829,7 @@ function Expense(): JSX.Element {
              isLoadingBankAccounts ||
              isLoadingCategoryBudgetAccounts
             }
-            error={
-              postError ||
-              fetchedErrorCategoryBudgetAccounts ||
-              fetchedErrorBankAccounts
-            }
+            error={postError || fetchedErrorBankAccounts}
             messageToUser={messageToUser}
             variant='tracker'
           />

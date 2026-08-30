@@ -681,3 +681,101 @@ textarea:invalid {
   transition: none;
  }
 }
+
+/* ── The category selector's fetch states ────────────────────────────────────
+   Loading, error with a retry, and empty are three readings and not degrees of
+   one another; all three used to render as a dropdown with nothing in it and no
+   word about why. The option label carries the two amounts, so this line carries
+   states only and never repeats a figure.
+
+   It sits on the tracker card, which is light with dark text, so every content
+   token below is one paired to a light surface. The skeleton borrows the panel
+   colour the controls on this card are painted with: there is no skeleton token,
+   and the bar stands in for a control. */
+
+.categoryStatus {
+ display: flex;
+ align-items: center;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+ /* Reserves the line's height from the first frame, so the note below does not
+    jump when the answer lands. */
+ min-height: var(--size-control-sm);
+ padding: var(--space-2) 0;
+}
+
+/* index.css sets font-size on the universal selector, so an inline element does
+   not inherit the size of the line it sits in and has to restate it. */
+.categoryStatus__text {
+ font-size: var(--font-size-xs);
+ line-height: 1.3;
+ color: var(--color-content-secondary);
+}
+
+.categoryStatus--error .categoryStatus__text {
+ color: var(--color-feedback-error-content);
+}
+
+.categoryStatus__retry {
+ min-height: var(--size-control-sm);
+ padding: var(--space-1) var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-strong);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-primary);
+ font-family: inherit;
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.categoryStatus__retry:hover {
+ background-color: var(--color-content-primary);
+ color: var(--color-surface-inverse);
+}
+
+.categoryStatus__retry:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.categoryStatus__retry:active {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.categoryStatus__retry:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* aria-hidden in the markup: a screen reader gains nothing from an empty bar. */
+.categoryStatus__skeleton {
+ width: 60%;
+ height: var(--font-size-sm);
+ border-radius: var(--radius-xs);
+ background-color: var(--color-surface-panel);
+ animation: categoryStatus__pulse var(--motion-slow) ease-in-out infinite
+  alternate;
+}
+
+@keyframes categoryStatus__pulse {
+ from {
+  opacity: 0.5;
+ }
+ to {
+  opacity: 1;
+ }
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .categoryStatus__skeleton {
+  animation: none;
+ }
+
+ .categoryStatus__retry {
+  transition: none;
+ }
+}
