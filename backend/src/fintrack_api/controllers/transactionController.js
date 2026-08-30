@@ -37,6 +37,11 @@ import {
 import { currencyAmountConversion } from '../services/fx_services/conversion/currencyAmountConversion.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
 import { accountLedgerCteForTransaction } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+// The compensation account this controller opens on demand for a PnL entry. It
+// is the app's own bookkeeping counterparty, not an account the owner holds, and
+// the date guard below leaves it out of the opening floor for that reason.
+const INTERNAL_COUNTERPARTY_NAME = 'slack';
+
 //==================================
 // 🔧 FX DEBUG UTILITY (centralized)
 // ==================================
@@ -526,8 +531,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
     }
 
     // The movement's date. Absent or empty means now, which is what every form
-    // sends today. It is validated here, below both lookups, because the lower
-    // bound is the later of the two accounts' opening days.
+    // but PnL sends today. It is validated here, below both lookups, because the
+    // floor is the later of the current month's first day and the openings of the
+    // accounts the owner selected.
     const timeZone = await getUserTimeZone(client, userId);
     const requestedDay = typeof actualDate === 'string' ? actualDate.trim() : '';
     let transaction_actual_date = new Date();
@@ -549,28 +555,45 @@ export const transferBetweenAccounts = async (req, res, next) => {
         );
       }
 
+      // The editing window is the current calendar month on the owner's calendar.
+      // Taking the month off `today` gives its first day in the same zone, with no
+      // second conversion that could disagree with the one above.
+      const monthFloor = `${today.slice(0, 7)}-01`;
+
+      if (requestedDay < monthFloor) {
+        throw createError(
+          422,
+          `A movement cannot be dated before the current month, which starts on ${monthFloor}`,
+        );
+      }
+
       // Calendar days on both sides, never instants. account_start_date holds an
       // arbitrary wall-clock time, so an account opened at 20:00 would refuse a
       // movement on its own opening day once that day is anchored at noon.
-      const openings = [
-        [
-          sourceAccountInfo.account_name,
-          dayInZone(sourceAccountInfo.account_start_date, timeZone),
-        ],
-        [
-          destinationAccountInfo.account_name,
-          dayInZone(destinationAccountInfo.account_start_date, timeZone),
-        ],
-      ];
-      const [openedName, openedDay] = openings.reduce((later, current) =>
-        current[1] > later[1] ? current : later,
-      );
+      //
+      // The internal counterparty is left out of the floor. It is created on
+      // demand by this same controller with account_start_date = now, so a
+      // back-dated PnL would be refused by an account the owner never created and
+      // cannot see, and on a first PnL it is born inside this very request, which
+      // would make every back-dated first entry impossible.
+      const openings = [sourceAccountInfo, destinationAccountInfo]
+        .filter((account) => account.account_name !== INTERNAL_COUNTERPARTY_NAME)
+        .map((account) => [
+          account.account_name,
+          dayInZone(account.account_start_date, timeZone),
+        ]);
 
-      if (requestedDay < openedDay) {
-        throw createError(
-          422,
-          `A movement cannot be dated before ${openedName} was opened on ${openedDay}`,
+      if (openings.length > 0) {
+        const [openedName, openedDay] = openings.reduce((later, current) =>
+          current[1] > later[1] ? current : later,
         );
+
+        if (requestedDay < openedDay) {
+          throw createError(
+            422,
+            `A movement cannot be dated before ${openedName} was opened on ${openedDay}`,
+          );
+        }
       }
 
       // Composed once, in SQL, and reused by both legs so the two halves of one

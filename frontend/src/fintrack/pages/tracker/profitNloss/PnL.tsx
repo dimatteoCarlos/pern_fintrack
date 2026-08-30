@@ -56,6 +56,7 @@ import {
   DropdownOptionType,
   // TransactionType,
 } from '../../../types/types.ts';
+import { toCalendarDay } from '../../../helpers/functions.ts';
 // =====================
 // CONSTANTS
 // =====================-
@@ -245,6 +246,10 @@ function PnL(): JSX.Element {
   type PayloadType = BasicTrackerMovementValidatedDataType & {
     user?: string;
     date: Date;
+    // The day the entry happened, as the calendar label the server validates.
+    // `date` above is the form's own state and the controller only logs it; this
+    // is the key that reaches transaction_actual_date.
+    transactionActualDate: string;
     account_id?: string;
   };
   //----
@@ -331,6 +336,19 @@ function PnL(): JSX.Element {
     [formInputData.type, setFormInputData, setFormValidatedData],
   );
 
+  // The window back-dating allows: the first day of the current month to today.
+  // The server validates the same window on the owner's zone; this only keeps the
+  // calendar from offering a day it would refuse. Memoised so the memoised
+  // Datepicker is not handed new Date objects on every render.
+  const { monthFloor, todayBound } = useMemo(() => {
+    const now = new Date();
+
+    return {
+      monthFloor: new Date(now.getFullYear(), now.getMonth(), 1),
+      todayBound: now,
+    };
+  }, []);
+
   // Handler for date changes
   const changeDate = useCallback(
     (selectedDate: Date) => {
@@ -393,6 +411,7 @@ function PnL(): JSX.Element {
         // ...formValidatedData!,//Aunque suelen ser lo mismo, si hay un pequeño retraso en la actualización del estado de React, podrías estar enviando el valor anterior
         account_id: accountId,
         date: validatedData?.date || new Date(),
+        transactionActualDate: toCalendarDay(validatedData?.date || new Date()),
         // currency: formValidatedData?.currency || defaultCurrency,
       };
       // console.log("🚀 ~ onSaveHandler ~ payload:", payload)
@@ -570,6 +589,8 @@ function PnL(): JSX.Element {
                   date={formInputData.date ?? new Date()}
                   variant={'tracker'}
                   popperClassName='pnl-datepicker-popper'
+                  minDate={monthFloor}
+                  maxDate={todayBound}
                 />
               </div>
             </div>
