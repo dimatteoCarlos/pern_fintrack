@@ -119,3 +119,124 @@ a.icon {
   z-index: 1;
 }
 /*--------------------------*/
+
+/* The debtor list's three fetch states.
+   A request in flight, a request that failed and an owner with no debtors are
+   three different answers, and none of them is a debtor. They used to share one
+   fabricated row. Tokens only: the block above predates the token file and is
+   left as it stands. */
+
+.debtorList__state {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ gap: var(--space-4);
+ padding: var(--space-8) var(--space-4);
+ text-align: center;
+}
+
+.debtorList__stateText {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* Retry, which is what separates an error from an empty list: the reader can do
+   something about it. */
+.debtorList__retry {
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-6);
+ border: var(--border-width-thin) solid var(--color-border-inverse);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ font-family: inherit;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.debtorList__retry:hover {
+ background-color: var(--color-surface-inverse);
+ color: var(--color-content-primary);
+}
+
+.debtorList__retry:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.debtorList__retry:active {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.debtorList__retry:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The loading state occupies the space the rows will take, so the page does not
+   jump when the answer lands. aria-hidden in the markup: a screen reader gains
+   nothing from a set of empty bars. */
+.debtorList__skeleton {
+ pointer-events: none;
+}
+
+.debtorList__skeletonRow {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ gap: var(--space-4);
+}
+
+.debtorList__skeletonBar {
+ width: 30%;
+ height: var(--font-size-sm);
+ margin: var(--space-1) 0;
+ border-radius: var(--radius-xs);
+ background-color: var(--color-border-subtle);
+ animation: debtorList__pulse var(--motion-slow) ease-in-out infinite alternate;
+}
+
+.debtorList__skeletonBar--title {
+ width: 45%;
+ height: var(--font-size-base);
+}
+
+.debtorList__skeletonBar--status {
+ width: 20%;
+ height: var(--font-size-xs);
+}
+
+@keyframes debtorList__pulse {
+ from {
+  opacity: 0.5;
+ }
+ to {
+  opacity: 1;
+ }
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .debtorList__skeletonBar {
+  animation: none;
+ }
+
+ .debtorList__retry {
+  transition: none;
+ }
+}
+
+/* Mobile-first from 360px. The state box takes more air once there is room for
+   it; the list itself does not reflow. */
+@media (min-width: 480px) {
+ .debtorList__state {
+  padding: var(--space-12) var(--space-6);
+ }
+}

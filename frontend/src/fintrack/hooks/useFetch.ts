@@ -82,6 +82,11 @@ export function useFetch<R>(url: string | null): FetchResponseType<R> {
               'No accounts of type:',
               'No transactions encountered',
               'No available accounts',
+              // The summary list answers this word order — 'No accounts
+              // available of type debtor.' — which the line above does not
+              // match. An owner with no debtors was therefore classified as a
+              // failed request, and the screen could not tell empty from error.
+              'No accounts available of type',
             ];
             if (noDataMessages.some((msg) => errorMessage.includes(msg))) {
               isDataNotFoundError = true;
