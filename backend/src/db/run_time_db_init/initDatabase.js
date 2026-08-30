@@ -156,9 +156,15 @@ export async function initializeDatabase() {
     // =======================================
     // Historical rate store (idempotent, runs on every boot)
     // =======================================
-    // Runtime counterpart of migration 021, for the same reason as the budget
-    // and pocket calls below: production is built by this path and never sees
-    // the migration runner. Pure CREATE ... IF NOT EXISTS.
+    // Runtime counterpart of migration 021. Pure CREATE ... IF NOT EXISTS.
+    //
+    // This path does NOT reach the Vercel deployment, and the comments on the
+    // budget and pocket calls below claim otherwise. index.js:51 guards
+    // startServer behind !process.env.VERCEL, and the serverless entrypoint
+    // backend/index.js imports src/app.js alone, so initializeDatabase never
+    // runs there. What this call covers is local development and any host that
+    // boots src/index.js. On Vercel the table arrives through migration 021 and
+    // the migration runner, which has to be run against that database.
     //
     // Before the FORCE_RECREATE_EXCHANGE_RATES block further down on purpose,
     // and unaffected by it: that flag resets the current-rate cache, and the
