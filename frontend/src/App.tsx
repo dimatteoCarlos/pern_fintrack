@@ -57,6 +57,9 @@ const NewCategory = lazy(
 const NewPocket = lazy(
   () => import('./fintrack/pages/forms/newPocket/NewPocket'),
 );
+const EditPocket = lazy(
+  () => import('./fintrack/pages/forms/editPocket/EditPocket'),
+);
 const NewProfile = lazy(
   () => import('./fintrack/pages/forms/newProfile/NewProfile'),
 );
@@ -337,6 +340,19 @@ function App() {
           element: (
             <LazyRoute>
               <PocketDetail />
+            </LazyRoute>
+          ),
+        },
+
+        // Declared beside the detail rather than inside it, so opening the
+        // editor unmounts the card underneath. Committing and releasing cash
+        // are modals for the opposite reason: they answer with the whole detail
+        // payload, so they repaint the card they are standing on.
+        {
+          path: 'pocket/pockets/:pocketId/edit',
+          element: (
+            <LazyRoute>
+              <EditPocket />
             </LazyRoute>
           ),
         },

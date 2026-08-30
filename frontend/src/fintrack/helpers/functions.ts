@@ -360,6 +360,25 @@ export function toCalendarDay(instant: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+// The other direction: takes the YYYY-MM-DD the server serves and returns the
+// Date a picker can show for that day on the device's calendar.
+//
+// Built from the parts for the same reason toCalendarDay reads them. new
+// Date('2026-08-29') is parsed as UTC midnight, which is the previous day
+// everywhere west of UTC — so a deadline stored as the 29th opens the calendar
+// on the 28th, and saving it back moves a date the owner never touched.
+//
+// Returns null for an absent or malformed label rather than an Invalid Date,
+// because a picker handed an Invalid Date renders NaN into its own field.
+export function fromCalendarDay(day: string | null | undefined): Date | null {
+  if (!day) return null;
+
+  const [year, month, date] = day.split('-').map(Number);
+  if (!year || !month || !date) return null;
+
+  return new Date(year, month - 1, date);
+}
+
 // Carries the board's month across a link. The month is a property of the URL,
 // so a link inside the module that drops it lands on a screen that silently
 // falls back to the current month.

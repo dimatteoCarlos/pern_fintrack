@@ -26,6 +26,7 @@ import {
  numberFormatCurrency,
 } from '../../../helpers/functions.ts';
 import SummaryPocketDetailBox from './summaryPocketDetailBox/SummaryPocketDetailBox.tsx';
+import PocketEditLink from './PocketEditLink.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
@@ -104,6 +105,18 @@ function PocketDetail() {
     <div className='form__title'>
      {pocket ? capitalize(pocket.name).toUpperCase() : ''}
     </div>
+
+    {/* Rendered only once the pocket is in hand, because the control names it
+        in its accessible label and an editor opened for a pocket the screen
+        cannot name yet has nothing to edit. The editor returns to this card,
+        not to the board the user came from: this is where they are standing. */}
+    {pocket && (
+     <PocketEditLink
+      pocketId={pocket.pocketId}
+      returnRoute={location.pathname}
+      pocketName={pocket.name}
+     />
+    )}
    </div>
   </div>
  );

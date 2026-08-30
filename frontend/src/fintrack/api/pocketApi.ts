@@ -17,6 +17,7 @@ import {
 } from '../../urlConfig.ts';
 import {
  CreatePocketBody,
+ EditPocketBody,
  PocketBoardPayload,
  PocketBoardResponse,
  PocketDetailPayload,
@@ -73,6 +74,29 @@ export const createPocket = async (
  const { data: responseBody } = await authFetch<PocketDetailResponse>(
   url_pocket_create,
   { method: 'POST', data: body },
+ );
+
+ return responseBody.data;
+};
+
+// Changes a pocket and returns the whole screen it changed.
+//
+// It addresses the same URL the detail read does, and that is the point rather
+// than an oversight: one pocket is one resource, and only the method differs.
+// A second declaration for the same path would be two names that have to be
+// kept equal by hand.
+//
+// The answer carries the recomputed figures, not the row written. A new target
+// moves the gap and the monthly pace it implies, and that pace is the figure
+// the owner is actually choosing — so the caller hands this straight to the
+// detail store and the screen repaints with no second request.
+export const editPocket = async (
+ pocketId: number,
+ body: EditPocketBody,
+): Promise<PocketDetailPayload> => {
+ const { data: responseBody } = await authFetch<PocketDetailResponse>(
+  url_pocket_detail(pocketId),
+  { method: 'PATCH', data: body },
  );
 
  return responseBody.data;

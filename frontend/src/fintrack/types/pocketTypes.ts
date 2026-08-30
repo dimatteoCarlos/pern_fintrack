@@ -208,3 +208,27 @@ export type CreatePocketBody = {
  // deadline typed in the evening.
  desiredDate: string;
 };
+
+// The body PATCH /pocket/:pocketId accepts. Every field is optional and the
+// schema behind it is strict, so an extra key is a 400 and an empty body is a
+// 400 too — at least one field must be sent.
+//
+// Two rules of that schema the caller has to respect, because neither is
+// expressible in this type:
+//
+// - `note` is nullable AND optional, and the two mean different things. null
+//   clears the note; an absent key leaves it as it was. Collapsing them would
+//   make "remove this note" impossible to say.
+// - `currency` is required whenever `targetAmount` is sent. The amount is a
+//   figure typed in some unit, and a figure without its unit is not an amount;
+//   the server converts and stores what it did.
+//
+// The pocket's own accounting currency is not editable. Restating it would
+// restate every allocation already made against it.
+export type EditPocketBody = {
+ name?: string;
+ note?: string | null;
+ targetAmount?: number;
+ currency?: CurrencyType;
+ desiredDate?: string;
+};
