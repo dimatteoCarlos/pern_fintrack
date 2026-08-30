@@ -9,7 +9,10 @@ import { pool } from '../../db/config/configDB.js';
 import { respondError, respondSuccess } from '../../utils/responseHelpers.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
-import { todayInZone } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
+import {
+  dayInZone,
+  todayInZone,
+} from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { accountAllocationService } from '../services/pocket_services/services/accountAllocationService.js';
 
 const backendColor = 'greenBright';
@@ -789,6 +792,23 @@ export const getAccountById = async (req, res, next) => {
       accountList: [accountListResult.rows[0]],
     };
     // console.log("🚀 ~ getAccountById ~ data:", data)
+
+    //----------------------------
+    // 📆 THE DAY THE ACCOUNT WAS OPENED, ON THE OWNER'S CALENDAR
+    //
+    // account_start_date is an instant (TIMESTAMPTZ) and a calendar day is a
+    // label. The conversion between them takes the owner's zone and happens
+    // once, here, so a screen never reads the instant's UTC parts — which named
+    // the following day for every account opened after 19:00 in Bogota.
+    //
+    // Served beside the instant, not instead of it: the raw column stays for
+    // any caller that needs the moment.
+    const accountTimeZone = await getUserTimeZone(pool, userId);
+
+    data.accountList[0].account_start_local_date = dayInZone(
+      data.accountList[0].account_start_date,
+      accountTimeZone,
+    );
 
     // 🧮 ENRICH CATEGORY ACCOUNT WITH BUDGET CALCULATIONS
     //budget remain and status alert for category_budget account type

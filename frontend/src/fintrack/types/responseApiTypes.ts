@@ -303,8 +303,14 @@ export type AccountByTypeResponseType = {
 export type AccountListType = Omit<
   AccountBasicDataType,
   'currency_id'| 'updated_at'
-  //  | 'created_at' 
->;
+  //  | 'created_at'
+> & {
+  // The calendar day account_start_date falls on in the owner's time zone,
+  // resolved by getAccountById. account_start_date beside it stays an instant,
+  // and reading its UTC parts to name a day is what printed the day after.
+  // Optional because only the detail endpoint serves it.
+  account_start_local_date?: string;
+};
 //--
 //CATEGORY_BUDGET TYPE
 export type CategoryBudgetAccountsResponseType = {

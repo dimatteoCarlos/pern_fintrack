@@ -43,6 +43,10 @@ type LocationStateType = {
   debtorDetailedData: DebtorListType;
 };
 
+// A figure or a date the answer did not carry. Never a fabricated value: a date
+// means something here, and it does not mean "the server did not send one".
+const DASH = '—';
+
 //--functions
 function getBubleInfoFromAccountDetail(
   accountDetail: AccountListType,
@@ -298,7 +302,16 @@ function DebtorDetail() {
                         className='form__datepicker__container'
                         style={{ textAlign: 'center', color: 'white' }}
                       >
-                        {formatDateToDDMMYYYY(accountDetail.account_start_date)}
+                        {/* The calendar label the server resolved on the
+                            owner's zone, not the raw instant beside it:
+                            formatDateToDDMMYYYY reads UTC parts, which named
+                            the day after for an account opened in the
+                            evening. */}
+                        {accountDetail.account_start_local_date
+                          ? formatDateToDDMMYYYY(
+                              accountDetail.account_start_local_date,
+                            )
+                          : DASH}
                       </div>
                     </div>
 
