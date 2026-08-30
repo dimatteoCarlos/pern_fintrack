@@ -1,0 +1,82 @@
+/* 💱 FX PATHWAY CARD
+   The conversion block shared by the account movement's detail and the pocket
+   allocation's detail. It sits on a raised dark surface inside a panel that is
+   already dark, so its text comes from the on-dark set.
+
+   The rules mirror the ones the account movement modal already carried, so that
+   the block reads identically wherever it lands. Tokens only. */
+
+.fxPathway {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ padding: var(--space-4);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+ background-color: var(--color-surface-raised);
+}
+
+.fxPathway__title {
+ margin: 0;
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wider);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The two amounts and the arrow between them. It wraps rather than truncating:
+   half of an amount is not a smaller amount, it is a wrong one. */
+.fxPathway__route {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
+/* Sized as a box and not as text: the glyph this replaced rendered far smaller
+   than its em box. */
+.fxPathway__arrow {
+ width: var(--space-6);
+ height: var(--space-6);
+ flex-shrink: 0;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.fxPathway__row {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-3);
+}
+
+.fxPathway__label {
+ flex-shrink: 0;
+ /* index.css sets a font size on the universal selector, so an inline element
+    does not inherit the size of the line it sits in and must restate one. */
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.fxPathway__value {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ text-align: right;
+ color: var(--color-content-on-dark-muted);
+ font-variant-numeric: tabular-nums;
+}
+
+/* The stored rate, at whatever precision the column kept. Monospaced so the
+   digits can be counted, and allowed to break so none of them is hidden. */
+.fxPathway__value--mono {
+ font-family: var(--font-family-mono);
+ font-size: var(--font-size-xs);
+ overflow-wrap: anywhere;
+}

@@ -28,12 +28,14 @@ import {
 import SummaryPocketDetailBox from './summaryPocketDetailBox/SummaryPocketDetailBox.tsx';
 import PocketEditLink from './PocketEditLink.tsx';
 import DeletePocketModal from './deletePocketModal/DeletePocketModal.tsx';
+import AllocationEntryModal from './allocationEntryModal/AllocationEntryModal.tsx';
 import PocketCashModal, {
  PocketCashDirection,
 } from './pocketCashModal/PocketCashModal.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
+import { PocketAllocationEntry } from '../../../types/pocketTypes.ts';
 
 import '../styles/forms-styles.css';
 import './styles/pocketDetail-styles.css';
@@ -87,6 +89,13 @@ function PocketDetail() {
  // where both panels are open at once.
  const [cashDirection, setCashDirection] =
   useState<PocketCashDirection | null>(null);
+
+ // Which history entry is open, held whole rather than by id: the list is
+ // already in memory, so looking the row up again by id would be a second
+ // source for something this screen is already holding.
+ const [openEntry, setOpenEntry] = useState<PocketAllocationEntry | null>(
+  null,
+ );
 
  useEffect(() => {
   if (!hasValidId) return;
@@ -296,11 +305,19 @@ function PocketDetail() {
      ) : (
       <ul className='pocketDetail__list'>
        {history.map((entry) => (
-        <li
-         className='pocketDetail__row'
-         key={`allocation-${entry.allocationId}`}
-        >
-         <div className='pocketDetail__rowLeft'>
+        <li key={`allocation-${entry.allocationId}`}>
+         {/* A button and not a list item with a handler: the row opens a panel
+             rather than navigating, so it needs focus, Enter and Space, and a
+             div with an onClick answers none of the three. */}
+         <button
+          type='button'
+          className='pocketDetail__row pocketDetail__row--open'
+          onClick={() => setOpenEntry(entry)}
+          aria-label={`Open the entry of ${formatCalendarDate(
+           entry.allocationDate,
+          )}`}
+         >
+          <div className='pocketDetail__rowLeft'>
           {/* The word beside the sign, never the colour alone: colour
               survives neither colour blindness nor print. */}
           <span className='pocketDetail__rowTitle'>
@@ -324,7 +341,8 @@ function PocketDetail() {
           >
            {amount(entry.amount)}
           </span>
-         </div>
+          </div>
+         </button>
         </li>
        ))}
       </ul>
@@ -366,6 +384,14 @@ function PocketDetail() {
      Delete this pocket
     </button>
    </article>
+
+   {openEntry && (
+    <AllocationEntryModal
+     entry={openEntry}
+     currency={currency}
+     onClose={() => setOpenEntry(null)}
+    />
+   )}
 
    {cashDirection && (
     <PocketCashModal

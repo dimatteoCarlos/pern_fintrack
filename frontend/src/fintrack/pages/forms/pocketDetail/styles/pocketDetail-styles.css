@@ -306,3 +306,43 @@
   transition: none;
  }
 }
+
+/* A history row that opens the decision in full. It is a button, so it resets
+   the ones a button brings and declares the five states a control owes: the row
+   above it is a plain layout rule and carries none of them. */
+.pocketDetail__row--open {
+ width: 100%;
+ border: var(--border-width-thin) solid transparent;
+ color: inherit;
+ font-family: inherit;
+ text-align: left;
+ cursor: pointer;
+ transition:
+  background-color var(--motion-fast),
+  border-color var(--motion-fast);
+}
+
+.pocketDetail__row--open:hover {
+ border-color: var(--color-border-subtle);
+ background-color: var(--color-surface-sunken);
+}
+
+.pocketDetail__row--open:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketDetail__row--open:active {
+ background-color: var(--color-surface-app);
+}
+
+.pocketDetail__row--open:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .pocketDetail__row--open {
+  transition: none;
+ }
+}

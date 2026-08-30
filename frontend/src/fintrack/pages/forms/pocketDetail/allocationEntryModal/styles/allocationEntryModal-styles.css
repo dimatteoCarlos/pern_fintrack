@@ -1,0 +1,169 @@
+/* 🧾 ALLOCATION ENTRY MODAL
+   One decision of the pocket's commitment history, in full.
+
+   It sits on the dark app surface rather than on a cream panel, because the
+   conversion block it carries is the shared one and that block is written for a
+   dark ground. Tokens only. */
+
+.allocationEntry__overlay {
+ position: fixed;
+ inset: 0;
+ z-index: var(--z-modal);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ padding: var(--space-4);
+ background-color: var(--color-surface-overlay);
+}
+
+.allocationEntry__panel {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-4);
+ width: 100%;
+ max-width: var(--layout-card-width);
+ /* Its own scroll, so a conversion block on a short viewport scrolls inside
+    the panel rather than pushing it off the screen. */
+ max-height: 85vh;
+ overflow-y: auto;
+ padding: var(--space-6) var(--space-5);
+ border-radius: var(--radius-xl);
+ background-color: var(--color-surface-app);
+ color: var(--color-content-on-dark);
+ box-shadow: var(--shadow-overlay);
+}
+
+.allocationEntry__panel:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.allocationEntry__header {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-3);
+}
+
+.allocationEntry__title {
+ margin: 0;
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark);
+}
+
+.allocationEntry__close {
+ min-width: var(--size-touch-target);
+ min-height: var(--size-touch-target);
+ border: none;
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-on-dark-subtle);
+ font-family: inherit;
+ font-size: var(--font-size-base);
+ cursor: pointer;
+ transition:
+  background-color var(--motion-fast),
+  color var(--motion-fast);
+}
+
+.allocationEntry__close:hover {
+ background-color: var(--color-surface-raised);
+ color: var(--color-content-on-dark);
+}
+
+.allocationEntry__close:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.allocationEntry__close:active {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.allocationEntry__close:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.allocationEntry__hero {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ gap: var(--space-1);
+ text-align: center;
+}
+
+.allocationEntry__amount {
+ font-size: var(--font-size-2xl);
+ font-weight: var(--font-weight-bold);
+ letter-spacing: var(--letter-spacing-wider);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
+.allocationEntry__stamp {
+ /* index.css sets a font size on the universal selector, so an inline element
+    does not inherit the size of the line it sits in and must restate one. */
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The same card shape the conversion block uses, so the two read as one stack
+   rather than as a card beside a loose list. */
+.allocationEntry__card {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ padding: var(--space-4);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+ background-color: var(--color-surface-raised);
+}
+
+.allocationEntry__cardTitle {
+ margin: 0;
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wider);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.allocationEntry__row {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-3);
+}
+
+.allocationEntry__label {
+ flex-shrink: 0;
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.allocationEntry__value {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ text-align: right;
+ color: var(--color-content-on-dark-muted);
+ text-transform: capitalize;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .allocationEntry__close {
+  transition: none;
+ }
+}
+
+@media (min-width: 480px) {
+ .allocationEntry__panel {
+  padding: var(--space-8) var(--space-6);
+ }
+}

@@ -20,6 +20,7 @@ import {
 } from '../../../../helpers/currencyConstants';
 import { DATE_TEXT_FORMAT } from '../../../../helpers/constants';
 import { TransactionDetailType } from '../../../../types/responseApiTypes';
+import FxPathwayCard from '../../../../general_components/fxPathwayCard/FxPathwayCard';
 
 import './styles/accountTransactionDetailModal-styles.css';
 
@@ -66,25 +67,6 @@ const formatLocalStamp = (
  return timeText ? `${label} · ${timeText}` : label;
 };
 
-// The rate lock is an instant stamped by the FX provider, not a date on the
-// owner's calendar, so it is read on the clock of whoever is looking.
-const formatInstantStamp = (value: string | Date) => {
- const instant = new Date(value);
- if (Number.isNaN(instant.getTime())) return MISSING_VALUE;
-
- const datePart = instant.toLocaleDateString(DATE_TEXT_FORMAT, {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
- });
- const timePart = instant.toLocaleTimeString(DATE_TEXT_FORMAT, {
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
- });
-
- return `${datePart} · ${timePart}`;
-};
 
 const DetailRow = ({ label, value, isMono = false }: DetailRowPropsType) => (
  <div className='transactionDetail__row'>
@@ -207,52 +189,6 @@ export const AccountTransactionDetailModal = ({
   AMOUNT_LOCALE,
  )} ${originalCurrency.toUpperCase()}`;
 
- // Absolute on both ends: the pathway states a conversion, and its direction is
- // carried by the arrow rather than by a sign repeated twice.
- const pathwayFrom = `${numberFormatCurrency(
-  Math.abs(transaction.original_amount ?? 0),
-  2,
-  originalCurrencyCode ?? undefined,
-  AMOUNT_LOCALE,
- )} ${(originalCurrencyCode ?? '').toUpperCase()}`;
- const pathwayTo = `${numberFormatCurrency(
-  Math.abs(transaction.amount),
-  2,
-  accountingCurrency,
-  AMOUNT_LOCALE,
- )} ${accountingCurrency.toUpperCase()}`;
-
- // Stored the other way round, so the reading a person expects is the inverse.
- const directRate =
-  transaction.exchange_rate && transaction.exchange_rate > 0
-   ? numberFormatCurrency(
-      1 / transaction.exchange_rate,
-      2,
-      undefined,
-      AMOUNT_LOCALE,
-     )
-   : null;
- const exchangeRateLabel = directRate
-  ? `1 ${accountingCurrency.toUpperCase()} = ${directRate} ${(
-    originalCurrencyCode ?? ''
-   ).toUpperCase()}`
-  : MISSING_VALUE;
-
- // The rate exactly as it was stored, with the direction it was stored in.
- const storedRate =
-  transaction.exchange_rate !== null
-   ? numberFormatCurrency(transaction.exchange_rate, 4, undefined, AMOUNT_LOCALE)
-   : null;
- const rateCleanLabel = storedRate
-  ? `${storedRate} · ${(
-    originalCurrencyCode ?? ''
-   ).toUpperCase()} → ${accountingCurrency.toUpperCase()}`
-  : MISSING_VALUE;
-
- const rateLockLabel = transaction.exchange_rate_timestamp
-  ? formatInstantStamp(transaction.exchange_rate_timestamp)
-  : MISSING_VALUE;
-
  return (
   <div
    className='transactionDetail'
@@ -348,33 +284,17 @@ export const AccountTransactionDetailModal = ({
       )}
      </section>
 
-     {hasConversion && (
-      <section className='transactionDetail__card'>
-       <h3 className='transactionDetail__cardTitle'>Foreign Exchange</h3>
-
-       <div className='transactionDetail__pathway'>
-        <span>{pathwayFrom}</span>
-        <svg
-         className='transactionDetail__arrow'
-         aria-hidden='true'
-         viewBox='0 0 24 24'
-         fill='none'
-         stroke='currentColor'
-         strokeWidth='2'
-         strokeLinecap='round'
-         strokeLinejoin='round'
-        >
-         <line x1='5' y1='12' x2='19' y2='12' />
-         <polyline points='12 5 19 12 12 19' />
-        </svg>
-        <span>{pathwayTo}</span>
-       </div>
-
-       <DetailRow label='Exchange Rate' value={exchangeRateLabel} />
-       <DetailRow label='Rate Lock' value={rateLockLabel} />
-       <DetailRow label='Rate Clean' value={rateCleanLabel} isMono />
-      </section>
-     )}
+     {/* The conversion block is the shared one: the pocket's allocation
+         history shows exactly this and a second copy would drift. It renders
+         nothing at all when the figure was typed in the accounting currency. */}
+     <FxPathwayCard
+      originalAmount={transaction.original_amount}
+      originalCurrency={originalCurrencyCode}
+      storedAmount={transaction.amount}
+      accountingCurrency={accountingCurrency}
+      exchangeRate={transaction.exchange_rate}
+      exchangeRateTimestamp={transaction.exchange_rate_timestamp}
+     />
     </div>
 
     <div className='transactionDetail__footer'>
