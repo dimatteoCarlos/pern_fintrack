@@ -4,68 +4,166 @@
 // ================================
 
 /**
- * Converts an amount from one currency to another using the global FX state.
- * This is the active version used by the frontend for real-time previews.
+ * Converts an amount from one currency to another.
  *
- * Uses:
- * - fxState (global in-memory state) for the rate.
- * - ensureFXStateIsFresh() to guarantee fresh data.
+ * Two sources of rate, chosen by whether the caller states a date:
+ *
+ * - No date. Today's rate, from fxState, the global in-memory state, after
+ *   ensureFXStateIsFresh() guarantees it is not stale. This is the path the
+ *   whole application already uses and it is unchanged.
+ * - A date. The rate that was in force on that day, from the historical
+ *   cascade. fxState is never touched and no freshness check runs: a past
+ *   figure cannot go stale, so a time-to-live on it would mean nothing.
+ *
+ * The function does NOT decide whether a given date is "today". It has no
+ * timezone, and the owner's day boundary is what settles that question, so the
+ * caller routes: no date means now, a date means the historical path. Adding a
+ * comparison against the server's own today here would resolve a 20:00
+ * movement at UTC-5 through the wrong path.
  */
+
+import Decimal from 'decimal.js';
 
 import { fxRateDecimal } from '../utils/fxRateDecimal.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 import { ensureFXStateIsFresh, fxState } from '../core/fxService.js';
+import { resolveHistoricalRate } from '../core/historicalRateResolver.js';
+
+// What a dated conversion may spend in total, however many currencies it has
+// to resolve. Same ceiling the resolver applies to a single one.
+const HISTORICAL_BUDGET_MS = Number(process.env.FX_HISTORICAL_BUDGET_MS || 5000);
+
+/**
+ * The calendar day a value names, as 'YYYY-MM-DD'.
+ * Only the identity case needs this; every other path gets its day back from
+ * the source that supplied the rate.
+ * @param {Date|string} value
+ * @returns {string|null}
+ */
+function toCalendarDay(value) {
+  if (typeof value === 'string') {
+    const trimmed = value.slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? trimmed : null;
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  return null;
+}
 
 // ─── Main exported function ─────────────────────────────────────────
 
 /**
- * Converts an amount from one currency to another using the global FX state.
- * Uses fxState.rates where each rate is defined as: 1 USD = X currency.
+ * Converts an amount from one currency to another.
+ * Every rate, from either source, is defined as: 1 USD = X currency.
  *
  * @param {number|string} amount - Amount to convert
  * @param {string} fromCurrency - Source currency code (e.g., 'eur')
  * @param {string} toCurrency - Target currency code (default 'usd')
- * @returns {Promise<{amount: Decimal, rate: number, source: string, fetchedAt: Date}>}
+ * @param {Date|string|null} [asOfDate=null] - The day to value the amount on.
+ *   Omitted means now, which is the behaviour every existing caller gets.
+ * @returns {Promise<{amount: Decimal, rate: number, source: string, fetchedAt: Date, effectiveDate: string|null}>}
+ *   source is what belongs in exchange_rate_source: the bare provider name on
+ *   the current path, and provider@effectiveDate on the historical one, so the
+ *   record names the day the rate actually came from. effectiveDate is null on
+ *   the current path and the day that supplied the figure on the historical one.
  */
 export async function currencyAmountConversion(
   amount,
   fromCurrency,
   toCurrency = ACCOUNTING_CURRENCY_CODE,
+  asOfDate = null,
 ) {
   const from = fromCurrency.toLowerCase();
   const to = toCurrency.toLowerCase();
 
   // Identity conversion (same currency)
   if (from === to) {
+    // One unit of a currency is one unit of itself on every day there has ever
+    // been, so the day asked for IS the day the rate was in force. No source is
+    // consulted and none has to be: nothing here can be wrong about a date.
+    const day = asOfDate ? toCalendarDay(asOfDate) : null;
+
     return {
       amount: fxRateDecimal(amount, 1),
       rate: 1,
-      source: 'identity',
+      source: day ? `identity@${day}` : 'identity',
       fetchedAt: new Date(),
+      effectiveDate: day,
+      provider: 'identity',
     };
   }
 
-  // Ensure the global FX state is fresh
-  await ensureFXStateIsFresh();
+  // The current path needs the global state fresh. The historical one must not
+  // touch it at all, so the freshness check is inside this branch, not above it.
+  if (!asOfDate) {
+    await ensureFXStateIsFresh();
+  }
 
-  // 📝 helper to get rate and throw error if missing
-  //function defined
-  const getRate = (currency) => {
-    const data = fxState.rates?.[currency];
-    if (!data) {
-      throw new Error(`Rate for ${currency} not available in FX state.`);
+  // The whole cascade's budget for this conversion, shared. A cross conversion
+  // resolves two currencies, and without a shared deadline the two would each
+  // get a full budget and the request could hang for twice as long.
+  const deadlineAt = asOfDate ? Date.now() + HISTORICAL_BUDGET_MS : null;
+
+  /**
+   * The quote for one currency against the accounting currency, from whichever
+   * of the two sources this call is using.
+   * @param {string} currency
+   * @returns {Promise<{rate: string|number, source: string, fetchedAt: Date, effectiveDate: string|null}>}
+   */
+  const quoteFor = async (currency) => {
+    if (!asOfDate) {
+      const data = fxState.rates?.[currency];
+
+      if (!data) {
+        throw new Error(`Rate for ${currency} not available in FX state.`);
+      }
+
+      return {
+        rate: data.rate,
+        source: data.source || 'system',
+        fetchedAt: data.fetchedAt || new Date(),
+        effectiveDate: null,
+      };
     }
-    return data.rate;
+
+    const resolved = await resolveHistoricalRate(currency, asOfDate, {
+      budgetMs: deadlineAt - Date.now(),
+    });
+
+    return {
+      rate: resolved.rate,
+      source: resolved.provenance,
+      fetchedAt: new Date(),
+      effectiveDate: resolved.effectiveDate,
+    };
   };
 
-   //direct multiplication with rate direction logic
-   let effectiveRate;
+  // The undated path keeps the float arithmetic it has always used, down to
+  // the last bit. Taking the reciprocal in Decimal is more accurate, but it
+  // moves the converted amount in its seventeenth digit, and this commit must
+  // not change a number any of the eight existing callers already gets. The
+  // dated path is new, so it takes its reciprocal in Decimal, where a cross
+  // conversion does not round on the way to the amount.
+  const reciprocalOf = (rate) => (asOfDate ? new Decimal(1).div(rate) : 1 / rate);
+
+  const composed = (fromRate, toRate) =>
+    asOfDate
+      ? new Decimal(1).div(fromRate).times(toRate)
+      : (1 / fromRate) * toRate;
+
+  // Only the currencies a case actually needs are quoted, so a conversion
+  // against the accounting currency never pays for a second resolution.
+  let effectiveRate;
+  let sourceData;
 
   // Case 1: Converting FROM a non-USD currency TO USD
   if (from !== ACCOUNTING_CURRENCY_CODE && to === ACCOUNTING_CURRENCY_CODE) {
-    // 📝 CHANGE: Use inverse rate because rate = 1 USD = X fromCurrency
-    const rate = getRate(from);
-    effectiveRate = 1 / rate;
+    // Inverse rate, because rate = 1 USD = X fromCurrency
+    sourceData = await quoteFor(from);
+    effectiveRate = reciprocalOf(sourceData.rate);
   }
 
   // Case 2: Converting FROM USD TO a non-USD currency (use direct rate)
@@ -73,17 +171,26 @@ export async function currencyAmountConversion(
     from === ACCOUNTING_CURRENCY_CODE &&
     to !== ACCOUNTING_CURRENCY_CODE
   ) {
-    // 📝 CHANGE: Use direct rate: 1 USD = X toCurrency
-    const rate = getRate(to);
-    effectiveRate = rate;
+    // Direct rate: 1 USD = X toCurrency
+    sourceData = await quoteFor(to);
+    effectiveRate = asOfDate ? new Decimal(sourceData.rate) : sourceData.rate;
   }
 
   // Case 3: Cross conversion between two non-USD currencies
   else {
-    // 📝 Cross conversion: amount * (1 / fromRate) * toRate
-    const fromRate = getRate(from); // 1 USD = X fromCurrency
-    const toRate = getRate(to); // 1 USD = Y toCurrency
-    effectiveRate = (1 / fromRate) * toRate;
+    // Cross conversion: amount * (1 / fromRate) * toRate
+    const fromQuote = await quoteFor(from); // 1 USD = X fromCurrency
+    const toQuote = await quoteFor(to); // 1 USD = Y toCurrency
+
+    effectiveRate = composed(fromQuote.rate, toQuote.rate);
+
+    // The leg that decides the record. Both legs are named when they disagree,
+    // because a cross conversion valued from two different effective days must
+    // not be recorded as if one day had supplied it.
+    sourceData =
+      fromQuote.effectiveDate && fromQuote.effectiveDate !== toQuote.effectiveDate
+        ? { ...fromQuote, source: `${fromQuote.source}+${toQuote.source}` }
+        : fromQuote;
   }
   //---DEBUG---
   // console.log('🔍 [CONVERSION] from:', from, 'to:', to);
@@ -95,27 +202,17 @@ export async function currencyAmountConversion(
   //   fxRateDecimal(amount, effectiveRate).toNumber(),
   // );
   //-----------------------------
-  // Perform conversion using Decimal.js
+  // Perform conversion using Decimal.js. The rate above is already a Decimal,
+  // so the reciprocal of a cross conversion never passes through a float.
   const convertedAmount = fxRateDecimal(amount, effectiveRate);
-
-  // 📝 Select source data based on the conversion case
-   let sourceData;
-   if (from !== ACCOUNTING_CURRENCY_CODE && to === ACCOUNTING_CURRENCY_CODE) {
-     // Case 1: From non-USD to USD → rate comes from 'from' currency
-     sourceData = fxState.rates?.[from] || {};
-   } else if (from === ACCOUNTING_CURRENCY_CODE && to !== ACCOUNTING_CURRENCY_CODE) {
-     // Case 2: From USD to non-USD → rate comes from 'to' currency
-     sourceData = fxState.rates?.[to] || {};
-   } else {
-     // Case 3: Cross conversion → rate comes from 'from' (or 'to', but we choose 'from')
-     sourceData = fxState.rates?.[from] || fxState.rates?.[to] || {};
-   }
 
   return {
     amount: convertedAmount,
-    // 📝 Return effectiveRate instead of raw fxState rate
-    rate: effectiveRate,
+    // The effective rate of the conversion, not the raw quote it came from.
+    rate: typeof effectiveRate === 'number' ? effectiveRate : effectiveRate.toNumber(),
     source: sourceData.source || 'system',
     fetchedAt: sourceData.fetchedAt || new Date(),
+    // null on the current path: today's rate has no effective day of its own.
+    effectiveDate: sourceData.effectiveDate,
   };
 }
