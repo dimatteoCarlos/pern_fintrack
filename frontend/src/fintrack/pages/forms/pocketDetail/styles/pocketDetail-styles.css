@@ -194,3 +194,51 @@
   padding: var(--space-3) var(--space-5);
  }
 }
+
+/* The control that opens the deletion confirmation. Last on the screen, past
+   everything the owner came to read, and quiet: it asks a question, it does not
+   perform the deletion. */
+.pocketDetail__delete {
+ align-self: center;
+ min-height: var(--size-touch-target);
+ margin-top: var(--space-6);
+ padding: var(--space-2) var(--space-6);
+ border: var(--border-width-thin) solid var(--color-status-alert);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-status-alert);
+ font-family: inherit;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition:
+  background-color var(--motion-fast),
+  color var(--motion-fast);
+}
+
+.pocketDetail__delete:hover {
+ background-color: var(--color-status-alert);
+ color: var(--color-content-on-dark);
+}
+
+.pocketDetail__delete:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketDetail__delete:active {
+ background-color: var(--color-financial-negative-surface);
+ color: var(--color-content-on-dark);
+}
+
+.pocketDetail__delete:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .pocketDetail__delete {
+  transition: none;
+ }
+}

@@ -16,7 +16,7 @@
 // history of those decisions — both served in the same payload as the hero.
 
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
@@ -27,6 +27,7 @@ import {
 } from '../../../helpers/functions.ts';
 import SummaryPocketDetailBox from './summaryPocketDetailBox/SummaryPocketDetailBox.tsx';
 import PocketEditLink from './PocketEditLink.tsx';
+import DeletePocketModal from './deletePocketModal/DeletePocketModal.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
@@ -71,6 +72,12 @@ function PocketDetail() {
  const fetchDetail = usePocketDetailStore((store) => store.fetchDetail);
  const refreshDetail = usePocketDetailStore((store) => store.refreshDetail);
  const clear = usePocketDetailStore((store) => store.clear);
+
+ // The confirmation is asked on this card rather than on a route of its own:
+ // it is one yes-or-no question about the pocket the owner is standing on, and
+ // a route would unmount the card to ask it.
+ const [isConfirmingDeletion, setIsConfirmingDeletion] =
+  useState<boolean>(false);
 
  useEffect(() => {
   if (!hasValidId) return;
@@ -314,7 +321,28 @@ function PocketDetail() {
       </ul>
      )}
     </div>
+
+    {/* Last on the screen and not in the header beside the editor. Deleting is
+        the one action here that cannot be undone by repeating it, so it sits
+        past everything the owner came to read rather than one stray tap from
+        the title. */}
+    <button
+     type='button'
+     className='pocketDetail__delete'
+     onClick={() => setIsConfirmingDeletion(true)}
+    >
+     Delete this pocket
+    </button>
    </article>
+
+   {isConfirmingDeletion && (
+    <DeletePocketModal
+     pocketId={pocket.pocketId}
+     pocketName={pocket.name}
+     currency={currency}
+     onClose={() => setIsConfirmingDeletion(false)}
+    />
+   )}
   </section>
  );
 }

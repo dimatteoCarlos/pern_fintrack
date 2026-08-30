@@ -232,3 +232,35 @@ export type EditPocketBody = {
  currency?: CurrencyType;
  desiredDate?: string;
 };
+
+// What one account gets back when the pocket it was funding is deleted.
+//
+// The account is named and not just numbered, because this list is read by the
+// owner and an id tells them nothing about where their cash went.
+export type PocketFreedCash = {
+ accountId: number;
+ accountName: string;
+ freedCash: number;
+};
+
+// The one write of this module that does NOT answer with the detail payload,
+// and it could not: the screen that payload describes no longer exists.
+//
+// It answers with what the deletion released instead. Deleting a pocket moves
+// no money — the cash was only ever committed, so it simply stops being
+// committed — and this list is the same promise the confirmation made, kept in
+// the server's own figures rather than recomputed by the screen.
+//
+// An empty list is a real answer and not a missing one: a pocket nothing was
+// ever committed to frees nothing.
+export type DeletePocketResult = {
+ pocketId: number;
+ name: string;
+ freed: PocketFreedCash[];
+};
+
+export type DeletePocketResponse = {
+ status: number;
+ message: string;
+ data: DeletePocketResult;
+};

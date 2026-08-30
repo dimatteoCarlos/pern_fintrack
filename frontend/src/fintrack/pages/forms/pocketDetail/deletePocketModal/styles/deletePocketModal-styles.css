@@ -1,0 +1,189 @@
+/* 🗑️ DELETE POCKET MODAL
+   The confirmation and its result, on a cream data panel over the dark app.
+
+   Written on tokens only. Every colour, spacing, radius, size and weight below
+   comes from tokens.css; nothing here reads the undefined light-surface names
+   that the older stylesheets of this module still carry. */
+
+.pocketDelete__overlay {
+ position: fixed;
+ inset: 0;
+ z-index: var(--z-modal);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ padding: var(--space-4);
+ background-color: var(--color-surface-overlay);
+}
+
+.pocketDelete__panel {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-4);
+ width: 100%;
+ /* The column the whole app centres on. Beyond it the panel stops growing and
+    the text stops running past a comfortable measure. */
+ max-width: var(--layout-card-width);
+ /* Its own scroll, so a long list of funding accounts scrolls inside the panel
+    rather than pushing it off the viewport on a short screen. */
+ max-height: 80vh;
+ overflow-y: auto;
+ padding: var(--space-6) var(--space-5);
+ border-radius: var(--radius-xl);
+ background-color: var(--color-surface-panel);
+ color: var(--color-content-primary);
+ box-shadow: var(--shadow-overlay);
+}
+
+/* The panel takes focus when it opens, and a focused container that paints no
+   ring reads as nothing having happened. */
+.pocketDelete__panel:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketDelete__title {
+ margin: 0;
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-primary);
+ text-wrap: balance;
+}
+
+.pocketDelete__body {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-regular);
+ line-height: 1.5;
+ color: var(--color-content-secondary);
+}
+
+.pocketDelete__error {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ color: var(--color-feedback-error-content);
+}
+
+/* What each account got back. A list and not a table: two cells per row need no
+   column headers, and a table would announce a structure this does not have. */
+.pocketDelete__freed {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ margin: 0;
+ padding: 0;
+ list-style: none;
+}
+
+.pocketDelete__freedRow {
+ display: flex;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-3);
+ padding-bottom: var(--space-2);
+ border-bottom: var(--border-width-thin) solid var(--color-content-secondary);
+}
+
+.pocketDelete__freedRow:last-child {
+ border-bottom: none;
+ padding-bottom: 0;
+}
+
+.pocketDelete__freedName {
+ min-width: 0;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-primary);
+ text-transform: capitalize;
+}
+
+.pocketDelete__freedAmount {
+ flex: 0 0 auto;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ /* Digits line up down the column so two amounts can be compared by eye. */
+ font-variant-numeric: tabular-nums;
+ color: var(--color-content-primary);
+}
+
+.pocketDelete__actions {
+ display: flex;
+ gap: var(--space-3);
+ justify-content: flex-end;
+ flex-wrap: wrap;
+}
+
+.pocketDelete__button {
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-5);
+ border: var(--border-width-thin) solid transparent;
+ border-radius: var(--radius-full);
+ font-family: inherit;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition:
+  background-color var(--motion-fast),
+  color var(--motion-fast);
+}
+
+.pocketDelete__button:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketDelete__button:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* Keeping the pocket is the safe answer, so it is the quiet one. */
+.pocketDelete__button--quiet {
+ border-color: var(--color-border-strong);
+ background-color: transparent;
+ color: var(--color-content-primary);
+}
+
+.pocketDelete__button--quiet:hover {
+ background-color: var(--color-surface-inverse);
+}
+
+.pocketDelete__button--quiet:active {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+/* The alert tone and not the error red. Deleting a pocket moves no money and
+   loses no history, so a colour that reads as damage would be overstating what
+   the button does. */
+.pocketDelete__button--confirm {
+ background-color: var(--color-status-alert);
+ color: var(--color-content-on-dark);
+}
+
+.pocketDelete__button--confirm:hover {
+ background-color: var(--color-financial-negative-border);
+}
+
+.pocketDelete__button--confirm:active {
+ background-color: var(--color-financial-negative-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .pocketDelete__button {
+  transition: none;
+ }
+}
+
+/* From 480px the panel takes more air; nothing reflows. */
+@media (min-width: 480px) {
+ .pocketDelete__panel {
+  padding: var(--space-8) var(--space-6);
+ }
+}

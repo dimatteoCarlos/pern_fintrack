@@ -17,6 +17,8 @@ import {
 } from '../../urlConfig.ts';
 import {
  CreatePocketBody,
+ DeletePocketResponse,
+ DeletePocketResult,
  EditPocketBody,
  PocketBoardPayload,
  PocketBoardResponse,
@@ -97,6 +99,27 @@ export const editPocket = async (
  const { data: responseBody } = await authFetch<PocketDetailResponse>(
   url_pocket_detail(pocketId),
   { method: 'PATCH', data: body },
+ );
+
+ return responseBody.data;
+};
+
+// Deletes a pocket and reports what it released.
+//
+// The one write here that does not answer with the detail payload, because the
+// screen that payload describes has just stopped existing. It answers with the
+// freed cash per account instead, which is the same promise the confirmation
+// made — kept in the server's own figures rather than recomputed by a screen
+// that would then be deriving the answer it was given.
+//
+// No money moves. The cash was only ever committed to a goal, so it simply
+// stops being committed and returns to the account's unassigned cash.
+export const deletePocket = async (
+ pocketId: number,
+): Promise<DeletePocketResult> => {
+ const { data: responseBody } = await authFetch<DeletePocketResponse>(
+  url_pocket_detail(pocketId),
+  { method: 'DELETE' },
  );
 
  return responseBody.data;
