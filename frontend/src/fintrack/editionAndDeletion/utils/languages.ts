@@ -97,7 +97,6 @@ reportTitleWithImpact:string;
  debtor:string;
  investment:string;
  bank:string;
- pocket_saving:string;
 
  //auto close in
  autoCloseIn:string;
@@ -214,7 +213,6 @@ reportTitleWithImpact:"Impact on Affected Accounts",
  debtor:"Debtor/Lender",
  investment:"Investment",
  bank:"Bank",
- pocket_saving:"Saving",
 
  //auto close in
  autoCloseIn:'Auto Close in ',
@@ -324,7 +322,6 @@ totalNetAdjustment: 'Ajuste Neto Total:',
  debtor:"Préstamo",
  investment:"Inversión",
  bank:"Banco",
- pocket_saving:"Ahorro",
 
  //auto close in
  autoCloseIn:"Cierre automático en ",

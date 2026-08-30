@@ -6,7 +6,6 @@ import {
   BaseAccountEditFormData,
   CategoryBudgetEditFormData,
   DebtorAccountEditFormData,
-  PocketSavingEditFormData,
 } from './editSchemas';
 import { AccountListType } from '../../types/responseApiTypes';
 // import { capitalize } from '../../helpers/functions';
@@ -15,7 +14,6 @@ import { AccountListType } from '../../types/responseApiTypes';
 export type FieldConfigType = {
   fieldName: keyof (BaseAccountEditFormData &
     CategoryBudgetEditFormData &
-    PocketSavingEditFormData &
     DebtorAccountEditFormData);
   label: string;
   inputType: 'text' | 'number' | 'textarea' | 'select' | 'date'; //as FieldInputType in input constraints
@@ -140,45 +138,6 @@ export const ACCOUNT_EDIT_SCHEMA_CONFIG: AccountSchemaConfigType = {
       inputType: 'textarea',
       isEditable: true,
       isRequired: false,
-      placeholder: 'Max 90 chars',
-    },
-  ],
-
-  // 💰 Pocket Saving
-  pocket_saving: [
-    {
-      fieldName: 'account_name',
-      label: 'Pocket Name',
-      inputType: 'text',
-      isEditable: true,
-      isRequired: true,
-      placeholder: 'e.g., Vacation Fund',
-    },
-    {
-      fieldName: 'target',
-      label: 'Savings Goal Amount',
-      inputType: 'number',
-      isEditable: true,
-      isRequired: true,
-      //  placeholder: '0.00',
-      helpText: 'Changing this will update the progress percentage.',
-      isCritical: true,
-    },
-    {
-      fieldName: 'desired_date',
-      label: 'Target Completion Date',
-      inputType: 'date',
-      isEditable: true,
-      isRequired: true,
-      helpText: 'Today or a later date.',
-      isCritical: true,
-    },
-    {
-      fieldName: 'note',
-      label: 'Note',
-      inputType: 'textarea',
-      isEditable: true,
-      isRequired: true,
       placeholder: 'Max 90 chars',
     },
   ],

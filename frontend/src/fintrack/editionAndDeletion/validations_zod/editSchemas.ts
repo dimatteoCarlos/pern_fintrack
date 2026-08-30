@@ -1,12 +1,8 @@
 //frontend/src/editionAndDeletion/validations/editSchemas.ts
 import { z } from 'zod';
-import {
-  ERROR_MESSAGES,
-  DB_MAX_LENGTHS,
-} from '../../validations/utils/constants.ts';
+import { DB_MAX_LENGTHS } from '../../validations/utils/constants.ts';
 import {
   noteSchema,
-  numberSchema,
   optionalButNotEmptySchema,
 } from './commonEditionSchemas.ts';
 
@@ -21,35 +17,6 @@ export const baseAccountEditSchema = z.object({
 
 //Zod infers a static type from your schema definitions. You can extract this type with the z.infer<> utility and use it however you like.
 export type BaseAccountEditFormData = z.infer<typeof baseAccountEditSchema>;
-
-//💰 2.POCKET SAVING SCHEMA
-export const pocketSavingEditSchema = baseAccountEditSchema.extend({
-  target: numberSchema.optional(),
-
-  //opcion para que acepte ambos tipos de fecha en string o en date.
-  desired_date: z
-    .union([
-      z.string().transform((str) => new Date(str)), // ← Si viene string, convertir a Date
-      z.date(), // ← Si ya viene Date, dejarlo igual
-    ])
-    .refine(
-      (date) => {
-        // >= and not >: today is a valid deadline. Under > the answer depended
-        // on the time of day the picker stamped — a date picked as today at
-        // 14:00 passed and the same day at 00:00 failed. The server holds the
-        // same rule on the owner's calendar, which is the one that decides.
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return date >= today;
-      },
-      {
-        message: ERROR_MESSAGES.INVALID_DATE_FUTURE,
-      },
-    )
-    .optional(),
-});
-
-export type PocketSavingEditFormData = z.infer<typeof pocketSavingEditSchema>;
 
 // Smallest amount the server can store: it rounds to two decimals, so 0.004
 // becomes 0.00 and is rejected. Mirrors MINIMUM_AMOUNT in core/money.js.
@@ -98,7 +65,6 @@ Record<string, z.ZodObject<Record<string, z.ZodTypeAny>>> = {
   bank: baseAccountEditSchema,
   investment: baseAccountEditSchema,
   income_source: baseAccountEditSchema,
-  pocket_saving: pocketSavingEditSchema,
   category_budget: categoryBudgetEditShema,
   debtor: debtorAccountEditSchema,
 };

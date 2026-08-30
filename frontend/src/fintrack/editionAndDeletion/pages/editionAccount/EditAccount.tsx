@@ -69,9 +69,8 @@ import EditSvg from '../../../../assets/pencil02Svg.svg?react';
 import '../../../pages/forms/styles/forms-styles.css';
 import './styles/editAccount-styles.css';
 
-// 🔧 UTILITIES - DATE PARSING AND DATA TRANSFORMATION
+// 🔧 UTILITIES - DATA TRANSFORMATION
 
-import { parsePostgresDate } from '../../utils/dateUtils.ts';
 import { normalizeBudgetError } from '../../../helpers/normalizeBudgetError.ts';
 import { formatBudgetMonthLabel } from '../../../helpers/functions.ts';
 // import { debounce } from '../../utils/debounce.ts';
@@ -250,11 +249,11 @@ export function EditAccount(): JSX.Element {
         const val = accountData[key];
 
         if (val !== undefined) {
-          // 🗓️ DATE FIELD HANDLING - SPECIAL PARSING FOR DATE FIELDS
+          // No date field survives here. The deadline of a pocket was the only
+          // one this editor ever parsed, and a pocket is edited on its own
+          // screen now — this editor no longer reaches one.
           initialData[field.fieldName] =
-            field.fieldName === 'desired_date' && typeof val === 'string'
-              ? parsePostgresDate(val)
-              : (val as GenericEditFormData[keyof GenericEditFormData]);
+            val as GenericEditFormData[keyof GenericEditFormData];
         }
       });
       pristineDataRef.current = initialData;
