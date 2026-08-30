@@ -397,6 +397,62 @@ export const transferBetweenAccounts = async (req, res, next) => {
     });
     //---------DEBUG---------
 
+    // The movement's day, resolved HERE because the conversion below now
+    // depends on it. Only the checks that need nothing but the owner's
+    // calendar run at this point: the shape of the day, that it is not in the
+    // future, and that it falls inside the current month. The check against
+    // the accounts' opening days stays where it was, inside the transaction
+    // that reads those accounts.
+    //
+    // The conversion could not simply be moved down to join it. That block
+    // sits inside an open transaction, and putting an HTTP call to a rate
+    // provider in there would hold the transaction open for the length of a
+    // network round trip. So the half of the validation that needs no account
+    // row comes up instead, which is the only direction that is safe.
+    //
+    // The zone is read from the pool rather than the transaction client for
+    // the same reason, and it is read once: the block below reuses this value
+    // instead of asking again.
+    const { transactionActualDate: actualDate } = req.body;
+
+    const timeZone = await getUserTimeZone(pool, userId);
+    const requestedDay = typeof actualDate === 'string' ? actualDate.trim() : '';
+    const todayForOwner = todayInZone(timeZone);
+
+    if (requestedDay !== '') {
+      if (!isCalendarDate(requestedDay)) {
+        throw createError(
+          400,
+          `transactionActualDate must be a calendar day, YYYY-MM-DD`,
+        );
+      }
+
+      if (requestedDay > todayForOwner) {
+        throw createError(
+          422,
+          `A movement cannot be dated after today, ${todayForOwner}`,
+        );
+      }
+
+      // The editing window is the current calendar month on the owner's calendar.
+      // Taking the month off today gives its first day in the same zone, with no
+      // second conversion that could disagree with the one above.
+      const monthFloor = `${todayForOwner.slice(0, 7)}-01`;
+
+      if (requestedDay < monthFloor) {
+        throw createError(
+          422,
+          `A movement cannot be dated before the current month, which starts on ${monthFloor}`,
+        );
+      }
+    }
+
+    // Null on today, which is what routes the conversion: no date means the
+    // current rate through the orchestrator, exactly as before. A day in the
+    // past means the rate that was in force on it.
+    const asOfDay =
+      requestedDay !== '' && requestedDay < todayForOwner ? requestedDay : null;
+
     // Perform FX conversion to USD
     let convertedAmount = originalAmountValue;
     let exchangeRate = 1.0;
@@ -416,10 +472,15 @@ export const transferBetweenAccounts = async (req, res, next) => {
         originalAmountValue,
         originalCurrencyCode,
         ACCOUNTING_CURRENCY_CODE,
+        asOfDay,
       );
 
       convertedAmount = conversion.amount.toNumber();
       exchangeRate = conversion.rate;
+      // Carries the effective day on a back-dated movement, as provider@day.
+      // exchange_rate_timestamp beside it keeps meaning what its name says —
+      // when the figure was obtained — because every row already written holds
+      // a real fetch instant and one column cannot hold two meanings.
       exchangeRateSource = conversion.source;
       exchangeRateTimestamp = conversion.fetchedAt;
       //------DEBUG-----
@@ -544,8 +605,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //   err.status = 400;
     //   throw err;
     // }
-    const { transactionActualDate: actualDate } = req.body;
-
     // =============================
     //=== Begin transaction========
     await client.query('BEGIN');
@@ -595,43 +654,15 @@ export const transferBetweenAccounts = async (req, res, next) => {
       );
     }
 
-    // The movement's date. Absent or empty means now, which is what every form
-    // but PnL sends today. It is validated here, below both lookups, because the
-    // floor is the later of the current month's first day and the openings of the
-    // accounts the owner selected.
-    const timeZone = await getUserTimeZone(client, userId);
-    const requestedDay = typeof actualDate === 'string' ? actualDate.trim() : '';
+    // The rest of the movement's date, the half that could not be hoisted above
+    // the conversion: this floor is the later of the openings of the two
+    // accounts the owner selected, and those rows are read by the transaction
+    // that is now open. The shape of the day, the future check and the month
+    // floor already ran before the conversion, on the same timeZone and
+    // todayForOwner reused here.
     let transaction_actual_date = new Date();
 
     if (requestedDay !== '') {
-      if (!isCalendarDate(requestedDay)) {
-        throw createError(
-          400,
-          `transactionActualDate must be a calendar day, YYYY-MM-DD`,
-        );
-      }
-
-      const today = todayInZone(timeZone);
-
-      if (requestedDay > today) {
-        throw createError(
-          422,
-          `A movement cannot be dated after today, ${today}`,
-        );
-      }
-
-      // The editing window is the current calendar month on the owner's calendar.
-      // Taking the month off `today` gives its first day in the same zone, with no
-      // second conversion that could disagree with the one above.
-      const monthFloor = `${today.slice(0, 7)}-01`;
-
-      if (requestedDay < monthFloor) {
-        throw createError(
-          422,
-          `A movement cannot be dated before the current month, which starts on ${monthFloor}`,
-        );
-      }
-
       // Calendar days on both sides, never instants. account_start_date holds an
       // arbitrary wall-clock time, so an account opened at 20:00 would refuse a
       // movement on its own opening day once that day is anchored at noon.
@@ -664,7 +695,11 @@ export const transferBetweenAccounts = async (req, res, next) => {
       // Composed once, in SQL, and reused by both legs so the two halves of one
       // entry cannot land in different months. A past day is anchored at noon in
       // the owner's zone; today keeps the real current instant.
-      if (requestedDay < today) {
+      //
+      // The same comparison that produced asOfDay above, so a movement valued at
+      // a past rate is always the one stamped with a past instant. If these two
+      // ever disagreed, a row would carry one day's rate under another day's date.
+      if (requestedDay < todayForOwner) {
         const composed = await client.query({
           text: `SELECT (($1::date + TIME '12:00') AT TIME ZONE $2) AS instant`,
           values: [requestedDay, timeZone],
