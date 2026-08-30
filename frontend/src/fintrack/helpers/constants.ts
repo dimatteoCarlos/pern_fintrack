@@ -2,7 +2,6 @@
 
 import {
   AccountListType,
-  PocketSavingAccountListType,
   TransactionsAccountApiResponseType,
 } from '../types/responseApiTypes';
 import {
@@ -179,26 +178,6 @@ export const ACCOUNT_DEFAULT: AccountListType[] = [
   //       account_starting_amount:0,
   //    account_start_date:new Date()
   // },
-];
-
-export const DEFAULT_POCKET_ACCOUNT_LIST: PocketSavingAccountListType[] = [
-  {
-    account_id: Infinity,
-    account_name: '',
-    note: '',
-    account_balance: 0,
-    target: 0,
-    currency_code: DEFAULT_CURRENCY,
-    desired_date: new Date(),
-    // The placeholder claims nothing about a row that does not exist yet.
-    // 'default' is the reading that withholds the pace figures rather than
-    // serving them off a date this constant invented.
-    desired_date_source: 'default',
-    account_start_date: new Date(),
-    account_type_id: Infinity,
-    account_type_name: 'pocket_saving',
-    user_id: '',
-  },
 ];
 
 //account detail transactions

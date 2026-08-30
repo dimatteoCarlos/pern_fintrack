@@ -15,7 +15,6 @@ import DebtsAccountsSvg from '../../../assets/accountingDashboardSvg/debtsAccoun
 import ExpenseAccountsSvg from '../../../assets/accountingDashboardSvg/expenseAccountsSvg.svg?react';
 import IncomeAccountsSvg from '../../../assets/accountingDashboardSvg/incomeAccountsSvg.svg?react';
 import InvestmentAccountsSvg from '../../../assets/accountingDashboardSvg/investmentAccountsSvg.svg?react';
-import PocketsAccountsSvg from '../../../assets/accountingDashboardSvg/pocketsAccountsSvg.svg?react';
 // The disclosure affordance of every group heading. One asset, rotated when
 // the group opens, rather than a second drawing for the open state.
 import ArrowDownLightSvg from '../../../assets/ArrowDownLightSvg.svg?react';
@@ -48,7 +47,6 @@ const ACCOUNT_TYPE_DATA = {
   bank: { Icon: BankAccountSvg, name: 'bank' },
   investment: { Icon: InvestmentAccountsSvg, name: 'investment' },
   debtor: { Icon: DebtsAccountsSvg, name: 'debtor' },
-  pocket_saving: { Icon: PocketsAccountsSvg, name: 'pocket_saving' },
   category_budget: { Icon: ExpenseAccountsSvg, name: 'category_budget' },
   income_source: { Icon: IncomeAccountsSvg, name: 'income_source' },
   // No drawing of its own yet, so it borrows the debtor glyph by decision.
@@ -61,7 +59,6 @@ const ACCOUNT_TYPE_DETAIL_PAGE: { [key: string]: string } = {
   income_source: '/fintrack/overview/accounts',
   investment: '/fintrack/overview/accounts',
   debtor: '/fintrack/debts/debtors',
-  pocket_saving: '/fintrack/budget/pockets',
   category_budget: `/fintrack/budget/account`,
 };
 //---TYPE DEFINITIONS

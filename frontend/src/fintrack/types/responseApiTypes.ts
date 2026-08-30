@@ -2,7 +2,7 @@
 //API RESPONSE TYPES FROM BACKEND
 
 //API RESPONSE TYPE DEFINITIONS
-import { CurrencyType, DesiredDateSourceType } from './types';
+import { CurrencyType } from './types';
 
 //ACCOUNT BALANCE BY TYPE
 export type BalanceBankRespType = {
@@ -288,37 +288,6 @@ type DebtorAccountType = {
   exchange_rate_timestamp: Date | string;
   exchange_rate_target_currency_id: number;
 };
-//---------------------------
-//CREATE POCKET SAVING ACCOUNT
-export type CreatePocketSavingAccountApiResponseType = {
-  status: number;
-  data: PocketResponseDataType;
-  message: string;
-};
-
-interface PocketResponseDataType extends ResponseDataType {
-  new_pocket_saving_account: PocketSavingAccountType;
-}
-
-type PocketSavingAccountType = {
-  account_id: number;
-  note: string;
-  target: number; //| string;
-  desired_date: Date | string;
-  account_start_date: Date | string;
-  // currency_code: CurrencyType;
-  // account_type_name: pocket_saving
-
-  // FX audit fields. target is the accounting currency; original_target is what
-  // the user typed. See migration 015.
-  original_target: number;
-  original_currency_id: number;
-  exchange_rate: number;
-  exchange_rate_source: string;
-  exchange_rate_timestamp: Date | string;
-  exchange_rate_target_currency_id: number;
-};
-
 //---------------------------------
 //GET ACCOUNT BY TYPE. RESPONSE TYPE
 //BANK TYPE
@@ -359,40 +328,6 @@ export type CategoryBudgetAccountListType =
   remain?:number;
   statusAlert?:boolean;
   //account_starting_amount: number;
-};
-//--
-//pocket_saving type
-export type PocketSavingAccountsResponseType = {
-  status: number;
-  message: string;
-  data: {
-    rows: number;
-    accountList: PocketSavingAccountListType[]
-  };
-};
-
-export type PocketSavingAccountListType = {
-account_id: number;
-    account_name: string;
-    account_type_id: number;
-    account_type_name: string;
-    currency_id?: number;
-    currency_code: CurrencyType;
-    account_balance: number;
-    account_starting_amount?: number;
-    account_start_date: string | Date;
-    created_at?: Date;
-    updated_at?: Date;
-  target: number;
-  note: string;
-  desired_date: Date | string;
-  // Where desired_date came from. 'default' means the controller invented it
-  // because the caller sent none, and no pace figure derived from it may be
-  // rendered as one the user asked for. See migration 018.
-  desired_date_source: DesiredDateSourceType;
-  user_id:string;
-// account_starting_amount: number;
-// account_start_date: Date | string;
 };
 //---------------------------------
 //MOVEMENT TRANSFER BETWEEN ACCOUNTS

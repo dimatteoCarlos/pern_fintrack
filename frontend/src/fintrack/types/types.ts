@@ -118,7 +118,7 @@ export type InvestmentAccountType = {
 //-------
 export type MovementTransactionType = TransactionType | DebtsTransactionType;
 
-//transfer (between investment, bank and pocket_saving account types)
+//transfer (between investment, bank, category_budget and income_source account types)
 export type MovementInputDataType = {
   amount:string;
   origin: string;
