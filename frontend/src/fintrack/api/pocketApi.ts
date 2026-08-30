@@ -11,15 +11,21 @@
 
 import { authFetch } from '../../auth/auth_utils/authFetch.ts';
 import {
+ url_get_accounts_by_type,
+ url_pocket_allocations,
  url_pocket_board,
  url_pocket_create,
  url_pocket_detail,
+ url_pocket_releases,
 } from '../../urlConfig.ts';
 import {
  CreatePocketBody,
  DeletePocketResponse,
  DeletePocketResult,
  EditPocketBody,
+ PocketAllocationBody,
+ PocketEligibleAccount,
+ PocketEligibleAccountsResponse,
  PocketBoardPayload,
  PocketBoardResponse,
  PocketDetailPayload,
@@ -123,4 +129,60 @@ export const deletePocket = async (
  );
 
  return responseBody.data;
+};
+
+// Commits cash from one account to one goal, and answers with the whole screen
+// it changed.
+//
+// One decision moves the headline, the source breakdown and the history at
+// once, so the response is the detail payload rather than the row written — a
+// client handed the row would be deriving the other two from it, which is how a
+// screen comes to disagree with itself.
+//
+// The amount goes out positive. The sign belongs to the endpoint, never to the
+// payload.
+export const allocateToPocket = async (
+ pocketId: number,
+ body: PocketAllocationBody,
+): Promise<PocketDetailPayload> => {
+ const { data: responseBody } = await authFetch<PocketDetailResponse>(
+  url_pocket_allocations(pocketId),
+  { method: 'POST', data: body },
+ );
+
+ return responseBody.data;
+};
+
+// Releases cash back to the account's unassigned cash. Same body, same positive
+// amount, same answer; only the ceiling differs, and it is the server that
+// applies it.
+export const releaseFromPocket = async (
+ pocketId: number,
+ body: PocketAllocationBody,
+): Promise<PocketDetailPayload> => {
+ const { data: responseBody } = await authFetch<PocketDetailResponse>(
+  url_pocket_releases(pocketId),
+  { method: 'POST', data: body },
+ );
+
+ return responseBody.data;
+};
+
+// The accounts a commitment may draw on: banks, with what each has committed
+// and what it has left uncommitted attached by the read itself.
+//
+// Only banks. No route creates a cash account, and the figure means nothing on
+// an investment balance that is a market valuation nor on a debtor — so a wider
+// request would return rows the picker would have to filter out again, and rows
+// whose two pocket figures the server deliberately withholds.
+export const getPocketSourceAccounts = async (): Promise<
+ PocketEligibleAccount[]
+> => {
+ const { data: responseBody } =
+  await authFetch<PocketEligibleAccountsResponse>(
+   `${url_get_accounts_by_type}/?type=bank`,
+   { method: 'GET' },
+  );
+
+ return responseBody.data.accountList;
 };

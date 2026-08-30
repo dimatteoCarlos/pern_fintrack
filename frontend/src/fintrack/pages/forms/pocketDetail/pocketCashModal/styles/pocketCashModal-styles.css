@@ -1,0 +1,308 @@
+/* 💸 COMMIT AND RELEASE MODAL
+   One panel for both directions, on a cream data panel over the dark app.
+
+   Written on tokens only. Nothing here reads the undefined light-surface names
+   the older stylesheets of this module still carry. */
+
+.pocketCash__overlay {
+ position: fixed;
+ inset: 0;
+ z-index: var(--z-modal);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ padding: var(--space-4);
+ background-color: var(--color-surface-overlay);
+}
+
+.pocketCash__panel {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-3);
+ width: 100%;
+ max-width: var(--layout-card-width);
+ /* Its own scroll, so a long list of accounts scrolls inside the panel rather
+    than pushing it off a short viewport. */
+ max-height: 85vh;
+ overflow-y: auto;
+ padding: var(--space-6) var(--space-5);
+ border-radius: var(--radius-xl);
+ background-color: var(--color-surface-panel);
+ color: var(--color-content-primary);
+ box-shadow: var(--shadow-overlay);
+}
+
+.pocketCash__panel:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketCash__title {
+ margin: 0;
+ font-size: var(--font-size-lg);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-primary);
+ text-wrap: balance;
+ text-transform: capitalize;
+}
+
+.pocketCash__body {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ line-height: 1.5;
+ color: var(--color-content-secondary);
+}
+
+.pocketCash__empty {
+ margin: 0;
+ padding: var(--space-4) 0;
+ font-size: var(--font-size-sm);
+ color: var(--color-content-secondary);
+ text-align: center;
+}
+
+.pocketCash__error {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ color: var(--color-feedback-error-content);
+}
+
+/* ── The source picker ──────────────────────────────────────────────────── */
+
+.pocketCash__picker {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+}
+
+.pocketCash__source {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ width: 100%;
+ min-height: var(--size-touch-target);
+ padding: var(--space-3);
+ border: var(--border-width-thin) solid var(--color-content-secondary);
+ border-radius: var(--radius-md);
+ background-color: transparent;
+ color: var(--color-content-primary);
+ font-family: inherit;
+ text-align: left;
+ cursor: pointer;
+ transition:
+  background-color var(--motion-fast),
+  border-color var(--motion-fast);
+}
+
+.pocketCash__source:hover {
+ border-color: var(--color-border-strong);
+ background-color: var(--color-surface-inverse);
+}
+
+.pocketCash__source:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketCash__source:active {
+ background-color: var(--color-accent);
+}
+
+.pocketCash__source:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.pocketCash__source.is-selected {
+ border-color: var(--color-border-strong);
+ border-width: var(--border-width-thick);
+ background-color: var(--color-surface-inverse);
+}
+
+.pocketCash__sourceName {
+ /* index.css sets a font size on the universal selector, so an inline element
+    does not inherit the size of the line it sits in and must restate one. */
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: capitalize;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+}
+
+/* Three figures on one line, wrapping rather than truncating: each is a
+   complete statement and half of one says nothing. */
+.pocketCash__sourceFigures {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-1) var(--space-3);
+ font-size: var(--font-size-2xs);
+}
+
+.pocketCash__sourceFigure {
+ font-size: var(--font-size-2xs);
+ font-variant-numeric: tabular-nums;
+ color: var(--color-content-secondary);
+}
+
+/* The one the decision is bounded by. */
+.pocketCash__sourceFigure--ceiling {
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-primary);
+}
+
+/* ── The amount ─────────────────────────────────────────────────────────── */
+
+.pocketCash__label {
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-secondary);
+}
+
+.pocketCash__amountRow {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+}
+
+.pocketCash__amount {
+ flex: 1;
+ min-width: 0;
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-3);
+ border: var(--border-width-thin) solid var(--color-content-secondary);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-inverse);
+ color: var(--color-content-primary);
+ font-family: inherit;
+ font-size: var(--font-size-base);
+ font-variant-numeric: tabular-nums;
+}
+
+.pocketCash__amount:hover {
+ border-color: var(--color-border-strong);
+}
+
+.pocketCash__amount:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketCash__amount:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.pocketCash__ceiling {
+ margin: 0;
+ font-size: var(--font-size-2xs);
+ font-variant-numeric: tabular-nums;
+ color: var(--color-content-secondary);
+}
+
+/* ── Loading, and the actions ───────────────────────────────────────────── */
+
+.pocketCash__skeleton {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ pointer-events: none;
+}
+
+.pocketCash__skeletonRow {
+ height: var(--size-badge);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-disabled);
+ animation: pocketCash__pulse var(--motion-slow) ease-in-out infinite alternate;
+}
+
+@keyframes pocketCash__pulse {
+ from {
+  opacity: 0.5;
+ }
+ to {
+  opacity: 1;
+ }
+}
+
+.pocketCash__actions {
+ display: flex;
+ gap: var(--space-3);
+ justify-content: flex-end;
+ flex-wrap: wrap;
+ margin-top: var(--space-2);
+}
+
+.pocketCash__button {
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-5);
+ border: var(--border-width-thin) solid transparent;
+ border-radius: var(--radius-full);
+ font-family: inherit;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition:
+  background-color var(--motion-fast),
+  color var(--motion-fast);
+}
+
+.pocketCash__button:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketCash__button:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.pocketCash__button--quiet {
+ border-color: var(--color-border-strong);
+ background-color: transparent;
+ color: var(--color-content-primary);
+}
+
+.pocketCash__button--quiet:hover {
+ background-color: var(--color-surface-inverse);
+}
+
+.pocketCash__button--quiet:active {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.pocketCash__button--confirm {
+ background-color: var(--color-content-primary);
+ color: var(--color-content-on-dark);
+}
+
+.pocketCash__button--confirm:hover {
+ background-color: var(--color-surface-raised);
+}
+
+.pocketCash__button--confirm:active {
+ background-color: var(--color-surface-app);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .pocketCash__button,
+ .pocketCash__source,
+ .pocketCash__skeletonRow {
+  transition: none;
+  animation: none;
+ }
+}
+
+@media (min-width: 480px) {
+ .pocketCash__panel {
+  padding: var(--space-8) var(--space-6);
+ }
+}

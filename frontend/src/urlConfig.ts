@@ -267,3 +267,23 @@ export const url_pocket_create: string = BASE_URL_APP + 'pocket';
 // id space that happens to start at 1 as well.
 export const url_pocket_detail = (pocketId: number | string): string =>
  BASE_URL_APP + `pocket/${pocketId}`;
+
+// POST /api/fintrack/pocket/:pocketId/allocations
+// Commits cash from one account to one goal. The amount is always positive and
+// the client never sends a sign — the row is written negative on the server for
+// the opposite direction below.
+//
+// No money moves: the account's balance is untouched and its unassigned cash
+// shrinks by what was committed.
+export const url_pocket_allocations = (pocketId: number | string): string =>
+ BASE_URL_APP + `pocket/${pocketId}/allocations`;
+
+// POST /api/fintrack/pocket/:pocketId/releases
+// The same decision with the opposite effect, and the endpoint is the only
+// thing that distinguishes them: the same body, the same positive amount.
+//
+// The ceiling is different, and that difference is the reason the two are not
+// one URL with a flag: committing is bounded by what the ACCOUNT has left
+// uncommitted, releasing by what THIS POCKET holds from that one account.
+export const url_pocket_releases = (pocketId: number | string): string =>
+ BASE_URL_APP + `pocket/${pocketId}/releases`;

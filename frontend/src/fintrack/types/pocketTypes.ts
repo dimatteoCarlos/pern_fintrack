@@ -264,3 +264,53 @@ export type DeletePocketResponse = {
  message: string;
  data: DeletePocketResult;
 };
+
+// The body both money endpoints accept, and they accept the same one: the
+// schema behind them is a single strict object over these four keys, because
+// committing and releasing are the same decision with opposite effect and the
+// endpoint is the only thing that tells them apart.
+//
+// The amount is ALWAYS positive. The client never sends a sign — a release row
+// is written negative on the server — so a minus in the field would be a second
+// way to say a direction the URL has already said.
+export type PocketAllocationBody = {
+ sourceAccountId: number;
+ amount: number;
+ // The unit the amount was TYPED in, not the pocket's. The server converts and
+ // records the rate it used.
+ currency: CurrencyType;
+ // YYYY-MM-DD on the OWNER's calendar. When the decision was taken, never when
+ // the row was written: one agreed on Friday and typed on Monday is Friday's.
+ // Omitted means today.
+ allocationDate?: string;
+};
+
+// One account the owner may commit cash from.
+//
+// Served by the accounts-by-type read, which attaches the two pocket figures to
+// every bank row. The three amounts are shown side by side on purpose, so that
+// no single one of them can be read as "available": a pocket blocks no spending,
+// so the available balance is still the whole balance, and the remainder is
+// only the cash no plan has claimed.
+//
+// The two pocket figures are absent rather than zero when the allocation read
+// could not answer for the row. A zero there would state that nothing is
+// committed to an account nobody measured.
+export type PocketEligibleAccount = {
+ account_id: number;
+ account_name: string;
+ account_balance: number;
+ currency_code: CurrencyType;
+ allocated?: number;
+ unassignedCash?: number;
+ isOverAllocated?: boolean;
+};
+
+export type PocketEligibleAccountsResponse = {
+ status: number;
+ message: string;
+ data: {
+  rows: number;
+  accountList: PocketEligibleAccount[];
+ };
+};

@@ -242,3 +242,67 @@
   transition: none;
  }
 }
+
+/* The two money decisions, side by side. Committing is the primary one — a
+   pocket that nothing is committed to reports zero on every screen — and
+   releasing is offered only when something is actually held. */
+.pocketDetail__actions {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-3);
+ justify-content: center;
+ margin-top: var(--space-6);
+}
+
+.pocketDetail__action {
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-6);
+ border: var(--border-width-thin) solid var(--color-border-inverse);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ font-family: inherit;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition:
+  background-color var(--motion-fast),
+  color var(--motion-fast);
+}
+
+.pocketDetail__action:hover {
+ background-color: var(--color-surface-inverse);
+ color: var(--color-content-primary);
+}
+
+.pocketDetail__action:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.pocketDetail__action:active {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.pocketDetail__action:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+.pocketDetail__action--primary {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.pocketDetail__action--primary:hover {
+ background-color: var(--color-content-on-dark-muted);
+ color: var(--color-accent-content);
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .pocketDetail__action {
+  transition: none;
+ }
+}

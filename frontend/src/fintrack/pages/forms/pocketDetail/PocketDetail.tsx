@@ -28,6 +28,9 @@ import {
 import SummaryPocketDetailBox from './summaryPocketDetailBox/SummaryPocketDetailBox.tsx';
 import PocketEditLink from './PocketEditLink.tsx';
 import DeletePocketModal from './deletePocketModal/DeletePocketModal.tsx';
+import PocketCashModal, {
+ PocketCashDirection,
+} from './pocketCashModal/PocketCashModal.tsx';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
@@ -78,6 +81,12 @@ function PocketDetail() {
  // a route would unmount the card to ask it.
  const [isConfirmingDeletion, setIsConfirmingDeletion] =
   useState<boolean>(false);
+
+ // Which money decision is open, or none. One piece of state and not two
+ // flags: the two are alternatives, and two booleans would admit a state
+ // where both panels are open at once.
+ const [cashDirection, setCashDirection] =
+  useState<PocketCashDirection | null>(null);
 
  useEffect(() => {
   if (!hasValidId) return;
@@ -322,6 +331,29 @@ function PocketDetail() {
      )}
     </div>
 
+    {/* The two decisions the module exists for. Releasing is offered only
+        when something is actually held: a control that can only refuse is
+        worse than one that is not there. */}
+    <div className='pocketDetail__actions'>
+     <button
+      type='button'
+      className='pocketDetail__action pocketDetail__action--primary'
+      onClick={() => setCashDirection('allocate')}
+     >
+      Commit cash
+     </button>
+
+     {sources.length > 0 && (
+      <button
+       type='button'
+       className='pocketDetail__action'
+       onClick={() => setCashDirection('release')}
+      >
+       Release cash
+      </button>
+     )}
+    </div>
+
     {/* Last on the screen and not in the header beside the editor. Deleting is
         the one action here that cannot be undone by repeating it, so it sits
         past everything the owner came to read rather than one stray tap from
@@ -334,6 +366,17 @@ function PocketDetail() {
      Delete this pocket
     </button>
    </article>
+
+   {cashDirection && (
+    <PocketCashModal
+     pocketId={pocket.pocketId}
+     pocketName={pocket.name}
+     currency={currency}
+     direction={cashDirection}
+     sources={sources}
+     onClose={() => setCashDirection(null)}
+    />
+   )}
 
    {isConfirmingDeletion && (
     <DeletePocketModal
