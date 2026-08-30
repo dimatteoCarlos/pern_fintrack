@@ -17,6 +17,7 @@ import useFormManager from '../../../hooks/useFormManager.ts';
 
 // Zustand store
 import useBalanceStore from '../../../stores/useBalanceStore.ts';
+import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
 import { notifyTransactionRecorded } from '../../../stores/transactionEvents.ts';
 //---------------------------
 // 🌐Endpoints and constants
@@ -43,9 +44,14 @@ import type {
 
 import type {
   AccountByTypeResponseType,
+  AccountListType,
   MovementTransactionResponseType,
   BalanceBankRespType,
 } from '../../../types/responseApiTypes.ts';
+
+// 🧮 Presentation helpers
+import { currencyFormat } from '../../../helpers/functions.ts';
+import { isUnbudgeted } from '../../../helpers/budgetStatus.ts';
 
 //-------------------------------------
 // 🛡️ Zod - Schema and data type validation
@@ -196,6 +202,86 @@ function Transfer(): JSX.Element {
   // });
 
   //---------------------------------
+  // 📡 This month's spend against this month's budget, joined into the list
+  // above rather than replacing it. The account/type fetch is generic — its URL
+  // is built from the origin type — and for a bank or an investment origin the
+  // running balance it carries is the right figure. Only the Rev.Expense
+  // origin, a category_budget account, reads the wrong window from it: there
+  // account_balance is a lifetime accumulator, everything the category has
+  // consumed since it opened.
+  const isCategoryOrigin = formData.originAccountType === 'category_budget';
+
+  // The month the figures report on. A constant while the tracker has no date
+  // control; once the back-dating datepicker lands it becomes the month of the
+  // date in the form, and only this line changes. Undefined travels as an
+  // omitted month, which is what asks the server to resolve the current one on
+  // the owner's calendar rather than on a browser clock.
+  const budgetMonth: string | undefined = undefined;
+
+  const budgetAccounts = useBudgetStatusStore((state) => state.accounts);
+  const isLoadingBudgetStatus = useBudgetStatusStore(
+    (state) => state.isLoading,
+  );
+  const fetchBudgetStatus = useBudgetStatusStore((state) => state.fetchStatus);
+
+  // Only the category branch asks for anything: a bank or investment origin
+  // needs no budget figure and must not pay for a request. reloadTrigger is a
+  // dependency because a recorded movement invalidates the store's memo, and
+  // this is what asks again for it.
+  useEffect(() => {
+    if (!isCategoryOrigin) return;
+
+    void fetchBudgetStatus(budgetMonth);
+  }, [isCategoryOrigin, fetchBudgetStatus, budgetMonth, reloadTrigger]);
+
+  // Joined on account_id, the one key both payloads carry. A name is what the
+  // dropdown submits, not what identifies a row.
+  const budgetStatusByAccountId = useMemo(
+    () => new Map(budgetAccounts.map((account) => [account.accountId, account])),
+    [budgetAccounts],
+  );
+
+  // One implementation for both origin memos below. They carried the same
+  // template twice, so a correction applied to one of them would have printed a
+  // different figure depending only on whether a destination was already
+  // chosen.
+  const buildOriginLabel = useCallback(
+    (acc: AccountListType): string => {
+      if (!isCategoryOrigin) {
+        return `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`;
+      }
+
+      const status = budgetStatusByAccountId.get(acc.account_id);
+
+      // The account's identity survives while its status is on the wire or
+      // absent; its figures do not. Falling back to account_balance here would
+      // serve the lifetime number under a label claiming the month — the exact
+      // defect this removes. Nothing budgeted and nothing spent is no budget at
+      // all, and the budget screens print nothing there either.
+      if (
+        !status ||
+        isLoadingBudgetStatus ||
+        !Number.isFinite(status.actualSpent) ||
+        !Number.isFinite(status.budgetAmount) ||
+        isUnbudgeted(status.budgetAmount, status.actualSpent)
+      ) {
+        return acc.account_name;
+      }
+
+      // The currency travels once: currencyFormat emits the symbol itself, so
+      // the loose currency code the other branch prefixes would say it twice.
+      const spent = currencyFormat(status.currency, status.actualSpent, 'en-US');
+      const budget = currencyFormat(
+        status.currency,
+        status.budgetAmount,
+        'en-US',
+      );
+
+      return `${acc.account_name} (${spent} / ${budget})`;
+    },
+    [isCategoryOrigin, budgetStatusByAccountId, isLoadingBudgetStatus],
+  );
+  //---------------------------------
   //--- DATA TRANSFORMATIONS
   // 🧠 Memoization: Account Options
   const optionsOriginAccounts = useMemo(() => {
@@ -211,11 +297,15 @@ function Transfer(): JSX.Element {
     return originAccountList.length
       ? originAccountList.map((acc) => ({
           value: acc.account_name,
-          label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`,
+          label: buildOriginLabel(acc),
           // account_id: acc.account_id,
         }))
       : ACCOUNT_OPTIONS_DEFAULT;
-  }, [originAccountsResponse?.data.accountList, fetchedErrorOriginAccounts]);
+  }, [
+    originAccountsResponse?.data.accountList,
+    fetchedErrorOriginAccounts,
+    buildOriginLabel,
+  ]);
   //-------------------------------------
   //filtering origin account list
   const filteredOriginOptions = useMemo(() => {
@@ -233,12 +323,13 @@ function Transfer(): JSX.Element {
     //map to dropdown format without account_id
     return filteredAccounts.map((acc) => ({
       value: acc.account_name,
-      label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`,
+      label: buildOriginLabel(acc),
     }));
   }, [
     formData.destinationAccountId,
     originAccountsResponse?.data.accountList,
     optionsOriginAccounts,
+    buildOriginLabel,
   ]);
 
   //----account options for dropdown of origin
