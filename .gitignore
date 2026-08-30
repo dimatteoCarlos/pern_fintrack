@@ -97,6 +97,13 @@ SCRIPTS
 scripts/
 *scripts"backen/.gitignore" 
 
+# ===============================
+# 🌿 AGENT WORKTREES
+# ===============================
+# Isolated git worktrees a session may create to work off the branch. They are
+# a scratch checkout of this same repository, never source.
+.claude/worktrees/
+
 # =============================
 #plan docs
 plan-docs/
