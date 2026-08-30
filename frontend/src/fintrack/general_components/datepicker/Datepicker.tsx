@@ -18,12 +18,12 @@ type DatePickerProps = {
   date: Date;
   changeDate: (selectedDate: Date) => void;
   variant?: VariantType;
-  isReset?: boolean;
   popperClassName?: string;
-  // The earliest day the calendar offers. Optional, so every existing caller
-  // keeps the 1900 floor below; a caller that passes one is stating a rule its
-  // own form has, not changing the component's default.
+  // The earliest and the latest day the calendar offers. Both optional, so every
+  // existing caller keeps the 1900 and 2100 bounds below; a caller that passes
+  // one is stating a rule its own form has, not changing the component's default.
   minDate?: Date;
+  maxDate?: Date;
 };
 
 // ⚙️ Config estándar
@@ -56,6 +56,7 @@ function Datepicker({
   variant,
   popperClassName,
   minDate,
+  maxDate,
 }: DatePickerProps) {
   const handleChange = React.useCallback(
     (selectedDate: Date | null) => {
@@ -80,7 +81,7 @@ function Datepicker({
       placeholderText='DD/MM/YYYY'
       dateFormat={DATE_FORMAT}
       minDate={minDate ?? MIN_DATE}
-      maxDate={MAX_DATE}
+      maxDate={maxDate ?? MAX_DATE}
       shouldCloseOnSelect
       customInput={<ReadOnlyInput />}
       popperClassName={popperClassName}

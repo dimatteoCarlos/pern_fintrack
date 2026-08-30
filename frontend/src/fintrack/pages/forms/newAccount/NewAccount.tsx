@@ -432,7 +432,6 @@ function NewAccount() {
                     changeDate={changeStartingPoint}
                     date={accountData.date}
                     variant={'form'}
-                    isReset={isReset}
                     // disabled={isFormDisabled}
                   ></FormDatepicker>
                 </div>

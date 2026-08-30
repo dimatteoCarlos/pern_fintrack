@@ -569,7 +569,6 @@ function PnL(): JSX.Element {
                   changeDate={changeDate}
                   date={formInputData.date ?? new Date()}
                   variant={'tracker'}
-                  isReset={isReset}
                   popperClassName='pnl-datepicker-popper'
                 />
               </div>
