@@ -7,7 +7,6 @@ import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../../auth/hooks/useAuth.ts';
 
 // UI COMPONENTS
-import SavingGoals from './components/SavingGoals.tsx';
 import AccountBalance from './components/AccountBalance.tsx';
 import MonthlyAverage from './components/MonthlyAverage.tsx';
 import LastMovements, {
@@ -19,14 +18,12 @@ import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 
 //ENDPOINTS
 import {
-  url_get_total_account_balance_by_type,
   url_monthly_TotalAmount_ByType,
   dashboardMovementTransactions,
 } from '../../../urlConfig.ts';
 
 //TYPES
 import {
-  BalancePocketRespType,
   FinancialDataRespType,
   LastMovementRespType,
   YearlyTotalsType,
@@ -50,12 +47,10 @@ export type CreateNewAccountPropType = {
 // const userId = import.meta.env.VITE_USER_ID;
 //---TYPE OF API RESPONSE
 export type ApiRespDataType = {
-  SavingGoals: BalancePocketRespType | null;
   MonthlyTotalAmountByType: FinancialDataRespType | null;
   MovementExpenseTransactions: LastMovementRespType | null;
   MovementDebtTransactions: LastMovementRespType | null;
   MovementIncomeTransactions: LastMovementRespType | null;
-  MovementPocketTransactions: LastMovementRespType | null;
   MovementInvestmentTransactions: LastMovementRespType | null;
   MovementPnLTransactions: LastMovementRespType | null;
 };
@@ -63,29 +58,22 @@ export type ApiRespDataType = {
 type KPIEndpointType = {
   key: keyof ApiRespDataType;
   url: string;
-  type: BalancePocketRespType | FinancialDataRespType | LastMovementRespType;
+  type: FinancialDataRespType | LastMovementRespType;
 };
 
 //type of state data to render
 type KPIDataStateType = {
-  SavingGoals: BalancePocketRespType | null; //??
   MonthlyMovementKPI: ResultType | null;
   YearlyTotals: YearlyTotalsType | null;
   LastExpenseMovements: LastMovementType[] | null;
   LastDebtMovements: LastMovementType[] | null;
   LastIncomeMovements: LastMovementType[] | null;
-  LastPocketMovements: LastMovementType[] | null;
   LastInvestmentMovements: LastMovementType[] | null;
   LastPnLMovements: LastMovementType[] | null;
 };
 //-----------------------------------------
 //CONFIG of DATA TO BE FETCHED
 const overviewKPIendpoints: KPIEndpointType[] = [
-  {
-    key: 'SavingGoals',
-    url: `${url_get_total_account_balance_by_type}/?type=pocket_saving`,
-    type: {} as BalancePocketRespType,
-  },
   {
     key: 'MonthlyTotalAmountByType',
     url: `${url_monthly_TotalAmount_ByType}?type=expense`,
@@ -104,11 +92,6 @@ const overviewKPIendpoints: KPIEndpointType[] = [
   {
     key: 'MovementIncomeTransactions',
     url: `${dashboardMovementTransactions}?start=&end=&movement=income`,
-    type: {} as LastMovementRespType,
-  },
-  {
-    key: 'MovementPocketTransactions',
-    url: `${dashboardMovementTransactions}?start=&end=&movement=pocket`,
     type: {} as LastMovementRespType,
   },
   {
@@ -133,13 +116,11 @@ function Overview() {
   // console.log({ originRoute });
   //-- STATES----
   const [kpiData, setKpiData] = useState<KPIDataStateType>({
-    SavingGoals: null,
     MonthlyMovementKPI: null,
     YearlyTotals: null,
     LastExpenseMovements: null,
     LastDebtMovements: null,
     LastIncomeMovements: null,
-    LastPocketMovements: null,
     LastInvestmentMovements: null,
     LastPnLMovements: null,
   });
@@ -171,11 +152,6 @@ function Overview() {
           throw new Error('No data received from API');
         }
         //----------------
-        const savingGoalsData =
-          result.SavingGoals.status === 'success'
-            ? result.SavingGoals.data
-            : null;
-        //---
         const monthlyAmounts =
           result.MonthlyTotalAmountByType.status === 'success'
             ? result.MonthlyTotalAmountByType?.data?.data.monthlyAmounts
@@ -284,38 +260,6 @@ function Overview() {
               },
             )
           : null;
-        //---
-        const movementPocketTransactionsData =
-          result.MovementPocketTransactions.status === 'success'
-            ? result.MovementPocketTransactions?.data?.data
-            : null;
-
-        const movementPocketTransactions = movementPocketTransactionsData
-          ? Array.from(
-              { length: movementPocketTransactionsData.length },
-              (_, i) => {
-                const {
-                  account_name,
-                  amount,
-                  description,
-                  note,
-                  transaction_actual_date,
-                  currency_code,  transaction_id,
-                } = movementPocketTransactionsData[i];
-
-                const obj = {
-                  accountName: account_name,
-                  record: amount, //data? or title?
-                  description: description,
-                  note,
-                  date: transaction_actual_date,
-                  currency: currency_code, transactionId: transaction_id, 
-
-                };
-                return { ...obj };
-              },
-            )
-          : null;
         //--------------------------------
         const movementInvestmentTransactionsData =
           result.MovementInvestmentTransactions.status === 'success'
@@ -381,13 +325,11 @@ function Overview() {
           : null;
         //-------------
         setKpiData({
-          SavingGoals: savingGoalsData,
           MonthlyMovementKPI: totalAndMonthlyAmount,
           YearlyTotals: yearlyTotals,
           LastExpenseMovements: movementExpenseTransactions,
           LastDebtMovements: movementDebtTransactions,
           LastIncomeMovements: movementIncomeTransactions,
-          LastPocketMovements: movementPocketTransactions,
           LastInvestmentMovements: movementInvestmentTransactions,
           LastPnLMovements: movementPnLTransactions,
         });
@@ -432,9 +374,6 @@ function Overview() {
           </div>
         )}
 
-        <SavingGoals data={kpiData.SavingGoals} />
-        {/*  */}
-
         <MonthlyAverage
           data={kpiData.MonthlyMovementKPI}
           yearlyTotals={kpiData.YearlyTotals}
@@ -475,11 +414,6 @@ function Overview() {
             title='Last Movements (income)'
           />
         }
-
-        <LastMovements
-          data={kpiData.LastPocketMovements}
-          title='Last Movements (pocket)'
-        />
 
         <LastMovements
           data={kpiData.LastInvestmentMovements}

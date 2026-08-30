@@ -13,7 +13,6 @@ import { url_get_total_account_balance_by_type } from '../../../urlConfig.ts';
 import {
   BalanceBankRespType,
   BalanceIncomeRespType,
-  BalancePocketRespType,
   DebtorRespType,
 } from '../../types/responseApiTypes.ts';
 
@@ -93,22 +92,6 @@ function OverviewLayout() {
   //   // investmentBalanceError,
   //   investmentBalanceStatus,})
   // );
-  //--Pocket accounts total balance
-  const {
-    apiData: pocketBalanceApiData,
-    isLoading: pocketBalanceIsLoading,
-    error: pocketBalanceError,
-    // status: pocketBalanceStatus,
-  } = useFetch<BalancePocketRespType>(
-    `${url_get_total_account_balance_by_type}/?type=pocket_saving`,
-  );
-  //  console.log(
-  //   '🚀 ~ OverviewLayout ~ pocketBalanceApiData:',JSON.stringify({
-  //   // pocketBalanceApiData,
-  //   // pocketBalanceIsLoading,
-  //   // pocketBalanceError,
-  //   // pocketBalanceStatus,})
-  // );
   //--debtor accounts total balance
   const {
     apiData: debtorBalanceApiData,
@@ -141,9 +124,6 @@ function OverviewLayout() {
     const totalBankBalance =
       Number(bankBalanceApiData?.data?.total_balance) || 0;
 
-    const totalPocketBalance =
-      Number(pocketBalanceApiData?.data?.total_balance) || 0;
-
     const totalInvestmentBalance =
       Number(investmentBalanceApiData?.data?.total_balance) || 0;
 
@@ -152,13 +132,9 @@ function OverviewLayout() {
     // console.log("🚀 ~ operatingProfit:", (totalIncome - totalExpense)==0?0:totalIncome-totalExpense;)
 
     const netWorthRaw =
-      +totalBankBalance +
-      totalPocketBalance +
-      totalInvestmentBalance +
-      totalDebtorBalance;
+      +totalBankBalance + totalInvestmentBalance + totalDebtorBalance;
 
     // console.log("🚀 ~ OverviewLayout ~ netWorthRaw:", netWorthRaw, totalBankBalance,
-    // totalPocketBalance,
     // totalInvestmentBalance,
     // totalDebtorBalance)
 
@@ -171,7 +147,6 @@ function OverviewLayout() {
     bankBalanceApiData?.data?.total_balance,
     debtorBalanceApiData?.data?.total_debt_balance,
     investmentBalanceApiData?.data?.total_balance,
-    pocketBalanceApiData?.data?.total_balance,
   ]);
 
   //---show error message
@@ -181,7 +156,6 @@ function OverviewLayout() {
       expenseBalanceError ||
       incomeBalanceError ||
       investmentBalanceError ||
-      pocketBalanceError ||
       debtorBalanceError;
 
     if (error && error !== lastErrorMessage) {
@@ -204,7 +178,6 @@ function OverviewLayout() {
     expenseBalanceError,
     bankBalanceError,
     investmentBalanceError,
-    pocketBalanceError,
     debtorBalanceError,
     lastErrorMessage,
   ]);
@@ -219,7 +192,6 @@ function OverviewLayout() {
   const isAnyLoading =
     bankBalanceIsLoading ||
     investmentBalanceIsLoading ||
-    pocketBalanceIsLoading ||
     incomeBalanceIsLoading ||
     expenseBalanceIsLoading ||
     debtorBalanceIsLoading;

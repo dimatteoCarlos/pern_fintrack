@@ -2,7 +2,6 @@
 
 import { AxiosError } from 'axios';
 import {
-  BalancePocketRespType,
   FinancialDataRespType,
   LastMovementRespType,
 } from '../../types/responseApiTypes';
@@ -118,17 +117,6 @@ function isLastMovementRespType(data: any): data is LastMovementRespType {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function isBalancePocketRespType(data: any): data is BalancePocketRespType {
-  return (
-    data &&
-    typeof data === 'object' &&
-    typeof data.status === 'number' &&
-    typeof data.message === 'string' &&
-    data?.data &&
-    typeof data.data.total_balance === 'number'
-  );
-}
 // =====================================
 // SAFE ERROR PARSING FUNCTION
 // =====================================
@@ -205,7 +193,7 @@ export async function overviewFetchAll(
   //   endpoints.map((e) => e?.key)
   // );
 
-  // results: Objeto donde se guardarán los resultados, uno por clave (SavingGoals, etc.)
+  // results: Objeto donde se guardarán los resultados, uno por clave (MonthlyTotalAmountByType, etc.)
 
   // Initialize results with default error state for all keys
   const results = {} as {
@@ -244,9 +232,7 @@ export async function overviewFetchAll(
         // });
       }
 
-      if (endpoint.key === 'SavingGoals' && isBalancePocketRespType(data)) {
-        results[endpoint.key] = { status: 'success', data };
-      } else if (
+      if (
         endpoint.key === 'MonthlyTotalAmountByType' &&
         isFinancialDataRespType(data)
       ) {
@@ -255,7 +241,6 @@ export async function overviewFetchAll(
         endpoint.key === 'MovementExpenseTransactions' ||
         endpoint.key === 'MovementDebtTransactions' ||
         endpoint.key === 'MovementIncomeTransactions' ||
-        endpoint.key === 'MovementPocketTransactions' ||
         endpoint.key === 'MovementInvestmentTransactions' ||
         endpoint.key === 'MovementPnLTransactions'
       ) {
