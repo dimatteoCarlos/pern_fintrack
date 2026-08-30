@@ -44,11 +44,14 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
  // means the goal is already covered; null means the deadline passed, so there
  // is no pace left to state. Branching on falsiness collapses the two, because
  // 0 is falsy in JavaScript.
+ // The shortfall is not repeated here. The line above already states it as
+ // "to go", and saying it again as "short" spends the one line that carries
+ // something the reader cannot get anywhere else on the card.
  const paceText =
   funded
    ? 'Goal covered'
    : requiredMonthly === null
-     ? `${amount(remaining)} short, deadline passed`
+     ? 'Deadline passed'
      : `${amount(requiredMonthly)} per month to stay on pace`;
 
  // Negative remaining is over-funding, which is a fact and not an error.
@@ -56,7 +59,11 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
 
  return (
   <div className='summaryPocket__container'>
-   <div className='summaryPocket__title'>allocated of goal</div>
+   {/* The two figures the card is about, named as the pair they are. "Of goal"
+       read as a preposition looking for a noun it never got, and target is what
+       the field is called everywhere else — goal names the figure, never the
+       object. */}
+   <div className='summaryPocket__title'>allocated / target</div>
 
    <div className='summaryPocket__data'>
     <div className='summaryPocket__data--amount'>{amount(allocated)}</div>

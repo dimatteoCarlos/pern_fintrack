@@ -19,7 +19,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
-import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
+import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 import {
  capitalize,
  formatCalendarDate,
@@ -32,7 +32,6 @@ import AllocationEntryModal from './allocationEntryModal/AllocationEntryModal.ts
 import PocketCashModal, {
  PocketCashDirection,
 } from './pocketCashModal/PocketCashModal.tsx';
-import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
 import { PocketAllocationEntry } from '../../../types/pocketTypes.ts';
@@ -223,30 +222,39 @@ function PocketDetail() {
    <SummaryPocketDetailBox pocket={pocket} />
 
    <article className='form__box'>
-    <div className='form__container'>
-     <div className='input__box'>
-      <label className='label forms__label'>{'Note'}</label>
-      {/* The modifier asks for the note's four lines. The base class alone is
-          one line, which is what the value boxes below want. */}
-      <div className='input__container input__container--note pocketDetail__value'>
-       {pocket.note ?? DASH}
-      </div>
+    {/* What the pocket carries besides its figures. Read-only, and it now looks
+        it: these three borrowed the form's own input classes, so a bordered box
+        around each value invited a click that does nothing. The pencil beside
+        the title is this screen's one editing affordance, and a value dressed
+        as a control competes with it.
+
+        The note takes its own paragraph and the other two sit side by side: a
+        date and a currency code are short, and a full row each spreads four
+        words down the screen. */}
+    <div className='pocketDetail__meta'>
+     <div className='pocketDetail__metaItem'>
+      <span className='pocketDetail__metaLabel'>Note</span>
+      <p className='pocketDetail__metaNote'>{pocket.note ?? DASH}</p>
      </div>
 
-     <div className='account__dateAndCurrency'>
-      <div className='account__date'>
-       <label className='label forms__label'>{'Desired Date'}</label>
+     <div className='pocketDetail__metaRow'>
+      <div className='pocketDetail__metaItem'>
+       <span className='pocketDetail__metaLabel'>Desired date</span>
        {/* Built from the parts of a YYYY-MM-DD label the server resolved on
            the owner's calendar. new Date() on one of these is UTC midnight and
            renders as the previous day west of UTC. */}
-       <div className='form__datepicker__container pocketDetail__value'>
+       <span className='pocketDetail__metaValue'>
         {formatCalendarDate(pocket.desiredDate)}
-       </div>
+       </span>
       </div>
 
-      <div className='account__currency'>
-       <div className='label forms__label'>{'Currency'}</div>
-       <CurrencyBadge variant={VARIANT_FORM} currency={currency} />
+      <div className='pocketDetail__metaItem'>
+       <span className='pocketDetail__metaLabel'>Currency</span>
+       {/* The code as text, not the badge. That badge is a control built to
+           change a currency, and a pocket's own currency is not editable —
+           restating it would restate every commitment already made against
+           it. */}
+       <span className='pocketDetail__metaValue'>{currency.toUpperCase()}</span>
       </div>
      </div>
     </div>

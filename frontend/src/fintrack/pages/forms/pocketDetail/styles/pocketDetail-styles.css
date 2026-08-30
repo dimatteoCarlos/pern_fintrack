@@ -183,9 +183,12 @@
 /* The cream panel's own value boxes. They carry dark text because the panel
    they sit on is cream, which is the one place on this screen where the
    on-dark set would be unreadable. */
+/* Values inside the source and history rows, which sit on the dark app
+   surface. The colour was the one written for cream panels and white headers —
+   near-black on black — so real data rendered all but invisible. */
 .pocketDetail__value {
  padding: var(--space-2);
- color: var(--color-content-primary);
+ color: var(--color-content-on-dark);
  font-size: var(--font-size-sm);
 }
 
@@ -345,4 +348,59 @@
  .pocketDetail__row--open {
   transition: none;
  }
+}
+
+/* ── What the pocket carries besides its figures ─────────────────────────────
+   Read-only metadata. It replaces three values that borrowed the form's own
+   input classes, so each one drew a bordered box and read as a control that
+   does nothing. The pencil beside the title is the screen's one editing
+   affordance and nothing else may compete with it. */
+
+.pocketDetail__meta {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-4);
+ padding: var(--space-4) 0;
+}
+
+.pocketDetail__metaItem {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ min-width: 0;
+}
+
+/* A date and a currency code are short, so they share a row rather than
+   spreading four words down the screen. */
+.pocketDetail__metaRow {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-4) var(--space-8);
+}
+
+.pocketDetail__metaLabel {
+ /* index.css sets a font size on the universal selector, so an inline element
+    does not inherit the size of the line it sits in and must restate one. */
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+.pocketDetail__metaValue {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark);
+}
+
+.pocketDetail__metaNote {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ line-height: 1.5;
+ color: var(--color-content-on-dark-muted);
+ /* The owner's own words, kept as they typed them. */
+ white-space: pre-wrap;
+ overflow-wrap: anywhere;
 }
