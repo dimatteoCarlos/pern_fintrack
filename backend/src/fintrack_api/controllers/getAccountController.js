@@ -14,9 +14,18 @@ import {
   todayInZone,
 } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { accountAllocationService } from '../services/pocket_services/services/accountAllocationService.js';
+import {
+  accountLedgerCte,
+  derivedAccountBalanceSql,
+  withDerivedBalance,
+} from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 
 const backendColor = 'greenBright';
 const errorColor = 'red';
+
+// Every list below serves this in place of the stored user_accounts.account_balance.
+// One expression, so a list and the detail of the same account cannot disagree.
+const DERIVED_BALANCE = derivedAccountBalanceSql('ua');
 
 //BASIC FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
@@ -90,11 +99,17 @@ const getAccountTransactions = async (
   // 📝 TRANSACTIONS QUERY
   const transactionsQuery = {
     text: `
+    WITH ${accountLedgerCte('$2')}
     SELECT tr.*, mt.movement_type_name, trt.transaction_type_name,
     ct.currency_code,
-    oc.currency_code AS original_currency_code 
+    oc.currency_code AS original_currency_code,
+    -- The balance derived from the ledger, replacing the stored column that
+    -- tr.* still ships. Renamed onto that column's key below, so the stale
+    -- figure never reaches the response.
+    al.balance AS derived_balance_after_tr
 
     FROM transactions tr
+    JOIN account_ledger al ON al.transaction_id = tr.transaction_id
     JOIN user_accounts ua ON (tr.account_id = ua.account_id AND tr.user_id = ua.user_id)
       JOIN movement_types mt ON tr.movement_type_id = mt.movement_type_id
       JOIN transaction_types trt ON tr.transaction_type_id = trt.transaction_type_id
@@ -113,7 +128,9 @@ const getAccountTransactions = async (
   const transactionsResult = await pool.query(transactionsQuery);
 
   // 📈 CALCULATE SUMMARY DATA
-  const transactions = transactionsResult.rows;
+  // The derived figure takes over the key the stored column shipped under, so
+  // the wire contract is unchanged and no frontend file moves.
+  const transactions = withDerivedBalance(transactionsResult.rows);
   const totalTransactions = transactions.length;
 
   // 🏦 FIND INITIAL AND FINAL BALANCES
@@ -268,14 +285,14 @@ export const getAllAccountsByType = async (req, res, next) => {
     const accountTypeQuery = {
       bank: {
         typeQuery: {
-          text: `SELECT ua.account_id, ua.account_name, CAST(ua.account_balance AS FLOAT), ct.currency_code, act.account_type_id, act.account_type_name,
+          text: `SELECT ua.account_id, ua.account_name, ${DERIVED_BALANCE} AS account_balance, ct.currency_code, act.account_type_id, act.account_type_name,
           CAST(ua.account_starting_amount AS FLOAT),  ua.account_start_date
        FROM user_accounts ua
        JOIN account_types act ON ua.account_type_id = act.account_type_id
        JOIN currencies ct ON ua.currency_id = ct.currency_id
        WHERE ua.user_id = $1
        AND act.account_type_name = $2 AND ua.account_name != $3
-       ORDER BY ua.account_name ASC, ua.account_balance DESC
+       ORDER BY ua.account_name ASC, account_balance DESC
        `,
           values: [userId, accountType, 'slack'],
         },
@@ -283,7 +300,7 @@ export const getAllAccountsByType = async (req, res, next) => {
 
       category_budget: {
         typeQuery: {
-          text: `SELECT ua.account_id, ua.account_name, CAST(ua.account_balance AS FLOAT),
+          text: `SELECT ua.account_id, ua.account_name, ${DERIVED_BALANCE} AS account_balance,
    act.account_type_name,
    ct.currency_code, cba.budget, cba.subcategory, cnt.category_nature_type_name,
      ua.account_starting_amount,  ua.account_start_date
@@ -294,7 +311,7 @@ export const getAllAccountsByType = async (req, res, next) => {
    JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
    WHERE ua.user_id =$1
    AND act.account_type_name = $2 AND ua.account_name != $3
-   ORDER BY ABS(ua.account_balance) DESC
+   ORDER BY ABS(${DERIVED_BALANCE}) DESC
        `,
           values: [userId, accountType, 'slack'],
         },
@@ -302,14 +319,14 @@ export const getAllAccountsByType = async (req, res, next) => {
 
       income_source: {
         typeQuery: {
-          text: `SELECT ua.account_id, ua.account_name, CAST(ua.account_balance AS FLOAT), act.account_type_name, ct.currency_code, 
+          text: `SELECT ua.account_id, ua.account_name, ${DERIVED_BALANCE} AS account_balance, act.account_type_name, ct.currency_code, 
          CAST(ua.account_starting_amount AS FLOAT), ua.account_start_date
 FROM user_accounts ua
 JOIN account_types act ON ua.account_type_id = act.account_type_id
 JOIN currencies ct ON ua.currency_id = ct.currency_id
   WHERE ua.user_id =$1
   AND act.account_type_name = $2 AND ua.account_name != $3
-  ORDER BY ABS(ua.account_balance) DESC
+  ORDER BY ABS(${DERIVED_BALANCE}) DESC
 `,
           values: [userId, accountType, 'slack'],
         },
@@ -317,14 +334,14 @@ JOIN currencies ct ON ua.currency_id = ct.currency_id
 
       investment: {
         typeQuery: {
-          text: `SELECT ua.account_id, ua.account_name, CAST(ua.account_balance AS FLOAT), act.account_type_name, ct.currency_code, 
+          text: `SELECT ua.account_id, ua.account_name, ${DERIVED_BALANCE} AS account_balance, act.account_type_name, ct.currency_code, 
            CAST(ua.account_starting_amount AS FLOAT) ,  ua.account_start_date
 FROM user_accounts ua
 JOIN account_types act ON ua.account_type_id = act.account_type_id
 JOIN currencies ct ON ua.currency_id = ct.currency_id
   WHERE ua.user_id =$1
   AND act.account_type_name = $2 AND ua.account_name != $3
-  ORDER BY ABS(ua.account_balance) DESC
+  ORDER BY ABS(${DERIVED_BALANCE}) DESC
       `,
           values: [userId, accountType, 'slack'],
         },
@@ -334,7 +351,7 @@ JOIN currencies ct ON ua.currency_id = ct.currency_id
         typeQuery: {
           text: `
    SELECT ua.account_id, ua.account_name,
-    CAST(ua.account_balance AS FLOAT),
+    ${DERIVED_BALANCE} AS account_balance,
     act.account_type_name, ct.currency_code, ps.target, ps.desired_date,
     -- 'user' or 'default'. A defaulted deadline is not a deadline the user
     -- chose, and no pace figure derived from it may read as one.
@@ -348,7 +365,7 @@ JOIN currencies ct ON ua.currency_id = ct.currency_id
 JOIN pocket_saving_accounts ps ON ua.account_id = ps.account_id
 WHERE ua.user_id =$1
 AND act.account_type_name = $2 AND ua.account_name != $3
-ORDER BY ps.target DESC,  ABS(ua.account_balance) DESC
+ORDER BY ps.target DESC, ABS(${DERIVED_BALANCE}) DESC
 `,
           values: [userId, accountType, 'slack'],
         },
@@ -358,7 +375,7 @@ ORDER BY ps.target DESC,  ABS(ua.account_balance) DESC
         typeQuery: {
           text: `
    SELECT ua.account_id,ua.account_name,
-    CAST(ua.account_balance AS FLOAT),
+    ${DERIVED_BALANCE} AS account_balance,
     act.account_type_name, ct.currency_code,
    dac.value as starting_value,
    dac.debtor_name, dac.debtor_lastname,
@@ -375,7 +392,7 @@ ORDER BY ps.target DESC,  ABS(ua.account_balance) DESC
     ON ua.account_id = dac.account_id
    WHERE ua.user_id =$1
    AND act.account_type_name = $2 AND ua.account_name != $3
-   ORDER BY  (ua.account_balance) ASC
+   ORDER BY account_balance ASC
 `,
           values: [userId, accountType, 'slack'],
         },
@@ -384,7 +401,7 @@ ORDER BY ps.target DESC,  ABS(ua.account_balance) DESC
       bank_and_investment: {
         typeQuery: {
           text: `SELECT ua.account_id, ua.account_name,
-           CAST(ua.account_balance AS FLOAT),
+           ${DERIVED_BALANCE} AS account_balance,
             ct.currency_code, act.account_type_id, act.account_type_name,
           CAST(ua.account_starting_amount AS FLOAT),
             ua.account_start_date
@@ -393,7 +410,7 @@ ORDER BY ps.target DESC,  ABS(ua.account_balance) DESC
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           WHERE ua.user_id = $1
           AND( act.account_type_name = $2 OR act.account_type_name=$3) AND ua.account_name != $4
-        ORDER BY ua.account_type_id ASC, ua.account_name ASC, ua.account_balance DESC
+        ORDER BY ua.account_type_id ASC, ua.account_name ASC, account_balance DESC
        `,
           values: [userId, 'bank', 'investment', 'slack'],
         },
@@ -492,14 +509,16 @@ export const getAccounts = async (req, res, next) => {
       all: {
         typeQuery: {
           text: `SELECT ua.*,  ct.currency_code,  act.account_type_name,
-           CAST(ua.account_balance AS FLOAT),
+           ${DERIVED_BALANCE} AS account_balance,
            CAST(ua.account_starting_amount AS FLOAT)   
        FROM user_accounts ua
        JOIN account_types act ON ua.account_type_id = act.account_type_id
        JOIN currencies ct ON ua.currency_id = ct.currency_id
        WHERE ua.user_id = $1
        AND ua.account_name != $2
-       ORDER BY ua.account_type_id ASC, ua.account_balance DESC
+       -- The expression and not the output name: ua.* already ships a column
+       -- called account_balance, so the bare name is ambiguous here.
+       ORDER BY ua.account_type_id ASC, ${DERIVED_BALANCE} DESC
        `,
           values: [userId, 'slack'],
         },
@@ -981,7 +1000,7 @@ export const getAccountsByCategory = async (req, res, next) => {
     //------------------------------------
     //--GET ACCOUNTS INFO BY CATEGORY NAME
     const accountsResult = await pool.query({
-      text: `SELECT ua.*, CAST(ua.account_balance AS FLOAT), CAST(ua.Account_starting_amount AS FLOAT), cba.*,CAST(cba.budget AS FLOAT),
+      text: `SELECT ua.*, ${DERIVED_BALANCE} AS account_balance, CAST(ua.Account_starting_amount AS FLOAT), cba.*,CAST(cba.budget AS FLOAT),
        cur.currency_code,act.account_type_name ,cnt.category_nature_type_name
       FROM user_accounts ua
       JOIN category_budget_accounts cba ON cba.account_id = ua.account_id

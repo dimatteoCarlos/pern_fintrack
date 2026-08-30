@@ -10,9 +10,18 @@
 // implementations of the same formula — which is exactly how the pocket board's
 // header came to disagree with its own list.
 //
+// The balance both consumers read is derived from the ledger, not taken from
+// user_accounts.account_balance. NUMERIC and never FLOAT: this figure is handed
+// to a decimal library and compared against a committed total, and money must
+// not pass through a float on its way to a comparison that refuses a request.
+//
 // Amounts leave as text for the reason the whole module keeps them so: the pg
 // driver hands NUMERIC over as a string to lose nothing, and money() parses it
 // exactly.
+
+import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+
+const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 
 /**
  * The committed total and the real balance of accounts the caller owns.
@@ -39,7 +48,10 @@ export async function getAccountAllocations(db, userId, accountIds = null) {
    ua.account_id                       AS "accountId",
    ua.account_name                     AS "accountName",
    act.account_type_name               AS "accountType",
-   ua.account_balance::text            AS "accountBalance",
+   -- Derived from the ledger, not read from the stored column. This figure and
+   -- the one the locked check below enforces must be the same number, or the
+   -- server refuses a commitment quoting a ceiling the owner was never shown.
+   ${DERIVED_BALANCE}::text            AS "accountBalance",
    COALESCE(SUM(pa.amount), 0)::text   AS "accountAllocated"
   FROM user_accounts ua
   JOIN account_types act ON act.account_type_id = ua.account_type_id
@@ -194,7 +206,6 @@ export async function lockOwnedSourceAccount(client, userId, accountId) {
    ua.account_id                     AS "accountId",
    ua.account_name                   AS "accountName",
    act.account_type_name             AS "accountType",
-   ua.account_balance::text          AS "accountBalance",
    ua.currency_id                    AS "currencyId",
    ua.deleted_at                     AS "deletedAt",
    COALESCE((
@@ -211,7 +222,30 @@ export async function lockOwnedSourceAccount(client, userId, accountId) {
   [accountId, userId],
  );
 
- return rows[0] ?? null;
+ if (!rows[0]) return null;
+
+ // The balance is derived in a SECOND statement, deliberately, and never joined
+ // into the one above.
+ //
+ // In the locking statement the locked row is re-read at its latest committed
+ // version while every other table is read from the statement's original
+ // snapshot. A derivation joined there would combine two points in time: the
+ // lock's view of the account and a stale view of its movements. Issued after
+ // the lock is held, this statement takes a fresh snapshot and therefore sees
+ // every transaction that committed before it began — including those of the
+ // competitor this lock just waited out. The lock still serialises; only the
+ // figure is now the ledger's rather than the stored column's.
+ //
+ // It has to be the same figure the picker showed, or a commitment inside the
+ // ceiling the owner saw is refused by a 422 quoting a number they never saw.
+ const { rows: derived } = await client.query(
+  `SELECT ${DERIVED_BALANCE}::text AS "accountBalance"
+     FROM user_accounts ua
+    WHERE ua.account_id = $1`,
+  [accountId],
+ );
+
+ return { ...rows[0], accountBalance: derived[0].accountBalance };
 }
 
 /**

@@ -36,6 +36,7 @@ import {
 } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { currencyAmountConversion } from '../services/fx_services/conversion/currencyAmountConversion.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
+import { accountLedgerCteForTransaction } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 //==================================
 // 🔧 FX DEBUG UTILITY (centralized)
 // ==================================
@@ -881,7 +882,8 @@ export async function getTransactionById(req, res, next) {
     }
 
     const result = await client.query(
-      `SELECT 
+      `WITH ${accountLedgerCteForTransaction('$1', '$2')}
+      SELECT
        ua.account_name,
         t.transaction_id,
         t.user_id,
@@ -892,7 +894,10 @@ export async function getTransactionById(req, res, next) {
         trt.transaction_type_name, 
         t.currency_id,
         t.account_id,
-        t.account_balance_after_tr,
+        -- Derived from the ledger, under the name the stored column shipped
+        -- under. This detail states a balance with no series around it to
+        -- contradict it, so a stale figure here is the one nobody can catch.
+        al.balance AS account_balance_after_tr,
         t.source_account_id,
         t.destination_account_id,
         t.status,
@@ -922,6 +927,8 @@ export async function getTransactionById(req, res, next) {
         ) AS transaction_local_time
 
       FROM transactions t
+
+      JOIN account_ledger al ON al.transaction_id = t.transaction_id
 
       LEFT JOIN currencies c ON t.currency_id = c.currency_id
       LEFT JOIN currencies oc ON t.original_currency_id = oc.currency_id

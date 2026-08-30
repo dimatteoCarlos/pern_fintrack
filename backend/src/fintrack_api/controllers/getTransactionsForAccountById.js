@@ -15,6 +15,10 @@ import {
   todayInZone,
 } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { extractNoteFromDescription } from '../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
+import {
+  accountLedgerCte,
+  withDerivedBalance,
+} from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 
 // A month, as YYYY-MM or YYYY-MM-DD. The day is accepted and discarded.
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$/;
@@ -231,12 +235,17 @@ export const getTransactionsForAccountById = async (req, res, next) => {
       }
     }
     //-------------------------------
-    //--main query for transactions by account_id and user_id getting account_balance_after_tr
+    //--main query for transactions by account_id and user_id, with the balance derived from the ledger
     //--rule: there must exist at least one transaction (account-opening). It should not be possible for an account to exist without this single recorded transaction
     const TRANSACTIONS_BY_ACCOUNT_QUERY = {
       text: `
+      WITH ${accountLedgerCte('$1')}
       SELECT
         tr.*, mt.movement_type_name, cr.currency_code, ua.account_name, CAST(ua.account_starting_amount AS FLOAT), ua.account_start_date,
+        -- The balance derived from the ledger, replacing the stored column that
+        -- tr.* still ships. It is renamed onto that column's key in JavaScript,
+        -- so the stale figure never reaches the response.
+        al.balance AS derived_balance_after_tr,
         -- The day the owner lived, not the day UTC saw. COALESCE mirrors the
         -- WHERE below, which also admits a row by created_at alone.
         (COALESCE(tr.transaction_actual_date, tr.created_at)
@@ -251,6 +260,8 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         ) AS transaction_local_time
       FROM
         transactions tr
+      JOIN
+        account_ledger al ON al.transaction_id = tr.transaction_id
       JOIN
         movement_types mt ON tr.movement_type_id = mt.movement_type_id
       JOIN
@@ -308,8 +319,13 @@ export const getTransactionsForAccountById = async (req, res, next) => {
     //     left NULL everywhere else. An absent figure beats a false zero.
     const TRANSACTIONS_BY_MONTH_QUERY = {
       text: `
+      WITH ${accountLedgerCte('$1')}
       SELECT
         tr.*, mt.movement_type_name, cr.currency_code, ua.account_name, CAST(ua.account_starting_amount AS FLOAT), ua.account_start_date,
+        -- Derived over the account's whole life, not over this month: a window
+        -- function sees only the rows its own query returns, so anchoring the
+        -- series here would restart the balance at each month.
+        al.balance AS derived_balance_after_tr,
         (tr.transaction_actual_date AT TIME ZONE $4)::date::text AS transaction_local_date,
         -- The hour of that same day, on that same calendar. Same pair the
         -- transaction detail already serves.
@@ -324,6 +340,8 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         END AS month_cumulative_spent
       FROM
         transactions tr
+      JOIN
+        account_ledger al ON al.transaction_id = tr.transaction_id
       JOIN
         movement_types mt ON tr.movement_type_id = mt.movement_type_id
       JOIN
@@ -351,7 +369,11 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         ? TRANSACTIONS_BY_MONTH_QUERY
         : TRANSACTIONS_BY_ACCOUNT_QUERY;
 
-    const transactions = await queryFn(QUERY.text, QUERY.values);
+    // The derived figure takes over the key the stored column shipped under, so
+    // the wire contract is unchanged and no frontend file moves.
+    const transactions = withDerivedBalance(
+      await queryFn(QUERY.text, QUERY.values),
+    );
 
     // Función para formatear fechas consistentemente/consistent date format
     const formatDate = (date) => date.toISOString().split('T')[0];
@@ -364,19 +386,44 @@ export const getTransactionsForAccountById = async (req, res, next) => {
     // The boundary is a parameter because both windows have one: the month's
     // first day, or the clamped start of the range.
     const getBalanceCarriedIntoPeriod = async (boundaryDay) => {
+      // Both outcomes are computed in one statement, and the no-movement case is
+      // a COALESCE rather than a branch in JavaScript. It used to be a branch,
+      // and it dated the carried-in balance with a UTC slice of the account's
+      // opening timestamp while everything around it went through the owner's
+      // zone — which put a balance on a day AFTER the period it opens: a window
+      // clamped to 14-08 reading "Initial Balance (15-08)" underneath it. There
+      // is now no JavaScript date path left here to get wrong.
       const PRIOR_BALANCE_QUERY = {
         text: `
+      WITH ${accountLedgerCte('$1')},
+      prior AS (
+        SELECT
+          al.balance,
+          (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS local_date
+        FROM
+          transactions tr
+        JOIN
+          account_ledger al ON al.transaction_id = tr.transaction_id
+        WHERE
+          tr.account_id = $1
+          AND tr.transaction_actual_date < ($2::timestamp AT TIME ZONE $3)
+        ORDER BY
+          tr.transaction_actual_date DESC, tr.transaction_id DESC
+        LIMIT 1
+      )
       SELECT
-        CAST(tr.account_balance_after_tr AS FLOAT) AS balance,
-        (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS local_date
+        COALESCE(
+          (SELECT balance FROM prior),
+          CAST(ua.account_starting_amount AS FLOAT)
+        ) AS balance,
+        COALESCE(
+          (SELECT local_date FROM prior),
+          (ua.account_start_date AT TIME ZONE $3)::date::text
+        ) AS local_date
       FROM
-        transactions tr
+        user_accounts ua
       WHERE
-        tr.account_id = $1
-        AND tr.transaction_actual_date < ($2::timestamp AT TIME ZONE $3)
-      ORDER BY
-        tr.transaction_actual_date DESC, tr.transaction_id DESC
-      LIMIT 1`,
+        ua.account_id = $1`,
         values: [accountId, boundaryDay, window.timeZone],
       };
 
@@ -384,18 +431,6 @@ export const getTransactionsForAccountById = async (req, res, next) => {
         PRIOR_BALANCE_QUERY.text,
         PRIOR_BALANCE_QUERY.values,
       );
-
-      // No transaction before the boundary means the account had not moved yet,
-      // so its opening amount and its start date ARE the real answer here.
-      if (!prior) {
-        return {
-          amount: parseFloat(accountInfoNeededResult[0].account_starting_amount),
-          currency: accountInfoNeededResult[0].currency_code,
-          date: formatDate(
-            new Date(accountInfoNeededResult[0].account_start_date),
-          ),
-        };
-      }
 
       return {
         amount: prior.balance,
@@ -434,15 +469,16 @@ export const getTransactionsForAccountById = async (req, res, next) => {
     // The window decides which question "initial" answers, and the two answers
     // are not interchangeable.
     //
-    // month: the balance left BY the month's first movement, read from the
-    // stored account_balance_after_tr of a row that exists. V1 decision 45 — no
-    // stored column holds the balance before a transaction. The rows arrive
-    // newest first, so the last element is that first movement.
+    // month: the balance left BY the month's first movement, taken from the
+    // derived series at a row that exists. No column holds the balance BEFORE a
+    // transaction, derived or stored, so "initial" here means the balance after
+    // the first movement of the month. The rows arrive newest first, so the last
+    // element is that first movement.
     //
     // range: the balance carried INTO the window, which is what the label says
     // and what a continuous history — a pocket, a debtor — needs. It reads the
-    // movement before the boundary rather than the first one inside it, so
-    // decision 45 does not bind it. What this replaces read
+    // movement before the boundary rather than the first one inside it, so the
+    // paragraph above does not bind it. What this replaces read
     // account_balance_before_tr, a column that exists nowhere, so the || fell
     // through on every call and reported the opening amount on the window's
     // start day, which in the common case precedes the account itself.
