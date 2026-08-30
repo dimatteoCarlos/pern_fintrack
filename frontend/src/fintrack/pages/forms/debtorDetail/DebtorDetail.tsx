@@ -1,5 +1,4 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import AccountEditLink from '../../../general_components/accountEditLink/AccountEditLink.tsx';
@@ -67,36 +66,10 @@ function DebtorDetail() {
   const location = useLocation();
   const state = location.state as LocationStateType | null;
   const debtorDetailedData = state?.debtorDetailedData;
-  const previousRouteFromState =
-    state?.previousRoute ?? '/fintrack/debts/debtors';
+  // Where the back arrow and the editor return to. The list sends it in the
+  // link state; a direct load has none, so the canonical list URL stands in.
+  const previousRoute = state?.previousRoute ?? '/fintrack/debts/debtors';
   const { debtorId: accountId } = useParams();
-
-  //--states
-  // Nothing is seeded. The screen used to open on a sample account —
-  // 'Lastname, name example' owing 10.00, with a statement running from
-  // 2025-05-18 — which the fetch overwrote only on success, so a failed or
-  // missing account left the sample standing as if it were the debtor.
-  const [accountDetail, setAccountDetail] = useState<AccountListType | null>(
-    null,
-  );
-  const [previousRoute, setPreviousRoute] = useState<string>(
-    '/fintrack/debts/debtors',
-  );
-  // The row the list handed over in the link state. Real data for this debtor,
-  // so it paints at once; null on a direct load or a refresh, where the fetch
-  // is the only source.
-  const [bubleInfo, setBubleInfo] = useState<DebtorListType | null>(
-    debtorDetailedData ?? null,
-  );
-
-  //--state for account transactions data
-  // null is "no answer yet"; an empty array is "the window holds no movement".
-  const [transactions, setTransactions] = useState<
-    AccountTransactionType[] | null
-  >(null);
-
-  const [summaryAccountBalance, setSummaryAccountBalance] =
-    useState<AccountSummaryBalanceType | null>(null);
 
   //-------------------------------------
   //--Fetch Data
@@ -137,28 +110,29 @@ function DebtorDetail() {
     refetch: refetchTransactions,
   } = useFetch<TransactionsAccountApiResponseType>(urlTransactionsAccountById);
   //-------------------------------------
-  //--
-  useEffect(() => {
-    if (previousRouteFromState) setPreviousRoute(previousRouteFromState);
-    if (accountsData?.data?.accountList?.length) {
-      const account = accountsData.data.accountList[0];
-      if (account) {
-        setAccountDetail(account);
+  //--WHAT THE ANSWERS CARRY
+  // Nothing is seeded and nothing is copied into state. The screen used to open
+  // on a sample account — 'Lastname, name example' owing 10.00, with a
+  // statement running from 2025-05-18 — which the fetch overwrote only on
+  // success, so a failed or missing account left the sample standing as if it
+  // were the debtor. Reading the answers here also removes the render in
+  // between, where an answer had arrived and the copy of it had not.
+  const accountDetail: AccountListType | null =
+    accountsData?.data?.accountList?.[0] ?? null;
 
-        setBubleInfo(
-          getBubleInfoFromAccountDetail(accountsData?.data?.accountList[0]),
-        );
-      }
-    }
-  }, [accountsData?.data?.accountList, previousRouteFromState]);
+  // The row the list handed over in the link state paints the bubble until the
+  // account answers. Real data for this debtor either way, and null on a direct
+  // load or a refresh, where the fetch is the only source.
+  const bubleInfo: DebtorListType | null = accountDetail
+    ? getBubleInfoFromAccountDetail(accountDetail)
+    : debtorDetailedData ?? null;
 
-  //-------------------------------------
-  useEffect(() => {
-    if (transactionAccountApiResponse?.data) {
-      setTransactions(transactionAccountApiResponse.data.transactions);
-      setSummaryAccountBalance(transactionAccountApiResponse.data.summary);
-    }
-  }, [transactionAccountApiResponse]);
+  // null is "no answer yet"; an empty array is "the window holds no movement".
+  const statementData = transactionAccountApiResponse?.data ?? null;
+  const transactions: AccountTransactionType[] | null =
+    statementData?.transactions ?? null;
+  const summaryAccountBalance: AccountSummaryBalanceType | null =
+    statementData?.summary ?? null;
 
   //--TRANSACTION DETAIL MODAL
   // Owned here and not inside the list: the list is presentational and shared
@@ -189,6 +163,37 @@ function DebtorDetail() {
   const hasStatementFailed = Boolean(errorTransactions);
   const isStatementPending =
     !hasStatementFailed && (isLoadingTransactions || !hasStatementAnswer);
+
+  // Also the last branch of each chain below: an answer that came back carrying
+  // no account, or no statement, is a request that failed to produce one. The
+  // screen says so rather than waiting on a skeleton that will never resolve.
+  const accountErrorPanel = (
+    <article className='form__box debtorDetail__state'>
+      <p className='debtorDetail__stateText'>
+        This debtor could not be loaded.
+      </p>
+
+      <button type='button' className='debtorDetail__retry' onClick={refetch}>
+        Try again
+      </button>
+    </article>
+  );
+
+  const statementErrorPanel = (
+    <div className='debtorDetail__state'>
+      <p className='debtorDetail__stateText'>
+        The statement could not be loaded.
+      </p>
+
+      <button
+        type='button'
+        className='debtorDetail__retry'
+        onClick={refetchTransactions}
+      >
+        Try again
+      </button>
+    </div>
+  );
 
   //--------------------------------------
   return (
@@ -237,20 +242,8 @@ function DebtorDetail() {
               </Link>
             </article>
           ) : hasAccountFailed ? (
-            <article className='form__box debtorDetail__state'>
-              <p className='debtorDetail__stateText'>
-                This debtor could not be loaded.
-              </p>
-
-              <button
-                type='button'
-                className='debtorDetail__retry'
-                onClick={refetch}
-              >
-                Try again
-              </button>
-            </article>
-          ) : isAccountPending || !accountDetail || !bubleInfo ? (
+            accountErrorPanel
+          ) : isAccountPending ? (
             <article
               className='form__box debtorDetail__skeleton'
               aria-hidden='true'
@@ -260,6 +253,8 @@ function DebtorDetail() {
               <div className='debtorDetail__skeletonBar'></div>
               <div className='debtorDetail__skeletonBar debtorDetail__skeletonBar--wide'></div>
             </article>
+          ) : !accountDetail || !bubleInfo ? (
+            accountErrorPanel
           ) : (
             <>
               <SummaryDebtorDetailBox
@@ -326,27 +321,15 @@ function DebtorDetail() {
                   style={{ margin: '1rem 0' }}
                 >
                   {hasStatementFailed ? (
-                    <div className='debtorDetail__state'>
-                      <p className='debtorDetail__stateText'>
-                        The statement could not be loaded.
-                      </p>
-
-                      <button
-                        type='button'
-                        className='debtorDetail__retry'
-                        onClick={refetchTransactions}
-                      >
-                        Try again
-                      </button>
-                    </div>
-                  ) : isStatementPending ||
-                    !summaryAccountBalance ||
-                    !transactions ? (
+                    statementErrorPanel
+                  ) : isStatementPending ? (
                     <div className='debtorDetail__skeleton' aria-hidden='true'>
                       <div className='debtorDetail__skeletonBar debtorDetail__skeletonBar--wide'></div>
                       <div className='debtorDetail__skeletonBar'></div>
                       <div className='debtorDetail__skeletonBar'></div>
                     </div>
+                  ) : !summaryAccountBalance || !transactions ? (
+                    statementErrorPanel
                   ) : (
                     <>
                       <div className='period-info'>
