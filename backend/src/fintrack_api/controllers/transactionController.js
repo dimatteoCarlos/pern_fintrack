@@ -36,7 +36,10 @@ import {
 } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { currencyAmountConversion } from '../services/fx_services/conversion/currencyAmountConversion.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
-import { accountLedgerCteForTransaction } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import {
+  accountLedgerCteForTransaction,
+  derivedAccountBalanceSql,
+} from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 // The compensation account this controller opens on demand for a PnL entry. It
 // is the app's own bookkeeping counterparty, not an account the owner holds, and
 // the date guard below leaves it out of the opening floor for that reason.
@@ -151,6 +154,68 @@ export const updateAccountBalance = async (
   //request
   const updatedAccountResult = await dbClient.query(insertBalanceQuery);
   return updatedAccountResult.rows[0];
+};
+
+// The account's opening amount plus its movements. What the stored column was
+// supposed to hold and no longer does.
+const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
+
+/**
+ * Lock every account a movement touches, then derive what each one holds.
+ *
+ * Two independent defects are closed here. user_accounts.account_balance has
+ * drifted from the ledger, so a funds check reading it refuses or admits against
+ * a ceiling that is not the account's. And BEGIN gives atomicity, not exclusion:
+ * two simultaneous movements on one account both read the same prior state, both
+ * pass the check, and both write.
+ *
+ * The lock is taken in ascending account_id order. A transfer A -> B racing a
+ * transfer B -> A would, locking in the direction of the movement, leave each
+ * transaction holding the row the other is waiting for; one global order means
+ * one of them simply waits and the cycle never forms.
+ *
+ * The derivation is a SECOND statement and is never joined into the locking one,
+ * the pattern accountAllocationRepository.js:227 already documents: inside a
+ * locking statement the locked row is re-read at its latest committed version
+ * while every other table is still read from the statement's original snapshot,
+ * so a derivation joined there would combine the lock's view of the account with
+ * a stale view of transactions. Issued once the lock is held, this one sees
+ * every movement the competitor it just waited out committed.
+ *
+ * Ownership is filtered in both statements rather than inherited from the
+ * caller. A helper whose safety depends on what its caller happened to do first
+ * is unsafe the first time it is called from somewhere else.
+ *
+ * NUMERIC as text: the pg driver hands NUMERIC over as a string to lose nothing,
+ * and this figure is about to decide whether a request is refused.
+ *
+ * @param {import('pg').PoolClient} client - inside BEGIN; a pool would release
+ *  the lock the moment the statement returned
+ * @param {string} userId - UUID from the token
+ * @param {number[]} accountIds - every account the movement touches
+ * @returns {Promise<Map<number, string>>} account_id -> balance as text
+ */
+export const lockAndDeriveBalances = async (client, userId, accountIds) => {
+  await client.query({
+    text: `SELECT ua.account_id
+             FROM user_accounts ua
+            WHERE ua.account_id = ANY($1::int[])
+              AND ua.user_id = $2
+            ORDER BY ua.account_id
+            FOR UPDATE`,
+    values: [accountIds, userId],
+  });
+
+  const { rows } = await client.query({
+    text: `SELECT ua.account_id,
+                  ${DERIVED_BALANCE}::text AS balance
+             FROM user_accounts ua
+            WHERE ua.account_id = ANY($1::int[])
+              AND ua.user_id = $2`,
+    values: [accountIds, userId],
+  });
+
+  return new Map(rows.map((row) => [row.account_id, row.balance]));
 };
 
 //transfer movement renamed
@@ -644,7 +709,16 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //---------------------------------------
     //---Update the balance in the source account
     //---------------------------------------
-    const sourceAccountBalance = parseFloat(sourceAccountInfo.account_balance);
+    // Both accounts are locked and derived before anything is decided or
+    // written, so the ceiling this check enforces is the one the ledger holds.
+    const ledgerBalances = await lockAndDeriveBalances(client, userId, [
+      sourceAccountInfo.account_id,
+      destinationAccountInfo.account_id,
+    ]);
+
+    const sourceAccountBalance = parseFloat(
+      ledgerBalances.get(sourceAccountInfo.account_id),
+    );
     //---check for enough funds on source account
     if (
       sourceAccountBalance < numericAmount &&
@@ -695,7 +769,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //--- Destination Account ---
     //---------------------------
     //--Update the balance in th destination account
-    const destinationAccountBalance = destinationAccountInfo.account_balance;
+    const destinationAccountBalance = ledgerBalances.get(
+      destinationAccountInfo.account_id,
+    );
     const newDestinationAccountBalance =
       parseFloat(destinationAccountBalance) + numericAmount;
 
