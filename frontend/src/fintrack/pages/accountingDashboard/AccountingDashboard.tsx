@@ -621,7 +621,16 @@ const AccountingDashboard = () => {
                   title={account.account_name.toUpperCase()}
                   amount={account.account_balance}
                   currency={account.currency_code}
-                  account_type={`(${capitalize(account.account_type_name.split('_')[0])})`}
+                  // Read from the same map that decided which group this card
+                  // is standing in. Split off the row's own type name, a row
+                  // of a type the map does not know announced its first word
+                  // as its kind — so a retired pocket account read "(Pocket)"
+                  // under a heading that said Other.
+                  account_type={`(${capitalize(
+                    ACCOUNT_TYPE_DATA[
+                      account.account_type_name as AccountType
+                    ]?.name ?? ACCOUNT_TYPE_DATA['other'].name,
+                  )})`}
                   onMenuClick={(e) => handleMenuClick(account, e)}
                   isMenuOpen={
                     menuState.isOpen &&

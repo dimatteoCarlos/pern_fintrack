@@ -69,10 +69,10 @@ export const url_create_category_budget_account: string =
 export const url_get_accounts_by_category: string =  BASE_URL_APP + 'account/category';
 
 //------
-//create a pocket_saving account
-//http://localhost:5000/api/fintrack/account/new_account/pocket_saving
-export const url_create_pocket_saving_account: string =
-  BASE_URL_APP + 'account/new_account/pocket_saving';
+// The declaration that created an account of the retired pocket type is gone
+// with the route behind it. A pocket is a planning object, not an account:
+// it is created through url_pocket_create below, which writes a row of the
+// pockets table.
 
 //FOR DEBTS PAGE
 //create a debtor account
@@ -248,10 +248,10 @@ export const url_get_transaction_by_id = BASE_URL_APP + 'transaction/';
 export const url_pocket_board: string = BASE_URL_APP + 'pocket/board';
 
 // POST /api/fintrack/pocket
-// Creates a pocket. Not to be confused with url_create_pocket_saving_account
-// above, which writes an account of the retired pocket_saving type — a row the
-// board cannot read, because the board reads the pockets table. That endpoint
-// stays mounted until the type itself is withdrawn.
+// Creates a pocket, and it is now the only way to create one. The endpoint that
+// wrote an account of the retired pocket type is withdrawn, route and handler
+// both: it produced a row the board could not read, because the board reads the
+// pockets table.
 //
 // It answers 201 with the whole detail payload rather than an id, so the screen
 // that follows a creation is served by the request that made it.

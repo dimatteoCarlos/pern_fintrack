@@ -13,7 +13,6 @@ import express, { Router } from 'express';
 import {
   createBasicAccount,
   createDebtorAccount,
-  createPocketAccount,
 } from '../controllers/accountCreationController.js';
 
 // 📚 ACCOUNT READING CONTROLLERS
@@ -55,7 +54,16 @@ router.post('/new_account/investment', createBasicAccount);
 
 router.post('/new_account/debtor', createDebtorAccount);
 
-router.post('/new_account/pocket_saving', createPocketAccount);
+// The route that created an account of the retired pocket type is withdrawn.
+// A pocket is a planning object, not an account: it holds no balance, takes
+// part in no transfer, and lives in its own table with its own endpoints.
+// While this route stood, any token holder could still write a row of a type
+// nothing is meant to create again, and every measurement of "none left" had
+// a shelf life.
+//
+// The READ paths stay, and so do the catalog rows and the extension table:
+// historical records carry those ids, and a database built at runtime still
+// creates that table.
 
 router.post('/new_account/category_budget', createCategoryBudgetAccount);
 

@@ -208,12 +208,6 @@ export type PocketsToRenderType = {
   desired_date:Date
 };
 //----------------------------------
-// Where a pocket's desired_date came from, mirroring the CHECK on
-// pocket_saving_accounts.desired_date_source (migration 018). A closed union
-// rather than string: the card decides between a pace and "deadline not set"
-// on this value, and the compiler is what keeps that decision exhaustive.
-export type DesiredDateSourceType = 'user' | 'default';
-
 //----------------------------------
 export type StatusType = boolean;
 
