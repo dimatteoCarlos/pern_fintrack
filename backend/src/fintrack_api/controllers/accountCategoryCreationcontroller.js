@@ -8,6 +8,7 @@ import { recordTransaction } from '../../utils/fintrackUtils/transactionManageme
 import { checkAndInsertAccount } from '../../utils/fintrackUtils/accountManagement/checkAndInsertAccount.js';
 import { verifyAccountExistence } from '../../utils/fintrackUtils/accountManagement/verifyAccountExistence.js';
 import { updateAccountBalance } from '../../utils/fintrackUtils/accountManagement/updateAccountBalance.js';
+import { lockAndDeriveBalances } from '../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 import { insertAccount } from '../../utils/fintrackUtils/accountManagement/insertAccount.js';
 import { getTransactionTypeId } from '../../utils/fintrackUtils/accountDataRetrieval/getTransactionTypeId.js';
 import { determineSourceAndDestinationAccounts } from '../../utils/fintrackUtils/accountManagement/determineSourceAndDestinationAccounts.js';
@@ -396,8 +397,18 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       'slack',
     );
 
+    // Locked and derived, like every other account a movement touches. No funds
+    // check: the compensation account is the one account allowed to overdraft.
+    // The figure still comes from the ledger because it is what this opening
+    // entry states in the audit trail, and the stored column has drifted from it.
+    const counterAccountId = counterAccountInfo.account.account_id;
+
+    const ledgerBalances = await lockAndDeriveBalances(client, userId, [
+      counterAccountId,
+    ]);
+
     const newCounterAccountBalance =
-      counterAccountInfo.account.account_balance - transactionAmount;
+      parseFloat(ledgerBalances.get(counterAccountId)) - transactionAmount;
 
     const counterAccountTransactionAmount = -transactionAmount;
 

@@ -22,6 +22,7 @@ import {
   verifyAccountExists,
 } from '../../utils/fintrackUtils/accountManagement/verifyAccountExistence.js';
 import { updateAccountBalance } from '../../utils/fintrackUtils/accountManagement/updateAccountBalance.js';
+import { lockAndDeriveBalances } from '../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 import { insertAccount } from '../../utils/fintrackUtils/accountManagement/insertAccount.js';
 import { getTransactionTypeId } from '../../utils/fintrackUtils/accountDataRetrieval/getTransactionTypeId.js';
 
@@ -250,8 +251,20 @@ export const createBasicAccount = async (req, res, next) => {
 
     const counterAccountTransactionAmount = -convertedAmount; //it will always be withdraw
 
+    // The compensation account, locked and derived like every other account a
+    // movement touches. No funds check here on purpose — this counterparty is
+    // the one account allowed to overdraft — but the figure still has to be the
+    // ledger's, because it is the balance this opening entry states in the audit
+    // trail. A stored figure would have the row explain the account with a
+    // number the account does not hold.
+    const counterAccountId = counterAccountInfo.account.account_id;
+
+    const ledgerBalances = await lockAndDeriveBalances(client, userId, [
+      counterAccountId,
+    ]);
+
     const newCounterAccountBalance =
-      counterAccountInfo.account.account_balance - convertedAmount;
+      parseFloat(ledgerBalances.get(counterAccountId)) - convertedAmount;
 
     //transaction type id's
     const transactionTypeDescriptionIds = await getTransactionTypeId(
@@ -650,19 +663,11 @@ export const createDebtorAccount = async (req, res, next) => {
       exchangeRateTimestamp = conversion.fetchedAt;
     }
 
+    // The check itself lives below, inside the transaction. It cannot run here:
+    // the figure it needs has to come from the ledger with the account row
+    // locked, and there is no transaction open yet at this point.
     const isCheckForFundsRequired =
       selectedAccountTransactionType === 'lend' && Number(convertedValue) > 0;
-    if (
-      isCheckForFundsRequired &&
-      counterAccountInfo.account.account_balance < parseFloat(convertedValue)
-    ) {
-      const message = `Not enough funds to transfer ${ACCOUNTING_CURRENCY_CODE} ${parseFloat(convertedValue)} from account ${counterAccountInfo.account.account_name} (${ACCOUNTING_CURRENCY_CODE} ${counterAccountInfo.account.account_balance})`;
-      console.warn(pc.magentaBright(message));
-      return res.status(400).json({
-        status: 400,
-        message,
-      });
-    }
     //===============================
     //-------------------------------
     //--DEBTOR ACCOUNT --------
@@ -684,6 +689,39 @@ export const createDebtorAccount = async (req, res, next) => {
     );
     //------- NEW DEBTOR BASIC ACCOUNT INFO ----------
     await client.query('BEGIN');
+
+    // The account the loan is drawn from, locked and derived before anything is
+    // decided or written. Two defects close here at once, the same pair the
+    // transfer path closed: the stored column has drifted from the ledger, so
+    // the ceiling this check enforced was not the account's and the refusal
+    // message quoted that wrong ceiling to the owner; and nothing serialised
+    // two simultaneous draws on one account, so both read the same prior state,
+    // both passed and both wrote.
+    //
+    // The lend balance is also what the counter movement is carried forward
+    // from further down, so a stale figure here was rewritten intact into the
+    // projection. Deriving makes that projection self-heal on the next movement
+    // of the account instead of propagating the drift.
+    const counterAccountId = counterAccountInfo.account.account_id;
+
+    const ledgerBalances = await lockAndDeriveBalances(client, userId, [
+      counterAccountId,
+    ]);
+
+    const counterAccountBalance = parseFloat(
+      ledgerBalances.get(counterAccountId),
+    );
+
+    if (isCheckForFundsRequired && counterAccountBalance < parseFloat(convertedValue)) {
+      const message = `Not enough funds to transfer ${ACCOUNTING_CURRENCY_CODE} ${parseFloat(convertedValue)} from account ${counterAccountInfo.account.account_name} (${ACCOUNTING_CURRENCY_CODE} ${counterAccountBalance})`;
+      console.warn(pc.magentaBright(message));
+
+      // Thrown rather than returned: the transaction is open now, and a bare
+      // response would leave it open on a connection handed back to the pool.
+      // The catch below rolls back.
+      throw createError(400, message);
+    }
+
     //---INSERT DEBTOR ACCOUNT into user_accounts table
     const { account_basic_data } = await insertAccount(
       client,
@@ -782,9 +820,13 @@ export const createDebtorAccount = async (req, res, next) => {
 
     //--------------------------------
     const counterAccountTransactionAmount = -Number(transactionAmount);
+
+    // Carried forward from the derived figure, not the stored one. Reading the
+    // stored column here rewrote whatever drift it held straight back into the
+    // projection, so the error survived every later movement; from the ledger
+    // the projection corrects itself the next time this account moves.
     const newCounterAccountBalance =
-      Number(counterAccountInfo.account.account_balance) +
-      counterAccountTransactionAmount;
+      counterAccountBalance + counterAccountTransactionAmount;
 
     // Its own metadata: the counter movement runs in the opposite direction, so
     // reusing the debtor's would store an origin whose sign contradicts the
