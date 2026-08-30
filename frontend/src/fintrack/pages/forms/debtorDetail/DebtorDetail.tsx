@@ -48,20 +48,36 @@ type LocationStateType = {
 const DASH = '—';
 
 //--functions
+// The board's list row, rebuilt from the account the detail endpoint answers so
+// the bubble holds real data on a direct load.
+//
+// The four debt fields carry the server's definitions verbatim, from the debtor
+// branch of the summary query in dashboardController: a POSITIVE balance is a
+// receivable and they owe the owner, a NEGATIVE one is a payable and the owner
+// owes, and zero is settled, which raises neither flag. Receivable and payable
+// were inverted against that definition here; no pixel showed it only because
+// the bubble reads neither field.
+//
+// The payable stays negative, as the accounting contract serves it. Printing
+// its absolute value is the interface's business, not this function's.
+//
+// The direction is still read off the sign because GET /account/:accountId
+// serves no debt position. Serving one closes that; a second client-side
+// derivation would not.
 function getBubleInfoFromAccountDetail(
   accountDetail: AccountListType,
 ): DebtorListType {
+  const balance = accountDetail.account_balance;
+
   return {
     account_name: accountDetail.account_name,
     account_id: accountDetail.account_id,
     currency_code: accountDetail.currency_code,
-    total_debt_balance: accountDetail.account_balance,
-    debt_receivable:
-      accountDetail.account_balance < 0 ? accountDetail.account_balance : 0,
-    debt_payable:
-      accountDetail.account_balance > 0 ? accountDetail.account_balance : 0,
-    creditor: accountDetail.account_balance < 0 ? 1 : 0,
-    debtor: accountDetail.account_balance >= 0 ? 1 : 0,
+    total_debt_balance: balance,
+    debt_receivable: balance > 0 ? balance : 0,
+    debt_payable: balance < 0 ? balance : 0,
+    creditor: balance < 0 ? 1 : 0,
+    debtor: balance > 0 ? 1 : 0,
   };
 }
 
