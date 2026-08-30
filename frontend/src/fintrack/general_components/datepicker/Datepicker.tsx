@@ -24,6 +24,22 @@ type DatePickerProps = {
   // one is stating a rule its own form has, not changing the component's default.
   minDate?: Date;
   maxDate?: Date;
+  // The element that opens the calendar. Optional, so every existing caller
+  // keeps the read-only text input below; a caller that passes one is stating
+  // that its date is a secondary action rather than a field on the form.
+  customInput?: React.ReactElement;
+  // Render the calendar centred and detached from the trigger instead of
+  // anchored under it. Optional and off by default, so the callers that open it
+  // inside their own panel keep doing that; a caller whose panel clips it asks
+  // for this.
+  //
+  // Both are needed together. withPortal on its own does NOT create a React
+  // portal: it renders <div class="react-datepicker__portal"> in place, inside
+  // the caller's tree, and that div's position: fixed is then resolved against
+  // the nearest transformed ancestor rather than the viewport. Only portalId
+  // takes the calendar out to document.body, where fixed means fixed.
+  withPortal?: boolean;
+  portalId?: string;
 };
 
 // ⚙️ Config estándar
@@ -57,6 +73,9 @@ function Datepicker({
   popperClassName,
   minDate,
   maxDate,
+  customInput,
+  withPortal,
+  portalId,
 }: DatePickerProps) {
   const handleChange = React.useCallback(
     (selectedDate: Date | null) => {
@@ -83,7 +102,9 @@ function Datepicker({
       minDate={minDate ?? MIN_DATE}
       maxDate={maxDate ?? MAX_DATE}
       shouldCloseOnSelect
-      customInput={<ReadOnlyInput />}
+      customInput={customInput ?? <ReadOnlyInput />}
+      withPortal={withPortal}
+      portalId={portalId}
       popperClassName={popperClassName}
       className={
         variant == 'tracker' || variant == 'light'

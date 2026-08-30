@@ -61,6 +61,7 @@ import { MovementValidatedDataType } from '../../../validations/types.ts';
 // 🎨 UI Components
 import TopCard from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
+import { useTransactionDate } from '../../../hooks/useTransactionDate.ts';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import CardNoteSave from '../components/CardNoteSave.tsx';
 import RadioInput from '../../../general_components/radioInput/RadioInput.tsx';
@@ -282,17 +283,25 @@ function Transfer(): JSX.Element {
     [isCategoryOrigin, budgetStatusByAccountId, isLoadingBudgetStatus],
   );
   //---------------------------------
+  // The day this entry happened. Defaults to today, which is always inside the
+  // window and always shows every account.
+  const {
+    transactionActualDate,
+    isOpenOnChosenDay,
+    dateProps: transactionDateProps,
+  } = useTransactionDate();
+
   //--- DATA TRANSFORMATIONS
   // 🧠 Memoization: Account Options
   const optionsOriginAccounts = useMemo(() => {
     if (fetchedErrorOriginAccounts) {
       return ACCOUNT_OPTIONS_DEFAULT;
     }
-    const originAccountList = originAccountsResponse?.data?.accountList ?? [];
-    // console.log(
-    //   '🚀 ~ optionsOriginAccounts ~ originAccountList:',
-    //   originAccountList
-    // );
+    // An account that did not exist on the chosen day is not a disabled option,
+    // it is not an option.
+    const originAccountList = (
+      originAccountsResponse?.data?.accountList ?? []
+    ).filter((acc) => isOpenOnChosenDay(acc.account_start_date));
 
     return originAccountList.length
       ? originAccountList.map((acc) => ({
@@ -305,6 +314,7 @@ function Transfer(): JSX.Element {
     originAccountsResponse?.data.accountList,
     fetchedErrorOriginAccounts,
     buildOriginLabel,
+    isOpenOnChosenDay,
   ]);
   //-------------------------------------
   //filtering origin account list
@@ -312,7 +322,9 @@ function Transfer(): JSX.Element {
     if (!formData.destinationAccountId) {
       return optionsOriginAccounts;
     }
-    const originAccountList = originAccountsResponse?.data?.accountList ?? [];
+    const originAccountList = (
+      originAccountsResponse?.data?.accountList ?? []
+    ).filter((acc) => isOpenOnChosenDay(acc.account_start_date));
 
     const filteredAccounts = originAccountList.length
       ? originAccountList.filter(
@@ -330,6 +342,7 @@ function Transfer(): JSX.Element {
     originAccountsResponse?.data.accountList,
     optionsOriginAccounts,
     buildOriginLabel,
+    isOpenOnChosenDay,
   ]);
 
   //----account options for dropdown of origin
@@ -376,15 +389,52 @@ function Transfer(): JSX.Element {
 
       options:
         destinationAccountsResponse?.data?.accountList
-          ?.filter((dest) => dest.account_id !== formData.originAccountId)
+          ?.filter(
+            (dest) =>
+              dest.account_id !== formData.originAccountId &&
+              isOpenOnChosenDay(dest.account_start_date),
+          )
           .map((acc) => ({
             value: acc.account_name,
             label: `${acc.account_name} (${acc.currency_code} ${acc.account_balance})`,
           })) || ACCOUNT_OPTIONS_DEFAULT,
       variant: VARIANT_DEFAULT,
     }),
-    [destinationAccountsResponse, formData.originAccountId],
+    [destinationAccountsResponse, formData.originAccountId, isOpenOnChosenDay],
   );
+
+  // A selection already made may stop qualifying when the date moves back. Both
+  // legs are cleared together and both dropdowns reset with them: clearing one
+  // while the other keeps its displayed label would leave the form showing a
+  // value its state no longer holds.
+  useEffect(() => {
+    const originStillOffered =
+      !formData.origin ||
+      filteredOriginOptions.some((option) => option.value === formData.origin);
+
+    const destinationStillOffered =
+      !formData.destination ||
+      destinationAccountOptions.options.some(
+        (option) => option.value === formData.destination,
+      );
+
+    if (originStillOffered && destinationStillOffered) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      origin: '',
+      originAccountId: undefined,
+      destination: '',
+      destinationAccountId: undefined,
+    }));
+    setIsReset(true);
+  }, [
+    filteredOriginOptions,
+    destinationAccountOptions,
+    formData.origin,
+    formData.destination,
+    setFormData,
+  ]);
 
   //-------------------------------------
   //OBTAIN THE REQUESTFN FROM userFetchLoad
@@ -392,7 +442,8 @@ function Transfer(): JSX.Element {
   type PayloadType = MovementValidatedDataType & {
     user?: string;
     type?: string;
-    // transaction_actual_date: string | Date;
+    // The day the movement happened, as the calendar label the server validates.
+    transactionActualDate: string;
   };
   //---
   //DATA POST FETCHING
@@ -585,6 +636,7 @@ function Transfer(): JSX.Element {
       const payload: PayloadType = {
         ...dataValidated,
         type: typeMovement,
+        transactionActualDate,
       };
 
       // const payload: PayloadType = {
@@ -721,6 +773,7 @@ function Transfer(): JSX.Element {
             accountTypeSelectionMode: 'inputChipMode',
             labelId: 'origin',
           }}
+          transactionDateProps={transactionDateProps}
         />
         {/* end of TOP CARD */}
 

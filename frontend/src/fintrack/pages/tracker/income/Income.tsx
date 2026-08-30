@@ -14,6 +14,7 @@ import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
 
 // form input validation manager
 import useFormManager from '../../../hooks/useFormManager.ts';
+import { useTransactionDate } from '../../../hooks/useTransactionDate.ts';
 
 // Zustand store
 import useBalanceStore from '../../../stores/useBalanceStore.ts';
@@ -140,6 +141,14 @@ function Income(): JSX.Element {
     incomeSchema,
     initialIncomeData,
   );
+  // The day this entry happened. Defaults to today, which is always inside the
+  // window and always shows every account.
+  const {
+    transactionActualDate,
+    isOpenOnChosenDay,
+    dateProps: transactionDateProps,
+  } = useTransactionDate();
+
   //---- Income account Options ------
   // 📡 Data Fetching:
   //GET: available accounts of type bank
@@ -160,15 +169,20 @@ function Income(): JSX.Element {
       BankAccountsResponse?.data?.accountList?.length &&
       !fetchedErrorBankAccounts &&
       !isLoadingBankAccounts
-        ? BankAccountsResponse?.data.accountList?.map((acc) => ({
-            value: acc.account_name,
-            label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code.toLowerCase()} ${acc.account_balance})`,
-          }))
+        ? BankAccountsResponse?.data.accountList
+            // An account that did not exist on the chosen day is not a disabled
+            // option, it is not an option.
+            .filter((acc) => isOpenOnChosenDay(acc.account_start_date))
+            .map((acc) => ({
+              value: acc.account_name,
+              label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code.toLowerCase()} ${acc.account_balance})`,
+            }))
         : ACCOUNT_OPTIONS_DEFAULT,
     [
       BankAccountsResponse?.data.accountList,
       fetchedErrorBankAccounts,
       isLoadingBankAccounts,
+      isOpenOnChosenDay,
     ],
   );
 
@@ -196,19 +210,53 @@ function Income(): JSX.Element {
       title: sources && !isLoadingSources ? 'Source of income' : '',
       options:
         !errorSources && sources?.data.accountList.length
-          ? sources?.data.accountList?.map((acc) => ({
-              value: acc.account_name,
-              label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${Math.abs(acc.account_balance)})`,
-            }))
+          ? sources?.data.accountList
+              .filter((acc) => isOpenOnChosenDay(acc.account_start_date))
+              .map((acc) => ({
+                value: acc.account_name,
+                label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${Math.abs(acc.account_balance)})`,
+              }))
           : SOURCE_OPTIONS_DEFAULT,
       variant: VARIANT_DEFAULT as VariantType,
     }),
-    [errorSources, isLoadingSources, sources],
+    [errorSources, isLoadingSources, sources, isOpenOnChosenDay],
   );
+
+  // A selection already made may stop qualifying when the date moves back. Both
+  // fields are cleared together and both dropdowns reset with them: clearing one
+  // while the other keeps its displayed label would leave the form showing a
+  // value its state no longer holds.
+  useEffect(() => {
+    const accountStillOffered =
+      !incomeData.account ||
+      optionsIncomeAccounts.some(
+        (option) => option.value === incomeData.account,
+      );
+
+    const sourceStillOffered =
+      !incomeData.source ||
+      sourceOptions.options.some((option) => option.value === incomeData.source);
+
+    if (accountStillOffered && sourceStillOffered) return;
+
+    setFormData((prev) => ({ ...prev, account: '', source: '' }));
+    setIsReset(true);
+  }, [
+    optionsIncomeAccounts,
+    sourceOptions,
+    incomeData.account,
+    incomeData.source,
+    setFormData,
+  ]);
   //--------------------------------
   //OBTAIN THE REQUESTFN FROM userFetchLoad
   // 📡 Post Request logic
-  type PayloadType = IncomeValidatedDataType & { user?: string; type?: string };
+  type PayloadType = IncomeValidatedDataType & {
+    user?: string;
+    type?: string;
+    // The day the movement happened, as the calendar label the server validates.
+    transactionActualDate: string;
+  };
   //----
   //DATA POST FETCHING
   const {
@@ -317,6 +365,7 @@ function Income(): JSX.Element {
       const payload: PayloadType = {
         ...(dataValidated as IncomeValidatedDataType & { type?: string }),
         type: typeMovement,
+        transactionActualDate,
       };
       //--send the post request
       const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
@@ -415,6 +464,7 @@ function Income(): JSX.Element {
           setIsReset={setIsReset}
           setIsResetDropdown={setIsResetDropdown}
           customSelectHandler={handleAccountChange}
+          transactionDateProps={transactionDateProps}
         />
         {/* end of TOP CARD */}
         <CardSeparator />

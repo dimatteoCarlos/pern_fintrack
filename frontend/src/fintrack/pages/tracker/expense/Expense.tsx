@@ -15,6 +15,7 @@ import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback.ts';
 // ZUSTAND STORES
 import { useBalanceStore } from '../../../stores/useBalanceStore.ts';
 import { useBudgetStatusStore } from '../../../stores/useBudgetStatusStore.ts';
+import { useTransactionDate } from '../../../hooks/useTransactionDate.ts';
 import { notifyTransactionRecorded } from '../../../stores/transactionEvents.ts';
 //---
 // 🎨 UI COMPONENTS
@@ -114,6 +115,14 @@ function Expense(): JSX.Element {
 
   const [expenseData, setExpenseData] =
     useState<ExpenseInputDataType>(initialExpenseData);
+
+  // The day this entry happened. Defaults to today, which is always inside the
+  // window and always shows every account, so an ordinary entry never touches it.
+  const {
+    transactionActualDate,
+    isOpenOnChosenDay,
+    dateProps: transactionDateProps,
+  } = useTransactionDate();
   // const [localError, setLocalError] = useState<string | null>(null);
 
   // Message States
@@ -171,7 +180,13 @@ function Expense(): JSX.Element {
     if (fetchedErrorBankAccounts) {
       return ACCOUNT_OPTIONS_DEFAULT;
     }
-    const accountList = BankAccountsResponse?.data?.accountList ?? [];
+    // Filtered by the chosen day before it is mapped: an account that did not
+    // exist yet is not a disabled option, it is not an option. The server
+    // refuses it independently; this is what keeps the owner from meeting that
+    // refusal through a control the form offered them.
+    const accountList = (BankAccountsResponse?.data?.accountList ?? []).filter(
+      (acc) => isOpenOnChosenDay(acc.account_start_date),
+    );
 
     return accountList.length
       ? accountList.map((acc) => ({
@@ -179,7 +194,27 @@ function Expense(): JSX.Element {
           label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`,
         }))
       : ACCOUNT_OPTIONS_DEFAULT;
-  }, [BankAccountsResponse?.data.accountList, fetchedErrorBankAccounts]);
+  }, [
+    BankAccountsResponse?.data.accountList,
+    fetchedErrorBankAccounts,
+    isOpenOnChosenDay,
+  ]);
+
+  // An account already chosen may stop qualifying when the date moves back.
+  // Clearing it is not a courtesy: the form would otherwise post a name the list
+  // no longer offers, and take a 422 for a choice the owner can no longer see.
+  useEffect(() => {
+    if (!expenseData.account) return;
+
+    const stillOffered = optionsExpenseAccounts.some(
+      (option) => option.value === expenseData.account,
+    );
+
+    if (stillOffered) return;
+
+    setExpenseData((prev) => ({ ...prev, account: '' }));
+    setIsResetDropdown(true);
+  }, [optionsExpenseAccounts, expenseData.account]);
 
   const accountOptions = {
     title: 'Select Account',
@@ -289,6 +324,8 @@ function Expense(): JSX.Element {
   // 📡 Post Request logic
   type PayloadType = ExpenseValidatedDataType & {
     type?: string;
+    // The day the movement happened, as the calendar label the server validates.
+    transactionActualDate: string;
   };
   //----
   //DATA POST FETCHING
@@ -470,6 +507,7 @@ function Expense(): JSX.Element {
       const payload: PayloadType = {
         ...(dataValidated as ExpenseValidatedDataType & { type?: string }),
         type: typeMovement,
+        transactionActualDate,
       };
 
       //send the request
@@ -780,6 +818,7 @@ function Expense(): JSX.Element {
           setIsResetDropdown={setIsResetDropdown}
 
           customSelectHandler={accountSelectHandler}
+          transactionDateProps={transactionDateProps}
         />
         {/* end of TOP CARD */}
 

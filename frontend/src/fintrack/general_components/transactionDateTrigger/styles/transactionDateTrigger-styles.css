@@ -1,0 +1,123 @@
+/* frontend/src/fintrack/general_components/transactionDateTrigger/styles/transactionDateTrigger-styles.css
+   The glyph that opens the transaction's date.
+
+   One surface only: it sits inside the tracker card, which is light with dark
+   content. No .light / .dark modifier, because there is no dark caller to name
+   — one added now would be written against a screen that does not exist.
+
+   The resting colour is the SECONDARY content, a step below the account label
+   it sits next to. That is the whole of "discreet": the label states what the
+   row is, the glyph offers something the owner usually does not need. */
+
+.transactionDateTrigger {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ /* Anchors the ::after that gives the tappable area back below. */
+ position: relative;
+ /* The painted box: the glyph plus --space-1 on each side. A minimum and not a
+    width, because the box grows to carry the day once the entry is back-dated. */
+ min-width: calc(var(--font-size-base) + var(--space-1) * 2);
+ height: calc(var(--font-size-base) + var(--space-1) * 2);
+ flex-shrink: 0;
+ gap: var(--space-1);
+ padding: var(--space-1);
+ border: none;
+ border-radius: var(--radius-xs);
+ background-color: transparent;
+ color: var(--color-content-secondary);
+ cursor: pointer;
+ transition:
+  background-color var(--motion-fast),
+  color var(--motion-fast);
+}
+
+/* The tappable area the small painted box gives up. Unpainted and hit-testable,
+   so a finger still gets --size-touch-target while only the glyph shows. */
+.transactionDateTrigger::after {
+ content: '';
+ position: absolute;
+ inset: calc(
+  (var(--size-touch-target) - var(--font-size-base) - var(--space-1) * 2) / -2
+ );
+}
+
+/* The asset is drawn on a square viewBox with stroke='currentColor', so the
+   colour above reaches it and the box needs no aspect correction. */
+.transactionDateTrigger__glyph {
+ height: var(--font-size-base);
+ width: var(--font-size-base);
+}
+
+.transactionDateTrigger:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.transactionDateTrigger:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-content-primary);
+ outline-offset: var(--border-width-thick);
+}
+
+/* Cream on near-black. The neighbouring trigger's light modifier pairs
+   --color-content-primary with --color-accent-content here, which is the same
+   near-black twice and paints the glyph out of sight; --color-accent is the
+   content colour that belongs on this fill. */
+.transactionDateTrigger:active {
+ background-color: var(--color-content-primary);
+ color: var(--color-accent);
+}
+
+.transactionDateTrigger:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The date is not today. The glyph rises to the primary content colour and the
+   day it carries is printed beside it. */
+.transactionDateTrigger.is-active {
+ color: var(--color-content-primary);
+ padding-inline-end: var(--space-2);
+}
+
+/* One step below the account label it sits next to: the row's subject is the
+   account, and this qualifies it. font-size is restated rather than inherited
+   because index.css sets it on the universal selector, so an inline element
+   does not take the size of the line it sits in. */
+.transactionDateTrigger__day {
+ font-size: var(--font-size-xs);
+ font-weight: var(--font-weight-semibold);
+ line-height: 1;
+ white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .transactionDateTrigger {
+  transition: none;
+ }
+}
+
+/* ── The calendar, opened in a portal ────────────────────────────────────────
+   react-datepicker's own stylesheet already centres this container on the
+   viewport. What is overridden here is what it hardcodes: a near-opaque black
+   scrim, and a z-index of 2147483647 that sits outside the closed scale the
+   tokens define and would cover a toast that has something to say about the
+   very entry being dated.
+
+   Only this trigger opens the calendar with withPortal, so the override reaches
+   nothing else. */
+.react-datepicker__portal {
+ background-color: var(--color-surface-overlay);
+ z-index: var(--z-modal);
+}
+
+/* The library also inflates the day cells to 3rem inside a portal, which is a
+   different calendar from the one PnL opens in place at 1.7rem. Brought back to
+   the control size the tokens declare: 1.7rem itself has no token, and 2rem
+   reads at the same density while staying a value the system owns. */
+.react-datepicker__portal .react-datepicker__day-name,
+.react-datepicker__portal .react-datepicker__day,
+.react-datepicker__portal .react-datepicker__time-name {
+ width: var(--size-control-sm);
+ line-height: var(--size-control-sm);
+}

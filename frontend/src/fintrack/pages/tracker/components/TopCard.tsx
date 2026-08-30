@@ -17,7 +17,10 @@ import {
 import { ValidationMessagesType } from '../../../validations/types';
 import LabelNumberValidation from '../../../general_components/labelNumberValidation/LabelNumberValidation';
 
-import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview'; 
+import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview';
+import TransactionDateTrigger, {
+ TransactionDatePropsType,
+} from '../../../general_components/transactionDateTrigger/TransactionDateTrigger';
 
 //---------------------------------
 type TopCardPropType<TFormDataType extends Record<string, unknown>> = {
@@ -51,6 +54,11 @@ type TopCardPropType<TFormDataType extends Record<string, unknown>> = {
 
   radioInputProps?: RadioInputPropsType;
 
+  // The date the entry is recorded on. Optional: a view that does not pass it
+  // records on the day of the request, which is what PnL does with its own
+  // labelled calendar and what every view did before back-dating existed.
+  transactionDateProps?: TransactionDatePropsType;
+
   //--handle special case of Transfer
   customSelectHandler?: (selectedOption: DropdownOptionType | null) => void;
   //---
@@ -73,6 +81,7 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
   setIsReset,
   //-------
   radioInputProps,
+  transactionDateProps,
   //-------
   customSelectHandler,
   //-------
@@ -195,9 +204,19 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
         </div>
 
         <div className='account card--title '>
-          <span className='account-label'>
-            {capitalize(label2 ?? title2).trim()}
-          </span>
+          {/* The label and the date travel together as the row's left group, so
+              justify-content: space-between still sees two children in a view
+              that also renders the account-type chips on the right, and the
+              glyph keeps the same distance from the label in all of them. */}
+          <div className='account__labelGroup'>
+            <span className='account-label'>
+              {capitalize(label2 ?? title2).trim()}
+            </span>
+
+            {transactionDateProps && (
+              <TransactionDateTrigger {...transactionDateProps} />
+            )}
+          </div>
 
           {radioInputProps && (
             <RadioInput

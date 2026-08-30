@@ -409,6 +409,17 @@ textarea:invalid {
 
 /*-----------*/
 /* Responsive style for To:*/
+/* The row's left group: the label and, when the view records a date, the glyph
+   that opens it. Grouping them keeps the row at two children, so the
+   space-between that pushes Transfer's account-type chips to the far right
+   still works and the glyph does not drift away from the label. */
+.account__labelGroup {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ min-width: 0;
+}
+
 .account-label {
  font-size: var(--font-size-sm);
  line-height: 1.25rem;

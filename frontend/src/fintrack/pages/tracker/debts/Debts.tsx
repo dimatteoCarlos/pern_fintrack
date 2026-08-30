@@ -42,6 +42,7 @@ import RadioInput from '../../../general_components/radioInput/RadioInput.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
 import TopCard from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
+import { useTransactionDate } from '../../../hooks/useTransactionDate.ts';
 // =====================
 // 📝 TYPES
 // =====================
@@ -162,6 +163,14 @@ function Debts(): JSX.Element {
     isLoading: isLoadingDebtors,
   } = useFetch<AccountByTypeResponseType>(fetchDebtorUrl as string);
 
+  // The day this entry happened. Defaults to today, which is always inside the
+  // window and always shows every account.
+  const {
+    transactionActualDate,
+    isOpenOnChosenDay,
+    dateProps: transactionDateProps,
+  } = useTransactionDate();
+
   const debtors = useMemo(() => {
     if (
       fetchedErrorDebtors ||
@@ -172,7 +181,11 @@ function Debts(): JSX.Element {
 
     const newIdMap: { [accountName: string]: string } = {};
 
-    const options = debtorsResponse?.data.accountList.map((debtor) => {
+    // A debtor account that did not exist on the chosen day is not a disabled
+    // option, it is not an option.
+    const options = debtorsResponse?.data.accountList
+      .filter((debtor) => isOpenOnChosenDay(debtor.account_start_date))
+      .map((debtor) => {
       newIdMap[debtor.account_name] = String(debtor.account_id);
 
       return {
@@ -187,6 +200,7 @@ function Debts(): JSX.Element {
     debtorsResponse?.data.accountList,
     fetchedErrorDebtors,
     isLoadingDebtors,
+    isOpenOnChosenDay,
   ]);
   //----------------------------------
   const debtorOptions = {
@@ -216,7 +230,9 @@ function Debts(): JSX.Element {
     if (fetchedErrorAccounts) {
       return [];
     }
-    const optionsAccountList = accountsResponse?.data.accountList ?? [];
+    const optionsAccountList = (
+      accountsResponse?.data.accountList ?? []
+    ).filter((acc: AccountListType) => isOpenOnChosenDay(acc.account_start_date));
     const idMap: { [accountName: string]: string } = {};
 
     const options = optionsAccountList.length
@@ -231,7 +247,30 @@ function Debts(): JSX.Element {
 
     setAccountIdMap(idMap);
     return options;
-  }, [accountsResponse?.data.accountList, fetchedErrorAccounts]);
+  }, [
+    accountsResponse?.data.accountList,
+    fetchedErrorAccounts,
+    isOpenOnChosenDay,
+  ]);
+
+  // A selection already made may stop qualifying when the date moves back. Both
+  // fields are cleared together and both dropdowns reset with them: clearing one
+  // while the other keeps its displayed label would leave the form showing a
+  // value its state no longer holds.
+  useEffect(() => {
+    const debtorStillOffered =
+      !datatrack.debtor ||
+      debtors.some((option) => option.value === datatrack.debtor);
+
+    const accountStillOffered =
+      !datatrack.account ||
+      optionsAccounts.some((option) => option.value === datatrack.account);
+
+    if (debtorStillOffered && accountStillOffered) return;
+
+    setDataTrack((prev) => ({ ...prev, debtor: '', account: '' }));
+    setIsReset(true);
+  }, [debtors, optionsAccounts, datatrack.debtor, datatrack.account]);
 
   const accountOptionsToRender = {
     title: accountsResponse?.data?.accountList?.length ? 'Select account' : '', //'No accounts available',
@@ -248,6 +287,8 @@ function Debts(): JSX.Element {
     user?: string;
     debtor_id?: string;
     account_id?: string;
+    // The day the movement happened, as the calendar label the server validates.
+    transactionActualDate: string;
   };
   //----
   //DATA POST FETCHING
@@ -413,6 +454,7 @@ function Debts(): JSX.Element {
         ...datatrack,
         debtor_id: debtorId,
         account_id: accountId,
+        transactionActualDate,
       } as PayloadType;
       // console.log("🚀 ~ onSaveHandler ~ payload:", payload)
       const postUrl = `${url_movement_transaction_record}/?movement=${typeMovement}`;
@@ -612,6 +654,7 @@ function Debts(): JSX.Element {
           setSelectState={setDataTrack}
           isReset={isReset}
           setIsReset={setIsReset}
+          transactionDateProps={transactionDateProps}
         />
 
         <CardSeparator />
