@@ -30,20 +30,6 @@
 
 }
 
-/* ── The board is a frame, not a document ────────────────────────────────────
-   The missing half of the list's own scroll, below: .pocketList already had
-   flex:1; min-height:0; overflow-y:auto, but nothing capped .home__layout's
-   own height, so it was free to grow past the viewport to fit the list
-   instead of shrinking it — which is what min-height:0 needs to have
-   anything to do. The result was a document scroll that carried the hero and
-   the toolbar away with the cards, the opposite of what the list's own rule
-   was written for. Same fix as budget's board, word for word. */
-.home__layout:has(.pocketLayout) {
- height: 100dvh;
- min-height: 0;
- overflow-y: hidden;
-}
-
 /* The board is shorter than the viewport and the shell spreads its three
    children with space-between, so it floated 23.1px down the taller band while
    the header stayed put — enough to break the alignment with the budget board.
