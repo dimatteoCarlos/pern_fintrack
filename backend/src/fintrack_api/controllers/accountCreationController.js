@@ -205,6 +205,7 @@ export const createBasicAccount = async (req, res, next) => {
         currency_code,
         ACCOUNTING_CURRENCY_CODE,
         openingRateDay,
+        openingTimeZone,
       );
 
       convertedAmount = conversion.amount.toNumber();
@@ -680,6 +681,7 @@ export const createDebtorAccount = async (req, res, next) => {
         currencyCode,
         ACCOUNTING_CURRENCY_CODE,
         openingRateDay,
+        openingTimeZone,
       );
       convertedValue = conversion.amount.toNumber();
       exchangeRate = conversion.rate;

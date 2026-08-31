@@ -402,6 +402,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
         originalCurrencyCode,
         ACCOUNTING_CURRENCY_CODE,
         asOfDay,
+        // The same zone asOfDay was decided on above, so the resolver's future
+        // guard and this controller's floor agree on which day it is.
+        timeZone,
       );
 
       convertedAmount = conversion.amount.toNumber();

@@ -247,6 +247,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
         currency_code,
         ACCOUNTING_CURRENCY_CODE,
         openingRateDay,
+        openingTimeZone,
       );
 
       convertedBudget = budgetConversion.amount.toNumber();
@@ -263,6 +264,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
           currency_code,
           ACCOUNTING_CURRENCY_CODE,
           openingRateDay,
+          openingTimeZone,
         );
 
         convertedStartingAmount = startingConversion.amount.toNumber();

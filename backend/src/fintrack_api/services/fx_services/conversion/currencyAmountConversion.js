@@ -63,6 +63,9 @@ function toCalendarDay(value) {
  * @param {string} fromCurrency - Source currency code (e.g., 'eur')
  * @param {string} toCurrency - Target currency code (default 'usd')
  * @param {Date|string|null} [asOfDate=null] - The day to value the amount on.
+ * @param {string} [timeZone='UTC'] - The IANA zone the day boundary is read on,
+ *   passed through to the historical cascade. A caller that knows the owner
+ *   supplies theirs; UTC preserves the behaviour of every caller that does not.
  *   Omitted means now, which is the behaviour every existing caller gets.
  * @returns {Promise<{amount: Decimal, rate: number, source: string, fetchedAt: Date, effectiveDate: string|null}>}
  *   source is what belongs in exchange_rate_source: the bare provider name on
@@ -75,6 +78,7 @@ export async function currencyAmountConversion(
   fromCurrency,
   toCurrency = ACCOUNTING_CURRENCY_CODE,
   asOfDate = null,
+  timeZone = 'UTC',
 ) {
   const from = fromCurrency.toLowerCase();
   const to = toCurrency.toLowerCase();
@@ -131,6 +135,7 @@ export async function currencyAmountConversion(
 
     const resolved = await resolveHistoricalRate(currency, asOfDate, {
       budgetMs: deadlineAt - Date.now(),
+      timeZone,
     });
 
     return {

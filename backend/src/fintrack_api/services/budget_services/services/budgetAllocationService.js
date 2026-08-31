@@ -251,6 +251,7 @@ async function setCurrentMonthBudget(
    currency,
    accountCurrency,
    month,
+   timeZone,
   );
 
   const normalizedAmount = normalizeAmount(converted.amount.toNumber());

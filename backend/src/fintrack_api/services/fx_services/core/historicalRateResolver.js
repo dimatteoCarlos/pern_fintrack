@@ -27,6 +27,7 @@ import { ACCOUNTING_CURRENCY_CODE, SUPPORTED_CURRENCIES } from './fxConfig.js';
 
 import { createError } from '../../../../utils/errorHandling.js';
 import { getCurrencyId } from '../../../../utils/currencyLookup.js';
+import { todayInZone } from '../../../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 
 import {
  MAX_RATE_AGE_DAYS,
@@ -95,10 +96,15 @@ function toCalendarDay(value) {
  * request and the same handful of rows, and it turns every later back-dated
  * movement of that month into a store hit with no network at all.
  *
+ * Closing at today needs the OWNER'S today. Read in UTC it would run a day
+ * ahead for anyone west of Greenwich, asking a provider for a day that has not
+ * started where the user is.
+ *
  * @param {string} day - The day being valued, YYYY-MM-DD
+ * @param {string} timeZone - IANA zone the day boundary is read on
  * @returns {{ from: string, to: string }}
  */
-function spanAround(day) {
+function spanAround(day, timeZone) {
  const [year, month] = day.split('-').map(Number);
 
  const firstOfMonth = Date.UTC(year, month - 1, 1);
@@ -108,7 +114,7 @@ function spanAround(day) {
 
  // Day 0 of the next month is the last day of this one.
  const lastOfMonth = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
- const today = new Date().toISOString().slice(0, 10);
+ const today = todayInZone(timeZone);
 
  return { from, to: today < lastOfMonth ? today : lastOfMonth };
 }
@@ -165,6 +171,11 @@ function asAnswer(hit, currency, requestedDate) {
  * @param {Date|string} requestedDate - The movement's own day
  * @param {Object} [options]
  * @param {number} [options.budgetMs] - Ceiling for the whole cascade
+ * @param {string} [options.timeZone='UTC'] - The IANA zone the day boundary is
+ *   read on. What counts as today is the OWNER'S question: at UTC a user in
+ *   Tokyo asking for their own current day is asking about tomorrow, and the
+ *   future guard below refuses to value it. UTC is the default because the
+ *   warm-up fills a shared store and has no owner to read a zone from.
  * @returns {Promise<HistoricalRate>}
  * @throws {Error} - every one carries a stable errorCode and details beside the
  *   prose: UNSUPPORTED_FX_CURRENCY and INVALID_FX_DATE on a bad input (400),
@@ -198,8 +209,10 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
   );
  }
 
- // A rate that has not happened yet cannot be resolved, only guessed.
- const today = new Date().toISOString().slice(0, 10);
+ // A rate that has not happened yet cannot be resolved, only guessed. Which
+ // days have happened is settled on the owner's calendar, not the server's.
+ const timeZone = options.timeZone || 'UTC';
+ const today = todayInZone(timeZone);
 
  if (day > today) {
   throw createError(
@@ -277,7 +290,7 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
    // a single validity leaves the days of every other one resolving backwards
    // onto a rate the provider had already superseded. Each row is stored under
    // the day its own validity opens on, never under the day that was asked for.
-   const { from, to } = spanAround(day);
+   const { from, to } = spanAround(day, timeZone);
 
    const series = await fetchTrmRange(from, to);
 
@@ -286,7 +299,10 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
     if (answer) return answer;
    }
 
-   attempts.push(`banrep: no validity in force on ${day} within ${from}..${to}`);
+   attempts.push(
+    `banrep: nothing in force on ${day} within ${from}..${to}, or the span ` +
+     `from the effective day to ${day} is not covered`,
+   );
   } catch (error) {
    attempts.push(`banrep: ${error.message}`);
   }
@@ -294,7 +310,7 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
 
  // ---- Banca d'Italia, the universal arm and the business-day oracle ----
  try {
-  const { from, to } = spanAround(day);
+  const { from, to } = spanAround(day, timeZone);
 
   const series = await fetchBancaDItaliaRange(currency, from, to, {
    deadlineAt,
@@ -307,7 +323,8 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
   }
 
   attempts.push(
-   `bancaditalia: no published day on or before ${day} within the bound`,
+   `bancaditalia: no published day on or before ${day} within the bound, ` +
+    `or the span from it to ${day} is not covered`,
   );
  } catch (error) {
   attempts.push(`bancaditalia: ${error.message}`);
@@ -345,7 +362,9 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
     if (answer) return answer;
 
     attempts.push(
-     `cdn answered ${publishedDay}, outside the ${MAX_RATE_AGE_DAYS}-day bound`,
+     `cdn answered ${publishedDay}, which is either outside the ` +
+      `${MAX_RATE_AGE_DAYS}-day bound or not covered through ${day}: this arm ` +
+      `asks for one day, so it covers one day and cannot answer a later one`,
     );
    }
   }
