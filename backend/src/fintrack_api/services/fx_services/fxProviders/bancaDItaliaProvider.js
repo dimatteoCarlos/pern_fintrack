@@ -46,6 +46,70 @@ const USD_BASE_CONVENTION = 'C';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// ─── Host reachability ───────────────────────────────────────────────────────
+//
+// Both endpoints below live on one host, so one of them failing to CONNECT
+// tells the other something. Measured 2026-08-31 from a development machine:
+// DNS resolves, the TCP handshake on 443 never completes, and every call spends
+// its whole timeout before the cascade moves on — about 2s of a 5s budget burnt
+// on a host that is not answering, once per currency per uncovered day.
+//
+// This remembers only that, and only briefly. It is NOT a judgement that the
+// provider is gone: the window is short so a host that is merely flaky is tried
+// again almost immediately, which matters because this provider is preferred —
+// it is the app's business-day oracle and it never invents movement on a closed
+// day.
+const HOST_RETRY_AFTER_MS = 60_000;
+
+let hostUnreachableUntil = 0;
+
+// Only a failure to REACH the host counts. An HTTP status or a malformed body
+// means the host answered and the fault is elsewhere; skipping the provider for
+// those would hide a bug instead of saving time.
+const CONNECTION_FAILURE_CODES = new Set([
+ 'ECONNABORTED',
+ 'ECONNREFUSED',
+ 'ECONNRESET',
+ 'EAI_AGAIN',
+ 'EHOSTUNREACH',
+ 'ENETUNREACH',
+ 'ENOTFOUND',
+ 'ETIMEDOUT',
+ 'ERR_NETWORK',
+]);
+
+/**
+ * Refuse the call outright while the host is known to be unreachable.
+ * @throws {Error} - Named so the cascade's diagnostics say skipped, not failed.
+ */
+function assertHostReachable() {
+ if (Date.now() < hostUnreachableUntil) {
+  const seconds = Math.ceil((hostUnreachableUntil - Date.now()) / 1000);
+
+  throw new Error(
+   `Banca d'Italia skipped: the host did not connect, not retried for ${seconds}s`,
+  );
+ }
+}
+
+/**
+ * Record what a request did to the host's reachability.
+ * @param {Error|null} error - null on success.
+ */
+function noteHostOutcome(error) {
+ if (!error) {
+  hostUnreachableUntil = 0;
+  return;
+ }
+
+ if (error.response) return;
+
+ if (CONNECTION_FAILURE_CODES.has(error.code)) {
+  hostUnreachableUntil = Date.now() + HOST_RETRY_AFTER_MS;
+ }
+}
+
+
 const SUPPORTED_CURRENCIES = ['cop', 'eur', 'mxn', 'ves'];
 
 /**
@@ -101,16 +165,27 @@ function previousDay(day) {
  * @throws {Error} - On network failure, timeout or a malformed payload
  */
 async function fetchOneDay(isoCode, day, timeoutMs) {
- const response = await axios.get(DAILY_RATES_URL, {
-  timeout: timeoutMs,
-  headers: { Accept: 'application/json' },
-  params: {
-   referenceDate: day,
-   baseCurrencyIsoCode: isoCode,
-   currencyIsoCode: 'USD',
-   lang: 'en',
-  },
- });
+ assertHostReachable();
+
+ let response;
+
+ try {
+  response = await axios.get(DAILY_RATES_URL, {
+   timeout: timeoutMs,
+   headers: { Accept: 'application/json' },
+   params: {
+    referenceDate: day,
+    baseCurrencyIsoCode: isoCode,
+    currencyIsoCode: 'USD',
+    lang: 'en',
+   },
+  });
+
+  noteHostOutcome(null);
+ } catch (error) {
+  noteHostOutcome(error);
+  throw error;
+ }
 
  const rows = response.data && Array.isArray(response.data.rates)
   ? response.data.rates
@@ -314,17 +389,28 @@ export async function fetchBancaDItaliaRange(currency, startDate, endDate, optio
   timeoutMs = Math.min(timeoutMs, remainingMs);
  }
 
- const response = await axios.get(TIME_SERIES_URL, {
-  timeout: timeoutMs,
-  headers: { Accept: 'application/json' },
-  params: {
-   startDate: from,
-   endDate: to,
-   baseCurrencyIsoCode: isoCode,
-   currencyIsoCode: 'USD',
-   lang: 'en',
-  },
- });
+ assertHostReachable();
+
+ let response;
+
+ try {
+  response = await axios.get(TIME_SERIES_URL, {
+   timeout: timeoutMs,
+   headers: { Accept: 'application/json' },
+   params: {
+    startDate: from,
+    endDate: to,
+    baseCurrencyIsoCode: isoCode,
+    currencyIsoCode: 'USD',
+    lang: 'en',
+   },
+  });
+
+  noteHostOutcome(null);
+ } catch (error) {
+  noteHostOutcome(error);
+  throw error;
+ }
 
  const payload = response.data;
  const rows = payload && Array.isArray(payload.rates) ? payload.rates : null;
