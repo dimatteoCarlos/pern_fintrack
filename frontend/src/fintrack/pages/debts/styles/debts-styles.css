@@ -426,3 +426,27 @@ a.icon {
 .box__title.debtorRow__amount--owing {
  color: var(--color-amount-negative);
 }
+
+/* ── The panel's two positions: colour on the dark indicator ──────────────── */
+
+/* Same pair as the debtor rows and the status square, and it is legible here:
+   measured against --dark, the ground .debtIndicatorContainer paints, teal
+   carries about 4.9 to 1 and rose about 5.6 to 1.
+
+   These two figures are POSITIONS with their direction written beside them, so
+   they print as magnitudes and the colour is the second carrier. The net above
+   them keeps its sign and takes no colour: it is the result of a subtraction,
+   not a direction, and painting it would have the panel judge an overall debt
+   position the app makes no judgement about.
+
+   The two counts beside them take no colour either. They are not amounts.
+
+   Written at the same specificity as the rule they override and after it in the
+   file, so no !important is needed. */
+.debtsLayout .displayScreen--result.debtsBoard__amount--owed {
+ color: var(--color-amount-positive);
+}
+
+.debtsLayout .displayScreen--result.debtsBoard__amount--owing {
+ color: var(--color-amount-negative);
+}

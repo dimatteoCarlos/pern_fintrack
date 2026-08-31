@@ -66,7 +66,11 @@ export function DebtsBigBoxResult({
       <div className='debtIndicatorContainer '>
         <div className='debtInfo '>
           <div className='displayScreen--concept light'>{receivable}:</div>
-          <div className='displayScreen--result light'>
+          {/* Coloured, and unsigned as it already was. The label beside it
+              carries the direction, so this figure follows the position rule and
+              not the movement one: magnitude, words, and colour as the second
+              carrier. The counts below take no colour — they are not amounts. */}
+          <div className='displayScreen--result light debtsBoard__amount--owed'>
             {formatAmount(receivableAmount)}
           </div>
 
@@ -80,7 +84,7 @@ export function DebtsBigBoxResult({
         <div className='debtInfo '>
           <div className='displayScreen--concept light'>{payable}:</div>
 
-          <div className='displayScreen--result light'>
+          <div className='displayScreen--result light debtsBoard__amount--owing'>
             {formatAmount(payableAmount)}
           </div>
 
