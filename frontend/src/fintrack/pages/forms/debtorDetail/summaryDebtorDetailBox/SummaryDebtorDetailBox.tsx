@@ -36,10 +36,19 @@ function SummaryDebtorDetailBox({ bubleInfo }: SummaryDetailPropType) {
   // symbol concatenated with toFixed(2) printed '$-10.21' where the rest of the
   // app prints '-$10.21', dropped the thousands separator, and turned an absent
   // figure into the literal string 'NaN'.
-  const formattedAmount =
-    typeof amount === 'number'
-      ? currencyFormat(currency, amount, formatNumberCountry)
-      : DASH;
+  //
+  // Coerced rather than type-tested. The balance reaches here as a STRING even
+  // though this type calls it a number: account_balance is DECIMAL(15,2) and
+  // node-postgres serves DECIMAL as text, so no cent is lost to a float. A
+  // typeof check on 'number' rejected every real figure and printed the dash on
+  // all of them. What has to be excluded is an ABSENT figure, and that is what
+  // Number reports as NaN.
+  const numericAmount =
+    amount === null || amount === undefined ? NaN : Number(amount);
+
+  const formattedAmount = Number.isNaN(numericAmount)
+    ? DASH
+    : currencyFormat(currency, numericAmount, formatNumberCountry);
 
   return (
     <>
