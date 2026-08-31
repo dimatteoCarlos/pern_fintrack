@@ -47,14 +47,28 @@ export const resolveOpeningDay = (value, timeZone) => {
   const instant = new Date(requested);
 
   if (Number.isNaN(instant.getTime())) {
-   throw createError(400, 'The opening date must be a calendar day, YYYY-MM-DD');
+   throw createError(
+    400,
+    'The opening date must be a calendar day, YYYY-MM-DD',
+    {
+     errorCode: 'INVALID_OPENING_DATE',
+     details: { expectedFormat: 'YYYY-MM-DD' },
+    },
+   );
   }
 
   openingDay = dayInZone(instant, timeZone);
  }
 
  if (openingDay > today) {
-  throw createError(422, `An account cannot be opened after today, ${today}`);
+  throw createError(
+   422,
+   `An account cannot be opened after today, ${today}`,
+   {
+    errorCode: 'OPENING_DATE_AFTER_TODAY',
+    details: { openingDay, today },
+   },
+  );
  }
 
  const monthFloor = `${today.slice(0, 7)}-01`;
@@ -63,6 +77,10 @@ export const resolveOpeningDay = (value, timeZone) => {
   throw createError(
    422,
    `An account cannot be opened before the current month, which starts on ${monthFloor}`,
+   {
+    errorCode: 'OPENING_DATE_BEFORE_CURRENT_MONTH',
+    details: { openingDay, currentMonthStart: monthFloor },
+   },
   );
  }
 

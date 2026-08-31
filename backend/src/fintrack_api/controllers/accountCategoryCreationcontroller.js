@@ -555,12 +555,12 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    const { code, message } = handlePostgresError(error); //handle pg errors
+    const { code, message, errorCode, details } = handlePostgresError(error); //handle pg errors
     console.error(
       pc.red('Error creating category budget account:'),
       message || 'something went wrong',
     );
-    return next(createError(code, message));
+    return next(createError(code, message, { errorCode, details }));
   } finally {
     client.release();
   }

@@ -1,9 +1,34 @@
 // backend\src\utils\errorHandling.js
 // import pc from 'picocolors'
 //createError handlePostgresErrorEs handlePostgresError createErrorResponse
-export function createError(statusCode, message) {
+/**
+ * An error that declares its own HTTP status, and optionally its identity.
+ *
+ * errorCode is what a client branches on: a stable name for the condition that
+ * survives a rewrite or a translation of the prose. message stays the sentence
+ * a human reads and is never the contract. details carries the values the
+ * message mentions, already parsed, so the client does not have to read them
+ * back out of the sentence.
+ *
+ * Both are optional and both are omitted from the response when absent, so the
+ * call sites that pass neither keep exactly the shape they have.
+ *
+ * @param {number} statusCode
+ * @param {string} message - for a human
+ * @param {{errorCode?: string, details?: object}} [identity] - for a machine
+ */
+export function createError(statusCode, message, identity = {}) {
   const err = new Error(message);
   err.status = statusCode;
+
+  if (identity.errorCode) {
+    err.errorCode = identity.errorCode;
+  }
+
+  if (identity.details) {
+    err.details = identity.details;
+  }
+
   console.log('Running create error fn:', 'status:',err.status, err.message);
   return err;
 }
@@ -47,8 +72,17 @@ export const handlePostgresError = (error) => {
   // An error that already declares its status was built by the application, not
   // by the driver: a pg error carries .code, never .status. Without this the
   // switch below never matches it and the default demotes a domain 400 to 500.
+  //
+  // The identity travels with the status. A caller that destructures only
+  // { code, message } ignores the two extra keys, which is why every existing
+  // one keeps working unchanged.
   if (error.status) {
-    return { code: error.status, message: error.message };
+    return {
+      code: error.status,
+      message: error.message,
+      errorCode: error.errorCode,
+      details: error.details,
+    };
   }
 
   let code = 500; // Default HTTP status code

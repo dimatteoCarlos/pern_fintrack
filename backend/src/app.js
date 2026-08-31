@@ -181,6 +181,11 @@ app.use((err, req, response, next) => {
   response.status(errorStatus).json({
     message: errorMessage,
     status: errorStatus,
+    // Emitted only when the thrower declared one. An error without a stable
+    // identity keeps the exact body it returns today, so nothing already
+    // reading this response has to change.
+    ...(err.errorCode ? { error: err.errorCode } : {}),
+    ...(err.details ? { details: err.details } : {}),
     stack: process.env.NODE_ENV == 'development' ? err.stack : undefined,
   });
 });

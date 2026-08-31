@@ -464,9 +464,9 @@ export const createBasicAccount = async (req, res, next) => {
   } catch (error) {
     await client.query('ROLLBACK');
     //handle pg errors
-    const { code, message } = handlePostgresError(error);
+    const { code, message, errorCode, details } = handlePostgresError(error);
     console.error(pc.red(`Error creating new account:`), message);
-    return next(createError(code, message));
+    return next(createError(code, message, { errorCode, details }));
   } finally {
     client.release();
   }
@@ -992,9 +992,9 @@ export const createDebtorAccount = async (req, res, next) => {
   } catch (error) {
     await client.query('ROLLBACK');
     //handle pg errors
-    const { code, message } = handlePostgresError(error);
+    const { code, message, errorCode, details } = handlePostgresError(error);
     console.error(pc.red('Error creating new debtor account:'), message);
-    return next(createError(code, message));
+    return next(createError(code, message, { errorCode, details }));
   } finally {
     client.release();
   }
