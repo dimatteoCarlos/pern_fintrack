@@ -210,10 +210,74 @@
  color: var(--color-content-secondary);
 }
 
+/* The amount and the unit it is typed in are ONE field, so the border belongs
+   to the row and not to the input inside it.
+
+   The currency control paints through two names the token sheet never declares,
+   so on this cream panel it inherited its container's colour and rendered cream
+   on cream: present, sized, and impossible to see or find. It was reported as a
+   missing feature more than once, which is what an invisible control is.
+
+   Corrected here and not in the shared component. Its own sheet is consumed by
+   every form in the application, and a bordered pill drawn there was tried and
+   rejected. This scopes the fix to the one surface that has the problem.
+
+   Known and NOT fixed by this: the control is a div carrying an onClick, so no
+   keyboard reaches it and no focus ring is drawn. That lives in the shared
+   component and needs its own decision. */
 .pocketCash__amountRow {
  display: flex;
  align-items: center;
  gap: var(--space-2);
+ padding-right: var(--space-2);
+ border: var(--border-width-thin) solid var(--color-content-secondary);
+ border-radius: var(--radius-md);
+ background-color: var(--color-surface-inverse);
+}
+
+/* The field is now the row, so the input gives up its own frame and keeps only
+   its typing area. */
+.pocketCash__amountRow .pocketCash__amount {
+ border: none;
+ border-radius: 0;
+ background-color: transparent;
+}
+
+.pocketCash__amountRow .pocketCash__amount:focus {
+ outline: none;
+}
+
+/* The whole field lights when the input inside it has focus, which is what a
+   single control should do. */
+.pocketCash__amountRow:focus-within {
+ outline: var(--border-width-thick) solid var(--color-content-primary);
+ outline-offset: var(--border-width-thin);
+}
+
+/* The unit, inside the field and reading as part of it: no second border, no
+   pill, no surface of its own. Dark ink because the panel is cream. */
+.pocketCash__amountRow .icon-currency {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ flex-shrink: 0;
+ width: auto;
+ min-width: var(--size-touch-target);
+ height: auto;
+ min-height: var(--size-touch-target);
+ padding: 0 var(--space-2);
+ border: none;
+ border-left: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: 0;
+ background-color: transparent;
+ color: var(--color-content-primary);
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+}
+
+.pocketCash__amountRow .icon-currency:hover {
+ color: var(--color-content-secondary);
 }
 
 .pocketCash__amount {
