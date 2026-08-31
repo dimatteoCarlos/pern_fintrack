@@ -57,6 +57,7 @@ import {
   // TransactionType,
 } from '../../../types/types.ts';
 import { toCalendarDay } from '../../../helpers/functions.ts';
+import { isAccountOpenOn } from '../../../hooks/useTransactionDate.ts';
 // =====================
 // CONSTANTS
 // =====================-
@@ -185,6 +186,13 @@ function PnL(): JSX.Element {
     error: fetchedErrorAccountDataApiResponse,
   } = useFetch<AccountByTypeResponseType>(fetchUrl as string);
 
+  // The chosen day as the calendar label the server validates, so the account
+  // list and the payload agree on which day is being recorded.
+  const chosenCalendarDay = useMemo(
+    () => toCalendarDay(formInputData.date ?? new Date()),
+    [formInputData.date],
+  );
+
   //Transform accounts data for dropdown
   const accountsToSelect = useMemo(() => {
     // Early returns for edge cases
@@ -195,21 +203,49 @@ function PnL(): JSX.Element {
 
     //Map and build idMap
     const idMap: { [accountName: string]: string } = {};
-    const options = accountDataApiResponse?.data.accountList?.map(
-      (acc: AccountListType) => {
+    const options = accountDataApiResponse?.data.accountList
+      // An account that did not exist on the chosen day is not a disabled
+      // option, it is not an option. The four other tracker forms take this
+      // from useTransactionDate; this one keeps its day in its own form state,
+      // so it calls the same predicate directly.
+      ?.filter((acc: AccountListType) =>
+        isAccountOpenOn(acc.account_start_date, chosenCalendarDay),
+      )
+      .map((acc: AccountListType) => {
         idMap[acc.account_name] = acc.account_id.toString();
         return {
           label: `${acc.account_name} (${acc.account_type_name} ${acc.currency_code} ${acc.account_balance})`,
           value: acc.account_name,
         };
-      },
-    );
+      });
     setAccountIdMap(idMap);
     return options;
   }, [
     accountDataApiResponse?.data.accountList,
     fetchedErrorAccountDataApiResponse,
     isLoadingAccountDataApiResponse,
+    chosenCalendarDay,
+  ]);
+
+  // A selection already made may stop qualifying when the date moves back.
+  // Clearing the field without resetting the dropdown would leave the form
+  // showing a label its state no longer holds.
+  useEffect(() => {
+    if (!formInputData.account) return;
+
+    const stillOffered = accountsToSelect.some(
+      (option) => option.value === formInputData.account,
+    );
+    if (stillOffered) return;
+
+    setFormInputData((prev) => ({ ...prev, account: '', accountType: '' }));
+    setFormValidatedData((prev) => ({ ...prev, account: '', accountType: '' }));
+    setIsReset(true);
+  }, [
+    accountsToSelect,
+    formInputData.account,
+    setFormInputData,
+    setFormValidatedData,
   ]);
 
   const optionsAccountsToSelect = {

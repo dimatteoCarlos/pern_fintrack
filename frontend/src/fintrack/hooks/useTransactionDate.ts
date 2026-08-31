@@ -14,6 +14,25 @@ import { useCallback, useMemo, useState } from 'react';
 import { toCalendarDay } from '../helpers/functions';
 import { TransactionDatePropsType } from '../general_components/transactionDateTrigger/TransactionDateTrigger';
 
+// The predicate on its own, for a form that holds the chosen day in its own
+// state instead of in this hook. One definition, so a screen that keeps its own
+// date cannot answer this question differently from the four that do not.
+//
+// An account whose opening the payload does not carry is admitted rather than
+// hidden: the server still refuses it, and hiding on missing data would empty
+// the list on a contract change instead of failing where it can be seen.
+export function isAccountOpenOn(
+ accountStartDate: string | Date | null | undefined,
+ chosenCalendarDay: string,
+): boolean {
+ if (!accountStartDate) return true;
+
+ const opening = new Date(accountStartDate);
+ if (Number.isNaN(opening.getTime())) return true;
+
+ return toCalendarDay(opening) <= chosenCalendarDay;
+}
+
 export function useTransactionDate(disabled = false) {
  const [transactionDate, setTransactionDate] = useState<Date>(() => new Date());
 
@@ -35,19 +54,9 @@ export function useTransactionDate(disabled = false) {
  // An account may take a movement only from its opening day onward. Both sides
  // are YYYY-MM-DD, which compares correctly as text and needs no second Date to
  // disagree with the first.
- //
- // An account whose opening the payload does not carry is admitted rather than
- // hidden: the server still refuses it, and hiding on missing data would empty
- // the list on a contract change instead of failing where it can be seen.
  const isOpenOnChosenDay = useCallback(
-  (accountStartDate: string | Date | null | undefined) => {
-   if (!accountStartDate) return true;
-
-   const opening = new Date(accountStartDate);
-   if (Number.isNaN(opening.getTime())) return true;
-
-   return toCalendarDay(opening) <= transactionActualDate;
-  },
+  (accountStartDate: string | Date | null | undefined) =>
+   isAccountOpenOn(accountStartDate, transactionActualDate),
   [transactionActualDate],
  );
 
