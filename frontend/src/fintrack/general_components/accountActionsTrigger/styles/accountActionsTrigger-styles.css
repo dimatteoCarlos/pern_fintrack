@@ -79,19 +79,16 @@
  color: var(--color-content-on-dark-muted);
 }
 
-/* Attenuated cream, not the solid fill it was. Solid, the hover was the
-   brightest object in a dark header and pulled the eye off the title it sits
-   beside; at this alpha it reads as the control lighting up, not as a badge.
+/* Solid cream, the same fill the light modifier carries, so one control reads
+   the same way on both surfaces. An attenuated version was tried and rejected:
+   it borrowed --color-border-subtle, whose name says border, to stand in for an
+   attenuated-surface token the system does not declare.
 
-   Open token question: --color-border-subtle IS the accent cream at 0.26
-   alpha, which is exactly the value wanted, but its name says border. The
-   system declares no attenuated-surface token. Borrowed, not invented.
-
-   The glyph keeps the light ink: the fill no longer covers the ground, so
-   dark text on it would be dark text on the dark header. */
+   The glyph inverts to the panel dark, because the fill now covers the ground
+   and light ink on cream would not read. */
 .accountActionsTrigger--dark:hover {
- background-color: var(--color-border-subtle);
- color: var(--color-content-on-dark);
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
 }
 
 /* --color-border-inverse is the ring meant for the app surface. */
