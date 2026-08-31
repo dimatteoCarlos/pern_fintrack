@@ -42,7 +42,17 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
   desiredDate,
  } = pocket;
 
- const amount = (value: number) => numberFormatCurrency(value, 2, currency);
+ // Grouped and to two decimals, but WITHOUT the currency style, so no symbol is
+ // printed. Passing the code turns on Intl's currency formatting and that emits
+ // a symbol of its own, which is what put "$50.00 USD" on the panel: the glyph
+ // and the code denominating the same figure twice.
+ //
+ // The code survives and the symbol goes, rather than the other way round. This
+ // application holds several currencies whose symbol is the same "$" — the
+ // dollar, the Colombian peso, the Argentine peso — so the glyph alone cannot
+ // say which one an amount is in, and it is the half that carries no
+ // information here.
+ const amount = (value: number) => numberFormatCurrency(value, 2);
 
  // The bar never runs past its track, while the figure beside it is free to
  // read over 100%. Clamping the number too would hide an over-funded pocket.
@@ -70,19 +80,22 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
    <PiggyCoinSvg className='summaryPocket__glyph' aria-hidden='true' />
 
    <div className='summaryPocket__data'>
-    <div className='summaryPocket__data--amount'>{amount(allocated)}</div>
+    {/* The code rides the headline, and it is the only place on the panel that
+        states the currency. Every figure here is in the same one, so saying it
+        against each was saying it three times. */}
+    <div className='summaryPocket__data--amount'>
+     {amount(allocated)}{' '}
+     <span className='summaryPocket__figureLabel'>
+      {currency.toUpperCase()}
+     </span>
+    </div>
 
     {/* Two labelled figures, not a sentence. What was here read "committed to
         this goal, of $25.50": the phrase named neither quantity, and the date
         the plan is measured against was three blocks further down the page. */}
     <div className='summaryPocket__data--subtitle1'>
      <span className='summaryPocket__figureLabel'>Target</span>{' '}
-     <span className='summaryPocket__figureValue'>{amount(target)}</span>{' '}
-     {/* The code, which used to sit three blocks down as a metadata field of
-         its own. It belongs against the figure it denominates. */}
-     <span className='summaryPocket__figureLabel'>
-      {currency.toUpperCase()}
-     </span>
+     <span className='summaryPocket__figureValue'>{amount(target)}</span>
      <span className='summaryPocket__separator' aria-hidden='true'>
       {' · '}
      </span>
@@ -90,6 +103,14 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
      <span className='summaryPocket__figureValue'>
       {formatCalendarDate(desiredDate)}
      </span>
+    </div>
+
+    {/* Directly above the track it reads, not in the row underneath. Beside
+        the shortfall it was one of two figures on a line and the eye had to
+        decide which one it belonged to; over the bar there is nothing else it
+        could be measuring. Same shape the board hero uses. */}
+    <div className='summaryPocket__data--share'>
+     {progress.toFixed(1)}% committed
     </div>
 
     <div
@@ -106,16 +127,11 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
      ></div>
     </div>
 
-    {/* The share leads, because it is the bar's own reading: below the bar and
-        after a sentence it was a bare "0.0%" with nothing naming what it
-        measured. The amount follows as the figure the share resolves to. */}
+    {/* What is left, alone on its line now that the share sits with the bar.
+        The two were separated by a dot and read as one statement, which is how
+        a percentage measuring what is COMMITTED came to be read as the share
+        still missing. */}
     <div className='summaryPocket__data--status'>
-     <span className='summaryPocket__data--share'>{progress.toFixed(1)}%</span>
-
-     <span className='summaryPocket__separator' aria-hidden='true'>
-      ·
-     </span>
-
      <span className='summaryPocket__data--subtitle2'>{gapText}</span>
     </div>
    </div>

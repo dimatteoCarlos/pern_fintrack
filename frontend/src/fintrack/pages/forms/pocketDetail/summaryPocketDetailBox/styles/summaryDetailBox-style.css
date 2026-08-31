@@ -71,6 +71,16 @@
  font-variant-numeric: tabular-nums;
 }
 
+/* The code rides the headline but does not compete with it: the label rule it
+   carries says font-size: inherit, which inside this line would set a currency
+   code at the size of the amount. It denominates the figure, it is not part of
+   it. */
+.summaryPocket__data--amount .summaryPocket__figureLabel {
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-secondary);
+}
+
 .summaryPocket__data--subtitle1 {
  font-size: var(--font-size-sm);
  font-weight: var(--font-weight-regular);
@@ -142,11 +152,15 @@
  font-variant-numeric: tabular-nums;
 }
 
-/* The bar's reading, in the panel's ink rather than the secondary grey: it
-   leads the row now, and a leading figure set lighter than the sentence after
-   it reads as the caption of that sentence. */
+/* The bar's reading, sitting directly over the track it reads. Two steps up
+   from the caption size it carried while it shared a line with the shortfall:
+   there it was one of two figures competing to be read, here it is the number
+   the bar exists to state and the only thing above it. In the panel's ink, not
+   the secondary grey — a figure set lighter than the line under it reads as
+   that line's caption. */
 .summaryPocket__data--share {
- font-size: var(--font-size-xs);
+ margin-bottom: var(--space-1);
+ font-size: var(--font-size-base);
  font-weight: var(--font-weight-semibold);
  color: var(--color-content-primary);
  font-variant-numeric: tabular-nums;
