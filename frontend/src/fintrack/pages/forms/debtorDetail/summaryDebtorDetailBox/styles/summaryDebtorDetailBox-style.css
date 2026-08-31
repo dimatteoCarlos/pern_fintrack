@@ -32,7 +32,9 @@
   justify-content: flex-end;
   width: 85%;
   letter-spacing: 1.5px;
-  border-bottom: 1px solid #141414;
+  /* Same rule under the amount as the shared summary box, expressed in the same
+     tokens: the two boxes sit on the same cream panel and must not diverge. */
+  border-bottom: var(--border-width-thin) solid var(--color-content-primary);
 }
 
 /* index.css sets font-size on the universal selector, so this inline element
@@ -40,8 +42,10 @@
 .summaryDebtor__amount {
   font-size: inherit;
 }
+/* The muted content colour of the cream panel. It is the same value the raw hex
+   held, so the two subtitles keep their contrast against --creme. */
 .summaryDebtor__data--subtitle1 {
-  color: #5b5b5b;
+  color: var(--color-content-secondary);
   font-size: 0.75rem;
 }
 .summaryDebtor__data--status {
@@ -52,7 +56,7 @@
 }
 
 .summaryDebtor__data--subtitle2 {
-  color: #5b5b5b;
+  color: var(--color-content-secondary);
   font-size: 0.75rem;
   text-transform: capitalize;
 }
