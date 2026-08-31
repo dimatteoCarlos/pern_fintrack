@@ -88,9 +88,13 @@ if (!toCurrencyCode ) {
 return {
    rates: response.data.conversion_rates,
    source: 'exchange-rate-api',
-   fetchedAt: response.data.time_last_update_unix
+// When WE asked. time_last_update_unix is when the PROVIDER published, which is
+// a different fact and now travels under its own name: the cache ages from the
+// request, and only providerUpdatedAt names the day the figure belongs to.
+   fetchedAt: new Date(),
+   providerUpdatedAt: response.data.time_last_update_unix
      ? new Date(response.data.time_last_update_unix * 1000)
-     : new Date(),
+     : null,
     };
   }
 //---------------------
@@ -115,10 +119,11 @@ return {
   return {
     rate: Number(rate),
     source: 'exchange-rate-api',
-// Extract provider's last updated timestamp (if available)
-    fetchedAt: response.data.time_last_update_unix
+    fetchedAt: new Date(),
+// The provider's own publication instant, kept apart from the read time above.
+    providerUpdatedAt: response.data.time_last_update_unix
       ? new Date(response.data.time_last_update_unix * 1000)
-      : new Date(),
+      : null,
   };
 };
 //----------------------
@@ -149,6 +154,7 @@ export async function fetchAllRates(baseCurrency) {
           rate,
           source: result.source || 'exchange-rate-api',
           fetchedAt: result.fetchedAt || new Date(),
+          providerUpdatedAt: result.providerUpdatedAt || null,
         };
       }
     }
@@ -157,6 +163,7 @@ export async function fetchAllRates(baseCurrency) {
       rates,
       source: 'exchange-rate-api',
       fetchedAt: result.fetchedAt || new Date(),
+      providerUpdatedAt: result.providerUpdatedAt || null,
     };
   } catch (error) {
     console.warn('⚠️ ExchangeRate-API fetchAllRates failed:', error.message);

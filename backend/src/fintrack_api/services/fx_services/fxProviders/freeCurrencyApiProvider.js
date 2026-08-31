@@ -55,7 +55,11 @@ const FX_TIMEOUT_MS = Number(process.env.FX_REQUEST_TIMEOUT_MS || 2000);
 
 // 6. Extract provider's last updated timestamp (if available)
 const providerUpdated = response.data.meta?.last_updated_at;
-const fetchedAt = providerUpdated ? new Date(providerUpdated) : new Date();
+// Two facts, two names. last_updated_at is when the provider published; fetchedAt
+// is when this installation asked. Reading one as the other made the cache age
+// from the publication instant and refresh itself early, every time.
+const providerUpdatedAt = providerUpdated ? new Date(providerUpdated) : null;
+const fetchedAt = new Date();
 
 // 7. If targetCode is null, return the full rates object
   if (!targetCode ) {
@@ -69,6 +73,7 @@ const fetchedAt = providerUpdated ? new Date(providerUpdated) : new Date();
     rates: normalizedRates,
     source: 'freecurrencyapi',
     fetchedAt,
+    providerUpdatedAt,
     };
    }
 //---------------------
@@ -89,6 +94,7 @@ const fetchedAt = providerUpdated ? new Date(providerUpdated) : new Date();
     rate: Number(rate),
     source: 'freecurrencyapi',
     fetchedAt,
+    providerUpdatedAt,
   };
 }
 
@@ -117,6 +123,7 @@ export async function fetchAllRates(baseCurrency) {
           rate,
           source: result.source || 'freecurrencyapi',
           fetchedAt: result.fetchedAt || new Date(),
+          providerUpdatedAt: result.providerUpdatedAt || null,
         };
       }
     }
@@ -125,6 +132,7 @@ export async function fetchAllRates(baseCurrency) {
       rates,
       source: 'freecurrencyapi',
       fetchedAt: result.fetchedAt || new Date(),
+      providerUpdatedAt: result.providerUpdatedAt || null,
     };
   } catch (error) {
     console.warn('⚠️ FreeCurrencyAPI fetchAllRates failed:', error.message);

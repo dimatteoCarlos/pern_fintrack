@@ -98,6 +98,8 @@ export async function fetchRatesFromProviders(
             rate: data.rate,
             source: data.source || provider.name,
             fetchedAt: data.fetchedAt || new Date(),
+            // Rebuilt field by field, so anything not named here is dropped.
+            providerUpdatedAt: data.providerUpdatedAt || null,
           };
           missing.delete(c);
           providerUsed = true;

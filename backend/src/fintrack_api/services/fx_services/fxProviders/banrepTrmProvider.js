@@ -332,10 +332,15 @@ export async function fetchAllRates(baseCurrency) {
      rate: result.rate,
      source: result.source,
      fetchedAt: result.fetchedAt,
+     // publishedAt is this adapter's name for the validity start it parsed out
+     // of vigenciadesde. It is the same idea the other providers call an update
+     // time, so it leaves here under the one name the assembler reads.
+     providerUpdatedAt: result.publishedAt || null,
     },
    },
    source: result.source,
    fetchedAt: result.fetchedAt,
+   providerUpdatedAt: result.publishedAt || null,
   };
  } catch (error) {
   console.warn('⚠️ Banrep TRM fetchAllRates failed:', error.message);

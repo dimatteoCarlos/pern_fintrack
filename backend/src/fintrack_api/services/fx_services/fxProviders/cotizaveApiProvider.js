@@ -155,12 +155,24 @@ export async function fetchFromCotizave(baseCode, targetCode) {
 
   // console.log(`[FX] Cotizave API ${base} -> ${target}: ${rate}`);
 
+  // updated_at is when Cotizave refreshed its reference market, not when this
+  // installation asked. Read as fetchedAt it aged the cache from the provider's
+  // clock; the two now travel separately.
+  //
+  // Parsed and checked rather than trusted: new Date(undefined) yields an
+  // Invalid Date, which is truthy, so the old `|| new Date()` fallback could
+  // never fire and an absent reference market stored an unusable timestamp.
+  const referenceUpdatedAt = new Date(
+    data.rates.find((r) => r.market === 'reference')?.updated_at,
+  );
+
   return {
     rate,
     source: 'cotizave',
-    fetchedAt:
-      new Date(data.rates.find((r) => r.market === 'reference')?.updated_at) ||
-      new Date(),
+    fetchedAt: new Date(),
+    providerUpdatedAt: Number.isNaN(referenceUpdatedAt.getTime())
+      ? null
+      : referenceUpdatedAt,
   };
 }
 //=======================================
@@ -175,10 +187,12 @@ export async function fetchAllRates(baseCurrency) {
             rate: result.rate,
             source: result.source || 'cotizave',
             fetchedAt: result.fetchedAt || new Date(),
+            providerUpdatedAt: result.providerUpdatedAt || null,
           },
         },
         source: 'cotizave',
         fetchedAt: result.fetchedAt || new Date(),
+        providerUpdatedAt: result.providerUpdatedAt || null,
       };
     }
     return null;
@@ -201,6 +215,7 @@ export async function fetchRate(baseCurrency, targetCurrency, options = {}) {
         rate: result.rate,
         source: result.source || 'cotizave',
         fetchedAt: result.fetchedAt || new Date(),
+        providerUpdatedAt: result.providerUpdatedAt || null,
       };
     }
     return null;
