@@ -1,0 +1,55 @@
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <!-- The coin carries the currency-neutral bank mark this set already draws in
+       coinsSvg.svg, so the icon names no national currency. -->
+  <g>
+    <circle cx="13.5" cy="4.35" r="2.1" stroke="currentColor" stroke-width="0.375" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Pediment -->
+    <path d="M 12.61 4.19 L 13.50 3.62 L 14.39 4.19" stroke="currentColor" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- Plinth -->
+    <path d="M 12.53 5.08 H 14.47" stroke="currentColor" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- Columns -->
+    <path d="M 13.14 4.27 V 5.00" stroke="currentColor" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M 13.86 4.27 V 5.00" stroke="currentColor" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Curved coin slot -->
+  <path d="M 11.10 8.40 A 7.5 6 0 0 1 15.90 8.40" stroke="currentColor" stroke-width="0.375" stroke-linecap="round"/>
+
+  <!-- Target rings, centre widened -->
+  <circle cx="15.38" cy="12.75" r="2.40" stroke="currentColor" stroke-width="0.375"/>
+  <circle cx="15.38" cy="12.75" r="1.50" stroke="currentColor" stroke-width="0.33"/>
+  <circle cx="15.38" cy="12.75" r="0.68" stroke="currentColor" stroke-width="0.33"/>
+
+  <!-- Arrow from the centre -->
+  <path d="M 15.38 12.75 L 18.00 10.13" stroke="currentColor" stroke-width="0.33" stroke-linecap="round"/>
+
+  <!-- Feathers on opposite sides, tilted right -->
+  <!-- Upper feather -->
+  <path d="M 17.48 10.65 L 17.10 9.75 L 17.63 9.90 L 17.85 10.28 Z" stroke="currentColor" stroke-width="0.27" fill="none" stroke-linejoin="round"/>
+  <!-- Lower feather -->
+  <path d="M 17.85 10.28 L 18.75 10.65 L 18.60 10.13 L 18.23 9.90 Z" stroke="currentColor" stroke-width="0.27" fill="none" stroke-linejoin="round"/>
+
+  <!-- Ear -->
+  <path d="M 7.65 8.40 C 6.75 4.13, 9.15 3.60, 10.13 6.60" stroke="currentColor" stroke-width="0.375" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Eye -->
+  <circle cx="8.10" cy="10.50" r="0.56" stroke="currentColor" stroke-width="0.375"/>
+
+  <!-- Tail curling upward -->
+  <path d="M 20.25 12.75 C 21.38 12.38, 22.13 11.10, 21.15 10.35 C 20.25 9.75, 19.65 10.88, 20.40 11.40" stroke="currentColor" stroke-width="0.375" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Body oval with snout and trapezoid legs -->
+  <path d="M 10.13 6.86
+           A 7.5 6 0 0 1 20.25 12.75
+           A 7.5 6 0 0 1 17.10 17.85
+           L 16.73 19.88 H 15.23 L 15.00 18.60
+           H 12.90
+           L 12.68 19.88 H 11.18 L 10.73 18.60
+           A 7.5 6 0 0 1 5.36 13.65
+           L 3.38 13.35 V 10.65 L 5.27 10.35
+           A 7.5 6 0 0 1 7.65 8.40"
+        stroke="currentColor"
+        stroke-width="0.375"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>

@@ -24,7 +24,7 @@ import {
 import { PocketDetailPocket } from '../../../../types/pocketTypes';
 // '?react' and not the bare form: only that door carries a React type, so the
 // glyph can take a className and inherit the panel's ink through currentColor.
-import PiggyCoinSvg from '../../../../../assets/PiggyCoinSvg.svg?react';
+import PiggyCoinSvg from '../../../../../assets/pocketSvg/PiggyUniversalCoinSvg.svg?react';
 import './styles/summaryDetailBox-style.css';
 
 type SummaryPocketDetailPropType = {

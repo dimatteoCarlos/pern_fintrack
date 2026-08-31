@@ -35,13 +35,15 @@
    because the scale of declared sizes stops at --size-badge (2.5rem) and the
    proposal draws the illustration at about this. The module needs an
    illustration-size token; it is not invented here. */
+/* The box comes from the sizing scale, not from --space-16: the spacing scale
+   declares in its own note that it does not apply to width or height. */
 .summaryPocket__glyph {
  position: absolute;
  top: var(--space-4);
  right: var(--space-5);
- width: var(--space-16);
- height: var(--space-16);
- color: var(--color-content-secondary);
+ width: var(--size-glyph-panel);
+ height: var(--size-glyph-panel);
+ color: var(--color-content-primary);
  pointer-events: none;
 }
 
