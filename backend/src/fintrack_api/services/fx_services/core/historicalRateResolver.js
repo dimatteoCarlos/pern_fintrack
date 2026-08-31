@@ -166,26 +166,50 @@ function asAnswer(hit, currency, requestedDate) {
  * @param {Object} [options]
  * @param {number} [options.budgetMs] - Ceiling for the whole cascade
  * @returns {Promise<HistoricalRate>}
- * @throws {Error} - status 400 on a bad input, 422 when no arm answers
+ * @throws {Error} - every one carries a stable errorCode and details beside the
+ *   prose: UNSUPPORTED_FX_CURRENCY and INVALID_FX_DATE on a bad input (400),
+ *   FX_DATE_IN_FUTURE and FX_RATE_UNAVAILABLE on a day that cannot be valued
+ *   (422). The code is the contract; the message is for a human and may change.
  */
 export async function resolveHistoricalRate(currencyCode, requestedDate, options = {}) {
  const currency = typeof currencyCode === 'string' ? currencyCode.toLowerCase() : '';
 
  if (!SUPPORTED_CURRENCIES.includes(currency)) {
-  throw createError(400, `Unsupported currency for a historical rate: ${currencyCode}`);
+  throw createError(
+   400,
+   `Unsupported currency for a historical rate: ${currencyCode}`,
+   {
+    errorCode: 'UNSUPPORTED_FX_CURRENCY',
+    details: { currency: String(currencyCode) },
+   },
+  );
  }
 
  const day = toCalendarDay(requestedDate);
 
  if (!day) {
-  throw createError(400, `Invalid date for a historical rate: ${requestedDate}`);
+  throw createError(
+   400,
+   `Invalid date for a historical rate: ${requestedDate}`,
+   {
+    errorCode: 'INVALID_FX_DATE',
+    details: { expectedFormat: 'YYYY-MM-DD' },
+   },
+  );
  }
 
  // A rate that has not happened yet cannot be resolved, only guessed.
  const today = new Date().toISOString().slice(0, 10);
 
  if (day > today) {
-  throw createError(422, `Cannot value a movement dated in the future: ${day}`);
+  throw createError(
+   422,
+   `Cannot value a movement dated in the future: ${day}`,
+   {
+    errorCode: 'FX_DATE_IN_FUTURE',
+    details: { requestedDay: day, today },
+   },
+  );
  }
 
  // One unit of the accounting currency is one unit of itself on every day that
@@ -311,8 +335,20 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
   attempts.push(`cdn: ${error.message}`);
  }
 
+ // What each arm tried belongs in the log, not in the response. It names
+ // providers and their failures, which is infrastructure diagnostics: a client
+ // cannot act on "bancaditalia: no published day" and should not have to read
+ // how the cascade is built to understand that no rate exists.
+ console.error(
+  `No historical rate for ${currency} on ${day}. Tried -> ${attempts.join(' | ')}`,
+ );
+
  throw createError(
   422,
-  `No historical rate for ${currency} on ${day}. Tried -> ${attempts.join(' | ')}`,
+  `No historical rate for ${currency} on ${day}.`,
+  {
+   errorCode: 'FX_RATE_UNAVAILABLE',
+   details: { currency, requestedDay: day },
+  },
  );
 }
