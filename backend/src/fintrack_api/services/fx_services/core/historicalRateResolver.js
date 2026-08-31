@@ -36,7 +36,7 @@ import {
 } from '../db/dailyRateDBaccess.js';
 
 import { fetchBancaDItaliaRange } from '../fxProviders/bancaDItaliaProvider.js';
-import { fetchTrmForDate } from '../fxProviders/banrepTrmProvider.js';
+import { fetchTrmRange } from '../fxProviders/banrepTrmProvider.js';
 import { fetchRatesForDate } from '../fxProviders/githubFallback.js';
 
 // The ceiling for the whole cascade, sized by what a form submit may hang for,
@@ -258,20 +258,21 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
  // ---- Banrep, the official Colombian source ----
  if (currency === OFFICIAL_TRM_CURRENCY) {
   try {
-   const trm = await fetchTrmForDate(day);
+   // The whole window, not the one day. The TRM is a rate with a validity, so
+   // every calendar day of the window belongs to exactly one of them; fetching
+   // a single validity leaves the days of every other one resolving backwards
+   // onto a rate the provider had already superseded. Each row is stored under
+   // the day its own validity opens on, never under the day that was asked for.
+   const { from, to } = spanAround(day);
 
-   // Stored under the day Banrep declares the range opens on, never under the
-   // day that was asked for. The store then resolves every later day of that
-   // range forward onto this row, which is the same rule Banrep publishes.
-   const answer = await storeThenResolve([
-    { rateDate: trm.effectiveDate, rate: String(trm.rate), source: trm.source },
-   ]);
+   const series = await fetchTrmRange(from, to);
 
-   if (answer) return answer;
+   if (series.length > 0) {
+    const answer = await storeThenResolve(series);
+    if (answer) return answer;
+   }
 
-   attempts.push(
-    `banrep answered ${trm.effectiveDate}, outside the ${MAX_RATE_AGE_DAYS}-day bound`,
-   );
+   attempts.push(`banrep: no validity in force on ${day} within ${from}..${to}`);
   } catch (error) {
    attempts.push(`banrep: ${error.message}`);
   }

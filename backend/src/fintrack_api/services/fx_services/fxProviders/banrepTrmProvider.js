@@ -12,6 +12,7 @@
  * - fetchAllRates(baseCurrency) → { rates: { cop: {...} }, source, fetchedAt }
  * - fetchRate(baseCurrency, targetCurrency) → { rate, source, fetchedAt } or null
  * - fetchTrmForDate(date) → { rate, source, effectiveDate, ... } — the historical arm
+ * - fetchTrmRange(from, to) → one row per validity — how the resolver fills a window
  *
  * Dataset row:
  * { valor: '3048.12', unidad: 'COP', vigenciadesde: '2026-08-22T00:00:00.000',
@@ -32,6 +33,10 @@ const COLOMBIA_OFFSET_MS = 5 * 60 * 60 * 1000;
 
 // A published TRM older than this is treated as unusable rather than served stale.
 const MAX_TRM_AGE_DAYS = 7;
+
+// A month holds at most 31 validities. The cap is a tripwire for a window
+// wider than intended, not a page size: hitting it is treated as a failure.
+const TRM_RANGE_ROW_LIMIT = 200;
 
 /**
  * Parse a dataset timestamp as Colombian local time.
@@ -208,6 +213,99 @@ export async function fetchTrmForDate(date) {
   fetchedAt: new Date(),
   publishedAt,
  };
+}
+
+
+/**
+ * Fetch every TRM validity that overlaps a window, one row per validity.
+ *
+ * Why a range and not a day at a time. The TRM is not a quote on a trading day:
+ * it is a rate with a validity, and every calendar day of the window falls
+ * inside exactly one of them. A store holding only some of those validities is
+ * not a partially warm cache — it is wrong. The as-of lookup answers with the
+ * most recent row on or before the day, so a day whose own validity was never
+ * fetched resolves onto an older one that the provider had already superseded.
+ * Measured on 2026-08-20 with only 08-15 stored: 3128.65 served where the rate
+ * in force was 3053.48.
+ *
+ * One call returns the whole month, so the window is either complete or the arm
+ * fails and the cascade continues. There is no in-between state to reason about.
+ *
+ * A window the dataset does not cover comes back as an empty array rather than
+ * an error: nothing published is a fact about the window, not a transport
+ * failure. Only a broken response or an unreachable host throws.
+ *
+ * @param {string|Date} from - First day of the window
+ * @param {string|Date} to - Last day of the window
+ * @returns {Promise<Array<{rateDate: string, rate: string, source: string}>>}
+ *   Each row under the day its validity opens on, oldest first.
+ * @throws {Error} - On an invalid window, network failure or malformed payload
+ */
+export async function fetchTrmRange(from, to) {
+ const firstDay = toColombianDay(from);
+ const lastDay = toColombianDay(to);
+
+ if (!firstDay || !lastDay) {
+  throw new Error(`Invalid TRM range requested: ${from}..${to}`);
+ }
+
+ const headers = {};
+
+ if (process.env.DATOS_GOV_APP_TOKEN) {
+  headers['X-App-Token'] = process.env.DATOS_GOV_APP_TOKEN;
+ }
+
+ const response = await axios.get(TRM_DATASET_URL, {
+  timeout: FX_TIMEOUT_MS,
+  headers,
+  params: {
+   // Overlap, not containment: the validity in force on the first day of the
+   // window usually opened before it, and dropping it would leave that day
+   // resolving onto whatever older row the store happens to hold.
+   //
+   // Both days are validated above, so neither can carry a SoQL fragment.
+   '$where':
+    `vigenciahasta >= '${firstDay}T00:00:00.000'` +
+    ` AND vigenciadesde <= '${lastDay}T23:59:59.999'`,
+   '$order': 'vigenciadesde ASC',
+   '$limit': TRM_RANGE_ROW_LIMIT,
+  },
+ });
+
+ if (!Array.isArray(response.data)) {
+  throw new Error(`Banrep returned a malformed payload for ${firstDay}..${lastDay}`);
+ }
+
+ // A truncated page would look exactly like a short month and silently leave
+ // the tail of the window uncovered, which is the failure this function exists
+ // to prevent. Say so rather than store an incomplete window.
+ if (response.data.length === TRM_RANGE_ROW_LIMIT) {
+  throw new Error(
+   `Banrep range ${firstDay}..${lastDay} hit the ${TRM_RANGE_ROW_LIMIT}-row limit`,
+  );
+ }
+
+ const series = [];
+
+ for (const row of response.data) {
+  const rate = Number(row.valor);
+  const effectiveDate = String(row.vigenciadesde || '').slice(0, 10);
+
+  if (!Number.isFinite(rate) || rate <= 0 || effectiveDate.length !== 10) {
+   console.warn(`[FX] Banrep skipping malformed row: ${JSON.stringify(row)}`);
+   continue;
+  }
+
+  // The provider's own string, not the parsed number: the parse validates, it
+  // does not decide the precision that reaches the column.
+  series.push({ rateDate: effectiveDate, rate: String(row.valor), source: 'banrep-trm' });
+ }
+
+ console.log(
+  `[FX] Banrep TRM usd -> cop for ${firstDay}..${lastDay}: ${series.length} validities`,
+ );
+
+ return series;
 }
 
 // ================================
