@@ -412,7 +412,12 @@ function PnL(): JSX.Element {
   // ======================
   // FORM SUBMIT HANDLING
   // ======================
-  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
+  // One path, two entries: the + button's click, and Enter in any field, which
+  // reaches this through the form's onSubmit. preventDefault below serves both,
+  // and it is why clicking + does not also fire the submit.
+  async function onSaveHandler(
+    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>,
+  ) {
     // console.log('On Save Handler');
     e.preventDefault();
     if (resetFn) resetFn();
@@ -593,7 +598,11 @@ function PnL(): JSX.Element {
   // ======================
   return (
     <>
-      <form className='trackerFormAccount' style={{ color: 'inherit' }}>
+      <form
+        className='trackerFormAccount'
+        style={{ color: 'inherit' }}
+        onSubmit={onSaveHandler}
+      >
         {/* TOP CARD START */}
         <TopCard
           topCardElements={topCardElements}

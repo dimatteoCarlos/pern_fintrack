@@ -585,7 +585,12 @@ function Transfer(): JSX.Element {
 
   //-------------------------------------
   //--Handler submit form
-  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
+  // One path, two entries: the + button's click, and Enter in any field, which
+  // reaches this through the form's onSubmit. preventDefault below serves both,
+  // and it is why clicking + does not also fire the submit.
+  async function onSaveHandler(
+    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>,
+  ) {
     // console.log('On Save Handler');
     e.preventDefault();
     if (resetFn) resetFn();
@@ -742,6 +747,7 @@ function Transfer(): JSX.Element {
         autoComplete={'off'}
         className='transfer'
         style={{ color: 'inherit' }}
+        onSubmit={onSaveHandler}
       >
         {/* start of TOP CARD */}
         <TopCard

@@ -489,7 +489,12 @@ function Expense(): JSX.Element {
   }
   //------------------------
   //Handler for form submit
-  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
+  // One path, two entries: the + button's click, and Enter in any field, which
+  // reaches this through the form's onSubmit. preventDefault below serves both,
+  // and it is why clicking + does not also fire the submit.
+  async function onSaveHandler(
+    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>,
+  ) {
     // console.log('On Save Handler');
     e.preventDefault();
     // Show all validation messages when submitting
@@ -818,7 +823,11 @@ function Expense(): JSX.Element {
   return (
     <>
       {/*  {!isLoadingBankAccounts && !isLoadingCategoryBudgetAccounts  &&!isLoading && */}
-      <form className='expense' style={{ color: 'inherit' }}>
+      <form
+        className='expense'
+        style={{ color: 'inherit' }}
+        onSubmit={onSaveHandler}
+      >
         {/* TOP CARD */}
         <TopCard<typeof initialExpenseData>
           topCardElements={topCardElements}
