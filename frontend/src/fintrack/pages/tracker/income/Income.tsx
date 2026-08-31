@@ -56,7 +56,8 @@ import { IncomeValidatedDataType } from '../../../validations/types.ts';
 import TopCard from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
-import CardNoteSave from '../components/CardNoteSave.tsx';
+import CardNote from '../components/CardNote.tsx';
+import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 //------------------------
 // 🛡️ authentication fetch
@@ -332,7 +333,11 @@ function Income(): JSX.Element {
   );
   //================================
   // Handler of saving button. Validation, API request and Resetting.
-  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
+  // Widened to the form event: the submit reaches this from the button AND from
+  // Enter in any field, and both arrive as one path rather than two.
+  async function onSaveHandler(
+    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>,
+  ) {
     // console.log('On Save Handler');
     e.preventDefault();
     setMessageToUser('Processing transaction...');
@@ -448,7 +453,7 @@ function Income(): JSX.Element {
   // -------------------------------
   return (
     <>
-      <form className='income' style={{ color: 'inherit' }}>
+      <form className='income' style={{ color: 'inherit' }} onSubmit={onSaveHandler}>
         {/* TOP CARD START */}
         <TopCard
           topCardElements={topCardElements}
@@ -484,15 +489,32 @@ function Income(): JSX.Element {
             setIsReset={setIsReset}
           />
 
-          <CardNoteSave
-            title={'note'}
-            validationMessages={validationMessages}
-            dataHandler={handleNoteChange}
-            inputNote={incomeData.note}
-            onSaveHandler={onSaveHandler}
-            isDisabled={isLoading || isLoadingBankAccounts || isLoadingSources}
-            showError={showValidation.note}
-          />
+          <div className='card--title'>
+            Note
+            <span className='validation__errMsg'>
+              {showValidation.note && validationMessages['note']
+                ? validationMessages['note']
+                : ''}
+            </span>
+          </div>
+
+          <div className='note--description'>
+            <CardNote
+              dataHandler={handleNoteChange}
+              inputNote={incomeData.note}
+              title='note'
+            />
+          </div>
+
+          {/* Extends the decision Expense took: the commit action at the foot of
+              the card, naming the movement it records, and the form owning the
+              submit so the keyboard reaches it. */}
+          <FormSubmitBtn
+            className='submit__btn--light'
+            disabled={isLoading || isLoadingBankAccounts || isLoadingSources}
+          >
+            Record income
+          </FormSubmitBtn>
         </div>
       </form>
 
