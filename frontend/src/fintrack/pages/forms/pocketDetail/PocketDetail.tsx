@@ -38,6 +38,7 @@ import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import {
  PocketStatusLevel,
+ POCKET_STATUS_WORD,
  pocketDateLevel,
  pocketReadingModifier,
  pocketSquareClass,
@@ -319,8 +320,15 @@ function PocketDetail() {
  const dayCount = Math.abs(pocket.daysRemaining);
  const dayWord = dayCount === 1 ? 'day' : 'days';
 
+ // The word comes from the shared map, not from a literal written here. The
+ // square beside it is painted for the LEVEL, so the text has to name that
+ // same level: a pocket past its goal lights the over-funded blue, and
+ // "Target reached" is the BAND that holds both landing on the goal and
+ // passing it. A band name beside a level's colour disagrees about how precise
+ // the reading is, and the map exists so a card, the hero's tallies and this
+ // reading cannot name one level three ways.
  const dateText = pocket.funded
-  ? 'Target reached'
+  ? POCKET_STATUS_WORD[dateLevel]
   : pocket.daysRemaining < 0
     ? `${dayCount} ${dayWord} late`
     : pocket.daysRemaining === 0

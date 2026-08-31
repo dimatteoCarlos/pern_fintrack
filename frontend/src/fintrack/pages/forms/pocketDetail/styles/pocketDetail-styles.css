@@ -25,6 +25,18 @@
  padding: 0 var(--space-3);
 }
 
+/* The header takes the column's full width, so the back arrow and the overflow
+   menu sit on the same left and right edges as the cream panel under them.
+
+   The shared rule gives this block 85% and centres it, which is 15% narrower
+   than everything else on the screen: the two controls ended up inset from the
+   panel's edges by half of that on each side, and the header read as belonging
+   to a different column. The budget detail corrects the same rule the same way
+   for its own title. */
+.page__container--pocket .page__content {
+ width: 100%;
+}
+
 /* ── The three fetch states ────────────────────────────────────────────────── */
 
 .pocketDetail__state {
