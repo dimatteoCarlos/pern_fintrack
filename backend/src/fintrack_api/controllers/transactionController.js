@@ -692,10 +692,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
 
       console.warn(pc.magentaBright(message));
 
-      return res.status(400).json({
-        status: 400,
-        message,
-      });
+      // Throwing, not responding: a response here hands the connection back to
+      // the pool with the transaction still open. The catch rolls it back.
+      throw createError(400, message);
     }
     //--------------------------------------
     // --- Update Source account balance ---
