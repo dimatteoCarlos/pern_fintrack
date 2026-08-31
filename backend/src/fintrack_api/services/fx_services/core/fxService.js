@@ -26,6 +26,7 @@ import {
   getAllRatesFromDB,
   upsertRatesBatch,
 } from '../db/fxDBaccess.js';
+import { persistQueriedRange } from '../db/dailyRateDBaccess.js';
 import { fetchRatesFromProviders } from './fxProviderOrchestrator.js';
 
 // ─── GLOBAL STATE 
@@ -152,15 +153,76 @@ export async function refreshFXState() {
       source: data.source,
       fetchedAt: data.fetchedAt,
       providerUpdatedAt: data.providerUpdatedAt || null,
+      providerDay: data.providerDay || null,
     }));
 
   await upsertRatesBatch(batch, baseId);
+
+  await recordLiveRatesAsDailyObservations(batch, baseId);
 
   // 3. Update global state
   fxState.baseCurrency = baseCurrency;
   fxState.rates = result.rates;
   fxState.oldestFetchedAt = result.oldestFetchedAt;
   fxState.stateTTL = result.stateTTL;
+}
+
+/**
+ * Record what the live refresh just fetched as that day's observation too.
+ *
+ * Why the live path writes into the historical store at all. The two stores
+ * never fed each other: the live refresh wrote only the mutable one-row-per-pair
+ * table, so the day it just paid a provider for was never recorded as that day's
+ * observation. A movement dated today then took the historical path, missed, and
+ * bought the same figure a second time — one redundant provider call per
+ * currency per day, for a rate already in hand.
+ *
+ * The day comes from the provider or the row is not written. Only an adapter
+ * knows its provider's calendar semantics, so each one states providerDay when
+ * it can and leaves it null when it cannot. Cotizave quotes a market
+ * continuously rather than publishing for a day, so its rate never becomes a
+ * daily observation — inventing a day for it would be exactly the fabrication
+ * the historical store refuses.
+ *
+ * Coverage travels with it. A single day was asked for, so a single day is
+ * covered, and persistQueriedRange commits the observation and the span
+ * together. Without that the row would sit in the store unreadable, because the
+ * resolver refuses a row it cannot prove was inside a queried period.
+ *
+ * @param {Array<Object>} batch - What upsertRatesBatch was just given.
+ * @param {number} baseCurrencyId
+ * @returns {Promise<void>} Never rejects.
+ */
+async function recordLiveRatesAsDailyObservations(batch, baseCurrencyId) {
+  for (const item of batch) {
+    if (!item.providerDay) continue;
+
+    try {
+      const targetCurrencyId = await getCurrencyId(null, item.targetCode);
+      if (!targetCurrencyId) continue;
+
+      await persistQueriedRange({
+        rateRows: [
+          {
+            rateDate: item.providerDay,
+            rate: String(item.rate),
+            source: item.source,
+          },
+        ],
+        baseCurrencyId,
+        targetCurrencyId,
+        from: item.providerDay,
+        to: item.providerDay,
+      });
+    } catch (error) {
+      // The live rate is already stored and being served. Recording history is
+      // an optimisation on top of that, so its failure must not fail a refresh
+      // that otherwise succeeded.
+      console.warn(
+        `FX history: ${item.targetCode} not recorded — ${error.message}`,
+      );
+    }
+  }
 }
 
 // ─── ENSURE FRESH STATE 

@@ -95,6 +95,11 @@ return {
    providerUpdatedAt: response.data.time_last_update_unix
      ? new Date(response.data.time_last_update_unix * 1000)
      : null,
+   providerDay: response.data.time_last_update_unix
+     ? new Date(response.data.time_last_update_unix * 1000)
+         .toISOString()
+         .slice(0, 10)
+     : null,
     };
   }
 //---------------------
@@ -123,6 +128,13 @@ return {
 // The provider's own publication instant, kept apart from the read time above.
     providerUpdatedAt: response.data.time_last_update_unix
       ? new Date(response.data.time_last_update_unix * 1000)
+      : null,
+// This provider publishes once a day at 00:00 UTC, so the UTC day of that
+// instant is the day it published for, not a rounding we invented.
+    providerDay: response.data.time_last_update_unix
+      ? new Date(response.data.time_last_update_unix * 1000)
+          .toISOString()
+          .slice(0, 10)
       : null,
   };
 };
@@ -155,6 +167,7 @@ export async function fetchAllRates(baseCurrency) {
           source: result.source || 'exchange-rate-api',
           fetchedAt: result.fetchedAt || new Date(),
           providerUpdatedAt: result.providerUpdatedAt || null,
+          providerDay: result.providerDay || null,
         };
       }
     }
@@ -164,6 +177,7 @@ export async function fetchAllRates(baseCurrency) {
       source: 'exchange-rate-api',
       fetchedAt: result.fetchedAt || new Date(),
       providerUpdatedAt: result.providerUpdatedAt || null,
+      providerDay: result.providerDay || null,
     };
   } catch (error) {
     console.warn('⚠️ ExchangeRate-API fetchAllRates failed:', error.message);

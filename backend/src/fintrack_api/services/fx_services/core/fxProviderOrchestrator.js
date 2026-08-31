@@ -100,6 +100,10 @@ export async function fetchRatesFromProviders(
             fetchedAt: data.fetchedAt || new Date(),
             // Rebuilt field by field, so anything not named here is dropped.
             providerUpdatedAt: data.providerUpdatedAt || null,
+            // Present only for a provider that publishes on a daily calendar.
+            // Cotizave quotes a market continuously and states no day, so its
+            // rate never becomes a daily observation.
+            providerDay: data.providerDay || null,
           };
           missing.delete(c);
           providerUsed = true;

@@ -59,6 +59,10 @@ const providerUpdated = response.data.meta?.last_updated_at;
 // is when this installation asked. Reading one as the other made the cache age
 // from the publication instant and refresh itself early, every time.
 const providerUpdatedAt = providerUpdated ? new Date(providerUpdated) : null;
+// Published once a day, so the UTC day of that instant is the day it covers.
+const providerDay = providerUpdatedAt
+  ? providerUpdatedAt.toISOString().slice(0, 10)
+  : null;
 const fetchedAt = new Date();
 
 // 7. If targetCode is null, return the full rates object
@@ -74,6 +78,7 @@ const fetchedAt = new Date();
     source: 'freecurrencyapi',
     fetchedAt,
     providerUpdatedAt,
+    providerDay,
     };
    }
 //---------------------
@@ -95,6 +100,7 @@ const fetchedAt = new Date();
     source: 'freecurrencyapi',
     fetchedAt,
     providerUpdatedAt,
+    providerDay,
   };
 }
 
@@ -124,6 +130,7 @@ export async function fetchAllRates(baseCurrency) {
           source: result.source || 'freecurrencyapi',
           fetchedAt: result.fetchedAt || new Date(),
           providerUpdatedAt: result.providerUpdatedAt || null,
+          providerDay: result.providerDay || null,
         };
       }
     }
@@ -133,6 +140,7 @@ export async function fetchAllRates(baseCurrency) {
       source: 'freecurrencyapi',
       fetchedAt: result.fetchedAt || new Date(),
       providerUpdatedAt: result.providerUpdatedAt || null,
+      providerDay: result.providerDay || null,
     };
   } catch (error) {
     console.warn('⚠️ FreeCurrencyAPI fetchAllRates failed:', error.message);

@@ -105,6 +105,11 @@ export async function fetchTrm() {
   source: 'banrep-trm',
   fetchedAt: new Date(),
   publishedAt,
+  // The day the figure belongs to, STATED by the provider rather than
+  // derived from an instant: vigenciadesde is already a calendar date.
+  // Deriving a day from a timestamp would be the fabrication this
+  // module's first invariant forbids.
+  providerDay: String(row.vigenciadesde).slice(0, 10),
  };
 }
 
@@ -336,11 +341,13 @@ export async function fetchAllRates(baseCurrency) {
      // of vigenciadesde. It is the same idea the other providers call an update
      // time, so it leaves here under the one name the assembler reads.
      providerUpdatedAt: result.publishedAt || null,
+     providerDay: result.providerDay || null,
     },
    },
    source: result.source,
    fetchedAt: result.fetchedAt,
    providerUpdatedAt: result.publishedAt || null,
+   providerDay: result.providerDay || null,
   };
  } catch (error) {
   console.warn('⚠️ Banrep TRM fetchAllRates failed:', error.message);
