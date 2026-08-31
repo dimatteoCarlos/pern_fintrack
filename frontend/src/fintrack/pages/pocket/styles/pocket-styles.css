@@ -1200,6 +1200,15 @@ button.line__container {
  color: var(--color-content-on-dark);
 }
 
+/* index.css sets font-size on the universal selector, so this span does not
+   inherit the size of the line it sits in and has to restate it. Uppercase, the
+   same way the detail panel sets the labels beside its figures. */
+.pocketCard__targetLabel {
+ font-size: inherit;
+ text-transform: uppercase;
+ letter-spacing: var(--letter-spacing-wide);
+}
+
 .pocketCard__target {
  min-width: 0;
  font-size: var(--font-size-2xs);

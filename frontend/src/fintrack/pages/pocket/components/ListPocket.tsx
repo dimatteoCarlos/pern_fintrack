@@ -316,7 +316,14 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
 
       <p className='pocketCard__amounts'>
        <span className='pocketCard__allocated'>{amount(allocated)}</span>
-       <span className='pocketCard__target'>of {amount(target)}</span>
+       {/* The figure is NAMED, not related by a preposition. "of" asserts that
+           the second amount is the whole and the first a part of it, and an
+           over-funded pocket makes that false on screen: "$5.00 of $1.38". The
+           label holds for every pocket because it states what the figure IS. */}
+       <span className='pocketCard__target'>
+        <span className='pocketCard__targetLabel'>Target</span>{' '}
+        {amount(target)}
+       </span>
        <span className={`pocketCard__percent pocketCard__percent--${tone}`}>
         {Math.round(progress)}%
        </span>
