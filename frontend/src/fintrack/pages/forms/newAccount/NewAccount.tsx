@@ -90,6 +90,15 @@ const latestOpeningDay = (): Date => {
   return today;
 };
 
+// The earliest opening day the calendar offers. An operative date belongs to
+// the month in course, so an earlier one comes back from the server as a 422
+// the form cannot explain. Without this the picker falls back to its own 1900
+// default, and the year dropdown puts that within two clicks.
+const earliestOpeningDay = (): Date => {
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth(), 1);
+};
+
 const formDataNumber = { keyName: 'amount', title: 'value' };
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
@@ -441,6 +450,7 @@ function NewAccount() {
                     changeDate={changeStartingPoint}
                     date={accountData.date}
                     variant={'form'}
+                    minDate={earliestOpeningDay()}
                     maxDate={latestOpeningDay()}
                     // disabled={isFormDisabled}
                   ></FormDatepicker>
