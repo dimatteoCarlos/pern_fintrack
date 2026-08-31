@@ -220,6 +220,12 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
       },
 
       debtor: {
+        // ORDER BY, because the caller reads rows[0] out of a grouped result and
+        // an ungrouped read has no defined first row: which currency reached the
+        // headline was decided by the aggregate's ordering.
+        // Deterministic is not complete — a second currency is still dropped
+        // rather than converted, and today it cannot arise, since every debtor
+        // account is inserted in the accounting currency.
         text: `
       SELECT CAST(SUM(${DERIVED_BALANCE}) AS FLOAT ) AS total_debt_balance, CAST(SUM(CASE WHEN ${DERIVED_BALANCE} > 0 THEN ${DERIVED_BALANCE} ELSE 0 END) AS FLOAT ) AS debt_receivable,  CAST(SUM(CASE WHEN ${DERIVED_BALANCE} < 0 THEN ${DERIVED_BALANCE} ELSE 0 END) AS FLOAT ) AS debt_payable, 
 
@@ -234,6 +240,7 @@ export const dashboardTotalBalanceAccountByType = async (req, res, next) => {
 
         WHERE user_id = $1 AND act.account_type_name = $2 AND ua.account_name!=$3
         GROUP BY  ct.currency_code
+        ORDER BY ct.currency_code
 `,
         values: [userId, accountType, 'slack'],
       },
