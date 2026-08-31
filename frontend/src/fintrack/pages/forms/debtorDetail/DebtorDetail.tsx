@@ -22,6 +22,7 @@ import {
   capitalize,
   formatDateToDDMMYYYY,
   numberFormatCurrency,
+  toCalendarDay,
 } from '../../../helpers/functions.ts';
 import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
@@ -116,8 +117,11 @@ function DebtorDetail() {
   const lastDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth() + 1, 0);
 
   //--YYYY-MM-DD
-  const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0];
-  const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0];
+  // Through toCalendarDay, not toISOString: the two bounds are built from the
+  // local getters above, and reading their UTC parts back names the previous
+  // day east of UTC — dropping the last day of the statement window.
+  const apiStartDate = toCalendarDay(firstDayOfPeriod);
+  const apiEndDate = toCalendarDay(lastDayOfPeriod);
 
   //-----
   const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
