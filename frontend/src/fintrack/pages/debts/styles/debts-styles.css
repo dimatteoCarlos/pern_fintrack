@@ -1,7 +1,4 @@
 /*debts styles.css*/
-.debtsLayout {
-  border: 0px solid blue;
-}
 /*---BigBoxResult--*/
 /*bigBox__container styles come from overview bigBox container*/
 
@@ -97,7 +94,6 @@
 
 .debtsLayout .presentation__card__title__container {
   padding: 1.5rem 0 1rem 0;
-  /* border: 1px solid blue; */
 }
 .debtsLayout .content__presentation {
   /* background-color: orange; */
