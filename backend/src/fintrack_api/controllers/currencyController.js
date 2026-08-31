@@ -74,11 +74,20 @@ export async function currencyConvert(req, res, next) {
     );
 
     // 5. Return result
+    //
+    // effectiveDate is the day whose rate actually answered, which is not always
+    // the day asked for: a validity published on the 15th values the 20th, and a
+    // market closed on a Saturday is valued by the Friday it quoted. It already
+    // travels glued inside source as provider@day; naming it as its own field is
+    // what lets a client tell "the rate for that day" from "the rate in force on
+    // that day" without parsing a string. null on the undated path, where today
+    // has no effective day of its own.
     res.json({
       convertedAmount: conversion.amount.toNumber(), //where amount is a Decimal object from Decimal.js lib.
       rate: conversion.rate,
       source: conversion.source,
       fetchedAt: conversion.fetchedAt,
+      effectiveDate: conversion.effectiveDate ?? null,
     });
   } catch (error) {
     // Forwarded rather than turned into a 500. A dated conversion reaches the
