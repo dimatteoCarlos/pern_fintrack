@@ -158,13 +158,16 @@ export async function initializeDatabase() {
     // =======================================
     // Runtime counterpart of migration 021. Pure CREATE ... IF NOT EXISTS.
     //
-    // This path does NOT reach the Vercel deployment, and the comments on the
-    // budget and pocket calls below claim otherwise. index.js:51 guards
-    // startServer behind !process.env.VERCEL, and the serverless entrypoint
-    // backend/index.js imports src/app.js alone, so initializeDatabase never
-    // runs there. What this call covers is local development and any host that
-    // boots src/index.js. On Vercel the table arrives through migration 021 and
-    // the migration runner, which has to be run against that database.
+    // WHAT THIS PATH REACHES, and it is not the Vercel deployment. Two
+    // independent reasons: index.js:51 guards startServer behind
+    // !process.env.VERCEL, and the serverless entrypoint backend/index.js
+    // imports src/app.js alone, so this file is never even loaded there.
+    //
+    // What every ensure* call in this block covers is therefore local
+    // development and any host that boots src/index.js — never production.
+    // Production takes its schema from the migration runner alone, and a table
+    // added only here would never arrive. For this one that is migration 021,
+    // and the runner has to be pointed at that database.
     //
     // Before the FORCE_RECREATE_EXCHANGE_RATES block further down on purpose,
     // and unaffected by it: that flag resets the current-rate cache, and the
@@ -188,9 +191,12 @@ export async function initializeDatabase() {
     // =======================================
     // Pocket domain (idempotent, runs on every boot)
     // =======================================
-    // Same reason as the budget call above: production is built by this path and
-    // never sees the migration runner, so a table created only inside the
-    // first-time block would never reach it. Pure CREATE ... IF NOT EXISTS.
+    // Same reason as the budget call above: a table created only inside the
+    // first-time block never reaches a database that already exists. Pure
+    // CREATE ... IF NOT EXISTS, so it is safe on every boot.
+    //
+    // It does NOT reach production: see the historical rate store call above,
+    // which carries the reason for every ensure* call in this file.
     //
     // The data steps of 020 — copying pocket accounts into pockets, restoring
     // the funding balances and deleting the accounts — are NOT mirrored here.
@@ -198,8 +204,9 @@ export async function initializeDatabase() {
     // an attended migration run, not to a boot.
     await ensurePocketTables(client);
 
-    // Runtime counterpart of migration 011: production is built by this path,
-    // not by the migration runner, so the constraint has to be applied here too.
+    // Runtime counterpart of migration 011, for the databases this file does
+    // reach: a local or self-hosted one that has never had the runner pointed
+    // at it. Production is not among them.
     await ensureCategoryBudgetCurrency(client);
 
     // Runtime counterpart of migration 014. After the call above, not before:
@@ -207,8 +214,8 @@ export async function initializeDatabase() {
     await ensureCategoryBudgetFxColumns(client);
 
     // Runtime counterpart of migration 012, for the same reason as the two
-    // calls above: production is built by this path, so a database that never
-    // saw the runner would keep its legacy budgets unmigrated.
+    // calls above: a database that never saw the runner would keep its legacy
+    // budgets unmigrated.
     await ensureBudgetAllocationBackfill(client);
 
     // Same reason as the two calls above: it must run outside the first-time
