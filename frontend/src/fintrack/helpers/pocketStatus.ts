@@ -57,7 +57,12 @@ const READING_MODIFIER: Record<PocketStatusLevel, string> = {
 // neither funded nor overdue and called it "Active" — a word that appeared on
 // the filter and nowhere else on the screen it was filtering.
 export const POCKET_STATUS_WORD: Record<PocketStatusLevel, string> = {
- funded: 'Funded',
+ // "At target" and no longer "Funded". Funded named the mechanism; the four
+ // words beside it all name an outcome, and this one now has a sibling — a
+ // pocket ABOVE its target — that it has to read as a pair with. It also stops
+ // the level from colliding with the board's own grouping, where "target
+ // reached" is the heading that holds both this level and the one above it.
+ funded: 'At target',
  overFunded: 'Above target',
  onPlan: 'On plan',
  atRisk: 'At risk',

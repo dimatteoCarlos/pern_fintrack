@@ -532,10 +532,6 @@ button.line__container {
  /* Without it a long pocket name blows its grid track out instead of wrapping
     inside it. */
  min-width: 0;
- /* The strip inside refuses to wrap, so past the card it has to go somewhere.
-    Here, and not on the page: a hero that scrolls the document sideways moves
-    every other block on the screen to show one reading. */
- overflow-x: auto;
  padding: var(--space-3);
  border-radius: var(--radius-md);
  background-color: var(--color-surface-raised);
@@ -543,23 +539,9 @@ button.line__container {
  color: inherit;
 }
 
-/* The headline and the strip beneath it, told apart the same way the equation
-   above tells its tiles apart: a hairline, not a font size. Only Next Target
-   has both now — the status card leads with its label and the strip follows it
-   directly, with no headline between them to divide from. */
-.pocketHero__cardValue + .pocketHero__strip {
- margin-top: var(--space-1);
- padding-top: var(--space-2);
- border-top: var(--border-width-thin) solid var(--color-border-subtle);
-}
-
 /* Room for the chevron, so a two-word name does not run under it. */
 .pocketHero__card--link {
  padding-right: var(--space-6);
-}
-
-.pocketHero__card--empty .pocketHero__cardValue {
- color: var(--color-content-on-dark-subtle);
 }
 
 .pocketHero__cardValue {
@@ -684,18 +666,19 @@ button.line__container {
    with the one beside it instead of standing a line shorter. */
 /* Two rows, and one column per GROUP rather than one per reading. The
    distinction decides whether the strip can be read at all: on plan and at risk
-   are not peers of "not funded", they are the two ways of being it, so a column
-   per reading forces the middle heading to be restated and "not funded" then
+   are not peers of "in progress", they are two of the three ways of being it,
+   so a column per reading forces the heading to be restated and the group then
    appears twice, each time carrying its own count.
 
-   min-width on the content, not on the container: three groups of readings do
-   not fit 360px, and wrapping a reading onto a second line breaks the grid the
-   two rows depend on. It scrolls inside the card instead, so the page never
-   scrolls sideways. */
+   Stacked here and side by side only once the CONTAINER can hold both. Two
+   bands of readings do not fit 360px, and the alternative — holding the row and
+   scrolling it — hides half the partition behind a gesture. A band that drops
+   below its neighbour still keeps its own heading over its own readings, which
+   is the only thing the two rows have to preserve. */
 .pocketHero__strip {
  display: flex;
- align-items: stretch;
- min-width: max-content;
+ flex-direction: column;
+ gap: var(--space-3);
 }
 
 /* One heading and the readings it heads. */
@@ -703,15 +686,7 @@ button.line__container {
  display: flex;
  flex-direction: column;
  gap: var(--space-2);
- padding: 0 var(--space-4);
-}
-
-.pocketHero__group:first-child {
- padding-left: 0;
-}
-
-.pocketHero__group + .pocketHero__group {
- border-left: var(--border-width-thin) solid var(--color-border-subtle);
+ min-width: 0;
 }
 
 /* The band spans its readings, which is the whole point of the two rows: the
@@ -749,13 +724,44 @@ button.line__container {
  flex-shrink: 0;
 }
 
-/* No wrap: a reading that dropped to a second line would sit under its
-   neighbour rather than under its own heading, and the two rows stop meaning
-   anything. The strip scrolls instead. */
+/* Wraps, and that is safe because a reading that drops to a second line is
+   still inside its own band: the band is a column, so everything in it belongs
+   to the heading above it wherever it lands. What must never happen is the
+   page scrolling sideways to reach a figure. */
 .pocketHero__marks {
  display: flex;
- gap: var(--space-4);
+ flex-wrap: wrap;
+ gap: var(--space-2) var(--space-4);
  margin: 0;
+}
+
+/* The exceptions, on a row of their own behind a rule. Not a third band: every
+   figure in it is already counted in the two above, which is why its heading
+   carries no number. It is a spotlight, not a bucket. */
+.pocketHero__alerts {
+ margin-top: var(--space-3);
+ padding-top: var(--space-3);
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+/* A goal that has been met, marked by SHAPE and not by another colour. It is
+   the one reading on the strip that is finished rather than pending, so it
+   sits off the semaphore — and a tick beside a square survives the colour
+   blindness that collapses a green beside an amber. Two borders on a rotated
+   box, so it costs no request.
+
+   Sized against the square it stands in line with rather than on the sizing
+   scale: the scale has no entry between the status square and the icon size,
+   and inventing one for a single mark is not this component's call. */
+.pocketHero__tick {
+ display: inline-block;
+ flex-shrink: 0;
+ width: 0.5rem;
+ height: 0.8rem;
+ border-right: var(--border-width-thick) solid var(--color-status-complete);
+ border-bottom: var(--border-width-thick) solid var(--color-status-complete);
+ transform: rotate(45deg) translateY(-0.1rem);
+ margin-right: var(--space-1);
 }
 
 /* A reading, not a caption: full ink at body size, lower case, and no letter
@@ -780,34 +786,34 @@ button.line__container {
  color: var(--color-content-on-dark-subtle);
 }
 
-.pocketHero__mark--empty .status__square {
+.pocketHero__mark--empty .status__square,
+.pocketHero__mark--empty .pocketHero__tick {
  opacity: 0.45;
 }
 
-/* The value under a heading that names one figure rather than heading a
-   partition. Next Target uses it; the status strip never does. */
-.pocketHero__reading {
- font-size: var(--font-size-base);
- color: var(--color-content-on-dark);
- white-space: nowrap;
- font-variant-numeric: tabular-nums;
+/* ── Next Target on one line ─────────────────────────────────────────────── */
+
+/* Wraps rather than scrolls: a long pocket name plus three readings does not
+   fit a narrow container, and the readings then fall under the name instead of
+   pushing the page sideways. */
+.pocketHero__card--row .pocketHero__inline {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: center;
+ gap: var(--space-2) var(--space-4);
+ min-width: 0;
 }
 
-/* The other axis entirely. A pocket whose funding accounts stopped backing what
-   it says is committed can be at any of the five levels, so counting it as a
-   peer would count it twice and break the total. It sits under the partition,
-   behind a rule, and it is absent at zero where the five readings never are. */
-.pocketHero__aside {
+.pocketHero__inlineItem {
  display: flex;
  align-items: center;
  gap: var(--space-2);
- padding-top: var(--space-2);
- border-top: var(--border-width-thin) solid var(--color-border-subtle);
- font-size: var(--font-size-sm);
- color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-base);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
 }
 
-.pocketHero__aside .status__square {
+.pocketHero__inlineItem .status__square {
  flex-shrink: 0;
 }
 
@@ -917,6 +923,47 @@ button.line__container {
     of it rather than half. */
  .pocketHero__cards .pocketHero__glyph {
   display: block;
+ }
+
+ /* The two bands go side by side, told apart by a hairline. Below this the
+    strip stays stacked: each band keeps its heading over its own readings
+    either way, and that is the only thing the two rows have to preserve. */
+ .pocketHero__strip {
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+ }
+
+ .pocketHero__strip .pocketHero__group {
+  padding: 0 var(--space-4);
+ }
+
+ .pocketHero__strip .pocketHero__group:first-child {
+  padding-left: 0;
+ }
+
+ .pocketHero__strip .pocketHero__group + .pocketHero__group {
+  border-left: var(--border-width-thin) solid var(--color-border-subtle);
+ }
+
+ /* Next Target on one line: the label opens it and the name and its three
+    readings follow. Below this the label sits on its own line above them,
+    which is what the card does by default. */
+ .pocketHero__card--row {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-4);
+ }
+
+ .pocketHero__card--row .pocketHero__label {
+  white-space: nowrap;
+ }
+
+ .pocketHero__card--row .pocketHero__cardValue--name {
+  font-size: var(--font-size-lg);
+  /* One line here: the card is a row, and a name breaking to two lines pushes
+     its own readings out of alignment with it. */
+  -webkit-line-clamp: 1;
  }
 }
 

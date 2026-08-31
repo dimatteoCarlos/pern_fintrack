@@ -62,6 +62,18 @@
  --color-status-warning: #b8894e;
  --color-status-success: #008000;
  --color-status-info: #60b1d6;
+ /* A goal that has been met, and the mark is a tick rather than a square: the
+    one outcome on a status strip that is FINISHED rather than pending, so it
+    is deliberately off the semaphore. Distinct from --color-status-ok, which
+    means healthy and still running; nothing more can be done to a complete
+    thing.
+
+    Separate from --color-status-success (#008000) because that value carries
+    3.39:1 against the raised surface and was never calibrated for it — it is
+    the raw CSS keyword and it lives on the light feedback banners. This one is
+    measured against --color-surface-raised at 6.23:1, in the same band as ok
+    (5.62) and alert (6.23), so the marks read as one set. */
+ --color-status-complete: #5faa78;
 
  /* COLOR - FEEDBACK ON A LIGHT SURFACE: the banner triad, valid on inverse and
     on panel. Separate from the semaphore above because those scalars are
