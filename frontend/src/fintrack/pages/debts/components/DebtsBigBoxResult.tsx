@@ -56,7 +56,12 @@ export function DebtsBigBoxResult({
       <div className='bigBox__mainInfo'>{totalTitle.toUpperCase()}</div>
 
       <div className='displayScreen dark flex-row-sb'>
-        <div className='displayScreen--concept light'>{'total'}</div>
+        {/* Net total, not total. This figure is what is owed to the owner MINUS
+            what the owner owes, so "total" invited reading it as the total of
+            the debts — which is the sum of the two figures below, a different
+            number. It was the last ambiguous word left on the panel once those
+            two got their own labels and colours. */}
+        <div className='displayScreen--concept light'>{'net total'}</div>
         <div className='displayScreen--result light'>
           {formatAmount(totalAmount)}
         </div>
