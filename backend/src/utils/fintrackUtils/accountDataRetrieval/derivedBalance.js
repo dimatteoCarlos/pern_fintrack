@@ -24,9 +24,21 @@
  * account that funded it. Only the credit duplicates the starting amount. The debit
  * is a real outflow the funding account has to keep, and excluding every row of the
  * type drops it. Measured on the same database: five such legs totalling 46.20 usd,
- * which a type-wide exclusion would report as money no account holds. The test is
- * therefore whether the account is the *destination* of the opening, which is true
- * of a credit leg and of a self-funded opening, and false of a funding leg.
+ * which a type-wide exclusion would report as money no account holds.
+ *
+ * **The row says which account it opens; the test does not guess it.** Until
+ * migration 022 the test was whether the account was the *destination* of the
+ * opening, which is a proxy for the direction the money moved. Both legs of an
+ * opening pair carry the same destination, so it could not tell them apart: it
+ * picked whichever leg's account happened to equal that shared destination. For
+ * a debtor the user owes, the debtor is the source and the funding account the
+ * destination, so the proxy inverted — the debtor counted its opening twice and
+ * derived -12.48 against a starting amount of -6.24, and the funding account
+ * silently lost a real 6.24 inflow. The controller that writes the row knows
+ * which account it opens and now states it in `opening_for_account_id`, NULL on
+ * every funding leg and on every ordinary movement. The movement type stays in
+ * the test as a guard on the kind of row; the column is the authority on which
+ * account.
  *
  * `transactions.amount` is stored signed, so the sum needs no per-type sign rule.
  *
@@ -139,7 +151,7 @@ export function userAccountBalancesCte(userIdPlaceholder = '$1') {
             ua.account_starting_amount
             + COALESCE(SUM(
                 CASE WHEN tr.movement_type_id = ${ACCOUNT_OPENING_MOVEMENT_TYPE_ID}
-                       AND tr.account_id = tr.destination_account_id
+                       AND tr.account_id = tr.opening_for_account_id
                   THEN 0 ELSE tr.amount END
               ), 0)
           AS FLOAT) AS balance
@@ -197,7 +209,7 @@ export function derivedAccountBalanceSql(accountAlias = 'ua', castAs = 'FLOAT') 
           ${accountAlias}.account_starting_amount
           + COALESCE(SUM(
               CASE WHEN tr.movement_type_id = ${ACCOUNT_OPENING_MOVEMENT_TYPE_ID}
-                     AND tr.account_id = tr.destination_account_id
+                     AND tr.account_id = tr.opening_for_account_id
                 THEN 0 ELSE tr.amount END
             ), 0)
         AS ${castAs})
@@ -222,7 +234,7 @@ function ledgerBody(accountIdSql) {
             ua.account_starting_amount
             + SUM(
                 CASE WHEN tr.movement_type_id = ${ACCOUNT_OPENING_MOVEMENT_TYPE_ID}
-                       AND tr.account_id = tr.destination_account_id
+                       AND tr.account_id = tr.opening_for_account_id
                   THEN 0 ELSE tr.amount END
               ) OVER (
                 ORDER BY tr.transaction_actual_date ASC, tr.transaction_id ASC
