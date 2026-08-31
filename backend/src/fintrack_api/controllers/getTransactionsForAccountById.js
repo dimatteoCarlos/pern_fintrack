@@ -466,42 +466,25 @@ export const getTransactionsForAccountById = async (req, res, next) => {
 
     //Funciones para obtener balances usando accountInfoNeededResult ================
     //
-    // The window decides which question "initial" answers, and the two answers
-    // are not interchangeable.
+    // One definition of "initial", for both windows: the balance carried INTO the
+    // period, read from the movement before the boundary.
     //
-    // month: the balance left BY the month's first movement, taken from the
-    // derived series at a row that exists. No column holds the balance BEFORE a
-    // transaction, derived or stored, so "initial" here means the balance after
-    // the first movement of the month. The rows arrive newest first, so the last
-    // element is that first movement.
+    // The month branch used to report the balance left BY the month's first
+    // movement, on the ground that no column holds the balance before a
+    // transaction. That ground is gone — the ledger CTE derives it, which is how
+    // the range branch has been answering the same question all along. The two
+    // definitions made the panel contradict itself: an initial balance that
+    // already contained the month's first movement never adds up to the final one
+    // with the movements listed between them.
     //
-    // range: the balance carried INTO the window, which is what the label says
-    // and what a continuous history — a pocket, a debtor — needs. It reads the
-    // movement before the boundary rather than the first one inside it, so the
-    // paragraph above does not bind it. What this replaces read
-    // account_balance_before_tr, a column that exists nowhere, so the || fell
-    // through on every call and reported the opening amount on the window's
-    // start day, which in the common case precedes the account itself.
-    //
-    // Both ends take their currency from the account and never from the row
-    // that produced the figure. A balance is denominated in the accounting
-    // currency of its account; a movement carries the currency it was typed in
-    // on its FX columns, and asking it instead let the two halves of the panel
-    // disagree — measured as "$0.00" over "COP 0.00" on a pocket whose opening
-    // row had been written with the typed currency.
-    const getInitialBalance = async () => {
-      if (window.mode !== 'month') {
-        return getBalanceCarriedIntoPeriod(period.periodStartDate);
-      }
-
-      const oldestTransaction = transactions[transactions.length - 1];
-
-      return {
-        amount: parseFloat(oldestTransaction.account_balance_after_tr),
-        currency: accountInfoNeededResult[0].currency_code,
-        date: oldestTransaction.transaction_local_date,
-      };
-    };
+    // Both ends take their currency from the account and never from the row that
+    // produced the figure. A balance is denominated in the accounting currency of
+    // its account; a movement carries the currency it was typed in on its FX
+    // columns, and asking it instead let the two halves of the panel disagree —
+    // measured as "$0.00" over "COP 0.00" on a pocket whose opening row had been
+    // written with the typed currency.
+    const getInitialBalance = () =>
+      getBalanceCarriedIntoPeriod(period.periodStartDate);
 
     const getFinalBalance = () => ({
       amount: parseFloat(transactions[0].account_balance_after_tr),
