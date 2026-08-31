@@ -18,7 +18,7 @@ import {
 // RTA Utilities
 import { checkAndInsertAccount } from '../../../utils/fintrackUtils/accountManagement/checkAndInsertAccount.js';
 
-import { updateAffectedAccountBalance } from '../../../utils/fintrackUtils/accountDeletionUtils/updateAffectedAccountBalance.js';
+import { setAccountBalanceFromLedger } from '../../../utils/fintrackUtils/accountManagement/setAccountBalanceFromLedger.js';
 
 import { recordAnnulmentTransaction } from '../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 import { lockAndDeriveBalances } from '../../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
@@ -269,13 +269,6 @@ const processRTAAnnulment = async (
         newAffectedBalance,
       } = calculation;
 
-      // Update affected account balance
-      await updateAffectedAccountBalance(
-        dbClient,
-        newAffectedBalance,
-        affectedAccountId,
-      );
-
       // Prepare annulment data
       const annulmentData = {
         userId,
@@ -305,14 +298,26 @@ const processRTAAnnulment = async (
 
       // Record annulment transaction
       await recordAnnulmentTransaction(dbClient, annulmentData);
+
+      // The stored column is written AFTER the rows that justify it, from the
+      // ledger's own arithmetic. newAffectedBalance above predicts the same
+      // figure - derived plus the adjustment, and the annulment row carries
+      // exactly that adjustment - so the two agree; when they ever disagree it
+      // is this one that is right, because it is the only one nobody computed.
+      await setAccountBalanceFromLedger(dbClient, affectedAccountId, userId);
     }
 
-    // 5. Update slack account balance
-    await updateAffectedAccountBalance(
+    // 5. Re-derive the compensation account, once, after every counterpart row
+    // of the loop above is in the ledger. Its annulment rows carry the negated
+    // adjustments, so the ledger produces finalSlackBalance on its own.
+    const slackRow = await setAccountBalanceFromLedger(
       dbClient,
-      finalSlackBalance,
       slackAccount.account_id,
+      userId,
     );
+
+    // What the service reports is what the column holds, not what was predicted.
+    finalSlackBalance = parseFloat(slackRow.account_balance);
   } else {
     console.log(
       pc.yellow(
