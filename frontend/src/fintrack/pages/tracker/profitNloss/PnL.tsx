@@ -31,7 +31,8 @@ import {
 //=====================
 import CardSeparator from '../components/CardSeparator.tsx';
 import Datepicker from '../../../general_components/datepicker/Datepicker.tsx';
-import CardNoteSave from '../components/CardNoteSave.tsx';
+import CardNote from '../components/CardNote.tsx';
+import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import TopCard from '../components/TopCard.tsx';
 
@@ -412,7 +413,11 @@ function PnL(): JSX.Element {
   // ======================
   // FORM SUBMIT HANDLING
   // ======================
-  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
+  // Widened to the form event: the submit reaches this from the button AND from
+  // Enter in any field, and both arrive as one path rather than two.
+  async function onSaveHandler(
+    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>,
+  ) {
     // console.log('On Save Handler');
     e.preventDefault();
     if (resetFn) resetFn();
@@ -593,7 +598,7 @@ function PnL(): JSX.Element {
   // ======================
   return (
     <>
-      <form className='trackerFormAccount' style={{ color: 'inherit' }}>
+      <form className='trackerFormAccount' style={{ color: 'inherit' }} onSubmit={onSaveHandler}>
         {/* TOP CARD START */}
         <TopCard
           topCardElements={topCardElements}
@@ -638,18 +643,32 @@ function PnL(): JSX.Element {
           </div>
 
           {/* NOTE AND SAVE SECTION */}
-          <CardNoteSave
-            title={'note'}
-            validationMessages={validationMessages}
-            dataHandler={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-              setHasUserInteracted?.(true);
-              handleNoteChange(e);
-            }}
-            inputNote={formInputData.note}
-            onSaveHandler={onSaveHandler}
-            isDisabled={isLoading}
-            showError={showValidation.note}
-          />
+          <div className='card--title'>
+            Note
+            <span className='validation__errMsg'>
+              {showValidation.note && validationMessages['note']
+                ? validationMessages['note']
+                : ''}
+            </span>
+          </div>
+
+          <div className='note--description'>
+            <CardNote
+              dataHandler={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                setHasUserInteracted?.(true);
+                handleNoteChange(e);
+              }}
+              inputNote={formInputData.note}
+              title='note'
+            />
+          </div>
+
+          {/* Extends the decision Expense took. The verb is the movement class
+              the screen records, not the deposit/withdraw direction, which is a
+              field inside the form and can change without renaming the action. */}
+          <FormSubmitBtn className='submit__btn--light' disabled={isLoading}>
+            Record adjustment
+          </FormSubmitBtn>
         </div>
       </form>
 
