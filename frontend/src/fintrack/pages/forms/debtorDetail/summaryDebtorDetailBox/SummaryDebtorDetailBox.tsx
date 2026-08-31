@@ -57,9 +57,14 @@ function SummaryDebtorDetailBox({ bubleInfo }: SummaryDetailPropType) {
   const numericAmount =
     amount === null || amount === undefined ? NaN : Number(amount);
 
+  // Unsigned, because the line below says which way it runs in words. A minus
+  // in front of a figure the card already calls "You owe" states the direction
+  // twice, and reads as a negative debt. It is the other half of the rule the
+  // movement rows follow the opposite way: there the sign is the only carrier
+  // and it stays; here the words are, and it goes.
   const formattedAmount = Number.isNaN(numericAmount)
     ? DASH
-    : currencyFormat(currency, numericAmount, formatNumberCountry);
+    : currencyFormat(currency, Math.abs(numericAmount), formatNumberCountry);
 
   return (
     <>
