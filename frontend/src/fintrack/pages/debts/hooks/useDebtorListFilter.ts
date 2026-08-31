@@ -53,9 +53,13 @@ const fold = (value: string) =>
   .trim();
 
 // Same test the row runs to choose its own word (ListOfDebtors.tsx), read here
-// rather than duplicated as a third boolean so the two cannot drift.
+// rather than duplicated as a third boolean so the two cannot drift. Reads
+// total_debt_balance's own sign, not a sum of debt_payable and
+// debt_receivable: both of those are positive magnitudes on the contract, and
+// adding them only reads as a net because exactly one of the two is zero on
+// any given row — a coincidence of the payload, not a rule of the domain.
 const transactionTypeOf = (row: DebtorListType): 'debtor' | 'lender' =>
- row.debt_payable + row.debt_receivable < 0 ? 'lender' : 'debtor';
+ row.total_debt_balance < 0 ? 'lender' : 'debtor';
 
 export function useDebtorListFilter({
  rows,

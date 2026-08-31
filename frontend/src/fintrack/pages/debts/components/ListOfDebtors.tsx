@@ -203,14 +203,17 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
             account_id,
             currency_code,
             total_debt_balance,
-            debt_receivable,
-            debt_payable,
             // debtor: debtorInd,
             // creditor: creditorInd,
           } = debtor;
 
-          const transactionType =
-            debt_payable + debt_receivable < 0 ? 'lender' : 'debtor';
+          // The row's own net, not a sum of the two magnitudes: debt_payable
+          // and debt_receivable are both positive on the contract, with
+          // direction in the field name rather than the sign, so adding them
+          // only reads as a net because exactly one of the two is zero on any
+          // given row. total_debt_balance is the field that is actually the
+          // net, and is what the hero above reads for the same distinction.
+          const transactionType = total_debt_balance < 0 ? 'lender' : 'debtor';
 
           return (
             <BoxContainer key={account_id}>
