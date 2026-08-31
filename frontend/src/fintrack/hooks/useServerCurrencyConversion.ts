@@ -71,6 +71,12 @@ const INACTIVE: Omit<ServerCurrencyConversion, 'retry'> = {
 export function useServerCurrencyConversion(
  amount: number | string,
  currency: CurrencyType,
+ // The day the movement is dated on, YYYY-MM-DD. Optional: a form that records
+ // on today alone omits it and the server prices at today's rate, which is what
+ // every caller did before this existed. A form that offers a date must pass it
+ // — otherwise it shows a figure resolved on one day and stores one resolved on
+ // another, which is the exact divergence a server-side preview exists to close.
+ day?: string,
 ): ServerCurrencyConversion {
  // The currency the amount will be STORED in, as the server declares it. Not
  // DEFAULT_CURRENCY, which is only what the interface renders in.
@@ -118,6 +124,9 @@ export function useServerCurrencyConversion(
       amount: numericAmount,
       fromCurrency: currency,
       toCurrency: accountingCurrency,
+      // Omitted rather than sent as undefined, so a caller with no date puts
+      // the same body on the wire it put there before.
+      ...(day ? { day } : {}),
      },
     });
 
@@ -149,7 +158,9 @@ export function useServerCurrencyConversion(
    clearTimeout(timer);
    controller.abort();
   };
- }, [numericAmount, currency, accountingCurrency, attempt]);
+ // day is a dependency, not just a payload field: without it here, changing the
+ // date would leave the previous day's figure on screen.
+ }, [numericAmount, currency, accountingCurrency, day, attempt]);
 
  return { ...result, retry };
 }
