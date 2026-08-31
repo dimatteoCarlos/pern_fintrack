@@ -54,6 +54,51 @@
  color: var(--color-content-secondary);
 }
 
+/* The plan the amount below is measured against. Four figures on two rows, and
+   they are laid out rather than listed: a definition list with no rules of its
+   own stacks every label and every value on a line of its own, which is eight
+   lines for four facts in a panel that has an account picker and a field still
+   to show.
+
+   Two columns because the four pair up: the target and its date are the plan,
+   what is allocated and what is left are the position against it. Boxed off by
+   a rule top and bottom so the block reads as context and not as the first
+   control of the form. */
+.pocketCash__plan {
+ display: grid;
+ grid-template-columns: repeat(2, minmax(0, 1fr));
+ gap: var(--space-2) var(--space-4);
+ margin: 0;
+ padding: var(--space-3) 0;
+ border-top: var(--border-width-thin) solid var(--color-border-strong);
+ border-bottom: var(--border-width-thin) solid var(--color-border-strong);
+}
+
+.pocketCash__planItem {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ min-width: 0;
+}
+
+.pocketCash__planLabel {
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-secondary);
+}
+
+/* The value carries the weight; the label above it says what it is. Tabular
+   figures so the two columns line up on the decimal. */
+.pocketCash__planValue {
+ margin: 0;
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-primary);
+ font-variant-numeric: tabular-nums;
+}
+
 .pocketCash__empty {
  margin: 0;
  padding: var(--space-4) 0;

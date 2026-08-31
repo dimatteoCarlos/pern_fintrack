@@ -33,7 +33,10 @@ import {
 import { usePocketDetailStore } from '../../../../stores/usePocketDetailStore.ts';
 import { usePocketBoardStore } from '../../../../stores/usePocketBoardStore.ts';
 import { normalizeError } from '../../../../helpers/normalizeError.ts';
-import { numberFormatCurrency } from '../../../../helpers/functions.ts';
+import {
+ formatCalendarDate,
+ numberFormatCurrency,
+} from '../../../../helpers/functions.ts';
 import CurrencyBadge from '../../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import RateTooltip from '../../../../general_components/rateTooltip/RateTooltip.tsx';
 import { useServerCurrencyConversion } from '../../../../hooks/useServerCurrencyConversion.ts';
@@ -84,9 +87,23 @@ const COPY: Record<
  },
 };
 
+// The plan the decision is measured against. One object rather than four
+// props because it is one thing: a target, the day it is wanted by, and where
+// the pocket stands against both. The modal reads it, never derives it — every
+// figure is served on the detail payload.
+type PocketPlan = {
+ target: number;
+ desiredDate: string;
+ allocated: number;
+ // Negative past the target, which is over-funding and a fact rather than an
+ // error. The header states the excess instead of a negative shortfall.
+ remaining: number;
+};
+
 type PocketCashModalPropType = {
  pocketId: number;
  pocketName: string;
+ plan: PocketPlan;
  // The pocket's accounting currency. Every figure the picker shows is stated in
  // it, and it is what the amount field starts in.
  currency: CurrencyType;
@@ -100,6 +117,7 @@ type PocketCashModalPropType = {
 function PocketCashModal({
  pocketId,
  pocketName,
+ plan,
  currency,
  direction,
  sources,
@@ -109,6 +127,11 @@ function PocketCashModal({
  const amountRef = useRef<HTMLInputElement>(null);
 
  const copy = COPY[direction];
+
+ // The plan's figures, always in the pocket's own currency. The amount below
+ // may be typed in another and is converted; these are not.
+ const planAmount = (value: number) =>
+  numberFormatCurrency(value, 2, currency);
 
  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
   null,
@@ -324,6 +347,45 @@ function PocketCashModal({
     </h2>
 
     <p className='pocketCash__body'>{copy.explanation}</p>
+
+    {/* What the amount below is measured against. The modal asked how much to
+        commit and stated nothing about the plan, so the decision had to be
+        made from memory or by closing the modal to go and read the panel
+        behind it.
+
+        Four figures and no more: the target and the day it is wanted by are
+        the plan; what is allocated and what is still to allocate are where the
+        pocket stands against it. The sum of the last two IS the target, which
+        is what lets the owner check the row without arithmetic. */}
+    <dl className='pocketCash__plan'>
+     <div className='pocketCash__planItem'>
+      <dt className='pocketCash__planLabel'>Target</dt>
+      <dd className='pocketCash__planValue'>{planAmount(plan.target)}</dd>
+     </div>
+
+     <div className='pocketCash__planItem'>
+      <dt className='pocketCash__planLabel'>By</dt>
+      <dd className='pocketCash__planValue'>
+       {formatCalendarDate(plan.desiredDate)}
+      </dd>
+     </div>
+
+     <div className='pocketCash__planItem'>
+      <dt className='pocketCash__planLabel'>Allocated</dt>
+      <dd className='pocketCash__planValue'>{planAmount(plan.allocated)}</dd>
+     </div>
+
+     {/* Over target when the shortfall has gone negative: the same figure, and
+         the word carries the sign so the amount never prints one. */}
+     <div className='pocketCash__planItem'>
+      <dt className='pocketCash__planLabel'>
+       {plan.remaining < 0 ? 'Over target' : 'Still to allocate'}
+      </dt>
+      <dd className='pocketCash__planValue'>
+       {planAmount(Math.abs(plan.remaining))}
+      </dd>
+     </div>
+    </dl>
 
     {banksFailed && (
      <p className='pocketCash__error' role='alert'>
