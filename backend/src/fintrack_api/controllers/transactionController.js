@@ -6,7 +6,9 @@
 //FUNCTION: Get transaction by ID with FX metadata
 
 //declared functions defined here:
-//getAccountTypeId,getAccountInfo, getAccountTypes,getTransactionTypes, balanceMultiplierFn,updateAccountBalance, getTransactionById.
+//getAccountTypeId,getAccountInfo, getAccountTypes,getTransactionTypes, balanceMultiplierFn, getTransactionById.
+//updateAccountBalance used to be declared here too; it is imported now, from
+//the single implementation in accountManagement.
 
 // transferBetweenAccounts.js (Controller)
 // Main controller for financial transfers between accounts
@@ -40,6 +42,7 @@ import {
   accountLedgerCteForTransaction,
 } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 import { lockAndDeriveBalances } from '../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
+import { updateAccountBalance } from '../../utils/fintrackUtils/accountManagement/updateAccountBalance.js';
 // The compensation account this controller opens on demand for a PnL entry. It
 // is the app's own bookkeeping counterparty, not an account the owner holds, and
 // the date guard below leaves it out of the opening floor for that reason.
@@ -134,26 +137,6 @@ export const balanceMultiplierFn = (transactionTypeName) => {
   const mult = negativeArr.includes(trimTypeName) ? -1.0 : 1.0;
   // console.log("🚀 ~ balanceMultiplierFn ~ :", mult, 'para', transactionTypeName)
   return mult;
-};
-
-//update account balance in user_accounts table
-// updated_at records when the row was last touched, not when the movement
-// happened; that is what the transactions say. NOW() is the pattern
-// accountEditController.js:282 already uses.
-export const updateAccountBalance = async (
-  clientOrPool,
-  newBalance,
-  accountId,
-) => {
-  const dbClient = clientOrPool || pool;
-  //assure first the existence of updatedAccountResult?
-  const insertBalanceQuery = {
-    text: `UPDATE user_accounts SET account_balance=$1, updated_at = NOW() WHERE account_id = $2 RETURNING *`,
-    values: [newBalance, accountId],
-  };
-  //request
-  const updatedAccountResult = await dbClient.query(insertBalanceQuery);
-  return updatedAccountResult.rows[0];
 };
 
 //transfer movement renamed
