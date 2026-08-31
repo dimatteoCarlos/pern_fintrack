@@ -832,3 +832,67 @@ export async function ensureDailyExchangeRatesTable(client = pool) {
 
  console.log(pc.green('Historical rate store verified/created.'));
 }
+
+/**
+ * Ensure the query-coverage store exists. Mirrors the DDL of migration
+ * 023_create_exchange_rate_query_coverage.sql.
+ *
+ * Deliberately NOT part of the mainTables array, for the same reason
+ * ensureDailyExchangeRatesTable is not: that array runs under
+ * Promise.allSettled, so a rejected table is only logged, never thrown. This
+ * one references currencies and needs a real failure when it cannot be created.
+ *
+ * What a row means: on fetched_at, this installation asked source for the
+ * base/target pair over the covered day range, and got a complete answer back.
+ * It is a fact about our own network traffic, not about any rate. It is what
+ * lets the resolver tell "the provider published nothing that day" from "we
+ * never downloaded that period" — two situations that look identical in
+ * daily_exchange_rates, and which the resolver currently reads as the first.
+ *
+ * See 023 for the measured error this closes, for why a valid_until column on
+ * the rate was rejected in its place, and for why the exclusion constraint is a
+ * prerequisite rather than an option.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureExchangeRateQueryCoverageTable(client = pool) {
+ console.log(pc.cyan('Ensuring historical rate query coverage...'));
+
+ // Before the table, not merely somewhere in this function: the exclusion
+ // constraint below mixes integer equality with range overlap in one GiST
+ // index, which cannot be created without the operator classes this installs.
+ // A role without the privilege must fail here rather than leave a coverage
+ // table that has lost its structural guarantee.
+ await client.query('CREATE EXTENSION IF NOT EXISTS btree_gist');
+
+ // Column names are reused from exchange_rates and daily_exchange_rates
+ // wherever the idea already has a name there. covered is the only new one, and
+ // it is a daterange in the half-open form PostgreSQL normalises to, so the
+ // resolver tests it with @> against [effective day, requested day + 1).
+ await client.query(`
+  CREATE TABLE IF NOT EXISTS exchange_rate_query_coverage (
+   coverage_id        SERIAL PRIMARY KEY,
+   base_currency_id   INTEGER NOT NULL
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+   target_currency_id INTEGER NOT NULL
+    REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+   source             VARCHAR(30) NOT NULL,
+   covered            DATERANGE   NOT NULL,
+   fetched_at         TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   created_at         TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+   CONSTRAINT ck_exchange_rate_query_coverage_not_empty
+    CHECK (NOT isempty(covered)),
+
+   CONSTRAINT ex_exchange_rate_query_coverage_no_overlap
+    EXCLUDE USING gist (
+     source             WITH =,
+     base_currency_id   WITH =,
+     target_currency_id WITH =,
+     covered            WITH &&
+    )
+  )
+ `);
+
+ console.log(pc.green('Historical rate query coverage verified/created.'));
+}

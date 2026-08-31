@@ -27,6 +27,7 @@ import {
   addFxAuditColumns,
   ensureBudgetTables,
   ensureDailyExchangeRatesTable,
+  ensureExchangeRateQueryCoverageTable,
   ensurePocketTables,
   ensureBudgetAllocationBackfill,
   ensureCategoryBudgetCurrency,
@@ -174,6 +175,12 @@ export async function initializeDatabase() {
     // rate history must survive a cache reset. They are separate tables so
     // that the flag cannot reach this one.
     await ensureDailyExchangeRatesTable(client);
+
+    // Immediately after the store it describes, and for the same reasons: it
+    // references currencies, and a cache reset must not reach it. Coverage is
+    // the record of which day ranges were actually requested of a provider,
+    // which is what tells a real absence from a period never downloaded.
+    await ensureExchangeRateQueryCoverageTable(client);
 
     // =======================================
     // Budget domain (idempotent, runs on every boot)
