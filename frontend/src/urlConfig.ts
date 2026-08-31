@@ -232,6 +232,10 @@ export const url_account_delete = (targetAccountId: string | number) =>
 // ===================================
 export const url_currency_rates = BASE_URL_APP + 'currency/rates';
 
+// The same conversion service the write path uses, asked before writing: it
+// answers the amount, the rate, which rate answered and when it was read.
+export const url_currency_convert = BASE_URL_APP + 'currency/convert';
+
 // ===================================
 // 💰 GET TRANSACTION BY ID
 // ===================================

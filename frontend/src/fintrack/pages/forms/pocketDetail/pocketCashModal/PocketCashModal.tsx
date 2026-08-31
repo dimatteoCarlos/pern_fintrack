@@ -35,6 +35,9 @@ import { usePocketBoardStore } from '../../../../stores/usePocketBoardStore.ts';
 import { normalizeError } from '../../../../helpers/normalizeError.ts';
 import { numberFormatCurrency } from '../../../../helpers/functions.ts';
 import CurrencyBadge from '../../../../general_components/currencyBadge/CurrencyBadge.tsx';
+import RateTooltip from '../../../../general_components/rateTooltip/RateTooltip.tsx';
+import { useServerCurrencyConversion } from '../../../../hooks/useServerCurrencyConversion.ts';
+import { useCurrencyStore } from '../../../../stores/useCurrencyStore.ts';
 import PocketSourcePicker, {
  PocketSourceOption,
 } from './PocketSourcePicker.tsx';
@@ -228,6 +231,44 @@ function PocketCashModal({
    ? numberFormatCurrency(selected.ceiling, 2, currency)
    : null;
 
+ // What the typed figure is worth in the currency the row will be stored in.
+ // Asked to the same conversion service the write path uses, not divided by a
+ // cached rate: what is shown here is what the row will carry. It still does
+ // not arm the ceiling above, which stays unenforced for the reason stated
+ // there — the server checks the real bound inside its row lock.
+ const conversion = useServerCurrencyConversion(amountText, typedCurrency);
+
+ const accountingCurrency = useCurrencyStore((state) => {
+  return state.accountingCurrency;
+ });
+
+ const convertedText =
+  conversion.convertedAmount !== null
+   ? `≈ ${numberFormatCurrency(conversion.convertedAmount, 2, accountingCurrency)}`
+   : null;
+
+ // The multiplier is read off the two figures the server sent rather than
+ // printed from its rate field, so the line cannot claim a direction the field
+ // does not hold. Source and reading time come with it: a figure resolved from
+ // a stale reading is still one the owner is entitled to question.
+ const rateTooltipText =
+  conversion.convertedAmount !== null && amount > 0
+   ? [
+      `1 ${typedCurrency.toUpperCase()} = ${numberFormatCurrency(
+       conversion.convertedAmount / amount,
+       4,
+       undefined,
+       'es-ES',
+      )} ${accountingCurrency.toUpperCase()}`,
+      conversion.source ? `source: ${conversion.source}` : '',
+      conversion.fetchedAt
+       ? `read: ${new Date(conversion.fetchedAt).toLocaleString()}`
+       : '',
+     ]
+      .filter(Boolean)
+      .join('\n')
+   : '';
+
  async function onSubmit() {
   if (selectedAccountId === null || !isAmountUsable) return;
 
@@ -330,6 +371,47 @@ function PocketCashModal({
       currency={typedCurrency}
      />
     </div>
+
+    {/* Three states, and they are not degrees of one another. A rate the
+        server could not resolve used to render exactly like an amount that
+        needs no conversion — nothing at all — which is the one case where the
+        owner most needs to be told. */}
+    {conversion.status === 'querying' && (
+     <span
+      className='pocketCash__fxPreview pocketCash__fxPreview--querying'
+      aria-live='polite'
+     >
+      Converting to {accountingCurrency.toUpperCase()}…
+     </span>
+    )}
+
+    {conversion.status === 'resolved' && convertedText && (
+     <RateTooltip
+      tipText={rateTooltipText}
+      surface='light'
+      placement='anchor-left'
+     >
+      <span className='pocketCash__fxPreview'>{convertedText}</span>
+     </RateTooltip>
+    )}
+
+    {conversion.status === 'failed' && (
+     <div className='pocketCash__fxFailure' role='status'>
+      <span className='pocketCash__fxFailureText'>
+       No rate for {typedCurrency.toUpperCase()} right now. The amount is still
+       sent; the server resolves the rate when it writes the row.
+      </span>
+
+      <button
+       type='button'
+       className='pocketCash__fxRetry'
+       onClick={conversion.retry}
+       disabled={isSubmitting}
+      >
+       Retry
+      </button>
+     </div>
+    )}
 
     {ceilingText && (
      <p className='pocketCash__ceiling'>
