@@ -69,6 +69,14 @@ const countByLevel = (
  };
 };
 
+// A level with nothing in it stays on screen and steps back. Dropping it breaks
+// the partition its heading counts, and a reader cannot tell a level that is
+// absent from one with nothing in it; printing it at full ink gives an empty
+// level the same call on the eye as a populated one. On a board where four of
+// the five are empty, this is what leaves the fifth as the only thing lit.
+const markClass = (count: number): string =>
+ count === 0 ? 'pocketHero__mark pocketHero__mark--empty' : 'pocketHero__mark';
+
 // The active pocket whose deadline falls first. Overdue ones are excluded on
 // purpose: the tile answers what is NEXT, and a deadline that has passed is not
 // next — it is a state the marks row already reports. null when nothing is
@@ -203,12 +211,14 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
       {/* The word and its count on one line, in the shape the group headings
           below already use. On a line of its own the total read as a third
           element sitting between the label that names it and the partition
-          that adds up to it, rather than as the heading of both. */}
+          that adds up to it, rather than as the heading of both.
+
+          "Pocket status" and not "Pockets": what follows is the partition by
+          level, and the count is the total it adds up to. The old word named
+          the objects and left the reader to discover that the lines beneath
+          were states rather than a list. */}
       <span className='pocketHero__label'>
-       Pockets{' '}
-       <b className='pocketHero__cardValue'>
-        {summary === null ? MISSING : summary.pocketCount}
-       </b>
+       Pocket status (total: <b>{summary === null ? MISSING : summary.pocketCount}</b>)
       </span>
 
       {/* Three headings, each with the count it heads, and its readings
@@ -225,15 +235,32 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
           members stops adding up to the list below it, and a reader cannot tell
           an absent level from a level with nothing in it.
           Never colour alone — each square carries its word. */}
+      {/* One column per GROUP, not one per reading, with a hairline between
+          columns. The distinction decides whether the strip can be read: on
+          plan and at risk are not peers of "not funded", they are the two ways
+          of being it, so a column per reading forces the middle heading to be
+          restated and "not funded" then appears twice, each time with its own
+          count. The three headings add up to the total in the label above. */}
       {levels !== null && (
-       <>
+       <div className='pocketHero__strip'>
         <span className='pocketHero__group'>
          <span className='pocketHero__groupLabel'>
           Funded <b>{levels.funded}</b>
          </span>
 
          <span className='pocketHero__marks'>
-          <span className='pocketHero__mark'>
+          {/* The level that had no reading at all. The heading counted it and
+              nothing spelled it out, so a pocket that landed exactly on its
+              target was visible only as the difference between two figures the
+              reader had to subtract. Derived rather than served: the flag is
+              set at committed above OR EQUAL, so the served count holds both
+              and only the excess half is counted here. */}
+          <span className={markClass(levels.funded - levels.overFunded)}>
+           <StatusSquare alert={pocketSquareClass('funded')} />
+           <span>{levels.funded - levels.overFunded} at target</span>
+          </span>
+
+          <span className={markClass(levels.overFunded)}>
            <StatusSquare alert={pocketSquareClass('overFunded')} />
            <span>{levels.overFunded} above target</span>
           </span>
@@ -248,12 +275,12 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
          </span>
 
          <span className='pocketHero__marks'>
-          <span className='pocketHero__mark'>
+          <span className={markClass(levels.onPlan)}>
            <StatusSquare alert={pocketSquareClass('onPlan')} />
            <span>{levels.onPlan} on plan</span>
           </span>
 
-          <span className='pocketHero__mark'>
+          <span className={markClass(levels.atRisk)}>
            <StatusSquare alert={pocketSquareClass('atRisk')} />
            <span>{levels.atRisk} at risk</span>
           </span>
@@ -268,16 +295,24 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
             left". The only level that asks for action today, and it sat two
             levels down.
 
-            It heads no subdivision, so the square its level paints rides on the
-            heading itself instead of on a reading that would repeat the count
-            and the word above it. */}
+            Its group and its level are the same fact, so the heading and the
+            reading below it carry the same figure. That repetition is the
+            price of the strip reading as one grid: giving this column a single
+            centred line instead put the only level that asks for action today
+            at heading weight, which is the board upside down. */}
         <span className='pocketHero__group'>
-         <span className='pocketHero__groupLabel pocketHero__groupLabel--level'>
-          <StatusSquare alert={pocketSquareClass('offPlan')} />
+         <span className='pocketHero__groupLabel'>
           Overdue <b>{levels.overdue}</b>
          </span>
+
+         <span className='pocketHero__marks'>
+          <span className={markClass(levels.overdue)}>
+           <StatusSquare alert={pocketSquareClass('offPlan')} />
+           <span>{levels.overdue} overdue</span>
+          </span>
+         </span>
         </span>
-       </>
+       </div>
       )}
 
       {/* Under neither heading, because coverage is the other axis entirely: a
@@ -285,11 +320,9 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
           committed can be funded or short, and the fact says nothing about
           either. It hides at zero, where the readings above never do. */}
       {uncoveredCount !== null && uncoveredCount > 0 && (
-       <span className='pocketHero__marks'>
-        <span className='pocketHero__mark'>
-         <StatusSquare alert={pocketSquareClass('offPlan')} />
-         <span>{uncoveredCount} uncovered</span>
-        </span>
+       <span className='pocketHero__aside'>
+        <StatusSquare alert={pocketSquareClass('offPlan')} />
+        <span>{uncoveredCount} uncovered</span>
        </span>
       )}
      </div>
@@ -322,12 +355,34 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
         {nextGoal.name}
        </span>
 
-       <span className='pocketHero__meta'>
-        {percent(nextGoal.progress)} committed ·{' '}
-        {nextGoal.daysRemaining === 1
-         ? '1 day left'
-         : `${nextGoal.daysRemaining} days left`}
-       </span>
+       {/* The same two rows the status strip uses, so the card and the strip
+           read as one screen rather than two blocks that happen to sit
+           together. It replaces a single grey line that joined both facts with
+           a dot, at the size of a footnote.
+
+           The square is the level this pocket already computes. It is the one
+           the owner is being sent to act on, so the reading that says how
+           urgent that is belongs on the card and not only in the tally above. */}
+       <div className='pocketHero__strip'>
+        <span className='pocketHero__group'>
+         <span className='pocketHero__groupLabel'>Committed</span>
+         <span className='pocketHero__reading'>
+          {percent(nextGoal.progress)}
+         </span>
+        </span>
+
+        <span className='pocketHero__group'>
+         <span className='pocketHero__groupLabel'>
+          <StatusSquare alert={pocketSquareClass(pocketDateLevel(nextGoal))} />
+          Time left
+         </span>
+         <span className='pocketHero__reading'>
+          {nextGoal.daysRemaining === 1
+           ? '1 day'
+           : `${nextGoal.daysRemaining} days`}
+         </span>
+        </span>
+       </div>
 
        <span className='pocketHero__chevron' aria-hidden='true'></span>
       </Link>

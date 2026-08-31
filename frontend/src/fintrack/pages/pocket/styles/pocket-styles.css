@@ -462,6 +462,16 @@ button.line__container {
  color: var(--color-content-on-dark-subtle);
 }
 
+/* The total the partition below adds up to, told from the words that name it.
+   index.css sets font-size on the universal selector, so an inline element does
+   not inherit the size of the line it sits in and has to restate it. */
+.pocketHero__label b {
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
 /* No ellipsis and no nowrap: both figures are amounts now, and an amount cut
    off at the column edge is a wrong number rather than a shortened name. */
 .pocketHero__value {
@@ -498,9 +508,13 @@ button.line__container {
 
 /* ── Level 2: the two cards ──────────────────────────────────────────────── */
 
+/* Stacked, not side by side. The status strip needs the full width of the hero
+   to lay three groups and five readings on two rows; in half of it the strip
+   spent its whole life scrolling. Next Target is the block that gives up the
+   pairing, and it loses nothing by it: it holds one name and two readings. */
 .pocketHero__cards {
  display: grid;
- grid-template-columns: repeat(2, minmax(0, 1fr));
+ grid-template-columns: minmax(0, 1fr);
  gap: var(--space-3);
 }
 
@@ -518,6 +532,10 @@ button.line__container {
  /* Without it a long pocket name blows its grid track out instead of wrapping
     inside it. */
  min-width: 0;
+ /* The strip inside refuses to wrap, so past the card it has to go somewhere.
+    Here, and not on the page: a hero that scrolls the document sideways moves
+    every other block on the screen to show one reading. */
+ overflow-x: auto;
  padding: var(--space-3);
  border-radius: var(--radius-md);
  background-color: var(--color-surface-raised);
@@ -525,10 +543,11 @@ button.line__container {
  color: inherit;
 }
 
-/* The headline and its breakdown, told apart the same way the equation above
-   tells its tiles apart: a hairline, not a font size. The Pockets card is the
-   one that has both; Next Target has only a headline and stays undivided. */
-.pocketHero__cardValue + .pocketHero__group {
+/* The headline and the strip beneath it, told apart the same way the equation
+   above tells its tiles apart: a hairline, not a font size. Only Next Target
+   has both now — the status card leads with its label and the strip follows it
+   directly, with no headline between them to divide from. */
+.pocketHero__cardValue + .pocketHero__strip {
  margin-top: var(--space-1);
  padding-top: var(--space-2);
  border-top: var(--border-width-thin) solid var(--color-border-subtle);
@@ -663,30 +682,55 @@ button.line__container {
 /* Inside the active-pockets card, under its figure. Reserved height whether or
    not a count is present, so a board with no exception keeps the card level
    with the one beside it instead of standing a line shorter. */
-/* One heading and the readings it heads. The readings are indented under it so
-   the nesting is visible without a rule or a box: the split between reaching a
-   target and not reaching it is the top level, and how a pocket got there is
-   the detail beneath. */
+/* Two rows, and one column per GROUP rather than one per reading. The
+   distinction decides whether the strip can be read at all: on plan and at risk
+   are not peers of "not funded", they are the two ways of being it, so a column
+   per reading forces the middle heading to be restated and "not funded" then
+   appears twice, each time carrying its own count.
+
+   min-width on the content, not on the container: three groups of readings do
+   not fit 360px, and wrapping a reading onto a second line breaks the grid the
+   two rows depend on. It scrolls inside the card instead, so the page never
+   scrolls sideways. */
+.pocketHero__strip {
+ display: flex;
+ align-items: stretch;
+ min-width: max-content;
+}
+
+/* One heading and the readings it heads. */
 .pocketHero__group {
  display: flex;
  flex-direction: column;
- gap: var(--space-1);
+ gap: var(--space-2);
+ padding: 0 var(--space-4);
 }
 
-/* --space-3, up from --space-2, now that the card carries a divider of its
-   own above the first group (.pocketHero__cardValue + .pocketHero__group):
-   the two rules together are what keep "funded" and "not funded" reading as
-   two separate clusters rather than one continuous list of four lines. */
+.pocketHero__group:first-child {
+ padding-left: 0;
+}
+
 .pocketHero__group + .pocketHero__group {
- margin-top: var(--space-3);
+ border-left: var(--border-width-thin) solid var(--color-border-subtle);
 }
 
+/* The band spans its readings, which is the whole point of the two rows: the
+   heading governs everything under it, and a hairline the width of the group is
+   what says so without a fill the palette does not declare. It replaces an
+   indent on the readings, which said the same thing more weakly and only while
+   the groups were stacked. */
 .pocketHero__groupLabel {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ padding-bottom: var(--space-1);
+ border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
  font-size: var(--font-size-2xs);
  font-weight: var(--font-weight-medium);
  letter-spacing: var(--letter-spacing-wider);
  text-transform: uppercase;
  color: var(--color-content-on-dark-subtle);
+ white-space: nowrap;
 }
 
 /* The count reads as the figure the heading names, not as part of its word. */
@@ -699,43 +743,72 @@ button.line__container {
  font-variant-numeric: tabular-nums;
 }
 
-/* The one heading that names a single level instead of an aggregate of several,
-   so it is the only one with a colour of its own to show. Funded and not funded
-   each span more than one level and have no single square to carry. The word
-   stays beside it: colour is never the only channel. */
-.pocketHero__groupLabel--level {
- display: flex;
- align-items: center;
- gap: var(--space-2);
-}
-
 /* The square is an inline span in its own sheet, so it only takes a width once
    a flex container blockifies it. Same reason .pocketHero__mark carries this. */
-.pocketHero__groupLabel--level .status__square {
+.pocketHero__groupLabel .status__square {
  flex-shrink: 0;
 }
 
-.pocketHero__group .pocketHero__marks {
- padding-left: var(--space-3);
-}
-
+/* No wrap: a reading that dropped to a second line would sit under its
+   neighbour rather than under its own heading, and the two rows stop meaning
+   anything. The strip scrolls instead. */
 .pocketHero__marks {
  display: flex;
- flex-wrap: wrap;
- gap: var(--space-1) var(--space-3);
- min-height: var(--font-size-base);
+ gap: var(--space-4);
  margin: 0;
 }
 
+/* A reading, not a caption: full ink at body size, lower case, and no letter
+   spacing. Under the heading band it was the smaller of the two, which put the
+   figures below the words that merely name them. */
 .pocketHero__mark {
  display: flex;
  align-items: center;
  gap: var(--space-2);
- font-size: var(--font-size-2xs);
- font-weight: var(--font-weight-medium);
- letter-spacing: var(--letter-spacing-wide);
- text-transform: uppercase;
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-on-dark);
+ white-space: nowrap;
+ font-variant-numeric: tabular-nums;
+}
+
+/* A level with nothing in it stays on screen and steps back. Dropping it breaks
+   the partition its heading counts; printing it at full ink gives an empty
+   level the same call on the eye as a populated one. On a board where four of
+   the five are empty, this is what leaves the fifth as the only thing lit. */
+.pocketHero__mark--empty {
  color: var(--color-content-on-dark-subtle);
+}
+
+.pocketHero__mark--empty .status__square {
+ opacity: 0.45;
+}
+
+/* The value under a heading that names one figure rather than heading a
+   partition. Next Target uses it; the status strip never does. */
+.pocketHero__reading {
+ font-size: var(--font-size-base);
+ color: var(--color-content-on-dark);
+ white-space: nowrap;
+ font-variant-numeric: tabular-nums;
+}
+
+/* The other axis entirely. A pocket whose funding accounts stopped backing what
+   it says is committed can be at any of the five levels, so counting it as a
+   peer would count it twice and break the total. It sits under the partition,
+   behind a rule, and it is absent at zero where the five readings never are. */
+.pocketHero__aside {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ padding-top: var(--space-2);
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.pocketHero__aside .status__square {
+ flex-shrink: 0;
 }
 
 /* index.css sets font-size on the universal selector, so this span does not
