@@ -1172,6 +1172,26 @@ button.line__container {
  transition: width var(--motion-slow);
 }
 
+/* Two of the five levels asked for a tone this sheet never declared, so their
+   bar painted no fill and their percentage no colour: a pocket above its
+   target and one on plan drew an empty track. Both consumers sit in
+   ListPocket's STATUS_TONE map.
+
+   Blue for above target, and it holds on this surface because the card has no
+   band to disambiguate it. In amber it would be indistinguishable from at
+   risk, which is the opposite situation - money the owner can release against
+   a deadline closing in. The board hero can afford amber there because its
+   heading says which band a reading sits in; a card in a list cannot. */
+.pocketCard__barFill--info {
+ background-color: var(--color-status-info);
+}
+
+/* Neutral is not a colour of the semaphore. On plan has nothing to flag, so its
+   bar takes muted ink rather than a state. */
+.pocketCard__barFill--neutral {
+ background-color: var(--color-content-on-dark-subtle);
+}
+
 .pocketCard__barFill--ok {
  background-color: var(--color-status-ok);
 }
@@ -1226,6 +1246,14 @@ button.line__container {
  font-size: var(--font-size-xs);
  font-weight: var(--font-weight-semibold);
  letter-spacing: var(--letter-spacing-wide);
+}
+
+.pocketCard__percent--info {
+ color: var(--color-status-info);
+}
+
+.pocketCard__percent--neutral {
+ color: var(--color-content-on-dark-subtle);
 }
 
 .pocketCard__percent--ok {
