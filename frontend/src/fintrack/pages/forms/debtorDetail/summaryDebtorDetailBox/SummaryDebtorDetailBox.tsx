@@ -19,84 +19,56 @@ const defaultCurrency = DEFAULT_CURRENCY;
 // is a settled debtor, which is a statement of fact the answer has not made.
 const DASH = '—';
 
-// The direction of the position, from the owner's side of it. It replaces
-// Lender and Debtor, which named the counterparty's role and left the owner to
-// work out which way the money runs.
-//
-// Three readings and not two. A position at zero is neither direction, and
-// calling it "you're owed" — which is where it fell when the test was a single
-// comparison against zero — states a claim the balance does not support.
-//
-// "Settled" here means this account's own balance is zero, and nothing more. It
-// is NOT the settled-debtor definition the domain contract is still deciding:
-// that one additionally requires a prior movement and counts soft-deleted rows.
-// Two definitions under one word is the trap; this one is the row in front of
-// the owner, not a population.
-const DIRECTION_WORD = {
-  owed: `You're owed`,
-  owing: 'You owe',
-  settled: 'Settled',
-} as const;
-
 type SummaryDetailPropType = {
   bubleInfo: DebtorListType;
 };
 
 function SummaryDebtorDetailBox({ bubleInfo }: SummaryDetailPropType) {
   const title = 'amount';
-  const { total_debt_balance: amount, currency_code } = bubleInfo;
+  const subtitle1 = '';
+  const { creditor, total_debt_balance: amount, currency_code } = bubleInfo;
+  const type = creditor ? 'Lender' : 'Debtor';
 
   const currency = currency_code ?? defaultCurrency;
   const formatNumberCountry = CURRENCY_OPTIONS[currency];
 
+  // Through the shared formatter, like every other amount in the module. A
+  // symbol concatenated with toFixed(2) printed '$-10.21' where the rest of the
+  // app prints '-$10.21', dropped the thousands separator, and turned an absent
+  // figure into the literal string 'NaN'.
+  //
   // Coerced rather than type-tested. The balance reaches here as a STRING even
   // though this type calls it a number: account_balance is DECIMAL(15,2) and
-  // node-postgres serves DECIMAL as text, so no cent is lost to a float. What
-  // has to be excluded is an ABSENT figure, and that is what Number reports as
-  // NaN.
+  // node-postgres serves DECIMAL as text, so no cent is lost to a float. A
+  // typeof check on 'number' rejected every real figure and printed the dash on
+  // all of them. What has to be excluded is an ABSENT figure, and that is what
+  // Number reports as NaN.
   const numericAmount =
     amount === null || amount === undefined ? NaN : Number(amount);
 
-  const isAmountKnown = !Number.isNaN(numericAmount);
-
-  const direction = !isAmountKnown
-    ? null
-    : numericAmount > 0
-      ? 'owed'
-      : numericAmount < 0
-        ? 'owing'
-        : 'settled';
-
-  // Unsigned, because the line beneath already says which way it runs. The
-  // accounting contract carries both legs as positive magnitudes and puts the
-  // direction in the name; a minus beside "You owe" says the same thing twice
-  // and reads as a negative debt.
-  const formattedAmount = isAmountKnown
-    ? currencyFormat(currency, Math.abs(numericAmount), formatNumberCountry)
-    : DASH;
+  const formattedAmount = Number.isNaN(numericAmount)
+    ? DASH
+    : currencyFormat(currency, numericAmount, formatNumberCountry);
 
   return (
-    <div className='summaryDebtor__container'>
-      <div className='summaryDebtor__heading'>
-        <span className='summaryDebtor__title'>{title}</span>
+    <>
+      <div className='summaryDebtor__container'>
+        <div className='summaryDebtor__title'>{title}</div>
+        <div className='summaryDebtor__data'>
+          <div className='summaryDebtor__data--amount'>
+            <span className='summaryDebtor__amount'>{formattedAmount}</span>
+          </div>
 
-        {/* No direction when there is no figure: an absent balance runs in no
-            direction, and the dash above already says so. */}
-        {direction && (
-          <span className='summaryDebtor__direction'>
-            <StatusSquare alert={direction === 'owing' ? 'alert' : ''} />
+          <div className='summaryDebtor__data--subtitle1'>{subtitle1}</div>
 
-            <span className='summaryDebtor__directionWord'>
-              {DIRECTION_WORD[direction]}
-            </span>
-          </span>
-        )}
+          <div className='summaryDebtor__data--status '>
+            {/* status: */}
+            <StatusSquare alert={type == 'Lender' ? 'alert' : ''} />
+            <div className='summaryDebtor__data--subtitle2'>{type}</div>
+          </div>
+        </div>
       </div>
-
-      <div className='summaryDebtor__data'>
-        <span className='summaryDebtor__amount'>{formattedAmount}</span>
-      </div>
-    </div>
+    </>
   );
 }
 
