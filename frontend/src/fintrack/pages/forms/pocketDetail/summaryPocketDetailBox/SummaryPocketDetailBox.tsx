@@ -42,17 +42,9 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
   desiredDate,
  } = pocket;
 
- // Grouped and to two decimals, but WITHOUT the currency style, so no symbol is
- // printed. Passing the code turns on Intl's currency formatting and that emits
- // a symbol of its own, which is what put "$50.00 USD" on the panel: the glyph
- // and the code denominating the same figure twice.
- //
- // The code survives and the symbol goes, rather than the other way round. This
- // application holds several currencies whose symbol is the same "$" — the
- // dollar, the Colombian peso, the Argentine peso — so the glyph alone cannot
- // say which one an amount is in, and it is the half that carries no
- // information here.
- const amount = (value: number) => numberFormatCurrency(value, 2);
+ // The symbol, which is how every amount in the application is denominated.
+ // Passing the code turns on Intl's currency style and that is what emits it.
+ const amount = (value: number) => numberFormatCurrency(value, 2, currency);
 
  // The bar never runs past its track, while the figure beside it is free to
  // read over 100%. Clamping the number too would hide an over-funded pocket.
@@ -67,10 +59,10 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
  // read at all.
  const gapText =
   excess !== null
-   ? `${amount(excess)} over`
+   ? `${amount(excess)} over target`
    : funded
-     ? 'Nothing left to commit'
-     : `Still to commit ${amount(remaining)}`;
+     ? 'Nothing left to allocate'
+     : `Still to allocate ${amount(remaining)}`;
 
  return (
   <div className='summaryPocket__container'>
@@ -80,15 +72,7 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
    <PiggyCoinSvg className='summaryPocket__glyph' aria-hidden='true' />
 
    <div className='summaryPocket__data'>
-    {/* The code rides the headline, and it is the only place on the panel that
-        states the currency. Every figure here is in the same one, so saying it
-        against each was saying it three times. */}
-    <div className='summaryPocket__data--amount'>
-     {amount(allocated)}{' '}
-     <span className='summaryPocket__figureLabel'>
-      {currency.toUpperCase()}
-     </span>
-    </div>
+    <div className='summaryPocket__data--amount'>{amount(allocated)}</div>
 
     {/* Two labelled figures, not a sentence. What was here read "committed to
         this goal, of $25.50": the phrase named neither quantity, and the date
@@ -110,7 +94,7 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
         decide which one it belonged to; over the bar there is nothing else it
         could be measuring. Same shape the board hero uses. */}
     <div className='summaryPocket__data--share'>
-     {progress.toFixed(1)}% committed
+     {progress.toFixed(1)}% allocated
     </div>
 
     <div

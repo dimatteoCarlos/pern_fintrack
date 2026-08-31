@@ -35,7 +35,7 @@ import '../styles/pocketToolbar.css';
 const SORT_OPTIONS: { value: PocketSortKey; label: string }[] = [
  { value: 'date', label: 'Deadline' },
  { value: 'name', label: 'Name' },
- { value: 'remaining', label: 'Remaining' },
+ { value: 'remaining', label: 'Still to allocate' },
 ];
 
 // 'All' first, as the absence of a filter; 'Uncovered' last, because it is
@@ -47,7 +47,7 @@ const FILTER_OPTIONS: { value: PocketQuickFilter; label: string }[] = [
  { value: 'onPlan', label: POCKET_STATUS_WORD.onPlan },
  { value: 'atRisk', label: POCKET_STATUS_WORD.atRisk },
  { value: 'offPlan', label: POCKET_STATUS_WORD.offPlan },
- { value: 'uncovered', label: 'Uncovered' },
+ { value: 'uncovered', label: 'Allocation not covered' },
 ];
 
 const SEARCH_MAX_LENGTH = 50;

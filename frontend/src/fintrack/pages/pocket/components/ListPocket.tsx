@@ -324,8 +324,11 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
 
       <dl className='pocketCard__facts'>
        <div className='pocketCard__fact'>
+        {/* The same words the board hero and the detail panel use for this
+            figure. "Remaining" was a fourth name for it, and the card sits in
+            a list the hero heads. */}
         <dt className='pocketCard__factLabel'>
-         {isExcess ? 'Over target' : 'Remaining'}
+         {isExcess ? 'Over target' : 'Still to allocate'}
         </dt>
         <dd
          className={`pocketCard__factValue ${

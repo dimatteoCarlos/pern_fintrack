@@ -190,7 +190,10 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
      </div>
 
      <div className='pocketHero__tile pocketHero__tile--remaining'>
-      <span className='pocketHero__label'>Still to commit</span>
+      {/* Allocated is the figure's word — POCKET_DECISIONS 18.1 freezes it —
+          and commit is the event's. This names a figure, so it takes the
+          figure's word and pairs with "Total allocated" beside it. */}
+      <span className='pocketHero__label'>Still to allocate</span>
       <span className='pocketHero__value'>
        {amount(summary?.totalRemaining)}
       </span>
@@ -381,7 +384,9 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
           band, which print at zero because a partition has to keep adding up.
           Nothing is partitioned here, so nothing breaks by leaving. */}
       {levels !== null &&
-       (levels.overdue > 0 || (uncoveredCount ?? 0) > 0) && (
+       (levels.overdue > 0 ||
+        levels.atRisk > 0 ||
+        (uncoveredCount ?? 0) > 0) && (
         <div className='pocketHero__alerts'>
          <span className='pocketHero__group'>
           <span className='pocketHero__groupLabel'>Alerts</span>
@@ -391,6 +396,18 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
             <span className='pocketHero__mark'>
              <StatusSquare alert={pocketSquareClass('offPlan')} />
              <span>{levels.overdue} overdue</span>
+            </span>
+           )}
+
+           {/* Amber inside a row of reds, and the difference is the point: a
+               deadline closing in is the one thing here that can still be
+               prevented, while a date already missed and an account short of
+               what it promised are facts about now. The row grades what it
+               raises instead of only listing it. */}
+           {levels.atRisk > 0 && (
+            <span className='pocketHero__mark'>
+             <StatusSquare alert={pocketSquareClass('atRisk')} />
+             <span>{levels.atRisk} at risk</span>
             </span>
            )}
 
@@ -445,7 +462,7 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
             its target, and a negative shortfall belongs to the over-funded
             reading in the band above. */}
         <span className='pocketHero__inlineItem'>
-         {amount(Math.max(nextGoal.remaining, 0))} to go
+         {amount(Math.max(nextGoal.remaining, 0))} still to allocate
         </span>
 
         <span className='pocketHero__inlineItem'>

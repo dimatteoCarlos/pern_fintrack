@@ -71,16 +71,6 @@
  font-variant-numeric: tabular-nums;
 }
 
-/* The code rides the headline but does not compete with it: the label rule it
-   carries says font-size: inherit, which inside this line would set a currency
-   code at the size of the amount. It denominates the figure, it is not part of
-   it. */
-.summaryPocket__data--amount .summaryPocket__figureLabel {
- font-size: var(--font-size-sm);
- font-weight: var(--font-weight-regular);
- color: var(--color-content-secondary);
-}
-
 .summaryPocket__data--subtitle1 {
  font-size: var(--font-size-sm);
  font-weight: var(--font-weight-regular);
@@ -146,9 +136,14 @@
  margin-top: var(--space-2);
 }
 
+/* What is still to commit, and it was the smallest thing on the panel while
+   being the only figure the owner can act on: the share above it says how it
+   is going, this says what to do about it. Up two steps to sit with the share,
+   in the panel's ink rather than the secondary grey. */
 .summaryPocket__data--subtitle2 {
- font-size: var(--font-size-xs);
- color: var(--color-content-secondary);
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-medium);
+ color: var(--color-content-primary);
  font-variant-numeric: tabular-nums;
 }
 
