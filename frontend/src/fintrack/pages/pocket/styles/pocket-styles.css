@@ -860,7 +860,13 @@ button.line__container {
 
    Every step is scoped by :has(.pocketList) so it reaches the board and not
    the pocket detail or the creation form, which render through the same two
-   generic section classes under this same layout. */
+   generic section classes under this same layout.
+
+   flex: 1 lands on .pocketList itself, never on the column that holds it —
+   PocketToolbar is the other child of that same column and keeps its
+   intrinsic height, so it and the create control below the list stay put
+   while only the cards between them scroll. Confirmed 2026-08-31 when the
+   toolbar was added: nothing here changed for it to still hold. */
 .pocketLayout .content__presentation:has(.pocketList),
 .pocketLayout .cards__presentation:has(.pocketList) {
  display: flex;
@@ -1217,6 +1223,12 @@ button.line__container {
  .pocketCard {
   gap: var(--space-1);
  }
+
+ /* The gap between cards, not just the air inside one: on a short viewport
+    every rem the grid spends between rows is a rem a card does not get. */
+ .pocketLayout .pocketList {
+  gap: var(--space-2);
+ }
 }
 
 @media (max-height: 568px) {
@@ -1226,5 +1238,9 @@ button.line__container {
 
  .pocketLayout .pocketList__state {
   padding: var(--space-4);
+ }
+
+ .pocketLayout .pocketList {
+  gap: var(--space-1);
  }
 }
