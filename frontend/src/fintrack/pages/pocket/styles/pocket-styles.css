@@ -420,12 +420,20 @@ button.line__container {
  container-name: pocketHero;
 }
 
-/* Committed and still-to-commit, with a rule between them: they are two halves
-   of one statement, not two tiles. Stacked under 480px of container, side by
-   side above it, and the divider turns with the layout. */
+/* The goal, what is committed against it and the gap left, with a rule between
+   them: they are three parts of one statement, not three tiles.
+
+   Three steps and not the single 480px frontier this carried before. It went
+   from a full-width stack straight to three tracks, so at the width where the
+   tracks first appear each one held about 128px and a 2rem amount wrapped
+   mid-figure; between the stack and that there was nothing.
+
+   A grid rather than a flex row, because the middle step has to put the third
+   figure on a row of its own. A flex row can only wrap it, and a wrapped flex
+   item takes the width of its content rather than the width of the row. */
 .pocketHero__equation {
- display: flex;
- flex-direction: column;
+ display: grid;
+ grid-template-columns: minmax(0, 1fr);
  gap: var(--space-3);
 }
 
@@ -442,8 +450,9 @@ button.line__container {
  border-top: var(--border-width-thin) solid var(--color-border-subtle);
 }
 
-/* The two span rules that were here went with the tiles they belonged to: the
-   hero is a column, so nothing spans a grid track any more. */
+/* The two span rules that were here went with the tiles they belonged to. The
+   only tile that spans a track now is the gap left, and only at the middle
+   step, where it takes the row under the pair above it. */
 
 .pocketHero__label {
  font-size: var(--font-size-sm);
@@ -466,6 +475,10 @@ button.line__container {
 /* The committed figure at the top of the scale and the remainder one clear step
    below it. The scale declares nothing between those two, so this is the whole
    decision the hierarchy can express. */
+/* The goal and what is committed against it read at the same size: they are the
+   two halves of the same comparison, and a target set a step smaller was what
+   made it a footnote of the committed figure rather than a figure of its own. */
+.pocketHero__tile--target .pocketHero__value,
 .pocketHero__tile--committed .pocketHero__value {
  font-size: var(--font-size-2xl);
  line-height: 1.1;
@@ -495,7 +508,13 @@ button.line__container {
  position: relative;
  display: flex;
  flex-direction: column;
- gap: var(--space-1);
+ /* --space-2, up from --space-1: the Pockets card stacks a headline and two
+    nested breakdown groups in this same column, and at --space-1 the label,
+    the value and the first group line all sat 4px apart with nothing telling
+    the headline from its own detail. The change is vertical only, so it does
+    not touch the horizontal budgets the container queries below are tuned
+    against. */
+ gap: var(--space-2);
  /* Without it a long pocket name blows its grid track out instead of wrapping
     inside it. */
  min-width: 0;
@@ -504,6 +523,15 @@ button.line__container {
  background-color: var(--color-surface-raised);
  text-decoration: none;
  color: inherit;
+}
+
+/* The headline and its breakdown, told apart the same way the equation above
+   tells its tiles apart: a hairline, not a font size. The Pockets card is the
+   one that has both; Next Target has only a headline and stays undivided. */
+.pocketHero__cardValue + .pocketHero__group {
+ margin-top: var(--space-1);
+ padding-top: var(--space-2);
+ border-top: var(--border-width-thin) solid var(--color-border-subtle);
 }
 
 /* Room for the chevron, so a two-word name does not run under it. */
@@ -568,6 +596,36 @@ button.line__container {
  outline-offset: var(--border-width-thick);
 }
 
+/* ── The hero glyphs ───────────────────────────────────────── */
+
+/* Decorative and only that: each block already names its subject in words, so
+   the drawing carries nothing the label does not. The box is --size-glyph-hero
+   rather than one of the icon sizes because the set is a 0.26 pen on a 24 unit
+   grid, and below 4rem that stroke renders under half a device pixel. */
+.pocketHero__glyph {
+ display: block;
+ width: var(--size-glyph-hero);
+ height: var(--size-glyph-hero);
+ flex-shrink: 0;
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* Absent under 480px of CONTAINER, not of viewport, for the same reason the
+   equation stacks there. At 360px the card holds 132px between its paddings and
+   a 4rem glyph would leave 69px of it for the figure and the marks. Drawing it
+   smaller instead is what the token's own note rules out. The progress block is
+   not gated: it has the full column and the room to pay for it. */
+.pocketHero__cards .pocketHero__glyph {
+ display: none;
+}
+
+/* The chevron already brightens on these same two states, and a glyph that
+   stayed flat beside it would read as a second, dead element. */
+.pocketHero__card--link:hover .pocketHero__glyph,
+.pocketHero__card--link:focus-visible .pocketHero__glyph {
+ color: var(--color-content-on-dark);
+}
+
 /* ── The board's own reading ─────────────────────────────────────────────── */
 
 .pocketHero__progress {
@@ -578,9 +636,19 @@ button.line__container {
 
 .pocketHero__progressRow {
  display: flex;
- align-items: baseline;
+ align-items: center;
  justify-content: space-between;
  gap: var(--space-3);
+}
+
+/* The glyph travels with the label it decorates, so the row keeps two children
+   and the percentage stays flush right. On its own it became a third child and
+   space-between spread all three. */
+.pocketHero__progressHead {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ min-width: 0;
 }
 
 .pocketHero__pct {
@@ -595,6 +663,62 @@ button.line__container {
 /* Inside the active-pockets card, under its figure. Reserved height whether or
    not a count is present, so a board with no exception keeps the card level
    with the one beside it instead of standing a line shorter. */
+/* One heading and the readings it heads. The readings are indented under it so
+   the nesting is visible without a rule or a box: the split between reaching a
+   target and not reaching it is the top level, and how a pocket got there is
+   the detail beneath. */
+.pocketHero__group {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+}
+
+/* --space-3, up from --space-2, now that the card carries a divider of its
+   own above the first group (.pocketHero__cardValue + .pocketHero__group):
+   the two rules together are what keep "funded" and "not funded" reading as
+   two separate clusters rather than one continuous list of four lines. */
+.pocketHero__group + .pocketHero__group {
+ margin-top: var(--space-3);
+}
+
+.pocketHero__groupLabel {
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wider);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The count reads as the figure the heading names, not as part of its word. */
+.pocketHero__groupLabel b {
+ /* index.css sets font-size on the universal selector, so an inline element
+    does not inherit the size of the line it sits in. */
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
+/* The one heading that names a single level instead of an aggregate of several,
+   so it is the only one with a colour of its own to show. Funded and not funded
+   each span more than one level and have no single square to carry. The word
+   stays beside it: colour is never the only channel. */
+.pocketHero__groupLabel--level {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+}
+
+/* The square is an inline span in its own sheet, so it only takes a width once
+   a flex container blockifies it. Same reason .pocketHero__mark carries this. */
+.pocketHero__groupLabel--level .status__square {
+ flex-shrink: 0;
+}
+
+.pocketHero__group .pocketHero__marks {
+ padding-left: var(--space-3);
+}
+
 .pocketHero__marks {
  display: flex;
  flex-wrap: wrap;
@@ -648,27 +772,78 @@ button.line__container {
 
 /* The guard is the CONTAINER and not the viewport, which is the correction this
    rewrite carries: the page column stops growing at --layout-width-max, so a
-   viewport query at 768px fired while the column holding these two figures was
-   still 640px wide.
+   viewport query at 768px fired while the column holding these figures was
+   still 640px wide. The same measurement is why there is no 768px step below:
+   .home__layout caps at 40rem and .pocketLayout takes 88% of it, so this
+   container runs from about 317px to about 563px and never reaches 768. */
 
-   Above 480px of container the equation turns into two columns and the rule
-   between the halves turns with it. */
-@container pocketHero (min-width: 480px) {
+/* The step the composition was missing. The goal and what is committed against
+   it pair first, because they are the two halves of the comparison; the gap
+   left takes the row underneath them.
+
+   The figures drop one place down the scale here and stay there. The size
+   follows the width of the COLUMN a figure is drawn in, not the width of the
+   container: stacked, an amount has the whole 317px, and split it has at most
+   223px, which is where 2rem starts breaking a figure across two lines. Their
+   relative order is untouched — the goal and the committed amount still read at
+   the same size and the remainder still one step under them. */
+@container pocketHero (min-width: 360px) {
  .pocketHero__equation {
-  flex-direction: row;
-  align-items: stretch;
-  gap: var(--space-6);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-4);
  }
 
- .pocketHero__equation .pocketHero__tile {
-  flex: 1 1 0;
+ /* The divider turns with the layout. Its padding matches the column gap so
+    the rule lands in the middle of the gutter rather than against a figure. */
+ .pocketHero__equation .pocketHero__tile + .pocketHero__tile--committed {
+  padding-top: 0;
+  padding-left: var(--space-4);
+  border-top: none;
+  border-left: var(--border-width-thin) solid var(--color-border-subtle);
+ }
+
+ /* Full width under the pair, keeping the horizontal rule it has when stacked.
+    The excess line hangs off this tile and it is a sentence, not a figure: in a
+    half-width column it wraps to four lines. */
+ .pocketHero__equation .pocketHero__tile--remaining {
+  grid-column: 1 / -1;
+ }
+
+ .pocketHero__tile--target .pocketHero__value,
+ .pocketHero__tile--committed .pocketHero__value {
+  font-size: var(--font-size-xl);
+ }
+
+ .pocketHero__tile--remaining .pocketHero__value {
+  font-size: var(--font-size-lg);
+ }
+}
+
+/* Three tracks, and the gutter narrows to pay for the third one: at 480px of
+   container the columns hold about 138px each, and a 1.5rem gap plus a 1.5rem
+   divider padding was taking 96px of the row away from them. */
+@container pocketHero (min-width: 480px) {
+ .pocketHero__equation {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
  }
 
  .pocketHero__equation .pocketHero__tile + .pocketHero__tile {
   padding-top: 0;
-  padding-left: var(--space-6);
+  padding-left: var(--space-4);
   border-top: none;
   border-left: var(--border-width-thin) solid var(--color-border-subtle);
+ }
+
+ /* Back into the row it left one step below. */
+ .pocketHero__equation .pocketHero__tile--remaining {
+  grid-column: auto;
+ }
+
+ /* The card track carries 293px of interior here, so the glyph costs a fifth
+    of it rather than half. */
+ .pocketHero__cards .pocketHero__glyph {
+  display: block;
  }
 }
 
@@ -820,6 +995,20 @@ button.line__container {
 
 .pocketCard__status--ok {
  color: var(--color-status-ok);
+}
+
+/* On plan has nothing to flag, so it takes the card's own ink rather than a
+   semaphore colour. It shares the bare square with funded; the word is what
+   separates them. */
+.pocketCard__status--neutral {
+ color: var(--color-content-on-dark-muted);
+}
+
+/* Notable, not wrong. Committed past the target is the one reading that points
+   at money the owner can move without setting a plan back, so it takes a colour
+   of its own: amber here already means the clock is running out. */
+.pocketCard__status--info {
+ color: var(--color-status-info);
 }
 
 .pocketCard__status--warning {

@@ -23,13 +23,19 @@
 // to close the gap.
 export const POCKET_AT_RISK_DAYS = 30;
 
-export type PocketStatusLevel = 'funded' | 'onPlan' | 'atRisk' | 'offPlan';
+export type PocketStatusLevel =
+ | 'funded'
+ | 'overFunded'
+ | 'onPlan'
+ | 'atRisk'
+ | 'offPlan';
 
 // The class the shared StatusSquare appends. The scale carries three colours
 // and the levels are four, so a covered pocket and one with slack share the
 // bare square: neither has anything to flag. The word beside them differs.
 const SQUARE_CLASS: Record<PocketStatusLevel, string> = {
  funded: '',
+ overFunded: 'info',
  onPlan: '',
  atRisk: 'warning',
  offPlan: 'alert',
@@ -39,6 +45,7 @@ const SQUARE_CLASS: Record<PocketStatusLevel, string> = {
 // can never disagree about the same pocket.
 const READING_MODIFIER: Record<PocketStatusLevel, string> = {
  funded: 'pocketDetail__reading--ok',
+ overFunded: 'pocketDetail__reading--info',
  onPlan: 'pocketDetail__reading--neutral',
  atRisk: 'pocketDetail__reading--warning',
  offPlan: 'pocketDetail__reading--alert',
@@ -65,13 +72,22 @@ export const pocketDateLevel = ({
  funded,
  overdue,
  daysRemaining,
+ remaining,
 }: {
  funded: boolean;
  overdue: boolean;
  daysRemaining: number;
+ remaining: number;
 }): PocketStatusLevel =>
  funded
-  ? 'funded'
+  ? // Split inside the served flag, not against it: the server sets funded at
+    // committed >= target, and a negative shortfall is the same payload saying
+    // by how much it passed. The two differ in what the owner can do — the
+    // excess of an over-funded pocket is the only committed money that can be
+    // released without setting a plan back — so they cannot share one reading.
+    remaining < 0
+    ? 'overFunded'
+    : 'funded'
   : overdue
     ? 'offPlan'
     : daysRemaining <= POCKET_AT_RISK_DAYS

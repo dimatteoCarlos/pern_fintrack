@@ -5,7 +5,13 @@ import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { currencyFormat } from '../../../helpers/functions';
 import { PocketBoardSummary, PocketStatus } from '../../../types/pocketTypes';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents';
-import { pocketSquareClass } from '../../../helpers/pocketStatus';
+import { pocketDateLevel, pocketSquareClass } from '../../../helpers/pocketStatus';
+// Decorative only, and drawn at --size-glyph-hero: the set is a 0.26 pen on a
+// 24 unit grid and stops resolving below 4rem. Each file already carries
+// aria-hidden, so none of them reaches the accessibility tree.
+import BarChartSvg from '../../../../assets/pocketSvg/barChartSvg.svg?react';
+import BullsEyeSvg from '../../../../assets/pocketSvg/bullsEyeSvg.svg?react';
+import WalletSvg from '../../../../assets/pocketSvg/walletSvg.svg?react';
 
 // The whole summary and the rows it was folded from, not four figures picked
 // out of ten. The parent used to narrow the payload before handing it over,
@@ -30,8 +36,38 @@ const MISSING = '—';
 // to be below the goal and funded requires the opposite, so no pocket is in
 // both and none is outside all three — which is what makes this subtraction
 // exact rather than an estimate the server would have to confirm.
-const countActive = (summary: PocketBoardSummary): number =>
- summary.pocketCount - summary.fundedCount - summary.overdueCount;
+// How many rows sit at each level of the date partition, which is what replaces
+// the single "active" figure this tile used to print. "Active" was never a
+// state: it was the residue of the two the server folds, and it hid the one
+// reading that asks for action by lumping a pocket thirty days out together
+// with one that has a year.
+//
+// Funded and overdue are taken from the server, which folds them; only the
+// split of the remainder is counted here, because the thirty-day threshold is
+// a presentation rule the model has nothing to read it from. The four add up to
+// pocketCount by construction: the two served counts are mutually exclusive and
+// the level helper sends everything else to one of the other two.
+const countByLevel = (
+ summary: PocketBoardSummary,
+ pockets: PocketStatus[],
+) => {
+ const at = (level: string) =>
+  pockets.filter((pocket) => pocketDateLevel(pocket) === level).length;
+
+ const overFunded = at('overFunded');
+
+ return {
+  // The served count, whole. A pocket past its target IS funded — the flag is
+  // set at committed above OR EQUAL — so taking the over-target rows out of it
+  // left "funded" meaning "landed on the cent", a case one cent wide that read
+  // as zero beside two pockets that had plainly reached their targets.
+  funded: summary.fundedCount,
+  overFunded,
+  overdue: summary.overdueCount,
+  atRisk: at('atRisk'),
+  onPlan: at('onPlan'),
+ };
+};
 
 // The active pocket whose deadline falls first. Overdue ones are excluded on
 // purpose: the tile answers what is NEXT, and a deadline that has passed is not
@@ -93,9 +129,8 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
   );
  }
 
- const activeCount = summary === null ? null : countActive(summary);
+ const levels = summary === null ? null : countByLevel(summary, pockets);
  const nextGoal = findNextGoal(pockets);
- const overdueCount = summary?.overdueCount ?? null;
  const uncoveredCount = summary?.uncoveredCount ?? null;
  // Clamped per pocket by the server before folding, so the bar needs no clamp
  // of its own and cannot paint past its track.
@@ -104,18 +139,30 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
  return (
   <div className='total__container flex-col-sb'>
    <div className='pocketHero'>
-    {/* LEVEL 1 — where the board stands.
-        The two halves of one statement, with a rule between them: committed
-        plus remaining is the target. The middle column of the reference is
-        gone, and with it the third printing of the percentage. */}
+    {/* LEVEL 1 — where the board stands, as three peer figures rather than one
+        headline with the other two demoted into its footnotes: the goal, what
+        is committed against it, and the gap between them.
+
+        They reconcile as allocated − excess + remaining = target, NOT as a
+        plain subtraction: the shortfall is clamped per pocket before the server
+        sums it. The excess is printed under the gap whenever it is not zero,
+        because without it the three figures look like an arithmetic error.
+
+        The two meta lines are gone with the demotion. "of a $X target" and "to
+        reach every target" existed only because the target had no tile of its
+        own to be stated in; each now repeats the line above or below it. */}
     <div className='pocketHero__equation'>
+     <div className='pocketHero__tile pocketHero__tile--target'>
+      <span className='pocketHero__label'>Target</span>
+      <span className='pocketHero__value'>
+       {amount(summary?.totalTarget)}
+      </span>
+     </div>
+
      <div className='pocketHero__tile pocketHero__tile--committed'>
       <span className='pocketHero__label'>Total allocated</span>
       <span className='pocketHero__value'>
        {amount(summary?.totalAllocated)}
-      </span>
-      <span className='pocketHero__meta'>
-       of a {amount(summary?.totalTarget)} target
       </span>
      </div>
 
@@ -124,7 +171,23 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
       <span className='pocketHero__value'>
        {amount(summary?.totalRemaining)}
       </span>
-      <span className='pocketHero__meta'>to reach every target</span>
+
+      {/* The figure that makes the three above reconcile, and the reason they
+          do not without it: the shortfall is clamped per pocket BEFORE the
+          server sums it, so that one over-funded pocket cannot cancel another
+          that is behind. The excess travels separately for the same reason.
+          The identity is therefore
+              allocated − excess + remaining = target
+          and not the subtraction it looks like. Printed only when it is not
+          zero, because on a board where nothing passed its goal there is no
+          discrepancy to explain. */}
+      {summary !== null &&
+       summary.totalExcess !== null &&
+       summary.totalExcess > 0 && (
+        <span className='pocketHero__meta'>
+         {amount(summary.totalExcess)} committed above target
+        </span>
+       )}
      </div>
     </div>
 
@@ -135,32 +198,100 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
         chevron on a tile that leads nowhere is an affordance that lies. */}
     <div className='pocketHero__cards'>
      <div className='pocketHero__card'>
-      <span className='pocketHero__label'>Active pockets</span>
+      <WalletSvg className='pocketHero__glyph' />
 
-      <span className='pocketHero__cardValue'>
-       {activeCount === null
-        ? MISSING
-        : `${activeCount} of ${summary?.pocketCount}`}
+      {/* The word and its count on one line, in the shape the group headings
+          below already use. On a line of its own the total read as a third
+          element sitting between the label that names it and the partition
+          that adds up to it, rather than as the heading of both. */}
+      <span className='pocketHero__label'>
+       Pockets{' '}
+       <b className='pocketHero__cardValue'>
+        {summary === null ? MISSING : summary.pocketCount}
+       </b>
       </span>
 
-      {/* The exception counts, each with its square, and each present only
-          when it is not zero: a mark reading "0 overdue" warns about nothing.
-          The count is never colour alone — it carries the word beside it. */}
-      <span className='pocketHero__marks'>
-       {overdueCount !== null && overdueCount > 0 && (
+      {/* Three headings, each with the count it heads, and its readings
+          beneath. The pockets that reached their target, the ones still inside
+          their deadline and the ones past it are the top-level split; how a
+          pocket got there is the detail under each.
+
+          The three counts add up to pocketCount and nothing overlaps: funded
+          and overdue are folded by the server and are mutually exclusive by
+          construction, and the level helper sends every remaining row to on
+          plan or at risk.
+
+          Every reading prints even at zero: a partition that drops its empty
+          members stops adding up to the list below it, and a reader cannot tell
+          an absent level from a level with nothing in it.
+          Never colour alone — each square carries its word. */}
+      {levels !== null && (
+       <>
+        <span className='pocketHero__group'>
+         <span className='pocketHero__groupLabel'>
+          Funded <b>{levels.funded}</b>
+         </span>
+
+         <span className='pocketHero__marks'>
+          <span className='pocketHero__mark'>
+           <StatusSquare alert={pocketSquareClass('overFunded')} />
+           <span>{levels.overFunded} above target</span>
+          </span>
+         </span>
+        </span>
+
+        {/* Overdue is out of this count now, so the heading means what it says:
+            not funded AND still inside its deadline. */}
+        <span className='pocketHero__group'>
+         <span className='pocketHero__groupLabel'>
+          Not funded <b>{levels.onPlan + levels.atRisk}</b>
+         </span>
+
+         <span className='pocketHero__marks'>
+          <span className='pocketHero__mark'>
+           <StatusSquare alert={pocketSquareClass('onPlan')} />
+           <span>{levels.onPlan} on plan</span>
+          </span>
+
+          <span className='pocketHero__mark'>
+           <StatusSquare alert={pocketSquareClass('atRisk')} />
+           <span>{levels.atRisk} at risk</span>
+          </span>
+         </span>
+        </span>
+
+        {/* A peer of the two above and not a reading under the second one. In
+            an overdue pocket the date has already passed, so there is no pace
+            left to compute: the monthly contribution it would need is null
+            rather than zero, which is why pocketDateLevel sends it to a level
+            of its own. It is not "not funded and running" — it is "no deadline
+            left". The only level that asks for action today, and it sat two
+            levels down.
+
+            It heads no subdivision, so the square its level paints rides on the
+            heading itself instead of on a reading that would repeat the count
+            and the word above it. */}
+        <span className='pocketHero__group'>
+         <span className='pocketHero__groupLabel pocketHero__groupLabel--level'>
+          <StatusSquare alert={pocketSquareClass('offPlan')} />
+          Overdue <b>{levels.overdue}</b>
+         </span>
+        </span>
+       </>
+      )}
+
+      {/* Under neither heading, because coverage is the other axis entirely: a
+          pocket whose funding accounts stopped backing what it says is
+          committed can be funded or short, and the fact says nothing about
+          either. It hides at zero, where the readings above never do. */}
+      {uncoveredCount !== null && uncoveredCount > 0 && (
+       <span className='pocketHero__marks'>
         <span className='pocketHero__mark'>
          <StatusSquare alert={pocketSquareClass('offPlan')} />
-         <span>{overdueCount} overdue</span>
-        </span>
-       )}
-
-       {uncoveredCount !== null && uncoveredCount > 0 && (
-        <span className='pocketHero__mark'>
-         <StatusSquare alert={pocketSquareClass('atRisk')} />
          <span>{uncoveredCount} uncovered</span>
         </span>
-       )}
-      </span>
+       </span>
+      )}
      </div>
 
      {/* Target and not goal. The frozen vocabulary lets the word goal name the
@@ -172,6 +303,8 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
          not: a control that can only refuse is worse than one that is absent. */}
      {nextGoal === null ? (
       <div className='pocketHero__card pocketHero__card--empty'>
+       <BullsEyeSvg className='pocketHero__glyph' />
+
        <span className='pocketHero__label'>Next target</span>
        <span className='pocketHero__cardValue'>{MISSING}</span>
        <span className='pocketHero__meta'>Nothing pending a date</span>
@@ -181,6 +314,8 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
        to={`pockets/${nextGoal.pocketId}`}
        className='pocketHero__card pocketHero__card--link'
       >
+       <BullsEyeSvg className='pocketHero__glyph' />
+
        <span className='pocketHero__label'>Next target</span>
 
        <span className='pocketHero__cardValue pocketHero__cardValue--name'>
@@ -202,7 +337,10 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
     {/* LEVEL 3 — how far along, all together. The board's one progress bar. */}
     <div className='pocketHero__progress'>
      <div className='pocketHero__progressRow'>
-      <span className='pocketHero__label'>Overall progress</span>
+      <span className='pocketHero__progressHead'>
+       <BarChartSvg className='pocketHero__glyph' />
+       <span className='pocketHero__label'>Overall progress</span>
+      </span>
       <span className='pocketHero__pct'>{percent(overallProgress)}</span>
      </div>
 
