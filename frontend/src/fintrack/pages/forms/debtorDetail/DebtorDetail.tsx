@@ -1,4 +1,10 @@
-import { Link, useLocation, useParams } from 'react-router-dom';
+import {
+  Link,
+  useLocation,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
+import MonthPicker from '../../../general_components/monthPicker/MonthPicker.tsx';
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import AccountEditLink from '../../../general_components/accountEditLink/AccountEditLink.tsx';
@@ -34,6 +40,7 @@ import { useTransactionDetail } from '../../../hooks/useTransactionDetail.ts';
 
 import '../styles/forms-styles.css';
 import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
+import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
 import './styles/debtorDetail-styles.css';
 
 //---------------
@@ -106,25 +113,41 @@ function DebtorDetail() {
   } = useFetch<AccountByTypeResponseType>(urlAccountById);
 
   //--account transaction api response
-  //--how to handle dates period
-  const tdy = new Date();
-  const numberOfMonths = 2;
-  const firstDayOfPeriod = new Date(
-    tdy.getFullYear(),
-    tdy.getMonth() - numberOfMonths + 1,
-    1,
-  );
-  const lastDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth() + 1, 0);
+  //--THE PERIOD, AS A CONTROL
+  //
+  // The window used to be a two-month stretch built here from the device's
+  // clock and sent as start and end. The statement endpoint names its window
+  // two ways and they are not two flavours of one thing
+  // (getTransactionsForAccountById.js:124-137): start and end are taken as
+  // given, while a month is resolved on the ACCOUNT OWNER's calendar. This
+  // screen now sends the month, so the boundary belongs to the owner and not to
+  // whichever device is looking.
+  //
+  // In the URL and not in state, for the reason the category detail states for
+  // the same choice: opening a movement unmounts nothing, but the editor and
+  // the back arrow both leave and return, and a month held in a component would
+  // not survive the trip.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const monthParam = searchParams.get('month');
 
-  //--YYYY-MM-DD
-  // Through toCalendarDay, not toISOString: the two bounds are built from the
-  // local getters above, and reading their UTC parts back names the previous
-  // day east of UTC — dropping the last day of the statement window.
-  const apiStartDate = toCalendarDay(firstDayOfPeriod);
-  const apiEndDate = toCalendarDay(lastDayOfPeriod);
+  const selectMonth = (month: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('month', month);
+    // replace, so browsing five months does not bury the previous screen under
+    // five history entries.
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  // The month the screen opens on. The device's clock decides only WHICH month
+  // is asked for; the two boundaries of it are the server's, resolved on the
+  // owner's calendar. The residual is one day at a month's edge for an owner in
+  // a distant zone, and it closes when the server serves its own current month
+  // the way the budget status endpoint already does for the category screen.
+  const currentMonth = toCalendarDay(new Date()).slice(0, 7);
+  const reportedMonth = monthParam ?? currentMonth;
 
   //-----
-  const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
+  const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?month=${reportedMonth}`;
 
   const {
     apiData: transactionAccountApiResponse, //{status, message, data}
@@ -353,6 +376,27 @@ function DebtorDetail() {
                   className='account-transactions__container '
                   style={{ margin: '1rem 0' }}
                 >
+                  {/* Above the three states on purpose: the control has to stay
+                      on screen while the month it just asked for is in flight,
+                      or the owner loses the thing they were operating exactly
+                      when they operated it. The floor is the account's own
+                      opening month — a debtor cannot report a month it did not
+                      exist in — and the ceiling is the current one. */}
+                  <MonthPicker
+                    month={`${reportedMonth}-01`}
+                    currentMonth={`${currentMonth}-01`}
+                    minMonth={
+                      accountDetail?.account_start_local_date
+                        ? String(accountDetail.account_start_local_date).slice(
+                            0,
+                            7,
+                          )
+                        : null
+                    }
+                    surface='dark'
+                    onSelect={selectMonth}
+                  />
+
                   {hasStatementFailed ? (
                     statementErrorPanel
                   ) : isStatementPending ? (
