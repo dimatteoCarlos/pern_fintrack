@@ -272,6 +272,10 @@ article {
    --font-size-sm is the 0.875rem the field declares above, so the floor and the
    type stay tied to one value. */
 .note--description {
+ /* The field declares height: 100%, which needs a parent that stretches it.
+    The four screens still on CardNoteSave set the same display inline, so this
+    changes nothing for them and gives the wrapper its own declaration. */
+ display: flex;
  min-height: calc(5 * (var(--font-size-sm) * 1.2) + 0.8rem);
 }
 
