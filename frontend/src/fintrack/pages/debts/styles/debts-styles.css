@@ -391,3 +391,38 @@ a.icon {
   padding-block: var(--space-12);
  }
 }
+
+/* ── A debtor row: the direction, in words and in colour ──────────────────── */
+
+/* The direction sits beside the counterparty's role, not instead of it: the
+   role names who the other party is, the direction names which way the money
+   runs, and neither states the other.
+
+   Its own span because .box__subtitle (budget-styles.css:478) capitalises every
+   word it holds. The role still wants that; a sentence does not, and would come
+   out as "You Owe". */
+.debtorRow__direction {
+ text-transform: none;
+ /* index.css sets font-size on the universal selector, so an inline element
+    does not inherit the size of the line it sits in unless it restates it. */
+ font-size: inherit;
+}
+
+/* The figure is printed unsigned, so the colour carries what the minus used to.
+   It is the SECOND carrier and never the only one - the words beside it say the
+   same thing, which is what keeps the row readable in monochrome, in high
+   contrast and to an eye that cannot separate these two hues.
+
+   Teal and rose, the pair the system already declares for amounts and the same
+   two the status square paints. Not red and green: that is the one pair the
+   most common colour blindness collapses, and it would have introduced a second
+   red beside the square's on the same row.
+
+   Two classes deep so it beats .box__title's own colour without !important. */
+.box__title.debtorRow__amount--owed {
+ color: var(--color-amount-positive);
+}
+
+.box__title.debtorRow__amount--owing {
+ color: var(--color-amount-negative);
+}

@@ -229,12 +229,22 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
                 >
                   <div className='debtor box__title hover'>{account_name}</div>
                 </Link>
-                <div className='box__title'>
+                {/* Unsigned, and coloured by direction. The line below names
+                    the direction in words, so a minus in front of a figure the
+                    row already calls "You owe" says it twice and reads as a
+                    negative debt. The colour is the second carrier, never the
+                    only one: it repeats what the words say for the eye that
+                    scans the column, and the words stand alone without it. */}
+                <div
+                  className={`box__title debtorRow__amount--${
+                    transactionType === 'lender' ? 'owing' : 'owed'
+                  }`}
+                >
                   {' '}
                   {typeof total_debt_balance === 'number'
                     ? currencyFormat(
                         currency_code ?? defaultCurrency,
-                        total_debt_balance,
+                        Math.abs(total_debt_balance),
                         formatNumberCountry,
                       )
                     : DASH}
@@ -249,6 +259,15 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
                     />
                     <div className='box__subtitle'>
                       &nbsp; {transactionType}{' '}
+                      {/* Its own span because .box__subtitle capitalises every
+                          word it holds, which the role above still wants and a
+                          sentence does not: it would print "You Owe". */}
+                      <span className='debtorRow__direction'>
+                        ·{' '}
+                        {transactionType === 'lender'
+                          ? 'You owe'
+                          : `You're owed`}
+                      </span>{' '}
                     </div>
                   </div>
                 </BoxRow>
