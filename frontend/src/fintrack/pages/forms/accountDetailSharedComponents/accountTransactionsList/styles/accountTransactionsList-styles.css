@@ -204,3 +204,32 @@
     font-size: 0.85rem;
   } */
 }
+/* ── The movement's amount: colour that reinforces the sign ───────────────── */
+
+/* The sign stays on these rows and the colour only repeats it. A movement is a
+   delta that accumulates against the opening balance above the list, so the
+   sign is the operator of that sum: strip it and the owner can no longer check
+   the total against the movements that produced it. That is the opposite of the
+   debtor row, where the direction is written in words and the colour is what
+   replaces the sign.
+
+   Colour is therefore the third carrier here, after the sign and the movement
+   type the row already names, which is what keeps the list readable in
+   monochrome and to an eye that cannot separate these two hues.
+
+   The same pair the debtor row and the status square use. No new colour: teal
+   and rose, not red and green.
+
+   Two classes deep so it beats .box__title's own colour without !important. */
+.box__title.transactionRow__amount--in {
+ color: var(--color-amount-positive);
+}
+
+.box__title.transactionRow__amount--out {
+ color: var(--color-amount-negative);
+}
+
+/* A movement of zero, and an amount the answer did not carry, take no colour
+   at all: they keep the row's own ink rather than being painted as one
+   direction or the other. Declared as a comment and not as a rule, because the
+   rule would have to name the colour it is already inheriting. */

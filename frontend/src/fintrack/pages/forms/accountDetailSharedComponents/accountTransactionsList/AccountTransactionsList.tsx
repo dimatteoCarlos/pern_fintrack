@@ -29,6 +29,18 @@ const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 // owner never wrote, or a date the server did not serve.
 const DASH = '—';
 
+// Which way a movement moved the account, for the colour that reinforces the
+// sign. Coerced rather than type-tested: an amount can reach here as text, the
+// way every DECIMAL column node-postgres serves does, and a figure the answer
+// did not carry must colour as nothing rather than as an outflow.
+const amountDirection = (amount: number | string | null | undefined) => {
+  const value = amount === null || amount === undefined ? NaN : Number(amount);
+
+  if (Number.isNaN(value) || value === 0) return 'flat';
+
+  return value > 0 ? 'in' : 'out';
+};
+
 type AccountTransactionsListPropsType = {
   transactions: AccountTransactionType[];
   // Optional on purpose: a screen with no detail to open leaves its rows inert
@@ -182,7 +194,18 @@ const AccountTransactionsList = ({
                       </div>
                     )} */}
 
-                  <div className='box__title' style={{ marginLeft: '0.8rem' }}>
+                  {/* The sign STAYS. These rows are deltas that accumulate
+                      against the opening balance above them, so the sign is the
+                      operator of that sum and the owner needs it to check the
+                      total against the movements. The colour only reinforces
+                      it — the opposite of the debtor row, where the direction is
+                      written in words and the colour replaces the sign. */}
+                  <div
+                    className={`box__title transactionRow__amount--${amountDirection(
+                      amount,
+                    )}`}
+                    style={{ marginLeft: '0.8rem' }}
+                  >
                     {currencyFormat(currency_code, amount, formatNumberCountry)}
                   </div>
                 </BoxRow>
