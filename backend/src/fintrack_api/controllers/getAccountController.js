@@ -585,7 +585,11 @@ export const getAccountById = async (req, res, next) => {
     //--------------
     // 📋 GET ACCOUNT BASIC INFO
     const accountsResult = await pool.query({
-      text: `SELECT act.account_type_name , ua.*
+      text: `SELECT act.account_type_name , ua.*,
+        -- The ledger figure, carried under its own name so it does not collide
+        -- with the stored column ua.* still ships. NUMERIC, so pg hands it back
+        -- as text and the wire type of account_balance does not change.
+        ${derivedAccountBalanceSql('ua', 'NUMERIC')} AS derived_account_balance
         FROM user_accounts ua
         JOIN account_types act ON 
         act.account_type_id = ua.account_type_id
@@ -811,6 +815,13 @@ export const getAccountById = async (req, res, next) => {
       accountList: [accountListResult.rows[0]],
     };
     // console.log("🚀 ~ getAccountById ~ data:", data)
+
+    // Every branch above selects ua.*, so every one of them shipped the stored
+    // balance. The detail screen states a figure with no series beside it to
+    // contradict it, and the category budget divided by it to say what is left.
+    data.accountList[0].account_balance =
+      accountsResult.rows[0].derived_account_balance;
+    delete data.accountList[0].derived_account_balance;
 
     //----------------------------
     // 📆 THE DAY THE ACCOUNT WAS OPENED, ON THE OWNER'S CALENDAR
