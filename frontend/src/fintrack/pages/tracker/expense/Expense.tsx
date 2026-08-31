@@ -339,7 +339,7 @@ function Expense(): JSX.Element {
 
   //--------------------------
   const categoryOptions = {
-    title: optionsExpenseCategories ? 'Category / Subategory' : '',
+    title: optionsExpenseCategories ? 'Category / Subcategory' : '',
     options: optionsExpenseCategories ?? CATEGORY_OPTIONS_DEFAULT,
     variant: VARIANT_DEFAULT as VariantType,
   };
