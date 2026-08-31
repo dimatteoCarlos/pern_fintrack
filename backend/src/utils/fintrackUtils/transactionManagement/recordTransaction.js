@@ -38,6 +38,9 @@ export async function recordTransaction(clientOrPool = null, option) {
       destination_account_id,
       transaction_actual_date,
       account_balance,
+      // Set only on the leg that opens an account, so the balance derivation
+      // can skip that row instead of guessing it from the money's direction.
+      opening_for_account_id,
       //FX fields
       original_amount,
       original_currency_id,
@@ -79,6 +82,10 @@ export async function recordTransaction(clientOrPool = null, option) {
       // the callers still compute it; retiring that column is a later step and
       // is not in this plan.
       0.0,
+      // NULL is the ordinary case: this row opens no account. A funding leg is
+      // NULL too, which is the whole point — both legs of an opening pair carry
+      // the same destination and only this column tells them apart.
+      opening_for_account_id ?? null,
       // FX fields with defaults
       original_amount ?? amount, //DEFAULT_ORIGINAL_AMOUNT,
       original_currency_id ?? currency_id, // accountingCurrencyId,
@@ -90,10 +97,10 @@ export async function recordTransaction(clientOrPool = null, option) {
 
     // Extended INSERT with all FX columns
     const transactionResult = await dbClient.query({
-      text: `INSERT INTO transactions (user_id, description, movement_type_id, status, amount,currency_id, account_id, source_account_id,transaction_type_id,destination_account_id, transaction_actual_date, account_balance_after_tr,
+      text: `INSERT INTO transactions (user_id, description, movement_type_id, status, amount,currency_id, account_id, source_account_id,transaction_type_id,destination_account_id, transaction_actual_date, account_balance_after_tr, opening_for_account_id,
       original_amount, original_currency_id, exchange_rate, exchange_rate_source, exchange_rate_timestamp, exchange_rate_target_currency_id
       )
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
       values,
     });
     // console.log(transactionResult.rows[0]);

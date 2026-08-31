@@ -21,7 +21,7 @@ import {
   verifyAccountExistence,
   verifyAccountExists,
 } from '../../utils/fintrackUtils/accountManagement/verifyAccountExistence.js';
-import { updateAccountBalance } from '../../utils/fintrackUtils/accountManagement/updateAccountBalance.js';
+import { setAccountBalanceFromLedger } from '../../utils/fintrackUtils/accountManagement/setAccountBalanceFromLedger.js';
 import { lockAndDeriveBalances } from '../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 import { insertAccount } from '../../utils/fintrackUtils/accountManagement/insertAccount.js';
 import { getTransactionTypeId } from '../../utils/fintrackUtils/accountDataRetrieval/getTransactionTypeId.js';
@@ -296,20 +296,10 @@ export const createBasicAccount = async (req, res, next) => {
       ...fxMetadata,
     };
 
-    //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
-    //--------------------------------
-    // const updatedCounterAccountInfo = isTransfer
-    //   ? await updateAccountBalance(
-    //       client,
-    //       newCounterAccountBalance,
-    //       slackCounterAccountInfo.account_id,
-    //       transaction_actual_date,
-    //     )
-    //   : null;
-    // console.log(
-    //   '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
-    //   updatedCounterAccountInfo
-    // );
+    // The funding account's stored balance is written below, after the rows
+    // exist. It was commented out entirely, which is the defect this closes:
+    // opening an account funded from another left that other account's stored
+    // figure behind, saying it still held what it had just given away.
 
     //----- INSERT NEW ACCOUNT -------
     const { account_basic_data } = await insertAccount(
@@ -339,6 +329,8 @@ export const createBasicAccount = async (req, res, next) => {
       amount: convertedAmount,
       currency_id: accountingCurrencyId,
       account_id: account_basic_data.account_id,
+      // This leg is the account's own opening row; the counter leg below is not.
+      opening_for_account_id: account_basic_data.account_id,
       transaction_actual_date: transaction_actual_date,
       currency_code,
       account_name: newAccountName,
@@ -404,6 +396,17 @@ export const createBasicAccount = async (req, res, next) => {
     const counterTransactionInfo = isTransfer
       ? await recordTransaction(client, counterTransactionOption)
       : {};
+
+    // Only when this opening actually took money from another account. With no
+    // starting amount there is no counterparty row, so there is nothing whose
+    // projection would have changed.
+    if (isTransfer) {
+      await setAccountBalanceFromLedger(
+        client,
+        slackCounterAccountInfo.account_id,
+        userId,
+      );
+    }
     //--------------------------------
     await client.query('COMMIT');
     //---deliver user_id only once
@@ -809,6 +812,10 @@ export const createDebtorAccount = async (req, res, next) => {
       amount: parseFloat(transactionAmount),
       currency_id: accountingCurrencyId,
       account_id: account_basic_data.account_id,
+      // The debtor's own opening row. Stated rather than inferred: for a debtor
+      // the user owes, the money flows away from the account being opened, and
+      // the direction test picked the funding leg instead.
+      opening_for_account_id: account_basic_data.account_id,
       transaction_actual_date,
       currency_code: ACCOUNTING_CURRENCY_CODE,
       account_name: newAccountName,
@@ -858,12 +865,10 @@ export const createDebtorAccount = async (req, res, next) => {
       ...counterFxMetadata,
     };
 
-    //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
-    const updatedCounterAccountInfo = await updateAccountBalance(
-      client,
-      newCounterAccountBalance, //counterAccountInfo.account.account_balance
-      slackCounterAccountInfo.account_id,
-    );
+    // The funding account's stored balance is NOT written here. It is
+    // re-derived from the ledger once the movement rows exist, below: a
+    // derivation at this point would read the ledger without the opening
+    // movement and store the balance the account held before it.
 
     // console.log('updateCounterAccountInfo iput ',  newCounterAccountBalance,
     //   slackCounterAccountInfo.account_id,
@@ -903,6 +908,15 @@ export const createDebtorAccount = async (req, res, next) => {
     const counterTransactionInfo = await recordTransaction(
       client,
       counterTransactionOption,
+    );
+
+    // The rows are in, so the projection can be taken from them. The account
+    // was locked further up, in ascending id order, and this is a separate
+    // statement issued after that lock.
+    const updatedCounterAccountInfo = await setAccountBalanceFromLedger(
+      client,
+      slackCounterAccountInfo.account_id,
+      userId,
     );
     // const counterTransactionInfo = !isAccountOpening
     //   ? await recordTransaction(counterTransactionOption)

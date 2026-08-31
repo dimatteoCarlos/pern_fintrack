@@ -7,7 +7,7 @@ import { determineTransactionType, formatDate } from '../../utils/helpers.js';
 import { recordTransaction } from '../../utils/fintrackUtils/transactionManagement/recordTransaction.js';
 import { checkAndInsertAccount } from '../../utils/fintrackUtils/accountManagement/checkAndInsertAccount.js';
 import { verifyAccountExistence } from '../../utils/fintrackUtils/accountManagement/verifyAccountExistence.js';
-import { updateAccountBalance } from '../../utils/fintrackUtils/accountManagement/updateAccountBalance.js';
+import { setAccountBalanceFromLedger } from '../../utils/fintrackUtils/accountManagement/setAccountBalanceFromLedger.js';
 import { lockAndDeriveBalances } from '../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 import { insertAccount } from '../../utils/fintrackUtils/accountManagement/insertAccount.js';
 import { getTransactionTypeId } from '../../utils/fintrackUtils/accountDataRetrieval/getTransactionTypeId.js';
@@ -379,6 +379,8 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       amount: parseFloat(transactionAmount),
       currency_id: accountingCurrencyId,//countable currency //b4: currencyIdReq,
       account_id: account_basic_data.account_id,
+      // This leg is the category account's own opening row; the counter leg is not.
+      opening_for_account_id: account_basic_data.account_id,
       transaction_actual_date,
       currency_code,
       account_name,
@@ -433,13 +435,10 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
        ...fxMetadata,
     };
 
-    //-- UPDATE BALANCE OF COUNTER ACCOUNT INTO user_accounts table
-    // const updatedCounterAccountInfo = await updateAccountBalance(
-    //   client,
-    //   newCounterAccountBalance,
-    //   slackCounterAccountInfo.account_id,
-    //   transaction_actual_date,
-    // );
+    // The funding account's stored balance is written below, after the rows
+    // exist. It was commented out entirely, which is the defect this closes:
+    // opening a category funded from another account left that account's stored
+    // figure saying it still held what it had just given away.
 
     // console.log(
     //   '🚀 ~ createBasicAccount ~ updatedCounterAccountInfo:',
@@ -485,6 +484,12 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     const counterTransactionInfo = !isAccountOpening
       ? await recordTransaction(client, counterTransactionOption)
       : {};
+
+    // Only when a counterparty row was actually written. An opening with no
+    // funding movement leaves no other account whose projection changed.
+    if (!isAccountOpening) {
+      await setAccountBalanceFromLedger(client, counterAccountId, userId);
+    }
 
     await client.query('COMMIT');
     //-----------------------------

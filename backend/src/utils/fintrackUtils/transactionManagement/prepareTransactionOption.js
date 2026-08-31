@@ -22,7 +22,10 @@ export function prepareTransactionOption(
     movement_type_id,
     status: 'complete',
     transaction_actual_date: accountInfo.transaction_actual_date,
-    account_balance:accountInfo.account_balance 
+    account_balance:accountInfo.account_balance,
+    // Carried only when the caller states it. The funding leg never does, and
+    // no ordinary movement does either.
+    opening_for_account_id: accountInfo.opening_for_account_id ?? null
   };
 
 // Propagate FX metadata if present

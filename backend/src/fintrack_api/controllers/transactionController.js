@@ -7,8 +7,9 @@
 
 //declared functions defined here:
 //getAccountTypeId,getAccountInfo, getAccountTypes,getTransactionTypes, balanceMultiplierFn, getTransactionById.
-//updateAccountBalance used to be declared here too; it is imported now, from
-//the single implementation in accountManagement.
+//The balance writer used to be declared here too. It is gone: the stored
+//balance is no longer a figure this controller computes, it is re-derived from
+//the ledger by setAccountBalanceFromLedger once the movement rows exist.
 
 // transferBetweenAccounts.js (Controller)
 // Main controller for financial transfers between accounts
@@ -38,11 +39,17 @@ import {
 } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { currencyAmountConversion } from '../services/fx_services/conversion/currencyAmountConversion.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
+// The app's decimal scale and rounding, not the budget module's: money.js sits
+// under budget_services only because that module needed the policy first.
+import {
+  money,
+  toAmountString,
+} from '../services/budget_services/core/money.js';
 import {
   accountLedgerCteForTransaction,
 } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 import { lockAndDeriveBalances } from '../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
-import { updateAccountBalance } from '../../utils/fintrackUtils/accountManagement/updateAccountBalance.js';
+import { setAccountBalanceFromLedger } from '../../utils/fintrackUtils/accountManagement/setAccountBalanceFromLedger.js';
 // The compensation account this controller opens on demand for a PnL entry. It
 // is the app's own bookkeeping counterparty, not an account the owner holds, and
 // the date guard below leaves it out of the opening floor for that reason.
@@ -673,12 +680,18 @@ export const transferBetweenAccounts = async (req, res, next) => {
       destinationAccountInfo.account_id,
     ]);
 
-    const sourceAccountBalance = parseFloat(
+    // The ledger figure exactly, from the NUMERIC text pg hands back. The
+    // parseFloat below still feeds the balance arithmetic further down, but it
+    // no longer decides anything: a sum of many rows carried through binary
+    // floating point can land either side of the amount in the last bit, which
+    // refuses a movement the ledger covers or admits one it does not.
+    const sourceLedgerBalance = money(
       ledgerBalances.get(sourceAccountInfo.account_id),
     );
+
     //---check for enough funds on source account
     if (
-      sourceAccountBalance < numericAmount &&
+      sourceLedgerBalance.lessThan(money(numericAmount)) &&
       ((sourceAccountTypeName === 'bank' &&
         sourceAccountInfo.account_name !== 'slack') ||
         sourceAccountTypeName === 'investment' ||
@@ -688,7 +701,8 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //Use accounting currency code in error message
     //----------------------------------
     {
-      const message = `Not enough funds in "${sourceAccountInfo.account_name.toUpperCase()}" (${accountingCurrencyCode} ${sourceAccountBalance})`;
+      // The figure the refusal quotes is the one the refusal was decided on.
+      const message = `Not enough funds in "${sourceAccountInfo.account_name.toUpperCase()}" (${accountingCurrencyCode} ${toAmountString(sourceLedgerBalance)})`;
 
       console.warn(pc.magentaBright(message));
 
@@ -696,52 +710,12 @@ export const transferBetweenAccounts = async (req, res, next) => {
       // the pool with the transaction still open. The catch rolls it back.
       throw createError(400, message);
     }
-    //--------------------------------------
-    // --- Update Source account balance ---
-    //--------------------------------------
-    const newSourceAccountBalance =
-      parseFloat(sourceAccountBalance) - numericAmount;
-
+    // The two stored balances are NOT written here. They are re-derived from
+    // the ledger once both movement rows exist, further down: a derivation run
+    // at this point would read the ledger without the movement being recorded
+    // and store the balance the accounts held before it.
     const sourceAccountId = sourceAccountInfo.account_id;
-    console.log(
-      'transaction actual date (tad):',
-      transaction_actual_date,
-      '#',
-      sourceAccountId,
-    );
-
-    const updatedSourceAccountInfo = await updateAccountBalance(
-      client,
-      newSourceAccountBalance,
-      sourceAccountId,
-    );
-    // console.log(
-    //   '🚀 ~ updatedSourceAccountInfo:',
-    //   updatedSourceAccountInfo,updatedSourceAccountInfo.account_balance,
-    //   'type of:',
-    //   typeof updatedSourceAccountInfo.account_balance
-    // );
-    //---------------------------
-    //--- Destination Account ---
-    //---------------------------
-    //--Update the balance in th destination account
-    const destinationAccountBalance = ledgerBalances.get(
-      destinationAccountInfo.account_id,
-    );
-    const newDestinationAccountBalance =
-      parseFloat(destinationAccountBalance) + numericAmount;
-
     const destinationAccountId = destinationAccountInfo.account_id;
-
-    const updatedDestinationAccountInfo = await updateAccountBalance(
-      client,
-      newDestinationAccountBalance,
-      destinationAccountId,
-    );
-    // console.log(
-    //   '🚀 ~ updatedDestinationAccountInfo:',
-    //   updatedDestinationAccountInfo,updatedDestinationAccountInfo.account_balance,
-    // );
     //====================================
     //---Register transfer/receive transaction---
     //----Source transaction----------
@@ -791,7 +765,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
       transaction_type_id: sourceTransactionTypeId, //withdraw or lend
       destination_account_id: destinationAccountId,
       transaction_actual_date,
-      account_balance: parseFloat(updatedSourceAccountInfo.account_balance),
 
       // FX metadata fields for recordTransaction
       original_amount: originalAmountValue,
@@ -833,9 +806,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
       transaction_type_id: destinationTransactionTypeId, //withdraw or borrow
       destination_account_id: destinationAccountId,
       transaction_actual_date,
-      account_balance: parseFloat(
-        updatedDestinationAccountInfo.account_balance,
-      ),
       // FX metadata (same as source)
       original_amount: originalAmountValue,
       original_currency_id: originalCurrencyId,
@@ -846,6 +816,30 @@ export const transferBetweenAccounts = async (req, res, next) => {
     };
     // destinationTransactionOption.movement_type_id;
     await recordTransaction(client, destinationTransactionOption);
+
+    //--------------------------------------------------------------
+    // --- The stored balances, re-derived now that the rows exist ---
+    //--------------------------------------------------------------
+    // Both rows are in, so the ledger holds this movement and the projection
+    // can be taken from it. The two accounts were locked at the top of this
+    // transaction, in ascending id order, and these are separate statements
+    // issued after that lock — which is what lets them see every movement a
+    // competitor committed while this one waited.
+    //
+    // What this replaces: the balance arrived as a figure this controller had
+    // computed, read-add-store, before the movement was even recorded. That is
+    // how the column and the ledger came apart.
+    const updatedSourceAccountInfo = await setAccountBalanceFromLedger(
+      client,
+      sourceAccountId,
+      userId,
+    );
+
+    const updatedDestinationAccountInfo = await setAccountBalanceFromLedger(
+      client,
+      destinationAccountId,
+      userId,
+    );
     //==============================
     // data response
     const data = {
