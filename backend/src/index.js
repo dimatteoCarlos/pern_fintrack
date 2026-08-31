@@ -12,6 +12,7 @@ import { cleanRevokedTokens } from './utils/authUtils/authFn.js';
 import app from './app.js';
 
 import { initializeDatabase } from './db/run_time_db_init/initDatabase.js';
+import { warmCurrentMonthRates } from './fintrack_api/services/fx_services/core/warmCurrentMonthRates.js';
 
 const PORT = parseInt(process.env.PORT ?? '5000');
 
@@ -35,6 +36,11 @@ async function startServer() {
     await checkConnection(); //in configDB
     await initializeDatabase();
     await cleanRevokedTokens();
+
+    // Deliberately not awaited: the store fills while the server already
+    // answers, and a slow provider must not hold up a boot. It resolves on its
+    // own and never rejects.
+    warmCurrentMonthRates();
 
     //=======================
     // Set server & Error handling
