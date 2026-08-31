@@ -1,29 +1,92 @@
-/*------------------------*/
+/* frontend/src/fintrack/general_components/currencyBadge/styles/currency-style.css
+   The control that switches the currency an amount is typed in.
+
+   Rewritten 2026-08-31. Every colour here named --creme or --dark, and neither
+   is declared in styles/tokens.css. A var() with no value and no fallback
+   makes the whole declaration invalid, so the border was never drawn and the
+   text fell back to inheriting its container's colour.
+
+   On the cream panel of the pocket cash modal that meant cream ink on a cream
+   ground: the control occupied its 2.5rem, could not be read, and could not be
+   found to click. It was reported as a missing feature more than once, which
+   is what an invisible control is.
+
+   The two variants say which SURFACE the control sits on, not what colour it
+   is. That is why the names read backwards at first: .light is the one with
+   dark ink, because a light surface takes dark ink. */
+
 .icon-currency {
-  font-size: 0.625rem;
-  font-weight: 700;
-  border-radius: 1.1em;
-
-  width: 2.5rem;
-  height: 2.5rem;
-
-  padding: 0.75rem 0.5rem;
-  /* border: 2px solid var(--dark); */
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ /* A finger, not the type scale. The badge sits beside an input whose own
+    minimum is this same target. */
+ min-width: var(--size-touch-target);
+ min-height: var(--size-touch-target);
+ padding: var(--space-2);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-bold);
+ letter-spacing: var(--letter-spacing-wide);
+ font-family: inherit;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
 }
 
-.icon-currency.tracker, .icon-currency.light {
-  border: 2px solid var(--dark);
-  color: var(--dark);
+/* On a light surface: the panel of a form, the cream modal. */
+.icon-currency.tracker,
+.icon-currency.light {
+ border: var(--border-width-thick) solid var(--color-border-strong);
+ color: var(--color-content-primary);
 }
 
-.icon-currency.form, .icon-currency.dark {
-  border: 2px solid var(--creme);
-  color: var(--creme);
+.icon-currency.tracker:hover,
+.icon-currency.light:hover {
+ background-color: var(--color-content-primary);
+ color: var(--color-surface-panel);
 }
 
-.icon-currency.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
+.icon-currency.tracker:focus-visible,
+.icon-currency.light:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
 }
-/*------------------------*/
+
+/* On the dark app surface. */
+.icon-currency.form,
+.icon-currency.dark {
+ border: var(--border-width-thick) solid var(--color-content-on-dark-muted);
+ color: var(--color-content-on-dark-muted);
+}
+
+.icon-currency.form:hover,
+.icon-currency.dark:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.icon-currency.form:focus-visible,
+.icon-currency.dark:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.icon-currency:active {
+ transform: scale(0.96);
+}
+
+.icon-currency.disabled,
+.icon-currency:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .icon-currency {
+  transition: none;
+ }
+
+ .icon-currency:active {
+  transform: none;
+ }
+}

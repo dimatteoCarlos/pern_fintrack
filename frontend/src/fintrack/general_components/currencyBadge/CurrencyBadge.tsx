@@ -34,13 +34,24 @@ function CurrencyBadge({
     debouncedToggleCurrency();
   }
 
+  // A button and not a div. It was a div carrying an onClick, which no
+  // keyboard can reach, which a screen reader announces as nothing, and which
+  // offers no focus ring to draw. The label says what pressing it DOES: the
+  // face of the control shows the current currency, and a reader meeting
+  // "USD" alone cannot tell a state from a command.
+  //
+  // disabled is the attribute now rather than a class and an inline cursor.
+  // The class only ever dimmed it; the control stayed clickable.
   return (
-    <div className={`icon-currency ${variant} ${disabled ? 'disabled' : ''}`}
-    onClick={handleClick}
-     style={{ cursor: disabled ? 'not-allowed' : 'pointer' }} 
+    <button
+      type='button'
+      className={`icon-currency ${variant}`}
+      onClick={handleClick}
+      disabled={disabled}
+      aria-label={`Currency: ${currency.toUpperCase()}. Change it.`}
     >
       {currency.toUpperCase()}
-    </div>
+    </button>
   );
 }
 
