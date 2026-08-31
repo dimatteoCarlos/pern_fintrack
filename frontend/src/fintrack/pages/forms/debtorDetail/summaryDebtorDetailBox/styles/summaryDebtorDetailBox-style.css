@@ -63,3 +63,19 @@
   text-transform: none;
   text-align: right;
 }
+
+/* The figure's colour, on the panel variants of the amount pair. The card sits
+   on cream, where the pair calibrated for the app surface measures 2.98 and
+   2.64 to 1 — under the 3:1 floor. These carry 4.94 and 4.74 against the same
+   ground.
+
+   Second carrier only: the line beneath already states the direction in words,
+   which is what keeps the card readable in monochrome and to an eye that cannot
+   separate the two hues. */
+.summaryDebtor__amount--owed {
+  color: var(--color-amount-positive-on-panel);
+}
+
+.summaryDebtor__amount--owing {
+  color: var(--color-amount-negative-on-panel);
+}

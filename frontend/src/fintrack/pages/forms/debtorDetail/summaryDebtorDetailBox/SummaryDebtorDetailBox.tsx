@@ -72,7 +72,17 @@ function SummaryDebtorDetailBox({ bubleInfo }: SummaryDetailPropType) {
         <div className='summaryDebtor__title'>{title}</div>
         <div className='summaryDebtor__data'>
           <div className='summaryDebtor__data--amount'>
-            <span className='summaryDebtor__amount'>{formattedAmount}</span>
+            {/* Coloured off the same flag as the phrase and the square, so the
+                three cannot disagree. On the panel variants of the two tokens:
+                the pair calibrated for the app surface falls under the contrast
+                floor on cream. */}
+            <span
+              className={`summaryDebtor__amount summaryDebtor__amount--${
+                creditor ? 'owing' : 'owed'
+              }`}
+            >
+              {formattedAmount}
+            </span>
           </div>
 
           <div className='summaryDebtor__data--subtitle1'>{subtitle1}</div>
