@@ -24,12 +24,21 @@
   gap: 0.25rem;
 }
 
+/* One flex item now, not two. The symbol and the digits used to be separate
+   spans pushed apart by space-between; the shared formatter emits the amount as
+   one string, and an amount on a data panel aligns to the rule under it. */
 .summaryDebtor__data--amount {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   width: 85%;
   letter-spacing: 1.5px;
   border-bottom: 1px solid #141414;
+}
+
+/* index.css sets font-size on the universal selector, so this inline element
+   does not inherit the size of the line it sits in unless it restates it. */
+.summaryDebtor__amount {
+  font-size: inherit;
 }
 .summaryDebtor__data--subtitle1 {
   color: #5b5b5b;

@@ -3,10 +3,9 @@ import DebtsBigBoxResult from './components/DebtsBigBoxResult.tsx';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import { DEFAULT_CURRENCY } from '../../helpers/constants.ts';
 import { url_get_total_account_balance_by_type } from '../../../urlConfig.ts';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useFetch } from '../../hooks/useFetch.ts';
 import { DebtorRespType } from '../../types/responseApiTypes.ts';
-import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 import { Outlet } from 'react-router-dom';
 import './styles/debts-styles.css';
 
@@ -14,20 +13,24 @@ import './styles/debts-styles.css';
 const defaultCurrency = DEFAULT_CURRENCY;
 //--------------------------------------
 function DebtsLayout() {
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const debtUrl = `${url_get_total_account_balance_by_type}?type=debtor`;
 
-  const { apiData, isLoading, error } = useFetch<DebtorRespType>(debtUrl);
+  const { apiData, isLoading, error, status, refetch } =
+    useFetch<DebtorRespType>(debtUrl);
 
   //--------------------------------------
-  useEffect(() => {
-    if (error) {
-      setErrorMessage(error);
-      const timer = setTimeout(() => setErrorMessage(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
+  //--FETCH STATES
+  // The hook starts idle and raises isLoading inside its effect, so a status or
+  // an error is what says an answer has actually come back.
+  const hasAnswer = status !== null || error !== null;
+  const hasFailed = Boolean(error);
+  const isPending = !hasFailed && (isLoading || !hasAnswer);
+
+  // An owner with no debts. The endpoint answers 400 'No available accounts of
+  // type debtor', which useFetch classifies as not-found: no error and no
+  // payload. That is not the same answer as a total of zero, and the board used
+  // to print both as a confident $0.00.
+  const isEmpty = !isPending && !hasFailed && !apiData?.data;
   //-----------------------------------
   const {
     total_debt_balance,
@@ -38,16 +41,19 @@ function DebtsLayout() {
     // debtors_without_debt,
     currency,
   } = useMemo(() => {
+    // null, never 0. A field the answer did not carry is not a figure, and the
+    // box below prints a dash for it; the currency is the one exception, since
+    // it is the formatter's configuration and not a figure.
     return {
-      total_debt_balance: apiData?.data.total_debt_balance ?? 0,
+      total_debt_balance: apiData?.data.total_debt_balance ?? null,
 
-      debt_payable: apiData?.data.debt_payable ?? 0,
-      lenders: apiData?.data.lenders ?? 0,
+      debt_payable: apiData?.data.debt_payable ?? null,
+      lenders: apiData?.data.lenders ?? null,
 
-      debtors: apiData?.data.debtors ?? 0,
-      debt_receivable: apiData?.data.debt_receivable ?? 0,
+      debtors: apiData?.data.debtors ?? null,
+      debt_receivable: apiData?.data.debt_receivable ?? null,
 
-      debtors_without_debt: apiData?.data.debtors_without_debt ?? 0,
+      debtors_without_debt: apiData?.data.debtors_without_debt ?? null,
 
       currency: apiData?.data.currency_code ?? defaultCurrency,
     };
@@ -63,7 +69,14 @@ function DebtsLayout() {
 
   const bigScreenInfo = [
     {
-      title: total_debt_balance >= 0 ? "you're owed" : 'you owe',
+      // The direction is a claim about the owner's position, so it needs a
+      // figure to stand on. Without one the headline names the section instead.
+      title:
+        total_debt_balance === null
+          ? 'debts'
+          : total_debt_balance >= 0
+            ? "you're owed"
+            : 'you owe',
       amount: total_debt_balance,
     },
     {
@@ -93,39 +106,49 @@ function DebtsLayout() {
         </div>
       </div>
 
-      {isLoading && (
+      {/* Three answers, three panels, all of them the shape of the board hero
+          so the page below does not move when the answer lands. The request in
+          flight used to be a spinner floating over a board of zeros, and the
+          failure a red line that erased itself after three seconds while those
+          same zeros stayed on screen. */}
+      {isPending ? (
         <div
-          className='loader__container'
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '20%',
-            zIndex: '1',
-          }}
+          className='bigBox__container debtsBoard__skeleton'
+          aria-hidden='true'
         >
-          <CoinSpinner />
+          <div className='debtsBoard__skeletonBar debtsBoard__skeletonBar--title'></div>
+          <div className='debtsBoard__skeletonBar debtsBoard__skeletonBar--total'></div>
+          <div className='debtsBoard__skeletonBar debtsBoard__skeletonBar--wide'></div>
+          <div className='debtsBoard__skeletonBar debtsBoard__skeletonBar--wide'></div>
         </div>
+      ) : hasFailed ? (
+        <div className='bigBox__container debtsBoard__state'>
+          <p className='debtsBoard__stateText'>
+            The debts summary could not be loaded.
+          </p>
+
+          <button
+            type='button'
+            className='debtsBoard__retry'
+            onClick={refetch}
+          >
+            Try again
+          </button>
+        </div>
+      ) : isEmpty ? (
+        <div className='bigBox__container debtsBoard__state'>
+          <p className='debtsBoard__stateText'>
+            Nothing lent and nothing owed. The totals appear once there is a
+            debtor.
+          </p>
+        </div>
+      ) : (
+        <DebtsBigBoxResult
+          bigScreenInfo={bigScreenInfo}
+          currency={currency}
+        ></DebtsBigBoxResult>
       )}
 
-      <DebtsBigBoxResult
-        bigScreenInfo={bigScreenInfo}
-        currency={currency}
-      ></DebtsBigBoxResult>
-
-      {error && (
-        <p
-          style={{
-            color: 'red',
-            position: 'absolute',
-            top: '1.5%',
-            left: '10%',
-            zIndex: '150',
-          }}
-        >
-          {/* Error:  */}
-          {errorMessage}
-        </p>
-      )}
       {/* The board comes from the route table, like every other section's
           layout. Rendering it here directly left the two declared child
           routes inert, so both debts URLs painted the same screen and no

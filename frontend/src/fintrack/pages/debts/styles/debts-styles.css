@@ -240,3 +240,123 @@ a.icon {
   padding: var(--space-12) var(--space-6);
  }
 }
+
+/* The headline board's three fetch states.
+   The hero keeps its own shape in all three — same class, same cream panel —
+   so the card under it does not jump when the answer lands. It sits on a light
+   surface, so the content tokens here are the ones paired to panel, not the
+   ones the debtor list uses on the dark board. */
+
+/* Scoped to hold (0,2,0). The hero's own rule sets gap and lives in another
+   stylesheet, so at one class each the winner would depend on which layout the
+   session entered by — the same race the board-hero rule documents. */
+.debtsLayout .debtsBoard__state {
+ align-items: center;
+ justify-content: center;
+ gap: var(--space-4);
+ padding-block: var(--space-8);
+ text-align: center;
+}
+
+.debtsBoard__stateText {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-secondary);
+}
+
+/* Retry, which is what separates an error from an empty board: the reader can
+   do something about it. */
+.debtsBoard__retry {
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-6);
+ border: var(--border-width-thin) solid var(--color-border-strong);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-primary);
+ font-family: inherit;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.debtsBoard__retry:hover {
+ background-color: var(--color-surface-inverse);
+ color: var(--color-content-primary);
+}
+
+.debtsBoard__retry:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.debtsBoard__retry:active {
+ background-color: var(--color-surface-app);
+ color: var(--color-content-on-dark);
+}
+
+.debtsBoard__retry:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The loading state holds the height the four rows of figures will take.
+   aria-hidden in the markup: a screen reader gains nothing from empty bars. */
+.debtsBoard__skeleton {
+ pointer-events: none;
+}
+
+.debtsBoard__skeletonBar {
+ width: 60%;
+ height: var(--font-size-sm);
+ border-radius: var(--radius-xs);
+ background-color: var(--color-surface-disabled);
+ animation: debtsBoard__pulse var(--motion-slow) ease-in-out infinite alternate;
+}
+
+.debtsBoard__skeletonBar--title {
+ width: 45%;
+ height: var(--font-size-xl);
+}
+
+.debtsBoard__skeletonBar--total {
+ width: 100%;
+ height: var(--font-size-2xl);
+ border-radius: var(--radius-md);
+}
+
+.debtsBoard__skeletonBar--wide {
+ width: 100%;
+ height: var(--font-size-lg);
+}
+
+@keyframes debtsBoard__pulse {
+ from {
+  opacity: 0.5;
+ }
+ to {
+  opacity: 1;
+ }
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .debtsBoard__skeletonBar {
+  animation: none;
+ }
+
+ .debtsBoard__retry {
+  transition: none;
+ }
+}
+
+/* Mobile-first from 360px. The state panel takes more air once there is room
+   for it; the hero's own width does not change. */
+@media (min-width: 480px) {
+ .debtsLayout .debtsBoard__state {
+  gap: var(--space-6);
+  padding-block: var(--space-12);
+ }
+}

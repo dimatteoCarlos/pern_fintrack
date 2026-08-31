@@ -4,8 +4,15 @@ import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants';
 import { currencyFormat } from '../../../helpers/functions';
 import { CurrencyType } from '../../../types/types';
 
+// A figure the answer did not carry. Never 0: on a debts board a zero is a
+// balance and a zero count is a statement about the owner's debtors, and
+// neither of them means 'the server did not send this field'.
+const DASH = '—';
+
 type BigBoxResultPropType = {
-  bigScreenInfo: { title: string; amount: number }[];
+  // Nullable per field, as the endpoint declares them. A field the answer
+  // omitted used to be coalesced to 0 by the layout and printed as $0.00.
+  bigScreenInfo: { title: string; amount: number | null }[];
   currency: CurrencyType | undefined;
 };
 
@@ -16,6 +23,11 @@ export function DebtsBigBoxResult({
   //temporary values------------
   const defaultCurrency = currency ?? DEFAULT_CURRENCY;
   const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
+
+  const formatAmount = (amount: number | null) =>
+    amount === null
+      ? DASH
+      : currencyFormat(defaultCurrency, amount, formatNumberCountry);
 
   const totalTitle = bigScreenInfo[0].title;
   const totalAmount = bigScreenInfo[0].amount;
@@ -33,7 +45,8 @@ export function DebtsBigBoxResult({
   // does not move; the label beside this figure already carries the direction in
   // words, so printing the sign as well asks the reader to apply two conventions
   // at once. Presentation is not accounting representation.
-  const payableAmount = Math.abs(bigScreenInfo[3].amount);
+  const payableAmount =
+    bigScreenInfo[3].amount === null ? null : Math.abs(bigScreenInfo[3].amount);
 
   const lenders = bigScreenInfo[4].title;
   const creditorCount = bigScreenInfo[4].amount;
@@ -45,7 +58,7 @@ export function DebtsBigBoxResult({
       <div className='displayScreen dark flex-row-sb'>
         <div className='displayScreen--concept light'>{'total'}</div>
         <div className='displayScreen--result light'>
-          {currencyFormat(defaultCurrency, totalAmount, formatNumberCountry)}
+          {formatAmount(totalAmount)}
         </div>
       </div>
 
@@ -54,15 +67,13 @@ export function DebtsBigBoxResult({
         <div className='debtInfo '>
           <div className='displayScreen--concept light'>{receivable}:</div>
           <div className='displayScreen--result light'>
-            {currencyFormat(
-              defaultCurrency,
-              receivableAmount,
-              formatNumberCountry,
-            )}
+            {formatAmount(receivableAmount)}
           </div>
 
           <div className='displayScreen--concept light'>{debtors}:</div>
-          <div className='displayScreen--result light'>{debtorCount}</div>
+          <div className='displayScreen--result light'>
+            {debtorCount ?? DASH}
+          </div>
         </div>
         {}
 
@@ -70,15 +81,13 @@ export function DebtsBigBoxResult({
           <div className='displayScreen--concept light'>{payable}:</div>
 
           <div className='displayScreen--result light'>
-            {currencyFormat(
-              defaultCurrency,
-              payableAmount,
-              formatNumberCountry,
-            )}
+            {formatAmount(payableAmount)}
           </div>
 
           <div className='displayScreen--concept light'>{lenders}:</div>
-          <div className='displayScreen--result light'>{creditorCount}</div>
+          <div className='displayScreen--result light'>
+            {creditorCount ?? DASH}
+          </div>
         </div>
       </div>
     </div>
