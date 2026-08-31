@@ -11,6 +11,20 @@
    set. The panel inside it is cream and paints its own, which is why the two
    sets appear in one file. */
 
+/* The content column, so this screen begins at the same x as the other detail
+   screens instead of running its text to the viewport edge. The cream panel
+   carried a width of its own and everything under it did not, which is why the
+   panel looked inset and the readings, the note and the two lists did not.
+
+   Same geometry the budget detail already borrows, and taken the same way: a
+   modifier on the shared .page__container rather than an edit to forms-styles,
+   which every form in the module imports. A selector added there for one
+   screen is a selector every other screen has to survive. */
+.page__container--pocket {
+ width: var(--layout-content-width);
+ padding: 0 var(--space-3);
+}
+
 /* ── The three fetch states ────────────────────────────────────────────────── */
 
 .pocketDetail__state {
@@ -91,6 +105,15 @@
 
 .pocketDetail__section {
  margin-top: var(--space-6);
+}
+
+/* Clearance under the last section. Every section declared the space ABOVE it
+   and none declared any below, so whichever one ended the page sat against the
+   screen edge — and it is the allocation history that ends it, a list whose
+   last row is a figure. A row of amounts touching the bottom of the viewport
+   reads as a list that was cut off rather than one that finished. */
+.pocketDetail__section:last-child {
+ padding-bottom: var(--space-6);
 }
 
 /* A rule under the heading, so the section reads as a band with a top edge

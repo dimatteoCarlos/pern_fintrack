@@ -310,7 +310,7 @@ function PocketDetail() {
 
  //--------------------------------------------
  return (
-  <section className='page__container'>
+  <section className='page__container page__container--pocket'>
    <TopWhiteSpace variant={'dark'} />
    {header}
 
@@ -577,6 +577,12 @@ function PocketDetail() {
     <PocketCashModal
      pocketId={pocket.pocketId}
      pocketName={pocket.name}
+     plan={{
+      target: pocket.target,
+      desiredDate: pocket.desiredDate,
+      allocated: pocket.allocated,
+      remaining: pocket.remaining,
+     }}
      currency={currency}
      direction={cashDirection}
      sources={sources}
