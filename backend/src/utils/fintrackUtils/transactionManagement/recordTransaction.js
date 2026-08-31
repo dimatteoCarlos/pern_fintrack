@@ -65,7 +65,20 @@ export async function recordTransaction(clientOrPool = null, option) {
       transaction_type_id,
       destination_account_id,
       transaction_actual_date,
-      account_balance,
+      // The row's running balance stops being persisted here. Every reader of
+      // account_balance_after_tr now takes the figure derived from the ledger
+      // and only inherits the key, so a value written into the column is read
+      // by nobody and can only go stale — and a stale figure is worse than an
+      // absent one, because it looks like an answer. Zero is written rather
+      // than null: the column is NOT NULL DEFAULT 0.00 already, so this needs
+      // no migration, and 0.00 cannot be mistaken for a balance the way a
+      // plausible-looking wrong number can.
+      //
+      // The account_balance argument this function still receives is left in
+      // place on purpose. user_accounts.account_balance is still persisted and
+      // the callers still compute it; retiring that column is a later step and
+      // is not in this plan.
+      0.0,
       // FX fields with defaults
       original_amount ?? amount, //DEFAULT_ORIGINAL_AMOUNT,
       original_currency_id ?? currency_id, // accountingCurrencyId,

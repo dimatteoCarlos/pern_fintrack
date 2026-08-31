@@ -104,7 +104,12 @@ export const recordAnnulmentTransaction = async (client, annulmentData) => {
     transaction_type_id: affectedTransactionTypeId,
     destination_account_id: destinationAccountId,
     transaction_actual_date: transactionDate,
-    account_balance: newAffectedBalance, //New balance after correction
+    // Stops being persisted. Every reader of account_balance_after_tr derives
+    // the figure from the ledger and only inherits the key, so anything written
+    // here is read by nobody and can only go stale. The key stays because the
+    // insert below passes Object.values, so its position is the twelfth bind.
+    // newAffectedBalance is still computed and still updates user_accounts.
+    account_balance: 0.0,
   };
 
   // Transaction 2: Entry for the SLACK ACCOUNT (S)
@@ -127,7 +132,8 @@ export const recordAnnulmentTransaction = async (client, annulmentData) => {
     transaction_type_id: slackTransactionTypeId,
     destination_account_id: destinationAccountId,
     transaction_actual_date: transactionDate,
-    account_balance: newSlackBalance,
+    // Same as the affected account's entry above, and for the same reason.
+    account_balance: 0.0,
   };
 
   const insertQuery = `
