@@ -42,6 +42,10 @@ import {
   checkDesiredDate,
   defaultDesiredDate,
 } from '../../utils/fintrackUtils/date-utils/pocketDeadline.js';
+import {
+  rateDayForOpening,
+  resolveOpeningDay,
+} from '../../utils/fintrackUtils/date-utils/resolveOpeningDay.js';
 
 //--------------------------------
 //endpoint: post: /api/fintrack/account/new_account/account_type_name?user=UUID
@@ -102,6 +106,13 @@ export const createBasicAccount = async (req, res, next) => {
         : !transactionActualDate || transactionActualDate == ''
           ? new Date()
           : transactionActualDate;
+
+    // The opening must belong to the month in course, the same window a
+    // movement is held to. Validated against the value the row will actually
+    // carry, not against req.body.date, so the two cannot disagree.
+    const openingTimeZone = await getUserTimeZone(client, userId);
+    const openingDay = resolveOpeningDay(account_start_date, openingTimeZone);
+    const openingRateDay = rateDayForOpening(openingDay, openingTimeZone);
 
     if (amount < 0) {
       const message = 'Amount must be >= 0. Tray again!';
@@ -186,10 +197,14 @@ export const createBasicAccount = async (req, res, next) => {
     let exchangeRateTimestamp = new Date();
 
     if (currency_code !== ACCOUNTING_CURRENCY_CODE) {
+      // Valued on the day the account was opened, not the day the form was
+      // submitted. A day this month that no source can price is refused with a
+      // 422 by the resolver, never valued at today's rate.
       const conversion = await currencyAmountConversion(
         newaccount_starting_amount,
         currency_code,
         ACCOUNTING_CURRENCY_CODE,
+        openingRateDay,
       );
 
       convertedAmount = conversion.amount.toNumber();
@@ -558,6 +573,11 @@ export const createDebtorAccount = async (req, res, next) => {
         ? new Date()
         : transactionActualDate;
 
+    // Same window as every other operative date: the month in course.
+    const openingTimeZone = await getUserTimeZone(client, userId);
+    const openingDay = resolveOpeningDay(account_start_date, openingTimeZone);
+    const openingRateDay = rateDayForOpening(openingDay, openingTimeZone);
+
     //---------------------------------------
     //get all account types and then get the account type id for the account name requested. although id debtor is 3 and id bank is 1.
     const accountTypeQuery = `SELECT * FROM account_types`;
@@ -659,6 +679,7 @@ export const createDebtorAccount = async (req, res, next) => {
         value,
         currencyCode,
         ACCOUNTING_CURRENCY_CODE,
+        openingRateDay,
       );
       convertedValue = conversion.amount.toNumber();
       exchangeRate = conversion.rate;

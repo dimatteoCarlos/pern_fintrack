@@ -20,6 +20,10 @@ import { getCurrencyId } from '../../utils/currencyLookup.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
 import { budgetAllocationService } from '../services/budget_services/services/budgetAllocationService.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import {
+  rateDayForOpening,
+  resolveOpeningDay,
+} from '../../utils/fintrackUtils/date-utils/resolveOpeningDay.js';
 
 //-----------------
 //endpoint: POST: http://localhost:5000/api/fintrack/account/new_account/category_budget?user=6e0ba475-bf23-4e1b-a125-3a8f0b3d352c
@@ -50,6 +54,12 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       !transactionActualDate || transactionActualDate == ''
         ? new Date()
         : transactionActualDate;
+
+    // Same window as every other operative date: the month in course. Read once
+    // here because the allocation below needs the same zone.
+    const openingTimeZone = await getUserTimeZone(client, userId);
+    const openingDay = resolveOpeningDay(account_start_date, openingTimeZone);
+    const openingRateDay = rateDayForOpening(openingDay, openingTimeZone);
     //category_budget account
     //data from budget new category form
     const {
@@ -79,9 +89,9 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     // Number.isFinite() rather than !isNaN(): the global isNaN coerces first, so
     // isNaN('') is false, and it also rejects the Infinity that Number('1e999') gives.
     //
-    // Validated here rather than in the service because this controller's catch
-    // runs handlePostgresError, which ignores error.status and would turn a 400
-    // into a 500.
+    // Validated here rather than in the service because the service does not
+    // see the request. handlePostgresError does forward error.status, so a
+    // domain error thrown below reaches the client with the code it declared.
     const category_nature_budget = Number(budget);
 
     if (!Number.isFinite(category_nature_budget) || category_nature_budget <= 0) {
@@ -229,10 +239,14 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     let exchangeRateTimestamp = new Date();
 
     if (currency_code !== ACCOUNTING_CURRENCY_CODE) {
+      // Valued on the day the account was opened, not the day the form was
+      // submitted. A day this month that no source can price is refused with a
+      // 422 by the resolver, never valued at today's rate.
       const budgetConversion = await currencyAmountConversion(
         category_nature_budget,
         currency_code,
         ACCOUNTING_CURRENCY_CODE,
+        openingRateDay,
       );
 
       convertedBudget = budgetConversion.amount.toNumber();
@@ -248,6 +262,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
           account_starting_amount,
           currency_code,
           ACCOUNTING_CURRENCY_CODE,
+          openingRateDay,
         );
 
         convertedStartingAmount = startingConversion.amount.toNumber();
@@ -340,7 +355,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       account_id,
       convertedBudget,
       account_start_date ?? transaction_actual_date,
-      await getUserTimeZone(client, userId),
+      openingTimeZone,
       // The accounting currency, matching what category_budget_accounts stores
       // in currency_id — not currencyIdReq, which is the origin this row does
       // not carry. Required by migration 017.
