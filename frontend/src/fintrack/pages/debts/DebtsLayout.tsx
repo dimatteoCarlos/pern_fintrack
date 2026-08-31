@@ -67,23 +67,20 @@ function DebtsLayout() {
     apiData?.data.currency_code,
   ]);
 
-  // Rewritten 2026-08-31 against Carlos's decision: a net does not tell 'owed
-  // 550' from 'owed 1,750 and owing 2,300' apart, and those are opposite
-  // situations behind the same −550. The two directions are the primary
-  // figures now; the net is a derived third line, subordinate to both.
-  //
-  // Direction lives in these two titles unconditionally, not behind a
-  // sign-of-the-net ternary: receivable is always what is owed TO the owner,
-  // payable is always what the owner owes, regardless of which side the net
-  // falls on. The net's own title needs no direction claim once the two
-  // figures above it already state theirs.
   const bigScreenInfo = [
     {
-      title: 'net',
+      // The direction is a claim about the owner's position, so it needs a
+      // figure to stand on. Without one the headline names the section instead.
+      title:
+        total_debt_balance === null
+          ? 'debts'
+          : total_debt_balance >= 0
+            ? "you're owed"
+            : 'you owe',
       amount: total_debt_balance,
     },
     {
-      title: "you're owed",
+      title: 'receivable',
       amount: debt_receivable,
     },
     {
@@ -91,7 +88,7 @@ function DebtsLayout() {
       amount: debtors,
     },
     {
-      title: 'you owe',
+      title: 'payable',
       amount: debt_payable,
     },
 
