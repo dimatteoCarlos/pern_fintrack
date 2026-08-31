@@ -243,12 +243,14 @@ function PnL(): JSX.Element {
   //OBTAIN THE REQUESTFN FROM userFetchLoad
   // Payload type for server submission
   //extend the type of input data with user id
-  type PayloadType = BasicTrackerMovementValidatedDataType & {
+  // The form's own `date` is deliberately omitted: it is a Date the calendar
+  // binds to, and the only date the server reads is the calendar label below.
+  // Sending both put two answers to one question on the wire, and the one the
+  // controller received it never used.
+  type PayloadType = Omit<BasicTrackerMovementValidatedDataType, 'date'> & {
     user?: string;
-    date: Date;
     // The day the entry happened, as the calendar label the server validates.
-    // `date` above is the form's own state and the controller only logs it; this
-    // is the key that reaches transaction_actual_date.
+    // This is the key that reaches transaction_actual_date.
     transactionActualDate: string;
     account_id?: string;
   };
@@ -406,12 +408,15 @@ function PnL(): JSX.Element {
       // Prepare payload with validated data
       const accountId = accountIdMap[formValidatedData.account];
 
+      // Split out rather than spread: the Date stays on the form, the calendar
+      // day goes on the wire.
+      const { date: chosenDate, ...validatedPayload } = validatedData!;
+
       const payload: PayloadType = {
-        ...validatedData!,
+        ...validatedPayload,
         // ...formValidatedData!,//Aunque suelen ser lo mismo, si hay un pequeño retraso en la actualización del estado de React, podrías estar enviando el valor anterior
         account_id: accountId,
-        date: validatedData?.date || new Date(),
-        transactionActualDate: toCalendarDay(validatedData?.date || new Date()),
+        transactionActualDate: toCalendarDay(chosenDate || new Date()),
         // currency: formValidatedData?.currency || defaultCurrency,
       };
       // console.log("🚀 ~ onSaveHandler ~ payload:", payload)

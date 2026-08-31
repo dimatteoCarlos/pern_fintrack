@@ -274,7 +274,9 @@ export type DebtsTrackerInputDataType = {
   type: MovementTransactionType;
   account: string;
   accountType: string | undefined;
-  date: Date;
+  // No `date` here. The screen sends transactionActualDate, a calendar day, and
+  // a Date beside it was a second answer to the same question that the server
+  // received and never read.
   note: string;
 };
 

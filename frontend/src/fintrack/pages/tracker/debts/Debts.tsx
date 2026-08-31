@@ -81,7 +81,6 @@ const initialTrackerData: DebtsTrackerInputDataType = {
   debtor: '',
   currency: defaultCurrency,
   type: 'lend', //default
-  date: new Date(), //default
   note: '',
   account: '',
   accountType: 'bank', //default
@@ -520,7 +519,6 @@ function Debts(): JSX.Element {
       setCurrency(defaultCurrency);
       setDataTrack({
         ...initialTrackerData,
-        date: new Date(),
         currency: defaultCurrency,
       });
       setType('lend');

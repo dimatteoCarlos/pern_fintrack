@@ -279,7 +279,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
       currency: currencyCode,
       type: transactionTypeName, //for pnl or for debt in new version
       accountType,
-      date,
+      // No `date` here any more. Two screens used to send one beside
+      // transactionActualDate and this controller only printed it: two answers
+      // to one question on the wire, one of which decided nothing.
     } = req.body; //common fields to all tracker movements.
     //-----------------
     // console.log('body', req.body);
@@ -288,7 +290,6 @@ export const transferBetweenAccounts = async (req, res, next) => {
       'type',
       transactionTypeName,
       accountType,
-      date,
     );
     //------------------------------------
     //Store original amount and currency (as sent by frontend)
