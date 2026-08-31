@@ -107,3 +107,6 @@ scripts/
 # =============================
 #plan docs
 plan-docs/
+# Crash dumps left behind when the Git Bash shell faults. Junk, and a hazard
+# in a tree several sessions commit from: one careless "git add ." sweeps it in.
+*.stackdump
