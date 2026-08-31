@@ -34,6 +34,7 @@ import PocketCashModal, {
  PocketCashDirection,
 } from './pocketCashModal/PocketCashModal.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
+import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import {
  PocketStatusLevel,
@@ -133,6 +134,38 @@ function PocketDetail() {
  // belonged. So the absence is answered here, before the formatter sees it.
  const amountOrDash = (value: number | null) =>
   value === null ? DASH : amount(value);
+
+ // The audit trail behind a converted entry: the rate that produced the stored
+ // figure, which source answered, and when that rate was read. It is metadata
+ // and never a second unit to do arithmetic in, so it lives in a tooltip rather
+ // than in the row.
+ //
+ // The rate keeps every decimal its column holds. Rounding it here would print
+ // a number that cannot be re-applied to the original amount to reproduce the
+ // stored one, which is the only thing this line is for.
+ // The multiplier is read off the row's own two figures rather than printed
+ // from the stored rate field, so the line cannot claim a direction that field
+ // does not hold. The stored rate comes with it, undirected and with every
+ // decimal its column keeps, because re-applying it to the original amount is
+ // the only way to check the figure above.
+ const originTip = (entry: PocketAllocationEntry) => {
+  const typed = Math.abs(entry.originalAmount);
+
+  return [
+   typed > 0
+    ? `1 ${entry.originalCurrency.toUpperCase()} = ${
+       Math.abs(entry.amount) / typed
+      } ${currency.toUpperCase()}`
+    : '',
+   `stored rate: ${entry.exchangeRate}`,
+   entry.exchangeRateSource ? `source: ${entry.exchangeRateSource}` : '',
+   entry.exchangeRateTimestamp
+    ? `read: ${new Date(entry.exchangeRateTimestamp).toLocaleString()}`
+    : '',
+  ]
+   .filter(Boolean)
+   .join('\n');
+ };
 
  //--------------------------------------------
  const header = (
@@ -325,9 +358,15 @@ function PocketDetail() {
        after the first commitment teaches the pair by surprise. Disabled it
        keeps the row's shape between an empty pocket and a funded one. */}
    <div className='pocketDetail__actions'>
+    {/* Only one of the pair carries the cream fill at a time: it marks which
+        operation is in hand, so two filled buttons would state that both are.
+        Committing holds it at rest, because it is what the screen is for, and
+        hands it over while the release panel is open. */}
     <button
      type='button'
-     className='pocketDetail__action pocketDetail__action--primary'
+     className={`pocketDetail__action${
+      cashDirection === 'release' ? '' : ' pocketDetail__action--primary'
+     }`}
      onClick={() => setCashDirection('allocate')}
     >
      Commit cash
@@ -335,7 +374,9 @@ function PocketDetail() {
 
     <button
      type='button'
-     className='pocketDetail__action'
+     className={`pocketDetail__action${
+      cashDirection === 'release' ? ' pocketDetail__action--primary' : ''
+     }`}
      onClick={() => setCashDirection('release')}
      disabled={sources.length === 0}
     >
@@ -465,7 +506,7 @@ function PocketDetail() {
           {/* The word beside the sign, never the colour alone: colour
               survives neither colour blindness nor print. */}
           <span className='pocketDetail__rowTitle'>
-           {entry.amount < 0 ? 'Released' : 'Allocated'}
+           {entry.amount < 0 ? 'Released' : 'Committed'}
           </span>
 
           <span className='pocketDetail__rowSubtitle'>
@@ -485,6 +526,30 @@ function PocketDetail() {
           >
            {amount(entry.amount)}
           </span>
+
+          {/* What the owner actually typed, when it was not this pocket's own
+              unit. The stored figure above is the one the pocket counts in and
+              the only one any arithmetic uses; this one is the decision as it
+              was made, and without it the row cannot be checked against the
+              bank statement it came from.
+
+              Withheld when the two units agree: repeating the same figure in
+              the same currency would read as a second amount. */}
+          {entry.originalCurrency !== currency && (
+           <RateTooltip
+            tipText={originTip(entry)}
+            surface='dark'
+            placement='anchor-left'
+           >
+            <span className='pocketDetail__rowOrigin'>
+             {numberFormatCurrency(
+              Math.abs(entry.originalAmount),
+              2,
+              entry.originalCurrency,
+             )}
+            </span>
+           </RateTooltip>
+          )}
           </div>
          </button>
         </li>

@@ -408,6 +408,12 @@
  border-left-color: var(--color-status-ok);
 }
 
+/* The board paints this level with the same token on its cards and its marks,
+   so one pocket cannot read one way there and another way here. */
+.pocketDetail__reading--info {
+ border-left-color: var(--color-status-info);
+}
+
 .pocketDetail__reading--neutral {
  border-left-color: var(--color-content-on-dark-subtle);
 }
@@ -429,9 +435,19 @@
   color var(--motion-fast);
 }
 
+/* Attenuated, and deliberately NOT the cream the filled sibling carries: the
+   cream fill states which of the two operations is in hand, so a hover that
+   painted it would put both buttons in that state at once. Neither is it the
+   pure white it was, which made the hovered outline button the brightest object
+   on the screen.
+
+   Open token question, the same one the actions trigger raised:
+   --color-border-subtle IS the accent cream at 0.26 alpha, which is the value
+   wanted, but its name says border and the system declares no
+   attenuated-surface token. Borrowed, not invented. */
 .pocketDetail__action:hover {
- background-color: var(--color-surface-inverse);
- color: var(--color-content-primary);
+ background-color: var(--color-border-subtle);
+ color: var(--color-content-on-dark);
 }
 
 .pocketDetail__action:focus-visible {
@@ -447,6 +463,16 @@
 .pocketDetail__action:disabled {
  opacity: 0.5;
  pointer-events: none;
+}
+
+/* The overflow control mirrors the back link on the other side of the title.
+   The link is pinned absolute-left by .iconLeftArrow; without the same pin on
+   this side the trigger sits wherever the centred title's auto margins leave
+   it, which is why the two never lined up. Scoped to this header because the
+   pocket detail is the only screen that mounts the trigger inside it. */
+.main__title--container .accountActionsTrigger {
+ position: absolute;
+ right: 0;
 }
 
 .pocketDetail__action--primary {
@@ -558,4 +584,20 @@
  /* The owner's own words, kept as they typed them. */
  white-space: pre-wrap;
  overflow-wrap: anywhere;
+}
+
+/* The figure as the owner typed it, under the one the pocket counts in. Smaller
+   and muted on purpose: it is the decision as it was made, not a second amount
+   to add up, and a row that prints two figures at the same weight invites
+   exactly that arithmetic.
+
+   It carries the rate, its source and when it was read in a tooltip, so the
+   audit trail is one hover away without a fourth line in every row. */
+.pocketDetail__rowOrigin {
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-on-dark-subtle);
+ font-variant-numeric: tabular-nums;
+ white-space: nowrap;
+ cursor: help;
 }
