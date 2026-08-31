@@ -302,11 +302,30 @@ function PocketDetail() {
       requiredRate: pocket.funded ? DASH : `${amount(requiredMonthly)} / month`,
      };
 
+ // How far the deadline is, and nothing else, because nothing else here was
+ // new. The sentence used to rebuild the whole plan: it restated the desired
+ // date, which the panel above already prints beside the target, and the
+ // monthly rate, which the pace card below prints twice - once as a sentence
+ // and once as a labelled figure. On one screen the date appeared twice and
+ // the rate three times.
+ //
+ // A fact belongs at the level where it carries the most, and it belongs there
+ // once. The distance to the deadline has no other home, so this reading keeps
+ // it and gives everything else back.
+ //
+ // The sign is spent on the word rather than on the number: late is "12 days
+ // late", never "-12 days left". Same rule the module applies to every figure
+ // whose direction is already stated in words beside it.
+ const dayCount = Math.abs(pocket.daysRemaining);
+ const dayWord = dayCount === 1 ? 'day' : 'days';
+
  const dateText = pocket.funded
-  ? `Goal covered. Desired date ${formatCalendarDate(pocket.desiredDate)}.`
-  : pocket.requiredMonthly === null
-    ? `The desired date passed on ${formatCalendarDate(pocket.desiredDate)}. ${amount(pocket.remaining)} still to allocate.`
-    : `Desired date ${formatCalendarDate(pocket.desiredDate)}, ${pocket.daysRemaining} ${pocket.daysRemaining === 1 ? 'day' : 'days'} away. ${amount(pocket.requiredMonthly)} per month to stay on pace.`;
+  ? 'Target reached'
+  : pocket.daysRemaining < 0
+    ? `${dayCount} ${dayWord} late`
+    : pocket.daysRemaining === 0
+      ? 'Due today'
+      : `${dayCount} ${dayWord} away`;
 
  //--------------------------------------------
  return (
