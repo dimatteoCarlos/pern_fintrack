@@ -91,6 +91,11 @@ export type BudgetAccountStatus = {
  // Per account and not per category, because it varies within one — which is
  // what makes it worth showing beside a subcategory.
  nature: BudgetNature | null;
+ // The day the account was registered, as the server stores it. Not a figure
+ // and never rendered: a tracker form reads it to stop offering a category on
+ // a day that category did not exist yet. Nullable, and a null is treated as
+ // open — the server refuses the movement independently.
+ accountStartDate: string | null;
  currency: CurrencyType;
  budgetAmount: number;
  // Renders the "this month only" line when it differs from budgetAmount. The

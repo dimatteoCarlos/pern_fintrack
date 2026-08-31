@@ -276,7 +276,14 @@ function Expense(): JSX.Element {
       return CATEGORY_OPTIONS_DEFAULT;
     }
 
-    return budgetAccounts.map((account) => {
+    // Filtered by the chosen day before it is mapped, the same rule the bank
+    // list above already applies: a category that did not exist yet is not a
+    // disabled option, it is not an option. Until the status payload carried an
+    // opening date this list could not be filtered at all, so moving the date
+    // back left categories on screen that the server would refuse.
+    return budgetAccounts
+      .filter((account) => isOpenOnChosenDay(account.accountStartDate))
+      .map((account) => {
       const hasFigures =
         !isLoadingCategoryBudgetAccounts &&
         Number.isFinite(account.actualSpent) &&
@@ -312,7 +319,24 @@ function Expense(): JSX.Element {
     budgetAccounts,
     fetchedErrorCategoryBudgetAccounts,
     isLoadingCategoryBudgetAccounts,
+    isOpenOnChosenDay,
   ]);
+  // Same reason as the account effect above: a category already chosen may stop
+  // qualifying when the date moves back, and a form that keeps it posts a name
+  // the list no longer offers.
+  useEffect(() => {
+    if (!expenseData.category) return;
+
+    const stillOffered = optionsExpenseCategories.some(
+      (option) => option.value === expenseData.category,
+    );
+
+    if (stillOffered) return;
+
+    setExpenseData((prev) => ({ ...prev, category: '' }));
+    setIsResetDropdown(true);
+  }, [optionsExpenseCategories, expenseData.category]);
+
   //--------------------------
   const categoryOptions = {
     title: optionsExpenseCategories ? 'Category / Subategory' : '',

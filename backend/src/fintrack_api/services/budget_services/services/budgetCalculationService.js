@@ -49,6 +49,7 @@ const buildAccountStatus = (entry) => {
   categoryName: entry.categoryName,
   subcategory: entry.subcategory,
   nature: entry.nature,
+  accountStartDate: entry.accountStartDate,
   currency: getCurrencyCodeSync(entry.currencyId),
   budgetAmount,
   nextMonthBudget: money(entry.nextMonthBudget),

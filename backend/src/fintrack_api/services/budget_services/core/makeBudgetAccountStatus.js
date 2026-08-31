@@ -25,6 +25,7 @@ export function makeBudgetAccountStatus({
  categoryName = null,
  subcategory = null,
  nature = null,
+ accountStartDate = null,
  currency,
  budgetAmount,
  nextMonthBudget,
@@ -56,6 +57,14 @@ export function makeBudgetAccountStatus({
   // account and not per category because it varies WITHIN one — which is the
   // only reason it is worth showing next to a subcategory.
   nature,
+  // The day the account was registered. Not a budget figure and never summed:
+  // it is here so a form can stop offering a category on a day that category
+  // did not exist yet, which is the one thing this payload could not answer.
+  // Null when the row does not carry it, and a null is admitted rather than
+  // hidden — the server refuses the movement independently, and hiding on
+  // missing data would empty a list on a contract change instead of failing
+  // where it can be seen.
+  accountStartDate,
   currency,
   budgetAmount: toAmount(budgetAmount),
   // What next month is already set to. The card shows its exception line by

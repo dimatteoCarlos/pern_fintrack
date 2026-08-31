@@ -122,7 +122,13 @@ const ACCOUNTS_QUERY = `
     cba.category_name,
     cba.subcategory,
     cnt.category_nature_type_name AS nature,
-    COALESCE(cba.currency_id, ua.currency_id) AS currency_id
+    COALESCE(cba.currency_id, ua.currency_id) AS currency_id,
+    -- The day the account was registered. Shipped raw, exactly as the nine
+    -- account list queries in getAccountController already ship it, so the one
+    -- client-side predicate that reads it treats both payloads identically.
+    -- A tracker form uses it to stop offering a category on a day that category
+    -- did not exist yet; the server refuses such a movement either way.
+    ua.account_start_date
   FROM user_accounts ua
   JOIN category_budget_accounts cba ON cba.account_id = ua.account_id
   LEFT JOIN category_nature_types cnt
@@ -261,6 +267,7 @@ export async function getMonthlyStatusForAccounts(pool, accountIds, timeZone = '
    // a figure, so there is nothing to default it to.
    nature: row.nature ?? null,
    currencyId: row.currency_id,
+   accountStartDate: row.account_start_date ?? null,
    // No decision in force resolves to 0, which is the effective budget the
    // domain defines for that case and not a null anything has to branch on.
    budgetAmount: currentByAccount.get(row.account_id) ?? 0,
