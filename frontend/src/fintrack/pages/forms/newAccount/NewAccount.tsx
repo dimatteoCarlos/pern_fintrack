@@ -81,6 +81,15 @@ export type TypeOptionsType = {
   variant: VariantType;
 };
 
+// The latest opening day the calendar offers. An account cannot have been
+// opened after today, and one dated forward is filtered out of every tracker
+// selector by isAccountOpenOn with nothing on screen saying why.
+const latestOpeningDay = (): Date => {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  return today;
+};
+
 const formDataNumber = { keyName: 'amount', title: 'value' };
 const initialFormData: FormNumberInputType = {
   [formDataNumber.keyName]: '',
@@ -432,6 +441,7 @@ function NewAccount() {
                     changeDate={changeStartingPoint}
                     date={accountData.date}
                     variant={'form'}
+                    maxDate={latestOpeningDay()}
                     // disabled={isFormDisabled}
                   ></FormDatepicker>
                 </div>
