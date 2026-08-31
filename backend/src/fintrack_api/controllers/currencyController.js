@@ -15,6 +15,9 @@ import {
   fxState,
 } from '../services/fx_services/core/fxService.js';
 
+import { createError } from '../../utils/errorHandling.js';
+import { isCalendarDate } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
+
 // ===============================
 // 🎯 FUNCTION: Convert a specific amount (POST)
 // ===============================
@@ -24,6 +27,7 @@ export async function currencyConvert(req, res, next) {
       amount,
       fromCurrency,
       toCurrency = ACCOUNTING_CURRENCY_CODE,
+      day,
     } = req.body;
 
     // 1. Validate amount
@@ -41,14 +45,35 @@ export async function currencyConvert(req, res, next) {
       return res.status(400).json({ error: 'Invalid currency code' });
     }
 
-    // 3. Perform conversion
+    // 3. The day the caller wants the conversion for.
+    //
+    // This does not turn the endpoint into a historical-rate endpoint: it lets
+    // a consumer say which day it is asking about, and today stays the default.
+    // Omitted means now, which is what every existing caller sends.
+    //
+    // The current-month rule is deliberately NOT applied here. That rule governs
+    // whether an operation may be recorded on a date; this only answers which
+    // rate corresponds to a date being asked about, and writes nothing.
+    const requestedDay = typeof day === 'string' ? day.trim() : '';
+
+    if (requestedDay !== '' && !isCalendarDate(requestedDay)) {
+      throw createError(400, `day must be a calendar day, YYYY-MM-DD`, {
+        errorCode: 'INVALID_FX_DATE',
+        details: { expectedFormat: 'YYYY-MM-DD' },
+      });
+    }
+
+    const asOfDay = requestedDay !== '' ? requestedDay : null;
+
+    // 4. Perform conversion
     const conversion = await currencyAmountConversion(
       numericAmount,
       fromCurrency,
       toCurrency,
+      asOfDay,
     );
 
-    // 4. Return result
+    // 5. Return result
     res.json({
       convertedAmount: conversion.amount.toNumber(), //where amount is a Decimal object from Decimal.js lib.
       rate: conversion.rate,
@@ -56,8 +81,12 @@ export async function currencyConvert(req, res, next) {
       fetchedAt: conversion.fetchedAt,
     });
   } catch (error) {
+    // Forwarded rather than turned into a 500. A dated conversion reaches the
+    // historical resolver, whose refusals already declare their own status and
+    // stable code; rebuilding them here would demote a 422 to a 500 and drop
+    // the code the client is meant to branch on.
     console.error('Currency conversion error:', error);
-    res.status(500).json({ error: error.message || 'Internal server error' });
+    return next(error);
   }
 }
 
