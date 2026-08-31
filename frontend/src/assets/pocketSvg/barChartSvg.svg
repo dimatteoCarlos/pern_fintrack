@@ -1,0 +1,13 @@
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <!-- Outlined rather than filled, at the pen the rest of the set uses: three
+       solid bars beside a hairline piggy read as three black slabs.
+       The bars ran 4 to 20 across and stood on y 21, while the wallet and the
+       bullseye both draw 3 to 21, so this one read narrower and a unit low
+       beside them. Same three bars and the same rhythm, in the family's box. -->
+  <!-- Short bar -->
+  <rect x="3" y="12" width="5" height="8" rx="1.5" stroke="currentColor" stroke-width="0.375" stroke-linejoin="round"/>
+  <!-- Medium bar -->
+  <rect x="9.5" y="8" width="5" height="12" rx="1.5" stroke="currentColor" stroke-width="0.375" stroke-linejoin="round"/>
+  <!-- Tall bar -->
+  <rect x="16" y="3" width="5" height="17" rx="1.5" stroke="currentColor" stroke-width="0.375" stroke-linejoin="round"/>
+</svg>
