@@ -427,15 +427,10 @@ function PocketCashModal({
       ref={amountRef}
      />
 
-     {/* The light-surface variant, because this modal's panel is cream. It
-         asked for the dark-surface one, whose ink is cream by design, so the
-         control painted cream on cream: present, sized, and impossible to see
-         or to find. */}
      <CurrencyBadge
-      variant={'light'}
+      variant={'form'}
       updateOutsideCurrencyData={setTypedCurrency}
       currency={typedCurrency}
-      disabled={isSubmitting}
      />
     </div>
 
