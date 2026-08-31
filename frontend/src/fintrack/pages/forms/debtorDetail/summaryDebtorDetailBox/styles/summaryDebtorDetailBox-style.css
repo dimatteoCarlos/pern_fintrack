@@ -58,5 +58,8 @@
 .summaryDebtor__data--subtitle2 {
   color: var(--color-content-secondary);
   font-size: 0.75rem;
-  text-transform: capitalize;
+  /* Not capitalize any more: the line is a sentence now, not the single role
+     word it used to hold, and capitalize would title-case every word of it. */
+  text-transform: none;
+  text-align: right;
 }

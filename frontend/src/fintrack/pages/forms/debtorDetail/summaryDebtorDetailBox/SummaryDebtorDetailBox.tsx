@@ -29,6 +29,17 @@ function SummaryDebtorDetailBox({ bubleInfo }: SummaryDetailPropType) {
   const { creditor, total_debt_balance: amount, currency_code } = bubleInfo;
   const type = creditor ? 'Lender' : 'Debtor';
 
+  // The direction of the position, said from the owner's side, BESIDE the
+  // counterparty's role and not instead of it. The role names who the other
+  // party is; the direction names which way the money runs. The card used to
+  // carry only the role and left the owner to work the direction out.
+  //
+  // The two halves move together off the same flag, so the phrase cannot say
+  // one thing while the square says the other.
+  const directionPhrase = creditor
+    ? `You owe to ${type}`
+    : `You're owed by ${type}`;
+
   const currency = currency_code ?? defaultCurrency;
   const formatNumberCountry = CURRENCY_OPTIONS[currency];
 
@@ -62,9 +73,12 @@ function SummaryDebtorDetailBox({ bubleInfo }: SummaryDetailPropType) {
           <div className='summaryDebtor__data--subtitle1'>{subtitle1}</div>
 
           <div className='summaryDebtor__data--status '>
-            {/* status: */}
+            {/* Red when the owner is the one who owes, plain when the money is
+                owed to them. Same flag the phrase reads. */}
             <StatusSquare alert={type == 'Lender' ? 'alert' : ''} />
-            <div className='summaryDebtor__data--subtitle2'>{type}</div>
+            <div className='summaryDebtor__data--subtitle2'>
+              {directionPhrase}
+            </div>
           </div>
         </div>
       </div>
