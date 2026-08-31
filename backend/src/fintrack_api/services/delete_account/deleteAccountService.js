@@ -21,6 +21,7 @@ import { checkAndInsertAccount } from '../../../utils/fintrackUtils/accountManag
 import { updateAffectedAccountBalance } from '../../../utils/fintrackUtils/accountDeletionUtils/updateAffectedAccountBalance.js';
 
 import { recordAnnulmentTransaction } from '../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
+import { lockAndDeriveBalances } from '../../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 //=====================================
 // 📋 MESSAGES CONFIGURATION
 const messages = {
@@ -200,7 +201,28 @@ const processRTAAnnulment = async (
 
   const slackAccount = slackAccountInfo.account;
 
-  let finalSlackBalance = slackAccount.account_balance;
+  // Every account this annulment touches, locked and derived before a single
+  // figure is computed from it: the compensation account and each affected one.
+  //
+  // Two defects close here, the same pair the transfer and account-creation
+  // paths closed. The stored column has drifted from the ledger — the
+  // compensation account reads −75.97 stored against −90.22 derived — so every
+  // corrected balance was built on a wrong starting point and written back,
+  // carrying the error forward. And the impact report is read on the pool
+  // before this transaction opens, so nothing stopped a movement landing on an
+  // affected account between the report and the correction.
+  //
+  // The report keeps its own figure: that one is what the owner was SHOWN when
+  // they confirmed, and it is now derived too.
+  const ledgerBalances = await lockAndDeriveBalances(dbClient, userId, [
+    ...impactReport.map((row) => row.affectedAccountId),
+    slackAccount.account_id,
+  ]);
+
+  const ledgerBalanceOf = (accountId) =>
+    parseFloat(ledgerBalances.get(accountId));
+
+  let finalSlackBalance = ledgerBalanceOf(slackAccount.account_id);
 
   if (impactReport.length > 0) {
     // 1. Fetch Common IDs (Movement/Transaction Types)
@@ -211,8 +233,11 @@ const processRTAAnnulment = async (
     // 3.a Calculate all balances of affected accounts(immutable phase)
     const balanceCalculations = impactReport.map((row) => ({
       ...row,
+      // From the locked ledger, not from the report's figure. The two agree
+      // whenever nothing moved between the report and this transaction, and
+      // when they disagree it is this one that is right.
       newAffectedBalance:
-        row.affectedAccountCurrentBalance +
+        ledgerBalanceOf(row.affectedAccountId) +
         row.affectedAccountNetAdjustmentAmount,
     }));
 
@@ -226,7 +251,7 @@ const processRTAAnnulment = async (
     }
 
     finalSlackBalance =
-      slackAccount.account_balance - totalAffectedAccountAdjustement;
+      ledgerBalanceOf(slackAccount.account_id) - totalAffectedAccountAdjustement;
 
     console.log('finalSlackBlaance:', finalSlackBalance);
 
@@ -263,7 +288,9 @@ const processRTAAnnulment = async (
         newAffectedBalance,
 
         slackAccountId: slackAccount.account_id,
-        slackAccountCurrentBalance: slackAccount.account_balance,
+        // Logged, not inserted. Derived like everything else here, so the log
+        // line cannot contradict the arithmetic printed beside it.
+        slackAccountCurrentBalance: ledgerBalanceOf(slackAccount.account_id),
         newSlackBalance: finalSlackBalance,
 
         currencyId: affectedAccountCurrencyId,
