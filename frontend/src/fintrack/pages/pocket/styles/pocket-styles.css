@@ -653,7 +653,9 @@ button.line__container {
 }
 
 .pocketHero__pct {
- font-size: var(--font-size-sm);
+ /* One step above the label it sits opposite: the figure is the reading, the
+    label only names it. */
+ font-size: var(--font-size-base);
  font-weight: var(--font-weight-semibold);
  color: var(--color-content-on-dark);
  font-variant-numeric: tabular-nums;
