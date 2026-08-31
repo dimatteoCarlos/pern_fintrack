@@ -712,8 +712,20 @@ export const getAccountById = async (req, res, next) => {
       //debtor
       debtor: {
         typeQuery: {
+          // da.* used to be selected whole, and debtor_accounts repeats three of
+          // user_accounts' column names — account_id, currency_id and
+          // account_start_date — so the driver kept the extension's copy of each
+          // and the row silently stopped being the account's own.
+          // account_start_date is the one that bites: account_start_local_date is
+          // derived from it below, and the edit path writes neither table's copy,
+          // so nothing keeps the two in step. The base table wins, because it is
+          // the one the rest of the app reads.
           text: `SELECT ua.*, act.account_type_name, ct.currency_code,
-      da.*
+      da.value, da.debtor_name, da.debtor_lastname,
+      da.selected_account_id, da.selected_account_name,
+      da.original_value, da.original_currency_id, da.exchange_rate,
+      da.exchange_rate_source, da.exchange_rate_timestamp,
+      da.exchange_rate_target_currency_id
       FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
       JOIN currencies ct ON ua.currency_id = ct.currency_id
