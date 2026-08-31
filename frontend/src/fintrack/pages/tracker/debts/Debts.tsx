@@ -36,8 +36,7 @@ import {
 // =====================
 // UI COMPONENTS
 //=====================
-import CardNote from '../components/CardNote.tsx';
-import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
+import CardNoteSave from '../components/CardNoteSave.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import RadioInput from '../../../general_components/radioInput/RadioInput.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
@@ -400,11 +399,7 @@ function Debts(): JSX.Element {
   // =====================
   // Form submission handler
   // =====================
-  // Widened to the form event: the submit reaches this from the button AND from
-  // Enter in any field, and both arrive as one path rather than two.
-  async function onSaveHandler(
-    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>,
-  ) {
+  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
     // console.log('On Save Handler');
     e.preventDefault();
     if (resetFn) resetFn();
@@ -644,7 +639,7 @@ function Debts(): JSX.Element {
   // ======================
   return (
     <>
-      <form className='debts' style={{ color: 'inherit' }} onSubmit={onSaveHandler}>
+      <form className='debts' style={{ color: 'inherit' }}>
         {/* TOP CARD */}
         <TopCard
           topCardElements={topCardElements}
@@ -691,32 +686,15 @@ function Debts(): JSX.Element {
             isResetDropdown={isResetAccount}
           />
 
-          <div className='card--title'>
-            Note
-            <span className='validation__errMsg'>
-              {showValidation.note && validationMessages['note']
-                ? validationMessages['note']
-                : ''}
-            </span>
-          </div>
-
-          <div className='note--description'>
-            <CardNote
-              dataHandler={updateTrackerData}
-              inputNote={datatrack.note}
-              title='note'
-            />
-          </div>
-
-          {/* Extends the decision Expense took: the commit action at the foot of
-              the card, naming the movement it records, and the form owning the
-              submit so the keyboard reaches it. */}
-          <FormSubmitBtn
-            className='submit__btn--light'
-            disabled={isLoading || isLoadingAccounts || isLoadingDebtors}
-          >
-            Record debt movement
-          </FormSubmitBtn>
+          <CardNoteSave
+            title={'note'}
+            validationMessages={validationMessages}
+            dataHandler={updateTrackerData}
+            inputNote={datatrack.note}
+            onSaveHandler={onSaveHandler}
+            isDisabled={isLoading || isLoadingAccounts || isLoadingDebtors}
+            showError={showValidation.note}
+          />
         </div>
       </form>
 

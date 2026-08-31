@@ -22,8 +22,7 @@ import { notifyTransactionRecorded } from '../../../stores/transactionEvents.ts'
 import TopCard from '../components/TopCard.tsx';
 import CardSeparator from '../components/CardSeparator.tsx';
 import DropDownSelection from '../../../general_components/dropdownSelection/DropDownSelection.tsx';
-import CardNote from '../components/CardNote.tsx';
-import FormSubmitBtn from '../../../general_components/formSubmitBtn/FormSubmitBtn.tsx';
+import CardNoteSave from '../components/CardNoteSave.tsx';
 import { MessageToUser } from '../../../general_components/messageToUser/MessageToUser.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 //---
@@ -490,12 +489,7 @@ function Expense(): JSX.Element {
   }
   //------------------------
   //Handler for form submit
-  //
-  // Widened to the form event: the submit reaches this from the button AND from
-  // Enter in any field, and both arrive as one path rather than two.
-  async function onSaveHandler(
-    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>,
-  ) {
+  async function onSaveHandler(e: React.MouseEvent<HTMLButtonElement>) {
     // console.log('On Save Handler');
     e.preventDefault();
     // Show all validation messages when submitting
@@ -824,7 +818,7 @@ function Expense(): JSX.Element {
   return (
     <>
       {/*  {!isLoadingBankAccounts && !isLoadingCategoryBudgetAccounts  &&!isLoading && */}
-      <form className='expense' style={{ color: 'inherit' }} onSubmit={onSaveHandler}>
+      <form className='expense' style={{ color: 'inherit' }}>
         {/* TOP CARD */}
         <TopCard<typeof initialExpenseData>
           topCardElements={topCardElements}
@@ -872,38 +866,19 @@ function Expense(): JSX.Element {
 
           {renderCategoryStatus()}
 
-          <div className='card--title'>
-            Note
-            <span className='validation__errMsg'>
-              {showValidation.note && validationMessages['note']
-                ? validationMessages['note']
-                : ''}
-            </span>
-          </div>
-
-          <div className='note--description'>
-            <CardNote
-              dataHandler={updateTrackerData_Zod}
-              inputNote={expenseData.note}
-              title='note'
-            />
-          </div>
-
-          {/* The commit action, where a commit action goes: the bottom of the
-              card, full width, naming the movement it records. It used to be an
-              unlabelled + beside the note field, which said nothing about what
-              pressing it would do and competed with the note it sat next to.
-              No onClick: the form's onSubmit already receives this button. */}
-          <FormSubmitBtn
-            className='submit__btn--light'
-            disabled={
+          <CardNoteSave
+            title={'note'}
+            validationMessages={validationMessages}
+            dataHandler={updateTrackerData_Zod}
+            inputNote={expenseData.note}
+            onSaveHandler={onSaveHandler}
+            isDisabled={
               isLoading ||
               isLoadingBankAccounts ||
               isLoadingCategoryBudgetAccounts
             }
-          >
-            Record expense
-          </FormSubmitBtn>
+            showError={showValidation.note}
+          />
 
           {/* end of BOTTOM CARD */}
         </div>
