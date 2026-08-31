@@ -39,7 +39,10 @@ import {
 } from '../../../helpers/functions.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
 
-import { useFetchLoad } from '../../../hooks/useFetchLoad.ts';
+import {
+  RequestFailureType,
+  useFetchLoad,
+} from '../../../hooks/useFetchLoad.ts';
 import { useCurrencyPreview } from '../../../hooks/useCurrencyPreview.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import { AUTH_ROUTE } from '../../../../auth/auth_constants/constants.ts';
@@ -97,6 +100,45 @@ const latestOpeningDay = (): Date => {
 const earliestOpeningDay = (): Date => {
   const today = new Date();
   return new Date(today.getFullYear(), today.getMonth(), 1);
+};
+
+// A value the server put in details, only when it really is text.
+const asText = (value: unknown): string | null =>
+  typeof value === 'string' && value !== '' ? value : null;
+
+// What the owner reads when the server refuses to create the account.
+//
+// Keyed on the stable code the server declares, never on its sentence: that
+// sentence is written for a developer, in English, and is rewritten whenever
+// the message is improved. A code with no entry here falls through to the
+// server's own prose, which reads worse but is never blank.
+//
+// Only the conditions this form can actually produce are listed. The calendar
+// already refuses a day outside the current month, so the two date entries are
+// the backstop for a form that got past it, not the normal path.
+const openingErrorText = (failure: RequestFailureType | null): string | null => {
+  if (!failure) return null;
+
+  const details = failure.details ?? {};
+
+  switch (failure.code) {
+    case 'OPENING_DATE_BEFORE_CURRENT_MONTH': {
+      const from = asText(details.currentMonthStart);
+      return from
+        ? `An account can only be opened this month. Pick a day from ${from} onwards.`
+        : 'An account can only be opened this month. Pick a day from the first of the month onwards.';
+    }
+    case 'OPENING_DATE_AFTER_TODAY':
+      return 'An account cannot be opened on a future day. Pick today, or an earlier day this month.';
+    case 'INVALID_OPENING_DATE':
+      return 'The opening date could not be read. Pick the day again from the calendar.';
+    case 'FX_RATE_UNAVAILABLE': {
+      const day = asText(details.requestedDay);
+      return `No exchange rate has been published for ${day ?? 'that day'} yet. Try again in a moment, or open the account dated today.`;
+    }
+    default:
+      return null;
+  }
 };
 
 const formDataNumber = { keyName: 'amount', title: 'value' };
@@ -171,7 +213,7 @@ function NewAccount() {
   const optionsTypeAccounts = ACCOUNT_TYPE_DEFAULT;
 
   //POST: NEW ACCOUNT DATA
-  const { data, isLoading, error, requestFn } = useFetchLoad<
+  const { data, isLoading, error, failure, requestFn } = useFetchLoad<
     CreateBasicAccountApiResponseType,
     AccountDataType
   >({ url: url_create_basic_account, method: 'POST' });
@@ -354,13 +396,15 @@ function NewAccount() {
         setMessageToUser(null);
       }, 4000);
     } else if (error) {
-      setMessageToUser(error);
+      // This form's own wording when the server named the condition, and the
+      // server's sentence when it did not.
+      setMessageToUser(openingErrorText(failure) ?? error);
       timer = setTimeout(() => setMessageToUser(null), 4000);
     }
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [data, isLoading, error]);
+  }, [data, isLoading, error, failure]);
 
   // 🆕 DESHABILITAR FORMULARIO SI NO ESTÁ AUTENTICADO
   const isFormDisabled = !isAuthenticated;
