@@ -49,7 +49,7 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
   // from a real one.
   if (error) {
     return (
-      <article className='list__main__container'>
+      <article className='list__main__container debtorList'>
         <div className='debtorList__state'>
           <p className='debtorList__stateText'>
             The debtor list could not be loaded.
@@ -69,7 +69,7 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
 
   if (isLoading || !hasAnswer) {
     return (
-      <article className='list__main__container'>
+      <article className='list__main__container debtorList'>
         {Array.from({ length: SKELETON_ROWS }, (_, index) => (
           <div
             className='box__container debtorList__skeleton'
@@ -94,7 +94,7 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
 
   if (debtors.length === 0) {
     return (
-      <article className='list__main__container'>
+      <article className='list__main__container debtorList'>
         <div className='debtorList__state'>
           <p className='debtorList__stateText'>
             No debtors yet. Create one to track what is lent and what is owed.
@@ -119,7 +119,7 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
 
   return (
     <>
-      <article className='list__main__container'>
+      <article className='list__main__container debtorList'>
         {debtList.map((debtor, indx) => {
           const {
             account_name,

@@ -120,6 +120,41 @@ a.icon {
 }
 /*--------------------------*/
 
+/* ── The list's own scroll ───────────────────────────────────────────────────
+   Same handoff pocket and budget already carry: the rows used to push the
+   whole page, because the chain from .debtsLayout down had no height bound
+   and no overflow, so a debtor list past a screenful grew the document
+   instead of scrolling inside its own panel.
+
+   .debtsLayout itself already takes the header's and the navbar's leftover
+   height (the .home__layout:has(.debtsLayout) .debtsLayout rule above); this
+   is the next two links, down to the list.
+
+   Scoped by :has(.debtorList) rather than written unconditionally, because
+   .content__presentation and .cards__presentation are the same two generic
+   classes the debtor detail and the new-debtor form render through, under this
+   same layout — a rule with no guard would also confine those two screens to
+   the list's scroll instead of their own document flow. */
+.debtsLayout .content__presentation:has(.debtorList),
+.debtsLayout .cards__presentation:has(.debtorList) {
+ display: flex;
+ flex-direction: column;
+ flex: 1;
+ min-height: 0;
+}
+
+/* Where the handoff ends. Its own class and not .list__main__container, which
+   is rendered by six lists across budget, pocket, debts and account detail on
+   stylesheets that are global rather than modules — a rule there would confine
+   all six. No display change: the base class is already a flex column, and
+   this only bounds its height and lets it scroll rather than grow. */
+.debtsLayout .debtorList {
+ flex: 1;
+ min-height: 0;
+ overflow-y: auto;
+ padding: var(--space-1);
+}
+
 /* The debtor list's three fetch states.
    A request in flight, a request that failed and an owner with no debtors are
    three different answers, and none of them is a debtor. They used to share one
