@@ -9,7 +9,31 @@ import { z } from 'zod';
 import { FIELD_LIMITS } from './constants';
 
 /**
- * Base schema for common fields shared between SignIn and SignUp
+ * Password rules, shared by both forms. Declared apart from the base schema
+ * because signing in no longer reuses that schema.
+ */
+const passwordField = z.string()
+  .min(FIELD_LIMITS.PASSWORD.MIN, {
+    message: `Password must be at least ${FIELD_LIMITS.PASSWORD.MIN} characters`
+  })
+  .max(FIELD_LIMITS.PASSWORD.MAX, {
+    message: `Password cannot exceed ${FIELD_LIMITS.PASSWORD.MAX} characters`
+  })
+  .refine(
+    (val) => val.trim().length > 0,
+    { message: 'Password cannot be empty or just whitespace' }
+  )
+  .refine(
+    (val) => val === val.trim(),
+    { message: 'Password cannot start or end with spaces' }
+  )
+  .refine(
+    (val) => !val.includes('<') && !val.includes('>'),
+    { message: 'Password cannot contain < or > characters' }
+  );
+
+/**
+ * Base schema for the SignUp form
  * Includes:
  * - username (required)
  * - email (valid format)
@@ -37,32 +61,33 @@ const baseAuthSchema = z.object({
       { message: 'Email cannot contain < or > characters' }
     ),
 
-  password: z.string()
-    .min(FIELD_LIMITS.PASSWORD.MIN, { 
-      message: `Password must be at least ${FIELD_LIMITS.PASSWORD.MIN} characters` 
-    })
-    .max(FIELD_LIMITS.PASSWORD.MAX, {
-      message: `Password cannot exceed ${FIELD_LIMITS.PASSWORD.MAX} characters`
-    })
-    .refine(
-      (val) => val.trim().length > 0,
-      { message: 'Password cannot be empty or just whitespace' }
-    )
-    .refine(
-      (val) => val === val.trim(),
-      { message: 'Password cannot start or end with spaces' }
-    )
-    .refine(
-      (val) => !val.includes('<') && !val.includes('>'),
-      { message: 'Password cannot contain < or > characters' }
-    ),
+  password: passwordField,
 });
 
 /**
- * Sign In schema - exactly the base schema
- * No additional fields needed
+ * Sign In schema - one identity and a password.
+ *
+ * The identity is not validated as an email: it is whichever of the two the
+ * user remembers, and the backend picks the column from the string. Validating
+ * the format here would reject a perfectly good username.
  */
-export const signInSchema = baseAuthSchema;
+export const signInSchema = z.object({
+  identity: z.string()
+    .min(1, { message: `${FIELD_LIMITS.IDENTITY.name} is required` })
+    .max(FIELD_LIMITS.IDENTITY.MAX, {
+      message: `${FIELD_LIMITS.IDENTITY.name} cannot exceed ${FIELD_LIMITS.IDENTITY.MAX} characters`
+    })
+    .refine(
+      (val) => val.trim().length > 0,
+      { message: `${FIELD_LIMITS.IDENTITY.name} cannot be empty or just whitespace` }
+    )
+    .refine(
+      (val) => !val.includes('<') && !val.includes('>'),
+      { message: `${FIELD_LIMITS.IDENTITY.name} cannot contain < or > characters` }
+    ),
+
+  password: passwordField,
+});
 //---------------------------------
 /**
  * Sign Up schema - extends base with:

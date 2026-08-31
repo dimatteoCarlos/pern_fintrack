@@ -31,10 +31,9 @@ const SignInForm: React.FC<SignInFormProps> = ({
   setRememberMe,
 }) => {
   // Initialize from localStorage if remembered
-  const identity = getIdentity();
+  const rememberedIdentity = getIdentity();
   const initialValues: SignInFormDataType = {
-    username: identity?.username || '',
-    email: identity?.email || '',
+    identity: rememberedIdentity?.identity || '',
     password: '',
   };
 
@@ -68,32 +67,19 @@ const SignInForm: React.FC<SignInFormProps> = ({
 
   return (
     <>
-      {/* Username */}
+      {/* Username or email. One field: the password is the only secret, so a
+        second identity could not authenticate anything, only disagree. */}
       <InputField variant='filled'
-        label="Username"
+        label="Username or email"
         type="text"
-        placeholder="your_username"
-        value={formData.username}
-        onChange={handleInputChange('username')}
-        error={validationErrors.username}
-        touched={touchedFields.has('username')}
+        placeholder="your_username or email"
+        value={formData.identity}
+        onChange={handleInputChange('identity')}
+        error={validationErrors.identity}
+        touched={touchedFields.has('identity')}
         required
         disabled={isLoading}
         tabindex={1}
-      />
- 
-      {/* Email */}
-      <InputField variant='filled'
-        label="Email"
-        type="email"
-        placeholder="email"
-        value={formData.email}
-        onChange={handleInputChange('email')}
-        error={validationErrors.email}
-        touched={touchedFields.has('email')}
-        required
-        disabled={isLoading}
-        tabindex={2}
       />
 
       {/* Password */}
@@ -110,7 +96,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
        showContentToggle={true}
        isContentVisible={isPasswordVisible}
        onToggleContent={togglePasswordVisibility}
-        tabindex={3}
+        tabindex={2}
       />
 
       {/* Remember Me Checkbox */}
@@ -121,7 +107,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
           id="rememberMe"
           checked={rememberMe}
           onChange={(e) => setRememberMe(e.target.checked)}
-          tabIndex={4}
+          tabIndex={3}
         />
         <label htmlFor="rememberMe" className={styles['auth-form__label-checkbox']}>
           Remember me
@@ -134,7 +120,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
         onClick={handleSubmit}
         className={styles['auth-form__button']}
         disabled={!isSubmittingAllowed || isLoading}
-        tabIndex={5}
+        tabIndex={4}
       >
         {isLoading ? 'Loading...' : 'Sign In'}
       </button>

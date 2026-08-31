@@ -9,7 +9,7 @@ export type FieldLimitType={
  name: string;
 };
 
-export type UserFieldsType = 'FIRSTNAME' | 'LASTNAME' | 'CONTACT' | 'PASSWORD';
+export type UserFieldsType = 'FIRSTNAME' | 'LASTNAME' | 'CONTACT' | 'PASSWORD' | 'IDENTITY';
 
 export const FIELD_LIMITS:
 // Partial<
@@ -20,6 +20,7 @@ Record<UserFieldsType,FieldLimitType>
   LASTNAME:{MAX: 25,MIN:1, name:'Last name'},   // user_lastname VARCHAR(25)
   CONTACT:{MAX: 25,MIN:1, name:'Contact'},    // user_contact VARCHAR(25)
   PASSWORD:{ MAX:72,MIN:4, name:'Password'},//8 is the Minimum securityRequirement and Maximum by Bcrypt practical limit
+  IDENTITY:{MAX:255,MIN:1, name:'Username or email'},// email VARCHAR(255), the longer of the two columns it can match
 };
 
 //REUSABLE VALIDATION MESSAGES

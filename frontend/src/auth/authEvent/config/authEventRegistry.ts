@@ -37,8 +37,8 @@ export const authEventRegistry: {
     const identity = getIdentity(); //from authStorage
     const result: AuthEventResultType = { uiState: 'SIGN_IN' };
 
-    if (identity?.email && identity?.username) {
-      result.prefill = { email: identity.email, username: identity.username };
+    if (identity?.identity) {
+      result.prefill = { identity: identity.identity };
     }
     return result;
   },

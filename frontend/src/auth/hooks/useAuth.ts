@@ -77,7 +77,7 @@ const extractErrorMessage = (err: unknown): string => {
 
     // Common codes error
     if (err.response.status === 401) {
-      return 'Invalid username or password';
+      return 'Invalid credentials';
     }
     if (err.response.status === 400) {
       return 'Invalid input data';
@@ -249,8 +249,7 @@ const useAuth = () => {
       // ✅ Persist identity if rememberMe is true
       if (rememberMe) {
         const identity: UserIdentityType = {
-          email: credentials.email,
-          username: credentials.username,
+          identity: credentials.identity,
           rememberMe: true,
         };
 

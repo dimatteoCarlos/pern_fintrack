@@ -10,5 +10,5 @@
 
 export type AuthEventContextType = {
 // Read-only: get identity for prefill
-  getIdentity: () => { email?: string; username?: string } | null;
+  getIdentity: () => { identity?: string } | null;
 };

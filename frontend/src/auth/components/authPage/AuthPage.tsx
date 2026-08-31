@@ -112,9 +112,9 @@ export default function AuthPage() {
 // ===============================
 const openLoginModalWithPrefill = useCallback(()=>{
  const identity = getIdentity();
- if(identity?.email && identity?.username){
-  setPrefilledData(identity.email, identity.username)
- }else {setPrefilledData(null, null);}
+ if(identity?.identity){
+  setPrefilledData(identity.identity)
+ }else {setPrefilledData(null);}
 
  setUIState(AUTH_UI_STATES.SIGN_IN); // always SIGN_IN, prefill handled separately
 }, [setPrefilledData, setUIState]);
@@ -177,7 +177,7 @@ useEffect(() => {
   }
    
  if (result.prefill) {
-  setPrefilledData(result.prefill.email ?? null, result.prefill.username ?? null);
+  setPrefilledData(result.prefill.identity ?? null);
   }
 
 // 4️⃣ Handle returnTo (for session_expired)
@@ -218,8 +218,8 @@ useEffect(() => {
 
       // Prefill identity if exists
       const identity = getIdentity();
-      if (identity?.email && identity?.username) {
-        setPrefilledData(identity.email, identity.username);
+      if (identity?.identity) {
+        setPrefilledData(identity.identity);
       }
 
     // Clean only returnTo (session_expired is gone)

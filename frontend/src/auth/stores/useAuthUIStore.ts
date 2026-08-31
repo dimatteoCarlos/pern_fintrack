@@ -32,14 +32,13 @@ type AuthUIStoreType = {
 // 💬 Optional message (for success/error texts)
   message: string | null;
   
-// 📝 Pre-filled data (from identity)
-  prefilledEmail: string | null;
-  prefilledUsername: string | null;
+// 📝 Pre-filled data (from identity): the username or email last used
+  prefilledIdentity: string | null;
   
 // 🎮 Actions
   setUIState: (state: AuthUIStateType) => void;
   setMessage: (message: string | null) => void;
-  setPrefilledData: (email: string | null, username: string | null) => void;
+  setPrefilledData: (identity: string | null) => void;
   resetUI: () => void;
 }
 
@@ -55,21 +54,18 @@ export const useAuthUIStore = create<AuthUIStoreType>()(
 // 🏁 Initial state
    uiState: 'IDLE',
    message: null,
-   prefilledEmail: null,
-   prefilledUsername: null,
+   prefilledIdentity: null,
     
 // 🎮 Actions
    setUIState: (uiState) => set({ uiState }),
    setMessage: (message) => set({ message }),
-   setPrefilledData: (email, username) => set({ 
-      prefilledEmail: email, 
-      prefilledUsername: username 
+   setPrefilledData: (identity) => set({
+      prefilledIdentity: identity
     }),
    resetUI: () => set({
       uiState: 'IDLE',
       message: null,
-      prefilledEmail: null,
-      prefilledUsername: null,
+      prefilledIdentity: null,
     }),
   })
 );
@@ -81,7 +77,7 @@ if (import.meta.env.VITE_ENVIRONMENT === 'developmentX') {
     console.log('🔧 AuthUIStore state:', {
       uiState: state.uiState,
       message: state.message,
-      hasPrefill: !!(state.prefilledEmail || state.prefilledUsername),
+      hasPrefill: !!state.prefilledIdentity,
     });
   });
 }

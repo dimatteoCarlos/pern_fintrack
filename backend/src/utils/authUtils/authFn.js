@@ -2,6 +2,7 @@
 //hashed,isRight,createToken,createRefreshToken,cleanRevokedTokens,rotateRefreshToken
 
 import bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import jwt from 'jsonwebtoken';
 import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
@@ -25,6 +26,19 @@ export const isRight = async (userPwd, hashedPwd) => {
       ? console.error(error, 'error message comparing password')
       : console.error('error:', 'something went error');
   }
+};
+
+//---
+// A hash of a random secret nobody can type, compared when a sign-in attempt
+// names an identity that does not exist. Without it the attempt returns without
+// ever calling bcrypt, and its speed says the account is not registered.
+let decoyHashPromise = null;
+
+export const getDecoyHash = () => {
+  if (!decoyHashPromise) {
+    decoyHashPromise = hashed(randomUUID());
+  }
+  return decoyHashPromise;
 };
 
 //--

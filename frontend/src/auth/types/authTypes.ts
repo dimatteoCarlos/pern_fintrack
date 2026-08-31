@@ -13,13 +13,17 @@ export type CredentialsType = {
 };
 
 //used in: AuthPage.tsx, useAuth.ts
+// Signing in takes ONE identity, which the backend resolves against the username
+// or the email column. Registering still takes both, because it creates them.
 export type SignInCredentialsType = {
-  username: string;
-  email: string;
+  identity: string;
   password: string;
 };
 
-export type SignUpCredentialsType = SignInCredentialsType & {
+export type SignUpCredentialsType = {
+  username: string;
+  email: string;
+  password: string;
   user_firstname: string;
   user_lastname: string;
   confirmPassword: string;
@@ -346,11 +350,8 @@ export type ProfileUpdateErrorResponseType = {
  * - Pure UX optimization
  */
 export type UserIdentityType = {
-  /** 👤 User's email for login form pre-fill */
-  email: string;
-
-  /** 👤 User's username for login form pre-fill */
-  username: string;
+  /** 👤 What was typed to sign in — a username or an email — for form pre-fill */
+  identity: string;
 
   /** ✅ Whether user wants to be remembered */
   rememberMe: boolean;

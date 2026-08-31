@@ -16,11 +16,11 @@ const STORAGE_KEYS = {
 /**
  * ✅ SAVE USER IDENTITY TO LOCALSTORAGE
  * 
- * @param identity - User identity data (email, username, rememberMe flag)
+ * @param identity - User identity data (identity, rememberMe flag)
  * @returns void
  * 
  * @example
- * saveIdentity({ email: 'user@example.com', username: 'johndoe', rememberMe: true });
+ * saveIdentity({ identity: 'johndoe', rememberMe: true });
  */
 export const saveIdentity = (identity: UserIdentityType): void => {
   try {
@@ -50,11 +50,12 @@ export const getIdentity = (): UserIdentityType | null => {
     
     const parsed = JSON.parse(serialized) as UserIdentityType;
     
-    // ✅ Basic validation to ensure shape is correct
-    if (typeof parsed === 'object' && 
+    // ✅ Basic validation to ensure shape is correct.
+    // An entry written before the single identity field carries email and
+    // username instead, and fails this check, so it is cleaned up below.
+    if (typeof parsed === 'object' &&
         parsed !== null &&
-        'email' in parsed && 
-        'username' in parsed && 
+        'identity' in parsed &&
         'rememberMe' in parsed)//mark the checkbox in the form
      {
      return parsed;

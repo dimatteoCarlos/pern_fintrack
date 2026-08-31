@@ -9,6 +9,7 @@ import {
   createRefreshToken,
   hashed,
   isRight,
+  getDecoyHash,
 } from '../../utils/authUtils/authFn.js';
 
 import { sendSuccessResponse } from '../../utils/authUtils/sendSuccessResponse.js';
@@ -225,18 +226,28 @@ export const signUpUser = async (req, res, next) => {
 export const signInUser = async (req, res, next) => {
   console.log(pc.greenBright('signInUser'));
   const client = await pool.connect();
-  const { username, email } = req.body;
-  // console.log('req.body', req.body);
+  // The form sends one identity. username and email are still read so a backend
+  // deployed ahead of its frontend keeps accepting the previous payload.
+  const identity = (
+    req.body.identity ??
+    req.body.email ??
+    req.body.username ??
+    ''
+  ).trim();
+  const password = req.body.password;
 
   try {
     await client.query('BEGIN');
     // ✅ VALIDATION
-    if (!(username && email && req.body.password)) {
-      return next(
-        createError(400, 'username, email and password, are required'),
-      );
+    if (!(identity && password)) {
+      return next(createError(400, 'Identity and password are required'));
     }
     // ✅ GET USER DATA FROM DB
+    // An email is the only identity that can carry '@', and both columns are
+    // UNIQUE, so the string itself decides the column and the match is exact.
+    // The column name is one of two literals here, never the typed value.
+    const identityColumn = identity.includes('@') ? 'u.email' : 'u.username';
+
     const userData = await client
       .query({
         text: `SELECT u.username, u.email, u.password_hashed, u.user_id, u.user_firstname, u.user_lastname, u.user_contact, u.user_role_id, u.timezone,
@@ -245,50 +256,25 @@ export const signInUser = async (req, res, next) => {
         FROM users u
         JOIN user_roles ur ON u.user_role_id = ur.user_role_id
         JOIN currencies ct ON u.currency_id = ct.currency_id
-        WHERE (u.username = $1 AND u.email = $2) OR u.username = $1 OR u.email = $2`,
-        values: [username, email],
+        WHERE ${identityColumn} = $1`,
+        values: [identity],
       })
       .then((res) => res.rows);
 
-    // console.log('userdata:', userData);
-
-    // ✅ USER VALIDATION EXISTENCE IN DB
-    if (!userData[0]) {
-      return next(createError(404, 'User does not exist. Try sign up.'));
-    }
-    //Validation of multiple users with the same information
-    if (userData.length > 1) {
-      console.warn(
-        'Accounts info:',
-        'There are more than one user with the same information',
-      );
-      return next(
-        createError(400, 'Multiple accounts found. Contact administrator.'),
-      ); //then what to do in this case?
-    }
     const user = userData[0];
 
-    // ✅ CROSSED-VERIFICATION OF USERNAME/EMAIL
-    if (userData.length > 0) {
-      if (
-        (username === user.username && user.email !== email) ||
-        (username !== user.username && user.email === email)
-      ) {
-        console.warn('username and email do not correspond');
-        return next(createError(400, 'username/email mismatch'));
-      }
-    }
-
     // ✅ CHECK PASSWORD
-    // console.log(req.body.password, userData[0].password_hashed);
+    // The hash is compared even when no row came back, and every failure gets
+    // the same answer, so neither the message nor the time the attempt took
+    // tells an anonymous caller whether that identity is registered.
     const isPasswordCorrect = await isRight(
-      req.body.password,
-      user.password_hashed,
+      password,
+      user ? user.password_hashed : await getDecoyHash(),
     );
-    // console.log("🚀 ~ signInUser ~ isPasswordCorrect:", isPasswordCorrect)
-    if (!isPasswordCorrect) {
-      console.warn('no authenticated:', 'wrong password');
-      return next(createError(401, 'Invalid password'));
+
+    if (!user || !isPasswordCorrect) {
+      console.warn('not authenticated:', 'invalid credentials');
+      return next(createError(401, 'Invalid credentials'));
     }
     // console.log(user.user_id, user.user_role_name)
 
@@ -363,7 +349,7 @@ export const signInUser = async (req, res, next) => {
 
     console.log(
       'User is logged in',
-      username,
+      user.username,
       // email,
       // userData[0].user_id,
       // req.body.password,
