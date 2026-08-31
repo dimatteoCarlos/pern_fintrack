@@ -238,6 +238,10 @@ async function setCurrentMonthBudget(
   // belongs to the stored currency, and rounding the origin figure first would
   // apply the rate to an amount the user never typed.
   //
+  // Valued on the month it governs, not the day it is saved: a month is a
+  // period, so its rate is the one in force on the day it begins. A month no
+  // source can price is refused with a 422, never valued at today's rate.
+  //
   // An identity conversion when the two codes match, so an account already kept
   // in the currency the user thinks in costs no rate lookup and still records
   // what it did.
@@ -246,6 +250,7 @@ async function setCurrentMonthBudget(
    amount,
    currency,
    accountCurrency,
+   month,
   );
 
   const normalizedAmount = normalizeAmount(converted.amount.toNumber());
