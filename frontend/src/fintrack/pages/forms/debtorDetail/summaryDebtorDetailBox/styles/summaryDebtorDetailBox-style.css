@@ -1,62 +1,91 @@
-/* frontend/src/fintrack/pages/forms/debtorDetail/summaryDebtorDetailBox/styles/summaryDebtorDetailBox-style.css */
+/* frontend/src/fintrack/pages/forms/debtorDetail/summaryDebtorDetailBox/styles/summaryDebtorDetailBox-style.css
 
+   The debtor card's hero: what the position is worth, and which way it runs.
+
+   Redistributed. The label used to hold the whole left half of the panel while
+   the figure, an empty line and the counterparty's role were stacked into a
+   fixed 50% column on the right, so the biggest thing on the card was empty
+   space and the figure was the smallest of three items sharing a column.
+
+   Now the left side carries what the figure IS — the label, and under it the
+   direction with its square — and the right side carries the figure alone, at
+   the size a hero figure deserves. Nothing was added to the payload: the
+   direction is the sign of the balance the card already had. */
+
+/* Stacked first: on the narrowest screen the label and the figure do not
+   compete for one line, and the figure keeps its size instead of shrinking to
+   fit beside the words. They sit side by side from 480px up. */
 .summaryDebtor__container {
-  background-color: var(--creme);
-  color: var(--dark);
-  font-weight: 600;
-  border-radius: 0.875rem;
-  padding: 0.5rem 1.75rem;
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-}
-.summaryDebtor__title {
-  font-size: 1.25rem;
-  color: var(--dark);
-  font-weight: 500;
-  text-transform: capitalize;
-}
-.summaryDebtor__data {
-  width: 50%;
   display: flex;
   flex-direction: column;
-  align-items: end;
-  gap: 0.25rem;
+  align-items: stretch;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-panel);
+  color: var(--color-content-primary);
 }
 
-/* One flex item now, not two. The symbol and the digits used to be separate
-   spans pushed apart by space-between; the shared formatter emits the amount as
-   one string, and an amount on a data panel aligns to the rule under it. */
-.summaryDebtor__data--amount {
+/* The two lines that name the figure. They travel together, so the direction
+   never lands beside a label it does not belong to. */
+.summaryDebtor__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.summaryDebtor__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  text-transform: capitalize;
+}
+
+.summaryDebtor__direction {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.summaryDebtor__directionWord {
+  /* index.css sets font-size on the universal selector, so an inline element
+     does not inherit the size of the line it sits in unless it restates it. */
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-content-secondary);
+  white-space: nowrap;
+}
+
+/* The figure, on its own. The rule under it is the same one the shared summary
+   box draws, in the same tokens: the two boxes sit on the same panel and must
+   not diverge. */
+.summaryDebtor__data {
   display: flex;
   justify-content: flex-end;
-  width: 85%;
-  letter-spacing: 1.5px;
-  /* Same rule under the amount as the shared summary box, expressed in the same
-     tokens: the two boxes sit on the same cream panel and must not diverge. */
+  flex-shrink: 0;
+  padding-bottom: var(--space-1);
   border-bottom: var(--border-width-thin) solid var(--color-content-primary);
 }
 
-/* index.css sets font-size on the universal selector, so this inline element
-   does not inherit the size of the line it sits in unless it restates it. */
 .summaryDebtor__amount {
-  font-size: inherit;
-}
-/* The muted content colour of the cream panel. It is the same value the raw hex
-   held, so the two subtitles keep their contrast against --creme. */
-.summaryDebtor__data--subtitle1 {
-  color: var(--color-content-secondary);
-  font-size: 0.75rem;
-}
-.summaryDebtor__data--status {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  justify-content: center;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  /* The token says what it is for: the summary amount row. */
+  letter-spacing: var(--letter-spacing-widest);
+  /* The figure changes as the owner records movements, and digits of unequal
+     width make the panel twitch. */
+  font-variant-numeric: tabular-nums;
 }
 
-.summaryDebtor__data--subtitle2 {
-  color: var(--color-content-secondary);
-  font-size: 0.75rem;
-  text-transform: capitalize;
+@media (min-width: 480px) {
+  .summaryDebtor__container {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .summaryDebtor__amount {
+    font-size: var(--font-size-xl);
+  }
 }
