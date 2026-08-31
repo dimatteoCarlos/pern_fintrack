@@ -234,6 +234,13 @@
  --size-icon: 2rem;
  --size-badge: 2.5rem;
  --size-control-height: 3.125rem;
+ /* The pocket glyph set is drawn at a 0.375 pen on a 24 unit grid, which is
+    exactly one device pixel at 4rem. Below that the stroke renders under a
+    pixel and reads as fog. */
+ --size-glyph-hero: 4rem;
+ /* The same set as a panel watermark rather than a glyph in a row: it sits
+    alone in a corner with no label beside it to hold a scale against. */
+ --size-glyph-panel: 5.5rem;
  /* Minimum tappable area. In px on purpose: it is bounded by a finger, not by
     the type scale, so it must not follow --font-size-root, which clamps 14-16px
     and only reaches 16 at a 767px viewport. As 2.75rem this resolved to 38.5px
