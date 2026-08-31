@@ -270,12 +270,27 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
     // null and 0 are different answers on this field: null is a deadline
     // already passed, so no pace exists to state, and 0 is a goal already
     // met, so none is required. Neither is an amount of money per month.
+    //
+    // A passed deadline printed a dash here, which told the owner nothing
+    // about a pocket the board is raising an alert on. There is no RATE left,
+    // because a rate is money over time and the time is gone, but there is
+    // very much an amount: the whole shortfall, due now rather than spread.
+    //
+    // It is read off `remaining`, which the server already sends. Nothing is
+    // written into requiredMonthly: a field named for a monthly figure must
+    // not carry one that is not monthly, and every consumer that formats it
+    // with "/ month" would then print something untrue. The detail screen
+    // states this already; the card was the one staying silent.
     const paceText =
      requiredMonthly === null
-      ? DASH
+      ? `${amount(remaining)} now`
       : requiredMonthly === 0
         ? 'Not needed'
         : amount(requiredMonthly);
+
+    // The label follows the figure and stops naming a rate on a pocket that
+    // has none left.
+    const paceLabel = requiredMonthly === null ? 'To settle' : 'Monthly pace';
 
     return (
      <Link
@@ -347,8 +362,14 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
        </div>
 
        <div className='pocketCard__fact'>
-        <dt className='pocketCard__factLabel'>Monthly pace</dt>
-        <dd className='pocketCard__factValue'>{paceText}</dd>
+        <dt className='pocketCard__factLabel'>{paceLabel}</dt>
+        <dd
+         className={`pocketCard__factValue ${
+          requiredMonthly === null ? 'pocketCard__factValue--alert' : ''
+         }`.trim()}
+        >
+         {paceText}
+        </dd>
        </div>
 
        <div className='pocketCard__fact'>

@@ -305,7 +305,7 @@ function PocketDetail() {
  const dateText = pocket.funded
   ? `Goal covered. Desired date ${formatCalendarDate(pocket.desiredDate)}.`
   : pocket.requiredMonthly === null
-    ? `The desired date passed on ${formatCalendarDate(pocket.desiredDate)}. ${amount(pocket.remaining)} still to commit.`
+    ? `The desired date passed on ${formatCalendarDate(pocket.desiredDate)}. ${amount(pocket.remaining)} still to allocate.`
     : `Desired date ${formatCalendarDate(pocket.desiredDate)}, ${pocket.daysRemaining} ${pocket.daysRemaining === 1 ? 'day' : 'days'} away. ${amount(pocket.requiredMonthly)} per month to stay on pace.`;
 
  //--------------------------------------------
