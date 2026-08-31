@@ -47,7 +47,10 @@ const FILTER_OPTIONS: { value: PocketQuickFilter; label: string }[] = [
  { value: 'onPlan', label: POCKET_STATUS_WORD.onPlan },
  { value: 'atRisk', label: POCKET_STATUS_WORD.atRisk },
  { value: 'offPlan', label: POCKET_STATUS_WORD.offPlan },
- { value: 'uncovered', label: 'Allocation not covered' },
+ // "Funding", not the bare word allocation, which the module's naming rule
+ // forbids as ambiguous between a pocket allocation and a monthly budget
+ // one. It is also the noun the card already uses for the same fact.
+ { value: 'uncovered', label: 'Funding not covered' },
 ];
 
 const SEARCH_MAX_LENGTH = 50;

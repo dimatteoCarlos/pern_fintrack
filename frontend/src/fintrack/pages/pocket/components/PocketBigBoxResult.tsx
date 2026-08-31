@@ -420,7 +420,7 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
            {(uncoveredCount ?? 0) > 0 && (
             <span className='pocketHero__mark'>
              <StatusSquare alert={pocketSquareClass('offPlan')} />
-             <span>{uncoveredCount} with allocation not covered</span>
+             <span>{uncoveredCount} with funding not covered</span>
             </span>
            )}
           </span>
