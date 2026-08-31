@@ -1,0 +1,233 @@
+/* frontend/src/fintrack/pages/debts/styles/debtsToolbar.css
+   The debtor list's own controls, same pattern as pocketToolbar.css: one
+   surface, a search field, a sort select with its direction button, and a
+   filter select — three segments told apart by a hairline each.
+
+   Imported by DebtsToolbar.tsx. */
+
+.debtsToolbar {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ margin-top: 0;
+ margin-bottom: var(--space-4);
+}
+
+@media (max-height: 735px) {
+ .debtsToolbar {
+  margin-top: 0;
+  margin-bottom: var(--space-3);
+ }
+}
+
+.debtsToolbar__fields {
+ display: flex;
+ flex-wrap: nowrap;
+ align-items: stretch;
+ min-height: var(--size-control-sm);
+ background-color: var(--color-surface-sunken);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+ overflow: hidden;
+ transition: border-color var(--motion-fast);
+}
+
+.debtsToolbar__fields:hover {
+ border-color: var(--color-content-on-dark-subtle);
+}
+
+.debtsToolbar__query,
+.debtsToolbar__selectBox {
+ position: relative;
+ display: flex;
+}
+
+.debtsToolbar__sort {
+ display: flex;
+ align-items: center;
+ gap: var(--space-1);
+ flex: 0 0 auto;
+}
+
+.debtsToolbar__query {
+ flex: 1 1 auto;
+ min-width: 0;
+}
+
+.debtsToolbar__selectBox {
+ flex: 0 0 auto;
+}
+
+.debtsToolbar__search,
+.debtsToolbar__select {
+ background-color: transparent;
+ border: none;
+ border-radius: 0;
+ color: var(--color-content-on-dark);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-sm);
+ transition: color var(--motion-fast), background-color var(--motion-fast);
+}
+
+.debtsToolbar__sort,
+.debtsToolbar__selectBox--filter {
+ border-left: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+.debtsToolbar__search {
+ width: 100%;
+ min-width: 0;
+ padding: var(--space-1) var(--space-3);
+ padding-left: var(--space-8);
+}
+
+.debtsToolbar__search::placeholder {
+ color: var(--color-content-placeholder);
+}
+
+.debtsToolbar__search::-webkit-search-cancel-button {
+ display: none;
+}
+
+.debtsToolbar__query:has(.debtsToolbar__reset) .debtsToolbar__search {
+ padding-right: var(--space-8);
+}
+
+.debtsToolbar__select {
+ width: auto;
+ padding: var(--space-1) var(--space-6);
+ padding-left: var(--space-8);
+ color: var(--color-content-on-dark-subtle);
+ appearance: none;
+ cursor: pointer;
+}
+
+.debtsToolbar__icon {
+ position: absolute;
+ top: 50%;
+ left: var(--space-2);
+ width: var(--font-size-base);
+ height: var(--font-size-base);
+ transform: translateY(-50%);
+ color: var(--color-content-on-dark-subtle);
+ pointer-events: none;
+}
+
+.debtsToolbar__icon--trailing {
+ right: var(--space-2);
+ left: auto;
+}
+
+.debtsToolbar__select option {
+ background-color: var(--color-surface-sunken);
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-sm);
+}
+
+.debtsToolbar__select option:checked,
+.debtsToolbar__select option:hover {
+ background-color: var(--color-surface-panel);
+ color: var(--color-content-primary);
+}
+
+.debtsToolbar__direction {
+ flex: 0 0 auto;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--size-control-sm);
+ background-color: transparent;
+ border: none;
+ color: var(--color-content-on-dark-subtle);
+ cursor: pointer;
+ transition: color var(--motion-fast);
+}
+
+.debtsToolbar__direction svg {
+ width: var(--font-size-base);
+ height: var(--font-size-base);
+ transition: transform var(--motion-fast);
+}
+
+.debtsToolbar__direction.is-ascending svg {
+ transform: rotate(180deg);
+}
+
+.debtsToolbar__direction:hover,
+.debtsToolbar__direction:active {
+ color: var(--color-content-on-dark);
+}
+
+.debtsToolbar__reset {
+ position: absolute;
+ top: 50%;
+ right: 0;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--space-8);
+ height: var(--size-control-sm);
+ transform: translateY(-50%);
+ background-color: transparent;
+ border: none;
+ border-radius: var(--radius-full);
+ color: var(--color-content-on-dark-subtle);
+ cursor: pointer;
+ transition: color var(--motion-fast);
+}
+
+.debtsToolbar__reset svg {
+ width: var(--font-size-base);
+ height: var(--font-size-base);
+}
+
+.debtsToolbar__reset:hover,
+.debtsToolbar__reset:active {
+ color: var(--color-content-on-dark);
+}
+
+.debtsToolbar__fields:active {
+ border-color: var(--color-accent);
+}
+
+.debtsToolbar__search:focus-visible,
+.debtsToolbar__select:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(-1 * var(--border-width-thick));
+ border-radius: var(--radius-lg);
+}
+
+.debtsToolbar__direction:focus-visible,
+.debtsToolbar__reset:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(-1 * var(--border-width-thick));
+}
+
+.debtsToolbar__status {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: center;
+ gap: var(--space-2);
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+}
+
+.debtsToolbar__status:empty {
+ display: none;
+}
+
+.debtsToolbar__message {
+ font-size: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .debtsToolbar__fields,
+ .debtsToolbar__search,
+ .debtsToolbar__select,
+ .debtsToolbar__direction,
+ .debtsToolbar__direction svg,
+ .debtsToolbar__reset {
+  transition: none;
+ }
+}

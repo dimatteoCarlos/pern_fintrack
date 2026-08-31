@@ -3,7 +3,7 @@ import { currencyFormat } from '../../../helpers/functions.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import { url_summary_balance_ByType } from '../../../../urlConfig.ts';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   DebtorListSummaryType,
   DebtorListType,
@@ -12,6 +12,15 @@ import {
   CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
 } from '../../../helpers/constants.ts';
+import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
+import {
+  DEFAULT_SORT_DIRECTION,
+  useDebtorListFilter,
+  type DebtorQuickFilter,
+  type DebtorSortDirection,
+  type DebtorSortKey,
+} from '../hooks/useDebtorListFilter.ts';
+import DebtsToolbar from './DebtsToolbar.tsx';
 
 export type DebtsToRenderType = DebtorListType[];
 
@@ -30,6 +39,24 @@ const DASH = '—';
 // claim a count the answer has not given yet.
 const SKELETON_ROWS = 3;
 
+// A URL is typed by anyone. An unrecognised key falls back to the value that
+// changes nothing.
+const SORT_KEYS: DebtorSortKey[] = ['balance', 'name'];
+const toSortKey = (value: string | null): DebtorSortKey =>
+  SORT_KEYS.includes(value as DebtorSortKey) ? (value as DebtorSortKey) : 'balance';
+
+const FILTER_KEYS: DebtorQuickFilter[] = ['all', 'debtor', 'lender'];
+const toQuickFilter = (value: string | null): DebtorQuickFilter =>
+  FILTER_KEYS.includes(value as DebtorQuickFilter)
+    ? (value as DebtorQuickFilter)
+    : 'all';
+
+const toSortDirection = (
+  value: string | null,
+  sort: DebtorSortKey,
+): DebtorSortDirection =>
+  value === 'asc' || value === 'desc' ? value : DEFAULT_SORT_DIRECTION[sort];
+
 //-----------
 function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
   //DATA FETCHING
@@ -38,10 +65,54 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
       `${url_summary_balance_ByType}?type=${accountType}`,
     );
 
+  // The toolbar's own state lives in the URL, not in a useState here, for the
+  // same reason pocket's and budget's do: opening a debtor's detail route
+  // unmounts this list, and a term held in component state would not survive
+  // the trip back from it.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = (searchParams.get('q') ?? '').slice(
+    0,
+    NAME_MAX_LENGTHS.account_name,
+  );
+  const sort = toSortKey(searchParams.get('sort'));
+  const direction = toSortDirection(searchParams.get('dir'), sort);
+  const quickFilter = toQuickFilter(searchParams.get('status'));
+
+  const setListParams = (values: Record<string, string>) => {
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        Object.entries(values).forEach(([key, value]) => {
+          if (value) next.set(key, value);
+          else next.delete(key);
+        });
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
   // Nothing has been asked yet on the very first render: the hook starts idle
   // and raises isLoading inside its effect. Without this the empty state would
   // paint for a frame before the request has even left.
   const hasAnswer = status !== null || error !== null;
+
+  // Read unconditionally, ahead of the state guards below: a hook cannot sit
+  // behind an early return. Filtering an empty or stale array while the
+  // request is still in flight costs nothing — the guards decide what
+  // actually renders.
+  const {
+    rows: visibleDebtors,
+    matched,
+    total,
+    isFiltered,
+  } = useDebtorListFilter({
+    rows: apiData?.data ?? [],
+    search,
+    sort,
+    direction,
+    quickFilter,
+  });
 
   // Four outcomes, and none of them is a debtor. A request that failed, one
   // still in flight and an owner with no debtors used to collapse into the same
@@ -90,9 +161,10 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
     );
   }
 
-  const debtors: DebtsToRenderType = apiData?.data ?? [];
-
-  if (debtors.length === 0) {
+  // The board's own empty state, never the toolbar's: an owner with no
+  // debtors at all is a different answer from a search or filter that
+  // matched nothing, and only the second one is the toolbar's to word.
+  if ((apiData?.data ?? []).length === 0) {
     return (
       <article className='list__main__container debtorList'>
         <div className='debtorList__state'>
@@ -104,23 +176,28 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
     );
   }
 
-  // On a copy: the array being sorted is the hook's own state, and sorting in
-  // place rewrites what the hook holds.
-  const debtList: DebtsToRenderType = [...debtors].sort((a, b) => {
-    if (a.creditor && !b.creditor) return -1;
-    if (!a.creditor && b.creditor) return 1;
-
-    if (a.creditor && b.creditor) {
-      return Math.abs(b.total_debt_balance) - Math.abs(a.total_debt_balance);
-    }
-
-    return b.total_debt_balance - a.total_debt_balance;
-  });
-
   return (
     <>
+      <DebtsToolbar
+        search={search}
+        onSearchChange={(value) => setListParams({ q: value })}
+        sort={sort}
+        onSortChange={(value) =>
+          setListParams({ sort: value === 'balance' ? '' : value, dir: '' })
+        }
+        direction={direction}
+        onDirectionChange={(value) => setListParams({ dir: value })}
+        quickFilter={quickFilter}
+        onQuickFilterChange={(value) =>
+          setListParams({ status: value === 'all' ? '' : value })
+        }
+        matched={matched}
+        total={total}
+        isFiltered={isFiltered}
+      />
+
       <article className='list__main__container debtorList'>
-        {debtList.map((debtor, indx) => {
+        {visibleDebtors.map((debtor) => {
           const {
             account_name,
             account_id,
@@ -136,7 +213,7 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
             debt_payable + debt_receivable < 0 ? 'lender' : 'debtor';
 
           return (
-            <BoxContainer key={indx}>
+            <BoxContainer key={account_id}>
               <BoxRow>
                 {/* Absolute on purpose. The detail route is declared once, at
                     /fintrack/debts/debtors/:debtorId, and a relative `to`
