@@ -16,6 +16,13 @@ type BigBoxResultPropType = {
   currency: CurrencyType | undefined;
 };
 
+// Rewritten 2026-08-31 against Carlos's decision on the panel's hierarchy: a
+// net does not distinguish "owed 550" from "owed 1,750 and owing 2,300" —
+// opposite positions behind the same −550 — so the net cannot be the figure
+// that summarises the panel. The two directions are the primary indicators
+// now; the net is a derived, visually subordinate third line beneath them.
+// Data and query untouched: every figure here was already served and already
+// rendered, this only changes which markup carries which weight.
 export function DebtsBigBoxResult({
   bigScreenInfo,
   currency,
@@ -29,23 +36,22 @@ export function DebtsBigBoxResult({
       ? DASH
       : currencyFormat(defaultCurrency, amount, formatNumberCountry);
 
-  const totalTitle = bigScreenInfo[0].title;
-  const totalAmount = bigScreenInfo[0].amount;
+  const netAmount = bigScreenInfo[0].amount;
 
-  const receivable = bigScreenInfo[1].title;
-  const receivableAmount = bigScreenInfo[1].amount;
+  const owedLabel = bigScreenInfo[1].title;
+  const owedAmount = bigScreenInfo[1].amount;
 
   const debtors = bigScreenInfo[2].title;
   const debtorCount = bigScreenInfo[2].amount;
 
-  const payable = bigScreenInfo[3].title;
+  const oweLabel = bigScreenInfo[3].title;
 
   // The magnitude of what is owed, and only here. The server sums the negative
   // balances and serves the payable negative, which is the accounting truth and
   // does not move; the label beside this figure already carries the direction in
   // words, so printing the sign as well asks the reader to apply two conventions
   // at once. Presentation is not accounting representation.
-  const payableAmount =
+  const oweAmount =
     bigScreenInfo[3].amount === null ? null : Math.abs(bigScreenInfo[3].amount);
 
   const lenders = bigScreenInfo[4].title;
@@ -53,42 +59,50 @@ export function DebtsBigBoxResult({
 
   return (
     <div className='bigBox__container flex-col-sb'>
-      <div className='bigBox__mainInfo'>{totalTitle.toUpperCase()}</div>
+      {/* Static, not the net's sign: with the two directions stated below in
+          their own words, a title that also claimed a direction would be a
+          second, redundant assertion — and the wrong one whenever the net's
+          sign disagreed with the position the reader actually cares about. */}
+      <div className='bigBox__mainInfo'>{'debts'.toUpperCase()}</div>
 
-      <div className='displayScreen dark flex-row-sb'>
-        <div className='displayScreen--concept light'>{'total'}</div>
-        <div className='displayScreen--result light'>
-          {formatAmount(totalAmount)}
-        </div>
-      </div>
-
-      {/***/}
-      <div className='debtIndicatorContainer '>
-        <div className='debtInfo '>
-          <div className='displayScreen--concept light'>{receivable}:</div>
+      {/* LEVEL 1 — the two primary indicators. Each carries its own
+          direction unconditionally: owed-to-the-owner and owed-by-the-owner
+          are not two readings of one sign, they are two different figures. */}
+      <div className='debtsHero__primary'>
+        <div className='debtInfo debtsHero__primaryRow'>
+          <div className='displayScreen--concept light'>{owedLabel}</div>
           <div className='displayScreen--result light'>
-            {formatAmount(receivableAmount)}
+            {formatAmount(owedAmount)}
           </div>
 
-          <div className='displayScreen--concept light'>{debtors}:</div>
-          <div className='displayScreen--result light'>
+          <div className='displayScreen--concept light debtsHero__primaryMeta'>
+            {debtors}:
+          </div>
+          <div className='displayScreen--result light debtsHero__primaryMeta'>
             {debtorCount ?? DASH}
           </div>
         </div>
-        {}
 
-        <div className='debtInfo '>
-          <div className='displayScreen--concept light'>{payable}:</div>
-
+        <div className='debtInfo debtsHero__primaryRow'>
+          <div className='displayScreen--concept light'>{oweLabel}</div>
           <div className='displayScreen--result light'>
-            {formatAmount(payableAmount)}
+            {formatAmount(oweAmount)}
           </div>
 
-          <div className='displayScreen--concept light'>{lenders}:</div>
-          <div className='displayScreen--result light'>
+          <div className='displayScreen--concept light debtsHero__primaryMeta'>
+            {lenders}:
+          </div>
+          <div className='displayScreen--result light debtsHero__primaryMeta'>
             {creditorCount ?? DASH}
           </div>
         </div>
+      </div>
+
+      {/* LEVEL 2 — the net, derived from the two above and demoted beneath
+          them: smaller, muted, and no longer the panel's headline. */}
+      <div className='debtsHero__net'>
+        <span className='debtsHero__netLabel'>Net</span>
+        <span className='debtsHero__netValue'>{formatAmount(netAmount)}</span>
       </div>
     </div>
   );
