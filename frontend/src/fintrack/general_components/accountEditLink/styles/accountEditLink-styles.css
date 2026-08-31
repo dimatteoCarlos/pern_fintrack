@@ -22,13 +22,17 @@
  justify-content: center;
  /* Anchors the ::after that gives the tappable area back below. */
  position: relative;
- /* The painted box: the glyph plus --space-1 on each side, squared off that
-    same sum rather than a literal pixel value. */
+ /* The painted box: the glyph plus --space-1 on each side, off that same sum
+    rather than a literal pixel value. Equal on both axes, so --radius-full
+    rounds it to a circle and not to a pill. */
  width: calc(var(--font-size-base) + var(--space-1) * 2);
  height: calc(var(--font-size-base) + var(--space-1) * 2);
  flex-shrink: 0;
  padding: var(--space-1);
- border-radius: var(--radius-xs);
+ /* Round, the same highlight its sibling AccountActionsTrigger paints. The two
+    controls sit on the same detail cards, and one highlighting as a square
+    while the other highlights as a circle read as two different systems. */
+ border-radius: var(--radius-full);
  background-color: transparent;
  /* A Link renders an anchor, which arrives underlined and in the browser's
     own link colour. Both are cleared here so the control reads as a control. */
@@ -38,7 +42,7 @@
 }
 
 /* The tappable area the smaller highlight gave up. Unpainted and hit-testable,
-   so the pointer still gets --size-touch-target while only the square shows. */
+   so the pointer still gets --size-touch-target while only the circle shows. */
 .accountEditLink::after {
  content: '';
  position: absolute;
