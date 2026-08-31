@@ -326,6 +326,16 @@ body {
   background-color: var(--color-status-warning);
 }
 
+/* Notable, not wrong. A pocket committed past its target is the one reading in
+   that module that points at money the owner can move, and it needs its own
+   colour: amber already means the clock is running out, and reusing it would
+   make one colour say two unrelated things. Written on the token, like the
+   rule above and unlike the two before it, which consume --square names that
+   are declared nowhere and paint by their hex fallback. */
+.status__square.info {
+  background-color: var(--color-status-info);
+}
+
 /*input css rules */
 textarea::placeholder,
 textarea.input__note__description::placeholder,
