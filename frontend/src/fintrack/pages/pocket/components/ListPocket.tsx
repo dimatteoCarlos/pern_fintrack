@@ -1,6 +1,6 @@
 //ListPocket.tsx
 //parent: Pocket.tsx
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
 import {
@@ -8,39 +8,41 @@ import {
  formatCalendarDate,
 } from '../../../helpers/functions.ts';
 import { usePocketBoardStore } from '../../../stores/usePocketBoardStore.ts';
-import { PocketStatus } from '../../../types/pocketTypes.ts';
+import {
+ POCKET_STATUS_WORD,
+ PocketStatusLevel,
+ pocketDateLevel,
+ pocketSquareClass,
+} from '../../../helpers/pocketStatus.ts';
+import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
+import {
+ DEFAULT_SORT_DIRECTION,
+ usePocketListFilter,
+ type PocketQuickFilter,
+ type PocketSortDirection,
+ type PocketSortKey,
+} from '../hooks/usePocketListFilter.ts';
+import PocketToolbar from './PocketToolbar.tsx';
 
 // A figure the contract withheld. Never 0 and never an empty cell: a dash says
 // the answer is absent, where 0 would state an amount.
 const DASH = '—';
 
-// Which of the square's three readings a pocket carries. Reached the goal is
-// the default, a deadline already passed is the alert, and still running sits
-// between them.
-//
-// The two flags are mutually exclusive on this contract — overdue requires the
-// committed amount to be below the goal and funded requires the opposite — so
-// the three readings partition the board with no gap and no overlap.
-const statusMark = (pocket: PocketStatus): string => {
- if (pocket.funded) return '';
+// The word beside each card's status square is POCKET_STATUS_WORD, imported
+// from pocketStatus.ts rather than declared here: the board's own filter
+// (PocketToolbar) reads the same map for its options, so a card and the
+// control that narrows down to it can never disagree about what a level is
+// called.
 
- return pocket.overdue ? 'alert' : 'warning';
-};
-
-// The word beside the square. Colour alone survives neither colour blindness
-// nor a monochrome print, so the reading is spelled out as well as painted.
-const statusWord = (pocket: PocketStatus): string => {
- if (pocket.funded) return 'Funded';
-
- return pocket.overdue ? 'Overdue' : 'Active';
-};
-
-// The modifier suffix shared by the word and the bar fill, so one pocket cannot
-// light its label and its progress differently.
-const statusTone = (pocket: PocketStatus): string => {
- if (pocket.funded) return 'ok';
-
- return pocket.overdue ? 'alert' : 'warning';
+// Funded and on plan share a bare square — neither has anything to flag — so the
+// word is what tells them apart, and it carries its own tone. Colour alone
+// survives neither colour blindness nor a monochrome print.
+const STATUS_TONE: Record<PocketStatusLevel, string> = {
+ funded: 'ok',
+ overFunded: 'info',
+ onPlan: 'neutral',
+ atRisk: 'warning',
+ offPlan: 'alert',
 };
 
 const plural = (count: number, word: string): string =>
@@ -65,6 +67,34 @@ const SKELETON_ROWS = 3;
 // card it stands in for rather than as a stack of equal blocks.
 const SKELETON_BARS = ['title', 'note', 'bar', 'facts'];
 
+// A URL is typed by anyone. An unrecognised key would leave the select
+// matching no option and showing an empty box, so both fall back to the
+// value that changes nothing — the order the rows already arrive in, and no
+// filter at all.
+const SORT_KEYS: PocketSortKey[] = ['date', 'name', 'remaining'];
+const toSortKey = (value: string | null): PocketSortKey =>
+ SORT_KEYS.includes(value as PocketSortKey) ? (value as PocketSortKey) : 'date';
+
+const FILTER_KEYS: PocketQuickFilter[] = [
+ 'all',
+ 'funded',
+ 'overFunded',
+ 'onPlan',
+ 'atRisk',
+ 'offPlan',
+ 'uncovered',
+];
+const toQuickFilter = (value: string | null): PocketQuickFilter =>
+ FILTER_KEYS.includes(value as PocketQuickFilter)
+  ? (value as PocketQuickFilter)
+  : 'all';
+
+const toSortDirection = (
+ value: string | null,
+ sort: PocketSortKey,
+): PocketSortDirection =>
+ value === 'asc' || value === 'desc' ? value : DEFAULT_SORT_DIRECTION[sort];
+
 //============================================
 function ListPocket({ previousRoute }: { previousRoute: string }) {
  // The board is fetched by PocketLayout, which needs the same answer for its
@@ -74,6 +104,44 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
  const isLoaded = usePocketBoardStore((state) => state.isLoaded);
  const error = usePocketBoardStore((state) => state.error);
  const refreshBoard = usePocketBoardStore((state) => state.refreshBoard);
+
+ // The toolbar's own state lives in the URL, not in a useState here, for the
+ // reason ListCategory's header states for the same choice: a pocket's detail
+ // is declared beside <Layout/> (PLAN_POCKET_FE.md §5), so opening one
+ // unmounts this whole list, and a term held in component state would not
+ // survive the trip back from it.
+ const [searchParams, setSearchParams] = useSearchParams();
+ const search = (searchParams.get('q') ?? '').slice(
+  0,
+  NAME_MAX_LENGTHS.pocket_name,
+ );
+ const sort = toSortKey(searchParams.get('sort'));
+ const direction = toSortDirection(searchParams.get('dir'), sort);
+ const quickFilter = toQuickFilter(searchParams.get('status'));
+
+ const setListParams = (values: Record<string, string>) => {
+  setSearchParams(
+   (previous) => {
+    const next = new URLSearchParams(previous);
+    Object.entries(values).forEach(([key, value]) => {
+     if (value) next.set(key, value);
+     else next.delete(key);
+    });
+    return next;
+   },
+   { replace: true },
+  );
+ };
+
+ // Read unconditionally, ahead of the state guards below: a hook cannot sit
+ // behind an early return. Filtering an empty or stale array while the board
+ // is still loading costs nothing — the guards decide what actually renders.
+ const {
+  rows: visiblePockets,
+  matched,
+  total,
+  isFiltered,
+ } = usePocketListFilter({ rows: pockets, search, sort, direction, quickFilter });
 
  // Three states, and they are not degrees of one another. A failed request is
  // not an empty board, and neither is a request still in flight — all three
@@ -126,7 +194,7 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
    <article className='list__main__container pocketList'>
     <div className='pocketList__state'>
      <p className='pocketList__stateText'>
-      No pockets yet. Create one to plan towards a goal.
+      No pockets yet. Create one to plan towards a target.
      </p>
     </div>
    </article>
@@ -135,8 +203,30 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
 
  //--------------------------------------------
  return (
-  <article className='list__main__container pocketList'>
-   {pockets.map((pocket) => {
+  <>
+   <PocketToolbar
+    search={search}
+    onSearchChange={(value) => setListParams({ q: value })}
+    sort={sort}
+    // The direction is cleared, not carried: each key opens on its own
+    // default (DEFAULT_SORT_DIRECTION), and keeping the previous one would
+    // open Remaining, whose default is descending, sorted ascending instead.
+    onSortChange={(value) =>
+     setListParams({ sort: value === 'date' ? '' : value, dir: '' })
+    }
+    direction={direction}
+    onDirectionChange={(value) => setListParams({ dir: value })}
+    quickFilter={quickFilter}
+    onQuickFilterChange={(value) =>
+     setListParams({ status: value === 'all' ? '' : value })
+    }
+    matched={matched}
+    total={total}
+    isFiltered={isFiltered}
+   />
+
+   <article className='list__main__container pocketList'>
+   {visiblePockets.map((pocket) => {
     const {
      pocketId,
      name,
@@ -164,7 +254,8 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
     // renders as the previous day west of UTC.
     const deadlineText = formatCalendarDate(desiredDate);
 
-    const tone = statusTone(pocket);
+    const level = pocketDateLevel(pocket);
+    const tone = STATUS_TONE[level];
 
     // The row's percentage is not clamped and passes 100 when the goal is
     // passed, which is a fact the label prints. The track is clamped instead,
@@ -196,13 +287,14 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
       <div className='pocketCard__head'>
        <h3 className='pocketCard__name'>{name}</h3>
 
-       {/* Read off the two flags the server serves. Derived from the
-           shortfall, this square marked a pocket three months ahead of
-           schedule identically to one whose deadline has passed, since
-           both are short of the goal. */}
+       {/* The level comes from the shared helper: the two served flags decide
+           funded and overdue, and the thirty-day threshold splits what is
+           left. Derived from the shortfall instead, this square once marked a
+           pocket three months ahead of schedule identically to one whose
+           deadline had passed, since both are short of the goal. */}
        <span className={`pocketCard__status pocketCard__status--${tone}`}>
-        <StatusSquare alert={statusMark(pocket)} />
-        {statusWord(pocket)}
+        <StatusSquare alert={pocketSquareClass(level)} />
+        {POCKET_STATUS_WORD[level]}
        </span>
       </div>
 
@@ -233,7 +325,7 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
       <dl className='pocketCard__facts'>
        <div className='pocketCard__fact'>
         <dt className='pocketCard__factLabel'>
-         {isExcess ? 'Over goal' : 'Remaining'}
+         {isExcess ? 'Over target' : 'Remaining'}
         </dt>
         <dd
          className={`pocketCard__factValue ${
@@ -286,6 +378,7 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
     );
    })}
   </article>
+  </>
  );
 }
 

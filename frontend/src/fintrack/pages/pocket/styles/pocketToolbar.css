@@ -1,0 +1,268 @@
+/* frontend/src/fintrack/pages/pocket/styles/pocketToolbar.css
+   The board's own list controls, adapted from budgetListControls.css: same
+   one-row, one-surface strip, same search field, but two <select> segments
+   instead of one — a pocket's five filters are a partition, not a binary
+   toggle, and a five-way switch reads better as a control that already opens
+   than as a row of chips fighting the search for the same 360px.
+
+   Imported by PocketToolbar.tsx. */
+
+.pocketToolbar {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ margin-top: 0;
+ margin-bottom: var(--space-4);
+}
+
+@media (max-height: 735px) {
+ .pocketToolbar {
+  margin-top: 0;
+  margin-bottom: var(--space-3);
+ }
+}
+
+/* One surface for the whole strip, not one border per control: three boxes
+   sharing a line read as one instrument, told apart by a hairline each,
+   rather than as three objects that happen to be adjacent. */
+.pocketToolbar__fields {
+ display: flex;
+ flex-wrap: nowrap;
+ align-items: stretch;
+ min-height: var(--size-control-sm);
+ background-color: var(--color-surface-sunken);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-xl);
+ overflow: hidden;
+ transition: border-color var(--motion-fast);
+}
+
+.pocketToolbar__fields:hover {
+ border-color: var(--color-content-on-dark-subtle);
+}
+
+.pocketToolbar__query,
+.pocketToolbar__selectBox {
+ position: relative;
+ display: flex;
+}
+
+/* The key and its direction, close enough to read as one control rather than
+   two that happen to be adjacent — same pairing budgetListControls draws
+   between its own sort select and direction button. */
+.pocketToolbar__sort {
+ display: flex;
+ align-items: center;
+ gap: var(--space-1);
+ flex: 0 0 auto;
+}
+
+/* The elastic side of the row. A search field still works narrow — the term
+   scrolls inside it — while the two selects are fixed objects that would be
+   cut rather than shortened. No floor: min-width: 0 is what actually lets an
+   <input> give up the ~20 character width it reports as its content size. */
+.pocketToolbar__query {
+ flex: 1 1 auto;
+ min-width: 0;
+}
+
+.pocketToolbar__selectBox {
+ flex: 0 0 auto;
+}
+
+.pocketToolbar__search,
+.pocketToolbar__select {
+ background-color: transparent;
+ border: none;
+ border-radius: 0;
+ color: var(--color-content-on-dark);
+ font-family: var(--font-family-sans);
+ font-size: var(--font-size-sm);
+ transition: color var(--motion-fast), background-color var(--motion-fast);
+}
+
+/* The hairline between the row's three segments — the term, the key with its
+   direction, and the filter — not a gap: a gap costs the term pixels and
+   still leaves the eye to guess where one segment ends and the next begins.
+   Nothing separates the select from its direction button inside .sort: the
+   two read as one control there, exactly as the search reads as one field
+   with its clear button. */
+.pocketToolbar__sort,
+.pocketToolbar__selectBox--filter {
+ border-left: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+.pocketToolbar__search {
+ width: 100%;
+ min-width: 0;
+ padding: var(--space-1) var(--space-3);
+ padding-left: var(--space-8);
+}
+
+.pocketToolbar__search::placeholder {
+ color: var(--color-content-placeholder);
+}
+
+.pocketToolbar__search::-webkit-search-cancel-button {
+ display: none;
+}
+
+.pocketToolbar__query:has(.pocketToolbar__reset) .pocketToolbar__search {
+ padding-right: var(--space-8);
+}
+
+/* The arrow a browser draws on a select ignores the page's colours, so it is
+   removed and redrawn as an icon. Grey rather than white: the value is the
+   app's own state, not what the reader typed. */
+.pocketToolbar__select {
+ width: auto;
+ padding: var(--space-1) var(--space-6);
+ padding-left: var(--space-8);
+ color: var(--color-content-on-dark-subtle);
+ appearance: none;
+ cursor: pointer;
+}
+
+.pocketToolbar__icon {
+ position: absolute;
+ top: 50%;
+ left: var(--space-2);
+ width: var(--font-size-base);
+ height: var(--font-size-base);
+ transform: translateY(-50%);
+ color: var(--color-content-on-dark-subtle);
+ pointer-events: none;
+}
+
+.pocketToolbar__icon--trailing {
+ right: var(--space-2);
+ left: auto;
+}
+
+/* Square, carrying the same box as the key beside it so the two read as one
+   control. The arrow points down for descending and turns for ascending, so
+   the glyph is the state rather than a label for it. */
+.pocketToolbar__direction {
+ flex: 0 0 auto;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--size-control-sm);
+ background-color: transparent;
+ border: none;
+ color: var(--color-content-on-dark-subtle);
+ cursor: pointer;
+ transition: color var(--motion-fast);
+}
+
+.pocketToolbar__direction svg {
+ width: var(--font-size-base);
+ height: var(--font-size-base);
+ transition: transform var(--motion-fast);
+}
+
+.pocketToolbar__direction.is-ascending svg {
+ transform: rotate(180deg);
+}
+
+.pocketToolbar__direction:hover,
+.pocketToolbar__direction:active {
+ color: var(--color-content-on-dark);
+}
+
+.pocketToolbar__direction:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(-1 * var(--border-width-thick));
+ border-radius: var(--radius-lg);
+}
+
+/* index.css sets font-size on the universal selector, which matches <option>
+   directly, so it never inherits the closed control's size without restating
+   it — the key has to read the same open as it does shut. Honoured by
+   Chromium and Firefox; Safari keeps its own option styling regardless. */
+.pocketToolbar__select option {
+ background-color: var(--color-surface-sunken);
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-sm);
+}
+
+.pocketToolbar__select option:checked,
+.pocketToolbar__select option:hover {
+ background-color: var(--color-surface-panel);
+ color: var(--color-content-primary);
+}
+
+.pocketToolbar__reset {
+ position: absolute;
+ top: 50%;
+ right: 0;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ width: var(--space-8);
+ height: var(--size-control-sm);
+ transform: translateY(-50%);
+ background-color: transparent;
+ border: none;
+ border-radius: var(--radius-full);
+ color: var(--color-content-on-dark-subtle);
+ cursor: pointer;
+ transition: color var(--motion-fast);
+}
+
+.pocketToolbar__reset svg {
+ width: var(--font-size-base);
+ height: var(--font-size-base);
+}
+
+.pocketToolbar__reset:hover,
+.pocketToolbar__reset:active {
+ color: var(--color-content-on-dark);
+}
+
+.pocketToolbar__fields:active {
+ border-color: var(--color-accent);
+}
+
+.pocketToolbar__search:focus-visible,
+.pocketToolbar__select:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(-1 * var(--border-width-thick));
+ border-radius: var(--radius-lg);
+}
+
+.pocketToolbar__reset:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: calc(-1 * var(--border-width-thick));
+}
+
+.pocketToolbar__status {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: center;
+ gap: var(--space-2);
+ color: var(--color-content-on-dark-subtle);
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+}
+
+/* Hidden outright, not merely collapsed to no height: the bar is a flex
+   column with a gap, and a zero-height child still takes that gap. */
+.pocketToolbar__status:empty {
+ display: none;
+}
+
+.pocketToolbar__message {
+ font-size: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .pocketToolbar__fields,
+ .pocketToolbar__search,
+ .pocketToolbar__select,
+ .pocketToolbar__direction,
+ .pocketToolbar__direction svg,
+ .pocketToolbar__reset {
+  transition: none;
+ }
+}

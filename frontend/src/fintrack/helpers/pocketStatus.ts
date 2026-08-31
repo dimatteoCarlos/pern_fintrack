@@ -51,6 +51,19 @@ const READING_MODIFIER: Record<PocketStatusLevel, string> = {
  offPlan: 'pocketDetail__reading--alert',
 };
 
+// The one place this vocabulary is spelled, so a card, the hero's tallies and
+// the board's own filter can never name the same level three different ways.
+// It replaces a private three-word scheme that painted AMBER on everything
+// neither funded nor overdue and called it "Active" — a word that appeared on
+// the filter and nowhere else on the screen it was filtering.
+export const POCKET_STATUS_WORD: Record<PocketStatusLevel, string> = {
+ funded: 'Funded',
+ overFunded: 'Above target',
+ onPlan: 'On plan',
+ atRisk: 'At risk',
+ offPlan: 'Overdue',
+};
+
 export const pocketSquareClass = (level: PocketStatusLevel): string =>
  SQUARE_CLASS[level];
 
