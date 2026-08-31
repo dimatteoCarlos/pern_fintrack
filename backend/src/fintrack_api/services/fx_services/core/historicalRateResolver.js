@@ -32,7 +32,7 @@ import {
  MAX_RATE_AGE_DAYS,
  findDailyRate,
  findLatestBusinessDay,
- persistDailyRates,
+ persistQueriedRange,
 } from '../db/dailyRateDBaccess.js';
 
 import { fetchBancaDItaliaRange } from '../fxProviders/bancaDItaliaProvider.js';
@@ -245,12 +245,26 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
  const attempts = [];
 
  /**
-  * Write what a provider returned and read the answer back out of the store.
+  * Write what a provider returned, record the span it was asked for, and read
+  * the answer back out of the store.
+  *
+  * The span is not decoration. The read below refuses a row it cannot prove was
+  * inside a queried period, so an arm that stored observations without saying
+  * what it asked for would store rows nothing will ever read again.
+  *
   * @param {Array<{rateDate: string, rate: string, source: string}>} rows
+  * @param {{from: string, to: string}} span - The days asked for, `to` included.
   * @returns {Promise<HistoricalRate|null>}
   */
- const storeThenResolve = async (rows) => {
-  await persistDailyRates(rows, baseCurrencyId, targetCurrencyId);
+ const storeThenResolve = async (rows, span) => {
+  await persistQueriedRange({
+   rateRows: rows,
+   baseCurrencyId,
+   targetCurrencyId,
+   from: span.from,
+   to: span.to,
+  });
+
   const hit = await findDailyRate(baseCurrencyId, targetCurrencyId, day);
   return hit ? asAnswer(hit, currency, day) : null;
  };
@@ -268,7 +282,7 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
    const series = await fetchTrmRange(from, to);
 
    if (series.length > 0) {
-    const answer = await storeThenResolve(series);
+    const answer = await storeThenResolve(series, { from, to });
     if (answer) return answer;
    }
 
@@ -288,7 +302,7 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
   });
 
   if (series.length > 0) {
-   const answer = await storeThenResolve(series);
+   const answer = await storeThenResolve(series, { from, to });
    if (answer) return answer;
   }
 
@@ -321,9 +335,12 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
    if (!quote) {
     attempts.push(`cdn: no ${currency} quote on ${publishedDay}`);
    } else {
-    const answer = await storeThenResolve([
-     { rateDate: publishedDay, rate: String(quote.rate), source: payload.source },
-    ]);
+    const answer = await storeThenResolve(
+     [{ rateDate: publishedDay, rate: String(quote.rate), source: payload.source }],
+     // One day was asked for, so one day is covered. Claiming the span the
+     // other arms use would assert days this call never requested.
+     { from: publishedDay, to: publishedDay },
+    );
 
     if (answer) return answer;
 

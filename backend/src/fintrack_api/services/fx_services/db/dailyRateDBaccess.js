@@ -14,6 +14,12 @@
  *
  * Its caller is the cascade resolver, core/historicalRateResolver.js, which
  * both reads from here and writes back every row a provider range returned.
+ *
+ * It also owns exchange_rate_query_coverage, created by migration 023, which
+ * records WHICH DAY RANGES were actually asked of a provider. The two tables are
+ * read together and written together: an observation says what a rate was, and
+ * coverage says whether the period around it was ever downloaded. Only both
+ * together make a walk-back to an older day mean anything.
  */
 
 import { pool } from '../../../../db/config/configDB.js';
@@ -74,6 +80,18 @@ const toCalendarDay = (value) => {
  * back as zero rows — a miss the caller handles by calling the provider, not a
  * hit it has to second-guess.
  *
+ * The row must also be COVERED. Walking back from the requested day to an older
+ * row asserts that every day in between was absent from the provider, and that
+ * assertion is only true if those days were ever asked for. An absent day inside
+ * a queried span is a real absence; outside one it means nothing. Without the
+ * coverage test the walk-back served a superseded rate — measured on the peso at
+ * +2.46% for 2026-08-20, inside the age bound, so nothing rejected it.
+ *
+ * Coverage is matched on the source of the row itself: having queried one
+ * provider over August proves nothing about another, which publishes on its own
+ * calendar. The exclusion constraint on the coverage table guarantees at most
+ * one row can contain a given span for a source and pair, so EXISTS is exact.
+ *
  * The rate is returned as DECIMAL text, exactly as Postgres delivers it. This
  * store feeds a ledger, and parsing to a float here would round at the module
  * boundary, before the caller has decided on its own precision.
@@ -101,11 +119,19 @@ export async function findDailyRate(
            TO_CHAR(rate_date, 'YYYY-MM-DD') AS rate_date,
            source,
            ($3::date - rate_date)           AS days_back
-      FROM daily_exchange_rates
+      FROM daily_exchange_rates d
      WHERE base_currency_id = $1
        AND target_currency_id = $2
        AND rate_date <= $3::date
        AND rate_date >= $3::date - $4::int
+       AND EXISTS (
+             SELECT 1
+               FROM exchange_rate_query_coverage c
+              WHERE c.source             = d.source
+                AND c.base_currency_id   = d.base_currency_id
+                AND c.target_currency_id = d.target_currency_id
+                AND c.covered @> daterange(d.rate_date, $3::date + 1, '[)')
+           )
      ORDER BY rate_date DESC
      LIMIT 1
     `,
@@ -143,15 +169,19 @@ export async function findDailyRate(
  * @param {DailyRateRow[]} rateRows
  * @param {number} baseCurrencyId
  * @param {number} targetCurrencyId
- * @returns {Promise<number>} Rows newly stored. Zero is a legitimate result:
- *   every row was already known.
+ * @returns {Promise<{stored: number, source: string}>} How many rows were
+ *   newly written, and the provider they were written under — the caller needs
+ *   the second to record coverage under the same name the rows carry. A stored
+ *   count of zero is legitimate: every row was already known. A source of
+ *   'unknown' with zero stored means nothing usable arrived.
  */
 export async function persistDailyRates(
  rateRows,
  baseCurrencyId,
  targetCurrencyId,
+ client = pool,
 ) {
- if (!rateRows?.length) return 0;
+ if (!rateRows?.length) return { stored: 0, source: 'unknown' };
 
  // Today in UTC, the calendar the provider's reference dates are stated in.
  const todayUtc = new Date().toISOString().slice(0, 10);
@@ -187,11 +217,12 @@ export async function persistDailyRates(
   source = source ?? item.source;
  }
 
- if (days.length === 0) return 0;
+ if (days.length === 0) return { stored: 0, source: 'unknown' };
 
  // One statement over the whole range. UNNEST pairs the two arrays
- // positionally, so the insert is atomic without an explicit transaction.
- const { rowCount } = await pool.query(
+ // positionally, so the insert is atomic on its own; a caller that also has
+ // coverage to write passes its client and gets both under one commit.
+ const { rowCount } = await client.query(
   `
     INSERT INTO daily_exchange_rates (
       base_currency_id,
@@ -211,7 +242,155 @@ export async function persistDailyRates(
   `Rate history: ${rowCount} new of ${days.length} returned (${rateRows.length - days.length} skipped)`,
  );
 
- return rowCount;
+ return { stored: rowCount, source: source || 'unknown' };
+}
+
+/**
+ * Record that one provider was asked for one currency pair over one span of
+ * days, and answered.
+ *
+ * What it asserts and what it does not. The row is a fact about this
+ * installation's own network traffic: on fetched_at we asked <source> for
+ * <base>/<target> over <covered>. It says nothing about any rate, and nothing
+ * about how long a rate stays valid. It is what lets the resolver tell "the
+ * provider published nothing that day" from "we never downloaded that period".
+ *
+ * Why the lock and the constraint are both here and are not the same thing. The
+ * advisory lock is transaction-scoped and keyed on the provider and the pair, so
+ * two submits that queried overlapping spans serialise instead of both reading
+ * the same neighbours and each writing a merged row over them — the phantom the
+ * read-merge-write is exposed to when neither row exists yet. The exclusion
+ * constraint on the table is the structural guarantee underneath: whatever gets
+ * built later, no two rows for one provider and pair can overlap. Overlapping
+ * rows would make the coverage test ambiguous, and an ambiguous coverage test is
+ * worse than none because it reports a hit it cannot back.
+ *
+ * The merge is one statement. Every stored span that overlaps OR touches the new
+ * one is deleted and its bounds folded in, so the set stays one row per
+ * contiguous interval and the constraint never has to reject anything. Adjacency
+ * matters as much as overlap: August and September stored apart would answer no
+ * to a span crossing the 31st, though every one of its days was queried. With no
+ * neighbours the aggregate is over zero rows, LEAST and GREATEST ignore the
+ * NULLs, and the new span is inserted as it stands.
+ *
+ * @param {object} client - A client already inside a transaction.
+ * @param {Object} span
+ * @param {number} span.baseCurrencyId
+ * @param {number} span.targetCurrencyId
+ * @param {string} span.source - The provider that answered.
+ * @param {string} span.from - First day asked for, 'YYYY-MM-DD'.
+ * @param {string} span.to - Last day asked for, INCLUSIVE.
+ * @returns {Promise<void>}
+ */
+export async function recordQueryCoverage(
+ client,
+ { baseCurrencyId, targetCurrencyId, source, from, to },
+) {
+ // The same key space the exclusion constraint uses, so the writers that can
+ // collide are exactly the ones that wait for each other.
+ await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+  `${source}:${baseCurrencyId}:${targetCurrencyId}`,
+ ]);
+
+ // to + 1 and not to + INTERVAL '1 day': adding an interval to a date yields a
+ // timestamp and there is no daterange(date, timestamp). The upper bound is the
+ // day after the last day asked for, because the half-open form excludes it.
+ await client.query(
+  `
+    WITH asked AS (
+      SELECT daterange($4::date, $5::date + 1, '[)') AS span
+    ),
+    absorbed AS (
+      DELETE FROM exchange_rate_query_coverage c
+       USING asked a
+       WHERE c.source             = $3
+         AND c.base_currency_id   = $1
+         AND c.target_currency_id = $2
+         AND (c.covered && a.span OR c.covered -|- a.span)
+      RETURNING c.covered
+    )
+    INSERT INTO exchange_rate_query_coverage
+           (base_currency_id, target_currency_id, source, covered)
+    SELECT $1, $2, $3,
+           daterange(
+             LEAST(MIN(lower(covered)), (SELECT lower(span) FROM asked)),
+             GREATEST(MAX(upper(covered)), (SELECT upper(span) FROM asked)),
+             '[)')
+      FROM absorbed
+    `,
+  [baseCurrencyId, targetCurrencyId, source, from, to],
+ );
+}
+
+/**
+ * Store what a provider returned and the span it was asked for, under one
+ * commit.
+ *
+ * The two writes cannot be separated. Observations without coverage are rows the
+ * resolver will never read; coverage without observations claims a period was
+ * downloaded when it was not. Either half alone is a lie about the store, so
+ * they share a transaction and a failure takes both.
+ *
+ * A span answered with no usable row writes NOTHING, coverage included. An empty
+ * answer is indistinguishable from a provider that returned a success with an
+ * empty body, and coverage is never invalidated by anything: recording it would
+ * mark that period permanently as asked-and-empty, so no later request would
+ * ever go back and the store could not recover from one bad response. Asking
+ * again costs a call; recording a false emptiness costs correctness for good.
+ *
+ * @param {Object} args
+ * @param {DailyRateRow[]} args.rateRows - What the provider returned.
+ * @param {number} args.baseCurrencyId
+ * @param {number} args.targetCurrencyId
+ * @param {string} args.from - First day asked for, 'YYYY-MM-DD'.
+ * @param {string} args.to - Last day asked for, inclusive.
+ * @returns {Promise<number>} Rows newly stored. Zero is legitimate: every
+ *   observation was already known, and the span is recorded all the same.
+ */
+export async function persistQueriedRange({
+ rateRows,
+ baseCurrencyId,
+ targetCurrencyId,
+ from,
+ to,
+}) {
+ if (!rateRows?.length) return 0;
+
+ const client = await pool.connect();
+
+ try {
+  await client.query('BEGIN');
+
+  const { stored, source } = await persistDailyRates(
+   rateRows,
+   baseCurrencyId,
+   targetCurrencyId,
+   client,
+  );
+
+  // Nothing the provider sent was usable, so nothing was learnt about the span.
+  if (source === 'unknown' && stored === 0) {
+   await client.query('ROLLBACK');
+   return 0;
+  }
+
+  await recordQueryCoverage(client, {
+   baseCurrencyId,
+   targetCurrencyId,
+   source,
+   from,
+   to,
+  });
+
+  await client.query('COMMIT');
+
+  return stored;
+ } catch (error) {
+  await client.query('ROLLBACK');
+  throw error;
+ } finally {
+  client.release();
+ }
 }
 
 /**
