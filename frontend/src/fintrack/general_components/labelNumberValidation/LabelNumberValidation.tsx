@@ -33,7 +33,13 @@ function LabelNumberValidation<
   return (
     <div className={labelClassName}>
       {capitalize(formDataNumber.title)}&nbsp;
+      {/* Named so the field it describes can point at it with
+          aria-describedby. Without the id the message is a loose sibling: a
+          screen reader reaches the input and is told nothing is wrong with
+          it. The id is derived from the field's own key, which is what the
+          input is named by, so the two cannot drift apart. */}
       <span
+        id={`${String(validationKey)}-validation`}
         className='validation__errMsg'
         style={{
           color: validationMessage.toLowerCase().includes('format:')

@@ -290,13 +290,26 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
       </div>
 
         <div className='card__screen'>
+          {/* The error for this field is rendered by LabelNumberValidation as
+              a sibling above; these two attributes are what tie it to the
+              input, so a screen reader announces the field as invalid and
+              reads the reason. InputField.tsx does the same for the auth
+              forms — this raw input is the one place that did not. */}
           <input
             className='inputNumber'
             name={title1}
             type='text'
+            /* The browser's own form history was offering past amounts over
+               the account selector below it. Same setting PocketCashModal's
+               amount field already carries. */
+            autoComplete='off'
             placeholder={trackerName}
             value={value} //amountValue
             onChange={updateTrackerData} //onAmountChange
+            aria-invalid={Boolean(validationMessages[title1])}
+            aria-describedby={
+              validationMessages[title1] ? `${title1}-validation` : undefined
+            }
           />
 
           <CurrencyBadge
