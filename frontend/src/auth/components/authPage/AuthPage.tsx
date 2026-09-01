@@ -48,6 +48,7 @@ export default function AuthPage() {
 //--LOCAL UI STATES not related to auth UX
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isSignInMode, setIsSignInMode] = useState(true); // true = signin, false = signup
+  const [isDarkTheme, setIsDarkTheme] = useState<boolean>(false);
 
 //CUSTOM HOOKS
 // Auth operations (passed to AuthUI)
@@ -232,6 +233,7 @@ useEffect(() => {
 // ======================
 // 🧹 Reset UI state when modal closes
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleTheme = () => setIsDarkTheme((prev) => !prev);
 
   const openSigninModalHandler = () => {
     setIsMenuOpen(false);
@@ -312,7 +314,7 @@ useEffect(() => {
         {showModal && (
           <div className={styles.modalOverlay} onClick={handleCloseModal}>
             <div
-              className={styles.modalContent}
+              className={`${styles.modalContent}${isDarkTheme ? ' theme-dark' : ''}`}
               onClick={(e) => e.stopPropagation()}
             >
               <AuthUI
@@ -327,6 +329,8 @@ useEffect(() => {
                 clearError={clearError}
                 // onClose is used by AuthUI to close modal (e.g., from its own close button)
                 onClose={handleCloseModal}
+                isDarkTheme={isDarkTheme}
+                onToggleTheme={toggleTheme}
               />
             </div>
           </div>

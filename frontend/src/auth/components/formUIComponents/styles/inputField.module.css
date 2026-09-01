@@ -251,8 +251,10 @@
    sits on: the auth modal and the profile menu are both white cards. What
    differs is that the auth one is filled, the way the Tracker draws a field --
    .card__screen in tracker-style.css:183-186 is a creme rectangle with no
-   border at all, on a white card. The fill is the whole affordance there, so
-   the contour that the default variant needs is redundant here.
+   border at all, on a white card. The fill was meant to be the whole
+   affordance here too, but on its own it measures 1.27:1 against the white
+   card -- under the 3:1 WCAG 1.4.11 floor for a control boundary -- so the
+   filled variant carries a thin border the default variant does not need.
 
    `default` is every rule above this line, unchanged, which is what
    ChangePasswordForm and UpdateProfileForm render. It carries color-scheme so
@@ -274,6 +276,13 @@
   color: var(--color-content-primary);
 }
 
+/* The label sits directly on the card, not on the cream fill -- #141414 on the
+   dark card's #0d0f12 is two near-identical near-blacks, unlike the border and
+   help text above which at least sit one step removed on the fill. */
+:global(.theme-dark) .inputContainer.filled .inputLabel {
+  color: var(--color-content-on-dark);
+}
+
 /* Every field of both auth forms is required, so a marker that never varies
    carries no information. The `required` attribute stays on the input, which is
    what validation and assistive technology read; what goes is the six identical
@@ -285,7 +294,11 @@
 .inputContainer.filled .inputField {
   background-color: var(--color-surface-panel);
   color: var(--color-content-primary);
-  border: none;
+  /* The fill alone measures 1.27:1 against the white card, under the 3:1
+     WCAG 1.4.11 floor for a control boundary. The border restores that
+     boundary without a new color -- it reuses the secondary text token,
+     already proven at 6.79:1 on white. */
+  border: var(--border-width-thin) solid var(--color-content-secondary);
   border-radius: var(--radius-md);
   /* The base rule has no min-height, so the field resolved to 30px against a
      44px button in the same column, under the project's own touch target. */
@@ -297,8 +310,8 @@
 }
 
 .inputContainer.filled .inputField::placeholder {
-  color: var(--color-content-secondary);
-  opacity: 0.75;
+  color: var(--color-content-placeholder);
+  opacity: 1;
 }
 
 /* With no border to recolour, focus has to be the ring. index.css:76 kills the
@@ -315,6 +328,23 @@
   opacity: 0.5;
   pointer-events: none;
   background-color: var(--color-surface-panel);
+}
+
+/* The field keeps its cream fill in both themes -- only what sits at the
+   boundary against the surrounding card changes. --color-content-secondary
+   (#5b5b5b) measures 2.83:1 against the dark card, under the 3:1 floor for a
+   control boundary (WCAG 1.4.11); --color-content-on-dark-subtle is 9.2:1 on
+   the same ground. Same reasoning for the focus ring: --color-border-strong
+   is #141414, nearly the dark card's own color, so it would disappear for a
+   keyboard user. The toggle icon's color rule below is untouched on purpose --
+   it already sits on the cream fill in both themes and needs no dark variant. */
+:global(.theme-dark) .inputContainer.filled .inputField {
+  border-color: var(--color-content-on-dark-subtle);
+}
+
+:global(.theme-dark) .inputContainer.filled .inputField:focus,
+:global(.theme-dark) .inputContainer.filled .inputField:focus-visible {
+  outline-color: var(--color-content-on-dark);
 }
 
 /* An inset shadow rather than a border: a border would change the field's
@@ -353,6 +383,12 @@
 
 .inputContainer.filled .helpText {
   color: var(--color-content-secondary);
+}
+
+/* Same 2.83:1-on-the-dark-card problem as the border above; errorMessage is
+   untouched because --color-status-alert already measures 5.71:1 there. */
+:global(.theme-dark) .inputContainer.filled .helpText {
+  color: var(--color-content-on-dark-subtle);
 }
 
 @media (prefers-reduced-motion: reduce) {

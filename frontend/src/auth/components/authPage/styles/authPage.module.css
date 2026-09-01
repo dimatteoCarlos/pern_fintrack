@@ -193,6 +193,16 @@ button {
   color: var(--color-content-primary);
 }
 
+/* Dark theme, toggled from AuthUI's header. Built only from the dark-surface
+   tokens tokens.css already carries but that no shipped component consumed
+   until now (see authUI.module.css and inputField.module.css for the rest
+   of this variant). */
+:global(.theme-dark).modalContent {
+  background-color: var(--color-surface-app);
+  color: var(--color-content-on-dark);
+  border: var(--border-width-thin) solid var(--color-content-on-dark-subtle);
+}
+
 /* The title had two owners: this descendant selector and
    .auth-container__title. This one won on specificity, so the class that
    names the element was the one being ignored. The class owns it now. */

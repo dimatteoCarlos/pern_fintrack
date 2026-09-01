@@ -86,6 +86,21 @@ Prevents layout shift when messages appear/disappear*/
   flex-shrink: 0;
 }
 
+/* The mark ships #141414 baked into logo.svg's paths, not currentColor, so a
+   second dark-theme asset would have to be maintained in step with it. A pure
+   grayscale invert turns that #141414 into ~#ebebeb (16:1 on the dark card)
+   without touching the asset or inventing a color. */
+:global(.theme-dark) .auth-header__logo {
+  filter: invert(1);
+}
+
+.auth-header__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
 /* The rule separates chrome from form, so it has to reach the panel edges.
    Inset by the panel padding it reads as a divider between two content blocks,
    which is not what it is. */
@@ -95,6 +110,10 @@ Prevents layout shift when messages appear/disappear*/
   opacity: 0.15;
   margin-inline: calc(-1 * var(--space-5));
   width: calc(100% + var(--space-5) * 2);
+}
+
+:global(.theme-dark) .auth-header__rule {
+  background-color: var(--color-content-on-dark-subtle);
 }
 
 /* The heading the screen reader gets. Every field is required, so the six
@@ -117,6 +136,13 @@ Prevents layout shift when messages appear/disappear*/
   font-size: var(--font-size-xs);
   font-style: italic;
   color: var(--color-content-secondary);
+}
+
+/* --color-content-secondary (#5b5b5b) measures 2.83:1 on the dark card, under
+   the 4.5:1 text floor. --color-content-on-dark-subtle is 9.2:1 on the same
+   ground. */
+:global(.theme-dark) .auth-container__note {
+  color: var(--color-content-on-dark-subtle);
 }
 
 .auth-container__errorMsg {
@@ -186,9 +212,10 @@ Estilo por defecto del checkbox
 
 } */
 .auth-form__checkbox {
-  /* Dimensions updated to 1.5rem */
-  width: 1.2rem;
-  height: 1.2rem;
+  /* 1.5rem = 24px, the WCAG 2.2 (2.5.8) minimum target size for an
+     interactive control; 1.2rem (19.2px) fell under it. */
+  width: 1.5rem;
+  height: 1.5rem;
   
   /* Use appearance none to bypass browser default styles and allow transparency */
   appearance: none;
@@ -232,12 +259,28 @@ Estilo por defecto del checkbox
   pointer-events: none;
 }
 
+:global(.theme-dark) .auth-form__checkbox {
+  border-color: var(--color-content-on-dark);
+  accent-color: var(--color-content-on-dark);
+}
+
+:global(.theme-dark) .auth-form__checkbox:checked {
+  background-color: var(--color-content-on-dark);
+  border-color: var(--color-content-on-dark);
+}
+
+/* The checkmark clip-path is filled with --color-surface-inverse (white) so it
+   reads against the near-black check; on a white check it would disappear. */
+:global(.theme-dark) .auth-form__checkbox:checked::before {
+  background-color: var(--color-surface-app);
+}
+
 /* Draws the checkmark using clip-path when checked. The glyph is white because
    the fill under it is the near-black content colour. */
 .auth-form__checkbox:checked::before {
   content: "";
-  width: .6rem;
-  height: .6rem;
+  width: .75rem;
+  height: .75rem;
   background-color: var(--color-surface-inverse);
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
 }
@@ -247,6 +290,10 @@ Estilo por defecto del checkbox
  font-size: var(--font-size-sm);
  color: var(--color-content-secondary);
  cursor: pointer;
+}
+
+:global(.theme-dark) .auth-form__label-checkbox {
+  color: var(--color-content-on-dark-subtle);
 }
 
 /* The primary action. rgb(16,163,127) was a green that appears on no other
@@ -303,6 +350,20 @@ Estilo por defecto del checkbox
   pointer-events: none;
 }
 
+/* --color-content-primary (#141414) is nearly the dark card's own background
+   (#0d0f12) -- the button would all but disappear. Inverted instead: the
+   button becomes the brightest thing on the card, same relationship it has
+   with the white card in light theme. */
+:global(.theme-dark) .auth-form__button {
+  background-color: var(--color-surface-inverse);
+  color: var(--color-surface-app);
+}
+
+:global(.theme-dark) .auth-form__button:hover,
+:global(.theme-dark) .auth-form__button:active {
+  background-color: var(--color-surface-panel);
+}
+
 .auth-actions {
   display: flex;
   flex-direction: column;
@@ -327,6 +388,19 @@ Estilo por defecto del checkbox
 
 .auth-actions__toggle-button:hover {
   color: var(--color-content-primary);
+}
+
+:global(.theme-dark) .auth-actions__toggle-button {
+  color: var(--color-content-on-dark-subtle);
+}
+
+:global(.theme-dark) .auth-actions__toggle-button:hover {
+  color: var(--color-content-on-dark);
+}
+
+/* Only the action word carries the link affordance; the lead-in phrase is
+   context, not something to click on its own. */
+.auth-actions__toggle-action {
   text-decoration: underline;
 }
 
@@ -485,6 +559,70 @@ Estilo por defecto del checkbox
 .closeButton:disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+:global(.theme-dark) .closeButton {
+  border-color: var(--color-content-on-dark-subtle);
+  color: var(--color-content-on-dark);
+}
+
+:global(.theme-dark) .closeButton:hover {
+  background-color: var(--color-content-on-dark-subtle);
+}
+
+.themeToggle {
+  width: var(--size-touch-target);
+  height: var(--size-touch-target);
+  flex-shrink: 0;
+  padding: 0;
+  background-color: transparent;
+  border: var(--border-width-thin) solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  color: var(--color-content-primary);
+  cursor: pointer;
+  transition: background-color var(--motion-normal), color var(--motion-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.themeToggle svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.themeToggle:hover {
+  background-color: var(--color-surface-panel);
+}
+
+.themeToggle:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-content-primary);
+  outline-offset: var(--border-width-thick);
+}
+
+.themeToggle:active {
+  transform: scale(0.98);
+}
+
+:global(.theme-dark) .themeToggle {
+  border-color: var(--color-content-on-dark-subtle);
+  color: var(--color-content-on-dark);
+}
+
+:global(.theme-dark) .themeToggle:hover {
+  background-color: var(--color-content-on-dark-subtle);
+}
+
+/* Every focus ring above is --color-border-strong / --color-content-primary,
+   both #141414 -- on the dark card (#0d0f12) that outline would sit two
+   near-identical near-blacks on top of each other and disappear for a
+   keyboard user. One override covers every focusable control in this file. */
+:global(.theme-dark) .auth-form__checkbox:focus-visible,
+:global(.theme-dark) .auth-form__button:focus-visible,
+:global(.theme-dark) .auth-actions__toggle-button:focus-visible,
+:global(.theme-dark) .closeButton:focus-visible,
+:global(.theme-dark) .themeToggle:focus-visible {
+  outline-color: var(--color-content-on-dark);
 }
 
 /**RESPONSIVE**/

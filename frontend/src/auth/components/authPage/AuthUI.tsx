@@ -11,6 +11,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 // import GoogleLogo from '../../../assets/auth/GoogleLogo';
 import Logo from '../../../assets/logo.svg';
+import SunIcon from '../../../assets/authSvg/SunSvg.svg';
+import MoonIcon from '../../../assets/authSvg/MoonSvg.svg';
 import Message, { MessageType } from '../formUIComponents/Message';
 import { SignInFormDataType, SignUpFormDataType } from '../../validation/zod_schemas/authSchemas';
 import SignInForm from '../signInForm/SignInForm';
@@ -28,6 +30,8 @@ type AuthUIPropsType = {
   isSignInInitial:boolean;
   clearError: () => void;
   onClose?: () => void;
+  isDarkTheme: boolean;
+  onToggleTheme: () => void;
 };
 //MAIN COMPONENT: AuthUI.tsx
 function AuthUI({
@@ -39,6 +43,8 @@ function AuthUI({
   isSignInInitial,
   clearError,
   onClose,
+  isDarkTheme,
+  onToggleTheme,
 }: AuthUIPropsType): JSX.Element {
  //STATES
   const [isSignIn, setIsSignIn] = useState(isSignInInitial);
@@ -109,15 +115,26 @@ const initialFormStateRef = useRef({
         <Logo />
       </span>
 
-      {onClose && (
+      <div className={styles['auth-header__controls']}>
         <button
           type='button'
-          onClick={handleCloseClick}
-          className={styles.closeButton}
+          onClick={onToggleTheme}
+          className={styles.themeToggle}
+          aria-label={isDarkTheme ? 'Switch to light theme' : 'Switch to dark theme'}
         >
-          <span>Close</span>
+          {isDarkTheme ? <SunIcon /> : <MoonIcon />}
         </button>
-      )}
+
+        {onClose && (
+          <button
+            type='button'
+            onClick={handleCloseClick}
+            className={styles.closeButton}
+          >
+            <span>Close</span>
+          </button>
+        )}
+      </div>
     </div>
 
     <div className={styles['auth-header__rule']} />
@@ -182,8 +199,8 @@ const initialFormStateRef = useRef({
         disabled={externalLoading}
       >
         {isSignIn
-          ? "Don't have an account? Sign up"
-          : 'Already have an account? Sign in'}
+          ? <>Don't have an account? <span className={styles['auth-actions__toggle-action']}>Sign up</span></>
+          : <>Already have an account? <span className={styles['auth-actions__toggle-action']}>Sign in</span></>}
       </button>
 
       {/* Closing moved to the header, where it aligns with the brand mark and
