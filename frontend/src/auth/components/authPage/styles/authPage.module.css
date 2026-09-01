@@ -233,13 +233,17 @@ button {
    .auth-container__title. This one won on specificity, so the class that
    names the element was the one being ignored. The class owns it now. */
 
-/* Tablets and large phones. The desktop shot is a screen capture, so `contain`
+/* HERO IMAGE -- 800px and 600px, its own two boundaries.
+   Deliberately not the layout boundary below. The picture swaps on how wide
+   the box it fills has become; the navbar swaps on whether the pills still
+   fit. Answering both with one number is what dragged the hamburger menu up
+   to 600px when only the photo was meant to move.
+
+   Tablets and large phones. The desktop shot is a screen capture, so `contain`
    in a box this narrow shrinks its figures until there is nothing left to read.
    The device mockup takes over and keeps `contain` like the base rule: at
    768x1024 the box is wider in proportion than the 783x1376 photo, so `cover`
-   would fill the width and cut some 400px off the phone, top and bottom.
-   The band runs from the phone boundary at 600px to 800px, above which the
-   capture resumes. */
+   would fill the width and cut some 400px off the phone, top and bottom. */
 @media (min-width: 601px) and (max-width: 799px) {
   .mainContent {
     background-image: url('../../../../assets/landingPageImages/fintrack_mobile_front.webp');
@@ -247,18 +251,20 @@ button {
   }
 }
 
-/* The phone layout: the hamburger navbar, the full-width modal and the device
-   photo below all hang off this one boundary, so they move together. */
+/* Phones. The flat shot is swapped for the device mockup, 614x1118. No gradient
+   over it -- the photo's own ground is a light beige and a black gradient greys
+   it out the way #f4f4f4 did. `cover` trims the sides here, which the photo can
+   spare; see the short-screen query below for where it stops being able to. */
 @media (max-width: 600px) {
-  /* The flat shot is swapped for the device mockup, 614x1118. No gradient over
-     it -- the photo's own ground is a light beige and a black gradient greys it
-     out the way #f4f4f4 did. `cover` trims the sides here, which the photo can
-     spare; see the short-screen query below for where it stops being able to. */
   .mainContent {
     background-image: url('../../../../assets/landingPageImages/fintrack_mobile.webp');
     background-size: cover;
   }
+}
 
+/* PHONE LAYOUT -- 480px, the width at which the two nav pills stop fitting
+   beside the mark. Nothing to do with which picture is behind them. */
+@media (max-width: 480px) {
   .navList {
     display: none;
     flex-direction: column;
