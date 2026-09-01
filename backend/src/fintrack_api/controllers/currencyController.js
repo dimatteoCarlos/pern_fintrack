@@ -16,7 +16,13 @@ import {
 } from '../services/fx_services/core/fxService.js';
 
 import { createError } from '../../utils/errorHandling.js';
-import { isCalendarDate } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
+import {
+  isCalendarDate,
+  todayInZone,
+} from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
+import { getAuthenticatedUserId } from '../../utils/authUtils/getAuthenticatedUserId.js';
+import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import { pool } from '../../db/config/configDB.js';
 
 /**
  * Refuse a currency code this installation does not convert, as a client error.
@@ -101,7 +107,28 @@ export async function currencyConvert(req, res, next) {
       });
     }
 
-    const asOfDay = requestedDay !== '' ? requestedDay : null;
+    // Which day is today is the OWNER'S question, and the answer routes the
+    // conversion: today takes the live rate, an earlier day takes the one that
+    // was in force on it. transactionController decides it the same way, and it
+    // has to — this endpoint exists so a form can show the figure the row will
+    // carry, and a preview that routes differently from the write shows a
+    // different number. Measured before this: an entry dated today previewed at
+    // 3.1223 from the historical store, which had walked back to the validity of
+    // three days earlier, while the row stored 3.1114 at the live rate.
+    //
+    // This is not the current-month rule, which stays out of here: that one
+    // governs whether an operation MAY be recorded on a date, and this endpoint
+    // records nothing.
+    //
+    // The route is behind verifyToken, so the identity is there; UTC is the
+    // fallback rather than a refusal, because a missing claim is the token
+    // middleware's error to raise and not this handler's.
+    const ownerId = getAuthenticatedUserId(req);
+    const timeZone = ownerId ? await getUserTimeZone(pool, ownerId) : 'UTC';
+    const todayForOwner = todayInZone(timeZone);
+
+    const asOfDay =
+      requestedDay !== '' && requestedDay < todayForOwner ? requestedDay : null;
 
     // 4. Perform conversion
     const conversion = await currencyAmountConversion(
@@ -109,6 +136,9 @@ export async function currencyConvert(req, res, next) {
       fromCurrency,
       toCurrency,
       asOfDay,
+      // The same zone asOfDay was decided on, so the resolver's future guard and
+      // this handler's routing agree on which day it is.
+      timeZone,
     );
 
     // 5. Return result
