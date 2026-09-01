@@ -37,13 +37,29 @@ import { resolveHistoricalRate } from './historicalRateResolver.js';
  * that falls to it warmed at most that day — and none at all when the first of
  * the month was not a trading day, which it is not roughly two months in seven.
  *
- * Why two months and not the month in course. The window used to be the calendar
- * month, which meant that on the first of a month it covered a single day while
- * the movements people actually back-date — the ones from a few days ago — had
- * just fallen out of it. A calendar unit is not the window a movement falls in.
+ * Why two months and not the month in course. Not because people back-date
+ * further than that — transactionController refuses any movement dated before
+ * the first of the current month. Because THIS module reads today in UTC while
+ * that floor reads it on the OWNER'S calendar, and the two disagree for up to a
+ * day. With UTC on the first of September an owner in Bogota is still on the
+ * thirty-first of August: every August day is legal for them, and a window of
+ * the UTC month had warmed exactly one day, of no use to them at all. Owners
+ * span UTC-12 to UTC+14, so around every month boundary the previous month is
+ * still live for somebody, and the window has to cover the current month of
+ * every owner rather than the current month of the server.
+ *
+ * A condition — widen only while UTC sits on the first — was considered and
+ * dropped. This runs on boot and nothing schedules it, so a rule keyed to the
+ * calendar day is only right for a server that happens to start that day.
+ *
  * The boundary is month-aligned rather than a rolling count of days because
  * spanAround fetches by month: a window of exactly two months is two range calls
  * per currency, where a rolling forty-five days would straddle three.
+ *
+ * It does not try to serve budget allocation, which converts for any month from
+ * the account's opening month to the current one and so reaches arbitrarily far
+ * back. Warming that is unbounded work for a deliberate, occasional action that
+ * can afford to pay the cascade once.
  *
  * The cost is bounded by the work actually left to do. A range arm covers a
  * month on the first day of it that answers, so every later day of that month is
