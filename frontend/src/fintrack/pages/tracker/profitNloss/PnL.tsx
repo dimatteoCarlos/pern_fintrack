@@ -56,7 +56,7 @@ import {
   DropdownOptionType,
   // TransactionType,
 } from '../../../types/types.ts';
-import { toCalendarDay } from '../../../helpers/functions.ts';
+import { earliestDatableDay, toCalendarDay } from '../../../helpers/functions.ts';
 import { isAccountOpenOn } from '../../../hooks/useTransactionDate.ts';
 // =====================
 // CONSTANTS
@@ -381,18 +381,19 @@ function PnL(): JSX.Element {
     [formInputData.type, setFormInputData, setFormValidatedData],
   );
 
-  // The window back-dating allows: the first day of the current month to today.
+  // The window back-dating allows: the floor of the configured window to today.
   // The server validates the same window on the owner's zone; this only keeps the
-  // calendar from offering a day it would refuse. Memoised so the memoised
-  // Datepicker is not handed new Date objects on every render.
-  const { monthFloor, todayBound } = useMemo(() => {
-    const now = new Date();
-
-    return {
-      monthFloor: new Date(now.getFullYear(), now.getMonth(), 1),
-      todayBound: now,
-    };
-  }, []);
+  // calendar from offering a day it would refuse. The floor comes from the shared
+  // helper rather than a local copy, because this screen and the four forms that
+  // use useTransactionDate have to answer the question the same way. Memoised so
+  // the memoised Datepicker is not handed new Date objects on every render.
+  const { monthFloor, todayBound } = useMemo(
+    () => ({
+      monthFloor: earliestDatableDay(),
+      todayBound: new Date(),
+    }),
+    [],
+  );
 
   // Handler for date changes
   const changeDate = useCallback(
