@@ -1,6 +1,7 @@
-// backend/src/fintrack_api/services/fx_services/core/warmCurrentMonthRates.js
+// backend/src/fintrack_api/services/fx_services/core/warmRecentRates.js
 
-// The current month's rates, fetched before anybody asks for them.
+// The days a back-dated movement is likely to fall on, fetched before anybody
+// asks for them.
 //
 // A conversion dated earlier than today takes the historical path, and on a
 // cold store that path costs a provider call — up to the whole cascade budget —
@@ -12,10 +13,9 @@
 // whole job. Nothing here knows what a provider is. That also keeps the
 // official source first for the peso, which a uniform range call would shadow.
 //
-// It asks for every day, and it asks in a deliberate order. Both were defects
-// once: seeding a single day left three of the four currencies with zero days
-// warmed, measured on a cold February. See daysOfCurrentMonth and
-// currenciesToWarm for why neither is an optimisation but a correctness fix.
+// It asks for every day, over two months, in a deliberate order. Each of those
+// three was a defect once, and each is a correctness fix rather than an
+// optimisation — see daysToWarm and currenciesToWarm for the measurements.
 
 import pc from 'picocolors';
 
@@ -27,21 +27,28 @@ import {
 import { resolveHistoricalRate } from './historicalRateResolver.js';
 
 /**
- * Every day of the month in course, from the first up to today.
+ * Every day from the first of last month up to today.
  *
- * Why every day and not just the first. The previous version asked for one day
- * and relied on the arm that answered having fetched a range around it. That is
- * a dependency on WHICH source answers, not on what this module wants: the arms
- * that fetch a range do warm the month as a side effect, but the CDN arm asks
- * for exactly one day and covers exactly one day, so a currency that falls to it
- * ended the warm-up with a single day ready — and with none at all when the
- * first of the month was not a trading day, which it is not roughly two months
- * in seven. Asking for each day states the intent instead of inheriting it.
+ * Why every day and not just the first of the month. An earlier version asked
+ * for one day and relied on the arm that answered having fetched a range around
+ * it. That is a dependency on WHICH source answers, not on what this module
+ * wants: the arms that fetch a range do warm the month as a side effect, but the
+ * CDN arm asks for exactly one day and covers exactly one day, so a currency
+ * that falls to it warmed at most that day — and none at all when the first of
+ * the month was not a trading day, which it is not roughly two months in seven.
  *
- * The cost is bounded by the work actually left to do. A range arm covers the
- * month on the first day it answers, so every later day is a single indexed read
- * — measured at about 1ms. Only the days a provider must still be asked for cost
- * a call, which is precisely the work this module exists to move off the request.
+ * Why two months and not the month in course. The window used to be the calendar
+ * month, which meant that on the first of a month it covered a single day while
+ * the movements people actually back-date — the ones from a few days ago — had
+ * just fallen out of it. A calendar unit is not the window a movement falls in.
+ * The boundary is month-aligned rather than a rolling count of days because
+ * spanAround fetches by month: a window of exactly two months is two range calls
+ * per currency, where a rolling forty-five days would straddle three.
+ *
+ * The cost is bounded by the work actually left to do. A range arm covers a
+ * month on the first day of it that answers, so every later day of that month is
+ * a single indexed read. Only the days a provider must still be asked for cost a
+ * call, which is precisely the work this module exists to move off the request.
  *
  * Read in UTC, not on the server's local calendar. The resolver refuses a day
  * that has not happened yet and reads that boundary in UTC by default, since a
@@ -50,15 +57,27 @@ import { resolveHistoricalRate } from './historicalRateResolver.js';
  *
  * @returns {string[]} 'YYYY-MM-DD', ascending.
  */
-const daysOfCurrentMonth = () => {
- const today = new Date().toISOString().slice(0, 10);
- const month = today.slice(0, 7);
- const lastDay = Number(today.slice(8, 10));
+const daysToWarm = () => {
+ const today = new Date();
+ const year = today.getUTCFullYear();
+ const month = today.getUTCMonth();
 
- return Array.from(
-  { length: lastDay },
-  (_, index) => `${month}-${String(index + 1).padStart(2, '0')}`,
- );
+ const days = [];
+ // Day 1 of last month through today, walked in UTC so no local zone and no
+ // daylight-saving shift can drop or repeat a day.
+ const cursor = new Date(Date.UTC(year, month - 1, 1));
+ const end = today.toISOString().slice(0, 10);
+
+ for (;;) {
+  const day = cursor.toISOString().slice(0, 10);
+
+  days.push(day);
+  if (day === end) break;
+
+  cursor.setUTCDate(cursor.getUTCDate() + 1);
+ }
+
+ return days;
 };
 
 /**
@@ -69,8 +88,9 @@ const daysOfCurrentMonth = () => {
  * one, which is what stops it inventing a day no market quoted. That calendar is
  * shared across every pair. So on a cold store a currency warmed before the one
  * whose official source publishes a range has nothing to ask for, and its arm
- * reports that no business day exists yet — measured, on a cold February, as
- * zero days ready for the euro against twenty-eight for the peso.
+ * reports that no business day exists yet — measured, on a cold November, as
+ * zero days ready for the euro against thirty for the peso; warmed after it, in
+ * an equally cold October, twenty-two, for the same total time.
  *
  * @returns {string[]}
  */
@@ -86,8 +106,8 @@ const currenciesToWarm = () => {
 };
 
 /**
- * Fill the historical store for every currency the app converts, for the month
- * in course.
+ * Fill the historical store for every currency the app converts, over the window
+ * a back-dated movement is likely to land in.
  *
  * Never throws and never rejects. A provider that is down must not stop a
  * server from starting, and the lazy path stays exactly as it is: an unwarmed
@@ -98,13 +118,13 @@ const currenciesToWarm = () => {
  * between to have been queried — so a currency served only by the one-day CDN
  * arm warms its trading days and leaves the rest to resolve later, once a range
  * source covers them. The counts below report that honestly rather than reading
- * a partial month as a failure.
+ * a partial window as a failure.
  *
  * @returns {Promise<{days: number, ready: Object<string, number>, warmed: string[], failed: string[]}>}
  *  for a caller that wants to log or test the outcome. Startup ignores it.
  */
-export async function warmCurrentMonthRates() {
- const days = daysOfCurrentMonth();
+export async function warmRecentRates() {
+ const days = daysToWarm();
  const ready = {};
  const warmed = [];
  const failed = [];
@@ -128,7 +148,7 @@ export async function warmCurrentMonthRates() {
   } else {
    failed.push(currency);
    // One line per currency, not one per day: a provider that is unreachable
-   // fails every day of the month for the same reason.
+   // fails every day of the window for the same reason.
    console.warn(
     pc.yellow(`FX warm-up: ${currency} unavailable — ${lastError?.message}`),
    );
