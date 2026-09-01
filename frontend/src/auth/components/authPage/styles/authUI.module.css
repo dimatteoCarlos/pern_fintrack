@@ -514,9 +514,12 @@ Estilo por defecto del checkbox
    Its hover was #d32f2f, the alert red: closing this form discards nothing and
    destroys nothing, so the red was reading a danger the action does not carry.
    It fills with the field colour instead. */
+/* --size-touch-target (44px) next to the logo's own 24px reads oversized;
+   --size-icon (32px) still clears the WCAG 2.5.8 mandatory 24px floor
+   (spec.md 6.2) -- it just gives up the "recommended" 44px, not the minimum. */
 .closeButton {
-  width: var(--size-touch-target);
-  height: var(--size-touch-target);
+  width: var(--size-icon);
+  height: var(--size-icon);
   flex-shrink: 0;
   padding: 0;
   background-color: transparent;
@@ -576,8 +579,8 @@ Estilo por defecto del checkbox
 }
 
 .themeToggle {
-  width: var(--size-touch-target);
-  height: var(--size-touch-target);
+  width: var(--size-icon);
+  height: var(--size-icon);
   flex-shrink: 0;
   padding: 0;
   background-color: transparent;
