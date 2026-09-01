@@ -202,6 +202,31 @@ There is no test runner in this repository. "Works" means:
 - Grep your own diff for a raw hex and for a raw px before you report.
 - Every `var()` you wrote resolves to a name that is actually declared.
 
+### The browser probe, which exists and is installed
+
+Playwright **1.62.1** lives in `plan-docs/playwright/`, with its own `package.json`
+and `node_modules`. The repository root has neither, so a call issued from the root
+looks like a missing installation and is not one — run from that directory. Its
+Chromium (151.0.7922.34) is in the user's browser cache and launches. Around sixty
+probe scripts sit beside it; `probe.mjs` and `authProbe.mjs` are the shortest to
+copy from.
+
+Three rules govern their use:
+
+- **The dev server is yours to start, on 5173 and nowhere else.** `vite.config.ts`
+  pins `port: 5173` with `strictPort: true`, and every probe addresses that port
+  through `process.env.BASE ?? 'http://localhost:5173'`. **Port 5000 is the backend
+  and is never yours to occupy.**
+- **Launch headless.** Most existing probes carry `headless: false` because a person
+  was watching; a subagent has no screen, and a headed launch hangs until timeout.
+- **`session.json` and `token.json` hold a live session — never read, print or copy
+  them.** A probe that needs an authenticated screen signs in through
+  `lib/session.mjs`.
+
+A screenshot is what proves a retrofit renders. The typecheck and the build only
+prove it compiles, and a component whose text lands dark on a dark card passes both.
+When the change is visual, take one and look at it.
+
 ## Commit hygiene
 
 A retrofit is always its own commit and its message describes the change, not
