@@ -9,11 +9,14 @@ import {
 import { authRefreshToken } from '../controllers/authRefreshToken.js';
 import { verifyToken } from '../middlewares/authMiddleware.js';
 import { authLimiter } from '../middlewares/rateLimiter.js';
+import { validateRequestSync } from '../middlewares/validateRequest.js';
+import { signUpSchema } from '../../validation/zod/userSchemas.js';
 
 const router = express.Router();
 
 // Ruta para el registro de usuarios: //api/auth/sign-up
-router.post('/sign-up', authLimiter, signUpUser);
+// The limiter runs first so a junk request never pays for the validation.
+router.post('/sign-up', authLimiter, validateRequestSync(signUpSchema), signUpUser);
 
 // Ruta para el inicio de sesión: //api/auth/sign-in
 router.post('/sign-in', authLimiter, signInUser);

@@ -21,7 +21,6 @@ import {
 import { createError } from '../../utils/errorHandling.js';
 
 import { getCurrencyId } from '../../utils/currencyLookup.js';
-import { isIanaTimeZone } from '../../utils/fintrackUtils/date-utils/ianaTimeZone.js';
 
 // import { getCurrencyId } from '../../fintrack_api/controllers/transactionController.js';
 
@@ -47,43 +46,20 @@ export const signUpUser = async (req, res, next) => {
   const client = await pool.connect();
   try {
     // ✅ GET CREDENTIALS
-    const { username, user_firstname, user_lastname, email, currency, timezone } = req.body;
+    // Read from the middleware's output, not from req.body: signUpSchema is what
+    // proves these are present and well formed, and it is where a transform lands.
+    const { username, user_firstname, user_lastname, email, currency, timezone } =
+      req.validatedData;
     const currency_code = currency ?? 'usd';
-    // console.log(req.body);
 
-    // Normalized before validating: a value that is only whitespace has to fail
-    // the required-fields check, not reach the INSERT as an empty string.
-    // The email folds case, the username keeps it — it is a display name.
-    const normalizedUsername = username?.trim();
-    const normalizedEmail = email?.trim().toLowerCase();
-
-    // ✅ REQUIRED FIELDS VALIDATION
-    if (
-      !(
-        normalizedUsername &&
-        normalizedEmail &&
-        req.body.password &&
-        user_firstname &&
-        user_lastname
-      )
-    ) {
-      return next(createError(400, 'All fields are required.'));
-    }
-
-    // ✅ TIME ZONE VALIDATION
-    // Absent is fine: the column default applies. Invalid is not — falling back
-    // in silence hands the user a calendar nobody told them about.
-    if (timezone !== undefined && !isIanaTimeZone(timezone)) {
-      return next(
-        createError(
-          400,
-          'Time zone must be a valid IANA identifier, for example America/Bogota',
-        ),
-      );
-    }
+    // Normalization is a rule of the write path, not of the request format, so it
+    // stays here. The email folds case, the username keeps it — it is a display name.
+    const normalizedUsername = username.trim();
+    const normalizedEmail = email.toLowerCase();
 
     //  ✅ HASH OF PASSWORD
-    let hashedPassword = await hashed(req.body.password);
+    let hashedPassword = await hashed(req.validatedData.password);
+    req.validatedData.password = undefined;
     req.body.password = undefined;
 
     // ✅ USER CREATION
