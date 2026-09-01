@@ -87,6 +87,11 @@ const VARIANT_DEFAULT: VariantType = 'tracker';
 // ⚛️Main Component: Income
 //======================================
 //----Income Tracker Movement -------
+// The one message this screen sends down the message channel that is not a
+// confirmation. See the same constant in Expense.tsx for why it is compared
+// exactly rather than inferred from the validation state.
+const CORRECTION_PROMPT = 'Please correct the highlithed fields';
+
 function Income(): JSX.Element {
   //rules: only bank accounts type are used to receive income amounts.
   //select option accounts rendered are all existing bank accounts,except the slack account which is not shown.
@@ -347,7 +352,7 @@ function Income(): JSX.Element {
     // console.log('validated', dataValidated)
     if (Object.keys(fieldErrors).length > 0) {
       setValidationMessages(fieldErrors);
-      setMessageToUser('Please correct the highlithed fields');
+      setMessageToUser(CORRECTION_PROMPT);
       setTimeout(() => {
         setMessageToUser(null);
       }, 4000);
@@ -512,6 +517,9 @@ function Income(): JSX.Element {
             error={postError || errorSources || fetchedErrorBankAccounts}
             messageToUser={messageToUser}
             variant='tracker'
+            tone={
+              messageToUser === CORRECTION_PROMPT ? 'correction' : 'confirmation'
+            }
           />
         </div>
       )}

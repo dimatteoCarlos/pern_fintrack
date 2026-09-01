@@ -98,6 +98,13 @@ const initialValidatedData: BasicTrackerMovementValidatedDataType = {
 // ===============================
 //---Profit and Loss adjustment ---------
 //rule: external deposit/withdraw transfers come from slack bank account, which is not rendered or visible.
+// The one message this screen sends down the message channel that is not a
+// confirmation. Compared exactly, and on this screen that matters more than on
+// the others: PnL sets "Processing transaction..." BEFORE it validates, and it
+// never empties validationMessages — it edits it field by field. Reading the
+// tone off the validation state would paint that progress line as an error.
+const CORRECTION_PROMPT = 'Please correct the highlighted fields';
+
 function PnL(): JSX.Element {
   // =============================
   // 🗺️ ROUTE & USER CONFIGURATION
@@ -431,7 +438,7 @@ function PnL(): JSX.Element {
       setValidationMessages(messages);
       // Force showing all validation messages
       activateAllValidations(true);
-      setMessageToUser('Please correct the highlighted fields');
+      setMessageToUser(CORRECTION_PROMPT);
       setTimeout(() => setMessageToUser(null), 3000);
       return;
     }
@@ -671,6 +678,9 @@ function PnL(): JSX.Element {
             error={error}
             messageToUser={messageToUser}
             variant='tracker'
+            tone={
+              messageToUser === CORRECTION_PROMPT ? 'correction' : 'confirmation'
+            }
           />
         </div>
       )}

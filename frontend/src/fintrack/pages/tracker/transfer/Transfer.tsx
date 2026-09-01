@@ -123,6 +123,11 @@ const inputRadioOptionsAccountBottomCard: RadioOptionType<TransferAccountType>[]
 //==============================
 //--Transfer Tracker Movement between accounts--
 //-- account types allowed: investment and bank accounts -----
+// The one message this screen sends down the message channel that is not a
+// confirmation. See the same constant in Expense.tsx for why it is compared
+// exactly rather than inferred from the validation state.
+const CORRECTION_PROMPT = 'Please correct the fields';
+
 function Transfer(): JSX.Element {
   //rules: only investment and bank account types are used.
   //slack account is not used.
@@ -619,7 +624,7 @@ function Transfer(): JSX.Element {
     console.log('🔍 [DEBUG] Entrando al if de fieldErrors');
     
       setValidationMessages(fieldErrors);
-      setMessageToUser('Please correct the fields');
+      setMessageToUser(CORRECTION_PROMPT);
       setTimeout(() => {
         setShowMessage(false);
         setMessageToUser(null);
@@ -847,6 +852,9 @@ function Transfer(): JSX.Element {
             error={error}
             messageToUser={messageToUser}
             variant='tracker'
+            tone={
+              messageToUser === CORRECTION_PROMPT ? 'correction' : 'confirmation'
+            }
           />
         </div>
       )}

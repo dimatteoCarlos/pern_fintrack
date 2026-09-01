@@ -91,6 +91,13 @@ const VARIANT_DEFAULT: VariantType = 'tracker';
 // ⚛️MAIN COMPONENT: EXPENSE
 // ===============================
 //----Expense Tracker Movement -----
+// The one message this screen sends down the message channel that is NOT a
+// confirmation. Named so the render can tell the two apart exactly, instead of
+// inferring it from whether any field happens to be flagged: the flags outlive
+// the prompt, and "Processing transaction..." would then be painted and
+// announced as an error.
+const CORRECTION_PROMPT = 'Please correct the highlighted errors.';
+
 function Expense(): JSX.Element {
   //rules: only bank accounts type are used to do operations.(eg. expenses)
   //select option accounts renders are all existing bank accounts, except, the slack account which is not shown.
@@ -512,7 +519,7 @@ function Expense(): JSX.Element {
     // console.log("🚀 ~ onSaveHandler ~ fullFormErrors:", fullFormErrors,)
     if (fullFormErrors && Object.keys(fullFormErrors).length > 0) {
       setValidationMessages(fullFormErrors);
-      setMessageToUser('Please correct the highlighted errors.');
+      setMessageToUser(CORRECTION_PROMPT);
       setTimeout(() => setMessageToUser(null), 4000);
       return; //abort
     }
@@ -904,6 +911,9 @@ function Expense(): JSX.Element {
             error={postError || fetchedErrorBankAccounts}
             messageToUser={messageToUser}
             variant='tracker'
+            tone={
+              messageToUser === CORRECTION_PROMPT ? 'correction' : 'confirmation'
+            }
           />
         </div>
       )}

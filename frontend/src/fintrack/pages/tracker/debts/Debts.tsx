@@ -99,6 +99,13 @@ const inputRadioOptionsDebtTransactionType = [
 // ⚛️ MAIN COMPONENT: Debts Tracker
 // =======================================
 //---- Debts Tracker Movement ------------
+// Said when the movement recorded but the balance could not be read back, so
+// the figure on screen is the one from before it. Named for the same reason the
+// correction prompts on the other tracker screens are: the render has to tell
+// this apart from a plain confirmation to colour and announce it correctly.
+const BALANCE_STALE_PROMPT =
+  'Debt recorded. The available balance could not be refreshed.';
+
 function Debts(): JSX.Element {
   //rules:lend/borrow is equivalent to a deposit/withdraw in deptor account. User must enter the type and counter account selection.
   // =====================================
@@ -486,13 +493,17 @@ function Debts(): JSX.Element {
       //1. Get the immediate new balance
       const newTotalBalance = await fetchNewBalance();
       // console.log('newTotalBalance', newTotalBalance)
+      // Both branches write the same state, and the success line below used to
+      // run unconditionally two lines later — in the same tick, so it replaced
+      // the warning before a render ever saw it. The owner was never told the
+      // balance on screen had not been refreshed. The movement itself did
+      // record either way, which is why the failing branch still says so.
       if (typeof newTotalBalance === 'number') {
         setAvailableBudget(newTotalBalance);
+        setMessageToUser('Debt transaction successfully recorded!');
       } else {
-        setMessageToUser('Check total_balance');
+        setMessageToUser(BALANCE_STALE_PROMPT);
       }
-
-      setMessageToUser('Debt transaction successfully recorded!');
       setTimeout(() => setMessageToUser(null), 3000);
       //----------------------------------
     } catch (error) {
@@ -716,6 +727,11 @@ function Debts(): JSX.Element {
             error={error || fetchedErrorDebtors}
             messageToUser={messageToUser}
             variant='tracker'
+            tone={
+              messageToUser === BALANCE_STALE_PROMPT
+                ? 'correction'
+                : 'confirmation'
+            }
           />
         </div>
       )}
