@@ -40,7 +40,7 @@
  --color-content-on-dark: #ffffff; /* on app, raised */
  --color-content-on-dark-muted: #e8e4da; /* on app, raised */
  --color-content-on-dark-subtle: #bdb1b1; /* on app, raised */
- --color-content-placeholder: #7f7f7f; /* any input */
+ --color-content-placeholder: #5b5b5b; /* any input; 5.35:1 on --color-surface-panel, was 3.16:1 at #7f7f7f */
 
  /* COLOR - INTERACTIVE */
  --color-accent: #e8e4da;
