@@ -150,8 +150,13 @@ article {
 
  /* SCROLL */
  /* overflow-y: auto; */
+ /* overflow-x: hidden here silently forced this to compute as auto instead
+    of visible -- the CSS spec's own rule: when one axis is non-visible, a
+    visible sibling computes to auto. That is what was clipping the rate
+    tooltip against the card's top edge. overflow-x: clip keeps the same
+    horizontal clipping this card actually needs, without that interaction. */
  overflow-y: visible;
- overflow-x: hidden;
+ overflow-x: clip;
  scroll-behavior: smooth;
  padding-right: var(--space-2);
 }
