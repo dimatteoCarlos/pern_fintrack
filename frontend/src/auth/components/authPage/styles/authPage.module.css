@@ -11,25 +11,33 @@ button {
   background-color: var(--color-surface-app);
 }
 
+/* Scoped exception to CLAUDE.md's "headers and navbars are white" rule: this
+   navbar sits directly on .authPageContainer's own dark ground
+   (--color-surface-app), not inside the app shell the rule describes, so a
+   white bar read as a seam cut across an otherwise dark landing page. The
+   exception is this one view only -- MainNavbar.tsx, inside the app, stays
+   on the rule. */
 .navbar {
-  background-color: #fff;
+  background-color: var(--color-surface-app);
   padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: var(--border-width-thin) solid var(--color-content-on-dark-subtle);
   /* Anchors the dropdown, which hangs off the bottom edge of this element. */
   position: relative;
 }
 
+/* The mark ships #141414 baked into logo.svg's paths, not currentColor (same
+   reasoning as AuthUI.module.css's .theme-dark .auth-header__logo). */
 .logoContainer {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #007bff;
   /* The mark is an inline <svg>, so it sat on the text baseline and rode 2px
      above the menu button's centre. Flex centres it on the box instead. */
   display: flex;
   align-items: center;
+  filter: invert(1);
 }
 
 .logoLink {
@@ -56,18 +64,17 @@ button {
 /* Was 80x80px next to a 24px-tall logo, both buttons sharing one
    undifferentiated style with a hardcoded #007bff hover found nowhere else
    in the product. Sized to the touch target instead of eyeballed, with an
-   active state so the pill names which mode the click below it opens.
-   CLAUDE.md fixes the navbar to a white surface (--light), so this uses the
-   same dark-on-white tokens as .closeButton/.auth-form__button rather than
-   the on-dark tokens the mockup's own dark-navbar demo used. */
+   active state so the pill names which mode the click below it opens. This
+   navbar is the dark exception above, so the pills take the same on-dark
+   tokens as the modal's own dark theme (authUI.module.css). */
 .navPill {
   height: var(--size-touch-target);
   padding: 0 var(--space-4);
   box-sizing: border-box;
   border-radius: var(--radius-md);
-  border: var(--border-width-thin) solid var(--color-content-secondary);
+  border: var(--border-width-thin) solid var(--color-content-on-dark-subtle);
   background-color: transparent;
-  color: var(--color-content-primary);
+  color: var(--color-content-on-dark);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
@@ -79,23 +86,27 @@ button {
 }
 
 .navPill:hover {
-  background-color: var(--color-surface-panel);
+  background-color: var(--color-content-on-dark-subtle);
+  color: var(--color-content-primary);
 }
 
 .navPillActive {
-  background-color: var(--color-content-primary);
-  color: var(--color-surface-inverse);
-  border-color: var(--color-content-primary);
+  background-color: var(--color-surface-panel);
+  color: var(--color-content-primary);
+  border-color: var(--color-surface-panel);
 }
 
 .navPillActive:hover {
-  background-color: var(--color-content-secondary);
+  background-color: var(--color-content-on-dark-subtle);
 }
 
 /* index.css:76 sets `button { outline: none }`, so the ring has to be
-   declared here or the keyboard user gets no feedback at all. */
+   declared here or the keyboard user gets no feedback at all.
+   --color-border-strong (#141414) would sit on the dark navbar's own
+   near-black and disappear for a keyboard user, same issue as the modal's
+   dark theme -- white is the visible option here. */
 .navPill:focus-visible {
-  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline: var(--border-width-thick) solid var(--color-content-on-dark);
   outline-offset: var(--border-width-thick);
 }
 
@@ -140,16 +151,17 @@ button {
   border-radius: var(--radius-full);
 }
 .menuToggleButton {
-  color: black;
+  color: var(--color-content-on-dark);
 }
 
-/* The navbar is a white surface, so the disc takes the cream panel token. */
+/* The navbar is the dark exception now, so the disc takes the same subtle
+   on-dark token as the pills' hover instead of the cream panel token. */
 .menuToggleButton:hover {
-  background-color: var(--color-surface-panel);
+  background-color: var(--color-content-on-dark-subtle);
 }
 
 .menuToggleButton:focus-visible {
-  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline: var(--border-width-thick) solid var(--color-content-on-dark);
   outline-offset: var(--border-width-thick);
 }
 
@@ -235,7 +247,9 @@ button {
   .navList {
     display: none;
     flex-direction: column;
-    background-color: #fff;
+    background-color: var(--color-surface-app);
+    border: var(--border-width-thin) solid var(--color-content-on-dark-subtle);
+    border-top: none;
     position: absolute;
     /* Was 3.5rem, hand-measured against a 16px root. The root is fluid, so at
        360px it resolved to 49px against a 73px navbar and the menu opened on
