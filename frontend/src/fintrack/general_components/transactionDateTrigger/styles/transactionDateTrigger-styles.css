@@ -110,18 +110,34 @@
    agreed symbol, so a mark would have to be guessed at, while "Today" states
    what pressing it does.
 
-   One step below the day it undoes, and the step is WEIGHT rather than size —
-   at 10px against 12px the two read alike, and the day is the datum while this
-   is the action on it. font-size is restated rather than inherited because
-   index.css sets it on the universal selector, so an inline element does not
-   take the size of the line it sits in. */
+   It carries the day's own size and separates from it by WEIGHT and colour
+   instead — the day is the datum, in the primary colour at semibold; this is the
+   action on it, a step back in both. Its first draft went a size step down as
+   well, to --font-size-2xs, and that was wrong twice over: at 10px the word read
+   as a footnote rather than a control beside a 12px label, and the box it made
+   stood 18px tall against the 24px floor the accessibility spec sets for an
+   interactive target.
+
+   The height is the trigger's own, so the two sit on one baseline and the target
+   clears that floor by construction rather than by counting padding. The
+   recommended 44px is deliberately NOT taken: the trigger reaches it with an
+   ::after that spills 10px on every side, and a second one 4px away would
+   overlap it — two hit areas fighting over the same pixels is worse than a 24px
+   target that is exactly where it looks.
+
+   font-size is restated rather than inherited because index.css sets it on the
+   universal selector, so an inline element does not take the size of the line it
+   sits in. */
 .transactionDateTrigger__today {
+ display: inline-flex;
+ align-items: center;
+ min-height: calc(var(--font-size-base) + var(--space-1) * 2);
  border: none;
  border-radius: var(--radius-xs);
- padding: var(--space-1) var(--space-2);
+ padding: 0 var(--space-2);
  background-color: transparent;
  color: var(--color-content-secondary);
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  font-weight: var(--font-weight-medium);
  line-height: 1;
  white-space: nowrap;
