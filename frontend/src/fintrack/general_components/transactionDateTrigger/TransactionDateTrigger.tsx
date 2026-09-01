@@ -107,7 +107,7 @@ function TransactionDateTrigger({
  }, [changeDate, maxDate]);
 
  return (
-  <span className='transactionDateTrigger__group'>
+  <span className='transactionDateControl'>
    <Datepicker
     date={date}
     changeDate={changeDate}

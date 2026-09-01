@@ -91,9 +91,16 @@
  white-space: nowrap;
 }
 
-/* The trigger and the way back read as one control, so they are laid out
-   together rather than each spacing itself against the label beside them. */
-.transactionDateTrigger__group {
+/* The date control as a whole: the trigger that opens the calendar and the way
+   back from a chosen day. They are laid out together rather than each spacing
+   itself against the label beside them.
+
+   A block of its own and not transactionDateTrigger__group, which is what it
+   was called first. An element belongs INSIDE the block it is named after, and
+   this wraps .transactionDateTrigger — so that name put the element around its
+   own block and inverted the containment it claims. Blocks may nest; an element
+   may not swallow its parent. */
+.transactionDateControl {
  display: inline-flex;
  align-items: center;
  gap: var(--space-1);
