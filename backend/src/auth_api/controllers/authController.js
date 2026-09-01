@@ -21,6 +21,7 @@ import {
 import { createError } from '../../utils/errorHandling.js';
 
 import { getCurrencyId } from '../../utils/currencyLookup.js';
+import { ACCOUNTING_CURRENCY_CODE } from '../../fintrack_api/config/fintrackConfig.js';
 
 // import { getCurrencyId } from '../../fintrack_api/controllers/transactionController.js';
 
@@ -54,7 +55,9 @@ export const signUpUser = async (req, res, next) => {
     // proves these are present and well formed, and it is where a transform lands.
     const { username, user_firstname, user_lastname, email, currency, timezone } =
       req.validatedData;
-    const currency_code = currency ?? 'usd';
+    // The configured accounting currency, not a literal: 'usd' and the id 1 were two
+    // independent defaults that agreed only because seed 005 pairs them.
+    const currency_code = currency ?? ACCOUNTING_CURRENCY_CODE;
 
     // Normalization is a rule of the write path, not of the request format, so it
     // stays here. The email folds case, the username keeps it — it is a display name.
@@ -69,9 +72,16 @@ export const signUpUser = async (req, res, next) => {
     // ✅ USER CREATION
     // ✅ Generate user id and get currency id
     const newUserId = uuidv4();
-    //In db tabl. currency_id = 1. currency_code= 'usd'
-    const currencyId = !currency ? 1 : await getCurrencyId(client, currency);
-    
+    // The id is derived from the code the response returns, so the row and the client
+    // can never name two different currencies. Resolved before BEGIN — a throw here
+    // would reach a catch whose ROLLBACK has no transaction to close.
+    let currencyId;
+    try {
+      currencyId = await getCurrencyId(client, currency_code);
+    } catch {
+      return next(createError(400, `Currency ${currency_code} is not supported`));
+    }
+
     console.log('🚀 ~ signUpUser ~ currencyId:', currencyId);
     // console.log('hashedPwd:', hashedPassword.length);
     // console.log('testUUID:', newUserId);
