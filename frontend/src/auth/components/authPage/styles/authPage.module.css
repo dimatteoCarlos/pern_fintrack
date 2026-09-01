@@ -129,7 +129,7 @@ button {
      starts below the navbar; on the container its top row was covered by it.
      `contain` shows the whole shot: the asset is 637x829, so `cover` upscaled
      it past 2x on a desktop and cropped it to sliced words on a phone. */
-  background-image: url('../../../../assets/landingPageImages/trackerPreview.png');
+  background-image: url('../../../../assets/landingPageImages/trackerPreview.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -241,7 +241,7 @@ button {
    800px is the upper edge, above which the capture resumes. */
 @media (min-width: 481px) and (max-width: 799px) {
   .mainContent {
-    background-image: url('../../../../assets/landingPageImages/fintrack_mobile_front.jpeg');
+    background-image: url('../../../../assets/landingPageImages/fintrack_mobile_front.webp');
     background-size: contain;
   }
 }
@@ -253,7 +253,7 @@ button {
      out the way #f4f4f4 did. `cover` trims the sides here, which the photo can
      spare; see the short-screen query below for where it stops being able to. */
   .mainContent {
-    background-image: url('../../../../assets/landingPageImages/fintrack_mobile.jpeg');
+    background-image: url('../../../../assets/landingPageImages/fintrack_mobile.webp');
     background-size: cover;
   }
 
