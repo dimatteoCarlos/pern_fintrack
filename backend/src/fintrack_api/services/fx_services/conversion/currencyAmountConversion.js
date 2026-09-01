@@ -67,11 +67,20 @@ function toCalendarDay(value) {
  *   passed through to the historical cascade. A caller that knows the owner
  *   supplies theirs; UTC preserves the behaviour of every caller that does not.
  *   Omitted means now, which is the behaviour every existing caller gets.
- * @returns {Promise<{amount: Decimal, rate: number, source: string, fetchedAt: Date, effectiveDate: string|null}>}
+ * @returns {Promise<{amount: Decimal, rate: number, quote: {currency: string, rate: number}, source: string, fetchedAt: Date, effectiveDate: string|null}>}
  *   source is what belongs in exchange_rate_source: the bare provider name on
  *   the current path, and provider@effectiveDate on the historical one, so the
  *   record names the day the rate actually came from. effectiveDate is null on
  *   the current path and the day that supplied the figure on the historical one.
+ *
+ *   rate is the conversion's own multiplier: convertedAmount = amount * rate.
+ *   quote is the market figure it was built from, always in the one direction
+ *   every source publishes — 1 accounting unit = quote.rate of quote.currency.
+ *   The two are different facts and only the second is legible: converting a
+ *   peso to a dollar gives a rate of 0.00031, which rounds to zero in any
+ *   display and reads as no rate at all, while the quote behind it is 3202.79.
+ *   A client cannot derive one from the other either — a cross conversion's
+ *   rate is two quotes composed, so inverting it yields neither of them.
  */
 export async function currencyAmountConversion(
   amount,
@@ -93,6 +102,9 @@ export async function currencyAmountConversion(
     return {
       amount: fxRateDecimal(amount, 1),
       rate: 1,
+      // One unit of a currency quoted against itself. No source published it,
+      // and none had to.
+      quote: { currency: from, rate: 1 },
       source: day ? `identity@${day}` : 'identity',
       fetchedAt: new Date(),
       effectiveDate: day,
@@ -164,11 +176,20 @@ export async function currencyAmountConversion(
   let effectiveRate;
   let sourceData;
 
+  // The market figure the conversion was built from, kept as the source states
+  // it: 1 accounting unit = quotedRate of quotedCurrency. The quoted currency is
+  // the foreign side of the pair, which is the one a reader needs named — an
+  // accounting unit against itself says nothing.
+  let quotedCurrency;
+  let quotedRate;
+
   // Case 1: Converting FROM a non-USD currency TO USD
   if (from !== ACCOUNTING_CURRENCY_CODE && to === ACCOUNTING_CURRENCY_CODE) {
     // Inverse rate, because rate = 1 USD = X fromCurrency
     sourceData = await quoteFor(from);
     effectiveRate = reciprocalOf(sourceData.rate);
+    quotedCurrency = from;
+    quotedRate = sourceData.rate;
   }
 
   // Case 2: Converting FROM USD TO a non-USD currency (use direct rate)
@@ -179,6 +200,8 @@ export async function currencyAmountConversion(
     // Direct rate: 1 USD = X toCurrency
     sourceData = await quoteFor(to);
     effectiveRate = asOfDate ? new Decimal(sourceData.rate) : sourceData.rate;
+    quotedCurrency = to;
+    quotedRate = sourceData.rate;
   }
 
   // Case 3: Cross conversion between two non-USD currencies
@@ -188,6 +211,11 @@ export async function currencyAmountConversion(
     const toQuote = await quoteFor(to); // 1 USD = Y toCurrency
 
     effectiveRate = composed(fromQuote.rate, toQuote.rate);
+
+    // The side the amount is typed in. Naming the other one would quote a
+    // currency the reader never entered.
+    quotedCurrency = from;
+    quotedRate = fromQuote.rate;
 
     // The leg that decides the record. Both legs are named when they disagree,
     // because a cross conversion valued from two different effective days must
@@ -215,6 +243,7 @@ export async function currencyAmountConversion(
     amount: convertedAmount,
     // The effective rate of the conversion, not the raw quote it came from.
     rate: typeof effectiveRate === 'number' ? effectiveRate : effectiveRate.toNumber(),
+    quote: { currency: quotedCurrency, rate: Number(quotedRate) },
     source: sourceData.source || 'system',
     fetchedAt: sourceData.fetchedAt || new Date(),
     // null on the current path: today's rate has no effective day of its own.

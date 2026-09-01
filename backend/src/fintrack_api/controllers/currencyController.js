@@ -123,6 +123,12 @@ export async function currencyConvert(req, res, next) {
     res.json({
       convertedAmount: conversion.amount.toNumber(), //where amount is a Decimal object from Decimal.js lib.
       rate: conversion.rate,
+      // The market figure behind the rate, in the direction every source
+      // publishes: 1 accounting unit = quote.rate of quote.currency. rate alone
+      // is the conversion's multiplier, and for a currency worth a fraction of
+      // an accounting unit it rounds to zero in any display — the reader is told
+      // there is no rate when there is one.
+      quote: conversion.quote,
       source: conversion.source,
       fetchedAt: conversion.fetchedAt,
       effectiveDate: conversion.effectiveDate ?? null,
