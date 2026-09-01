@@ -16,6 +16,13 @@ import svgr from 'vite-plugin-svgr';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // The browser probes under plan-docs/playwright address this port literally.
+  // strictPort makes an occupied 5173 fail loudly instead of moving the server to
+  // the next free one, which is what left three probes pointing at 5174 and 5199.
+  server: {
+    port: 5173,
+    strictPort: true,
+  },
   // …
   plugins: [
     react(),
