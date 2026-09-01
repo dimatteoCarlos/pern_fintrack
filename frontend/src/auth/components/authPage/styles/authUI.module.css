@@ -731,15 +731,21 @@ Estilo por defecto del checkbox
    back to its own default gap, and gave .auth-container a padding and a 26rem
    cap that .modalContent now owns. Nothing in it survived the card collapse. */
 
-/* Larger screens */
-@media (min-width: 600px) {
+/* The modal caps at 26rem (416px, .modalContent in authPage.module.css) and
+   reaches that width well under 600px of viewport, so the pair sat stacked
+   for a stretch where the card already had the room to take them side by
+   side. 480px is where the two converge. */
+@media (min-width: 480px) {
   .extraFieldsGroup {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-4);
     align-items: start;
   }
+}
 
+/* Larger screens */
+@media (min-width: 600px) {
    .messageArea.isVisible {
     max-height: none;
     font-size: var(--font-size-sm);
