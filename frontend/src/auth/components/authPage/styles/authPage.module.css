@@ -128,8 +128,18 @@ button {
   /* The preview sits on this element rather than on the page container so it
      starts below the navbar; on the container its top row was covered by it.
      `contain` shows the whole shot: the asset is 637x829, so `cover` upscaled
-     it past 2x on a desktop and cropped it to sliced words on a phone. */
+     it past 2x on a desktop and cropped it to sliced words on a phone.
+
+     The colour belongs to this element and not to .authPageContainer, which is
+     where it used to live. `contain` always leaves a band, and with no colour
+     here that band was the parent showing through -- so the picture and its
+     surround sat in different rules and went out of step the moment a band was
+     added. Each band now states both, one line apart.
+
+     This one stays on the app's own ground: the capture's edges are dark UI and
+     white card, not the beige the two photographs below are shot on. */
   background-image: url('../../../../assets/landingPageImages/trackerPreview.webp');
+  background-color: var(--color-surface-app);
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -247,6 +257,10 @@ button {
 @media (min-width: 601px) and (max-width: 799px) {
   .mainContent {
     background-image: url('../../../../assets/landingPageImages/fintrack_mobile_front.webp');
+    /* Cream, not the app's near-black: the photo is shot on marble a shade off
+       this token, so the band reads as part of the picture. Against the dark
+       ground the same band read as a seam cut around it. */
+    background-color: var(--color-surface-panel);
     background-size: contain;
   }
 }
@@ -258,6 +272,9 @@ button {
 @media (max-width: 600px) {
   .mainContent {
     background-image: url('../../../../assets/landingPageImages/fintrack_mobile.webp');
+    /* Invisible while `cover` fills the box; it is the short-screen query below
+       that turns this into `contain` and puts the band on screen. */
+    background-color: var(--color-surface-panel);
     background-size: cover;
   }
 }
@@ -335,10 +352,6 @@ button {
    reads as part of the picture rather than as a seam.
    735px is the height step the project already uses, not a new one. */
 @media (max-width: 600px) and (max-height: 735px) {
-  .authPageContainer {
-    background-color: var(--color-surface-panel);
-  }
-
   .mainContent {
     background-size: contain;
   }
