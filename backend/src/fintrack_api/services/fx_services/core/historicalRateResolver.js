@@ -23,7 +23,11 @@
  *    to the current rate would silently record a figure no market quoted.
  */
 
-import { ACCOUNTING_CURRENCY_CODE, SUPPORTED_CURRENCIES } from './fxConfig.js';
+import {
+ ACCOUNTING_CURRENCY_CODE,
+ OFFICIAL_TRM_CURRENCY,
+ SUPPORTED_CURRENCIES,
+} from './fxConfig.js';
 
 import { createError } from '../../../../utils/errorHandling.js';
 import { getCurrencyId } from '../../../../utils/currencyLookup.js';
@@ -45,10 +49,6 @@ import { fetchRatesForDate } from '../fxProviders/githubFallback.js';
 const CASCADE_BUDGET_MS = Number(process.env.FX_HISTORICAL_BUDGET_MS || 5000);
 
 const CALL_TIMEOUT_MS = Number(process.env.FX_REQUEST_TIMEOUT_MS || 2000);
-
-// The currency Banrep publishes the official rate for. It gets its own arm,
-// first, so a Colombian movement is valued by the Colombian official source.
-const OFFICIAL_TRM_CURRENCY = 'cop';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

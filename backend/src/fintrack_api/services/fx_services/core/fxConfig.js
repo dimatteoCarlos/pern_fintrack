@@ -35,3 +35,8 @@ export {
 
 // List of supported currencies (can be extended later)
 export const SUPPORTED_CURRENCIES = ['usd', 'eur', 'cop', 'ves', 'mxn'];
+
+// The currency an official national source publishes for. Its historical arm
+// asks for a whole range and stores one row per validity, so it is also what
+// establishes the shared business-day calendar every other currency reads.
+export const OFFICIAL_TRM_CURRENCY = 'cop';
