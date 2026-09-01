@@ -18,6 +18,40 @@ import {
 import { createError } from '../../utils/errorHandling.js';
 import { isCalendarDate } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 
+/**
+ * Refuse a currency code this installation does not convert, as a client error.
+ *
+ * getCurrencyId throws a plain Error for a code it cannot find, and a plain
+ * Error declares no status, so the handler defaulted it to 500 — a server fault
+ * reported for the client's own typo. Measured: `zzz` answered
+ * `{ message: 'Currency code not found: zzz', status: 500 }`.
+ *
+ * The lookup's own contract is left alone. It is called across the API and its
+ * throw is documented; narrowing the failure belongs to the endpoint that knows
+ * the code arrived in a request body.
+ *
+ * The code is the one the historical resolver already raises for the same fact,
+ * so a client branches on one name whichever layer refuses. details names the
+ * side, since a conversion carries two currencies.
+ *
+ * @param {string} code - The currency code as the client sent it.
+ * @param {string} side - 'fromCurrency' or 'toCurrency'.
+ * @returns {Promise<void>}
+ * @throws {Error} 400 UNSUPPORTED_FX_CURRENCY
+ */
+async function assertCurrencySupported(code, side) {
+  try {
+    if (await getCurrencyId(null, code)) return;
+  } catch {
+    // Not found. Refused below, with the status and the code the client needs.
+  }
+
+  throw createError(400, `unsupported currency code: ${code}`, {
+    errorCode: 'UNSUPPORTED_FX_CURRENCY',
+    details: { currency: String(code), side },
+  });
+}
+
 // ===============================
 // 🎯 FUNCTION: Convert a specific amount (POST)
 // ===============================
@@ -31,19 +65,23 @@ export async function currencyConvert(req, res, next) {
     } = req.body;
 
     // 1. Validate amount
+    //
+    // Raised rather than returned, and carrying a code rather than only prose.
+    // Every other refusal on this path — the date, the currency, the day that
+    // cannot be valued — reaches the client as errorCode plus details, and a
+    // caller that has to read English to tell one 400 from another cannot act
+    // on the difference.
     const numericAmount = parseFloat(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      return res
-        .status(400)
-        .json({ error: 'Amount must be a positive number' });
+      throw createError(400, 'amount must be a positive number', {
+        errorCode: 'INVALID_FX_AMOUNT',
+        details: { amount: String(amount) },
+      });
     }
 
-    // 2. Validate currencies (optional but recommended)
-    const fromId = await getCurrencyId(null, fromCurrency);
-    const toId = await getCurrencyId(null, toCurrency);
-    if (!fromId || !toId) {
-      return res.status(400).json({ error: 'Invalid currency code' });
-    }
+    // 2. Validate currencies
+    await assertCurrencySupported(fromCurrency, 'fromCurrency');
+    await assertCurrencySupported(toCurrency, 'toCurrency');
 
     // 3. The day the caller wants the conversion for.
     //
