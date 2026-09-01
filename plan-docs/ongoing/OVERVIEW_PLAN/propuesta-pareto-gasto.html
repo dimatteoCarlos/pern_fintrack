@@ -1,0 +1,1416 @@
+<title>Pareto del gasto mensual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
+
+<style>
+ /* ---------------------------------------------------------------
+    Two token sets live in this page, and they must not be confused.
+
+    --ft-*  are FinTrack's own values, transcribed verbatim from
+            frontend/src/styles/tokens.css. They never respond to the
+            reader's theme: the product looks the way the product looks,
+            and a proposal that repainted it would be showing something
+            that does not exist.
+
+    --doc-* are this document's chrome. Those do follow the reader.
+    --------------------------------------------------------------- */
+
+ :root {
+  /* PRODUCT — surface */
+  --ft-surface-app: #0d0f12;
+  --ft-surface-raised: #161a22;
+  --ft-surface-panel: #e8e4da;
+  --ft-surface-inverse: #ffffff;
+  /* PRODUCT — content */
+  --ft-content-primary: #141414;
+  --ft-content-secondary: #5b5b5b;
+  --ft-content-placeholder: #7f7f7f;
+  --ft-content-on-dark: #ffffff;
+  --ft-content-on-dark-subtle: #bdb1b1;
+  /* PRODUCT — semaphore, reserved */
+  --ft-financial-negative: #c97474;
+  --ft-financial-positive: #5b8c93;
+  --ft-financial-neutral: #bdb1b1;
+  --ft-status-warning: #ffa500;
+  /* PRODUCT — the attention family, FinTrack's own ochre */
+  --ft-financial-attention: #c49a5a;
+  --ft-financial-attention-surface: #473515;
+  --ft-financial-attention-border: #c48e31;
+  --ft-financial-attention-content: #f6bb55;
+  /* PRODUCT — border */
+  --ft-border-strong: #141414;
+  --ft-border-inverse: #ffffff;
+  --ft-border-subtle: rgba(232, 228, 218, 0.26);
+  --ft-border-width-thin: 1px;
+  --ft-border-width-thick: 2px;
+  /* PRODUCT — scale */
+  --ft-space-1: 0.25rem;
+  --ft-space-2: 0.5rem;
+  --ft-space-3: 0.75rem;
+  --ft-space-4: 1rem;
+  --ft-space-5: 1.25rem;
+  --ft-space-6: 1.5rem;
+  --ft-radius-xs: 0.25rem;
+  --ft-radius-full: 9999px;
+  --ft-size-status-square: 0.75rem;
+  --ft-size-touch-target: 2.75rem;
+  --ft-font-2xs: 0.625rem;
+  --ft-font-xs: 0.75rem;
+  --ft-font-sm: 0.875rem;
+  --ft-font-base: 1rem;
+  --ft-font-lg: 1.25rem;
+  --ft-font-xl: 1.5rem;
+  --ft-weight-regular: 400;
+  --ft-weight-medium: 500;
+  --ft-weight-semibold: 600;
+  --ft-weight-bold: 700;
+  --ft-tracking-wide: 0.5px;
+  --ft-tracking-wider: 1px;
+
+  /* THE MAGNITUDE SCALE — its own semantic layer over the palette. The high end
+     aliases a token that already exists; the low end is the one new value in
+     this proposal, and it exists because the ochre family jumps from -border
+     straight to -surface, which is too dark to sit on a dark ground. */
+  --color-scale-magnitude-high: var(--ft-financial-attention-content);
+  --color-scale-magnitude-low: #8a6026;
+
+  /* THE RAMP — hi is the biggest category, lo the smallest. Which ends apply
+     depends on the surface the bar lands on. */
+  --ramp-hi: var(--ft-content-primary);
+  --ramp-lo: var(--ft-content-placeholder);
+
+  /* DOCUMENT — light, the default. Neutrals biased warm so the page
+     sits in the same temperature as the product's cream panel. */
+  --doc-bg: #f6f4ef;
+  --doc-surface: #fffefb;
+  --doc-surface-sunk: #edeae3;
+  --doc-ink: #1d1b17;
+  --doc-ink-muted: #6b665d;
+  --doc-rule: rgba(29, 27, 23, 0.13);
+  --doc-accent: #3f6d75;
+  --doc-accent-soft: rgba(63, 109, 117, 0.11);
+  --doc-shadow: 0 1px 2px rgba(29, 27, 23, 0.05), 0 12px 32px -18px rgba(29, 27, 23, 0.35);
+
+  --doc-measure: 66ch;
+  --doc-gutter: clamp(1.25rem, 5vw, 3.5rem);
+ }
+
+ @media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+   --doc-bg: #12110f;
+   --doc-surface: #1b1a16;
+   --doc-surface-sunk: #100f0d;
+   --doc-ink: #ece8e0;
+   --doc-ink-muted: #99938a;
+   --doc-rule: rgba(236, 232, 224, 0.15);
+   --doc-accent: #86bcc3;
+   --doc-accent-soft: rgba(134, 188, 195, 0.13);
+   --doc-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 32px -18px rgba(0, 0, 0, 0.8);
+  }
+ }
+
+ :root[data-theme="dark"] {
+  --doc-bg: #12110f;
+  --doc-surface: #1b1a16;
+  --doc-surface-sunk: #100f0d;
+  --doc-ink: #ece8e0;
+  --doc-ink-muted: #99938a;
+  --doc-rule: rgba(236, 232, 224, 0.15);
+  --doc-accent: #86bcc3;
+  --doc-accent-soft: rgba(134, 188, 195, 0.13);
+  --doc-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 32px -18px rgba(0, 0, 0, 0.8);
+ }
+
+ * { box-sizing: border-box; }
+
+ body {
+  margin: 0;
+  background: var(--doc-bg);
+  color: var(--doc-ink);
+  font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+ }
+
+ .page {
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 7vw, 5rem) var(--doc-gutter) 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3rem, 7vw, 5.5rem);
+ }
+
+ /* ---------- document typography ---------- */
+
+ .eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--doc-accent);
+ }
+
+ h1 {
+  margin: 0;
+  font-size: clamp(2.25rem, 6vw, 3.75rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+ }
+
+ h2 {
+  margin: 0;
+  font-size: clamp(1.375rem, 3vw, 1.875rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+ }
+
+ h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+ }
+
+ p { margin: 0; }
+ .prose { max-width: var(--doc-measure); }
+ .prose + .prose { margin-top: 0.9rem; }
+ .muted { color: var(--doc-ink-muted); }
+ .lede { font-size: clamp(1.0625rem, 2vw, 1.25rem); line-height: 1.5; font-weight: 300; }
+
+ code, .mono {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.8125em;
+ }
+ code {
+  background: var(--doc-accent-soft);
+  color: inherit;
+  padding: 0.1em 0.36em;
+  border-radius: 3px;
+  white-space: nowrap;
+ }
+
+ /* ---------- section scaffolding ---------- */
+
+ .section { display: flex; flex-direction: column; gap: 1.75rem; }
+ .section__head { display: flex; flex-direction: column; gap: 0.625rem; }
+ .section__head .prose { margin-top: 0.375rem; }
+
+ .rule { height: 1px; background: var(--doc-rule); border: 0; margin: 0; }
+
+ .split {
+  display: grid;
+  gap: 2rem;
+  align-items: start;
+ }
+ @media (min-width: 62rem) {
+  .split { grid-template-columns: minmax(0, 22.5rem) minmax(0, 1fr); gap: 3.25rem; }
+ }
+
+ .notes { display: flex; flex-direction: column; gap: 1.5rem; }
+ .note { display: flex; flex-direction: column; gap: 0.4rem; }
+ .note__tag {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--doc-ink-muted);
+ }
+ .note p { max-width: var(--doc-measure); }
+
+ .card {
+  background: var(--doc-surface);
+  border: 1px solid var(--doc-rule);
+  border-radius: 12px;
+  padding: clamp(1.125rem, 3vw, 1.75rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+ }
+
+ .grid-cards {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+ }
+
+ /* =====================================================================
+    THE DEVICE FRAME — FinTrack's own surfaces, fixed against the theme
+    ===================================================================== */
+
+ .frame {
+  width: 360px;
+  max-width: 100%;
+  background: var(--ft-surface-app);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--doc-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+ }
+ .frame__label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ft-content-on-dark-subtle);
+  padding-left: 2px;
+ }
+ .frame--wide { width: 100%; max-width: 40rem; }
+
+ /* =====================================================================
+    THE COMPONENT
+    Panel = --ft-surface-panel. Everything inside consumes --ft-* only.
+    ===================================================================== */
+
+ /* Every surface-dependent value is a custom property declared here and
+    re-declared once by the .chart--dark modifier. The modifier names the
+    surface the component sits on, never a colour of its own. */
+ .chart {
+  --chart-surface: var(--ft-surface-panel);
+  --chart-ink: var(--ft-content-primary);
+  --chart-ink-muted: var(--ft-content-secondary);
+  --chart-hairline: rgba(20, 20, 20, 0.12);
+  --chart-hover: rgba(20, 20, 20, 0.05);
+  --chart-active: rgba(20, 20, 20, 0.1);
+  --chart-focus: var(--ft-border-strong);
+  --chart-outline: var(--ft-border-strong);
+  --ramp-hi: var(--ft-content-primary);
+  --ramp-lo: var(--ft-content-placeholder);
+
+  margin: 0;
+  background: var(--chart-surface);
+  color: var(--chart-ink);
+  border-radius: var(--ft-radius-xs);
+  padding: var(--ft-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ft-space-4);
+  font-size: var(--ft-font-sm);
+ }
+
+ /* The chart is not a data panel, so the cream rule does not reach it: it sits
+    straight on the app ground. Being darker than the raised surface, every mark
+    on it gains contrast. */
+ .chart--dark {
+  --chart-surface: var(--ft-surface-app);
+  --chart-ink: var(--ft-content-on-dark);
+  --chart-ink-muted: var(--ft-content-on-dark-subtle);
+  --chart-hairline: rgba(232, 228, 218, 0.15);
+  --chart-hover: rgba(232, 228, 218, 0.07);
+  --chart-active: rgba(232, 228, 218, 0.12);
+  --chart-focus: var(--ft-border-inverse);
+  --chart-outline: var(--ft-content-on-dark-subtle);
+  --ramp-hi: var(--color-scale-magnitude-high);
+  --ramp-lo: var(--color-scale-magnitude-low);
+ }
+ .chart--dark .row--zero .row__swatch { box-shadow: inset 0 0 0 var(--ft-border-width-thin) var(--ft-content-on-dark-subtle); }
+
+ .chart__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ft-space-3);
+ }
+ .chart__title {
+  font-size: var(--ft-font-2xs);
+  font-weight: var(--ft-weight-semibold);
+  letter-spacing: var(--ft-tracking-wider);
+  text-transform: uppercase;
+  color: var(--chart-ink-muted);
+ }
+ .chart__month {
+  font-size: var(--ft-font-base);
+  font-weight: var(--ft-weight-medium);
+  line-height: 1.25;
+ }
+ .chart__totals { text-align: right; }
+ .chart__total {
+  font-size: var(--ft-font-xl);
+  font-weight: var(--ft-weight-semibold);
+  line-height: 1.1;
+  letter-spacing: var(--ft-tracking-wide);
+  font-variant-numeric: tabular-nums;
+ }
+ .chart__totalLabel {
+  font-size: var(--ft-font-2xs);
+  letter-spacing: var(--ft-tracking-wide);
+  text-transform: uppercase;
+  color: var(--chart-ink-muted);
+ }
+
+ /* ---------- the bar ---------- */
+
+ .chart__barWrap { position: relative; display: flex; flex-direction: column; gap: var(--ft-space-1); }
+
+ .chart__track {
+  position: relative;
+  display: flex;
+  gap: var(--ft-border-width-thin);
+  height: var(--ft-size-status-square);
+  border-radius: var(--ft-radius-full);
+  overflow: hidden;
+  background: var(--chart-surface);
+ }
+
+ .seg {
+  --t: 1;
+  flex: 0 0 auto;
+  min-width: var(--ft-border-width-thick);
+  background: color-mix(in oklab, var(--ramp-hi) calc(var(--t) * 100%), var(--ramp-lo));
+  transition: opacity 150ms ease;
+ }
+ .seg--over { box-shadow: inset 0 -2px 0 0 var(--ft-financial-negative); }
+ .seg--uncategorised {
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--ft-border-width-thin) var(--chart-outline);
+ }
+
+ .chart__pareto {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 80%;
+  width: var(--ft-border-width-thin);
+  background: var(--chart-surface);
+  box-shadow: 0 0 0 var(--ft-border-width-thin) var(--chart-ink);
+ }
+ .chart__paretoScale {
+  position: relative;
+  height: 0.875rem;
+  font-size: var(--ft-font-2xs);
+  color: var(--chart-ink-muted);
+ }
+ .chart__paretoTick {
+  position: absolute;
+  left: 80%;
+  transform: translateX(-50%);
+  letter-spacing: var(--ft-tracking-wide);
+  white-space: nowrap;
+ }
+
+ /* ---------- the legend, which is the Pareto table ---------- */
+
+ .chart__legend { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+
+ .row {
+  width: 100%;
+  min-height: var(--ft-size-touch-target);
+  display: grid;
+  grid-template-columns: var(--ft-size-status-square) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--ft-space-2) var(--ft-space-3);
+  padding: var(--ft-space-2) var(--ft-space-1);
+  background: transparent;
+  border: 0;
+  border-top: var(--ft-border-width-thin) solid var(--chart-hairline);
+  border-radius: var(--ft-radius-xs);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+ }
+ .chart__legend li:first-child .row { border-top: 0; }
+
+ .row:hover { background: var(--chart-hover); }
+ .row:focus-visible {
+  outline: var(--ft-border-width-thick) solid var(--chart-focus);
+  outline-offset: var(--ft-border-width-thick);
+ }
+ .row:active { background: var(--chart-active); }
+ .row:disabled { opacity: 0.5; pointer-events: none; }
+
+ .row__swatch {
+  --t: 1;
+  width: var(--ft-size-status-square);
+  height: var(--ft-size-status-square);
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--ramp-hi) calc(var(--t) * 100%), var(--ramp-lo));
+ }
+ .row--over .row__swatch { box-shadow: inset 0 -2px 0 0 var(--ft-financial-negative); }
+ .row--uncategorised .row__swatch {
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--ft-border-width-thin) var(--chart-outline);
+ }
+ .row--zero .row__swatch { background: transparent; box-shadow: inset 0 0 0 var(--ft-border-width-thin) var(--ft-content-placeholder); }
+
+ .row__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--ft-weight-medium);
+ }
+ .row__amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--ft-weight-medium);
+ }
+ .row__cum {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ft-font-xs);
+  color: var(--chart-ink-muted);
+  min-width: 3.5rem;
+  text-align: right;
+ }
+ .row__amount--reverse { color: var(--ft-financial-positive); }
+
+ .row--paretoEdge { border-bottom: var(--ft-border-width-thin) dashed var(--chart-ink-muted); }
+
+ .chart__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ft-space-2);
+  font-size: var(--ft-font-2xs);
+  color: var(--chart-ink-muted);
+  letter-spacing: var(--ft-tracking-wide);
+ }
+
+ /* ---------- linked highlight ---------- */
+
+ .chart.is-focusing .seg { opacity: 0.32; }
+ .chart.is-focusing .seg.is-active { opacity: 1; }
+ .chart.is-focusing .row { opacity: 0.5; }
+ .chart.is-focusing .row.is-active { opacity: 1; }
+
+ /* ---------- the three fetch states ---------- */
+
+ .skel {
+  background: linear-gradient(90deg, var(--chart-hover), var(--chart-active), var(--chart-hover));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: var(--ft-radius-full);
+ }
+ @keyframes shimmer { to { background-position: -200% 0; } }
+ .skel--bar { height: var(--ft-size-status-square); }
+ .skel--line { height: 0.75rem; }
+ .skel--total { height: 1.5rem; width: 6rem; border-radius: var(--ft-radius-xs); }
+ .skelRow {
+  display: grid;
+  grid-template-columns: var(--ft-size-status-square) minmax(0, 1fr) 3.5rem;
+  align-items: center;
+  gap: var(--ft-space-3);
+  min-height: var(--ft-size-touch-target);
+ }
+ .skelRow .skel--sq { width: var(--ft-size-status-square); height: var(--ft-size-status-square); border-radius: 2px; }
+
+ .state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ft-space-3);
+  padding: var(--ft-space-5) 0;
+ }
+ .state__msg { max-width: 26ch; }
+ .btn {
+  min-height: var(--ft-size-touch-target);
+  padding: 0 var(--ft-space-4);
+  background: var(--chart-ink, var(--ft-content-primary));
+  color: var(--chart-surface, var(--ft-surface-panel));
+  border: 0;
+  border-radius: var(--ft-radius-full);
+  font: inherit;
+  font-weight: var(--ft-weight-medium);
+  cursor: pointer;
+  transition: opacity 150ms ease;
+ }
+ .btn:hover { opacity: 0.86; }
+ .btn:focus-visible { outline: var(--ft-border-width-thick) solid var(--chart-focus, var(--ft-border-strong)); outline-offset: var(--ft-border-width-thick); }
+ .btn:active { opacity: 0.72; }
+ .btn:disabled { opacity: 0.5; pointer-events: none; }
+
+ .emptyBar {
+  height: var(--ft-size-status-square);
+  border-radius: var(--ft-radius-full);
+  box-shadow: inset 0 0 0 var(--ft-border-width-thin) var(--chart-outline, var(--ft-border-strong));
+  opacity: 0.5;
+ }
+
+ /* ---------- the ramp exhibit ---------- */
+
+ .ramp { display: flex; flex-direction: column; gap: 0.75rem; }
+ .rampStrip {
+  display: flex;
+  height: 3.25rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--doc-rule);
+ }
+ .rampStrip span { flex: 1; }
+ .rampCompare {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+ }
+ .rampDemo {
+  background: var(--ft-surface-panel);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+ }
+ .rampDemo__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ft-content-secondary);
+ }
+ .rampDemo__bar { display: flex; gap: 1px; height: var(--ft-size-status-square); border-radius: var(--ft-radius-full); overflow: hidden; }
+ .rampDemo__bar span { flex: 0 0 auto; }
+ .rampDemo__note { font-size: 0.75rem; color: var(--ft-content-secondary); line-height: 1.45; }
+ .rampDemo--dark { background: var(--ft-surface-raised); }
+ .rampDemo--dark .rampDemo__label,
+ .rampDemo--dark .rampDemo__note { color: var(--ft-content-on-dark-subtle); }
+
+ /* ---------- the ramp lab: four candidates, same five figures ---------- */
+
+ .lab { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--doc-rule); border-radius: 12px; overflow: hidden; }
+ .lab__row {
+  display: grid;
+  gap: 0.75rem 1.25rem;
+  padding: 1.125rem 1.25rem;
+  border-bottom: 1px solid var(--doc-rule);
+  align-items: center;
+ }
+ .lab__row:last-child { border-bottom: 0; }
+ @media (min-width: 48rem) {
+  .lab__row { grid-template-columns: 11rem minmax(0, 1fr) 9rem; }
+ }
+ .lab__row--onDark { background: var(--ft-surface-app); }
+ .lab__name { font-weight: 600; font-size: 0.9375rem; }
+ .lab__name small { display: block; font-weight: 400; font-size: 0.75rem; color: var(--doc-ink-muted); margin-top: 0.15rem; }
+ .lab__row--onDark .lab__name { color: var(--ft-content-on-dark); }
+ .lab__row--onDark .lab__name small { color: var(--ft-content-on-dark-subtle); }
+ .lab__bar { display: flex; gap: 1px; height: 1.125rem; border-radius: 999px; overflow: hidden; }
+ .lab__bar span { flex: 0 0 auto; }
+ .lab__verdict { font-size: 0.8125rem; line-height: 1.4; color: var(--doc-ink-muted); }
+ .lab__row--onDark .lab__verdict { color: var(--ft-content-on-dark-subtle); }
+ .lab__verdict b { display: block; color: var(--doc-ink); font-weight: 600; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
+ .lab__row--onDark .lab__verdict b { color: var(--ft-content-on-dark); }
+
+ .pair { display: grid; gap: 1.25rem; }
+ @media (min-width: 52rem) { .pair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+ .frame--light { background: var(--ft-surface-inverse); }
+ .frame--light .frame__label { color: var(--ft-content-secondary); }
+
+ /* ---------- tables ---------- */
+
+ .tableWrap { overflow-x: auto; border: 1px solid var(--doc-rule); border-radius: 10px; }
+ table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+ th, td { text-align: left; padding: 0.625rem 0.875rem; border-bottom: 1px solid var(--doc-rule); vertical-align: top; }
+ thead th {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--doc-ink-muted);
+  white-space: nowrap;
+  background: var(--doc-surface-sunk);
+ }
+ tbody tr:last-child td { border-bottom: 0; }
+ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+ .swatchCell { display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; }
+ .swatchCell i { width: 0.875rem; height: 0.875rem; border-radius: 3px; border: 1px solid var(--doc-rule); display: inline-block; }
+
+ .flag {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+ }
+ .flag--ask { color: var(--doc-accent); }
+
+ /* ---------- controls ---------- */
+
+ .controls { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+ .toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--doc-rule);
+  border-radius: 999px;
+  background: var(--doc-surface);
+  color: var(--doc-ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+ }
+ .toggle:hover { border-color: var(--doc-accent); }
+ .toggle:focus-visible { outline: 2px solid var(--doc-accent); outline-offset: 2px; }
+ .toggle:active { background: var(--doc-accent-soft); }
+ .toggle[aria-pressed="true"] { background: var(--doc-accent-soft); border-color: var(--doc-accent); color: var(--doc-accent); }
+ .toggle i {
+  width: 0.5rem; height: 0.5rem; border-radius: 999px;
+  border: 1px solid currentColor; display: inline-block;
+ }
+ .toggle[aria-pressed="true"] i { background: currentColor; }
+
+ .checklist { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+ .checklist li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.75rem; align-items: start; }
+ .checklist .k {
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.15rem 0.5rem; border-radius: 999px; white-space: nowrap;
+  border: 1px solid var(--doc-rule); color: var(--doc-ink-muted);
+ }
+ .checklist .k--decide { color: var(--doc-accent); border-color: currentColor; }
+
+ footer { color: var(--doc-ink-muted); font-size: 0.8125rem; }
+
+ @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+ }
+</style>
+
+<div class="page">
+
+ <header class="section">
+  <p class="eyebrow">Propuesta de diseño · Overview · D19</p>
+  <h1>Pareto del gasto mensual</h1>
+  <p class="prose lede">Una barra apilada que reparte el gasto del mes entre las categorías, ordenada de mayor a menor, con el color derivado del monto y una leyenda que no acompaña al gráfico: <strong>es</strong> el gráfico, en su forma legible.</p>
+  <p class="prose muted">Van dos variantes de superficie: el panel cream que manda hoy y una tarjeta oscura con rampa ocre, que es la que recomiendo. Todo consume tokens que ya existen en <code>src/styles/tokens.css</code>; donde el sistema no tiene un valor, lo marco como decisión pendiente en vez de inventar un nombre. Los datos son los reales de agosto 2026 del entorno local.</p>
+ </header>
+
+ <hr class="rule">
+
+ <!-- ============ THE COMPONENT ============ -->
+ <section class="section">
+  <div class="section__head">
+   <p class="eyebrow">La propuesta</p>
+   <h2>Un solo bloque, a 360&nbsp;px</h2>
+   <p class="prose">Pasá el cursor o tabulá por la leyenda: la fila y su segmento son la misma entidad y se iluminan juntos. Los interruptores muestran los casos que hoy no están en los datos.</p>
+  </div>
+
+  <div class="controls">
+   <button class="toggle" type="button" id="tgl-uncat" aria-pressed="false"><i></i> Con «Sin categoría»</button>
+   <button class="toggle" type="button" id="tgl-pareto" aria-pressed="true"><i></i> Marca del 80&nbsp;%</button>
+  </div>
+
+  <div class="split">
+   <div class="frame">
+    <p class="frame__label">Overview · panel de datos</p>
+
+    <figure class="chart" id="chart">
+     <div class="chart__head">
+      <div>
+       <p class="chart__title">Distribución del gasto</p>
+       <p class="chart__month">Agosto 2026</p>
+      </div>
+      <div class="chart__totals">
+       <p class="chart__total" id="total">267.88</p>
+       <p class="chart__totalLabel">gasto categorizado</p>
+      </div>
+     </div>
+
+     <div class="chart__barWrap">
+      <div class="chart__track" id="track" aria-hidden="true"></div>
+      <div class="chart__paretoScale" id="paretoScale"><span class="chart__paretoTick">80&nbsp;%</span></div>
+     </div>
+
+     <ul class="chart__legend" id="legend"></ul>
+
+     <div class="chart__foot">
+      <span id="footPareto">3 de 5 categorías concentran el 80&nbsp;%</span>
+      <span>cierra en 100,00&nbsp;%</span>
+     </div>
+    </figure>
+   </div>
+
+   <div class="notes">
+    <div class="note">
+     <p class="note__tag">Por qué la leyenda es la tabla</p>
+     <p><em>dairy</em> pesa 4,58&nbsp;%: sobre 360&nbsp;px son 16&nbsp;px de segmento. Ningún nombre entra ahí. En vez de duplicar el dato en un gráfico y una tabla, la leyenda ya trae hueco, nombre, monto y acumulado en orden de <code>rank</code>, que es exactamente el Pareto que el backend publica. Un componente, no dos.</p>
+    </div>
+    <div class="note">
+     <p class="note__tag">Por qué el orden viene tal cual</p>
+     <p>El frontend no reordena. <code>makeCategoryBreakdown</code> ya devuelve descendente por gasto con desempate alfabético, así que el 80&nbsp;% es un prefijo contiguo y la marca vertical siempre cae en un solo punto. Reordenar en el cliente rompería la correspondencia entre <code>rank</code> y posición.</p>
+    </div>
+    <div class="note">
+     <p class="note__tag">Por qué la marca del 80&nbsp;% existe</p>
+     <p>Es lo único que convierte una barra bonita en un instrumento. Hoy cae dentro de <em>verduras</em>, entre 79,10&nbsp;% y 95,42&nbsp;%: tres categorías cargan el 80&nbsp;% del mes. La línea punteada en la leyenda marca el mismo corte para quien lee la lista y no la barra.</p>
+    </div>
+    <div class="note">
+     <p class="note__tag">Por qué la barra no habla con el lector de pantalla</p>
+     <p>La barra es <code>aria-hidden</code>. La representación accesible es la leyenda, que ya es una tabla de valores. Exponer las dos haría que un lector de pantalla recitara cada cifra dos veces.</p>
+    </div>
+   </div>
+  </div>
+ </section>
+
+ <hr class="rule">
+
+ <!-- ============ THE RAMP ============ -->
+ <section class="section">
+  <div class="section__head">
+   <p class="eyebrow">La rampa de color · sobre el panel cream</p>
+   <h2>Grafito para la magnitud, rojo para el semáforo</h2>
+   <p class="prose">Pediste que el color salga del monto y esa es la decisión correcta, pero cambio la familia que recomendé antes. Si cada segmento de gasto es rojo, el rojo deja de significar «algo anda mal» y <code>isOverBudget</code> se queda sin canal. La rampa va en grafito y el semáforo queda reservado.</p>
+   <p class="prose muted">Esto es lo que el panel cream permite. La sección siguiente muestra qué pasa cuando el componente se muda a una tarjeta oscura, que es donde el ocre se vuelve posible.</p>
+  </div>
+
+  <div class="ramp">
+   <div class="rampStrip" id="rampStrip" aria-hidden="true"></div>
+   <p class="prose muted" style="font-size:0.875rem"><code>color-mix(in oklab, var(--color-content-primary) calc(t * 100%), var(--color-content-placeholder))</code> — donde <code>t = actualSpent / max(actualSpent)</code>. Los dos extremos son tokens que ya existen; no se escribe ningún hex nuevo.</p>
+  </div>
+
+  <div class="rampCompare">
+   <div class="rampDemo">
+    <p class="rampDemo__label">Rampa grafito · recomendada</p>
+    <div class="rampDemo__bar" id="demoGraphite"></div>
+    <p class="rampDemo__note">Recorrido de luminancia amplio. El paso más claro mide 3,15:1 contra el panel cream — por encima del 3:1 que WCAG 1.4.11 pide para objetos gráficos.</p>
+   </div>
+   <div class="rampDemo">
+    <p class="rampDemo__label">Rampa roja · descartada</p>
+    <div class="rampDemo__bar" id="demoRed"></div>
+    <p class="rampDemo__note">De <code>#cc3833</code> a <code>#c97474</code> hay muy poco recorrido: a 12&nbsp;px de alto los segundos y terceros puestos son indistinguibles, y consume el color del semáforo.</p>
+   </div>
+  </div>
+
+  <div class="grid-cards">
+   <div class="card">
+    <h3>Contra el monto, no contra el ranking</h3>
+    <p class="muted">El color deja de ser identidad y pasa a ser magnitud. Eso disuelve el defecto que te señalé: <code>ExpenseCategoryStatus</code> no trae id, y si el color viniera del índice del arreglo, una categoría cambiaría de color al cambiar de puesto. Con la rampa por monto, ya no importa.</p>
+   </div>
+   <div class="card">
+    <h3>Normalizada contra el líder</h3>
+    <p class="muted"><code>t = actualSpent / max(actualSpent)</code>, no contra un dominio absoluto. Si el dominio fuera absoluto, los mismos 50 saldrían oscuros en un mes barato y pálidos en uno caro. Normalizada, el primero siempre es el más oscuro y la rampa usa todo su recorrido cada mes.</p>
+   </div>
+   <div class="card">
+    <h3>Codificación redundante, a propósito</h3>
+    <p class="muted">El ancho ya dice magnitud; el color la repite. Es deliberado: al ser una rampa de luminancia y no de matices, sobrevive a la escala de grises y a cualquier daltonismo, cosa que una paleta categórica de cinco colores no hace.</p>
+   </div>
+   <div class="card">
+    <h3>Un separador de 1&nbsp;px, obligatorio</h3>
+    <p class="muted">Como la barra está ordenada por monto, dos categorías parecidas quedan con color parecido <em>y</em> pegadas: se leen como un solo segmento. El corte de 1&nbsp;px del color del panel entre segmentos es lo que impide esa fusión.</p>
+   </div>
+  </div>
+ </section>
+
+ <hr class="rule">
+
+ <!-- ============ DARK + OCHRE ============ -->
+ <section class="section">
+  <div class="section__head">
+   <p class="eyebrow">Variante oscura</p>
+   <h2>Ocre de punta a punta, sin gris</h2>
+   <p class="prose">La barra no es un panel, así que la regla del cream no la alcanza y no hace falta ninguna excepción: se apoya directo sobre el fondo de la app, <code>--color-surface-app</code>. Al ser más oscuro que la superficie elevada, cada marca gana contraste en vez de perderlo.</p>
+   <p class="prose">FinTrack ya posee el ocre. <code>--color-financial-attention</code> y su tríada existen en <code>tokens.css</code>, y su significado declarado es «esto pide tu atención», que es exactamente lo que es la categoría que más gastó. No es decoración: es el token diciendo lo suyo.</p>
+   <p class="prose">El problema es el recorrido. La familia tiene tres valores claros muy juntos y después salta a <code>#473515</code>, que está pensado como fondo y sobre oscuro queda en 1,63:1. Entre el medio y ese fondo <strong>no hay nada</strong>, y una escala secuencial necesita justamente ese tramo.</p>
+  </div>
+
+  <div class="lab" id="lab"></div>
+
+  <p class="prose muted" style="font-size:0.875rem">Los cuatro llevan las mismas cinco cifras de agosto. La diferencia que ves es únicamente la rampa.</p>
+
+  <div class="pair">
+   <div class="frame">
+    <p class="frame__label">Hoy · panel cream, rampa grafito</p>
+    <div id="mountLight"></div>
+   </div>
+   <div class="frame">
+    <p class="frame__label">Propuesta · sobre el fondo de la app, rampa ocre</p>
+    <div id="mountDark"></div>
+   </div>
+  </div>
+
+  <div class="grid-cards">
+   <div class="card">
+    <h3>Ocre sí, amarillo no</h3>
+    <p class="muted">El amarillo puro y el naranja son colores de estado: <code>--color-status-warning</code> es <code>#ffa500</code> y significa advertencia. El ocre <code>#c49a5a</code> está desaturado hacia el oro viejo y se lee como materia y valor, no como alarma. Esa distinción es la que impide que el gráfico grite.</p>
+   </div>
+   <div class="card">
+    <h3>La referencia no codifica magnitud</h3>
+    <p class="muted">En el gráfico que me mostraste los tonos no siguen el orden de las cifras: 22803 sale pálido y 19545 sale saturado. El color está asignado por posición en el arreglo, no por valor — el mismo defecto que te señalé al principio. Se ve bien y no dice nada. Los puntos de la leyenda, además, son todos del mismo color, así que la leyenda no sirve para identificar segmentos.</p>
+   </div>
+   <div class="card">
+    <h3>La escala es su propia capa</h3>
+    <p class="muted">La rampa no se declara sobre la familia del ocre sino encima de ella: <code>--color-scale-magnitude-high</code> aliasea el <code>#f6bb55</code> que ya existe y <code>--color-scale-magnitude-low</code> aporta <code>#8a6026</code>, el único valor nuevo de toda la propuesta, con 3,46:1 sobre el fondo de la app. El nombre dice la función —codificar magnitud— y no la apariencia, así que si mañana la paleta cambia de matiz, el componente no se entera.</p>
+   </div>
+   <div class="card">
+    <h3>La rampa se invierte</h3>
+    <p class="muted">Sobre cream, más gasto es más oscuro: más tinta, más peso. Sobre oscuro se da vuelta: más gasto es más brillante. Es la misma idea física —el que más pesa domina— expresada al revés porque el fondo cambió de lado.</p>
+   </div>
+   <div class="card">
+    <h3>Un riesgo que hay que aceptar</h3>
+    <p class="muted">Sobre oscuro, el extremo brillante de la rampa y <code>--color-status-warning</code> quedan cerca. La regla que lo evita: la rampa solo existe como relleno dentro de la pista, y la advertencia nunca se dibuja como relleno. Si esa regla se rompe, los dos se confunden.</p>
+   </div>
+   <div class="card">
+    <h3>No choca con ninguna regla</h3>
+    <p class="muted">La regla del cream habla de paneles de datos. La barra no es un panel: es un gráfico apoyado sobre el fondo de la app. Aquí no hay excepción que declarar ni enmienda que hacer al sistema de diseño.</p>
+   </div>
+  </div>
+
+  <div class="tableWrap">
+   <table>
+    <thead>
+     <tr><th>Color</th><th>Token</th><th>Sobre cream <span class="mono">#e8e4da</span></th><th>Sobre la app <span class="mono">#0d0f12</span></th><th>Sirve como</th></tr>
+    </thead>
+    <tbody>
+     <tr><td><span class="swatchCell"><i style="background:#141414"></i>#141414</span></td><td class="mono">--color-content-primary</td><td class="num">14,5:1</td><td class="num">1,08:1</td><td>Extremo alto en cream</td></tr>
+     <tr><td><span class="swatchCell"><i style="background:#7f7f7f"></i>#7f7f7f</span></td><td class="mono">--color-content-placeholder</td><td class="num">3,15:1</td><td class="num">4,79:1</td><td>Extremo bajo en cream</td></tr>
+     <tr><td><span class="swatchCell"><i style="background:#f6bb55"></i>#f6bb55</span></td><td class="mono">--color-financial-attention-content</td><td class="num">1,36:1</td><td class="num">11,1:1</td><td>Extremo alto en oscuro</td></tr>
+     <tr><td><span class="swatchCell"><i style="background:#c49a5a"></i>#c49a5a</span></td><td class="mono">--color-financial-attention</td><td class="num">2,28:1</td><td class="num">7,4:1</td><td>Paso intermedio</td></tr>
+     <tr><td><span class="swatchCell"><i style="background:#c48e31"></i>#c48e31</span></td><td class="mono">--color-financial-attention-border</td><td class="num">2,28:1</td><td class="num">6,6:1</td><td>Paso intermedio</td></tr>
+     <tr><td><span class="swatchCell"><i style="background:#8a6026"></i>#8a6026</span></td><td class="mono">--color-scale-magnitude-low</td><td class="num">4,44:1</td><td class="num">3,46:1</td><td><strong>Extremo bajo de la rampa · token nuevo</strong></td></tr>
+     <tr><td><span class="swatchCell"><i style="background:#473515"></i>#473515</span></td><td class="mono">--color-financial-attention-surface</td><td class="num">9,25:1</td><td class="num">1,63:1</td><td>Fondo, no marca</td></tr>
+     <tr><td><span class="swatchCell"><i style="background:#c97474"></i>#c97474</span></td><td class="mono">--color-financial-negative</td><td class="num">2,65:1</td><td class="num">5,70:1</td><td>Sobrepresupuesto: legible solo en oscuro</td></tr>
+    </tbody>
+   </table>
+  </div>
+  <p class="prose muted" style="font-size:0.875rem">Umbrales: 3:1 para objetos gráficos, 4,5:1 para texto. Dos lecturas salen de esta tabla. La primera: entre <code>#c48e31</code> y <code>#473515</code> la familia salta de 6,6:1 a 1,63:1 sin nada en medio, y ese hueco es exactamente lo que la escala necesita. La segunda: sobre el fondo oscuro el rojo del semáforo llega a 5,70:1, así que el sobrepresupuesto recupera su cifra en rojo legible sin inventar nada.</p>
+ </section>
+
+ <hr class="rule">
+
+ <!-- ============ EDGE CASES ============ -->
+ <section class="section">
+  <div class="section__head">
+   <p class="eyebrow">Casos límite</p>
+   <h2>Lo que la barra hace cuando el dato no colabora</h2>
+   <p class="prose">Ninguno de estos aparece en los datos de hoy. Todos aparecen tarde o temprano.</p>
+  </div>
+
+  <div class="grid-cards">
+   <div class="card">
+    <h3>Gasto cero</h3>
+    <p class="muted"><em>proteins</em> gastó 0 sobre un presupuesto de 60. Está en la leyenda con el hueco vacío y ausente de la barra: un ancho cero no es un segmento. Ocultarla de la lista escondería un presupuesto sin ejecutar, que es información.</p>
+   </div>
+   <div class="card">
+    <h3>Segmento por debajo del píxel</h3>
+    <p class="muted">Una categoría al 0,5&nbsp;% mide 1,8&nbsp;px a 360&nbsp;px, menos que su propio separador. Piso de 2&nbsp;px para todo segmento distinto de cero, y el excedente se descuenta del mayor. Una cifra distinta de cero nunca se dibuja como nada.</p>
+   </div>
+   <div class="card">
+    <h3>Sin categoría</h3>
+    <p class="muted">Cuando <code>hasUncategorizedExpense</code> es verdadero, el resto (<code>totalAmount − categorizedExpense</code>) va último y se dibuja <strong>contorneado, no relleno</strong>. No tiene <code>rank</code> ni acumulado, y darle un valor de la rampa lo haría leer como la categoría más grande o la más chica.</p>
+   </div>
+   <div class="card">
+    <h3>Reverso mayor que el gasto</h3>
+    <p class="muted">Un <code>movement_type_id = 6</code> más grande que el gasto del mes deja <code>actualSpent</code> negativo. Propuesta: ancho recortado a cero, la cifra real en la leyenda con el color positivo —el dinero volvió— y la fila marcada. <span class="flag flag--ask">necesita decisión de backend</span> el acumulado del Pareto dejaría de ser monótono.</p>
+   </div>
+  </div>
+ </section>
+
+ <hr class="rule">
+
+ <!-- ============ FETCH STATES ============ -->
+ <section class="section">
+  <div class="section__head">
+   <p class="eyebrow">Estados de carga</p>
+   <h2>Tres estados distintos, ninguno improvisado</h2>
+   <p class="prose">Una cifra ausente se dibuja como esqueleto o como raya, nunca como <code>0</code> ni como <code>NaN</code>. Vacío no es lo mismo que error, y error no es lo mismo que cargando.</p>
+  </div>
+
+  <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(18rem,1fr))">
+
+   <div class="frame">
+    <p class="frame__label">Cargando</p>
+    <figure class="chart">
+     <div class="chart__head">
+      <div>
+       <p class="chart__title">Distribución del gasto</p>
+       <p class="chart__month">Agosto 2026</p>
+      </div>
+      <div class="chart__totals"><div class="skel skel--total"></div></div>
+     </div>
+     <div class="skel skel--bar"></div>
+     <div>
+      <div class="skelRow"><div class="skel skel--sq"></div><div class="skel skel--line" style="width:62%"></div><div class="skel skel--line"></div></div>
+      <div class="skelRow"><div class="skel skel--sq"></div><div class="skel skel--line" style="width:48%"></div><div class="skel skel--line"></div></div>
+      <div class="skelRow"><div class="skel skel--sq"></div><div class="skel skel--line" style="width:55%"></div><div class="skel skel--line"></div></div>
+     </div>
+    </figure>
+   </div>
+
+   <div class="frame">
+    <p class="frame__label">Error</p>
+    <figure class="chart">
+     <div class="chart__head">
+      <div>
+       <p class="chart__title">Distribución del gasto</p>
+       <p class="chart__month">Agosto 2026</p>
+      </div>
+     </div>
+     <div class="state">
+      <p class="state__msg">No pudimos traer la distribución del mes.</p>
+      <button class="btn" type="button">Reintentar</button>
+     </div>
+    </figure>
+   </div>
+
+   <div class="frame">
+    <p class="frame__label">Vacío</p>
+    <figure class="chart">
+     <div class="chart__head">
+      <div>
+       <p class="chart__title">Distribución del gasto</p>
+       <p class="chart__month">Agosto 2026</p>
+      </div>
+      <div class="chart__totals">
+       <p class="chart__total">—</p>
+       <p class="chart__totalLabel">gasto categorizado</p>
+      </div>
+     </div>
+     <div class="emptyBar"></div>
+     <div class="state">
+      <p class="state__msg">Todavía no hay gastos con categoría este mes.</p>
+     </div>
+    </figure>
+   </div>
+
+  </div>
+ </section>
+
+ <hr class="rule">
+
+ <!-- ============ TOKEN MAP ============ -->
+ <section class="section">
+  <div class="section__head">
+   <p class="eyebrow">Trazabilidad</p>
+   <h2>De dónde sale cada valor</h2>
+   <p class="prose">Cada declaración del componente apunta a un token existente. Las dos filas marcadas son las que el sistema no cubre y que no voy a inventar.</p>
+  </div>
+
+  <div class="tableWrap">
+   <table>
+    <thead>
+     <tr><th>Elemento</th><th>Token</th><th>Valor</th><th>Motivo</th></tr>
+    </thead>
+    <tbody>
+     <tr><td>Panel</td><td class="mono">--color-surface-panel</td><td class="num">#e8e4da</td><td>Los paneles de datos son cream con texto oscuro.</td></tr>
+     <tr><td>Extremo oscuro de la rampa</td><td class="mono">--color-content-primary</td><td class="num">#141414</td><td>14,5:1 contra el panel.</td></tr>
+     <tr><td>Extremo claro de la rampa</td><td class="mono">--color-content-placeholder</td><td class="num">#7f7f7f</td><td>3,15:1 contra el panel. <code>--color-financial-neutral</code> quedaría en 1,32:1 y se disolvería en el cream.</td></tr>
+     <tr><td><strong>Rampa de magnitud (la decidida)</strong></td><td class="mono">--color-scale-magnitude-high / -low</td><td class="num">#f6bb55 → #8a6026</td><td>El extremo alto aliasea <code>--color-financial-attention-content</code>; el bajo es el único valor nuevo de la propuesta.</td></tr>
+     <tr><td>Separador entre segmentos</td><td class="mono">--border-width-thin</td><td class="num">1px</td><td>Del color del panel. Cuesta 0,28&nbsp;% del ancho por corte, por debajo del redondeo de los porcentajes mostrados.</td></tr>
+     <tr><td>Alto de la barra y del hueco</td><td class="mono">--size-status-square</td><td class="num">0.75rem</td><td>Decidido. Segmento y hueco miden igual porque son la misma entidad; no se abre un token de alto de gráfico.</td></tr>
+     <tr><td>Alto de fila de la leyenda</td><td class="mono">--size-touch-target</td><td class="num">2.75rem</td><td>Cada fila es un control; 44&nbsp;px es el mínimo tocable.</td></tr>
+     <tr><td>Radio de la pista</td><td class="mono">--radius-full</td><td class="num">9999px</td><td>Solo la pista. Redondear cada segmento los volvería píldoras sueltas en vez de una cantidad repartida.</td></tr>
+     <tr><td>Anillo de foco</td><td class="mono">--border-width-thick</td><td class="num">2px</td><td>2&nbsp;px de anillo con 2&nbsp;px de separación, sobre <code>--color-border-strong</code>.</td></tr>
+     <tr><td>Marca de sobrepresupuesto</td><td class="mono">--color-financial-negative</td><td class="num">#c97474</td><td><span class="flag flag--ask">a confirmar</span> 2,65:1 contra el cream: sirve como refuerzo decorativo, no como único portador. Por eso la marca es una regla de 2&nbsp;px, no un cambio de color.</td></tr>
+     <tr><td>Cifra revertida</td><td class="mono">--color-financial-positive</td><td class="num">#5b8c93</td><td>Un reverso devuelve dinero; el signo del efecto financiero es positivo.</td></tr>
+     <tr><td>Familia tipográfica</td><td class="mono">--font-family-sans</td><td class="num">Outfit</td><td>Una sola familia en todo el producto. Los montos van en sans con <code>tabular-nums</code>.</td></tr>
+    </tbody>
+   </table>
+  </div>
+ </section>
+
+ <hr class="rule">
+
+ <!-- ============ THE DATA ============ -->
+ <section class="section">
+  <div class="section__head">
+   <p class="eyebrow">Datos reales · agosto 2026</p>
+   <h2>Lo que el backend ya devuelve</h2>
+   <p class="prose">Cinco filas de <code>categories</code>. La suma de <code>actualSpent</code> coincide exactamente con <code>card.categorizedExpense</code>: una cifra, una fórmula.</p>
+  </div>
+
+  <div class="tableWrap">
+   <table>
+    <thead>
+     <tr><th>#</th><th>Categoría</th><th>Gastado</th><th>Peso</th><th>Acumulado</th><th>Presupuesto</th><th>Estado</th></tr>
+    </thead>
+    <tbody id="dataRows"></tbody>
+    <tbody>
+     <tr>
+      <td></td><td><strong>Total</strong></td><td class="num"><strong>267.88</strong></td>
+      <td class="num">100,00&nbsp;%</td><td class="num">100,00&nbsp;%</td><td class="num">232.34</td><td></td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+  <p class="prose muted" style="font-size:0.875rem">Los importes van en la moneda contable que cada fila trae en <code>category.currency</code>. No la asumo en esta propuesta: el componente la lee del payload y la muestra una sola vez en la cabecera.</p>
+ </section>
+
+ <hr class="rule">
+
+ <!-- ============ NATIVE VS LIBRARY ============ -->
+ <section class="section">
+  <div class="section__head">
+   <p class="eyebrow">Arquitectura</p>
+   <h2>Esta barra va nativa; la librería es para la tendencia</h2>
+   <p class="prose">La línea que separa un caso del otro es concreta: <strong>una librería de gráficos se paga cuando necesitás un sistema de coordenadas</strong>. Ejes, escalas, marcas, interpolación, re-layout al cambiar el ancho. La tendencia de seis meses tiene todo eso. Esta barra no tiene nada de eso: es una proporción tendida sobre un solo eje, sin escala y sin eje dibujado.</p>
+  </div>
+
+  <div class="grid-cards">
+   <div class="card">
+    <h3>Es un flex con cuatro hijos</h3>
+    <p class="muted">La barra son cuatro <code>span</code> con <code>flex-basis</code> en porcentaje. Traer un renderizador, un sistema de escalas y un motor de layout para dibujar cuatro rectángulos es peso que la pantalla de entrada paga en el primer render.</p>
+   </div>
+   <div class="card">
+    <h3>La leyenda es una tabla, no una leyenda</h3>
+    <p class="muted">Este es el argumento fuerte. Las librerías traen su propia leyenda y pelean cuando lo que querés es una tabla real con cifras tabulares, truncado por elipsis y filas de 44&nbsp;px que son botones. Terminarías desactivando la leyenda de la librería y construyendo la tabla igual.</p>
+   </div>
+   <div class="card">
+    <h3>Los tokens no cruzan a JavaScript</h3>
+    <p class="muted">Una librería recibe colores como cadenas. <code>var(--token)</code> y <code>color-mix()</code> no se resuelven dentro de un canvas, así que habría que leer estilos computados y pasar hexadecimales por props: el color se muda del CSS a la lógica del componente, que es justo lo que el sistema de tokens evita.</p>
+   </div>
+   <div class="card">
+    <h3>Las reglas del dibujo son nuestras</h3>
+    <p class="muted">Piso de 2&nbsp;px por segmento con el excedente descontado del mayor, «Sin categoría» contorneado, la fila de gasto cero presente en la lista y ausente de la barra, la marca del 80&nbsp;%. Cada una es una excepción que habría que forzarle a la librería.</p>
+   </div>
+   <div class="card">
+    <h3>La accesibilidad ya está resuelta</h3>
+    <p class="muted">La barra es <code>aria-hidden</code> y la leyenda es la representación accesible. Una librería monta su propia estructura ARIA sobre SVG, que después hay que silenciar para que el lector de pantalla no lea cada cifra dos veces.</p>
+   </div>
+   <div class="card">
+    <h3>Dónde sí conviene</h3>
+    <p class="muted">D18, la tendencia de seis meses: eje temporal, escala de valores, marcas, curva y re-layout responsivo. Ahí la librería hace trabajo real. Y como es una serie única, le basta un color plano: nunca necesita saber de la rampa ocre.</p>
+   </div>
+  </div>
+
+  <div class="note">
+   <p class="note__tag">La condición para que convivan</p>
+   <p class="prose">Si la librería pinta la tendencia y el CSS pinta la barra, los dos tienen que hablar del mismo color. La regla: la librería recibe sus colores como props leídas de los tokens en el borde de la aplicación, nunca escritas a mano en su configuración. Una sola fuente de verdad, dos consumidores.</p>
+  </div>
+ </section>
+
+ <hr class="rule">
+
+ <!-- ============ OPEN DECISIONS ============ -->
+ <section class="section">
+  <div class="section__head">
+   <p class="eyebrow">Lo que falta cerrar</p>
+   <h2>Decisiones que son tuyas</h2>
+  </div>
+
+  <ul class="checklist">
+   <li>
+    <span class="k">Rampa</span>
+    <p>Cerrada: ocre profundo, de <code>--color-financial-attention-content</code> a <code>#8a6026</code>. Un solo matiz de punta a punta, sin gris.</p>
+   </li>
+   <li>
+    <span class="k">Nombre del token</span>
+    <p>Cerrado: <code>--color-scale-magnitude-low: #8a6026</code>, con <code>--color-scale-magnitude-high</code> aliaseando <code>--color-financial-attention-content</code>. Queda pendiente escribirlos en <code>tokens.css</code>, que es su propio commit.</p>
+   </li>
+   <li>
+    <span class="k">Superficie</span>
+    <p>Cerrada. La barra no es un panel, así que la regla del cream no la alcanza: va sobre <code>--color-surface-app</code> sin excepciones ni enmiendas.</p>
+   </li>
+   <li>
+    <span class="k">Nativo o librería</span>
+    <p>Cerrada, salvo que discrepes. La barra va nativa en CSS; la tendencia de seis meses es la que justifica la librería.</p>
+   </li>
+   <li>
+    <span class="k">Alto</span>
+    <p>Cerrado: <code>--size-status-square</code>. Segmento y hueco de la leyenda miden lo mismo porque son la misma entidad, y no se abre un token de alto de gráfico que hoy nada más consumiría.</p>
+   </li>
+   <li>
+    <span class="k">Rojo sobre cream</span>
+    <p>Queda resuelta por la anterior. Sobre cream ningún rojo llega a 4,5:1 y el exceso tiene que marcarse con forma; sobre la tarjeta oscura <code>--color-financial-negative</code> alcanza 5,2:1 y puede escribir la cifra.</p>
+   </li>
+   <li>
+    <span class="k k--decide">Negativos</span>
+    <p>Qué hace el Pareto cuando <code>actualSpent</code> es negativo. Recortar a cero resuelve el dibujo, pero el acumulado monótono se rompe y eso se decide en el backend.</p>
+   </li>
+   <li>
+    <span class="k k--decide">Payload</span>
+    <p>Si <code>GET /overview</code> publica <code>categories</code> y <code>trend</code>, que ya calcula y descarta, o el Overview llama a <code>GET /overview/expense</code> con su paginación de filas solo para dibujar dos gráficos.</p>
+   </li>
+   <li>
+    <span class="k">Tokens</span>
+    <p>Este componente sería el primer consumidor de <code>tokens.css</code>: hoy nada lo usa. Migrar hacia esos nombres es un paso aparte del que hay que ser consciente antes de escribir la primera línea.</p>
+   </li>
+  </ul>
+ </section>
+
+ <hr class="rule">
+
+ <footer>
+  <p>Propuesta de diseño · módulo Overview · rama <span class="mono">feat/overview</span>. Ningún archivo del repositorio fue modificado.</p>
+ </footer>
+
+</div>
+
+<script>
+ // The payload as the backend publishes it: already ranked, already cumulative.
+ const CATEGORIES = [
+  { name: 'transport',   spent: 123.36, share: 46.05, cum: 46.05,  budget: 12.02,  over: true  },
+  { name: 'aseo hogar',  spent: 88.53,  share: 33.05, cum: 79.10,  budget: 75.00,  over: true  },
+  { name: 'verduras',    spent: 43.71,  share: 16.32, cum: 95.42,  budget: 55.00,  over: false },
+  { name: 'dairy',       spent: 12.28,  share: 4.58,  cum: 100.00, budget: 30.32,  over: false },
+  { name: 'proteins',    spent: 0,      share: 0,     cum: 100.00, budget: 60.00,  over: false },
+ ];
+
+ // Illustrative only: the payload reports 0 uncategorised expense this month.
+ const UNCATEGORISED = { name: 'Sin categoría', spent: 41.20, share: 13.3 };
+
+ const MIN_SEGMENT_PERCENT = 0.6;
+ const maxSpent = Math.max(...CATEGORIES.map((c) => c.spent));
+ const fmt = (n) => n.toFixed(2);
+ const pct = (n) => n.toFixed(2).replace('.', ',') + ' %';
+
+ // paint() fills any .chart node, so the cream and the dark variants are the
+ // same component with a different surface modifier — never a second component.
+ const paint = (figure, opts) => {
+  const track = figure.querySelector('.chart__track');
+  const legend = figure.querySelector('.chart__legend');
+  const scaleEl = figure.querySelector('.chart__paretoScale');
+  const totalEl = figure.querySelector('.chart__total');
+  const footEl = figure.querySelector('.chart__foot span');
+
+  const rows = CATEGORIES.map((c) => ({ ...c, kind: 'category' }));
+  const total = CATEGORIES.reduce((s, c) => s + c.spent, 0)
+   + (opts.uncategorised ? UNCATEGORISED.spent : 0);
+
+  if (opts.uncategorised) {
+   rows.push({ ...UNCATEGORISED, kind: 'uncategorised', over: false, budget: null, cum: null });
+  }
+
+  // Widths are recomputed against the displayed total so the bar always closes.
+  const drawn = rows.filter((r) => r.spent > 0)
+   .map((r) => ({ ...r, width: Math.max((r.spent / total) * 100, MIN_SEGMENT_PERCENT) }));
+
+  track.textContent = '';
+  drawn.forEach((r) => {
+   const seg = document.createElement('span');
+   seg.className = 'seg'
+    + (r.kind === 'uncategorised' ? ' seg--uncategorised' : '')
+    + (r.over ? ' seg--over' : '');
+   seg.style.flexBasis = r.width + '%';
+   seg.style.setProperty('--t', r.kind === 'uncategorised' ? 0 : r.spent / maxSpent);
+   seg.dataset.key = r.name;
+   track.appendChild(seg);
+  });
+  if (opts.pareto) {
+   const line = document.createElement('div');
+   line.className = 'chart__pareto';
+   track.appendChild(line);
+  }
+  scaleEl.style.visibility = opts.pareto ? 'visible' : 'hidden';
+
+  const paretoEdge = CATEGORIES.findIndex((c) => c.cum >= 80);
+
+  legend.textContent = '';
+  rows.forEach((r, i) => {
+   const li = document.createElement('li');
+   const btn = document.createElement('button');
+   btn.type = 'button';
+   btn.className = 'row'
+    + (r.over ? ' row--over' : '')
+    + (r.kind === 'uncategorised' ? ' row--uncategorised' : '')
+    + (r.spent === 0 ? ' row--zero' : '')
+    + (opts.pareto && i === paretoEdge ? ' row--paretoEdge' : '');
+   btn.dataset.key = r.name;
+
+   const swatch = document.createElement('span');
+   swatch.className = 'row__swatch';
+   swatch.style.setProperty('--t', r.kind === 'uncategorised' ? 0 : r.spent / maxSpent);
+
+   const name = document.createElement('span');
+   name.className = 'row__name';
+   name.textContent = r.name;
+
+   const amount = document.createElement('span');
+   amount.className = 'row__amount';
+   amount.textContent = fmt(r.spent);
+
+   const cum = document.createElement('span');
+   cum.className = 'row__cum';
+   cum.textContent = r.cum === null ? '—' : pct(r.cum);
+
+   btn.append(swatch, name, amount, cum);
+   btn.setAttribute('aria-label',
+    `${r.name}, ${fmt(r.spent)}, ${r.cum === null ? 'fuera del acumulado' : 'acumulado ' + pct(r.cum)}`
+    + (r.over ? ', sobre presupuesto' : ''));
+   li.appendChild(btn);
+   legend.appendChild(li);
+  });
+
+  totalEl.textContent = fmt(total);
+  footEl.textContent = `${paretoEdge + 1} de ${CATEGORIES.length} categorías concentran el 80 %`;
+ };
+
+ // Segment and legend row are one entity: touching either raises both.
+ const link = (figure) => {
+  const legend = figure.querySelector('.chart__legend');
+  const setActive = (key) => {
+   figure.classList.toggle('is-focusing', Boolean(key));
+   figure.querySelectorAll('[data-key]').forEach((el) => {
+    el.classList.toggle('is-active', el.dataset.key === key);
+   });
+  };
+  legend.addEventListener('pointerover', (e) => {
+   const row = e.target.closest('.row');
+   if (row) setActive(row.dataset.key);
+  });
+  legend.addEventListener('pointerleave', () => setActive(null));
+  legend.addEventListener('focusin', (e) => {
+   const row = e.target.closest('.row');
+   if (row) setActive(row.dataset.key);
+  });
+  legend.addEventListener('focusout', () => setActive(null));
+ };
+
+ const CHART_MARKUP = (dark) => `
+  <figure class="chart${dark ? ' chart--dark' : ''}">
+   <div class="chart__head">
+    <div>
+     <p class="chart__title">Distribución del gasto</p>
+     <p class="chart__month">Agosto 2026</p>
+    </div>
+    <div class="chart__totals">
+     <p class="chart__total">—</p>
+     <p class="chart__totalLabel">gasto categorizado</p>
+    </div>
+   </div>
+   <div class="chart__barWrap">
+    <div class="chart__track" aria-hidden="true"></div>
+    <div class="chart__paretoScale"><span class="chart__paretoTick">80&nbsp;%</span></div>
+   </div>
+   <ul class="chart__legend"></ul>
+   <div class="chart__foot"><span></span><span>cierra en 100,00&nbsp;%</span></div>
+  </figure>`;
+
+ const mount = (hostId, dark) => {
+  const host = document.getElementById(hostId);
+  host.innerHTML = CHART_MARKUP(dark);
+  const figure = host.querySelector('.chart');
+  paint(figure, { uncategorised: false, pareto: true });
+  link(figure);
+ };
+
+ const chart = document.getElementById('chart');
+ let showUncategorised = false;
+ let showPareto = true;
+ const render = () => paint(chart, { uncategorised: showUncategorised, pareto: showPareto });
+ link(chart);
+
+ const bind = (id, get, set) => {
+  const el = document.getElementById(id);
+  el.addEventListener('click', () => {
+   set(!get());
+   el.setAttribute('aria-pressed', String(get()));
+   render();
+  });
+ };
+ bind('tgl-uncat', () => showUncategorised, (v) => { showUncategorised = v; });
+ bind('tgl-pareto', () => showPareto, (v) => { showPareto = v; });
+
+ mount('mountLight', false);
+ mount('mountDark', true);
+
+ // ---- the ramp lab: four candidates, identical figures ----
+ const LAB = [
+  {
+   name: 'Grafito sobre cream', sub: 'content-primary → content-placeholder',
+   hi: '#141414', lo: '#7f7f7f', dark: false,
+   title: 'Referencia',
+   verdict: 'La variante que respeta el panel cream. Todo el recorrido es luminosidad y el 2.º y el 3.er puesto se rozan.',
+  },
+  {
+   name: 'Ocre corto', sub: 'attention-content → attention',
+   hi: '#f6bb55', lo: '#c49a5a', dark: true,
+   title: 'Tu objeción, demostrada',
+   verdict: 'Los dos tokens claros de la familia. El recorrido es tan breve que los cinco segmentos parecen uno.',
+  },
+  {
+   name: 'Ocre claro', sub: 'content-on-dark-muted → attention-content',
+   hi: '#e8e4da', lo: '#f6bb55', dark: true,
+   title: 'Como la referencia',
+   verdict: 'La mitad clara del arco, los dos extremos ya son tokens. Elegante, pero el recorrido sigue siendo corto.',
+  },
+  {
+   name: 'Ocre completo', sub: 'attention-content → attention-surface',
+   hi: '#f6bb55', lo: '#473515', dark: true,
+   title: 'La cola se apaga',
+   verdict: 'Usa toda la familia, pero el valor -surface está pensado como fondo: el segmento más chico queda en 1,63:1 y se lee como un hueco.',
+  },
+  {
+   name: 'Arco completo', sub: 'content-on-dark-muted → ocre oscuro',
+   hi: '#e8e4da', lo: '#8a6026', dark: true,
+   title: 'Descartada',
+   verdict: 'Arranca en oro pálido y estira más el recorrido, pero la cabeza se acerca al blanco y pierde el carácter del ocre.',
+  },
+  {
+   name: 'Ocre profundo', sub: 'attention-content → ocre oscuro',
+   hi: '#f6bb55', lo: '#8a6026', dark: true,
+   title: 'Decidida',
+   verdict: 'De oro saturado a ocre profundo. Un solo matiz de punta a punta, contenida, y todo el recorrido se lee como oro.',
+  },
+  {
+   name: 'Categórico', sub: 'cinco matices sin token en el sistema',
+   categorical: ['#f6bb55', '#5b8c93', '#c97474', '#8f7fd6', '#6fae7a'], dark: true,
+   title: 'Descartada',
+   verdict: 'Arcoíris: el color deja de medir y obliga a memorizar la leyenda.',
+  },
+ ];
+
+ const lab = document.getElementById('lab');
+ LAB.forEach((cand) => {
+  const row = document.createElement('div');
+  row.className = 'lab__row' + (cand.dark ? ' lab__row--onDark' : '');
+
+  const name = document.createElement('div');
+  name.className = 'lab__name';
+  name.innerHTML = `${cand.name}<small>${cand.sub}</small>`;
+
+  const bar = document.createElement('div');
+  bar.className = 'lab__bar';
+  bar.style.background = cand.dark ? '#0d0f12' : '#e8e4da';
+  CATEGORIES.filter((c) => c.spent > 0).forEach((c, i) => {
+   const s = document.createElement('span');
+   s.style.flexBasis = c.share + '%';
+   s.style.background = cand.categorical
+    ? cand.categorical[i]
+    : `color-mix(in oklab, ${cand.hi} ${(c.spent / maxSpent) * 100}%, ${cand.lo})`;
+   bar.appendChild(s);
+  });
+
+  const verdict = document.createElement('div');
+  verdict.className = 'lab__verdict';
+  verdict.innerHTML = `<b>${cand.title}</b>${cand.verdict}`;
+
+  row.append(name, bar, verdict);
+  lab.appendChild(row);
+ });
+
+ // The ramp exhibits.
+ const strip = document.getElementById('rampStrip');
+ for (let i = 0; i < 24; i += 1) {
+  const s = document.createElement('span');
+  s.style.setProperty('--t', 1 - i / 23);
+  s.style.background = 'color-mix(in oklab, var(--ramp-hi) calc(var(--t) * 100%), var(--ramp-lo))';
+  strip.appendChild(s);
+ }
+
+ const demoBar = (host, colorFor) => {
+  CATEGORIES.filter((c) => c.spent > 0).forEach((c) => {
+   const s = document.createElement('span');
+   s.style.flexBasis = c.share + '%';
+   s.style.background = colorFor(c.spent / maxSpent);
+   host.appendChild(s);
+  });
+ };
+ demoBar(document.getElementById('demoGraphite'),
+  (t) => `color-mix(in oklab, var(--ramp-hi) ${t * 100}%, var(--ramp-lo))`);
+ demoBar(document.getElementById('demoRed'),
+  (t) => `color-mix(in oklab, #cc3833 ${t * 100}%, #c97474)`);
+
+ // The data table.
+ const body = document.getElementById('dataRows');
+ CATEGORIES.forEach((c, i) => {
+  const tr = document.createElement('tr');
+  const swatch = `<span class="swatchCell"><i style="background:color-mix(in oklab, var(--ramp-hi) ${(c.spent / maxSpent) * 100}%, var(--ramp-lo))"></i>${c.name}</span>`;
+  tr.innerHTML = `<td class="num">${i + 1}</td><td>${swatch}</td>`
+   + `<td class="num">${fmt(c.spent)}</td><td class="num">${pct(c.share)}</td>`
+   + `<td class="num">${pct(c.cum)}</td><td class="num">${fmt(c.budget)}</td>`
+   + `<td>${c.over ? 'sobre presupuesto' : c.spent === 0 ? 'sin ejecutar' : 'dentro'}</td>`;
+  body.appendChild(tr);
+ });
+
+ render();
+</script>

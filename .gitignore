@@ -106,7 +106,23 @@ scripts/
 
 # =============================
 #plan docs
-plan-docs/
+#
+# Excluded by default and opened per directory, never the reverse. The tree holds
+# operational material beside the planning notes — probes that read a production
+# connection string out of .env, deployment guides that name the certificate —
+# and a blanket un-ignore would put access tooling in the history, where deleting
+# it later does not remove it.
+#
+# What is opened below was audited file by file for credential VALUES rather than
+# variable names: no connection string, no key, no certificate. The screenshots
+# were opened and read; they carry placeholder figures, not a real balance.
+# The contents are excluded, NOT the directory. `plan-docs/` on its own excludes
+# the directory itself, so git never descends into it and no negation below can
+# be reached — the re-includes would silently do nothing.
+plan-docs/*
+!plan-docs/ongoing/
+!plan-docs/business-rules/
+!plan-docs/completed/
 # Crash dumps left behind when the Git Bash shell faults. Junk, and a hazard
 # in a tree several sessions commit from: one careless "git add ." sweeps it in.
 *.stackdump

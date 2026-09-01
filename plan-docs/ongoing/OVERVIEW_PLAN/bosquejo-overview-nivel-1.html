@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview Nivel 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap">
+<style>
+ *, *::before, *::after { box-sizing: border-box; }
+ img, svg { max-width: 100%; height: auto; }
+
+ :root {
+  --ground: #10161B;
+  --ground-deep: #0A0F13;
+  --sheet: #C9D6DD;
+  --sheet-ink: #1A2429;
+  --sheet-mute: #5A6E78;
+  --rule: #2C3B45;
+  --rule-soft: #1D2830;
+  --paper-ink: #A9BDC7;
+  --paper-mute: #6E838E;
+  --bright: #E4EEF3;
+
+  --nat-position: #7FA6B8;
+  --nat-flow: #C98A2E;
+  --nat-accum: #9B7BA8;
+  --nat-trend: #6E9C86;
+  --nat-none: #6E838E;
+  --alarm: #C4553C;
+
+  --font-display: 'Chivo', system-ui, -apple-system, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, monospace;
+  --font-prose: 'Newsreader', Georgia, serif;
+
+  --s1: 0.375rem;
+  --s2: 0.75rem;
+  --s3: 1.25rem;
+  --s4: 2rem;
+  --s5: 3.25rem;
+  --s6: 5rem;
+ }
+
+ body {
+  margin: 0;
+  background: var(--ground);
+  background-image:
+   linear-gradient(var(--rule-soft) 1px, transparent 1px),
+   linear-gradient(90deg, var(--rule-soft) 1px, transparent 1px);
+  background-size: 44px 44px;
+  color: var(--paper-ink);
+  font-family: var(--font-prose);
+  font-size: 1rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+ }
+
+ .wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--s5) var(--s3) var(--s6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+ }
+
+ .masthead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: var(--s3);
+ }
+ .masthead__eyebrow {
+  font-family: var(--font-code);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--nat-flow);
+ }
+ .masthead__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--bright);
+  margin: 0;
+  text-wrap: balance;
+ }
+ .masthead__lede {
+  margin: 0;
+  max-width: 64ch;
+  font-size: 1.0625rem;
+  font-weight: 300;
+ }
+ .masthead__note {
+  margin: 0;
+  max-width: 64ch;
+  font-size: 0.9375rem;
+  font-style: italic;
+  color: var(--paper-mute);
+ }
+
+ .block { display: flex; flex-direction: column; gap: var(--s3); }
+ .block__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: baseline;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: var(--s1);
+ }
+ .block__index {
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--nat-flow);
+  flex: none;
+ }
+ .block__name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.1875rem;
+  letter-spacing: -0.01em;
+  color: var(--bright);
+  margin: 0;
+  flex: 1 1 auto;
+ }
+ .block__why {
+  margin: 0;
+  max-width: 70ch;
+  font-size: 0.9375rem;
+  font-weight: 300;
+ }
+
+ code {
+  font-family: var(--font-code);
+  font-size: 0.85em;
+  color: var(--bright);
+ }
+
+ .tag {
+  font-family: var(--font-code);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.15em 0.5em;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  flex: none;
+ }
+ .tag--position { color: var(--nat-position); }
+ .tag--flow { color: var(--nat-flow); }
+ .tag--accum { color: var(--nat-accum); }
+ .tag--trend { color: var(--nat-trend); }
+ .tag--none { color: var(--nat-none); border-style: dashed; }
+ .tag--alarm { color: var(--alarm); }
+
+ .legend {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s2);
+  border: 1px solid var(--rule);
+  padding: var(--s3);
+ }
+ .legend__head {
+  grid-column: 1 / -1;
+  font-family: var(--font-code);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+ }
+ .legend__row {
+  display: flex;
+  gap: var(--s2);
+  align-items: baseline;
+  font-size: 0.9375rem;
+  font-weight: 300;
+ }
+ .legend__row b {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--bright);
+ }
+
+ .sheet {
+  background: var(--sheet);
+  color: var(--sheet-ink);
+  padding: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+ }
+ .sheet--dark {
+  background: var(--ground-deep);
+  color: var(--paper-ink);
+  border: 1px solid var(--rule);
+ }
+
+ .cell {
+  border: 1px dashed var(--sheet-mute);
+  padding: var(--s2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+ }
+ .sheet--dark .cell { border-color: var(--rule); }
+
+ .cell__label {
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--sheet-mute);
+ }
+ .sheet--dark .cell__label { color: var(--paper-mute); }
+
+ .cell__figure {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.25rem, 3.4vw, 1.6875rem);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+ }
+ .cell__figure--sm { font-size: 1.0625rem; }
+
+ .cell__scope {
+  font-family: var(--font-code);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+ }
+ .cell__sub {
+  font-family: var(--font-code);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+ }
+ .cell__key {
+  font-family: var(--font-code);
+  font-size: 0.625rem;
+  color: var(--sheet-mute);
+  overflow-wrap: anywhere;
+ }
+ .sheet--dark .cell__key { color: var(--paper-mute); }
+
+ .row { display: flex; gap: var(--s2); flex-wrap: wrap; }
+ .row > * { flex: 1 1 12rem; }
+
+ .grid-3 { display: grid; grid-template-columns: 1fr; gap: var(--s2); }
+
+ .spark { display: flex; align-items: flex-end; gap: 3px; height: 3rem; }
+ .spark span { flex: 1; background: var(--nat-flow); opacity: 0.55; }
+ .spark span:last-child { opacity: 1; }
+
+ .bar-strip { display: flex; height: 1rem; gap: 2px; }
+ .bar-strip span { display: block; }
+
+ .ledger { display: flex; flex-direction: column; }
+ .ledger__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s2);
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(90, 110, 120, 0.3);
+ }
+ .ledger__row span:last-child { font-variant-numeric: tabular-nums; }
+
+ .note {
+  border-left: 2px solid var(--nat-flow);
+  padding-left: var(--s2);
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 300;
+  max-width: 70ch;
+ }
+ .note--warn { border-left-color: var(--alarm); }
+ .note--assume { border-left-color: var(--nat-accum); }
+ .note--out { border-left-color: var(--paper-mute); color: var(--paper-mute); }
+ .note b {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--bright);
+ }
+ .note--out code, .note--out b { color: var(--paper-mute); }
+
+ .scroller { overflow-x: auto; }
+
+ table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+ .matrix table { min-width: 60rem; }
+ .plain table { min-width: 34rem; }
+ th, td {
+  text-align: left;
+  padding: 0.55rem var(--s2) 0.55rem 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+ }
+ th {
+  font-family: var(--font-display);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+  white-space: nowrap;
+ }
+ td { font-weight: 300; }
+ td strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--bright);
+ }
+ tbody tr:hover { background: rgba(201, 138, 46, 0.05); }
+
+ .foot {
+  border-top: 1px solid var(--rule);
+  padding-top: var(--s3);
+  font-size: 0.875rem;
+  font-weight: 300;
+  color: var(--paper-mute);
+  max-width: 70ch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+ }
+
+ @media (min-width: 640px) {
+  .legend { grid-template-columns: repeat(2, 1fr); }
+ }
+ @media (min-width: 860px) {
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .wrap { padding-left: var(--s4); padding-right: var(--s4); }
+ }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+ <header class="masthead">
+  <div class="masthead__eyebrow">Fase 4 · revisión 2 · matriz conceptual antes del código</div>
+  <h1 class="masthead__title">Overview Nivel 1</h1>
+  <p class="masthead__lede">Cada elemento del Nivel 1 clasificado por lo que representa, su naturaleza, su período y su fuente — y después dibujado. Ninguna cifra se decide desde el componente.</p>
+  <p class="masthead__note">Plano, no maqueta: el azul es para leer estructura, no color. El color real sale de los tokens — la app es oscura, los paneles de datos son crema con texto oscuro.</p>
+ </header>
+
+ <section class="legend">
+  <div class="legend__head">Las cuatro naturalezas — cada cifra declara la suya</div>
+  <div class="legend__row"><span class="tag tag--position">Posición</span><span><b>¿Qué tengo ahora?</b> Un saldo. No se suma a lo largo del tiempo.</span></div>
+  <div class="legend__row"><span class="tag tag--flow">Flujo</span><span><b>¿Qué ocurrió en el período?</b> Suma de movimientos del mes elegido.</span></div>
+  <div class="legend__row"><span class="tag tag--accum">Acumulación</span><span><b>¿Cuánto llevo en el año?</b> Desde enero al mes elegido.</span></div>
+  <div class="legend__row"><span class="tag tag--trend">Tendencia</span><span><b>¿Cómo se comporta?</b> Promedios y varianzas, no dinero disponible.</span></div>
+ </section>
+
+ <section class="block matrix">
+  <div class="block__head">
+   <span class="block__index">A</span>
+   <h2 class="block__name">La matriz</h2>
+  </div>
+  <p class="block__why">El orden de decisión es: primero qué significa el KPI, después de qué consulta sale. Nunca al revés. La columna <em>Fuente</em> es lo que <code>GET /overview</code> sirve hoy; donde dice <b>falta</b>, es trabajo de backend que aún no existe.</p>
+
+  <div class="scroller">
+   <table>
+    <thead>
+     <tr>
+      <th>Elemento</th>
+      <th>Qué representa</th>
+      <th>Naturaleza</th>
+      <th>Período</th>
+      <th>Fuente</th>
+      <th>N1</th>
+      <th>Visual</th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td><strong>Net worth</strong></td>
+      <td>Todo lo que tengo menos todo lo que debo</td>
+      <td><span class="tag tag--position">Posición</span></td>
+      <td><span style="color: var(--alarm);">mixto — defecto abierto</span></td>
+      <td><code>hero.netWorth</code></td>
+      <td>Sí</td>
+      <td>KPI</td>
+     </tr>
+     <tr>
+      <td><strong>Cash position</strong></td>
+      <td>Dinero líquido: banco más pocket</td>
+      <td><span class="tag tag--position">Posición</span></td>
+      <td><span style="color: var(--alarm);">mixto — defecto abierto</span></td>
+      <td><code>hero.cashPosition</code></td>
+      <td>Sí</td>
+      <td>KPI</td>
+     </tr>
+     <tr>
+      <td><strong>Flujo neto</strong></td>
+      <td>Ingresos menos gastos del mes</td>
+      <td><span class="tag tag--flow">Flujo</span></td>
+      <td>mes elegido</td>
+      <td><code>hero.netMonthlyFlow</code></td>
+      <td>Sí</td>
+      <td>KPI</td>
+     </tr>
+
+     <tr>
+      <td><strong>Income</strong></td>
+      <td>Total ingresado en el mes</td>
+      <td><span class="tag tag--flow">Flujo</span></td>
+      <td>mes elegido, completo</td>
+      <td><code>domainCards.income.totalAmount</code></td>
+      <td>Sí</td>
+      <td>KPI + delta</td>
+     </tr>
+     <tr>
+      <td><strong>Expense</strong></td>
+      <td>Total gastado en el mes</td>
+      <td><span class="tag tag--flow">Flujo</span></td>
+      <td>mes elegido, completo</td>
+      <td><code>domainCards.expense.totalAmount</code></td>
+      <td>Sí</td>
+      <td>KPI + delta</td>
+     </tr>
+     <tr>
+      <td><strong>PnL</strong></td>
+      <td>Resultado del mes, con signo real</td>
+      <td><span class="tag tag--flow">Flujo</span></td>
+      <td>mes elegido, completo</td>
+      <td><code>domainCards.pnl.totalAmount</code></td>
+      <td>Sí</td>
+      <td>KPI + delta</td>
+     </tr>
+     <tr>
+      <td><strong>Debt · payable</strong></td>
+      <td>Lo que debo a otros</td>
+      <td><span class="tag tag--position">Posición</span></td>
+      <td>cierre del mes</td>
+      <td><code>domainCards.debt.payable</code></td>
+      <td>Sí</td>
+      <td>KPI</td>
+     </tr>
+     <tr>
+      <td><strong>Debt · receivable</strong></td>
+      <td>Lo que otros me deben</td>
+      <td><span class="tag tag--position">Posición</span></td>
+      <td>cierre del mes</td>
+      <td><code>domainCards.debt.receivable</code></td>
+      <td>Sí</td>
+      <td>KPI</td>
+     </tr>
+     <tr>
+      <td><strong>Pocket</strong></td>
+      <td>Dinero disponible en pockets</td>
+      <td><span class="tag tag--position">Posición</span></td>
+      <td>cierre del mes</td>
+      <td><code>domainCards.pocket.totalAmount</code></td>
+      <td>Sí</td>
+      <td>KPI + delta</td>
+     </tr>
+     <tr>
+      <td><strong>Investment</strong></td>
+      <td>Valor en libros de la cartera</td>
+      <td><span class="tag tag--position">Posición</span></td>
+      <td><b>a hoy</b> — ignora el selector</td>
+      <td><code>domainCards.investment.ledgerBalance</code></td>
+      <td>Sí</td>
+      <td>KPI + aviso</td>
+     </tr>
+
+     <tr>
+      <td><strong>Actual del mes</strong></td>
+      <td>Lo movido este mes, por dominio</td>
+      <td><span class="tag tag--flow">Flujo</span></td>
+      <td>mes elegido</td>
+      <td><code>monthlySnapshot[].domainMonthlyActual</code></td>
+      <td>Sí</td>
+      <td>KPI</td>
+     </tr>
+     <tr>
+      <td><strong>Promedio mensual 3M</strong></td>
+      <td>Cuánto muevo en un mes típico, lectura reactiva</td>
+      <td><span class="tag tag--trend">Tendencia</span></td>
+      <td>meses <b>activos</b> de los 3 previos</td>
+      <td><code>activeMonthAverage3m</code></td>
+      <td>Sí</td>
+      <td>KPI</td>
+     </tr>
+     <tr>
+      <td><strong>Promedio mensual 12M</strong></td>
+      <td>La misma pregunta, lectura estable</td>
+      <td><span class="tag tag--trend">Tendencia</span></td>
+      <td>meses <b>activos</b> de los 12 previos</td>
+      <td><code>activeMonthAverage12m</code></td>
+      <td>Sí</td>
+      <td>KPI</td>
+     </tr>
+     <tr>
+      <td><strong>Varianza</strong></td>
+      <td>Si este mes fue inusual</td>
+      <td><span class="tag tag--trend">Tendencia</span></td>
+      <td>mes contra el promedio de 12</td>
+      <td><code>varianceVsAverage</code></td>
+      <td>Sí</td>
+      <td>KPI + signo</td>
+     </tr>
+
+     <tr>
+      <td><strong>Financial goals</strong></td>
+      <td>Ahorrado, meta y lo que falta</td>
+      <td><span class="tag tag--position">Posición</span></td>
+      <td><b>a hoy</b> — sin ventana</td>
+      <td><code>financialGoals.*</code></td>
+      <td>Sí</td>
+      <td>KPI</td>
+     </tr>
+     <tr>
+      <td><strong>Recent activity</strong></td>
+      <td>Qué pasó last, no qué pasó en el mes</td>
+      <td><span class="tag tag--none">No es métrica</span></td>
+      <td><b>a hoy</b> — sin ventana</td>
+      <td><code>recentActivity.transactions</code></td>
+      <td>Sí</td>
+      <td>Lista</td>
+     </tr>
+
+     <tr>
+      <td><strong>Tendencia 6M</strong></td>
+      <td>Cómo se ha comportado el dominio</td>
+      <td><span class="tag tag--trend">Tendencia</span></td>
+      <td>6 meses hasta el elegido</td>
+      <td><code>charts.trend</code> — income, expense, pocket</td>
+      <td>Sí</td>
+      <td>Chart</td>
+     </tr>
+     <tr>
+      <td><strong>Distribución del gasto</strong></td>
+      <td>En qué se fue el dinero</td>
+      <td><span class="tag tag--flow">Flujo</span></td>
+      <td>mes elegido</td>
+      <td><code>charts.expenseCategories</code></td>
+      <td>Sí</td>
+      <td>Chart</td>
+     </tr>
+
+     <tr>
+      <td><strong>YTD</strong></td>
+      <td>Acumulado desde enero</td>
+      <td><span class="tag tag--accum">Acumulación</span></td>
+      <td>enero al mes elegido</td>
+      <td><span style="color: var(--alarm);">falta</span> — no existe en el payload</td>
+      <td>No</td>
+      <td>Se descubre en Nivel 2</td>
+     </tr>
+
+     <tr>
+      <td><strong>Bank balance</strong></td>
+      <td>Saldo en cuentas de banco</td>
+      <td><span class="tag tag--position">Posición</span></td>
+      <td><b>a hoy</b></td>
+      <td>Entra al hero. <b>No hay dominio Bank</b></td>
+      <td>Sólo vía hero</td>
+      <td>—</td>
+     </tr>
+     <tr>
+      <td><strong>Savings</strong></td>
+      <td>No es un dominio: las metas se leen <b>una fila por pocket</b></td>
+      <td><span class="tag tag--none">No existe</span></td>
+      <td>—</td>
+      <td>Es <code>financialGoals</code>, ya listado</td>
+      <td>Ya está</td>
+      <td>—</td>
+     </tr>
+     <tr>
+      <td><strong>Card ALL</strong></td>
+      <td>Consolidado de los cinco dominios</td>
+      <td><span class="tag tag--position">Posición</span></td>
+      <td>mes elegido</td>
+      <td><code>all.*</code> — ya viaja</td>
+      <td><span style="color: var(--paper-mute);">No · fase 5</span></td>
+      <td>—</td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+
+  <p class="note"><b>Moneda: una sola en toda la pantalla.</b> Cada bloque publica la moneda contable del sistema, porque eso es lo que la base almacena; la moneda que el frontend envía al registrar es metadata de origen para el cambio, no una segunda unidad. La única excepción es <code>recentActivity</code>, donde cada fila trae la suya y por eso el bloque no publica ninguna.</p>
+
+  <p class="note note--assume"><b>Charts confirmado: Nivel 1, fuera de las cards.</b> Quedan dos supuestos pendientes de tu confirmación. La etiqueta del promedio dice <code>Promedio mensual · 3M</code> con el conteo real debajo, porque el divisor son los meses activos y omitirlo haría falsa la cifra. Y los dominios son los <b>seis</b> que el backend sirve: sin Bank, sin Savings, con PnL.</p>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <span class="block__index">B</span>
+   <h2 class="block__name">La regla visual por nivel</h2>
+  </div>
+  <div class="scroller plain">
+   <table>
+    <thead>
+     <tr><th>Nivel</th><th>Qué hace</th><th>Qué puede llevar</th><th>Qué no</th></tr>
+    </thead>
+    <tbody>
+     <tr><td><strong>1 · Overview</strong></td><td>Reconocer</td><td>Cifra, semántica y una comparación</td><td>Barras, progreso, mini tablas dentro de la card</td></tr>
+     <tr><td><strong>1 · Charts</strong></td><td>Comportamiento</td><td>Tendencia y distribución, como sección aparte</td><td>Vivir dentro de una card</td></tr>
+     <tr><td><strong>2 · Hero de dominio</strong></td><td>Posición y contexto</td><td>Progreso, comparación, mini tendencia</td><td>—</td></tr>
+     <tr><td><strong>3 · Transacciones</strong></td><td>Explicar</td><td>Detalle, paginado y bajo demanda</td><td>Cargarse con el Nivel 1</td></tr>
+    </tbody>
+   </table>
+  </div>
+  <p class="note"><b>Card es estado; chart es comportamiento.</b> Una barra dentro de la card la convierte en un mini dashboard, que es justo lo que el Nivel 1 no debe ser.</p>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <span class="block__index">01</span>
+   <h2 class="block__name">Selector de mes</h2>
+  </div>
+  <p class="block__why">Un solo control. Resuelve la ventana que viaja al backend, y es el único input de la pantalla. Elige un <b>mes completo</b>, no un mes hasta la fecha: agosto leído en noviembre es un mes cerrado, y llamarlo MTD sería falso once meses del año.</p>
+  <div class="sheet sheet--dark">
+   <div class="row">
+    <div class="cell" style="flex: 0 1 18rem;">
+     <div class="cell__label">Período</div>
+     <div class="cell__figure cell__figure--sm">◀&nbsp;&nbsp;Agosto 2026&nbsp;&nbsp;▶</div>
+     <div class="cell__key">window.periodStart · window.periodEnd</div>
+    </div>
+   </div>
+  </div>
+  <p class="note"><b>El selector no manda sobre toda la pantalla.</b> Investment, financial goals y recent activity lo ignoran por diseño. Por eso cada cifra declara su período en su propia etiqueta, en vez de heredarlo del título de la página.</p>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <span class="block__index">02</span>
+   <h2 class="block__name">Hero</h2>
+  </div>
+  <p class="block__why">Tres cifras. El hero nunca recalcula: compone desde las cards ya resueltas.</p>
+  <div class="sheet sheet--dark">
+   <div class="grid-3">
+    <div class="cell">
+     <div class="cell__label">Patrimonio neto</div>
+     <div class="cell__figure">$ 24,180.55</div>
+     <div class="cell__scope" style="color: var(--nat-position);">Posición · a hoy</div>
+    </div>
+    <div class="cell">
+     <div class="cell__label">Posición en efectivo</div>
+     <div class="cell__figure">$ 8,420.10</div>
+     <div class="cell__scope" style="color: var(--nat-position);">Posición · a hoy</div>
+    </div>
+    <div class="cell">
+     <div class="cell__label">Flujo neto</div>
+     <div class="cell__figure">+ $ 1,265.40</div>
+     <div class="cell__scope" style="color: var(--nat-flow);">Flujo · agosto 2026</div>
+    </div>
+   </div>
+  </div>
+  <p class="note note--warn"><b>Defecto abierto.</b> El patrimonio suma banco e inversión, que son <em>a hoy</em>, con deuda y pocket, que son cierre del mes. Con el mes en curso las dos lecturas coinciden y nadie lo nota; <b>al elegir un mes pasado la cifra queda mitad y mitad</b>. La posición en efectivo, igual. Sólo el flujo neto es puramente del mes.</p>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <span class="block__index">03</span>
+   <h2 class="block__name">Seis cards de dominio</h2>
+  </div>
+  <p class="block__why">Un KPI principal por card, más el contexto mínimo. Cada una declara su naturaleza y su período debajo de la cifra. Ninguna lleva barra.</p>
+
+  <div class="sheet">
+   <div class="grid-3">
+
+    <div class="cell">
+     <div class="cell__label">Income</div>
+     <div class="cell__figure">$ 4,300.00</div>
+     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__sub">▲ 7.7% vs julio</div>
+    </div>
+
+    <div class="cell">
+     <div class="cell__label">Expense</div>
+     <div class="cell__figure">$ 3,034.60</div>
+     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__sub">▼ 3.7% vs julio · budget $3,200</div>
+    </div>
+
+    <div class="cell">
+     <div class="cell__label">PnL</div>
+     <div class="cell__figure">+ $ 1,265.40</div>
+     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__sub">▲ 24.1% vs julio</div>
+    </div>
+
+    <div class="cell">
+     <div class="cell__label">Debt</div>
+     <div class="cell__figure cell__figure--sm">You owe &nbsp;<b>$ 2,300.00</b></div>
+     <div class="cell__figure cell__figure--sm">You're owed &nbsp;<b>$ 1,750.00</b></div>
+     <div class="cell__scope" style="color: #3E6577;">Posición · cierre de agosto</div>
+     <div class="cell__sub">4 deudores · 2 acreedores</div>
+    </div>
+
+    <div class="cell">
+     <div class="cell__label">Pocket</div>
+     <div class="cell__figure">$ 5,120.00</div>
+     <div class="cell__scope" style="color: #3E6577;">Posición · cierre de agosto</div>
+     <div class="cell__sub">▲ $400.00 vs cierre de julio</div>
+    </div>
+
+    <div class="cell">
+     <div class="cell__label">Investment</div>
+     <div class="cell__figure">$ 11,600.00</div>
+     <div class="cell__scope" style="color: #3E6577;">Posición · <b>a hoy</b></div>
+     <div class="cell__sub">no sigue el mes elegido</div>
+    </div>
+
+   </div>
+  </div>
+
+  <p class="note"><b>Debt deja de ser un neto.</b> Un neto de −$550 no distingue entre "debes 550" y "te deben 1,750 y debes 2,300", que son situaciones opuestas. Las dos piernas se muestran por separado, con la lengua que la app ya usa en <code>DebtsLayout.tsx:66</code>. El neto queda pendiente de decidir: puede aclarar o puede introducir una tercera cifra que nadie pidió.</p>
+
+  <p class="note"><b>Pocket muestra el saldo disponible, no lo ahorrado este mes.</b> Es una posición. Lo aportado, lo retirado y el neto del mes se descubren en el Nivel 2.</p>
+
+  <p class="note note--warn"><b>Pocket nunca debería ser negativo, y eso es una regla del dominio, no de la vista.</b> Si no se puede retirar más de lo disponible, el retiro se rechaza en el backend. Un Overview que muestre un pocket negativo estaría señalando una violación del modelo, y la card <b>no debe taparla</b> con un <code>Math.max(0, saldo)</code>. <em>Sin verificar: falta comprobar si el esquema hoy impone ese invariante.</em></p>
+
+  <p class="note"><b>Sin <code>delta</code> no se inventa un cero.</b> Cuando no hubo período previo completo el backend manda <code>null</code> y la card pinta un guion.</p>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <span class="block__index">04</span>
+   <h2 class="block__name">Monthly snapshot</h2>
+  </div>
+  <p class="block__why">Tres widgets — income, expense y pocket — que miden el mes contra su propio historial. La comparación se hace contra los <b>12</b> meses, no contra los 3: medir un mes contra un promedio que ya se mueve rápido no dice si el mes fue inusual, porque los dos se movieron juntos.</p>
+
+  <div class="sheet">
+   <div class="grid-3">
+
+    <div class="cell">
+     <div class="cell__label">Income</div>
+     <div class="cell__figure">$ 4,300.00</div>
+     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__sub">Promedio mensual · 3M &nbsp; $ 4,050.00</div>
+     <div class="cell__sub" style="color: var(--sheet-mute);">sobre 3 de 3 meses con movimiento</div>
+     <div class="cell__sub">Promedio mensual · 12M &nbsp; $ 3,890.00</div>
+     <div class="cell__sub" style="color: var(--sheet-mute);">sobre 11 de 12 meses con movimiento</div>
+     <div class="cell__sub" style="color: #2F6B4F;">▲ $ 410.00 sobre el promedio</div>
+    </div>
+
+    <div class="cell">
+     <div class="cell__label">Expense</div>
+     <div class="cell__figure">$ 3,034.60</div>
+     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__sub">Promedio mensual · 3M &nbsp; $ 2,910.00</div>
+     <div class="cell__sub" style="color: var(--sheet-mute);">sobre 3 de 3 meses con movimiento</div>
+     <div class="cell__sub">Promedio mensual · 12M &nbsp; $ 3,150.00</div>
+     <div class="cell__sub" style="color: var(--sheet-mute);">sobre 12 de 12 meses con movimiento</div>
+     <div class="cell__sub" style="color: #2F6B4F;">▼ $ 115.40 bajo el promedio</div>
+    </div>
+
+    <div class="cell">
+     <div class="cell__label">Pocket · neto del mes</div>
+     <div class="cell__figure">+ $ 400.00</div>
+     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__sub">Promedio mensual · 3M &nbsp; —</div>
+     <div class="cell__sub">Promedio mensual · 12M &nbsp; —</div>
+     <div class="cell__sub" style="color: var(--sheet-mute);">sin historia suficiente</div>
+    </div>
+
+   </div>
+  </div>
+
+  <p class="note"><b>Aquí pocket entra como flujo, no como saldo</b>, aunque su card sea un saldo. Si el snapshot usara el balance, la varianza restaría un promedio de movimientos a una posición: una cifra sin significado. Y este neto <b>sí puede ser negativo</b> — un mes donde retiraste más de lo que metiste — sin contradecir que el saldo nunca lo sea.</p>
+
+  <p class="note"><b>El divisor son los meses activos.</b> Un mes sin movimiento no entra, así que un mes vacío no diluye el promedio; y si no hubo ninguno, la cifra es <code>null</code>, nunca <code>0</code>. Por eso la línea de abajo dice sobre cuántos meses se calculó: sin ella, "Promedio mensual · 3M" afirmaría algo que la cifra no cumple.</p>
+
+  <p class="note"><b>El mes juzgado nunca entra en su propia línea base.</b> La serie trae trece puntos: el mes que se mide y los doce que lo miden.</p>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <span class="block__index">05</span>
+   <h2 class="block__name">Financial goals</h2>
+  </div>
+  <p class="block__why">No recibe ventana: una meta de ahorro no tiene versión de agosto. Sin barra de progreso — el porcentaje es una cifra.</p>
+  <div class="sheet">
+   <div class="row">
+    <div class="cell">
+     <div class="cell__label">Ahorrado</div>
+     <div class="cell__figure">$ 5,120.00</div>
+     <div class="cell__scope" style="color: #3E6577;">Posición · a hoy</div>
+    </div>
+    <div class="cell">
+     <div class="cell__label">Meta</div>
+     <div class="cell__figure">$ 8,000.00</div>
+     <div class="cell__scope" style="color: #3E6577;">Posición · a hoy</div>
+    </div>
+    <div class="cell">
+     <div class="cell__label">Falta</div>
+     <div class="cell__figure">$ 2,880.00</div>
+     <div class="cell__sub">64% alcanzado</div>
+    </div>
+   </div>
+  </div>
+  <p class="note"><b>El progreso se mide sólo sobre los pockets que tienen meta.</b> Restar el ahorro de un pocket sin meta reportaría avance hacia un objetivo al que ese dinero nunca apuntó. Si ninguno tiene meta, el bloque lo dice y las tres cifras van en guion — <b>una meta ausente no es una meta de cero</b>.</p>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <span class="block__index">06</span>
+   <h2 class="block__name">Recent activity</h2>
+  </div>
+  <p class="block__why">Cinco movimientos, del dominio que sea. <b>Deliberadamente fuera del mes:</b> alguien leyendo agosto en noviembre vería un teaser de tres meses atrás y parecería que la app dejó de registrar.</p>
+  <div class="sheet">
+   <div class="ledger">
+    <div class="ledger__row"><span>20 ago · Supermercado</span><span>− 84.30</span></div>
+    <div class="ledger__row"><span>19 ago · Nómina</span><span>+ 2,150.00</span></div>
+    <div class="ledger__row"><span>18 ago · Aporte pocket</span><span>+ 400.00</span></div>
+    <div class="ledger__row"><span>17 ago · Préstamo a J.</span><span>+ 300.00</span></div>
+    <div class="ledger__row"><span>16 ago · Servicios</span><span>− 112.00</span></div>
+   </div>
+  </div>
+  <p class="note">Cada fila trae su propia moneda, así que el bloque no publica una. Misma forma de fila que las demás listas del módulo: un componente las pinta todas. <b>No es una métrica</b> — no se suma ni se compara.</p>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <span class="block__index">07</span>
+   <h2 class="block__name">Charts</h2>
+  </div>
+  <p class="block__why">Sección propia, debajo de las cards y fuera de ellas. No son paneles: no les aplica la regla del panel crema. La rampa es ocre sobre fondo oscuro.</p>
+
+  <div class="sheet sheet--dark">
+   <div class="row">
+    <div class="cell">
+     <div class="cell__label">Tendencia · 6 meses</div>
+     <div class="spark" aria-hidden="true">
+      <span style="height: 42%;"></span><span style="height: 58%;"></span><span style="height: 51%;"></span><span style="height: 74%;"></span><span style="height: 66%;"></span><span style="height: 88%;"></span>
+     </div>
+     <div class="cell__key">charts.trend.income · .expense · .pocket</div>
+    </div>
+    <div class="cell">
+     <div class="cell__label">Distribución del gasto · agosto</div>
+     <div class="bar-strip" aria-hidden="true">
+      <span style="flex: 34; background: #C98A2E;"></span>
+      <span style="flex: 24; background: #B07E33;"></span>
+      <span style="flex: 17; background: #8F6A32;"></span>
+      <span style="flex: 13; background: #6E5530;"></span>
+      <span style="flex: 12; background: #4E402C;"></span>
+     </div>
+     <div class="cell__sub">Vivienda 34% · Comida 24% · Transporte 17% · Servicios 13% · Otros 12%</div>
+     <div class="cell__key">charts.expenseCategories</div>
+    </div>
+   </div>
+  </div>
+
+  <p class="note"><b>Sólo tres dominios tienen serie.</b> Income, expense y pocket. Los otros tres no traen la llave — ausente dice que el dominio no tiene serie; vacía diría que tiene una y está en blanco.</p>
+  <p class="note"><b>La barra de distribución se hace nativa en CSS, sin librería.</b> No tiene sistema de coordenadas, su leyenda es una tabla de datos real, y <code>var(--token)</code> no resuelve dentro de un canvas. La librería queda para la serie de tendencia, que como línea única sólo necesita un color plano. La distribución YTD, cuando exista, es también una barra horizontal — no un donut.</p>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <span class="block__index">08</span>
+   <h2 class="block__name">Estados de carga</h2>
+  </div>
+  <p class="block__why">Tres estados distintos por bloque, no uno para toda la página.</p>
+  <div class="sheet">
+   <div class="grid-3">
+    <div class="cell">
+     <div class="cell__label">Cargando</div>
+     <div class="bar-strip" style="height: 1.6rem;" aria-hidden="true"><span style="flex: 1; background: rgba(90,110,120,0.3);"></span></div>
+     <div class="cell__sub">skeleton, nunca un cero</div>
+    </div>
+    <div class="cell">
+     <div class="cell__label">Error</div>
+     <div class="cell__figure cell__figure--sm">No se pudo cargar</div>
+     <div class="cell__sub">[ Reintentar ]</div>
+    </div>
+    <div class="cell">
+     <div class="cell__label">Vacío</div>
+     <div class="cell__figure cell__figure--sm">—</div>
+     <div class="cell__sub">sin movimientos este mes</div>
+    </div>
+   </div>
+  </div>
+  <p class="note"><b>Una cifra ausente se pinta como guion o como skeleton. Nunca como <code>0</code> ni como <code>NaN</code>.</b> Un cero es una respuesta; la ausencia de dato no lo es.</p>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <span class="block__index">C</span>
+   <h2 class="block__name">Lo que falta en backend</h2>
+   <span class="tag tag--alarm">Bloquea</span>
+  </div>
+  <div class="scroller plain">
+   <table>
+    <thead>
+     <tr><th>Hueco</th><th>Qué implica</th><th>Coste</th></tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td><strong>Debt · receivable / payable</strong></td>
+      <td><b>Cerrado</b> — la card ya publica las dos piernas</td>
+      <td>La estimación <i>«bajo, el <code>SUM</code> ya existe y se copia»</i> era falsa. El <code>SUM</code> legacy lee <code>ua.account_balance</code> <b>a hoy</b>, y la card publica el <b>cierre del mes</b>; además <code>getMonthlyBalance</code> agrega todas las cuentas antes de restar, así que los signos ya no existen cuando tiene una cifra. Exigió una consulta nueva que reconstruye <b>por cuenta</b> y recién ahí agrupa por signo</td>
+     </tr>
+     <tr>
+      <td><strong>YTD por dominio</strong></td>
+      <td>La acumulación anual no viaja en el payload</td>
+      <td>Medio — consulta nueva. <b>Nunca sumando meses en el cliente</b></td>
+     </tr>
+     <tr>
+      <td><strong>Mezcla temporal del hero</strong></td>
+      <td>El patrimonio y el efectivo cruzan dos tiempos</td>
+      <td>Dos salidas: declararlo <em>a hoy</em> en pantalla, o que el saldo de banco acepte la ventana</td>
+     </tr>
+     <tr>
+      <td><strong>Invariante pocket ≥ 0</strong></td>
+      <td>Sin verificar si el esquema lo impone</td>
+      <td>Medir primero; si no lo impone, es una regla de dominio, no un parche de vista</td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+  <p class="note"><b>Todo esto entra en la misma petición.</b> Una sola llamada inicial que trae el snapshot completo; el Nivel 2 se pide bajo demanda. Ni un endpoint por dominio, ni una consulta por card.</p>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <span class="block__index">—</span>
+   <h2 class="block__name">Fuera del Nivel 1</h2>
+  </div>
+  <p class="note note--out">La card <b>ALL</b> ya viene en el payload, pero pertenece al Nivel 2 junto con la página por dominio. Se ignora en esta fase, no se borra.</p>
+  <p class="note note--out">El <b>YTD legacy</b> suma doce filas en el cliente; el YTD del módulo lo servirá el backend. No pueden coexistir vivos: el legacy sale en la fase de limpieza, no aquí.</p>
+  <p class="note note--out">Las <b>transacciones</b> son Nivel 3: paginadas y bajo demanda. El Nivel 1 no carga ninguna fila salvo las cinco del teaser.</p>
+ </section>
+
+
+ <section class="block matrix">
+  <div class="block__head">
+   <span class="block__index">D</span>
+   <h2 class="block__name">Inventario por dominio — lo que hoy se puede pintar</h2>
+  </div>
+  <p class="block__why">Medido contra los constructores de card, no supuesto. Base común de los cinco primeros: <code>totalAmount</code>, <code>transactionCount</code>, <code>delta</code>, <code>currency</code>, <code>window</code>, <code>meta.notices</code>. Investment no la usa.</p>
+
+  <div class="scroller">
+   <table>
+    <thead>
+     <tr><th>Dominio</th><th>Disponible hoy</th><th>Avisos que ya emite</th><th>No existe</th></tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td><strong>Income</strong></td>
+      <td>Total del mes · nº de movimientos · delta vs mes anterior · serie de 6 meses</td>
+      <td>—</td>
+      <td>YTD · nº de cuentas</td>
+     </tr>
+     <tr>
+      <td><strong>Expense</strong></td>
+      <td>Total del mes · nº de movimientos · delta · <code>budgetAmount</code> · <code>categorizedExpense</code> · <code>budgetVariance</code> · <code>hasUncategorizedExpense</code> · serie de 6 meses · Pareto de categorías</td>
+      <td>Hay gasto sin categorizar</td>
+      <td>YTD · nº de categorías excedidas · nº en banda 75–100&nbsp;%</td>
+     </tr>
+     <tr>
+      <td><strong>PnL</strong></td>
+      <td>Resultado del mes <b>con signo</b> · nº de movimientos · delta</td>
+      <td>—</td>
+      <td>YTD · nº de depósitos y retiros · balance histórico</td>
+     </tr>
+     <tr>
+      <td><strong>Debt</strong></td>
+      <td>Neto <b>con signo</b> · nº de movimientos · delta</td>
+      <td>—</td>
+      <td><b>receivable / payable</b> · <code>settledCount</code> · YTD</td>
+     </tr>
+     <tr>
+      <td><strong>Pocket</strong></td>
+      <td>Saldo al cierre · nº de movimientos · delta vs cierre anterior · serie de 6 meses de cierres</td>
+      <td>—</td>
+      <td>YTD · aportado y retirado por separado</td>
+     </tr>
+     <tr>
+      <td><strong>Investment</strong></td>
+      <td><code>ledgerBalance</code> · <code>capitalContributed</code> · <code>realizedPnl</code> · <code>concentration</code> · <code>daysSinceLastContribution</code></td>
+      <td>Sin cuentas de inversión · cartera vacía · sin aportes registrados · <b>el balance no reconcilia</b></td>
+      <td><code>totalAmount</code> · <code>delta</code> · <code>window</code> · <code>transactionCount</code> · serie · YTD · rendimiento&nbsp;%</td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+
+  <p class="note"><b>Investment es la excepción de forma, no de contenido.</b> No lleva total, delta ni ventana porque sus cifras son <em>a hoy</em>, y publica cuatro avisos que ninguna otra card tiene. El de reconciliación es el más valioso: dice que aportado más realizado no cuadra con el saldo en libros.</p>
+
+  <p class="note"><b>El rendimiento porcentual no existe y es deliberado.</b> Sin precio de mercado, un retorno calculado sobre el valor en libros sería una cifra no honesta. Los campos están <b>ausentes</b>, no en null.</p>
+
+  <p class="note"><b>Cuatro de los seis dominios sólo tienen la base.</b> Income, PnL, Debt y Pocket publican tres cifras cada uno. Es suficiente para el Nivel 1 — un KPI principal más una comparación — pero significa que Debt no puede mostrar las dos piernas hasta que el backend las publique.</p>
+ </section>
+
+ <footer class="foot">
+  <p>Todo lo dibujado sale de <code>GET /overview</code> tal como está hoy, salvo lo marcado como <b>falta</b>. Ninguna cifra se recalcula en el cliente: ése fue el defecto R202 que abrió el módulo entero — un total consolidado que discrepaba del detalle que tenía al lado.</p>
+  <p>El orden es: hecho financiero → modelo de dominio → KPI aprobado → read model de Overview → UI. Nunca al revés, y nunca diseñando alrededor del nombre de un endpoint que ya existe.</p>
+ </footer>
+
+</div>
+</body>
+</html>
