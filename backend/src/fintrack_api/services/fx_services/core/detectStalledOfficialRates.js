@@ -87,7 +87,7 @@ import {
  earliestDatableDay,
  todayInZone,
 } from '../../../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
-import { fetchRatesForDate } from '../fxProviders/githubFallback.js';
+import { fetchRatesForDate } from '../fxProviders/githubFallbackProvider.js';
 
 // How far above the official rate the independent one has to sit before a day
 // is a candidate. Zero means the direction alone: on the measured window that

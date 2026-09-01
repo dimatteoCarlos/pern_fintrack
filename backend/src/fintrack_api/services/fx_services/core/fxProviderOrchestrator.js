@@ -28,7 +28,7 @@ import * as banrep from '../fxProviders/banrepTrmProvider.js';
 import * as cotizave from '../fxProviders/cotizaveApiProvider.js';
 import * as exchangeRate from '../fxProviders/exchangeRateApiProvider.js';
 import * as freeCurrency from '../fxProviders/freeCurrencyApiProvider.js';
-import * as github from '../fxProviders/githubFallback.js';
+import * as github from '../fxProviders/githubFallbackProvider.js';
 import * as staticFallback from '../fxProviders/getFallbackRate.js';
 
 // ─── Provider list in priority order ──

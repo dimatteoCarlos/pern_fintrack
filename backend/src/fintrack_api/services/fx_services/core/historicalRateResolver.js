@@ -46,7 +46,7 @@ import {
 import { fetchBancaDItaliaRange } from '../fxProviders/bancaDItaliaProvider.js';
 import { fetchBcvRange } from '../fxProviders/bcvApiRafnixgProvider.js';
 import { fetchTrmRange } from '../fxProviders/banrepTrmProvider.js';
-import { fetchRatesForDate } from '../fxProviders/githubFallback.js';
+import { fetchRatesForDate } from '../fxProviders/githubFallbackProvider.js';
 
 // The ceiling for the whole cascade, sized by what a form submit may hang for,
 // not by the sum of the arms. Each arm caps its own call by what is left.

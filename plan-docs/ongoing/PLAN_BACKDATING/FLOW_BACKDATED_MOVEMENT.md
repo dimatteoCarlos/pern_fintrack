@@ -135,7 +135,7 @@ historicalRateResolver
 | `backend/src/fintrack_api/services/fx_services/core/historicalRateResolver.js` | the cascade, the span arithmetic, the future guard, and the `isDaySettled` guard that skips a call which can write nothing |
 | `backend/src/fintrack_api/services/fx_services/fxProviders/banrepTrmProvider.js` | the Colombian official source, by validity |
 | `backend/src/fintrack_api/services/fx_services/fxProviders/bancaDItaliaProvider.js` | the universal range arm, plus the host-reachability breaker |
-| `backend/src/fintrack_api/services/fx_services/fxProviders/githubFallback.js` | the CDN, source `github-fallback`, one day per call |
+| `backend/src/fintrack_api/services/fx_services/fxProviders/githubFallbackProvider.js` | the CDN, source `github-fallback`, one day per call |
 | `backend/src/fintrack_api/services/fx_services/db/dailyRateDBaccess.js` | `findDailyRate`, `persistQueriedRange`, `recordQueryCoverage`, `findLatestBusinessDay`, `isDaySettled`, `MAX_RATE_AGE_DAYS` |
 
 **Two ceilings, two questions.** "Is this absence real?" is answered by coverage.
