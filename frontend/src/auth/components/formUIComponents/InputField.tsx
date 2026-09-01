@@ -69,9 +69,6 @@ export type InputFieldProps = {
 
   /** 👀 Optional icon/svg for the toggle button */
   toggleIcon?: React.ReactNode;
-
-  //tab control
-  tabindex?: number;
 };
 
 /* 🌟 ===============================

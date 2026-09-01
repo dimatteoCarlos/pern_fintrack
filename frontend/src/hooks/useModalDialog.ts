@@ -7,26 +7,35 @@
 // store, no type, no constant — only React and the DOM. Both modules import it
 // and neither imports the other (REMARKS R261).
 //
-// It declares the dialog to assistive technology, closes on Escape, and hands
-// the caret in and back out again. Modality is the browser's job: `inert` on
-// #root makes everything behind unreachable to pointer, caret and screen
-// reader at once, so no hand-rolled Tab cycle is needed and none should be
-// written.
+// It declares the dialog to assistive technology, closes on Escape, cycles Tab
+// inside the panel, and hands the caret in and back out again. `inert` on #root
+// buys modality -- nothing behind is reachable by pointer, caret or screen
+// reader -- but not containment: at the last stop Tab still leaves for the
+// browser chrome. The cycle below closes it, as the ARIA guide for
+// role="dialog" prescribes.
 //
 // The consumer MUST render through createPortal into document.body. A dialog
 // left inside #root becomes inert along with the page it is covering.
 
 import { useEffect, useId, useRef } from 'react';
 
+// Every native stop, minus the ones a `disabled` took out. getClientRects and
+// not offsetParent: a fixed panel reports no offset parent, and every stop
+// inside it would be discarded as hidden.
+const FOCUS_STOPS =
+ 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]),' +
+ ' textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 type ModalDialogOptions = {
  onClose: () => void;
  // Read on every render: a modal that must not be abandoned mid-submit lowers
  // this while the request is in flight.
  canClose?: boolean;
- // Run once, on mount. A callback and not a ref because a ref only names the
- // node and leaves the operation to this hook, and a form that prefills a
- // figure wants select() rather than focus() on the very same input.
- onInitialFocus?: () => void;
+ // Run once on mount, with the panel node in hand. A callback and not a ref
+ // because a ref only names the node and leaves the operation to this hook, and
+ // a form that prefills a figure wants select() rather than focus() on the very
+ // same input.
+ onInitialFocus?: (panel: HTMLDivElement) => void;
 };
 
 export function useModalDialog({
@@ -45,7 +54,34 @@ export function useModalDialog({
 
  useEffect(() => {
   const handleKeyDown = (event: KeyboardEvent) => {
-   if (event.key === 'Escape' && canClose) onClose();
+   if (event.key === 'Escape' && canClose) {
+    onClose();
+    return;
+   }
+
+   const panel = panelRef.current;
+   if (event.key !== 'Tab' || !panel) return;
+
+   // Read on every Tab and not once on mount: a field appears with an error, a
+   // button turns disabled mid-submit, and a list captured earlier would send
+   // the caret to a node that is no longer there.
+   const stops = Array.from(panel.querySelectorAll<HTMLElement>(FOCUS_STOPS))
+    .filter((node) => node.getClientRects().length > 0);
+   if (stops.length === 0) return;
+
+   const first = stops[0];
+   const last = stops[stops.length - 1];
+   const active = document.activeElement;
+
+   // The panel itself holds the caret when no caller claimed it, and a backwards
+   // Tab from there has nothing earlier inside the dialog to reach.
+   if (event.shiftKey && (active === first || active === panel)) {
+    event.preventDefault();
+    last.focus();
+   } else if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus();
+   }
   };
 
   window.addEventListener('keydown', handleKeyDown);
@@ -66,8 +102,9 @@ export function useModalDialog({
   // The caller decides what takes the caret; the panel is the fallback for a
   // dialog with nothing better to offer, and for one whose dangerous answer
   // must not be focused already.
-  if (initialFocusRef.current) initialFocusRef.current();
-  else panelRef.current?.focus();
+  const panel = panelRef.current;
+  if (initialFocusRef.current && panel) initialFocusRef.current(panel);
+  else panel?.focus();
 
   return () => {
    root?.removeAttribute('inert');

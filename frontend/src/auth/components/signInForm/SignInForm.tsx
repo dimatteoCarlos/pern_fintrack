@@ -79,7 +79,6 @@ const SignInForm: React.FC<SignInFormProps> = ({
         touched={touchedFields.has('identity')}
         required
         disabled={isLoading}
-        tabindex={1}
       />
 
       {/* Password */}
@@ -96,7 +95,6 @@ const SignInForm: React.FC<SignInFormProps> = ({
        showContentToggle={true}
        isContentVisible={isPasswordVisible}
        onToggleContent={togglePasswordVisibility}
-        tabindex={2}
       />
 
       {/* Remember Me Checkbox */}
@@ -107,7 +105,6 @@ const SignInForm: React.FC<SignInFormProps> = ({
           id="rememberMe"
           checked={rememberMe}
           onChange={(e) => setRememberMe(e.target.checked)}
-          tabIndex={3}
         />
         <label htmlFor="rememberMe" className={styles['auth-form__label-checkbox']}>
           Remember me
@@ -120,7 +117,6 @@ const SignInForm: React.FC<SignInFormProps> = ({
         onClick={handleSubmit}
         className={styles['auth-form__button']}
         disabled={!isSubmittingAllowed || isLoading}
-        tabIndex={4}
       >
         {isLoading ? 'Loading...' : 'Sign In'}
       </button>

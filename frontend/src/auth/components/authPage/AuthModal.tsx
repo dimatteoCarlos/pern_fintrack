@@ -23,7 +23,14 @@ type AuthModalPropsType = Omit<AuthUIPropsType, 'titleId'> & {
 };
 
 function AuthModal({ onClose, isDarkTheme, ...authUIProps }: AuthModalPropsType) {
- const { titleId, dialogProps } = useModalDialog({ onClose });
+ const { titleId, dialogProps } = useModalDialog({
+  onClose,
+  // The first field and not the panel, which would otherwise put the header's
+  // theme toggle one Tab away from the caret. Queried and not named because
+  // AuthUI swaps sign-in for sign-up and the first field changes with it:
+  // "Username or email" in one mode, "Username" in the other.
+  onInitialFocus: (panel) => panel.querySelector('input')?.focus(),
+ });
 
  return createPortal(
   // The backdrop closes on click, as it always did. The panel stops the
