@@ -21,7 +21,7 @@
 import { useCallback, useEffect, useState , useRef} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import AuthUI from './AuthUI';
+import AuthModal from './AuthModal';
 import { AUTH_UI_STATES } from '../../auth_constants/constants';
 import Logo from '../../../assets/logo.svg';
 
@@ -265,7 +265,7 @@ useEffect(() => {
     <div className={styles.authPageContainer}>
       {/* {Navbar} */}
       <nav className={styles.navbar}>
-       <div className={styles.logoContainer} onClick={openSigninModalHandler}>
+       <div className={styles.logoContainer}>
         {/* No wrapper: a span puts the svg back on a text baseline and the mark
             rides 2px above the menu button it is meant to line up with. */}
         <Logo />
@@ -312,28 +312,21 @@ useEffect(() => {
       <main className={styles.mainContent}>
         {/* unique modal */}
         {showModal && (
-          <div className={styles.modalOverlay} onClick={handleCloseModal}>
-            <div
-              className={`${styles.modalContent}${isDarkTheme ? ' theme-dark' : ''}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <AuthUI
-              // Auth operations
-                onSignIn={handleSignInWithNavigation}
-                onSignUp={handleSignUpWithNavigation}
-                isLoading={isLoading}
-                error={error}
-                messageToUser={message} //from UI store
-               //current mode
-                isSignInInitial={isSignInMode}
-                clearError={clearError}
-                // onClose is used by AuthUI to close modal (e.g., from its own close button)
-                onClose={handleCloseModal}
-                isDarkTheme={isDarkTheme}
-                onToggleTheme={toggleTheme}
-              />
-            </div>
-          </div>
+          <AuthModal
+          // Auth operations
+            onSignIn={handleSignInWithNavigation}
+            onSignUp={handleSignUpWithNavigation}
+            isLoading={isLoading}
+            error={error}
+            messageToUser={message} //from UI store
+           //current mode
+            isSignInInitial={isSignInMode}
+            clearError={clearError}
+            // Escape, the backdrop and AuthUI's own close button all land here
+            onClose={handleCloseModal}
+            isDarkTheme={isDarkTheme}
+            onToggleTheme={toggleTheme}
+          />
         )}
       </main>
     </div>
