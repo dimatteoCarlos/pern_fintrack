@@ -176,6 +176,11 @@ Prevents layout shift when messages appear/disappear*/
  gap: var(--space-3);
  cursor: pointer;
  user-select:none;
+ /* .auth-container (its parent) centers children that don't set their own
+    width, same as this row -- InputField and .auth-form__button both set
+    width:100% and align left because of it; this one has no intrinsic width,
+    so it shrank to its content and centered instead of lining up with them. */
+ align-self: flex-start;
 }
 
 /* The Tracker's perforation (.bar, tracker-style.css:106-107), splitting the
