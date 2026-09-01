@@ -34,11 +34,15 @@ import { getCurrencyId } from '../../utils/currencyLookup.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import {
   dayInZone,
+  earliestDatableDay,
   isCalendarDate,
   todayInZone,
 } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { currencyAmountConversion } from '../services/fx_services/conversion/currencyAmountConversion.js';
-import { ACCOUNTING_CURRENCY_CODE } from '../config/fintrackConfig.js';
+import {
+  ACCOUNTING_CURRENCY_CODE,
+  BACKDATING_WINDOW_MONTHS,
+} from '../config/fintrackConfig.js';
 // The app's decimal scale and rounding, not the budget module's: money.js sits
 // under budget_services only because that module needed the policy first.
 import {
@@ -329,7 +333,7 @@ export const transferBetweenAccounts = async (req, res, next) => {
     // The movement's day, resolved HERE because the conversion below now
     // depends on it. Only the checks that need nothing but the owner's
     // calendar run at this point: the shape of the day, that it is not in the
-    // future, and that it falls inside the current month. The check against
+    // future, and that it falls inside the back-dating window. The check against
     // the accounts' opening days stays where it was, inside the transaction
     // that reads those accounts.
     //
@@ -363,15 +367,19 @@ export const transferBetweenAccounts = async (req, res, next) => {
         );
       }
 
-      // The editing window is the current calendar month on the owner's calendar.
-      // Taking the month off today gives its first day in the same zone, with no
-      // second conversion that could disagree with the one above.
-      const monthFloor = `${todayForOwner.slice(0, 7)}-01`;
+      // The editing window is a whole number of calendar months ending with the
+      // current one, on the owner's calendar. The floor is derived from the day
+      // already resolved above, so there is no second conversion that could
+      // disagree with it.
+      const windowFloor = earliestDatableDay(
+        todayForOwner,
+        BACKDATING_WINDOW_MONTHS,
+      );
 
-      if (requestedDay < monthFloor) {
+      if (requestedDay < windowFloor) {
         throw createError(
           422,
-          `A movement cannot be dated before the current month, which starts on ${monthFloor}`,
+          `A movement cannot be dated before ${windowFloor}`,
         );
       }
     }

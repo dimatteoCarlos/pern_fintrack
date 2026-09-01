@@ -12,7 +12,11 @@
 // *   **`isValidCurrencyCode`**: Validation guard that checks strings against supported ISO 4217 codes to ensure application stability.
 //-------------------------
 import { CurrencyType, StatusType } from '../types/types';
-import { DATE_TEXT_FORMAT, DATE_TIME_FORMAT_DEFAULT } from './constants';
+import {
+  BACKDATING_WINDOW_MONTHS,
+  DATE_TEXT_FORMAT,
+  DATE_TIME_FORMAT_DEFAULT,
+} from './constants';
 
 import { CURRENCY_CYCLE } from './constants';
 
@@ -377,6 +381,22 @@ export function fromCalendarDay(day: string | null | undefined): Date | null {
   if (!year || !month || !date) return null;
 
   return new Date(year, month - 1, date);
+}
+
+// The earliest day a calendar may offer for an operative date: the first of the
+// oldest month the back-dating window still reaches, on the device's calendar.
+//
+// Every form that dates a movement or an account opening asks the same question,
+// so it is answered once here. A picker handed no floor falls back to its own
+// 1900 default and puts a year the server refuses within two clicks.
+//
+// Nothing here is the guarantee. The server validates the same window on the
+// owner's zone, which is the one that counts; this only keeps the calendar from
+// offering a day that would come back as a 422.
+export function earliestDatableDay(): Date {
+  const now = new Date();
+
+  return new Date(now.getFullYear(), now.getMonth() - (BACKDATING_WINDOW_MONTHS - 1), 1);
 }
 
 // Carries the board's month across a link. The month is a property of the URL,

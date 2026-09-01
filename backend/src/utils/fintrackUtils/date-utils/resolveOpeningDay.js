@@ -2,21 +2,28 @@
 
 // The day an account is opened on, and the window that day may fall in.
 //
-// An operative date may only belong to the month in course. Transactions
-// already enforce that window in transactionController; stating it once here
-// keeps account creation from introducing a second, softer policy for the same
-// kind of date.
+// An operative date belongs to the back-dating window, which is a whole number
+// of calendar months ending with the current one. Transactions enforce the same
+// window in transactionController, off the same constant; reading it here keeps
+// account creation from introducing a second, softer policy for the same kind
+// of date.
 
 import { createError } from '../../errorHandling.js';
-import { dayInZone, isCalendarDate, todayInZone } from './resolveZonedWindow.js';
+import {
+ dayInZone,
+ earliestDatableDay,
+ isCalendarDate,
+ todayInZone,
+} from './resolveZonedWindow.js';
+import { BACKDATING_WINDOW_MONTHS } from '../../../fintrack_api/config/fintrackConfig.js';
 
 /**
  * The calendar day an account is opened on, read on the owner's calendar.
  *
- * Today is allowed, an earlier day of the current month is allowed; a future
- * day and any day before the first of this month are refused. The check runs
- * before anything is converted or written, so a rejected date costs no rate
- * lookup and leaves no row.
+ * Today is allowed, and so is any earlier day the back-dating window still
+ * reaches; a future day and any day before that window are refused. The check
+ * runs before anything is converted or written, so a rejected date costs no
+ * rate lookup and leaves no row.
  *
  * The value arrives in two shapes. A transaction posts a bare YYYY-MM-DD; the
  * account forms hold a Date, which JSON serialises as a UTC instant. Slicing
@@ -29,7 +36,7 @@ import { dayInZone, isCalendarDate, todayInZone } from './resolveZonedWindow.js'
  * @param {string} timeZone - the owner's IANA zone.
  * @returns {string} YYYY-MM-DD.
  * @throws 400 when the value is not a date at all; 422 when it is a date
- *  outside the current month.
+ *  outside the back-dating window.
  */
 export const resolveOpeningDay = (value, timeZone) => {
  const today = todayInZone(timeZone);
@@ -71,15 +78,18 @@ export const resolveOpeningDay = (value, timeZone) => {
   );
  }
 
- const monthFloor = `${today.slice(0, 7)}-01`;
+ const windowFloor = earliestDatableDay(today, BACKDATING_WINDOW_MONTHS);
 
- if (openingDay < monthFloor) {
+ if (openingDay < windowFloor) {
+  // The code and the details key keep the names they were published under. The
+  // window they describe widened, but they are what NewAccount matches on, and
+  // renaming a contract to match a comment is a change nobody asked for.
   throw createError(
    422,
-   `An account cannot be opened before the current month, which starts on ${monthFloor}`,
+   `An account cannot be opened before ${windowFloor}`,
    {
     errorCode: 'OPENING_DATE_BEFORE_CURRENT_MONTH',
-    details: { openingDay, currentMonthStart: monthFloor },
+    details: { openingDay, currentMonthStart: windowFloor },
    },
   );
  }

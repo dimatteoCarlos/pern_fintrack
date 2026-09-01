@@ -52,6 +52,27 @@ export const SELECT_CURRENCY_OPTIONS: DropdownOptionType<CurrencyType>[] = [
 export const DEFAULT_CURRENCY = (import.meta.env.VITE_ACCOUNTING_CURRENCY_CODE || 'usd' ) as CurrencyType;
 //==================================
 
+// How far back a calendar may offer an operative date, in whole calendar months
+// counting the current one: 1 is the current month alone, 2 also opens the
+// previous month.
+//
+// This mirrors BACKDATING_WINDOW_MONTHS in backend/.env, and mirroring is what
+// it is: two declarations of one policy, which the browser cannot read off the
+// server. They must carry the same number. Set only here, the calendar offers a
+// day the server refuses — a 422 the owner sees, never a wrong row — and set
+// only there, the window simply stays closed to him. The defaults agree, so
+// neither drifts until somebody changes one of them alone.
+const configuredBackdatingWindow = Number.parseInt(
+  import.meta.env.VITE_BACKDATING_WINDOW_MONTHS ?? '',
+  10,
+);
+
+export const BACKDATING_WINDOW_MONTHS =
+  Number.isInteger(configuredBackdatingWindow) && configuredBackdatingWindow >= 1
+    ? configuredBackdatingWindow
+    : 2;
+//==================================
+
 export const DATE_TIME_FORMAT_DEFAULT = 'es-ES';
 
 // For dates that render a WORD rather than digits. DATE_TIME_FORMAT_DEFAULT only

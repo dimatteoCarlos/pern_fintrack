@@ -35,6 +35,7 @@ import { CreateBasicAccountApiResponseType } from '../../../types/responseApiTyp
 
 import {
   capitalize,
+  earliestDatableDay,
   numberFormatCurrency,
 } from '../../../helpers/functions.ts';
 import { validationData } from '../../../validations/utils/custom_validation.ts';
@@ -94,13 +95,11 @@ const latestOpeningDay = (): Date => {
 };
 
 // The earliest opening day the calendar offers. An operative date belongs to
-// the month in course, so an earlier one comes back from the server as a 422
-// the form cannot explain. Without this the picker falls back to its own 1900
-// default, and the year dropdown puts that within two clicks.
-const earliestOpeningDay = (): Date => {
-  const today = new Date();
-  return new Date(today.getFullYear(), today.getMonth(), 1);
-};
+// the back-dating window, so an earlier one comes back from the server as a 422
+// the form cannot explain. The window is read from the shared helper rather than
+// recomputed here: the movement forms answer the same question, and two spellings
+// of one policy would let this calendar and theirs disagree.
+const earliestOpeningDay = earliestDatableDay;
 
 // A value the server put in details, only when it really is text.
 const asText = (value: unknown): string | null =>
@@ -114,8 +113,8 @@ const asText = (value: unknown): string | null =>
 // server's own prose, which reads worse but is never blank.
 //
 // Only the conditions this form can actually produce are listed. The calendar
-// already refuses a day outside the current month, so the two date entries are
-// the backstop for a form that got past it, not the normal path.
+// already refuses a day outside the back-dating window, so the two date entries
+// are the backstop for a form that got past it, not the normal path.
 const openingErrorText = (failure: RequestFailureType | null): string | null => {
   if (!failure) return null;
 
@@ -125,11 +124,11 @@ const openingErrorText = (failure: RequestFailureType | null): string | null => 
     case 'OPENING_DATE_BEFORE_CURRENT_MONTH': {
       const from = asText(details.currentMonthStart);
       return from
-        ? `An account can only be opened this month. Pick a day from ${from} onwards.`
-        : 'An account can only be opened this month. Pick a day from the first of the month onwards.';
+        ? `That day is outside the window an account can be opened in. Pick a day from ${from} onwards.`
+        : 'That day is outside the window an account can be opened in. Pick a more recent one.';
     }
     case 'OPENING_DATE_AFTER_TODAY':
-      return 'An account cannot be opened on a future day. Pick today, or an earlier day this month.';
+      return 'An account cannot be opened on a future day. Pick today, or an earlier one.';
     case 'INVALID_OPENING_DATE':
       return 'The opening date could not be read. Pick the day again from the calendar.';
     case 'FX_RATE_UNAVAILABLE': {

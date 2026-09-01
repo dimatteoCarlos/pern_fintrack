@@ -80,6 +80,39 @@ export const isCalendarDate = (value) =>
  typeof value === 'string' && CALENDAR_DATE.test(value);
 
 /**
+ * The earliest day an operative date may be placed on: the first of the oldest
+ * month the back-dating window still reaches.
+ *
+ * The window is counted in whole calendar months including the current one, so
+ * 1 returns the first of this month and 2 the first of the previous one. Month
+ * arithmetic on the naive parts, for the same reason shiftDays does it: the day
+ * handed in was already resolved on the owner's calendar, so no zone is left to
+ * apply and Date.UTC only counts. A negative month index rolls the year back on
+ * its own, which is why January needs no special case.
+ *
+ * The policy value is a parameter rather than a read of the config here: this
+ * module is a date utility and stays free of the app's configuration.
+ *
+ * @param {string} today - YYYY-MM-DD on the owner's calendar
+ * @param {number} windowMonths - whole months the window spans, at least 1
+ * @returns {string} YYYY-MM-DD, always the first day of a month
+ */
+export const earliestDatableDay = (today, windowMonths) => {
+ const [year, month] = today.split('-').map(Number);
+
+ // Clamped rather than trusted. The config already guarantees a whole number of
+ // at least 1, but a NaN reaching Date.UTC produces an Invalid Date whose
+ // toISOString throws, and a date utility that throws on a bad count is a worse
+ // failure than one that closes the window to the current month.
+ const months = Number.isFinite(windowMonths) ? Math.trunc(windowMonths) : 1;
+ const monthsBack = Math.max(1, months) - 1;
+
+ return new Date(Date.UTC(year, month - 1 - monthsBack, 1))
+  .toISOString()
+  .slice(0, 10);
+};
+
+/**
  * @param {object} params
  * @param {string} [params.start] - YYYY-MM-DD from the query string
  * @param {string} [params.end] - YYYY-MM-DD from the query string

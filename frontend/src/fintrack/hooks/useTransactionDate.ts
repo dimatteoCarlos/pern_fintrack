@@ -11,7 +11,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
-import { toCalendarDay } from '../helpers/functions';
+import { earliestDatableDay, toCalendarDay } from '../helpers/functions';
 import { TransactionDatePropsType } from '../general_components/transactionDateTrigger/TransactionDateTrigger';
 
 // The predicate on its own, for a form that holds the chosen day in its own
@@ -36,16 +36,15 @@ export function isAccountOpenOn(
 export function useTransactionDate(disabled = false) {
  const [transactionDate, setTransactionDate] = useState<Date>(() => new Date());
 
- // Resolved once per mount: the first day of the current month, and today, on
+ // Resolved once per mount: the floor of the back-dating window, and today, on
  // the device's calendar.
- const { minDate, maxDate } = useMemo(() => {
-  const now = new Date();
-
-  return {
-   minDate: new Date(now.getFullYear(), now.getMonth(), 1),
-   maxDate: now,
-  };
- }, []);
+ const { minDate, maxDate } = useMemo(
+  () => ({
+   minDate: earliestDatableDay(),
+   maxDate: new Date(),
+  }),
+  [],
+ );
 
  // What the payload carries. Read off the local parts, so a choice made in the
  // evening west of UTC does not arrive as the following day.
