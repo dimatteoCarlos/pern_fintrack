@@ -39,7 +39,15 @@ const RateTooltip = ({
   .join(' ');
 
  return (
-  <Tooltip tipText={tipText} isActive={false} tooltipClassName={chipClassName}>
+  <Tooltip
+   tipText={tipText}
+   isActive={false}
+   tooltipClassName={chipClassName}
+   /* The rate and the day it belongs to are stated nowhere else on the
+      screen, so this trigger takes focus and names the chip as its
+      description. Without it the figures are available to a pointer only. */
+   focusable
+  >
    {children}
   </Tooltip>
  );

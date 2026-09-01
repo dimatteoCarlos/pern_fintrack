@@ -26,9 +26,27 @@
   z-index: 10;
 }
 
-.tooltip__wrapper:hover .tooltip__wrapper--text {
+/* :focus-within as well as :hover -- the tip was reachable with a pointer and
+   with nothing else, so its content did not exist for a keyboard. Only the
+   triggers that opt into being focusable can satisfy it (Tooltip.tsx), so this
+   adds no tab stops on its own.
+
+   .is-dismissed is Escape: the tip closes while the pointer stays where it is,
+   and clears again on leave or blur. */
+.tooltip__wrapper:hover .tooltip__wrapper--text,
+.tooltip__wrapper:focus-within .tooltip__wrapper--text {
   border: 1px solid var(--dark);
   opacity: 1;
+}
+
+.tooltip__wrapper.is-dismissed .tooltip__wrapper--text {
+  opacity: 0;
+}
+
+.tooltip__wrapper:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline-offset: var(--border-width-thick);
+  border-radius: var(--radius-xs);
 }
 
 /* .tooltip__wrapper:hover .tooltip__wrapper--text:not(.currency-preview-tooltip) {

@@ -24,7 +24,11 @@
  font-family: monospace;
  border-radius: 0.5rem;
  box-shadow: 0 0.125rem 1.125rem color-mix(in srgb, var(--dark) 20%, transparent);
- pointer-events: none;
+ /* No pointer-events: none. It made the chip unhoverable, so a reader who
+    magnifies the screen could never bring the pointer onto the rate to read
+    it -- the chip vanished on the way. The chip is a descendant of the
+    wrapper, so the pointer resting on it keeps the wrapper hovered and the
+    chip open, which is what WCAG 2.1's "hoverable" asks for. */
 }
 
 /* Sits on a light panel, such as the tracker card. Paints itself dark. */
