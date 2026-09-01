@@ -55,8 +55,13 @@
    without replacing what it did, and the chip crowded the card's right edge
    and the amount field beneath it. `right: 0` anchors the edge that has to
    stay put and lets the chip grow left, into the room the row actually has,
-   with no percentage tied to how wide the chip happens to be this time. */
+   with no percentage tied to how wide the chip happens to be this time.
+
+   No `bottom` override here anymore: the inherited bottom: 100% (base
+   .tooltip__wrapper--text) sits the chip flush above the trigger, clear of
+   it. The old 6% was tuned for a shorter, two-line chip and pulled the
+   (now taller) chip's bottom edge down onto the currency-preview text it
+   sits beside, covering the figure it was supposed to annotate. */
 .tooltip__wrapper--text.rateTooltip__chip--anchor-left {
- bottom: 6%;
  right: 0;
 }
