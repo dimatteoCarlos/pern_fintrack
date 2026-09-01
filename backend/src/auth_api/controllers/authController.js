@@ -46,18 +46,22 @@ export const signUpUser = async (req, res, next) => {
   console.log(pc.blueBright('signUpUser'));
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
     // ✅ GET CREDENTIALS
-    const { username, user_firstname, user_lastname, email, currency, timezone } =
-      req.body;
+    const { username, user_firstname, user_lastname, email, currency, timezone } = req.body;
     const currency_code = currency ?? 'usd';
     // console.log(req.body);
+
+    // Normalized before validating: a value that is only whitespace has to fail
+    // the required-fields check, not reach the INSERT as an empty string.
+    // The email folds case, the username keeps it — it is a display name.
+    const normalizedUsername = username?.trim();
+    const normalizedEmail = email?.trim().toLowerCase();
 
     // ✅ REQUIRED FIELDS VALIDATION
     if (
       !(
-        username &&
-        email &&
+        normalizedUsername &&
+        normalizedEmail &&
         req.body.password &&
         user_firstname &&
         user_lastname
@@ -78,29 +82,6 @@ export const signUpUser = async (req, res, next) => {
       );
     }
 
-    // ✅ CHECK EXISTENCE OF USER/EMAIL
-    const usernameExists = await client.query(
-      'SELECT 1 FROM users WHERE username=$1 FOR UPDATE',
-      [username],
-    );
-    //FOR UPDATE: is used within a transaction, it locks the selected rows, preventing other concurrent transactions from modifying or locking those same rows until the current transaction either commits or rolls back
-
-    if (usernameExists.rowCount > 0) {
-      return next(createError(409, 'Username already exists.Try Sign in'));
-    }
-
-    // ✅ CHECK IF EMAIL EXISTS
-    const emailExists = await client.query(
-      'SELECT 1 FROM users WHERE email=$1 FOR UPDATE',
-      [email],
-    );
-
-    if (emailExists.rowCount > 0) {
-      return next(
-        createError(409, 'Email already exists. Login with sign in button'),
-      );
-    }
-
     //  ✅ HASH OF PASSWORD
     let hashedPassword = await hashed(req.body.password);
     req.body.password = undefined;
@@ -117,6 +98,9 @@ export const signUpUser = async (req, res, next) => {
 
     //evalute to adding: google_id, display_name, auth_method, user_contact, user_role_id is 1 by default.
 
+    // Opens here: the hash above is CPU work of hundreds of milliseconds, and holding a transaction open across it pins a pooled connection for nothing.
+    await client.query('BEGIN');
+
     // ✅ -Insert new user into data base
     const userData = await client.query({
       text: `
@@ -124,8 +108,8 @@ export const signUpUser = async (req, res, next) => {
       RETURNING user_id, username, email, user_firstname, user_lastname, currency_id, user_role_id, timezone;`,
       values: [
         newUserId,
-        username,
-        email,
+        normalizedUsername,
+        normalizedEmail,
         hashedPassword,
         user_firstname,
         user_lastname,
@@ -182,17 +166,13 @@ export const signUpUser = async (req, res, next) => {
     // user.password_hashed = undefined;
     // delete newUser.password; delete newUser.password_hashed; delete newUser.user_role_name
 
+    // Commits before the cookie and the body: nothing reaches the client until the user is durable.
+    await client.query('COMMIT');
+
     // ✅ REFRESH TOKEN
     setRefreshTokenCookie(res, refreshToken);
 
     // ✅ RESPONSE HANDLING
-    // const userResponseData  = {
-    //   user: { ...newUser, currency: currency_code ,
-    //   user_id: undefined,
-    //   password_hashed: undefined},
-    //   userAccessDevice: clientDevice,
-    // };
-
     const userResponseData = {
       user_id: newUser.user_id,
       username: newUser.username,
@@ -210,10 +190,21 @@ export const signUpUser = async (req, res, next) => {
       user: userResponseData,
       expiresIn: 3600 * 1 * 1, // 60 minutos
     });
-
-    await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');
+
+    // 23505 is the unique violation. It is the caller's duplicate, not a server
+    // fault, and error.message would publish the index name.
+    if (error.code === '23505') {
+      // Two names per column: the plain UNIQUE and the case-folded index that
+      // migration 025 adds. Either one means the email is taken.
+      const emailConstraints = ['users_email_key', 'users_email_lower_key'];
+      const duplicate = emailConstraints.includes(error.constraint)
+        ? 'Email already exists. Login with sign in button'
+        : 'Username already exists.Try Sign in';
+      return next(createError(409, duplicate));
+    }
+
     console.log(pc.red('Sign-up error:'), error);
     next(createError(500, error.message || 'internal signup error'));
   } finally {
@@ -243,9 +234,9 @@ export const signInUser = async (req, res, next) => {
       return next(createError(400, 'Identity and password are required'));
     }
     // ✅ GET USER DATA FROM DB
-    // An email is the only identity that can carry '@', and both columns are
-    // UNIQUE, so the string itself decides the column and the match is exact.
-    // The column name is one of two literals here, never the typed value.
+    // An email is the only identity that can carry '@', so the string itself
+    // decides the column. The column name is one of two literals here, never
+    // the typed value.
     const identityColumn = identity.includes('@') ? 'u.email' : 'u.username';
 
     const userData = await client
@@ -256,7 +247,9 @@ export const signInUser = async (req, res, next) => {
         FROM users u
         JOIN user_roles ur ON u.user_role_id = ur.user_role_id
         JOIN currencies ct ON u.currency_id = ct.currency_id
-        WHERE ${identityColumn} = $1`,
+        -- Folded on both sides: whoever registered a name with a capital still
+        -- signs in with it typed any other way.
+        WHERE lower(${identityColumn}) = lower($1)`,
         values: [identity],
       })
       .then((res) => res.rows);

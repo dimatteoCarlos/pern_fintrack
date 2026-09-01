@@ -29,8 +29,10 @@ if (!SYSTEM_ADMIN_EMAIL || !SYSTEM_ADMIN_PASSWORD) {
  }
 
 // Check if admin already exists
+ // Folded, like the INSERT below: the same address typed with a capital in the
+ // environment has to find the admin that already exists, not create a second one.
  const { rowCount } = await client.query(
-  'SELECT 1 FROM users WHERE email = $1 ',
+  'SELECT 1 FROM users WHERE lower(email) = lower(btrim($1))',
   [SYSTEM_ADMIN_EMAIL]
  );
 
@@ -59,7 +61,7 @@ INSERT INTO users (
 VALUES (
  gen_random_uuid(),
  'system_admin',
- $1,
+ lower(btrim($1)),
  'System',
  'Administrator',
  $2,
