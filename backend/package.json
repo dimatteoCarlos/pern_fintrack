@@ -13,6 +13,7 @@
     "db:migrate": "node src/db/migrations/runMigrations.js",
     "db:seed:base": "node src/db/migrations/runSeeds.js base",
     "db:seed:admin": "node src/db/migrations/runSeeds.js admin",
+    "fx:stall-scan": "node src/fintrack_api/services/fx_services/core/detectStalledOfficialRates.js",
     "clear": "node --clear src/index.js"
   },
   "keywords": [],
