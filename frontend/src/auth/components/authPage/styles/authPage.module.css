@@ -127,9 +127,9 @@ button {
   padding: 1rem;
   /* The preview sits on this element rather than on the page container so it
      starts below the navbar; on the container its top row was covered by it.
-     `contain` shows the whole shot: the asset is 500x723, so `cover` upscaled
-     it 2.5x on a desktop and cropped it to sliced words on a phone. */
-  background-image: url('../../../../assets/trackerPreview.png');
+     `contain` shows the whole shot: the asset is 637x829, so `cover` upscaled
+     it past 2x on a desktop and cropped it to sliced words on a phone. */
+  background-image: url('../../../../assets/landingPageImages/trackerPreview.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -233,14 +233,27 @@ button {
    .auth-container__title. This one won on specificity, so the class that
    names the element was the one being ignored. The class owns it now. */
 
+/* Tablets and large phones. The desktop shot is a screen capture, so `contain`
+   in a box this narrow shrinks its figures until there is nothing left to read.
+   The device mockup takes over and keeps `contain` like the base rule: at
+   768x1024 the box is wider in proportion than the 783x1376 photo, so `cover`
+   would fill the width and cut some 400px off the phone, top and bottom.
+   800px is the upper edge, above which the capture resumes. */
+@media (min-width: 481px) and (max-width: 799px) {
+  .mainContent {
+    background-image: url('../../../../assets/landingPageImages/fintrack_mobile_front.jpeg');
+    background-size: contain;
+  }
+}
+
 /* Media query para pantallas más pequeñas */
 @media (max-width: 480px) {
-  /* The flat shot is swapped for the device mockup, 768x1397. No gradient over
+  /* The flat shot is swapped for the device mockup, 614x1118. No gradient over
      it -- the photo's own ground is a light beige and a black gradient greys it
      out the way #f4f4f4 did. `cover` trims the sides here, which the photo can
      spare; see the short-screen query below for where it stops being able to. */
   .mainContent {
-    background-image: url('../../../../assets/fintrack_mobile.jpeg');
+    background-image: url('../../../../assets/landingPageImages/fintrack_mobile.jpeg');
     background-size: cover;
   }
 
@@ -307,7 +320,7 @@ button {
 }
 
 /* Short screens. Below roughly 700px of viewport the box under the navbar gets
-   wider than the 768x1397 mockup, so `cover` switches from trimming the sides
+   wider than the 614x1118 mockup, so `cover` switches from trimming the sides
    to trimming top and bottom -- and the nav pill, which sits on the bottom edge
    of the photo, is the first thing to go. `contain` never crops; the cream
    ground is within a shade of the photo's own beige, so the band it leaves
