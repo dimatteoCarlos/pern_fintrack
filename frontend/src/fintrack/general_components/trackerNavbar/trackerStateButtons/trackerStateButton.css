@@ -13,7 +13,12 @@
   height: 3.5rem;
   width: 3.5rem;
 
-  background-color: var(--dark)3;
+  /* The declaration that stood here was `background-color: var(--dark)3` --
+     the trailing 3 made it invalid, so the parser has always dropped it and
+     the button has always rested transparent over the navbar's own fill.
+     Removed rather than repaired: repairing it would give these tabs a
+     background they have never had, which is a change of appearance nobody
+     asked for dressed up as a fix. */
   cursor: pointer;
 
   padding: 2.5px;

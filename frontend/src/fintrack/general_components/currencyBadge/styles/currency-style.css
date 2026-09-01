@@ -1,14 +1,21 @@
 /*------------------------*/
+/* Six literals stood here. Four had an exact token already: 0.625rem is
+   --font-size-2xs, 700 is --font-weight-bold, 2.5rem is --size-badge, and
+   0.75rem 0.5rem are --space-3 and --space-2.
+
+   The radius did not: 1.1em resolved to 17.6px against this box, and the
+   scale's nearest step is --radius-xl at 16px. Taken anyway rather than left
+   as the only literal in the rule — the 1.6px it gives up is not a shape
+   anyone chose, it is what an em happened to resolve to. */
 .icon-currency {
-  font-size: 0.625rem;
-  font-weight: 700;
-  border-radius: 1.1em;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--radius-xl);
 
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--size-badge);
+  height: var(--size-badge);
 
-  padding: 0.75rem 0.5rem;
-  /* border: 2px solid var(--dark); */
+  padding: var(--space-3) var(--space-2);
 }
 
 .icon-currency.tracker {

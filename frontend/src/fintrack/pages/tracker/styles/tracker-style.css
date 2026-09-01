@@ -204,7 +204,11 @@ article {
 /* The converted amount beside the label. Was inline on the span in TopCard.tsx,
    where no token could reach it. */
 .currency-preview {
- font-size: 0.8rem;
+ /* Was 0.8rem, a step the scale does not define. --font-size-xs (0.75rem) is
+    the nearest one and the right reading besides: this line qualifies the
+    amount above it, the same relationship the day label has to the account
+    label. 0.8px narrower, no other effect. */
+ font-size: var(--font-size-xs);
  color: var(--color-content-secondary);
 }
 
@@ -473,6 +477,11 @@ textarea:invalid {
    still works and the glyph does not drift away from the label. */
 .account__labelGroup {
  display: flex;
+ /* Deliberately NOT width:100% with space-between, which was tried and
+    reverted: this row is not the label and the date alone. Transfer puts the
+    account-type options in it too (.radio-input__options, which takes flex:1),
+    and pinning the two ends stopped them sharing the line and dropped them to
+    the next one. The date control stays beside the label it qualifies. */
  /* Not center: .account-label is a 20px line box (line-height: 1.25rem) and
     TransactionDateTrigger's own control is 24px, so centering the BOXES left
     "Account" sitting off the calendar control's own text line. Baseline lines
