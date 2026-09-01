@@ -56,11 +56,22 @@ const createStyles = (
     borderRadius: '0.75rem',
   }),
 
-  control: (base) => ({
+  control: (base, state) => ({
     ...base,
     backgroundColor: variant === 'tracker' ? '#e8e4da' : 'transparent',
     color: variant === 'tracker' ? 'var(--dark)' : 'var(--light)',
-    boxShadow: 'none', //this is the contorn line
+    // Was a flat 'none', which removed react-select's own focus treatment and
+    // put nothing in its place: tabbing into either dropdown showed nothing at
+    // all. The ring is drawn as a shadow because this control's border is the
+    // library's and changing it shifts the box; a shadow overlays instead.
+    // Only on focus, so the resting field is unchanged.
+    boxShadow: state.isFocused
+      ? `0 0 0 var(--border-width-thick) ${
+          variant === 'tracker'
+            ? 'var(--color-border-strong)'
+            : 'var(--color-border-inverse)'
+        }`
+      : 'none',
     border: variant === 'tracker' ? 'none' : '1px solid var(--light)',
     borderRadius: '1rem',
     fontWeight: '500',

@@ -48,6 +48,16 @@
   transition: transform 0.1s ease-out; /* Una transición más rápida para el "click" */
 }
 
+/* index.css:74-81 strips the outline from every button, and this one never put
+   it back: the control that saves the entry had no keyboard focus indicator at
+   all. Same ring the rest of the product uses. The offset keeps it clear of the
+   glyph's own dark disc. */
+.plus__btn:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline-offset: var(--border-width-thick);
+  border-radius: var(--radius-full);
+}
+
 .plus__btn:disabled,
 .plus__btn:disabled:hover {
   /* background-color: #ccc; */

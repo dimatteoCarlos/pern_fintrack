@@ -14,3 +14,23 @@
   transition: transform 0.2s ease
 
 }
+
+/* Only :hover was declared, so these two answered a pointer and nothing else.
+   The sign-out control is a <button>, which index.css:74-81 strips the outline
+   from, so it had no keyboard indicator at all; the edit control is a <a>,
+   which keeps the UA ring but was never given the product's own. The header is
+   a white surface, so the ring takes the strong border token. */
+.iconContainer.exit:focus-visible,
+.iconContainer.edit:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline-offset: var(--border-width-thick);
+  border-radius: var(--radius-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iconContainer.exit:hover,
+  .iconContainer.edit:hover {
+    transform: none;
+    transition: none;
+  }
+}
