@@ -468,7 +468,12 @@ textarea:invalid {
    still works and the glyph does not drift away from the label. */
 .account__labelGroup {
  display: flex;
- align-items: center;
+ /* Not center: .account-label is a 20px line box (line-height: 1.25rem) and
+    TransactionDateTrigger's own control is 24px, so centering the BOXES left
+    "Account" sitting off the calendar control's own text line. Baseline lines
+    up the text itself instead of the mismatched boxes around it -- same fix
+    as transactionDateTrigger-styles.css's .transactionDateControl. */
+ align-items: baseline;
  gap: var(--space-2);
  min-width: 0;
 }
