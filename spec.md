@@ -47,14 +47,28 @@ This specification defines mandatory web accessibility rules (WCAG 2.1 and 2.2 L
 
 #### 6.1. Contrast & Color Tokens (WCAG 1.4.3 & 1.4.11)
 
-Claude Code must **exclusively use the application's CSS variables or design tokens** (e.g., `var(--color-text-primary)`, `var(--color-bg-surface)`), adhering to the following contrast rules:
+Claude Code must **exclusively use the application's own CSS variables**, defined in `frontend/src/styles/tokens.css`. There is no `--color-text-*` or `--color-bg-*` family — content tokens are prefixed `--color-content-*`, surfaces `--color-surface-*`, and `tokens.css:14-18` states the rule they follow: a near-black app with white or cream panels, near-black content on those panels. Every content token's own comment names the surfaces it is valid on (e.g. `tokens.css:38`, `--color-content-primary: #141414; /* on inverse, panel */`) — read that comment before pairing a token with a surface, not after.
 
 * **Primary & Secondary Text (< 18pt / 24px):** Any text token applied over a background token must guarantee a minimum contrast ratio of **4.5:1**.
 * *Secondary Text / Placeholder Rule:* Assign a higher-contrast text token if the default secondary token fails to reach 4.5:1 on the selected background.
-
-
 * **Non-Text Components & Control Borders:** Input field borders, buttons, and interactive controls must use a border token guaranteeing at least **3.0:1** contrast against adjacent background tokens.
 * **Theme Support (Dark/Light Mode):** Combinations must be independently evaluated for every active theme in the application.
+
+**Verified pairs.** Computed with the sRGB relative-luminance formula (WCAG 1.4.3/1.4.11), not estimated. Recompute rather than trust this table once a token's hex changes.
+
+| content token | on surface token | ratio | floor |
+|---|---|---|---|
+| `--color-content-primary` (#141414) | `--color-surface-inverse` (#ffffff) | 18.43:1 | 4.5:1 |
+| `--color-content-primary` (#141414) | `--color-surface-panel` (#e8e4da) | 14.51:1 | 4.5:1 |
+| `--color-content-secondary` (#5b5b5b) | `--color-surface-inverse` (#ffffff) | 6.79:1 | 4.5:1 |
+| `--color-content-secondary` (#5b5b5b) | `--color-surface-panel` (#e8e4da) | 5.35:1 | 4.5:1 |
+| `--color-content-placeholder` (#5b5b5b) | `--color-surface-panel` (#e8e4da) | 5.35:1 | 4.5:1 |
+| `--color-content-on-dark` (#ffffff) | `--color-surface-app` (#0d0f12) | 19.23:1 | 4.5:1 |
+| `--color-content-on-dark` (#ffffff) | `--color-surface-raised` (#161a22) | 17.43:1 | 4.5:1 |
+| `--color-content-on-dark-subtle` (#bdb1b1) | `--color-surface-app` (#0d0f12) | 9.24:1 | 4.5:1 (used as border: also clears 3.0:1) |
+| `--color-content-on-dark-subtle` (#bdb1b1) | `--color-surface-raised` (#161a22) | 8.37:1 | 4.5:1 |
+
+A pairing not in this table is not "probably fine" — measure it before shipping it, the same way each row here was measured, and add the row.
 
 #### 6.2. Form Structure & Interaction (WCAG 3.3.2, 2.5.8 & 2.4.7)
 
@@ -70,74 +84,22 @@ Claude Code must **exclusively use the application's CSS variables or design tok
 
 #### 6.4. Integrated Reference Pattern (Design Tokens & Accessibility)
 
-When building form controls or UI components, follow this React + TypeScript architecture:
+There is already an accessible input in this codebase — `frontend/src/auth/components/formUIComponents/InputField.tsx`, styled by the CSS Module at `styles/inputField.module.css`. Do not invent a second one from generic markup (plain `form-group`/`form-input` classes belong to no styling system this project uses); extend or reuse this component instead. Its pattern, in the same order 6.1-6.3 above require it:
 
-```tsx
-import React, { useId } from 'react';
+* Label association — `InputField.tsx:118-124,145`: `inputId` is derived once and shared between the `<label htmlFor={inputId}>` and the `<input id={inputId}>`.
+* Error/help association — `InputField.tsx:130-132`: `aria-describedby` points at `${inputId}-error` only `hasError` is true, matching the rendered element's own `id` at `InputField.tsx:193`.
+* Icon-only control — `InputField.tsx:181`: the show/hide toggle carries `aria-label={isContentVisible ? 'Hide content' : 'Show content'}`, no visible text.
+* Token-only color — `inputField.module.css:287-298`: the filled variant's background, text and border are each a `var(--color-*)` token, never a literal hex; the border exists at all because the fill alone measured under the 3.0:1 floor (`inputField.module.css:290-293`).
+* Focus ring — `inputField.module.css:313-317`: `:focus-visible` only, so a mouse click does not paint a ring a keyboard user actually needs.
 
-type AccessibleInputProps = {
-  label: string;
-  type?: string;
-  error?: string;
-  helperText?: string;
-} & React.InputHTMLAttributes<HTMLInputElement>;
-
-export const AccessibleInput = React.forwardRef<HTMLInputElement, AccessibleInputProps>(
-  ({ label, type = 'text', error, helperText, className = '', ...props }, ref) => {
-    const id = useId();
-    const errorId = `${id}-error`;
-    const helperId = `${id}-helper`;
-
-    const describedBy = [
-      error ? errorId : null,
-      helperText ? helperId : null,
-    ].filter(Boolean).join(' ') || undefined;
-
-    return (
-      <div className="form-group">
-        <label htmlFor={id} className="form-label">
-          {label}
-        </label>
-        
-        <input
-          ref={ref}
-          id={id}
-          type={type}
-          aria-invalid={Boolean(error)}
-          aria-describedby={describedBy}
-          className={`form-input ${error ? 'form-input--error' : ''} ${className}`.trim()}
-          {...props}
-        />
-
-        {helperText && !error && (
-          <p id={helperId} className="form-helper-text">
-            {helperText}
-          </p>
-        )}
-
-        {error && (
-          <p id={errorId} role="alert" className="form-error-text">
-            <span aria-hidden="true">⚠️ </span>
-            <span>{error}</span>
-          </p>
-        )}
-      </div>
-    );
-  }
-);
-
-AccessibleInput.displayName = 'AccessibleInput';
-
-```
+When a form needs a new field, render `<InputField variant="filled" .../>` — see `SignInForm.tsx:72-100` for a working call — rather than authoring a new input element.
 
 ---
 
-#### 6.5. Automated Verification Checklist
+#### 6.5. How to Audit a View
 
-When designing or refactoring UI components, verify:
-
-1. Are design tokens/variables being used instead of hardcoded hex colors?
-2. Does the text token meet the **4.5:1** contrast ratio over the chosen background token?
-3. Does the input border token meet the **3.0:1** contrast ratio over the background?
-4. Do all icon-only interactive controls contain a descriptive `aria-label`?
-5. Is the form input fully accessible via keyboard navigation with clear focus outlines?
+1. List every `color`/`background-color`/`border-color` declaration the view's CSS Module actually applies, in every state (`:hover`, `:focus-visible`, `:disabled`, `::placeholder`, and separately for each theme it renders in).
+2. For each one, resolve the two tokens involved (content-on-surface) and check the table in 6.1. Not there — compute it with the sRGB relative-luminance formula and add the row; do not eyeball it or reuse a ratio measured for a different pair.
+3. Flag any literal hex outside `tokens.css` — it has no verified ratio and no comment naming its valid surfaces, which is itself a finding regardless of what it measures to.
+4. Confirm every `<label>`/`<input>` pair shares an `id`/`htmlFor`, every icon-only control has an `aria-label`, and every focusable control has a visible `:focus-visible` ring (not just `:hover`).
+5. Report findings as `element | token pair | measured ratio | floor | verdict`, the same shape as the table in 6.1 — a finding that only says "contrast looks low" without a measured ratio is not an audit.
