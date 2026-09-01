@@ -47,6 +47,13 @@ type ServerCurrencyConversion = {
  // store. The owner is entitled to know a figure came from a stale reading.
  source: string | null;
  fetchedAt: string | null;
+ // The market figure behind the rate, as every source publishes it: one
+ // accounting unit is worth quote.rate of quote.currency. Not the same fact as
+ // rate, which is the conversion's own multiplier — converting a peso to a
+ // dollar gives 0.00031, which rounds to zero in any display and reads as no
+ // rate at all, while the quote behind it is 3202.79. It cannot be derived
+ // here either: a cross conversion's rate is two quotes composed.
+ quote: { currency: string; rate: number } | null;
  // The day whose rate actually answered, which is not always the day asked for:
  // a market closed on a Saturday is valued by the Friday it quoted. null on the
  // undated path, where today has no effective day of its own. Without it a
@@ -63,6 +70,7 @@ type ConvertResponse = {
  rate: number;
  source: string;
  fetchedAt: string;
+ quote: { currency: string; rate: number } | null;
  effectiveDate: string | null;
 };
 
@@ -72,6 +80,7 @@ const INACTIVE: Omit<ServerCurrencyConversion, 'retry'> = {
  rate: null,
  source: null,
  fetchedAt: null,
+ quote: null,
  effectiveDate: null,
  errorMessage: null,
 };
@@ -146,6 +155,7 @@ export function useServerCurrencyConversion(
      rate: response.data.rate,
      source: response.data.source,
      fetchedAt: response.data.fetchedAt,
+     quote: response.data.quote ?? null,
      effectiveDate: response.data.effectiveDate ?? null,
      errorMessage: null,
     });

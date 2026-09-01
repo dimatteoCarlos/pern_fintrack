@@ -182,15 +182,32 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
       ? `≈ ${numberFormatCurrency(conversion.convertedAmount, 2, undefined, 'es-ES')} ${accountingCurrency}`
       : '';
 
+  // The QUOTE, never the conversion's own rate. Converting a peso to a dollar
+  // gives a rate of 0.00031, which two decimals render as 0,00 — the owner is
+  // told there is no rate when there is one. The quote is the same figure the
+  // provider published, in the direction it published it.
+  //
+  // Four decimals below ten, because a currency worth less than an accounting
+  // unit carries its information after the second place: the euro quotes around
+  // 0.8470, which two decimals flatten to 0,85.
+  const quotedRate = conversion.quote
+    ? numberFormatCurrency(
+        conversion.quote.rate,
+        Math.abs(conversion.quote.rate) < 10 ? 4 : 2,
+        undefined,
+        'es-ES',
+      )
+    : '';
+
   // Three lines, and the third is the one that was missing: which day the rate
   // belongs to. A market closed on the chosen day is valued by the last one that
   // quoted, and without saying so the owner cannot tell a rate FOR that day from
   // a rate IN FORCE on it.
   const tooltipText = [
-    `${accountingCurrency}→${currency}`,
-    conversion.rate !== null
-      ? `rate: ${numberFormatCurrency(conversion.rate, 2, undefined, 'es-ES')}`
+    conversion.quote
+      ? `${accountingCurrency}→${conversion.quote.currency}`
       : '',
+    quotedRate ? `rate: ${quotedRate}` : '',
     conversion.effectiveDate ? `for ${conversion.effectiveDate}` : '',
   ]
     .filter(Boolean)
