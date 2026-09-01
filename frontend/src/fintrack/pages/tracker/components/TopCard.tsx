@@ -199,6 +199,26 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
       )
     : '';
 
+  // Numeric only (day/month/year, es-ES order and separators), not
+  // formatCalendarDate's word-month default: that default is en-US on
+  // purpose (helpers/constants.ts:57-59) so a spelled-out month doesn't read
+  // as the interface itself switching language. Built from the parts and not
+  // from new Date(effectiveDate), for the same UTC-midnight reason
+  // formatCalendarDate is.
+  const effectiveDateLabel = conversion.effectiveDate
+    ? (() => {
+        const [year, month, day] = conversion.effectiveDate!
+          .split('-')
+          .map(Number);
+        if (!year || !month || !day) return '';
+        return new Date(year, month - 1, day).toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+      })()
+    : '';
+
   // Three lines, and the third is the one that was missing: which day the rate
   // belongs to. A market closed on the chosen day is valued by the last one that
   // quoted, and without saying so the owner cannot tell a rate FOR that day from
@@ -208,7 +228,7 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
       ? `${accountingCurrency}→${conversion.quote.currency}`
       : '',
     quotedRate ? `rate: ${quotedRate}` : '',
-    conversion.effectiveDate ? `for ${conversion.effectiveDate}` : '',
+    effectiveDateLabel ? `for ${effectiveDateLabel}` : '',
   ]
     .filter(Boolean)
     .join('\n');

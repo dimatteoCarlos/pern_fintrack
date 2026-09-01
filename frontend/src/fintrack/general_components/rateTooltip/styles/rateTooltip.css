@@ -8,10 +8,15 @@
    placement, so it composes with a surface modifier and keeps the base tooltip
    position, which is above the trigger and centred on it. */
 .tooltip__wrapper--text.rateTooltip__chip {
- margin-bottom: 0.375rem;
+ /* Widened from 0.375rem: the third line (see the padding note below) grows
+    the chip upward from its anchored bottom edge, and at the old margin its
+    lower edge touched the tracker card's own top border. */
+ margin-bottom: 0.625rem;
  white-space: pre-line;
  font-size: 0.625rem;
- padding: 0.3125rem 0.5rem;
+ /* Widened from 0.3125rem 0.5rem: three lines (TopCard.tsx:206-214, the
+    "for <day>" line added for backdating) read cramped at the old padding. */
+ padding: 0.5rem 0.75rem;
  max-width: max-content;
  width: max-content;
 
