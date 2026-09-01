@@ -309,9 +309,14 @@
   box-sizing: border-box;
 }
 
+/* The color alone measures 5.35:1 on the cream fill -- already proven AA --
+   but Outfit's regular weight is thin enough that the same hex reads fainter
+   here than in a system-font mockup. Weight compensates for the typeface
+   instead of darkening the color past what the contrast math calls for. */
 .inputContainer.filled .inputField::placeholder {
   color: var(--color-content-placeholder);
   opacity: 1;
+  font-weight: var(--font-weight-medium);
 }
 
 /* With no border to recolour, focus has to be the ring. index.css:76 kills the
