@@ -9,8 +9,9 @@ import { z } from 'zod';
 import { FIELD_LIMITS } from './constants';
 
 /**
- * Password rules, shared by both forms. Declared apart from the base schema
- * because signing in no longer reuses that schema.
+ * Password composition rules. They belong to the forms that write the value,
+ * sign-up here and the password change form on its own schema, never to signing
+ * in, where the value is only compared.
  */
 const passwordField = z.string()
   .min(FIELD_LIMITS.PASSWORD.MIN, {
@@ -86,7 +87,14 @@ export const signInSchema = z.object({
       { message: `${FIELD_LIMITS.IDENTITY.name} cannot contain < or > characters` }
     ),
 
-  password: passwordField,
+  // Presence and the bcrypt ceiling only, mirroring the backend sign-in schema:
+  // a stored hash cannot be measured, so a minimum here would lock out the owner
+  // of an older password on the one screen where it can be changed.
+  password: z.string()
+    .min(1, { message: `${FIELD_LIMITS.PASSWORD.name} is required` })
+    .max(FIELD_LIMITS.PASSWORD.MAX, {
+      message: `${FIELD_LIMITS.PASSWORD.name} cannot exceed ${FIELD_LIMITS.PASSWORD.MAX} characters`
+    }),
 });
 //---------------------------------
 /**

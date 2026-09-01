@@ -19,10 +19,13 @@ import SignInForm from '../signInForm/SignInForm';
 import SignUpForm from '../signUpForm/SignUpForm';
 import { getIdentity } from '../../auth_utils/localStorageHandle/authStorage'
 import { useAuthUIStore } from '../../stores/useAuthUIStore';
+import type { SignInResultType } from '../../hooks/useAuth';
 import styles from './styles/authUI.module.css';
 
 export type AuthUIPropsType = {
-  onSignIn: (credentials: SignInFormDataType, rememberMe: boolean) => Promise<void>;
+  // Resolves with the sign-in result: the form needs the failed one to render
+  // the server's per-field validation messages.
+  onSignIn: (credentials: SignInFormDataType, rememberMe: boolean) => Promise<SignInResultType>;
   onSignUp: (userData: SignUpFormDataType) => Promise<void>;
   isLoading: boolean;
   error: string | null;

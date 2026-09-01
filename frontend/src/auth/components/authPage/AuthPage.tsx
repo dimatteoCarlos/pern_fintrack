@@ -26,7 +26,7 @@ import { AUTH_UI_STATES } from '../../auth_constants/constants';
 import Logo from '../../../assets/logo.svg';
 
 import { useAuthUIStore } from '../../stores/useAuthUIStore';
-import useAuth from '../../hooks/useAuth';
+import useAuth, { SignInResultType } from '../../hooks/useAuth';
 
 import { SignInCredentialsType, SignUpCredentialsType } from '../../types/authTypes';
 
@@ -75,7 +75,7 @@ export default function AuthPage() {
  const handleSignInWithNavigation = async (
   credentials: SignInCredentialsType,
   rememberMe: boolean,
-  ) => {
+  ): Promise<SignInResultType> => {
   // console.log(🔐 Sign in wrapper called);
   const result =  await handleSignInDomain(credentials, rememberMe);
 
@@ -96,6 +96,9 @@ export default function AuthPage() {
  // ✅ Clean returnTo after navigation
   returnToRef.current = null;
    }
+
+ // The form reads the failed result to attach the server's per-field messages.
+  return result;
   };
 
 //Sign up wrapper – decides navigation after successful registration.

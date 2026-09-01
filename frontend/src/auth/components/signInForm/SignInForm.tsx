@@ -8,13 +8,36 @@
 import React, { useState } from 'react';
 import { signInSchema, SignInFormDataType } from '../../../auth/validation/zod_schemas/authSchemas';
 import { getIdentity } from '../../../auth/auth_utils/localStorageHandle/authStorage';
-import { useFormLogic } from '../../hooks/useFormLogic';
+import { FormErrorsType, useFormLogic } from '../../hooks/useFormLogic';
+import type { SignInResultType } from '../../hooks/useAuth';
 import InputField from '../formUIComponents/InputField';
 
 import styles from "../authPage/styles/authUI.module.css"
 
+type SignInFieldNameType = keyof SignInFormDataType;
+
+/**
+ * The server answers a 400 with one list of messages per field, keyed by the
+ * form's own field names. Only the first message of each is shown.
+ */
+const mapApiFieldErrors = (
+ fieldErrors: Record<string, string[]>,
+): FormErrorsType<SignInFieldNameType> => {
+ const mapped: FormErrorsType<SignInFieldNameType> = {};
+
+ (['identity', 'password'] as const).forEach((field) => {
+  const messages = fieldErrors[field];
+
+  if (Array.isArray(messages) && messages.length > 0) {
+   mapped[field] = messages[0];
+  }
+ });
+
+ return mapped;
+};
+
 type SignInFormProps = {
-  onSignIn: (credentials: SignInFormDataType, rememberMe: boolean) => Promise<void>;
+  onSignIn: (credentials: SignInFormDataType, rememberMe: boolean) => Promise<SignInResultType>;
   externalLoading: boolean;
   error: string | null;
   clearError: () => void;
@@ -37,6 +60,9 @@ const SignInForm: React.FC<SignInFormProps> = ({
     password: '',
   };
 
+  // Per-field messages the server sent back, kept apart from the client's own.
+  const [apiErrors, setApiErrors] = useState<FormErrorsType<SignInFieldNameType>>({});
+
   const {
     formData,
     handleChange,
@@ -49,9 +75,21 @@ const SignInForm: React.FC<SignInFormProps> = ({
     schema: signInSchema,
     initialValues,
     onSubmit: async (data) => {
-      await onSignIn(data, rememberMe);
+      setApiErrors({});
+
+      const result = await onSignIn(data, rememberMe);
+
+      // A 401 carries no field map: it stays the banner's form-level message so
+      // it never names which half of the credentials was wrong.
+      if (!result.success && result.fieldErrors) {
+        setApiErrors(mapApiFieldErrors(result.fieldErrors));
+      }
     },
   });
+
+  // The client's own message wins; the server's is the fallback.
+  const getFieldError = (field: SignInFieldNameType): string | undefined =>
+    validationErrors[field] || apiErrors[field];
 
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
@@ -62,6 +100,14 @@ const SignInForm: React.FC<SignInFormProps> = ({
     const handleInputChange = (field: keyof SignInFormDataType) => (input: string | React.ChangeEvent<HTMLInputElement>) => {
     const value = typeof input === 'string' ? input : input.target.value;
     if (error) clearError();
+    // The server's verdict is about the value that was sent, so editing retires it.
+    if (apiErrors[field]) {
+      setApiErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
     handleChange(field)(value);
     };
 
@@ -75,7 +121,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
         placeholder="your_username or email"
         value={formData.identity}
         onChange={handleInputChange('identity')}
-        error={validationErrors.identity}
+        error={getFieldError('identity')}
         touched={touchedFields.has('identity')}
         required
         disabled={isLoading}
@@ -88,7 +134,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
         placeholder="password"
         value={formData.password}
         onChange={handleInputChange('password')}
-        error={validationErrors.password}
+        error={getFieldError('password')}
         touched={touchedFields.has('password')}
         required
         disabled={isLoading}

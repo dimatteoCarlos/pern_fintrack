@@ -101,6 +101,44 @@ const extractErrorMessage = (err: unknown): string => {
 };
 
 /* ===============================
+ 🔐 SIGN IN RESULT
+ =============================== */
+/**
+ * What the sign-in call hands back to the presentation layer. `fieldErrors` is
+ * only present on a 400 validation failure and is keyed by the form's own field
+ * names, so the form can attach each message to its input.
+ */
+export type SignInResultType = {
+ success: boolean;
+ error?: string;
+ fieldErrors?: Record<string, string[]>;
+};
+
+/**
+ * Pulls the per-field messages out of a failed sign-in.
+ *
+ * Only a 400 carries them. A 401 (wrong password or unknown account) is answered
+ * with a single message on purpose: attaching it to a field would tell an
+ * anonymous caller which half of the pair was wrong.
+ */
+const extractSignInFieldErrors = (
+ err: unknown,
+): Record<string, string[]> | undefined => {
+ if (!axios.isAxiosError(err) || err.response?.status !== 400) return undefined;
+
+ const data = err.response.data as
+  | { fieldErrors?: unknown; details?: { fieldErrors?: unknown } }
+  | undefined;
+
+ // `details` is the legacy envelope some endpoints still answer with.
+ const fieldErrors = data?.fieldErrors ?? data?.details?.fieldErrors;
+
+ if (!fieldErrors || typeof fieldErrors !== 'object') return undefined;
+
+ return fieldErrors as Record<string, string[]>;
+};
+
+/* ===============================
   🎯 MAIN HOOK: useAuth
   =============================== */
 
@@ -212,7 +250,7 @@ const useAuth = () => {
   const handleSignIn = async (
     credentials: SignInCredentialsType,
     rememberMe: boolean,
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<SignInResultType> => {
     clearError();
     setIsLoading(true);
     clearSuccessMessage();
@@ -279,8 +317,13 @@ const useAuth = () => {
       const errorMessage =
         extractErrorMessage(err) ||
         'Login failed. Please check your credentials.';
+
+      // The banner keeps the form-level message; the field map travels beside it
+      // so the form can put each message under the input it belongs to.
+      const fieldErrors = extractSignInFieldErrors(err);
+
       setError(errorMessage);
-      return { success: false, error: errorMessage };
+      return { success: false, error: errorMessage, fieldErrors };
     } finally {
       setIsLoading(false);
     }
