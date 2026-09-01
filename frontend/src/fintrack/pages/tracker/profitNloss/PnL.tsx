@@ -616,6 +616,7 @@ function PnL(): JSX.Element {
           isReset={isReset}
           setIsReset={setIsReset}
           customSelectHandler={handleAccountSelect}
+          day={chosenCalendarDay}
         />
         <CardSeparator />
         {/* BOTTOM CARD START */}

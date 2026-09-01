@@ -47,6 +47,12 @@ type ServerCurrencyConversion = {
  // store. The owner is entitled to know a figure came from a stale reading.
  source: string | null;
  fetchedAt: string | null;
+ // The day whose rate actually answered, which is not always the day asked for:
+ // a market closed on a Saturday is valued by the Friday it quoted. null on the
+ // undated path, where today has no effective day of its own. Without it a
+ // preview can say WHICH rate it used but not FOR WHEN, and a walk-back is
+ // invisible to the owner who is about to commit to the figure.
+ effectiveDate: string | null;
  errorMessage: string | null;
  // Only meaningful while the status is failed. Re-runs the same request.
  retry: () => void;
@@ -57,6 +63,7 @@ type ConvertResponse = {
  rate: number;
  source: string;
  fetchedAt: string;
+ effectiveDate: string | null;
 };
 
 const INACTIVE: Omit<ServerCurrencyConversion, 'retry'> = {
@@ -65,6 +72,7 @@ const INACTIVE: Omit<ServerCurrencyConversion, 'retry'> = {
  rate: null,
  source: null,
  fetchedAt: null,
+ effectiveDate: null,
  errorMessage: null,
 };
 
@@ -138,6 +146,7 @@ export function useServerCurrencyConversion(
      rate: response.data.rate,
      source: response.data.source,
      fetchedAt: response.data.fetchedAt,
+     effectiveDate: response.data.effectiveDate ?? null,
      errorMessage: null,
     });
    } catch (error: unknown) {

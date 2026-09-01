@@ -203,6 +203,59 @@ article {
  color: var(--color-content-secondary);
 }
 
+/* The answer has not arrived. It reserves the width the figure will take, so the
+   row does not jump when it lands, and it carries no text: a number in flight is
+   not a number, and rendering a stale one would be worse than rendering none. */
+.currency-preview--querying {
+ display: inline-block;
+ min-width: var(--space-16);
+ min-height: var(--font-size-base);
+ border-radius: var(--radius-xs);
+ background-color: var(--color-surface-disabled);
+ opacity: 0.5;
+}
+
+/* The server could not resolve a rate. Distinct from an amount that needs no
+   conversion, which renders nothing at all — this is the case the owner most
+   needs to be told about, since the figure they are about to commit to is not
+   the one on screen. */
+.currency-preview--failed {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-2);
+ color: var(--color-feedback-warning-content);
+}
+
+.currency-preview__retry {
+ border: 1px solid var(--color-feedback-warning-border);
+ border-radius: var(--radius-xs);
+ padding: var(--space-1) var(--space-2);
+ background-color: var(--color-feedback-warning-surface);
+ color: var(--color-feedback-warning-content);
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-medium);
+ cursor: pointer;
+}
+
+.currency-preview__retry:hover {
+ background-color: var(--color-feedback-warning-border);
+}
+
+.currency-preview__retry:focus-visible {
+ outline: 2px solid var(--color-feedback-warning-content);
+ outline-offset: 2px;
+}
+
+.currency-preview__retry:active {
+ background-color: var(--color-feedback-warning-border);
+ color: var(--color-content-primary);
+}
+
+.currency-preview__retry:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
 .inputNumber {
  font-size: var(--font-size-xl);
  line-height: 2em;
