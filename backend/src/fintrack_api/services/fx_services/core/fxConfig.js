@@ -40,3 +40,12 @@ export const SUPPORTED_CURRENCIES = ['usd', 'eur', 'cop', 'ves', 'mxn'];
 // asks for a whole range and stores one row per validity, so it is also what
 // establishes the shared business-day calendar every other currency reads.
 export const OFFICIAL_TRM_CURRENCY = 'cop';
+
+// The name the CDN arm stores its observations and its coverage under. It is
+// the arm of last resort: it is asked for a single day, and it answers with a
+// cross recomputed from the accounting currency rather than a figure a national
+// source published. Two readers need to know which name that is -- the resolver,
+// to ask whether the call has anything left to write, and the historical store,
+// to rank a day that now holds observations from more than one provider -- so it
+// is defined once here instead of twice beside each of them.
+export const FALLBACK_RATE_SOURCE = 'github-fallback';

@@ -23,6 +23,7 @@
  */
 
 import { pool } from '../../../../db/config/configDB.js';
+import { FALLBACK_RATE_SOURCE } from '../core/fxConfig.js';
 
 /**
  * How far back a stored row may be from the requested day before it stops
@@ -92,6 +93,14 @@ const toCalendarDay = (value) => {
  * calendar. The exclusion constraint on the coverage table guarantees at most
  * one row can contain a given span for a source and pair, so EXISTS is exact.
  *
+ * Since 024 a day may hold one observation per provider, so the ordering has to
+ * choose between them and not merely between days. The CDN goes last: it is
+ * asked for a single day and answers with a cross recomputed from the accounting
+ * currency, while a national source publishes the figure itself. Among the rest
+ * the most recently fetched wins, and the provider name breaks the final tie —
+ * not because either is meaningful, but because a read that feeds a ledger must
+ * return the same row every time it is run.
+ *
  * The rate is returned as DECIMAL text, exactly as Postgres delivers it. This
  * store feeds a ledger, and parsing to a float here would round at the module
  * boundary, before the caller has decided on its own precision.
@@ -132,10 +141,13 @@ export async function findDailyRate(
                 AND c.target_currency_id = d.target_currency_id
                 AND c.covered @> daterange(d.rate_date, $3::date + 1, '[)')
            )
-     ORDER BY rate_date DESC
+     ORDER BY rate_date DESC,
+              (source = $5) ASC,
+              fetched_at DESC,
+              source ASC
      LIMIT 1
     `,
-  [baseCurrencyId, targetCurrencyId, day, maxAgeDays],
+  [baseCurrencyId, targetCurrencyId, day, maxAgeDays, FALLBACK_RATE_SOURCE],
  );
 
  if (rows.length === 0) return null;
@@ -448,11 +460,18 @@ export async function findLatestBusinessDay(
  * change, so there is nothing to refresh; the question is only whether the two
  * writes have any work left to do.
  *
- * The row is matched WITHOUT its source, deliberately. A day that holds another
- * provider's observation is a day this one cannot overwrite, so the call is just
- * as pointless there — which is the case that made this worth writing, since a
- * store holding rows from a provider that has since become unreachable would
- * otherwise pay a full round trip per day, on every boot, forever.
+ * The row is matched ON ITS SOURCE, which is what makes this the same question
+ * findDailyRate asks, restricted to a single day. It was written matching the
+ * row without its source, on the reasoning that a day holding ANOTHER
+ * provider's observation was a day this one could not overwrite either. That
+ * was true of the key 021 wrote and it is no longer true: since 024 an
+ * observation is unique per provider, so a second provider's call does have
+ * something to write. Worse, while it held, this function reported SETTLED for
+ * a day whose only row findDailyRate refuses — and the arm that would have
+ * repaired it was skipped, turning a recoverable gap into a permanent 422.
+ *
+ * A guard over a read must ask the read's own question. Any weaker predicate
+ * suppresses a call the read still needs.
  *
  * @param {number} baseCurrencyId
  * @param {number} targetCurrencyId
@@ -474,6 +493,7 @@ export async function isDaySettled(
               WHERE base_currency_id   = $1
                 AND target_currency_id = $2
                 AND rate_date          = $3::date
+                AND source             = $4
            )
        AND EXISTS (
              SELECT 1

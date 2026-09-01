@@ -25,6 +25,7 @@
 
 import {
  ACCOUNTING_CURRENCY_CODE,
+ FALLBACK_RATE_SOURCE,
  OFFICIAL_TRM_CURRENCY,
  SUPPORTED_CURRENCIES,
 } from './fxConfig.js';
@@ -53,10 +54,12 @@ const CALL_TIMEOUT_MS = Number(process.env.FX_REQUEST_TIMEOUT_MS || 2000);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// The name the CDN arm's writes are stored under. Named here because the guard
-// below has to ask about that source before the call is made, and the payload
-// that would declare it does not exist yet at that point.
-const CDN_SOURCE = 'github-fallback';
+// The name the CDN arm's writes are stored under. The guard below has to ask
+// about that source before the call is made, and the payload that would declare
+// it does not exist yet at that point. Read from fxConfig rather than restated
+// here: the store ranks by the same name, and two spellings of one provider
+// would silently disagree.
+const CDN_SOURCE = FALLBACK_RATE_SOURCE;
 
 /**
  * @typedef {Object} HistoricalRate

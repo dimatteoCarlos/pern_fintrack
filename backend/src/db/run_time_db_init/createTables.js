@@ -811,7 +811,14 @@ export async function ensureDailyExchangeRatesTable(client = pool) {
 
  // See 021 for why rate_date and fetched_at are both kept, why no row is ever
  // written for a day the provider did not quote, and why the unique constraint
- // is a correctness rule rather than index tuning.
+ // is a correctness rule rather than index tuning. See 024 for why source is
+ // part of that key: an observation is a fact OF A PROVIDER, and the coverage
+ // test the resolver runs is per provider, so a key without source lets the
+ // first provider to write a day block every other one out of it forever.
+ //
+ // This DDL and 024 must declare the same four columns. A database created here
+ // and then migrated would otherwise have its key rewritten under it, and one
+ // created here and never migrated would keep a key the resolver contradicts.
  await client.query(`
   CREATE TABLE IF NOT EXISTS daily_exchange_rates (
    daily_rate_id      SERIAL PRIMARY KEY,
@@ -826,7 +833,7 @@ export async function ensureDailyExchangeRatesTable(client = pool) {
    created_at         TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
    CONSTRAINT uq_daily_exchange_rate
-    UNIQUE (base_currency_id, target_currency_id, rate_date)
+    UNIQUE (base_currency_id, target_currency_id, rate_date, source)
   )
  `);
 

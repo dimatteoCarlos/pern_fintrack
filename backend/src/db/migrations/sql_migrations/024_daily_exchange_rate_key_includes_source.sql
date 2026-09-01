@@ -1,0 +1,134 @@
+-- 024_daily_exchange_rate_key_includes_source.sql
+--
+-- Adds source to the unique key of daily_exchange_rates, so an observation is
+-- unique per PROVIDER, pair and day rather than per pair and day alone.
+--
+-- THE DEFECT THIS CLOSES
+--
+-- 021 created the store and 023 added coverage, and the two disagree about what
+-- identifies an observation.
+--
+--   * the unique key of 021 is (base, target, rate_date). It says a day holds
+--     one observation, whoever produced it.
+--   * the read added by 023 accepts a row only when the span from it to the
+--     requested day is covered FOR THAT ROW'S OWN SOURCE. It says an
+--     observation is a fact of a provider, because having queried one provider
+--     over a period proves nothing about another.
+--
+-- Under both rules at once, THE FIRST PROVIDER TO WRITE A DAY OWNS IT
+-- EXCLUSIVELY AND FOREVER. If that provider has no coverage over the day, the
+-- read refuses its row -- correctly -- and no other provider can ever replace
+-- it: the insert loses to the unique key and ON CONFLICT DO NOTHING discards
+-- it. The day becomes permanently unresolvable while looking, in the table,
+-- fully populated.
+--
+-- This is not hypothetical. Measured on the development database before this
+-- migration: 146 observations from bancaditalia (96 eur, 25 mxn, 25 ves, from
+-- 1999-01-04 to 2026-08-28) that no read can use and no write can displace, 75
+-- of them inside the two months the tracker allows a movement to be back-dated
+-- into. They were written before 023 existed, so they have no coverage and
+-- cannot acquire any while that provider's host is unreachable. Asking for a
+-- VES movement on 2026-08-12 returned 422 FX_RATE_UNAVAILABLE with a stored
+-- rate of 763.39320000 sitting in the table for that exact day.
+--
+-- The CDN arm of the resolver exists precisely to recover such a day: it fetches
+-- the one day a real source established and stores it under its own name, with
+-- its own coverage. It could not. Its rows collapsed onto the older ones and
+-- only its coverage survived -- which is why the coverage table holds spans for
+-- github-fallback with no github-fallback observation inside them.
+--
+-- WHY WIDENING THE KEY AND NOT DELETING THE STRANDED ROWS
+--
+-- Deleting them would also unblock the days, and it is the wrong instrument.
+-- Those rows are not corrupt and they are not dead: the moment their provider
+-- answers again over a range containing them, the range write records that
+-- provider's coverage and the SAME rows become readable, at the precision the
+-- official source published rather than a cross recomputed from the CDN. A
+-- migration that destroys recoverable observations to work around a key is a
+-- data loss dressed as a fix. This file changes the key and touches no row.
+--
+-- WHY THIS IS THE KEY 021 MEANT TO WRITE
+--
+-- 021's own header states the store holds "one immutable observation per source,
+-- pair and day", and the resolver's docs say the same. The constraint is the
+-- only place that says otherwise. This is an alignment of the key with the model
+-- everything else was already built against, not a new modelling decision.
+--
+-- WHAT IT MEANS FOR THE READ
+--
+-- A day may now hold several observations, one per provider that quoted it, and
+-- the read has to choose. The resolver orders an official range source ahead of
+-- the CDN, because the CDN is asked for a single day and answers with a cross
+-- recomputed from the accounting currency, while a national source publishes the
+-- figure itself. That ordering lives in findDailyRate, in the same commit.
+--
+-- IMMUTABILITY IS UNCHANGED
+--
+-- ON CONFLICT DO NOTHING still governs every write. What changes is only which
+-- rows collide: two observations of the same day from the same provider still
+-- collapse onto the first, exactly as before. A second provider's observation is
+-- no longer a collision, because it never was the same fact.
+--
+-- NO DATA STEPS
+--
+-- Widening a unique key can never fail on existing data: any set of rows unique
+-- on three columns is unique on those three plus a fourth. There is nothing to
+-- validate, nothing to backfill and nothing to clean up first.
+--
+-- ---------------------------------------------------------------------------
+-- UP
+-- ---------------------------------------------------------------------------
+--
+-- DROP then ADD under the same name, rather than adding a second constraint and
+-- leaving the old one in place: keeping the narrow key would keep the exclusion
+-- this file exists to remove. The name is preserved because persistDailyRates
+-- targets it by name in ON CONFLICT ON CONSTRAINT, and because the boot-time
+-- ensureDailyExchangeRatesTable declares the same name -- the two must produce
+-- identical constraints on every database.
+--
+-- IF EXISTS on the drop, so the file also applies to a database whose table was
+-- created by the boot DDL after that DDL was corrected: there the constraint is
+-- already in its new shape and this pair rewrites it to itself.
+--
+-- The runner wraps every pending file in one transaction and PostgreSQL DDL is
+-- transactional, so the table is never visible without a unique key.
+ALTER TABLE daily_exchange_rates
+ DROP CONSTRAINT IF EXISTS uq_daily_exchange_rate;
+
+ALTER TABLE daily_exchange_rates
+ ADD CONSTRAINT uq_daily_exchange_rate
+ UNIQUE (base_currency_id, target_currency_id, rate_date, source);
+
+-- No second index. The constraint's B-tree still leads with base and target, so
+-- it remains the index the resolver's read uses: the two currencies equal, then
+-- rate_date scanned backwards for the greatest value not after the requested
+-- day. source trails the columns the read filters on and costs it nothing.
+
+-- ---------------------------------------------------------------------------
+-- DOWN
+-- ---------------------------------------------------------------------------
+--
+-- Reversible in shape, and NOT unconditionally reversible in data -- stated
+-- plainly rather than hidden, because the difference matters at the moment it
+-- is run.
+--
+-- Narrowing the key back fails if by then any day holds observations from two
+-- providers, which is the very thing the UP permits and the resolver's recovery
+-- path is expected to produce. The reversal is then not a matter of running the
+-- statement: whoever runs it must first decide which observation of each such
+-- day to keep, and that is a data decision no migration should make on its own.
+--
+-- The query below reports the collisions before the ALTER is attempted. An empty
+-- result means the DOWN applies cleanly.
+--
+-- SELECT base_currency_id, target_currency_id, rate_date, count(*)
+--   FROM daily_exchange_rates
+--  GROUP BY 1, 2, 3
+-- HAVING count(*) > 1;
+--
+-- BEGIN;
+-- ALTER TABLE daily_exchange_rates DROP CONSTRAINT IF EXISTS uq_daily_exchange_rate;
+-- ALTER TABLE daily_exchange_rates ADD CONSTRAINT uq_daily_exchange_rate
+--  UNIQUE (base_currency_id, target_currency_id, rate_date);
+-- DELETE FROM migrations WHERE filename = '024_daily_exchange_rate_key_includes_source.sql';
+-- COMMIT;
