@@ -46,9 +46,17 @@
 
 /* Pulls the chip left of the trigger instead of centring it above. Belongs to a
    caller whose trigger sits at the right edge of a wide row, where a centred
-   chip would overflow: the tracker card. Anywhere else it lands off-screen. */
+   chip would overflow: the tracker card. Anywhere else it lands off-screen.
+
+   right: 0, not left: 0 with a translate: this box is width: max-content, so
+   `left` alone anchors where it STARTS and it grows further right from
+   there -- toward the edge it needs to stay clear of. The previous attempt
+   removed a working -46% translate meant to counter exactly that growth
+   without replacing what it did, and the chip crowded the card's right edge
+   and the amount field beneath it. `right: 0` anchors the edge that has to
+   stay put and lets the chip grow left, into the room the row actually has,
+   with no percentage tied to how wide the chip happens to be this time. */
 .tooltip__wrapper--text.rateTooltip__chip--anchor-left {
  bottom: 6%;
- left: 0%;
- translate: -46%;
+ right: 0;
 }
