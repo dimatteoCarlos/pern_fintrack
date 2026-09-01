@@ -91,8 +91,65 @@
  white-space: nowrap;
 }
 
+/* The trigger and the way back read as one control, so they are laid out
+   together rather than each spacing itself against the label beside them. */
+.transactionDateTrigger__group {
+ display: inline-flex;
+ align-items: center;
+ gap: var(--space-1);
+}
+
+/* The return to the form's default day. A word and not a glyph: undoing has no
+   agreed symbol, so a mark would have to be guessed at, while "Today" states
+   what pressing it does.
+
+   One step below the day it undoes, and the step is WEIGHT rather than size —
+   at 10px against 12px the two read alike, and the day is the datum while this
+   is the action on it. font-size is restated rather than inherited because
+   index.css sets it on the universal selector, so an inline element does not
+   take the size of the line it sits in. */
+.transactionDateTrigger__today {
+ border: none;
+ border-radius: var(--radius-xs);
+ padding: var(--space-1) var(--space-2);
+ background-color: transparent;
+ color: var(--color-content-secondary);
+ font-size: var(--font-size-2xs);
+ font-weight: var(--font-weight-medium);
+ line-height: 1;
+ white-space: nowrap;
+ cursor: pointer;
+ transition:
+  background-color var(--motion-fast),
+  color var(--motion-fast);
+}
+
+/* The same fill the trigger beside it takes, so the pair answers a pointer as
+   one control. It reads as a wash because the tracker card is white under a
+   texture, not the cream this fill would vanish into. */
+.transactionDateTrigger__today:hover {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.transactionDateTrigger__today:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-content-primary);
+ outline-offset: var(--border-width-thick);
+}
+
+.transactionDateTrigger__today:active {
+ background-color: var(--color-content-primary);
+ color: var(--color-accent);
+}
+
+.transactionDateTrigger__today:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
- .transactionDateTrigger {
+ .transactionDateTrigger,
+ .transactionDateTrigger__today {
   transition: none;
  }
 }
