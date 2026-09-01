@@ -24,6 +24,10 @@ import { getCurrencyId } from '../../utils/currencyLookup.js';
 
 // import { getCurrencyId } from '../../fintrack_api/controllers/transactionController.js';
 
+// The role every new account is born with. The application decides the name; only
+// its id is read from the catalog.
+const DEFAULT_USER_ROLE = 'user';
+
 //=====================
 //FUNCTIONS DECLARATION
 //=====================
@@ -72,7 +76,20 @@ export const signUpUser = async (req, res, next) => {
     // console.log('hashedPwd:', hashedPassword.length);
     // console.log('testUUID:', newUserId);
 
-    //evalute to adding: google_id, display_name, auth_method, user_contact, user_role_id is 1 by default.
+    //evalute to adding: google_id, display_name, auth_method, user_contact.
+
+    // The catalog resolves the id: user_role_id is nullable, so a role written blind
+    // could land as NULL and sign-in's INNER JOIN would then refuse a valid
+    // credential. Read before BEGIN — a missing catalog must not reach the catch,
+    // whose ROLLBACK would run with no transaction open.
+    const roleResult = await client.query(
+      'SELECT user_role_id FROM user_roles WHERE user_role_name = $1',
+      [DEFAULT_USER_ROLE],
+    );
+    if (roleResult.rows.length === 0) {
+      return next(createError(500, 'Role catalog is not initialized'));
+    }
+    const userRoleId = roleResult.rows[0].user_role_id;
 
     // Opens here: the hash above is CPU work of hundreds of milliseconds, and holding a transaction open across it pins a pooled connection for nothing.
     await client.query('BEGIN');
@@ -90,7 +107,7 @@ export const signUpUser = async (req, res, next) => {
         user_firstname,
         user_lastname,
         currencyId,
-        '1',
+        userRoleId,
         // COALESCE and not the column default: a parameter left out of VALUES is
         // not the same as one bound to null, and null breaks the NOT NULL.
         timezone ?? null,
@@ -109,12 +126,10 @@ export const signUpUser = async (req, res, next) => {
     // }
     //-------------------------------------
     // ✅ CREATE JWT TOKENS
-    //here user role is assumed, but role should be taken from role id or must be gotten from the data base
     // console.log('check', {newUser})
-    const accessToken = createToken(
-      newUser.user_id,
-      newUser.user_role_name || 'user',
-    );
+    // The name the inserted id was resolved from: RETURNING cannot join user_roles,
+    // so the row carries the id and never the name.
+    const accessToken = createToken(newUser.user_id, DEFAULT_USER_ROLE);
 
     const refreshToken = createRefreshToken(newUser.user_id);
 
@@ -157,7 +172,7 @@ export const signUpUser = async (req, res, next) => {
       user_lastname: newUser.user_lastname,
       currency: currency_code,
       timezone: newUser.timezone,
-      role: newUser.user_role_name || 'user',
+      role: DEFAULT_USER_ROLE,
     };
 
     res.status(201).json({
