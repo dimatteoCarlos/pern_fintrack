@@ -2597,3 +2597,142 @@ left.
 The identical counts are the check that matters: no answer changed, only dead work
 disappeared. Boot verified on port 5078. Shipped as `04491746 perf(fx): skip a
 provider call that can write nothing`.
+
+---
+
+### 9.4.23 The unique key locked every day to its first provider — fixed 2026-09-01
+
+**Reported from the screen.** Enter an amount in VES, then pick a date other than
+today: the preview turns into *"No rate — the server resolves it on save."* It is
+not a display defect. The server answers 422 `FX_RATE_UNAVAILABLE`.
+
+Reproduced for 2026-08-12:
+
+```
+No historical rate for ves on 2026-08-12. Tried ->
+  bancaditalia: timeout of 2000ms exceeded |
+  cdn: skipped, 2026-08-12 is already stored and covered
+```
+
+A rate for that exact day was sitting in the table, `763.39320000`.
+
+**The cause is two rules that contradict each other.** The unique key written by
+migration 021 is `(base, target, rate_date)` — a day holds one observation,
+whoever produced it. The read added by migration 023 accepts a row only when the
+span from it to the requested day is covered **for that row's own source** —
+having queried one provider proves nothing about another.
+
+Under both at once, **the first provider to write a day owns it exclusively and
+forever**. If that provider has no coverage, the read refuses the row, correctly,
+and no other provider can replace it: the insert loses to the unique key and
+`ON CONFLICT DO NOTHING` discards it. The day is unresolvable while the table
+looks full.
+
+**Measured before the fix:** 146 observations from Banca d'Italia — 96 euro, 25
+Mexican peso, 25 bolívar, from 1999-01-04 to 2026-08-28 — that no read could use
+and no write could displace. 75 of them fell inside the two months the tracker
+lets a movement be back-dated into. They were written before the coverage table
+existed, so they have none, and cannot acquire any while that host is unreachable.
+
+The recovery arm could not recover. The CDN fetches the one day a real source
+established and stores it under its own name with its own coverage; its rows
+collapsed onto the older ones and only its coverage survived — which is why the
+coverage table held spans for `github-fallback` with no `github-fallback`
+observation inside them.
+
+**The fix is the key, not the rows.** Migration
+`024_daily_exchange_rate_key_includes_source.sql` adds `source` to the unique
+key. The stranded rows are not deleted: they are neither corrupt nor dead, and
+the moment their provider answers again over a range containing them, that range
+write records its coverage and the same rows become readable at the precision the
+official source published. A migration that destroys recoverable observations to
+work around a key is data loss dressed as a fix.
+
+This is also the key 021 meant to write. Its own header says the store holds *one
+immutable observation per source, pair and day*; the constraint was the only place
+that said otherwise.
+
+Three changes travel with it, because the migration alone is not enough:
+
+| file | change |
+|---|---|
+| `createTables.js` | the boot DDL declares the same four columns, or a database created there and one migrated would disagree |
+| `findDailyRate` | a day may now hold several providers, so the ordering ranks an official range source ahead of the CDN, then most recently fetched, then the name — a read feeding a ledger must return the same row every time |
+| `isDaySettled` | matched the row **without** its source, which was true of the old key and is no longer. While it held, it reported SETTLED for a day whose only row the read refuses, and skipped the arm that would have repaired it — turning a recoverable gap into a permanent 422. A guard over a read must ask the read's own question. |
+
+`FALLBACK_RATE_SOURCE` moves into `fxConfig.js`: the resolver asks about that
+provider before the call and the store ranks by it, and two spellings of one name
+would silently disagree.
+
+**Verified.**
+
+| check | result |
+|---|---|
+| the reported case | resolves, `github-fallback@2026-08-12`, quote 761.68984914 |
+| second call | 71ms, a store hit — no provider traffic |
+| euro 08-11, Mexican peso 08-13 | recovered, same way |
+| Colombian peso, US dollar | unchanged, still `banrep-trm` |
+| immutability | same provider twice on one day still writes 0 rows |
+| two providers on one day | both stored, official source wins the read |
+| warm-up | `cop 32/32, eur 25/32, ves 25/32, mxn 25/32`, 5s |
+| boot | `Server running on port 5078` |
+
+**What is still not resolvable, and why it is a different problem.** Seven days
+per foreign currency in August remain 422: the Sundays and Saturdays, plus
+2026-08-19, which is a hole in the CDN's own dataset. The CDN arm asks for exactly
+one day and therefore covers exactly one day, so it can never answer a later day
+that walks back to it — a Sunday needs the span from Friday through Sunday, and
+only a range provider can assert that. **Banca d'Italia is that range provider and
+its host does not connect.** No key change reaches this; it is the same
+reachability item already open.
+
+---
+
+### 9.4.24 The migration chain cannot reach production — measured 2026-09-01
+
+Asked to test migration 024 against the local production clone before it ships.
+It cannot be tested there, and the reason is not 024.
+
+`fintrack_prod_data` was inspected read-only, then copied with
+`CREATE DATABASE ... TEMPLATE` so the clone itself was never written to. The copy
+was migrated and dropped afterwards.
+
+**What the clone holds:** 17 tables, 785 transactions, 1 user, and a `migrations`
+ledger with **zero rows**. It has no budget tables, no `daily_exchange_rates` and
+no `exchange_rate_query_coverage`. Production's schema was built by the boot-time
+DDL in `createTables.js`, never by the migration runner.
+
+**The chain stops at the second file.** `002_accounts.sql` creates `users` with a
+`timezone` column and then attaches a trigger `BEFORE INSERT OR UPDATE OF timezone
+ON users`. The table already exists in the clone without that column, so the
+`CREATE TABLE IF NOT EXISTS` is a no-op and the trigger fails:
+
+```
+❌ Migration failed: column "timezone" of relation "users" does not exist
+```
+
+**And the rollback does not roll back.** After that failure the copy still carried
+a `migrations` row for `001_initial_migration.sql`. The runner wraps every pending
+file in one transaction, but files 001 through 007 each contain their own `BEGIN;`
+… `COMMIT;`. A nested `BEGIN` is ignored with a warning; the `COMMIT` commits the
+runner's outer transaction. **For those seven files the runner's all-or-nothing is
+a fiction**, and a failed run leaves a partial ledger that the next run will skip
+over. 021, 023 and 024 carry no transaction statements of their own — the `BEGIN`
+tokens in 014-020 are PL/pgSQL `DO $$ BEGIN … END $$` blocks — so the FX
+migrations are genuinely atomic.
+
+**024 itself was verified against the production shape**, on the copy, in both
+orders it can meet:
+
+| order | result |
+|---|---|
+| boot DDL creates the table, then 024 runs | key already correct, 024 rewrites it to itself, no error |
+| the old 021 key restored, then 024 runs | widened to four columns |
+| two providers on one day | both rows stored |
+| the same provider twice | 0 rows — immutability holds |
+
+**The open item is therefore not 024.** It is that there is no working path to
+apply *any* migration to production, and that the runner cannot be trusted to
+leave a clean ledger when one fails. Both belong to the deployment plan, not to
+this one.
+
