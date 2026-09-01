@@ -433,3 +433,59 @@ export async function findLatestBusinessDay(
 
  return rows[0]?.rate_date || null;
 }
+
+/**
+ * Whether asking a source for one day could still write anything.
+ *
+ * A provider call is worth making only if its result can change what the store
+ * answers. It cannot when both halves of that answer are already there: a row
+ * exists for the pair on that day, so the insert loses to it and immutability
+ * keeps the older observation; and the span covering that day is already
+ * recorded for that source, so the coverage write adds nothing either. The read
+ * that follows then returns exactly what it returned before the call.
+ *
+ * This is not a cache and it is not a freshness rule. A past day's figure cannot
+ * change, so there is nothing to refresh; the question is only whether the two
+ * writes have any work left to do.
+ *
+ * The row is matched WITHOUT its source, deliberately. A day that holds another
+ * provider's observation is a day this one cannot overwrite, so the call is just
+ * as pointless there — which is the case that made this worth writing, since a
+ * store holding rows from a provider that has since become unreachable would
+ * otherwise pay a full round trip per day, on every boot, forever.
+ *
+ * @param {number} baseCurrencyId
+ * @param {number} targetCurrencyId
+ * @param {string} day - 'YYYY-MM-DD', the day the source would be asked for.
+ * @param {string} source - The name the call would store its coverage under.
+ * @returns {Promise<boolean>} true when the call cannot change the answer.
+ */
+export async function isDaySettled(
+ baseCurrencyId,
+ targetCurrencyId,
+ day,
+ source,
+) {
+ const { rows } = await pool.query(
+  `
+    SELECT EXISTS (
+             SELECT 1
+               FROM daily_exchange_rates
+              WHERE base_currency_id   = $1
+                AND target_currency_id = $2
+                AND rate_date          = $3::date
+           )
+       AND EXISTS (
+             SELECT 1
+               FROM exchange_rate_query_coverage
+              WHERE base_currency_id   = $1
+                AND target_currency_id = $2
+                AND source             = $4
+                AND covered @> daterange($3::date, $3::date + 1, '[)')
+           ) AS settled
+    `,
+  [baseCurrencyId, targetCurrencyId, day, source],
+ );
+
+ return rows[0]?.settled === true;
+}

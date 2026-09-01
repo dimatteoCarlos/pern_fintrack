@@ -37,6 +37,7 @@ import {
  MAX_RATE_AGE_DAYS,
  findDailyRate,
  findLatestBusinessDay,
+ isDaySettled,
  persistQueriedRange,
 } from '../db/dailyRateDBaccess.js';
 
@@ -51,6 +52,11 @@ const CASCADE_BUDGET_MS = Number(process.env.FX_HISTORICAL_BUDGET_MS || 5000);
 const CALL_TIMEOUT_MS = Number(process.env.FX_REQUEST_TIMEOUT_MS || 2000);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// The name the CDN arm's writes are stored under. Named here because the guard
+// below has to ask about that source before the call is made, and the payload
+// that would declare it does not exist yet at that point.
+const CDN_SOURCE = 'github-fallback';
 
 /**
  * @typedef {Object} HistoricalRate
@@ -341,6 +347,15 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
 
   if (!publishedDay) {
    attempts.push('cdn: skipped, no source has established a business day yet');
+  } else if (await isDaySettled(baseCurrencyId, targetCurrencyId, publishedDay, CDN_SOURCE)) {
+   // The call would write nothing: the day already holds an observation the
+   // insert cannot displace, and its span is already covered under this source.
+   // Without this the arm pays a full round trip for a result it already has,
+   // once per uncovered day, on every warm-up — measured at about 7s of a boot
+   // against a store whose rows came from a provider that no longer connects.
+   attempts.push(
+    `cdn: skipped, ${publishedDay} is already stored and covered`,
+   );
   } else {
    const payload = await fetchRatesForDate(ACCOUNTING_CURRENCY_CODE, publishedDay, {
     deadlineAt,
