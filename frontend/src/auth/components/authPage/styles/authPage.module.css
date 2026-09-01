@@ -53,43 +53,57 @@ button {
   border: none;
 }
 /*li*/
-.navItem {
-  border: 3px solid black;
+/* Was 80x80px next to a 24px-tall logo, both buttons sharing one
+   undifferentiated style with a hardcoded #007bff hover found nowhere else
+   in the product. Sized to the touch target instead of eyeballed, with an
+   active state so the pill names which mode the click below it opens.
+   CLAUDE.md fixes the navbar to a white surface (--light), so this uses the
+   same dark-on-white tokens as .closeButton/.auth-form__button rather than
+   the on-dark tokens the mockup's own dark-navbar demo used. */
+.navPill {
+  height: var(--size-touch-target);
+  padding: 0 var(--space-4);
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  border: var(--border-width-thin) solid var(--color-content-secondary);
+  background-color: transparent;
+  color: var(--color-content-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  font-weight: bold;
-}
-.navItem {
-  padding: 0.5rem;
-  width: 5rem;
-  height: 5rem;
-  text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 1.25rem;
-  margin-right: 1rem;
-  /* index.css:74-81 resets background, border and padding on button but not
-     color, so without this the glyph falls back to the UA button color. */
-  color: inherit;
+  margin-right: var(--space-3);
+  transition: background-color var(--motion-normal), color var(--motion-normal), border-color var(--motion-normal);
 }
 
-.navItem:hover {
-  color: #007bff;
-  font-weight: bolder;
+.navPill:hover {
+  background-color: var(--color-surface-panel);
+}
+
+.navPillActive {
+  background-color: var(--color-content-primary);
+  color: var(--color-surface-inverse);
+  border-color: var(--color-content-primary);
+}
+
+.navPillActive:hover {
+  background-color: var(--color-content-secondary);
 }
 
 /* index.css:76 sets `button { outline: none }`, so the ring has to be
    declared here or the keyboard user gets no feedback at all. */
-.navItem:focus-visible {
+.navPill:focus-visible {
   outline: var(--border-width-thick) solid var(--color-border-strong);
   outline-offset: var(--border-width-thick);
 }
 
-.navItem:active {
+.navPill:active {
   transform: scale(0.98);
 }
 
-.navItem:disabled {
+.navPill:disabled {
   opacity: 0.5;
   pointer-events: none;
 }
@@ -242,8 +256,9 @@ button {
     align-items: stretch;
   }
 
-  .navItem {
+  .navPill {
     margin-bottom: 0.5rem;
+    margin-right: 0;
     width: 100%;
     text-align: center;
   }

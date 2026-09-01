@@ -289,7 +289,7 @@ useEffect(() => {
           <li>
             <button
               type='button'
-              className={styles.navItem}
+              className={`${styles.navPill} ${isSignInMode ? styles.navPillActive : ''}`}
               onClick={openSigninModalHandler}
             >
               Sign in
@@ -299,7 +299,7 @@ useEffect(() => {
           <li>
             <button
               type='button'
-              className={styles.navItem}
+              className={`${styles.navPill} ${!isSignInMode ? styles.navPillActive : ''}`}
               onClick={openSignupModalHandler}
             >
               Sign up
