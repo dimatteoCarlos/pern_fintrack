@@ -102,7 +102,13 @@
    may not swallow its parent. */
 .transactionDateControl {
  display: inline-flex;
- align-items: center;
+ /* Not center: .transactionDateTrigger and .transactionDateTrigger__today are
+    each their own flex box at the same height, but the trigger's baseline
+    sits wherever its day <span> falls inside a row that also carries a
+    non-text glyph, while __today is plain text -- centering their BOXES
+    still left the two text baselines a couple of pixels apart. Baseline
+    aligns the text itself instead of the boxes around it. */
+ align-items: baseline;
  gap: var(--space-1);
 }
 
