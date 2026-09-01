@@ -11,7 +11,14 @@
 
 .transactionDateTrigger {
  display: inline-flex;
- align-items: center;
+ /* baseline, not center: this button is itself a flex item of
+    .transactionDateControl, which aligns by baseline, and a flex container
+    hands up the baseline of its FIRST baseline-aligned child. Centred, that
+    child is the glyph -- an SVG, which has no text baseline, so the browser
+    synthesises one at its bottom edge and the whole glyph+day pair rode high
+    against "Account" and "Today". With baseline here the day <span> is the
+    one that answers, and the glyph is excused from it below. */
+ align-items: baseline;
  justify-content: center;
  /* Anchors the ::after that gives the tappable area back below. */
  position: relative;
@@ -47,6 +54,10 @@
 .transactionDateTrigger__glyph {
  height: var(--font-size-base);
  width: var(--font-size-base);
+ /* Centred on the row rather than sat on its baseline, and by being centred it
+    stops participating in baseline alignment at all -- which is what leaves
+    the day text as the button's baseline instead of this glyph's bottom. */
+ align-self: center;
 }
 
 .transactionDateTrigger:hover {
@@ -103,6 +114,20 @@
    this wraps .transactionDateTrigger — so that name put the element around its
    own block and inverted the containment it claims. Blocks may nest; an element
    may not swallow its parent. */
+/* Not back-dated: the glyph stands alone, with no day text inside it and no
+   Today button beside it. There is then nothing in this control carrying a text
+   baseline, so baseline alignment falls back to its bottom edge and the glyph
+   rides high against the account label. Centring it on the row is the correct
+   reading of "align a picture with a word" -- it only applies while there is no
+   word of its own to align by. */
+.transactionDateControl:not(:has(.transactionDateTrigger__day)) {
+ align-self: center;
+}
+
+.transactionDateTrigger:not(.is-active) {
+ align-self: center;
+}
+
 .transactionDateControl {
  display: inline-flex;
  /* Not center: .transactionDateTrigger and .transactionDateTrigger__today are
