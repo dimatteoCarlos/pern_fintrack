@@ -14,7 +14,11 @@ type RateTooltipPropType = {
  surface: 'light' | 'dark';
  // Above the trigger by default. 'anchor-left' is for a trigger that sits at
  // the right edge of a wide row, where a centred chip would overflow it.
- placement?: 'above' | 'anchor-left';
+ // 'row-centred' anchors to the trigger's ROW rather than to the trigger, and
+ // sits in the blank space the row's own space-between leaves in the middle:
+ // for a row so close to the top of its card that a chip placed above the
+ // trigger has nowhere to go but over whatever sits above the card.
+ placement?: 'above' | 'anchor-left' | 'row-centred';
  children: React.ReactNode;
 };
 
@@ -29,7 +33,7 @@ const RateTooltip = ({
  const chipClassName = [
   'rateTooltip__chip',
   `rateTooltip__chip--${surface}`,
-  placement === 'anchor-left' ? 'rateTooltip__chip--anchor-left' : '',
+  placement !== 'above' ? `rateTooltip__chip--${placement}` : '',
  ]
   .filter(Boolean)
   .join(' ');

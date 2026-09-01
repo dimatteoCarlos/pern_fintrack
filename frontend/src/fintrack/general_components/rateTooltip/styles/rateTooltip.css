@@ -65,3 +65,43 @@
 .tooltip__wrapper--text.rateTooltip__chip--anchor-left {
  right: 0;
 }
+
+/* Anchored to the trigger's ROW, not to the trigger. The tracker's amount row
+   sits one --space-4 below the card's top edge, and the chip needs some 55px:
+   anchored to the preview span at the row's right end there is nowhere for it
+   to go but up over the navbar, whichever offset it is given. The row's own
+   space-between leaves a wide blank band in the middle instead — between the
+   "Amount" label and the preview — and that is where this puts it, straddling
+   the row rather than stacking above it.
+
+   The wrapper has to give up being the positioned ancestor for that to reach
+   the row, which is what the :has() rule below does. It is scoped to this
+   placement, so the shared Tooltip keeps its own behaviour everywhere else. */
+.tooltip__wrapper:has(> .rateTooltip__chip--row-centred) {
+ position: static;
+}
+
+.tooltip__wrapper--text.rateTooltip__chip--row-centred {
+ /* Explicit coordinates, not a centring transform: centred on the row put the
+    chip in the middle of the label and sunk it into the amount field below.
+    The band this aims at is the one between the card's top edge and the top of
+    that field -- so the chip's bottom edge is pinned just under the row's own
+    text line, and it grows upward into the card's --space-4 of top padding. */
+ /* Half of the card's own --space-4 of top padding: enough to clear the row's
+    text, not enough to reach past the card's top edge. */
+ top: -0.5rem;
+ bottom: auto;
+ /* In from the row's right end, and no further: past about 20% the chip starts
+    covering the preview figure it exists to explain. */
+ right: 20%;
+ left: auto;
+ transform: none;
+ margin-bottom: 0;
+ /* Tight vertically, generous horizontally. The band between the card's top
+    edge and the amount field is about 38px and three lines cannot be given
+    both; the width is where the air goes instead, which is the trade Carlos
+    asked for. Line height is stated rather than inherited for the same reason
+    the size is -- index.css sets it on the universal selector. */
+ padding: 0.25rem 0.875rem;
+ line-height: 1.25;
+}

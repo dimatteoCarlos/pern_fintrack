@@ -239,7 +239,10 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
    <>
      <div className='state__card--top  '>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* position: relative so the rate chip can anchor to this whole row
+          instead of to the narrow preview span at its right end -- the span
+          leaves it no room to sit anywhere but over the navbar above. */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
 
         <LabelNumberValidation
           formDataNumber={{ keyName: title1, title: title1 }}
@@ -263,7 +266,7 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
           <RateTooltip
             tipText={tooltipText}
             surface='light'
-            placement='anchor-left'
+            placement='row-centred'
           >
             <span className='currency-preview'>{previewText}</span>
           </RateTooltip>
