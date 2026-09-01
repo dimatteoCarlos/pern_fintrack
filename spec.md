@@ -70,6 +70,14 @@ Claude Code must **exclusively use the application's own CSS variables**, define
 
 A pairing not in this table is not "probably fine" — measure it before shipping it, the same way each row here was measured, and add the row.
 
+**A surface this table cannot cover.** `.cards__presentation--tracker` (`tracker-style.css:124,133-134`) declares `background-color: white` and then `background: url('cardBgTexture.png') repeat` on the same rule — the shorthand resets `background-color` to `transparent`, so the actual painted ground is the texture image's own pixels, not a flat token. Any ratio computed against this card (e.g. `--color-content-secondary` at 6.79:1, assuming near-white) is an approximation, not a measurement — token math alone cannot verify it. Confirm against a real screenshot's sampled pixel before treating a ratio on this specific card as settled.
+
+#### 6.1.1. Reflow (WCAG 1.4.10)
+
+Content must be usable at 400% browser zoom on a 1280px-wide viewport — equivalent to a 320px CSS viewport — **without requiring horizontal scrolling**, except for content that WCAG itself exempts (data tables, toolbars, and anything whose two-dimensional layout is essential, e.g. a calendar grid). Vertical scrolling is always allowed and is not a failure.
+
+How to test: set the viewport to 320px CSS width (not 320px of a zoomed 1280px canvas — the two are equivalent, but 320px direct is simpler to drive) and confirm nothing forces the page wider than that — no fixed-width element wider than the viewport, no row that refuses to wrap.
+
 #### 6.2. Form Structure & Interaction (WCAG 3.3.2, 2.5.8 & 2.4.7)
 
 * **Explicit Labels:** Every input field must be explicitly associated with its corresponding `<label>` using `htmlFor` and `id`.
