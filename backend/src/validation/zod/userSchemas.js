@@ -15,6 +15,9 @@ const FIELD_LIMITS = {
   LASTNAME:{MAX: 25,MIN:1, name:'Last name'},   // user_lastname VARCHAR(25)
   CONTACT:{MAX: 25,MIN:1, name:'Contact'},    // user_contact VARCHAR(25)
   PASSWORD:{ MAX:72,MIN:4, name:'Password'},//8 is the Minimum securityRequirement and Maximum by Bcrypt practical limit
+  // Sign-in only, where the field is a lookup key and not a stored value: it holds a
+  // username or an email, so the cap is the wider of the two columns.
+  IDENTITY:{MAX:255,MIN:1, name:'Username or email'},
 };
 
 // ==================================
@@ -172,6 +175,53 @@ export const signUpSchema = z.object({
 });
 
 // ==========================
+// 🎯 SIGN-IN SCHEMA
+// ==========================
+/**
+ * The server's own copy of the sign-in rules, mirroring the form schema at
+ * frontend/src/auth/validation/zod_schemas/authSchemas.ts.
+ *
+ * The identity is not validated as an email: it is whichever of the two the owner
+ * remembers, and the column is chosen from the string in the controller. The cap
+ * bounds the work, it does not decide whether the value exists — an identity no row
+ * matches is a 401, not a 400.
+ */
+const identityField = z.string({error:(issue)=> issue.input === undefined ? `${FIELD_LIMITS.IDENTITY.name} is required` : undefined})
+ .transform((val) => val.trim())
+ .pipe(
+  z.string()
+   .min(FIELD_LIMITS.IDENTITY.MIN, {message:`${FIELD_LIMITS.IDENTITY.name} is required`})
+   .max(FIELD_LIMITS.IDENTITY.MAX, {
+    message:`${FIELD_LIMITS.IDENTITY.name} cannot exceed ${FIELD_LIMITS.IDENTITY.MAX} characters`
+   })
+   .refine(val=>!val.includes('<') && !val.includes('>'), {
+    message:`${FIELD_LIMITS.IDENTITY.name} cannot contain < or > characters`
+   })
+ );
+
+export const signInSchema = z.preprocess(
+ // The form sends `identity`. `email` and `username` are folded in here so a client
+ // deployed behind the backend keeps signing in, and the controller stops reading a
+ // payload shape it no longer defines.
+ (raw) => {
+  if (raw === null || typeof raw !== 'object') return raw;
+  return { identity: raw.identity ?? raw.email ?? raw.username, password: raw.password };
+ },
+ z.object({
+  identity: identityField,
+
+  // Presence and the bcrypt ceiling, never the composition rules: an account whose
+  // password predates a rule must still be able to sign in, and a rejection here
+  // would be a 400 its owner cannot fix.
+  password: z.string({error:(issue)=> issue.input === undefined ? `${FIELD_LIMITS.PASSWORD.name} is required` : undefined})
+   .min(1, {message:`${FIELD_LIMITS.PASSWORD.name} is required`})
+   .max(FIELD_LIMITS.PASSWORD.MAX, {
+    message:`${FIELD_LIMITS.PASSWORD.name} cannot exceed ${FIELD_LIMITS.PASSWORD.MAX} characters`
+   })
+ })
+);
+
+// ==========================
 // 🎯 UPDATE PROFILE SCHEMA
 // ==========================
 export const updateProfileSchema = z.object({
@@ -254,6 +304,7 @@ export const changePasswordSchema = z.object({
 export default {
 // Main schemas for endpoints
   signUpSchema,
+  signInSchema,
   updateProfileSchema,
   changePasswordSchema,
 

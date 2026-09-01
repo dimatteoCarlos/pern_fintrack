@@ -10,7 +10,7 @@ import { authRefreshToken } from '../controllers/authRefreshToken.js';
 import { verifyToken } from '../middlewares/authMiddleware.js';
 import { authLimiter } from '../middlewares/rateLimiter.js';
 import { validateRequestSync } from '../middlewares/validateRequest.js';
-import { signUpSchema } from '../../validation/zod/userSchemas.js';
+import { signUpSchema, signInSchema } from '../../validation/zod/userSchemas.js';
 
 const router = express.Router();
 
@@ -19,7 +19,7 @@ const router = express.Router();
 router.post('/sign-up', authLimiter, validateRequestSync(signUpSchema), signUpUser);
 
 // Ruta para el inicio de sesión: //api/auth/sign-in
-router.post('/sign-in', authLimiter, signInUser);
+router.post('/sign-in', authLimiter, validateRequestSync(signInSchema), signInUser);
 
 // Ruta de refresh token api/auth/refresh-token
 router.post('/refresh-token', authRefreshToken);

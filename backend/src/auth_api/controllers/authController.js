@@ -218,22 +218,13 @@ export const signUpUser = async (req, res, next) => {
 export const signInUser = async (req, res, next) => {
   console.log(pc.greenBright('signInUser'));
   const client = await pool.connect();
-  // The form sends one identity. username and email are still read so a backend
-  // deployed ahead of its frontend keeps accepting the previous payload.
-  const identity = (
-    req.body.identity ??
-    req.body.email ??
-    req.body.username ??
-    ''
-  ).trim();
-  const password = req.body.password;
+  // Read from the middleware's output: signInSchema is what proves both are present,
+  // trims the identity and folds in the email and username keys a client deployed
+  // behind this backend may still send.
+  const { identity, password } = req.validatedData;
 
   try {
     await client.query('BEGIN');
-    // ✅ VALIDATION
-    if (!(identity && password)) {
-      return next(createError(400, 'Identity and password are required'));
-    }
     // ✅ GET USER DATA FROM DB
     // An email is the only identity that can carry '@', so the string itself
     // decides the column. The column name is one of two literals here, never
