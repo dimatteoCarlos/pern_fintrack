@@ -443,7 +443,11 @@ function NewProfile() {
                         ?.toLowerCase()
                         .includes('format:')
                         ? 'var(--lightSuccess)'
-                        : 'var(--error)',
+                        // Same fix as LabelNumberValidation.tsx and
+                        // .validation__errMsg: --error is the dark-page
+                        // semaphore (3.18:1 here), not calibrated for this
+                        // light card.
+                        : 'var(--color-feedback-error-content)',
                     }}
                   >
                     {validationMessages[formDataNumber.keyName]?.replace(

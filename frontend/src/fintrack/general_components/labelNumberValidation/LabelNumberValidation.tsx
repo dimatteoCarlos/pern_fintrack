@@ -18,7 +18,12 @@ function LabelNumberValidation<
   validationMessages,
   variant,
 }: LabelNumberValidationPropType<TFormDataType>) {
-  const successColor = variant === 'form' ? '--lightSuccess' : '--success';
+  // '--success' resolves to --color-status-success, the dark-page semaphore
+  // (4.05:1 on this light card, under the 4.5:1 floor); the 'tracker' variant
+  // renders on a card, so it takes the light-surface-calibrated sibling
+  // instead. 'form' still uses --lightSuccess, a separate, unaudited path.
+  const successColor =
+    variant === 'form' ? '--lightSuccess' : '--color-feedback-success-content';
   const labelClassName =
     variant === 'form' ? 'label forms__label' : 'card--title';
 
@@ -33,7 +38,9 @@ function LabelNumberValidation<
         style={{
           color: validationMessage.toLowerCase().includes('format:')
             ? `var(${successColor})`
-            : 'var(--error)',
+            // Same fix as .validation__errMsg in generalStyles.css: the
+            // light-surface error token, not the dark-page semaphore.
+            : 'var(--color-feedback-error-content)',
         }}
       >
         {validationMessages[

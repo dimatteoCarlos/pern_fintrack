@@ -363,7 +363,12 @@ input[type='number'] {
 /******************/
 
 .validation__errMsg {
-  color: var(--error);
+  /* Not --error: that alias is --color-status-error, the app-surface
+     semaphore red (tokens.css:58), calibrated for the dark page, not the
+     light card this message sits on -- 3.18:1 there, under the 4.5:1 floor.
+     --color-feedback-error-content is the light-surface-calibrated sibling,
+     5.89:1 on white. */
+  color: var(--color-feedback-error-content);
   font-size: 0.7rem;
   font-style: italic;
   font-weight: normal;
