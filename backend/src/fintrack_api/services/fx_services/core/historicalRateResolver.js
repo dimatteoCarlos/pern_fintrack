@@ -26,6 +26,7 @@
 import {
  ACCOUNTING_CURRENCY_CODE,
  FALLBACK_RATE_SOURCE,
+ OFFICIAL_BCV_CURRENCY,
  OFFICIAL_TRM_CURRENCY,
  SUPPORTED_CURRENCIES,
 } from './fxConfig.js';
@@ -43,6 +44,7 @@ import {
 } from '../db/dailyRateDBaccess.js';
 
 import { fetchBancaDItaliaRange } from '../fxProviders/bancaDItaliaProvider.js';
+import { fetchBcvRange } from '../fxProviders/bcvApiRafnixgProvider.js';
 import { fetchTrmRange } from '../fxProviders/banrepTrmProvider.js';
 import { fetchRatesForDate } from '../fxProviders/githubFallback.js';
 
@@ -314,6 +316,40 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
    );
   } catch (error) {
    attempts.push(`banrep: ${error.message}`);
+  }
+ }
+
+ // ---- The BCV, the official Venezuelan source ----
+ //
+ // Ahead of the universal arm for the same reason Banrep is: a national central
+ // bank publishing its own currency outranks a foreign central bank's cross and
+ // a CDN's recomputation of one. Measured over June to September against the
+ // curated series in bcv_data.js, the CDN sat below the BCV on 63 of 63 days;
+ // this source matched it exactly on 34 of 37 comparable days.
+ //
+ // It is a range provider, so it asserts coverage across the span and a bolivar
+ // movement dated on a weekend resolves onto the publication before it. That is
+ // the gap the CDN arm structurally cannot close.
+ if (currency === OFFICIAL_BCV_CURRENCY) {
+  try {
+   const { from, to } = spanAround(day, timeZone);
+
+   const series = await fetchBcvRange(currency, from, to, {
+    deadlineAt,
+    timeoutMs: CALL_TIMEOUT_MS,
+   });
+
+   if (series.length > 0) {
+    const answer = await storeThenResolve(series, { from, to });
+    if (answer) return answer;
+   }
+
+   attempts.push(
+    `bcv: no published day on or before ${day} within ${from}..${to}, or the ` +
+     `span from it to ${day} is not covered`,
+   );
+  } catch (error) {
+   attempts.push(`bcv: ${error.message}`);
   }
  }
 
