@@ -428,7 +428,10 @@ function PocketCashModal({
      />
 
      <CurrencyBadge
-      variant={'form'}
+      // This modal's panel is --color-surface-panel (cream), not the dark
+      // surface 'form' is aliased to elsewhere -- 'light' names the surface
+      // it actually sits on. See CurrencyBadge point 1/7.
+      variant={'light'}
       updateOutsideCurrencyData={setTypedCurrency}
       currency={typedCurrency}
      />

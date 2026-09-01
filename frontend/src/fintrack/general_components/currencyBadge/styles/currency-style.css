@@ -11,9 +11,17 @@
   /* border: 2px solid var(--dark); */
 }
 
-.icon-currency.tracker, .icon-currency.light {
+.icon-currency.tracker {
   border: 2px solid var(--dark);
   color: var(--dark);
+}
+
+/* Split from .tracker: same ink, but no border. The bordered pill on a cream
+   panel is what got this reverted once (24a9871); dark text at 13:1 on the
+   panel does not need a border to read, and the ring below covers focus. */
+.icon-currency.light {
+  border: 0;
+  color: var(--color-content-primary);
 }
 
 .icon-currency.form, .icon-currency.dark {
@@ -21,7 +29,12 @@
   color: var(--creme);
 }
 
-.icon-currency.disabled {
+.icon-currency:focus-visible {
+  outline: 2px solid var(--color-border-strong);
+  outline-offset: 2px;
+}
+
+.icon-currency:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;

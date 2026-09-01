@@ -35,12 +35,14 @@ function CurrencyBadge({
   }
 
   return (
-    <div className={`icon-currency ${variant} ${disabled ? 'disabled' : ''}`}
-    onClick={handleClick}
-     style={{ cursor: disabled ? 'not-allowed' : 'pointer' }} 
+    <button
+      type='button'
+      className={`icon-currency ${variant}`}
+      onClick={handleClick}
+      disabled={disabled}
     >
       {currency.toUpperCase()}
-    </div>
+    </button>
   );
 }
 
