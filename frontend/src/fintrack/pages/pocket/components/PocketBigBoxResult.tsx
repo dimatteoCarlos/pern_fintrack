@@ -32,40 +32,18 @@ type PocketHeroPropType = {
 
 const MISSING = '—';
 
-// The deadline in the two lengths the tile asks for, built by slicing the
-// YYYY-MM-DD text rather than by parsing it. new Date() on one of these reads
-// UTC midnight and renders the previous day west of UTC, which is why the row
-// type forbids it and why there is no Date here at all.
-const deadlineReadings = (day: string | null) => {
+// The deadline as DD-MM-YYYY, built by slicing the YYYY-MM-DD text rather than
+// by parsing it. new Date() on one of these reads UTC midnight and renders the
+// previous day west of UTC, which is why the row type forbids it and why there
+// is no Date here at all.
+const deadlineLabel = (day: string | null) => {
  if (!day) return null;
 
  const [year, month, date] = day.split('-');
  if (!year || !month || !date) return null;
 
- return {
-  wide: `${date}-${month}-${year}`,
-  narrow: `${date}-${month}-${year.slice(2)}`,
- };
+ return `${date}-${month}-${year}`;
 };
-
-// One line in two readings; the container shows the one its width calls for.
-// Both travel and the loser is display:none rather than hidden or clipped, so a
-// screen reader is not read the same line twice.
-//
-// This is NOT a fitting device. Measured across every pixel from 317 to 563, at
-// the size the clamp gives it there, every long reading fits even at the
-// narrowest end -- so the switch buys density, not room, and it is a design
-// call rather than a constraint.
-//
-// Only two lines have a second reading. The excess already states itself in
-// four words and shortening it further reached "+$3.62", which says how much but
-// not of what.
-const MetaLine = ({ wide, narrow }: { wide: string; narrow: string }) => (
- <span className='pocketHero__meta'>
-  <span className='pocketHero__meta--wide'>{wide}</span>
-  <span className='pocketHero__meta--narrow'>{narrow}</span>
- </span>
-);
 
 // Three levels, and they answer three different questions: where the board
 // stands as a whole, which pocket the owner has to act on next, and how far
@@ -114,7 +92,7 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
  const levels = summary === null ? null : countByLevel(summary, pockets);
  const nextGoal = findNextGoal(pockets);
  const uncoveredCount = summary?.uncoveredCount ?? null;
- const deadline = deadlineReadings(summary?.latestDesiredDate ?? null);
+ const deadline = deadlineLabel(summary?.latestDesiredDate ?? null);
  // Clamped per pocket by the server before folding, so the bar needs no clamp
  // of its own and cannot paint past its track.
  const overallProgress = summary?.overallProgress ?? null;
@@ -149,11 +127,14 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
       {/* What the target is made of and by when. Absent on an empty board,
           where there is no deadline and the count would say zero twice — the
           status card below already states the population. */}
+      {/* One reading, at every width. Measured on the component's own markup
+          across the container's whole range -- 282px to 563px -- the whole
+          sentence fits at the narrowest end, so the abbreviation that stood
+          here was answering a width that does not exist. */}
       {deadline !== null && summary !== null && (
-       <MetaLine
-        wide={`${summary.pocketCount} pockets till ${deadline.wide}`}
-        narrow={`${summary.pocketCount} pckt ${deadline.narrow}`}
-       />
+       <span className='pocketHero__meta'>
+        {summary.pocketCount} pockets till {deadline}
+       </span>
       )}
      </div>
 
@@ -174,10 +155,9 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
           The count itself does not filter by type, which is what D45 requires
           of it: filtering to bank would be the version that breaks. */}
       {summary !== null && summary.sourceAccountCount > 0 && (
-       <MetaLine
-        wide={`with ${summary.sourceAccountCount} bank accounts`}
-        narrow={`${summary.sourceAccountCount} bank acc.`}
-       />
+       <span className='pocketHero__meta'>
+        with {summary.sourceAccountCount} bank accounts
+       </span>
       )}
      </div>
 
