@@ -1349,6 +1349,15 @@ towards it.
 > is not checkable from the repository, because the date the copy was taken is
 > not recorded anywhere this document could read. **What would settle it:** the
 > date `fintrack_prod_data` was dumped, against 2026-08-24.
+>
+> **Settled 2026-09-02: the copy predates the deletion, so the three readings
+> agree.** The dump date is recorded after all, in a file this document did not
+> look at: `backend/src/db/migrations/supabase/001_production_alignment.sql:55-56`
+> names the production dump `fintrack_prod_data` was restored from as 2026-08-21
+> 23:04, three days before the owner deleted the last pocket account. Account
+> `108` alive on that copy is an artefact of the copy's age, not a live
+> production row. Production did hold four zero counts on 2026-08-24, and the
+> recommendation below now rests on a confirmed premise instead of a hypothesis.
 
 | option | consequence |
 |---|---|
