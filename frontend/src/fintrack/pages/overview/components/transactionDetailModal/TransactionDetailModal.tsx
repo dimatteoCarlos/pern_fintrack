@@ -1,7 +1,7 @@
 // frontend/src/fintrack/pages/overview/components/transactionDetailModal/TransactionDetailModal.tsx
 // 🧩 COMPONENT: TransactionDetailModal - Versión final (sin dos columnas, botón responsive, Rate Clean con dirección)
 
-import { useEffect, useRef } from 'react';
+import { useModalDialog } from '../../../../../hooks/useModalDialog';
 import { numberFormatCurrency, formatDate, capitalize } from '../../../../helpers/functions';
 import { MOVEMENT_TYPES } from '../../../../helpers/constants';
 import { DEFAULT_CURRENCY } from '../../../../helpers/currencyConstants';
@@ -13,21 +13,28 @@ type TransactionDetailModalProps = {
   onClose: () => void;
 };
 
+// The guard, and nothing else. ListContent mounts this component once and leaves
+// it mounted, handing it null until a row is clicked, so the dialog below has to
+// be a component of its own: a hook cannot be called after an early return, and
+// the caret only comes back to the row because the dialog UNMOUNTS on close.
 export const TransactionDetailModal = ({ transaction, onClose }: TransactionDetailModalProps) => {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    if (transaction) {
-      window.addEventListener('keydown', handleKeyDown);
-      modalRef.current?.focus();
-    }
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [transaction, onClose]);
-
   if (!transaction) return null;
+
+  return <TransactionDetailDialog transaction={transaction} onClose={onClose} />;
+};
+
+type TransactionDetailDialogProps = {
+  transaction: TransactionDetailType;
+  onClose: () => void;
+};
+
+const TransactionDetailDialog = ({ transaction, onClose }: TransactionDetailDialogProps) => {
+  // Not portalled, so the page behind is not made inert: aria-modal hides it
+  // from a screen reader and the hook's Tab cycle keeps the caret inside.
+  const { titleId, dialogProps } = useModalDialog({
+    onClose,
+    lockPageBehind: false,
+  });
 
   // =========================================
   // 💰 FORMAT VALUES
@@ -105,13 +112,13 @@ export const TransactionDetailModal = ({ transaction, onClose }: TransactionDeta
     : '';
 
   return (
-    <div className="fx-modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="fx-modal-title">
-      <div className="fx-modal-container" onClick={(e) => e.stopPropagation()} ref={modalRef} tabIndex={-1}>
+    <div className="fx-modal-overlay" onClick={onClose}>
+      <div className="fx-modal-container" onClick={(e) => e.stopPropagation()} {...dialogProps}>
 
         {/* HEADER */}
         <div className="fx-modal-header">
           <div>
-            <h2 id="fx-modal-title" className="fx-modal-id">Transaction #{transaction.transaction_id}</h2>
+            <h2 id={titleId} className="fx-modal-id">Transaction #{transaction.transaction_id}</h2>
             <div className="fx-badge-container">
               <span className={`fx-movement-badge-large ${movementModifier}`}>{displayMovementUpper}</span>
               <span className={`fx-modal-badge ${badgeClass}`}>{displayTransactionUpper}</span>

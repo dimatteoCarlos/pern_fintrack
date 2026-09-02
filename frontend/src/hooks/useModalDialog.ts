@@ -14,8 +14,11 @@
 // browser chrome. The cycle below closes it, as the ARIA guide for
 // role="dialog" prescribes.
 //
-// The consumer MUST render through createPortal into document.body. A dialog
-// left inside #root becomes inert along with the page it is covering.
+// A consumer that keeps `lockPageBehind` MUST render through createPortal into
+// document.body: a dialog left inside #root becomes inert along with the page it
+// is covering. One that cannot be portalled passes the flag false and keeps
+// aria-modal and the Tab cycle as its containment — the treatment that predates
+// `inert`, and the one the two transaction detail modals take.
 
 import { useEffect, useId, useRef } from 'react';
 
@@ -36,12 +39,17 @@ type ModalDialogOptions = {
  // a form that prefills a figure wants select() rather than focus() on the very
  // same input.
  onInitialFocus?: (panel: HTMLDivElement) => void;
+ // Whether to make #root inert while the dialog is up. Only a portalled dialog
+ // may keep it: applied from inside #root the attribute disables the dialog
+ // itself. Everything else here works either way.
+ lockPageBehind?: boolean;
 };
 
 export function useModalDialog({
  onClose,
  canClose = true,
  onInitialFocus,
+ lockPageBehind = true,
 }: ModalDialogOptions) {
  const panelRef = useRef<HTMLDivElement>(null);
  const titleId = useId();
@@ -51,6 +59,11 @@ export function useModalDialog({
  // the caret while the reader is typing.
  const initialFocusRef = useRef(onInitialFocus);
  initialFocusRef.current = onInitialFocus;
+
+ // Read once and never again: whether a dialog is portalled is a fact about the
+ // component, not a state it moves through, and holding it here leaves the mount
+ // effect below with the empty dependency list it needs.
+ const lockPageBehindRef = useRef(lockPageBehind);
 
  useEffect(() => {
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -92,7 +105,9 @@ export function useModalDialog({
  // may already hold the lock, and writing an empty string would hand the
  // scroll back while that one is still open.
  useEffect(() => {
-  const root = document.getElementById('root');
+  const root = lockPageBehindRef.current
+   ? document.getElementById('root')
+   : null;
   const previousOverflow = document.body.style.overflow;
   const previouslyFocused = document.activeElement;
 

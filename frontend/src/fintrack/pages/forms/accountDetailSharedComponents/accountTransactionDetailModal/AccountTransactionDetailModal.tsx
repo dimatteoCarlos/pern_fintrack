@@ -8,8 +8,6 @@
 // the overview module and keeps its own structure and styles. The two share the
 // contract and the useTransactionDetail hook, nothing else.
 
-import { useEffect, useRef } from 'react';
-
 import {
  capitalize,
  numberFormatCurrency,
@@ -21,6 +19,7 @@ import {
 import { DATE_TEXT_FORMAT } from '../../../../helpers/constants';
 import { TransactionDetailType } from '../../../../types/responseApiTypes';
 import FxPathwayCard from '../../../../general_components/fxPathwayCard/FxPathwayCard';
+import { useModalDialog } from '../../../../../hooks/useModalDialog';
 
 import './styles/accountTransactionDetailModal-styles.css';
 
@@ -81,26 +80,37 @@ const DetailRow = ({ label, value, isMono = false }: DetailRowPropsType) => (
  </div>
 );
 
+// The guard, and nothing else. All three detail screens mount this component
+// once and leave it mounted, handing it null until a row is clicked, so the
+// dialog below has to be a component of its own: a hook cannot be called after
+// an early return, and the caret only comes back to the row it left because the
+// dialog UNMOUNTS on close.
 export const AccountTransactionDetailModal = ({
  transaction,
  onClose,
 }: AccountTransactionDetailModalPropsType) => {
- const modalRef = useRef<HTMLDivElement>(null);
-
- useEffect(() => {
-  const handleKeyDown = (event: KeyboardEvent) => {
-   if (event.key === 'Escape') onClose();
-  };
-
-  if (transaction) {
-   window.addEventListener('keydown', handleKeyDown);
-   modalRef.current?.focus();
-  }
-
-  return () => window.removeEventListener('keydown', handleKeyDown);
- }, [transaction, onClose]);
-
  if (!transaction) return null;
+
+ return (
+  <AccountTransactionDetailDialog transaction={transaction} onClose={onClose} />
+ );
+};
+
+type AccountTransactionDetailDialogPropsType = {
+ transaction: TransactionDetailType;
+ onClose: () => void;
+};
+
+const AccountTransactionDetailDialog = ({
+ transaction,
+ onClose,
+}: AccountTransactionDetailDialogPropsType) => {
+ // Not portalled, so the page behind is not made inert: aria-modal hides it from
+ // a screen reader and the hook's Tab cycle keeps the caret inside.
+ const { titleId, dialogProps } = useModalDialog({
+  onClose,
+  lockPageBehind: false,
+ });
 
  // The currency the account keeps its books in. Served per row and nullable
  // because the join is a left one; the overview modal writes the application
@@ -190,21 +200,14 @@ export const AccountTransactionDetailModal = ({
  )} ${originalCurrency.toUpperCase()}`;
 
  return (
-  <div
-   className='transactionDetail'
-   onClick={onClose}
-   role='dialog'
-   aria-modal='true'
-   aria-labelledby='transactionDetailTitle'
-  >
+  <div className='transactionDetail' onClick={onClose}>
    <div
     className='transactionDetail__panel'
     onClick={(event) => event.stopPropagation()}
-    ref={modalRef}
-    tabIndex={-1}
+    {...dialogProps}
    >
     <div className='transactionDetail__header'>
-     <h2 id='transactionDetailTitle' className='transactionDetail__title'>
+     <h2 id={titleId} className='transactionDetail__title'>
       {`Transaction Details (#${transaction.transaction_id})`}
      </h2>
 
