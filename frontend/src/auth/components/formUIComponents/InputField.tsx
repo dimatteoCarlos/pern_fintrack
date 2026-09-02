@@ -171,12 +171,19 @@ const InputField: React.FC<InputFieldProps> = React.memo(
           />
 
           {showContentToggle && onToggleContent && (
+            /* No tabIndex. A `tabIndex={-1}` stood here and took the button out
+               of the tab order, which left the keyboard with no way at all to
+               unmask the field -- this is the only control that does it. The
+               natural order already puts the button right after its own input.
+
+               The name says password and not content: the type above resolves to
+               'password' whenever showContentToggle is set, so the generic word
+               told the listener less than the truth. */
             <button
               type='button'
               className={styles.toggleButton}
               onClick={onToggleContent}
-              aria-label={isContentVisible ? 'Hide content' : 'Show content'}
-              tabIndex={-1} //Remove from the tab order
+              aria-label={isContentVisible ? 'Hide password' : 'Show password'}
             >
               {toggleIcon || (isContentVisible ? <LuEyeClosed /> : <LuEye />)}
               {/* {toggleIcon || (isContentVisible ? "🙈" : "👁️")} */}
