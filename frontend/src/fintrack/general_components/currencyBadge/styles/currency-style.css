@@ -7,10 +7,18 @@
    scale's nearest step is --radius-xl at 16px. Taken anyway rather than left
    as the only literal in the rule — the 1.6px it gives up is not a shape
    anyone chose, it is what an em happened to resolve to. */
+/* A rounded SQUARE, on Carlos's call 2026-09-02. The radius above was
+   --radius-xl, 16px on a 40px box: two fifths of the side, which reads as a
+   circle with four flat spots rather than as a square. --radius-sm is a fifth
+   of it, where the corner is plainly a corner.
+
+   It is a change of shape and not a correction: the note above records that
+   --radius-xl was taken as the nearest step to the 1.1em this rule was written
+   with, so the badge has always been near-circular. Twelve screens draw it. */
 .icon-currency {
   font-size: var(--font-size-2xs);
   font-weight: var(--font-weight-bold);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-sm);
 
   width: var(--size-badge);
   height: var(--size-badge);
