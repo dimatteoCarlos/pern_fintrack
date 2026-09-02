@@ -13,7 +13,7 @@
 // takes a first month and a last one, so a save reaches as far as it was told
 // to. The caller is what refuses to open this over a past month.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import {
@@ -40,6 +40,7 @@ import {
 } from '../../../../helpers/constants';
 import { numberFormatCurrency } from '../../../../helpers/functions';
 import { useCurrencyPreview } from '../../../../hooks/useCurrencyPreview';
+import { useModalDialog } from '../../../../../hooks/useModalDialog';
 import { CurrencyType } from '../../../../types/types';
 import {
  OPEN_ENDED,
@@ -86,7 +87,6 @@ type BudgetEditModalPropsType = {
  onSave: (allocation: BudgetWriteRequest) => Promise<BudgetWriteResponse | null>;
 };
 
-const TITLE_ID = 'budgetEditTitle';
 
 // How far the month selector reaches, counting the month on screen. An
 // interface limit and not a server rule: the write path puts no ceiling on
@@ -159,7 +159,6 @@ function BudgetEditModal({
  onClose,
  onSave,
 }: BudgetEditModalPropsType) {
- const panelRef = useRef<HTMLDivElement>(null);
  const amountRef = useRef<HTMLInputElement>(null);
 
  // Empty rather than prefilled. The figure being replaced is already stated in
@@ -195,63 +194,27 @@ function BudgetEditModal({
  // budgeting was to type a zero — and nobody reads a zero as a decision.
  const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
 
- useEffect(() => {
-  const handleKeyDown = (event: KeyboardEvent) => {
-   if (event.key === 'Escape') onClose();
-  };
 
-  window.addEventListener('keydown', handleKeyDown);
-
-  return () => window.removeEventListener('keydown', handleKeyDown);
- }, [onClose]);
-
- // What makes the panel actually modal, and neither half works without the
- // other. role='dialog' and aria-modal announce a modal; they do not enforce
- // one. Until now the page behind stayed tabbable, so Tab walked out of the
- // panel into the rows and the navbar, and the wheel scrolled the list under
- // the overlay instead of the panel over it.
+ // The behaviour this file used to carry itself, now stated once. Portalled, so
+ // lockPageBehind keeps its default and #root goes inert as before.
  //
- // inert on #root and not on a page section: the header and the bottom navbar
- // are rendered by Layout, outside whichever screen mounted this panel, so a
- // narrower target leaves them reachable. The panel escapes it by being
- // portalled to body, a sibling of #root rather than a descendant.
+ // select() and not focus(): the amount is the one thing this panel writes and
+ // it opens prefilled, so typing has to replace the figure rather than append
+ // to it. The fallback is restated here because naming a callback at all is
+ // what tells the hook not to take the panel itself.
  //
- // The overflow is captured and restored rather than cleared: another overlay
- // may already hold the lock, and writing '' would hand the scroll back while
- // that one is still open.
- useEffect(() => {
-  const root = document.getElementById('root');
-  const previousOverflow = document.body.style.overflow;
-  // The control that opened the panel, captured before inert blurs whatever it
-  // covers. It rides in this effect and not one of its own because the restore
-  // has to be sequenced against the removeAttribute below.
-  const previouslyFocused = document.activeElement;
+ // The title id is generated rather than the module constant it replaces: that
+ // string was shared by every instance, so two panels open at once would both
+ // name the first heading.
+ const { titleId, dialogProps } = useModalDialog({
+  onClose,
+  onInitialFocus: (panel) => {
+   const input = amountRef.current;
 
-  root?.setAttribute('inert', '');
-  document.body.style.overflow = 'hidden';
-
-  return () => {
-   root?.removeAttribute('inert');
-   document.body.style.overflow = previousOverflow;
-   // After removeAttribute and never before: focus() on a node still inside
-   // inert content is a no-op.
-   if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
-  };
- }, []);
-
- // The caret lands on the amount, which is the one thing this panel writes:
- // a modal that opens with the focus on its own frame makes the reader hunt for
- // the field. select() rather than focus() so the prefilled figure is replaced
- // by typing instead of appended to.
- //
- // Runs once, not on every onClose identity: the caller rebuilds that callback
- // each render, and re-selecting on each one would fight the caret mid-edit.
- useEffect(() => {
-  const input = amountRef.current;
-
-  if (input) input.select();
-  else panelRef.current?.focus();
- }, []);
+   if (input) input.select();
+   else panel.focus();
+  },
+ });
 
  const locale = CURRENCY_OPTIONS[currency ?? DEFAULT_CURRENCY];
  const asMoney = (value: number) =>
@@ -506,17 +469,10 @@ function BudgetEditModal({
  // ancestor transform, which would have made `fixed` resolve against that
  // ancestor instead of the viewport.
  return createPortal(
-  <div
-   className='budgetEdit'
-   role='dialog'
-   aria-modal='true'
-   aria-labelledby={TITLE_ID}
-   onClick={handleOverlayClick}
-  >
+  <div className='budgetEdit' onClick={handleOverlayClick}>
    <div
     className='budgetEdit__panel'
-    ref={panelRef}
-    tabIndex={-1}
+    {...dialogProps}
     onClick={(event) => event.stopPropagation()}
    >
     {/* The close control shares its row with what the panel is for, instead of
@@ -535,7 +491,7 @@ function BudgetEditModal({
      </button>
     </div>
 
-    <h2 id={TITLE_ID} className='budgetEdit__title'>
+    <h2 id={titleId} className='budgetEdit__title'>
      {/* The caption names the value under it, the way every field of the
          creation form does, and the month rides the same line rather than
          spending one of its own. 'Subcategory' and not 'Account': that is the

@@ -16,7 +16,7 @@
 // the goal stops that commitment. The account's balance does not move by a
 // cent, and the deletion is never refused for a non-zero net.
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,10 +27,10 @@ import { normalizeError } from '../../../../helpers/normalizeError.ts';
 import { numberFormatCurrency } from '../../../../helpers/functions.ts';
 import { CurrencyType } from '../../../../types/types.ts';
 import { DeletePocketResult } from '../../../../types/pocketTypes.ts';
+import { useModalDialog } from '../../../../../hooks/useModalDialog.ts';
 
 import './styles/deletePocketModal-styles.css';
 
-const TITLE_ID = 'deletePocketTitle';
 
 // Where the owner lands once the pocket is gone. Not the card they came from:
 // that card describes a pocket that no longer exists.
@@ -54,61 +54,29 @@ function DeletePocketModal({
  onClose,
 }: DeletePocketModalPropType) {
  const navigateTo = useNavigate();
- const panelRef = useRef<HTMLDivElement>(null);
  const confirmRef = useRef<HTMLButtonElement>(null);
 
  const [isDeleting, setIsDeleting] = useState<boolean>(false);
  const [result, setResult] = useState<DeletePocketResult | null>(null);
  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
- // Escape closes the question. It does not close the result: the pocket is
- // already gone by then and the card behind is describing something that no
- // longer exists, so the only exit from that pane is the one that navigates.
- useEffect(() => {
-  const handleKeyDown = (event: KeyboardEvent) => {
-   if (event.key === 'Escape' && result === null && !isDeleting) onClose();
-  };
-
-  window.addEventListener('keydown', handleKeyDown);
-
-  return () => window.removeEventListener('keydown', handleKeyDown);
- }, [onClose, result, isDeleting]);
-
- // What makes the panel actually modal, and neither half works without the
- // other. The dialog role and the modal flag announce a modal; they do not
- // enforce one, and without this the page behind stays tabbable and scrollable.
+ // The behaviour this file used to carry itself, now stated once. No initial
+ // focus is named, which leaves the hook holding the caret on the panel: a
+ // destructive question whose dangerous answer is already focused is answered
+ // by a stray Enter, and that is not an answer.
  //
- // The inert attribute goes on the application root rather than on a section of
- // the page, because the header and the bottom navbar are rendered outside
- // whichever screen mounted this. The panel escapes it by being portalled to
- // the body, a sibling of that root rather than a descendant.
+ // canClose does what the Escape handler here did. Escape closes the question;
+ // it does not close the result, because the pocket is gone by then and the
+ // card behind describes something that no longer exists -- the only exit from
+ // that pane is the one that navigates.
  //
- // The overflow is captured and restored rather than cleared: another overlay
- // may already hold the lock, and writing an empty string would hand the scroll
- // back while that one is still open.
- useEffect(() => {
-  const root = document.getElementById('root');
-  const previousOverflow = document.body.style.overflow;
-  const previouslyFocused = document.activeElement;
-
-  root?.setAttribute('inert', '');
-  document.body.style.overflow = 'hidden';
-
-  return () => {
-   root?.removeAttribute('inert');
-   document.body.style.overflow = previousOverflow;
-   // After the attribute is removed and never before: focusing a node still
-   // inside inert content is a no-op.
-   if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
-  };
- }, []);
-
- // The caret lands on the panel and not on the confirming button. A destructive
- // question whose dangerous answer is already focused is answered by a stray
- // Enter, which is not an answer.
- useEffect(() => {
-  panelRef.current?.focus();
- }, []);
+ // The title id is generated rather than the module constant it replaces: that
+ // string was shared by every instance, so two panels open at once would both
+ // name the first heading.
+ const { titleId, dialogProps } = useModalDialog({
+  onClose,
+  canClose: result === null && !isDeleting,
+ });
 
  const asMoney = (value: number) => numberFormatCurrency(value, 2, currency);
 
@@ -145,17 +113,10 @@ function DeletePocketModal({
 
  return createPortal(
   <div className='pocketDelete__overlay'>
-   <div
-    className='pocketDelete__panel'
-    role='dialog'
-    aria-modal='true'
-    aria-labelledby={TITLE_ID}
-    ref={panelRef}
-    tabIndex={-1}
-   >
+   <div className='pocketDelete__panel' {...dialogProps}>
     {result === null ? (
      <>
-      <h2 className='pocketDelete__title' id={TITLE_ID}>
+      <h2 className='pocketDelete__title' id={titleId}>
        Delete {pocketName}?
       </h2>
 
@@ -194,7 +155,7 @@ function DeletePocketModal({
      </>
     ) : (
      <>
-      <h2 className='pocketDelete__title' id={TITLE_ID}>
+      <h2 className='pocketDelete__title' id={titleId}>
        {result.name} is gone
       </h2>
 

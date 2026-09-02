@@ -14,7 +14,6 @@
 // back onto it, and there is nothing to fetch — the entry is already in hand
 // from the payload that drew the list.
 
-import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 import FxPathwayCard from '../../../../general_components/fxPathwayCard/FxPathwayCard';
@@ -24,10 +23,9 @@ import {
 } from '../../../../helpers/functions';
 import { PocketAllocationEntry } from '../../../../types/pocketTypes';
 import { CurrencyType } from '../../../../types/types';
+import { useModalDialog } from '../../../../../hooks/useModalDialog';
 
 import './styles/allocationEntryModal-styles.css';
-
-const TITLE_ID = 'allocationEntryTitle';
 
 // A field the payload withheld. Never 0, which would be a figure.
 const DASH = '—';
@@ -45,47 +43,15 @@ function AllocationEntryModal({
  currency,
  onClose,
 }: AllocationEntryModalPropType) {
- const panelRef = useRef<HTMLDivElement>(null);
-
  // The sign is the decision, and the word says it. Neither ever moved a
  // balance: committing and releasing change what is promised, not what is held.
  const isRelease = entry.amount < 0;
 
- useEffect(() => {
-  const handleKeyDown = (event: KeyboardEvent) => {
-   if (event.key === 'Escape') onClose();
-  };
-
-  window.addEventListener('keydown', handleKeyDown);
-
-  return () => window.removeEventListener('keydown', handleKeyDown);
- }, [onClose]);
-
- // What makes the panel actually modal, and neither half works alone. The
- // dialog role announces a modal; it does not enforce one, and without this the
- // page behind stays tabbable and scrollable under the overlay. The attribute
- // goes on the application root because the header and the bottom navbar are
- // rendered outside the screen that mounted this.
- //
- // The overflow is captured and restored rather than cleared: another overlay
- // may already hold the lock.
- useEffect(() => {
-  const root = document.getElementById('root');
-  const previousOverflow = document.body.style.overflow;
-  const previouslyFocused = document.activeElement;
-
-  root?.setAttribute('inert', '');
-  document.body.style.overflow = 'hidden';
-  panelRef.current?.focus();
-
-  return () => {
-   root?.removeAttribute('inert');
-   document.body.style.overflow = previousOverflow;
-   // After the attribute is removed and never before: focusing a node still
-   // inside inert content is a no-op.
-   if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
-  };
- }, []);
+ // Escape, the caret in and back out, the scroll lock, inert on #root and the
+ // Tab cycle -- the same effects this file carried, now stated once. The title
+ // id is generated rather than the module constant it replaces: two entries
+ // opened in one session shared that string and both named the first heading.
+ const { titleId, dialogProps } = useModalDialog({ onClose });
 
  // Absolute, because the word above it already carries the direction. A minus
  // beside the word "Released" says the same thing twice and invites the reader
@@ -100,15 +66,11 @@ function AllocationEntryModal({
   <div className='allocationEntry__overlay' onClick={onClose}>
    <div
     className='allocationEntry__panel'
-    role='dialog'
-    aria-modal='true'
-    aria-labelledby={TITLE_ID}
-    ref={panelRef}
-    tabIndex={-1}
+    {...dialogProps}
     onClick={(event) => event.stopPropagation()}
    >
     <div className='allocationEntry__header'>
-     <h2 className='allocationEntry__title' id={TITLE_ID}>
+     <h2 className='allocationEntry__title' id={titleId}>
       {isRelease ? 'Released' : 'Committed'}
      </h2>
 

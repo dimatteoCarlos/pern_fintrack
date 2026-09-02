@@ -50,10 +50,9 @@ import {
  PocketEligibleAccount,
  PocketSource,
 } from '../../../../types/pocketTypes.ts';
+import { useModalDialog } from '../../../../../hooks/useModalDialog.ts';
 
 import './styles/pocketCashModal-styles.css';
-
-const TITLE_ID = 'pocketCashTitle';
 
 export type PocketCashDirection = 'allocate' | 'release';
 
@@ -123,7 +122,6 @@ function PocketCashModal({
  sources,
  onClose,
 }: PocketCashModalPropType) {
- const panelRef = useRef<HTMLDivElement>(null);
  const amountRef = useRef<HTMLInputElement>(null);
 
  const copy = COPY[direction];
@@ -169,44 +167,19 @@ function PocketCashModal({
   };
  }, [direction]);
 
- useEffect(() => {
-  const handleKeyDown = (event: KeyboardEvent) => {
-   if (event.key === 'Escape' && !isSubmitting) onClose();
-  };
-
-  window.addEventListener('keydown', handleKeyDown);
-
-  return () => window.removeEventListener('keydown', handleKeyDown);
- }, [onClose, isSubmitting]);
-
- // What makes the panel actually modal, and neither half works without the
- // other. The dialog role announces a modal; it does not enforce one, and
- // without this the page behind stays tabbable and scrollable under the
- // overlay. The inert attribute goes on the application root because the header
- // and the bottom navbar are rendered outside whichever screen mounted this.
+ // The behaviour this file used to carry itself, now stated once. canClose does
+ // what the Escape handler did: the request must not be abandoned while it is
+ // in flight. No initial focus is named, so the caret stays on the panel rather
+ // than in the amount field -- the reader reads the direction and the pocket
+ // before typing a figure into either.
  //
- // The overflow is captured and restored rather than cleared: another overlay
- // may already hold the lock.
- useEffect(() => {
-  const root = document.getElementById('root');
-  const previousOverflow = document.body.style.overflow;
-  const previouslyFocused = document.activeElement;
-
-  root?.setAttribute('inert', '');
-  document.body.style.overflow = 'hidden';
-
-  return () => {
-   root?.removeAttribute('inert');
-   document.body.style.overflow = previousOverflow;
-   // After the attribute is removed and never before: focusing a node still
-   // inside inert content is a no-op.
-   if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
-  };
- }, []);
-
- useEffect(() => {
-  panelRef.current?.focus();
- }, []);
+ // The title id is generated rather than the module constant it replaces: that
+ // string was shared by every instance, so two panels open at once would both
+ // name the first heading.
+ const { titleId, dialogProps } = useModalDialog({
+  onClose,
+  canClose: !isSubmitting,
+ });
 
  // The picker's rows, built from whichever set this direction draws on. The
  // picker itself never learns which one it is looking at.
@@ -334,15 +307,8 @@ function PocketCashModal({
 
  return createPortal(
   <div className='pocketCash__overlay'>
-   <div
-    className='pocketCash__panel'
-    role='dialog'
-    aria-modal='true'
-    aria-labelledby={TITLE_ID}
-    ref={panelRef}
-    tabIndex={-1}
-   >
-    <h2 className='pocketCash__title' id={TITLE_ID}>
+   <div className='pocketCash__panel' {...dialogProps}>
+    <h2 className='pocketCash__title' id={titleId}>
      {copy.title} · {pocketName}
     </h2>
 
