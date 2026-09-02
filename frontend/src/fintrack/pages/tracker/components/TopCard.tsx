@@ -295,6 +295,15 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
               input, so a screen reader announces the field as invalid and
               reads the reason. InputField.tsx does the same for the auth
               forms — this raw input is the one place that did not. */}
+          {/* The date leads the field it qualifies. The amount is the headline
+              of the movement and the date is a fact about that movement, so
+              "this much, on this day" is one reading; on the account's line it
+              was a fact about the account. The field was already a row of two —
+              the figure and its unit — so a third element costs it no row. */}
+          {transactionDateProps && (
+            <TransactionDateTrigger {...transactionDateProps} />
+          )}
+
           <input
             className='inputNumber'
             id={title1}
@@ -321,18 +330,15 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
         </div>
 
         <div className='account card--title '>
-          {/* The label and the date travel together as the row's left group, so
-              justify-content: space-between still sees two children in a view
-              that also renders the account-type chips on the right, and the
-              glyph keeps the same distance from the label in all of them. */}
+          {/* The label alone now. The date used to sit beside it, where it read
+              as a property of the ACCOUNT rather than of the movement — and in
+              Transfer, whose label is the word "From:", the pair came out as a
+              date range: "From: 30 Aug ... Today". It moved into the amount
+              field above, which is the movement's own headline. */}
           <div className='account__labelGroup'>
             <span className='account-label'>
               {capitalize(label2 ?? title2).trim()}
             </span>
-
-            {transactionDateProps && (
-              <TransactionDateTrigger {...transactionDateProps} />
-            )}
           </div>
 
           {radioInputProps && (

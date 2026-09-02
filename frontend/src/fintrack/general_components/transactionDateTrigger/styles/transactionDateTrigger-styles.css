@@ -84,8 +84,9 @@
  pointer-events: none;
 }
 
-/* The date is not today. The glyph rises to the primary content colour and the
-   day it carries is printed beside it. */
+/* The date is not today, and that is now ALL this class says: the day prints
+   either way, so the class no longer decides whether it shows -- only how it is
+   drawn. Its name still reads as "selected"; it means back-dated. */
 .transactionDateTrigger.is-active {
  color: var(--color-content-primary);
  padding-inline-end: var(--space-2);
@@ -114,100 +115,43 @@
    this wraps .transactionDateTrigger — so that name put the element around its
    own block and inverted the containment it claims. Blocks may nest; an element
    may not swallow its parent. */
-/* Not back-dated: the glyph stands alone, with no day text inside it and no
-   Today button beside it. There is then nothing in this control carrying a text
-   baseline, so baseline alignment falls back to its bottom edge and the glyph
-   rides high against the account label. Centring it on the row is the correct
-   reading of "align a picture with a word" -- it only applies while there is no
-   word of its own to align by. */
-.transactionDateControl:not(:has(.transactionDateTrigger__day)) {
- align-self: center;
-}
-
-.transactionDateTrigger:not(.is-active) {
- align-self: center;
-}
+/* The two rules that stood here centred a control holding nothing but a glyph.
+   The day always prints now, so there is always a text baseline inside it and
+   the case they answered cannot occur. */
 
 .transactionDateControl {
  display: inline-flex;
- /* Not center: .transactionDateTrigger and .transactionDateTrigger__today are
-    each their own flex box at the same height, but the trigger's baseline
-    sits wherever its day <span> falls inside a row that also carries a
-    non-text glyph, while __today is plain text -- centering their BOXES
-    still left the two text baselines a couple of pixels apart. Baseline
-    aligns the text itself instead of the boxes around it. */
- align-items: baseline;
+ /* The control holds one child now, and centring it is right for the box it
+    sits in: the amount field is a row of items aligned on their centres, not on
+    a shared text baseline -- the figure beside it is set at a different size
+    and would drag the glyph off the row's middle. */
+ align-items: center;
  gap: var(--space-1);
 }
 
-/* The return to the form's default day. A word and not a glyph: undoing has no
-   agreed symbol, so a mark would have to be guessed at, while "Today" states
-   what pressing it does.
+/* The control inside the amount field, which is where it lives now. It leads
+   the figure it qualifies and gives up a divider to the row, so the field still
+   reads as ONE control with parts rather than as two things sharing a box.
 
-   It carries the day's own size (--font-size-sm, matching the account label
-   the whole row sits beside, on Carlos's call) and separates from it by
-   WEIGHT and colour instead — the day is the datum, in the primary colour at
-   semibold; this is the action on it, a step back in both. Its first draft
-   went a size step down as well, to --font-size-2xs, and that was wrong
-   twice over: at 10px the word read as a footnote rather than a control
-   beside the label, and the box it made stood 18px tall against the 24px
-   floor the accessibility spec sets for an interactive target.
-
-   The height is the trigger's own, so the two sit on one baseline and the target
-   clears that floor by construction rather than by counting padding. The
-   recommended 44px is deliberately NOT taken: the trigger reaches it with an
-   ::after that spills 10px on every side, and a second one 4px away would
-   overlap it — two hit areas fighting over the same pixels is worse than a 24px
-   target that is exactly where it looks.
-
-   font-size is restated rather than inherited because index.css sets it on the
-   universal selector, so an inline element does not take the size of the line it
-   sits in. */
-.transactionDateTrigger__today {
- display: inline-flex;
- align-items: center;
- min-height: calc(var(--font-size-base) + var(--space-1) * 2);
- border: none;
- border-radius: var(--radius-xs);
- padding: 0 var(--space-2);
- background-color: transparent;
- color: var(--color-content-secondary);
- font-size: var(--font-size-sm);
- font-weight: var(--font-weight-medium);
- line-height: 1;
- white-space: nowrap;
- cursor: pointer;
- transition:
-  background-color var(--motion-fast),
-  color var(--motion-fast);
+   Everything the Today button carried went with it: the word, its own hit area
+   and the argument about which of the two was active. Inside the field there is
+   one control, and the calendar it opens has today as a cell. */
+.transactionDateControl {
+ flex-shrink: 0;
+ padding-inline-end: var(--space-2);
+ border-inline-end: var(--border-width-thin) solid
+  var(--color-content-secondary);
 }
 
-/* The same fill the trigger beside it takes, so the pair answers a pointer as
-   one control. It reads as a wash because the tracker card is white under a
-   texture, not the cream this fill would vanish into. */
-.transactionDateTrigger__today:hover {
- background-color: var(--color-accent);
- color: var(--color-accent-content);
-}
-
-.transactionDateTrigger__today:focus-visible {
- outline: var(--border-width-thick) solid var(--color-content-primary);
- outline-offset: var(--border-width-thick);
-}
-
-.transactionDateTrigger__today:active {
- background-color: var(--color-content-primary);
- color: var(--color-accent);
-}
-
-.transactionDateTrigger__today:disabled {
- opacity: 0.5;
- pointer-events: none;
+/* The whole control answers the pointer, not the button inside it: the divider
+   belongs to the control, so a fill that stopped at the button's edge would
+   paint up to a line and leave the gap beside it unlit. */
+.transactionDateControl:has(.transactionDateTrigger:hover) {
+ border-inline-end-color: var(--color-content-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {
- .transactionDateTrigger,
- .transactionDateTrigger__today {
+ .transactionDateTrigger {
   transition: none;
  }
 }
