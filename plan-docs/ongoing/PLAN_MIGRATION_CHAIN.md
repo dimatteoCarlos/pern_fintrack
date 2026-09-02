@@ -42,7 +42,7 @@ autoconfirmación, y el `ROLLBACK` de la línea 81 ya no revierte nada.
 | Sentencias de transacción por archivo | 001-007 traen `BEGIN;`/`COMMIT;` propios; 008-024 no traen ninguna (los `BEGIN` de 014-020 son bloques PL/pgSQL) | 2026-09-02 |
 | Libro de `fintrack_dev` | 25 filas para 24 archivos; sobra `012_backfill_budget_policies.sql` (08-08) junto a la real `012_backfill_budget_allocations.sql` (08-14); nada en disco sin registrar | 2026-09-02 |
 | `transactions.opening_for_account_id` en desarrollo | presente | 2026-09-02 |
-| Qué es `fintrack_prod_data` | la copia de control anterior a la alineación, restaurada del volcado del 2026-08-21 23:04; producción tiene **siete** archivos pendientes, no veinticuatro | 2026-09-02 |
+| Qué es `fintrack_prod_data` | la copia de control anterior a la alineación, restaurada del volcado del 2026-08-21 23:04; producción tiene **seis** archivos pendientes, no veinticuatro | 2026-09-02 |
 
 **El defecto real de atomicidad**, una vez corregida la lectura anterior: el
 archivo se confirma en una transacción y su fila del libro se escribe en otra
@@ -110,19 +110,36 @@ viva. Tres líneas independientes lo dicen y ninguna necesita credenciales:
 una copia anterior a ella. El libro vacío es una propiedad de la copia, no de
 producción.
 
-**Lo pendiente en producción son siete archivos, no seis ni veinticuatro.** Las
-diecisiete filas cubren 001-012 y 014-017 más el propio archivo de alineación, y
-la 018 llegó por su cuenta el 2026-08-27. Quedan **013, 019, 020, 021, 022, 023 y
-024**.
+**Lo pendiente en producción son seis archivos, no veinticuatro: 019 a 024.**
 
-**La séptima es la que hay que mirar.**
-`013_normalize_category_budget_name_case.sql` se dejó fuera del libro a propósito
-— el propio paso 9 lo explica en `001_production_alignment.sql:586-588` — y es la
-única de las siete que **escribe datos existentes**: pasa a minúsculas los nombres
-de `category_budget` y las partes de las que derivan. Corriendo la cadena contra
-producción es la primera que se aplica, antes que cualquiera de las seis de esta
-rama. Necesita su propio ensayo contra la copia restaurada, con huella de los
-nombres antes y después.
+Un primer conteo escrito aquí el mismo día dijo siete. Sumaba la
+`013_normalize_category_budget_name_case.sql`, porque el paso 9 de la alineación
+la deja fuera de las diecisiete filas que inserta —
+`001_production_alignment.sql:586-588` lo explica — y de ahí que el archivo se
+aplicara el 2026-08-22 no se sigue que la 013 haya corrido. **Sí corrió.** La
+sección 1 de `plan-docs/on-hold/PLAN_DEPLOYMENT/PLAN_SUPABASE_MIGRATION.md` trae
+una medición **contra la base viva**, con los dos sondeos de solo lectura de
+`db_guides/`, fechada el 2026-08-27: 145 columnas, 19 tablas base y un libro de
+**19 filas**, la misma cuenta que `fintrack_dev`. Diecinueve son los dieciocho
+archivos de la cadena hasta la 018 más el propio archivo de alineación, y no
+dejan lugar para que falte ninguno. Entre el 22 y el 27 de agosto alguien corrió
+el corredor contra producción y aplicó lo que quedaba, 013 y 018.
+
+**Lo que igual se confirma por su nombre, y cuesta una consulta.** La cuenta de
+diecinueve es un argumento aritmético, no una lista. `SELECT filename FROM
+migrations ORDER BY id` sobre producción la vuelve una lista, y el sondeo que ya
+existe para eso es
+`plan-docs/on-hold/PLAN_DEPLOYMENT/db_guides/probe_production_state.mjs`. Importa
+sólo por un archivo: si la 013 no estuviera, es la única pendiente que **reescribe
+datos existentes** — pasa a minúsculas los nombres de `category_budget` y las
+partes de las que derivan — y correría antes que las seis de esta rama, con su
+propio ensayo y huella de los nombres antes y después.
+
+**Y ojo con qué documento se lee.** La sección 1-ter de ese mismo plan de Supabase
+avisa que tres documentos describen el estado de producción de tres maneras, y que
+la medición más nueva es la suya. Los otros dos —`NEXT_SESSION.md` §2.1 y
+`db-migration-procedure.md` §1— siguen diciendo que la alineación nunca se
+ejecutó.
 
 **Y su encabezado cree en el invariante que no existe.** La línea 16 de esa misma
 013 dice que el corredor envuelve cada archivo en una transacción junto con su

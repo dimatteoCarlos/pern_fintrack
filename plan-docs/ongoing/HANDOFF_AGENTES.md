@@ -282,10 +282,12 @@ el 2026-09-01 y encontró el libro vacío. **No se contradicen**:
 del volcado del 2026-08-21 23:04 que el propio archivo nombra, y el libro vacío es
 una propiedad de la copia. Queda establecido con documentos, sin abrir ninguna
 conexión; el detalle y sus tres líneas de evidencia están en el paso 0 de
-`PLAN_MIGRATION_CHAIN.md`. **Lo pendiente en producción son siete archivos**: las
-seis de esta rama, 019 a 024, y antes que todas la
-`013_normalize_category_budget_name_case.sql`, que el paso 9 dejó fuera del libro
-a propósito y que es la única que escribe datos ya existentes.
+`PLAN_MIGRATION_CHAIN.md`. **Lo pendiente en producción son las seis de esta
+rama, 019 a 024.** El libro de producción tiene diecinueve filas, medido contra
+la base viva el 2026-08-27 y anotado en la sección 1 del plan de Supabase: los
+dieciocho archivos de la cadena hasta la 018 más el archivo de alineación. La
+`013_normalize_category_budget_name_case.sql`, que el paso 9 dejó fuera de las
+diecisiete filas que inserta, corrió por su cuenta entre el 22 y el 27 de agosto.
 
 *5. Una fila del libro que nombra un archivo inexistente.*
 `fintrack_dev` registra `012_backfill_budget_policies.sql` el 2026-08-08. El
