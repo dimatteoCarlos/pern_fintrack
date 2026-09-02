@@ -42,6 +42,7 @@ autoconfirmación, y el `ROLLBACK` de la línea 81 ya no revierte nada.
 | Sentencias de transacción por archivo | 001-007 traen `BEGIN;`/`COMMIT;` propios; 008-024 no traen ninguna (los `BEGIN` de 014-020 son bloques PL/pgSQL) | 2026-09-02 |
 | Libro de `fintrack_dev` | 25 filas para 24 archivos; sobra `012_backfill_budget_policies.sql` (08-08) junto a la real `012_backfill_budget_allocations.sql` (08-14); nada en disco sin registrar | 2026-09-02 |
 | `transactions.opening_for_account_id` en desarrollo | presente | 2026-09-02 |
+| Qué es `fintrack_prod_data` | la copia de control anterior a la alineación, restaurada del volcado del 2026-08-21 23:04; producción tiene **siete** archivos pendientes, no veinticuatro | 2026-09-02 |
 
 **El defecto real de atomicidad**, una vez corregida la lectura anterior: el
 archivo se confirma en una transacción y su fila del libro se escribe en otra
@@ -89,6 +90,45 @@ conexión a otra base del servidor reusando las credenciales del pool.
 
 **Salida.** Un párrafo fechado en este archivo diciendo cuál de las dos es, y
 cuántas migraciones quedan pendientes en consecuencia.
+
+**Respondido el 2026-09-02, con documentos y sin abrir ninguna conexión.**
+`fintrack_prod_data` es la copia de control anterior a la alineación, no la base
+viva. Tres líneas independientes lo dicen y ninguna necesita credenciales:
+
+- **El procedimiento que la crea la define así.**
+  `backend/src/db/docs/db-documented/db-migration-procedure.md:157-161` la
+  construye desde `prod_full.sql` como el control del ensayo, y el encabezado del
+  archivo de alineación fecha ese volcado el **2026-08-21 23:04** (`:55-56`), un
+  día antes de que el archivo se aplicara a Supabase el **2026-08-22** (`:68-69`).
+- **El libro vacío sólo es posible antes.** El paso 9 de la alineación escribe
+  diecisiete filas; una copia tomada después no podría tener cero.
+- **Los datos lo confirman por su cuenta.** El plan de bolsillos anotó la cuenta
+  `108` viva en `fintrack_prod_data` el 2026-08-29, cuando producción la tenía
+  borrada desde el 2026-08-24. La copia es anterior a esa fecha.
+
+**Los dos documentos nunca se contradijeron**: uno describe la base viva y el otro
+una copia anterior a ella. El libro vacío es una propiedad de la copia, no de
+producción.
+
+**Lo pendiente en producción son siete archivos, no seis ni veinticuatro.** Las
+diecisiete filas cubren 001-012 y 014-017 más el propio archivo de alineación, y
+la 018 llegó por su cuenta el 2026-08-27. Quedan **013, 019, 020, 021, 022, 023 y
+024**.
+
+**La séptima es la que hay que mirar.**
+`013_normalize_category_budget_name_case.sql` se dejó fuera del libro a propósito
+— el propio paso 9 lo explica en `001_production_alignment.sql:586-588` — y es la
+única de las siete que **escribe datos existentes**: pasa a minúsculas los nombres
+de `category_budget` y las partes de las que derivan. Corriendo la cadena contra
+producción es la primera que se aplica, antes que cualquiera de las seis de esta
+rama. Necesita su propio ensayo contra la copia restaurada, con huella de los
+nombres antes y después.
+
+**Y su encabezado cree en el invariante que no existe.** La línea 16 de esa misma
+013 dice que el corredor envuelve cada archivo en una transacción junto con su
+`INSERT INTO migrations`, y declara seguir la convención de la 010 a la 012. Eso
+es justamente lo que el corredor no hace. El paso 2 no cambia una convención: la
+construye por primera vez, y cuatro archivos ya escritos la dan por cierta.
 
 ---
 

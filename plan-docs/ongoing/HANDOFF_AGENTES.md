@@ -272,16 +272,20 @@ en los dos lados — `createTables.js:133` y `:835` — lo que muestra que la pa
 se cuida a veces y a veces no. Es el riesgo que el encabezado de la propia 019
 anuncia: la tabla está definida dos veces y producción construye por la otra.
 
-*4. Dos documentos que no dicen lo mismo sobre el estado de producción, y nadie
-lo ha resuelto.* El encabezado de
+*4. Dos documentos que parecían no decir lo mismo sobre producción — resuelto el
+2026-09-02.* El encabezado de
 `backend/src/db/migrations/supabase/001_production_alignment.sql` dice que su paso
 9 escribió diecisiete filas en el libro y que el archivo se aplicó a Supabase el
 2026-08-22, más la 018 el 2026-08-27. La sección 9.4.24 midió `fintrack_prod_data`
-el 2026-09-01 y encontró el libro vacío. Las dos cosas se concilian si
-`fintrack_prod_data` es una restauración local anterior al 22 de agosto y no la
-base viva — el propio archivo de alineación dice que el volcado es del 2026-08-21
-23:04 — pero **eso no está medido**. De cuál de las dos sea la verdad depende si
-lo pendiente son seis migraciones o veinticuatro. **Se mide antes de tocar nada.**
+el 2026-09-01 y encontró el libro vacío. **No se contradicen**:
+`fintrack_prod_data` es la copia de control anterior a la alineación, restaurada
+del volcado del 2026-08-21 23:04 que el propio archivo nombra, y el libro vacío es
+una propiedad de la copia. Queda establecido con documentos, sin abrir ninguna
+conexión; el detalle y sus tres líneas de evidencia están en el paso 0 de
+`PLAN_MIGRATION_CHAIN.md`. **Lo pendiente en producción son siete archivos**: las
+seis de esta rama, 019 a 024, y antes que todas la
+`013_normalize_category_budget_name_case.sql`, que el paso 9 dejó fuera del libro
+a propósito y que es la única que escribe datos ya existentes.
 
 *5. Una fila del libro que nombra un archivo inexistente.*
 `fintrack_dev` registra `012_backfill_budget_policies.sql` el 2026-08-08. El
