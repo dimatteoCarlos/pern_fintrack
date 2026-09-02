@@ -235,10 +235,20 @@ toca ya no hay ninguna abierta. `runMigrations.js:35` abre la suya y el `COMMIT;
 de `001_initial_migration.sql:47` se la lleva. Reproducida la forma exacta del
 corredor contra la base de desarrollo: después de un archivo que trae su propio
 `COMMIT;`, `txid_current_if_assigned()` devuelve nulo, y una tabla creada después
-de ese punto sobrevivió al `ROLLBACK` de la línea 81. **Cada sentencia de 008 a
-024 se confirma sola.** Un archivo que falla a mitad deja su mitad aplicada sin
-fila en el libro que la nombre, y la corrida siguiente repite lo ya hecho. La
-corrección quedó escrita en la propia 9.4.24.
+de ese punto sobrevivió al `ROLLBACK` de la línea 81.
+
+**La unidad atómica es el archivo, no la sentencia.** Una primera redacción de
+esta corrección decía que cada sentencia de 008 a 024 se confirma sola. No es
+así: el corredor manda el archivo entero como un solo `client.query(sql)`, y
+Postgres envuelve una consulta simple de varias sentencias en una transacción
+implícita. Medido con `CREATE TEMP TABLE ...; SELECT 1/0;` después de que la
+transacción del corredor ya había sido confirmada: la tabla no sobrevivió. Un
+archivo que falla a mitad se revierte entero. **Lo que queda fuera de esa unidad
+es el libro**: `runMigrations.js:71` escribe la fila `INSERT INTO migrations` en
+una transacción aparte de la del archivo que nombra, así que un corte entre las
+dos deja el archivo aplicado sin fila que lo nombre y la corrida siguiente lo
+repite. El defecto existe; la ventana está entre el archivo y su fila, no dentro
+del archivo. Las dos correcciones quedaron escritas en la propia 9.4.24.
 
 *2. La salida exitosa después de una falla.*
 El `catch` sale con código 1 en `runMigrations.js:83` y el `finally` sale con
@@ -252,7 +262,9 @@ arregle el punto 1 se va a topar con esto en la misma función.
 `022_add_transaction_opening_for_account.sql:65-66` agrega
 `transactions.opening_for_account_id`.
 `backend/src/db/run_time_db_init/createTables.js` no la declara en ninguna parte,
-y ese es el camino por el que producción construye. `recordTransaction.js:100` la
+y ese no es sólo el camino por el que producción construyó: `initializeDatabase()`
+lo invoca en **cada arranque del servidor** desde `backend/src/index.js:37`, no
+sólo desde el script de inicialización. `recordTransaction.js:100` la
 inserta y `derivedBalance.js:154`, `:212` y `:237` la leen en los tres
 constructores de saldo, así que una base levantada por ese camino falla en cada
 inserción de transacción y en cada derivación de saldo. La 019 y la 024 sí están
@@ -310,6 +322,11 @@ devuelva; si alguna se quiere distinta, se dice antes de repartir el paquete.
 - **La columna que falta entra por `createTables.js`, sin migración nueva.** Ese
   archivo construye bases vacías; agregarle una columna no toca ninguna base que
   ya tenga datos, así que no hay nada que migrar.
+- **La regla del reverso rige desde la 025 en adelante.** Ninguna de las
+  veinticuatro ya aplicadas se retrofitea: un `DOWN` escrito hoy para una
+  migración que ya corrió es un reverso que nadie va a ejecutar y que nadie puede
+  probar, y escribirlo obligaría además a tocar archivos que el límite de alcance
+  declara intocables. La regla se hace exigible en el corredor, no en el pasado.
 - **La fila fantasma del libro se deja como está.** Corregirla es reescribir
   historia sobre una base de desarrollo que igual se reconstruye, y en producción
   esa fila no existe.
@@ -323,7 +340,11 @@ ensayo contra una copia restaurada, y la autoriza el desarrollador.
 - Contra una base descartable construida desde vacío, la cadena entera corre y el
   libro queda con veinticuatro filas y ninguna más.
 - Con una falla forzada en medio de un archivo, ni su DDL ni su fila del libro
-  sobreviven, y una segunda corrida arranca desde ese archivo.
+  sobreviven, y una segunda corrida arranca desde ese archivo. **Esta prueba sola
+  no demuestra el arreglo**: hoy ya pasa para 008-024, porque el archivo es
+  atómico por sí mismo. La que sí lo demuestra es cortar el proceso entre el
+  archivo y su fila del libro, y comprobar que el esquema del archivo tampoco
+  sobrevivió.
 - Una base levantada sólo por `createTables.js` acepta una inserción de
   transacción y deriva un saldo.
 - El servidor arranca en el puerto 5078. **Nunca el 5000**, que lo usa el

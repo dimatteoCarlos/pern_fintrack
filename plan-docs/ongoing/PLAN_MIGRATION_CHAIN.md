@@ -1,0 +1,248 @@
+# PLAN_MIGRATION_CHAIN — dejar la cadena en condiciones de aplicarse
+
+Estado: abierto. Escrito el 2026-09-02.
+Rama de trabajo: `fix/auth-screen`.
+Origen: sección F de `HANDOFF_AGENTES.md` y la sección 9.4.24 del plan de
+retro-fechado, corregidas ambas el 2026-09-02.
+
+---
+
+## 1. Qué está mal hoy
+
+El proyecto tiene dos caminos para construir un esquema y ninguno de los dos es
+el camino oficial.
+
+- **La cadena de migraciones**, veinticuatro archivos en
+  `backend/src/db/migrations/sql_migrations/`, corridos por `runMigrations.js`.
+  Es el camino que la base de desarrollo recorrió.
+- **El DDL de arranque**, `backend/src/db/run_time_db_init/createTables.js`,
+  invocado por `initializeDatabase()` desde `backend/src/index.js:37` en **cada
+  arranque del servidor**. Es el camino por el que se construyó producción, y su
+  libro de migraciones quedó vacío.
+
+Los dos divergen. Cuando divergen, la base construida por el segundo camino
+arranca sin fallar y rompe en tiempo de ejecución, que es la peor forma de
+enterarse.
+
+Y el corredor, que debería ser la red de seguridad, no lo es: abre **una sola**
+transacción para la corrida entera (`runMigrations.js:35`) y el `COMMIT;` de
+`001_initial_migration.sql:47` se la lleva. Todo lo que corre después queda en
+autoconfirmación, y el `ROLLBACK` de la línea 81 ya no revierte nada.
+
+---
+
+## 2. Lo medido, con su fecha
+
+| medición | resultado | fecha |
+|---|---|---|
+| Copia local de producción: tablas, transacciones, filas del libro | 17 tablas, 785 transacciones, **libro vacío** | 2026-09-01 |
+| Dónde se detiene la cadena sobre esa copia | en el segundo archivo: `002_accounts.sql` le cuelga un disparador sobre `users.timezone` a una tabla que ya existe sin esa columna | 2026-09-01 |
+| Transacción del corredor tras un archivo que trae `COMMIT;` | `txid_current_if_assigned()` devuelve nulo; una tabla creada después sobrevive al `ROLLBACK` | 2026-09-02 |
+| Archivo de varias sentencias sin control de transacción propio | **atómico**: Postgres lo envuelve en una transacción implícita; una falla en la segunda sentencia no deja la primera | 2026-09-02 |
+| Sentencias de transacción por archivo | 001-007 traen `BEGIN;`/`COMMIT;` propios; 008-024 no traen ninguna (los `BEGIN` de 014-020 son bloques PL/pgSQL) | 2026-09-02 |
+| Libro de `fintrack_dev` | 25 filas para 24 archivos; sobra `012_backfill_budget_policies.sql` (08-08) junto a la real `012_backfill_budget_allocations.sql` (08-14); nada en disco sin registrar | 2026-09-02 |
+| `transactions.opening_for_account_id` en desarrollo | presente | 2026-09-02 |
+
+**El defecto real de atomicidad**, una vez corregida la lectura anterior: el
+archivo se confirma en una transacción y su fila del libro se escribe en otra
+(`runMigrations.js:71`). Un corte entre las dos deja el archivo aplicado sin fila
+que lo nombre, y la corrida siguiente lo repite.
+
+---
+
+## 3. Decisiones ya tomadas
+
+| decisión | razón |
+|---|---|
+| Una transacción por archivo, y la abre el corredor; a 001-007 se les quitan las suyas | el esquema del archivo y su fila del libro tienen que confirmarse juntos, que es el invariante que hoy se rompe |
+| La columna que falta entra por `createTables.js`, sin migración nueva | ese archivo construye bases vacías; agregarle una columna no toca ninguna base con datos |
+| La fila fantasma del libro se deja como está | corregirla es reescribir historia sobre una base que se reconstruye, y en producción no existe |
+| La regla del reverso rige **desde la 025 en adelante** | un `DOWN` escrito hoy para una migración ya aplicada es un reverso que nadie va a ejecutar y que nadie puede probar; además obligaría a tocar archivos que el límite de alcance declara intocables |
+
+**Lo que no se decide aquí:** si al terminar se aplica la cadena a producción.
+Es una operación sobre datos vivos, va con su propio ensayo contra una copia
+restaurada, y la autoriza el desarrollador en persona.
+
+---
+
+## 4. Los pasos, en orden
+
+El orden importa: el paso 0 decide el tamaño de todo lo demás, y el paso 1 es un
+defecto vivo que no depende de ningún otro.
+
+### Paso 0 — Medir qué es `fintrack_prod_data`
+
+**Por qué primero.** El encabezado de
+`backend/src/db/migrations/supabase/001_production_alignment.sql` dice que su
+paso 9 escribió diecisiete filas en el libro y que el archivo se aplicó el
+2026-08-22. La medición del 2026-09-01 encontró el libro de `fintrack_prod_data`
+vacío. Las dos cosas se concilian si esa base es una restauración del volcado del
+2026-08-21 23:04 y no la base viva, pero **eso no está medido**. De cuál sea la
+verdad depende si lo pendiente son seis migraciones o veinticuatro.
+
+**Qué hay que establecer.** Si el volcado del que salió `fintrack_prod_data` es
+anterior a la aplicación del archivo de alineación. Se responde con la fecha del
+volcado y la fecha declarada de aplicación, sin conectarse a Supabase.
+
+**Límite.** Nada se ejecuta contra Supabase. Ninguna sesión de agente abre una
+conexión a otra base del servidor reusando las credenciales del pool.
+
+**Salida.** Un párrafo fechado en este archivo diciendo cuál de las dos es, y
+cuántas migraciones quedan pendientes en consecuencia.
+
+---
+
+### Paso 1 — La columna que el arranque no declara
+
+**Defecto.** `022_add_transaction_opening_for_account.sql:65-66` agrega
+`transactions.opening_for_account_id`. `createTables.js` no la declara en su DDL
+de `transactions` (`:150-184`). `recordTransaction.js:88` y `:100` la insertan, y
+`derivedBalance.js:154`, `:212` y `:237` la leen en los tres constructores de
+saldo. Una base levantada por el camino de arranque falla en cada inserción de
+transacción y en cada derivación de saldo.
+
+**No es un problema de la cadena, es un problema del arranque.** Por eso va
+primero y va solo: `initializeDatabase()` corre en cada arranque del servidor.
+
+**Qué cambia.** La declaración de la columna en el DDL de `transactions` de
+`createTables.js`, con la misma definición y la misma clave foránea que la 022.
+Ninguna migración nueva.
+
+**Verificación.** Una base levantada sólo por `createTables.js` acepta una
+inserción de transacción y deriva un saldo. Arranque en el puerto **5078**.
+
+**Commit.** `fix(db): boot DDL declares opening_for_account_id`.
+
+---
+
+### Paso 2 — Una transacción por archivo
+
+**Defecto.** `runMigrations.js:35` abre una transacción para la corrida entera y
+la confirma en `:77`. El `COMMIT;` de `001_initial_migration.sql:47` la cierra
+antes de tiempo, y la fila del libro (`:71`) se escribe fuera de la transacción
+del archivo que nombra.
+
+**Qué cambia.**
+
+- El corredor deja de abrir una transacción alrededor del bucle. Abre una **por
+  archivo**, antes de leerlo, y la confirma después de escribir su fila del
+  libro. Un fallo revierte el archivo y su fila juntos.
+- La creación de la tabla `migrations` y la lectura del libro quedan fuera de esa
+  transacción, en su propia unidad.
+- A los siete archivos que traen `BEGIN;`/`COMMIT;` propios (001-007) se les
+  quitan esas dos líneas. **Es la única excepción al límite de "no se toca ningún
+  archivo ya aplicado"**, y está acotada a esas dos líneas: no se altera ninguna
+  sentencia de esquema.
+
+**Por qué no al revés.** Dejar que cada archivo maneje su transacción y que el
+corredor no abra nada deja la fila del libro fuera, y reproduce el mismo defecto
+en pequeño.
+
+**Verificación.**
+
+1. Contra una base descartable construida desde vacío, la cadena entera corre y
+   el libro queda con veinticuatro filas y ninguna más.
+2. Con una falla forzada en medio de un archivo, ni su DDL ni su fila del libro
+   sobreviven, y una segunda corrida arranca desde ese archivo. **Esta prueba
+   sola no demuestra nada**: hoy ya pasa para 008-024, porque el archivo es
+   atómico por sí mismo.
+3. **La prueba que sí lo demuestra:** cortar el proceso entre la aplicación del
+   archivo y la escritura de su fila, y comprobar que el esquema del archivo
+   tampoco sobrevivió. Es el único escenario que hoy falla.
+
+**Commit.** `fix(db): one transaction per migration file`.
+
+---
+
+### Paso 3 — El código de salida
+
+**Defecto.** El `catch` sale con código 1 (`runMigrations.js:83`) y el `finally`
+sale con código 0 (`:86`). Hoy el código de salida es correcto por accidente:
+`process.exit` no ejecuta el `finally`. El día que alguien saque ese `exit` del
+`catch` para liberar el cliente como corresponde, toda falla se reporta como
+éxito y el paso de despliegue la lee como buena.
+
+**Por qué va aquí.** Quien haga el paso 2 se topa con esto en la misma función, y
+el paso 2 hace exactamente lo que dispara la trampa: mover la liberación del
+cliente.
+
+**Qué cambia.** El código de salida se decide en una variable y se aplica una
+sola vez, después de liberar el cliente. Nada de `process.exit` dentro del
+`catch`.
+
+**Verificación.** Una corrida con falla forzada devuelve código de salida 1. Una
+corrida limpia devuelve 0.
+
+**Commit.** puede ir dentro del paso 2 si el diff es el mismo bloque; si no,
+`fix(db): migration runner exits on the real outcome`.
+
+---
+
+### Paso 4 — El reverso, de la 025 en adelante
+
+**Qué cambia.** Una plantilla de migración con `-- UP` y `-- DOWN` explícitos, y
+la regla escrita en el documento de reglas del proyecto acotada a los archivos
+nuevos. Las veinticuatro ya aplicadas quedan sin reverso **por decisión
+declarada**, no por olvido: eso se anota en el encabezado de la plantilla para
+que el próximo lector no lo lea como una omisión.
+
+**Lo que no incluye.** Un corredor de reversos. Escribir el `DOWN` y ejecutarlo
+son dos trabajos; este plan sólo obliga a escribirlo.
+
+**Commit.** `docs(db): migrations declare an explicit reverse`.
+
+---
+
+### Paso 5 — La paridad entre los dos caminos
+
+**Por qué.** El paso 1 cierra **un** punto de divergencia entre `createTables.js`
+y la cadena. El registro de observaciones tiene medida una divergencia de treinta
+y siete puntos entre los dos. Sin una comprobación, el punto siguiente se
+descubre igual que este: en producción, en tiempo de ejecución.
+
+**Qué cambia.** Una comprobación que levanta dos bases descartables —una por la
+cadena, otra por `createTables.js`— y compara tabla por tabla y columna por
+columna, con una lista explícita de diferencias aceptadas y su razón. No corrige
+nada: reporta.
+
+**Verificación.** La comprobación corre y su salida es una lista vacía, o una
+lista cuyas entradas están todas justificadas.
+
+**Commit.** `test(db): schema parity between the two build paths`.
+
+---
+
+### Paso 6 — Cómo recibe el libro una base construida por el DDL
+
+**El problema que queda abierto después de todo lo anterior.** Si producción se
+levantó por `createTables.js` con el libro vacío, correr la cadena desde 001
+falla en el segundo archivo. Ya está medido. Arreglar el corredor no lo resuelve:
+lo que falta es marcar como aplicadas las migraciones cuyo efecto el esquema ya
+tiene, que es exactamente lo que hizo el archivo de alineación con sus diecisiete
+filas.
+
+**Qué cambia.** El procedimiento escrito: qué se mide sobre la base destino para
+decidir qué filas se marcan, cómo se ensaya contra una copia restaurada, y qué se
+verifica después. **Escrito, no ejecutado.**
+
+**Lo que no cambia.** Nada se aplica a producción en este plan. Ejecutar el
+procedimiento es la decisión aparte, y la autoriza el desarrollador.
+
+**Commit.** `docs(db): the ledger seeding procedure for production`.
+
+---
+
+## 5. Lo que este plan no toca
+
+- Ningún `sql_migrations/*.sql` ya aplicado, salvo las dos líneas de transacción
+  de 001-007 que el paso 2 nombra explícitamente.
+- `backend/src/db/migrations/supabase/001_production_alignment.sql`, que ya se
+  aplicó.
+- `.env`, que comparten tres sesiones y que no debe apuntar nunca a
+  `fintrack_prod_data` ni a Supabase.
+- Producción. Nada se ejecuta contra Supabase en ningún paso.
+
+## 6. Verificación transversal
+
+El servidor arranca en el puerto **5078**. Nunca el 5000, que lo usa el
+desarrollador.
