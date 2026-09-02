@@ -249,8 +249,18 @@ function DebtorDetail() {
         <TopWhiteSpace variant={'dark'} />
         <div className='page__content'>
           <div className='main__title--container '>
-            <Link to={previousRoute} relative='path' className='iconLeftArrow'>
-              <LeftArrowLightSvg />
+            {/* The link held nothing but a glyph, so it was announced as an
+                unnamed link. "Go back" and not the destination: previousRoute
+                is whatever the caller handed over. The worded link further down
+                this file can name the debtor list because it only renders on
+                the branch that has no other origin. */}
+            <Link
+              to={previousRoute}
+              relative='path'
+              className='iconLeftArrow'
+              aria-label='Go back'
+            >
+              <LeftArrowLightSvg aria-hidden='true' />
             </Link>
             <div className='form__title'>
               {/* The name of an account that is gone, or of one that failed to

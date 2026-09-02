@@ -172,8 +172,12 @@ function PocketDetail() {
  const header = (
   <div className='page__content'>
    <div className='main__title--container'>
-    <Link to={previousRoute} className='iconLeftArrow'>
-     <LeftArrowLightSvg />
+    {/* The link held nothing but a glyph, so it was announced as an unnamed
+        link. "Go back" and not the destination: previousRoute is whatever the
+        caller handed over, and only falls back to the board, so naming the
+        board would be wrong for every other origin. */}
+    <Link to={previousRoute} className='iconLeftArrow' aria-label='Go back'>
+     <LeftArrowLightSvg aria-hidden='true' />
     </Link>
 
     <div className='form__title'>

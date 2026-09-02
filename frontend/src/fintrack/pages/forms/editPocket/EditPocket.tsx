@@ -338,8 +338,11 @@ function EditPocket() {
 
   const header = (
     <div className='main__title--container'>
-      <Link to={returnRoute} className='iconLeftArrow'>
-        <LeftArrowSvg />
+      {/* The link held nothing but a glyph, so it was announced as an unnamed
+          link. "Go back" and not the destination: returnRoute is whatever the
+          caller handed over, and only falls back to this pocket's own detail. */}
+      <Link to={returnRoute} className='iconLeftArrow' aria-label='Go back'>
+        <LeftArrowSvg aria-hidden='true' />
       </Link>
 
       <div className='form__title'>{'Edit Pocket'}</div>
