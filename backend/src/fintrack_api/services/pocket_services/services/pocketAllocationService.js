@@ -23,6 +23,7 @@ import {
  isWithinAmountRange,
  money,
  toAmount,
+ toAmountString,
 } from '../../budget_services/core/money.js';
 import { currencyAmountConversion } from '../../fx_services/conversion/currencyAmountConversion.js';
 import {
@@ -58,6 +59,17 @@ const badRequest = (message) =>
 // draws, and the budget module drew it first.
 const unprocessable = (message) =>
  Object.assign(new Error(message), { status: 422 });
+
+// A figure inside a refusal, in the unit it is actually stated in. Every amount
+// these messages name has passed convertTypedAmount, which refuses any account
+// not kept in the accounting currency, so the unit is known here and does not
+// have to be looked up. The code and not a symbol: "$" names a different amount
+// in each of the currencies this app converts between.
+//
+// toAmountString and not toAmount, so a round figure reads 3140.70 rather than
+// 3140.7 and the two amounts in one sentence line up at the same scale.
+const statedAmount = (value) =>
+ `${ACCOUNTING_CURRENCY_CODE.toUpperCase()} ${toAmountString(value)}`;
 
 /**
  * Validate an amount and return it at the scale of the column.
@@ -207,7 +219,7 @@ const writeLedgerRow = async (direction, userId, pocketId, body) => {
 
    if (requested.greaterThan(unassignedCash)) {
     throw unprocessable(
-     `Cannot commit ${toAmount(requested)} to this pocket: "${account.accountName}" has ${toAmount(unassignedCash)} of unassigned cash.`,
+     `Cannot commit ${statedAmount(requested)} to this pocket: "${account.accountName}" has ${statedAmount(unassignedCash)} of unassigned cash.`,
     );
    }
   } else {
@@ -226,7 +238,7 @@ const writeLedgerRow = async (direction, userId, pocketId, body) => {
 
    if (requested.greaterThan(held)) {
     throw unprocessable(
-     `Cannot release ${toAmount(requested)} from "${account.accountName}": this pocket holds ${toAmount(held)} from it.`,
+     `Cannot release ${statedAmount(requested)} from "${account.accountName}": this pocket holds ${statedAmount(held)} from it.`,
     );
    }
   }
