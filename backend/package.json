@@ -11,6 +11,7 @@
     "db:bootstrap": "node src/db/migrations/bootstrapping.js",
     "db:reset": "node src/db/migrations/runResetDb.js",
     "db:migrate": "node src/db/migrations/runMigrations.js",
+    "db:parity": "node src/db/migrations/schemaParity.js",
     "db:seed:base": "node src/db/migrations/runSeeds.js base",
     "db:seed:admin": "node src/db/migrations/runSeeds.js admin",
     "fx:stall-scan": "node src/fintrack_api/services/fx_services/core/detectStalledOfficialRates.js",

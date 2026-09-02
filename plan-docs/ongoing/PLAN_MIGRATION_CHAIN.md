@@ -267,6 +267,34 @@ lista cuyas entradas están todas justificadas.
 
 **Commit.** `test(db): schema parity between the two build paths`.
 
+**Aplicado y medido el 2026-09-02.** `npm run db:parity` levanta una base por
+cada camino, las compara columna por columna y reporta; no corrige nada y se
+niega a correr contra una cadena de conexión que nombre producción. La lista de
+diferencias aceptadas lleva la razón de cada una: el libro de la cadena, la
+bandera del arranque, y la tabla de respaldo que la 013 deja a propósito.
+
+**Primera corrida: seis diferencias, todas anteriores a este plan.**
+
+| diferencia | cadena | arranque |
+|---|---|---|
+| `pocket_saving_accounts.currency_id` | presente | **ausente** |
+| `currencies.currency_name` | `VARCHAR(25)` | `VARCHAR(10)` |
+| `transactions.status` | `TEXT` | `VARCHAR(50)` |
+| `users.auth_method` | `VARCHAR(255)` | `VARCHAR(50)` |
+| `category_nature_types.category_nature_type_id` | entero llano | `SERIAL` |
+| `transaction_types.transaction_type_id` | entero llano | `SERIAL` |
+
+La primera es del mismo tipo que el paso 1 y es la más grave: la moneda contable
+del bolsillo, que la 020 declara `NOT NULL`, no existe en una base levantada por
+el arranque. Las tres de ancho son truncamientos silenciosos en un sentido y
+espacio de más en el otro. Las dos últimas dejan la clave primaria de dos
+catálogos sin secuencia por el camino de la cadena, así que un `INSERT` que
+omita el id falla ahí y funciona en el otro.
+
+**No se corrigen aquí.** Cada una obliga a elegir un lado, y elegirlo es una
+decisión sobre datos: cuál ancho es el correcto, y qué pasa con las filas que ya
+existen del lado que se achica. Es trabajo propio, no residuo de este plan.
+
 ---
 
 ### Paso 6 — Cómo recibe el libro una base construida por el DDL
