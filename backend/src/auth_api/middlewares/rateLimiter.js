@@ -5,8 +5,11 @@ import { ipKeyGenerator } from 'express-rate-limit';
 // =========================================
 // 🎯 KEY GENERATOR (USER-SPECIFIC LIMITING)
 // =========================================
+// The helper takes the ip STRING. Handed a request it finds no IPv6 inside an
+// object and returns the object unchanged, and the store is a Map: a fresh
+// request every call means a fresh key every call, so nothing ever accumulates.
 const keyGenerator = (req) => {
- const safeIp = ipKeyGenerator(req);
+ const safeIp = ipKeyGenerator(req.ip);
  // Versión que mantiene formato similar al original
  const userId = req.user?.userId;
  return userId ? `${userId}_${safeIp}` : safeIp;
@@ -96,8 +99,10 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Do not count successful logins toward the limit - login
 
-// Always use IP for auth endpoints (before user is logged in)
-  keyGenerator: ipKeyGenerator, // Track by IP address
+// Always use IP for auth endpoints (before user is logged in). Express calls a
+// keyGenerator with (req, res), so the helper cannot stand in for one: it would
+// read the request itself as an ip.
+  keyGenerator: (req) => ipKeyGenerator(req.ip),
 
   handler: (req, res,  next, options) => {
    res.status(429).json(
