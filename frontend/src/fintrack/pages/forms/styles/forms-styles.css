@@ -484,3 +484,25 @@ textarea:invalid {
     padding-top: 10px;
   }
 }
+
+/* ============================================================
+   FOCUS
+   ====================== */
+
+/* index.css strips the outline from every element it lists and from every
+   button (62-67, 74-77), and this file never put one back: the caret could sit
+   on any field, on the submit button, on a nature tile or on the plus control
+   with nothing on screen to say so.
+
+   White because these five forms stand on the dark app surface, where it
+   measures 17.9:1 -- the criterion sets a floor of 3:1 for an indicator and no
+   ceiling, so a dimmer ring would only be harder to find. The offset leaves the
+   dark ground showing between a control's own border and the ring, so the two
+   never read as one thicker edge. */
+.input__container:focus-visible,
+.submit__btn:focus-visible,
+.tile__button:focus-visible,
+.iconPlusSign:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-inverse);
+  outline-offset: var(--border-width-thick);
+}

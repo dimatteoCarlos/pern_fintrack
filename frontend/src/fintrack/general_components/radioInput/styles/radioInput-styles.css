@@ -63,9 +63,14 @@
   /* background-image: radial-gradient(var(--dark) 100%, transparent 100%); */
 }
 
-.radio-input__radio:focus {
-  outline: none;
-  /* box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); */
+/* The outline was removed here EXPLICITLY, and the replacement on the next line
+   was left commented out, so the account-type radios answered the keyboard with
+   nothing at all. Near-black because every caller renders on the light tracker
+   card -- TopCard, Transfer and Debts are the only three -- where it measures
+   13:1. :focus-visible and not :focus, so a pointer press does not draw it. */
+.radio-input__radio:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline-offset: var(--border-width-thick);
 }
 /* Label for each option */
 .radio-input__label {
@@ -102,9 +107,25 @@ input[type="checkbox"]:disabled + label {
     margin-right: 0; /* gap handles space*/
   }
  /* Hide the native radio circle */
+  /* Not display: none, which is what stood here. A control that is not
+     displayed is not focusable either, so below 470px -- the width this whole
+     block is written for -- the account type could not be reached or changed by
+     keyboard at all. Reduced to an invisible pixel instead: it keeps its place
+     in the focus order, and the label beside it wears the ring. */
   .radio-input__options--chip .radio-input__radio {
-    display: none; /* radio circle hidden */
-    /* display:inline-flex; */
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    opacity: 0;
+  }
+
+  .radio-input__options--chip
+    .radio-input__radio:focus-visible
+    + .radio-input__label {
+    outline: var(--border-width-thick) solid var(--color-border-strong);
+    outline-offset: var(--border-width-thick);
   }
 
 /* Selected chip */
