@@ -211,6 +211,131 @@ primero es decisión de producto y el segundo depende de una decisión abierta.
 
 ---
 
+### F — El corredor de migraciones y las seis que producción no tiene
+
+**Objetivo.** Que la cadena se pueda aplicar sin dejar una base a medias, y que
+las seis migraciones que esta rama agregó puedan llegar a producción.
+
+**Lo que ya está medido y escrito, y no hay que volver a medir.** El plan de
+retro-fechado, sección 9.4.24, tiene el terreno levantado el 2026-09-01: la copia
+de producción se construyó por el DDL de arranque y nunca por el corredor, su
+libro de migraciones estaba vacío, y la cadena se detiene en el segundo archivo
+porque `002_accounts.sql` le cuelga un disparador `BEFORE INSERT OR UPDATE OF
+timezone ON users` a una tabla que ya existe sin esa columna. Ahí también está
+verificada la migración 024 contra la forma de producción, en los dos órdenes en
+que puede encontrarla.
+
+**Lo medido el 2026-09-02, que es lo que agrega este paquete.**
+
+*1. La ficción de la transacción cubre la corrida entera, no siete archivos.*
+La sección 9.4.24 cerraba diciendo que las migraciones de tipo de cambio son
+atómicas porque no traen sentencias de transacción propias. Es al revés: no traer
+`BEGIN;` es justamente lo que las deja sin transacción, porque para cuando les
+toca ya no hay ninguna abierta. `runMigrations.js:35` abre la suya y el `COMMIT;`
+de `001_initial_migration.sql:47` se la lleva. Reproducida la forma exacta del
+corredor contra la base de desarrollo: después de un archivo que trae su propio
+`COMMIT;`, `txid_current_if_assigned()` devuelve nulo, y una tabla creada después
+de ese punto sobrevivió al `ROLLBACK` de la línea 81. **Cada sentencia de 008 a
+024 se confirma sola.** Un archivo que falla a mitad deja su mitad aplicada sin
+fila en el libro que la nombre, y la corrida siguiente repite lo ya hecho. La
+corrección quedó escrita en la propia 9.4.24.
+
+*2. La salida exitosa después de una falla.*
+El `catch` sale con código 1 en `runMigrations.js:83` y el `finally` sale con
+código 0 en la 86. Hoy el código de salida es correcto por un accidente del
+lenguaje: probado, `process.exit` no ejecuta el `finally`. El día que alguien
+saque ese `exit` del `catch` para liberar el cliente como corresponde, toda falla
+pasa a reportarse como éxito y el paso de despliegue la lee como buena. Quien
+arregle el punto 1 se va a topar con esto en la misma función.
+
+*3. Una columna de la cadena que el camino de arranque no declara.*
+`022_add_transaction_opening_for_account.sql:65-66` agrega
+`transactions.opening_for_account_id`.
+`backend/src/db/run_time_db_init/createTables.js` no la declara en ninguna parte,
+y ese es el camino por el que producción construye. `recordTransaction.js:100` la
+inserta y `derivedBalance.js:154`, `:212` y `:237` la leen en los tres
+constructores de saldo, así que una base levantada por ese camino falla en cada
+inserción de transacción y en cada derivación de saldo. La 019 y la 024 sí están
+en los dos lados — `createTables.js:133` y `:835` — lo que muestra que la paridad
+se cuida a veces y a veces no. Es el riesgo que el encabezado de la propia 019
+anuncia: la tabla está definida dos veces y producción construye por la otra.
+
+*4. Dos documentos que no dicen lo mismo sobre el estado de producción, y nadie
+lo ha resuelto.* El encabezado de
+`backend/src/db/migrations/supabase/001_production_alignment.sql` dice que su paso
+9 escribió diecisiete filas en el libro y que el archivo se aplicó a Supabase el
+2026-08-22, más la 018 el 2026-08-27. La sección 9.4.24 midió `fintrack_prod_data`
+el 2026-09-01 y encontró el libro vacío. Las dos cosas se concilian si
+`fintrack_prod_data` es una restauración local anterior al 22 de agosto y no la
+base viva — el propio archivo de alineación dice que el volcado es del 2026-08-21
+23:04 — pero **eso no está medido**. De cuál de las dos sea la verdad depende si
+lo pendiente son seis migraciones o veinticuatro. **Se mide antes de tocar nada.**
+
+*5. Una fila del libro que nombra un archivo inexistente.*
+`fintrack_dev` registra `012_backfill_budget_policies.sql` el 2026-08-08. El
+repositorio tiene `012_backfill_budget_allocations.sql`, registrado el 2026-08-14.
+Nadie puede decir qué esquema produjo la primera.
+
+*6. Ninguna migración de la cadena declara su reverso*, contra lo que pide el
+documento de reglas del proyecto. Sólo el archivo de alineación marca `-- UP`. Lo
+más cercano a un reverso son tres líneas comentadas en
+`020_create_pocket_tables.sql:425-427`.
+
+**Puede tocar.** `runMigrations.js`, `createTables.js`, y archivos SQL nuevos.
+
+**No toca.** Ningún `sql_migrations/*.sql` ya aplicado — no hay migraciones
+correctivas. Tampoco `supabase/001_production_alignment.sql`, que ya se aplicó.
+Tampoco `.env`, que comparten tres sesiones y que no debe apuntar nunca a
+`fintrack_prod_data` ni a Supabase. Nada se ejecuta contra Supabase.
+
+**Gobierna.**
+
+- Una migración sale bien la primera vez. Romper una base local es un costo
+  aceptado; romper la cadena no lo es.
+- Lo que una migración le agrega a una tabla entra a `createTables.js` en el mismo
+  commit, o producción nunca lo recibe.
+- Cada migración declara su avance y su reverso explícitamente.
+- La transacción la maneja el corredor o la maneja el archivo, nunca los dos.
+
+**Decisiones ya tomadas, con su razón.** Van tomadas para que el agente no las
+devuelva; si alguna se quiere distinta, se dice antes de repartir el paquete.
+
+- **Una transacción por archivo, y la abre el corredor.** El corredor envuelve
+  cada archivo por separado: abre antes del archivo y confirma después de escribir
+  su fila del libro, de modo que el esquema y el registro se confirman juntos —
+  que es justamente el invariante que hoy se rompe. A los siete archivos que traen
+  su propio `BEGIN;`/`COMMIT;` se les quitan. La alternativa, dejar que cada
+  archivo maneje lo suyo y que el corredor no abra nada, deja la fila del libro
+  fuera de la transacción del archivo y reproduce el mismo defecto en chico.
+- **La columna que falta entra por `createTables.js`, sin migración nueva.** Ese
+  archivo construye bases vacías; agregarle una columna no toca ninguna base que
+  ya tenga datos, así que no hay nada que migrar.
+- **La fila fantasma del libro se deja como está.** Corregirla es reescribir
+  historia sobre una base de desarrollo que igual se reconstruye, y en producción
+  esa fila no existe.
+
+**Lo que no decide solo.** Si al terminar el arreglo del corredor se aplica o no
+la cadena a producción. Eso es una operación sobre datos vivos, va con su propio
+ensayo contra una copia restaurada, y la autoriza el desarrollador.
+
+**Verificación.**
+
+- Contra una base descartable construida desde vacío, la cadena entera corre y el
+  libro queda con veinticuatro filas y ninguna más.
+- Con una falla forzada en medio de un archivo, ni su DDL ni su fila del libro
+  sobreviven, y una segunda corrida arranca desde ese archivo.
+- Una base levantada sólo por `createTables.js` acepta una inserción de
+  transacción y deriva un saldo.
+- El servidor arranca en el puerto 5078. **Nunca el 5000**, que lo usa el
+  desarrollador.
+
+**Límite de alcance.** No se reescribe ninguna migración ya aplicada, no se toca
+el archivo de alineación de producción, y no se aplica nada a producción en este
+paquete: esto deja la cadena en condiciones de aplicarse, y aplicarla es la
+decisión aparte de arriba.
+
+---
+
 ## 5. Los que no se reparten todavía, y por qué
 
 | unidad | qué la traba |
