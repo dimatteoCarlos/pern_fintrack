@@ -149,11 +149,13 @@
   text-transform: capitalize;
 }
 
+/* No :hover rule here. The one that stood below this declared `color: cyan f`,
+   which is not a colour, so the browser discarded the whole declaration and the
+   rule had never drawn anything. The row does answer the pointer -- the `hover`
+   class beside this one supplies --hoverColor -- and reading a dead rule as the
+   source of that is how it stayed unnoticed. Budget carried the same copy. */
 .box__title--category__name {
   cursor: pointer;
-}
-.box__title--category__name:hover {
-  color: cyan f;
 }
 
 .box__title--spent {
