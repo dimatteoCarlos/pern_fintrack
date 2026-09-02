@@ -1,3 +1,20 @@
+/* The word role='status' reads out. Taken off the screen rather than hidden:
+   display: none and visibility: hidden are both skipped by a screen reader, and
+   this text exists for one and nothing else. Same recipe as
+   loadingSpinner.module.css's .srOnly, kept local so the spinner does not
+   depend on another route's stylesheet having been loaded. */
+.loader__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .loader {
   transform: translateZ(1px);
 }
