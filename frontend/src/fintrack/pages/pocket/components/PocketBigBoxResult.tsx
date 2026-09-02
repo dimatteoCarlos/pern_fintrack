@@ -45,6 +45,82 @@ const deadlineLabel = (day: string | null) => {
  return `${date}-${month}-${year}`;
 };
 
+// The three states partition the board. Overdue requires the committed amount
+// to be below the goal and funded requires the opposite, so no pocket is in
+// both and none is outside all three — which is what makes this subtraction
+// exact rather than an estimate the server would have to confirm.
+// How many rows sit at each level of the date partition, which is what replaces
+// the single "active" figure this tile used to print. "Active" was never a
+// state: it was the residue of the two the server folds, and it hid the one
+// reading that asks for action by lumping a pocket thirty days out together
+// with one that has a year.
+//
+// Funded and overdue are taken from the server, which folds them; only the
+// split of the remainder is counted here, because the thirty-day threshold is
+// a presentation rule the model has nothing to read it from. The four add up to
+// pocketCount by construction: the two served counts are mutually exclusive and
+// the level helper sends everything else to one of the other two.
+const countByLevel = (
+ summary: PocketBoardSummary,
+ pockets: PocketStatus[],
+) => {
+ const at = (level: string) =>
+  pockets.filter((pocket) => pocketDateLevel(pocket) === level).length;
+
+ const overFunded = at('overFunded');
+
+ return {
+  // The served count, whole. A pocket past its target IS funded — the flag is
+  // set at committed above OR EQUAL — so taking the over-target rows out of it
+  // left "funded" meaning "landed on the cent", a case one cent wide that read
+  // as zero beside two pockets that had plainly reached their targets.
+  funded: summary.fundedCount,
+  overFunded,
+  overdue: summary.overdueCount,
+  atRisk: at('atRisk'),
+  onPlan: at('onPlan'),
+ };
+};
+
+// A level with nothing in it stays on screen and steps back. Dropping it breaks
+// the partition its heading counts, and a reader cannot tell a level that is
+// absent from one with nothing in it; printing it at full ink gives an empty
+// level the same call on the eye as a populated one. On a board where four of
+// the five are empty, this is what leaves the fifth as the only thing lit.
+const markClass = (count: number): string =>
+ count === 0 ? 'pocketHero__mark pocketHero__mark--empty' : 'pocketHero__mark';
+
+// The pocket to send the owner to, which is not the same question as which
+// deadline falls first on the calendar.
+//
+// Excluding the late ones outright, as this did, blanked the card on exactly
+// the board where direction matters most: every unfinished pocket past its
+// date meant nothing upcoming, so four pockets could be raising an alert while
+// the tile said there was nothing pending. A deadline that has passed is not
+// next by the calendar, but it is very much what to do next.
+//
+// So: the nearest deadline among those still running, and only when none is
+// still running, the one furthest past its date. daysRemaining goes negative
+// once the deadline passes, so one comparison answers both.
+//
+// null when every pocket has reached its target, or there are none at all.
+// The tile is then absent rather than empty: the bands above already say
+// "in progress 0", and a card whose only message is that it has nothing to say
+// spends the width of the hero to repeat it.
+const findNextGoal = (pockets: PocketStatus[]): PocketStatus | null => {
+ const unfinished = pockets.filter((pocket) => !pocket.funded);
+ const running = unfinished.filter((pocket) => !pocket.overdue);
+ const pool = running.length > 0 ? running : unfinished;
+
+ return pool.reduce<PocketStatus | null>(
+  (nearest, pocket) =>
+   nearest === null || pocket.daysRemaining < nearest.daysRemaining
+    ? pocket
+    : nearest,
+  null,
+ );
+};
+
 // Three levels, and they answer three different questions: where the board
 // stands as a whole, which pocket the owner has to act on next, and how far
 // along everything is together.
