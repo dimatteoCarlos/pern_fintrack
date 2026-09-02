@@ -109,6 +109,16 @@
   padding: var(--space-3);
 }
 
+/* The create button LEADS this card; on the budget and pocket boards it closes
+   one. Its 1.75rem top margin was written for that other position, where it
+   separates the button from the last row above it. Here there is no row above
+   it — only the card's own edge — so the margin just doubled the padding it
+   already sits behind. Scoped to the button in first position, so the shared
+   rule keeps working where it was meant to. */
+.debtsLayout .debts.cards__presentation > button.line__container {
+  margin-top: 0;
+}
+
 a.icon {
   height: 100%;
   width: 2rem;
