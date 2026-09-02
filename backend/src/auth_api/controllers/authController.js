@@ -317,7 +317,9 @@ export const signInUser = async (req, res, next) => {
       email: user.email,
       user_firstname: user.user_firstname,
       user_lastname: user.user_lastname,
-      user_role_name: user.user_role_name,
+      // The column is user_role_name; the contract is `role`, the same name
+      // validate-session already returns. Two endpoints, one user, one key.
+      role: user.user_role_name,
       currency: user.currency,
       user_contact: user.user_contact,
       timezone: user.timezone,
