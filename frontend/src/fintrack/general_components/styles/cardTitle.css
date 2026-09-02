@@ -66,6 +66,15 @@
  padding: 0;
 }
 
+/* The title inside a stacked row is a heading element, and index.css declares a
+   font-size on the universal selector, which matches that element directly and
+   beats what it would otherwise inherit from the box around it -- the same trap
+   the span rule above answers. */
+.presentation__card--heading {
+ font-size: inherit;
+ font-weight: inherit;
+}
+
 /* Quieter than the row above it: this one is read once, the title every time.
    The size sits on the spans and not on the row because index.css declares one
    on the universal selector, which matches a span directly and beats what it
