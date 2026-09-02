@@ -122,6 +122,12 @@ export const mainTables = [
   {
     tblName: `pocket_saving_accounts`,
     table: `CREATE TABLE IF NOT EXISTS pocket_saving_accounts (account_id INT PRIMARY KEY REFERENCES user_accounts(account_id) ON DELETE CASCADE, target DECIMAL(15, 2),
+
+ -- The accounting currency target is expressed in. Nullable, and ON DELETE SET
+ -- NULL, exactly as migration 002 declares it: this one predates the FX pair
+ -- below and does not share their NOT NULL. See migration 002.
+    currency_id INT REFERENCES currencies(currency_id) ON DELETE SET NULL ON UPDATE CASCADE,
+
     note  VARCHAR(155),
     desired_date TIMESTAMPTZ NOT NULL,
     account_start_date TIMESTAMPTZ NOT NULL,

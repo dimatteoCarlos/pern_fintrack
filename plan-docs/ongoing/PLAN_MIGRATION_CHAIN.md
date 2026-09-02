@@ -275,25 +275,32 @@ bandera del arranque, y la tabla de respaldo que la 013 deja a propósito.
 
 **Primera corrida: seis diferencias, todas anteriores a este plan.**
 
-| diferencia | cadena | arranque |
-|---|---|---|
-| `pocket_saving_accounts.currency_id` | presente | **ausente** |
-| `currencies.currency_name` | `VARCHAR(25)` | `VARCHAR(10)` |
-| `transactions.status` | `TEXT` | `VARCHAR(50)` |
-| `users.auth_method` | `VARCHAR(255)` | `VARCHAR(50)` |
-| `category_nature_types.category_nature_type_id` | entero llano | `SERIAL` |
-| `transaction_types.transaction_type_id` | entero llano | `SERIAL` |
+| diferencia | cadena | arranque | estado |
+|---|---|---|---|
+| `pocket_saving_accounts.currency_id` | presente | **ausente** | **cerrada** el 2026-09-02 |
+| `currencies.currency_name` | `VARCHAR(25)` | `VARCHAR(10)` | abierta |
+| `transactions.status` | `TEXT` | `VARCHAR(50)` | abierta |
+| `users.auth_method` | `VARCHAR(50)` | `VARCHAR(255)` | abierta |
+| `category_nature_types.category_nature_type_id` | entero llano | `SERIAL` | abierta |
+| `transaction_types.transaction_type_id` | entero llano | `SERIAL` | abierta |
 
-La primera es del mismo tipo que el paso 1 y es la más grave: la moneda contable
-del bolsillo, que la 020 declara `NOT NULL`, no existe en una base levantada por
-el arranque. Las tres de ancho son truncamientos silenciosos en un sentido y
-espacio de más en el otro. Las dos últimas dejan la clave primaria de dos
-catálogos sin secuencia por el camino de la cadena, así que un `INSERT` que
-omita el id falla ahí y funciona en el otro.
+**La primera se cerró el mismo día, por ser del mismo tipo que el paso 1.** La
+columna viene de `002_accounts.sql:198-200`, no de la 020 — el `NOT NULL` de la
+020 es de `pockets`, otra tabla — y es **anulable**, con `ON DELETE SET NULL`.
+Al no ser obligatoria no hay nada que rellenar: entra a `createTables.js` con la
+definición textual de la 002 y ninguna base con datos se toca. Producción ya la
+tiene, porque la 002 está entre las diecisiete filas que sembró la alineación;
+la falta sólo existía en bases levantadas desde vacío por el arranque. Y a
+diferencia de `opening_for_account_id`, ningún archivo bajo `fintrack_api` ni
+`utils` la lee, así que era divergencia latente y no una vía rota.
 
-**No se corrigen aquí.** Cada una obliga a elegir un lado, y elegirlo es una
-decisión sobre datos: cuál ancho es el correcto, y qué pasa con las filas que ya
-existen del lado que se achica. Es trabajo propio, no residuo de este plan.
+**Las otras cuatro no se corrigen aquí.** Cada una obliga a elegir un lado, y
+elegirlo es una decisión sobre datos: cuál ancho es el correcto, y qué pasa con
+las filas que ya existen del lado que se achica. Las tres de ancho son
+truncamientos silenciosos en un sentido y espacio de más en el otro; las dos de
+clave primaria dejan dos catálogos sin secuencia por el camino de la cadena, así
+que un `INSERT` que omita el id falla ahí y funciona en el otro. Son trabajo
+propio, no residuo de este plan.
 
 ---
 
