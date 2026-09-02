@@ -522,7 +522,12 @@ button.line__container {
    it is clipped, and each reading below is short enough that the clip does not
    fire at the width it is written for. */
 .pocketHero__meta {
- font-size: clamp(var(--font-size-3xs), 2.4cqi, var(--font-size-xs));
+ /* 2.75 and not 2.4: measured across the range, the longest reading each tile
+    carries stops fitting at about 2.9% of the container, so the line was being
+    drawn a fifth smaller than its own track allows. The floor and the ceiling
+    are unchanged -- at the narrowest box this still lands on --font-size-3xs,
+    and it reaches --font-size-xs at about 430 of container. */
+ font-size: clamp(var(--font-size-3xs), 2.75cqi, var(--font-size-xs));
  font-weight: var(--font-weight-regular);
  color: var(--color-content-on-dark-subtle);
  line-height: 1.4;
@@ -542,6 +547,17 @@ button.line__container {
    Rewriting it as a viewport media query would be the wrong instrument for the
    right number: the board's width follows its column, and a column that ever
    changes its share would move the hero without moving the viewport. */
+/* index.css declares a font-size on the universal selector, so these two spans
+   matched it DIRECTLY at 16px and beat what they would otherwise have inherited
+   from the line holding them -- a clamp that resolves to about 8px in the narrow
+   band. The two lines that carry a second reading were therefore drawn at nearly
+   twice the size of the one that does not, and truncated where it did not. It is
+   the same trap the day label and the card heading already answer. */
+.pocketHero__meta--wide,
+.pocketHero__meta--narrow {
+ font-size: inherit;
+}
+
 @container pocketHero (max-width: 351.98px) {
  .pocketHero__meta--wide {
   display: none;
