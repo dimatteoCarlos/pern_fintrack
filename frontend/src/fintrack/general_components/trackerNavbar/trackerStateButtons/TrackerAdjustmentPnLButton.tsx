@@ -13,10 +13,22 @@ function TrackerInvestmentButton() {
   return (
     <>
       <div className='trackerStateButton__container'>
-        <NavLink to='pnl' className={classNavLink}>
+        {/* The icon carries no title, so without this the link announces
+            unnamed. Pointed at the caption below rather than repeating the word
+            in an aria-label: the accessible name is then the visible text. */}
+        <NavLink
+          to='pnl'
+          aria-labelledby='trackerTabLabel-pnl'
+          className={classNavLink}
+        >
           <AdjustSvg />
         </NavLink>
-        <div className='trackerStateButton__state--title'>{'PnL'}</div>
+        <div
+          id='trackerTabLabel-pnl'
+          className='trackerStateButton__state--title'
+        >
+          {'PnL'}
+        </div>
       </div>
     </>
   );

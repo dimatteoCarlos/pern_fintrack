@@ -14,10 +14,22 @@ function TrackerTransferButton() {
   return (
     <>
       <div className='trackerStateButton__container'>
-        <NavLink to='transfer' className={classNavLink}>
+        {/* The icon carries no title, so without this the link announces
+            unnamed. Pointed at the caption below rather than repeating the word
+            in an aria-label: the accessible name is then the visible text. */}
+        <NavLink
+          to='transfer'
+          aria-labelledby='trackerTabLabel-transfer'
+          className={classNavLink}
+        >
           <TransferSvg />
         </NavLink>
-        <div className='trackerStateButton__state--title'>{'Transfer'}</div>
+        <div
+          id='trackerTabLabel-transfer'
+          className='trackerStateButton__state--title'
+        >
+          {'Transfer'}
+        </div>
       </div>
     </>
   );

@@ -1,46 +1,56 @@
 /* frontend/src/general_components/trackerNavbar/trackerStateButtons/trackerStateButton.css */
 
 .trackerStateButton__container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: fit-content;
-  /* background-color: green; */
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ width: fit-content;
+ /* background-color: green; */
 }
 
 .trackerStateIconButton {
-  border-radius: 0.75rem;
-  height: 3.5rem;
-  width: 3.5rem;
+ border-radius: var(--radius-md);
+ height: 3.5rem;
+ width: 3.5rem;
 
-  /* The declaration that stood here was `background-color: var(--dark)3` --
-     the trailing 3 made it invalid, so the parser has always dropped it and
-     the button has always rested transparent over the navbar's own fill.
-     Removed rather than repaired: repairing it would give these tabs a
-     background they have never had, which is a change of appearance nobody
-     asked for dressed up as a fix. */
-  cursor: pointer;
+ /* The declaration that stood here was `background-color: var(--dark)3` --
+    the trailing 3 made it invalid, so the parser has always dropped it and
+    the button has always rested transparent over the navbar's own fill.
+    Removed rather than repaired: repairing it would give these tabs a
+    background they have never had, which is a change of appearance nobody
+    asked for dressed up as a fix. */
+ cursor: pointer;
 
-  padding: 2.5px;
+ /* Transparent by default so each state below only changes its colour. This
+    replaces the `padding: 2.5px` / `padding: 0` pair that used to absorb the
+    border's width by hand. */
+ border: var(--border-width-thick) solid transparent;
 }
 
+/* Split off `:focus`, which used to share this border: the current tab and a
+   merely focused tab were drawn identically, so the caret was invisible on the
+   tab already selected. `:active` stays because a press and a selection do mean
+   the same thing here -- the press is about to make it the current tab. */
 .trackerStateIconButton.active,
-.trackerStateIconButton:focus,
 .trackerStateIconButton:active {
-  border: 2px solid var(--creme);
-  border-color: var(--creme);
-  padding: 0;
-  border-radius: 0.75rem;
+ border-color: var(--color-accent);
+}
+
+/* An outline and not a border: it sits outside the border above, so a focused
+   tab that is also the current one shows both marks at once. */
+.trackerStateIconButton:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-interactive-hover);
+ outline-offset: var(--border-width-thick);
 }
 
 .trackerStateIconButton:not(.active, :active):hover {
-  border: 2px solid cyan;
+ border-color: var(--color-interactive-hover);
 }
 
 .trackerStateButton__state--title {
-  font-size: 0.625rem;
-  color: #f7f7f7;
-  text-transform: capitalize;
-  text-align: center;
-  margin-top: 0.25em;
+ font-size: var(--font-size-2xs);
+ color: var(--color-content-on-dark);
+ text-transform: capitalize;
+ text-align: center;
+ margin-top: var(--space-1);
 }

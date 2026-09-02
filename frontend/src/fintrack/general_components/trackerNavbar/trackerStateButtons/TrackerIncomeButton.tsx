@@ -8,8 +8,12 @@ function TrackerIncomeButton() {
     <>
       <div className='trackerStateButton__container'>
         <div className={`trackerStateButton`}>
+          {/* The icon carries no title, so without this the link announces
+              unnamed. Pointed at the caption below rather than repeating the
+              word in an aria-label: the accessible name is the visible text. */}
           <NavLink
             to={'income'}
+            aria-labelledby='trackerTabLabel-income'
             className={`trackerStateIconButton flx-col-center ${(isActive: {
               isActive: boolean;
             }) => (isActive ? 'active' : '')}`}
@@ -17,7 +21,12 @@ function TrackerIncomeButton() {
             <IncomeSvg />
           </NavLink>
         </div>
-        <div className='trackerStateButton__state--title'>{'Income'}</div>
+        <div
+          id='trackerTabLabel-income'
+          className='trackerStateButton__state--title'
+        >
+          {'Income'}
+        </div>
       </div>
     </>
   );
