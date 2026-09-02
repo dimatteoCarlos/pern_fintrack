@@ -106,9 +106,13 @@ const makeSummary = (pockets, accountAllocations) => {
   // The accounts a pocket actually draws on, the board's fold of the sourceCount
   // each row already carries. getAccountAllocations returns every account the
   // owner holds, including the ones committed to nothing, because the account
-  // screen has to print that zero — and a zero is not a source. Bank and cash
-  // both count: those are the two types that can fund a pocket, and counting
-  // only one would stop reconciling with totalAllocated above it.
+  // screen has to print that zero — and a zero is not a source.
+  //
+  // Not filtered by account type, deliberately. The two source lists admit
+  // 'cash' beside 'bank', but no cash account exists and no creation path
+  // offers one, so a type filter would encode a rule the data does not have.
+  // Counting whatever actually funds a pocket stays true either way, and keeps
+  // the figure reconciling with totalAllocated printed above it.
   //
   // greaterThan and not isPositive: Decimal tests the SIGN, and zero is signed
   // positive, so isPositive() admits every uncommitted account and turned this
