@@ -3,7 +3,8 @@
 -- Migration 004: Create exchange_rates table (FX cache)
 -- ============================================
 
-BEGIN;
+-- Transaction control belongs to runMigrations.js, which opens one
+-- transaction per file. A BEGIN here would close the runner's own.
 
 CREATE TABLE IF NOT EXISTS exchange_rates (
     rate_id SERIAL PRIMARY KEY,
@@ -16,5 +17,3 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
     provider_updated_at TIMESTAMPTZ,
     UNIQUE (base_currency_id, target_currency_id)
 );
-
-COMMIT;

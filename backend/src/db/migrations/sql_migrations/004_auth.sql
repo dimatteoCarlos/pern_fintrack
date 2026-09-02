@@ -5,7 +5,8 @@
 -- Purpose: Authentication base tables
 -- ==========================================
 
-BEGIN;
+-- Transaction control belongs to runMigrations.js, which opens one
+-- transaction per file. A BEGIN here would close the runner's own.
 
 -- -------------------------------------
 -- REFRESH TOKENS / SESSIONS
@@ -28,4 +29,3 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMIT;

@@ -5,7 +5,8 @@
 -- Financial transactions (double-entry compatible)
 -- ======================================
 
-BEGIN;
+-- Transaction control belongs to runMigrations.js, which opens one
+-- transaction per file. A BEGIN here would close the runner's own.
 
 -- ======================================
 -- TRANSACTIONS (logical group)
@@ -80,4 +81,3 @@ CREATE TABLE transactions (
 --   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 -- );
 
-COMMIT;

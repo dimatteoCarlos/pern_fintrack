@@ -7,7 +7,8 @@
 -- 001_init.sql (catalog / reference tables)
 -- ======================================
 
-BEGIN;
+-- Transaction control belongs to runMigrations.js, which opens one
+-- transaction per file. A BEGIN here would close the runner's own.
 
 -- ======================================
 -- USERS
@@ -204,4 +205,3 @@ CREATE TABLE IF NOT EXISTS pocket_saving_accounts (
   account_start_date TIMESTAMPTZ NOT NULL
 );
 
-COMMIT;

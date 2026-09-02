@@ -6,7 +6,8 @@
 -- for the application to operate.
 -- ======================================
 
-BEGIN;
+-- Transaction control belongs to runMigrations.js, which opens one
+-- transaction per file. A BEGIN here would close the runner's own.
 
 -- -----------------------
 -- CURRENCIES
@@ -79,5 +80,4 @@ INSERT INTO transaction_types (transaction_type_id, transaction_type_name) VALUE
   (5, 'account-opening')
 ON CONFLICT (transaction_type_id) DO NOTHING;
 
-COMMIT;
 

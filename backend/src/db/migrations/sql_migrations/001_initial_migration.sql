@@ -5,7 +5,8 @@
 -- Migration 001: Initial base tables
 -- ============================
 
-BEGIN;
+-- Transaction control belongs to runMigrations.js, which opens one
+-- transaction per file. A BEGIN here would close the runner's own.
 
 -- Control table
 CREATE TABLE IF NOT EXISTS migrations (
@@ -44,4 +45,3 @@ CREATE TABLE IF NOT EXISTS transaction_types (
 
 CREATE TABLE IF NOT EXISTS user_roles(user_role_id SERIAL PRIMARY KEY  NOT NULL, user_role_name VARCHAR(15) NOT NULL CHECK (user_role_name IN ('user', 'admin', 'super_admin', 'system_admin') ) );
 
-COMMIT;

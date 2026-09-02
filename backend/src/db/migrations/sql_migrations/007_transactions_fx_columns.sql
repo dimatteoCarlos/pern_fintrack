@@ -4,7 +4,8 @@
 -- Migration 005: Add FX audit columns to transactions
 -- ============================================
 
-BEGIN;
+-- Transaction control belongs to runMigrations.js, which opens one
+-- transaction per file. A BEGIN here would close the runner's own.
 
 -- Add columns (idempotent)
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS original_amount DECIMAL(15,2) NOT NULL DEFAULT 0;
@@ -30,5 +31,3 @@ BEGIN
     END IF;
 END
 $$;
-
-COMMIT;
