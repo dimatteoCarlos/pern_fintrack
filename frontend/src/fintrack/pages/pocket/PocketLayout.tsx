@@ -1,5 +1,5 @@
 //frontend\src\fintrack\pages\pocket\PocketLayout.tsx
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import { usePocketBoardStore } from '../../stores/usePocketBoardStore.ts';
 import PocketBigBoxResult from './components/PocketBigBoxResult.tsx';
@@ -9,8 +9,6 @@ import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 import { Outlet } from 'react-router-dom';
 
 function PocketLayout() {
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   // The module's single request. This header and the list below are both drawn
   // from it, which is why it is issued here and not in either one. It used to be
   // two requests for one screen, and the two could disagree: the header's query
@@ -26,13 +24,6 @@ function PocketLayout() {
     fetchBoard();
   }, [fetchBoard]);
 
-  useEffect(() => {
-    if (error) {
-      setErrorMessage(error);
-      const timer = setTimeout(() => setErrorMessage(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
   //--------------------------------------
   // The summary and the rows go through whole, nulls included. Narrowing them
   // to three fields here is what left six of the ten figures the server folds
@@ -72,25 +63,35 @@ function PocketLayout() {
           </div>
         )}
 
-        <PocketBigBoxResult
-          summary={summary}
-          pockets={pockets}
-          notice={notice}
-        />
+        {/* The failure takes the hero's own place, the way the debts board
+            already answers. It used to be a red line floated over the box at
+            top: 1.5%, which erased itself after three seconds while the totals
+            it contradicted stayed on screen -- and since the guard tested
+            `error` and the text read a separate `errorMessage`, what stayed
+            behind for the life of the view was an empty paragraph.
+            No figure survives a failed request, so no figure is drawn. */}
+        {error ? (
+          <div className='total__container flex-col-sb boardState' role='alert'>
+            <p className='boardState__text'>
+              The pocket summary could not be loaded.
+            </p>
 
-        {error && (
-          <p
-            style={{
-              color: 'red',
-              position: 'absolute',
-              top: '1.5%',
-              left: '10%',
-              zIndex: '150',
-            }}
-          >
-            {errorMessage}
-          </p>
+            <button
+              type='button'
+              className='boardState__retry'
+              onClick={fetchBoard}
+            >
+              Try again
+            </button>
+          </div>
+        ) : (
+          <PocketBigBoxResult
+            summary={summary}
+            pockets={pockets}
+            notice={notice}
+          />
         )}
+
         <Outlet />
       </div>
     </>

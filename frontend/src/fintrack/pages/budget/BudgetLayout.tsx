@@ -1,5 +1,5 @@
 //frontend\src\fintrack\pages\budget\BudgetLayout.tsx
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
 import { useBudgetStatusStore } from '../../stores/useBudgetStatusStore.ts';
 import BudgetBigBoxResult from './components/BudgetBigBoxResult.tsx';
@@ -9,8 +9,6 @@ import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
 import { Outlet, useSearchParams } from 'react-router-dom';
 
 function BudgetLayout() {
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   // The module's single request. This header and the category list below are
   // both drawn from it, which is why it is issued here and not in either one.
   const totals = useBudgetStatusStore((state) => state.totals);
@@ -53,13 +51,11 @@ function BudgetLayout() {
     [setSearchParams],
   );
 
-  useEffect(() => {
-    if (error) {
-      setErrorMessage(error);
-      const timer = setTimeout(() => setErrorMessage(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
+  // The same argument the effect above sends, so pressing the button asks for
+  // the month on screen and not for whatever the server would resolve today.
+  const retry = useCallback(() => {
+    fetchStatus(monthParam ?? undefined);
+  }, [fetchStatus, monthParam]);
   //--------------------------------------
   // Served, never summed here: totals is the server's own fold of the rows the
   // list below renders, so the header and the list cannot disagree.
@@ -131,30 +127,35 @@ function BudgetLayout() {
           </div>
         )}
 
-        <BudgetBigBoxResult
-          budgetAmount={budgetAmount}
-          actualSpent={actualSpent}
-          remainingBudget={remainingBudget}
-          executionPercentage={executionPercentage}
-          currency={currency}
-          isOverBudget={isOverBudget}
-          notice={notice}
-        />
+        {/* The failure takes the hero's own place, the way the debts board
+            already answers. It used to be a red line floated over the box at
+            top: 1.5%, which erased itself after three seconds while the totals
+            it contradicted stayed on screen -- and since the guard tested
+            `error` and the text read a separate `errorMessage`, what stayed
+            behind for the life of the view was an empty paragraph.
+            No figure survives a failed request, so no figure is drawn. */}
+        {error ? (
+          <div className='total__container flex-col-sb boardState' role='alert'>
+            <p className='boardState__text'>
+              The budget summary could not be loaded.
+            </p>
 
-        {error && (
-          <p
-            style={{
-              color: 'red',
-              position: 'absolute',
-              top: '1.5%',
-              left: '10%',
-              zIndex: '150',
-            }}
-          >
-            {/* Error:  */}
-            {errorMessage}
-          </p>
+            <button type='button' className='boardState__retry' onClick={retry}>
+              Try again
+            </button>
+          </div>
+        ) : (
+          <BudgetBigBoxResult
+            budgetAmount={budgetAmount}
+            actualSpent={actualSpent}
+            remainingBudget={remainingBudget}
+            executionPercentage={executionPercentage}
+            currency={currency}
+            isOverBudget={isOverBudget}
+            notice={notice}
+          />
         )}
+
         <Outlet />
       </div>
     </>

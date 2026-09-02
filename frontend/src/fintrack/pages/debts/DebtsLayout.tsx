@@ -122,7 +122,11 @@ function DebtsLayout() {
           <div className='debtsBoard__skeletonBar debtsBoard__skeletonBar--wide'></div>
         </div>
       ) : hasFailed ? (
-        <div className='bigBox__container debtsBoard__state'>
+        // The panel replaced the totals but never said so out loud: the swap is
+        // silent to a screen reader, which is still being read the figures that
+        // are no longer on screen. The two boards beside this one now answer the
+        // same way.
+        <div className='bigBox__container debtsBoard__state' role='alert'>
           <p className='debtsBoard__stateText'>
             The debts summary could not be loaded.
           </p>

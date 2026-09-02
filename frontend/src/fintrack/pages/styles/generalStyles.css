@@ -413,6 +413,75 @@ input[type='number'] {
   cursor: pointer;
 }
 
+/* ============================================================
+   A BOARD HERO THAT HAS NOTHING TO SHOW
+   ====================== */
+
+/* The panel a board puts where its totals would be when the request failed. It
+   lives here and not in either board's stylesheet because budget-styles.css and
+   pocket-styles.css are already near-duplicates of each other and a third copy
+   of the same rules is how they got that way.
+
+   Calibrated for --color-surface-deep, which is what .total__container paints
+   on both boards. Debts keeps .debtsBoard__state instead: its hero is the cream
+   .bigBox__container, so the same values would be invisible there and its own
+   are unusable here. */
+.boardState {
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding-block: var(--space-8);
+  text-align: center;
+}
+
+.boardState__text {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-wide);
+  color: var(--color-content-on-dark-subtle);
+}
+
+/* Retry, which is what separates a failure from an empty board: the reader can
+   do something about it. The touch target is stated rather than counted from
+   padding, so the control clears the floor whatever the label says. */
+.boardState__retry {
+  min-height: var(--size-touch-target);
+  padding: var(--space-2) var(--space-6);
+  border: var(--border-width-thin) solid var(--color-border-inverse);
+  border-radius: var(--radius-full);
+  background-color: transparent;
+  color: var(--color-content-on-dark);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast),
+    color var(--motion-fast);
+}
+
+.boardState__retry:hover {
+  background-color: var(--color-content-on-dark);
+  color: var(--color-content-primary);
+}
+
+.boardState__retry:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-inverse);
+  outline-offset: var(--border-width-thick);
+}
+
+.boardState__retry:active {
+  background-color: var(--color-accent);
+  color: var(--color-content-primary);
+}
+
+.boardState__retry:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .box__container, .box__row { 
  width: 100%; 
 }
