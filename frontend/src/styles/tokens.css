@@ -41,6 +41,13 @@
  --color-content-on-dark-muted: #e8e4da; /* on app, raised */
  --color-content-on-dark-subtle: #bdb1b1; /* on app, raised */
  --color-content-placeholder: #5b5b5b; /* any input; 5.35:1 on --color-surface-panel, was 3.16:1 at #7f7f7f */
+ /* The sibling for a field that stands on the app surface, which the one above
+    cannot serve: #5b5b5b measures 2.83:1 there. The value is not new -- it is
+    what forms-styles.css:215 already places on the creation forms' own fields,
+    at 6.57:1; naming it is what lets the second placeholder in that file stop
+    being an unmeasured literal. A placeholder is hint text, so it stays a step
+    below --color-content-on-dark-subtle rather than borrowing it. */
+ --color-content-on-dark-placeholder: #979797; /* on app, raised; 6.57:1 */
 
  /* COLOR - INTERACTIVE */
  --color-accent: #e8e4da;

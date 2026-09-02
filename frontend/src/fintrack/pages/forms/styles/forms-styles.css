@@ -212,7 +212,7 @@ textarea.input__container {
 
 /* Dark forms placeholder baseline */
 .input__container::placeholder {
-  color: rgb(151, 151, 151);
+  color: var(--color-content-on-dark-placeholder);
   font-size: 0.875rem;
   padding-left: 0.5em;
   font-weight: 500;
@@ -331,9 +331,14 @@ textarea.input__container {
   width: 100%;
 }
 
+/* The target amount used to state #5b5b5b here, which is
+   --color-content-placeholder's value -- the token calibrated for the cream
+   panel. Over a transparent field on the app surface it measured 2.83:1, under
+   the 4.5:1 floor, while the field two rules above it already read at 6.57:1.
+   One placeholder in this file was legible and the other was not. */
 .input__targetAmount::placeholder {
   background-color: transparent;
-  color: #5b5b5b;
+  color: var(--color-content-on-dark-placeholder);
   text-transform: capitalize;
 }
 
