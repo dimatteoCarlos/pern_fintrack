@@ -217,21 +217,22 @@ export const signUpUser = async (req, res, next) => {
 //===================================
 export const signInUser = async (req, res, next) => {
   console.log(pc.greenBright('signInUser'));
-  const client = await pool.connect();
   // Read from the middleware's output: signInSchema is what proves both are present,
   // trims the identity and folds in the email and username keys a client deployed
   // behind this backend may still send.
   const { identity, password } = req.validatedData;
 
+  // No transaction: one read and one write, and a single statement is already
+  // atomic. The BEGIN this used to open leaked on the 401 path, where the return
+  // skips the catch and release() hands the pool a connection still in transaction.
   try {
-    await client.query('BEGIN');
     // ✅ GET USER DATA FROM DB
     // An email is the only identity that can carry '@', so the string itself
     // decides the column. The column name is one of two literals here, never
     // the typed value.
     const identityColumn = identity.includes('@') ? 'u.email' : 'u.username';
 
-    const userData = await client
+    const userData = await pool
       .query({
         text: `SELECT u.username, u.email, u.password_hashed, u.user_id, u.user_firstname, u.user_lastname, u.user_contact, u.user_role_id, u.timezone,
         ur.user_role_name,
@@ -287,7 +288,7 @@ export const signInUser = async (req, res, next) => {
     );
 
     // Store the refresh token in the database
-    await client.query(
+    await pool.query(
       'INSERT INTO refresh_tokens (user_id, token, expiration_date, user_agent, ip_address) VALUES ($1, $2, $3, $4, $5) RETURNING token_id',
       [
         user.user_id,
@@ -345,13 +346,9 @@ export const signInUser = async (req, res, next) => {
       // 'userResponseData:',
       // userResponseData
     );
-    await client.query('COMMIT');
   } catch (error) {
-    await client.query('ROLLBACK');
     console.log('Sign-in error:', error);
     next(createError(500, error.message || 'internal sign-in user error'));
-  } finally {
-    client.release();
   }
 };
 
