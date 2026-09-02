@@ -426,66 +426,47 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
        </div>
       )}
 
-      {/* The exceptions, on a row of their own behind a rule. Not a third
-          column of the partition, and the heading carries no count on purpose:
-          every figure here is ALREADY counted in the two bands above — the
-          late ones inside "in progress", and a pocket short of backing inside
-          whichever band its own progress puts it in. A number on this heading
-          would invite an addition that does not hold. It is a spotlight, not a
-          bucket.
+      {/* Coverage, and ONLY coverage. The row used to repeat the overdue and
+          at-risk counts from the band directly above it, which is what made the
+          card read as three passes over one set of figures: on a board of five
+          pockets, "2 overdue · 1 at risk" appeared twice, three lines apart.
 
-          Coverage earns its place here and nowhere else. It is the other axis
-          entirely: a pocket whose funding accounts no longer hold what it says
-          is committed can be at any level, so the fact says nothing about
-          which band it belongs to and it cannot join either.
+          The argument for restating them was that this row is a spotlight
+          rather than a bucket — it points at what needs acting on. That holds
+          when the bands are long enough for an exception to be lost among the
+          rows. Two short lines lose nothing, so the spotlight was landing on
+          what it stood next to.
+
+          Coverage is the reading that has nowhere else to live, and the reason
+          is structural rather than editorial: it is the other axis entirely. A
+          pocket whose funding accounts no longer hold what it says is committed
+          can be at ANY level, so the fact says nothing about which band it
+          belongs to and cannot join either. It is the one exception the
+          partition above genuinely cannot state.
 
           Absent when there is nothing to raise, unlike the readings inside a
           band, which print at zero because a partition has to keep adding up.
           Nothing is partitioned here, so nothing breaks by leaving. */}
-      {levels !== null &&
-       (levels.overdue > 0 ||
-        levels.atRisk > 0 ||
-        (uncoveredCount ?? 0) > 0) && (
-        <div className='pocketHero__alerts'>
-         <span className='pocketHero__group'>
-          <span className='pocketHero__groupLabel'>Alerts</span>
+      {(uncoveredCount ?? 0) > 0 && (
+       <div className='pocketHero__alerts'>
+        <span className='pocketHero__group'>
+         <span className='pocketHero__groupLabel'>Alerts</span>
 
-          <span className='pocketHero__marks'>
-           {levels.overdue > 0 && (
-            <span className='pocketHero__mark'>
-             <StatusSquare alert={pocketSquareClass('offPlan')} />
-             <span>{levels.overdue} overdue</span>
-            </span>
-           )}
-
-           {/* Amber inside a row of reds, and the difference is the point: a
-               deadline closing in is the one thing here that can still be
-               prevented, while a date already missed and an account short of
-               what it promised are facts about now. The row grades what it
-               raises instead of only listing it. */}
-           {levels.atRisk > 0 && (
-            <span className='pocketHero__mark'>
-             <StatusSquare alert={pocketSquareClass('atRisk')} />
-             <span>{levels.atRisk} at risk</span>
-            </span>
-           )}
-
-           {/* The wording names what failed rather than labelling the pocket.
-               "Uncovered" sat one line under "not funded" and read as the same
-               thing; it is not. Not funded is the pocket against its own
-               target. This is whether the money it says it holds still exists:
-               an account it draws on now promises its pockets more than its
-               balance. A pocket can be at its target AND short of backing. */}
-           {(uncoveredCount ?? 0) > 0 && (
-            <span className='pocketHero__mark'>
-             <StatusSquare alert={pocketSquareClass('offPlan')} />
-             <span>{uncoveredCount} with funding not covered</span>
-            </span>
-           )}
+         <span className='pocketHero__marks'>
+          {/* The wording names what failed rather than labelling the pocket.
+              "Uncovered" sat one line under "not funded" and read as the same
+              thing; it is not. Not funded is the pocket against its own
+              target. This is whether the money it says it holds still exists:
+              an account it draws on now promises its pockets more than its
+              balance. A pocket can be at its target AND short of backing. */}
+          <span className='pocketHero__mark'>
+           <StatusSquare alert={pocketSquareClass('offPlan')} />
+           <span>{uncoveredCount} with funding not covered</span>
           </span>
          </span>
-        </div>
-       )}
+        </span>
+       </div>
+      )}
      </div>
 
      {/* Target and not goal. The frozen vocabulary lets the word goal name the
