@@ -19,7 +19,7 @@ export const mainTables = [
      timezone TEXT NOT NULL DEFAULT 'UTC',
      google_id VARCHAR(255) UNIQUE,
      display_name VARCHAR(255),
-     auth_method VARCHAR(255) DEFAULT 'password',
+     auth_method VARCHAR(50) DEFAULT 'password',
      user_role_id INT REFERENCES user_roles(user_role_id) ON DELETE SET NULL ON UPDATE CASCADE,
      deleted_at TIMESTAMPTZ DEFAULT NULL,
      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -175,7 +175,7 @@ export const mainTables = [
      source_account_id INT REFERENCES user_accounts(account_id) ON DELETE RESTRICT ON UPDATE CASCADE,
      destination_account_id INT REFERENCES user_accounts(account_id) ON DELETE RESTRICT ON UPDATE CASCADE,
 
-     status VARCHAR(50) NOT NULL, 
+     status TEXT NOT NULL, 
      transaction_actual_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, 
      updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,

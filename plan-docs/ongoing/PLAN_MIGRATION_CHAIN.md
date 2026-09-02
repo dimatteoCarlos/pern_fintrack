@@ -278,11 +278,11 @@ bandera del arranque, y la tabla de respaldo que la 013 deja a propósito.
 | diferencia | cadena | arranque | estado |
 |---|---|---|---|
 | `pocket_saving_accounts.currency_id` | presente | **ausente** | **cerrada** el 2026-09-02 |
-| `currencies.currency_name` | `VARCHAR(25)` | `VARCHAR(10)` | abierta |
-| `transactions.status` | `TEXT` | `VARCHAR(50)` | abierta |
-| `users.auth_method` | `VARCHAR(50)` | `VARCHAR(255)` | abierta |
-| `category_nature_types.category_nature_type_id` | entero llano | `SERIAL` | abierta |
-| `transaction_types.transaction_type_id` | entero llano | `SERIAL` | abierta |
+| `currencies.currency_name` | `VARCHAR(25)` | `VARCHAR(10)` | **cerrada** el 2026-09-02 |
+| `transactions.status` | `TEXT` | `VARCHAR(50)` | **cerrada** el 2026-09-02 |
+| `users.auth_method` | `VARCHAR(50)` | `VARCHAR(255)` | **cerrada** el 2026-09-02 |
+| `category_nature_types.category_nature_type_id` | entero llano | `SERIAL` | **cerrada** el 2026-09-02 |
+| `transaction_types.transaction_type_id` | entero llano | `SERIAL` | **cerrada** el 2026-09-02 |
 
 **La primera se cerró el mismo día, por ser del mismo tipo que el paso 1.** La
 columna viene de `002_accounts.sql:198-200`, no de la 020 — el `NOT NULL` de la
@@ -294,13 +294,27 @@ la falta sólo existía en bases levantadas desde vacío por el arranque. Y a
 diferencia de `opening_for_account_id`, ningún archivo bajo `fintrack_api` ni
 `utils` la lee, así que era divergencia latente y no una vía rota.
 
-**Las otras cuatro no se corrigen aquí.** Cada una obliga a elegir un lado, y
-elegirlo es una decisión sobre datos: cuál ancho es el correcto, y qué pasa con
-las filas que ya existen del lado que se achica. Las tres de ancho son
-truncamientos silenciosos en un sentido y espacio de más en el otro; las dos de
-clave primaria dejan dos catálogos sin secuencia por el camino de la cadena, así
-que un `INSERT` que omita el id falla ahí y funciona en el otro. Son trabajo
-propio, no residuo de este plan.
+**Las otras cinco se cerraron el 2026-09-02, y el criterio es uno solo: manda la
+cadena.** Es la historia versionada del esquema; el DDL de arranque la sigue, que
+es la misma regla que ya gobierna este paquete. El temor de que elegir un lado
+truncara filas existentes no aplica: `createTables.js` y `populateDB.js`
+construyen con `CREATE TABLE IF NOT EXISTS` y **nunca alteran una tabla que ya
+existe**, así que ninguna base con datos se toca al cambiarles la declaración.
+
+- `users.auth_method` pasa a `VARCHAR(50)` y `transactions.status` a `TEXT`, como
+  los declaran la 002 y la 003. `currencies.currency_name` pasa a `VARCHAR(25)`,
+  como la 001.
+- Las dos claves primarias pierden su `SERIAL` en el arranque. La 001 declara
+  **cuatro** de los cinco catálogos como `INT PRIMARY KEY` a propósito: sus ids
+  son fijos, los escribe la siembra y las consultas los leen como literales
+  — `movement_type_id IN (1, 6)` es uno—. Una secuencia sobre ellos invita a
+  insertar sin id y repartir uno que ninguna consulta conoce. `user_roles` es la
+  única `SERIAL`, en los dos caminos. La realineación de secuencias de
+  `populateDB.js` ya tolera un catálogo sin secuencia: su propio comentario dice
+  que `pg_get_serial_sequence` devuelve nulo ahí.
+
+**`npm run db:parity` reporta cero diferencias.** Los dos caminos construyen el
+mismo esquema.
 
 ---
 
