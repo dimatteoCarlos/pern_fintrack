@@ -51,6 +51,8 @@ import {
  PocketSource,
 } from '../../../../types/pocketTypes.ts';
 import { useModalDialog } from '../../../../../hooks/useModalDialog.ts';
+import useAuth from '../../../../../auth/hooks/useAuth.ts';
+import { isIanaTimeZone } from '../../../../../auth/auth_utils/timeZoneOptions.ts';
 
 import './styles/pocketCashModal-styles.css';
 
@@ -238,29 +240,57 @@ function PocketCashModal({
   return state.accountingCurrency;
  });
 
+ // The zone the reading below is stated in. The account's own, not the
+ // browser's: the two disagree for an owner who travels.
+ const { userData } = useAuth();
+
  const convertedText =
   conversion.convertedAmount !== null
    ? `≈ ${numberFormatCurrency(conversion.convertedAmount, 2, accountingCurrency)}`
    : null;
 
- // The multiplier is read off the two figures the server sent rather than
- // printed from its rate field, so the line cannot claim a direction the field
- // does not hold. Source and reading time come with it: a figure resolved from
- // a stale reading is still one the owner is entitled to question.
+ // The QUOTE the provider published, and not the multiplier read off the two
+ // figures the server sent. Dividing them states the conversion backwards --
+ // 1 COP = 0,0003 USD -- a direction no rate table publishes and a number whose
+ // information sits past the fourth decimal. The quote is the accounting rate,
+ // one accounting unit expressed in the typed currency, and it cannot be
+ // derived here: a cross conversion composes two of them.
+ //
+ // Four decimals below ten, because a currency worth less than an accounting
+ // unit carries its information after the second place.
+ const quoteLine = conversion.quote
+  ? `1 ${accountingCurrency.toUpperCase()} = ${numberFormatCurrency(
+     conversion.quote.rate,
+     Math.abs(conversion.quote.rate) < 10 ? 4 : 2,
+     undefined,
+     'es-ES',
+    )} ${conversion.quote.currency.toUpperCase()}`
+  : '';
+
+ // The account's own zone, named in the line. toLocaleString with no arguments
+ // renders the browser's locale and zone silently, so a reading is read as
+ // local time by an owner whose account keeps another one. The zone is checked
+ // before it is passed: an identifier Intl rejects throws on format.
+ const readAtLine = conversion.fetchedAt
+  ? `read: ${new Date(conversion.fetchedAt).toLocaleString('es-ES', {
+     day: '2-digit',
+     month: '2-digit',
+     year: 'numeric',
+     hour: '2-digit',
+     minute: '2-digit',
+     hour12: false,
+     timeZone: isIanaTimeZone(userData?.timezone)
+      ? userData?.timezone
+      : undefined,
+     timeZoneName: 'short',
+    })}`
+  : '';
+
+ // Source and reading time come with the rate: a figure resolved from a stale
+ // reading is still one the owner is entitled to question.
  const rateTooltipText =
   conversion.convertedAmount !== null && amount > 0
-   ? [
-      `1 ${typedCurrency.toUpperCase()} = ${numberFormatCurrency(
-       conversion.convertedAmount / amount,
-       4,
-       undefined,
-       'es-ES',
-      )} ${accountingCurrency.toUpperCase()}`,
-      conversion.source ? `source: ${conversion.source}` : '',
-      conversion.fetchedAt
-       ? `read: ${new Date(conversion.fetchedAt).toLocaleString()}`
-       : '',
-     ]
+   ? [quoteLine, conversion.source ? `source: ${conversion.source}` : '', readAtLine]
       .filter(Boolean)
       .join('\n')
    : '';
