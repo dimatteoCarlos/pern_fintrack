@@ -95,7 +95,7 @@ const findUncoveredPockets = (accountRows, holdingRows) => {
  * count over an empty set is legitimately zero, and pocketCount: 0 already
  * establishes that reading.
  */
-const makeSummary = (pockets) => {
+const makeSummary = (pockets, accountAllocations) => {
  const pocketCount = pockets.length;
 
  const counts = {
@@ -103,6 +103,30 @@ const makeSummary = (pockets) => {
   fundedCount: pockets.filter((p) => p.funded).length,
   overdueCount: pockets.filter((p) => p.overdue).length,
   uncoveredCount: pockets.filter((p) => p.uncovered).length,
+  // The accounts a pocket actually draws on, the board's fold of the sourceCount
+  // each row already carries. getAccountAllocations returns every account the
+  // owner holds, including the ones committed to nothing, because the account
+  // screen has to print that zero — and a zero is not a source. Bank and cash
+  // both count: those are the two types that can fund a pocket, and counting
+  // only one would stop reconciling with totalAllocated above it.
+  //
+  // greaterThan and not isPositive: Decimal tests the SIGN, and zero is signed
+  // positive, so isPositive() admits every uncommitted account and turned this
+  // count into "accounts the owner holds".
+  sourceAccountCount: accountAllocations.filter((a) =>
+   money(a.accountAllocated).greaterThan(0),
+  ).length,
+  // The furthest goal on the board. Taken as a maximum and not as the last row
+  // of a query that happens to order by this column: that order belongs to the
+  // list, and changing it must not silently change this figure. The dates are
+  // YYYY-MM-DD text, where lexicographic order is chronological order.
+  latestDesiredDate:
+   pocketCount === 0
+    ? null
+    : pockets.reduce(
+       (latest, p) => (p.desiredDate > latest ? p.desiredDate : latest),
+       pockets[0].desiredDate,
+      ),
  };
 
  const noAmounts = {
@@ -184,7 +208,7 @@ export const pocketBoardService = {
    uncovered: uncovered.has(row.pocketId),
   }));
 
-  const summary = makeSummary(pockets);
+  const summary = makeSummary(pockets, accountRows);
 
   // Raised only when there is something to fold and it could not be folded.
   // Guarding on currency alone would fire on an empty board, where a null
