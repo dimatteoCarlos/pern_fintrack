@@ -308,11 +308,78 @@
  pointer-events: none;
 }
 
+/* The label, the field and the converted figure as one block. It exists to be
+   the chip's positioning context and nothing else: the chip belongs under the
+   FIELD, centred on it, while the figure that opens it sits on the label's line
+   above — so there is no single element it can hang off and land where it
+   belongs. */
+.pocketCash__amountBlock {
+ position: relative;
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+}
+
+/* The converted figure rides the label's own line instead of taking one under
+   the field. space-between and not a centre: the label owns the left, and the
+   figure is a second reading rather than a continuation of it. */
+/* The label and the date trigger travel together at the left end, so the
+   converted figure keeps the right end of the row. Without the group the row's
+   space-between would push the figure into the middle. */
+.pocketCash__labelGroup {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ min-width: 0;
+}
+
+.pocketCash__labelRow {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: baseline;
+ justify-content: space-between;
+ gap: var(--space-1) var(--space-3);
+ min-width: 0;
+}
+
+/* Scoped to this panel, so the six other callers of the shared tooltip keep the
+   behaviour they were written against.
+
+   position: static on the wrapper is the whole mechanism. The base tooltip makes
+   that wrapper relative and the chip anchors to it, which puts the chip on the
+   trigger — here, on a figure sitting in the label row. Taking the wrapper out
+   of the positioning chain hands the chip to .pocketCash__amountBlock instead,
+   and from there it can be placed against the field. */
+.pocketCash__labelRow .tooltip__wrapper {
+ position: static;
+}
+
+/* Centred ON the field, which is where it sat before and where it costs the
+   panel no height: the chip is absolutely positioned, so it takes none either
+   way, and covering the field for as long as a pointer rests on the figure is
+   the trade a tooltip is.
+
+   Measured from the block's BOTTOM, which is the field's bottom, because the
+   label row above it is not a fixed height. bottom at half the field puts the
+   chip's lower edge on the field's centre line; the 50% translate then pushes
+   the chip down by half of ITSELF, landing its centre on that same line. The
+   field's height is the badge inside it plus its two borders, and both are
+   tokens -- nothing here is a measured pixel. */
+.pocketCash__amountBlock .tooltip__wrapper--text.rateTooltip__chip {
+ top: auto;
+ bottom: calc((var(--size-badge) + var(--border-width-thin) * 2) / 2);
+ left: 50%;
+ transform: translate(-50%, 50%);
+ margin-top: 0;
+ margin-bottom: 0;
+}
+
 .pocketCash__ceiling {
  margin: 0;
  font-size: var(--font-size-2xs);
  font-variant-numeric: tabular-nums;
  color: var(--color-content-secondary);
+ white-space: nowrap;
 }
 
 /* The typed figure in the currency the row will be stored in. Written on tokens

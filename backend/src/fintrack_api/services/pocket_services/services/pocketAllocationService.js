@@ -30,7 +30,17 @@ import {
  getCurrencyCodeSync,
  getCurrencyId,
 } from '../../../../utils/currencyLookup.js';
-import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
+import {
+ ACCOUNTING_CURRENCY_CODE,
+ BACKDATING_WINDOW_MONTHS,
+} from '../../../config/fintrackConfig.js';
+import { getUserTimeZone } from '../../../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import {
+ dayInZone,
+ earliestDatableDay,
+ isCalendarDate,
+ todayInZone,
+} from '../../../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { getPocketForUser } from '../db/pocketRepository.js';
 import {
  getHeldByPocketFromAccount,
@@ -122,13 +132,78 @@ const normalizeAmount = (value) => {
 };
 
 /**
+ * Resolve the day the decision is dated on, and refuse one outside the window.
+ *
+ * The same three checks the movement path runs, in the same order and on the
+ * owner's calendar: the shape of the day, that it is not in the future, and
+ * that it is not before the floor of the back-dating window. The fourth, the
+ * source account's opening day, needs the account row and runs below with it.
+ *
+ * The window is the app's rule and not this module's: a decision nobody can
+ * date a movement on is a decision nobody may date an allocation on either.
+ *
+ * @returns {{requestedDay: string, todayForOwner: string, asOfDay: string|null}}
+ *  asOfDay is null on today, which is what routes the conversion to the current
+ *  rate exactly as it did before this existed.
+ */
+const resolveAllocationDay = (requested, timeZone) => {
+ const todayForOwner = todayInZone(timeZone);
+ const requestedDay = typeof requested === 'string' ? requested.trim() : '';
+
+ if (requestedDay === '') {
+  return { requestedDay: '', todayForOwner, asOfDay: null };
+ }
+
+ if (!isCalendarDate(requestedDay)) {
+  throw badRequest('allocationDate must be a calendar day, YYYY-MM-DD.');
+ }
+
+ if (requestedDay > todayForOwner) {
+  throw unprocessable(
+   `An allocation cannot be dated after today, ${todayForOwner}.`,
+  );
+ }
+
+ const windowFloor = earliestDatableDay(todayForOwner, BACKDATING_WINDOW_MONTHS);
+
+ if (requestedDay < windowFloor) {
+  throw unprocessable(`An allocation cannot be dated before ${windowFloor}.`);
+ }
+
+ return {
+  requestedDay,
+  todayForOwner,
+  asOfDay: requestedDay < todayForOwner ? requestedDay : null,
+ };
+};
+
+/**
  * Prove the source account may back a pocket at all.
  *
  * A structurally valid payload naming an account of the wrong kind is a 422, not
  * a 400: every field parses, and what fails is a domain rule about the account
  * behind the id.
+ *
+ * @param {object} account - the locked row
+ * @param {string} chosenDay - YYYY-MM-DD, or '' when the decision is undated
+ * @param {string} timeZone - the owner's IANA zone
  */
-const assertEligibleSource = (account) => {
+const assertEligibleSource = (account, chosenDay, timeZone) => {
+ // The account's opening day is the fourth check of the window, and it is here
+ // rather than beside the other three because only this point holds the row.
+ // Calendar days on both sides, never instants: account_start_date keeps an
+ // arbitrary wall-clock time, so an account opened at 20:00 would refuse a
+ // decision on its own opening day, which composes to 12:00.
+ if (chosenDay !== '') {
+  const openingDay = dayInZone(account.accountStartDate, timeZone);
+
+  if (openingDay && chosenDay < openingDay) {
+   throw unprocessable(
+    `Account "${account.accountName}" was opened on ${openingDay} and cannot back an allocation dated before it.`,
+   );
+  }
+ }
+
  if (account.deletedAt !== null) {
   throw unprocessable(
    `Account "${account.accountName}" has been deleted and cannot back a pocket.`,
@@ -149,6 +224,9 @@ const assertEligibleSource = (account) => {
 /**
  * Convert the typed figure into the accounting currency and keep the proof.
  *
+ * @param {string|null} asOfDay - the day to value on, null for today
+ * @param {string} timeZone - the owner's IANA zone
+ *
  * The target is the accounting currency and not the account's own, deliberately:
  * pockets.target_amount is in that unit, so an allocation stored in it is
  * directly comparable to the goal it is measured against. The guard below is
@@ -156,7 +234,14 @@ const assertEligibleSource = (account) => {
  * in the accounting currency, and an account that is not would have its balance
  * compared against a total in another unit at an implicit 1:1.
  */
-const convertTypedAmount = async (client, amount, currencyCode, account) => {
+const convertTypedAmount = async (
+ client,
+ amount,
+ currencyCode,
+ account,
+ asOfDay,
+ timeZone,
+) => {
  const accountCurrency = getCurrencyCodeSync(account.currencyId);
 
  if (accountCurrency !== ACCOUNTING_CURRENCY_CODE) {
@@ -165,10 +250,19 @@ const convertTypedAmount = async (client, amount, currencyCode, account) => {
   );
  }
 
+ // The day the decision is dated on, so a back-dated allocation is valued at
+ // the rate that was in force then. Null on today, which routes the resolver to
+ // the current rate. Without it the row would carry a date from August and a
+ // rate from September, and the preview the owner approved would not be the
+ // figure the row stores.
  const converted = await currencyAmountConversion(
   amount,
   currencyCode,
   ACCOUNTING_CURRENCY_CODE,
+  asOfDay,
+  // The same zone asOfDay was decided on, so the resolver's future guard and
+  // this module's floor agree on which day it is.
+  timeZone,
  );
 
  return {
@@ -199,6 +293,17 @@ const convertTypedAmount = async (client, amount, currencyCode, account) => {
  * @returns {Promise<object>} the row written, and the figures it moved
  */
 const writeLedgerRow = async (direction, userId, pocketId, body) => {
+ // The zone, and the three checks that need nothing but it, run BEFORE the
+ // transaction opens. The conversion below depends on the day they resolve, and
+ // an HTTP call to a rate provider inside an open transaction would hold it for
+ // the length of a network round trip.
+ const timeZone = await getUserTimeZone(pool, userId);
+
+ const { requestedDay, asOfDay } = resolveAllocationDay(
+  body.allocationDate,
+  timeZone,
+ );
+
  const client = await pool.connect();
 
  try {
@@ -220,13 +325,15 @@ const writeLedgerRow = async (direction, userId, pocketId, body) => {
    throw forbidden('Account not found or not owned by the authenticated user.');
   }
 
-  assertEligibleSource(account);
+  assertEligibleSource(account, requestedDay, timeZone);
 
   const converted = await convertTypedAmount(
    client,
    body.amount,
    body.currency,
    account,
+   asOfDay,
+   timeZone,
   );
 
   const requested = money(converted.amount);
@@ -274,7 +381,12 @@ const writeLedgerRow = async (direction, userId, pocketId, body) => {
    pocketId,
    sourceAccountId: body.sourceAccountId,
    amount: toAmount(requested.times(sign)),
-   allocationDate: body.allocationDate ?? null,
+   // The validated day, and null whenever it is today: a decision taken now
+   // keeps the real current instant, and only a past one is anchored at noon.
+   // It is the same value the conversion was priced on, so the row's date and
+   // its rate can never describe two different days.
+   allocationDate: asOfDay,
+   timeZone,
    originalAmount: toAmount(money(converted.originalAmount).times(sign)),
    originalCurrencyId: converted.originalCurrencyId,
    exchangeRate: converted.exchangeRate,

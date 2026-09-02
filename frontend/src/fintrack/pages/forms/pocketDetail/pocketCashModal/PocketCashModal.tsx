@@ -51,6 +51,8 @@ import {
  PocketSource,
 } from '../../../../types/pocketTypes.ts';
 import { useModalDialog } from '../../../../../hooks/useModalDialog.ts';
+import TransactionDateTrigger from '../../../../general_components/transactionDateTrigger/TransactionDateTrigger.tsx';
+import { useTransactionDate } from '../../../../hooks/useTransactionDate.ts';
 import useAuth from '../../../../../auth/hooks/useAuth.ts';
 import { isIanaTimeZone } from '../../../../../auth/auth_utils/timeZoneOptions.ts';
 
@@ -72,16 +74,34 @@ const COPY: Record<
 > = {
  allocate: {
   title: 'Commit cash',
-  explanation:
-   'The account keeps every cent. What changes is how much of it is already promised to a goal.',
+  // The mirror of the release line below, and read as a pair they state the
+  // whole model in two sentences: nothing moves, only what the money is spoken
+  // for changes. Both fit the panel's one line of about forty-four characters.
+  //
+  // It does not open by naming the commit. The title reads "Commit cash" and
+  // the button reads "Commit", so a third statement of it would spend the only
+  // line on what the reader has already been told twice.
+  //
+  // "Allocated" is this module's frozen word for what is committed to a goal
+  // (POCKET_DECISIONS 18.1), and it is the word the hero's own tile carries.
+  explanation: 'Stays in the account, allocated to this goal.',
   ceilingLabel: 'Unassigned',
   submit: 'Commit',
   pending: 'Committing…',
  },
  release: {
   title: 'Release cash',
-  explanation:
-   'The goal stops holding this. It returns to the account as cash no plan has claimed.',
+  // One line, which the panel is 310px wide and 14px tall enough to hold at
+  // about forty-four characters. What went is the half the panel already says
+  // twice: the title reads "Release cash" and the button reads "Release", so an
+  // explanation that opens by restating the release spends its only line on it.
+  // Where the money goes is the part nothing else on the panel states.
+  //
+  // "Unassigned" and not "unallocated": allocated is this module's word for what
+  // IS committed to a goal (POCKET_DECISIONS 18.1), and unassigned is its word
+  // for what is not — the ceiling label on the commit side of this same object
+  // reads Unassigned, and the deletion modal ends on the same word.
+  explanation: 'Returns to the account as unassigned cash.',
   ceilingLabel: 'Held here',
   submit: 'Release',
   pending: 'Releasing…',
@@ -141,6 +161,16 @@ function PocketCashModal({
  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+ // The day the decision is dated on, and the window it may move in. The same
+ // hook the four tracker forms use, so a pocket cannot answer the question
+ // differently from a movement: the floor is the back-dating window, the
+ // ceiling is today, and both are read on the owner's calendar.
+ const {
+  transactionActualDate: chosenDay,
+  isOpenOnChosenDay,
+  dateProps,
+ } = useTransactionDate(isSubmitting);
+
  // Only the committing direction asks for these. Releasing already has its set
  // in the payload that drew the screen, and asking again would be a request for
  // an answer already in hand.
@@ -185,32 +215,54 @@ function PocketCashModal({
 
  // The picker's rows, built from whichever set this direction draws on. The
  // picker itself never learns which one it is looking at.
+ // An account may back a decision only from its opening day onward, so the day
+ // filters the list. It is a convenience and never the guarantee: the server
+ // checks the same bound on every request, whatever this offered. Hiding the
+ // option is what keeps the owner from meeting a 422 they could not have
+ // predicted from the form.
  const options = useMemo<PocketSourceOption[]>(() => {
   if (direction === 'release') {
-   return sources.map((source) => ({
-    accountId: source.accountId,
-    // The same words the detail screen uses for the same absence: the
-    // allocation ledger names an account this read cannot resolve. It is a
-    // missing NAME, never a missing amount — what it holds is still counted.
-    accountName: source.accountName ?? 'Account no longer available',
-    balance: source.accountBalance,
-    committed: source.accountAllocated,
-    // What THIS pocket holds from THIS account, which is the only figure a
-    // release may be measured against.
-    ceiling: source.heldByThisPocket,
-   }));
+   return sources
+    .filter((source) => isOpenOnChosenDay(source.accountStartDate))
+    .map((source) => ({
+     accountId: source.accountId,
+     // The same words the detail screen uses for the same absence: the
+     // allocation ledger names an account this read cannot resolve. It is a
+     // missing NAME, never a missing amount — what it holds is still counted.
+     accountName: source.accountName ?? 'Account no longer available',
+     balance: source.accountBalance,
+     committed: source.accountAllocated,
+     // What THIS pocket holds from THIS account, which is the only figure a
+     // release may be measured against.
+     ceiling: source.heldByThisPocket,
+    }));
   }
 
-  return (banks ?? []).map((bank) => ({
-   accountId: bank.account_id,
-   accountName: bank.account_name,
-   balance: bank.account_balance,
-   // Absent rather than zero when the allocation read could not answer for the
-   // row, and the server then applies the real bound.
-   committed: bank.allocated ?? null,
-   ceiling: bank.unassignedCash ?? null,
-  }));
- }, [direction, sources, banks]);
+  return (banks ?? [])
+   .filter((bank) => isOpenOnChosenDay(bank.account_start_date))
+   .map((bank) => ({
+    accountId: bank.account_id,
+    accountName: bank.account_name,
+    balance: bank.account_balance,
+    // Absent rather than zero when the allocation read could not answer for the
+    // row, and the server then applies the real bound.
+    committed: bank.allocated ?? null,
+    ceiling: bank.unassignedCash ?? null,
+   }));
+ }, [direction, sources, banks, isOpenOnChosenDay]);
+
+ // A selection the chosen day just invalidated is dropped rather than left
+ // standing: the row would still be sent, and the server would refuse it with
+ // a message about an account no longer on screen.
+ useEffect(() => {
+  if (selectedAccountId === null) return;
+
+  const isStillOffered = options.some(
+   (option) => option.accountId === selectedAccountId,
+  );
+
+  if (!isStillOffered) setSelectedAccountId(null);
+ }, [options, selectedAccountId]);
 
  const selected = options.find(
   (option) => option.accountId === selectedAccountId,
@@ -234,7 +286,11 @@ function PocketCashModal({
  // cached rate: what is shown here is what the row will carry. It still does
  // not arm the ceiling above, which stays unenforced for the reason stated
  // there — the server checks the real bound inside its row lock.
- const conversion = useServerCurrencyConversion(amountText, typedCurrency);
+ const conversion = useServerCurrencyConversion(
+  amountText,
+  typedCurrency,
+  chosenDay,
+ );
 
  const accountingCurrency = useCurrencyStore((state) => {
   return state.accountingCurrency;
@@ -304,6 +360,11 @@ function PocketCashModal({
   setErrorMessage(null);
 
   const body: PocketAllocationBody = {
+   // The day the decision is dated on. Always sent, including today: the
+   // server compares it against today on the OWNER's calendar, which is the
+   // only calendar that decides, and omitting it would hand that decision to
+   // whatever zone the request happens to arrive in.
+   allocationDate: chosenDay,
    sourceAccountId: selectedAccountId,
    amount,
    currency: typedCurrency,
@@ -407,55 +468,80 @@ function PocketCashModal({
      />
     )}
 
-    <label className='pocketCash__label' htmlFor='pocketCashAmount'>
-     Amount
-    </label>
+    {/* The label, the field and the converted figure as one block, and the
+        block is what the rate chip anchors to. The chip belongs under the
+        FIELD, centred on it, and the figure that opens it sits on the label's
+        own line — so no element the chip could hang off is in the right place
+        for it. Positioning it against this box instead is what puts it there,
+        and the scoping keeps that out of the six other callers of the shared
+        tooltip. */}
+    <div className='pocketCash__amountBlock'>
+     <div className='pocketCash__labelRow'>
+      {/* The label and the date as one group, so the converted figure keeps
+          the right end of the row to itself. The date is a SECONDARY action:
+          it defaults to today, which is always valid, so the ordinary
+          decision never has to touch it — the same reason the tracker renders
+          it as a bare glyph rather than a labelled field. */}
+      <span className='pocketCash__labelGroup'>
+       <label className='pocketCash__label' htmlFor='pocketCashAmount'>
+        Amount
+       </label>
 
-    <div className='pocketCash__amountRow'>
-     <input
-      id='pocketCashAmount'
-      className='pocketCash__amount'
-      type='text'
-      inputMode='decimal'
-      autoComplete='off'
-      maxLength={15}
-      value={amountText}
-      onChange={(event) => setAmountText(event.target.value)}
-      disabled={isSubmitting}
-      ref={amountRef}
-     />
+       <TransactionDateTrigger {...dateProps} />
+      </span>
 
-     <CurrencyBadge
-      // This modal's panel is --color-surface-panel (cream), not the dark
-      // surface 'form' is aliased to elsewhere -- 'light' names the surface
-      // it actually sits on. See CurrencyBadge point 1/7.
-      variant={'light'}
-      updateOutsideCurrencyData={setTypedCurrency}
-      currency={typedCurrency}
-     />
+      {/* The converted figure rides the label's line rather than taking one of
+          its own under the field. Three states, and they are not degrees of
+          one another: a rate the server could not resolve used to render
+          exactly like an amount that needs no conversion — nothing at all —
+          which is the one case where the owner most needs to be told. The
+          failure is not here, because it is a sentence with a button after it
+          and would not fit a label's line. */}
+      {conversion.status === 'querying' && (
+       <span
+        className='pocketCash__fxPreview pocketCash__fxPreview--querying'
+        aria-live='polite'
+       >
+        Converting to {accountingCurrency.toUpperCase()}…
+       </span>
+      )}
+
+      {conversion.status === 'resolved' && convertedText && (
+       <RateTooltip tipText={rateTooltipText} surface='light'>
+        <span className='pocketCash__fxPreview'>{convertedText}</span>
+       </RateTooltip>
+      )}
+     </div>
+
+     <div className='pocketCash__amountRow'>
+      <input
+       id='pocketCashAmount'
+       className='pocketCash__amount'
+       type='text'
+       inputMode='decimal'
+       autoComplete='off'
+       maxLength={15}
+       value={amountText}
+       onChange={(event) => setAmountText(event.target.value)}
+       disabled={isSubmitting}
+       ref={amountRef}
+      />
+
+      <CurrencyBadge
+       // This modal's panel is --color-surface-panel (cream), not the dark
+       // surface 'form' is aliased to elsewhere -- 'light' names the surface
+       // it actually sits on. See CurrencyBadge point 1/7.
+       variant={'light'}
+       updateOutsideCurrencyData={setTypedCurrency}
+       currency={typedCurrency}
+      />
+     </div>
     </div>
 
-    {/* Three states, and they are not degrees of one another. A rate the
-        server could not resolve used to render exactly like an amount that
-        needs no conversion — nothing at all — which is the one case where the
-        owner most needs to be told. */}
-    {conversion.status === 'querying' && (
-     <span
-      className='pocketCash__fxPreview pocketCash__fxPreview--querying'
-      aria-live='polite'
-     >
-      Converting to {accountingCurrency.toUpperCase()}…
-     </span>
-    )}
-
-    {conversion.status === 'resolved' && convertedText && (
-     <RateTooltip
-      tipText={rateTooltipText}
-      surface='light'
-      placement='anchor-left'
-     >
-      <span className='pocketCash__fxPreview'>{convertedText}</span>
-     </RateTooltip>
+    {ceilingText && (
+     <p className='pocketCash__ceiling'>
+      {copy.ceilingLabel}: {ceilingText}
+     </p>
     )}
 
     {conversion.status === 'failed' && (
@@ -474,12 +560,6 @@ function PocketCashModal({
        Retry
       </button>
      </div>
-    )}
-
-    {ceilingText && (
-     <p className='pocketCash__ceiling'>
-      {copy.ceilingLabel}: {ceilingText}
-     </p>
     )}
 
     {errorMessage && (

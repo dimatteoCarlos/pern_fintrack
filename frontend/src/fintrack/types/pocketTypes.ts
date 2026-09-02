@@ -86,6 +86,16 @@ export type PocketBoardSummary = {
  fundedCount: number;
  overdueCount: number;
  uncoveredCount: number;
+ // How many distinct accounts hold an allocation greater than zero to any
+ // pocket. The board's fold of the sourceCount each row above already carries,
+ // and it cannot be derived here: summing the rows counts an account once per
+ // pocket it funds.
+ sourceAccountCount: number;
+ // The furthest deadline on the board, YYYY-MM-DD on the OWNER's calendar, and
+ // null when there are no pockets — the one nullable field here that is not an
+ // amount. Same handling as the row's own desiredDate: never new Date() on it,
+ // which reads UTC midnight and renders the previous day west of UTC.
+ latestDesiredDate: string | null;
 };
 
 // What the endpoint answers, inside the envelope every route of this API wraps
@@ -138,6 +148,9 @@ export type PocketSource = {
  accountId: number;
  accountName: string | null;
  accountType: string | null;
+ // The instant the account was opened, which is the floor of what may be dated
+ // onto it. null on an account the allocation read cannot resolve.
+ accountStartDate: string | null;
  // What THIS account has committed to THIS pocket.
  heldByThisPocket: number;
  // What the account has committed across every pocket it funds.
@@ -304,6 +317,9 @@ export type PocketEligibleAccount = {
  account_id: number;
  account_name: string;
  account_balance: number;
+ // Snake case because this row comes from the account list endpoint, which
+ // serves the column's own name. The floor of what may be dated onto it.
+ account_start_date?: string;
  currency_code: CurrencyType;
  allocated?: number;
  unassignedCash?: number;

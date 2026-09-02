@@ -27,6 +27,7 @@ import { toAmount, money } from '../../budget_services/core/money.js';
  * @param {number} row.accountId
  * @param {string} row.accountName
  * @param {string} row.accountType
+ * @param {Date|string|null} [row.accountStartDate] - the opening instant
  * @param {string|number} row.accountBalance - NUMERIC as text
  * @param {string|number} row.accountAllocated - NUMERIC as text
  * @returns {Readonly<object>}
@@ -35,6 +36,7 @@ export function makeAccountAllocation({
  accountId,
  accountName,
  accountType,
+ accountStartDate,
  accountBalance,
  accountAllocated,
 }) {
@@ -46,6 +48,10 @@ export function makeAccountAllocation({
   accountId,
   accountName,
   accountType,
+  // The instant the account opened, carried through untouched. It is the floor
+  // of what may be dated onto this account, and the form needs it to stop
+  // offering a source the server would refuse.
+  accountStartDate: accountStartDate ?? null,
   accountBalance: toAmount(balance),
   accountAllocated: toAmount(allocated),
   accountUnassignedCash: toAmount(unassigned),

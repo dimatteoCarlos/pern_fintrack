@@ -48,6 +48,10 @@ export async function getAccountAllocations(db, userId, accountIds = null) {
    ua.account_id                       AS "accountId",
    ua.account_name                     AS "accountName",
    act.account_type_name               AS "accountType",
+   -- The day the account opened, which is the floor of what may be dated onto
+   -- it. Carried on the list the form already holds rather than fetched per
+   -- account: the picker has to hide what the server would refuse.
+   ua.account_start_date               AS "accountStartDate",
    -- Derived from the ledger, not read from the stored column. This figure and
    -- the one the locked check below enforces must be the same number, or the
    -- server refuses a commitment quoting a ceiling the owner was never shown.
@@ -206,6 +210,7 @@ export async function lockOwnedSourceAccount(client, userId, accountId) {
    ua.account_id                     AS "accountId",
    ua.account_name                   AS "accountName",
    act.account_type_name             AS "accountType",
+   ua.account_start_date             AS "accountStartDate",
    ua.currency_id                    AS "currencyId",
    ua.deleted_at                     AS "deletedAt",
    COALESCE((
@@ -291,6 +296,13 @@ export async function getHeldByPocketFromAccount(
  * amount arrives already signed by the service — positive for an allocation,
  * negative for a release. The client never sends a sign.
  *
+ * A day in the past is anchored at NOON in the owner's zone, and composed in
+ * SQL rather than in JavaScript. Midday is maximally far from both boundaries,
+ * so no zone conversion can push the decision into the adjacent day or month,
+ * while a bare 'YYYY-MM-DD' casts to midnight and lands a day earlier for every
+ * owner west of the server. Today keeps the actual current instant: a decision
+ * taken now has a real time of day, and flattening it would gain nothing.
+ *
  * @param {import('pg').PoolClient} client - inside BEGIN, holding the account lock
  * @returns {Promise<object>} the row written
  */
@@ -302,7 +314,11 @@ export async function insertAllocation(client, userId, allocation) {
    original_amount, original_currency_id, exchange_rate, exchange_rate_source,
    exchange_rate_timestamp, exchange_rate_target_currency_id
   )
-  VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, CURRENT_TIMESTAMP),
+  VALUES ($1, $2, $3, $4,
+          CASE
+           WHEN $5::date IS NULL THEN CURRENT_TIMESTAMP
+           ELSE ($5::date + TIME '12:00') AT TIME ZONE $12
+          END,
           $6, $7, $8, $9, $10, $11)
   RETURNING allocation_id::text AS "allocationId",
             amount::text        AS amount,
@@ -320,6 +336,7 @@ export async function insertAllocation(client, userId, allocation) {
    allocation.exchangeRateSource,
    allocation.exchangeRateTimestamp,
    allocation.exchangeRateTargetCurrencyId,
+   allocation.timeZone,
   ],
  );
 
