@@ -413,6 +413,7 @@ function EditPocket() {
                 type='text'
                 className={`input__container`}
                 placeholder={`${'purpose/name'}`}
+                id={'name'}
                 name={'name'}
                 onChange={inputHandler}
                 value={pocketData.name}
@@ -440,6 +441,7 @@ function EditPocket() {
                 className={`input__container`}
                 placeholder={`${'description'}`}
                 onChange={inputHandler}
+                id={'note'}
                 name={'note'}
                 value={pocketData.note}
                 maxLength={NAME_MAX_LENGTHS.note}
@@ -479,6 +481,7 @@ function EditPocket() {
               <input
                 className={`input__container`}
                 type='text'
+                id={formDataNumber.keyName}
                 name={formDataNumber.keyName}
                 placeholder={formDataNumber.keyName}
                 value={formData[formDataNumber.keyName]}
