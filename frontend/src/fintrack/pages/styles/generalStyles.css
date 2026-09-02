@@ -374,6 +374,27 @@ input[type='number'] {
   font-weight: normal;
   /* width: 50%; */
 }
+/* The red above is calibrated for the light card and measures 3.26:1 on the
+   dark forms, at 0.7rem italic. .form__box is the wrapper every page under
+   pages/forms uses and not one of them paints a background, so all of them
+   stand on the app's dark body. --color-status-alert is that surface's sibling
+   at 5.70:1. */
+.form__box .validation__errMsg {
+  color: var(--color-status-alert);
+}
+
+/* The same span states an ACCEPTED format as well as a rejection, so it carries
+   the opposite meaning half the time. A class and not an inline style, because
+   only a stylesheet can pick the value per surface -- which is the whole defect
+   above. */
+.validation__errMsg--ok {
+  color: var(--color-feedback-success-content);
+}
+
+.form__box .validation__errMsg--ok {
+  color: var(--color-status-complete);
+}
+
 /*target amount*/
 .form__title1 .validation__errMsg {
   width: 100%;

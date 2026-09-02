@@ -437,18 +437,13 @@ function NewProfile() {
                 >
                   {capitalize(formDataNumber.title)}&nbsp;
                   <span
-                    className='validation__errMsg'
-                    style={{
-                      color: validationMessages[formDataNumber.keyName]
+                    className={`validation__errMsg${
+                      validationMessages[formDataNumber.keyName]
                         ?.toLowerCase()
                         .includes('format:')
-                        ? 'var(--lightSuccess)'
-                        // Same fix as LabelNumberValidation.tsx and
-                        // .validation__errMsg: --error is the dark-page
-                        // semaphore (3.18:1 here), not calibrated for this
-                        // light card.
-                        : 'var(--color-feedback-error-content)',
-                    }}
+                        ? ' validation__errMsg--ok'
+                        : ''
+                    }`}
                   >
                     {validationMessages[formDataNumber.keyName]?.replace(
                       'Format:',

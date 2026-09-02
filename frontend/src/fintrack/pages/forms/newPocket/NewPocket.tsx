@@ -366,15 +366,18 @@ function NewPocket() {
                   maxLength={15}
                 />
 
+                {/* Both values here were missing their closing bracket --
+                    'var(--lightSuccess' and 'var(--error' -- so the browser
+                    dropped the declaration and the message took whatever colour
+                    it inherited. */}
                 <div
-                  className='validation__errMsg'
-                  style={{
-                    color: validationMessages[formDataNumber.keyName]
+                  className={`validation__errMsg${
+                    validationMessages[formDataNumber.keyName]
                       ?.toLocaleLowerCase()
                       .includes('format:')
-                      ? 'var(--lightSuccess'
-                      : 'var(--error',
-                  }}
+                      ? ' validation__errMsg--ok'
+                      : ''
+                  }`}
                 >
                   {validationMessages[formDataNumber.keyName]}
                 </div>

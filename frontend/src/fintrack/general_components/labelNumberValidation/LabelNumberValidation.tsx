@@ -18,17 +18,18 @@ function LabelNumberValidation<
   validationMessages,
   variant,
 }: LabelNumberValidationPropType<TFormDataType>) {
-  // '--success' resolves to --color-status-success, the dark-page semaphore
-  // (4.05:1 on this light card, under the 4.5:1 floor); the 'tracker' variant
-  // renders on a card, so it takes the light-surface-calibrated sibling
-  // instead. 'form' still uses --lightSuccess, a separate, unaudited path.
-  const successColor =
-    variant === 'form' ? '--lightSuccess' : '--color-feedback-success-content';
   const labelClassName =
     variant === 'form' ? 'label forms__label' : 'card--title';
 
   const validationKey = formDataNumber.keyName as keyof TFormDataType;
   const validationMessage = validationMessages[validationKey] || '';
+
+  // A 'Format:' prefix means the figure was ACCEPTED, so this one span says two
+  // opposite things. The class states which; the stylesheet then picks the
+  // colour for the surface it lands on, which the inline style it replaces
+  // could not do -- the forms are dark and the tracker card is light, and one
+  // hardcoded value was wrong on one of them.
+  const isAcceptedFormat = validationMessage.toLowerCase().includes('format:');
 
   return (
     // A label and not a div, and htmlFor is the field's own key: the amount
@@ -44,14 +45,9 @@ function LabelNumberValidation<
           input is named by, so the two cannot drift apart. */}
       <span
         id={`${String(validationKey)}-validation`}
-        className='validation__errMsg'
-        style={{
-          color: validationMessage.toLowerCase().includes('format:')
-            ? `var(${successColor})`
-            // Same fix as .validation__errMsg in generalStyles.css: the
-            // light-surface error token, not the dark-page semaphore.
-            : 'var(--color-feedback-error-content)',
-        }}
+        className={`validation__errMsg${
+          isAcceptedFormat ? ' validation__errMsg--ok' : ''
+        }`}
       >
         {validationMessages[
           formDataNumber.keyName as keyof TFormDataType
