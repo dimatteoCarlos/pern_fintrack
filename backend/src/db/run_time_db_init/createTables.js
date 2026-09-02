@@ -180,7 +180,13 @@ export const mainTables = [
     exchange_rate DECIMAL(18,8) NOT NULL DEFAULT 1.0 CHECK (exchange_rate > 0),
     exchange_rate_source VARCHAR(60) NOT NULL DEFAULT 'identity',
     exchange_rate_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    exchange_rate_target_currency_id INTEGER NOT NULL DEFAULT 1 REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE
+    exchange_rate_target_currency_id INTEGER NOT NULL DEFAULT 1 REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+
+-- Marks the single row that opens an account. Nullable on purpose: NULL reads as
+-- "this row opens no account", which is true of every ordinary movement.
+-- Declared last so a database built here holds the same column order migration
+-- 022 leaves on one built by the chain.
+    opening_for_account_id INTEGER REFERENCES user_accounts(account_id) ON DELETE RESTRICT ON UPDATE CASCADE
       );`,
   },
 
