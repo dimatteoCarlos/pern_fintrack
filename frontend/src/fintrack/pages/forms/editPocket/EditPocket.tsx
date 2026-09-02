@@ -329,7 +329,9 @@ function EditPocket() {
       <section className='newPocket__page page__container'>
         <TopWhiteSpace variant={'dark'} />
         <div className='page__content'>
-          <h3 className='form__title'>Authentication Required</h3>
+          {/* h1 and not h3: this branch returns before the header below, so it
+              is the whole screen and this is its only title. */}
+          <h1 className='form__title'>Authentication Required</h1>
           <p>Please log in to edit a pocket.</p>
         </div>
       </section>
@@ -345,7 +347,10 @@ function EditPocket() {
         <LeftArrowSvg aria-hidden='true' />
       </Link>
 
-      <div className='form__title'>{'Edit Pocket'}</div>
+      {/* The screen's own name. As a div it was not a heading, so this page had
+          no h1 and the h3 below hung off nothing. Every rule for this class
+          selects the class, so the tag changes and nothing moves. */}
+      <h1 className='form__title'>{'Edit Pocket'}</h1>
     </div>
   );
 

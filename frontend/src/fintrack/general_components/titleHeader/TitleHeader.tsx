@@ -12,11 +12,23 @@ export function TitleHeader() {
   return (
     <>
       <div className='title__header__container'>
-        <Link to={'..'} relative='path' className='iconArrowLeftDark'>
-          <LeftArrowDarkSvg />
+        {/* The link held nothing but a glyph, so it was announced as an unnamed
+            link -- on four layouts, this being the header they share. */}
+        <Link
+          to={'..'}
+          relative='path'
+          className='iconArrowLeftDark'
+          aria-label='Go back'
+        >
+          <LeftArrowDarkSvg aria-hidden='true' />
         </Link>
 
-        <div className='title__header'>{currentRoute}</div>
+        {/* The screen's own name, and the only page-level title these four
+            layouts have. As a div it was not a heading, so Budget, Pocket,
+            Debts and Overview had no h1 at all and every CardTitle below hung
+            off nothing. Each rule for this class selects the class, so the tag
+            changes and the appearance does not. */}
+        <h1 className='title__header'>{currentRoute}</h1>
       </div>
     </>
   );

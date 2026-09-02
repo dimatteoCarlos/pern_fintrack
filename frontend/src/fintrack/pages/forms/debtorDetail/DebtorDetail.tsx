@@ -262,7 +262,11 @@ function DebtorDetail() {
             >
               <LeftArrowLightSvg aria-hidden='true' />
             </Link>
-            <div className='form__title'>
+            {/* The screen's own name. As a div it was not a heading, so this
+                page had no h1 and every CardTitle below it hung off nothing.
+                Every rule for this class selects the class, so the tag changes
+                and nothing moves. */}
+            <h1 className='form__title'>
               {/* The name of an account that is gone, or of one that failed to
                   load, is not a fact this screen may state. */}
               {bubleInfo && !isAccountMissing && !hasAccountFailed ? (
@@ -273,7 +277,7 @@ function DebtorDetail() {
                   aria-hidden='true'
                 ></span>
               )}
-            </div>
+            </h1>
             {/* The editor returns to this card, not to the list the user came
                 from: it is where they were standing. Offered only once the
                 account is known to exist. */}

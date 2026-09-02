@@ -180,9 +180,12 @@ function PocketDetail() {
      <LeftArrowLightSvg aria-hidden='true' />
     </Link>
 
-    <div className='form__title'>
+    {/* The screen's own name. As a div it was not a heading, so this page had
+        no h1 and every CardTitle below it hung off nothing. Every rule for this
+        class selects the class, so the tag changes and nothing moves. */}
+    <h1 className='form__title'>
      {pocket ? capitalize(pocket.name).toUpperCase() : ''}
-    </div>
+    </h1>
 
     {/* Rendered only once the pocket is in hand, because the control names it
         in its accessible label and a menu opened for a pocket the screen
