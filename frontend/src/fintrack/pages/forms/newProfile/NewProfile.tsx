@@ -485,16 +485,22 @@ function NewProfile() {
             </div>
 
             <div className='input__box'>
-              <label className='label forms__label'>
+              {/* A div and no longer a label. DropDownSelection is this
+                  element's SIBLING, not its child, and the element carried no
+                  htmlFor — so the label named nothing at all, which is worse
+                  than no label: it is a promise the markup does not keep. The
+                  control is named below, where it is built. */}
+              <div className='label forms__label'>
                 {'Type'}
                 <span className='validation__errMsg'>
                   {validationMessages['type']}
                 </span>
-              </label>
+              </div>
               {/* action debtor type */}
               <DropDownSelection
                 dropDownOptions={typeSelectionProp}
                 updateOptionHandler={typeSelectHandler}
+                ariaLabel='Type'
                 isReset={isReset}
                 setIsReset={setIsReset}
               />

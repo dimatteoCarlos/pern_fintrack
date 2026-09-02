@@ -819,9 +819,15 @@ function Transfer(): JSX.Element {
           <div className='validation__errMsg'>
             {validationMessages['destination']}
           </div>
+          {/* "To", the word above it, and not the placeholder: the placeholder
+              reads "Select Account" on BOTH of this screen's dropdowns, so it
+              cannot tell the origin from the destination — and it goes empty
+              while the account list is still on the wire, which would leave the
+              control with no name at all. */}
           <DropDownSelection
             dropDownOptions={destinationAccountOptions}
             updateOptionHandler={handleDestinationChange}
+            ariaLabel='To'
             isReset={isReset}
             setIsReset={setIsReset}
             setIsResetDropdown={setIsResetDestinationAccount}

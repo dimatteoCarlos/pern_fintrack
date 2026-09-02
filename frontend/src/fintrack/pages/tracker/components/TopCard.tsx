@@ -107,6 +107,15 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
   } = topCardElements;
 
   const accountFieldName = title2.trim().toLowerCase() as keyof TFormDataType;
+
+  // The word above the account dropdown, and the dropdown's accessible name.
+  // One constant for both, so the two cannot drift: a name that does not
+  // contain the label the reader can see is a control they cannot ask for by
+  // the word in front of them (2.5.3). It also tells Transfer's two dropdowns
+  // apart, which are otherwise both "Select Account".
+  const accountFieldLabel = capitalize(label2 ?? title2)
+    .trim()
+    .replace(/:$/, '');
   //---
   const errorMessage = validationMessages[accountFieldName] || '';
   //(topCardElements.value as string).trim() !== '';//new
@@ -336,9 +345,7 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
               date range: "From: 30 Aug ... Today". It moved into the amount
               field above, which is the movement's own headline. */}
           <div className='account__labelGroup'>
-            <span className='account-label'>
-              {capitalize(label2 ?? title2).trim()}
-            </span>
+            <span className='account-label'>{accountFieldLabel}</span>
           </div>
 
           {radioInputProps && (
@@ -365,6 +372,7 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
         <DropDownSelection
           dropDownOptions={topCardOptions}
           updateOptionHandler={finalSelectHandler}
+          ariaLabel={accountFieldLabel}
           isReset={isReset}
           isResetDropdown={isResetDropdown}
           setIsReset={setIsReset}

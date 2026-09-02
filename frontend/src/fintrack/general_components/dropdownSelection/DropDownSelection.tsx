@@ -22,6 +22,18 @@ export type DropdownSelectPropType = {
 
   updateOptionHandler: (selectedOption: DropdownOptionType | null) => void;
 
+  // The control's accessible name. A placeholder is not one: react-select
+  // erases it the moment a value is chosen, so the control was unnamed exactly
+  // when a reader most needs to ask what it holds — and while empty it was
+  // named only by a hint the browser is free to stop exposing.
+  //
+  // Optional, and it falls back to the placeholder text, so every caller gains
+  // a name without being touched: "Select Account" on the four tracker screens,
+  // "select type" on the new-debtor form. A caller passes this only when the
+  // placeholder is too vague to name the field on its own — two dropdowns
+  // reading "Select Account" on one screen are the case it exists for.
+  ariaLabel?: string;
+
   setIsReset: (value: boolean) => void;
   isReset: boolean;
 
@@ -133,6 +145,7 @@ const createStyles = (
 function DropDownSelection({
   dropDownOptions,
   updateOptionHandler,
+  ariaLabel,
   isReset,
   isResetDropdown,
   setIsReset,
@@ -166,6 +179,8 @@ function DropDownSelection({
       options={options}
       onChange={handleChange}
       placeholder={title}
+      // The name survives the value; the placeholder does not.
+      aria-label={ariaLabel ?? title}
       styles={createStyles(variant)}
       closeMenuOnSelect={true}
       tabSelectsValue={false}
