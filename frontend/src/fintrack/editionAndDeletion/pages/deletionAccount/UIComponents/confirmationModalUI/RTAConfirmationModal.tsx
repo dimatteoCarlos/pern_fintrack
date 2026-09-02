@@ -4,6 +4,7 @@ import { DictionaryDataType } from "../../../../utils/languages.ts";
 
 import StatusModalUI from "../statusModalUI/StatusModalUI.tsx";
 import InitialConfirmationDeleteAccountUI from "./InitialConfirmationDeleteAccountUI.tsx"
+import { useModalDialog } from "../../../../../../hooks/useModalDialog.ts";
 
 import './RTAConfirmationModal.css';
 
@@ -22,12 +23,35 @@ export type RTAConfirmationModalPropsType={
 // ====================================
 // 🎯 RTA CONFIRMATION MODAL COMPONENT
 // ====================================
-export const RTAConfirmationModal = ({
- t, isOpen, affectedAccountsReportCount, onClose, onConfirm, message, mainStatusFromParent
+// The guard, and nothing else: a hook cannot be called after the early return
+// below, and the caret only returns to whatever opened this because the dialog
+// UNMOUNTS on close.
+export const RTAConfirmationModal = (props:RTAConfirmationModalPropsType) => {
+ if(!props.isOpen) return null;
+
+ return <RTAConfirmationDialog {...props} />;
+};
+
+const RTAConfirmationDialog = ({
+ t, affectedAccountsReportCount, onClose, onConfirm, message, mainStatusFromParent
 }:RTAConfirmationModalPropsType) => {
-//Visibility logic: initial logic to render null if modal is closed
-if(!isOpen) return null;
 const buttonDisabled = mainStatusFromParent === 'executing';
+
+// This element is the dialog and the two screens below are its CONTENT, which
+// is why they stop declaring roles of their own: a dialog inside a dialog is
+// not a structure a screen reader can report.
+//
+// Not portalled, so the page behind is not made inert; aria-modal hides it from
+// a screen reader and the hook's Tab cycle keeps the caret inside. No initial
+// focus is named on purpose -- the hook then holds the caret on the panel, and
+// the destructive answer is not the thing already focused when the dialog opens.
+const { titleId, dialogProps } = useModalDialog({
+ onClose,
+ lockPageBehind: false,
+ // The account is being deleted; the request must not be abandoned halfway by
+ // an Escape. Same condition the buttons disable on.
+ canClose: mainStatusFromParent !== 'executing',
+});
 
 // ===================================
 // 🎯 MODAL CONTENT RENDERER
@@ -47,6 +71,7 @@ switch (mainStatusFromParent){
    onConfirm={onConfirm}
    mainStatusFromParent={mainStatusFromParent}
    message={message}
+   titleId={titleId}
 
    isOpen
   />
@@ -63,6 +88,7 @@ switch (mainStatusFromParent){
     autoCloseDelay={4000}
     showCountdown={true}
     t={t}
+    titleId={titleId}
    />
   );
 
@@ -74,9 +100,20 @@ switch (mainStatusFromParent){
 // 🎯 MAIN RENDER
 // =====================
 return (
- <div className=     {`rta-confirmation-modal-overlay
-   ${isOpen ? 'open' : ''}`}
-   role="dialog" aria-modal="true"  aria-hidden={!isOpen} aria-labelledby="modal-title">
+ <div
+   className="rta-confirmation-modal-overlay open"
+   {...dialogProps}
+   /* alertdialog once the deletion is running or has answered: that content
+      demands a response and interrupts. The idle screen is an ordinary
+      confirmation. The role is stated after the spread so it wins over the
+      hook's default. */
+   role={mainStatusFromParent === 'idle' ? 'dialog' : 'alertdialog'}
+   /* The paragraph only exists on the status screens. It named the inner
+      element while the dialog role sat on this one, so nothing described the
+      dialog. */
+   aria-describedby={
+    mainStatusFromParent === 'idle' ? undefined : 'status-modal-message'
+   }>
   <div className="rta-confirmation-modal-container ">
    {getModalContent()}
   </div>
