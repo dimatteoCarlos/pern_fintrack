@@ -63,13 +63,35 @@ const unprocessable = (message) =>
 // A figure inside a refusal, in the unit it is actually stated in. Every amount
 // these messages name has passed convertTypedAmount, which refuses any account
 // not kept in the accounting currency, so the unit is known here and does not
-// have to be looked up. The code and not a symbol: "$" names a different amount
-// in each of the currencies this app converts between.
+// have to be looked up.
 //
-// toAmountString and not toAmount, so a round figure reads 3140.70 rather than
-// 3140.7 and the two amounts in one sentence line up at the same scale.
+// The symbol is asked of Intl and never held in a table here. The accounting
+// currency is read from the environment and a deployment may change it, so a
+// map in this module would be one more place to remember; Intl already answers
+// for whatever code that variable carries, and it brings the currency's own
+// grouping and decimal count with it. narrowSymbol, so a dollar reads "$"
+// rather than "US$", and en-US because these messages are written in English.
+//
+// Built once and behind a guard: an unknown code makes the constructor throw,
+// and a refusal that turns into a 500 tells the owner nothing about the rule it
+// was refusing on. The fallback states the bare code, fixed-point so a round
+// figure still reads 3140.70.
+const accountingAmountFormat = (() => {
+ try {
+  return new Intl.NumberFormat('en-US', {
+   style: 'currency',
+   currency: ACCOUNTING_CURRENCY_CODE.toUpperCase(),
+   currencyDisplay: 'narrowSymbol',
+  });
+ } catch {
+  return null;
+ }
+})();
+
 const statedAmount = (value) =>
- `${ACCOUNTING_CURRENCY_CODE.toUpperCase()} ${toAmountString(value)}`;
+ accountingAmountFormat
+  ? accountingAmountFormat.format(toAmount(value))
+  : `${ACCOUNTING_CURRENCY_CODE.toUpperCase()} ${toAmountString(value)}`;
 
 /**
  * Validate an amount and return it at the scale of the column.
