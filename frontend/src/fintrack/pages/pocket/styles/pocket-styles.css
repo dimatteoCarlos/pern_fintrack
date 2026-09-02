@@ -425,18 +425,20 @@ button.line__container {
 /* The goal, what is committed against it and the gap left, with a rule between
    them: they are three parts of one statement, not three tiles.
 
-   Three steps and not the single 480px frontier this carried before. It went
-   from a full-width stack straight to three tracks, so at the width where the
-   tracks first appear each one held about 128px and a 2rem amount wrapped
-   mid-figure; between the stack and that there was nothing.
+   Three tracks at every width, 320px included. They used to be built up in two
+   steps -- a stack, then a pair, then the row -- and the cost was that on a
+   phone the three parts of one statement were read one under the other, which
+   is not what the statement says. What the steps were paying for was the width
+   an amount needs, and that is now paid by the amount itself: it is measured in
+   cqi against this container, so it follows its own track instead of forcing
+   the layout to widen around it.
 
-   A grid rather than a flex row, because the middle step has to put the third
-   figure on a row of its own. A flex row can only wrap it, and a wrapped flex
-   item takes the width of its content rather than the width of the row. */
+   A grid and not a flex row: minmax(0, 1fr) is what keeps a long figure inside
+   its track, where a flex item would take the width of its content. */
 .pocketHero__equation {
  display: grid;
- grid-template-columns: minmax(0, 1fr);
- gap: var(--space-3);
+ grid-template-columns: repeat(3, minmax(0, 1fr));
+ gap: var(--space-2);
 }
 
 .pocketHero__tile {
@@ -448,20 +450,27 @@ button.line__container {
 }
 
 .pocketHero__equation .pocketHero__tile + .pocketHero__tile {
- padding-top: var(--space-3);
- border-top: var(--border-width-thin) solid var(--color-border-subtle);
+ padding-left: var(--space-2);
+ border-left: var(--border-width-thin) solid var(--color-border-subtle);
 }
 
 /* The two span rules that were here went with the tiles they belonged to. The
    only tile that spans a track now is the gap left, and only at the middle
    step, where it takes the row under the pair above it. */
 
+/* Floored one step ABOVE the qualifier under it rather than floating that
+   qualifier one step below the scale, and creme rather than the same subtle grey
+   the qualifier wears: at 320px both used to reach --font-size-2xs, where
+   nothing but the weight told them apart and the message came out the LARGER of
+   the two. One line, because a heading that wraps pushes its own figure a row
+   below the two beside it. */
 .pocketHero__label {
- font-size: var(--font-size-sm);
+ font-size: clamp(var(--font-size-xs), 2.9cqi, var(--font-size-sm));
  font-weight: var(--font-weight-semibold);
- letter-spacing: var(--letter-spacing-wide);
+ letter-spacing: normal;
  text-transform: uppercase;
- color: var(--color-content-on-dark-subtle);
+ white-space: nowrap;
+ color: var(--color-content-on-dark-muted);
 }
 
 /* The total the partition below adds up to, told from the words that name it.
@@ -475,13 +484,18 @@ button.line__container {
 }
 
 /* No ellipsis and no nowrap: both figures are amounts now, and an amount cut
-   off at the column edge is a wrong number rather than a shortened name. */
+   off at the column edge is a wrong number rather than a shortened name.
+   For the same reason it never breaks INSIDE itself either -- this used to
+   allow a break anywhere, and $117.60 came apart as "$117.6" over "0" the
+   moment a track was narrower than the figure. The clamps below keep it inside
+   the track instead of letting it split. */
 .pocketHero__value {
  font-weight: var(--font-weight-bold);
  letter-spacing: var(--letter-spacing-wider);
  color: var(--color-content-on-dark);
  font-variant-numeric: tabular-nums;
- overflow-wrap: anywhere;
+ overflow-wrap: normal;
+ word-break: keep-all;
 }
 
 /* The committed figure at the top of the scale and the remainder one clear step
@@ -492,20 +506,52 @@ button.line__container {
    made it a footnote of the committed figure rather than a figure of its own. */
 .pocketHero__tile--target .pocketHero__value,
 .pocketHero__tile--committed .pocketHero__value {
- font-size: var(--font-size-2xl);
+ font-size: clamp(var(--font-size-base), 5.3cqi, var(--font-size-xl));
  line-height: 1.1;
 }
 
 .pocketHero__tile--remaining .pocketHero__value {
- font-size: var(--font-size-xl);
+ font-size: clamp(var(--font-size-base), 5.3cqi, var(--font-size-lg));
  line-height: 1.2;
 }
 
+/* One step under the heading at BOTH ends of the range: the ceiling is the
+   heading's floor and the floor is --font-size-3xs, the step added under 2xs for
+   exactly this line. It never wraps -- a second row here takes the height of a
+   fourth line and pushes the three tiles out of alignment with each other -- so
+   it is clipped, and each reading below is short enough that the clip does not
+   fire at the width it is written for. */
 .pocketHero__meta {
- font-size: var(--font-size-sm);
+ font-size: clamp(var(--font-size-3xs), 2.4cqi, var(--font-size-xs));
  font-weight: var(--font-weight-regular);
  color: var(--color-content-on-dark-subtle);
  line-height: 1.4;
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+/* Two readings of one line, and the container picks which.
+
+   352px is a TRANSLATION, not a preference: the threshold was asked for in
+   viewport pixels -- short below 400, full from 400 -- and this query answers to
+   the container, which is not the same number. Measured through the real chain,
+   a 400px viewport gives this hero 352px and a 399px one gives it 351. The two
+   are a pixel apart, so the frontier lands exactly where it was asked for.
+
+   Rewriting it as a viewport media query would be the wrong instrument for the
+   right number: the board's width follows its column, and a column that ever
+   changes its share would move the hero without moving the viewport. */
+@container pocketHero (max-width: 351.98px) {
+ .pocketHero__meta--wide {
+  display: none;
+ }
+}
+
+@container pocketHero (min-width: 352px) {
+ .pocketHero__meta--narrow {
+  display: none;
+ }
 }
 
 /* ── Level 2: the two cards ──────────────────────────────────────────────── */
@@ -613,13 +659,51 @@ button.line__container {
  color: var(--color-content-on-dark-subtle);
 }
 
-/* Absent under 480px of CONTAINER, not of viewport, for the same reason the
-   equation stacks there. At 360px the card holds 132px between its paddings and
-   a 4rem glyph would leave 69px of it for the figure and the marks. Drawing it
-   smaller instead is what the token's own note rules out. The progress block is
-   not gated: it has the full column and the room to pay for it. */
+/* The glyph and the heading it belongs to, on one line. The card is a column,
+   so without this row the drawing took a whole row of its own to say what the
+   words beside it already said. */
+.pocketHero__cardHead {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ min-width: 0;
+ /* Both cards use it, and Next Target's is a flex item of a row above 480px:
+    without this the pair stretches and the glyph grows with the card. */
+ flex-shrink: 0;
+}
+
+/* Present at every width, which it was not: under 480px of container it was
+   hidden outright, because at 4rem it left the card 69px for the figure and the
+   marks and the set's own note rules out drawing it smaller.
+
+   It is drawn smaller here, and the note is answered rather than ignored. What
+   the note protects is the STROKE: the set is a 0.35 pen on a 24 unit grid, so
+   at 4rem it lands at about 0.93 device pixels and at 2rem it would fall under
+   half of one and stop resolving. The rule below scales the pen with the box,
+   so the rendered stroke stays where it was and only the drawing shrinks.
+
+   The cost, stated: the set is drawn with two pens -- 0.35 for the shape that
+   names the object and 0.24 for the detail inside it -- and one override
+   collapses them to one weight. At 28px that distinction is under a pixel wide
+   either way. */
 .pocketHero__cards .pocketHero__glyph {
- display: none;
+ display: block;
+}
+
+/* Both halves of the change live in ONE max-width query, so above it no rule
+   exists at all and the asset keeps the pen it was drawn with. Restoring the
+   attribute from a min-width query is not possible: a presentation attribute
+   sits at author level with no specificity, so reverting an author declaration
+   goes straight past it to the user agent's stroke-width of 1. */
+@container pocketHero (max-width: 479.98px) {
+ .pocketHero__cards .pocketHero__glyph {
+  width: var(--size-control-sm);
+  height: var(--size-control-sm);
+ }
+
+ .pocketHero__cards .pocketHero__glyph :is(path, circle, rect, line, polyline) {
+  stroke-width: 0.77;
+ }
 }
 
 /* The chevron already brightens on these same two states, and a glyph that
@@ -870,63 +954,19 @@ button.line__container {
    223px, which is where 2rem starts breaking a figure across two lines. Their
    relative order is untouched — the goal and the committed amount still read at
    the same size and the remainder still one step under them. */
-@container pocketHero (min-width: 360px) {
- .pocketHero__equation {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3) var(--space-4);
- }
-
- /* The divider turns with the layout. Its padding matches the column gap so
-    the rule lands in the middle of the gutter rather than against a figure. */
- .pocketHero__equation .pocketHero__tile + .pocketHero__tile--committed {
-  padding-top: 0;
-  padding-left: var(--space-4);
-  border-top: none;
-  border-left: var(--border-width-thin) solid var(--color-border-subtle);
- }
-
- /* Full width under the pair, keeping the horizontal rule it has when stacked.
-    The excess line hangs off this tile and it is a sentence, not a figure: in a
-    half-width column it wraps to four lines. */
- .pocketHero__equation .pocketHero__tile--remaining {
-  grid-column: 1 / -1;
- }
-
- .pocketHero__tile--target .pocketHero__value,
- .pocketHero__tile--committed .pocketHero__value {
-  font-size: var(--font-size-xl);
- }
-
- .pocketHero__tile--remaining .pocketHero__value {
-  font-size: var(--font-size-lg);
- }
-}
-
-/* Three tracks, and the gutter narrows to pay for the third one: at 480px of
-   container the columns hold about 138px each, and a 1.5rem gap plus a 1.5rem
-   divider padding was taking 96px of the row away from them. */
+/* The two steps that built the row up -- a pair here, the third track at 480 --
+   are gone: the row is three tracks from 320px, and the figures inside it are
+   sized in cqi rather than stepped down the scale at fixed frontiers. What is
+   left of this query is everything that was never about the equation. */
 @container pocketHero (min-width: 480px) {
+ /* The gutter widens once there is room to pay for it. Below this the row keeps
+    --space-2, which is what lets three tracks exist at 320px at all. */
  .pocketHero__equation {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
  }
 
  .pocketHero__equation .pocketHero__tile + .pocketHero__tile {
-  padding-top: 0;
   padding-left: var(--space-4);
-  border-top: none;
-  border-left: var(--border-width-thin) solid var(--color-border-subtle);
- }
-
- /* Back into the row it left one step below. */
- .pocketHero__equation .pocketHero__tile--remaining {
-  grid-column: auto;
- }
-
- /* The card track carries 293px of interior here, so the glyph costs a fifth
-    of it rather than half. */
- .pocketHero__cards .pocketHero__glyph {
-  display: block;
  }
 
  /* The two bands go side by side, told apart by a hairline. Below this the

@@ -186,6 +186,18 @@
 
  /* The specification names no token for line height, so none is invented. Each
     size carries its line height and tracking as a comment instead. */
+ /* One step under 2xs, on the same 0.125rem interval the small end of the scale
+    already runs on (0.5 → 0.625 → 0.75 → 0.875 → 1). Added 2026-09-02 for the
+    qualifier line under a hero figure, which has to read one step below the
+    label above it at EVERY width: both were floored at 2xs in the narrow band,
+    where the message came out as loud as its own heading.
+
+    The smallest size the scale will carry, and it is for a line that qualifies
+    a figure someone has already read — never for the figure, the label or any
+    body text. It stays a rem, so a reader who enlarges their browser text moves
+    it with everything else (WCAG 1.4.4), and the contrast floor is unchanged:
+    --color-content-on-dark-subtle measures 8.9:1 on --color-surface-deep. */
+ --font-size-3xs: 0.5rem; /* 1.2 / 0 */
  --font-size-2xs: 0.625rem; /* 1.2 / 1px */
  --font-size-xs: 0.75rem; /* 1.3 / 0 */
  --font-size-sm: 0.875rem; /* 1.4 / 0.5px - the default UI size */

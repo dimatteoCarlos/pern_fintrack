@@ -32,81 +32,40 @@ type PocketHeroPropType = {
 
 const MISSING = '—';
 
-// The three states partition the board. Overdue requires the committed amount
-// to be below the goal and funded requires the opposite, so no pocket is in
-// both and none is outside all three — which is what makes this subtraction
-// exact rather than an estimate the server would have to confirm.
-// How many rows sit at each level of the date partition, which is what replaces
-// the single "active" figure this tile used to print. "Active" was never a
-// state: it was the residue of the two the server folds, and it hid the one
-// reading that asks for action by lumping a pocket thirty days out together
-// with one that has a year.
-//
-// Funded and overdue are taken from the server, which folds them; only the
-// split of the remainder is counted here, because the thirty-day threshold is
-// a presentation rule the model has nothing to read it from. The four add up to
-// pocketCount by construction: the two served counts are mutually exclusive and
-// the level helper sends everything else to one of the other two.
-const countByLevel = (
- summary: PocketBoardSummary,
- pockets: PocketStatus[],
-) => {
- const at = (level: string) =>
-  pockets.filter((pocket) => pocketDateLevel(pocket) === level).length;
+// The deadline in the two lengths the tile asks for, built by slicing the
+// YYYY-MM-DD text rather than by parsing it. new Date() on one of these reads
+// UTC midnight and renders the previous day west of UTC, which is why the row
+// type forbids it and why there is no Date here at all.
+const deadlineReadings = (day: string | null) => {
+ if (!day) return null;
 
- const overFunded = at('overFunded');
+ const [year, month, date] = day.split('-');
+ if (!year || !month || !date) return null;
 
  return {
-  // The served count, whole. A pocket past its target IS funded — the flag is
-  // set at committed above OR EQUAL — so taking the over-target rows out of it
-  // left "funded" meaning "landed on the cent", a case one cent wide that read
-  // as zero beside two pockets that had plainly reached their targets.
-  funded: summary.fundedCount,
-  overFunded,
-  overdue: summary.overdueCount,
-  atRisk: at('atRisk'),
-  onPlan: at('onPlan'),
+  wide: `${date}-${month}-${year}`,
+  narrow: `${date}-${month}-${year.slice(2)}`,
  };
 };
 
-// A level with nothing in it stays on screen and steps back. Dropping it breaks
-// the partition its heading counts, and a reader cannot tell a level that is
-// absent from one with nothing in it; printing it at full ink gives an empty
-// level the same call on the eye as a populated one. On a board where four of
-// the five are empty, this is what leaves the fifth as the only thing lit.
-const markClass = (count: number): string =>
- count === 0 ? 'pocketHero__mark pocketHero__mark--empty' : 'pocketHero__mark';
-
-// The pocket to send the owner to, which is not the same question as which
-// deadline falls first on the calendar.
+// One line in two readings; the container shows the one its width calls for.
+// Both travel and the loser is display:none rather than hidden or clipped, so a
+// screen reader is not read the same line twice.
 //
-// Excluding the late ones outright, as this did, blanked the card on exactly
-// the board where direction matters most: every unfinished pocket past its
-// date meant nothing upcoming, so four pockets could be raising an alert while
-// the tile said there was nothing pending. A deadline that has passed is not
-// next by the calendar, but it is very much what to do next.
+// This is NOT a fitting device. Measured across every pixel from 317 to 563, at
+// the size the clamp gives it there, every long reading fits even at the
+// narrowest end -- so the switch buys density, not room, and it is a design
+// call rather than a constraint.
 //
-// So: the nearest deadline among those still running, and only when none is
-// still running, the one furthest past its date. daysRemaining goes negative
-// once the deadline passes, so one comparison answers both.
-//
-// null when every pocket has reached its target, or there are none at all.
-// The tile is then absent rather than empty: the bands above already say
-// "in progress 0", and a card whose only message is that it has nothing to say
-// spends the width of the hero to repeat it.
-const findNextGoal = (pockets: PocketStatus[]): PocketStatus | null => {
- const unfinished = pockets.filter((pocket) => !pocket.funded);
- const running = unfinished.filter((pocket) => !pocket.overdue);
- const pool = running.length > 0 ? running : unfinished;
-
- return pool.reduce<PocketStatus | null>(
-  (nearest, pocket) =>
-   nearest === null || pocket.daysRemaining < nearest.daysRemaining
-    ? pocket
-    : nearest,
-  null,
- );
-};
+// Only two lines have a second reading. The excess already states itself in
+// four words and shortening it further reached "+$3.62", which says how much but
+// not of what.
+const MetaLine = ({ wide, narrow }: { wide: string; narrow: string }) => (
+ <span className='pocketHero__meta'>
+  <span className='pocketHero__meta--wide'>{wide}</span>
+  <span className='pocketHero__meta--narrow'>{narrow}</span>
+ </span>
+);
 
 // Three levels, and they answer three different questions: where the board
 // stands as a whole, which pocket the owner has to act on next, and how far
@@ -155,6 +114,7 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
  const levels = summary === null ? null : countByLevel(summary, pockets);
  const nextGoal = findNextGoal(pockets);
  const uncoveredCount = summary?.uncoveredCount ?? null;
+ const deadline = deadlineReadings(summary?.latestDesiredDate ?? null);
  // Clamped per pocket by the server before folding, so the bar needs no clamp
  // of its own and cannot paint past its track.
  const overallProgress = summary?.overallProgress ?? null;
@@ -175,25 +135,57 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
         reach every target" existed only because the target had no tile of its
         own to be stated in; each now repeats the line above or below it. */}
     <div className='pocketHero__equation'>
+     {/* One word each, because the three sit in one row under one heading and a
+         label only has to tell its own tile from the two beside it. "Total" and
+         "Still to" were carrying nothing and were what forced the row to stack
+         below 480px — three tracks at 320px hold about 88px, and the longer
+         wording did not fit any size the type scale declares. */}
      <div className='pocketHero__tile pocketHero__tile--target'>
       <span className='pocketHero__label'>Target</span>
       <span className='pocketHero__value'>
        {amount(summary?.totalTarget)}
       </span>
+
+      {/* What the target is made of and by when. Absent on an empty board,
+          where there is no deadline and the count would say zero twice — the
+          status card below already states the population. */}
+      {deadline !== null && summary !== null && (
+       <MetaLine
+        wide={`${summary.pocketCount} pockets till ${deadline.wide}`}
+        narrow={`${summary.pocketCount} pckt ${deadline.narrow}`}
+       />
+      )}
      </div>
 
      <div className='pocketHero__tile pocketHero__tile--committed'>
-      <span className='pocketHero__label'>Total allocated</span>
+      <span className='pocketHero__label'>Allocated</span>
       <span className='pocketHero__value'>
        {amount(summary?.totalAllocated)}
       </span>
+
+      {/* Where the figure above came from. "bank accounts" carries no caveat:
+          a cash account IS a bank account for every reading in this app, and
+          every formula that names bank includes cash (OVERVIEW_DECISIONS D45,
+          2026-09-01). The two types that may fund a pocket are exactly those
+          two — accountAllocationService.js:23 — so the word covers the whole
+          set the count is taken over, today and if a cash account ever holds
+          an allocation.
+
+          The count itself does not filter by type, which is what D45 requires
+          of it: filtering to bank would be the version that breaks. */}
+      {summary !== null && summary.sourceAccountCount > 0 && (
+       <MetaLine
+        wide={`with ${summary.sourceAccountCount} bank accounts`}
+        narrow={`${summary.sourceAccountCount} bank acc.`}
+       />
+      )}
      </div>
 
      <div className='pocketHero__tile pocketHero__tile--remaining'>
       {/* Allocated is the figure's word — POCKET_DECISIONS 18.1 freezes it —
           and commit is the event's. This names a figure, so it takes the
-          figure's word and pairs with "Total allocated" beside it. */}
-      <span className='pocketHero__label'>Still to allocate</span>
+          figure's word and pairs with "Allocated" beside it. */}
+      <span className='pocketHero__label'>To allocate</span>
       <span className='pocketHero__value'>
        {amount(summary?.totalRemaining)}
       </span>
@@ -206,12 +198,16 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
               allocated − excess + remaining = target
           and not the subtraction it looks like. Printed only when it is not
           zero, because on a board where nothing passed its goal there is no
-          discrepancy to explain. */}
+          discrepancy to explain.
+
+          The short reading is the sign alone: a leading + says excess in one
+          character where "committed above target" needed twenty-six, and the
+          narrow track carries about fourteen. */}
       {summary !== null &&
        summary.totalExcess !== null &&
        summary.totalExcess > 0 && (
         <span className='pocketHero__meta'>
-         {amount(summary.totalExcess)} committed above target
+         {amount(summary.totalExcess)} above target
         </span>
        )}
      </div>
@@ -258,19 +254,26 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
         chevron on a tile that leads nowhere is an affordance that lies. */}
     <div className='pocketHero__cards'>
      <div className='pocketHero__card'>
-      <WalletSvg className='pocketHero__glyph' />
+      {/* The glyph beside the heading and not above it. On a line of its own it
+          spent a whole row of the card saying what the words beside it already
+          say, which is a lot of height for decoration on a board that has to
+          hold five readings under this. */}
+      <span className='pocketHero__cardHead'>
+       <WalletSvg className='pocketHero__glyph' />
 
-      {/* The word and its count on one line, in the shape the group headings
-          below already use. On a line of its own the total read as a third
-          element sitting between the label that names it and the partition
-          that adds up to it, rather than as the heading of both.
+       {/* The word and its count on one line, in the shape the group headings
+           below already use. On a line of its own the total read as a third
+           element sitting between the label that names it and the partition
+           that adds up to it, rather than as the heading of both.
 
-          "Pocket status" and not "Pockets": what follows is the partition by
-          level, and the count is the total it adds up to. The old word named
-          the objects and left the reader to discover that the lines beneath
-          were states rather than a list. */}
-      <span className='pocketHero__label'>
-       Pocket status (total: <b>{summary === null ? MISSING : summary.pocketCount}</b>)
+           "Pocket status" and not "Pockets": what follows is the partition by
+           level, and the count is the total it adds up to. The old word named
+           the objects and left the reader to discover that the lines beneath
+           were states rather than a list. */}
+       <span className='pocketHero__label'>
+        Pocket status (total:{' '}
+        <b>{summary === null ? MISSING : summary.pocketCount}</b>)
+       </span>
       </span>
 
       {/* Three headings, each with the count it heads, and its readings
@@ -447,9 +450,16 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
        to={`pockets/${nextGoal.pocketId}`}
        className='pocketHero__card pocketHero__card--link pocketHero__card--row'
       >
-       <BullsEyeSvg className='pocketHero__glyph' />
+       {/* The glyph beside the heading, the way the status card above does it.
+           Below 480px this card is a column, so on its own the drawing took a
+           row of its own to say what the two words beside it already say. Above
+           it the card is a row and the pair travels as one item, which is what
+           it always read as. */}
+       <span className='pocketHero__cardHead'>
+        <BullsEyeSvg className='pocketHero__glyph' />
 
-       <span className='pocketHero__label'>Next target</span>
+        <span className='pocketHero__label'>Next target</span>
+       </span>
 
        <span className='pocketHero__inline'>
         <span className='pocketHero__cardValue pocketHero__cardValue--name'>
