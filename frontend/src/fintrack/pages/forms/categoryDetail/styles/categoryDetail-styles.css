@@ -299,3 +299,102 @@
   transition: none;
  }
 }
+
+/* ── The record's identity, in three parts ───────────────────────────────────
+   It used to be one string — "TRANSPORT/PUBLIC/MUST" — inside .form__title,
+   which is white-space: nowrap with an ellipsis at max-width calc(100% - 4rem).
+   At 360px, the app's base width, the record lost its own name to make room
+   for the path above it.
+
+   They are not three parts of a name. The category is WHERE the record lives,
+   the subcategory IS the record, and the nature is a property of it: three
+   kinds of fact the slash was flattening into one. Each arrives as its own
+   field from the budget contract, so nothing is parsed here.
+
+   The column takes the width the title's siblings leave, and min-width: 0 is
+   what lets it shrink inside the flex row rather than push the edit link off
+   the end. */
+.budgetDetail__identity {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ gap: var(--space-1);
+ flex: 1;
+ min-width: 0;
+}
+
+/* Where the record lives. A step below the name in size and in colour, because
+   it answers a question the reader did not ask first. */
+.budgetDetail__crumb {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* Undoes the truncation .form__title imposes, which is the whole point of the
+   split: with the path gone the name fits, and a name that fits must not be
+   cut. It keeps that rule's size, weight and colour. */
+.main__title--container .budgetDetail__recordName {
+ max-width: 100%;
+ white-space: normal;
+ overflow: visible;
+ text-overflow: clip;
+ padding: 0;
+}
+
+/* A property of the record, not part of its name, so it is set apart rather
+   than appended: must, need and want are a closed set of three and each is one
+   short word. Filled rather than outlined, because an outline at this size
+   reads as a control. */
+.budgetDetail__nature {
+ font-size: var(--font-size-3xs);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-primary);
+ background-color: var(--color-content-on-dark-subtle);
+ border-radius: var(--radius-xs);
+ padding: 0 var(--space-1);
+}
+
+/* ── The period, on one line ─────────────────────────────────────────────────
+   A labelled "Period" row over a two-column panel of Initial and Final Balance
+   is three lines and a bordered box to state a range and its two ends. The
+   month is already named by the picker above this, so the RANGE is the only
+   thing left to say, and the pair of balances is what the range is about.
+
+   The rule below it does the work the panel's border was doing: it separates
+   the period from the list, which is the only boundary here. */
+.budgetDetail__period {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
+ padding: var(--space-2) 0 var(--space-3);
+ border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+.budgetDetail__periodRange {
+ font-size: var(--font-size-xs);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+.budgetDetail__periodPair {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-4);
+}
+
+/* The figure leads and its word follows: the two amounts are what the reader
+   compares, and a label in front of each would put four words between them. */
+.budgetDetail__periodItem {
+ font-size: var(--font-size-sm);
+ color: var(--color-content-on-dark-muted);
+}
+
+.budgetDetail__periodItem b {
+ font-weight: var(--font-weight-bold);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
