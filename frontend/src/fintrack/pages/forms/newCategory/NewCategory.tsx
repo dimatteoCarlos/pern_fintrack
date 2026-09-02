@@ -488,6 +488,7 @@ function NewCategory() {
                 type='text'
                 className={`input__container`}
                 placeholder={`Category Name`}
+                id={'category'}
                 name={'category'}
                 onChange={inputHandler}
                 onBlur = {handleBlur}
@@ -523,6 +524,7 @@ function NewCategory() {
                 type='text'
                 className={`input__container`}
                 placeholder={`subcategory name`}
+                id={'subcategory'}
                 name={'subcategory'}
                 onBlur={handleBlur}
                 onChange={inputHandler}
@@ -568,6 +570,7 @@ function NewCategory() {
                 <input
                   className={'input__container'}
                   type='text'
+                  id={formDataNumber.keyName}
                   name={formDataNumber.keyName}
                   placeholder={formDataNumber.title}
                   value={formData[formDataNumber.keyName]}

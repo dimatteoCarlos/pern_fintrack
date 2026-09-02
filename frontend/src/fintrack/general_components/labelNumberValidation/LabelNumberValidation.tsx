@@ -31,7 +31,11 @@ function LabelNumberValidation<
   const validationMessage = validationMessages[validationKey] || '';
 
   return (
-    <div className={labelClassName}>
+    // A label and not a div, and htmlFor is the field's own key: the amount
+    // input is named by that key everywhere this renders, so the two cannot
+    // drift. As a div the word "Amount" named nothing — the field was
+    // announced unlabelled on all five tracker routes and in NewCategory.
+    <label className={labelClassName} htmlFor={String(validationKey)}>
       {capitalize(formDataNumber.title)}&nbsp;
       {/* Named so the field it describes can point at it with
           aria-describedby. Without the id the message is a loose sibling: a
@@ -53,7 +57,7 @@ function LabelNumberValidation<
           formDataNumber.keyName as keyof TFormDataType
         ]?.replace('Format:', '')}
       </span>
-    </div>
+    </label>
   );
 }
 

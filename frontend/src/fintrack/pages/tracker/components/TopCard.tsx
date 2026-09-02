@@ -297,6 +297,7 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
               forms — this raw input is the one place that did not. */}
           <input
             className='inputNumber'
+            id={title1}
             name={title1}
             type='text'
             /* The browser's own form history was offering past amounts over

@@ -470,6 +470,7 @@ function NewAccount() {
                 type='text'
                 className='input__container'
                 placeholder='Account Name'
+                id='name'
                 name='name'
                 onChange={inputHandler}
                 value={accountData.name}

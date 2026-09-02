@@ -316,6 +316,7 @@ function NewPocket() {
                 type='text'
                 className={`input__container`}
                 placeholder={`${'purpose/name'}`}
+                id={'name'}
                 name={'name'}
                 onChange={inputHandler}
                 value={pocketData['name']}
@@ -342,6 +343,7 @@ function NewPocket() {
                 className={`input__container`}
                 placeholder={`${'description'}`}
                 onChange={inputHandler}
+                id={'note'}
                 name={'note'}
                 value={pocketData['note']}
                 maxLength={NAME_MAX_LENGTHS.note}
@@ -395,6 +397,7 @@ function NewPocket() {
               <input
                 className={`input__container`}
                 type='text'
+                id={formDataNumber.keyName}
                 name={formDataNumber.keyName}
                 placeholder={formDataNumber.keyName}
                 value={formData[formDataNumber.keyName]}

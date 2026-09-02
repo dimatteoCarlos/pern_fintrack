@@ -432,7 +432,7 @@ function NewProfile() {
                   it does not focus the input. */}
               <div className='form__label-row'>
                 <label
-                  // htmlFor={formDataNumber.keyName}
+                  htmlFor={formDataNumber.keyName}
                   className='label forms__label'
                 >
                   {capitalize(formDataNumber.title)}&nbsp;

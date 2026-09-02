@@ -63,6 +63,9 @@ function InputNumberFormHandler<T>({
       <input
         className={'input__container'}
         type='text'
+        /* The label beside it points here with the same key it names the field
+           by, so an id derived from anything else would break the pair. */
+        id={keyName as string}
         name={keyName as string}
         placeholder={placeholderText}
         value={displayValue}

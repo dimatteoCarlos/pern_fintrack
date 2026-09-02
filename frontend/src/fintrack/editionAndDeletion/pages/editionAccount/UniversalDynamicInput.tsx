@@ -118,6 +118,7 @@ export function UniversalDynamicInput<T extends Record<string, unknown>>({
           return (
             <textarea
               className={`input__container ${isReadOnly ? 'read-only' : ''}`}
+              id={fieldConfig.fieldName}
               name={fieldConfig.fieldName}
               placeholder={fieldConfig.placeholder}
               value={inputValue}
@@ -135,6 +136,7 @@ export function UniversalDynamicInput<T extends Record<string, unknown>>({
           <input
             className={`input__container ${isReadOnly ? 'read-only' : ''}`}
             type={'text'} // Usar 'text' para el manejo de formatos de número por el handler del padre
+            id={fieldConfig.fieldName}
             name={fieldConfig.fieldName}
             placeholder={fieldConfig.placeholder}
             value={inputValue}
@@ -237,7 +239,19 @@ export function UniversalDynamicInput<T extends Record<string, unknown>>({
   // -----------------------------
   return (
     <div className='input__box'>
-      <label className='label forms__label'>
+      {/* htmlFor only for the branches that render a NATIVE control. The select
+          branch renders react-select and the date branch a Datepicker, and
+          neither takes an id -- pointing at them would name nothing, which is
+          the defect being fixed. Those two are labelled in the DropDownSelection
+          pass instead. */}
+      <label
+       className='label forms__label'
+       htmlFor={
+        fieldConfig.inputType === 'select' || fieldConfig.inputType === 'date'
+         ? undefined
+         : fieldConfig.fieldName
+       }
+      >
         {fieldConfig.label}
         {fieldConfig.isRequired && <span className='required-star'>*</span>}
         &nbsp;
