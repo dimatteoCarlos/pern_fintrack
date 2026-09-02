@@ -286,8 +286,13 @@ button {
     display: none;
     flex-direction: column;
     background-color: var(--color-surface-app);
-    border: var(--border-width-thin) solid var(--color-content-on-dark-subtle);
-    border-top: none;
+    /* The bottom edge only. This panel is left: 0 and width: 100%, so a side
+       border lands ON the viewport's own edges -- two pale hairlines running
+       down the sides of the screen, which is what read as white gaps beside a
+       dark page. There is nothing beside the panel for a side border to
+       separate it from; the bottom is the only edge that meets content. */
+    border-bottom: var(--border-width-thin) solid
+      var(--color-content-on-dark-subtle);
     position: absolute;
     /* Was 3.5rem, hand-measured against a 16px root. The root is fluid, so at
        360px it resolved to 49px against a 73px navbar and the menu opened on

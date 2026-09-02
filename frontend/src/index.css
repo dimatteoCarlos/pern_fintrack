@@ -45,6 +45,18 @@ body,
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* The page's own ground, and it belongs here rather than in a route's
+     stylesheet. scrollbar-gutter above reserves the scrollbar's track whether
+     or not a scrollbar is showing, so there is always a strip of the document
+     beside whatever a screen paints -- and on a route that does not paint the
+     body, that strip is the browser's white. generalStyles.css sets it for the
+     fintrack screens; auth never loads that file, which is why the reserved
+     gutter read as a white band down the edge of the landing page.
+
+     Every screen in this app is dark, so the ground is stated once, globally,
+     instead of by each route that remembers to. */
+  background-color: var(--color-surface-app);
 }
 
 /* The reader asked the system for no animation, and a glide is one. */
