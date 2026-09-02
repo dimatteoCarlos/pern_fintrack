@@ -18,6 +18,11 @@ import { toAmount, money } from '../../budget_services/core/money.js';
  * midnight, and a client doing new Date('2026-08-01') reads UTC midnight, which
  * renders as July west of UTC. Neither happens to a label.
  *
+ * The time of day is a second label off the same instant and the same zone, for
+ * the same reason: two decisions taken on one day are told apart by it, and a
+ * client that had to derive it would be deriving it from a Date this contract
+ * deliberately never sends.
+ *
  * originalAmount and its currency are audit metadata, never a second unit to do
  * arithmetic in: they exist so the conversion can be shown and re-checked.
  *
@@ -28,6 +33,7 @@ export function makeAllocationEntry({
  allocationId,
  amount,
  allocationDate,
+ allocationTime,
  sourceAccountId,
  sourceAccountName,
  originalAmount,
@@ -43,6 +49,7 @@ export function makeAllocationEntry({
   allocationId: Number(allocationId),
   amount: toAmount(amount),
   allocationDate,
+  allocationTime,
   sourceAccountId,
   sourceAccountName,
   originalAmount: toAmount(originalAmount),

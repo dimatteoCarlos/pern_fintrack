@@ -148,6 +148,7 @@ export async function getPocketHistory(db, userId, pocketId, timeZone) {
    pa.allocation_id::text        AS "allocationId",
    pa.amount::text               AS amount,
    to_char(pa.allocation_actual_date AT TIME ZONE $3, 'YYYY-MM-DD') AS "allocationDate",
+   to_char(pa.allocation_actual_date AT TIME ZONE $3, 'HH24:MI')     AS "allocationTime",
    pa.source_account_id          AS "sourceAccountId",
    ua.account_name               AS "sourceAccountName",
    pa.original_amount::text      AS "originalAmount",

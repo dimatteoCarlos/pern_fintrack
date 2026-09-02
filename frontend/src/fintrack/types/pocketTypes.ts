@@ -165,6 +165,10 @@ export type PocketAllocationEntry = {
  // YYYY-MM-DD on the OWNER's calendar. When the decision was taken, never when
  // the row was written: one agreed on Friday and typed on Monday is Friday's.
  allocationDate: string;
+ // HH:MM off the same instant and the same zone, so two decisions taken on one
+ // day are told apart. A label like the date above, never derived here: the
+ // contract sends no instant to derive it from.
+ allocationTime: string;
  sourceAccountId: number;
  sourceAccountName: string | null;
  // Audit metadata proving the conversion ran, never a second unit to do

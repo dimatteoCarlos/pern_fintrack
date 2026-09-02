@@ -258,12 +258,14 @@ function PocketCashModal({
  //
  // Four decimals below ten, because a currency worth less than an accounting
  // unit carries its information after the second place.
+ //
+ // Grouped the way every other amount on this screen is: comma for thousands,
+ // point for decimals. Two conventions in one tooltip would have the rate and
+ // the figure it produced disagreeing about what a separator means.
  const quoteLine = conversion.quote
   ? `1 ${accountingCurrency.toUpperCase()} = ${numberFormatCurrency(
      conversion.quote.rate,
      Math.abs(conversion.quote.rate) < 10 ? 4 : 2,
-     undefined,
-     'es-ES',
     )} ${conversion.quote.currency.toUpperCase()}`
   : '';
 

@@ -45,6 +45,8 @@ import {
 } from '../../../helpers/pocketStatus.ts';
 import PocketReadingIcon from './PocketReadingIcon.tsx';
 import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
+import useAuth from '../../../../auth/hooks/useAuth.ts';
+import { isIanaTimeZone } from '../../../../auth/auth_utils/timeZoneOptions.ts';
 import { PocketAllocationEntry } from '../../../types/pocketTypes.ts';
 
 import '../styles/forms-styles.css';
@@ -129,6 +131,30 @@ function PocketDetail() {
  const currency = pocket?.currency ?? DEFAULT_CURRENCY;
  const amount = (value: number) => numberFormatCurrency(value, 2, currency);
 
+ // The zone every instant on this screen is stated in: the account's own, not
+ // the browser's. The two disagree for an owner who travels, and a rate read at
+ // 08:46 in Bogota is not a rate read at 08:46 wherever the laptop is today.
+ const { userData } = useAuth();
+
+ const ownerTimeZone = isIanaTimeZone(userData?.timezone)
+  ? userData?.timezone
+  : undefined;
+
+ // An instant as the owner reads it. toLocaleString with no arguments renders
+ // the browser's locale AND its zone, both unnamed, so the same reading shows a
+ // different hour on a second machine with nothing on screen to explain it.
+ const readingMoment = (instant: string) =>
+  new Date(instant).toLocaleString('es-ES', {
+   day: '2-digit',
+   month: '2-digit',
+   year: 'numeric',
+   hour: '2-digit',
+   minute: '2-digit',
+   hour12: false,
+   timeZone: ownerTimeZone,
+   timeZoneName: 'short',
+  });
+
  // A figure the payload may withhold. numberFormatCurrency(null) does not print
  // a dash: parseFloat('null') is NaN, and it returns the literal string
  // 'Not a valid number, please try again' into the space where an amount
@@ -141,27 +167,33 @@ function PocketDetail() {
  // and never a second unit to do arithmetic in, so it lives in a tooltip rather
  // than in the row.
  //
- // The rate keeps every decimal its column holds. Rounding it here would print
- // a number that cannot be re-applied to the original amount to reproduce the
- // stored one, which is the only thing this line is for.
- // The multiplier is read off the row's own two figures rather than printed
- // from the stored rate field, so the line cannot claim a direction that field
- // does not hold. The stored rate comes with it, undirected and with every
- // decimal its column keeps, because re-applying it to the original amount is
- // the only way to check the figure above.
+ // The line states the ACCOUNTING rate: one stored unit in the currency that
+ // was typed. The other way round it reads 1 COP = 0.0003 USD, a direction no
+ // rate table publishes and a figure whose information sits past the fourth
+ // decimal. It is still read off the row's own two amounts rather than printed
+ // from the stored rate field, so it cannot claim a direction that field does
+ // not hold.
+ //
+ // The stored rate comes with it, undirected and with every decimal its column
+ // keeps, because re-applying it to the original amount is the only way to
+ // check the figure above. Rounding that one would print a number that no
+ // longer reproduces the stored figure, which is the only thing it is for.
  const originTip = (entry: PocketAllocationEntry) => {
   const typed = Math.abs(entry.originalAmount);
+  const stored = Math.abs(entry.amount);
+  const quote = stored > 0 ? typed / stored : 0;
 
   return [
-   typed > 0
-    ? `1 ${entry.originalCurrency.toUpperCase()} = ${
-       Math.abs(entry.amount) / typed
-      } ${currency.toUpperCase()}`
+   quote > 0
+    ? `1 ${currency.toUpperCase()} = ${numberFormatCurrency(
+       quote,
+       quote < 10 ? 4 : 2,
+      )} ${entry.originalCurrency.toUpperCase()}`
     : '',
    `stored rate: ${entry.exchangeRate}`,
    entry.exchangeRateSource ? `source: ${entry.exchangeRateSource}` : '',
    entry.exchangeRateTimestamp
-    ? `read: ${new Date(entry.exchangeRateTimestamp).toLocaleString()}`
+    ? `read: ${readingMoment(entry.exchangeRateTimestamp)}`
     : '',
   ]
    .filter(Boolean)
@@ -543,10 +575,14 @@ function PocketDetail() {
            {entry.amount < 0 ? 'Released' : 'Committed'}
           </span>
 
+          {/* The hour comes off the same instant as the day and in the same
+              zone, resolved by the server: two decisions taken on one day are
+              told apart by nothing else. */}
           <span className='pocketDetail__rowSubtitle'>
            {entry.sourceAccountName ?? DASH}
            {' · '}
            {formatCalendarDate(entry.allocationDate)}
+           {entry.allocationTime ? `, ${entry.allocationTime}` : ''}
           </span>
          </div>
 
