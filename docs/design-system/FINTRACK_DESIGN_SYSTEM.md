@@ -406,7 +406,7 @@ Two hard rules:
 ### 2.7 Z-index
 
 An unmanaged `z-index` is how a modal ends up behind a navbar. The scale is
-closed: nine values, and nothing outside them.
+closed: eight values, and nothing outside them.
 
 | Token | Value | Layer |
 | --- | --- | --- |
@@ -418,7 +418,6 @@ closed: nine values, and nothing outside them.
 | `--z-modal` | `1000` | Dialogs |
 | `--z-modal-popover` | `1050` | A layer opened from inside a dialog, above it |
 | `--z-toast` | `1100` | Transient notifications |
-| `--z-tooltip` | `2000` | Always on top |
 
 Two elements on the **same** value do not have an undefined order — they have a
 worse one: the browser falls back to document order and paints the later sibling
@@ -426,6 +425,14 @@ on top. That is a real ordering, and it is stable only while the document order
 is. When the two elements are portalled into `<body>` by different owners, it is
 not: see §7.10. A layer that must sit above another needs its own value, not the
 same one.
+
+There is no tooltip value, and that is deliberate. The shipped tooltip is not a
+layer of the application: `.tooltip__wrapper--text` is `position: absolute`
+inside its own trigger (`tooltip.css:11-26`), so its `z-index` orders it against
+that trigger's siblings and never against a dialog. A scale value would promise
+a stacking it cannot deliver, and would let a tooltip inside the navbar paint
+over a modal. A tooltip that is ever portalled to `<body>` gets a value agreed
+at that point, not one reserved now.
 
 ---
 
