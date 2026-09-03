@@ -416,8 +416,16 @@ closed: nine values, and nothing outside them.
 | `--z-dropdown` | `100` | Menus, date picker |
 | `--z-overlay` | `500` | Scrims |
 | `--z-modal` | `1000` | Dialogs |
+| `--z-modal-popover` | `1050` | A layer opened from inside a dialog, above it |
 | `--z-toast` | `1100` | Transient notifications |
 | `--z-tooltip` | `2000` | Always on top |
+
+Two elements on the **same** value do not have an undefined order — they have a
+worse one: the browser falls back to document order and paints the later sibling
+on top. That is a real ordering, and it is stable only while the document order
+is. When the two elements are portalled into `<body>` by different owners, it is
+not: see §7.10. A layer that must sit above another needs its own value, not the
+same one.
 
 ---
 
@@ -947,6 +955,47 @@ full measurement.
 `auth/components/passwordChangeForm/ChangePasswordContainer.tsx:296-298` declares
 a fixed-position `DebugPanel`, labelled by its own comment as temporary. Whether
 it mounts was not verified.
+
+### 7.10 Two portalled layers shared one z-index — **fixed 2026-09-02**
+
+**What was seen.** Inside the pocket cash dialog (`PocketCashModal`, which
+renders both *Commit cash* and *Release cash* from one component), pressing the
+date button opened the calendar the first time and never again. In *Release* it
+appeared never to work at all.
+
+**What it actually was.** The calendar did open every time. It was painted
+behind the dialog. `.react-datepicker__portal` and `.pocketCash__overlay` are
+both children of `<body>` and both declared `z-index: var(--z-modal)`. Equal
+values tie, so the winner was decided by document order — and document order here
+is not ours to decide. `react-datepicker` creates its portal host on the first
+open anywhere in the application and never removes it: `Portal.componentWillUnmount`
+drops only its own child, not the host (`react-datepicker/dist/index.js:4088`).
+So the host outlives the calendar, and every dialog React portals in afterwards
+lands after it in the body and paints over it.
+
+That is the whole reason the failure looked inconsistent. The calendar has two
+callers — `TopCard.tsx:313` on the tracker, outside any dialog, and
+`PocketCashModal.tsx:563` inside one. Opening it once on the tracker is enough to
+plant the host, after which no calendar inside a dialog is ever visible again.
+*Release* was not a second defect; by the time it is reached the host exists.
+
+**How it was resolved.** `--z-modal-popover: 1050` was added between `--z-modal`
+and `--z-toast`, and `.react-datepicker__portal` consumes it
+(`transactionDateTrigger-styles.css:170`). `z-index` is compared before document
+order, so 1050 wins wherever the host happens to sit. The tie is removed rather
+than the order corrected — the order belongs to the library.
+
+Measured in `plan-docs/playwright/calendarOverModal.mjs`, which hit-tests the
+centre of the viewport with the host inserted before and after the dialog:
+both orders lost before, both win after.
+
+**The rule this establishes.** Never place two layers that can overlap on the
+same z-index token, and never rely on document order to separate them when either
+one is portalled.
+
+**What was deliberately not changed.** `--z-toast: 1100` has no consumer: the
+real toasts are `react-toastify` at its own `--toastify-z-index: 9999`. The token
+is dead and is its own finding, not this one's business.
 
 ---
 
