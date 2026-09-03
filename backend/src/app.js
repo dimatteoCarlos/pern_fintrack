@@ -38,6 +38,28 @@ if (!process.env.VERCEL) {
 }
 
 // ============================
+// Token secret, checked at load
+// ============================
+// Every sign, verify and refresh reads process.env.JWT_SECRET. Missing, the
+// failure surfaces on the first authenticated request as a 500 whose message
+// does not name the cause, and it surfaces again on every serverless cold
+// start. The check moves that failure to load time, where the deployment log
+// states which variable is absent. The value itself is never printed.
+const JWT_SECRET_MIN_LENGTH = 32;
+
+if (!process.env.JWT_SECRET) {
+  throw new Error(
+    'JWT_SECRET is not set. Tokens cannot be signed or verified without it.',
+  );
+}
+
+if (process.env.JWT_SECRET.length < JWT_SECRET_MIN_LENGTH) {
+  console.warn(
+    `⚠️ JWT_SECRET is shorter than ${JWT_SECRET_MIN_LENGTH} characters. A short secret can be recovered offline from any token the server has issued.`,
+  );
+}
+
+// ============================
 // Initialize in-memory currency catalog
 // ============================
 try {
