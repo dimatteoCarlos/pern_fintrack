@@ -106,6 +106,50 @@ async function readShape(uri) {
  return { shape, tables };
 }
 
+// Reads the constraints of a database as a map of rule to its delete/update
+// action. The name Postgres generates is not comparable between two databases
+// built by different paths; the columns and the referenced table are.
+async function readConstraints(uri) {
+ const client = new pg.Client({ connectionString: uri });
+ await client.connect();
+ const { rows } = await client.query(`
+   SELECT con.contype::text AS kind,
+          rel.relname::text AS tbl,
+          (SELECT string_agg(att.attname, ',' ORDER BY att.attname)
+             FROM unnest(con.conkey) k
+             JOIN pg_attribute att ON att.attrelid = rel.oid AND att.attnum = k) AS cols,
+          COALESCE(fre.relname::text, '') AS ref_tbl,
+          COALESCE((SELECT string_agg(att.attname, ',' ORDER BY att.attname)
+             FROM unnest(con.confkey) k
+             JOIN pg_attribute att ON att.attrelid = fre.oid AND att.attnum = k), '') AS ref_cols,
+          COALESCE(con.confdeltype::text, '') AS on_delete,
+          COALESCE(con.confupdtype::text, '') AS on_update
+   FROM pg_constraint con
+   JOIN pg_class rel ON rel.oid = con.conrelid
+   JOIN pg_namespace ns ON ns.oid = rel.relnamespace
+   LEFT JOIN pg_class fre ON fre.oid = con.confrelid
+   WHERE ns.nspname = 'public' AND con.contype IN ('f','u','p')
+   ORDER BY 1, 2, 3
+ `);
+ await client.end();
+
+ const rules = new Map();
+ for (const r of rows) {
+  const kind = { f: 'FK', u: 'UNIQUE', p: 'PK' }[r.kind];
+  const key =
+   kind === 'FK'
+    ? `FK ${r.tbl}(${r.cols}) -> ${r.ref_tbl}(${r.ref_cols})`
+    : `${kind} ${r.tbl}(${r.cols})`;
+  rules.set(key, kind === 'FK' ? `del=${r.on_delete} upd=${r.on_update}` : '');
+ }
+ return rules;
+}
+
+// The table a constraint key belongs to, for the accepted-tables filter.
+function constraintTable(key) {
+ return key.replace(/^\S+ /, '').replace(/\(.*$/, '');
+}
+
 // Builds the boot-path database in a child process, so the global pool this
 // module already holds is not the one that connects to it.
 function buildBootPath(uri) {
@@ -201,9 +245,34 @@ async function main() {
     differences += 1;
    }
 
+   // Constraints present on one side only, or carrying a different action.
+   const chainRules = await readConstraints(chainUri);
+   const bootRules = await readConstraints(bootUri);
+
+   for (const [rules, side, other] of [
+    [chainRules, 'chain', bootRules],
+    [bootRules, 'boot ', chainRules],
+   ]) {
+    for (const [key, action] of rules) {
+     if (ACCEPTED_TABLES[constraintTable(key)]) continue;
+     if (other.has(key)) continue;
+     console.log(pc.red(`  CONSTRAINT only in ${side}: ${key} ${action}`));
+     differences += 1;
+    }
+   }
+
+   for (const [key, action] of chainRules) {
+    if (ACCEPTED_TABLES[constraintTable(key)]) continue;
+    if (!bootRules.has(key) || bootRules.get(key) === action) continue;
+    console.log(pc.yellow(`  ACTION DIFFERS: ${key}`));
+    console.log(pc.gray(`      chain: ${action}`));
+    console.log(pc.gray(`      boot:  ${bootRules.get(key)}`));
+    differences += 1;
+   }
+
    console.log(
     differences === 0
-     ? pc.green('\n✅ The two paths build the same schema.\n')
+     ? pc.green('\n✅ Same columns and same constraints on both paths.\n')
      : pc.red(`\n❌ ${differences} difference(s) between the two paths.\n`),
    );
   } finally {
