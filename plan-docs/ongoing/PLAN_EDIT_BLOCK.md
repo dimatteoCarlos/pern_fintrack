@@ -4,7 +4,7 @@
 module, and additionally reach editing from every account detail screen through
 the three-dots control at title level (`.icon3dots`).
 
-`plan-docs/` is gitignored. Nothing in this file produces a commit.
+`plan-docs/ongoing/` is re-included by `.gitignore:123`. This file is versioned.
 
 > ### 🛑 The boundary below was reversed by the developer — 2026-08-19
 >

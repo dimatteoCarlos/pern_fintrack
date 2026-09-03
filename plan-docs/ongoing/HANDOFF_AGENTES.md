@@ -1,7 +1,8 @@
 # Qué se le entrega a un agente
 
 **Escrito 2026-08-30 sobre `fix/auth-screen`, cabeza `be6ebbf`.** Vive en
-`plan-docs/`, gitignoreado.
+`plan-docs/ongoing/`, que el `.gitignore:123` re-incluye: este archivo sí se
+versiona.
 
 Un agente no recibe "arreglá el módulo de bolsillos". Recibe **un paquete**: una
 unidad de trabajo con su estado medido, sus reglas vinculantes, su límite de

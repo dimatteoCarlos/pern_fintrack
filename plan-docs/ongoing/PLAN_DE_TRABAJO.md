@@ -2,7 +2,8 @@
 
 **Medido el 2026-08-30 sobre `fix/auth-screen`, cabeza `be6ebbf`, incluyendo trece
 archivos del módulo de bolsillos modificados y sin commitear.** Vive en
-`plan-docs/`, gitignoreado: no produce commit.
+`plan-docs/ongoing/`, que el `.gitignore:123` re-incluye: este archivo sí se
+versiona.
 
 Complementa `ESTADO_PLANES.md`, que dice **dónde estamos**. Este dice **qué hacer**.
 Cada punto trae tres cosas: qué falta, dónde está, y cómo se arregla. Ordenado por

@@ -1,6 +1,6 @@
 # Benchmark — "average monthly spending" en apps de fintech personal
 
-**Lives in `plan-docs/`, which is in `.gitignore`: it produces no commit.**
+**Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.**
 
 Contexto: soporte de **D14** (`OVERVIEW_DECISIONS.md`) — qué ventana temporal y
 qué denominador usa el widget `active_month_average` (antes `MonthlyAverage.tsx`

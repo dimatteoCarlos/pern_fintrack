@@ -1,7 +1,7 @@
 # POCKET BACKEND — INVENTORY OF WHAT IS IMPLEMENTED
 
 **Measured 2026-08-29, read-only, from source. No database was connected.**
-Lives in `plan-docs/`, which is gitignored: this file produces no commit.
+Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.
 
 This is a factual record of the pocket module's HTTP surface as the code actually
 spells it — request fields, validation, response field names, status codes — plus

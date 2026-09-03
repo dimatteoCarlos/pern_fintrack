@@ -5,7 +5,7 @@ check that `NewCategory` already has must reach account **edition** and the
 remaining **creation** screens, and the Save button must not enable while the
 name collides.
 
-`plan-docs/` is gitignored. Nothing in this file produces a commit.
+`plan-docs/ongoing/` is re-included by `.gitignore:123`. This file is versioned.
 
 ---
 

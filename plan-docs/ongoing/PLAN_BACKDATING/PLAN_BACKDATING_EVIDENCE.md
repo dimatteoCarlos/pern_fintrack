@@ -10,7 +10,7 @@
 implement, not a discussion. Every figure in it was measured on 2026-08-24 against
 the working tree, the real-data copies, or a live HTTP request — never recalled.
 
-`plan-docs/` is in `.gitignore:102`. Nothing in this folder produces a commit.
+`plan-docs/ongoing/` is re-included by `.gitignore:123`. This folder is versioned.
 
 **V1 carries no migration.** Not on `transactions`, not on `exchange_rates`.
 

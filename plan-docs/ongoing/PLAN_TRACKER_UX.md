@@ -70,7 +70,7 @@ Expense form at 400x667 marking the empty area under `Note`.
 **Trigger: the budget module closes.** This document is a register of what was
 measured, not a queue jump. Nothing here is written before B closes (D7).
 
-`plan-docs/` is in `.gitignore`: nothing in this file produces a commit.
+`plan-docs/ongoing/` is re-included by `.gitignore:123`: this file is versioned.
 
 ---
 

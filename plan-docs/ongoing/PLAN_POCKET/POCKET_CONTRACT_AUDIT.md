@@ -1,8 +1,8 @@
 # POCKET — CONTRACT AUDIT, SEVEN ENDPOINTS TRACED END TO END
 
 **Measured 2026-08-29 on `fix/auth-screen`, after `8c7ca8f` *"fix(pocket): read
-the board the server answers"*. Lives in `plan-docs/`, which is gitignored: this
-document produces no commit. No file under `frontend/` or `backend/` was
+the board the server answers"*. Lives in `plan-docs/ongoing/`, which
+`.gitignore:123` re-includes: this file is versioned. No file under `frontend/` or `backend/` was
 modified.**
 
 Starting point: `POCKET_FE_RECONCILIATION.md`, which classified the plan's

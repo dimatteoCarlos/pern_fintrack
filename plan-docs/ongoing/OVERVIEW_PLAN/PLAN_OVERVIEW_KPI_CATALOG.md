@@ -1,6 +1,6 @@
 # CATÁLOGO DE KPI — Overview, fase 1
 
-**Lives in `plan-docs/`, which is in `.gitignore`: it produces no commit.**
+**Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.**
 
 Depende de D1-D13 cerradas en `OVERVIEW_DECISIONS.md`. Cada entrada declara los
 once campos exigidos por `PLAN_OVERVIEW.md` §5: metric id, domain, business
