@@ -11,10 +11,14 @@ Companion documents: `db-lifecycle.md` (what migrations, seeds and resets are),
 
 ### The chain — `src/db/migrations/sql_migrations/`
 
-Numbered files, `001` to `020` today, with no gap; the next free number is
-`021`. They build a database **from zero**, in order: `002_accounts.sql` creates
+Numbered files, `001` to `028` today, with no gap; the next free number is
+`029`. They build a database **from zero**, in order: `002_accounts.sql` creates
 the tables that `014_category_budget_fx_columns.sql` later alters. A file assumes
 every lower-numbered file already ran.
+
+List the directory before writing one rather than trusting the count above. That
+count goes stale on every migration, and it was three files behind until
+2026-09-03.
 
 This is the only kind that is written from now on.
 
