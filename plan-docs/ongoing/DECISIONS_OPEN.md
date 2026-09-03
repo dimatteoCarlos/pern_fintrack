@@ -18,11 +18,86 @@ se decide, contra qué código, y qué cambia según la respuesta.
 | # | decide | bloquea |
 | --- | --- | --- |
 | D7 | Una cuenta que no existia en el mes: se oculta o se marca? | El paso 3 |
+| D9 | Cuanto alto puede ocupar la cabecera del tablero de Pocket | El techo del contenedor en Pocket |
 
-**Queda una sola.** D1 a D6 y D8, mas la pregunta del alcance del editor,
+**Quedan dos.** D1 a D6 y D8, mas la pregunta del alcance del editor,
 cerraron el 2026-08-29. Bajaron al
 final de este archivo con la decision y el principio que cada una dejo. Los pasos
 son los de la secuencia del bloque `D` de `NEXT_SESSION.md`.
+
+---
+
+## D9 — cuanto alto puede ocupar la cabecera del tablero de Pocket
+
+**Abierta 2026-09-02.** Medida, no estimada:
+`plan-docs/playwright/pocketTop.mjs`, cuatro viewports, 12 pockets en la lista.
+
+### Que se decide
+
+El tablero de Pocket es el unico de los cuatro cuyo contenedor
+(`section.home__layout`, `Layout.tsx:16`) **no tiene techo**: no declara ni
+`height: 100dvh` como Budget (`budget-styles.css:285`) ni `max-height: 100dvh`
+como Debts (`debts-styles.css:129`). Solo tiene el reparto hacia abajo,
+`.home__layout:has(.pocketLayout) .pocketLayout { flex: 1 }`
+(`pocket-styles.css:37`) y el `overflow-y: auto` de la lista
+(`pocket-styles.css:1044`), que sin techo arriba no hacen nada.
+
+Lo que **no** se decide es si hace falta el techo. Hace falta: sin el, la pagina
+crece a 1662-2168px y la barra inferior queda entre 850px y 1400px por debajo del
+pliegue en tres de los cuatro viewports medidos.
+
+Lo que se decide es **cuanto alto puede gastar la cabecera**, porque el techo por
+si solo no se puede aplicar.
+
+### Por que los dos cambios son uno solo
+
+| viewport | lista hoy | lista con el techo puesto y nada mas |
+| --- | --- | --- |
+| 412x915 | 99px (11%) | 99px (11%) |
+| 412x740 | 1352px, la pagina crece | **7px (1%)** |
+| 360x640 | 1164px, la pagina crece | **7px (1%)** |
+| 1280x799 | 764px, la pagina crece | **8px (1%)** |
+
+En Debts y en Budget el techo devolvia altura a la lista. En Pocket no queda nada
+que devolver: lo que hay encima de la lista mide 694-799px, y a 360x640 eso ya no
+cabe en la pantalla — 108% del viewport antes de la primera fila. Poner el techo
+sin bajar la cabecera cambia "la barra se fue abajo" por "no hay lista". Es un
+solo commit, no dos.
+
+### De donde sale el alto — 412x915
+
+| pieza | alto | % del viewport |
+| --- | --- | --- |
+| cabecera blanca (`.home__header`, alto fijo 12.5rem) | 178px | 19% |
+| **hero** (`PocketBigBoxResult`) | **519px** | **57%** |
+| barra de busqueda y orden | 45px | 5% |
+| **total antes de la lista** | **729px** | **80%** |
+| lista | 99px | 11% |
+
+Y el hero por dentro:
+
+| pieza del hero | alto | que es |
+| --- | --- | --- |
+| ecuacion de tres cifras | 57px | objetivo, asignado, por asignar |
+| barra de progreso general | 71px | el cociente de las dos primeras |
+| **bloque de tarjetas** | **340px** | dos tercios del hero |
+| — tarjeta de estado | 225px | la particion por nivel mas la linea de alertas |
+| — tarjeta de proximo objetivo | 105px | nombre, faltante, porcentaje y dias |
+
+La tarjeta de estado es el consumidor mas grande de la pantalla despues de la
+cabecera blanca.
+
+### Lo que hay que responder
+
+Cuanto de esas cinco piezas sobrevive dentro del marco fijo, y en que forma. No
+se propone ninguna opcion todavia: cada una cambia que lectura pierde el tablero,
+y esa es una decision de producto, no de CSS. Lo que si esta cerrado es la
+restriccion: **la suma de cabecera blanca + hero + barra tiene que dejarle a la
+lista mas que una fila**, y hoy no lo hace en ningun viewport medido.
+
+### Lo que NO se toca hasta que esto se cierre
+
+Nada de `pocket-styles.css`. El techo queda sin escribir.
 
 ---
 
