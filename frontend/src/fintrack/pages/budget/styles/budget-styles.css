@@ -284,6 +284,12 @@
    selector reads: this shell, only while it is holding the budget board. */
 .home__layout:has(.budgetLayout) {
   height: 100dvh;
+  /* The height above is not enough on its own: .home__layout carries
+     max-height: 55rem behind @media (min-height: 50rem) in generalStyles.css,
+     and max-height clamps height whatever the specificity. With a fluid root
+     that cap measured 784px on a 915px viewport, so the board stopped short and
+     the 131px it gave up piled under the navbar as dead space. */
+  max-height: none;
   min-height: 0;
   overflow-y: hidden;
 }
