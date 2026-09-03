@@ -1,0 +1,75 @@
+-- 027_widen_currency_name.sql
+--
+-- Widens currencies.currency_name from VARCHAR(25) to VARCHAR(50), so a
+-- currency can be stored under the name the ISO 4217 standard gives it.
+--
+-- THE DEFECT THIS CLOSES
+--
+-- 001_initial_migration.sql:23 declares the column VARCHAR(25). The longest
+-- name in ISO 4217 is "Bosnia and Herzegovina Convertible Mark", 39 characters,
+-- and several others pass 25: "Netherlands Antillean Guilder" is 29, "Peso
+-- Uruguayo en Unidades Indexadas" is 35.
+--
+-- Inserting one of them raises 22001, value too long for type character
+-- varying(25). The global error handler turns that into a 500, so the caller is
+-- told the server failed rather than that the name does not fit.
+--
+-- Nothing fails today. The catalog holds five currencies whose names are all
+-- under ten characters -- Bs, Euro, Pesos col -- seeded by 005_base_catalogs.sql
+-- and rewritten for two of them by 008_update_currencies.sql. This file raises a
+-- ceiling before it is met, it does not repair a broken row.
+--
+-- WHY 50 AND NOT 40
+--
+-- 39 is the longest name in the standard as it stands, so 40 leaves no room for
+-- an entry the standard adds later. 50 is the width the sibling catalog name
+-- columns already carry: account_type_name, movement_type_name and
+-- transaction_type_name are all VARCHAR(50), in this chain and in the boot DDL.
+-- The choice is the schema's existing convention, not a new number.
+--
+-- WHY THE BOOT PATH IS TOUCHED TOO
+--
+-- populateDB.js:141 declares the same column with the same width, and its
+-- CREATE TABLE runs only when the table is absent. Both declarations move in the
+-- same commit: leaving one behind puts npm run db:parity back in the red on a
+-- column type, which is the exact difference that check exists to catch.
+--
+-- 001_initial_migration.sql keeps its VARCHAR(25). Editing it would reach no
+-- existing database -- CREATE TABLE IF NOT EXISTS never alters a table that is
+-- already there -- and would leave the file describing something other than what
+-- it built.
+--
+-- NO DATA STEPS
+--
+-- Widening a VARCHAR is a catalog-only change since PostgreSQL 9.2: no table
+-- rewrite, no verification pass over the rows, and the ACCESS EXCLUSIVE lock is
+-- held for the duration of a catalog update rather than of a scan. Every
+-- existing value already fits the new width by definition.
+--
+-- ---------------------------------------------------------------------------
+-- UP
+-- ---------------------------------------------------------------------------
+--
+-- The runner wraps every pending file in one transaction and PostgreSQL DDL is
+-- transactional, so the column is never visible at an intermediate width.
+ALTER TABLE currencies
+ ALTER COLUMN currency_name TYPE VARCHAR(50);
+
+-- ---------------------------------------------------------------------------
+-- DOWN
+-- ---------------------------------------------------------------------------
+--
+-- Run manually, and read the first line before running it. Narrowing is not the
+-- mirror of widening: PostgreSQL scans every row and fails with 22001 if any
+-- value exceeds 25 characters, so this reverses cleanly only while no currency
+-- carries a long name. Measure first:
+--
+--   SELECT currency_id, currency_name, length(currency_name)
+--     FROM currencies
+--    WHERE length(currency_name) > 25;
+--
+-- BEGIN;
+-- ALTER TABLE currencies
+--  ALTER COLUMN currency_name TYPE VARCHAR(25);
+-- DELETE FROM migrations WHERE filename = '027_widen_currency_name.sql';
+-- COMMIT;

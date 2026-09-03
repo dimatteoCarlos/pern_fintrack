@@ -138,7 +138,7 @@ export async function tblCurrencies(client = pool) {
       const createQuery = `CREATE TABLE currencies (
       currency_id INT PRIMARY KEY NOT NULL,
       currency_code VARCHAR(3) NOT NULL UNIQUE,
-      currency_name VARCHAR(25) NOT NULL 
+      currency_name VARCHAR(50) NOT NULL
 )`;
       await client.query(createQuery);
     }
