@@ -54,22 +54,21 @@
  align-items: center;
  justify-content: center;
  flex-shrink: 0;
- width: var(--size-icon);
- height: var(--size-icon);
+ width: var(--size-touch-target);
+ height: var(--size-touch-target);
  padding: 0;
  border: var(--border-width-thin) solid var(--color-border-subtle);
  border-radius: var(--radius-full);
- background-color: var(--color-surface-raised);
- color: var(--color-content-on-dark-subtle);
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
  font-family: var(--font-family-sans);
- font-size: var(--font-size-sm);
+ font-size: var(--font-size-base);
  cursor: pointer;
- transition: background-color var(--motion-fast), color var(--motion-fast);
+ transition: opacity var(--motion-fast);
 }
 
 .transactionDetail__close:hover {
- background-color: var(--color-accent);
- color: var(--color-accent-content);
+ opacity: 0.85;
 }
 
 .transactionDetail__close:focus-visible {
@@ -193,15 +192,6 @@
  background-color: var(--color-surface-raised);
 }
 
-.transactionDetail__cardTitle {
- margin: 0;
- font-size: var(--font-size-2xs);
- font-weight: var(--font-weight-semibold);
- letter-spacing: var(--letter-spacing-wider);
- text-transform: uppercase;
- color: var(--color-content-on-dark-subtle);
-}
-
 .transactionDetail__row {
  display: flex;
  align-items: baseline;
@@ -268,44 +258,6 @@
  color: var(--color-content-on-dark-subtle);
 }
 
-.transactionDetail__footer {
- margin-top: auto;
-}
-
-.transactionDetail__action {
- width: 100%;
- min-height: var(--size-touch-target);
- padding: var(--space-3);
- border: var(--border-width-thin) solid var(--color-border-subtle);
- border-radius: var(--radius-md);
- background-color: var(--color-accent);
- color: var(--color-accent-content);
- font-family: var(--font-family-sans);
- font-size: var(--font-size-sm);
- font-weight: var(--font-weight-semibold);
- letter-spacing: var(--letter-spacing-wide);
- cursor: pointer;
- transition: opacity var(--motion-fast);
-}
-
-.transactionDetail__action:hover {
- opacity: 0.85;
-}
-
-.transactionDetail__action:focus-visible {
- outline: var(--border-width-thick) solid var(--color-interactive-hover);
- outline-offset: var(--border-width-thick);
-}
-
-.transactionDetail__action:active {
- opacity: 0.7;
-}
-
-.transactionDetail__action:disabled {
- opacity: 0.5;
- pointer-events: none;
-}
-
 @media (min-width: 480px) {
  .transactionDetail__panel {
   padding: var(--space-6);
@@ -365,8 +317,7 @@
   animation: none;
  }
 
- .transactionDetail__close,
- .transactionDetail__action {
+ .transactionDetail__close {
   transition: none;
  }
 }

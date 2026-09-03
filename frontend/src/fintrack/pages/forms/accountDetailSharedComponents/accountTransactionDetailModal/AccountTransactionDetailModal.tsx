@@ -242,8 +242,6 @@ const AccountTransactionDetailDialog = ({
 
     <div className='transactionDetail__body'>
      <section className='transactionDetail__card'>
-      <h3 className='transactionDetail__cardTitle'>Account Context</h3>
-
       <DetailRow
        label='Account'
        value={`${asText(transaction.account_name)} #${transaction.account_id}`}
@@ -298,16 +296,6 @@ const AccountTransactionDetailDialog = ({
       exchangeRate={transaction.exchange_rate}
       exchangeRateTimestamp={transaction.exchange_rate_timestamp}
      />
-    </div>
-
-    <div className='transactionDetail__footer'>
-     <button
-      type='button'
-      className='transactionDetail__action'
-      onClick={onClose}
-     >
-      Close
-     </button>
     </div>
    </div>
   </div>
