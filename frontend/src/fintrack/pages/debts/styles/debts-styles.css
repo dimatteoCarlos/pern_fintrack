@@ -126,6 +126,22 @@ a.icon {
 }
 /*--------------------------*/
 
+/* ── The shell's ceiling ───────────────────────────────────
+   Without this the handoff below is inert. .home__layout declares
+   min-height: 100dvh, a floor and not a ceiling, and its only max-height in
+   generalStyles.css sits behind @media (min-height: 50rem) — so under 800px
+   of viewport the shell simply grows past the screen and every flex: 1 /
+   min-height: 0 rung under it grows with it. The board scrolled at 915px and
+   pushed the page at 740px for that reason alone.
+
+   max-height rather than height, so at 50rem and up the existing min-height
+   still wins and the board's current geometry is untouched. Guarded by the
+   list, like the rules below, to leave the debtor detail and the new-debtor
+   form on document flow. */
+.home__layout:has(.debtsLayout .debtorList) {
+ max-height: 100dvh;
+}
+
 /* ── The list's own scroll ───────────────────────────────────────────────────
    Same handoff pocket and budget already carry: the rows used to push the
    whole page, because the chain from .debtsLayout down had no height bound
