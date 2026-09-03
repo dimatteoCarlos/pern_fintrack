@@ -114,6 +114,30 @@ export const authLimiter = rateLimit({
   }
 });
 
+// =====================================
+// 🆕 SIGN-UP RATE LIMITER (account creation)
+// =====================================
+// Counts successes: a completed sign-up is the request this limit exists to cap.
+// authLimiter cannot serve here, it skips them so a correct password costs nothing.
+export const signUpLimiter = rateLimit({
+ windowMs: 60 * 60 * 1000, // 1 hour
+ limit: 5, // 5 accounts per hour per IP
+ standardHeaders: true,
+ legacyHeaders: false,
+ skipSuccessfulRequests: false,
+ // No user exists yet at sign-up, so the shared keyGenerator has no id to use.
+ keyGenerator: (req) => ipKeyGenerator(req.ip),
+ handler: (req, res, next, options) => {
+  res.status(429).json(
+   createRateLimitResponse(
+    'SignUpRateLimitExceeded',
+    'Too many accounts created from this network. Please wait before trying again.',
+    options.windowMs,
+   ),
+  );
+ },
+});
+
 // =======================================
 // 🔄 GLOBAL API RATE LIMITER (optional safety net)
 // =======================================
@@ -140,5 +164,6 @@ export default {
   profileUpdateLimiter,
   passwordChangeLimiter,
   authLimiter,
+  signUpLimiter,
   globalLimiter,
 };
