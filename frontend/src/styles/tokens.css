@@ -309,6 +309,10 @@
  --layout-width-min: 22.5rem; /* the Figma frame, 360px */
  --layout-card-width: 21.875rem; /* the account card, 350px */
  --layout-width-max: 40rem; /* beyond this the column centres */
+ /* A modal centred on the viewport, not a card in the app column: the width
+    an account row needs to state its three figures on one line, measured, and
+    nothing beyond it. */
+ --layout-modal-width: 31.25rem; /* 500px */
  --layout-content-width: 88%;
  --layout-top-space: 2.75rem;
  --layout-header-height: 12.5rem;

@@ -4,13 +4,19 @@
    Written on tokens only. Nothing here reads the undefined light-surface names
    the older stylesheets of this module still carry. */
 
+/* align-items: flex-start with margin: auto on the panel, and not center. A
+   flex item centred by align-items overflows EQUALLY at both ends when it is
+   taller than its container, and the end that overflows upwards cannot be
+   scrolled back to -- the panel's first line becomes unreachable. margin: auto
+   centres the same way while it fits and stops centring when it does not. */
 .pocketCash__overlay {
  position: fixed;
  inset: 0;
  z-index: var(--z-modal);
  display: flex;
- align-items: center;
+ align-items: flex-start;
  justify-content: center;
+ overflow-y: auto;
  padding: var(--space-4);
  background-color: var(--color-surface-overlay);
 }
@@ -20,10 +26,22 @@
  flex-direction: column;
  gap: var(--space-3);
  width: 100%;
- max-width: var(--layout-card-width);
+ /* The widest the content column is allowed to go, and not the account card's
+    350px: this panel is centred on the viewport rather than sitting in the
+    app's column, and at 350 the three figures of every account row — balance,
+    committed, unassigned — wrapped onto a second line. Below this width the
+    overlay's own padding decides, so a phone is unaffected. */
+ max-width: var(--layout-modal-width);
  /* Its own scroll, so a long list of accounts scrolls inside the panel rather
-    than pushing it off a short viewport. */
- max-height: 85vh;
+    than pushing it off a short viewport.
+
+    dvh and not vh: on a phone vh is the viewport with the browser's own bars
+    HIDDEN, so 85vh on a 915px screen reserves 777px of a space that is only
+    about 830 tall while the address bar is showing -- and the panel's last
+    rows, the amount field and the two buttons, fall past the bottom edge.
+    dvh tracks the space actually visible. */
+ max-height: 85dvh;
+ margin: auto;
  overflow-y: auto;
  padding: var(--space-6) var(--space-5);
  border-radius: var(--radius-xl);
@@ -37,19 +55,47 @@
  outline-offset: var(--border-width-thick);
 }
 
+/* Two lines: what the panel does, and which pocket it does it to. The heading
+   is the column, and the two spans below carry the type. */
 .pocketCash__title {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-1);
  margin: 0;
+ color: var(--color-content-primary);
+}
+
+/* The action, and the quieter of the two. It repeats what the confirm button
+   already says, so it introduces the name rather than competing with it.
+   One step up, to --font-size-base: this line is the panel's title -- it names
+   what the panel does -- and at --font-size-sm it was set below the body text
+   under it, which reads as a label for the name rather than as the heading.
+
+   font-size is restated and not inherited because index.css sets one on the
+   universal selector. */
+.pocketCash__action {
+ font-size: var(--font-size-base);
+ font-weight: var(--font-weight-medium);
+ letter-spacing: var(--letter-spacing-wide);
+ text-transform: uppercase;
+ color: var(--color-content-secondary);
+}
+
+/* The subject of the panel, on a line of its own and never cut: a pocket name
+   is chosen by the owner and half of one names nothing. */
+.pocketCash__pocketName {
  font-size: var(--font-size-lg);
  font-weight: var(--font-weight-semibold);
  letter-spacing: var(--letter-spacing-wide);
- color: var(--color-content-primary);
- text-wrap: balance;
+ line-height: 1.2;
  text-transform: capitalize;
+ text-wrap: balance;
+ overflow-wrap: anywhere;
 }
 
 .pocketCash__body {
  margin: 0;
- font-size: var(--font-size-sm);
+ font-size: var(--font-size-base);
  line-height: 1.5;
  color: var(--color-content-secondary);
 }
@@ -82,11 +128,23 @@
 }
 
 .pocketCash__planLabel {
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  font-weight: var(--font-weight-medium);
  letter-spacing: var(--letter-spacing-wide);
  text-transform: uppercase;
  color: var(--color-content-secondary);
+}
+
+/* This position is the only one of the four whose label changes, and the word
+   is what carries the sign — the figure below it prints none. Dressed like the
+   three fixed labels it stood beside, the change was invisible.
+
+   The colour is the info level, which is what pocketStatus.ts already gives a
+   pocket above its target, so the panel and the board cannot say one state two
+   ways. Not the error colour: over-funding a goal is a fact, not a fault. */
+.pocketCash__planLabel--overTarget {
+ color: var(--color-feedback-info-content);
+ font-weight: var(--font-weight-semibold);
 }
 
 /* The value carries the weight; the label above it says what it is. Tabular
@@ -102,30 +160,59 @@
 .pocketCash__empty {
  margin: 0;
  padding: var(--space-4) 0;
- font-size: var(--font-size-sm);
+ font-size: var(--font-size-base);
  color: var(--color-content-secondary);
  text-align: center;
 }
 
 .pocketCash__error {
  margin: 0;
- font-size: var(--font-size-sm);
+ font-size: var(--font-size-base);
  font-weight: var(--font-weight-medium);
  color: var(--color-feedback-error-content);
 }
 
 /* ── The source picker ──────────────────────────────────────────────────── */
 
+/* The list scrolls, not the panel. Without a height of its own the picker made
+   the whole panel grow, and past the panel's own ceiling the amount field and
+   the two buttons fell below the cut: the reader had to scroll a form to reach
+   the control that submits it.
+
+   Bounded in dvh and not in rows: what has to be left over is a share of the
+   visible screen, and that is what dvh names. padding-inline-end keeps the
+   scrollbar off the cards' right border.
+
+   28 and not 40: at 40 the ceiling held close to six cards, so a list of four
+   never reached it and the scroll appeared to be broken. At 28 the list always
+   cuts a card in half at its lower edge -- three and a bit on a phone, four on
+   a tall screen -- which is what tells the reader there is more below. */
 .pocketCash__picker {
  display: flex;
  flex-direction: column;
  gap: var(--space-2);
+ max-height: 28dvh;
+ overflow-y: auto;
+ padding-inline-end: var(--space-1);
+ /* The list settles on a card's edge and never halfway through one: without
+    this the scroll stops wherever the finger left it, and an account shows its
+    figures under a name cut in half -- three rows that each look damaged. */
+ scroll-snap-type: y proximity;
+}
+
+.pocketCash__picker > .pocketCash__source {
+ scroll-snap-align: start;
 }
 
 .pocketCash__source {
  display: flex;
  flex-direction: column;
  gap: var(--space-1);
+ /* A card keeps its own height. The picker is a flex column with a ceiling, and
+    a flex item shrinks to fit one by default: past the ceiling every card was
+    squeezed down to its min-height and its name was clipped through the middle.
+    The list is what gives way here, by scrolling; the cards are not. */
+ flex-shrink: 0;
  width: 100%;
  min-height: var(--size-touch-target);
  padding: var(--space-3);
@@ -169,7 +256,7 @@
 .pocketCash__sourceName {
  /* index.css sets a font size on the universal selector, so an inline element
     does not inherit the size of the line it sits in and must restate one. */
- font-size: var(--font-size-sm);
+ font-size: var(--font-size-base);
  font-weight: var(--font-weight-semibold);
  letter-spacing: var(--letter-spacing-wide);
  text-transform: capitalize;
@@ -188,14 +275,14 @@
 }
 
 .pocketCash__sourceFigure {
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  font-variant-numeric: tabular-nums;
  color: var(--color-content-secondary);
 }
 
 /* The one the decision is bounded by. */
 .pocketCash__sourceFigure--ceiling {
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  font-weight: var(--font-weight-semibold);
  color: var(--color-content-primary);
 }
@@ -203,7 +290,7 @@
 /* ── The amount ─────────────────────────────────────────────────────────── */
 
 .pocketCash__label {
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  font-weight: var(--font-weight-medium);
  letter-spacing: var(--letter-spacing-wide);
  text-transform: uppercase;
@@ -229,15 +316,38 @@
  display: flex;
  align-items: center;
  gap: var(--space-2);
- padding-right: var(--space-2);
+ /* Both ends now: the date control leads the row and takes the same inset from
+    the frame that the unit has at the other end. */
+ padding: 0 var(--space-2);
  border: var(--border-width-thin) solid var(--color-content-secondary);
  border-radius: var(--radius-md);
  background-color: var(--color-surface-inverse);
 }
 
+/* The date control's divider, declared here and not on the shared component:
+   it separates the control from the figure BESIDE it, which is an arrangement
+   this field has and the component's other callers need not. It mirrors the
+   unit's border at the far end, so the field reads as ONE control with three
+   parts rather than three things sharing a box. */
+.pocketCash__amountRow .transactionDateControl {
+ padding-inline-end: var(--space-2);
+ border-inline-end: var(--border-width-thin) solid
+  var(--color-content-secondary);
+}
+
+/* The whole control answers the pointer, not the button inside it: the divider
+   belongs to the control, so a fill stopping at the button's edge would paint
+   up to a line and leave the gap beside it unlit. */
+.pocketCash__amountRow
+ .transactionDateControl:has(.transactionDateTrigger:hover) {
+ border-inline-end-color: var(--color-content-primary);
+}
+
 /* The field is now the row, so the input gives up its own frame and keeps only
-   its typing area. */
+   its typing area. Its left padding goes with the frame: the date control and
+   the row's gap already inset the figure. */
 .pocketCash__amountRow .pocketCash__amount {
+ padding-left: 0;
  border: none;
  border-radius: 0;
  background-color: transparent;
@@ -254,30 +364,24 @@
  outline-offset: var(--border-width-thin);
 }
 
-/* The unit, inside the field and reading as part of it: no second border, no
-   pill, no surface of its own. Dark ink because the panel is cream. */
+/* The unit keeps the tracker's square — same border, same ink — one step down
+   on the control scale. This field's figure is a step below the tracker's too,
+   so a 40px box beside it read as the heavier of the two. */
 .pocketCash__amountRow .icon-currency {
  display: inline-flex;
  align-items: center;
  justify-content: center;
  flex-shrink: 0;
- width: auto;
- min-width: var(--size-touch-target);
- height: auto;
- min-height: var(--size-touch-target);
- padding: 0 var(--space-2);
- border: none;
- border-left: var(--border-width-thin) solid var(--color-border-subtle);
- border-radius: 0;
- background-color: transparent;
- color: var(--color-content-primary);
- font-size: var(--font-size-sm);
- font-weight: var(--font-weight-semibold);
- letter-spacing: var(--letter-spacing-wide);
+ width: var(--size-control-sm);
+ height: var(--size-control-sm);
+ padding: 0;
 }
 
-.pocketCash__amountRow .icon-currency:hover {
- color: var(--color-content-secondary);
+/* One step up, and only here: the day sits inside the field beside a figure at
+   --font-size-lg, where the tracker's --font-size-sm read as a caption. The
+   shared sheet keeps its own size for the tracker. */
+.pocketCash__amountRow .transactionDateTrigger__day {
+ font-size: var(--font-size-base);
 }
 
 .pocketCash__amount {
@@ -290,7 +394,7 @@
  background-color: var(--color-surface-inverse);
  color: var(--color-content-primary);
  font-family: inherit;
- font-size: var(--font-size-base);
+ font-size: var(--font-size-lg);
  font-variant-numeric: tabular-nums;
 }
 
@@ -376,7 +480,7 @@
 
 .pocketCash__ceiling {
  margin: 0;
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  font-variant-numeric: tabular-nums;
  color: var(--color-content-secondary);
  white-space: nowrap;
@@ -386,7 +490,7 @@
    rather than copied from .form__fx-preview, which hardcodes its size, weight
    and colour. The help cursor says the chip holds the rate behind it. */
 .pocketCash__fxPreview {
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  font-variant-numeric: tabular-nums;
  color: var(--color-content-secondary);
  white-space: nowrap;
@@ -411,7 +515,7 @@
 }
 
 .pocketCash__fxFailureText {
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  color: var(--color-feedback-error-content);
 }
 
@@ -422,7 +526,7 @@
  background-color: transparent;
  color: var(--color-content-primary);
  font-family: inherit;
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  font-weight: var(--font-weight-semibold);
  letter-spacing: var(--letter-spacing-wide);
  cursor: pointer;
@@ -488,7 +592,7 @@
  border: var(--border-width-thin) solid transparent;
  border-radius: var(--radius-full);
  font-family: inherit;
- font-size: var(--font-size-sm);
+ font-size: var(--font-size-base);
  font-weight: var(--font-weight-semibold);
  letter-spacing: var(--letter-spacing-wide);
  cursor: pointer;
