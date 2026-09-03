@@ -53,8 +53,6 @@ import {
 import { useModalDialog } from '../../../../../hooks/useModalDialog.ts';
 import TransactionDateTrigger from '../../../../general_components/transactionDateTrigger/TransactionDateTrigger.tsx';
 import { useTransactionDate } from '../../../../hooks/useTransactionDate.ts';
-import useAuth from '../../../../../auth/hooks/useAuth.ts';
-import { isIanaTimeZone } from '../../../../../auth/auth_utils/timeZoneOptions.ts';
 
 import './styles/pocketCashModal-styles.css';
 
@@ -296,10 +294,6 @@ function PocketCashModal({
   return state.accountingCurrency;
  });
 
- // The zone the reading below is stated in. The account's own, not the
- // browser's: the two disagree for an owner who travels.
- const { userData } = useAuth();
-
  const convertedText =
   conversion.convertedAmount !== null
    ? `≈ ${numberFormatCurrency(conversion.convertedAmount, 2, accountingCurrency)}`
@@ -325,30 +319,26 @@ function PocketCashModal({
     )} ${conversion.quote.currency.toUpperCase()}`
   : '';
 
- // The account's own zone, named in the line. toLocaleString with no arguments
- // renders the browser's locale and zone silently, so a reading is read as
- // local time by an owner whose account keeps another one. The zone is checked
- // before it is passed: an identifier Intl rejects throws on format.
- const readAtLine = conversion.fetchedAt
-  ? `read: ${new Date(conversion.fetchedAt).toLocaleString('es-ES', {
-     day: '2-digit',
-     month: '2-digit',
-     year: 'numeric',
-     hour: '2-digit',
-     minute: '2-digit',
-     hour12: false,
-     timeZone: isIanaTimeZone(userData?.timezone)
-      ? userData?.timezone
-      : undefined,
-     timeZoneName: 'short',
-    })}`
+ // The day the rate VALUES, which is not always the day chosen: a market closed
+ // on the chosen day is valued by the last one that quoted.
+ //
+ // It replaces the reading time this line used to state. When the store
+ // downloaded a figure is an internal fact, and a whole month pulled in one
+ // warm-up call carries the same download stamp on every day of it — so the
+ // owner read a date that had nothing to do with the rate in front of them.
+ const valuedDayLine = conversion.effectiveDate
+  ? `for ${formatCalendarDate(conversion.effectiveDate)}`
   : '';
 
- // Source and reading time come with the rate: a figure resolved from a stale
- // reading is still one the owner is entitled to question.
+ // Source and valued day come with the rate: a figure resolved from a day other
+ // than the one chosen is still one the owner is entitled to question.
  const rateTooltipText =
   conversion.convertedAmount !== null && amount > 0
-   ? [quoteLine, conversion.source ? `source: ${conversion.source}` : '', readAtLine]
+   ? [
+      quoteLine,
+      conversion.source ? `source: ${conversion.source}` : '',
+      valuedDayLine,
+     ]
       .filter(Boolean)
       .join('\n')
    : '';
@@ -401,8 +391,14 @@ function PocketCashModal({
  return createPortal(
   <div className='pocketCash__overlay'>
    <div className='pocketCash__panel' {...dialogProps}>
+    {/* Two lines, not one sentence joined by a middot. The verb says what the
+        panel does and the name says which pocket it does it to — two different
+        questions, and on one line a long name was crowded against the action
+        it had nothing to do with. Both stay inside the h2, so the accessible
+        name the dialog is labelled by is unchanged. */}
     <h2 className='pocketCash__title' id={titleId}>
-     {copy.title} · {pocketName}
+     <span className='pocketCash__action'>{copy.title}</span>
+     <span className='pocketCash__pocketName'>{pocketName}</span>
     </h2>
 
     <p className='pocketCash__body'>{copy.explanation}</p>
@@ -435,9 +431,19 @@ function PocketCashModal({
      </div>
 
      {/* Over target when the shortfall has gone negative: the same figure, and
-         the word carries the sign so the amount never prints one. */}
+         the word carries the sign so the amount never prints one.
+
+         Which is why it takes a colour of its own. Dressed like the three
+         fixed labels beside it, the only carrier of the sign read as a heading
+         that never changes. The colour is the one this module already gives a
+         pocket above its target — the info level of pocketStatus.ts — so the
+         panel and the board cannot say the same state two ways. */}
      <div className='pocketCash__planItem'>
-      <dt className='pocketCash__planLabel'>
+      <dt
+       className={`pocketCash__planLabel${
+        plan.remaining < 0 ? ' pocketCash__planLabel--overTarget' : ''
+       }`}
+      >
        {plan.remaining < 0 ? 'Over target' : 'Still to allocate'}
       </dt>
       <dd className='pocketCash__planValue'>
@@ -477,17 +483,14 @@ function PocketCashModal({
         tooltip. */}
     <div className='pocketCash__amountBlock'>
      <div className='pocketCash__labelRow'>
-      {/* The label and the date as one group, so the converted figure keeps
-          the right end of the row to itself. The date is a SECONDARY action:
-          it defaults to today, which is always valid, so the ordinary
-          decision never has to touch it — the same reason the tracker renders
-          it as a bare glyph rather than a labelled field. */}
+      {/* The label alone. The date moved into the field below, which is where
+          the four tracker forms put it. It stays a group so the row keeps two
+          children and its space-between goes on holding the converted figure
+          at the right end. */}
       <span className='pocketCash__labelGroup'>
        <label className='pocketCash__label' htmlFor='pocketCashAmount'>
         Amount
        </label>
-
-       <TransactionDateTrigger {...dateProps} />
       </span>
 
       {/* The converted figure rides the label's line rather than taking one of
@@ -514,6 +517,12 @@ function PocketCashModal({
      </div>
 
      <div className='pocketCash__amountRow'>
+      {/* The date leads the figure it qualifies: the amount is the decision's
+          headline and the day is a fact about that decision, so the field
+          reads as one sentence — this much, on this day. The row already held
+          the figure and its unit, so a third part costs it no line. */}
+      <TransactionDateTrigger {...dateProps} />
+
       <input
        id='pocketCashAmount'
        className='pocketCash__amount'
