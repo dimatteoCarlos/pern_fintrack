@@ -136,10 +136,13 @@ app.get('/api/db-test', async (req, res) => {
     const result = await pool.query('SELECT 1 as test');
     res.json({ success: true, data: result.rows });
   } catch (error) {
+    // The driver's text names the host, the role, the database and whether the
+    // connection is encrypted. It belongs in the log, not in the response: this
+    // route is public and unauthenticated, so anyone holding the URL reads it.
     console.error('DB test error', error);
     res.status(500).json({
       success: false,
-      error: error.message,
+      error: 'Database unreachable',
     });
   }
 });
