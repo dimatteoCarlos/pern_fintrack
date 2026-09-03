@@ -5,7 +5,9 @@ import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
+import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetailSharedComponents/accountTransactionsList/AccountTransactionsList.tsx';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import AccountEditLink from '../../../general_components/accountEditLink/AccountEditLink.tsx';
 import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
@@ -46,7 +48,7 @@ import {
   withMonthParam,
 } from '../../../helpers/functions.ts';
 
-import { DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
+import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
 
 import '../styles/forms-styles.css';
 import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
@@ -313,37 +315,9 @@ function CategoryDetail() {
                 <LeftArrowLightSvg />
               </Link>
 
-              {/* Three facts, not one string. The name used to print whole —
-                  "TRANSPORT/PUBLIC/MUST" — and .form__title truncates with an
-                  ellipsis at a max-width of calc(100% - 4rem), so at 360px the
-                  record lost its own name to make room for a path.
-
-                  They are not three parts of a name. The category is WHERE the
-                  record lives, the subcategory IS the record, and the nature is
-                  a property of it; the slash was flattening three kinds of fact
-                  into one. Each arrives as its own field, so nothing is parsed.
-
-                  The subcategory falls back to the account name, which is what
-                  a category-level account has and a nature-less one keeps. */}
-              <div className='budgetDetail__identity'>
-                {budgetAccount?.categoryName && (
-                  <span className='budgetDetail__crumb'>
-                    {capitalize(budgetAccount.categoryName)}
-                  </span>
-                )}
-
-                <span className='form__title form__title--recordName budgetDetail__recordName'>
-                  {capitalize(
-                    budgetAccount?.subcategory ??
-                      budgetAccount?.accountName ??
-                      accountRecord?.account_name,
-                  )}
-                </span>
-
-                {budgetAccount?.nature && (
-                  <span className='budgetDetail__nature'>
-                    {budgetAccount.nature}
-                  </span>
+              <div className='form__title form__title--recordName'>
+                {capitalize(
+                  budgetAccount?.accountName ?? accountRecord?.account_name
                 )}
               </div>
 
@@ -412,81 +386,88 @@ function CategoryDetail() {
             </div>
           )}
 
-          {/* The record's own card is gone, whole: Balance, Account Type,
-              Starting Point and Currency.
-
-              The criterion is which question the screen answers. On
-              AccountDetail the subject IS the account, so its properties are
-              the answer and that screen keeps them. Here the subject is a
-              MONTH — there is a picker at the top choosing it — and the
-              account's properties were context standing in front of the
-              content. Measured at 360px, they pushed Last Movements to 648px,
-              eight past the bottom of a 640px screen: the list this screen
-              exists for never appeared on first paint.
-
-              Each of the four also failed on its own terms:
-
-                Balance read summaryAccountBalance.finalBalance -- the same
-                object, the same date, as Final Balance twelve lines below it.
-
-                Account Type printed account_type_name raw, and BOTH of this
-                screen's routes hang off budget/, so it said category_budget on
-                every instance. A field with one possible value informs nobody.
-
-                Starting Point's only job is explaining the floor of the month
-                picker, which the picker can say when a reader reaches it.
-
-                Currency is already carried by every figure that matters:
-                currencyFormat leaves the code beside the amount for any
-                currency that is not the locale's own -- "COP 110.63". What it
-                does not qualify is the Budget headline, which prints its symbol
-                separately through getCurrencySymbol; that is SummaryDetailBox's
-                to fix, not a reason to keep a field on four screens.
-
-              All four wore .input__container, whose 1px cream border is what
-              NewAccount puts on a real <input>: three read-only values dressed
-              as fields the reader could type into. */}
           <article className='form__box'>
+            <div className='form__container'>
+              <div className='input__box'>
+                {/* The balance at the close of the month being reported, not
+                    today's. The month is selectable now, and a figure that
+                    ignores it states another month's fact under this one. */}
+                <label className='label forms__label'>
+                  {summaryAccountBalance
+                    ? `Balance (${formatDateToDDMMYYYY(
+                        summaryAccountBalance.finalBalance.date,
+                      )})`
+                    : 'Balance'}
+                </label>
+
+                <div className='input__container' style={{ padding: '0.5rem' }}>
+                  {/* A dash and not a zero: a balance still on the wire is not
+                      a balance of nothing. */}
+                  {summaryAccountBalance
+                    ? currencyFormat(
+                        currency_code,
+                        summaryAccountBalance.finalBalance.amount,
+                      )
+                    : '—'}
+                </div>
+              </div>
+
+              <div className='input__box'>
+                <label className='label forms__label'>{'Account Type'}</label>
+
+                <p className='input__container' style={{ padding: '0.5rem' }}>
+                  {accountRecord?.account_type_name}
+                </p>
+              </div>
+
+              <div className='account__dateAndCurrency'>
+                <div className='account__date'>
+                  <label className='label forms__label'>
+                    {'Starting Point'}
+                  </label>
+                  <div
+                    className='form__datepicker__container'
+                    style={{ textAlign: 'center', color: 'white' }}
+                  >
+                    {formatDateToDDMMYYYY(accountRecord?.account_start_date)}
+                  </div>
+                </div>
+
+                <div className='account__currency'>
+                  <div className='label forms__label'>{'Currency'}</div>
+
+                  <CurrencyBadge
+                    variant={VARIANT_FORM}
+                    currency={currency_code}
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* --- TRANSACTION STATEMENT SECTION --- */}
             <div
               className='account-transactions__container '
-              style={{ margin: '0.5rem 0' }}
+              style={{ margin: '1rem 0' }}
             >
-              {/* The period and the two ends of the balance on ONE line, where
-                  they used to be a labelled row plus a two-column panel. The
-                  month is already named by the picker above, so the RANGE is
-                  the only thing left to state, and the pair of balances is what
-                  the range is about. */}
+              {/* The month the budget figures above are about, as the server
+                  bounded it on the owner's calendar. */}
               {summaryAccountBalance && (
-                <div className='budgetDetail__period'>
-                  <span className='budgetDetail__periodRange'>
-                    {formatDateToDDMMYYYY(summaryAccountBalance.periodStartDate)}
-                    {' – '}
-                    {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}
-                  </span>
-
-                  <span className='budgetDetail__periodPair'>
-                    <span className='budgetDetail__periodItem'>
-                      <b>
-                        {currencyFormat(
-                          currency_code,
-                          summaryAccountBalance.initialBalance.amount,
-                        )}
-                      </b>{' '}
-                      opening
+                <>
+                  <div className='period-info'>
+                    <div className='period-info__label'>Period</div>
+                    <span className='period-info__dates  '>
+                      {formatDateToDDMMYYYY(
+                        summaryAccountBalance.periodStartDate
+                      )}
+                      {'  '} / {'  '}{' '}
+                      {formatDateToDDMMYYYY(summaryAccountBalance.periodEndDate)}
                     </span>
+                  </div>
 
-                    <span className='budgetDetail__periodItem'>
-                      <b>
-                        {currencyFormat(
-                          currency_code,
-                          summaryAccountBalance.finalBalance.amount,
-                        )}
-                      </b>{' '}
-                      closing
-                    </span>
-                  </span>
-                </div>
+                  <AccountBalanceSummary
+                    summaryAccountBalance={summaryAccountBalance}
+                  />
+                </>
               )}
 
               <div className='presentation__card__title__container '>
