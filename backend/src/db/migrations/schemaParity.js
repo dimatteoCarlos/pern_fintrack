@@ -9,9 +9,10 @@
  * When they drift, a database built by the boot path starts without error and
  * breaks at run time, which is the worst way to find out.
  *
- * This builds one throwaway database by each path, compares them column by
- * column, and reports. It corrects nothing. Local databases only: it refuses
- * to run against a connection string that names production.
+ * This builds one throwaway database by each path and compares three things:
+ * the columns, the constraints, and the rows of the catalogs both paths seed.
+ * It corrects nothing. Local databases only: it refuses to run against a
+ * connection string that names production.
  *
  * Run with: npm run db:parity
  */
@@ -32,6 +33,22 @@ const ACCEPTED_TABLES = {
  app_initialization: 'the boot path flag; the chain does not set one',
  account_name_case_backup_013:
   'the name backup migration 013 keeps on purpose; its DROP is commented out',
+};
+
+// The catalogs both paths seed, and the columns whose value has to match. The
+// column comparison below cannot see these: a missing row and a name spelled
+// differently are data, and the check reported green while account_types held
+// six rows on one path and seven on the other.
+//
+// Table and column names are literals of this file, never input, so they are
+// interpolated into the query the same way the rest of this module does it.
+const SEEDED_CATALOGS = {
+ currencies: ['currency_id', 'currency_code', 'currency_name'],
+ user_roles: ['user_role_id', 'user_role_name'],
+ account_types: ['account_type_id', 'account_type_name'],
+ category_nature_types: ['category_nature_type_id', 'category_nature_type_name'],
+ movement_types: ['movement_type_id', 'movement_type_name'],
+ transaction_types: ['transaction_type_id', 'transaction_type_name'],
 };
 
 const SELF = fileURLToPath(import.meta.url);
@@ -143,6 +160,34 @@ async function readConstraints(uri) {
   rules.set(key, kind === 'FK' ? `del=${r.on_delete} upd=${r.on_update}` : '');
  }
  return rules;
+}
+
+// Reads the seeded catalog rows as a map of table to the list of its rows, each
+// row rendered as one string. A table the path never created is left out, which
+// the table comparison already reports.
+async function readCatalogRows(uri) {
+ const client = new pg.Client({ connectionString: uri });
+ await client.connect();
+
+ const catalogs = new Map();
+ for (const [table, columns] of Object.entries(SEEDED_CATALOGS)) {
+  const { rows: exists } = await client.query(
+   `SELECT to_regclass($1) IS NOT NULL AS present`,
+   [`public.${table}`],
+  );
+  if (!exists[0].present) continue;
+
+  const { rows } = await client.query(
+   `SELECT ${columns.join(', ')} FROM ${table} ORDER BY ${columns[0]}`,
+  );
+  catalogs.set(
+   table,
+   rows.map((row) => columns.map((column) => String(row[column])).join(' | ')),
+  );
+ }
+
+ await client.end();
+ return catalogs;
 }
 
 // The table a constraint key belongs to, for the accepted-tables filter.
@@ -270,9 +315,32 @@ async function main() {
     differences += 1;
    }
 
+   // Seeded catalog rows present on one side only.
+   const chainRows = await readCatalogRows(chainUri);
+   const bootRows = await readCatalogRows(bootUri);
+
+   for (const table of Object.keys(SEEDED_CATALOGS)) {
+    const inChain = chainRows.get(table);
+    const inBoot = bootRows.get(table);
+    if (!inChain || !inBoot) continue;
+
+    for (const [rows, side, other] of [
+     [inChain, 'chain', new Set(inBoot)],
+     [inBoot, 'boot ', new Set(inChain)],
+    ]) {
+     for (const row of rows) {
+      if (other.has(row)) continue;
+      console.log(pc.red(`  ROW only in ${side}: ${table} -> ${row}`));
+      differences += 1;
+     }
+    }
+   }
+
    console.log(
     differences === 0
-     ? pc.green('\n✅ Same columns and same constraints on both paths.\n')
+     ? pc.green(
+        '\n✅ Same columns, same constraints and same seeded rows on both paths.\n',
+       )
      : pc.red(`\n❌ ${differences} difference(s) between the two paths.\n`),
    );
   } finally {
