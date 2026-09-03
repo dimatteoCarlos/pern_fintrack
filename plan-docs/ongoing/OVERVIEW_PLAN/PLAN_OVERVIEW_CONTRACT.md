@@ -587,17 +587,20 @@ type GetOverviewDomainResponse = ApiEnvelope<GetOverviewDomainData>;
 
 | pendiente | qué falta | bloquea |
 |---|---|---|
-| Sonda de fase 2b (`account_type_id=7`, `cash`) | confirmar si tiene escritura real | ninguno de los tipos de arriba lo asume — quedaría fuera si no tiene datos. Hoy queda fuera de `hero.cashPosition` y del conjunto de cuentas de income |
+| ~~Sonda de fase 2b (`account_type_id=7`, `cash`)~~ | **cerrada 2026-09-01 por D45** — una cuenta de efectivo es una cuenta bancaria y se lee como tal. Ya no hay nada que confirmar: la cifra no depende de si el tipo tiene escritura | nada. Lo que sí queda es trabajo de código: `hero.cashPosition` y el conjunto de cuentas reales deben incluir `cash`, y hoy no lo incluyen |
 | `financialGoals` cuando exista `pocket_services` | `PLAN_POCKET_ALERT.md` §10.2 B1 propone `services/pocket_services/` para servir el snapshot por pocket. G1-G3 debe leer de ahí y no de una consulta propia, o será la cuarta copia de la misma cifra — §8.2 de ese plan ya registra que hoy son tres consultas solapadas | nada hoy: G1-G3 ya funciona. Es deuda registrada, no un bloqueo |
 | R59 sobre G2/G3 | `accountCreationController.js:985-988` convierte un target ausente en `0.00`. **D30** ya decide qué hacer con esas filas; la base local no tiene ninguna (3 pockets, 3 targets reales) | nada hoy. El día que aparezca una, la regla ya está escrita |
 
 > **Remedido 2026-08-30, las tres filas.**
 >
-> - **`cash`.** Sigue sin ruta de creación localizada, pero **ya tiene
->   lectores**: es uno de los dos tipos elegibles como origen de una asignación
->   (`pocketAllocationService.js:45`, `accountAllocationService.js:23`). Sigue
->   fuera de `hero.cashPosition` en este contrato, y la sonda conserva su
->   pregunta, ahora estrechada a "¿existe alguna ruta que cree una cuenta `cash`?".
+> - **`cash`.** *Superado por D45, 2026-09-01.* Lo medido aquí sigue siendo
+>   cierto — sin ruta de creación localizada, y con lectores confirmados en
+>   `pocketAllocationService.js:45` y `accountAllocationService.js:23` — pero la
+>   pregunta que sostenía dejó de importar: el desarrollador decidió que una
+>   cuenta de efectivo **es** una cuenta bancaria, así que se lee como banco
+>   exista o no alguna. Lo que este contrato tiene que corregir ya no es una duda
+>   sino una omisión: `hero.cashPosition` y el conjunto de cuentas reales excluyen
+>   `cash`, y por D45 deben incluirlo.
 > - **`financialGoals` cuando exista `pocket_services`.** Ya existe:
 >   `backend/src/fintrack_api/services/pocket_services/` está en la rama de
 >   trabajo con `core/`, `db/` y `services/`, sus rutas montadas en

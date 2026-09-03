@@ -313,8 +313,43 @@ existe**, así que ninguna base con datos se toca al cambiarles la declaración.
   `populateDB.js` ya tolera un catálogo sin secuencia: su propio comentario dice
   que `pg_get_serial_sequence` devuelve nulo ahí.
 
-**`npm run db:parity` reporta cero diferencias.** Los dos caminos construyen el
-mismo esquema.
+**`npm run db:parity` reporta cero diferencias de columnas.** Hasta aquí la
+comprobación solo leía `information_schema.columns`.
+
+**Segunda corrida, 2026-09-02: la comprobación aprendió a leer restricciones y
+aparecieron diez diferencias más.** `schemaParity.js` consulta ahora también
+`pg_constraint` — clave primaria, unicidad y clave foránea con su acción de
+borrado y de actualización — y compara cada regla por sus columnas y su tabla
+referenciada, no por el nombre: el que Postgres genera no es comparable entre dos
+bases construidas por caminos distintos.
+
+| diferencia | cadena | arranque | cierre |
+|---|---|---|---|
+| FK `transactions.movement_type_id` | presente | **ausente** | `createTables.js`, `09a5e310` |
+| FK `transactions.transaction_type_id` | presente | **ausente** | `createTables.js`, `09a5e310` |
+| FK `transactions.currency_id` | presente | **ausente** | `createTables.js`, `09a5e310` |
+| FK `debtor_accounts.selected_account_id` | presente | **ausente** | `createTables.js`, `09a5e310` |
+| UNIQUE en el nombre de los cinco catálogos | presente | **ausente** | `populateDB.js`, `09a5e310` |
+| `category_budget_accounts.currency_id` al borrar | `SET NULL` | `RESTRICT` | migración `026`, `18232221` |
+
+**Las nueve primeras las tenía mal el arranque y se corrigieron ahí.** Una base
+levantada desde vacío aceptaba una transacción que apunta a un tipo de movimiento
+inexistente y dos filas de catálogo con el mismo nombre. Cambiar la declaración
+no arriesga ninguna base con datos: `createTables.js` construye con
+`CREATE TABLE IF NOT EXISTS` y los sembradores de `populateDB.js` crean su tabla
+solo cuando falta, así que el cambio alcanza únicamente a bases nuevas.
+
+**La décima la tenía mal la cadena, y es la excepción a la regla de que manda la
+cadena.** La `002` declara `category_budget_accounts.currency_id` con
+`ON DELETE SET NULL` y la `011` la vuelve `NOT NULL`. Las dos no pueden cumplirse:
+borrar una moneda que un presupuesto referencia falla dentro de la acción de la
+clave foránea, nombrando una restricción que quien borra nunca mencionó. El
+arranque ya decía `RESTRICT` y tenía razón, así que la migración `026` lleva la
+cadena hasta donde el arranque ya estaba, y no al revés.
+
+**`npm run db:parity` reporta cero diferencias: mismas columnas y mismas
+restricciones en los dos caminos.** Lo que la comprobación sigue sin mirar son
+las filas sembradas, donde los dos caminos todavía difieren.
 
 ---
 

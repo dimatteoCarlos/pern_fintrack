@@ -2717,9 +2717,33 @@ file in one transaction, but files 001 through 007 each contain their own `BEGIN
 … `COMMIT;`. A nested `BEGIN` is ignored with a warning; the `COMMIT` commits the
 runner's outer transaction. **For those seven files the runner's all-or-nothing is
 a fiction**, and a failed run leaves a partial ledger that the next run will skip
-over. 021, 023 and 024 carry no transaction statements of their own — the `BEGIN`
-tokens in 014-020 are PL/pgSQL `DO $$ BEGIN … END $$` blocks — so the FX
-migrations are genuinely atomic.
+over.
+
+**Correction, measured 2026-09-02 on `fintrack_dev`: the fiction covers the
+whole run, not seven files.** The paragraph above closed by saying that 021, 023
+and 024 carry no transaction statements of their own — true, the `BEGIN` tokens
+in 014-020 are PL/pgSQL `DO $$ BEGIN … END $$` blocks — and concluded that the FX
+migrations are therefore atomic. They are not. Carrying no `BEGIN` is what makes
+them **non**-atomic here, because by then nothing is open: the runner's
+transaction was already committed away by the `COMMIT;` inside
+`001_initial_migration.sql:47`, and no file from 008 onward opens another. The
+runner's shape was reproduced statement for statement against the development
+database — after a file that carries its own `COMMIT;`,
+`txid_current_if_assigned()` returns null, and a table created after that point
+survived the runner's `ROLLBACK`.
+
+**Second correction, same day: the atomic unit is the file, not the statement.**
+An earlier draft of the paragraph above said every statement from 008 to 024
+commits by itself. It does not. The runner sends a whole file as one
+`client.query(sql)`, and Postgres wraps a multi-statement simple query in an
+implicit transaction: `CREATE TEMP TABLE ...; SELECT 1/0;`, sent after the
+runner's transaction had already been committed away, left no table behind. A
+file that fails halfway rolls back whole. What falls outside that unit is the
+ledger - `runMigrations.js:71` writes the `INSERT INTO migrations` row in a
+transaction of its own, separate from the file it names, so a crash between the
+two leaves an applied file with no row naming it and the next run replays it.
+The defect is real; the window sits between the file and its ledger row, not
+inside the file.
 
 **024 itself was verified against the production shape**, on the copy, in both
 orders it can meet:
@@ -2736,3 +2760,54 @@ apply *any* migration to production, and that the runner cannot be trusted to
 leave a clean ledger when one fails. Both belong to the deployment plan, not to
 this one.
 
+
+### 9.4.25 The back-dating window is configurable — shipped 2026-09-01
+
+**Why.** On the first day of a month the editing window offered exactly one
+selectable day, so nothing about historical dates could be exercised from the
+interface. The window was a literal in four places; it is now one number.
+
+**The scale.** `BACKDATING_WINDOW_MONTHS` counts whole calendar months
+*including the current one*. `1` is the previous behaviour — the current month
+alone. `2` also opens the previous month. Set to `2` in `backend/.env`, which on
+2026-09-01 puts the floor at 2026-08-01 and reaches the 12 August case.
+
+**Where it is read.**
+
+| site | before | after |
+|---|---|---|
+| `transactionController.js` movement date | `${today.slice(0,7)}-01` | `earliestDatableDay(today, BACKDATING_WINDOW_MONTHS)` |
+| `resolveOpeningDay.js` account opening | same literal | same call, same constant |
+| `useTransactionDate.ts` four tracker forms | first of current month | `earliestDatableDay()` |
+| `NewAccount.tsx` opening calendar | own local copy | delegates to the shared helper |
+
+Both enforcement sites now derive the floor from one function,
+`earliestDatableDay` in `resolveZonedWindow.js`, so account creation cannot
+acquire a softer policy than movements the way it nearly did before.
+
+**Verified.** Nine cases across year boundaries, January, a 0 and a NaN, with
+the backend and frontend implementations agreeing on every one. Both enforcement
+sites accept 2026-08-12 and 2026-08-01 and refuse 2026-07-31 and 2026-09-02.
+Backend boots; frontend typechecks clean.
+
+**The mirror, stated as the cost it is.** The browser cannot read
+`backend/.env`, so the frontend declares the same number as
+`VITE_BACKDATING_WINDOW_MONTHS`, exactly as `VITE_ACCOUNTING_CURRENCY_CODE`
+already mirrors `ACCOUNTING_CURRENCY_CODE`. Both default to 2, so they agree
+until somebody changes one alone. If they do disagree, the failure is a 422 the
+owner reads, never a wrong row. Making the server declare the window in a
+payload the tracker already fetches would remove the mirror; it was not done
+here because it enlarges a temporary test relaxation into a contract change.
+
+**FE requirement still open.** `PnL.tsx:388` computes its own
+`monthFloor` in a local `useMemo` and does not use `useTransactionDate`'s
+bounds, so the P&L calendar stays clamped to the current month while the other
+four forms open. The file is owned by the frontend session and was committed by
+it the same day, so it was deliberately not touched. One line: replace the
+`monthFloor` computation with `earliestDatableDay()` from
+`fintrack/helpers/functions`.
+
+**Not renamed.** The error code `OPENING_DATE_BEFORE_CURRENT_MONTH` and its
+`details.currentMonthStart` key now describe a window that may reach further
+back than the current month. They keep their names because `NewAccount.tsx`
+matches on the code; the owner-facing sentences were reworded instead.

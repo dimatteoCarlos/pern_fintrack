@@ -51,9 +51,19 @@ instante de inserción, nunca la fecha que el usuario elige — ningún tracker
 envía `transactionActualDate`. Toda métrica con "time basis" de periodo hereda
 esta advertencia: agrupa por fecha de entrada, no por fecha editable.
 
-**`cash` (`account_type_id = 7`) no aparece en ningún flujo de escritura
-localizado esta sesión.** Se excluye de todas las fórmulas de abajo hasta que la
-sonda de fase 2b confirme si tiene datos reales o es un tipo sin usar.
+**`cash` (`account_type_id = 7`) se lee como `bank` — D45, cerrada por el
+desarrollador el 2026-09-01.** Una cuenta de efectivo es una cuenta bancaria a
+todos los efectos de lectura: **toda fórmula de abajo que nombre `bank` incluye
+`cash`, y ninguna las distingue.** La distinción se conserva en el esquema, donde
+describe de dónde salió el dinero, y desaparece en la lectura, donde no cambia
+ninguna respuesta.
+
+*Texto anterior, conservado porque explica qué cambió:* «`cash` no aparece en
+ningún flujo de escritura localizado esta sesión. Se excluye de todas las
+fórmulas de abajo hasta que la sonda de fase 2b confirme si tiene datos reales o
+es un tipo sin usar.» La sonda deja de ser un requisito: preguntaba si el tipo
+tenía datos reales, y la respuesta la da el modelo y no el conteo — haya una
+cuenta de efectivo o ninguna, se lee como banco.
 
 > **Reverificado 2026-08-30.** Los tres catálogos del glosario siguen exactos,
 > fila por fila, contra `005_base_catalogs.sql:36-44`, `:59-69` y `:74-80` —
@@ -74,7 +84,7 @@ sonda de fase 2b confirme si tiene datos reales o es un tipo sin usar.
 ### H1 — `net_worth`
 - **Domain:** ALL / hero
 - **Business meaning:** patrimonio neto actual del usuario — lo que tiene, menos lo que debe, más lo que le deben.
-- **Formula:** `SUM(account_balance) WHERE account_type_id IN (1,2,3,4) AND account_name != 'slack'`
+- **Formula:** `SUM(account_balance) WHERE account_type_id IN (1,2,3,4,7) AND account_name != 'slack'` — el `7` (`cash`) entra por **D45**: se lee como banco
 - **Source facts:** `user_accounts.account_balance`, `account_types`
 - **Currency behaviour:** `stored-in-accounting-currency`
 - **Time basis:** stock, *as of* el instante de la respuesta
@@ -115,8 +125,8 @@ sonda de fase 2b confirme si tiene datos reales o es un tipo sin usar.
 
 ### H2 — `cash_position`
 - **Business meaning:** dinero disponible de inmediato, sin vender una posición de inversión ni resolver una deuda.
-- **Formula:** `SUM(account_balance) WHERE account_type_id IN (1,4) AND account_name != 'slack'`
-- **Source facts:** igual que H1, filtrado a bank + pocket_saving
+- **Formula:** `SUM(account_balance) WHERE account_type_id IN (1,4,7) AND account_name != 'slack'` — el `7` (`cash`) entra por **D45**: se lee como banco
+- **Source facts:** igual que H1, filtrado a bank + cash + pocket_saving
 - **Currency behaviour:** `stored-in-accounting-currency`
 - **Time basis:** stock, *as of* ahora
 - **Aggregation rule:** SUM directo
@@ -621,15 +631,16 @@ fila muestra la moneda de su propia cuenta (ya contable, D7) — no hay campo de
 |---|---|
 | Aprobar o descartar E4/E5 (`budgetAmount`, `budgetVariance`) | movido a `OVERVIEW_DECISIONS.md` **D16**, junto con `PLAN_OVERVIEW_CONTRACT.md` §0 |
 | Aprobar o descartar `income_by_source` | movido a `OVERVIEW_DECISIONS.md` **D17** |
-| Uso real de `account_type_id = 7` (`cash`) | ninguna escritura localizada esta sesión — sonda de fase 2b |
+| ~~Uso real de `account_type_id = 7` (`cash`)~~ | **cerrado 2026-09-01** — `OVERVIEW_DECISIONS.md` **D45**: una cuenta de efectivo es una cuenta bancaria y se lee como tal. Ninguna fórmula necesita ya la sonda |
 | ~~Si `Transfer` entra en `transaction_count_all` de ALL~~ | **cerrado** — `OVERVIEW_DECISIONS.md` **D15**: no cuenta |
 
-> **Actualizado 2026-08-30:** la fila de `cash` sigue abierta pero se estrechó.
-> Hay **lectores** confirmados del tipo — es uno de los dos orígenes elegibles de
-> una asignación (`pocketAllocationService.js:45`,
-> `accountAllocationService.js:23`) — y sigue sin localizarse un flujo que **cree**
-> una cuenta de ese tipo. La pregunta de la sonda pasa de "¿se usa?" a "¿hay
-> alguna ruta que cree una cuenta `cash`?".
+> **Cerrado 2026-09-01 — D45.** La nota del 2026-08-30 estrechaba la pregunta de
+> la sonda de "¿se usa?" a "¿hay alguna ruta que cree una cuenta `cash`?". Ya no
+> hace falta contestar ninguna de las dos: el desarrollador decidió que una cuenta
+> de efectivo **es** una cuenta bancaria, así que se lee como banco exista o no
+> alguna. Lo que aquella nota midió sigue siendo cierto y ahora es coherente: el
+> único sitio del código que clasifica los dos tipos ya los pone juntos
+> (`pocketAllocationService.js:45`, `accountAllocationService.js:23`).
 
 ---
 
