@@ -228,16 +228,31 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
       })()
     : '';
 
-  // Three lines, and the third is the one that was missing: which day the rate
-  // belongs to. A market closed on the chosen day is valued by the last one that
-  // quoted, and without saying so the owner cannot tell a rate FOR that day from
-  // a rate IN FORCE on it.
+  // The day the rate reaches, and only when it is not the day already on the
+  // trigger beside the field. A rate carries a validity rather than belonging to
+  // one day: the TRM published on a Saturday is in force that Saturday, the
+  // Sunday and the Monday, so an entry dated Monday the 24th is valued by the
+  // 22nd.
+  //
+  // "for <day>" said that badly — it read as "the rate is of the 22nd", which is
+  // the question the owner was asking, not the answer. "in force since" states
+  // the validity that reaches their day.
+  //
+  // Compared against today's calendar day when the view passes no day of its
+  // own: that view records on the day of the request, so today is the day the
+  // rate has to reach.
+  const valuedDayLine =
+    effectiveDateLabel &&
+    conversion.effectiveDate !== (chosenDay ?? toCalendarDay(new Date()))
+      ? `in force since ${effectiveDateLabel}`
+      : '';
+
   const tooltipText = [
     conversion.quote
       ? `${accountingCurrency}→${conversion.quote.currency}`
       : '',
     quotedRate ? `rate: ${quotedRate}` : '',
-    effectiveDateLabel ? `for ${effectiveDateLabel}` : '',
+    valuedDayLine,
   ]
     .filter(Boolean)
     .join('\n');
