@@ -9,7 +9,6 @@ import { createError } from '../../utils/errorHandling.js';
 
 import { pool } from '../../db/config/configDB.js';
 
-import pc from 'picocolors';
 import {
   clearAccessTokenFromCookie,
   clearRefreshTokenFromCookie,
@@ -21,7 +20,6 @@ export const getUserById = async (req, res, next) => {
   const { userId, userRole } = req.user;
 
   // const isAdmin = userRole === 'admin' || userRole === 'super_admin';
-  console.log('getUserbyid', 'userId:', userId);
 
   try {
     const userDataResult = await pool.query({
@@ -43,8 +41,6 @@ export const getUserById = async (req, res, next) => {
     });
 
     const userData = userDataResult.rows[0];
-    //---------------------------
-    console.log('🚀 ~ getUserById ~ userDataResult:', userData);
 
     if (!userData) {
       return next(createError(404, 'user not found'));
@@ -119,8 +115,6 @@ export const updateUserById = async (req, res, next) => {
         userId,
       ],
     });
-    //------------------------------
-    console.log('🚀 ~ updateUserById ~ updatedUser:', updatedUser);
 
     return res.status(200).json({
       status: 200,
@@ -137,7 +131,6 @@ export const updateUserById = async (req, res, next) => {
 //--------
 // 🎯 UPDATE USER PROFILE CONTROLLER
 export const updateProfile = async (req, res, next) => {
-  console.log(pc.bgBlueBright('controller:', 'updateProfile'));
 
   // 🎯 GET CLIENT FOR TRANSACTION MANAGEMENT
   const client = await pool.connect();
@@ -149,8 +142,6 @@ export const updateProfile = async (req, res, next) => {
     const { userId } = req.user;
     const updateData = req.validatedData; //req.body //Data Validated by zod.
 
-    console.log('📥 BODY:', req.body);
-    console.log('📥 VALIDATED:', req.validatedData);
 
     // ✅ VALIDATE DATA TO UPDATE
     if (!updateData || Object.keys(updateData).length === 0) {
@@ -304,7 +295,6 @@ export const updateProfile = async (req, res, next) => {
  * - 429: Rate limit
  */
 export const changePassword = async (req, res, next) => {
-  console.log(pc.redBright('changePassword'));
 
   const client = await pool.connect();
 
