@@ -154,11 +154,20 @@
    tokens define and would cover a toast that has something to say about the
    very entry being dated.
 
+   One step above --z-modal and not on it. This container and any modal that
+   opens it are both children of <body>, so equal values tie and the browser
+   falls back to document order -- which react-datepicker decides, not us: it
+   creates its portal host on the first open anywhere in the app and never
+   removes it (Portal.componentWillUnmount drops only its own child), so from
+   the second open onward the host predates the modal React portals in later
+   and the calendar was painted behind it. A distinct value settles the order
+   before document order is consulted at all.
+
    Only this trigger opens the calendar with withPortal, so the override reaches
    nothing else. */
 .react-datepicker__portal {
  background-color: var(--color-surface-overlay);
- z-index: var(--z-modal);
+ z-index: var(--z-modal-popover);
 }
 
 /* The library also inflates the day cells to 3rem inside a portal, which is a

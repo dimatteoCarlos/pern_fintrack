@@ -300,6 +300,12 @@
  --z-dropdown: 100;
  --z-overlay: 500;
  --z-modal: 1000;
+ /* A layer opened from inside a modal, above the modal that opened it: the
+    calendar the date trigger portals into the body. Both are children of
+    <body>, so with one value they tie and the winner is whichever react-
+    datepicker happened to insert last -- which is why the calendar showed on
+    the first open of a session and never again. */
+ --z-modal-popover: 1050;
  --z-toast: 1100;
  --z-tooltip: 2000;
 
