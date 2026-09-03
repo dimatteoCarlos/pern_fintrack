@@ -33,6 +33,7 @@ import {
 import { usePocketDetailStore } from '../../../../stores/usePocketDetailStore.ts';
 import { usePocketBoardStore } from '../../../../stores/usePocketBoardStore.ts';
 import { normalizeError } from '../../../../helpers/normalizeError.ts';
+import { showToastByStatus } from '../../../../helpers/showToastByStatus.ts';
 import {
  formatCalendarDate,
  numberFormatCurrency,
@@ -68,6 +69,7 @@ const COPY: Record<
   ceilingLabel: string;
   submit: string;
   pending: string;
+  confirmation: (figure: string, account: string, pocket: string) => string;
  }
 > = {
  allocate: {
@@ -86,6 +88,12 @@ const COPY: Record<
   ceilingLabel: 'Unassigned',
   submit: 'Commit',
   pending: 'Committing…',
+  // What was done, once it is done. It names the three things the panel asked
+  // for -- how much, to which goal, out of which account -- because the panel
+  // is gone by the time this is read and the figures behind it may be off the
+  // bottom of a phone screen.
+  confirmation: (figure, account, pocket) =>
+   `${figure} committed to ${pocket} from ${account}`,
  },
  release: {
   title: 'Release cash',
@@ -103,6 +111,10 @@ const COPY: Record<
   ceilingLabel: 'Held here',
   submit: 'Release',
   pending: 'Releasing…',
+  // The mirror of the line above, and the preposition is the whole difference:
+  // cash leaves the goal and lands back in the account.
+  confirmation: (figure, account, pocket) =>
+   `${figure} released from ${pocket} to ${account}`,
  },
 };
 
@@ -384,6 +396,22 @@ function PocketCashModal({
    usePocketDetailStore.getState().setDetail(detail);
    usePocketBoardStore.getState().invalidate();
 
+   // Said out loud, because until now the success was silent: the panel closed
+   // and the only evidence was a repainted figure that a phone may have below
+   // the fold. A repaint is also not announced to a screen reader, which is
+   // what WCAG 4.1.3 asks a status message to be.
+   //
+   // In the currency it was TYPED in, not the pocket's: this confirms what the
+   // owner did, and the conversion is the server's business.
+   showToastByStatus(
+    copy.confirmation(
+     numberFormatCurrency(amount, 2, typedCurrency),
+     selected?.accountName ?? 'the account',
+     pocketName,
+    ),
+    200,
+   );
+
    onClose();
   } catch (error) {
    // The server's own words, verbatim. A refusal over the ceiling names both
@@ -548,10 +576,11 @@ function PocketCashModal({
       />
 
       <CurrencyBadge
-       // This modal's panel is --color-surface-panel (cream), not the dark
-       // surface 'form' is aliased to elsewhere -- 'light' names the surface
-       // it actually sits on. See CurrencyBadge point 1/7.
-       variant={'light'}
+       // The tracker's square, and the same one: this field is the tracker's
+       // amount field in a modal — a figure, its unit and the day — so the
+       // unit is drawn the way that field draws it. 'light' rendered it as
+       // bare text, which read as a caption rather than as the control it is.
+       variant={'tracker'}
        updateOutsideCurrencyData={setTypedCurrency}
        currency={typedCurrency}
       />
