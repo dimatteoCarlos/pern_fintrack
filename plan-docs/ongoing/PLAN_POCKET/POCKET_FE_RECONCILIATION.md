@@ -2,8 +2,8 @@
 
 **Measured 2026-08-29 on `fix/auth-screen`, after the merge `68cb4f1`
 *"merge(pocket): land the pocket backend and board"* (15 commits, 39 files,
-3713 insertions). Lives in `plan-docs/`, which is gitignored: this document
-produces no commit.**
+3713 insertions). Lives in `plan-docs/ongoing/`, which `.gitignore:123`
+re-includes: this file is versioned.**
 
 > ## CORRECTION 2026-08-30 — read this before the body
 >

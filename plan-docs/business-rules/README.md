@@ -1,6 +1,7 @@
 # Inventario de reglas de negocio
 
-**Vive en `plan-docs/`, que está en `.gitignore`: no produce commit.**
+**Vive en `plan-docs/business-rules/`, que el `.gitignore:124` re-incluye: este
+archivo sí se versiona.**
 
 Documento de autoridad, no código. **No se extrae nada, no se crea ningún motor
 de reglas.** El objetivo es que una regla implementada en más de un sitio se

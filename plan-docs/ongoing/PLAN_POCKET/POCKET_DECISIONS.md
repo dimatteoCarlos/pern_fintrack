@@ -1,7 +1,7 @@
 # PLAN — POCKET
 
 **Written:** 2026-08-15 as `POCKET_INDICATORS.md` · **Unified 2026-08-22** ·
-**Lives in `plan-docs/`, which is in `.gitignore`: it produces no commit.**
+**Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.**
 
 > ### WHICH SECTIONS ARE ALIVE — read this before anything else
 >

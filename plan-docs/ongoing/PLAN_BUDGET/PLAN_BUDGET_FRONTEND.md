@@ -1,6 +1,6 @@
 # PLAN — Budget module, frontend
 
-**Lives in `plan-docs/`, which is in `.gitignore`: it produces no commit.**
+**Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.**
 **This is the next step to execute.** Backend V1 is delivered; nothing in the UI
 consumes it yet.
 

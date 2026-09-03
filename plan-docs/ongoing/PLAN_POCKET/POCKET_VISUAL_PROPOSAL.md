@@ -1,8 +1,8 @@
 # POCKET — THE VISUAL PROPOSAL, VERIFIED AGAINST WHAT THE SERVER ACTUALLY SENDS
 
 **Measured 2026-08-29 on `fix/auth-screen`, HEAD `610e399` *"feat(budget): open
-the editor from the category card"*. Lives in `plan-docs/`, which is gitignored:
-this document produces no commit. No file under `frontend/` or `backend/` was
+the editor from the category card"*. Lives in `plan-docs/ongoing/`, which
+`.gitignore:123` re-includes: this file is versioned. No file under `frontend/` or `backend/` was
 modified, nothing was staged, nothing was committed.**
 
 The proposal under review is the developer's own, quoted in the brief. It is

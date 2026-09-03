@@ -1,6 +1,6 @@
 # CONTRATO DE DATOS — Overview, fase 2
 
-**Lives in `plan-docs/`, which is in `.gitignore`: it produces no commit.**
+**Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.**
 
 Depende de `PLAN_OVERVIEW_KPI_CATALOG.md` (fase 1, cerrada y aprobada
 2026-08-20). Cada tipo de abajo es la forma de cable de una entrada del
@@ -619,7 +619,7 @@ type GetOverviewDomainResponse = ApiEnvelope<GetOverviewDomainData>;
 
 **Estado 2026-08-20:** §11 y §12 están implementados y verificados contra la base
 local — seis dominios, la página completa, y el arnés del scratchpad cubriendo
-las invariantes de §4.2. `plan-docs/` es gitignored: nada de esto produce commit.
+las invariantes de §4.2. `plan-docs/ongoing/` lo re-incluye el `.gitignore:123`: este archivo sí se versiona.
 
 > **Precisión 2026-08-30 sobre el párrafo anterior.** "Implementados" significa
 > implementados **en la rama `feat/overview`, que sigue sin fundir**: 8 commits,

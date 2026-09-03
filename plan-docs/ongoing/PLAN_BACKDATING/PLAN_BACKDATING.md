@@ -6,7 +6,7 @@ file keeps the raw measurements, the superseded drafts and the reasoning that pr
 each ruling. **Where the two disagree, this file wins** — the other is a record of how
 we got here, not of where we are.
 
-`plan-docs/` is gitignored. Nothing in this folder produces a commit.
+`plan-docs/ongoing/` is re-included by `.gitignore:123`. This folder is versioned.
 
 **V1 carries no migration.** Not on `transactions`, not on `exchange_rates`.
 

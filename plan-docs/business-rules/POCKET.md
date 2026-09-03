@@ -1,6 +1,7 @@
 # Bolsillos — reglas que gobiernan cada mensaje al usuario
 
-**Vive en `plan-docs/`, que está en `.gitignore`: no produce commit.**
+**Vive en `plan-docs/business-rules/`, que el `.gitignore:124` re-incluye: este
+archivo sí se versiona.**
 
 Medido contra el código el 2026-08-31, en `fb4dc01`. Cada fila se leyó del
 archivo, no del plan.

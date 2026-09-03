@@ -2,7 +2,7 @@
 
 **Measured 2026-08-29, read-only, from source. No file was modified and no git
 state was changed.**
-Lives in `plan-docs/`, which is gitignored: this file produces no commit.
+Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.
 
 This is a factual record of the frontend as it stands. It describes; it does not
 propose. The two exceptions are the column stating what becomes obsolete under

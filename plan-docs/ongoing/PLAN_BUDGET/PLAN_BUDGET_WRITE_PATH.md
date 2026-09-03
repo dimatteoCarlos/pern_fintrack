@@ -1,6 +1,6 @@
 # PLAN — Budget module, the write path
 
-**Lives in `plan-docs/`, which is in `.gitignore`: it produces no commit.**
+**Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.**
 
 Opened 2026-08-17. This is the document `PLAN_BUDGET_FRONTEND.md` §10.3 points at
 with its unspecified row — `| — | the edit modal | after 9 | V1 §7.1 |`. That row

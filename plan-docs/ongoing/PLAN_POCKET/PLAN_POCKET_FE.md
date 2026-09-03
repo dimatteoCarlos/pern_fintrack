@@ -1,7 +1,7 @@
 # PLAN — POCKET FRONTEND
 
-**Written 2026-08-29 against `fix/auth-screen`. Lives in `plan-docs/`, which is
-gitignored: this document produces no commit.**
+**Written 2026-08-29 against `fix/auth-screen`. Lives in `plan-docs/ongoing/`,
+which `.gitignore:123` re-includes: this file is versioned.**
 
 This is the executable plan. It consumes `POCKET_DECISIONS.md` (the frozen
 model), `POCKET_BACKEND_INVENTORY.md` (the closed contract) and

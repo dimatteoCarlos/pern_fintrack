@@ -509,7 +509,7 @@ function PocketBigBoxResult({ summary, pockets, notice }: PocketHeroPropType) {
             its target, and a negative shortfall belongs to the over-funded
             reading in the band above. */}
         <span className='pocketHero__inlineItem'>
-         {amount(Math.max(nextGoal.remaining, 0))} still to allocate
+         {amount(Math.max(nextGoal.remaining, 0))} to allocate
         </span>
 
         <span className='pocketHero__inlineItem'>

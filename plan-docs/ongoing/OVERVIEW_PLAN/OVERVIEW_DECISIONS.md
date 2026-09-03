@@ -1,6 +1,6 @@
 # OVERVIEW — registro de decisiones
 
-**Lives in `plan-docs/`, which is in `.gitignore`: it produces no commit.**
+**Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.**
 
 Rama de trabajo: `feat/overview`, creada 2026-08-20 desde `feat/budget` (`2540932`).
 

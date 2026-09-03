@@ -307,7 +307,6 @@
     the first open of a session and never again. */
  --z-modal-popover: 1050;
  --z-toast: 1100;
- --z-tooltip: 2000;
 
  /* LAYOUT
     A single column, centred rather than stretched on wide viewports. It never

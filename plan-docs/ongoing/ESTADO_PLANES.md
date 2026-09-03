@@ -14,7 +14,7 @@ noche.**
 > la 1, la 8 y la 10; el resto se deja como estaba y la tabla final dice qué no se
 > remidió.
 
-Vive en `plan-docs/`, que está en `.gitignore`: no produce commit.
+Vive en `plan-docs/ongoing/`, que el `.gitignore:123` re-incluye: este archivo sí se versiona.
 
 Este archivo dice, plan por plan, **qué decisión sigue sin tomarse** y **qué trabajo
 falta para cerrarlo**. Cada afirmación está medida contra el código, no copiada del

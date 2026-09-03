@@ -885,11 +885,24 @@ button.line__container {
  min-width: 0;
 }
 
+/* The pocket's name takes a line of its own. It is the only field in this
+   card that is user text rather than a figure, so it is the only one that can
+   be long; sharing a row with the readings it wrapped mid-name and they
+   scattered around it. */
+.pocketHero__card--row .pocketHero__cardValue--name {
+ flex: 1 0 100%;
+}
+
 .pocketHero__inlineItem {
  display: flex;
  align-items: center;
  gap: var(--space-2);
- font-size: var(--font-size-base);
+ /* One step down from base, which is what buys the three readings a single
+    row once the name has left it: at base they measured 364px against the
+    317px the card offers at 412, and broke into two. The column gap stays at
+    --space-4, twice the gap inside a reading, because that difference is what
+    still groups them as three. */
+ font-size: var(--font-size-sm);
  color: var(--color-content-on-dark);
  font-variant-numeric: tabular-nums;
 }
@@ -1001,6 +1014,18 @@ button.line__container {
   /* One line here: the card is a row, and a name breaking to two lines pushes
      its own readings out of alignment with it. */
   -webkit-line-clamp: 1;
+ }
+
+ /* Half the gap the column layout uses, and only here. Turning the card into a
+    row moves the heading to the left of it, which costs the readings about a
+    third of their width -- 309px against the 446px they had one step below --
+    while the readings themselves do not shrink. At --space-4 they need 316 and
+    break, and this band is the worst of it: wider containers give the width
+    back. The column layout keeps --space-4, where the readings have the full
+    card and the difference against the gap inside a reading still groups
+    them. */
+ .pocketHero__card--row .pocketHero__inline {
+  column-gap: var(--space-2);
  }
 }
 

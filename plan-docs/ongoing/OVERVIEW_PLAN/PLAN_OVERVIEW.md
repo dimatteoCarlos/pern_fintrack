@@ -6,7 +6,7 @@
 > whatever `budget_services` returns; building against a shape still in flight in
 > `feat/budget` risks a second rewrite. Independent of budget otherwise.
 
-**Written 2026-08-20.** `plan-docs/` is gitignored: nothing here produces a commit.
+**Written 2026-08-20.** `plan-docs/ongoing/` is re-included by `.gitignore:123`: this file is versioned.
 
 **Supersedes three documents.** `OVERVIEW_REFACTOR.md` recorded three successive
 iterations of the same idea and never marked one final; it also concatenated

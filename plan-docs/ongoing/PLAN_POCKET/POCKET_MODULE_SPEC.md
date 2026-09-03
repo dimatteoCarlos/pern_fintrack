@@ -7,8 +7,8 @@ This document is the contract. Where it disagrees with `../POCKET_DECISIONS.md`,
 one wins and the section below says which part of that plan it supersedes. Where
 it disagrees with the code, the code is what has to change.
 
-`plan-docs/` is gitignored (`.gitignore:102`). Nothing in this file reaches the
-repository; it is the source the commits are written from.
+`plan-docs/ongoing/` is re-included by `.gitignore:123`, so this file is
+versioned; it is the source the commits are written from.
 
 ---
 
@@ -1663,7 +1663,7 @@ already rewriting — never a neighbouring one.
 
 **The end state.**
 17. No screen, endpoint or query treats a pocket as an account.
-18. `git status` clean; `plan-docs/` is gitignored.
+18. `git status` clean; the plan docs under `plan-docs/ongoing/` are committed.
 
 ---
 

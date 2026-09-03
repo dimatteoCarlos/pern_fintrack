@@ -1,6 +1,6 @@
 # EVALUACIÓN — `plan-docs/ongoing/OVERVIEW_PLAN/PLAN_OVERVIEW.md`
 
-**Lives in `plan-docs/`, which is in `.gitignore`: it produces no commit.**
+**Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.**
 
 Producido 2026-08-20 por un agente arquitecto de solo lectura, con especialidad
 en KPI financieros, arquitectura de tableros y presentación de posiciones de

@@ -1,6 +1,6 @@
 # DECISIONES ABIERTAS — esperando al desarrollador
 
-**Abierto 2026-08-25. Vive en `plan-docs/`, que está en `.gitignore`: no produce commit.**
+**Abierto 2026-08-25. Vive en `plan-docs/ongoing/`, que el `.gitignore:123` re-incluye: este archivo sí se versiona.**
 
 Este archivo es lo contrario de `DECISIONS.md`. Aquel registra lo **rechazado**,
 para que no se vuelva a proponer. Éste registra lo que **todavía no se decidió**,
