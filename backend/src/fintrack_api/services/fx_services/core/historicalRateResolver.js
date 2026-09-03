@@ -72,6 +72,8 @@ const CDN_SOURCE = FALLBACK_RATE_SOURCE;
  * @property {string} effectiveDate - The day the rate was in force.
  * @property {number} daysBack - requestedDate minus effectiveDate, in days.
  * @property {string} provenance - source@effectiveDate, for exchange_rate_source.
+ * @property {Date|null} fetchedAt - When the rate was read from the provider.
+ *  null when nothing was read, which is the identity answer.
  */
 
 /**
@@ -146,6 +148,7 @@ function asAnswer(hit, currency, requestedDate) {
   effectiveDate: hit.rateDate,
   daysBack: hit.daysBack,
   provenance: `${hit.source}@${hit.rateDate}`,
+  fetchedAt: hit.fetchedAt,
  };
 }
 
@@ -245,6 +248,8 @@ export async function resolveHistoricalRate(currencyCode, requestedDate, options
    source: 'identity',
    requestedDate: day,
    effectiveDate: day,
+   // Nothing was read to answer this, so there is no reading to stamp.
+   fetchedAt: null,
    daysBack: 0,
    provenance: `identity@${day}`,
   };

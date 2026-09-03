@@ -153,7 +153,12 @@ export async function currencyAmountConversion(
     return {
       rate: resolved.rate,
       source: resolved.provenance,
-      fetchedAt: new Date(),
+      // When the rate was READ, which on this path is not now: a rate in force
+      // on 29 August was read the day the store fetched it. Stamping the
+      // request's own clock contradicted the day in the source string, and it
+      // is also what every back-dated row persists as exchange_rate_timestamp.
+      // now() stays the fallback for the identity answer, which read nothing.
+      fetchedAt: resolved.fetchedAt || new Date(),
       effectiveDate: resolved.effectiveDate,
     };
   };

@@ -51,6 +51,9 @@ export const MAX_RATE_AGE_DAYS = 5;
  * @property {string} rateDate - The day it was in force, YYYY-MM-DD.
  * @property {string} source - Which provider supplied it.
  * @property {number} daysBack - Requested day minus rateDate, in days.
+ * @property {Date} fetchedAt - When this installation read the rate from the
+ *  provider. Not the day it was in force: a rate for August read in September
+ *  is stamped September, and the two facts are stated separately.
  */
 
 /**
@@ -127,6 +130,7 @@ export async function findDailyRate(
     SELECT exchange_rate,
            TO_CHAR(rate_date, 'YYYY-MM-DD') AS rate_date,
            source,
+           fetched_at,
            ($3::date - rate_date)           AS days_back
       FROM daily_exchange_rates d
      WHERE base_currency_id = $1
@@ -158,6 +162,7 @@ export async function findDailyRate(
   rateDate: row.rate_date,
   source: row.source,
   daysBack: row.days_back,
+  fetchedAt: row.fetched_at,
  };
 }
 
