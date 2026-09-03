@@ -143,8 +143,26 @@ const SignInForm: React.FC<SignInFormProps> = ({
        onToggleContent={togglePasswordVisibility}
       />
 
-      {/* Remember Me Checkbox */}
-      <div className={styles['auth-form__remember-me']} onClick={() => setRememberMe(!rememberMe)}>
+      {/* Remember Me Checkbox
+
+          The ROW is the label, and that is the whole fix. It used to be a div
+          carrying onClick, wrapped around a checkbox that already handles its
+          own click and a label that already forwards clicks to it — so every
+          real way of using the control fired the toggle TWICE and landed back
+          on the value it started from: clicking the box, clicking the words,
+          and pressing Space on it, because a keyboard activation dispatches a
+          click that bubbles just the same. The only gesture that worked was a
+          click on the row's empty padding, where nothing but the div answered.
+
+          A label needs no handler: the browser routes the activation to the
+          control it names, exactly once, from anywhere inside it. The styles
+          were already written for this — the row declares display:flex,
+          cursor:pointer and user-select:none — and a flex label is not the
+          inline box its default would give.
+
+          The text drops to a span: a label inside a label is not valid, and
+          the outer one now covers what the inner one covered. */}
+      <label className={styles['auth-form__remember-me']} htmlFor="rememberMe">
         <input
           className={styles['auth-form__checkbox']}
           type="checkbox"
@@ -152,10 +170,10 @@ const SignInForm: React.FC<SignInFormProps> = ({
           checked={rememberMe}
           onChange={(e) => setRememberMe(e.target.checked)}
         />
-        <label htmlFor="rememberMe" className={styles['auth-form__label-checkbox']}>
+        <span className={styles['auth-form__label-checkbox']}>
           Remember me
-        </label>
-      </div>
+        </span>
+      </label>
 
       {/* Submit Button */}
       <button
