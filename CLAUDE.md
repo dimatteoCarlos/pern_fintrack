@@ -34,7 +34,7 @@ that breaks them costs the developer a file read to follow an argument.
 
 - **Straight to it.** No preamble. Open with the decision or the problem.
 - **Specific.** Name the exact file, line, function and variable. No generalities.
-- **One recommendation.** When there is more than one option, say which is best
+- **One recommendation.** When there is more than one option, evaluate pros and cons and based on the result set your recommendation, say which is best
   and why, in one sentence. Never hand over an unranked list.
 - **Concept before identifier.** An id is a label, not an argument. `K6`,
   `QP-13`, `P-2`, `R42`, a plan section number — none of them mean anything to a
@@ -52,6 +52,16 @@ tables of the commit workflow are exempt from the length rule, not from the rest
 This section binds subagents too: every subagent prompt carries the
 concept-before-identifier rule as an output rule, or its report comes back as a
 list of ids that is unreadable without the plan beside it.
+
+## new ones
+# Output & Style Guidelines
+
+- **Conciseness**: Be extremely direct, concise, and straight to the point. Eliminate introductory fluff, meta-announcements, and conversational closings.
+- **Code First**: Prioritize code snippets, command execution, or diffs over explanations. Explain only when strictly necessary or requested.
+- **Formatting**: Use bullet points and bold text for readability. Avoid multi-paragraph background context unless explicitly asked.
+- **Assumptions**: Make reasonable technical assumptions based on the codebase context instead of asking clarifying questions for minor details.
+
+##
 
 ## Refactoring & Safety Rules
 

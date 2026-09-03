@@ -4,7 +4,8 @@
       "Bash(rm -f package-lock.json)",
       "Bash(git checkout *)",
       "Bash(git merge *)",
-      "Bash(echo \"=== exit $? ===\")"
+      "Bash(echo \"=== exit $? ===\")",
+      "Bash(node ../plan-docs/playwright/pocketHeroEquation.mjs)"
     ]
   }
 }
