@@ -2,10 +2,13 @@
 // The hero of the pocket detail screen: what is committed and against what
 // goal. It states one reading and keeps one height.
 //
-// The state readings — the date, the pace and the coverage warning — left this
-// panel on 2026-08-30. Inside it they made the panel grow with the number of
-// states a pocket happened to be in, which moved the control row 70px between
-// one pocket and another. They now sit under the controls, in PocketDetail.
+// The two state readings — the date and the coverage warning — are back inside
+// this panel as of 2026-09-02, on the developer's call. They had been moved out
+// on 2026-08-30 because the panel grew with the number of states a pocket
+// happened to be in and the control row under it moved 70px between one pocket
+// and another; that cost is accepted, and the reason it was paid is that a
+// state read three blocks below the figures it qualifies is read by nobody.
+// The pace card stays where it is: it is a block of figures, not a state.
 //
 // Rewritten 2026-08-29 against the server that answers. The previous version
 // read an account — it destructured account_balance and subtracted the goal
@@ -25,6 +28,14 @@ import { PocketDetailPocket } from '../../../../types/pocketTypes';
 // '?react' and not the bare form: only that door carries a React type, so the
 // glyph can take a className and inherit the panel's ink through currentColor.
 import PiggyCoinSvg from '../../../../../assets/pocketSvg/PiggyUniversalCoinSvg.svg?react';
+import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents.tsx';
+import {
+ POCKET_STATUS_WORD,
+ pocketDateLevel,
+ pocketReadingModifier,
+ pocketSquareClass,
+} from '../../../../helpers/pocketStatus.ts';
+import PocketReadingIcon from '../PocketReadingIcon.tsx';
 import './styles/summaryDetailBox-style.css';
 
 type SummaryPocketDetailPropType = {
@@ -40,6 +51,8 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
   funded,
   currency,
   desiredDate,
+  uncovered,
+  daysRemaining,
  } = pocket;
 
  // The symbol, which is how every amount in the application is denominated.
@@ -63,6 +76,29 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
    : funded
      ? 'Nothing left to allocate'
      : `Still to allocate ${amount(remaining)}`;
+
+
+ // The colour of the square and of the reading's border come from this one
+ // level, so the two can never state different things about the same pocket.
+ const dateLevel = pocketDateLevel(pocket);
+
+ // The sign is spent on the word rather than on the number: late is "12 days
+ // late", never "-12 days left". Same rule the module applies to every figure
+ // whose direction is already stated in words beside it.
+ const dayCount = Math.abs(daysRemaining);
+ const dayWord = dayCount === 1 ? 'day' : 'days';
+
+ // The word comes from the shared map, not from a literal written here. The
+ // square beside it is painted for the LEVEL, so the text has to name that same
+ // level: a pocket past its goal lights the over-funded blue, and a band name
+ // beside a level's colour disagrees about how precise the reading is.
+ const dateText = funded
+  ? POCKET_STATUS_WORD[dateLevel]
+  : daysRemaining < 0
+    ? `${dayCount} ${dayWord} late`
+    : daysRemaining === 0
+      ? 'Due today'
+      : `${dayCount} ${dayWord} away`;
 
  return (
   <div className='summaryPocket__container'>
@@ -118,6 +154,39 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
     <div className='summaryPocket__data--status'>
      <span className='summaryPocket__data--subtitle2'>{gapText}</span>
     </div>
+   </div>
+
+   {/* What is true about the pocket, under the figures it qualifies.
+
+       Coverage leads when both are present. The criterion is not which hurts
+       more but which contradicts the figures above: an account that no longer
+       holds what is committed makes the allocated total unbacked, while a
+       passed date leaves it true. */}
+   <div className='summaryPocket__readings'>
+    {uncovered && (
+     <p
+      className={`summaryPocket__reading ${pocketReadingModifier('offPlan')}`}
+      role='status'
+     >
+      <StatusSquare alert={pocketSquareClass('offPlan')} />
+      <PocketReadingIcon
+       level='offPlan'
+       className='summaryPocket__readingIcon'
+      />
+      <span className='summaryPocket__readingText'>
+       The funding accounts no longer hold what is committed here.
+      </span>
+     </p>
+    )}
+
+    <p className={`summaryPocket__reading ${pocketReadingModifier(dateLevel)}`}>
+     <StatusSquare alert={pocketSquareClass(dateLevel)} />
+     <PocketReadingIcon
+      level={dateLevel}
+      className='summaryPocket__readingIcon'
+     />
+     <span className='summaryPocket__readingText'>{dateText}</span>
+    </p>
    </div>
   </div>
  );

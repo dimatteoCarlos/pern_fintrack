@@ -38,12 +38,8 @@ import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
 import {
  PocketStatusLevel,
- POCKET_STATUS_WORD,
- pocketDateLevel,
- pocketReadingModifier,
  pocketSquareClass,
 } from '../../../helpers/pocketStatus.ts';
-import PocketReadingIcon from './PocketReadingIcon.tsx';
 import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import { isIanaTimeZone } from '../../../../auth/auth_utils/timeZoneOptions.ts';
@@ -306,17 +302,16 @@ function PocketDetail() {
   );
  }
 
- // Built after the guards, where the pocket is known to have arrived: the three
- // states below all read fields off it.
+ // Built after the guards, where the pocket is known to have arrived.
  //
- // The date reading, in its three states, and the null is not the zero. A
- // required rate of exactly 0 means the goal is covered and there is no pace
+ // The date reading and the coverage warning are NOT built here: they moved
+ // into SummaryPocketDetailBox on 2026-09-02, where they sit under the figures
+ // they qualify. The pace card stays, because it is a block of figures.
+ //
+ // A required rate of exactly 0 means the goal is covered and there is no pace
  // left to keep; null means the date passed while money is still short, so
  // there is no monthly figure that answers anything. Branching on falsiness
  // collapses the two, because 0 is falsy in JavaScript.
- // The colour of the square and of the border come from this one level, so the
- // two cannot state different things about the same pocket.
- const dateLevel = pocketDateLevel(pocket);
 
  // The pace card, and the one block of this screen that is still waiting on the
  // server. The rate the plan REQUIRES is served; the rate actually achieved
@@ -342,38 +337,6 @@ function PocketDetail() {
       requiredRate: pocket.funded ? DASH : `${amount(requiredMonthly)} / month`,
      };
 
- // How far the deadline is, and nothing else, because nothing else here was
- // new. The sentence used to rebuild the whole plan: it restated the desired
- // date, which the panel above already prints beside the target, and the
- // monthly rate, which the pace card below prints twice - once as a sentence
- // and once as a labelled figure. On one screen the date appeared twice and
- // the rate three times.
- //
- // A fact belongs at the level where it carries the most, and it belongs there
- // once. The distance to the deadline has no other home, so this reading keeps
- // it and gives everything else back.
- //
- // The sign is spent on the word rather than on the number: late is "12 days
- // late", never "-12 days left". Same rule the module applies to every figure
- // whose direction is already stated in words beside it.
- const dayCount = Math.abs(pocket.daysRemaining);
- const dayWord = dayCount === 1 ? 'day' : 'days';
-
- // The word comes from the shared map, not from a literal written here. The
- // square beside it is painted for the LEVEL, so the text has to name that
- // same level: a pocket past its goal lights the over-funded blue, and
- // "Target reached" is the BAND that holds both landing on the goal and
- // passing it. A band name beside a level's colour disagrees about how precise
- // the reading is, and the map exists so a card, the hero's tallies and this
- // reading cannot name one level three ways.
- const dateText = pocket.funded
-  ? POCKET_STATUS_WORD[dateLevel]
-  : pocket.daysRemaining < 0
-    ? `${dayCount} ${dayWord} late`
-    : pocket.daysRemaining === 0
-      ? 'Due today'
-      : `${dayCount} ${dayWord} away`;
-
  //--------------------------------------------
  return (
   <section className='page__container page__container--pocket'>
@@ -381,39 +344,6 @@ function PocketDetail() {
    {header}
 
    <SummaryPocketDetailBox pocket={pocket} />
-
-   {/* The state readings, between the hero and the controls: they say what is
-       true about the pocket, and the two buttons are what can be done about
-       it, so the sentence comes before the response to it.
-
-       Outside the cream panel and not inside it. In the panel they made it
-       grow with the number of states a pocket happened to be in; out here the
-       panel keeps one height.
-
-       Coverage leads when both are present. The criterion is not which hurts
-       more but which contradicts the figures above: an account that no longer
-       holds what is committed makes the hero's number unbacked, while a passed
-       date leaves it true. */}
-   <div className='pocketDetail__readings'>
-    {pocket.uncovered && (
-     <p
-      className={`pocketDetail__reading ${pocketReadingModifier('offPlan')}`}
-      role='status'
-     >
-      <StatusSquare alert={pocketSquareClass('offPlan')} />
-      <PocketReadingIcon level='offPlan' className='pocketDetail__readingIcon' />
-      <span className='pocketDetail__readingText'>
-       The funding accounts no longer hold what is committed here.
-      </span>
-     </p>
-    )}
-
-    <p className={`pocketDetail__reading ${pocketReadingModifier(dateLevel)}`}>
-     <StatusSquare alert={pocketSquareClass(dateLevel)} />
-     <PocketReadingIcon level={dateLevel} className='pocketDetail__readingIcon' />
-     <span className='pocketDetail__readingText'>{dateText}</span>
-    </p>
-   </div>
 
    {/* The two decisions the module exists for, lifted out of the article on
        2026-08-30 so they answer the hero directly instead of sitting past two

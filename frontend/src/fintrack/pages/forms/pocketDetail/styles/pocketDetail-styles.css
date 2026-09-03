@@ -303,51 +303,15 @@
  margin-top: var(--space-6);
 }
 
-/* The state readings, moved out of the hero panel on 2026-08-30. Inside it the
-   panel changed height with the number of states a pocket happened to be in,
-   and the control row above moved 70px between a healthy pocket and one
-   carrying two. Here they grow downward against reading blocks only, so the
-   controls keep one position on every pocket.
-
-   They sit on the app surface now, not on the cream panel, so the sentence is
-   set in the on-dark ink rather than the panel's. */
-.pocketDetail__readings {
- display: flex;
- flex-direction: column;
- gap: var(--space-2);
- margin-top: var(--space-4);
-}
-
-/* Colour is never the only channel here: each reading names its own state in
-   words, and the border repeats it. On this surface the status colours are the
-   ones calibrated against the dark ground, not the panel's. */
-.pocketDetail__reading {
- display: flex;
- align-items: flex-start;
- gap: var(--space-2);
- padding: var(--space-1) var(--space-3);
- border-left: var(--border-width-thick) solid
-  var(--color-content-on-dark-subtle);
- color: var(--color-content-on-dark);
- font-size: var(--font-size-xs);
- line-height: 1.4;
-}
+/* The state readings returned to the hero panel on 2026-09-02 and their rules
+   went with them, to summaryDetailBox-style.css. Only the pace card's square
+   still needs the rule they shared. */
 
 /* The square keeps its size against a sentence that wraps to three lines, and
    sits on the first line rather than centred on the whole block. */
-.pocketDetail__reading .status__square,
 .pocketDetail__paceVerdict .status__square {
  flex-shrink: 0;
  margin-top: var(--space-1);
-}
-
-/* The glyph names the state a third time, after the square and the sentence.
-   currentColor, so it takes the ink of the line and adds no colour of its own;
-   the square is where the hue lives. */
-.pocketDetail__readingIcon {
- width: var(--font-size-base);
- height: var(--font-size-base);
- flex-shrink: 0;
 }
 
 /* ── The pace card ──────────────────────────────────────────────────────────
@@ -425,33 +389,6 @@
  font-variant-numeric: tabular-nums;
 }
 
-/* index.css sets font-size on the universal selector, so this span does not
-   inherit the size of the line it sits in and has to restate it. */
-.pocketDetail__readingText {
- font-size: inherit;
-}
-
-.pocketDetail__reading--warning {
- border-left-color: var(--color-status-warning);
-}
-
-.pocketDetail__reading--alert {
- border-left-color: var(--color-status-alert);
-}
-
-.pocketDetail__reading--ok {
- border-left-color: var(--color-status-ok);
-}
-
-/* The board paints this level with the same token on its cards and its marks,
-   so one pocket cannot read one way there and another way here. */
-.pocketDetail__reading--info {
- border-left-color: var(--color-status-info);
-}
-
-.pocketDetail__reading--neutral {
- border-left-color: var(--color-content-on-dark-subtle);
-}
 
 .pocketDetail__action {
  min-height: var(--size-touch-target);

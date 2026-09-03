@@ -169,9 +169,84 @@
  color: var(--color-content-secondary);
 }
 
-/* The date reading, the pace and the coverage warning were declared here until
-   2026-08-30. They now render under the control row and their rules live with
-   them, in pocketDetail-styles.css. Nothing else consumed these three names. */
+/* ── The state readings ─────────────────────────────────────────────────────
+   Back inside the panel on 2026-09-02, under the figures they qualify. They
+   spent three days under the control row, where the panel kept one height on
+   every pocket; the panel now grows by one line, or two when the coverage
+   warning is also true, and that is the accepted cost of the move.
+
+   The pace card did NOT come back. It is a block of figures, not a sentence
+   about the pocket's state, and it stays where it is. */
+.summaryPocket__readings {
+ display: flex;
+ flex-direction: column;
+ gap: var(--space-2);
+ margin-top: var(--space-3);
+ padding-top: var(--space-3);
+ border-top: var(--border-width-thin) solid var(--color-border-strong);
+}
+
+/* Colour is never the only channel: each reading names its own state in words
+   and draws its glyph, so the border is a third reading and never the first.
+   On the cream panel the ink is the panel's, not the on-dark one these rules
+   carried while they sat on the app surface. */
+.summaryPocket__reading {
+ display: flex;
+ align-items: flex-start;
+ gap: var(--space-2);
+ padding-left: var(--space-3);
+ border-left: var(--border-width-thick) solid var(--color-content-secondary);
+ color: var(--color-content-primary);
+ font-size: var(--font-size-xs);
+ line-height: 1.4;
+}
+
+/* The square keeps its size against a sentence that wraps to three lines, and
+   sits on the first line rather than centred on the whole block. */
+.summaryPocket__reading .status__square {
+ flex-shrink: 0;
+ margin-top: var(--space-1);
+}
+
+/* The glyph names the state a third time, after the square and the sentence.
+   currentColor, so it takes the ink of the line and adds no colour of its own;
+   the square is where the hue lives. */
+.summaryPocket__readingIcon {
+ width: var(--font-size-base);
+ height: var(--font-size-base);
+ flex-shrink: 0;
+}
+
+/* index.css sets font-size on the universal selector, so this span does not
+   inherit the size of the line it sits in and has to restate it. */
+.summaryPocket__readingText {
+ font-size: inherit;
+}
+
+/* The border takes the SAME token the square beside it takes, and not the
+   on-light feedback family: two blues on one line, a token apart, would read
+   as two different states rather than as one stated twice. */
+.summaryPocket__reading--ok {
+ border-left-color: var(--color-status-ok);
+}
+
+/* The board paints this level with the same token on its cards and its marks,
+   so one pocket cannot read one way there and another way here. */
+.summaryPocket__reading--info {
+ border-left-color: var(--color-status-info);
+}
+
+.summaryPocket__reading--neutral {
+ border-left-color: var(--color-content-secondary);
+}
+
+.summaryPocket__reading--warning {
+ border-left-color: var(--color-status-warning);
+}
+
+.summaryPocket__reading--alert {
+ border-left-color: var(--color-status-alert);
+}
 
 @media (prefers-reduced-motion: reduce) {
  .summaryPocket__fill {

@@ -42,13 +42,14 @@ const SQUARE_CLASS: Record<PocketStatusLevel, string> = {
 };
 
 // The modifier on the reading's left border, from the same level, so the two
-// can never disagree about the same pocket.
+// can never disagree about the same pocket. The block name follows the readings
+// themselves, which returned to the hero panel on 2026-09-02.
 const READING_MODIFIER: Record<PocketStatusLevel, string> = {
- funded: 'pocketDetail__reading--ok',
- overFunded: 'pocketDetail__reading--info',
- onPlan: 'pocketDetail__reading--neutral',
- atRisk: 'pocketDetail__reading--warning',
- offPlan: 'pocketDetail__reading--alert',
+ funded: 'summaryPocket__reading--ok',
+ overFunded: 'summaryPocket__reading--info',
+ onPlan: 'summaryPocket__reading--neutral',
+ atRisk: 'summaryPocket__reading--warning',
+ offPlan: 'summaryPocket__reading--alert',
 };
 
 // The one place this vocabulary is spelled, so a card, the hero's tallies and
