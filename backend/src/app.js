@@ -122,11 +122,14 @@ app.use((req, res, next) => {
 //HEALTH
 app.get('/api/health', (req, res) => {
   console.log('✅ /api/health invoked');
+  // The route is public and unauthenticated, so it answers only that the
+  // process is up. The rollout note that used to travel here named which
+  // routes were being enabled and which test was in progress, which is a
+  // description of the deployment handed to anyone holding the URL.
   res.json({
     status: 'ok',
     timestamp: Date.now(),
     message: 'Testing vercel-serverless',
-    step: 'TESTING ADDING ENDPOINTS. - NOW TEST 09.Enable fintrack routes with auth middleware - .TEST 08:WAS OK.',
   });
 });
 //-------------------------
