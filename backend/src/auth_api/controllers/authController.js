@@ -207,7 +207,7 @@ export const signUpUser = async (req, res, next) => {
     }
 
     console.log(pc.red('Sign-up error:'), error);
-    next(createError(500, error.message || 'internal signup error'));
+    next(createError(500, 'internal signup error'));
   } finally {
     client.release();
   }
@@ -348,7 +348,7 @@ export const signInUser = async (req, res, next) => {
     );
   } catch (error) {
     console.log('Sign-in error:', error);
-    next(createError(500, error.message || 'internal sign-in user error'));
+    next(createError(500, 'internal sign-in user error'));
   }
 };
 
