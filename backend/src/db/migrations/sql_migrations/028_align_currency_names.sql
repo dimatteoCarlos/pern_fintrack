@@ -1,0 +1,70 @@
+-- 028_align_currency_names.sql
+--
+-- Gives the five seeded currencies the English name their code stands for, and
+-- makes the two schema build paths agree on that name.
+--
+-- THE DEFECT THIS CLOSES
+--
+-- The same currency is stored under two different names depending on how the
+-- database was built. 005_base_catalogs.sql:15-20 writes 'US Dollar', 'Euro',
+-- 'Pesos col', 'Bs' and 'Pesos mxn'; 008_update_currencies.sql rewrites the last
+-- two with the same text. populateDB.js:117-131, the boot path, writes
+-- 'us-dollars', 'euros', 'pesos col', 'bs' and 'pesos mxn'.
+--
+-- npm run db:parity does not see it. That check compares information_schema
+-- columns and pg_constraint, which is the schema, and these rows are data.
+-- The divergence stands while the check reports green.
+--
+-- WHICH NAMING WINS AND WHY
+--
+-- Neither of the two. The frontend never reads currencies.currency_name: it
+-- builds every label from Intl.DisplayNames, at constants.ts:39-47,
+-- currencyConstants.ts:33-37 and functions.ts:105-111, which is where the string
+-- 'USD - US Dollar' on screen comes from. The column is returned only by the
+-- profile query, userController.js:32 and :254, and no component renders it.
+--
+-- So the value is chosen to match what the frontend already displays. These five
+-- strings are exactly what Intl.DisplayNames(['en'], { type: 'currency' })
+-- returns for each code, which means the stored name and the rendered label can
+-- no longer contradict each other.
+--
+-- Three of them were already impossible to store before 027 widened the column:
+-- none exceeds 18 characters, but the standard names this catalog is meant to
+-- hold do, and that is the ceiling 027 raised.
+--
+-- NO SCHEMA CHANGE
+--
+-- Five UPDATEs on a five-row catalog, addressed by primary key. No column moves,
+-- no constraint moves, and the boot path changes in the same commit so the two
+-- paths seed identical rows.
+--
+-- ---------------------------------------------------------------------------
+-- UP
+-- ---------------------------------------------------------------------------
+--
+-- Addressed by currency_id, which is fixed by the seed and never generated. A
+-- row absent from this catalog is not created here: 005 seeds it and this file
+-- corrects a name, so an UPDATE that matches nothing is the correct outcome on a
+-- database that never ran the seed.
+UPDATE currencies SET currency_name = 'US Dollar' WHERE currency_id = 1;
+UPDATE currencies SET currency_name = 'Euro' WHERE currency_id = 2;
+UPDATE currencies SET currency_name = 'Colombian Peso' WHERE currency_id = 3;
+UPDATE currencies SET currency_name = 'Venezuelan Bolívar' WHERE currency_id = 4;
+UPDATE currencies SET currency_name = 'Mexican Peso' WHERE currency_id = 5;
+
+-- ---------------------------------------------------------------------------
+-- DOWN
+-- ---------------------------------------------------------------------------
+--
+-- Restores the names the migration chain held before this file ran, which are
+-- the ones 005_base_catalogs.sql and 008_update_currencies.sql left. It does not
+-- restore the boot path's spelling, because that spelling was the defect.
+--
+-- BEGIN;
+-- UPDATE currencies SET currency_name = 'US Dollar' WHERE currency_id = 1;
+-- UPDATE currencies SET currency_name = 'Euro' WHERE currency_id = 2;
+-- UPDATE currencies SET currency_name = 'Pesos col' WHERE currency_id = 3;
+-- UPDATE currencies SET currency_name = 'Bs' WHERE currency_id = 4;
+-- UPDATE currencies SET currency_name = 'Pesos mxn' WHERE currency_id = 5;
+-- DELETE FROM migrations WHERE filename = '028_align_currency_names.sql';
+-- COMMIT;

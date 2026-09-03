@@ -114,20 +114,23 @@ export async function resyncCatalogSequences(client = pool) {
 //--
 //currencies
 export async function tblCurrencies(client = pool) {
+  // The English name each code stands for, as 028_align_currency_names.sql
+  // writes it on the migration chain. The strings are what Intl.DisplayNames
+  // returns in the frontend, so the stored name and the rendered label agree.
   const currenciesValues = [
     {
       currency_id: 1,
       currency_code: 'usd',
-      currency_name: 'us-dollars',
+      currency_name: 'US Dollar',
     },
 
-    { currency_id: 2, currency_code: 'eur', currency_name: 'euros' },
+    { currency_id: 2, currency_code: 'eur', currency_name: 'Euro' },
 
-    { currency_id: 3, currency_code: 'cop', currency_name: 'pesos col' },
+    { currency_id: 3, currency_code: 'cop', currency_name: 'Colombian Peso' },
 
-    { currency_id: 4, currency_code: 'ves', currency_name: 'bs' },
+    { currency_id: 4, currency_code: 'ves', currency_name: 'Venezuelan Bolívar' },
 
-    { currency_id: 5, currency_code: 'mxn', currency_name: 'pesos mxn' },
+    { currency_id: 5, currency_code: 'mxn', currency_name: 'Mexican Peso' },
   ];
 
   try {
@@ -144,7 +147,13 @@ export async function tblCurrencies(client = pool) {
     }
 
     //is it already populated
-    const isPopulated = await isTablePopulated(client, 'currencies', 2);
+    // The table is seeded only when it holds every row this seeder writes. The
+    // threshold was 2, so a catalog three currencies short read as complete.
+    const isPopulated = await isTablePopulated(
+      client,
+      'currencies',
+      currenciesValues.length,
+    );
     if (isPopulated) {
       console.log('currencies table is already populated.');
       return;
@@ -156,7 +165,8 @@ export async function tblCurrencies(client = pool) {
     //run through the data and insert every tuple
 
     for (const currency of currenciesValues) {
-      const queryText = `INSERT INTO currencies(currency_id,currency_code, currency_name) VALUES ($1,$2,$3)`;
+      const queryText = `INSERT INTO currencies(currency_id,currency_code, currency_name) VALUES ($1,$2,$3)
+      ON CONFLICT (currency_id) DO NOTHING`;
       const values = [
         currency.currency_id,
         currency.currency_code,
@@ -182,10 +192,14 @@ export async function tblCurrencies(client = pool) {
 //--
 //user roles
 export async function tblUserRoles(client = pool) {
+  // Four roles, as 005_base_catalogs.sql seeds them. The boot path stopped at
+  // three and its CHECK rejected the fourth, so a database built from empty
+  // could not hold a value the migration chain both allows and seeds.
   const rolesValues = [
     { user_role_id: 1, user_role_name: 'user' },
     { user_role_id: 2, user_role_name: 'admin' },
     { user_role_id: 3, user_role_name: 'super_admin' },
+    { user_role_id: 4, user_role_name: 'system_admin' },
   ];
   const tblName = 'user_roles';
   const minCount = rolesValues.length;
@@ -201,7 +215,7 @@ export async function tblUserRoles(client = pool) {
       console.log(
         pc.cyan(`/" ${tblName}/" table does not exist. Creating it...`),
       );
-      const createQuery = `CREATE TABLE user_roles(user_role_id SERIAL PRIMARY KEY  NOT NULL, user_role_name VARCHAR(15) NOT NULL CHECK (user_role_name IN ('user', 'admin', 'super_admin') ) )`;
+      const createQuery = `CREATE TABLE user_roles(user_role_id SERIAL PRIMARY KEY  NOT NULL, user_role_name VARCHAR(15) NOT NULL CHECK (user_role_name IN ('user', 'admin', 'super_admin', 'system_admin') ) )`;
       await client.query(createQuery);
     }
 
@@ -217,7 +231,8 @@ export async function tblUserRoles(client = pool) {
 
     //run through the data and insert every tuple
     for (const role of rolesValues) {
-      const queryText = `INSERT INTO user_roles(user_role_id, user_role_name) VALUES ($1,$2)`;
+      const queryText = `INSERT INTO user_roles(user_role_id, user_role_name) VALUES ($1,$2)
+      ON CONFLICT (user_role_id) DO NOTHING`;
       const values = [role.user_role_id, role.user_role_name];
       await client.query(queryText, values);
       console.log(
@@ -249,9 +264,13 @@ export async function tblAccountTypes(client = pool) {
     { account_type_id: 4, account_type_name: 'pocket_saving' },
     { account_type_id: 5, account_type_name: 'category_budget' }, //expense category
     { account_type_id: 6, account_type_name: 'income_source' },
+    { account_type_id: 7, account_type_name: 'cash' },
   ];
   const tblName = 'account_types';
-  const minCount = accountTypeValues.length - 1;
+  // The count the table must reach to be considered seeded is the number of
+  // rows this seeder writes. It used to be one less, so a table missing its
+  // last row read as populated and the row was never written.
+  const minCount = accountTypeValues.length;
 
   try {
     //verify if table exists
@@ -281,7 +300,8 @@ export async function tblAccountTypes(client = pool) {
     //run through the data and insert every tuple
     for (const type of accountTypeValues) {
       const queryText = `INSERT INTO account_types(account_type_id,
-      account_type_name) VALUES ($1,$2)`;
+      account_type_name) VALUES ($1,$2)
+      ON CONFLICT (account_type_id) DO NOTHING`;
       const values = [type.account_type_id, type.account_type_name];
       await client.query(queryText, values);
       console.log(pc.green(`inserted: ${tblName}, ${type.account_type_name}`));
