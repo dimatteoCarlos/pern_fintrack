@@ -993,9 +993,11 @@ both orders lost before, both win after.
 same z-index token, and never rely on document order to separate them when either
 one is portalled.
 
-**What was deliberately not changed.** `--z-toast: 1100` has no consumer: the
-real toasts are `react-toastify` at its own `--toastify-z-index: 9999`. The token
-is dead and is its own finding, not this one's business.
+**What was deliberately not changed.** `react-toastify` keeps its own
+`--toastify-z-index: 9999`: it portals outside this scale, like the date picker.
+`--z-toast: 1100` looked dead from here and was not -- the app's own `Toast`
+component was writing the same `1100` by hand. It reads the token as of
+`toast-styles.css:9` (commit `5039769b`).
 
 ---
 
