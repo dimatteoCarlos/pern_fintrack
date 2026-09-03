@@ -26,6 +26,12 @@ export const mainTables = [
      updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
 
+     -- Email uniqueness ignoring case, as 025_email_case_insensitive_unique.sql
+     -- adds it on the migration chain. The plain UNIQUE above lets
+     -- 'Carlos@Mail.com' and 'carlos@mail.com' become two accounts, while
+     -- sign-in folds both sides and reaches only one of them.
+     CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_key ON users (lower(email));
+
      CREATE OR REPLACE FUNCTION assert_iana_timezone()
      RETURNS TRIGGER AS $$
      BEGIN
