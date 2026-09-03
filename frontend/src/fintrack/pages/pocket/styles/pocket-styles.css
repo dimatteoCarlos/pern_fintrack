@@ -1015,6 +1015,18 @@ button.line__container {
      its own readings out of alignment with it. */
   -webkit-line-clamp: 1;
  }
+
+ /* Half the gap the column layout uses, and only here. Turning the card into a
+    row moves the heading to the left of it, which costs the readings about a
+    third of their width -- 309px against the 446px they had one step below --
+    while the readings themselves do not shrink. At --space-4 they need 316 and
+    break, and this band is the worst of it: wider containers give the width
+    back. The column layout keeps --space-4, where the readings have the full
+    card and the difference against the gap inside a reading still groups
+    them. */
+ .pocketHero__card--row .pocketHero__inline {
+  column-gap: var(--space-2);
+ }
 }
 
 /* ── The list's own scroll ───────────────────────────────────────────────────
