@@ -196,9 +196,17 @@ article {
  display: flex;
  align-items: center;
  justify-content: space-between;
+ gap: var(--space-2);
  color: var(--color-content-primary);
 
  height: 100%;
+}
+
+/* The badge is a fixed 40px box; without this it competes for width against
+   the input below and loses the fight silently -- shrinking just enough that
+   the two end up touching instead of visibly broken. */
+.card__screen .icon-currency {
+ flex-shrink: 0;
 }
 
 /* The date control leads the amount field here, so it gives a divider to the
@@ -287,7 +295,8 @@ article {
  font-size: var(--font-size-xl);
  line-height: 2em;
  font-weight: var(--font-weight-bold);
- width: 90%;
+ flex: 1 1 auto;
+ min-width: 0;
  padding-right: var(--space-2);
  text-align: right;
  background-color: transparent;
