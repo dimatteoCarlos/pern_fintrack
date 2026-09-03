@@ -201,6 +201,24 @@ article {
  height: 100%;
 }
 
+/* The date control leads the amount field here, so it gives a divider to the
+   row and the field reads as ONE control with parts rather than two things
+   sharing a box. Scoped to this field and not declared on the control itself:
+   the other caller of that shared component puts it on a label row, where the
+   same line would divide nothing. */
+.card__screen .transactionDateControl {
+ padding-inline-end: var(--space-2);
+ border-inline-end: var(--border-width-thin) solid
+  var(--color-content-secondary);
+}
+
+/* The whole control answers the pointer, not the button inside it: the divider
+   belongs to the control, so a fill that stopped at the button's edge would
+   paint up to a line and leave the gap beside it unlit. */
+.card__screen .transactionDateControl:has(.transactionDateTrigger:hover) {
+ border-inline-end-color: var(--color-content-primary);
+}
+
 /* The converted amount beside the label. Was inline on the span in TopCard.tsx,
    where no token could reach it. */
 .currency-preview {

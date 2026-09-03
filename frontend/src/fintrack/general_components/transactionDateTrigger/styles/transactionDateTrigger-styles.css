@@ -129,26 +129,17 @@
  gap: var(--space-1);
 }
 
-/* The control inside the amount field, which is where it lives now. It leads
-   the figure it qualifies and gives up a divider to the row, so the field still
-   reads as ONE control with parts rather than as two things sharing a box.
-
-   Everything the Today button carried went with it: the word, its own hit area
-   and the argument about which of the two was active. Inside the field there is
-   one control, and the calendar it opens has today as a cell. */
 .transactionDateControl {
  flex-shrink: 0;
- padding-inline-end: var(--space-2);
- border-inline-end: var(--border-width-thin) solid
-  var(--color-content-secondary);
 }
 
-/* The whole control answers the pointer, not the button inside it: the divider
-   belongs to the control, so a fill that stopped at the button's edge would
-   paint up to a line and leave the gap beside it unlit. */
-.transactionDateControl:has(.transactionDateTrigger:hover) {
- border-inline-end-color: var(--color-content-primary);
-}
+/* The divider that used to stand here is gone from this sheet. It separates the
+   control from the figure BESIDE it, which is an arrangement one caller has —
+   the tracker, where the control leads the amount field — and the other does
+   not: the commit and release modal puts the control on the label row, where
+   the line had nothing to its right and divided the row from itself. A shared
+   component must not paint a decision that belongs to one of its callers, so
+   the rules moved to tracker-style.css, scoped to the field they divide. */
 
 @media (prefers-reduced-motion: reduce) {
  .transactionDateTrigger {
