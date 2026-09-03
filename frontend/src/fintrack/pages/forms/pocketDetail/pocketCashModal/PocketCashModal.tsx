@@ -319,24 +319,35 @@ function PocketCashModal({
     )} ${conversion.quote.currency.toUpperCase()}`
   : '';
 
- // The day the rate VALUES, which is not always the day chosen: a market closed
- // on the chosen day is valued by the last one that quoted.
+ // Why THIS rate values the chosen day, and only when there is something to
+ // explain. A rate carries a validity rather than belonging to one day: the TRM
+ // published on a Saturday is in force that Saturday, the Sunday and the Monday,
+ // so a decision dated Monday the 24th is valued by the 22nd.
+ //
+ // "for <day>" said that badly — it read as "the rate is of the 22nd", which is
+ // the question the owner was asking, not the answer. "in force since" states
+ // the validity that reaches their day. Nothing prints when the two agree: the
+ // day is already on the trigger beside the field.
  //
  // It replaces the reading time this line used to state. When the store
  // downloaded a figure is an internal fact, and a whole month pulled in one
  // warm-up call carries the same download stamp on every day of it — so the
  // owner read a date that had nothing to do with the rate in front of them.
- const valuedDayLine = conversion.effectiveDate
-  ? `for ${formatCalendarDate(conversion.effectiveDate)}`
-  : '';
+ const valuedDayLine =
+  conversion.effectiveDate && conversion.effectiveDate !== chosenDay
+   ? `in force since ${formatCalendarDate(conversion.effectiveDate)}`
+   : '';
 
- // Source and valued day come with the rate: a figure resolved from a day other
- // than the one chosen is still one the owner is entitled to question.
+ // The rate and the day it belongs to. The provider's identifier is kept
+ // commented rather than deleted: the provenance is still owed to the owner,
+ // and where it belongs is the open decision — a string like
+ // banrep-trm@2026-08-29 names a source the reader has no way to check from
+ // here, which is what put it in question.
  const rateTooltipText =
   conversion.convertedAmount !== null && amount > 0
    ? [
       quoteLine,
-      conversion.source ? `source: ${conversion.source}` : '',
+      // conversion.source ? `source: ${conversion.source}` : '',
       valuedDayLine,
      ]
       .filter(Boolean)
