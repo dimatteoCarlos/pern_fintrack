@@ -1,0 +1,87 @@
+-- 026_budget_currency_delete_restrict.sql
+--
+-- Changes category_budget_accounts.currency_id from ON DELETE SET NULL to
+-- ON DELETE RESTRICT, so the rule the foreign key states can actually be
+-- carried out.
+--
+-- THE DEFECT THIS CLOSES
+--
+-- Two files declare this column and they contradict each other.
+--
+--   * 002_accounts.sql:154 creates it with ON DELETE SET NULL.
+--   * 011_enforce_category_budget_currency.sql:37 makes it NOT NULL.
+--
+-- Read together, they say: the column may never hold NULL, and on deleting the
+-- currency, write NULL into it. Deleting a currency that any budget account
+-- references therefore fails inside the foreign key action with a not-null
+-- violation, naming a constraint the caller never mentioned. Nothing warns
+-- earlier, because each file is correct on its own and the pair is not.
+--
+-- WHY RESTRICT AND NOT A NULLABLE COLUMN
+--
+-- 011 exists on purpose: a budget row without a currency is an amount without a
+-- unit, and the code that reads it has no honest fallback. Its own header says
+-- so, and the sibling declarations already agree -- debtor_accounts.currency_id
+-- is RESTRICT for the same stated reason, and user_accounts.currency_id is
+-- RESTRICT and NOT NULL. Making the column nullable again to satisfy the action
+-- would reopen the failure 011 closed.
+--
+-- RESTRICT refuses the delete up front, with the currency and the table named,
+-- instead of failing halfway through an action the caller cannot see.
+--
+-- WHY THE BOOT PATH IS NOT TOUCHED
+--
+-- createTables.js:85 already declares RESTRICT, and it is right. This file
+-- brings the chain to where the boot DDL already stands, which is the reverse
+-- of the usual direction and is why the difference survived: npm run db:parity
+-- reported it as the last of ten and the other nine were the boot path's.
+--
+-- NO DATA STEPS
+--
+-- Changing which action a foreign key takes validates the existing rows against
+-- the same reference they already satisfy. No row can fail, nothing is written
+-- and nothing is backfilled. The seeded currencies are referenced by budget
+-- accounts and were never deletable in practice: under the old declaration the
+-- delete raised a not-null violation, under the new one it raises a foreign key
+-- violation. What changes is the error, not the outcome.
+--
+-- ---------------------------------------------------------------------------
+-- UP
+-- ---------------------------------------------------------------------------
+--
+-- DROP then ADD under the same name. The name is the one PostgreSQL generated
+-- for the inline REFERENCES in 002, and the boot DDL's inline REFERENCES
+-- generates the same one, so both paths keep producing an identically named
+-- constraint.
+--
+-- IF EXISTS on the drop, so the file also applies to a database built by the
+-- boot DDL, where the constraint is already RESTRICT and this pair rewrites it
+-- to itself.
+--
+-- The runner wraps every pending file in one transaction and PostgreSQL DDL is
+-- transactional, so the column is never visible without its foreign key.
+ALTER TABLE category_budget_accounts
+ DROP CONSTRAINT IF EXISTS category_budget_accounts_currency_id_fkey;
+
+ALTER TABLE category_budget_accounts
+ ADD CONSTRAINT category_budget_accounts_currency_id_fkey
+ FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
+ ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- ---------------------------------------------------------------------------
+-- DOWN
+-- ---------------------------------------------------------------------------
+--
+-- Run manually. It applies cleanly on any data, and it restores the
+-- contradiction described above: the column stays NOT NULL while the action
+-- says to write NULL. Reverse this file only together with 011.
+--
+-- BEGIN;
+-- ALTER TABLE category_budget_accounts
+--  DROP CONSTRAINT IF EXISTS category_budget_accounts_currency_id_fkey;
+-- ALTER TABLE category_budget_accounts
+--  ADD CONSTRAINT category_budget_accounts_currency_id_fkey
+--  FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
+--  ON DELETE SET NULL ON UPDATE CASCADE;
+-- DELETE FROM migrations WHERE filename = '026_budget_currency_delete_restrict.sql';
+-- COMMIT;
