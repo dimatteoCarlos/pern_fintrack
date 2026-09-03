@@ -137,7 +137,7 @@ export async function tblCurrencies(client = pool) {
       // console.log('"currencies" table does not exist. Creating it...');
       const createQuery = `CREATE TABLE currencies (
       currency_id INT PRIMARY KEY NOT NULL,
-      currency_code VARCHAR(3) NOT NULL ,
+      currency_code VARCHAR(3) NOT NULL UNIQUE,
       currency_name VARCHAR(25) NOT NULL 
 )`;
       await client.query(createQuery);
@@ -264,7 +264,7 @@ export async function tblAccountTypes(client = pool) {
       console.log(pc.yellow`${tblName} table does not exist. Creating it...'`);
       const createQuery = `CREATE TABLE account_types (
         account_type_id INT PRIMARY KEY NOT NULL,
-        account_type_name VARCHAR(50) NOT NULL 
+        account_type_name VARCHAR(50) NOT NULL UNIQUE
 )`;
       await client.query(createQuery);
     }
@@ -324,7 +324,7 @@ export async function tblCategoryNatureTypes(client = pool) {
       // them as literals. Migration 001 declares this table the same way.
       const createQuery = `CREATE TABLE category_nature_types (
         category_nature_type_id INT PRIMARY KEY NOT NULL,
-        category_nature_type_name VARCHAR(15) NOT NULL 
+        category_nature_type_name VARCHAR(15) NOT NULL UNIQUE
 )`;
       await client.query(createQuery);
     }
@@ -396,7 +396,7 @@ export async function tblMovementTypes(client = pool) {
       console.log(pc.yellow`${tblName} table does not exist. Creating it...'`);
       const createQuery = `CREATE TABLE movement_types (
         movement_type_id INT PRIMARY KEY NOT NULL,
-        movement_type_name VARCHAR(50) NOT NULL CHECK(movement_type_name IN ('expense','income','investment','debt','pocket','transfer','receive','account-opening','pnl'))
+        movement_type_name VARCHAR(50) NOT NULL UNIQUE CHECK(movement_type_name IN ('expense','income','investment','debt','pocket','transfer','receive','account-opening','pnl'))
 )`;
       await client.query(createQuery);
     }
@@ -457,7 +457,7 @@ export async function tbltransactionTypes(client = pool) {
       console.log(pc.yellow`${tblName} table does not exist. Creating it...'`);
       // Fixed ids, no sequence, as migration 001 declares it.
       const createQuery = `CREATE TABLE transaction_types(transaction_type_id INT PRIMARY KEY NOT NULL,
-        transaction_type_name VARCHAR(50) NOT NULL)`;
+        transaction_type_name VARCHAR(50) NOT NULL UNIQUE)`;
       await client.query(createQuery);
     }
 

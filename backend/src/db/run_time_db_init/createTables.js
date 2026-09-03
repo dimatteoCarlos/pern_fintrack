@@ -104,7 +104,7 @@ export const mainTables = [
      currency_id INT REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE,
      debtor_name VARCHAR(25),
      debtor_lastname VARCHAR(25),
-     selected_account_id INT,
+     selected_account_id INT REFERENCES user_accounts(account_id) ON DELETE SET NULL,
      selected_account_name VARCHAR(50),
      account_start_date TIMESTAMPTZ NOT NULL,
   --  FX audit columns. value holds the accounting currency; original_value
@@ -160,9 +160,12 @@ export const mainTables = [
        ON UPDATE CASCADE,
       description TEXT,
       amount DECIMAL(15,2) NOT NULL, 
-      movement_type_id INTEGER NOT NULL,
-      transaction_type_id INTEGER NOT NULL,
-      currency_id INTEGER NOT NULL, 
+      movement_type_id INTEGER NOT NULL REFERENCES movement_types(movement_type_id)
+       ON DELETE RESTRICT ON UPDATE CASCADE,
+      transaction_type_id INTEGER NOT NULL REFERENCES transaction_types(transaction_type_id)
+       ON DELETE RESTRICT ON UPDATE CASCADE,
+      currency_id INTEGER NOT NULL REFERENCES currencies(currency_id)
+       ON DELETE RESTRICT ON UPDATE CASCADE,
 
 -- 🔴 OWNING FK: RESTRICT, so no physical delete reaches the ledger without
 -- passing through the deletion engine that settles the account first.
