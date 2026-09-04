@@ -628,3 +628,175 @@ missing amount to zero (`helpers/functions.ts:19-23`), the four cross-module
 fields undeclared on `AccountListType` (`types/responseApiTypes.ts:303`), the
 validation-error envelope declared by no frontend type, and an unavailable
 exchange rate answering `500` rather than `503`.
+
+---
+
+## Contract change 2026-09-03 — the board reads a month, and the row carries its level
+
+The board endpoint gains a query parameter and eleven served fields. This is the
+frozen shape the frontend builds against; it supersedes the field list of §2.1
+and contradicts one earlier statement outright, recorded below.
+
+### The request
+
+`GET /api/fintrack/pocket/board?month=YYYY-MM`
+
+| aspect | rule |
+| --- | --- |
+| optional | absent means the current month |
+| accepted | `YYYY-MM` or `YYYY-MM-DD`; a full date is truncated to its month |
+| validated by | `boardQuerySchema` (`validation/zod/pocketValidators.js`), reusing `monthBound` from `budgetValidators.js` — strict, so an unknown key is a 400 naming it |
+| refused | a month later than the current one, `422`, message naming both months |
+| never sent by the client | the current month itself — resolved on the owner's calendar by `getCalendarToday`, because a browser west of UTC disagrees with one east of it for several hours a day |
+
+**This contradicts §2.1's statement that the board is a GET carrying nothing,
+and the frontend plan's "the board never grows a query parameter".** Both are
+superseded by the month ruling of 2026-09-03 (`POCKET_DECISIONS.md` §23.4). The
+parameter is optional, so a client that never sends it keeps the behaviour it
+had.
+
+### The evaluation date — the one date every figure reads
+
+Resolved in `pocketBoardService.js` by `resolveEvaluationDate(monthStart, today)`:
+today when the selected month is the current one, the last day of that month
+otherwise. Every date comparison on the payload — the passed deadline, the days
+remaining, the required pace, the schedule position and the level — is made at
+this single point, and it is served in `meta` because the screen cannot derive
+it.
+
+### New fields on each row
+
+| field | type | meaning | null when |
+| --- | --- | --- | --- |
+| `planStart` | `string` | `YYYY-MM-DD`, the day the plan was made, on the owner's calendar | never |
+| `planInstalment` | `number \| null` | the target divided by the plan's whole months | the plan has no window |
+| `scheduledByNow` | `number \| null` | what the instalments already due required | the plan has no window |
+| `aheadOfPlan` | `number \| null` | committed minus scheduled, **signed** — positive is slack, negative is a shortfall against the line | the plan has no window |
+| `paceRatio` | `number \| null` | the pace now needed over the pace the plan set | the deadline has passed, or the plan has no window; `0` once the target is covered |
+| `level` | `string` | one of `completed`, `aboveTarget`, `onTrack`, `behind`, `atRisk`, `overdue` | never |
+| `movedInMonth` | `number \| null` | the net of the selected month, signed | the caller asked for no month — the detail endpoint |
+| `committedInMonth` | `number \| null` | the month's positive rows | as above |
+| `releasedInMonth` | `number \| null` | the month's negative rows, as a magnitude | as above |
+
+`allocated` and `sourceCount` keep their names and change their meaning: both are
+now bounded at the close of the selected month. Every other row field is
+unchanged.
+
+**`behindSchedule` was proposed and does not ship.** A boolean cannot separate
+*behind* from *at risk*, which is the whole point of the ratio.
+
+### New fields on the header
+
+| field | type | meaning |
+| --- | --- | --- |
+| `levelCounts` | `{completed, aboveTarget, onTrack, behind, atRisk, overdue}` | one count per level, every key always present with at least a zero |
+| `aheadCount` | `number` | pockets whose `aheadOfPlan` is above zero |
+| `totalAheadOfPlan` | `number \| null` | the sum of the positive slack only — a pocket behind its line does not cancel the slack another one holds |
+| `totalMovedInMonth` | `number \| null` | the month's net across the board |
+| `totalCommittedInMonth` | `number \| null` | the month's gross in |
+| `totalReleasedInMonth` | `number \| null` | the month's gross out, as a magnitude |
+
+The empty-board rule is unchanged: every amount null, never zero; every count a
+real zero.
+
+### New `meta`
+
+```
+meta: { referenceMonth, currentMonth, evaluationDate, notices[] }
+```
+
+`referenceMonth` and `currentMonth` are `YYYY-MM`; `evaluationDate` is
+`YYYY-MM-DD`. The stepper labels the badge with the first and disables its
+forward arrow at the second.
+
+### What the frontend must do with this
+
+- **Stop classifying.** `pocketDateLevel` (`helpers/pocketStatus.ts`) becomes a
+  map from the served `level` to a word and a colour. A client that re-derives
+  the level from the flags is a second answer to a question the server already
+  answered, which is the defect this module's own header comment exists to
+  prevent.
+- **Stop counting.** `countByLevel` in `PocketBigBoxResult.tsx` is replaced by
+  `summary.levelCounts`.
+- **Six words, not five.** *At target* → **Completed**, *On plan* → **On track**,
+  and **Behind** is new. *Above target*, *At risk* and *Overdue* keep their
+  words. The summary strip's inline lower-cased literals must be brought onto
+  the shared map, or the strip will say *at target* while the card beside it
+  says *Completed*.
+- **Ahead of plan is an axis, not a word.** A row in the readings card, an option
+  in the filter beside *Funding not covered*, a line on the card, and a sort
+  criterion — never a seventh level.
+- **A null is a dash.** `currencyFormat` still defaults a missing amount to
+  `0.00` (`helpers/functions.ts:19-23`), and this payload adds seven nullable
+  amounts. That trap is now reachable.
+
+### Indexes
+
+Migration `029_pocket_board_month_indexes.sql` adds
+`pocket_allocations(pocket_id, allocation_actual_date)` and
+`pockets(user_id, created_at)`, with the reverse written. Mirrored in
+`run_time_db_init/createTables.js` in the same pass, per the two-build-path rule.
+
+---
+
+## Contract change 2026-09-04 — the level vocabulary gains a seventh word
+
+Concepts and reasoning: `POCKET_DECISIONS.md` section 24. This amends the
+contract change of 2026-09-03 above, in three places and nowhere else. Not yet
+implemented — the shape is frozen here first, as the standing rule requires.
+
+### `level` on every row
+
+Seven values, not six: `completed`, `aboveTarget`, `ahead`, `onTrack`,
+`behind`, `atRisk`, `overdue`. The addition is `ahead`.
+
+**What moved out of `onTrack`.** That value used to cover every pocket at or
+above its plan's line, because the ratio being at or below 1 is algebraically the
+same condition as the money figure `aheadOfPlan` being at or above zero. It now
+covers only the pockets inside a tolerance band around the line. Everything
+clearly above the band reads `ahead`; everything clearly below it reads `behind`
+as before.
+
+**A row reading `ahead` satisfies two conditions, not one:** the ratio below the
+band, and `aheadOfPlan` above zero. The second exists for the single date on
+which a deadline falling on a month end is evaluated at that month's close,
+where the instalments left are floored at one and the ratio can read low while
+the pocket is short of its whole target.
+
+`planStart`, `planInstalment`, `scheduledByNow`, `aheadOfPlan`, `paceRatio` and
+the three month figures are unchanged in name, type and meaning.
+
+### `levelCounts` on the header
+
+Seven keys, every one always present with at least a zero. `ahead` is added in
+reading order after `aboveTarget` and before `onTrack` — corrected on
+2026-09-04 when the classifier was written. The list runs best to worst,
+and a pocket running early asks less of its owner than one sitting exactly
+on its line.
+
+### Two header fields change
+
+| field | before | after |
+| --- | --- | --- |
+| `aheadCount` | pockets whose `aheadOfPlan` is above zero | **removed** — it is now `levelCounts.ahead` minus a rounding, which is two answers to one question |
+| `totalAheadOfPlan` | the positive slack of every pocket holding any | the slack held by the pockets reading `ahead`, so the readings row states a count and an amount describing the same rows |
+
+### What the frontend must do with this
+
+- **A seventh word in the vocabulary map** (`POCKET_STATUS_WORD`,
+  `helpers/pocketStatus.ts:66-76`) and a seventh key in each of the two class
+  maps beside it.
+- **The filter select gains the value and loses the toggle.** *Ahead of plan*
+  becomes an option of the status select
+  (`PocketToolbar.tsx:47-59`), and the separate toggle
+  (`PocketToolbar.tsx:194-203`) with its `aheadOfPlanOnly` prop and its clause
+  in `usePocketListFilter.ts:95-100` is removed. Nothing is lost: the value it
+  selected is now a level.
+- **The readings row reads the two narrowed fields**, not the retired count
+  (`PocketBigBoxResult.tsx:579-588`).
+- **The sort criterion stays** — it ranks by the money figure, which every live
+  pocket still carries, and `null` still sorts as the least ahead.
+- **Three of the seven words still render identically.** `completed`, `onTrack`,
+  `behind` and now `ahead` all resolve to the bare status square until the two
+  deferred colour tokens exist. Named, unstyled and commented as such, exactly
+  as `behind` already is.

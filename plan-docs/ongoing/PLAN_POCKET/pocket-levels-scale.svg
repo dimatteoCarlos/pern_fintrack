@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="784" height="330" viewBox="0 0 784 330" role="img" aria-label="The seven pocket level marks, on the board card and on the cream panel">
+ <title>Pocket level scale</title>
+
+ <style>
+  .panelTitle { font: 600 12px system-ui, sans-serif; letter-spacing: 0.04em; }
+  .word { font: 600 12px system-ui, sans-serif; }
+  .meta { font: 10px ui-monospace, monospace; }
+  .onDark { fill: #d8cdcd; }
+  .onDarkQuiet { fill: #917978; }
+  .onLight { fill: #2b2b2b; }
+  .onLightQuiet { fill: #6b6560; }
+  .note { font: 11px system-ui, sans-serif; }
+ </style>
+
+ <!-- The board card. Pure black is what pocket-styles.css:110 paints, and it
+      is the surface every contrast figure in the reference is measured on. -->
+ <rect x="0" y="0" width="784" height="150" rx="8" fill="#000000" />
+ <text x="16" y="26" class="panelTitle onDark">ON THE BOARD CARD — #000000</text>
+
+ <g transform="translate(16, 52)">
+  <g transform="translate(0,0)">
+   <rect width="12" height="12" rx="2" fill="#5faa78" />
+   <text x="0" y="32" class="word onDark">Completed</text>
+   <text x="0" y="50" class="meta onDarkQuiet">#5faa78</text>
+   <text x="0" y="66" class="meta onDarkQuiet">7.51</text>
+  </g>
+  <g transform="translate(107,0)">
+   <rect width="12" height="12" rx="2" fill="#60b1d6" />
+   <text x="0" y="32" class="word onDark">Above target</text>
+   <text x="0" y="50" class="meta onDarkQuiet">#60b1d6</text>
+   <text x="0" y="66" class="meta onDarkQuiet">8.76</text>
+  </g>
+  <g transform="translate(214,0)">
+   <rect width="12" height="12" rx="2" fill="#c97474" />
+   <text x="0" y="32" class="word onDark">Overdue</text>
+   <text x="0" y="50" class="meta onDarkQuiet">#c97474</text>
+   <text x="0" y="66" class="meta onDarkQuiet">6.23</text>
+  </g>
+  <g transform="translate(321,0)">
+   <rect width="12" height="12" rx="2" fill="#b8894e" />
+   <text x="0" y="32" class="word onDark">At risk</text>
+   <text x="0" y="50" class="meta onDarkQuiet">#b8894e</text>
+   <text x="0" y="66" class="meta onDarkQuiet">6.73</text>
+  </g>
+  <g transform="translate(428,0)">
+   <rect width="12" height="12" rx="2" fill="#9c75d1" />
+   <text x="0" y="32" class="word onDark">Behind</text>
+   <text x="0" y="50" class="meta onDarkQuiet">#9c75d1</text>
+   <text x="0" y="66" class="meta onDarkQuiet">5.88</text>
+  </g>
+  <g transform="translate(535,0)">
+   <rect width="12" height="12" rx="2" fill="#3db87a" />
+   <text x="0" y="32" class="word onDark">Ahead</text>
+   <text x="0" y="50" class="meta onDarkQuiet">#3db87a</text>
+   <text x="0" y="66" class="meta onDarkQuiet">8.34</text>
+  </g>
+  <g transform="translate(642,0)">
+   <rect width="12" height="12" rx="2" fill="#5b8c93" />
+   <text x="0" y="32" class="word onDark">On track</text>
+   <text x="0" y="50" class="meta onDarkQuiet">#5b8c93</text>
+   <text x="0" y="66" class="meta onDarkQuiet">5.62</text>
+  </g>
+ </g>
+
+ <!-- The cream panel. The pocket detail summary is this surface, and the whole
+      series falls under the 3:1 floor on it — the defect is drawn, not stated. -->
+ <rect x="0" y="164" width="784" height="150" rx="8" fill="#e8e4da" />
+ <text x="16" y="190" class="panelTitle onLight">ON THE CREAM PANEL — #e8e4da — EVERY MARK UNDER THE 3:1 FLOOR</text>
+
+ <g transform="translate(16, 216)">
+  <g transform="translate(0,0)">
+   <rect width="12" height="12" rx="2" fill="#5faa78" />
+   <text x="0" y="32" class="word onLight">Completed</text>
+   <text x="0" y="50" class="meta onLightQuiet">2.20</text>
+  </g>
+  <g transform="translate(107,0)">
+   <rect width="12" height="12" rx="2" fill="#60b1d6" />
+   <text x="0" y="32" class="word onLight">Above target</text>
+   <text x="0" y="50" class="meta onLightQuiet">1.89</text>
+  </g>
+  <g transform="translate(214,0)">
+   <rect width="12" height="12" rx="2" fill="#c97474" />
+   <text x="0" y="32" class="word onLight">Overdue</text>
+   <text x="0" y="50" class="meta onLightQuiet">2.65</text>
+  </g>
+  <g transform="translate(321,0)">
+   <rect width="12" height="12" rx="2" fill="#b8894e" />
+   <text x="0" y="32" class="word onLight">At risk</text>
+   <text x="0" y="50" class="meta onLightQuiet">2.46</text>
+  </g>
+  <g transform="translate(428,0)">
+   <rect width="12" height="12" rx="2" fill="#9c75d1" />
+   <text x="0" y="32" class="word onLight">Behind</text>
+   <text x="0" y="50" class="meta onLightQuiet">2.81</text>
+  </g>
+  <g transform="translate(535,0)">
+   <rect width="12" height="12" rx="2" fill="#3db87a" />
+   <text x="0" y="32" class="word onLight">Ahead</text>
+   <text x="0" y="50" class="meta onLightQuiet">1.98</text>
+  </g>
+  <g transform="translate(642,0)">
+   <rect width="12" height="12" rx="2" fill="#5b8c93" />
+   <text x="0" y="32" class="word onLight">On track</text>
+   <text x="0" y="50" class="meta onLightQuiet">2.94</text>
+  </g>
+ </g>
+
+ <text x="16" y="328" class="note onDarkQuiet">Squares drawn at 12px, the size the status square renders at. Figures are contrast ratios against the panel behind them.</text>
+</svg>

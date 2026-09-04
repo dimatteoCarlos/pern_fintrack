@@ -2588,6 +2588,433 @@ another.
 
 ---
 
+## 23. The board reads a month, and a level reads the plan's own line — RULED 2026-09-03
+
+Five rulings, taken as one section because they depend on each other. The month
+bound is what makes a level computable at a date other than today; the
+step-wise line is what stops that reading changing by the day; the retroactive
+target is what stops any of it needing a history this model does not keep.
+
+### 23.1 A level is set by the pace the plan still demands, not by nearness to its deadline
+
+**Superseded in part by section 24 (2026-09-04).** The criterion and the
+reasoning stand; the six-level table below is replaced by the seven-level one
+there, which splits the band this table calls `onTrack` into being ahead of the
+line, on it, and short of it.
+
+**What was wrong.** The shipped classifier splits everything neither at target
+nor overdue by how near the deadline is, at a threshold of thirty days
+(`frontend/src/fintrack/helpers/pocketStatus.ts:24`, `:90-114`). Nearness to a
+deadline states nothing about progress toward a target, and the two cases that
+matter both read backwards: a pocket at 5% with 200 days left reads **on plan**,
+and one at 98% with 20 days left reads **at risk**.
+
+**The criterion that replaces it is a ratio of two paces.** What the pocket now
+needs per month, over what its plan set per month.
+
+- The numerator is served already: the remainder over the horizon
+  (`requiredMonthly`, `makePocketStatus.js:127`).
+- The denominator is the plan's **instalment**: the target over the number of
+  full calendar months between the plan's creation month and its deadline.
+
+**Why a ratio and not a day count.** A fixed horizon of thirty days treats a
+three-month plan and a five-year plan identically. The question the owner is
+actually asking is not *how long is left* but *can I still cover it*, and the
+ratio answers it in the module's own terms — how many of the planned
+contributions would have to be found at once.
+
+**Worked**, on a target of 12,000 over twelve months, instalment 1,000:
+
+| situation | needed per month | ratio | level |
+| on the line at the close of month 8 | 1,000 | 1.0 | on track |
+| short by 2,000 with four months left | 1,500 | 1.5 | behind |
+| short by 2,000 with one month left | 3,000 | 3.0 | at risk |
+
+The same shortfall, two readings. What separates them is whether an ordinary
+month still closes it.
+
+**The six levels, evaluated top down**, which makes them mutually exclusive by
+construction:
+
+| level | condition |
+| `completed` | committed reaches the target |
+| `aboveTarget` | committed passes the target |
+| `overdue` | not complete, and the deadline passed on the owner's calendar |
+| `atRisk` | not complete, deadline ahead, ratio at or above 2 |
+| `behind` | not complete, deadline ahead, ratio above 1 and under 2 |
+| `onTrack` | not complete, deadline ahead, ratio at or below 1 |
+
+**Six, and the original request asked for six.** An earlier reading in this
+process collapsed them to five, on the ground that *at risk* and *overdue* named
+one condition. They did — but only in a draft that defined *at risk* as the
+deadline having passed. Under the ratio there is no overlap, and both words
+carry a distinct fact: **behind** is a plan that has fallen back, **at risk** is
+one that an ordinary month can no longer recover.
+
+**The thirty-day threshold is deleted** (`POCKET_AT_RISK_DAYS`). The ratio climbs
+on its own as the deadline nears, so proximity is captured without a constant.
+Days remaining stays a printed fact and classifies nothing.
+
+**Both ends of the ratio are already guarded.** The needed monthly figure is 0
+once the target is covered and null once the deadline has passed, and both cases
+are decided by a level above the ratio, so it is only ever consulted inside the
+live band.
+
+**The owner's calendar** is the date read from the current instant in the zone
+stored on the user row (`users.timezone`, `002_accounts.sql:37-39`), resolved
+once per request (`getUserTimeZone.js:20-27`) and turned into a date in SQL
+(`pocketRepository.js:31-38`). Never the browser clock, never UTC.
+
+**A plan with no full calendar month in its window publishes no instalment**, so
+it has no ratio and can read neither behind nor at risk. It falls to on track and
+the card states that the plan has no window rather than printing a pace. Two
+cases: a pocket created days before its own deadline, and the one legacy pocket,
+whose creation stamp is migration 020's own date.
+
+**What is NOT built, and was considered.** The achieved rate and the projected
+date. Both stay decided out — a rate read over the ledger measures how often the
+owner changed their mind, not how fast money arrived — and the reason written
+into `pocketBoardService.js:18-21` stands unamended. This ruling reads no
+sequence of rows: it reads the plan's two endpoints and one total.
+
+### 23.2 The line is step-wise by month, never continuous
+
+**The target is divided into monthly instalments and the amount due rises only
+when a month closes.**
+
+- **The creation month does not count.** A plan made on the 20th did not have
+  that month to fund it, so its first instalment falls due at the close of the
+  first full month after it.
+- **The current month's instalment is not yet due.** At any point inside
+  September, what is owed is the instalments through August.
+
+**Why not a continuous line.** The expectation would climb every day, so the same
+pocket would read on track on the 2nd and behind on the 28th with no change in
+behaviour. Step-wise, the reading moves only when a month closes — which is the
+boundary every other figure on this page now uses.
+
+### 23.3 Committed beyond the plan's line is an axis, not a level
+
+**Superseded by section 24 (2026-09-04).** Slack does cross `completed` and
+`aboveTarget`, as this subsection says, but inside the live band it partitions
+rather than crosses it: sitting at or above the line is algebraically the same
+set as the ratio sitting at or below 1. It is a level. Everything below about
+naming it by the fact, and about it being distinct from the surplus of section
+22, is unchanged.
+
+**The figure:** committed minus what the already-due instalments required, when
+positive. It is what a pocket holds beyond its own schedule.
+
+**It cannot be a level, and the reason is structural: it does not exclude the
+others.** A pocket can be on track and ahead of its plan, or above target and
+ahead of its plan. Levels are mutually exclusive; this crosses them. It follows
+the pattern coverage already uses on this board — an orthogonal reading with a
+row in the summary card and an option in the filter, and no new word in the
+vocabulary map.
+
+**What it is for.** It names where money can be moved from, toward a pocket
+reading behind or at risk. A colour delivers neither of the two facts the owner
+needs — *which* pockets hold it and *how much* each holds — so it appears as a
+row in the readings card, an option in the filter, a line on the card, and a
+sort criterion.
+
+**Named by the fact, never by the permission.** It is *ahead of plan*, not
+*movable*, *releasable* or *slack*. Releasing it drops the pocket to exactly its
+line with nothing spare, so a word naming the permission would read as *spare*
+and tell the owner something false. This is the ruling already made when the
+remainder of an account was called **unassigned cash** and *available balance*
+was refused.
+
+**Distinct from the surplus of section 22.** What a pocket holds past its target
+can be released at no cost to any plan. What it holds ahead of its line cannot —
+that money is still needed by that plan, only not yet. Two amounts, two
+consequences, two sentences.
+
+**What is NOT built, and was considered.** A rebalance action in one step.
+Releasing returns the commitment to the funding account and committing draws from
+an account; the owner can already do it in two. Which target yields is an opinion
+about their priorities — the same opinion section 22 refused to hold.
+
+### 23.4 The board takes a month, and every figure reads at its close
+
+**What changes.** `GET /api/fintrack/pocket/board` accepts an optional month.
+Absent means the current one. This overrides the board contract of section 5 and
+the statement in `PLAN_POCKET_FE.md` §7.1 that the board never grows a query
+parameter — both written when every figure on the page was a lifetime sum.
+
+**The current month never travels.** The server resolves it on the owner's
+calendar, the rule the overview handlers already state
+(`overviewController.js:7-10`). A later month is refused with 422.
+
+**One evaluation date replaces today** across the page: today when the current
+month is selected, the last day of the month otherwise. Every date comparison
+reads at that close — the passed deadline, the days remaining, the needed monthly
+figure and the ratio of section 23.1.
+
+**What the ledger can and cannot answer.** It carries an owner-chosen date on
+every row (`020_create_pocket_tables.sql:154`), anchored at noon in the owner's
+zone when back-dated, so the committed total at a close and the amount moved
+within a month are exact facts. Nothing here reads a series or a rate.
+
+**The movement prints as the net**, with its direction in words. The server sends
+both gross halves so the composition is available when a screen needs it, and
+nothing prints them for now. Never a bare signed number: it cannot say which of
+two opposite decisions happened.
+
+### 23.5 An edited target is in force from the day the plan was made
+
+**The ruling, in the developer's terms:** editing a target is a correction of the
+plan, and the corrected figure is treated as having applied since the pocket was
+created. **There is no historical target distinct from the current one.**
+
+**What this settles.** V1 stores the current plan and nothing else (`QP-14`,
+2026-08-29), so a board read at a past close necessarily divides by today's
+target. Under this ruling that is not an approximation to be disclosed — it is
+the correct reading.
+
+**What it removes.** Three things were drafted as answers to a question this
+ruling dissolves, and none is built: a note under the month badge, a per-row
+marker built from the last-modified stamp (`pockets.updated_at`), and a
+plan-revision table.
+
+**What it must state, because it will be observed.** *A past month's figures
+change when a target is edited.* The same month reports one progress before the
+correction and another after it. That is this ruling working, and it is recorded
+here so it is not later read as a defect and repaired.
+
+**Why it is consistent with 23.1 and 23.2 rather than merely compatible.** The
+instalment is computed from the plan's creation date and the current target, so
+this ruling is that computation stated. The levels, the progress and the pace
+cannot disagree about which plan they are reading.
+
+**What is NOT built, and was considered.** A revision table storing each target
+and deadline change with the date it took effect. It is the only thing that
+recovers a genuine prior value, it reverses `QP-14`, and **it cannot be
+backfilled** — every month before such a migration would stay unanswerable
+regardless. It returns only if target corrections turn out to be frequent enough
+that treating them as retroactive misreads what the owner meant.
+
+### 23.6 What this section does not decide
+
+- **Two tokens.** The scale has no sixth status colour for **behind** — the
+  attention amber sits too close to the warning amber at the size of a status
+  square — and no glyph size for the icon beside the progress bar, where the
+  smallest declared is 2rem. Deferred deliberately: the concepts are agreed
+  first, and the literals carry a comment until the tokens are named.
+- **Whether the filter chips carry counts.** Still open from the visual
+  proposal, and now with six levels rather than five.
+- **Whether the ordering of the board is ever driven by the ratio.** The figure
+  ranks pockets by how far their plan has slipped, which is a candidate for the
+  next-target choice section 20 left open. Not taken here.
+
+---
+
+## 24. On the line, ahead of it and short of it are three readings, not two — RULED 2026-09-04
+
+This re-decides section 23.3 with a date, and replaces the level table of
+section 23.1. It does not touch 23.2 (the line is step-wise), 23.4 (the board
+takes a month) or 23.5 (an edited target is retroactive), and it leaves the
+achieved rate decided out exactly as it was.
+
+**The full derivation, the seven criteria and one worked example of every
+level live in `POCKET_LEVELS_REFERENCE.md`.** This section rules; that file
+explains, and is written to be read without this one open.
+
+### 24.1 The objection, and the measurement that proves it
+
+**The objection.** A pocket running ahead of its plan is not *on track*, and one
+running short of it is not *on track* either. The word claims the plan is being
+met as written; it was being printed over three different situations.
+
+**It is not a matter of taste — the two bands are algebraically the same set.**
+Write the instalment as `I`, the instalments already due as `d`, the committed
+amount as `A`, the target as `T` over `M` months, so `I = T / M`:
+
+- what the schedule required is `S = d × I`, and `aheadOfPlan = A − S`
+- the pace ratio is `remainder / instalmentsLeft / I = (T − A) / ((M − d) × I)`
+
+Substituting `T = M × I` and reducing, `ratio ≤ 1` is true exactly when
+`A ≥ d × I`, which is `aheadOfPlan ≥ 0`.
+
+**So *on track* has never meant "on the plan's line". It has meant "on the line
+or above it",** and the orthogonal *ahead of plan* filter of 23.3 was selecting a
+strict subset of it rather than crossing it. The two controls asked one question
+twice, which is the defect this module already corrected once when *at target*
+and *on plan* were renamed for naming the mechanism instead of the state.
+
+**What 23.3 got right and keeps.** Slack does cross *completed* and *above
+target*: a pocket past its goal also sits above its own schedule. What it got
+wrong is the claim that slack crosses the live band. Inside the live band it
+partitions it.
+
+### 24.2 The seven levels, evaluated top down
+
+Top-down evaluation is what makes them mutually exclusive by construction, and
+it is what keeps a finished pocket out of *ahead* even though its slack is
+positive.
+
+| level | condition |
+| --- | --- |
+| `completed` | committed reaches the target |
+| `aboveTarget` | committed passes the target |
+| `overdue` | not complete, and the deadline passed on the owner's calendar |
+| `atRisk` | not complete, deadline ahead, ratio at or above 2 |
+| `behind` | not complete, deadline ahead, ratio above the band's upper edge |
+| `ahead` | not complete, deadline ahead, ratio below the band's lower edge, **and** the money figure `aheadOfPlan` above zero |
+| `onTrack` | not complete, deadline ahead, ratio inside the band |
+
+**A plan publishing no instalment still falls to `onTrack`**, unchanged from
+23.1. A window holding no full calendar month has no line, so the pocket is
+neither ahead of one nor short of one, and the card states that the plan has no
+window rather than printing a pace.
+
+### 24.3 On track is a band around the line, never the point where the ratio is 1
+
+**Why a band is required.** Split at exactly 1 and *on track* means
+`aheadOfPlan` is exactly zero. The instalment is a division that rarely
+terminates — 12,000 over eleven months is 1,090.909… — so equality is reached by
+almost no pocket after its first month. A level that is defined but never fires
+is the same defect as the retired *Active* bucket, which appeared on a filter
+and nowhere else on the screen it filtered.
+
+**The band is symmetric and expressed on the ratio, not in money.** *On track* is
+the ratio within a tolerance either side of 1; *ahead* and *behind* are what lie
+beyond it. Proposed value: **five hundredths**, one named constant beside the
+two the classifier already carries.
+
+**Why on the ratio and not on a fixed sum.** A ratio tolerance is worth more
+money early in a plan and less money late in it, which is the property the ratio
+was chosen for in the first place when a thirty-day threshold was rejected.
+Being half an instalment short with eleven months left is noise; being half an
+instalment short with one month left is not. A fixed sum would call both by the
+same word.
+
+**Why symmetric.** *On track* has to mean the plan is being met as written, and
+a pocket two hundredths over its line is meeting it exactly as much as one two
+hundredths under. The asymmetry belongs in the colour, not in the boundary.
+
+### 24.4 The one edge the money guard exists for
+
+At the close of a month that is also the deadline's own month, with the deadline
+falling on the last day of it, every instalment has fallen due and the count of
+instalments left is floored at one. The ratio is then the remainder over one
+instalment, which can read below 1 while `aheadOfPlan` is negative — the pocket
+is short of its whole target, not ahead of anything.
+
+**This is why `ahead` requires the money figure to be positive as well as the
+ratio to be low.** Without it the card would print *"180.00 behind the plan"*
+under a level word saying *Ahead*. It costs one condition and closes the only
+case where the two figures disagree about direction.
+
+### 24.5 What this costs, and what changes shape
+
+| where | change |
+| --- | --- |
+| `pocketLevel.js` | one band constant, one new branch, `ahead` added to the exported level order |
+| `makePocketLevel` inputs | gains `aheadOfPlan`, already computed by `planSchedule.js` |
+| `levelCounts` | seven keys, every one always present with at least a zero |
+| `aheadCount` | **retired.** It counted pockets with positive slack, which is now a level count minus a rounding — two answers to one question |
+| `totalAheadOfPlan` | **narrowed to the same population as the level:** the slack held by pockets reading `ahead`, so the readings row pairs a count and an amount describing the same rows |
+| the filter | *Ahead of plan* stops being a separate toggle and becomes a value of the status select, beside the other six |
+| the sort criterion | unchanged — it ranks by the money figure, which every live pocket still carries |
+
+**The status filter stays single-choice.** With slack no longer crossing the
+live band there is nothing left for a second axis to express. Coverage
+(*funding not covered*) is unaffected and remains the one genuinely orthogonal
+option in that list.
+
+### 24.6 The colour scale, agreed 2026-09-04 — values measured 2026-09-04
+
+The deferral of 23.6 is lifted. Seven levels are named and the square
+answers only five of them, so the two levels that ask the owner to act —
+**behind** and **ahead** — were the two left with no colour.
+
+**The surface the marks are measured against is pure black.** The board
+cards paint `--color-surface-deep` (`pocket-styles.css:110`, `:132`), not the
+raised surface. A first reading of this section quoted a band mixing the two
+surfaces, copied from the comment on `--color-status-complete`, which cited
+its own figure against raised beside two figures against deep. That comment
+is corrected in `tokens.css` and the band below is the measured one.
+
+**Why a band is imposed at all.** Contrast IS loudness: a mark with a much
+higher ratio than its siblings dominates the screen whatever it means. The
+palette records the exact failure — the warning token was the CSS keyword
+`orange` at 10.63:1 while healthy read 5.62 and alert read 6.23, so the
+warning was the loudest thing on the board and shouted over the alert. It was
+muted to 6.73 to sit between its siblings. The band is therefore a rule about
+outliers, NOT a severity ordering: the informational blue already measures
+8.76 and is the loudest mark in the set, which is a separate question this
+section does not open.
+
+**The seven marks, measured against the board card:**
+
+| level | token | value | against the card |
+| --- | --- | --- | --- |
+| on track | `--color-status-ok` | `#5b8c93` | 5.62 |
+| **behind** | `--color-status-behind` | `#9c75d1` | **5.88** |
+| overdue | `--color-status-alert` | `#c97474` | 6.23 |
+| at risk | `--color-status-warning` | `#b8894e` | 6.73 |
+| completed | `--color-status-complete` | `#5faa78` | 7.51 |
+| **ahead** | `--color-status-ahead` | `#3db87a` | **8.34** |
+| above target | `--color-status-info` | `#60b1d6` | 8.76 |
+
+**Two new tokens, named by the state and not by the colour**, which is the
+convention `--color-status-complete` already follows.
+
+**Ahead is a saturated green, not a pale one.** A pale green was measured
+first at 11.53:1 — the level that asks LEAST of the owner would have been the
+strongest mark on the board, which is the orange defect repeated. Saturation
+rather than lightness is also what separates it from the desaturated teal of
+on track, so it reads as a different hue and not as a lighter version of the
+same one.
+
+**Behind is violet at half saturation.** Every warm hue is taken by a level
+above it in severity, and a second amber was already tried and rejected for
+sitting seven hundredths of lightness from the warning amber. It lands
+quieter than both levels that outrank it in severity, which is the one place
+the ordering does hold.
+
+**Orange is refused, and the reason is on record.** It is the value the
+warning token was moved away from, and it is the same hue family as the level
+directly beneath the one it would mark.
+
+**Completed is separated by shape, not by hue.** The palette already states
+that a met goal carries a tick rather than a square. The tick exists
+(`pocket-styles.css:1006`) and the hero strip uses it; what still paints a
+square is the per-pocket card and the detail border. A class map cannot close
+that — a shape is not a class name, so the component drawing the mark has to
+choose tick or square from the level.
+
+### 24.7 Two defects the measurement exposed
+
+Neither is created by this ruling; both were found while measuring it, and
+both are recorded here rather than fixed silently.
+
+- **On track contradicts itself across the two screens.** Its square class is
+  empty so the board paints the base teal, while its reading modifier is
+  `--neutral` and the detail paints grey. One level, two colours, which is
+  exactly what `pocketStatus.ts`'s own header says cannot happen. Giving on
+  track an explicit grey square also frees the green family entirely for
+  ahead and removes the only pair that collides under deuteranopia. The grey
+  in use measures 3.09:1 against the card, at the floor for a graphic object,
+  so it cannot be adopted at that value.
+- **The whole series fails on the cream panel.** Against
+  `--color-surface-panel` every mark measures under the 3:1 floor — ahead
+  1.98, behind 2.81, and the five that already shipped between 1.89 and 2.94.
+  The pocket detail summary is that surface. It needs an `-on-panel` set of
+  its own, the way the amount tokens already have one, and that is separate
+  work.
+
+### 24.8 What this section does not decide
+
+- **The band's value.** Five hundredths is the recommendation and the reasoning
+  is above; the number itself is open until a real board is read at it.
+- **Whether *ahead* ranks above or below *on track* in the level order.** It is
+  written between `onTrack` and `behind` in the table above for reading order
+  only; the summary strip's own ordering is a screen decision.
+
+---
+
 ## Corrections applied 2026-08-30 — re-measured against the working tree
 
 **Not one decision was touched.** Sections 1 to 14 are marked history by this
