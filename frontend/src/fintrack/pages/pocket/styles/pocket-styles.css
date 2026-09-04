@@ -1083,7 +1083,10 @@ button.line__container {
    figures below the words that merely name them. */
 .pocketHero__mark {
  display: grid;
- grid-template-columns: auto 1fr auto;
+ /* The mark's column is a fixed width and not `auto`, so the words start at the
+    same x on every row: the tick is 0.5rem wide and a square is wider, and an
+    auto column would indent the six squared rows past the ticked one. */
+ grid-template-columns: var(--space-4) 1fr auto;
  align-items: center;
  gap: var(--space-2);
  padding: 0 var(--space-2);
@@ -1104,6 +1107,13 @@ button.line__container {
  gap: var(--space-2);
  min-width: 0;
  overflow: hidden;
+ /* The word was already at 400 — nothing here ever set it bold. What read as
+    weight was pure white at 1rem against a near-black card, which is the
+    heaviest a label can look without being heavy. A step off white is the lever
+    that actually lightens it, and it keeps the count at full ink: the count is
+    the figure the row exists to state, the word only names which row. */
+ font-weight: var(--font-weight-regular);
+ color: var(--color-content-on-dark-muted);
  text-overflow: ellipsis;
 }
 
@@ -1467,7 +1477,12 @@ button.line__container {
    rule above on purpose — same specificity, and this is the one span on the
    mark that does not take the line's size. */
 .pocketHero__markWord > .pocketHero__markExtra {
- font-size: var(--font-size-2xs);
+ /* One step up from 2xs on 2026-09-04. At the smaller size it read as a
+    footnote to the word beside it; it is a figure the owner can act on — money
+    already past a target, and slack held in front of a plan — and the row it
+    hangs off states no amount of its own. It stays one step under the row so it
+    is still the detail and not a second reading. */
+ font-size: var(--font-size-xs);
  color: var(--color-status-info);
 }
 
@@ -1479,8 +1494,16 @@ button.line__container {
  color: var(--color-status-ahead);
 }
 
+/* Larger here than the 0.75rem the shared square carries elsewhere, and the
+   reason is written on the behind token itself: two colours 1.21 apart do not
+   separate at 12px. Three of the seven levels sit in the quiet half of the scale
+   — a grey, a violet and an amber — and at 14px their hues resolve where at
+   12px they read as three greys. The board card keeps the smaller square: there
+   one square is alone on a row, with nothing beside it to be confused with. */
 .pocketHero__mark .status__square {
  flex-shrink: 0;
+ width: var(--font-size-sm);
+ height: var(--font-size-sm);
 }
 
 /* A linear bar and not a ring: one value, no second token to position a stroke
