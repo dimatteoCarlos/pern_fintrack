@@ -1499,6 +1499,81 @@ truncates on a client-side rule nobody wrote down.
 | raise the shared `note` to 155 | one pocket decision silently changes the counter on every form that shares the key |
 | keep 28 and 90 | the owner is stopped at a length the server would accept, and no code states why |
 
+### 9.7 The hero measures the lifetime goal and not the plan — five folds are missing
+
+The top of the board reads `Target`, `Allocated` and a bar of `overallProgress`,
+and all three measure against the **lifetime** goal. So a board where every
+pocket is exactly on its own schedule still reads 40%, and the reader cannot tell
+that from a board that is 60% behind: the one figure the module computes per
+pocket — how the commitment stands against what the plan required **by the close
+of the selected month** — is never folded to the headline.
+
+`plan-docs/design-refs/pocket-hero/schedule-bar.html` re-frames it. Three tiles,
+`Required` / `Committed` / `Variance`; the bar becomes committed over required at
+that close; the lifetime figure is demoted to one line at the foot. Three states
+are drawn — behind, ahead, and no pocket holding a plan window, that last one
+with no fill element at all rather than a width of zero, which is the rule
+`.pocketHero__barFill` already follows.
+
+**Every figure it needs exists per row. None of them exists as a fold.**
+
+| the mockup reads | the row already carries | on `summary` |
+|---|---|---|
+| `Required` | `scheduledByNow` | absent |
+| `Committed` | `allocated` | `totalAllocated`, over a **different population** — see below |
+| `Variance` | `aheadOfPlan`, signed | absent; `totalAheadOfPlan` is not it |
+| `3 behind · 2 ahead` | `level` | `levelCounts.behind` / `.ahead` — **served** |
+| the bar's own percentage | — | absent |
+| `6 of 8 pockets on a plan` | `scheduledByNow !== null` | absent |
+| `1,145.00 due this month` | `planInstalment` | absent |
+| `Lifetime · 9,600 of 24,000 — 40%` | — | `totalAllocated`, `totalTarget`, `overallProgress` — **served** |
+
+**The population defect, which has to be settled before anything is asked of the
+backend.** `Required` can only sum the pockets that hold a plan window —
+`scheduledByNow` is `null` for the rest. `totalAllocated` sums every pocket on
+the board. Subtracting one from the other compares two different sets, and the
+mockup states the size of the gap itself: `6 of 8 pockets on a plan`. Either
+`Committed` is restricted to those same six, or `Variance` means nothing. It
+follows that the new `Committed` is **not** the `Allocated` tile the hero shows
+today, and the two are expected to disagree on any board holding a pocket
+without a window.
+
+**`totalAheadOfPlan` cannot serve as `Variance`**, whatever the name suggests. It
+sums the positive slack only — a pocket behind its line does not cancel the slack
+another one holds, the same rule `totalExcess` follows against `totalRemaining`
+(`pocketTypes.ts:164-166`). A net is a different question from a sum of one side.
+
+**And it is not derived on the client**, though all eight rows arrive on the
+payload. The summary's own contract states the reason — folded by the server *so
+no component adds amounts up* — and `levelCounts` carries the scar: it was
+derived client-side until 2026-09-03, which let the strip and the cards render
+two different partitions of one board. `summary.currency` is `null` when the
+board mixes currencies precisely because the server refuses to add at an implicit
+1:1, and a client-side sum would perform exactly that addition.
+
+| option | consequence |
+|---|---|
+| **record it as a backend requirement and leave the hero on the lifetime figures until the folds arrive** — recommended | nothing built now has to be unbuilt; the five fields are additive, and the mockup's three states are already drawn against tokens |
+| fold the five figures in the frontend from `pockets[]` | forbidden twice over — the client never computes a figure the server did not serve, and it would sum across currencies the server declines to add |
+| ship the tiles reading `totalAllocated` against `totalScheduledByNow` | a variance between two different populations, printed as one number, with nothing on screen saying so |
+
+The requirement, stated for the owning backend plan — five fields on
+`data.summary` of `GET /board`, each folded by the server from the rows it
+already builds, each carrying the nullability the rest of the fold carries:
+
+| field | type | what it folds |
+|---|---|---|
+| `plannedCount` | `number` | how many rows hold `scheduledByNow !== null`. Never null, like every other count on the summary — it is answerable on any board, including an empty one |
+| `totalScheduledByNow` | `number \| null` | the sum of `scheduledByNow` over those rows. `Required` |
+| `totalAllocatedOnPlan` | `number \| null` | the sum of `allocated` over **those same rows**, so `Required` and `Committed` measure one population |
+| `totalVariance` | `number \| null` | `totalAllocatedOnPlan − totalScheduledByNow`, **signed and unclamped**: it is a difference, not a shortfall, and clamping it would erase the side the tile exists to name |
+| `scheduleProgress` | `number \| null` | 0-100, clamped **per pocket before folding**, the same rule `overallProgress` already states. Without it the client divides two nullable totals and manufactures a percentage, which is the exact job `overallProgress` exists to take off the client |
+
+`totalPlanInstalment` is deliberately **not** on that list. The mockup's
+`1,145.00 due this month` is the sum of `planInstalment` over the planned rows,
+and it is the one figure of the seven that explains nothing the three tiles state
+— it can be added later, or the reading line can drop it.
+
 ---
 
 ## 10. Acceptance criteria, per unit
