@@ -52,16 +52,23 @@ const SORT_OPTIONS: { value: PocketSortKey; label: string }[] = [
 const FILTER_OPTIONS: { value: PocketQuickFilter; label: string }[] = [
  { value: 'all', label: 'All' },
  { value: 'completed', label: POCKET_STATUS_WORD.completed },
- { value: 'aboveTarget', label: POCKET_STATUS_WORD.aboveTarget },
+ // The only option that does not print its level's own word. In this list the
+ // seven readings are stacked in order, so "Above" sits between "Completed" and
+ // "Ahead" and the target is given by the column; on a card the word stands
+ // alone beside an amount, where "Above" on its own would not say above what.
+ { value: 'aboveTarget', label: 'Above' },
  { value: 'ahead', label: POCKET_STATUS_WORD.ahead },
  { value: 'onTrack', label: POCKET_STATUS_WORD.onTrack },
  { value: 'behind', label: POCKET_STATUS_WORD.behind },
  { value: 'atRisk', label: POCKET_STATUS_WORD.atRisk },
  { value: 'overdue', label: POCKET_STATUS_WORD.overdue },
- // "Funding", not the bare word allocation, which the module's naming rule
- // forbids as ambiguous between a pocket allocation and a monthly budget
- // one. It is also the noun the card already uses for the same fact.
- { value: 'uncovered', label: 'Funding not covered' },
+ // Two words, and not "Funding not covered": the option sits inside a control
+ // that filters the pocket board, so the subject is already given and the label
+ // only has to say what is missing. Naming it again made this the longest
+ // option in the list, and a select is as wide as its longest option even while
+ // it is showing a shorter one — so the extra word was charged to the whole
+ // strip and not only to this line.
+ { value: 'uncovered', label: 'Not covered' },
 ];
 
 const SEARCH_MAX_LENGTH = 50;
