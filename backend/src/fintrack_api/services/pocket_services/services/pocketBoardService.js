@@ -139,11 +139,45 @@ const findUncoveredPockets = (accountRows, holdingRows) => {
 const makeSummary = (pockets, accountAllocations) => {
  const pocketCount = pockets.length;
 
+ // The pockets that have a plan window at all. The four schedule fields are null
+ // TOGETHER when a window holds no full calendar month (planSchedule.js), so one
+ // test decides membership for every schedule figure below, and totalAllocated
+ // cannot stand in for the committed amount of this narrower population.
+ const scheduled = pockets.filter((p) => p.scheduledByNow !== null);
+
+ // Withheld as a set, for the same reason the amounts are: a board with no plan
+ // window has nothing to measure against a schedule, and a zero there would claim
+ // the plans required nothing.
+ const noSchedule = {
+  totalScheduledByNow: null,
+  scheduledPocketsAllocated: null,
+  totalScheduleGap: null,
+  totalRequiredMonthly: null,
+  scheduleAdherence: null,
+  scheduledPocketsMovedInMonth: null,
+ };
+
  const counts = {
   pocketCount,
   fundedCount: pockets.filter((p) => p.funded).length,
   overdueCount: pockets.filter((p) => p.overdue).length,
   uncoveredCount: pockets.filter((p) => p.uncovered).length,
+  // How many pockets have a plan window, and how the schedule axis splits them.
+  // The two sides partition this population exactly and always sum to it. The
+  // negative test is STRICTLY below zero, so a pocket sitting on its line falls
+  // to the over side — the tie-break ruled 2026-09-04.
+  //
+  // Both are served rather than one being subtracted from the other, so no
+  // arithmetic over this fold reaches the client.
+  //
+  // NOT levelCounts, and the two must never be folded together. The levels are
+  // seven mutually exclusive readings evaluated top down, so a pocket that is
+  // completed or past its target holds non-negative slack and counts here while
+  // its word says otherwise: overScheduleCount is always at least
+  // levelCounts.ahead, and equal to it only when no pocket has passed its target.
+  scheduledPocketCount: scheduled.length,
+  underScheduleCount: scheduled.filter((p) => p.aheadOfPlan < 0).length,
+  overScheduleCount: scheduled.filter((p) => p.aheadOfPlan >= 0).length,
   // One count per level, folded from the level each row already carries. The
   // client used to derive these from the same rows while the cards read the
   // served flags, which is two answers to one question — the defect the header
@@ -208,6 +242,7 @@ const makeSummary = (pockets, accountAllocations) => {
   totalReleasedInMonth: null,
   overallProgress: null,
   currency: null,
+  ...noSchedule,
   ...counts,
  };
 
@@ -270,6 +305,70 @@ const makeSummary = (pockets, accountAllocations) => {
   },
  );
 
+ // The schedule fold, over the pockets that hold a plan window only. Kept apart
+ // from the fold above rather than branched inside it, because the population is
+ // different: a figure over every pocket printed beside one over the scheduled
+ // few is the reading the hero's own labels exist to prevent.
+ const scheduleSums = scheduled.reduce(
+  (acc, p) => ({
+   scheduledByNow: acc.scheduledByNow.plus(money(p.scheduledByNow)),
+   allocated: acc.allocated.plus(money(p.allocated)),
+   // Signed, unlike the clamped slack above. That one answers where money can be
+   // taken from, so a shortfall must not cancel another pocket's surplus; this
+   // one answers whether the board is on plan, where the cancellation IS the
+   // answer. The two ship together because they are different questions.
+   gap: acc.gap.plus(money(p.aheadOfPlan)),
+   // Null once a deadline has passed, and a pace nobody can still meet is not a
+   // zero to add into a pace the owner is being asked to hold.
+   requiredMonthly: acc.requiredMonthly.plus(money(p.requiredMonthly ?? 0)),
+   moved: acc.moved.plus(money(p.movedInMonth ?? 0)),
+  }),
+  {
+   scheduledByNow: money(0),
+   allocated: money(0),
+   gap: money(0),
+   requiredMonthly: money(0),
+   moved: money(0),
+  },
+ );
+
+ const scheduleTotals =
+  scheduled.length === 0
+   ? noSchedule
+   : {
+      totalScheduledByNow: toAmount(scheduleSums.scheduledByNow),
+      scheduledPocketsAllocated: toAmount(scheduleSums.allocated),
+      totalScheduleGap: toAmount(scheduleSums.gap),
+      totalRequiredMonthly: toAmount(scheduleSums.requiredMonthly),
+      // A quotient of the two sums, never a fold of per-pocket ratios clamped at
+      // 100 first. Clamping each pocket would discard the surplus held by the
+      // ones standing over their line, so the figure would read lower than the
+      // two amounts the card prints beside it — and a reader divides those two by
+      // eye. A percentage contradicting the numbers on its own line is worse than
+      // one above 100.
+      //
+      // UNCLAMPED for the same reason: the fill stops at the track, the label
+      // states this value, and a clipped bar with no figure cannot say how far
+      // past the schedule the owner stands.
+      //
+      // Null and never zero when the plans have required nothing yet. A share of
+      // nothing is not zero per cent, and this is reachable on a live board: a
+      // plan whose first instalment has not yet fallen due schedules zero.
+      scheduleAdherence: scheduleSums.scheduledByNow.isZero()
+       ? null
+       : toRate(
+          scheduleSums.allocated
+           .dividedBy(scheduleSums.scheduledByNow)
+           .times(HUNDRED),
+         ),
+      // Scoped on purpose, beside the board-wide net above rather than replacing
+      // it. It prints inside the tile whose balance counts these same pockets,
+      // and a sub-figure drawn from a wider population is not a part of the
+      // number above it. The two gross halves stay board-wide and do NOT
+      // decompose this one: committed minus released yields the board-wide net.
+      scheduledPocketsMovedInMonth: toAmount(scheduleSums.moved),
+     };
+
  return {
   totalAllocated: toAmount(sums.allocated),
   totalTarget: toAmount(sums.target),
@@ -281,6 +380,7 @@ const makeSummary = (pockets, accountAllocations) => {
   totalReleasedInMonth: toAmount(sums.released),
   overallProgress: toRate(sums.covered.dividedBy(sums.target).times(HUNDRED)),
   currency,
+  ...scheduleTotals,
   ...counts,
  };
 };
