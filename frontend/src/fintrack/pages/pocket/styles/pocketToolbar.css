@@ -98,6 +98,18 @@
  width: 100%;
 }
 
+/* A <select> reports the width of its WIDEST option and not of the one it is
+   showing, so this control was holding room for "Funding not covered" while it
+   read "All" — the longest of nine words paying for the eight it is not. That
+   width came out of the row: it pushed the strip past its own edge, and the
+   overflow: hidden above cut off whatever crossed it, which is this segment's
+   own chevron — the last thing in the row.
+   The cap is what the eight shorter words need; the ninth ellipsizes. */
+.pocketToolbar__selectBox--filter .pocketToolbar__select {
+ max-width: calc(var(--space-16) + var(--space-12));
+ text-overflow: ellipsis;
+}
+
 .pocketToolbar__search,
 .pocketToolbar__select {
  background-color: transparent;
