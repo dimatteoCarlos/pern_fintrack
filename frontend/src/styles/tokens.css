@@ -136,6 +136,35 @@
     beside it keeps the card's own ink. */
  --color-status-neutral: #7a7a7a;
 
+ /* COLOR - THE SCHEDULE AXIS. Two values, and they are NOT part of the level
+    scale above even though each currently equals one of it.
+
+    The axis is the sign of a pocket's own slack: strictly below the line its
+    plan drew, or at or above it. The levels are seven mutually exclusive
+    readings evaluated top down. They disagree at the margin by construction — a
+    completed pocket, or one past its target, holds non-negative slack and reads
+    OVER on this axis while its level word says something else — so the count on
+    one is always at least the count on the other. The contract states they may
+    never be folded together, and a shared colour token is exactly how that
+    ruling would be undone in the stylesheet without anyone deciding to.
+
+    Named for the words on screen. The copy reads "over schedule" and "under
+    schedule", never "ahead" and "behind": those two belong to the classifier.
+
+    The value is REPEATED and not aliased to the level token. An alias would
+    re-couple what these names exist to separate — and the violet is already
+    flagged for review, so the level moving would silently move the axis with
+    it. Starting them equal is honest: the two scales read the same direction
+    today, and there is no evidence yet that they need to differ. When one moves,
+    only one moves.
+
+    Contrast is inherited with the value, measured on --color-surface-deep in the
+    level block above: 8.34 for the green, 5.88 for the violet. Both fall under
+    3:1 on --color-surface-panel, the same gap that block already records and
+    that these two do not widen. */
+ --color-schedule-over: #3db87a;
+ --color-schedule-under: #9c75d1;
+
  /* COLOR - FEEDBACK ON A LIGHT SURFACE: the banner triad, valid on inverse and
     on panel. Separate from the semaphore above because those scalars are
     calibrated against the app surface and drop to 1.89:1 on the cream panel.
