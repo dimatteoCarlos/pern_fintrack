@@ -74,6 +74,80 @@ far am I from that commitment*. Two simultaneous truths that are never mixed, an
 
 ---
 
+## 0ter. The questions the owner arrives with — RULED 2026-09-04
+
+Written at the developer's request on 2026-09-04, after three exchanges in which
+every served field could be named and none of them could be tied to a question
+the owner was asking.
+
+**This document specified what every figure IS and never what it ANSWERS.** §6
+rules what each level may say, §7 lists what each screen shows, and the contract
+audit traces every byte of the payload — and none of the three states why a
+person opens this page. The consequence was concrete: `Target` reads *the sum of
+the goals declared up to this month*, which is a correct definition and does not
+say whether it is the figure the reader wanted. Without this section a new figure
+is argued on whether it is computable, never on whether anyone needed it.
+
+**The order is by what the owner does next.** A question that changes an action
+this month outranks one that changes an opinion about the year. It is not the
+order the screen renders in, and §7 is free to disagree with it for layout
+reasons — but a question ranked here above another may not be the one that is
+missing while the lower one is served.
+
+### The ranking
+
+| # | The question, in the owner's words | The figure that answers it | State |
+|---|---|---|---|
+| 1 | *How much do I have to put aside **this month**?* | the sum of `requiredMonthly` across live pockets | **missing** — computed per row (`makePocketStatus.js:133`), never folded |
+| 2 | *Am I where my own plans say I should be by now?* | `totalAllocated` against the sum of `scheduledByNow`, and the shortfall between them | **half missing** — the fold keeps only the positive side, as `totalAheadOfPlan`; the deficit is discarded on the way in (`pocketBoardService.js:249`) |
+| 3 | *Which pocket needs money first?* | the row's `level`, and `levelCounts` in the header | served |
+| 4 | *How far am I from everything I have promised myself?* | `totalTarget`, `totalAllocated`, `totalRemaining`, `overallProgress` | served — the hero's three tiles and the bar under them |
+| 5 | *Did I actually do anything this month?* | `totalCommittedInMonth`, `totalReleasedInMonth`, `totalMovedInMonth` | served — only the net prints (§7.1) |
+| 6 | *Where can I take money from without breaking a plan?* | `totalAheadOfPlan` with `levelCounts.ahead`, and `totalExcess` with `levelCounts.aboveTarget` | served — two distinct amounts, never added together |
+| 7 | *Is the money I promised actually still in the accounts?* | the row's `uncovered`, `uncoveredCount` in the header | served |
+| 8 | *What did this look like at the close of a past month?* | the month stepper and `meta.referenceMonth` | served |
+| 9 | *Which accounts fund this pocket, and by how much?* | the sources table of the detail payload | served — on the detail, not on the board |
+
+**The two questions at the top of the ranking are the two the board cannot
+answer.** That is the finding this section exists to record: the module answers
+every question about the *state* of the goals and neither of the two about the
+*pace* of the owner, and pace is what a person opens a savings page to check.
+
+### What follows from it
+
+**A figure is added only after its question is written here.** A served field
+that answers no question on this list is a field a screen has to invent a use
+for, which is how `Target` came to be three different readings depending on who
+was asked.
+
+**The progress bar keeps the lifetime target as its denominator — RULED
+2026-09-04.** The candidate was to divide by the schedule instead, so the bar
+would read *adherence to the plan*. Refused: the bar would then stand at 100%
+while the goal is 40% funded, and the bar is the one element on this page a
+reader interprets without reading its label. The schedule is a sentence beside
+the bar, never a change of its scale.
+
+**The sum of the targets whose deadline falls at or before the selected close is
+NOT built — RULED 2026-09-04.** It was the third candidate reading of *the
+accumulated target for this month*. It jumps from zero to a full target in the
+month a deadline lands, so a twelve-month plan contributes nothing for eleven
+months and everything in the twelfth: it measures deadlines passing, not saving
+done. Question 1 above is what the owner meant, and its answer is a monthly pace.
+
+### What this obliges
+
+Three sums enter the header fold (`makeSummary`), each named for the question it
+answers: what the plans require by now, how far short of that the board stands,
+and what this month asks for. All three are folds over fields already on the row
+— no query change and no migration.
+
+The frontend requirement that follows, per the standing rule that a payload
+change records it in the owning plan: the board's summary type gains the three
+fields, and §7.1 places them. Placement is not settled here — this section ranks
+the questions and does not lay out the screen.
+
+---
+
 ## 1. The problem, measured
 
 A pocket today is a **real account that really receives money**. Funding one
