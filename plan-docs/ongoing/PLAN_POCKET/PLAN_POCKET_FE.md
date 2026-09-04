@@ -1522,7 +1522,7 @@ with no fill element at all rather than a width of zero, which is the rule
 | `Required` | `scheduledByNow` | absent |
 | `Committed` | `allocated` | `totalAllocated`, over a **different population** — see below |
 | `Variance` | `aheadOfPlan`, signed | absent; `totalAheadOfPlan` is not it |
-| `3 behind · 2 ahead` | `level` | `levelCounts.behind` / `.ahead` — **served** |
+| `3 behind · 2 ahead` | the sign of `aheadOfPlan` | absent — and **not** `levelCounts`, see the correction below |
 | the bar's own percentage | — | absent |
 | `6 of 8 pockets on a plan` | `scheduledByNow !== null` | absent |
 | `1,145.00 due this month` | `planInstalment` | absent |
@@ -1557,22 +1557,87 @@ board mixes currencies precisely because the server refuses to add at an implici
 | fold the five figures in the frontend from `pockets[]` | forbidden twice over — the client never computes a figure the server did not serve, and it would sum across currencies the server declines to add |
 | ship the tiles reading `totalAllocated` against `totalScheduledByNow` | a variance between two different populations, printed as one number, with nothing on screen saying so |
 
-The requirement, stated for the owning backend plan — five fields on
-`data.summary` of `GET /board`, each folded by the server from the rows it
-already builds, each carrying the nullability the rest of the fold carries:
+> **RESOLVED 2026-09-04 — the requirement was accepted, renamed, and extended to
+> eight fields. This section is no longer the authority: `POCKET_CONTRACT_AUDIT.md`
+> is.** The five fields asked for below are superseded by what the backend
+> declared in answer, and the frontend follows the served names. Kept here because
+> the reasoning above is what produced them and is still what the module has to
+> hold; the list itself is history.
 
-| field | type | what it folds |
+The five that were asked for, and what ships instead:
+
+| asked | ships as | changed how |
 |---|---|---|
-| `plannedCount` | `number` | how many rows hold `scheduledByNow !== null`. Never null, like every other count on the summary — it is answerable on any board, including an empty one |
-| `totalScheduledByNow` | `number \| null` | the sum of `scheduledByNow` over those rows. `Required` |
-| `totalAllocatedOnPlan` | `number \| null` | the sum of `allocated` over **those same rows**, so `Required` and `Committed` measure one population |
-| `totalVariance` | `number \| null` | `totalAllocatedOnPlan − totalScheduledByNow`, **signed and unclamped**: it is a difference, not a shortfall, and clamping it would erase the side the tile exists to name |
-| `scheduleProgress` | `number \| null` | 0-100, clamped **per pocket before folding**, the same rule `overallProgress` already states. Without it the client divides two nullable totals and manufactures a percentage, which is the exact job `overallProgress` exists to take off the client |
+| `plannedCount` | `scheduledPocketCount` | name only |
+| `totalScheduledByNow` | `totalScheduledByNow` | unchanged |
+| `totalAllocatedOnPlan` | `scheduledPocketsAllocated` | name only; the qualifier now states the population instead of leaving it to a comment |
+| `totalVariance` | `totalScheduleGap` | **better defined**: the sum of each row's own signed slack rather than a subtraction of two totals. The two are algebraically identical, since a row's slack is its committed amount minus what its own plan required, and the served form states the derivation |
+| `scheduleProgress` | `scheduleAdherence` | **the clamp was refused, and rightly** — see below |
 
-`totalPlanInstalment` is deliberately **not** on that list. The mockup's
-`1,145.00 due this month` is the sum of `planInstalment` over the planned rows,
-and it is the one figure of the seven that explains nothing the three tiles state
-— it can be added later, or the reading line can drop it.
+**Nine fields ship, not five.** The five above account for the first five; four
+more were added that this section did not ask for.
+
+Three came with the answer: the sum of the pace each plan now needs per month
+(`totalRequiredMonthly`), and the two counts that partition the scheduled
+population by the sign of each pocket's slack (`underScheduleCount`,
+`overScheduleCount`). Those two are named for the AXIS and deliberately not for
+the level words, which stay the classifier's alone; a pocket exactly on its line
+falls to the over side, because the test for the under side is strictly below
+zero, and that tie-break is what makes the pair sum to the scheduled population
+exactly.
+
+The ninth followed the question about the month's movement: the net moved within
+the selected month over the scheduled pockets alone
+(`scheduledPocketsMovedInMonth`), **added beside** the three board-wide movement
+figures rather than redefining any of them. It prints inside the committed tile,
+under a balance counting those same pockets, which is the whole reason it exists.
+The consequence has to survive into the code: the two board-wide gross halves do
+NOT decompose this net — subtracting one from the other gives the board-wide net,
+not this one.
+
+The contract was frozen at these nine on 2026-09-04. Where this section and
+`POCKET_CONTRACT_AUDIT.md` disagree, the audit is right.
+
+**The clamp was refused and the refusal is correct.** This section asked for the
+ratio clamped per pocket before folding, the rule the lifetime progress figure
+follows. The backend refused it on arithmetic: the card prints **both operands in
+words on the same line** — the committed amount of the scheduled pockets and what
+those same plans required — so a reader divides them by eye. A clamped fold
+discards the surplus held by every pocket standing over its own line, so it would
+read lower than the division of the two numbers printed beside it, and neither
+figure could be called wrong. A percentage that contradicts its own operands is a
+worse defect than one that exceeds 100. So the served figure is unclamped and may
+pass 100; the clamping happens **at the bar's fill only**, while the label states
+the true value. The two ratios are not the same kind of number: one divides by a
+target and cannot meaningfully exceed it, the other divides by a schedule and
+exceeding it is the interesting case.
+
+**The two schedule counts are not the level counts**, and the contract states it
+in each field's own description. The schedule counts partition the pockets
+holding a plan window by the sign of their slack, with a pocket exactly on its
+line counted as over; the level counts are the seven mutually exclusive readings
+of the classifier, evaluated top down. A completed pocket, or one past its
+target, holds non-negative slack and lands in the schedule count while its level
+word says something else — so the schedule count is always the larger, and the
+two may never be folded together or substituted for one another. The row above
+mapping `3 behind · 2 ahead` to `levelCounts` was exactly that mistake and is
+corrected.
+
+**The copy is fixed, and it does not use the level words.** The line under the
+variance amount reads `under the schedule` or `over the schedule`, with the
+article, because it names the one board line a single signed net is compared
+against. The portfolio segment reads `6 of 8 pockets on a plan (3 under / 3 over
+schedule)` — no article, both counts, one shared noun — because its subject is a
+population and not a net. Both counts print; the complement is never recovered by
+subtraction, which leaves the reader doing arithmetic for a figure the line can
+simply state.
+
+The two left tiles are labelled `Required to date` and `Committed to date`,
+together or not at all: both are cumulative from each plan's creation through the
+close of the month in the stepper, and both count only the pockets with a plan
+window — so the committed tile is **not** the portfolio's total committed, which
+is the separate lifetime strip. Neither label names the month; the stepper badge
+does.
 
 ---
 
