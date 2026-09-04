@@ -28,6 +28,17 @@ type MonthPickerProps = {
  minMonth?: string | null;
  // The surface the badge lands on, not its own colour.
  surface?: 'dark' | 'light';
+ // Opt-in, so the three screens that render the badge alone are untouched: the
+ // budget board, the category detail and the debtor detail pass nothing and
+ // get exactly what they have today. The arrows live here and not in a local
+ // wrapper because the bounds live here — a wrapper would hold a second copy
+ // of them, and that is how the next screen gets a forward arrow that steps
+ // past the current month.
+ withSteppers?: boolean;
+ // An answer is on the wire. The arrows stay live, because the store keeps the
+ // last month ASKED FOR rather than the last answer to arrive, so holding an
+ // arrow down has to remain possible.
+ isLoading?: boolean;
  onSelect: (month: string) => void;
 };
 
@@ -52,6 +63,38 @@ const toDate = (month: string | null) => {
 // user in a negative offset.
 const toMonthParam = (date: Date) =>
  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+// 'YYYY-MM', whether the caller sent that or a first-of-month date. The bounds
+// are compared as text, which is exact on this format and needs no Date.
+const toMonthKey = (month: string | null | undefined) =>
+ month ? month.slice(0, 7) : null;
+
+// One month either side, by parts. The Date constructor rolls December over to
+// January of the next year on its own, which is the whole reason it is used
+// here rather than arithmetic on the two numbers.
+const shiftMonth = (month: string, step: number) => {
+ const [year, monthNumber] = month.split('-').map(Number);
+
+ return toMonthParam(new Date(year, monthNumber - 1 + step, 1));
+};
+
+// Decorative: the button beside it carries the label. currentColor so the two
+// surface modifiers keep working without a second rule per direction.
+const StepChevron = ({ back }: { back: boolean }) => (
+ <svg
+  className='monthStepper__chevron'
+  viewBox='0 0 24 24'
+  fill='none'
+  stroke='currentColor'
+  strokeWidth='2'
+  strokeLinecap='round'
+  strokeLinejoin='round'
+  aria-hidden='true'
+  focusable='false'
+ >
+  <polyline points={back ? '15 5 8 12 15 19' : '9 5 16 12 9 19'} />
+ </svg>
+);
 
 // react-datepicker clones this element with its own handlers and ref. It is a
 // button and not the read-only input the day picker uses: this one opens a
@@ -98,6 +141,8 @@ function MonthPicker({
  currentMonth,
  minMonth,
  surface = 'light',
+ withSteppers = false,
+ isLoading = false,
  onSelect,
 }: MonthPickerProps) {
  const selected = toDate(month);
@@ -113,17 +158,31 @@ function MonthPicker({
   [onSelect],
  );
 
- // Nothing to label yet: a skeleton, not a month computed here to fill the gap.
- if (!selected) {
-  return (
-   <div
-    className={`month-badge month-badge--${surface} month-badge--skeleton`}
-    aria-hidden='true'
-   />
-  );
- }
+ const monthKey = toMonthKey(month);
+ const floorKey = toMonthKey(minMonth);
+ const ceilingKey = toMonthKey(currentMonth);
 
- return (
+ // Each arrow disables at its own bound. A ceiling that has not arrived stops
+ // the forward step outright: stepping into a month the server refuses with
+ // 422 is a refusal the interface can simply not offer.
+ const canStepBack =
+  monthKey !== null && (floorKey === null || monthKey > floorKey);
+ const canStepForward =
+  monthKey !== null && ceilingKey !== null && monthKey < ceilingKey;
+
+ const step = (direction: -1 | 1) => {
+  if (!monthKey) return;
+
+  onSelect(shiftMonth(monthKey, direction));
+ };
+
+ // Nothing to label yet: a skeleton, not a month computed here to fill the gap.
+ const badge = !selected ? (
+  <div
+   className={`month-badge month-badge--${surface} month-badge--skeleton`}
+   aria-hidden='true'
+  />
+ ) : (
   <DatePicker
    selected={selected}
    onChange={handleChange}
@@ -138,6 +197,40 @@ function MonthPicker({
     <MonthTrigger label={formatBudgetMonthLabel(month)} surface={surface} />
    }
   />
+ );
+
+ if (!withSteppers) return badge;
+
+ return (
+  // aria-busy and not a spinner: the badge keeps its label while the next
+  // month is on the wire, so the row does not collapse and reflow the page
+  // under it on every step.
+  <div
+   className={`monthStepper monthStepper--${surface}`}
+   aria-busy={isLoading}
+  >
+   <button
+    type='button'
+    className='monthStepper__arrow'
+    onClick={() => step(-1)}
+    disabled={!canStepBack}
+    aria-label='Previous month'
+   >
+    <StepChevron back />
+   </button>
+
+   {badge}
+
+   <button
+    type='button'
+    className='monthStepper__arrow'
+    onClick={() => step(1)}
+    disabled={!canStepForward}
+    aria-label='Next month'
+   >
+    <StepChevron back={false} />
+   </button>
+  </div>
  );
 }
 
