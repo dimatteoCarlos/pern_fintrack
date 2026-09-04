@@ -80,12 +80,11 @@ const deadlineLabel = (day: string | null) => {
 const markClass = (count: number): string =>
  count === 0 ? 'pocketHero__mark pocketHero__mark--empty' : 'pocketHero__mark';
 
-// The five words come from the shared map and are lower-cased here, never typed
-// out: the strip used to spell its own copies, so renaming the map left the
-// card saying "Completed" beside a strip still saying "at target". Casing is
-// presentation; the word is not.
-const reading = (level: keyof typeof POCKET_STATUS_WORD) =>
- POCKET_STATUS_WORD[level].toLowerCase();
+// The words still come from the shared map and are never typed out here — the
+// strip used to spell its own copies, so renaming the map left the card saying
+// "Completed" beside a strip still saying "at target" — but they are no longer
+// lower-cased. The reading was "2 completed" inside a sentence; it is now the
+// first thing on its own row, and a row opens with a capital.
 
 // The pocket to send the owner to, which is not the same question as which
 // deadline falls first on the calendar.
@@ -513,26 +512,32 @@ export function PocketBoardReadings() {
                Shared with the board card and the detail panel since 2026-09-04;
                it was this strip's own private markup until then. */}
            <StatusTick />
-           <span>
-            {levels.completed} {reading('completed')}
+           <span className='pocketHero__markWord'>
+            {POCKET_STATUS_WORD.completed}
            </span>
+           <b className='pocketHero__markCount'>{levels.completed}</b>
           </span>
 
           <span className={markClass(levels.aboveTarget)}>
            <StatusSquare alert={pocketSquareClass('aboveTarget')} />
-           <span>
-            {levels.aboveTarget} {reading('aboveTarget')}
-           </span>
+           <span className='pocketHero__markWord'>
+            {POCKET_STATUS_WORD.aboveTarget}
 
-           {/* The surplus, arriving from the third tile it used to occupy.
-               Beside the count of the pockets it is made of is the only place it
-               reads as one fact rather than as a second figure competing with
-               the gap. Absent when nothing passed its target. */}
-           {summary.totalExcess !== null && summary.totalExcess > 0 && (
-            <span className='pocketHero__markExtra'>
-             {amount(summary.totalExcess)} above
-            </span>
-           )}
+            {/* The surplus, arriving from the third tile it used to occupy.
+                Beside the count of the pockets it is made of is the only place
+                it reads as one fact rather than as a second figure competing
+                with the gap. Absent when nothing passed its target.
+
+                It rides the word rather than taking a line of its own: on a
+                card of seven rows, two extra lines are two rows' worth of
+                height spent on a detail of one of them. */}
+            {summary.totalExcess !== null && summary.totalExcess > 0 && (
+             <span className='pocketHero__markExtra'>
+              {amount(summary.totalExcess)} above
+             </span>
+            )}
+           </span>
+           <b className='pocketHero__markCount'>{levels.aboveTarget}</b>
           </span>
          </span>
         </span>
@@ -562,29 +567,31 @@ export function PocketBoardReadings() {
               not name the one reading that needs no action. */}
           <span className={markClass(levels.ahead)}>
            <StatusSquare alert={pocketSquareClass('ahead')} />
-           <span>
-            {levels.ahead} {reading('ahead')}
-           </span>
+           <span className='pocketHero__markWord'>
+            {POCKET_STATUS_WORD.ahead}
 
-           {/* The slack these pockets hold, beside the count of the pockets it
-               belongs to — the same shape the surplus takes beside "above
-               target". It had a heading of its own under the coverage alerts
-               until the level existed, where it was the only row on the card
-               reporting good news under a warning band, and its count came from
-               a separate fold that could name a different set of pockets than
-               the amount summed. */}
-           {totalAheadOfPlan !== null && totalAheadOfPlan > 0 && (
-            <span className='pocketHero__markExtra pocketHero__markExtra--ahead'>
-             {amount(totalAheadOfPlan)} ahead
-            </span>
-           )}
+            {/* The slack these pockets hold, beside the count of the pockets it
+                belongs to — the same shape the surplus takes beside "above
+                target". It had a heading of its own under the coverage alerts
+                until the level existed, where it was the only row on the card
+                reporting good news under a warning band, and its count came
+                from a separate fold that could name a different set of pockets
+                than the amount summed. */}
+            {totalAheadOfPlan !== null && totalAheadOfPlan > 0 && (
+             <span className='pocketHero__markExtra pocketHero__markExtra--ahead'>
+              {amount(totalAheadOfPlan)} ahead
+             </span>
+            )}
+           </span>
+           <b className='pocketHero__markCount'>{levels.ahead}</b>
           </span>
 
           <span className={markClass(levels.onTrack)}>
            <StatusSquare alert={pocketSquareClass('onTrack')} />
-           <span>
-            {levels.onTrack} {reading('onTrack')}
+           <span className='pocketHero__markWord'>
+            {POCKET_STATUS_WORD.onTrack}
            </span>
+           <b className='pocketHero__markCount'>{levels.onTrack}</b>
           </span>
 
           {/* Between on track and at risk, the order the ratio itself climbs
@@ -592,23 +599,26 @@ export function PocketBoardReadings() {
               2026-09-03 (POCKET_DECISIONS.md #23) left unnamed was decided. */}
           <span className={markClass(levels.behind)}>
            <StatusSquare alert={pocketSquareClass('behind')} />
-           <span>
-            {levels.behind} {reading('behind')}
+           <span className='pocketHero__markWord'>
+            {POCKET_STATUS_WORD.behind}
            </span>
+           <b className='pocketHero__markCount'>{levels.behind}</b>
           </span>
 
           <span className={markClass(levels.atRisk)}>
            <StatusSquare alert={pocketSquareClass('atRisk')} />
-           <span>
-            {levels.atRisk} {reading('atRisk')}
+           <span className='pocketHero__markWord'>
+            {POCKET_STATUS_WORD.atRisk}
            </span>
+           <b className='pocketHero__markCount'>{levels.atRisk}</b>
           </span>
 
           <span className={markClass(levels.overdue)}>
            <StatusSquare alert={pocketSquareClass('overdue')} />
-           <span>
-            {levels.overdue} {reading('overdue')}
+           <span className='pocketHero__markWord'>
+            {POCKET_STATUS_WORD.overdue}
            </span>
+           <b className='pocketHero__markCount'>{levels.overdue}</b>
           </span>
          </span>
         </span>
@@ -624,17 +634,21 @@ export function PocketBoardReadings() {
            Nothing is partitioned here, so nothing breaks by leaving. */}
        {uncoveredCount > 0 && (
         <div className='pocketHero__alerts'>
-         <span className='pocketHero__group'>
-          <span className='pocketHero__groupLabel'>Alerts</span>
+         <span className='pocketHero__marks'>
+          {/* The wording names what failed rather than labelling the pocket.
+              Not funded is the pocket against its own target. This is whether
+              the money it says it holds still exists.
 
-          <span className='pocketHero__marks'>
-           {/* The wording names what failed rather than labelling the pocket.
-               Not funded is the pocket against its own target. This is whether
-               the money it says it holds still exists. */}
-           <span className='pocketHero__mark'>
-            <StatusSquare alert={pocketSquareClass('overdue')} />
-            <span>{uncoveredCount} with funding not covered</span>
-           </span>
+              One word since the readings became rows: the sentence "N with
+              funding not covered" spelled its own subject because it stood
+              alone under a heading, and the row it is now states the subject in
+              the column it shares with the seven levels above. The heading went
+              with it — a band label over a single row names nothing the row
+              does not already say. */}
+          <span className='pocketHero__mark'>
+           <StatusSquare alert={pocketSquareClass('overdue')} />
+           <span className='pocketHero__markWord'>Uncovered</span>
+           <b className='pocketHero__markCount'>{uncoveredCount}</b>
           </span>
          </span>
         </div>

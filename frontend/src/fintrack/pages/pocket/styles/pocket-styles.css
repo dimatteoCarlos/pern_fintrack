@@ -1048,14 +1048,18 @@ button.line__container {
  flex-shrink: 0;
 }
 
-/* Wraps, and that is safe because a reading that drops to a second line is
-   still inside its own band: the band is a column, so everything in it belongs
-   to the heading above it wherever it lands. What must never happen is the
-   page scrolling sideways to reach a figure. */
+/* One reading per row since 2026-09-04, where it was an inline run that
+   wrapped. The run put the seven counts at seven different x positions — each
+   one landing wherever its own word ended — and a column of counts exists to be
+   compared down, which is the one thing that layout could not do.
+
+   The cost is height: seven facts in a column are seven lines where the run
+   folded them into four. It is paid back by the row itself, which is now the
+   shape a control needs — the day a reading filters the board it becomes a
+   button and nothing moves. */
 .pocketHero__marks {
  display: flex;
- flex-wrap: wrap;
- gap: var(--space-2) var(--space-4);
+ flex-direction: column;
  margin: 0;
 }
 
@@ -1078,14 +1082,39 @@ button.line__container {
    spacing. Under the heading band it was the smaller of the two, which put the
    figures below the words that merely name them. */
 .pocketHero__mark {
- display: flex;
+ display: grid;
+ grid-template-columns: auto 1fr auto;
  align-items: center;
  gap: var(--space-2);
+ padding: 0 var(--space-2);
  font-size: var(--font-size-base);
  font-weight: var(--font-weight-regular);
  color: var(--color-content-on-dark);
  white-space: nowrap;
  font-variant-numeric: tabular-nums;
+}
+
+/* The mark and its word on the left, the count on the right, and the middle
+   column is what pushes them apart. No vertical padding: seven rows would spend
+   half a row's height on it, and the rows are already told apart by the count
+   column running down the right edge. */
+.pocketHero__markWord {
+ display: flex;
+ align-items: baseline;
+ gap: var(--space-2);
+ min-width: 0;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+/* Full ink even on a row whose word is stepped back, because the count is the
+   figure the row exists to state. */
+.pocketHero__markCount {
+ /* index.css sets font-size on the universal selector, so this does not inherit
+    the size of the row it sits in. */
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
 }
 
 /* A level with nothing in it stays on screen and steps back. Dropping it breaks
@@ -1096,9 +1125,13 @@ button.line__container {
  color: var(--color-content-on-dark-subtle);
 }
 
-.pocketHero__mark--empty .status__square,
-.pocketHero__mark--empty .status__tick {
- opacity: 0.45;
+/* The SQUARE keeps its full colour on an empty level, and only the word and the
+   count step back. Fading the mark too was fading the one thing on the row that
+   is not a repetition: at 45% the violet of behind and the amber of at risk are
+   two greys, so a reader learning the palette lost it on exactly the rows that
+   were quiet enough to study. The count already says the level is empty. */
+.pocketHero__mark--empty .pocketHero__markCount {
+ color: var(--color-content-on-dark-subtle);
 }
 
 /* ── The accounts funding the pockets ────────────────────────────────────────
@@ -1433,7 +1466,7 @@ button.line__container {
    reads as that reading's detail and not as a sixth level. It sits after the
    rule above on purpose — same specificity, and this is the one span on the
    mark that does not take the line's size. */
-.pocketHero__mark > .pocketHero__markExtra {
+.pocketHero__markWord > .pocketHero__markExtra {
  font-size: var(--font-size-2xs);
  color: var(--color-status-info);
 }
@@ -1442,7 +1475,7 @@ button.line__container {
    rule above sets for the surplus beside above target: each extra is the detail
    of the reading it hangs off, so it wears that reading's colour or it reads as
    a mark of its own. Same selector shape, or it would lose on specificity. */
-.pocketHero__mark > .pocketHero__markExtra--ahead {
+.pocketHero__markWord > .pocketHero__markExtra--ahead {
  color: var(--color-status-ahead);
 }
 
