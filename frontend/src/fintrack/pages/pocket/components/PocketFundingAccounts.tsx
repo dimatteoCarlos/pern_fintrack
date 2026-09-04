@@ -106,13 +106,23 @@ function PocketFundingAccounts({
  // Whether this component is still on screen. It guards the three state writes
  // below so an answer landing after the board is left does not write into a
  // component nobody is rendering.
+ //
+ // It is RAISED in the setup and not only lowered in the cleanup, and that is
+ // the whole point of the two lines rather than one. In development React mounts
+ // every component twice on purpose — mount, unmount, mount — and a flag that is
+ // only ever lowered stays lowered through the second mount: the request started
+ // by the first one then resolved into a guard that refused every write, and the
+ // card sat in its skeleton for ever with nothing failing and nothing logged.
+ // The claim above survives that same remount, so raising this flag does not buy
+ // a second request.
  const isMounted = useRef(true);
- useEffect(
-  () => () => {
+ useEffect(() => {
+  isMounted.current = true;
+
+  return () => {
    isMounted.current = false;
-  },
-  [],
- );
+  };
+ }, []);
 
  // Asked for on the first expand and never with the board. The board's payload
  // does not carry these rows, and a card most readers never open must not cost
