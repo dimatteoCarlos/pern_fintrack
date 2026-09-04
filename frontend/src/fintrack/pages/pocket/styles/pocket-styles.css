@@ -1100,7 +1100,15 @@ button.line__container {
  align-items: center;
  gap: var(--space-2);
  padding: 0 var(--space-2);
- font-size: var(--font-size-base);
+ /* --font-size-base put the row at 16px, larger than the card's own heading at
+    12 and larger than every other body text on this hero — a funding account's
+    name and amount are both --font-size-sm. The token's comment calls this size
+    the default UI one, and the card now agrees with the card under it.
+    The heading and the band labels stay where they are: they are overlines,
+    uppercase with open tracking and meant to be scanned past, and raising them
+    to the row's size would make three headings compete and cost the seven rows
+    the rank that lets the eye find the counts. */
+ font-size: var(--font-size-sm);
  font-weight: var(--font-weight-regular);
  color: var(--color-content-on-dark);
  white-space: nowrap;
