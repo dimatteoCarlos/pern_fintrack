@@ -127,14 +127,17 @@
 }
 
 /* A <select> reports the width of its WIDEST option and not of the one it is
-   showing, so this control was holding room for "Funding not covered" while it
-   read "All" — the longest of nine words paying for the eight it is not. That
-   width came out of the row: it pushed the strip past its own edge, and the
-   overflow: hidden above cut off whatever crossed it, which is this segment's
-   own chevron — the last thing in the row.
-   The cap is what the eight shorter words need; the ninth ellipsizes. */
+   showing, and that is the behaviour this control WANTS: the segment holds one
+   width whatever is chosen, so picking a filter never moves the row.
+   It carried a max-width of --space-16 + --space-12 until the ninth option was
+   "Funding not covered" — nineteen characters paying width the other eight did
+   not need, which pushed the strip past its own edge until the cap cut it back
+   and let the word ellipsize. That option is one word now, so the longest of
+   the nine is "Completed" and the intrinsic width is under the cap: it
+   constrained nothing and its comment explained a problem that no longer
+   existed. The ellipsis stays, for the day an option is added that is longer
+   than the cap would have been. */
 .pocketToolbar__selectBox--filter .pocketToolbar__select {
- max-width: calc(var(--space-16) + var(--space-12));
  text-overflow: ellipsis;
 }
 
