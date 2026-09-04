@@ -245,11 +245,18 @@ export const url_get_transaction_by_id = BASE_URL_APP + 'transaction/';
 // ===================================
 // One request feeds the whole board: the header totals and the list below it
 // are two readings of the same answer, which is what keeps them from
-// disagreeing. It takes no parameters — the board is every pocket the caller
-// owns, and identity comes from the token.
+// disagreeing. Identity comes from the token, so the board is every pocket the
+// caller owns and nothing names the owner.
 
-// GET /api/fintrack/pocket/board
-export const url_pocket_board: string = BASE_URL_APP + 'pocket/board';
+// GET /api/fintrack/pocket/board?month=YYYY-MM
+// The month is the one parameter it takes, and it is optional. The CURRENT
+// month never travels: the server resolves it on the owner's calendar, the
+// same rule the budget block above states. Only a month the reader stepped
+// back to is sent.
+export const url_pocket_board = (month?: string): string =>
+ month
+  ? `${BASE_URL_APP}pocket/board?month=${encodeURIComponent(month)}`
+  : `${BASE_URL_APP}pocket/board`;
 
 // POST /api/fintrack/pocket
 // Creates a pocket, and it is now the only way to create one. The endpoint that

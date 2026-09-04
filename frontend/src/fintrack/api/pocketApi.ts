@@ -32,19 +32,23 @@ import {
  PocketDetailResponse,
 } from '../types/pocketTypes.ts';
 
-// No arguments, and that is the contract: the board is every pocket the caller
-// owns. There is nothing for a screen to name and therefore nothing it can name
-// wrongly.
+// One optional argument, the month as YYYY-MM. Omitting it is not the same as
+// computing the current month here: the server resolves that on the owner's
+// calendar, and a browser clock lands on the wrong date for part of every day.
+// Only a month the reader stepped back to travels.
 //
 // It returns the payload, not the envelope. The status and message of
 // { status, message, data } are transport, and handing them to a store would
 // make every consumer reach through a wrapper that says nothing about pockets.
 // The double destructure is the two layers: axios wraps the HTTP body, and the
 // API wraps its payload.
-export const getPocketBoard = async (): Promise<PocketBoardPayload> => {
- const { data: body } = await authFetch<PocketBoardResponse>(url_pocket_board, {
-  method: 'GET',
- });
+export const getPocketBoard = async (
+ month?: string,
+): Promise<PocketBoardPayload> => {
+ const { data: body } = await authFetch<PocketBoardResponse>(
+  url_pocket_board(month),
+  { method: 'GET' },
+ );
 
  return body.data;
 };
