@@ -58,16 +58,25 @@
 }
 
 /* The elastic side of the row. A search field still works narrow — the term
-   scrolls inside it — while the two selects are fixed objects that would be
-   cut rather than shortened. No floor: min-width: 0 is what actually lets an
-   <input> give up the ~20 character width it reports as its content size. */
+   scrolls inside it — while the two selects are shortened only once the field
+   has reached its floor. min-width: 0 is what lets an <input> give up the ~20
+   character width it reports as its content size, and the floor beside it is
+   what stops it giving up ALL of it: with only a zero there the field shrank to
+   its own two paddings on a 360px strip, leaving the magnifier sitting against
+   the sort key with nowhere to type. */
 .pocketToolbar__query {
  flex: 1 1 auto;
- min-width: 0;
+ min-width: var(--space-16);
 }
 
+/* Allowed to shrink, and after the field rather than before it. While these
+   were 0 0 auto the row could not fit its own contents at 360px: it overflowed
+   to the right and the strip's overflow: hidden cut off whatever crossed the
+   edge — which was the filter's chevron, the last thing in the row. */
+.pocketToolbar__sort,
 .pocketToolbar__selectBox {
- flex: 0 0 auto;
+ flex: 0 1 auto;
+ min-width: 0;
 }
 
 .pocketToolbar__search,
@@ -114,11 +123,17 @@
 /* The arrow a browser draws on a select ignores the page's colours, so it is
    removed and redrawn as an icon. Grey rather than white: the value is the
    app's own state, not what the reader typed. */
+/* The right padding clears the chevron drawn over it; the left one only has to
+   clear the hairline. It was var(--space-8) — the search field's, which is that
+   wide because a magnifier sits in it — and neither select has a leading icon,
+   so the two of them were spending 4rem of the strip on nothing and taking it
+   from the only control that needed the width. */
 .pocketToolbar__select {
  width: auto;
- padding: var(--space-1) var(--space-6);
- padding-left: var(--space-8);
+ min-width: 0;
+ padding: var(--space-1) var(--space-6) var(--space-1) var(--space-3);
  color: var(--color-content-on-dark-subtle);
+ text-overflow: ellipsis;
  appearance: none;
  cursor: pointer;
 }
