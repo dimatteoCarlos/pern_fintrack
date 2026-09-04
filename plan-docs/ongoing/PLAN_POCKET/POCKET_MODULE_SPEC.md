@@ -94,6 +94,20 @@ order the screen renders in, and §7 is free to disagree with it for layout
 reasons — but a question ranked here above another may not be the one that is
 missing while the lower one is served.
 
+### The scope premise — RULED 2026-09-04
+
+**The board answers one question about a chosen month: how the owner's
+commitment to their own allocations stands at its close.** The month's
+commitment is the sum of everything that should have been saved to be on plan
+**by** that month — the cumulative schedule, not the instalment of a single
+month. Lifetime figures over the whole portfolio are the overview's, and they
+leave this page as soon as the overview carries them.
+
+The premise does not reorder the ranking below, which is ordered by what the
+owner does next and stays defensible as such. What it settles is which question
+owns the bar — the second — and which questions this page is only holding until
+another module is built — the fourth.
+
 ### The ranking
 
 | # | The question, in the owner's words | The figure that answers it | State |
@@ -101,7 +115,7 @@ missing while the lower one is served.
 | 1 | *How much do I have to put aside **this month**?* | the sum of `requiredMonthly` across live pockets | **missing** — computed per row (`makePocketStatus.js:133`), never folded |
 | 2 | *Am I where my own plans say I should be by now?* | `totalAllocated` against the sum of `scheduledByNow`, and the shortfall between them | **half missing** — the fold keeps only the positive side, as `totalAheadOfPlan`; the deficit is discarded on the way in (`pocketBoardService.js:249`) |
 | 3 | *Which pocket needs money first?* | the row's `level`, and `levelCounts` in the header | served |
-| 4 | *How far am I from everything I have promised myself?* | `totalTarget`, `totalAllocated`, `totalRemaining`, `overallProgress` | served — the hero's three tiles and the bar under them |
+| 4 | *How far am I from everything I have promised myself?* | `totalTarget`, `totalAllocated`, `totalRemaining`, `overallProgress` | served — the hero's three tiles; the overview's question under the scope premise above |
 | 5 | *Did I actually do anything this month?* | `totalCommittedInMonth`, `totalReleasedInMonth`, `totalMovedInMonth` | served — only the net prints (§7.1) |
 | 6 | *Where can I take money from without breaking a plan?* | `totalAheadOfPlan` with `levelCounts.ahead`, and `totalExcess` with `levelCounts.aboveTarget` | served — two distinct amounts, never added together |
 | 7 | *Is the money I promised actually still in the accounts?* | the row's `uncovered`, `uncoveredCount` in the header | served |
@@ -120,12 +134,28 @@ that answers no question on this list is a field a screen has to invent a use
 for, which is how `Target` came to be three different readings depending on who
 was asked.
 
-**The progress bar keeps the lifetime target as its denominator — RULED
-2026-09-04.** The candidate was to divide by the schedule instead, so the bar
-would read *adherence to the plan*. Refused: the bar would then stand at 100%
+**The progress bar divides by the schedule — RULED 2026-09-04, reversing the
+ruling taken earlier the same day.** The first ruling kept the lifetime target,
+refusing a schedule denominator on the ground that the bar would stand at 100%
 while the goal is 40% funded, and the bar is the one element on this page a
-reader interprets without reading its label. The schedule is a sentence beside
-the bar, never a change of its scale.
+reader interprets without reading its label. That reasoning did not have the
+scope premise above in front of it. A bar cannot mislead a reader about a figure
+the page no longer claims to show, and adherence to the schedule is now the
+page's whole subject.
+
+The numerator is the committed amount of the pockets that have a plan window and
+the denominator is what those same plans required by the selected close. Three
+conditions come with the reversal, and the bar is wrong without them:
+
+- **The label names its denominator and the month** — *of what your plans
+  required by August 2026* — never the bare word *progress*. The hero and the
+  cards then divide by different figures on purpose, and only the label keeps a
+  reader from comparing them.
+- **The fill clamps at 100% and the surplus prints as a sentence.** Committed
+  passes the line by any amount; a clipped bar with no sentence loses how far
+  ahead the owner stands.
+- **The lifetime reading is not dropped from the product before the overview
+  carries it.** The bar changes now; the hero's lifetime tiles stay until then.
 
 **The sum of the targets whose deadline falls at or before the selected close is
 NOT built — RULED 2026-09-04.** It was the third candidate reading of *the
@@ -136,15 +166,40 @@ done. Question 1 above is what the owner meant, and its answer is a monthly pace
 
 ### What this obliges
 
-Three sums enter the header fold (`makeSummary`), each named for the question it
-answers: what the plans require by now, how far short of that the board stands,
-and what this month asks for. All three are folds over fields already on the row
-— no query change and no migration.
+Five fields enter the header fold (`makeSummary`), all of them folds over
+fields already on the row — no query change and no migration:
+
+| Field | What it holds |
+|---|---|
+| `totalScheduledByNow` | the sum of `scheduledByNow`: what the plans required by the selected close |
+| `scheduledPocketsAllocated` | the committed amount of those same pockets — the bar's numerator |
+| `totalScheduleGap` | the sum of `aheadOfPlan`, **signed**: positive is slack held, negative is the shortfall |
+| `totalRequiredMonthly` | the sum of `requiredMonthly`: what this month asks for |
+| `scheduledPocketCount` | how many pockets have a plan window at all |
+
+**Why five and not three.** The four schedule fields are null together when a
+plan's window holds no full calendar month (`planSchedule.js`, `planMonths < 1`).
+Those pockets are excluded from the line, so they must also be excluded from its
+numerator — which is why `totalAllocated` cannot serve as the bar's numerator
+and why the count ships beside the ratio, so the screen can say how many pockets
+the reading leaves out.
+
+`totalScheduleGap` does not replace `totalAheadOfPlan`. The clamped one answers
+where money can be taken from (question 6) and must stay clamped, because a
+pocket behind its line is not a source; the signed one answers whether the board
+is on plan (question 2) and must keep its sign.
 
 The frontend requirement that follows, per the standing rule that a payload
-change records it in the owning plan: the board's summary type gains the three
-fields, and §7.1 places them. Placement is not settled here — this section ranks
-the questions and does not lay out the screen.
+change records it in the owning plan: `PocketBoardSummary` gains the five
+fields, the hero's bar takes its new denominator and its label, and §7.1 places
+the rest. Placement is not settled here — this section ranks the questions and
+does not lay out the screen.
+
+**The per-pocket percentage is unchanged — RULED 2026-09-04.** The card keeps
+`allocated ÷ target × 100` (`makePocketStatus.js:162`), because the card already
+carries both axes: the lifetime bar and the schedule reading in words beside it,
+with the level colour set by the pace ratio. The hero has one bar and has to
+pick; the card does not.
 
 ---
 
