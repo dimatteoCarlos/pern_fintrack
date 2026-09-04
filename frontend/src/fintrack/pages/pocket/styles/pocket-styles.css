@@ -788,7 +788,17 @@ button.line__container {
  display: block;
  width: var(--space-4);
  height: var(--space-4);
- transition: transform var(--motion-fast);
+ transition: transform var(--motion-fast), color var(--motion-fast);
+}
+
+/* ArrowDownLightSvg paints a hex on its own path, so the toggle's color never
+   reached the glyph: it sat at that hex whatever the button's state, brighter
+   than the --color-content-on-dark-subtle it was meant to rest at and unmoved
+   by :hover. A CSS declaration outranks a presentation attribute, and this one
+   is scoped to the class so the four other components importing the same asset
+   keep it as drawn. */
+.pocketHero__toggleChevron path {
+ stroke: currentColor;
 }
 
 .pocketHero__toggle.is-active .pocketHero__toggleChevron {

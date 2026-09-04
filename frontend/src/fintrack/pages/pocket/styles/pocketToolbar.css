@@ -213,11 +213,23 @@
  transform: translateY(-50%);
  color: var(--color-content-on-dark-subtle);
  pointer-events: none;
+ transition: color var(--motion-fast);
 }
 
 .pocketToolbar__icon--trailing {
  right: var(--space-2);
  left: auto;
+}
+
+/* The chevron answers the segment, not itself: it carries pointer-events: none
+   so the click lands on the select underneath it, which also means it can never
+   be hovered directly. The state is read off the box that holds both, and off
+   the select's own focus for the reader arriving by keyboard — where a ring is
+   drawn but the glyph inside it stayed grey. Same brightening the direction
+   button beside it already does. */
+.pocketToolbar__selectBox:hover .pocketToolbar__icon--trailing,
+.pocketToolbar__select:focus-visible ~ .pocketToolbar__icon--trailing {
+ color: var(--color-content-on-dark);
 }
 
 /* Square, carrying the same box as the key beside it so the two read as one
@@ -349,6 +361,7 @@
  .pocketToolbar__select,
  .pocketToolbar__direction,
  .pocketToolbar__direction svg,
+ .pocketToolbar__icon,
  .pocketToolbar__reset {
   transition: none;
  }
