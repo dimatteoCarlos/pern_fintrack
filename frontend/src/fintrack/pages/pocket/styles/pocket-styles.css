@@ -1678,6 +1678,15 @@ button.line__container {
  min-height: 0;
  padding: var(--space-1);
  overflow-y: auto;
+ /* The gutter is reserved whether or not a scrollbar is drawn in it. Without
+    this, overflow-y: auto only draws the bar when the content does not fit, so
+    filtering the list short made it disappear and handed its ~15px back to the
+    content box — the toolbar and every card silently widened, outside any
+    breakpoint and only when a filter was chosen.
+    It costs nothing where the platform overlays its scrollbars: the property is
+    specified to have no effect on an overlay scrollbar, so no phone loses the
+    width. */
+ scrollbar-gutter: stable;
 }
 
 /* Scoped by layout and not written on .list__main__container: that class is
