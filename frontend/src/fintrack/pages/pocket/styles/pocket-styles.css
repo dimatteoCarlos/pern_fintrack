@@ -763,6 +763,8 @@ button.line__container {
  display: inline-flex;
  align-items: center;
  justify-content: center;
+ /* Anchors the ::after that gives the tappable area back below. */
+ position: relative;
  flex-shrink: 0;
  padding: var(--space-1);
  border: none;
@@ -780,6 +782,22 @@ button.line__container {
 .pocketHero__toggle:focus-visible {
  outline: var(--border-width-thick) solid var(--color-border-inverse);
  outline-offset: var(--border-width-thick);
+}
+
+/* The tappable area the small glyph gave up. The painted box is the chevron
+   plus --space-1 on each side, which is 24px, and a finger asks for
+   --size-touch-target: this makes up the difference without painting a
+   millimetre of it. Absolutely positioned with a negative inset, so it takes
+   no room in the head row and the chevron stays the size it looks.
+   The token is a hit area and not a visible size - the same reading
+   AccountEditLink and AccountActionsTrigger already take off it, and the same
+   reason authUI.module.css records for not sizing a control to it. */
+.pocketHero__toggle::after {
+ content: '';
+ position: absolute;
+ inset: calc(
+  (var(--size-touch-target) - var(--space-4) - var(--space-1) * 2) / -2
+ );
 }
 
 /* One glyph rotated rather than two assets: closed points down at the body it
