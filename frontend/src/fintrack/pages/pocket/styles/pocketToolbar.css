@@ -65,19 +65,37 @@
    its own two paddings on a 360px strip, leaving the magnifier sitting against
    the sort key with nowhere to type. */
 .pocketToolbar__query {
- flex: 1 1 auto;
  min-width: var(--space-16);
 }
 
-/* Allowed to shrink, and after the field rather than before it — but never
-   below what they hold. That floor is the flex item's own min-width: auto, so
-   it is kept by NOT writing a min-width here: a 0 next to this shrink factor
-   took the floor away and the sort key collapsed to nothing on the first strip
-   too narrow for everything, which is a worse answer than the overflow it was
-   meant to prevent. */
-.pocketToolbar__sort,
+/* The term and the sort key split the strip in half, and the filter takes only
+   what its word needs. A basis of 0 is what makes that split EQUAL rather than
+   proportional: with a basis of auto each side keeps its own content width and
+   only shares the leftover, so the half that happened to hold a longer word
+   stayed wider for ever.
+
+   Both can still shrink, and never below what they hold: that floor is the
+   flex item's own min-width: auto, kept by NOT writing a min-width here. A 0
+   beside a shrink factor takes it away, and the sort key then collapses to
+   nothing on the first strip too narrow for everything — a worse answer than
+   the overflow it was meant to prevent. */
+.pocketToolbar__query,
+.pocketToolbar__sort {
+ flex: 1 1 0;
+}
+
 .pocketToolbar__selectBox {
  flex: 0 1 auto;
+}
+
+/* The key fills its half, so the chevron sits at the segment's own right edge
+   rather than leaving a gap between the word and the hairline. */
+.pocketToolbar__sort .pocketToolbar__selectBox {
+ flex: 1 1 auto;
+}
+
+.pocketToolbar__sort .pocketToolbar__select {
+ width: 100%;
 }
 
 .pocketToolbar__search,
