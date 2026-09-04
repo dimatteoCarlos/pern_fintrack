@@ -11,6 +11,27 @@ import {
   VariantType,
 } from '../types/types';
 
+// THE RULE EVERY DEFAULT IN THIS FILE OBEYS
+//
+// A default that fills an entity's fields with 0, '' and Infinity is not a
+// neutral starting point — it is a fabricated answer. The screen renders it the
+// same way it renders a real one, so a figure the server has not sent reads as
+// a figure the owner does not have, and nothing on the page distinguishes the
+// two. That is the defect that hid the account detail's missing fields: an
+// absent key and an empty field look identical, and a placeholder guarantees the
+// absent key never announces itself.
+//
+// So a default is admissible in exactly two shapes:
+//
+// 1. A CHOICE the application makes and stands behind — DEFAULT_CURRENCY, the
+//    dropdown option lists, VARIANT_DEFAULT. These are real values.
+// 2. A SAMPLE, used to develop a component against, never as the initial state
+//    of a screen that fetches. A screen that fetches starts at null and renders
+//    a dash or a skeleton until the answer lands.
+//
+// What is NOT admissible is the third shape this file used to serve: a blank
+// entity handed to a live screen as its initial state. If a new default is
+// tempting for that job, the screen needs a null and a loading branch instead.
 //------------------------
 export const PAGE_LOC_NUM = 3;
 
@@ -165,6 +186,15 @@ export const ACCOUNT_TYPE_DEFAULT: DropdownOptionType[] = [
 //overview/
 //account balance
 
+// SAMPLE ONLY, per the rule at the head of this file. It was the initial state
+// of AccountDetail.tsx and OverviewAccountReading.tsx and is no longer: those
+// screens fetch, so their starting point is null. Printing this one made the
+// balance read 0.00 and the type read blank before any answer existed.
+//
+// It also carries the eight columns the accounts-by-type route serves and NOT
+// the whole row the by-id route serves, so it can never stand in for a fetched
+// account — account_start_local_date, allocated, unassignedCash and pockets are
+// all missing from it, and a screen defaulted to it read undefined for every one.
 export const ACCOUNT_DEFAULT: AccountListType[] = [
   {
     account_name: '',

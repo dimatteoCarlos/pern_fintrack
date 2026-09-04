@@ -23,7 +23,6 @@ import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 import { useTransactionDetail } from '../../../hooks/useTransactionDetail.ts';
 
 import {
-  ACCOUNT_DEFAULT,
   DEFAULT_CURRENCY,
   VARIANT_FORM,
   DEFAULT_ACCOUNT_TRANSACTIONS,
@@ -63,9 +62,12 @@ type LocationStateType = {
   previousRoute: string;
   detailedData: AccountListType;
 };
-//dummy data (used if API data is not available or for initial state)
-//account main data
-const initialAccountDetail = ACCOUNT_DEFAULT[0];
+// No placeholder account. The screen starts with NOTHING, not with a blank one:
+// a default object carrying account_balance: 0 prints a real 0.00 for a figure
+// the server has not sent, and no reader can tell that apart from an account
+// that truly holds nothing. Absence is rendered as absence — see ACCOUNT_DEFAULT
+// in helpers/constants.ts, which now says so at the source.
+const DASH = '—';
 
 const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
 // console.log('initialAccountTransactions', initialAccountTransactionsData)
@@ -87,8 +89,12 @@ function AccountDetail() {
   );
   // console.log('location',location,   accountId, {detailedData}, {previousRouteFromState}, )
 
-  const [accountDetail, setAccountDetail] =
-    useState<AccountListType>(initialAccountDetail);
+  // Nullable, so "the answer has not arrived" is a state the render can see. It
+  // was an always-present object before, which made the guard below dead code
+  // and every figure on the card readable as data before any data existed.
+  const [accountDetail, setAccountDetail] = useState<AccountListType | null>(
+    null,
+  );
 
   //--state for account transactions data
   const [transactions, setTransactions] = useState<AccountTransactionType[]>(
@@ -211,7 +217,7 @@ function AccountDetail() {
               <AccountEditLink
                 accountId={accountId}
                 returnRoute={location.pathname}
-                accountName={accountDetail.account_name}
+                accountName={accountDetail?.account_name ?? ''}
                 originRoute={previousRoute}
               />
             )}
@@ -222,8 +228,13 @@ function AccountDetail() {
               <div className='input__box'>
                 <div className='label forms__label'>{`Current Balance`}</div>
 
+                {/* A dash and never 0.00 while the row is in flight. A zero
+                    here is a statement about the owner's money, and the screen
+                    is in no position to make it yet. */}
                 <div className='input__container' style={{ padding: '0.5rem' }}>
-                  {numberFormatCurrency(accountDetail?.account_balance)}
+                  {accountDetail
+                    ? numberFormatCurrency(accountDetail.account_balance)
+                    : DASH}
                 </div>
               </div>
 
@@ -231,7 +242,9 @@ function AccountDetail() {
                 <label className='label forms__label'>{'Account Type'}</label>
 
                 <p className='input__container' style={{ padding: '0.5rem' }}>
-                  {capitalize(accountDetail.account_type_name!.toLocaleString())}
+                  {accountDetail?.account_type_name
+                    ? capitalize(accountDetail.account_type_name.toLocaleString())
+                    : DASH}
                 </p>
               </div>
 
@@ -244,7 +257,9 @@ function AccountDetail() {
                     className='form__datepicker__container'
                     style={{ textAlign: 'center', color: 'white' }}
                   >
-                    {formatDateToDDMMYYYY(accountDetail.account_start_date)}
+                    {accountDetail?.account_start_date
+                      ? formatDateToDDMMYYYY(accountDetail.account_start_date)
+                      : DASH}
                   </div>
                 </div>
 
@@ -253,7 +268,7 @@ function AccountDetail() {
 
                   <CurrencyBadge
                     variant={VARIANT_FORM}
-                    currency={accountDetail.currency_code ?? DEFAULT_CURRENCY}
+                    currency={accountDetail?.currency_code ?? DEFAULT_CURRENCY}
                   />
                 </div>
               </div>
@@ -271,11 +286,11 @@ function AccountDetail() {
             {accountId && (
               <AccountPocketCommitments
                 accountId={accountId}
-                allocated={accountDetail.allocated}
-                unassignedCash={accountDetail.unassignedCash}
-                isOverAllocated={accountDetail.isOverAllocated}
-                pockets={accountDetail.pockets}
-                currencyCode={accountDetail.currency_code}
+                allocated={accountDetail?.allocated}
+                unassignedCash={accountDetail?.unassignedCash}
+                isOverAllocated={accountDetail?.isOverAllocated}
+                pockets={accountDetail?.pockets}
+                currencyCode={accountDetail?.currency_code}
               />
             )}
 
@@ -291,7 +306,7 @@ function AccountDetail() {
                 month={`${reportedMonth}-01`}
                 currentMonth={`${currentMonth}-01`}
                 minMonth={
-                  accountDetail.account_start_local_date
+                  accountDetail?.account_start_local_date
                     ? String(accountDetail.account_start_local_date).slice(
                         0,
                         7,

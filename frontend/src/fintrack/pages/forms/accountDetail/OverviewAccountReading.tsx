@@ -25,10 +25,7 @@ import { AccountTransactionDetailModal } from '../accountDetailSharedComponents/
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 import { useTransactionDetail } from '../../../hooks/useTransactionDetail.ts';
 
-import {
-  ACCOUNT_DEFAULT,
-  DEFAULT_ACCOUNT_TRANSACTIONS,
-} from '../../../helpers/constants.ts';
+import { DEFAULT_ACCOUNT_TRANSACTIONS } from '../../../helpers/constants.ts';
 import {
   capitalize,
   formatDateToDDMMYYYY,
@@ -59,9 +56,11 @@ type LocationStateType = {
   previousRoute: string;
   detailedData: AccountListType;
 };
-//dummy data (used if API data is not available or for initial state)
-const initialAccountDetail = ACCOUNT_DEFAULT[0];
-
+// No placeholder account. The screen starts with NOTHING, not with a blank one:
+// a default object carrying account_balance: 0 prints a real 0.00 for a figure
+// the server has not sent, and no reader can tell that apart from an account
+// that truly holds nothing. Absence is rendered as absence — see ACCOUNT_DEFAULT
+// in helpers/constants.ts, which now says so at the source.
 const initialAccountTransactionsData = DEFAULT_ACCOUNT_TRANSACTIONS['data'];
 //==============================
 //MAIN COMPONENT OVERVIEW ACCOUNT READING
@@ -80,8 +79,11 @@ function OverviewAccountReading() {
     previousRouteFromState,
   );
 
-  const [accountDetail, setAccountDetail] =
-    useState<AccountListType>(initialAccountDetail);
+  // Nullable, so "the answer has not arrived" is a state the render can see. It
+  // was an always-present object before, which made the guard below dead code.
+  const [accountDetail, setAccountDetail] = useState<AccountListType | null>(
+    null,
+  );
 
   //--state for account transactions data
   const [transactions, setTransactions] = useState<AccountTransactionType[]>(
@@ -191,7 +193,7 @@ function OverviewAccountReading() {
               <AccountEditLink
                 accountId={accountId}
                 returnRoute={location.pathname}
-                accountName={accountDetail.account_name}
+                accountName={accountDetail?.account_name ?? ''}
                 originRoute={previousRoute}
               />
             )}
@@ -216,7 +218,7 @@ function OverviewAccountReading() {
                 month={`${reportedMonth}-01`}
                 currentMonth={`${currentMonth}-01`}
                 minMonth={
-                  accountDetail.account_start_local_date
+                  accountDetail?.account_start_local_date
                     ? String(accountDetail.account_start_local_date).slice(
                         0,
                         7,
