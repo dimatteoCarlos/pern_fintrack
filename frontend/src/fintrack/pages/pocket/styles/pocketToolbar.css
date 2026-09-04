@@ -69,14 +69,15 @@
  min-width: var(--space-16);
 }
 
-/* Allowed to shrink, and after the field rather than before it. While these
-   were 0 0 auto the row could not fit its own contents at 360px: it overflowed
-   to the right and the strip's overflow: hidden cut off whatever crossed the
-   edge — which was the filter's chevron, the last thing in the row. */
+/* Allowed to shrink, and after the field rather than before it — but never
+   below what they hold. That floor is the flex item's own min-width: auto, so
+   it is kept by NOT writing a min-width here: a 0 next to this shrink factor
+   took the floor away and the sort key collapsed to nothing on the first strip
+   too narrow for everything, which is a worse answer than the overflow it was
+   meant to prevent. */
 .pocketToolbar__sort,
 .pocketToolbar__selectBox {
  flex: 0 1 auto;
- min-width: 0;
 }
 
 .pocketToolbar__search,
@@ -130,10 +131,8 @@
    from the only control that needed the width. */
 .pocketToolbar__select {
  width: auto;
- min-width: 0;
  padding: var(--space-1) var(--space-6) var(--space-1) var(--space-3);
  color: var(--color-content-on-dark-subtle);
- text-overflow: ellipsis;
  appearance: none;
  cursor: pointer;
 }
