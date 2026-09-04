@@ -196,6 +196,24 @@ type DebtCard = DomainCardBase & {
  settledCount: number;
 };
 
+// ⛔ **Los tres campos de arriba están declarados y NO se sirven — medido
+// 2026-09-04.** `overviewDebtService.js:37-39` delega entero en
+// `readStockDomain`, que arma la tarjeta base y nada más
+// (`stockDomainCalculator.js:83-97`): `totalAmount`, `transactionCount`,
+// `delta`, `currency`, `window` y `meta`. Las cadenas `payable`, `receivable` y
+// `settledCount` no aparecen en un solo archivo de `overview_services/`.
+//
+// **El tipo no se recorta.** D39 y D43 son decisiones cerradas por el
+// desarrollador y §5.1 y §5.2 las definen normativamente: lo que falta es la
+// implementación, no la decisión. Recortar el tipo convertiría una deuda de
+// código en una decisión revocada en silencio.
+//
+// **Y el coste sigue siendo el que D39 corrigió sobre sí misma:** una consulta
+// nueva, no un `CASE` copiado. El total al cierre lo produce
+// `getMonthlyBalance`, que agrega todas las cuentas antes de restar
+// (`overviewBalanceRepository.js`), así que no admite corte por signo — las
+// piernas exigen reconstruir por cuenta y agrupar por signo recién después.
+
 type PocketCard = DomainCardBase & {
  domain: 'pocket';
 };
@@ -265,7 +283,8 @@ funcione.
 > así que para un mes cerrado sigue sin tener por qué coincidir con `totalAmount`.
 > Lo que ya no es cierto es la frase "leyendo `ua.account_balance`".
 >
-> El anclaje de §5.1 en la rama sin fundir sigue exacto:
+> El anclaje de §5.1 ~~en la rama sin fundir~~ **— corregido 2026-09-04: en el
+> árbol de trabajo, fundido el 2026-09-02 —** sigue exacto:
 > `overview_services/db/overviewBalanceRepository.js:16-21` es el comentario que
 > explica por qué la consulta se escribe desde el saldo actual hacia atrás. Pero
 > su `MONTHLY_BALANCE_QUERY` (`:41-56`) ancla la serie en
@@ -302,7 +321,10 @@ detalle. Son dos cifras distintas con nombres parecidos, y el contrato lo
 registra para que nadie las cruce esperando que cuadren.
 
 > **Reverificado 2026-08-30.** Las tres partes de la definicion siguen
-> describiendo el codigo de la rama `feat/overview`: el conjunto de
+> describiendo el codigo ~~de la rama `feat/overview`~~ **del árbol de trabajo,
+> fundido el 2026-09-02 — corregido 2026-09-04. Y hay que leerlo sabiendo que
+> este conteo NO se sirve: el servicio de deuda produce la tarjeta base y nada
+> más.** El conjunto de
 > `getDebtAccountIds` es `overviewAccountRepository.js:98-106`, sin filtro
 > `deleted_at` y sin join a `debtor_accounts`, con el motivo documentado en
 > `:92-97`. Las dos razones de la no coincidencia con la cifra legacy siguen en
@@ -429,6 +451,13 @@ type GetOverviewData = {
   expenseCategories: ExpenseCategoryStatus[];
   // D33 — el acumulado del año por categoría, sólo expense. Ventana propia:
   // 1 de enero → cierre del mes de referencia, no el mes del resto del payload.
+  //
+  // ⛔ DECLARADO Y NO SERVIDO — medido 2026-09-04. El servicio de página publica
+  // `trend` y `expenseCategories` y ninguna tercera llave
+  // (`overviewPageService.js:183-190`), y la cadena `expenseYtd` no aparece en
+  // ningún archivo de `backend/src`. El tipo se conserva: es una decisión
+  // cerrada sin implementar, no una afirmación que envejeció. Un cliente que lo
+  // lea hoy recibe `undefined`, no un arreglo vacío.
   expenseYtdDistribution: ExpenseYtdShare[];
  };
 };
@@ -459,10 +488,30 @@ mejor SQL.
 
 | campo | de dónde sale | decisión |
 |---|---|---|
-| `hero.netWorth` | saldo de banco + `investment.ledgerBalance` + `debt.totalAmount` + `pocket.totalAmount` | **D27** |
-| `hero.cashPosition` | saldo de banco + `pocket.totalAmount` | **D27** |
+| `hero.netWorth` | saldo de banco + `investment.ledgerBalance` + `debt.totalAmount` + `pocket.totalAmount` | **D27**, corregido por **D46** |
+| `hero.cashPosition` | saldo de banco + `pocket.totalAmount` | **D27**, corregido por **D46** |
 | `hero.netMonthlyFlow` | `income.totalAmount − expense.totalAmount` | **D27** — hereda la corrección de D22 en vez de repetir la pata invertida |
 | `all.*` (cinco cifras) | copiadas de `hero` y de las tarjetas | §7, sin fórmula nueva |
+
+> **Time base of the hero inputs — D46, 2026-09-03.** Two of the four terms of
+> `netWorth` do not respect the requested month, and this is a defect, not a
+> design: `getBankBalance(pool, userId)` (`overviewPageRepository.js:101`) takes
+> no month argument, and the investment figures are as of now by declaration
+> (`AS_OF_NOW_NOTICE`, `overviewInvestmentService.js:27`). `debt.totalAmount` and
+> `pocket.totalAmount` are closing balances of the reference month. A past month
+> therefore adds two current balances to two closing ones and yields a figure
+> that corresponds to no instant; `cashPosition` mixes one of each.
+>
+> **Both terms must be reconstructed at the month's close**, with the technique
+> `stockDomainCalculator` already applies to debt and pocket: current balance
+> minus every transaction posted after the cut. Until that lands, the month
+> selector of D46 stays off the Overview page — a control that relabels a figure
+> it does not actually move is worse than no control.
+>
+> The investment notice is not a substitute. It correctly warns about the
+> investment CARD, whose figures stand on their own; it cannot excuse an addition
+> that mixes two time bases, because the sum has no notice to carry and no reader
+> can subtract the wrong term back out.
 | `all.transactionCountAll` | suma de los cinco `transactionCount` de dominio | **D31** — un `COUNT(*)` duplicaría todo movimiento de dos patas |
 | `domainCards.*` | las seis calculadoras, tal cual | §12 |
 | `monthlySnapshot[]` | MS1 de la tarjeta; MS2/MS3 de una serie de 13 puntos | **D28** para pocket |
@@ -478,7 +527,12 @@ mejor SQL.
 > `pocket_saving_accounts`, y que es una de las tres lecturas propias que hace la
 > pagina.
 >
-> *Lo que dice el codigo:* la consulta existe unicamente en la rama sin fundir —
+> *Lo que dice el codigo:* ~~la consulta existe unicamente en la rama sin fundir~~
+> **— corregido 2026-09-04: la consulta está en la rama de trabajo, fundida el
+> 2026-09-02, y sigue leyendo el modelo retirado en
+> `overviewPageRepository.js:56-58`. Deja de ser un defecto que se pueda
+> corregir antes de fundir y pasa a ser un defecto embarcado.** El resto del
+> párrafo se conserva porque sigue describiendo el mecanismo:
 > `overview_services/db/overviewPageRepository.js:50-58`, `SAVING_GOALS_QUERY`,
 > con `JOIN pocket_saving_accounts psa` y
 > `AND act.account_type_name = 'pocket_saving'`. La migracion `020` desmonto ese
@@ -621,13 +675,42 @@ type GetOverviewDomainResponse = ApiEnvelope<GetOverviewDomainData>;
 local — seis dominios, la página completa, y el arnés del scratchpad cubriendo
 las invariantes de §4.2. `plan-docs/ongoing/` lo re-incluye el `.gitignore:123`: este archivo sí se versiona.
 
-> **Precisión 2026-08-30 sobre el párrafo anterior.** "Implementados" significa
+> ~~**Precisión 2026-08-30 sobre el párrafo anterior.** "Implementados" significa
 > implementados **en la rama `feat/overview`, que sigue sin fundir**: 8 commits,
 > 29 archivos, 3201 líneas sobre su punto de divergencia con `feat/budget`
 > (`2540932`), remedido hoy y coincidente con lo que registra
 > `OVERVIEW_DECISIONS.md`. Nada de `overview_services` existe en la rama de
 > trabajo `fix/auth-screen`, así que todo anclaje de este documento a un archivo
-> `overview_services/**` describe código que no está en el árbol donde se lee.
+> `overview_services/**` describe código que no está en el árbol donde se lee.~~
+
+> **Superada 2026-09-04: la rama se fundió y "implementados" hay que releerlo
+> campo por campo.**
+>
+> **La rama ya no existe como pendiente.** `feat/overview` llegó a `main` el
+> 2026-09-02 en el merge `d5693f1d`, y de ahí a la rama de trabajo actual
+> `feat/vercel-serverless`. Su cabeza `1fb66b9` es ancestro de `HEAD` y
+> `git log feat/overview ^HEAD` no devuelve nada: **cero commits sin fundir.**
+> Todo anclaje `overview_services/**` de este documento describe ahora código del
+> árbol en el que se lee, y hay que leerlo así en las tres notas de arriba que
+> dicen lo contrario (§5.1, §11.1 y §13).
+>
+> **Pero "implementados" sigue sin ser cierto de dos partes del contrato**, y el
+> merge no las trajo porque nunca se escribieron: las dos piernas de la posición
+> de deuda con el conteo de deudores saldados (§5, §5.2, D39 y D43), y la
+> distribución del gasto acumulado del año por categoría (§11, D33). Las dos
+> están marcadas en su sitio. Lo demás del payload sí se sirve.
+>
+> **Y el merge cambió qué clase de problema es la sección de metas de ahorro.**
+> Mientras la rama estaba fuera, la consulta que lee el modelo de bolsillo
+> retirado era un defecto que se podía corregir antes de fundir. Hoy está en la
+> rama: `overviewPageRepository.js:56-58` sigue uniendo `pocket_saving_accounts`
+> y filtrando `account_type_name = 'pocket_saving'`, sobre una tabla que la
+> migración `020` dejó vacía a propósito. **Lo único que lo mantiene invisible es
+> que ningún frontend llama a estas rutas**, así que la sección informa cero
+> ahorrado y ninguna meta fijada sin lanzar un error, y nadie lo ve.
+> **Esa invisibilidad se acaba el día que el nivel 1 haga su primera petición**,
+> que es exactamente lo que la propuesta de nivel 1 va a pedir. Es la primera
+> pieza de backend que hay que arreglar, y va antes que cualquier campo nuevo.
 
 E4/E5 e I4 (D16/D17) ya cerradas — ver §0. `trend` (D18) y `categories` (D19)
 ya cerradas — ver §12. D19 deja un requisito pendiente sobre D16: cuando
@@ -651,7 +734,7 @@ modificaron. Medido en `fix/auth-screen`, `e919a89`, árbol de trabajo incluido.
 | sección | qué se corrigió |
 |---|---|
 | §5 | anclajes de `DebtCard` en `DebtsLayout.tsx`: `:44`/`:48` → `:50`/`:54`, ternario `:66` → `:75-79`; los dos anclajes de `ExpenseCard` reverificados sin cambio |
-| §5.1 | la divergencia legacy se mantiene, pero `dashboardController.js:216-226` es hoy `:224-228` y **no lee `ua.account_balance`**: suma `derivedAccountBalanceSql`. Registrado además que `MONTHLY_BALANCE_QUERY` de la rama sin fundir sí ancla en la columna almacenada (`overviewBalanceRepository.js:47`) |
+| §5.1 | la divergencia legacy se mantiene, pero `dashboardController.js:216-226` es hoy `:224-228` y **no lee `ua.account_balance`**: suma `derivedAccountBalanceSql`. Registrado además que `MONTHLY_BALANCE_QUERY` ~~de la rama sin fundir~~ sí ancla en la columna almacenada (`overviewBalanceRepository.js:47`) |
 | §5.2 | reverificada entera contra `overviewAccountRepository.js:92-106`, sin cambios |
 | §11.1 | **marcada** la fila de `financialGoals` — su consulta lee `pocket_saving_accounts`, vaciada por la migración `020`, y su mitad de frontend fue borrada por `b40c4b8` |
 | §13 | las tres filas: `cash` ya tiene lectores; `pocket_services` ya existe y G1-G3 dejó de funcionar; el anclaje de R59 ya no apunta a nada y el esquema nuevo impide la fila que D30 preveía |
@@ -665,3 +748,30 @@ como precedente, y todos los tipos de §4 a §12.
 **Sin resolver:** las cifras "3 pockets, 3 targets reales, 0 nulos, 0 ceros" de
 D30 y la fila de §13 son conteos sobre la base local; no se leyó ninguna base de
 datos en esta sesión, así que se dejan como estaban.
+
+---
+
+## Registro de correcciones — 2026-09-04
+
+Sólo mediciones y una consecuencia de ellas. **Ningún tipo, ninguna nulabilidad
+y ninguna decisión se modificaron.** Medido en `feat/vercel-serverless`, árbol de
+trabajo incluido. No se leyó ninguna base de datos.
+
+| sección | qué se corrigió |
+|---|---|
+| §5 | **marcados** los tres campos de la tarjeta de deuda que este contrato declara y el servidor no emite: las dos piernas de la posición y el conteo de deudores saldados. El tipo se conserva — son decisiones cerradas sin implementar, no afirmaciones que envejecieron |
+| §5.1 · §5.2 | los dos anclajes dejan de decir "rama sin fundir": describen el árbol de trabajo desde el merge del 2026-09-02 |
+| §11 | **marcada** la llave de distribución del gasto acumulado del año: declarada y no servida. El servicio de página publica dos llaves de gráfico y no tres |
+| §11.1 | la fila de metas de ahorro deja de describir un defecto corregible antes de fundir y pasa a describir un defecto embarcado |
+| §13 | la precisión del 2026-08-30 sobre "implementados" queda superada: cero commits sin fundir, y "implementado" hay que releerlo campo por campo — dos partes del contrato no lo están |
+
+**Lo que sigue exacto y se dejó como estaba:** el envelope compartido, la
+convención de avisos siempre-arreglo, la ventana de reporte con su rechazo de
+**422 y no 400** para un mes posterior al actual —resuelto en un solo sitio
+compartido por los dos manejadores a propósito, para que "más tarde que el mes en
+curso" no tenga dos copias de las que sólo una se arreglaría—, y todos los demás
+tipos de §4 a §12, verificados campo por campo contra los constructores de
+`overview_services/core/`.
+
+**Sin resolver:** los conteos sobre la base local que este archivo arrastra desde
+agosto. Siguen sin recomprobarse; no se leyó ninguna base de datos.

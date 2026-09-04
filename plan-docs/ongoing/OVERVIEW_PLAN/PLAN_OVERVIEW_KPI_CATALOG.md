@@ -12,6 +12,44 @@ revisar del plan o de la evaluación. Donde algo sigue sin verificar se marca
 explícitamente como pendiente de la sonda de fase 2b — no se rellena con una
 suposición (regla del proyecto, `CLAUDE.md`).
 
+> ## Cómo leer este archivo, fijado 2026-09-04
+>
+> **Este catálogo es la fuente de las fórmulas y no de las decisiones.** Una
+> entrada dice qué es un indicador, de qué hechos sale, cómo se comporta en cero
+> y en nulo, y quién lo consume. Cuando una decisión posterior mueve una cifra,
+> **manda la decisión**, que es más nueva por construcción, y este archivo la
+> registra en su entrada.
+>
+> **Cuatro entradas están corregidas o sustituidas por decisiones posteriores**, y
+> conviene saberlo antes de implementar desde aquí:
+>
+> - **La pata del ingreso estaba invertida.** El filtro original seleccionaba la
+>   pata de la cuenta de origen, no la que entra en la cuenta del usuario, y
+>   habría publicado el ingreso del mes en negativo. Corregido en la entrada de
+>   ingreso y en el término de ingreso del flujo neto del hero.
+> - **El cambio contra el periodo anterior de un dominio de saldo abarcaba dos
+>   meses**, no uno. Queda fijado para las cinco tarjetas genéricas: el total es
+>   el estado al cierre del periodo y la delta es el cambio respecto al cierre
+>   anterior.
+> - **El conteo de movimientos hereda el filtro del total**, sea cual sea, y su
+>   etiqueta visible dice *movimientos* y nunca *gastos*: parte de las filas que
+>   cuenta son reversiones.
+> - **El bloque entero de bolsillo quedó derogado** cuando un bolsillo dejó de ser
+>   una cuenta de custodia y pasó a ser una asignación sobre dinero que sigue en
+>   el banco. Sus cuatro entradas no se migraron: murieron. **El texto vivo son
+>   las dos secciones que las sustituyen** — la de bolsillo como asignación y la
+>   de ahorro como conducta medida sobre un periodo, no como tipo de cuenta.
+>
+> **Y una advertencia de vocabulario que no es de este catálogo pero lo alcanza:**
+> el módulo de bolsillos clasifica cada meta en **siete** niveles desde el
+> 2026-09-04, decididos en un solo sitio del servidor. Ninguna palabra de esa
+> escala entra hoy en un payload de Overview, pero es el idioma que Overview
+> heredará el día que presente el estado de las metas. La definición está en
+> `PLAN_POCKET/POCKET_LEVELS_REFERENCE.md`.
+>
+> **Las decisiones abiertas no están en este archivo.** Están consolidadas al
+> final de `OVERVIEW_DECISIONS.md`, agrupadas por lo que bloquea cada una.
+
 ---
 
 ## 0. Convenciones — glosario verificado
@@ -595,11 +633,17 @@ stock *as of* ahora, reusados de la respuesta ya servida hoy (`SavingGoals.tsx:2
 >   read* el 2026-08-30, junto con la petición de metas de ahorro que lo
 >   alimentaba y con el `Math.random()` que esta sección manda quitar. El cambio
 >   está commiteado y es ancestro de `HEAD`.
-> - La consulta que servía G1-G3 sólo sobrevive en la rama `feat/overview`, sin
->   fundir: `overview_services/db/overviewPageRepository.js:50-58`
+> - ~~La consulta que servía G1-G3 sólo sobrevive en la rama `feat/overview`, sin
+>   fundir:~~ **Corregido 2026-09-04: la rama se fundió el 2026-09-02 (merge
+>   `d5693f1d`) y la consulta está en el árbol de trabajo, sirviendo.** Sigue
+>   siendo `overview_services/db/overviewPageRepository.js:50-58`
 >   (`SAVING_GOALS_QUERY`), que hace `JOIN pocket_saving_accounts` filtrando
 >   `account_type_name = 'pocket_saving'` — las filas que la migración `020` dejó
->   en cero.
+>   en cero. Lo único que lo mantiene invisible es que **ninguna pantalla llama a
+>   la ruta**: la sección informa saldo cero, meta nula y faltante nulo con el
+>   aviso de *ninguna meta fijada*, y nadie lo lee. La primera petición del nivel
+>   1 acaba con esa invisibilidad, así que la reescritura es la **primera** tarea
+>   de backend del módulo y no una posterior.
 > - El anclaje de R59, `accountCreationController.js:985-988`, ya no apunta a
 >   nada: el archivo tiene 986 líneas y no contiene ninguna asignación de
 >   `target`. La ruta que creaba una cuenta del tipo retirado fue retirada

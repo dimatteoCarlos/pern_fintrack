@@ -8,10 +8,28 @@ Medido el 2026-09-01 sobre dos árboles:
 | árbol | rama | qué se midió |
 |---|---|---|
 | `pern_fintrack` | `fix/auth-screen` | la app que corre: rutas, controladores, `budget_services`, `pocket_services`, frontend legacy |
-| `pern_fintrack_overview` | `feat/overview` | el módulo Overview, sin fundir |
+| ~~`pern_fintrack_overview`~~ | ~~`feat/overview`~~ | ~~el módulo Overview, sin fundir~~ |
 
 Ningún dato de este archivo se heredó del plan: todo se leyó del código en esta
 sesión.
+
+> **Corrected 2026-09-04 — the second tree is gone and the module is merged.**
+> The whole of `feat/overview` reached `main` on 2026-09-02 in the merge commit
+> `d5693f1d`, and from there the current working branch `feat/vercel-serverless`.
+> Its head `1fb66b9` is an ancestor of `HEAD`; `git log feat/overview ^HEAD`
+> returns nothing, so **there are zero unmerged commits**. Every anchor in this
+> file that says `overview_services/**` now describes code in the tree it is read
+> in, and the separate `pern_fintrack_overview` worktree is no longer the place
+> to look.
+>
+> **What that changes is severity, not content.** The three rows of §4 — the
+> pocket card and its trend, the saving-goals section, and the mixed time base of
+> net worth — used to describe a defect waiting on a merge that could be fixed
+> first. They now describe **code that is shipped on the branch**. What keeps it
+> invisible is the other half of the same measurement: **no frontend file calls
+> either overview route.** The screen at `/fintrack/overview` still issues the
+> thirteen legacy dashboard requests of `Overview.tsx:76-108` and
+> `OverviewLayout.tsx`, so the served figures reach nobody.
 
 ---
 
@@ -119,12 +137,21 @@ Todo `/api/fintrack/*` pasa por `verifyToken` en `app.js:155`. `/api/auth` y
 | POST | `/currency/convert` | `currencyRoutes.js:13` |
 | GET | `/currency/rates` | `currencyRoutes.js:16` |
 
-### 1.8 Overview — sólo en `feat/overview`
+### 1.8 Overview — montadas en la rama de trabajo desde el 2026-09-02
 
-| método | ruta |
-|---|---|
-| GET | `/api/fintrack/overview/` |
-| GET | `/api/fintrack/overview/:domain` |
+| método | ruta | montaje |
+|---|---|---|
+| GET | `/api/fintrack/overview/` | `overviewRoutes.js:17` → `getOverview` |
+| GET | `/api/fintrack/overview/:domain` | `overviewRoutes.js:21` → `getOverviewDomain` |
+
+Los seis dominios del contrato tienen calculadora — `expense`, `income`, `pnl`,
+`debt`, `pocket` e `investment`, mapeados en `overviewController.js:49-56` — así
+que la rama del 501 no dispara hoy con ningún dominio que el validador acepte.
+`overviewValidators.js:21-28` sólo admite esos seis, y cualquier otro es un 400.
+
+**Las dos rutas no tienen ni un consumidor de frontend.** Ninguna palabra
+`fintrack/overview` en `frontend/src` es una URL de API: todas son rutas de
+navegación de React Router. La pantalla sigue leyendo los endpoints legacy.
 
 ### 1.9 Dos hallazgos del recorrido
 
@@ -132,9 +159,11 @@ Todo `/api/fintrack/*` pasa por `verifyToken` en `app.js:155`. `/api/auth` y
 `router.post`** (`transactionRoute.js:8`). Un `use` no filtra método: un `GET` a
 esa ruta entra al mismo controlador que escribe la transferencia.
 
-**El módulo Overview no está en la rama que corre.** No existe
-`services/overview_services/` en `fix/auth-screen`. Todo anclaje a
-`overview_services/**` describe código de otra rama.
+~~**El módulo Overview no está en la rama que corre.**~~ **Corregido
+2026-09-04: ya está.** `services/overview_services/` vive en el árbol de trabajo
+con sus 24 archivos, sus dos rutas montadas y su validador. Lo que sigue siendo
+cierto es la otra mitad, y es la que importa: **el backend responde y el
+frontend no pregunta.** El módulo está servido y sin consumir.
 
 ---
 
@@ -192,19 +221,57 @@ Overview nuevo **no son la misma cifra**, porque uno omite los bolsillos.
 
 | indicador | archivo | significado |
 |---|---|---|
-| `target` / `allocated` | `makePocketStatus.js:117` | Meta del bolsillo y cuánto de las cuentas reales está comprometido con ella |
-| `remaining` | `:121` | Lo que falta. Negativo = sobrefinanciado |
-| `progress` | `:122` | Avance porcentual hacia la meta |
-| `daysRemaining` | `:124` | Días de calendario hasta la fecha deseada |
-| `requiredMonthly` | `:129` | Cuánto comprometer por mes para llegar a tiempo. `null` si la fecha pasó |
-| `funded` / `overdue` | `:130-131` | Meta cubierta / fecha vencida sin cubrir |
-| `sourceCount` | `:132` | De cuántas cuentas distintas se nutre el bolsillo |
-| `pocketCount`, `fundedCount`, `overdueCount`, `uncoveredCount` | `pocketBoardService.js:99-106` | Conteos del tablero |
-| `totalAllocated`, `totalTarget`, `totalRemaining`, `totalExcess` | `:153-156` | Agregados. Faltante y excedente se acumulan por separado, no se cancelan |
-| `overallProgress` | `:157` | Avance global, con cada bolsillo recortado al 100 % antes de sumar |
-| `accountBalance`, `accountAllocated`, `accountUnassignedCash`, `isOverAllocated` | `makeAccountAllocation.js:49-52` | Por cuenta: saldo, comprometido, libre, y si se comprometió de más |
+| `target` / `allocated` | `makePocketStatus.js:157-158` | Meta del bolsillo y cuánto de las cuentas reales está comprometido con ella |
+| `remaining` | `:161` | Lo que falta. Negativo = sobrefinanciado |
+| `progress` | `:162` | Avance porcentual hacia la meta |
+| `daysRemaining` | `:165` | Días de calendario hasta la fecha deseada |
+| `requiredMonthly` | `:170` | Cuánto comprometer por mes para llegar a tiempo. `null` si la fecha pasó |
+| `movedInMonth`, `committedInMonth`, `releasedInMonth` | `:179-181` | Movimiento del mes: neto, y sus dos mitades brutas |
+| `funded` / `overdue` | `:182`, `:183` | Meta cubierta / fecha vencida sin cubrir |
+| `level` | `:191`, calculado en `pocketLevel.js:53-111` | **La clasificación del bolsillo. Uno de siete valores** |
+| `sourceCount` | `:198` | De cuántas cuentas distintas se nutre el bolsillo |
+| `pocketCount`, `fundedCount`, `overdueCount`, `uncoveredCount` | `pocketBoardService.js:143-146` | Conteos del tablero |
+| `levelCounts` | `:155-161` | **Un conteo por nivel, siete llaves, todas presentes aunque valgan cero** |
+| `sourceAccountCount` | `:184-186` | Cuentas que financian algo. Un saldo comprometido en cero no es una fuente |
+| `latestDesiredDate` | `:191-197` | La meta más lejana del tablero, tomada como máximo y no como la última fila de un orden |
+| `totalAllocated`, `totalTarget`, `totalRemaining`, `totalExcess` | `:274-277` | Agregados. Faltante y excedente se acumulan por separado, no se cancelan |
+| `totalAheadOfPlan` | `:278` | **La holgura, acotada a los bolsillos que leen `ahead`** |
+| `totalMovedInMonth`, `totalCommittedInMonth`, `totalReleasedInMonth` | `:279-281` | Pliegue del movimiento del mes |
+| `overallProgress` | `:282` | Avance global, con cada bolsillo recortado al 100 % antes de sumar |
+| `accountBalance`, `accountAllocated`, `accountUnassignedCash`, `isOverAllocated` | `makeAccountAllocation.js:55-58` | Por cuenta: saldo, comprometido, libre, y si se comprometió de más |
 
-### 2.6 Overview nuevo — sólo en `feat/overview`
+> **Remedido 2026-09-04. El vocabulario de bolsillos cambió y esta tabla lo
+> decía con las palabras viejas.**
+>
+> **Son siete niveles y no dos banderas.** La clasificación vive en un solo sitio
+> del servidor (`pocketLevel.js:53-111`) y publica uno de siete valores, en el
+> orden de lectura que `POCKET_LEVELS` congela (`:123-132`): meta alcanzada
+> (`completed`), meta superada (`aboveTarget`), por delante de su plan (`ahead`),
+> en línea con él (`onTrack`), por detrás (`behind`), necesitando el doble del
+> ritmo que se fijó (`atRisk`) y con la fecha vencida sin cubrir (`overdue`). La
+> definición completa está en `PLAN_POCKET/POCKET_LEVELS_REFERENCE.md`.
+>
+> **El conteo de bolsillos por delante de su plan desapareció del encabezado.**
+> Regla del 2026-09-04: estar en la línea del plan o por encima es la misma
+> condición algebraica que la razón de ritmo esté en 1 o por debajo, así que era
+> un conteo de nivel menos un redondeo, y dos cifras respondiendo la misma
+> pregunta con números distintos son el defecto que el pliegue existe para
+> evitar. La pantalla que lo quiera lee `levelCounts.ahead`.
+>
+> **La suma de esa holgura se estrechó.** `totalAheadOfPlan` ya no suma todo
+> bolsillo con holgura positiva: se acota a los que leen `ahead`
+> (`pocketBoardService.js:233-239`), porque la fila que la imprime lleva al lado
+> el conteo de ese nivel y un conteo sobre una población junto a una suma sobre
+> otra más ancha es una fila que no cuadra.
+>
+> **Qué le toca a Overview de todo esto: nada, todavía.** El dominio de bolsillo
+> de Overview no lee el tablero — `overviewPocketService.js:45-47` delega en
+> `readStockDomain`, que es saldo y serie, no niveles. Ninguna de las siete
+> palabras entra hoy en ningún payload de Overview. Lo que fija es el idioma que
+> Overview tendrá que adoptar el día que presente el estado de las metas, para no
+> ser el tercer sitio que nombra el mismo nivel de una tercera manera.
+
+### 2.6 Overview nuevo — servido en la rama de trabajo, sin consumidor
 
 | indicador | significado |
 |---|---|
@@ -215,10 +282,28 @@ Overview nuevo **no son la misma cifra**, porque uno omite los bolsillos.
 | `budgetAmount`, `categorizedExpense`, `budgetVariance`, `hasUncategorizedExpense` | Gasto contra presupuesto y bandera de gasto sin categoría |
 | `capitalContributed`, `ledgerBalance`, `realizedPnl` | Inversión: capital aportado, saldo en libros, resultado realizado |
 | `concentration`, `daysSinceLastContribution` | Peso de la mayor posición y días desde el último aporte |
-| `receivable`, `payable`, `settledCount` | Piernas de deuda y contrapartes saldadas |
+| ~~`receivable`, `payable`, `settledCount`~~ | ~~Piernas de deuda y contrapartes saldadas~~ — **no se sirven, ver la nota** |
 | `activeMonthAverage3m` / `12m`, `varianceVsAverage` | Promedio reactivo y estable del mes activo, y desviación del mes |
 | `rank`, `cumulativeActual`, `cumulativePercentage` | Curva de Pareto del gasto por categoría |
 | `goalsTotalBalance`, `goalsTotalTarget`, `goalsTotalRemaining` | Agregados de metas |
+
+> **Corregido 2026-09-04 — dos filas de esta tabla no describían código.** Esta
+> sección se llama *indicadores que se calculan hoy*, así que una entrada que el
+> contrato congela pero el servidor no emite está en el archivo equivocado.
+>
+> **Las dos piernas de la deuda y el conteo de deudores saldados no existen.** El
+> contrato las declara en su tipo de tarjeta de deuda y define el conteo
+> normativamente en §5.2, pero `overviewDebtService.js:37-39` delega entero en
+> `readStockDomain`, que arma una tarjeta base y nada más
+> (`stockDomainCalculator.js:83-97`): total, conteo de movimientos, delta,
+> moneda, ventana y avisos. Ni `receivable`, ni `payable`, ni `settledCount`
+> aparecen en una sola línea de `overview_services/`. Se mueven a §3.2, que es
+> donde vive lo decidido y sin construir.
+>
+> **La distribución del gasto acumulado del año tampoco.** Ya estaba anotada
+> abajo y se confirma: el servicio de página publica `charts.trend` y
+> `charts.expenseCategories` (`overviewPageService.js:183-190`) y ninguna tercera
+> llave.
 
 ---
 
@@ -249,6 +334,8 @@ P3, derogadas por D44 cuando el bolsillo dejó de ser una cuenta de custodia.
 |---|---|---|---|
 | D33 | `charts.expenseYtdDistribution` | Dónde se fue el dinero **en el año**, por categoría: `categoryName`, `actualSpentYtd`, `share`, `rank` | **`overview_services`**, con consulta propia de doce meses. **No** reusa `makeCategoryBreakdown`: el Pareto acumula una suma corrida, esto es participación por fila. El tipo ya está escrito en el contrato §11 (`:432-441`) y el payload no lo publica |
 | D40 | YTD en las seis cards | Cuánto llevo acumulado este año — una cuarta naturaleza junto a Posición, Flujo y Tendencia | **`overview_services`**. Nunca el cliente: sumar doce meses en pantalla es el mismo defecto que abrió el módulo. Hay un precedente vivo de ese error en `feat/accountingDashboard` |
+| D39 | `payable` y `receivable` de la tarjeta de deuda | Si el neto de la posición esconde *debo 550* o *me deben 1.750 y debo 2.300*, que son situaciones opuestas | **`overview_services`**, con **consulta nueva**. El `SUM` legacy no se puede copiar: lee saldo a hoy y agrega antes de restar, así que no admite corte por signo. Las piernas al cierre exigen reconstruir **por cuenta** y agrupar por signo recién después. Añadido a esta tabla el 2026-09-04, al medir que el servicio de deuda no las emite |
+| D43 | `settledCount` | Cuántas contrapartes quedaron en cero al cierre habiendo tenido movimiento antes | **`overview_services`**, sobre el mismo conjunto de cuentas que el total. Definido normativamente en el contrato §5.2 y no implementado. Añadido el 2026-09-04 |
 
 ### 3.3 Acordados con el desarrollador, sin entrada de catálogo
 
@@ -295,3 +382,13 @@ las de §3, porque una cifra ausente se ve y una equivocada no.
 | YTD (D33, D40) | 2 datasets | `overview_services` |
 | KPIs acordados sin catálogo | 5 | `overview_services`, 2 de ellos sin consulta nueva |
 | Corrección de base temporal del hero | 1 | `overview_services` |
+| Piernas de deuda y deudores saldados (D39, D43) | 3 campos | `overview_services`, **una consulta nueva** — añadido 2026-09-04 |
+
+> **Lo que este resumen no cuenta, y es lo que decide cuándo se ve algo en
+> pantalla: el frontend.** Las seis filas de arriba son trabajo de backend sobre
+> un backend que **ya responde**. Lo que no existe en ninguna cantidad es un
+> consumidor: la pantalla de Overview sigue armada contra los endpoints legacy
+> del dashboard y no hay un solo componente que lea `GET /api/fintrack/overview`.
+> El nivel 1 no está bloqueado por ninguna de estas seis filas — está bloqueado
+> por no tener pantalla. Ver el mapa de la carpeta en
+> `OVERVIEW_BRIEF_2026-09-04.md`.

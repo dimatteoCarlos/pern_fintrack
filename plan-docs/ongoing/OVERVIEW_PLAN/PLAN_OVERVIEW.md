@@ -1,10 +1,29 @@
 # PLAN — Overview refactor
 
-> ⏳ **TRIGGER — do not open until this fires.**
+> ⏳ ~~**TRIGGER — do not open until this fires.**
 > Fires when the budget branch **merges to production** (`PLAN_PRODUCTION_MERGE.md`),
 > not merely when it is code-complete. Overview's Expense domain card consumes
 > whatever `budget_services` returns; building against a shape still in flight in
-> `feat/budget` risks a second rewrite. Independent of budget otherwise.
+> `feat/budget` risks a second rewrite. Independent of budget otherwise.~~
+>
+> **The trigger fired, and the backend it guarded is already built and merged —
+> measured 2026-09-04.** The expense card consumes `budget_services` today
+> (`overviewExpenseService.js`), and the whole Overview backend reached `main` on
+> 2026-09-02 in the merge `d5693f1d`; `git log feat/overview ^HEAD` returns
+> nothing. The rewrite this trigger was protecting against did not happen.
+>
+> **What is still true is the developer's own standing decision, and it is a
+> different rule:** Overview is taken up **when the other modules and their
+> indicators are defined**, because Overview produces no figure of its own and
+> closing it against modules still in motion means rewriting it each time one of
+> them changes shape.
+>
+> **And there is one thing this plan does not say anywhere, which changes what
+> "start" means:** the backend answers and **no screen asks.** No frontend file
+> calls either Overview route. So the work in front of the module is not the
+> backend of §5 and §6 — it is a first screen, over a payload that already
+> exists. The map of this folder and the consolidated register of open decisions
+> are in `OVERVIEW_BRIEF_2026-09-04.md` and at the end of `OVERVIEW_DECISIONS.md`.
 
 **Written 2026-08-20.** `plan-docs/ongoing/` is re-included by `.gitignore:123`: this file is versioned.
 
@@ -702,6 +721,22 @@ Overview is worth less than each screen answering its own question, so neither o
 those two is scheduled before the modules are separated.
 
 ## 8. Open decisions
+
+> **This table is no longer the list — fixed 2026-09-04.** The same five
+> decisions appear here, in the evaluation document's own table, and in the
+> decisions register, in three wordings. **The single list is at the end of
+> `OVERVIEW_DECISIONS.md`**, grouped by what each decision blocks: the ones that
+> stop the first screen, the ones that are decided and merely unbuilt, the ones
+> that only touch the styling phase, and the ones a measurement closed without
+> anybody deciding anything. This table is kept for its reasoning.
+>
+> **Two rows here are closed by measurement rather than by decision.** Where the
+> catalog of indicators lives was settled by building it —
+> `services/overview_services/` exists with its three layers and its two routes
+> mounted. And the deferral of the shared list component was argued from a second
+> consumer pending inside the pocket module being rebuilt; that consumer does not
+> exist in the rebuilt screen, so the deferral outlived its premise. Neither
+> blocks level 1.
 
 | # | question | options | recommendation |
 |---|---|---|---|

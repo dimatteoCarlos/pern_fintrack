@@ -80,6 +80,45 @@ miente sin error.
 > cambia — sigue siendo aditivo y no estructural — pero el trabajo de reescritura
 > creció de un dominio a un dominio más una sección.
 
+> ## ⛔ Superado 2026-09-04 — **la rama se fundió, y con el defecto dentro**
+>
+> **Todo el bloque de arriba razona sobre una rama pendiente, y no lo está.**
+> `feat/overview` llegó a `main` el **2026-09-02** en el merge `d5693f1d`, y de
+> ahí a la rama de trabajo actual `feat/vercel-serverless`. Su cabeza `1fb66b9`
+> es ancestro de `HEAD` y `git log feat/overview ^HEAD` no devuelve nada:
+> **cero commits sin fundir.** Las cifras de 8 commits, 29 archivos y 3201 líneas
+> ya no describen un pendiente, describen lo que entró.
+>
+> **La frase que hay que releer al revés es la del bloque:** *"la rama no se
+> puede fundir tal como está"*. Se fundió tal como estaba. Los tres anclajes del
+> dominio de bolsillo siguen exactamente donde los dejó la medición del
+> 2026-08-30, ahora en el árbol de trabajo:
+>
+> | qué lee el modelo retirado | dónde está hoy |
+> |---|---|
+> | el conjunto de cuentas reales del que sale el patrimonio | `overviewAccountRepository.js:62` |
+> | el conjunto sobre el que se lee el saldo de bolsillo | `overviewAccountRepository.js:201-208` |
+> | la consulta de metas de ahorro | `overviewPageRepository.js:56-58` |
+>
+> **Lo que impide que se vea es que nadie pregunta.** Ninguna de las dos rutas de
+> Overview tiene un consumidor de frontend: la pantalla sigue armada contra los
+> endpoints legacy del dashboard (`Overview.tsx:76-108` y las cinco lecturas de
+> `OverviewLayout.tsx`), y ninguna palabra `fintrack/overview` de `frontend/src`
+> es una URL de API — todas son rutas de navegación. Así que la tarjeta que
+> *miente sin romperse* está servida y no la lee nadie.
+>
+> **La consecuencia práctica, y es la que ordena el trabajo:** la primera
+> petición que haga el nivel 1 es lo que vuelve visible el defecto. Reescribir el
+> dominio de bolsillo y la sección de metas contra `pockets` y
+> `pocket_allocations` deja de ser una condición para fundir y pasa a ser una
+> **condición para conectar la primera pantalla**. No es más trabajo del que ya
+> estaba contado; es el mismo trabajo con otro disparador.
+>
+> **Y una decisión del bloque queda sin sujeto.** *"Overview se aborda al final"*
+> sigue siendo la decisión del desarrollador y no se toca. Lo que ya no aplica es
+> su premisa operativa: no hay una rama esperando, hay código en producción
+> lógica esperando un consumidor.
+
 ---
 
 ## Decisiones cerradas
@@ -127,6 +166,7 @@ miente sin error.
 | **D28** | En el `monthlySnapshot` de §8, `domainMonthlyActual` (MS1) de **pocket** es el **neto ahorrado del mes** — el mismo número que `PocketCard.delta` — no el saldo total | 2026-08-20 | Con MS1 = saldo, MS4 (`MS1 − MS3`) restaría un promedio de flujo a un stock: una cifra sin significado en la única tarjeta donde el catálogo la define para los tres dominios por igual. Las cuatro entradas del snapshot responden "¿cuánto muevo en un mes típico y este mes es inusual?", y esa pregunta sólo se contesta si las cuatro son de la misma naturaleza. Confirmado por un segundo camino: `PLAN_POCKET_ALERT.md` §9.2 llega a la misma cifra desde el diseño de la tarjeta de pocket — *saved this month* no es derivable de `saved` y `withdrawals`, así que se gana su lugar, mientras que el acumulado no. El neto del mes y `PocketCard.delta` son el mismo número por construcción (cierre del mes menos cierre del anterior = lo aportado neto en el mes), así que sigue siendo una cifra y una fórmula |
 | **D26** | V5 (`days_since_last_contribution`) lee **sólo `movement_type_id = 6`** con `amount > 0`, no `IN (6, 8)`. V1 (`capital_contributed`) sí incluye 8 | 2026-08-20 | La entrada V5 del catálogo se contradecía consigo misma: la fórmula incluía el tipo 8 (apertura) y la regla de null decía "sin aportes **más allá de la apertura**, `null` + notice". Con el tipo 8 dentro, esa regla era inalcanzable — siempre habría respondido con la fecha de apertura. V5 es una señal de constancia, y abrir una cuenta una vez no es un hábito. V1 es distinto y sí incluye la apertura: el dinero puesto al crear la cuenta es capital que el usuario aportó. Verificado en datos locales: la identidad contable de §6 se cumple exacta, `−0.16 + 2.30 = 2.14` |
 | **D45** | **Una cuenta de efectivo es una cuenta bancaria.** A todos los efectos de lectura, `account_type_id = 7` (`cash`) se lee como `bank`: entra en el patrimonio neto (H1), en la posición de efectivo (H2), en el conjunto de cuentas reales del que ingreso y gasto toman su pata, y en el conjunto elegible de PA1/PA2. **Toda fórmula que nombre `bank` incluye `cash`; ninguna las distingue.** No se propone ninguna migración que funda los dos tipos del catálogo: la distinción se conserva en el esquema, donde describe de dónde salió el dinero, y desaparece en la lectura, donde no cambia ninguna respuesta | 2026-09-01 | **Decisión del desarrollador.** Cierra la única pregunta que la sonda de fase 2b tenía sobre este tipo, y la cierra por el lado correcto: la pregunta era si el tipo tenía datos reales, y la respuesta la da el modelo, no el conteo — haya una cuenta de efectivo o ninguna, se lee como banco, así que la cifra deja de depender de una medición pendiente. El código ya lo asumía en el único sitio que clasifica los dos tipos juntos: `ELIGIBLE_SOURCE_TYPES = ['bank', 'cash']` en `pocketAllocationService.js:45` y `accountAllocationService.js:23`, que es exactamente el conjunto que PA1 y PA2 declaran elegible. La decisión alinea el catálogo con eso en vez de dejar dos clasificaciones vivas. **Consecuencia pendiente en código, no resuelta por esta decisión:** el conjunto de cuentas reales de `overviewAccountRepository.js:62` (rama `feat/overview`) enumera `('bank', 'investment', 'debtor', 'pocket_saving')` sin `cash`, y `dashboardTotalBalanceAccountByType` filtra por nombre exacto de tipo — hoy una cuenta de efectivo no aparece en la cifra de banco de ninguno de los dos |
+| **D46** | **Overview owns its month selector. The month is NOT delegated to the domain screens.** The reference month is chosen on the Overview page itself, travels as `?month=YYYY-MM` in the URL, is absent for the current month, and is refused with 422 when it is later than the current month — the same convention the pocket board and the budget board already implement, through the same shared `MonthPicker`. The domain screens keep their own selectors; the two are independent and neither reads the other. **The selector does not ship until every hero input reports on the same time base** — see the cost column | 2026-09-03 | **Asked by the developer: should Overview show results for a selected month, or delegate that to each domain?** Three measurements decide it. First, the backend already implements it end to end: `overviewController.js:98-112` resolves the window or answers 422, `overviewValidators.js:65` accepts a past month only, and all six calculators receive that window — delegating would mean withdrawing a parameter that already works. Second, the page exists to answer one window across six domains; delegating forces the reader to open six screens to reconstruct what one screen was built to show, and the six answers would each carry their own month. Third, the control costs nothing new: five screens already carry the shared `MonthPicker` with the month in the URL. **The cost, stated and not hidden: two of the six hero inputs ignore the month today.** The bank balance is read by `getBankBalance(pool, userId)` (`overviewPageRepository.js:101`), which takes no month argument, and the investment card declares itself as of now through `AS_OF_NOW_NOTICE` (`overviewInvestmentService.js:27`). Debt, pocket, income and expense do respect the window. So `netWorth` for a past month adds two current balances to two closing ones and corresponds to no instant, and `cashPosition` does the same with one of each. Exposing a selector over that publishes a figure whose label is a lie. **Both must be reconstructed at the month close first**, with the technique `stockDomainCalculator` already uses for debt and pocket. The investment notice keeps excusing the investment CARD, whose own figures stand alone, but it stops excusing the hero: a sum cannot carry two time bases, and a notice on an addition does not repair the addition |
 
 ### Anclajes de la tabla de arriba, remedidos 2026-08-30
 
@@ -353,9 +393,12 @@ para presentar cada dominio, o si conserva la lista apilada por dominio.
 
 ### Material relacionado, misma carpeta
 
-- `status-strip.html` — el bloque de estados rehecho, con los cinco niveles y
-  seis casos borde: tablero vacío, todo vencido, nada que atender, cifras de
-  tres dígitos, y el servidor reteniendo las cifras.
+- `status-strip.html` — el bloque de estados rehecho, con ~~los cinco niveles~~
+  **siete niveles desde el 2026-09-04** y seis casos borde: tablero vacío, todo
+  vencido, nada que atender, cifras de tres dígitos, y el servidor reteniendo
+  las cifras. La escala vigente está dibujada en
+  `plan-docs/design-refs/pocket-status-scale.html` y definida en
+  `PLAN_POCKET/POCKET_LEVELS_REFERENCE.md`.
 - `next-target.html` — dos formas de poner en fila la tarjeta de próximo
   objetivo, con su caso vacío, pendientes de que el desarrollador elija una.
 
@@ -395,6 +438,37 @@ rompen nada de Overview y no obligan a ningún cambio hoy**. Lo que hacen es fij
 el idioma que Overview tendrá que adoptar el día que presente bolsillos: si teclea
 sus propias palabras, será el tercer sitio que nombra el mismo nivel de una tercera
 manera, que es exactamente lo que el mapa compartido se escribió para impedir.
+
+> **Remedido 2026-09-04 — la conclusión se sostiene y el idioma que fija creció.**
+>
+> **Overview sigue sin consumir una sola palabra del vocabulario de bolsillos**, y
+> ahora hay una razón estructural además del conteo de importadores: el dominio de
+> bolsillo de Overview **no lee el tablero**. `overviewPocketService.js:45-47`
+> delega en `readStockDomain`, que produce saldo, conteo de movimientos, delta y
+> serie — ninguna clasificación. Los niveles viven en
+> `pocketBoardService.js`, que Overview no importa.
+>
+> **Pero el idioma que Overview heredará el día que presente metas pasó de cinco
+> palabras a siete.** La clasificación se decide en un solo sitio del servidor,
+> `pocketLevel.js:53-111`, y publica uno de siete valores en el orden de lectura
+> que `POCKET_LEVELS` congela (`:123-132`): meta alcanzada, meta superada, por
+> delante del plan, en línea con él, por detrás, necesitando el doble del ritmo
+> fijado, y con la fecha vencida sin cubrir.
+>
+> **Dos cifras del encabezado del tablero cambiaron, y las dos importan para un
+> encabezado consolidado.** El conteo de bolsillos por delante de su plan
+> **desapareció** — era un conteo de nivel menos un redondeo, así que
+> `levelCounts.ahead` lo responde entero — y la **suma de esa holgura se acotó a
+> los bolsillos que leen ese nivel** (`pocketBoardService.js:233-239`), porque un
+> conteo sobre una población junto a una suma sobre otra más ancha es una fila que
+> no cuadra.
+>
+> **Y esa segunda corrección es exactamente la lección que el material congelado
+> de arriba pedía mirar**, resuelta por el módulo antes de que Overview la
+> heredara: una partición que cuenta algo que nunca nombra. La regla que sale de
+> ahí, y que un tablero que consolida cinco dominios va a necesitar cinco veces:
+> **una cifra agregada se publica sobre la misma población que el conteo impreso a
+> su lado, o no se publica al lado.**
 
 ### 2. De las definiciones, una — y es un choque de verdad
 
@@ -488,7 +562,33 @@ resolverlo.** En `fix/auth-screen` está **borrado** —`pages/overview/componen
 tiene cinco archivos y ninguno es `SavingGoals.tsx`, y las dos claves de bolsillo del
 agregador están comentadas—. En `feat/overview` está **vivo y montado**: importado en
 `Overview.tsx:10`, pedido en `:83` y renderizado en `:424`, contra el endpoint viejo
-del dashboard. Las dos ramas no pueden ganar.
+del dashboard. ~~Las dos ramas no pueden ganar.~~
+
+> **Resuelto por los hechos 2026-09-04 — y los otros dos hay que releerlos.**
+>
+> **El tercero ya no está abierto: ganó el borrado.** La fusión ocurrió el
+> 2026-09-02 y en el árbol de trabajo `frontend/src/fintrack/pages/overview/`
+> **no contiene ningún `SavingGoals.tsx`**, ni en `components/` ni en ninguna
+> parte del repositorio. Las dos claves de bolsillo del agregador siguen
+> comentadas (`overviewFetchAll.ts:67` y `:72`). La pregunta *cuál rama gana con
+> el componente de metas de ahorro* está contestada por el merge, no por una
+> decisión: **no hay componente.** El nivel 1 lo construye de cero o no lo tiene.
+>
+> **El primero sigue entero y cambió de gravedad.** La consulta que lee el modelo
+> de bolsillo retirado está hoy en la rama de trabajo
+> (`overviewPageRepository.js:56-58`), servida y sin consumidor. Sigue devolviendo
+> saldo cero, meta nula y faltante nulo con el aviso de *ninguna meta fijada*,
+> sobre un dueño que sí tiene bolsillos, metas y compromisos escritos en `pockets`
+> y `pocket_allocations`. Nadie lo ve porque nadie llama a la ruta.
+>
+> **El segundo se sostiene sin cambio:** el código sigue citando un plan que no
+> existe. `makeFinancialGoals.js:6-8` remite a `PLAN_POCKET_ALERT.md` para la
+> tarjeta y el hero por bolsillo, y ese archivo no está en `plan-docs/`. Lo que
+> gobierna esa pantalla es `PLAN_POCKET/POCKET_MODULE_SPEC.md` con
+> `POCKET_DECISIONS.md`, y la escala de niveles es
+> `PLAN_POCKET/POCKET_LEVELS_REFERENCE.md`. **Sigue sin corregirse aquí porque
+> está en código y este pase tampoco escribe código**; se corrige el día que se
+> reescriba esa sección contra el modelo nuevo, que es el mismo día.
 
 ### Las tres decisiones que esto abre, y ninguna se cierra aquí
 
@@ -496,6 +596,244 @@ del dashboard. Las dos ramas no pueden ganar.
    aparte, o resta plana.
 2. **Qué se hace con la consulta de metas** antes de fusionar: reescribirla contra
    `pockets` y `pocket_allocations`, o dejar la tarjeta fuera de la primera entrega.
-3. **Cuál rama gana con el componente de metas de ahorro.**
+3. ~~**Cuál rama gana con el componente de metas de ahorro.**~~ **Cerrada por el
+   merge del 2026-09-02: ganó el borrado, no hay componente.**
 
 Las tres están además anotadas en `ongoing/ESTADO_PLANES.md`, secciones 8 y 10.
+
+---
+
+# Registro único de decisiones abiertas — consolidado 2026-09-04
+
+**Por qué existe.** Hasta hoy las decisiones abiertas de este módulo estaban
+repartidas entre seis documentos, y varias aparecían en dos con redacciones
+distintas. Ésta es la lista única. **Agrupada por lo que bloquea, no por
+prioridad**: una decisión importa por lo que impide empezar, no por una etiqueta.
+
+Una fila deja este registro sólo de dos maneras: el desarrollador la cierra, o
+una medición demuestra que la pregunta ya no tiene sujeto. Lo segundo no es
+cerrar una decisión — es descubrir que no había ninguna.
+
+## Grupo A — bloquean la primera pantalla del nivel 1
+
+Nada de esto se puede empezar sin resolverlo, porque decide qué se dibuja.
+
+| decisión | qué está en juego | quién decide | recomendación |
+|---|---|---|---|
+| Dónde viven los gráficos de distribución del gasto — el de barras ordenadas con su curva acumulada y el de anillo | Si el nivel 1 lleva una sección de análisis o si es sólo reconocimiento, y si hace falta un entorno nuevo de tablero | desarrollador | **D47**, abajo |
+| Qué muestra el nivel 1 | La lista de bloques de la primera pantalla. Declarado abierto por el desarrollador el 2026-09-03 y nada lo cerró desde entonces | desarrollador | **D50**, abajo |
+| Si Overview adopta el idioma de banda que abarca sus lecturas, o conserva la lista apilada por dominio | La forma de presentar la partición de estados de cada dominio, multiplicada por cinco | desarrollador | **D50** la absorbe: el nivel 1 no lleva particiones de estado |
+| Cómo se suma el faltante de las metas: recortado por bolsillo con el excedente aparte, o resta plana | Dos pantallas de la misma app informan cifras distintas para la misma cartera. Con un bolsillo excedido en 500 y otro atrasado en 500, el módulo de bolsillos informa 500 por asignar y Overview informa 0 | desarrollador | **recortar y publicar el excedente al lado**, igual que el tablero de bolsillos. La resta plana contesta *cuánto falta en neto*, que es una pregunta legítima y no es la que un dueño hace mirando metas; y de las dos, sólo el recorte permite que la cifra de Overview y la del módulo sean la misma cifra. Coste de backend: reescribir la sección de metas, que **hay que reescribir igual** por la fila del Grupo B |
+
+## Grupo B — decididas, sin implementar: no falta decisión, falta trabajo
+
+Estas no van a una reunión. Están cerradas por escrito y el código no las tiene.
+Se listan aquí porque cinco documentos las citan como si estuvieran servidas.
+
+| qué falta | decisión que la cerró | dónde debería estar y no está |
+|---|---|---|
+| La sección de metas de ahorro leída contra el modelo vivo de bolsillos | D44 (2026-08-24): las metas se repuntan, no mueren | `overviewPageRepository.js:56-58` sigue uniendo la tabla vaciada por la migración `020`. **Es la primera pieza que hay que arreglar**: es la que empieza a mentir en voz alta el día que el nivel 1 haga su primera petición |
+| El saldo de bolsillo de la tarjeta de dominio y su serie | D44, misma fecha | `overviewAccountRepository.js:201-208` lee el tipo de cuenta retirado |
+| Las dos piernas de la posición de deuda y el conteo de deudores saldados | D39 y D43 (2026-08-21), definidas normativamente en el contrato §5.1 y §5.2 | `overviewDebtService.js:37-39` delega en la tarjeta base y no las produce. Cuesta **una consulta nueva**: el total al cierre agrega antes de restar, así que no admite corte por signo |
+| La distribución del gasto acumulado del año por categoría | D33 (2026-08-21), tipo escrito en el contrato §11 | El servicio de página publica dos llaves de gráfico y no tres (`overviewPageService.js:183-190`) |
+| Que las cuentas de efectivo entren donde entra el banco | D45 (2026-09-01): una cuenta de efectivo **es** una cuenta bancaria en toda lectura | `overviewAccountRepository.js:62` enumera cuatro tipos y ninguno es `cash` |
+| Que el patrimonio y la posición de efectivo se lean en una sola base temporal | D46 (2026-09-03) lo declara defecto y condiciona el selector de mes a que se corrija | El saldo de banco no acepta mes y la cifra de inversión se declara *a hoy*. **Bloquea el selector de mes del nivel 1**, no el nivel 1 |
+
+## Grupo C — bloquean la fase de estilos, no el diseño
+
+| decisión | bloquea |
+|---|---|
+| Qué vocabulario de tokens usa el CSS nuevo (D10) | la fase de estilos |
+| Si se corrigen los dos tokens mal escritos del CSS vecino (D11) | nada: mueren con el archivo si se reemplaza |
+| Si el criterio de "una petición" se mide en build de desarrollo o de producción (D12) | la aceptación de la fase de estilos, no su construcción |
+| La etiqueta del promedio mensual y su divisor de meses con movimiento (D36) | **adoptada por recomendación, sin confirmación explícita.** No bloquea: si el nivel 1 no lleva el promedio, la pregunta se difiere entera |
+
+## Grupo D — cerradas por medición, no por decisión
+
+Se registran porque cinco documentos todavía las listan como abiertas.
+
+| pregunta | por qué ya no tiene sujeto |
+|---|---|
+| Cuál rama gana con el componente de metas de ahorro | El merge del 2026-09-02 la contestó: **no hay componente**. `SavingGoals.tsx` no existe en el repositorio |
+| Dónde vive el catálogo de KPI: extender presupuesto o un módulo nuevo (D2) | `services/overview_services/` existe, con sus tres capas y sus dos rutas montadas. La decisión se ejecutó |
+| Qué se hace con la consulta de metas **antes de fusionar** | Ya se fusionó. La pregunta sobrevive con otro disparador y está en el Grupo B |
+| Si `ListContent` se mueve al árbol de Overview o se generaliza (D4) | Sigue abierta como decisión, pero **su premisa murió**: el aplazamiento se argumentó desde un segundo consumidor pendiente dentro del módulo de bolsillos, y el detalle de bolsillo reconstruido se escribió sin él. Hoy tiene exactamente un importador. No bloquea el nivel 1 |
+
+---
+
+# Decisiones propuestas — las cuatro preguntas del informe del 2026-09-04
+
+**Estado: recomendaciones, no decisiones.** Entran a la tabla de cerradas cuando
+el desarrollador las apruebe. Cada una lleva su coste de backend.
+
+**Tres de las cuatro cuestan cero de backend**, y la cuarta no cuesta un campo
+nuevo: cuesta la reescritura de la sección de metas de ahorro, que hay que hacer
+igual porque hoy miente. Ninguna de las cuatro pide una migración.
+
+## D47 — Los gráficos de distribución del gasto viven en el nivel 1, en una sección propia fuera de las tarjetas
+
+**Recomendación.** El de barras ordenadas con su curva acumulada y el de anillo
+se quedan en la primera pantalla, en una sección propia debajo de las tarjetas.
+Ni entorno nuevo de tablero, ni escondidos dentro del dominio de gasto.
+
+**Coste de backend: cero.** Las filas ya viajan en el payload de la página. El
+servicio de página publica el mismo arreglo que alimenta los dos gráficos
+(`overviewPageService.js:189`), producido por la calculadora de gasto
+(`overviewExpenseService.js:132`) y ordenado por gasto descendente con el nombre
+de la categoría rompiendo el empate, de modo que el orden no puede cambiar entre
+dos peticiones idénticas. **Un solo arreglo para los dos gráficos**, así que no
+pueden mostrar cifras distintas para la misma categoría.
+
+**Por qué el nivel 1 y no un entorno nuevo.** Un entorno nuevo es una pantalla
+más que mantener para dibujar datos que ya llegan en una petición que la primera
+pantalla hace igual. Y la regla que ya está cerrada dice que las tarjetas no
+llevan barra ni gráfico y que los gráficos se quedan en el nivel 1 como sección
+aparte — una tarjeta es estado, un gráfico es comportamiento. Esa regla ya
+distingue las dos cosas dentro de la misma pantalla; un entorno nuevo resuelve
+otra vez un problema resuelto.
+
+**Por qué no dentro del dominio de gasto.** Ahí obliga a dos peticiones donde
+alcanza una, y arrastra la paginación de filas de un endpoint de detalle a una
+pantalla que por contrato no carga filas. El drill-down del gasto **también**
+los tendrá, con el grano por cuenta que el nivel 1 no muestra; no es lo mismo
+dibujado dos veces.
+
+**Lo que esta decisión no cierra:** la distribución del año acumulado sigue
+declarada y sin servir. La sección arranca con lo que existe.
+
+## D48 — El gasto sin categoría es un aviso, nunca una porción del anillo
+
+**Recomendación.** Se muestra como una línea de aviso debajo del gráfico, con su
+importe, y **no** como una categoría más.
+
+**Coste de backend: cero.** La bandera y el aviso ya viajan en la tarjeta de
+gasto: `makeExpenseCard.js` la levanta comparando el gasto total contra el gasto
+que sigue resolviendo a una categoría viva, y anexa la frase que la explica en la
+misma comparación que la levanta, para que la bandera y su explicación no puedan
+discrepar.
+
+**Por qué un aviso y no una porción.** Porque no es una categoría de gasto: es
+historia huérfana. Un gasto **no se puede registrar sin categoría** — el destino
+de un gasto *es* una cuenta de categoría, y el controlador de transacciones
+rechaza la escritura cuyo destino no resuelve a una. La cifra sólo aparece cuando
+una categoría fue borrada o perdió su fila de presupuesto. **En un juego de datos
+sano vale cero.** Un valor distinto de cero es una señal de integridad de datos,
+y pintarlo como porción lo pone a competir por área con categorías reales,
+sugiriendo que el dueño "gastó" ahí. Un anillo con una porción llamada *sin
+categoría* invita a preguntar en qué se fue ese dinero; el aviso contesta la
+pregunta correcta, que es **qué categoría desapareció**.
+
+**Y hay una razón de aritmética además de la de significado:** el arreglo del
+anillo se construye sobre las categorías del presupuesto e incluye a propósito
+las borradas con gasto real, para que la suma de las porciones reconcilie exacto
+con el total de la tarjeta. Añadir una porción sintética con la diferencia
+rompería esa reconciliación por doble conteo.
+
+## D49 — No se construye ninguna regla de inactividad de deudores
+
+**Recomendación.** Se retira del boceto de agosto y no se propone como trabajo.
+
+**Coste de backend: cero, y ése es el punto** — construirla cuesta un módulo que
+no existe.
+
+**Por qué.** La regla **no existe en ninguna parte del código**: no hay directorio
+de servicios de deuda y no hay ninguna constante de días para ella. La única cifra
+de *días desde* que el repositorio calcula es la de la tarjeta de inversión, días
+desde el último aporte, y su definición es deliberadamente estrecha — cuenta sólo
+las transferencias de aporte y excluye la apertura de la cuenta, porque abrir una
+cuenta una vez no es un hábito. Un boceto que muestre *60 días sin movimiento*
+sobre un deudor **está inventando una regla**, no reflejando una que exista.
+
+**Y la pregunta que la abriría se hizo y nunca se contestó:** si sería una
+constante fija o una banda con nombre, como los siete niveles del módulo de
+bolsillos. Ésa es la que decide el coste. Una constante es un número en un
+archivo; una banda con nombre es una clasificación, y una clasificación exige
+decidir sus cortes, sus palabras, sus colores y dónde se calcula — el módulo de
+bolsillos acaba de pagar ese precio entero y llevó semanas.
+
+**Lo que sí se recomienda en su lugar, y ya está decidido y sin construir:** el
+conteo de contrapartes saldadas al cierre. Contesta una pregunta cercana — *quién
+ya no me debe nada* — está definido normativamente, no inventa ninguna regla, y
+su coste está contado en el Grupo B.
+
+## D50 — El nivel 1 son ocho bloques y ninguno de ellos es un gráfico dentro de una tarjeta
+
+**Recomendación.** Ver la propuesta desarrollada y el boceto navegable en
+`plan-docs/design-refs/overview-level-1/overview-level-1.html`.
+
+**Coste de backend: cero para siete de los ocho bloques.** Todos salen del payload
+que `GET /api/fintrack/overview` ya devuelve. El octavo — el bloque de metas de
+ahorro — **no cuesta un campo nuevo sino una reescritura**: la que el Grupo B pone
+primera en la fila.
+
+**El bloque que no se propone, y hay que decirlo antes que los ocho:** el
+**selector de mes no embarca con el nivel 1**. Está decidido que Overview es dueño
+de su mes, y en la misma decisión está escrito por qué no puede embarcar todavía:
+dos de los cuatro términos del patrimonio ignoran el mes pedido, así que un mes
+pasado suma dos saldos de hoy con dos saldos al cierre y produce una cifra que no
+corresponde a ningún instante. **Un control que reetiqueta una cifra que no mueve
+es peor que no tener control.** El nivel 1 arranca en el mes en curso, sin
+selector, y lo gana cuando esos dos términos se reconstruyan al cierre.
+
+### Los ocho bloques, y de dónde sale cada uno
+
+| # | bloque | qué contesta | de dónde sale |
+|---|---|---|---|
+| 1 | **Encabezado de tres cifras** — patrimonio, efectivo disponible, flujo neto del mes | Cuánto tengo, cuánto puedo gastar hoy, y si el mes fue hacia adelante o hacia atrás | `hero`, servido |
+| 2 | **Cinco tarjetas de dominio** — ingreso, gasto, deuda, bolsillo, resultado | El estado de cada dominio en tres cifras: total del periodo, movimientos detrás de ese total, y cambio contra el cierre anterior | `domainCards`, servido. **Sin barra, sin progreso y sin mini gráfico**, por la regla ya cerrada: una tarjeta es estado |
+| 3 | **Tarjeta de inversión, con forma propia** | Capital aportado, saldo en libros, resultado registrado, peso de la mayor posición y días desde el último aporte | `domainCards.investment`, servido. **No comparte la forma de las otras cinco y el boceto no se la impone**: cinco cifras absolutas no son un total, un conteo y una delta, y el código lo declara por escrito |
+| 4 | **Distribución del gasto** — barras ordenadas con curva acumulada, y anillo | Qué categorías dominan el mes y cómo van contra su presupuesto | `charts.expenseCategories`, servido. **D47** |
+| 5 | **Tres series de seis meses** — ingreso, gasto, bolsillo | Cómo se movió cada uno en el tiempo | `charts.trend`, servido |
+| 6 | **Instantánea mensual** de esos tres dominios | Si este mes es inusual comparado con un mes con movimiento | `monthlySnapshot`, servido. Su etiqueta depende de **D36**, sin confirmar; si no se confirma, el bloque se difiere sin tocar nada más |
+| 7 | **Metas de ahorro** | Cuánto hay guardado en total y cuánto falta | `financialGoals`, **servido y mintiendo**. Único bloque con coste: la reescritura del Grupo B |
+| 8 | **Últimos cinco movimientos** | Qué pasó por último | `recentActivity`, servido. **No se acota al mes**: contesta *qué pasó por último*, no *qué pasó en el mes que estoy mirando* |
+
+### Las tres reglas de forma que el nivel 1 no puede romper
+
+1. **Los tres estados de carga son tres cosas distintas.** Esqueleto mientras
+   llega, mensaje con reintento si falla, y vacío cuando no hay nada que mostrar.
+   Con cinco dominios en una pantalla, ésta es la parte difícil, no un detalle.
+2. **Una cifra que el servidor retuvo se dibuja como guion**, nunca como `0` ni
+   como `NaN`. El contrato distingue las dos cosas a propósito en varios campos:
+   *no hay meta fijada* es `null` y *la meta es cero* es un cero, y sólo el
+   segundo es una cifra.
+3. **Una cifra agregada se publica sobre la misma población que el conteo impreso
+   a su lado, o no se publica al lado.** Es la lección que el módulo de bolsillos
+   acaba de pagar dos veces, y un tablero que consolida cinco dominios la va a
+   necesitar cinco veces.
+
+---
+
+## Registro de correcciones — 2026-09-04
+
+Medido en `feat/vercel-serverless`, árbol de trabajo incluido. No se leyó ninguna
+base de datos y no se escribió ninguna línea de código.
+
+**Ninguna decisión cerrada se borró, se reescribió ni se reordenó.** Lo que se
+corrigió son mediciones que envejecieron, y una de ellas cambia el estado del
+módulo entero.
+
+| bloque | qué se corrigió |
+|---|---|
+| "Overview se aborda al final" | **la rama se fundió.** Ocho commits sin fundir pasaron a cero: el merge del 2026-09-02 llevó todo a `main` y de ahí a la rama de trabajo. La frase *"la rama no se puede fundir tal como está"* hay que leerla al revés — se fundió tal como estaba, con los tres anclajes del modelo retirado dentro. La decisión del desarrollador no se toca; lo que ya no aplica es su premisa operativa |
+| Material de bolsillos, primera parte | **son siete niveles y no cinco.** La escala se rehízo el 2026-09-04 y se anotan las dos cifras del encabezado que cambiaron: el conteo de bolsillos por delante del plan desapareció por ser un conteo de nivel menos un redondeo, y la suma de esa holgura se acotó a los bolsillos que leen ese nivel |
+| Material de bolsillos, segunda parte | se confirma que **Overview no consume una sola palabra** de ese vocabulario, ahora con una razón estructural: su dominio de bolsillo no lee el tablero, lee saldo y serie |
+| Tres hechos medidos en la rama | **el tercero está cerrado por el merge**: ganó el borrado, el componente de metas de ahorro no existe en el repositorio. El primero sigue entero y con más gravedad; el segundo —el código citando un plan inexistente— sigue sin tocarse porque está en código |
+| Nuevo | **registro único de decisiones abiertas**, agrupado por lo que bloquea cada una, sustituyendo a las tres tablas repartidas entre este archivo, el plan y la evaluación |
+| Nuevo | **D47 a D50**, las cuatro recomendaciones del informe del 2026-09-04, cada una con su coste de backend. Son propuestas, no decisiones |
+
+**Verificado y dejado como estaba:** las cuarenta y seis decisiones cerradas, sus
+motivos y sus fechas; la tabla de anclajes del 2026-08-30; y la invalidación
+entrada por entrada que dejó la decisión de que un bolsillo es una asignación.
+
+**Sin resolver:** los conteos sobre la base local que este archivo arrastra desde
+agosto. Ninguno se recomprobó.
+
+**Encontrado y no corregido aquí, porque pertenece a otro plan:** la cabecera de
+`PLAN_POCKET/POCKET_LEVELS_REFERENCE.md` se declara *especificación congelada,
+todavía sin implementar*, y dice que el clasificador embarcado lleva seis niveles
+y ninguna banda de tolerancia. **Las dos afirmaciones son falsas hoy**: el
+clasificador tiene los siete niveles y la banda, y la lista congelada de niveles
+tiene siete entradas. Ese documento es de la sesión del módulo de bolsillos y se
+le reporta en vez de editarlo, para no escribir dos sesiones sobre el mismo
+archivo.

@@ -10,6 +10,34 @@ Este documento evalúa el plan. **No lo reemplaza.** Donde los dos difieran, el
 plan sigue siendo la especificación hasta que el desarrollador cierre la decisión
 correspondiente en §D.
 
+> ## Estado de este archivo, fijado 2026-09-04: **histórico**
+>
+> **No es una fuente de hechos actuales y no debe leerse como tal.** Es una
+> auditoría del plan tal como estaba el 2026-08-20, y su valor es el
+> razonamiento: por qué una afirmación del plan se aceptó o se rechazó. Sus
+> veredictos ya se absorbieron — los que se convirtieron en decisión están en
+> `OVERVIEW_DECISIONS.md`, que es donde se leen.
+>
+> **Su tabla de decisiones abiertas (§D) es una tercera copia.** Las mismas cinco
+> decisiones aparecen en `PLAN_OVERVIEW.md` §8 y en el registro de decisiones.
+> **Ninguna de las tres es la lista buena a partir de hoy:** las decisiones
+> abiertas del módulo están consolidadas en un solo registro al final de
+> `OVERVIEW_DECISIONS.md`, agrupadas por lo que bloquea cada una. Las tres tablas
+> viejas se conservan por su razonamiento, no por su contenido.
+>
+> **Dos cosas concretas que este archivo dice y ya no valen.** La rama en la que
+> se ejecuta el trabajo dejó de ser una pregunta: `feat/overview` se fundió el
+> 2026-09-02 y no hay commits sin fundir. Y la fila que discute dónde vive el
+> catálogo de indicadores se ejecutó: `services/overview_services/` existe, con
+> sus tres capas y sus dos rutas montadas.
+>
+> **Lo que sigue valiendo entero, y es la mejor parte del archivo:** la
+> incompatibilidad que señala entre *una sola petición* y *un fallo no borra la
+> pantalla*. Sólo se resuelve si el modelo de lectura se degrada por sección, y
+> ésa es exactamente la razón por la que los tres estados de carga —esqueleto,
+> error con reintento, y vacío— son el problema central del nivel 1 y no un
+> detalle de acabado.
+
 ---
 
 **Veredicto general.** El plan es sólido y su §2 está genuinamente medido: de 40
