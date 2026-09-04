@@ -8,18 +8,27 @@
 // above this list keeps the server's own counts, and this hook never changes
 // them — it only changes which of the rows already counted are listed.
 //
-// The five filters are the same partition the hero's own tallies read
-// (PocketBigBoxResult.tsx: funded, overFunded, onPlan, atRisk, offPlan) and
+// The seven filters are the same partition the hero's own tallies read
+// (completed, aboveTarget, ahead, onTrack, behind, atRisk, overdue — served as
+// levelCounts since 2026-09-03, no longer folded on the client) and
 // the word each one carries on screen is POCKET_STATUS_WORD — the shared map
-// ListPocket's own cards read. Nothing here invents a sixth word: an earlier
-// draft filtered on a private "Active" bucket that folded onPlan and atRisk
-// together, and pocketStatus.ts's own header already records why that word
-// was retired once — it appeared on a filter and nowhere else on the screen
-// it was filtering.
+// ListPocket's own cards read. Nothing here invents a word of its own: an
+// earlier draft filtered on a private "Active" bucket that folded onPlan and
+// atRisk together, and pocketStatus.ts's own header already records why that
+// word was retired once — it appeared on a filter and nowhere else on the
+// screen it was filtering.
+//
+// 'ahead' was one of those private words until 2026-09-04. It sat beside
+// 'uncovered' as an orthogonal value with its own predicate over aheadOfPlan,
+// which meant this hook classified a pocket the server had already classified
+// — and the two rules were not the same one, because the server also requires
+// the pace ratio to be under its band. The server now serves `ahead` as a
+// level, so the option is a level like the other six and the predicate is gone.
+// 'uncovered' stays orthogonal: a pocket can be uncovered at ANY level.
 
 import { useMemo } from 'react';
 import { PocketStatus } from '../../../types/pocketTypes';
-import { PocketStatusLevel, pocketDateLevel } from '../../../helpers/pocketStatus';
+import { PocketStatusLevel } from '../../../helpers/pocketStatus';
 
 export type PocketSortKey = 'date' | 'name' | 'remaining';
 export type PocketSortDirection = 'asc' | 'desc';
@@ -32,11 +41,13 @@ export const DEFAULT_SORT_DIRECTION: Record<PocketSortKey, PocketSortDirection> 
  date: 'asc',
  name: 'asc',
  remaining: 'desc',
+ // Leads with the pocket holding the most slack, the one a reader moving
+ // money OUT of a plan is most likely to start from.
 };
 
-// 'uncovered' is orthogonal to the five date-partition levels — a pocket can
-// be funded and still uncovered — so it is not a sixth PocketStatusLevel, it
-// is its own filter value beside them.
+// One value beside the seven levels, and it is orthogonal to all of them: a
+// pocket can be completed and still uncovered, so this is not an eighth level.
+// 'all' is the absence of a filter rather than a value the rows carry.
 export type PocketQuickFilter = PocketStatusLevel | 'all' | 'uncovered';
 
 type PocketListFilterInput = {
@@ -71,7 +82,11 @@ const passesQuickFilter = (
  if (quickFilter === 'all') return true;
  if (quickFilter === 'uncovered') return pocket.uncovered;
 
- return pocketDateLevel(pocket) === quickFilter;
+ // Served, never derived: RULED 2026-09-03 (POCKET_CONTRACT_AUDIT.md,
+ // "Contract change 2026-09-03"), the level is decided once on the server.
+ // 'ahead' had a hand-written predicate over aheadOfPlan here until it became a
+ // level; it now arrives through this same comparison as the other six.
+ return pocket.level === quickFilter;
 };
 
 export function usePocketListFilter({

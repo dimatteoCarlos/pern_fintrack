@@ -55,7 +55,13 @@
  --color-interactive-hover: #00ffff;
  --color-border-strong: #141414;
  --color-border-inverse: #ffffff;
- --color-border-subtle: rgba(232, 228, 218, 0.26);
+ /* 0.40, up from 0.26 on 2026-09-04. At 0.26 the line composited to #454442 on
+    --color-surface-sunken and carried 2.01:1 against the field it encloses —
+    under the 3:1 that SC 1.4.11 asks of the boundary of a control, so the
+    search box and the two selects had no identifiable edge. 0.40 is the first
+    step that clears the floor on every surface this line is drawn against:
+    sunken 3.21, deep 3.10, raised 3.26, app 3.25. */
+ --color-border-subtle: rgba(232, 228, 218, 0.4);
 
  /* COLOR - FEEDBACK AND THE FINANCIAL SEMAPHORE
     The status square is the signature indicator: teal when a figure is healthy,
@@ -78,9 +84,57 @@
     Separate from --color-status-success (#008000) because that value carries
     3.39:1 against the raised surface and was never calibrated for it — it is
     the raw CSS keyword and it lives on the light feedback banners. This one is
-    measured against --color-surface-raised at 6.23:1, in the same band as ok
-    (5.62) and alert (6.23), so the marks read as one set. */
+    measured against --color-surface-deep at 7.51:1, the surface the board cards
+    paint, in the same band as ok (5.62) and alert (6.23), so the marks read as
+    one set. The 6.23 this comment used to claim was its RAISED figure quoted
+    beside two DEEP ones; every scalar in this block is stated against deep. */
  --color-status-complete: #5faa78;
+
+ /* The two marks the pocket board's six levels needed and the semaphore did not
+    carry. Both named for the state and not for the hue, like complete above.
+
+    ahead: a pocket running in front of its own plan. Green because it belongs
+    to the half of the scale that asks for nothing, and NOT the pale green it
+    was first drawn as: that measured 11.53:1 here and would have made the
+    least urgent reading on the board the loudest mark on it — the same defect
+    the warning value above was muted to correct. At 8.34 it sits between
+    attention (8.12) and info (8.76), and it is saturated rather than pale so
+    it reads as green beside the desaturated teal of ok rather than as a
+    lighter version of it.
+
+    behind: short of the plan and not yet at risk. Violet because every warm
+    hue is taken by the levels ABOVE it in severity, and a second amber was
+    measured and rejected — --color-financial-attention (#c49a5a) against
+    --color-status-warning (#b8894e) is 1.21 apart in ratio and indistinguishable
+    at 12px. Violet says "a different kind of problem" rather than "a softer
+    red", which is what behind is against at risk. At 5.88 it sits between ok
+    (5.62) and alert (6.23), quieter than both levels above it.
+
+    Both fall under 3:1 on --color-surface-panel (1.98 and 2.81) — so does every
+    scalar in this block, ok included at 2.94. The cream panel needs its own
+    calibrated set the way --color-amount-*-on-panel exists; that is a separate
+    piece of work and these two do not create the gap. */
+ --color-status-ahead: #3db87a;
+ --color-status-behind: #9c75d1;
+
+ /* On track: keeping up with the plan, which asks nothing of the owner. The one
+    level on the scale that is deliberately OFF the semaphore while still being
+    pending — a hue would claim the eye for a reading whose whole content is
+    that there is nothing to do.
+
+    It exists because the level had no value of its own and was reading two
+    ways at once: the square fell through to `--square`, a variable declared
+    nowhere, and painted its hex fallback — the ok teal — while the detail
+    panel's border beside it painted --color-content-secondary. The same pocket
+    read teal on the board and grey on its own screen.
+
+    Grey, and NOT --color-content-secondary (#5b5b5b), which is calibrated for
+    the cream panel and carries 1.94:1 on the black board card. This value is
+    the first grey that clears the 3:1 SC 1.4.11 asks of a non-text mark on BOTH
+    surfaces this level is drawn on: 4.89 on --color-surface-deep, 3.38 on
+    --color-surface-panel. It is a mark and a border, never text — the word
+    beside it keeps the card's own ink. */
+ --color-status-neutral: #7a7a7a;
 
  /* COLOR - FEEDBACK ON A LIGHT SURFACE: the banner triad, valid on inverse and
     on panel. Separate from the semaphore above because those scalars are

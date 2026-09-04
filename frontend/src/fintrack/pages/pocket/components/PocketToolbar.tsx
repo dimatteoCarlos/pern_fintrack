@@ -12,7 +12,8 @@
 // component state would not survive the trip back.
 //
 // The filter options are POCKET_STATUS_WORD, the same map ListPocket's own
-// cards read for their status square's word, plus 'All' and 'Uncovered'.
+// cards read for their status square's word, plus 'All' and the one orthogonal
+// reading.
 // Nothing here spells a status in its own words: a filter option is only ever
 // a word the reader can already find printed on this same screen.
 //
@@ -38,15 +39,25 @@ const SORT_OPTIONS: { value: PocketSortKey; label: string }[] = [
  { value: 'remaining', label: 'Still to allocate' },
 ];
 
-// 'All' first, as the absence of a filter; 'Uncovered' last, because it is
-// orthogonal to the five readings above it rather than a sixth level of them.
+// 'All' first, as the absence of a filter; the seven levels in the order they
+// READ, from the one that asks least of the owner to the one that asks most —
+// the same order POCKET_STATUS_WORD declares and the same order the server's
+// own POCKET_LEVELS uses. A select whose options run in severity order lets the
+// reader find one by position instead of by scanning every label.
+//
+// The one orthogonal value goes last, after the levels, because it is not an
+// eighth level of them. Ahead of plan was orthogonal too, and had a separate
+// toggle beside this select until 2026-09-04; it is a level now, so it sits in
+// the run rather than at the end.
 const FILTER_OPTIONS: { value: PocketQuickFilter; label: string }[] = [
  { value: 'all', label: 'All' },
- { value: 'funded', label: POCKET_STATUS_WORD.funded },
- { value: 'overFunded', label: POCKET_STATUS_WORD.overFunded },
- { value: 'onPlan', label: POCKET_STATUS_WORD.onPlan },
+ { value: 'completed', label: POCKET_STATUS_WORD.completed },
+ { value: 'aboveTarget', label: POCKET_STATUS_WORD.aboveTarget },
+ { value: 'ahead', label: POCKET_STATUS_WORD.ahead },
+ { value: 'onTrack', label: POCKET_STATUS_WORD.onTrack },
+ { value: 'behind', label: POCKET_STATUS_WORD.behind },
  { value: 'atRisk', label: POCKET_STATUS_WORD.atRisk },
- { value: 'offPlan', label: POCKET_STATUS_WORD.offPlan },
+ { value: 'overdue', label: POCKET_STATUS_WORD.overdue },
  // "Funding", not the bare word allocation, which the module's naming rule
  // forbids as ambiguous between a pocket allocation and a monthly budget
  // one. It is also the noun the card already uses for the same fact.
@@ -174,6 +185,7 @@ function PocketToolbar({
 
      <ChevronDownSvg className='pocketToolbar__icon pocketToolbar__icon--trailing' />
     </div>
+
    </div>
 
    {/* Collapses to nothing while there is no count to report, so the bar is

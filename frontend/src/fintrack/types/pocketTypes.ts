@@ -17,6 +17,7 @@
 // endpoint serves, and the row builder throws on anything else.
 
 import { CurrencyType } from './types.ts';
+import { PocketStatusLevel } from '../helpers/pocketStatus.ts';
 
 // One pocket on the board.
 //
@@ -35,7 +36,12 @@ export type PocketStatus = {
  // model, so this is not nullable and neither is `progress` below.
  target: number;
  // What the funding accounts have committed to this pocket. Never called
- // `saved`: the money has not moved and nothing was set aside.
+ // `saved`: the money has not moved and nothing was set aside. On the BOARD
+ // row this is bounded at the close of the selected month, since the
+ // 2026-09-03 contract change — a board read on a past month shows what was
+ // committed by its close. The detail endpoint carries no month and answers
+ // with the lifetime figure instead: same field name, two different windows
+ // depending on which endpoint served the row.
  allocated: number;
  // target - allocated. Negative when the goal was passed.
  remaining: number;
@@ -45,7 +51,34 @@ export type PocketStatus = {
  // of these is UTC midnight and renders as the previous day west of UTC, so
  // every label is built from the parts instead.
  desiredDate: string;
- // Negative once the deadline has passed.
+ // The day the plan was made, same format and same calendar. It is the origin
+ // of the schedule below: the straight line runs from here to desiredDate.
+ // Never null — every pocket has a creation date, unlike the schedule it
+ // anchors.
+ planStart: string;
+ // The target over the full calendar months in the plan's window. null when
+ // the window holds none — created days before its own deadline, or a
+ // deadline at or before its creation — which is a plan that publishes no
+ // instalment rather than one whose instalment is zero.
+ planInstalment: number | null;
+ // What the already-due instalments require by the evaluation date — the
+ // count of full months closed since planStart, times planInstalment. null
+ // together with planInstalment.
+ scheduledByNow: number | null;
+ // Committed minus scheduledByNow, SIGNED: positive is ahead of the plan,
+ // negative is short of it. Not named for the permission it implies — never
+ // "movable" or "releasable" — because releasing it drops the pocket to
+ // exactly its line with nothing spare; the word states the fact, not what
+ // may be done with it. null together with planInstalment.
+ aheadOfPlan: number | null;
+ // What is now required per month, over what the plan set per month. A fact
+ // to print, not a classifier the client reads: `level` below is decided once
+ // on the server (`pocketLevel.js`). null once the deadline has passed or the
+ // plan's window holds no full month; 0 once the target is already covered.
+ // TWO DISTINCT falsy-adjacent states — a truthiness check collapses them:
+ // 0 says the target is covered, null says there is no pace left to read.
+ paceRatio: number | null;
+ // Negative once the deadline has passed. A printed fact, never a classifier.
  daysRemaining: number;
  // The only nullable figure on the row, and the null has a meaning the caller
  // must respect: the deadline passed, so there is no monthly pace to state. It
@@ -53,12 +86,26 @@ export type PocketStatus = {
  requiredMonthly: number | null;
  funded: boolean;
  overdue: boolean;
- // How many distinct accounts fund this pocket.
+ // One of six, decided once by the server (`pocketLevel.js`), evaluated top
+ // down so the six are mutually exclusive. RULED 2026-09-03
+ // (POCKET_CONTRACT_AUDIT.md, "Contract change 2026-09-03"): the client no
+ // longer derives this from `funded`/`overdue`/`paceRatio` — it only maps the
+ // served word to a colour and a label (pocketStatus.ts).
+ level: PocketStatusLevel;
+ // How many distinct accounts fund this pocket, bounded at the close of the
+ // selected month, same as `allocated`.
  sourceCount: number;
  currency: CurrencyType;
  // The funding accounts no longer hold what this pocket says they committed.
  // Folded by the server across accounts, so no component can derive it.
  uncovered: boolean;
+ // What moved WITHIN the selected month, for this one pocket — distinct from
+ // the header's totalMovedInMonth, which folds every row's own figure below.
+ // null when the caller asked for no month, which only the detail endpoint
+ // ever does: the board always resolves one.
+ movedInMonth: number | null;
+ committedInMonth: number | null;
+ releasedInMonth: number | null;
 };
 
 // The header figures, folded by the server from the rows above so no component
@@ -96,6 +143,33 @@ export type PocketBoardSummary = {
  // amount. Same handling as the row's own desiredDate: never new Date() on it,
  // which reads UTC midnight and renders the previous day west of UTC.
  latestDesiredDate: string | null;
+ // What moved WITHIN the selected month across the whole board, as a net and
+ // as its two gross halves. All three travel because a net of -180.00 states
+ // neither how much went in nor how much came out, and a screen needing both
+ // would re-derive one from the other. The halves are positive; only the net
+ // carries a sign. Renamed from movedInMonth/committedInMonth/releasedInMonth
+ // 2026-09-03, once the row itself gained its OWN figure of almost the same
+ // name — the two would collide under one name.
+ totalMovedInMonth: number | null;
+ totalCommittedInMonth: number | null;
+ totalReleasedInMonth: number | null;
+ // The slack held by the pockets whose LEVEL is `ahead`, and no longer the sum
+ // over every row with positive slack. `aheadCount` travelled beside it until
+ // 2026-09-04 and is gone: once ahead became a level of its own, the count
+ // lived in levelCounts.ahead below, and two counts of the same thing folded by
+ // two rules is exactly how a screen comes to contradict itself. The amount and
+ // the count now describe the same rows by construction.
+ //
+ // Only positive slack is summed — a pocket behind its own line does not cancel
+ // the slack another one holds, the same reasoning totalExcess above already
+ // applies to the surplus past a target.
+ totalAheadOfPlan: number | null;
+ // One count per level, folded by the server from the same rows the list
+ // renders. Derived on the client until 2026-09-03, which let the strip and
+ // the cards read two different partitions of one board. Seven keys since
+ // 2026-09-04, and every one is always present, zeros included — never a
+ // sparse object missing an empty level.
+ levelCounts: Record<PocketStatusLevel, number>;
 };
 
 // What the endpoint answers, inside the envelope every route of this API wraps
@@ -103,9 +177,25 @@ export type PocketBoardSummary = {
 export type PocketBoardPayload = {
  summary: PocketBoardSummary;
  pockets: PocketStatus[];
- // Why the totals read as dashes, in the server's own words. Empty, never
- // absent.
- meta: { notices: string[] };
+ meta: {
+  // The month every figure below is about, as the server resolved it on the
+  // owner's calendar. YYYY-MM. It is the badge's label and it is NOT what the
+  // client asked for: the first request asks for none. Moved into meta
+  // 2026-09-03, beside the other three facts about the answer rather than a
+  // sibling of summary and pockets.
+  referenceMonth: string;
+  // The latest month that may be asked for, same calendar. Not
+  // referenceMonth: looking at August does not make August the latest month
+  // there is. YYYY-MM.
+  currentMonth: string;
+  // YYYY-MM-DD. The one date every figure on the payload was computed at —
+  // the passed deadline, the days remaining, the pace and the level all read
+  // this instant. Printed if a screen needs it, never derived client-side.
+  evaluationDate: string;
+  // Why the totals read as dashes, in the server's own words. Empty, never
+  // absent.
+  notices: string[];
+ };
 };
 
 export type PocketBoardResponse = {
@@ -131,6 +221,18 @@ export type PocketBoardResponse = {
 // a second answer to a question the rows already answer. Derived from the row
 // type rather than restated, so a change to the row cannot leave the two
 // disagreeing.
+//
+// The type is shared and the VALUES are not, confirmed against
+// makePocketStatus.js/makePocketLevel.js — the same builder serves both rows,
+// but this endpoint carries no month:
+// - `allocated` (and every figure derived from it) is the LIFETIME sum here,
+//   never bounded at a month's close the way the board's own row is.
+// - `movedInMonth`/`committedInMonth`/`releasedInMonth` are null, not zero —
+//   a screen printing one of these three on this payload prints a dash, never
+//   an arithmetic result on a null.
+// - `planStart`/`planInstalment`/`scheduledByNow`/`aheadOfPlan`/`paceRatio`
+//   ARE populated here, evaluated at today rather than at a selected month's
+//   close, since this endpoint never resolves one.
 export type PocketDetailPocket = Omit<PocketStatus, 'sourceCount'>;
 
 // One account funding this pocket.

@@ -41,7 +41,7 @@ export function BoxRow({ children , className}: ChildrenPropType) {
   return <div className={`box__row  box-row ${className}`.trim()}>{children}</div>;
 }
 
-//-----StatusSquare 
+//-----StatusSquare
 export function StatusSquare({
   alert,
 }: {
@@ -49,4 +49,16 @@ export function StatusSquare({
 }) {
   return <span className={`status__square ${alert}`}>
   </span>;
+}
+
+//-----StatusTick
+// The square's sibling for a reading that is FINISHED rather than pending, and
+// the only mark on the pocket scale that is told apart by shape. It takes no
+// props: a tick means one thing, so a colour argument would be a way to say
+// something it cannot mean.
+//
+// aria-hidden, like the square: both stand beside a word that already names the
+// state, and a mark announced on its own would read the level twice.
+export function StatusTick() {
+  return <span className='status__tick' aria-hidden='true'></span>;
 }

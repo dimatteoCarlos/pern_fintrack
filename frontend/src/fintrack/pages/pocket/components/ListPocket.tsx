@@ -1,19 +1,13 @@
 //ListPocket.tsx
 //parent: Pocket.tsx
-import { Link, useSearchParams } from 'react-router-dom';
-import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
-import { CURRENCY_OPTIONS, DEFAULT_CURRENCY } from '../../../helpers/constants.ts';
-import {
- currencyFormat,
- formatCalendarDate,
-} from '../../../helpers/functions.ts';
+//
+// The board's rows, the toolbar that narrows them, and the three fetch states.
+// It no longer draws a pocket: the card moved to PocketCard.tsx on 2026-09-04,
+// when the hero's Next target needed the same shape and was hand-building a
+// weaker copy of it. What is left here is the LIST — which rows, in what order,
+// and what to show when there are none.
+import { useSearchParams } from 'react-router-dom';
 import { usePocketBoardStore } from '../../../stores/usePocketBoardStore.ts';
-import {
- POCKET_STATUS_WORD,
- PocketStatusLevel,
- pocketDateLevel,
- pocketSquareClass,
-} from '../../../helpers/pocketStatus.ts';
 import { NAME_MAX_LENGTHS } from '../../../validations/utils/inputConstraints/nameMaxLengths.ts';
 import {
  DEFAULT_SORT_DIRECTION,
@@ -22,41 +16,8 @@ import {
  type PocketSortDirection,
  type PocketSortKey,
 } from '../hooks/usePocketListFilter.ts';
+import PocketCard from './PocketCard.tsx';
 import PocketToolbar from './PocketToolbar.tsx';
-
-// A figure the contract withheld. Never 0 and never an empty cell: a dash says
-// the answer is absent, where 0 would state an amount.
-const DASH = '—';
-
-// The word beside each card's status square is POCKET_STATUS_WORD, imported
-// from pocketStatus.ts rather than declared here: the board's own filter
-// (PocketToolbar) reads the same map for its options, so a card and the
-// control that narrows down to it can never disagree about what a level is
-// called.
-
-// Funded and on plan share a bare square — neither has anything to flag — so the
-// word is what tells them apart, and it carries its own tone. Colour alone
-// survives neither colour blindness nor a monochrome print.
-const STATUS_TONE: Record<PocketStatusLevel, string> = {
- funded: 'ok',
- overFunded: 'info',
- onPlan: 'neutral',
- atRisk: 'warning',
- offPlan: 'alert',
-};
-
-const plural = (count: number, word: string): string =>
- `${count} ${word}${Math.abs(count) === 1 ? '' : 's'}`;
-
-// How the deadline reads against today. Negative days are a deadline already
-// passed, and the day it falls on is neither left nor overdue.
-const deadlineReading = (days: number): string => {
- if (days === 0) return 'Due today';
-
- return days > 0
-  ? `${plural(days, 'day')} left`
-  : `${plural(Math.abs(days), 'day')} overdue`;
-};
 
 // How many placeholder rows the loading state draws. Enough to occupy the list
 // so the page does not jump when the real rows land, few enough not to claim a
@@ -77,11 +38,13 @@ const toSortKey = (value: string | null): PocketSortKey =>
 
 const FILTER_KEYS: PocketQuickFilter[] = [
  'all',
- 'funded',
- 'overFunded',
- 'onPlan',
+ 'completed',
+ 'aboveTarget',
+ 'ahead',
+ 'onTrack',
+ 'behind',
  'atRisk',
- 'offPlan',
+ 'overdue',
  'uncovered',
 ];
 const toQuickFilter = (value: string | null): PocketQuickFilter =>
@@ -101,9 +64,13 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
  // header. This reads it; it does not ask for it again.
  const pockets = usePocketBoardStore((state) => state.pockets);
  const isLoading = usePocketBoardStore((state) => state.isLoading);
- const isLoaded = usePocketBoardStore((state) => state.isLoaded);
+ // An answer is in memory, keyed by the month it was asked for. While a new
+ // month is on the wire this still names the previous one, and isLoading below
+ // is what sends the list to its skeleton rather than to stale rows.
+ const loadedMonth = usePocketBoardStore((state) => state.loadedMonth);
  const error = usePocketBoardStore((state) => state.error);
  const refreshBoard = usePocketBoardStore((state) => state.refreshBoard);
+ const isLoaded = loadedMonth !== null;
 
  // The toolbar's own state lives in the URL, not in a useState here, for the
  // reason ListCategory's header states for the same choice: a pocket's detail
@@ -141,7 +108,13 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
   matched,
   total,
   isFiltered,
- } = usePocketListFilter({ rows: pockets, search, sort, direction, quickFilter });
+ } = usePocketListFilter({
+  rows: pockets,
+  search,
+  sort,
+  direction,
+  quickFilter,
+ });
 
  // Three states, and they are not degrees of one another. A failed request is
  // not an empty board, and neither is a request still in flight — all three
@@ -153,6 +126,11 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
      <p className='pocketList__stateText'>
       The pocket board could not be loaded.
      </p>
+
+     {/* The served reason, which the store has been holding and this screen
+         was discarding. Same change as the summary's own error state above
+         it: one sentence for every possible failure is a dead end. */}
+     <p className='pocketList__stateDetail'>{error}</p>
 
      <button
       type='button'
@@ -226,189 +204,14 @@ function ListPocket({ previousRoute }: { previousRoute: string }) {
    />
 
    <article className='list__main__container pocketList'>
-   {visiblePockets.map((pocket) => {
-    const {
-     pocketId,
-     name,
-     note,
-     allocated,
-     target,
-     remaining,
-     progress,
-     desiredDate,
-     daysRemaining,
-     requiredMonthly,
-     sourceCount,
-     uncovered,
-     currency,
-    } = pocket;
-
-    const currency_code = currency ?? DEFAULT_CURRENCY;
-    const formatNumberCountry = CURRENCY_OPTIONS[currency_code];
-
-    const amount = (value: number) =>
-     currencyFormat(currency_code, value, formatNumberCountry);
-
-    // Built from the parts of a YYYY-MM-DD label the server resolved on the
-    // owner's calendar. new Date() on one of these is UTC midnight and
-    // renders as the previous day west of UTC.
-    const deadlineText = formatCalendarDate(desiredDate);
-
-    const level = pocketDateLevel(pocket);
-    const tone = STATUS_TONE[level];
-
-    // The row's percentage is not clamped and passes 100 when the goal is
-    // passed, which is a fact the label prints. The track is clamped instead,
-    // because a fill wider than its rail is a paint error and not a reading.
-    const barWidth = Math.min(Math.max(progress, 0), 100);
-
-    // A shortfall and an excess are the same subtraction with opposite signs
-    // and they are not the same news, so each gets its own word. Exactly zero
-    // is a real answer — nothing is missing — and prints as the amount.
-    const isExcess = remaining < 0;
-
-    // null and 0 are different answers on this field: null is a deadline
-    // already passed, so no pace exists to state, and 0 is a goal already
-    // met, so none is required. Neither is an amount of money per month.
-    //
-    // A passed deadline printed a dash here, which told the owner nothing
-    // about a pocket the board is raising an alert on. There is no RATE left,
-    // because a rate is money over time and the time is gone, but there is
-    // very much an amount: the whole shortfall, due now rather than spread.
-    //
-    // It is read off `remaining`, which the server already sends. Nothing is
-    // written into requiredMonthly: a field named for a monthly figure must
-    // not carry one that is not monthly, and every consumer that formats it
-    // with "/ month" would then print something untrue. The detail screen
-    // states this already; the card was the one staying silent.
-    const paceText =
-     requiredMonthly === null
-      ? `${amount(remaining)} now`
-      : requiredMonthly === 0
-        ? 'Not needed'
-        : amount(requiredMonthly);
-
-    // The label follows the figure and stops naming a rate on a pocket that
-    // has none left.
-    const paceLabel = requiredMonthly === null ? 'To settle' : 'Monthly pace';
-
-    return (
-     <Link
-      to={`pockets/${pocketId}`}
-      state={{ previousRoute }}
-      className={`pocketCard ${uncovered ? 'pocketCard--uncovered' : ''}`.trim()}
-      key={`pocket-${pocketId}`}
-     >
-      <div className='pocketCard__head'>
-       <h3 className='pocketCard__name'>{name}</h3>
-
-       {/* The level comes from the shared helper: the two served flags decide
-           funded and overdue, and the thirty-day threshold splits what is
-           left. Derived from the shortfall instead, this square once marked a
-           pocket three months ahead of schedule identically to one whose
-           deadline had passed, since both are short of the goal. */}
-       <span className={`pocketCard__status pocketCard__status--${tone}`}>
-        <StatusSquare alert={pocketSquareClass(level)} />
-        {POCKET_STATUS_WORD[level]}
-       </span>
-      </div>
-
-      <p className='pocketCard__note'>{note ?? DASH}</p>
-
-      <div
-       className='pocketCard__bar'
-       role='progressbar'
-       aria-label={`${name} progress`}
-       aria-valuemin={0}
-       aria-valuemax={100}
-       aria-valuenow={Math.round(progress)}
-      >
-       <div
-        className={`pocketCard__barFill pocketCard__barFill--${tone}`}
-        style={{ width: `${barWidth}%` }}
-       />
-      </div>
-
-      <p className='pocketCard__amounts'>
-       <span className='pocketCard__allocated'>{amount(allocated)}</span>
-       {/* The figure is NAMED, not related by a preposition. "of" asserts that
-           the second amount is the whole and the first a part of it, and an
-           over-funded pocket makes that false on screen: "$5.00 of $1.38". The
-           label holds for every pocket because it states what the figure IS. */}
-       <span className='pocketCard__target'>
-        <span className='pocketCard__targetLabel'>Target</span>{' '}
-        {amount(target)}
-       </span>
-       <span className={`pocketCard__percent pocketCard__percent--${tone}`}>
-        {Math.round(progress)}%
-       </span>
-      </p>
-
-      <dl className='pocketCard__facts'>
-       <div className='pocketCard__fact'>
-        {/* The same words the board hero and the detail panel use for this
-            figure. "Remaining" was a fourth name for it, and the card sits in
-            a list the hero heads. */}
-        <dt className='pocketCard__factLabel'>
-         {isExcess ? 'Over target' : 'Still to allocate'}
-        </dt>
-        <dd
-         className={`pocketCard__factValue ${
-          isExcess ? 'pocketCard__factValue--ok' : ''
-         }`.trim()}
-        >
-         {amount(Math.abs(remaining))}
-        </dd>
-       </div>
-
-       <div className='pocketCard__fact'>
-        <dt className='pocketCard__factLabel'>{paceLabel}</dt>
-        <dd
-         className={`pocketCard__factValue ${
-          requiredMonthly === null ? 'pocketCard__factValue--alert' : ''
-         }`.trim()}
-        >
-         {paceText}
-        </dd>
-       </div>
-
-       <div className='pocketCard__fact'>
-        <dt className='pocketCard__factLabel'>Deadline</dt>
-        <dd className='pocketCard__factValue'>{deadlineText || DASH}</dd>
-       </div>
-
-       <div className='pocketCard__fact'>
-        <dt className='pocketCard__factLabel'>Time</dt>
-        <dd
-         className={`pocketCard__factValue ${
-          daysRemaining < 0 ? 'pocketCard__factValue--alert' : ''
-         }`.trim()}
-        >
-         {deadlineReading(daysRemaining)}
-        </dd>
-       </div>
-      </dl>
-
-      {/* A count, not names: the detail screen lists the accounts one by one
-          and the card has no room for two of them. */}
-      <p className='pocketCard__sources'>
-       {sourceCount === 0
-        ? 'No funding account yet'
-        : `Funded by ${plural(sourceCount, 'account')}`}
-      </p>
-
-      {/* Orthogonal to the three readings above and louder than any of them:
-          a funded pocket can still be uncovered. Folded by the server across
-          the accounts, so nothing here derives it. */}
-      {uncovered && (
-       <p className='pocketCard__uncovered'>
-        Funding accounts no longer hold what this pocket committed
-       </p>
-      )}
-     </Link>
-    );
-   })}
-  </article>
+    {visiblePockets.map((pocket) => (
+     <PocketCard
+      pocket={pocket}
+      previousRoute={previousRoute}
+      key={`pocket-${pocket.pocketId}`}
+     />
+    ))}
+   </article>
   </>
  );
 }

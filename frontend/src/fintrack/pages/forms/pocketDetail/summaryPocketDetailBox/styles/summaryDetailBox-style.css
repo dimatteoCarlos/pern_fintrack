@@ -236,8 +236,12 @@
  border-left-color: var(--color-status-info);
 }
 
+/* Its own token since 2026-09-04, and no longer --color-content-secondary.
+   That value is the panel's body ink, so the border was borrowing the colour of
+   text rather than stating a level — which is how this row came to disagree
+   with the square beside it on the board, where the same level painted teal. */
 .summaryPocket__reading--neutral {
- border-left-color: var(--color-content-secondary);
+ border-left-color: var(--color-status-neutral);
 }
 
 .summaryPocket__reading--warning {
@@ -246,6 +250,17 @@
 
 .summaryPocket__reading--alert {
  border-left-color: var(--color-status-alert);
+}
+
+/* The two levels whose colour was deferred until 2026-09-04. Same token the
+   square beside them takes, for the reason the --ok rule above states: two
+   values a token apart on one line read as two states rather than as one. */
+.summaryPocket__reading--behind {
+ border-left-color: var(--color-status-behind);
+}
+
+.summaryPocket__reading--ahead {
+ border-left-color: var(--color-status-ahead);
 }
 
 @media (prefers-reduced-motion: reduce) {

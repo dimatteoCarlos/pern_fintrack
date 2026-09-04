@@ -336,6 +336,54 @@ body {
   background-color: var(--color-status-info);
 }
 
+/* Short of the plan and not yet at risk. Named on the token like the two rules
+   above it. Violet rather than a second amber: the warm end of the scale is
+   already spent on the two levels that outrank this one in severity, and the
+   two ambers that exist measure 1.21 apart and do not separate at 12px. */
+.status__square.behind {
+  background-color: var(--color-status-behind);
+}
+
+/* Running in front of the plan. It shares the quiet half of the scale with on
+   track and completed, and it is the only square in that half that carries a
+   hue: on track paints the base teal and completed is a tick, not a square. */
+.status__square.ahead {
+  background-color: var(--color-status-ahead);
+}
+
+/* Keeping up with the plan, which asks nothing of the owner. It is the one
+   pending level painted off the semaphore, and it needs an explicit rule
+   because the bare square it used to take paints var(--square) — a variable
+   declared nowhere — and fell through to the ok teal, so the same level read
+   teal here and grey on the detail panel's border. */
+.status__square.neutral {
+  background-color: var(--color-status-neutral);
+}
+
+/* A goal that has been met, marked by SHAPE and not by another colour: two
+   borders on a rotated box, so it costs no request.
+
+   It is the only mark on this scale that survives colour blindness. Simulated,
+   the seven levels collapse to two families and five of them sit within 1.11:1
+   of one another — the tick is what still separates one reading from the rest,
+   which is why the shape is the mark and not a decoration on top of it.
+
+   Sized against the square it stands in line with rather than on the sizing
+   scale: the scale has no entry between the status square and the icon size.
+   The right margin compensates for the rotation, which is a transform and so
+   changes what is drawn without changing what is laid out — the glyph spills
+   past its own 0.5rem box and would otherwise touch the word beside it. */
+.status__tick {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.8rem;
+  border-right: var(--border-width-thick) solid var(--color-status-complete);
+  border-bottom: var(--border-width-thick) solid var(--color-status-complete);
+  transform: rotate(45deg) translateY(-0.1rem);
+  margin-right: var(--space-1);
+}
+
 /*input css rules */
 textarea::placeholder,
 textarea.input__note__description::placeholder,
@@ -440,6 +488,23 @@ input[type='number'] {
   font-weight: var(--font-weight-regular);
   letter-spacing: var(--letter-spacing-wide);
   color: var(--color-content-on-dark-subtle);
+}
+
+/* The served reason under the sentence that says a request failed. A step down
+   in size because it qualifies the line above rather than competing with it,
+   and it breaks anywhere: a server message is prose of unknown length and a
+   long one must not push the retry off the box.
+
+   It is the only place on either board where a raw server string is printed,
+   which is deliberate. The sentence above is written for the owner; this line
+   is written for whoever has to fix it, and a failure that will not say what
+   it was costs a debugging session every time it appears. */
+.boardState__detail {
+  margin: 0;
+  max-width: 40ch;
+  font-size: var(--font-size-2xs);
+  color: var(--color-content-on-dark-muted);
+  overflow-wrap: anywhere;
 }
 
 /* Retry, which is what separates a failure from an empty board: the reader can

@@ -26,7 +26,7 @@ function PocketReadingIcon({ level, className }: PocketReadingIconPropType) {
    aria-hidden='true'
    focusable='false'
   >
-   {level === 'funded' && (
+   {level === 'completed' && (
     <>
      <circle cx='12' cy='12' r='9' stroke='currentColor' strokeWidth='1.75' />
      <path
@@ -42,7 +42,7 @@ function PocketReadingIcon({ level, className }: PocketReadingIconPropType) {
    {/* The account no longer covers what is committed, and the date reading in
        its failed state. A triangle, which is the one shape here that does not
        depend on colour to read as a warning. */}
-   {level === 'offPlan' && (
+   {level === 'overdue' && (
     <>
      <path
       d='M12 3.75 2.75 20h18.5L12 3.75Z'
@@ -74,7 +74,34 @@ function PocketReadingIcon({ level, className }: PocketReadingIconPropType) {
     </>
    )}
 
-   {level === 'onPlan' && (
+   {/* In front of the plan's own line: a rising trend, which states a DIRECTION
+       where the calendar below states a schedule kept. It is the one glyph here
+       that is not a container — nothing bounds this reading, the pocket is
+       simply further along than the line asked for.
+
+       aboveTarget and behind still draw an empty svg. That gap predates the
+       seventh level and is not closed here: this file is a switch, so a missing
+       branch costs a blank glyph and never a crash. */}
+   {level === 'ahead' && (
+    <>
+     <path
+      d='M3.75 16.5 9.5 10.75l3.25 3.25 6.5-6.5'
+      stroke='currentColor'
+      strokeWidth='1.75'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+     />
+     <path
+      d='M14.75 7.5h4.5V12'
+      stroke='currentColor'
+      strokeWidth='1.75'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+     />
+    </>
+   )}
+
+   {level === 'onTrack' && (
     <>
      <rect
       x='3.5'

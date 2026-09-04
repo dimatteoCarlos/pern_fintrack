@@ -28,10 +28,13 @@ import { PocketDetailPocket } from '../../../../types/pocketTypes';
 // '?react' and not the bare form: only that door carries a React type, so the
 // glyph can take a className and inherit the panel's ink through currentColor.
 import PiggyCoinSvg from '../../../../../assets/pocketSvg/PiggyUniversalCoinSvg.svg?react';
-import { StatusSquare } from '../../../../general_components/boxComponents/BoxComponents.tsx';
+import {
+ StatusSquare,
+ StatusTick,
+} from '../../../../general_components/boxComponents/BoxComponents.tsx';
 import {
  POCKET_STATUS_WORD,
- pocketDateLevel,
+ pocketMarkIsTick,
  pocketReadingModifier,
  pocketSquareClass,
 } from '../../../../helpers/pocketStatus.ts';
@@ -53,6 +56,7 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
   desiredDate,
   uncovered,
   daysRemaining,
+  level: dateLevel,
  } = pocket;
 
  // The symbol, which is how every amount in the application is denominated.
@@ -78,9 +82,10 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
      : `Still to allocate ${amount(remaining)}`;
 
 
- // The colour of the square and of the reading's border come from this one
- // level, so the two can never state different things about the same pocket.
- const dateLevel = pocketDateLevel(pocket);
+ // Served, never derived: RULED 2026-09-03 (POCKET_CONTRACT_AUDIT.md,
+ // "Contract change 2026-09-03"). The colour of the square and of the
+ // reading's border come from this one level, so the two can never state
+ // different things about the same pocket.
 
  // The sign is spent on the word rather than on the number: late is "12 days
  // late", never "-12 days left". Same rule the module applies to every figure
@@ -165,12 +170,12 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
    <div className='summaryPocket__readings'>
     {uncovered && (
      <p
-      className={`summaryPocket__reading ${pocketReadingModifier('offPlan')}`}
+      className={`summaryPocket__reading ${pocketReadingModifier('overdue')}`}
       role='status'
      >
-      <StatusSquare alert={pocketSquareClass('offPlan')} />
+      <StatusSquare alert={pocketSquareClass('overdue')} />
       <PocketReadingIcon
-       level='offPlan'
+       level='overdue'
        className='summaryPocket__readingIcon'
       />
       <span className='summaryPocket__readingText'>
@@ -179,8 +184,17 @@ function SummaryPocketDetailBox({ pocket }: SummaryPocketDetailPropType) {
      </p>
     )}
 
+    {/* A tick for the one level that is finished rather than pending, a square
+        for the other six — asked through the shared helper, so this panel and
+        the board card cannot draw the same pocket two different shapes. The
+        border beside it keeps its hue: a line cannot be a shape, so colour is
+        all that mark has to carry. */}
     <p className={`summaryPocket__reading ${pocketReadingModifier(dateLevel)}`}>
-     <StatusSquare alert={pocketSquareClass(dateLevel)} />
+     {pocketMarkIsTick(dateLevel) ? (
+      <StatusTick />
+     ) : (
+      <StatusSquare alert={pocketSquareClass(dateLevel)} />
+     )}
      <PocketReadingIcon
       level={dateLevel}
       className='summaryPocket__readingIcon'

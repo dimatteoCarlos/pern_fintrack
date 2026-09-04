@@ -1,0 +1,21 @@
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <!-- The accounts the pockets draw on. Drawn with the same pen as
+       walletSvg.svg and PiggyUniversalCoinSvg.svg: 0.375 for the strokes that
+       name the object and 0.35 for the detail inside it. The set renders at
+       4rem, where those weights land just under a pixel, so anything heavier
+       would read as a different family of icons rather than a different
+       subject.
+       The columns are the exception at 0.32: three parallel verticals at the
+       body weight fill in and read as a solid block at this size, so they are
+       drawn one step lighter to stay three. -->
+  <!-- Pediment: the roof as an open triangle, apex centred on the grid -->
+  <path d="M12 3.5L21.5 8.5H2.5L12 3.5Z" stroke="currentColor" stroke-width="0.375" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- The line the columns stand on, held clear of the pediment above -->
+  <path d="M4 10.5H20" stroke="currentColor" stroke-width="0.35" stroke-linecap="round"/>
+  <!-- Three columns, evenly spaced across the span -->
+  <path d="M6.5 10.5V17.5M12 10.5V17.5M17.5 10.5V17.5" stroke="currentColor" stroke-width="0.32" stroke-linecap="round"/>
+  <!-- Plinth, then the ground line wider than it: two rules, so the building
+       sits on a base rather than ending in the air -->
+  <path d="M4 17.5H20" stroke="currentColor" stroke-width="0.35" stroke-linecap="round"/>
+  <path d="M2.5 20.5H21.5" stroke="currentColor" stroke-width="0.375" stroke-linecap="round"/>
+</svg>
