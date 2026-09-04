@@ -116,7 +116,7 @@ another module is built — the fourth.
 | 2 | *Am I where my own plans say I should be by now?* | `totalAllocated` against the sum of `scheduledByNow`, and the shortfall between them | **half missing** — the fold keeps only the positive side, as `totalAheadOfPlan`; the deficit is discarded on the way in (`pocketBoardService.js:249`) |
 | 3 | *Which pocket needs money first?* | the row's `level`, and `levelCounts` in the header | served |
 | 4 | *How far am I from everything I have promised myself?* | `totalTarget`, `totalAllocated`, `totalRemaining`, `overallProgress` | served — the hero's three tiles; the overview's question under the scope premise above |
-| 5 | *Did I actually do anything this month?* | `totalCommittedInMonth`, `totalReleasedInMonth`, `totalMovedInMonth` | served — only the net prints (§7.1) |
+| 5 | *Did I actually do anything this month?* | `totalCommittedInMonth`, `totalReleasedInMonth`, `totalMovedInMonth` | served, board-wide and unchanged — the hero prints the net over the pockets on a plan instead, a separate fold (§7.1) |
 | 6 | *Where can I take money from without breaking a plan?* | `totalAheadOfPlan` with `levelCounts.ahead`, and `totalExcess` with `levelCounts.aboveTarget` | served — two distinct amounts, never added together |
 | 7 | *Is the money I promised actually still in the accounts?* | the row's `uncovered`, `uncoveredCount` in the header | served |
 | 8 | *What did this look like at the close of a past month?* | the month stepper and `meta.referenceMonth` | served |
@@ -166,23 +166,82 @@ done. Question 1 above is what the owner meant, and its answer is a monthly pace
 
 ### What this obliges
 
-Five fields enter the header fold (`makeSummary`), all of them folds over
+Nine fields enter the header fold (`makeSummary`), all of them folds over
 fields already on the row — no query change and no migration:
 
 | Field | What it holds |
 |---|---|
 | `totalScheduledByNow` | the sum of `scheduledByNow`: what the plans required by the selected close |
-| `scheduledPocketsAllocated` | the committed amount of those same pockets — the bar's numerator |
+| `scheduledPocketsAllocated` | the committed amount of those same pockets, printed beside what those plans required |
+| `scheduleAdherence` | the share of what the plans required that is actually committed, **served as a percentage**, nullable and **not clamped** |
 | `totalScheduleGap` | the sum of `aheadOfPlan`, **signed**: positive is slack held, negative is the shortfall |
 | `totalRequiredMonthly` | the sum of `requiredMonthly`: what this month asks for |
 | `scheduledPocketCount` | how many pockets have a plan window at all |
+| `underScheduleCount` | how many of those pockets stand strictly below their own line (`aheadOfPlan < 0`), never null |
+| `overScheduleCount` | how many stand at or above it (`aheadOfPlan >= 0`), never null |
+| `scheduledPocketsMovedInMonth` | the net moved within the selected month across those same pockets, **signed** and nullable |
 
-**Why five and not three.** The four schedule fields are null together when a
+**The month's net gains a second figure and loses none — RULED 2026-09-04.** The
+three board-wide movement figures already served — the net moved in the month,
+the gross committed and the gross released — keep their meaning exactly and count
+every pocket on the board. The ninth field above is a separate fold over the
+pockets that hold a plan window, and it carries the same qualifier the other
+schedule folds carry so that **the name states its population**. Narrowing the
+existing net in place was considered and refused: changing a served field's
+meaning under a name that does not state its scope forces every reader to be
+re-verified, and the readers outside a repository search cannot be. Only the net
+is scoped — no scoped gross halves ship, because nothing prints them — so the
+two gross halves stay board-wide and **do not decompose the scoped net**.
+
+**A pocket exactly on its line counts on the over side — RULED 2026-09-04.**
+The negative test is strictly below zero, so a pocket that has committed
+precisely what its plan asked for falls to the over side. The tie-break is not
+cosmetic: with it the two counts partition the whole population of pockets that
+have a plan window, so they always sum to `scheduledPocketCount`. A pocket with
+no full calendar month in its window has no difference against a schedule at all
+— that difference is null together with the other three schedule fields
+(`planSchedule.js`, `planMonths < 1`) — and falls outside both counts, which is
+the same exclusion the ratio and the amount it divides already make.
+
+**Both counts are served and neither is subtracted on the client.** Both are
+non-null on any board, an empty one included, and the percentage above is served
+too: no arithmetic over this fold is left to the browser.
+
+**The adherence percentage is a quotient of the two sums, never a fold of
+per-pocket ratios — RULED 2026-09-04.** Clamping each pocket at one hundred
+before summing discards the surplus held by every pocket standing over its own
+line, so the folded figure would read lower than the two amounts printed beside
+it on the same line, where the reader divides them by eye. A percentage that
+contradicts the two numbers next to it is a worse defect than one above a
+hundred. **The clamping happens at the bar's fill and nowhere else**, so a board
+past its schedule shows a figure above one hundred over a full bar. It is not
+called the progress of the schedule: that name carried the clamped-per-pocket
+definition while it was disputed, and a name that has meant two things is how a
+wrong implementation ships later. The lifetime progress figure is unaffected —
+it divides by a target that cannot meaningfully be exceeded, this one by a
+schedule where exceeding it is the interesting case.
+
+**Why the signed total cannot replace them.** A net figure cannot say how many
+pockets sit on each side of the line. A board whose signed difference nets to
+zero can hold five pockets badly short of their plans and one holding enough
+slack to cancel them; the owner acts on the five, not on the zero.
+
+**The side of the schedule is an axis, not the level scale.** The axis is
+binary and is set by the sign of one field, the difference between what a pocket
+has committed and what its own plan asked for by the close. The levels
+(`pocketLevel.js`) are a scale of seven mutually exclusive bands set by the pace
+ratio, and a level is neither a side nor a subdivision of one. Reading the two
+counts as level counts is what makes them look as if they cannot add up to the
+population. The tolerance band for keeping up with the plan is symmetric — five
+hundredths of the pace ratio either side of the line (`ON_TRACK_BAND`) — so it
+straddles the axis, and a pocket reading *On track* can be on either side of it.
+
+**Why the amounts do not travel alone.** The four schedule fields are null together when a
 plan's window holds no full calendar month (`planSchedule.js`, `planMonths < 1`).
-Those pockets are excluded from the line, so they must also be excluded from its
-numerator — which is why `totalAllocated` cannot serve as the bar's numerator
-and why the count ships beside the ratio, so the screen can say how many pockets
-the reading leaves out.
+Those pockets are excluded from the line, so they must also be excluded from the
+amount measured against it — which is why `totalAllocated` cannot be what the
+adherence figure divides, and why the count ships beside the percentage, so the
+screen can say how many pockets the reading leaves out.
 
 `totalScheduleGap` does not replace `totalAheadOfPlan`. The clamped one answers
 where money can be taken from (question 6) and must stay clamped, because a
@@ -190,10 +249,15 @@ pocket behind its line is not a source; the signed one answers whether the board
 is on plan (question 2) and must keep its sign.
 
 The frontend requirement that follows, per the standing rule that a payload
-change records it in the owning plan: `PocketBoardSummary` gains the five
-fields, the hero's bar takes its new denominator and its label, and §7.1 places
-the rest. Placement is not settled here — this section ranks the questions and
-does not lay out the screen.
+change records it in the owning plan: the board summary type
+(`PocketBoardSummary`, `frontend/src/fintrack/types/pocketTypes.ts`) gains all
+nine fields, the hero's bar prints the served percentage as its label and clamps
+only its own fill, and §7.1
+places the rest. Placement is not settled here — this section ranks the
+questions and does not lay out the screen. The wording the hero carries for
+these fields is settled, in the mockup and in the decision log
+(`plan-docs/design-refs/pocket-hero/schedule-bar.html`; `POCKET_DECISIONS.md`
+section 27).
 
 **The per-pocket percentage is unchanged — RULED 2026-09-04.** The card keeps
 `allocated ÷ target × 100` (`makePocketStatus.js:162`), because the card already
@@ -823,6 +887,87 @@ date, source count, note.
 > (`PocketBigBoxResult.tsx:423`) — and §18.1 of `POCKET_DECISIONS.md` forbids it
 > as ambiguous between `pocket_allocations` and `budget_monthly_allocations`.
 > **Not corrected here**: amending a frozen contract is the developer's.
+
+**The schedule block and its wording — RULED 2026-09-04.** Reasoning in
+`POCKET_DECISIONS.md` section 27; the three states are drawn in
+`plan-docs/design-refs/pocket-hero/schedule-bar.html`. What the screen owes:
+
+- **Two blocks, in this order: the money first, then the schedule.** The block
+  is called **schedule** and never *progress*, because *progress* is the word the
+  lifetime bar already owns and the two answer different questions. The
+  accessibility role on the widget stays `progressbar`: that is the platform's
+  name for the control, not the page's name for the block.
+- **The bar's label prints the served percentage unclamped, and only the fill is
+  clamped to the track** (`scheduleAdherence`). A board standing past what its
+  plans asked for reads a figure above one hundred over a full bar, with the
+  sentence beside it saying so. The screen divides nothing and counts nothing:
+  the percentage and both pocket counts arrive served.
+- **The third tile is labelled `Variance` and carries three rows** — the label,
+  the signed amount, and under it the side of the board's own line spelled in
+  words: `under the schedule` when the signed net is negative, `over the
+  schedule` when it is at or above zero. The amount prints once, in the value; a
+  bare signed number is never the whole tile, because the sign states the side
+  only in symbols. Tile labels are authored in sentence case and uppercased by
+  CSS.
+- **The two left tiles of the equation are labelled `Required to date` and
+  `Committed to date`**, and the two labels move together. Both figures are
+  cumulative from each plan's creation through the close of the month in the
+  stepper, and both count only the pockets that have a plan window. Without the
+  phrase a reader takes the committed figure for the portfolio's total, which is
+  the different figure on the lifetime strip. **Neither label names the month**:
+  the badge does, and a label carrying a month would have to change as the
+  stepper moves.
+- **The month's movement reads `840.00 net committed in August`**, inside the
+  committed tile. The word `net` is not decoration — the figure is what came in
+  less what was released, and without it a release makes the figure look wrong.
+  It is its own served fold over **only the pockets with a plan window**
+  (`scheduledPocketsMovedInMonth`), the same six the tile's own balance counts,
+  because a sub-figure drawn from a wider population is not a part of the number
+  above it. The board-wide net stays served and unchanged, and is not what this
+  line prints.
+- **The two schedule-side counts sit inside the segment that counts pockets**,
+  in parentheses and **both printed**: `6 of 8 pockets on a plan (3 under / 3
+  over schedule)`. A free-standing segment of its own would read as a second
+  population, and printing one side alone makes it read as contradicting the
+  variance amount above it, which is a signed net over the whole board and can
+  point the other way.
+- **The monthly pace is worded `1,145.00 a month to finish on time`**, never
+  *due this month*. *Due* makes a forward-looking pace sound like a bill landing
+  beside the arrears and invites adding the two. They are not added: the
+  accumulated difference against the schedule is already inside the pace, which
+  divides what is left of the target by the time left
+  (`computeRequiredMonthly`, `makePocketStatus.js:52-62`).
+- **When no plan window covers the selected month the third segment is dropped
+  entirely** — `No plan window covers August 2026 · 0 of 8 pockets on a plan` —
+  because there is no line to be on either side of.
+- **The lifetime strip stays on this page** and reads
+  `Lifetime · 9,600.00 committed of 24,000.00 total target — 40%`. It leaves the
+  pocket page only when the app-wide overview carries the question, and the
+  overview's own KPI catalog currently refuses every pocket goal figure by name,
+  so the strip has nowhere to go yet (see the note in section 27).
+
+**The seven level words are untouched, and the hero's axis words change instead
+— RULED 2026-09-04.** This reverses a ruling taken earlier the same day, which
+renamed the pace band between the line and double it because the word *behind*
+named both that band and the whole negative side of the schedule axis. The
+collision was real but the remedy was wrong: **the word for running early
+collides in exactly the same way**, so renaming one band leaves the other half of
+the ambiguity standing. The level vocabulary keeps all seven words —
+`Completed`, `Above target`, `Ahead`, `On track`, `Behind`, `At risk`,
+`Overdue` — and the hero says `under` and `over` where it talks about the line.
+The coverage word is unchanged and stays `Uncovered` on every surface.
+
+**One consequence that survives the reversal:** the hand-typed lowercase level
+literals in the board summary component (`PocketBigBoxResult.tsx:573`, `:605`,
+`:621`, `:659`) contradict the shared vocabulary map's own claim to be the
+single place a level is spelled (`POCKET_STATUS_WORD`,
+`helpers/pocketStatus.ts:104-119`). No rename is pending now, so nothing forces
+the fix, but it is a live defect and is recorded rather than left unsaid.
+
+**One correction to the re-measured block above**, which is a measurement of
+2026-08-31 and stays as written: the level scale has carried **seven** words
+since 2026-09-04, not five, and the filter chip list is that many plus `All` and
+coverage.
 
 **The board is a pocket hero and nothing else.** No cash position, no net worth,
 no accounting-dashboard figure. Same separation the owner required between the

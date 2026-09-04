@@ -3015,6 +3015,341 @@ both are recorded here rather than fixed silently.
 
 ---
 
+## 25. The board says how many pockets sit on each side of the schedule — RULED 2026-09-04
+
+The header fold (`makeSummary`, `pocketBoardService.js:139-286`) gains two
+counts beside the schedule figures the module spec already obliges it to carry
+(§0ter): the number of pockets standing strictly below their own line
+(`underScheduleCount`, the difference against the schedule negative) and the
+number standing at or above it (`overScheduleCount`, that difference at zero or
+above). Both are folds over `aheadOfPlan`, a field the row already carries, so
+there is no query change and no migration. **Both are served and both are
+non-null on any board, an empty one included** — neither is recovered by
+subtracting the other in the browser.
+
+The words are the hero's axis words, ruled in section 26. They were first
+written with the two level names, which is the collision that section closes.
+
+### 25.1 A pocket exactly on its line counts on the over side
+
+The negative test is strictly below zero, so the pocket that has committed
+precisely what its plan asked for falls to the over side. The tie-break is the
+whole reason the pair is worth serving. With it the two counts **partition** the
+population of pockets that have a plan window, so they always sum to
+`scheduledPocketCount` and the screen can print the three figures side by side
+without a reader having to wonder where the remainder went.
+
+The pockets outside both counts are the ones outside the percentage as well:
+when a plan's window holds no full calendar month, the difference against the
+schedule is null together with the other three schedule figures
+(`planSchedule.js`, `planMonths < 1`). They are excluded from the amount
+required, from the amount committed against it and from both counts, by one rule
+applied consistently rather than three.
+
+Counting the pocket on its line as *over* rather than *under* is also the
+reading the domain wants: a pocket that has committed exactly what its plan
+asked for is meeting the plan, and asking its owner for nothing.
+
+### 25.2 Why the signed total cannot do this job
+
+The board already carries the signed sum of the same field (`totalScheduleGap`),
+and it answers a different question. **A net cannot describe a distribution.** A
+board whose signed difference comes to zero can hold five pockets badly short of
+their plans and one holding enough slack to cancel all five; the owner has five
+things to do and the net says none. The counts say how many are on each side,
+the signed total says by how much overall, and neither is derivable from the
+other.
+
+### 25.3 This is not the retired slack count returning
+
+The count of pockets holding positive slack was retired earlier the same day
+(24.5) because it duplicated a level count minus a rounding. The pair ruled here
+is a different measurement and the difference is the population, not the
+threshold:
+
+| | the retired count | the pair ruled here |
+| --- | --- | --- |
+| what it counted | pockets inside the live band holding slack | every pocket with a plan window, on one side or the other |
+| finished and late pockets | outside it | inside it |
+| relation to a level | the same rows as the level for running early | none — it crosses every level |
+
+Because the finished, the above-target and the late pockets are all inside this
+population, the over side is always at least the count of pockets reading
+*Ahead* and usually strictly more.
+
+### 25.4 The side of the schedule is an axis, not the level scale
+
+This is the confusion the pair exists to survive, and it is worth stating in the
+plan because it was made once already while reading the screen.
+
+- **The axis is binary and set by the sign of one money figure**, the difference
+  between what a pocket has committed and what its own plan asked for by the
+  close. Every scheduled pocket is on exactly one side of it.
+- **The level is a scale of seven mutually exclusive bands** set by the pace
+  ratio (`pocketLevel.js`). A level is neither a side of the axis nor a
+  subdivision of one.
+
+The two do not line up, and the reason is the tolerance band. Keeping up with
+the plan is defined as a symmetric five hundredths of the pace ratio either side
+of the line (`ON_TRACK_BAND`), so the band straddles the axis: a pocket reading
+*On track* is on the over side in the band's lower half and on the under side in
+its upper half. Of the rest, the level for running early and the two levels for
+a met or exceeded target are always on the over side, the level for a pace at or
+past double the plan's is always on the under side, and a pocket past its date
+can be on either.
+
+The consequence for the screen: **the two counts must never be summed with, or
+checked against, the per-level counts.** They are readings on different axes of
+the same rows.
+
+### 25.5 The share committed against what the plans required is served, not divided on the screen
+
+The percentage the bar states is its own served fold (`scheduleAdherence`): the
+committed amount of the scheduled pockets over what those same plans required by
+the selected close. Nullable on the terms every amount here is nullable on, and
+**not clamped** — over a hundred is a reading, not an error.
+
+**It is a quotient of the two sums and never a fold of per-pocket ratios.**
+Clamping each pocket at a hundred before summing throws away the surplus held by
+every pocket standing over its own line, so the folded figure would come out
+lower than the two amounts printed beside it on the same line, which a reader
+divides by eye. **A percentage that contradicts the two numbers next to it is a
+worse defect than one above a hundred.**
+
+**The clamping belongs to the bar's fill alone.** The fill stops at the track
+while the label states the true value, so a board past its schedule shows a
+figure above a hundred over a full bar with a sentence beside it saying the
+owner stands past what the schedule asked for.
+
+**It is not called the progress of the schedule.** That name carried the
+clamped-per-pocket definition while the two readings were in dispute, and a name
+that has meant two things is how a wrong implementation ships later.
+
+**The lifetime progress figure keeps its own rule.** The two are different kinds
+of number: that one divides by a target that cannot meaningfully be exceeded,
+this one by a schedule where exceeding it is the interesting case.
+
+---
+
+## 26. The hero's axis says under and over; the seven level words are untouched — RULED 2026-09-04
+
+**This reverses a ruling taken earlier the same day and recorded in this
+section**, which renamed the level for a pace above the plan's and below double
+it. The original argument is kept below, because it identified a real problem
+and only the remedy was wrong.
+
+### 26.1 The argument that was made, and why it was overruled
+
+**What was ruled first.** The word *behind* named two things of different size
+on the same screen: the whole negative side of the schedule axis, which holds
+pockets drawn from four different levels, and the single band of the level scale
+where the pace now required exceeds the pace the plan set without reaching
+double it. A reader meeting both in one hero reads the axis counts as level
+counts and concludes, correctly for what he was shown, that the figures cannot
+add up. The remedy proposed was to rename the band, on the reasoning that the
+axis word is the one the reader needs beside the counts and the level word is a
+label that can move.
+
+**Why it does not hold.** The collision is not one word's. The word for a pocket
+running early names a level *and* the positive side of the same axis, in exactly
+the same way. Renaming one band leaves the other half of the ambiguity standing
+and buys nothing but a migration — a level value travels on every row and keys
+the per-level counts object, so the rename would have moved the payload, four
+maps, a fixture, two filters, a card and four stylesheets including a colour
+token.
+
+**The remedy that was adopted instead:** change the words the hero uses for the
+axis, where the ambiguity actually appears, and leave the level scale alone. A
+screen decision, with no payload consequence.
+
+### 26.2 The seven level words stand as they are
+
+`Completed`, `Above target`, `Ahead`, `On track`, `Behind`, `At risk` and
+`Overdue` keep their words and their identifiers. The band boundaries, the
+classifier and the reading order were never in question
+(`pocketLevel.js`), and the shared vocabulary map is the one place the words are
+spelled (`POCKET_STATUS_WORD`, `helpers/pocketStatus.ts:104-119`).
+
+**The coverage word is untouched too.** It stays `Uncovered` on every surface —
+the chip, the card and the hero's alerts row — and nothing in this correction
+reaches it.
+
+### 26.3 The axis reads under the schedule and over the schedule
+
+The line under the variance amount says `under the schedule` when the board's
+signed net is negative, and `over the schedule` when it is at or above zero.
+
+**The article is load-bearing.** *The* schedule names the single board-wide line
+the one net figure is measured against, and that is what separates this reading
+from the per-pocket counts below it, which describe eight separate lines. A
+bare *under schedule* would read as a category rather than as a comparison
+against a named thing.
+
+**Why `under` and not a stronger negative word.** The two sides are not
+symmetric: the negative side is strictly below zero, while the positive side
+includes exactly zero. A pocket sitting precisely on its line falls to the
+positive side by the tie-break ruled in section 25, so any word implying a
+strict surplus — *surplus*, *saved past*, *ahead of* in its strong sense — would
+mislabel it. *Under* and *over* carry the comparison without claiming a
+distance.
+
+### 26.4 What this leaves standing from the withdrawn ruling
+
+**The hand-typed level literals in the board summary component remain a defect**
+(`PocketBigBoxResult.tsx:573`, `:605`, `:621`, `:659`): each asks for a square
+class with the level spelled inline, which the vocabulary map's own header says
+cannot happen, since it exists so that a card, the hero's tallies and the filter
+can never name one level three different ways. It was found while measuring the
+rename's blast radius and it survives the rename's withdrawal. **Nothing forces
+the fix now** — no identifier is moving — so it is recorded rather than fixed
+silently.
+
+---
+
+## 27. The hero's schedule block and its wording — RULED 2026-09-04
+
+Drawn in three states in `plan-docs/design-refs/pocket-hero/schedule-bar.html`
+and settled there: a board under its schedule, a board over it, and no plan
+window covering the selected month. This section records the reasons, which the
+mockup can only carry as comments. **The mockup carries every wording ruled
+here**, the axis words of section 26 included.
+
+### 27.1 Two blocks, and the second one is called schedule
+
+The money reads first — the amounts and the lifetime ratio — and the schedule
+block sits under it. *Progress* is not available as a name for the second block:
+it is the word the lifetime bar already owns, and the two answer different
+questions, one about the distance to the goal and one about the distance to the
+plan's own line.
+
+**The accessibility role stays `progressbar`.** It is the platform's name for a
+widget that fills, not the page's name for the block, and a reader using it hears
+the label rather than the role name.
+
+### 27.2 The variance tile has three rows and prints the amount once
+
+The label `Variance`, the signed amount, and under it the side of the line in
+words — `under the schedule` or `over the schedule`, ruled in section 26 and
+replacing the earlier pair of words, which repeated two level names. The sign
+states the side in symbols only; the words state it in language, and the two
+sides are opposite situations rather than degrees of one. **A bare signed number
+is never the whole tile.**
+
+The label is static and the developer chose it over the alternative of a label
+that changed with the side. Tile labels are authored in sentence case and
+uppercased by CSS, as the rest of the hero already is.
+
+### 27.2b The two left tiles of the equation say `to date`
+
+`Required to date` and `Committed to date`, and the two labels move together
+because they are the two halves of one comparison. Both figures are cumulative
+from each plan's creation through the close of the month standing in the
+stepper, and both count only the pockets that have a plan window.
+
+**Without the phrase the committed figure is read as the portfolio's total**,
+which is a different number and is already on the screen, on the lifetime strip.
+The two are only equal when every pocket is on a plan.
+
+**Neither label names the month, deliberately.** The badge above the block names
+it, and a label carrying a month would have to be rewritten every time the
+stepper moves — one place stating the period is the rule the rest of the hero
+already follows.
+
+### 27.3 The two counts sit inside the segment that counts pockets, and both print
+
+`6 of 8 pockets on a plan (3 under / 3 over schedule)`, in parentheses and
+attached to the count they decompose. As a free-standing segment between two
+middots they would read as a separate population — a third figure beside eight
+and six rather than a split of six — which is exactly the misreading section 25
+exists to prevent.
+
+**Both sides print, and this reverses the earlier ruling that one count was
+enough** on the reasoning that the reader could subtract it from the planned
+count to recover the other. Two reasons overturn it. The pair partitions that
+population exactly and always sums to the figure named immediately before, so
+printing both costs one number and removes an arithmetic step. More seriously,
+**one count alone reads as contradicting the variance amount above it**: the
+variance is a signed net over the whole board and can point the opposite way to
+the majority of pockets, so a lone count of the side the net does not favour
+looks like an error in one of the two figures.
+
+### 27.3b The month's movement is a net, and it counts the same six pockets
+
+Inside the committed tile: `840.00 net committed in August`. **The word `net` is
+required**, because the figure is what came in less what was released; without
+it a month holding a release reads as a wrong number rather than as a smaller
+one.
+
+**It counts only the pockets with a plan window** — the six, not all eight —
+because it sits inside the tile whose balance counts those same six, and a
+sub-figure drawn from a wider population is not a part of the number above it.
+
+**This is served as a new figure, and nothing already served is redefined.** The
+three board-wide movement figures — the net moved in the month, the gross
+committed and the gross released — keep their meaning and their population. The
+scoped net is a ninth schedule fold beside them
+(`scheduledPocketsMovedInMonth`), carrying the same qualifier the committed
+amount of those pockets already carries, so the name says which pockets it
+counts.
+
+**Narrowing the existing net in place was refused, and the reason is worth
+keeping.** A served field whose name does not state its scope cannot have its
+meaning changed safely: every reader has to be re-verified, and the readers
+outside a repository search — the contract audit, the overview plan, whatever is
+written next — cannot be. A client already reading it would go on reading it and
+would silently be reading a different population.
+
+**Only the net is scoped**, because only the net is printed; the module does not
+add a field before the question it answers is written down. The consequence to
+state before someone tries the arithmetic: **the two gross halves are board-wide
+and do not decompose this figure** — subtracting one from the other gives the
+board-wide net, not the scoped one.
+
+**The board-wide net keeps its place and loses no reader.** It answers how much
+the owner saved in the month across everything they hold, which is the app-wide
+overview's question rather than this board's; it simply has no consumer on the
+hero. The frozen shape of all of this is in `POCKET_CONTRACT_AUDIT.md`,
+"Contract change 2026-09-04 (second)".
+
+### 27.4 A pace, not a bill
+
+The monthly figure is worded `1,145.00 a month to finish on time` and never
+*due this month*. **Due makes a forward-looking pace sound like an arrears
+notice landing beside the variance, and invites adding the two.** They must not
+be added: the accumulated difference against the schedule is already inside the
+pace, because the pace divides what is left of the target by the time left
+(`computeRequiredMonthly`, `makePocketStatus.js:52-62`), and money not committed
+in past months is still in the remainder it divides. Adding the variance to the
+pace counts the shortfall twice.
+
+### 27.5 The no-plan-window state drops the third segment
+
+`No plan window covers August 2026 · 0 of 8 pockets on a plan`, and nothing
+else. There is no line to be on either side of, so there is no variance to show
+and no pace to finish on time by; the variance tile carries an em dash and the
+words `nothing to measure against`. Printing a zero here would be a figure, and
+a missing figure is a dash.
+
+### 27.6 The lifetime strip stays, and where it is meant to go
+
+`Lifetime · 9,600.00 committed of 24,000.00 total target — 40%`, held to one
+line under the schedule block. It answers the portfolio question — the committed
+amount against the sum of the targets across every pocket — which belongs to the
+app-wide overview and not to the module board. It stays on this page until the
+overview carries it.
+
+**The overview does not merely omit that obligation today; it refuses it by
+name.** Its KPI catalog (`OVERVIEW_PLAN/PLAN_OVERVIEW_KPI_CATALOG.md`) excludes
+the sum of the targets, the overall progress and the counts of finished and late
+pockets under the module-boundary ruling it shares with budget, and states that
+the overview calls no pocket endpoint at all. **Nothing was written into the
+overview plans**, because adding the obligation there would overturn a standing
+decision of another module rather than record a missing one. The strip therefore
+has no scheduled exit, and reopening the boundary is the developer's call, not
+this section's.
+
+---
+
 ## Corrections applied 2026-08-30 — re-measured against the working tree
 
 **Not one decision was touched.** Sections 1 to 14 are marked history by this
