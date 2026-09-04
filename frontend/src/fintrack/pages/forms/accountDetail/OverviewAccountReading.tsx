@@ -74,7 +74,6 @@ function OverviewAccountReading() {
   //------------------------------
   //✅ DYNAMIC BACK ROUTE
   const previousRouteFromState = state?.previousRoute || '/fintrack/overview';
-  const isAccountDetailMissing = !accountDetailedFromState;
 
   //--STATES
   const [previousRoute, setPreviousRoute] = useState<string>(
@@ -93,9 +92,12 @@ function OverviewAccountReading() {
     useState<AccountSummaryBalanceType>(initialAccountTransactionsData.summary);
   //----------------------------------
   // API CALLS
-  const urlAccountById = isAccountDetailMissing
-    ? `${url_get_account_by_id}/${accountId}`
-    : null;
+  // Always by id, never conditional on the account riding in location.state.
+  // The list route serves eight explicit columns and the by-id route serves the
+  // whole row plus its derived fields, so a screen that skipped the fetch read
+  // undefined for everything outside those eight — silently, because an absent
+  // key looks the same as a field the owner never filled.
+  const urlAccountById = `${url_get_account_by_id}/${accountId}`;
 
   const {
     apiData: accountsDataFromFetch,
@@ -103,8 +105,11 @@ function OverviewAccountReading() {
     error,
   } = useFetch<AccountByTypeResponseType>(urlAccountById);
 
+  // The fetched account wins. The one carried in state is the optimistic first
+  // paint, so the screen renders immediately and is corrected when the complete
+  // row lands.
   const accountsData =
-    accountDetailedFromState || accountsDataFromFetch?.data?.accountList[0];
+    accountsDataFromFetch?.data?.accountList[0] ?? accountDetailedFromState;
 
   //-------------------------------------
   //--ACCOUNT TRANSACTION API RESPONSE
