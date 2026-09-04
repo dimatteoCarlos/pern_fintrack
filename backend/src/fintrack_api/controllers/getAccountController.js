@@ -27,6 +27,16 @@ const errorColor = 'red';
 // One expression, so a list and the detail of the same account cannot disagree.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua');
 
+// Soft-deleted accounts are dropped from every LIST this controller serves.
+// The rule is the one accountUtils.js states in its header and the pocket views
+// already obey; this file applied it nowhere, so a deleted account survived in
+// the accounting dashboard after overview had stopped showing it.
+//
+// Deliberately NOT applied to the reads by account id: the deletion flow has to
+// display the account it has just deleted, so those keep serving it and ship
+// is_deleted beside it instead.
+const LIVE_ACCOUNT = 'AND ua.deleted_at IS NULL';
+
 //BASIC FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
   const backendColor =
@@ -292,6 +302,7 @@ export const getAllAccountsByType = async (req, res, next) => {
        JOIN currencies ct ON ua.currency_id = ct.currency_id
        WHERE ua.user_id = $1
        AND act.account_type_name = $2 AND ua.account_name != $3
+       ${LIVE_ACCOUNT}
        ORDER BY ua.account_name ASC, account_balance DESC
        `,
           values: [userId, accountType, 'slack'],
@@ -311,6 +322,7 @@ export const getAllAccountsByType = async (req, res, next) => {
    JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
    WHERE ua.user_id =$1
    AND act.account_type_name = $2 AND ua.account_name != $3
+   ${LIVE_ACCOUNT}
    ORDER BY ABS(${DERIVED_BALANCE}) DESC
        `,
           values: [userId, accountType, 'slack'],
@@ -326,6 +338,7 @@ JOIN account_types act ON ua.account_type_id = act.account_type_id
 JOIN currencies ct ON ua.currency_id = ct.currency_id
   WHERE ua.user_id =$1
   AND act.account_type_name = $2 AND ua.account_name != $3
+  ${LIVE_ACCOUNT}
   ORDER BY ABS(${DERIVED_BALANCE}) DESC
 `,
           values: [userId, accountType, 'slack'],
@@ -341,6 +354,7 @@ JOIN account_types act ON ua.account_type_id = act.account_type_id
 JOIN currencies ct ON ua.currency_id = ct.currency_id
   WHERE ua.user_id =$1
   AND act.account_type_name = $2 AND ua.account_name != $3
+  ${LIVE_ACCOUNT}
   ORDER BY ABS(${DERIVED_BALANCE}) DESC
       `,
           values: [userId, accountType, 'slack'],
@@ -365,6 +379,7 @@ JOIN currencies ct ON ua.currency_id = ct.currency_id
 JOIN pocket_saving_accounts ps ON ua.account_id = ps.account_id
 WHERE ua.user_id =$1
 AND act.account_type_name = $2 AND ua.account_name != $3
+${LIVE_ACCOUNT}
 ORDER BY ps.target DESC, ABS(${DERIVED_BALANCE}) DESC
 `,
           values: [userId, accountType, 'slack'],
@@ -392,6 +407,7 @@ ORDER BY ps.target DESC, ABS(${DERIVED_BALANCE}) DESC
     ON ua.account_id = dac.account_id
    WHERE ua.user_id =$1
    AND act.account_type_name = $2 AND ua.account_name != $3
+   ${LIVE_ACCOUNT}
    ORDER BY account_balance ASC
 `,
           values: [userId, accountType, 'slack'],
@@ -410,6 +426,7 @@ ORDER BY ps.target DESC, ABS(${DERIVED_BALANCE}) DESC
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           WHERE ua.user_id = $1
           AND( act.account_type_name = $2 OR act.account_type_name=$3) AND ua.account_name != $4
+          ${LIVE_ACCOUNT}
         ORDER BY ua.account_type_id ASC, ua.account_name ASC, account_balance DESC
        `,
           values: [userId, 'bank', 'investment', 'slack'],
@@ -516,6 +533,7 @@ export const getAccounts = async (req, res, next) => {
        JOIN currencies ct ON ua.currency_id = ct.currency_id
        WHERE ua.user_id = $1
        AND ua.account_name != $2
+       ${LIVE_ACCOUNT}
        -- The expression and not the output name: ua.* already ships a column
        -- called account_balance, so the bare name is ambiguous here.
        ORDER BY ua.account_type_id ASC, ${DERIVED_BALANCE} DESC
@@ -836,6 +854,16 @@ export const getAccountById = async (req, res, next) => {
     delete data.accountList[0].derived_account_balance;
 
     //----------------------------
+    // 🗑️ WHETHER THIS ACCOUNT STILL EXISTS FOR THE OWNER
+    //
+    // Every list in this controller now drops soft-deleted rows; this route does
+    // not, because the deletion flow has to display the account it has just
+    // deleted. The flag is what lets a screen tell those two cases apart —
+    // without it the caller would have to read the raw stamp and decide for
+    // itself, and a screen that never asked would show a deleted account as live.
+    data.accountList[0].is_deleted = Boolean(data.accountList[0].deleted_at);
+
+    //----------------------------
     // 📆 THE DAY THE ACCOUNT WAS OPENED, ON THE OWNER'S CALENDAR
     //
     // account_start_date is an instant (TIMESTAMPTZ) and a calendar day is a
@@ -1032,6 +1060,7 @@ export const getAccountsByCategory = async (req, res, next) => {
       JOIN account_types act ON act.account_type_id= ua.account_type_id
 
       WHERE cba.category_name = $1 AND ua.user_id = $2
+      ${LIVE_ACCOUNT}
       
       ORDER BY cba.category_name asc, cnt.category_nature_type_id asc`,
       values: [categoryName, userId],

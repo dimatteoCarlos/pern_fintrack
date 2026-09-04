@@ -330,6 +330,16 @@ export type AccountListType = Omit<
   // Optional because only the detail endpoint serves it.
   account_start_local_date?: string;
 
+  // Whether the account has been soft-deleted. Served ONLY by
+  // GET /account/:accountId: every list drops deleted rows, so a row that
+  // arrives from a list is live by construction and the flag would be a
+  // constant there.
+  //
+  // The by-id route keeps serving a deleted account because the deletion flow
+  // reads the account it has just deleted. A screen that shows one without
+  // consulting this flag presents a record as a live account.
+  is_deleted?: boolean;
+
   // What this account has committed to pockets, and to which ones. Served by
   // GET /account/:accountId and, for the three scalars, by the accounts-by-type
   // read as well.
