@@ -455,9 +455,13 @@ export function PocketBoardReadings() {
        {/* "Pocket status" and not "Pockets": what follows is the partition by
            level, and the count is the total it adds up to. The old word named
            the objects and left the reader to discover that the lines beneath
-           were states rather than a list. */}
+           were states rather than a list.
+
+           The bracket says "total" without the word: a lone figure after a
+           heading is read as how many there are, and the two band subtotals
+           under it add up to exactly this one. */}
        <span className='pocketHero__label'>
-        Pocket status (total: <b>{summary.pocketCount}</b>)
+        Pocket status (<b>{summary.pocketCount}</b>)
        </span>
       </span>
 
