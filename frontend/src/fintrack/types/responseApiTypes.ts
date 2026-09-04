@@ -300,6 +300,25 @@ export type AccountByTypeResponseType = {
   };
 };
 
+// One pocket drawing on an account, as GET /account/:accountId serves it,
+// ordered by the pocket's name.
+//
+// A pocket whose net fell to zero after a full release is ABSENT from this list
+// rather than present at zero — the query drops it — which is the same rule the
+// pocket detail's own source list follows: it stopped drawing on the account,
+// and listing it would name a destination that holds nothing. An EMPTY array is
+// therefore a real answer and not a missing one: this account funds no pocket.
+export type AccountPocketAllocationType = {
+  pocketId: number;
+  // The pocket's NAME, not an id. An id tells the owner nothing about where
+  // their cash went.
+  name: string;
+  // What THIS account holds for THAT pocket — never the pocket's own progress
+  // towards its target. The payload carries no target at all, so this figure
+  // has no denominator and nothing here can be drawn as a proportion.
+  heldFromThisAccount: number;
+};
+
 export type AccountListType = Omit<
   AccountBasicDataType,
   'currency_id'| 'updated_at'
@@ -310,6 +329,32 @@ export type AccountListType = Omit<
   // and reading its UTC parts to name a day is what printed the day after.
   // Optional because only the detail endpoint serves it.
   account_start_local_date?: string;
+
+  // What this account has committed to pockets, and to which ones. Served by
+  // GET /account/:accountId and, for the three scalars, by the accounts-by-type
+  // read as well.
+  //
+  // ALL FOUR ARE ABSENT — not zero and not null — on account types that hold no
+  // unassigned cash, which is every type but bank. A zero would state that
+  // nothing is committed to an account the question cannot be asked of, so a
+  // screen must render the block or omit it, never print a zero.
+  //
+  // NONE of the four follows the month picker on the account screen, and none
+  // could: they are computed over the whole allocation ledger and the route
+  // that serves them takes no month. They are a standing state, like the
+  // balance above them — the picker windows the STATEMENT below, which is a
+  // list of movements.
+  allocated?: number;
+  // The balance minus everything committed. NEVER called "available": a pocket
+  // blocks no spending, so the available balance is still the whole balance and
+  // this is only the cash no plan has claimed yet. It can be negative, which is
+  // a deficit the screen reports and does not correct — and it is never split
+  // across the pockets below, because any split would need a policy the
+  // application would have to invent.
+  unassignedCash?: number;
+  // True exactly when the figure above is negative.
+  isOverAllocated?: boolean;
+  pockets?: AccountPocketAllocationType[];
 };
 //--
 //CATEGORY_BUDGET TYPE
