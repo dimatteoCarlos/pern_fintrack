@@ -59,19 +59,6 @@ type PocketHeroPropType = {
 
 const MISSING = '—';
 
-// The deadline as DD-MM-YYYY, built by slicing the YYYY-MM-DD text rather than
-// by parsing it. new Date() on one of these reads UTC midnight and renders the
-// previous day west of UTC, which is why the row type forbids it and why there
-// is no Date here at all.
-const deadlineLabel = (day: string | null) => {
- if (!day) return null;
-
- const [year, month, date] = day.split('-');
- if (!year || !month || !date) return null;
-
- return `${date}-${month}-${year}`;
-};
-
 // A level with nothing in it stays on screen and steps back. Dropping it breaks
 // the partition its heading counts, and a reader cannot tell a level that is
 // absent from one with nothing in it; printing it at full ink gives an empty
@@ -159,10 +146,49 @@ function PocketBigBoxResult({
   );
  }
 
- const deadline = deadlineLabel(summary?.latestDesiredDate ?? null);
- // Clamped per pocket by the server before folding, so the bar needs no clamp
- // of its own and cannot paint past its track.
- const overallProgress = summary?.overallProgress ?? null;
+ // The furthest deadline and the lifetime progress both left this component
+ // with the schedule redesign: the equation measures against the plan now, and
+ // neither figure explains any of its three amounts. The lifetime pair belongs
+ // to the reading card below, which states it in full.
+
+ // THE SCHEDULE, which is what this hero measures since 2026-09-04. Not the
+ // lifetime goal: a board where every pocket sits exactly on its own plan still
+ // reads 40% against its targets, indistinguishable from one 60% behind. All of
+ // these count ONLY the pockets holding a plan window, which is what
+ // scheduledPocketCount states and why the committed figure here is not
+ // totalAllocated.
+ const scheduledByNow = summary?.totalScheduledByNow ?? null;
+ const committedOnPlan = summary?.scheduledPocketsAllocated ?? null;
+ const scheduleGap = summary?.totalScheduleGap ?? null;
+ // Served UNCLAMPED and free to pass 100 — the card prints both operands in
+ // words, so a clamped figure would contradict the division a reader makes by
+ // eye. The clamp belongs to the fill alone, below.
+ const adherence = summary?.scheduleAdherence ?? null;
+ const scheduledCount = summary?.scheduledPocketCount ?? 0;
+
+ // The plans have required nothing yet: every pocket holds a window but no
+ // instalment has fallen due, so the ratio has no denominator and the server
+ // withholds it. NOT a rare edge — a board of plans made this month is exactly
+ // this, which is why the bar meets its unknown state on a first render rather
+ // than eventually.
+ const nothingDueYet = scheduledCount > 0 && scheduledByNow === 0;
+
+ // What the variance is measured against, in words, because a bare signed
+ // number cannot say which of two opposite situations happened.
+ //
+ // With nothing due, the amount is real and the READING is not: standing
+ // "over the schedule" by everything committed, against a schedule that asked
+ // for nothing, invites "I am well ahead" when the truth is that nothing has
+ // come due. So the figure stays — the server served it — and the words say
+ // what actually happened instead of claiming a side of an axis that has not
+ // started.
+ const scheduleSide = nothingDueYet
+  ? 'committed before anything was due'
+  : scheduleGap === null
+    ? null
+    : scheduleGap < 0
+      ? 'under the schedule'
+      : 'over the schedule';
 
  // A past month is named. "This month" on a board reporting August is the one
  // wording that can be read as the wrong month, and the label comes from the
@@ -181,49 +207,35 @@ function PocketBigBoxResult({
  // null when the server withheld the figures, and the line is then absent
  // rather than printed as a dash: the two tiles beside it already carry the
  // dashes that say the totals are missing.
+ // It reads the SCOPED net — the movement across the pockets holding a plan
+ // window — and not the board-wide one, because it sits under a balance
+ // counting exactly those pockets, and a sub-figure drawn from a wider
+ // population is not a part of the number above it. The board-wide trio is
+ // still served and still means what it always did; it has no consumer on this
+ // hero and belongs to a reading about everything the owner holds.
+ //
+ // No gross halves exist at this scope, so the two of them cannot spell out
+ // which direction won a mixed month. The word "net" carries that instead: an
+ // inflow can be offset by a release inside the same month, and a bare "800
+ // committed" would claim a gross the figure is not.
  const movement = ((): { text: string; isCommitted: boolean } | null => {
-  if (summary === null) return null;
+  const movedInMonth = summary?.scheduledPocketsMovedInMonth ?? null;
+  if (movedInMonth === null) return null;
 
-  const {
-   totalCommittedInMonth: committedInMonth,
-   totalReleasedInMonth: releasedInMonth,
-   totalMovedInMonth: movedInMonth,
-  } = summary;
-  if (
-   committedInMonth === null ||
-   releasedInMonth === null ||
-   movedInMonth === null
-  ) {
-   return null;
+  // Zero is a real answer here and not an absence: no plan window took or gave
+  // back money this month. It cannot say whether nothing happened or equal
+  // amounts cancelled, so it claims neither.
+  if (movedInMonth === 0) {
+   return { text: `No net movement${monthSuffix}`, isCommitted: false };
   }
 
-  if (committedInMonth === 0 && releasedInMonth === 0) {
-   return { text: `Nothing moved${monthSuffix}`, isCommitted: false };
-  }
-
-  if (releasedInMonth === 0) {
-   return {
-    text: `${amount(committedInMonth)} committed${monthSuffix}`,
-    isCommitted: true,
-   };
-  }
-
-  if (committedInMonth === 0) {
-   return {
-    text: `${amount(releasedInMonth)} released${monthSuffix}`,
-    isCommitted: false,
-   };
-  }
-
-  // Both happened, so neither gross half is the answer on its own: the net
-  // states which decision won the month, and the word states which one it was.
-  return movedInMonth >= 0
+  return movedInMonth > 0
    ? {
-      text: `${amount(movedInMonth)} committed net${monthSuffix}`,
+      text: `${amount(movedInMonth)} net committed${monthSuffix}`,
       isCommitted: true,
      }
    : {
-      text: `${amount(Math.abs(movedInMonth))} released net${monthSuffix}`,
+      text: `${amount(Math.abs(movedInMonth))} net released${monthSuffix}`,
       isCommitted: false,
      };
  })();
@@ -250,9 +262,13 @@ function PocketBigBoxResult({
          below 480px — three tracks at 320px hold about 88px, and the longer
          wording did not fit any size the type scale declares. */}
      <div className='pocketHero__tile pocketHero__tile--target'>
-      <span className='pocketHero__label'>Target</span>
+      {/* "to date" on this tile and the next, together or on neither: both are
+          cumulative from each plan's creation through the close of the month in
+          the stepper. Neither names the month — the stepper badge does, and a
+          label repeating it would go stale the moment the badge moved. */}
+      <span className='pocketHero__label'>Required to date</span>
       <span className='pocketHero__value'>
-       {amount(summary?.totalTarget)}
+       {amount(scheduledByNow)}
       </span>
 
       {/* What the target is made of and by when. Absent on an empty board,
@@ -260,17 +276,24 @@ function PocketBigBoxResult({
           status card below already states the population. Both figures are
           bound to the selected month by the server: a pocket created after it
           closed is not on this board at all. */}
-      {deadline !== null && summary !== null && (
+      {/* Which pockets this figure counts, and — by the difference — how many
+          it does not. Stated here because every amount on this row excludes the
+          pockets holding no plan window, and a reader who does not know that
+          reads three totals about a board and gets a fourth answer from the
+          list below. "of N pockets" and not "N plans": one noun for one thing,
+          or the row reads as some number of plans spread over some other number
+          of pockets. */}
+      {summary !== null && summary.pocketCount > 0 && (
        <span className='pocketHero__meta'>
-        {summary.pocketCount} pockets till {deadline}
+        from {scheduledCount} of {summary.pocketCount} pockets
        </span>
       )}
      </div>
 
      <div className='pocketHero__tile pocketHero__tile--committed'>
-      <span className='pocketHero__label'>Allocated</span>
+      <span className='pocketHero__label'>Committed to date</span>
       <span className='pocketHero__value'>
-       {amount(summary?.totalAllocated)}
+       {amount(committedOnPlan)}
       </span>
 
       {/* One slot, and what earns it depends on the board.
@@ -294,34 +317,6 @@ function PocketBigBoxResult({
           only FLOW and appears nowhere else on the board; the count explains no
           figure on this card, and the detail screen already lists those
           accounts one by one, which is the same fact with names on it. */}
-      {summary !== null && summary.totalExcess !== null && summary.totalExcess > 0 ? (
-       <span className='pocketHero__meta pocketHero__meta--excess'>
-        {amount(summary.totalExcess)} above target
-       </span>
-      ) : (
-       summary !== null &&
-       summary.sourceAccountCount > 0 && (
-        <span className='pocketHero__meta'>
-         {summary.sourceAccountCount} funding account
-         {summary.sourceAccountCount === 1 ? '' : 's'}
-        </span>
-       )
-      )}
-     </div>
-
-     <div className='pocketHero__tile pocketHero__tile--remaining'>
-      {/* Allocated is the figure's word — POCKET_DECISIONS 18.1 freezes it —
-          and commit is the event's. This names a figure, so it takes the
-          figure's word and pairs with "Allocated" beside it. */}
-      <span className='pocketHero__label'>To allocate</span>
-      <span className='pocketHero__value'>
-       {amount(summary?.totalRemaining)}
-      </span>
-
-      {/* A FLOW where the two tiles beside it are stocks: what the owner did
-          this month, not what stands after every month. The surplus that used
-          to sit here is a stock that rarely moves and it went to the status
-          card, beside the count of pockets it belongs to. */}
       {movement !== null && (
        <span
         className={`pocketHero__meta pocketHero__meta--movement${
@@ -332,6 +327,29 @@ function PocketBigBoxResult({
        </span>
       )}
      </div>
+
+     <div className='pocketHero__tile pocketHero__tile--variance'>
+      <span className='pocketHero__label'>Variance</span>
+      {/* The one figure on this row that carries a sign, and the sign is not
+          the reading: the line under it is. Signed and unclamped, because it is
+          a difference and not a shortfall — clamping would erase the very side
+          the tile exists to name. */}
+      <span
+       className={`pocketHero__value${
+        scheduleGap === null || nothingDueYet
+         ? ''
+         : scheduleGap < 0
+           ? ' pocketHero__value--under'
+           : ' pocketHero__value--over'
+       }`}
+      >
+       {amount(scheduleGap)}
+      </span>
+
+      {scheduleSide !== null && (
+       <span className='pocketHero__meta'>{scheduleSide}</span>
+      )}
+     </div>
     </div>
 
     {/* LEVEL 1b — the same three figures as a ratio, directly under them.
@@ -340,29 +358,50 @@ function PocketBigBoxResult({
         had to carry three figures in mind to know what it measured. The
         hero now reads in two movements: the money, then the pockets. */}
     <div className='pocketHero__progress'>
+     {/* The label names the DENOMINATOR and the month, never the bare word
+         progress: two percentages now live on this board measuring different
+         things, and one of them unnamed makes the reader work out which. */}
      <div className='pocketHero__progressRow'>
       <span className='pocketHero__progressHead'>
        <BarChartSvg className='pocketHero__glyph' />
-       <span className='pocketHero__label'>Overall progress</span>
+       <span className='pocketHero__label'>
+        {nothingDueYet
+         ? 'No instalment has fallen due yet'
+         : `of what your plans required${monthSuffix || ' this month'}`}
+       </span>
       </span>
-      <span className='pocketHero__pct'>{percent(overallProgress)}</span>
+      {!nothingDueYet && (
+       <span className='pocketHero__pct'>{percent(adherence)}</span>
+      )}
      </div>
 
      <div
       className='pocketHero__bar'
       role='progressbar'
-      aria-label='Overall progress across every pocket'
+      aria-label='Committed against what the plans required by the close of the selected month'
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-valuenow={overallProgress ?? undefined}
+      // Clamped, unlike the label beside it. A progress bar whose current value
+      // exceeds its maximum is invalid, so the machine-readable number stops at
+      // the track while the accessible text carries the true figure — a screen
+      // reader then hears exactly what the sighted label says.
+      aria-valuenow={adherence === null ? undefined : Math.min(adherence, 100)}
+      aria-valuetext={adherence === null ? undefined : `${Math.round(adherence)}%`}
      >
-      {/* No fill at all while the figure is missing. A width of zero would be
-          the same paint as a board that has committed nothing, and those are
-          two different answers. */}
-      {overallProgress !== null && (
+      {/* No fill at all while the figure is missing, which on this board is a
+          FIRST render and not an edge: plans made this month have required
+          nothing yet. A width of zero would be the same paint as a board that
+          committed nothing, and those are two different answers.
+
+          The fill is where the clamping happens — it cannot paint past its own
+          track — while the label above states the true value, which may exceed
+          100 because standing over the schedule is the interesting case. */}
+      {adherence !== null && (
        <div
-        className='pocketHero__barFill'
-        style={{ width: `${overallProgress}%` }}
+        className={`pocketHero__barFill${
+         adherence > 100 ? ' pocketHero__barFill--over' : ''
+        }`}
+        style={{ width: `${Math.min(adherence, 100)}%` }}
        />
       )}
      </div>

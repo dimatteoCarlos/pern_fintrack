@@ -622,9 +622,27 @@ button.line__container {
  line-height: 1.1;
 }
 
-.pocketHero__tile--remaining .pocketHero__value {
+.pocketHero__tile--variance .pocketHero__value {
  font-size: clamp(var(--font-size-sm), 5.3cqi, var(--font-size-base));
  line-height: 1.2;
+}
+
+/* The schedule axis, and NOT the level scale even though each value currently
+   equals one of it: the axis splits the scheduled pockets by the sign of their
+   own slack, the levels are the classifier's seven readings, and the two
+   disagree at the margin by construction. The tokens are separate so a change
+   to one scale cannot move the other.
+
+   The colour only seconds the reading. The sign is on the figure and the word
+   is under it — this tile has to survive a monochrome print and every kind of
+   colour blindness, which no hue does on its own. Neither modifier is applied
+   while the plans have required nothing yet: there is no side to be on. */
+.pocketHero__value--under {
+ color: var(--color-schedule-under);
+}
+
+.pocketHero__value--over {
+ color: var(--color-schedule-over);
 }
 
 /* One step under the heading at BOTH ends of the range: the ceiling is the
@@ -1557,6 +1575,21 @@ button.line__container {
  border-radius: var(--radius-full);
  background-color: var(--color-accent);
  transition: width var(--motion-slow);
+}
+
+/* Past what the schedule asked for. The fill is clamped at the track, so LENGTH
+   alone cannot tell this apart from a board that landed exactly on its line —
+   both paint a full bar. The texture carries the difference, and it survives a
+   monochrome print and every kind of colour blindness where a hue does not.
+   Same device the funding accounts card uses for an account committed past its
+   own balance. The 45deg has no token: the scale declares no angles. */
+.pocketHero__barFill--over {
+ background-color: var(--color-schedule-over);
+ background-image: repeating-linear-gradient(
+  45deg,
+  transparent 0 var(--space-1),
+  var(--color-surface-deep) var(--space-1) var(--space-2)
+ );
 }
 
 @media (prefers-reduced-motion: reduce) {
