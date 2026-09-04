@@ -236,6 +236,12 @@ article {
     label. 0.8px narrower, no other effect. */
  font-size: var(--font-size-xs);
  color: var(--color-content-secondary);
+ /* An amount and the currency it is denominated in are ONE reading, and the row
+    that holds this span is a space-between flex row, so the label beside it
+    takes the width first and what is left wraps at the last space — putting the
+    code on its own line under the figure, which reads as a second value rather
+    than as the unit of the first. Never a wrap between a number and its unit. */
+ white-space: nowrap;
 }
 
 /* The answer has not arrived. It reserves the width the figure will take, so the
@@ -259,6 +265,11 @@ article {
  align-items: center;
  gap: var(--space-2);
  color: var(--color-feedback-warning-content);
+ /* This state carries a SENTENCE and a button, not a figure, so it takes the
+    wrap back that the base class refuses. The rule above exists to keep a
+    number joined to its unit; a sentence held on one line would push the row
+    past the card instead. */
+ white-space: normal;
 }
 
 .currency-preview__retry {
