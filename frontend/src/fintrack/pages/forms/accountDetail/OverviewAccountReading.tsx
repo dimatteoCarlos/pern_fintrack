@@ -157,13 +157,6 @@ function OverviewAccountReading() {
     }
   }, [accountsData, previousRouteFromState]);
 
-  useEffect(() => {
-    if (!accountsData && accountsData) {
-      const account = accountsData;
-      if (account) setAccountDetail(account);
-    }
-  }, [accountsData, accountId]);
-
   //--TRANSACTION DETAIL MODAL
   const {
     selectedTransaction,

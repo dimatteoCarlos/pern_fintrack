@@ -176,14 +176,6 @@ function AccountDetail() {
     }
   }, [accountsData, previousRouteFromState]);
 
-  useEffect(() => {
-    if (!accountsData && accountsData) {
-      const account = accountsData;
-      //  const account = accountsData.data.accountList.find((acc)=>acc.account_id === Number(accountId))
-      if (account) setAccountDetail(account);
-    }
-  }, [accountsData, accountId]);
-
   //--TRANSACTION DETAIL MODAL
   // Owned here and not inside the list: the list is presentational and shared
   // by the other detail screens.
