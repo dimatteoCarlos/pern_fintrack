@@ -10,6 +10,7 @@ import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import AccountEditLink from '../../../general_components/accountEditLink/AccountEditLink.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 
+import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
 import {
   AccountByTypeResponseType,
   AccountListType,
@@ -24,9 +25,12 @@ import {
 } from '../../../../urlConfig.ts';
 import { useFetch } from '../../../hooks/useFetch.ts';
 import {
+  capitalize,
   formatDateToDDMMYYYY,
+  numberFormatCurrency,
   toCalendarDay,
 } from '../../../helpers/functions.ts';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetailSharedComponents/accountTransactionsList/AccountTransactionsList.tsx';
 import SummaryDebtorDetailBox from './summaryDebtorDetailBox/SummaryDebtorDetailBox.tsx';
@@ -46,6 +50,10 @@ type LocationStateType = {
   previousRoute: string;
   debtorDetailedData: DebtorListType;
 };
+
+// A figure or a date the answer did not carry. Never a fabricated value: a date
+// means something here, and it does not mean "the server did not send one".
+const DASH = '—';
 
 //--functions
 // The board's list row, rebuilt from the account the detail endpoint answers so
@@ -315,13 +323,65 @@ function DebtorDetail() {
               ></SummaryDebtorDetailBox>
 
               <article className='form__box'>
-                {/* The record card -- balance, account type, opening date and currency
-                    -- stood here until 2026-09-02. It restated the account's own
-                    properties ahead of the movements this screen exists to show,
-                    which pushed the transaction list below the fold on a short
-                    screen. The balance survives in the summary above, the
-                    currency in the symbol of every figure, and the opening date
-                    is read from Edit account, where it is changed. */}
+                <div className='form__container'>
+                  <div className='input__box'>
+                    <label className='label forms__label'>{`Current Balance`}</label>
+
+                    <div
+                      className='input__container'
+                      style={{ padding: '0.5rem' }}
+                    >
+                      {numberFormatCurrency(accountDetail.account_balance)}
+                    </div>
+                  </div>
+
+                  <div className='input__box'>
+                    <label className='label forms__label'>
+                      {'Account Type'}
+                    </label>
+
+                    <p
+                      className='input__container'
+                      style={{ padding: '0.5rem' }}
+                    >
+                      {capitalize(
+                        accountDetail.account_type_name!.toLocaleString(),
+                      )}
+                    </p>
+                  </div>
+
+                  <div className='account__dateAndCurrency'>
+                    <div className='account__date'>
+                      <label className='label forms__label'>
+                        {'Starting Point'}
+                      </label>
+                      <div
+                        className='form__datepicker__container'
+                        style={{ textAlign: 'center', color: 'white' }}
+                      >
+                        {/* The calendar label the server resolved on the
+                            owner's zone, not the raw instant beside it:
+                            formatDateToDDMMYYYY reads UTC parts, which named
+                            the day after for an account opened in the
+                            evening. */}
+                        {accountDetail.account_start_local_date
+                          ? formatDateToDDMMYYYY(
+                              accountDetail.account_start_local_date,
+                            )
+                          : DASH}
+                      </div>
+                    </div>
+
+                    <div className='account__currency'>
+                      <div className='label forms__label'>{'Currency'}</div>
+
+                      <CurrencyBadge
+                        variant={VARIANT_FORM}
+                        currency={accountDetail.currency_code ?? DEFAULT_CURRENCY}
+                      />
+                    </div>
+                  </div>
+                </div>
 
                 {/* --- TRANSACTION STATEMENT SECTION --- */}
                 {/* Its own three states. The statement is a second request and

@@ -8,6 +8,7 @@ import AccountEditLink from '../../../general_components/accountEditLink/Account
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetailSharedComponents/accountTransactionsList/AccountTransactionsList.tsx';
 import { AccountTransactionDetailModal } from '../accountDetailSharedComponents/accountTransactionDetailModal/AccountTransactionDetailModal.tsx';
@@ -16,10 +17,13 @@ import { useTransactionDetail } from '../../../hooks/useTransactionDetail.ts';
 
 import {
   ACCOUNT_DEFAULT,
+  DEFAULT_CURRENCY,
+  VARIANT_FORM,
   DEFAULT_ACCOUNT_TRANSACTIONS,
 } from '../../../helpers/constants.ts';
 import {
   capitalize,
+  numberFormatCurrency,
   formatDateToDDMMYYYY,
 } from '../../../helpers/functions.ts';
 
@@ -195,13 +199,46 @@ function AccountDetail() {
           </div>
 
           <form className='form__box'>
-            {/* The record card -- balance, account type, opening date and currency --
-                stood here until 2026-09-02. It restated the account's own
-                properties ahead of the movements this screen exists to show,
-                about 350px of them, which pushed the transaction list below the
-                fold on a 640px screen. The balance survives in the summary
-                above, the currency in the symbol of every figure, and the
-                opening date is read from Edit account, where it is changed. */}
+            <div className='form__container'>
+              <div className='input__box'>
+                <div className='label forms__label'>{`Current Balance`}</div>
+
+                <div className='input__container' style={{ padding: '0.5rem' }}>
+                  {numberFormatCurrency(accountDetail?.account_balance)}
+                </div>
+              </div>
+
+              <div className='input__box'>
+                <label className='label forms__label'>{'Account Type'}</label>
+
+                <p className='input__container' style={{ padding: '0.5rem' }}>
+                  {capitalize(accountDetail.account_type_name!.toLocaleString())}
+                </p>
+              </div>
+
+              <div className='account__dateAndCurrency'>
+                <div className='account__date'>
+                  <label className='label forms__label'>
+                    {'Starting Point'}
+                  </label>
+                  <div
+                    className='form__datepicker__container'
+                    style={{ textAlign: 'center', color: 'white' }}
+                  >
+                    {formatDateToDDMMYYYY(accountDetail.account_start_date)}
+                  </div>
+                </div>
+
+                <div className='account__currency'>
+                  <div className='label forms__label'>{'Currency'}</div>
+
+                  <CurrencyBadge
+                    variant={VARIANT_FORM}
+                    currency={accountDetail.currency_code ?? DEFAULT_CURRENCY}
+                  />
+                </div>
+              </div>
+            </div>
 
             {/* --- TRANSACTION STATEMENT SECTION --- */}
             <div

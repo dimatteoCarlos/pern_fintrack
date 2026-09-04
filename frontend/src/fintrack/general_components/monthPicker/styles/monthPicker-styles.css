@@ -115,6 +115,187 @@
  opacity: 0.5;
 }
 
+/* ── The stepper ─────────────────────────────────────────────────────────────
+   The same badge with an arrow on each side, behind the withSteppers prop. The
+   three screens that render the badge alone never reach any of these rules.
+
+   One pill, not three shapes in a row. The container itself carries the
+   badge's visual weight — background, border, full radius — and the badge and
+   the two arrows sit inside it as plain content, so the chevrons read as part
+   of the one control rather than as separate buttons flanking it.
+
+   RULED 2026-09-03: the row's height used to be set by the arrows' own
+   44px touch target drawn at full size, which read as taller than the badge
+   beside it needed. The arrows now draw at a smaller box and keep their real
+   44px tap area through the same invisible-hit-area pattern
+   accountEditLink-styles.css:44-52 already uses, so the pill is shorter
+   without shrinking anyone's actual target. */
+.monthStepper {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ gap: var(--space-1);
+ padding: 0 var(--space-2);
+ border: var(--border-width-thin) solid transparent;
+ border-radius: var(--radius-full);
+ /* It is a flex item wherever it lands, and it must not be the thing that
+    gives way: measured at 360x568, the row compressed to nothing and the
+    control this screen is built around disappeared while the summary beside
+    it — which carries flex-shrink: 0 — kept its height. */
+ flex-shrink: 0;
+}
+
+.monthStepper--dark {
+ background-color: var(--color-surface-raised);
+ border-color: var(--color-border-subtle);
+}
+
+.monthStepper--light {
+ background-color: var(--color-content-primary);
+ border-color: var(--color-content-primary);
+}
+
+/* The badge loses its own outline here — it is content inside the pill now,
+   not a second pill beside the arrows. Horizontal padding stays, unlike the
+   version this replaces: at zero, the dark/light hover fill below painted only
+   the width of the text, which read as a highlighted word rather than a
+   control with a hit region of its own.
+   Fixed width regardless of the label's length, so stepping between "May
+   2026" and "September 2026" does not resize the pill or shift the arrows
+   around it. Measured 2026-09-03 at this font-size: "September 2026" renders
+   at 121.34px and "May 2026" at 113.20px, so the floor is set above the
+   longer of the two rather than reused from month-badge--skeleton's own
+   113.2px — that value was tuned for the base font-size the skeleton renders
+   at, not this rule's --font-size-xs, and it left the longer label free to
+   grow past it. */
+/* Compact proportions for a header band, the same scale
+   .budgetLayout .month-badge (budget-styles.css:146-151) already uses for the
+   same reason: --space-1 vertical padding and --font-size-xs against the base
+   badge's --space-2/--font-size-sm. Not that rule's background-color, which
+   is its own white-fill look — this pill keeps the dark fill it already has. */
+.monthStepper .month-badge {
+ margin-bottom: 0;
+ padding: var(--space-1) var(--space-3);
+ border-color: transparent;
+ font-size: var(--font-size-xs);
+ min-width: calc(var(--space-16) * 2 + var(--space-4));
+ justify-content: center;
+}
+
+.monthStepper--light .month-badge {
+ color: var(--color-accent);
+}
+
+/* The drawn box is smaller than the tap target it sits inside — see the
+   ::after below — which is what brings the pill's own height down: nothing
+   is drawn at rest, no border and no fill, so the chevron reads as a mark
+   inside the pill rather than a circle sitting beside it. */
+.monthStepper__arrow {
+ position: relative;
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ flex-shrink: 0;
+ width: var(--space-8);
+ height: var(--space-8);
+ padding: 0;
+ border: none;
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ cursor: pointer;
+ transition: color var(--motion-fast);
+}
+
+/* The tappable area the smaller box above gives up. Unpainted and
+   hit-testable, so a finger still gets the full --size-touch-target while
+   only the smaller box shows — same pattern accountEditLink-styles.css:44-52
+   already uses for the same reason. */
+.monthStepper__arrow::after {
+ content: '';
+ position: absolute;
+ inset: calc((var(--space-8) - var(--size-touch-target)) / -2);
+}
+
+/* Sized off the spacing scale, the way .pocketHero__chevron already is: the
+   size scale starts at 2rem, which is the whole button rather than the mark
+   inside it. */
+.monthStepper__chevron {
+ display: block;
+ width: var(--space-4);
+ height: var(--space-4);
+ transition: stroke-width var(--motion-fast);
+}
+
+/* ONE resting colour for both modifiers, and no per-surface split, because the
+   modifier names the row the pill lands in and NOT the pill: --dark fills with
+   --color-surface-raised (#161a22) and --light with --color-content-primary
+   (#141414), so the chevron sits on a dark fill either way.
+
+   The split it replaces was painting an invisible control on one of them.
+   --light gave the arrow --color-content-primary, which is the very value that
+   pill is filled with — #141414 on #141414 — so the two chevrons were drawn in
+   the colour of their own background and only the tap target survived.
+
+   Subtle rather than muted, so the control has somewhere to go under the
+   pointer: 8.30:1 on the dark pill against the 3:1 SC 1.4.11 asks of a control,
+   with the full ink below at 17.3:1. A control at rest should be quieter than
+   the same control under the pointer, and it cannot be if it starts at the top
+   of the scale. */
+.monthStepper__arrow {
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* Hover is mouse-only and carries no accessibility requirement of its own —
+   :focus-visible below is what a keyboard user gets, and a touch tap never
+   sees this state at all. No fill and no background: the ink stepping to full
+   plus a bolder stroke is a shape cue as much as a colour one, so it still
+   reads without colour vision.
+
+   It took --color-accent until 2026-09-04, and that is why there appeared to be
+   no hover at all: --color-accent and --color-content-on-dark-muted are the
+   SAME value, #e8e4da, so the rule fired and repainted the resting colour over
+   itself. On the --light pill it was worse than nothing — near-white ink
+   arriving on a control the split above had already made invisible. */
+.monthStepper__arrow:hover,
+.monthStepper__arrow:active {
+ color: var(--color-content-on-dark);
+}
+
+.monthStepper__arrow:hover .monthStepper__chevron,
+.monthStepper__arrow:active .monthStepper__chevron {
+ stroke-width: 2.5;
+}
+
+.monthStepper__arrow:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-content-primary);
+ outline-offset: var(--border-width-thick);
+}
+
+/* The ring above is #141414 on a #0d0f12 surface. Only its colour changes. */
+.monthStepper--dark .monthStepper__arrow:focus-visible {
+ outline-color: var(--color-border-inverse);
+}
+
+/* At its bound. The forward arrow wears this on the current month, which is
+   what makes the server's 422 for a later month unreachable from here. */
+.monthStepper__arrow:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* An answer is on the wire. The label stays, so the row keeps its height and
+   the page under it does not reflow on every step; only the ink steps back. */
+.monthStepper[aria-busy='true'] .month-badge {
+ opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .monthStepper__arrow,
+ .monthStepper__chevron {
+  transition: none;
+ }
+}
+
 /* The library inserts a focus trap beside the wrapper while the panel is open —
    an empty div, but a flex parent still opens its gap before it, and the budget
    header is a gapped column. That grew the container and carried the badge down

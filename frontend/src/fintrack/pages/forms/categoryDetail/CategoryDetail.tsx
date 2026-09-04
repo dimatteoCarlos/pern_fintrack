@@ -7,6 +7,7 @@ import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetailSharedComponents/accountTransactionsList/AccountTransactionsList.tsx';
+import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBadge.tsx';
 import AccountEditLink from '../../../general_components/accountEditLink/AccountEditLink.tsx';
 import SummaryDetailBox from '../accountDetailSharedComponents/summaryDetailBox/SummaryDetailBox.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
@@ -42,9 +43,12 @@ import {
 
 import {
   capitalize,
+  currencyFormat,
   formatDateToDDMMYYYY,
   withMonthParam,
 } from '../../../helpers/functions.ts';
+
+import { DEFAULT_CURRENCY, VARIANT_FORM } from '../../../helpers/constants.ts';
 
 import '../styles/forms-styles.css';
 import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
@@ -207,6 +211,9 @@ function CategoryDetail() {
   } = useFetch<CategoryBudgetAccountsResponseType>(urlAccountById);
 
   const accountRecord = accountsDataFromFetch?.data?.accountList[0];
+
+  const currency_code =
+    budgetAccount?.currency ?? accountRecord?.currency_code ?? DEFAULT_CURRENCY;
 
   // The account cannot report a month it did not exist in. Parsed by parts and
   // never through new Date on a string: an ISO midnight is the previous day west
@@ -380,13 +387,62 @@ function CategoryDetail() {
           )}
 
           <article className='form__box'>
-            {/* The record card -- balance, account type, opening date and currency --
-                stood here until 2026-09-02. It restated the account's own
-                properties ahead of the movements this screen exists to show,
-                about 350px of them, which pushed the transaction list below the
-                fold on a 640px screen. The balance survives in the summary
-                above, the currency in the symbol of every figure, and the
-                opening date is read from Edit account, where it is changed. */}
+            <div className='form__container'>
+              <div className='input__box'>
+                {/* The balance at the close of the month being reported, not
+                    today's. The month is selectable now, and a figure that
+                    ignores it states another month's fact under this one. */}
+                <label className='label forms__label'>
+                  {summaryAccountBalance
+                    ? `Balance (${formatDateToDDMMYYYY(
+                        summaryAccountBalance.finalBalance.date,
+                      )})`
+                    : 'Balance'}
+                </label>
+
+                <div className='input__container' style={{ padding: '0.5rem' }}>
+                  {/* A dash and not a zero: a balance still on the wire is not
+                      a balance of nothing. */}
+                  {summaryAccountBalance
+                    ? currencyFormat(
+                        currency_code,
+                        summaryAccountBalance.finalBalance.amount,
+                      )
+                    : '—'}
+                </div>
+              </div>
+
+              <div className='input__box'>
+                <label className='label forms__label'>{'Account Type'}</label>
+
+                <p className='input__container' style={{ padding: '0.5rem' }}>
+                  {accountRecord?.account_type_name}
+                </p>
+              </div>
+
+              <div className='account__dateAndCurrency'>
+                <div className='account__date'>
+                  <label className='label forms__label'>
+                    {'Starting Point'}
+                  </label>
+                  <div
+                    className='form__datepicker__container'
+                    style={{ textAlign: 'center', color: 'white' }}
+                  >
+                    {formatDateToDDMMYYYY(accountRecord?.account_start_date)}
+                  </div>
+                </div>
+
+                <div className='account__currency'>
+                  <div className='label forms__label'>{'Currency'}</div>
+
+                  <CurrencyBadge
+                    variant={VARIANT_FORM}
+                    currency={currency_code}
+                  />
+                </div>
+              </div>
+            </div>
 
             {/* --- TRANSACTION STATEMENT SECTION --- */}
             <div
