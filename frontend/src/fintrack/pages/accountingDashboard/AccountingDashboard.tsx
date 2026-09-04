@@ -22,6 +22,10 @@ import ArrowDownLightSvg from '../../../assets/ArrowDownLightSvg.svg?react';
 // take the field's colour rather than declaring one.
 import SearchSvg from '../../../assets/budgetListControlsSvg/SearchSvg.svg?react';
 import ClearSvg from '../../../assets/budgetListControlsSvg/ClearSvg.svg?react';
+// The institution plus the badge that turns it into an action: it names what
+// the empty state is missing rather than repeating the plus every other create
+// control on this screen already wears.
+import OpenAccountSvg from '../../../assets/openAccountSvg.svg?react';
 import Toast from '../../editionAndDeletion/components/toast/Toast';
 import AccountActionsMenu from '../../editionAndDeletion/components/accountActionMenu/AccountActionsMenu';
 //---
@@ -61,6 +65,16 @@ const ACCOUNT_TYPE_DETAIL_PAGE: { [key: string]: string } = {
   debtor: '/fintrack/debts/debtors',
   category_budget: `/fintrack/budget/account`,
 };
+
+// Where the owner goes to open an account: OVERVIEW, and not the creation form
+// underneath it. The form is reached FROM there, so sending the reader straight
+// to it would skip the screen that owns the decision -- and it would put a
+// second door on a form Overview already opens, which is a second entry to keep
+// in step with the first.
+//
+// Absolute, like the map above, because this dashboard is declared beside those
+// routes rather than under them.
+const OPEN_ACCOUNT_ROUTE = '/fintrack/overview';
 //---TYPE DEFINITIONS
 type AccountType = keyof typeof ACCOUNT_TYPE_DATA;
 type ToastMessageType = 'success' | 'error' | 'info' | 'warning';
@@ -548,6 +562,22 @@ const AccountingDashboard = () => {
               ? `No account name contains "${searchTerm.trim()}".`
               : 'Get started by creating your first account to manage your finances.'}
           </p>
+
+          {/* The way OUT of the empty state, and only on the truly empty one.
+              A filter that matched nothing is not solved by opening an account
+              -- it is solved by another word -- so offering one there would
+              answer a question the reader did not ask.
+
+              It leads to Overview, which is where accounts are opened, and
+              not to the creation form under it: the form is reached from
+              there, and jumping past that screen would skip the one that owns
+              the decision. */}
+          {!isFiltered && (
+            <Link to={OPEN_ACCOUNT_ROUTE} className='accounting-empty__action'>
+              <OpenAccountSvg className='accounting-empty__actionIcon' />
+              Add account
+            </Link>
+          )}
         </div>
       );
     }

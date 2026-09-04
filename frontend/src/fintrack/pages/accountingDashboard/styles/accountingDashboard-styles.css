@@ -721,3 +721,59 @@ button {
   animation: none;
  }
 }
+
+/* The way out of the empty inventory. It is drawn as a control and not as a
+   sentence with a link in it: the screen has nothing else on it, so this is the
+   one thing to do, and a text link would read as a footnote to a message that
+   has already finished speaking.
+
+   The touch target is stated rather than counted up from the padding, so the
+   control clears the floor whatever the label ends up saying. */
+.accounting-empty__action {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ gap: var(--space-2);
+ min-height: var(--size-touch-target);
+ margin-top: var(--space-6);
+ padding: var(--space-2) var(--space-6);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ font-size: var(--font-size-sm);
+ letter-spacing: var(--letter-spacing-wide);
+ text-decoration: none;
+ cursor: pointer;
+ transition: background-color var(--motion-fast), border-color var(--motion-fast);
+}
+
+.accounting-empty__action:hover,
+.accounting-empty__action:focus-visible {
+ border-color: var(--color-content-on-dark);
+ background-color: var(--color-surface-raised);
+}
+
+.accounting-empty__action:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.accounting-empty__action:active {
+ background-color: var(--color-surface-sunken);
+}
+
+/* Sized off the spacing scale, like the other glyphs on this screen: the size
+   scale starts at 2rem, which is the whole control rather than the mark in it. */
+.accounting-empty__actionIcon {
+ display: block;
+ width: var(--space-5);
+ height: var(--space-5);
+ flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .accounting-empty__action {
+  transition: none;
+ }
+}

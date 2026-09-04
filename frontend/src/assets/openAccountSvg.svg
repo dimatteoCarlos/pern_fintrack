@@ -1,0 +1,22 @@
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <!-- Opening an account: a classical institution with the badge that turns the
+       noun into an action. Redrawn 2026-09-04 after the Landmark glyph of the
+       Lucide set, by hand rather than by installing it -- the composition is
+       theirs, the file is this repository's.
+
+       The landmark is scaled into the top-left and its two horizontal rules
+       stop short of the badge. Two lines ending on the same vertical read as
+       something in front occluding them, which is what a badge is; lines
+       running under a disc read as a mistake.
+
+       Every stroke is currentColor, so the glyph takes the ink of whatever it
+       sits in and holds on the white header and the dark body alike. -->
+  <path d="M8 1.5 15 6H1Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M4 7.75v5.25M8 7.75v5.25M12 7.75v5.25" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M2 13.4h11M1 16.4h12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <!-- One path with evenodd, so the plus is a HOLE in the disc and not a second
+       stroke painted over it. A knocked-out cross shows whatever surface is
+       behind and never assumes that surface is white -- which is exactly what
+       the version with a hardcoded white plus got wrong. -->
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M23 18.5a4.5 4.5 0 1 0-9 0 4.5 4.5 0 1 0 9 0ZM17.85 16.1h1.3v1.75h1.75v1.3h-1.75v1.75h-1.3v-1.75h-1.75v-1.3h1.75z" fill="currentColor"/>
+</svg>
