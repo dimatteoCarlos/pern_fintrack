@@ -27,7 +27,15 @@
    rather than as three objects that happen to be adjacent. */
 .pocketToolbar__fields {
  display: flex;
- flex-wrap: nowrap;
+ /* Two lines on the narrow phone and one from 480px up, and the wrap is what
+    switches between them — not a second container. The three controls ask for
+    about 430px between them (the term ~140, the key with its direction ~178,
+    the filter ~114) and a 360px screen leaves about 340: the row is
+    oversubscribed by more than any relabelling can recover, so something has to
+    leave it. The term is what leaves, because it is the one control that cannot
+    do its job in the width left over — a key can be read shortened, a field
+    cannot be typed in. */
+ flex-wrap: wrap;
  align-items: stretch;
  min-height: var(--size-control-sm);
  background-color: var(--color-surface-sunken);
@@ -54,7 +62,6 @@
  display: flex;
  align-items: center;
  gap: var(--space-1);
- flex: 0 0 auto;
 }
 
 /* The elastic side of the row. A search field still works narrow — the term
@@ -68,20 +75,41 @@
  min-width: var(--space-16);
 }
 
-/* The term and the sort key split the strip in half, and the filter takes only
-   what its word needs. A basis of 0 is what makes that split EQUAL rather than
-   proportional: with a basis of auto each side keeps its own content width and
-   only shares the leftover, so the half that happened to hold a longer word
-   stayed wider for ever.
+/* The term takes the whole first line, and the rule under it is the same
+   hairline the segments use sideways — the strip stays one instrument, told
+   apart by lines, and does not become two boxes stacked. */
+.pocketToolbar__query {
+ flex: 1 0 100%;
+ min-height: var(--size-control-sm);
+ border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+}
 
-   Both can still shrink, and never below what they hold: that floor is the
-   flex item's own min-width: auto, kept by NOT writing a min-width here. A 0
-   beside a shrink factor takes it away, and the sort key then collapses to
-   nothing on the first strip too narrow for everything — a worse answer than
-   the overflow it was meant to prevent. */
-.pocketToolbar__query,
 .pocketToolbar__sort {
  flex: 1 1 0;
+ min-height: var(--size-control-sm);
+}
+
+/* From 480px the three fit on one line again — about 430px asked of about 460
+   available — so the term returns to the row and splits it with the key. A
+   basis of 0 is what makes that split EQUAL rather than proportional: with a
+   basis of auto each side keeps its own content width and only shares the
+   leftover, so the half that happened to hold a longer word stayed wider for
+   ever.
+
+   Both can still shrink, and never below what they hold: that floor is the flex
+   item's own min-width: auto, kept by NOT writing a min-width here. A 0 beside a
+   shrink factor takes it away, and the key then collapses to nothing on the
+   first strip too narrow for everything — a worse answer than the overflow it
+   was meant to prevent. */
+@media (min-width: 480px) {
+ .pocketToolbar__fields {
+  flex-wrap: nowrap;
+ }
+
+ .pocketToolbar__query {
+  flex: 1 1 0;
+  border-bottom: none;
+ }
 }
 
 .pocketToolbar__selectBox {
@@ -127,9 +155,18 @@
    Nothing separates the select from its direction button inside .sort: the
    two read as one control there, exactly as the search reads as one field
    with its clear button. */
-.pocketToolbar__sort,
+/* Only the filter carries a hairline on the narrow phone: the key opens the
+   second line, so a border on its left edge would draw a line down the
+   container's own edge and read as a box inside the box. The key takes its own
+   hairline back at 480px, where it follows the term on one line again. */
 .pocketToolbar__selectBox--filter {
  border-left: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+@media (min-width: 480px) {
+ .pocketToolbar__sort {
+  border-left: var(--border-width-thin) solid var(--color-border-subtle);
+ }
 }
 
 .pocketToolbar__search {

@@ -62,13 +62,17 @@ const FILTER_OPTIONS: { value: PocketQuickFilter; label: string }[] = [
  { value: 'behind', label: POCKET_STATUS_WORD.behind },
  { value: 'atRisk', label: POCKET_STATUS_WORD.atRisk },
  { value: 'overdue', label: POCKET_STATUS_WORD.overdue },
- // Two words, and not "Funding not covered": the option sits inside a control
+ // One word, and not "Funding not covered": the option sits inside a control
  // that filters the pocket board, so the subject is already given and the label
  // only has to say what is missing. Naming it again made this the longest
  // option in the list, and a select is as wide as its longest option even while
  // it is showing a shorter one — so the extra word was charged to the whole
  // strip and not only to this line.
- { value: 'uncovered', label: 'Not covered' },
+ //
+ // The same word the hero's own coverage row states, which is the rule this
+ // list follows for the other seven: a filter option is only ever a word the
+ // reader can already find printed on this screen.
+ { value: 'uncovered', label: 'Uncovered' },
 ];
 
 const SEARCH_MAX_LENGTH = 50;
