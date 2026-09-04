@@ -633,30 +633,35 @@ export function PocketBoardReadings() {
            at ANY level, so the fact says nothing about which band it belongs to
            and cannot join either.
 
-           Absent when there is nothing to raise, unlike the readings inside a
-           band, which print at zero because a partition has to keep adding up.
-           Nothing is partitioned here, so nothing breaks by leaving. */}
-       {uncoveredCount > 0 && (
-        <div className='pocketHero__alerts'>
-         <span className='pocketHero__marks'>
-          {/* The wording names what failed rather than labelling the pocket.
-              Not funded is the pocket against its own target. This is whether
-              the money it says it holds still exists.
+           It prints at zero, like every reading above it, and no longer only
+           when there is something to raise. Leaving took the check off the
+           screen along with the problem, and a reader who has never seen a
+           pocket lose its funding cannot tell "none are uncovered" from "this
+           card does not look at that". A row reading zero says the board
+           checked; an absent row says nothing at all.
 
-              One word since the readings became rows: the sentence "N with
-              funding not covered" spelled its own subject because it stood
-              alone under a heading, and the row it is now states the subject in
-              the column it shares with the seven levels above. The heading went
-              with it — a band label over a single row names nothing the row
-              does not already say. */}
-          <span className='pocketHero__mark'>
-           <StatusSquare alert={pocketSquareClass('overdue')} />
-           <span className='pocketHero__markWord'>Uncovered</span>
-           <b className='pocketHero__markCount'>{uncoveredCount}</b>
-          </span>
+           At zero it takes the same stepped-back treatment as an empty level —
+           word and count off the ink, square at full colour — so it reports
+           rather than warns. */}
+       <div className='pocketHero__alerts'>
+        <span className='pocketHero__marks'>
+         {/* The wording names what failed rather than labelling the pocket.
+             Not funded is the pocket against its own target. This is whether
+             the money it says it holds still exists.
+
+             One word since the readings became rows: the sentence "N with
+             funding not covered" spelled its own subject because it stood
+             alone under a heading, and the row it is now states the subject in
+             the column it shares with the seven levels above. The heading went
+             with it — a band label over a single row names nothing the row
+             does not already say. */}
+         <span className={markClass(uncoveredCount)}>
+          <StatusSquare alert={pocketSquareClass('overdue')} />
+          <span className='pocketHero__markWord'>Uncovered</span>
+          <b className='pocketHero__markCount'>{uncoveredCount}</b>
          </span>
-        </div>
-       )}
+        </span>
+       </div>
 
        {/* Ahead of plan had its own group here, under the coverage alerts, for
            exactly one day. RULED 2026-09-03 (POCKET_DECISIONS.md #23.3) made it
