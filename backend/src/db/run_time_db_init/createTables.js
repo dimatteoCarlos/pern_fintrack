@@ -528,6 +528,17 @@ export async function ensurePocketTables(client = pool) {
   `CREATE INDEX IF NOT EXISTS idx_pocket_allocations_account ON pocket_allocations(source_account_id)`,
  );
 
+ // The runtime counterpart of migration 029. The board reads one month at a
+ // time, so both of its predicates are an equality on the owner or the pocket
+ // followed by a range on a date — the order these two composites are written
+ // in, and the only order in which the range stays one contiguous span.
+ await client.query(
+  `CREATE INDEX IF NOT EXISTS idx_pocket_allocations_pocket_date ON pocket_allocations(pocket_id, allocation_actual_date)`,
+ );
+ await client.query(
+  `CREATE INDEX IF NOT EXISTS idx_pockets_user_created ON pockets(user_id, created_at)`,
+ );
+
  console.log(pc.green('Pocket domain tables verified/created.'));
 }
 
