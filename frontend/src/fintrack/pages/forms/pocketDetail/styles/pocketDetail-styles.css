@@ -134,6 +134,14 @@
 .pocketDetail__section .presentation__card__title__container {
  padding-bottom: var(--space-2);
  border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+ /* Clearance UNDER the rule, added 2026-09-04. The rule had padding above it
+    and nothing below, so every section's first line sat against it — the same
+    distance from the heading it belongs to as from the band edge that separates
+    it from the section before. It shows worst on a line of prose, which has no
+    row structure of its own to stand on, but the lists were reading tight for
+    the same reason. --space-3 against the heading's own --space-2 keeps the
+    rule closer to the words it underlines than to the content it introduces. */
+ margin-bottom: var(--space-3);
 }
 
 .pocketDetail__list {
@@ -509,6 +517,12 @@
    does nothing. The pencil beside the title is the screen's one editing
    affordance and nothing else may compete with it. */
 
+/* DEAD as of 2026-09-04, and kept only until the note's new section has been
+   seen on screen: the note was the last field in this block and it is a section
+   of its own now, headed by CardTitle like Money sources. The five rules below
+   — the block, the item, the row, the label and the value — are what a metadata
+   list needed; nothing renders any of them. Delete them together with the
+   revert path, not before. */
 .pocketDetail__meta {
  display: flex;
  flex-direction: column;
@@ -548,12 +562,31 @@
  color: var(--color-content-on-dark);
 }
 
-.pocketDetail__metaNote {
+/* The note itself. Same values the metadata version carried — those were right
+   and only the block around them was wrong — under a name that no longer claims
+   it is metadata.
+
+   pre-wrap and overflow-wrap: anywhere are both load-bearing: the first keeps
+   the line breaks the owner typed, which is the difference between a note and a
+   paragraph the browser rewrapped, and the second is what stops an unbroken
+   string — a URL, an account number — pushing the panel wider than the screen.
+   It does NOT get the card's single-line ellipsis: the list has to keep every
+   card the same height and this screen has one pocket on it, so the whole note
+   is readable here and nowhere else. */
+.pocketDetail__note {
  margin: 0;
+ /* The one block of PROSE on a screen of figures, so it is the one block set
+    to a measure. Every other section here is rows — a name against an amount —
+    which the eye scans down a column and never reads across; a paragraph run to
+    the full width of a wide panel loses its place at every line break. 60ch is
+    inside the 45-75 the typographic convention gives for a single column, and
+    it is a ch and not a rem so the limit follows the font actually rendered. */
+ max-width: 60ch;
  font-size: var(--font-size-sm);
- line-height: 1.5;
+ /* Looser than the 1.5 the rows take. This is the only text here anyone reads
+    line after line rather than looking up. */
+ line-height: 1.6;
  color: var(--color-content-on-dark-muted);
- /* The owner's own words, kept as they typed them. */
  white-space: pre-wrap;
  overflow-wrap: anywhere;
 }

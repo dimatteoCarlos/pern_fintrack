@@ -36,10 +36,7 @@ import PocketCashModal, {
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
-import {
- PocketStatusLevel,
- pocketSquareClass,
-} from '../../../helpers/pocketStatus.ts';
+import { pocketSquareClass } from '../../../helpers/pocketStatus.ts';
 import { usePocketDetailStore } from '../../../stores/usePocketDetailStore.ts';
 import useAuth from '../../../../auth/hooks/useAuth.ts';
 import { isIanaTimeZone } from '../../../../auth/auth_utils/timeZoneOptions.ts';
@@ -330,7 +327,11 @@ function PocketDetail() {
   requiredMonthly === null
    ? null
    : {
-      level: (pocket.funded ? 'funded' : 'onPlan') as PocketStatusLevel,
+      // Same served level the hero's date reading uses, so a pocket at risk or
+      // behind does not show its pace card in the bare on-track square. Served
+      // by the server, never derived here (POCKET_CONTRACT_AUDIT.md, "Contract
+      // change 2026-09-03").
+      level: pocket.level,
       verdict: pocket.funded
        ? 'The target is covered, so there is no rate left to keep.'
        : `${amount(requiredMonthly)} a month keeps this target on its date.`,
@@ -412,21 +413,40 @@ function PocketDetail() {
    )}
 
    <article className='form__box'>
-    {/* What the pocket carries besides its figures. Read-only, and it now looks
-        it: these three borrowed the form's own input classes, so a bordered box
-        around each value invited a click that does nothing. The pencil beside
-        the title is this screen's one editing affordance, and a value dressed
-        as a control competes with it.
+    {/* --- WHY THIS POCKET EXISTS, IN THE OWNER'S OWN WORDS ---
 
-        The desired date and the currency both left this block on 2026-08-30.
-        They are labelled figures in the hero now, beside the target they
-        qualify; printed in two places they were two facts the reader had to
-        reconcile. What stays is the one field that is prose. */}
-    <div className='pocketDetail__meta'>
-     <div className='pocketDetail__metaItem'>
-      <span className='pocketDetail__metaLabel'>Note</span>
-      <p className='pocketDetail__metaNote'>{pocket.note ?? DASH}</p>
+        A section, with the same heading Money sources below it carries, and no
+        longer a metadata item. It sat in a .pocketDetail__meta block under a
+        --font-size-2xs uppercase label — the treatment the desired date and the
+        currency had before they left that block on 2026-08-30 for the hero. Two
+        things followed from that. The note was the only field left in a
+        container built for several, and it was ranked as an annotation on the
+        figures when it is the one thing on this screen the figures cannot say:
+        every other value here is served and computed, and this is what the
+        owner wrote.
+
+        It stays ABOVE Money sources. The note says what the plan is for, and
+        that is read before what is funding it.
+
+        The empty state is a sentence and not a dash, and the section does not
+        hide when there is no note. Money sources answers the same question the
+        same way one block below — it explains what would put something here
+        rather than disappearing — and two sections behaving two different ways
+        would be a difference the reader has to explain to themselves. A dash
+        also says the wrong thing: it means a figure the contract withheld,
+        where this is a field nobody has filled in yet. */}
+    <div className='pocketDetail__section'>
+     <div className='presentation__card__title__container'>
+      <CardTitle>{'Note'}</CardTitle>
      </div>
+
+     {pocket.note === null ? (
+      <p className='pocketDetail__empty'>
+       No note yet. Editing this pocket adds one.
+      </p>
+     ) : (
+      <p className='pocketDetail__note'>{pocket.note}</p>
+     )}
     </div>
 
     {/* --- THE ACCOUNTS FUNDING THIS POCKET --- */}
