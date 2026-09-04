@@ -1,10 +1,16 @@
 //frontend/src/pages/forms/accountDetail/AccountDetail.tsx
-import { Link, useLocation, useParams } from 'react-router-dom';
+import {
+  Link,
+  useLocation,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useFetch } from '../../../hooks/useFetch.ts';
 
 import LeftArrowLightSvg from '../../../../assets/LeftArrowSvg.svg';
 import AccountEditLink from '../../../general_components/accountEditLink/AccountEditLink.tsx';
+import MonthPicker from '../../../general_components/monthPicker/MonthPicker.tsx';
 
 import TopWhiteSpace from '../../../general_components/topWhiteSpace/TopWhiteSpace.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
@@ -25,6 +31,7 @@ import {
   capitalize,
   numberFormatCurrency,
   formatDateToDDMMYYYY,
+  toCalendarDay,
 } from '../../../helpers/functions.ts';
 
 import {
@@ -44,6 +51,7 @@ import {
 import '../styles/forms-styles.css';
 
 import '../accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css';
+import '../../../general_components/monthPicker/styles/monthPicker-styles.css';
 
 /*frontend/src/fintrack/pages/forms/accountDetailSharedComponents/accountTransactionsList/styles/accountDetailPeriodInfo-styles.css */
 
@@ -109,22 +117,27 @@ function AccountDetail() {
 
   //-------------------------------------
   //--ACCOUNT TRANSACTION API RESPONSE
-  //period dates considering previous number of months and current month transactions
-  const tdy = new Date();
-  const numberOfMonths = 2;
-  const firstDayOfPeriod = new Date(
-    tdy.getFullYear(),
-    tdy.getMonth() - numberOfMonths + 1,
-    1,
-  );
-  const lastDayOfPeriod = new Date(tdy.getFullYear(), tdy.getMonth() + 1, 0);
+  //--THE PERIOD, AS A CONTROL
+  // Replaces the fixed two-month window built from the device's clock and sent
+  // as start/end. The statement endpoint resolves a month on the account
+  // owner's calendar when asked with ?month=, the path DebtorDetail.tsx already
+  // uses for the same request.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const monthParam = searchParams.get('month');
 
-  //--YYYY-MM-DD
-  const apiStartDate = firstDayOfPeriod.toISOString().split('T')[0];
-  const apiEndDate = lastDayOfPeriod.toISOString().split('T')[0];
+  const selectMonth = (month: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('month', month);
+    // replace, so browsing five months does not bury the previous screen under
+    // five history entries.
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const currentMonth = toCalendarDay(new Date()).slice(0, 7);
+  const reportedMonth = monthParam ?? currentMonth;
 
   //-----
-  const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?start=${apiStartDate}&end=${apiEndDate}`;
+  const urlTransactionsAccountById = `${url_get_transactions_by_account_id}/${accountId}/?month=${reportedMonth}`;
 
   const {
     apiData: transactionAccountApiResponse, //{status, message, data}
@@ -245,6 +258,24 @@ function AccountDetail() {
               className='account-transactions__container '
               style={{ margin: '1rem 0' }}
             >
+              {/* The floor is the account's own opening month; the ceiling is
+                  the current one, so the picker cannot land on a month the
+                  server would refuse with 422. */}
+              <MonthPicker
+                month={`${reportedMonth}-01`}
+                currentMonth={`${currentMonth}-01`}
+                minMonth={
+                  accountDetail.account_start_local_date
+                    ? String(accountDetail.account_start_local_date).slice(
+                        0,
+                        7,
+                      )
+                    : null
+                }
+                surface='dark'
+                onSelect={selectMonth}
+              />
+
               <div className='period-info'>
                 <div className='period-info__label'>Period</div>
                 <span className='period-info__dates  '>
