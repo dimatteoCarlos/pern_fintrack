@@ -256,6 +256,12 @@
  font-size: inherit;
 }
 
+/* Restored 2026-09-04 after being lost to a truncated write, not to a decision:
+   the diff that removed it also took the file's trailing newline, which is the
+   signature of a cut rather than an edit. Every transition it switches off is
+   still declared above, and no rule anywhere else in the module names a
+   .pocketToolbar__* selector under this query — so while it was gone the bar
+   went on animating for a reader who had asked the system not to animate. */
 @media (prefers-reduced-motion: reduce) {
  .pocketToolbar__fields,
  .pocketToolbar__search,
