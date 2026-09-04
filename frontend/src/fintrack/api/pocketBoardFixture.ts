@@ -345,6 +345,24 @@ const SEPTEMBER: PocketBoardPayload = {
    atRisk: 0,
    overdue: 1,
   },
+  // The schedule fold, nine fields frozen 2026-09-04. Every one counts ONLY the
+  // pockets holding a plan window, and every figure below is folded from this
+  // fixture's own rows rather than invented, so the board it serves cannot
+  // contradict the rows beneath it.
+  totalScheduledByNow: 15061.77,
+  scheduledPocketsAllocated: 14920,
+  totalScheduleGap: -141.77,
+  totalRequiredMonthly: 727.5,
+  // Unclamped and free to pass 100. This board sits just under it.
+  scheduleAdherence: 99.06,
+  // One of the six rows carries no plan window, which is why this reads 5
+  // while pocketCount reads 6.
+  scheduledPocketCount: 5,
+  // They partition the scheduled population: 2 + 3 === 5, always.
+  underScheduleCount: 2,
+  overScheduleCount: 3,
+  // Scoped to those five, so it is NOT totalMovedInMonth above.
+  scheduledPocketsMovedInMonth: 1200,
  },
  pockets: SEPTEMBER_POCKETS,
  meta: {
@@ -386,6 +404,21 @@ const AUGUST: PocketBoardPayload = {
    atRisk: 0,
    overdue: 0,
   },
+  // The schedule fold, nine fields frozen 2026-09-04. Every one counts ONLY the
+  // pockets holding a plan window, and every figure below is folded from this
+  // fixture's own rows rather than invented, so the board it serves cannot
+  // contradict the rows beneath it.
+  totalScheduledByNow: 13876.82,
+  scheduledPocketsAllocated: 13380,
+  totalScheduleGap: -496.82,
+  totalRequiredMonthly: 877.5,
+  scheduleAdherence: 96.42,
+  // Every row this month holds a window, so this equals pocketCount.
+  scheduledPocketCount: 5,
+  // 1 + 4 === 5.
+  underScheduleCount: 1,
+  overScheduleCount: 4,
+  scheduledPocketsMovedInMonth: 720,
  },
  pockets: AUGUST_POCKETS,
  meta: {
@@ -434,6 +467,18 @@ const emptyBoard = (month: string): PocketBoardPayload => ({
    atRisk: 0,
    overdue: 0,
   },
+  // The schedule fold on an empty board: every amount null and never zero. A
+  // zero would state that nothing was required, which is a different claim from
+  // there being nothing to measure. The counts stay real zeros.
+  totalScheduledByNow: null,
+  scheduledPocketsAllocated: null,
+  totalScheduleGap: null,
+  totalRequiredMonthly: null,
+  scheduleAdherence: null,
+  scheduledPocketCount: 0,
+  underScheduleCount: 0,
+  overScheduleCount: 0,
+  scheduledPocketsMovedInMonth: null,
  },
  pockets: [],
  meta: {

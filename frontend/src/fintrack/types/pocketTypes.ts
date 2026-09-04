@@ -170,6 +170,76 @@ export type PocketBoardSummary = {
  // 2026-09-04, and every one is always present, zeros included — never a
  // sparse object missing an empty level.
  levelCounts: Record<PocketStatusLevel, number>;
+
+ // ── The schedule fold ────────────────────────────────────────────────────
+ // Nine fields, frozen 2026-09-04 (POCKET_CONTRACT_AUDIT.md). They answer a
+ // different question from every figure above: not how the board stands
+ // against its LIFETIME goals, but how it stands against what its own plans
+ // required by the close of the selected month. A board where every pocket is
+ // exactly on its schedule still reads 40% on `overallProgress`, which is why
+ // none of these can be derived from the figures above.
+ //
+ // All nine count ONLY the pockets that hold a plan window — the rows whose
+ // `scheduledByNow` is not null. That is the population `scheduledPocketCount`
+ // states, and the reason `scheduledPocketsAllocated` exists beside
+ // `totalAllocated` rather than reusing it: the two are EXPECTED to disagree on
+ // any board holding a pocket without a window, and subtracting across them
+ // would compare two different sets.
+
+ // What the already-due instalments required by the close of the selected
+ // month, summed over the scheduled pockets.
+ totalScheduledByNow: number | null;
+ // The committed amount of those SAME pockets. Not the board's total.
+ scheduledPocketsAllocated: number | null;
+ // The signed sum of each pocket's own slack, and not a subtraction of the two
+ // totals above — algebraically the same number, since a row's slack is its
+ // committed amount minus what its own plan required, but served in the form
+ // that states its derivation. Positive is slack held, negative is the
+ // shortfall. Never clamped: it is a difference and not a shortfall, and
+ // clamping would erase the side the reading exists to name.
+ //
+ // NOT `totalAheadOfPlan` above, which sums the POSITIVE slack only.
+ totalScheduleGap: number | null;
+ // The pace those plans now need per month to finish on time.
+ totalRequiredMonthly: number | null;
+ // 0-100 and ABOVE 100 when the board stands past what its plans asked for.
+ // Unclamped on purpose, and the one figure here whose rule differs from
+ // `overallProgress`: the card prints both operands in words on the same line,
+ // so a reader divides them by eye, and a per-pocket clamped fold would read
+ // lower than that division while neither figure could be called wrong. The
+ // clamping happens at the BAR'S FILL alone; the label states the true value.
+ scheduleAdherence: number | null;
+
+ // The three counts. Never null — a count is answerable on any board, the
+ // empty one included.
+
+ // How many pockets hold a plan window at all.
+ scheduledPocketCount: number;
+ // Strictly below their own line, and at or above it. Both are served rather
+ // than one subtracted from the other, so no arithmetic is left here. They
+ // partition the scheduled population exactly: a pocket sitting ON its line
+ // falls to the over side, because the under test is strictly below zero, so
+ // underScheduleCount + overScheduleCount === scheduledPocketCount always.
+ //
+ // NOT `levelCounts.behind` and `levelCounts.ahead`, and the two pairs may
+ // never be folded together or substituted for one another. These split the
+ // scheduled population by the SIGN of its slack; the level counts are the
+ // seven mutually exclusive readings of the classifier, evaluated top down. A
+ // completed pocket, or one past its target, holds non-negative slack and lands
+ // here while its level word says something else — so these are always the
+ // larger. The screen never spells them with the level's words either: the copy
+ // reads "under" and "over schedule", never "behind" and "ahead".
+ underScheduleCount: number;
+ overScheduleCount: number;
+
+ // The net moved within the selected month across those same scheduled
+ // pockets. It sits BESIDE the three board-wide movement figures above and
+ // redefines none of them — those keep their whole-board population.
+ //
+ // The two board-wide gross halves do NOT decompose this net: subtracting one
+ // from the other gives `totalMovedInMonth`, not this. No scoped gross halves
+ // are served, because nothing prints them.
+ scheduledPocketsMovedInMonth: number | null;
 };
 
 // What the endpoint answers, inside the envelope every route of this API wraps
