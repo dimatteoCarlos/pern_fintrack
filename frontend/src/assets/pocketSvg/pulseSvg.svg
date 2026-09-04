@@ -1,0 +1,21 @@
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+ <!-- The state of the portfolio, not the window it is measured over: a pulse
+      line, the shape an ECG or a ticker draws. It is the only glyph in the set
+      drawn as ONE continuous stroke, which is what keeps it apart from the
+      three rounded rectangles of barChartSvg.svg that sit directly above it on
+      the same panel.
+      One weight only, 0.375, the pen the set uses for the stroke that names the
+      object; there is no detail inside a line, so the lighter 0.35 and 0.32
+      never come up.
+      The event is sized for the SMALL box, not the large one. Below 480px of
+      container the board renders this at --space-6 with the pen scaled to 1,
+      where a narrow spike closes into a solid wedge. The spike's limbs are 2.4
+      units apart on each side, so at 24px they still stand about 1.8 device
+      pixels clear of each other at mid height; the recovery bump is drawn to
+      the same budget.
+      The drawing runs 3 to 21 across, the box the rest of the set stands in,
+      but not 3 to 21 down: a pulse that filled the box vertically would be a
+      zigzag, and the flat runs are what make this read as a line with one
+      event in it. -->
+ <path d="M3 12.5H7.2L9.6 17.3L12 5.4L14.4 14.2L16.4 10.4L18 12.5H21" stroke="currentColor" stroke-width="0.375" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
