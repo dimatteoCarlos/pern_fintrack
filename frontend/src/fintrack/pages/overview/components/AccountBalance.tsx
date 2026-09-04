@@ -115,7 +115,7 @@ function AccountBalance({
           {
             return (
               <Link
-                to={`accounts/${account_id}`} //AccountDetail.tsx
+                to={`account/${account_id}`} //OverviewAccountReading.tsx -- singular, not AccountDetail.tsx's plural "accounts"
                 state={{ previousRoute, detailedData: account }}
                 className='tile__container tile__container--account flx-col-sb'
                 key={`account-${account_id}`}

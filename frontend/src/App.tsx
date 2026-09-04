@@ -72,8 +72,18 @@ const NewAccount = lazy(
 const AccountDetail = lazy(
   () => import('./fintrack/pages/forms/accountDetail/AccountDetail'),
 );
+// Overview's own account screen — a leaner copy of AccountDetail without the
+// record card. AccountDetail itself stays Accounting Dashboard's, untouched.
+const OverviewAccountReading = lazy(
+  () => import('./fintrack/pages/forms/accountDetail/OverviewAccountReading'),
+);
 const DebtorDetail = lazy(
   () => import('./fintrack/pages/forms/debtorDetail/DebtorDetail'),
+);
+// Debts' own account screen — a leaner copy of DebtorDetail without the record
+// card. DebtorDetail itself stays Accounting Dashboard's, untouched.
+const DebtorDetailReading = lazy(
+  () => import('./fintrack/pages/forms/debtorDetail/DebtorDetailReading'),
 );
 const PocketDetail = lazy(
   () => import('./fintrack/pages/forms/pocketDetail/PocketDetail'),
@@ -83,6 +93,11 @@ const CategoryAccountList = lazy(
 );
 const CategoryDetail = lazy(
   () => import('./fintrack/pages/forms/categoryDetail/CategoryDetail'),
+);
+// Budget's own account screen — a leaner copy of CategoryDetail without the
+// record card. CategoryDetail itself stays Accounting Dashboard's, untouched.
+const CategoryDetailReading = lazy(
+  () => import('./fintrack/pages/forms/categoryDetail/CategoryDetailReading'),
 );
 
 //🚀 ACTIONS FOR ACCOUNT EDITION/DELETION
@@ -327,11 +342,35 @@ function App() {
           ),
         },
 
+        // Overview's own route to the same account, leaner. A new path rather
+        // than a swapped element on the one above: that one is also Accounting
+        // Dashboard's, and it stays exactly as it is.
+        {
+          path: 'overview/account/:accountId',
+          element: (
+            <LazyRoute>
+              <OverviewAccountReading />
+            </LazyRoute>
+          ),
+        },
+
         {
           path: 'debts/debtors/:debtorId',
           element: (
             <LazyRoute>
               <DebtorDetail />
+            </LazyRoute>
+          ),
+        },
+
+        // Debts' own route to the same debtor, leaner. A new path rather than a
+        // swapped element on the one above: that one is also Accounting
+        // Dashboard's, and it stays exactly as it is.
+        {
+          path: 'debts/debtor/:debtorId',
+          element: (
+            <LazyRoute>
+              <DebtorDetailReading />
             </LazyRoute>
           ),
         },
@@ -367,10 +406,13 @@ function App() {
         },
 
         {
+          // Budget's own route to the account, already distinct from
+          // Accounting Dashboard's (below, by the categoryName segment) —
+          // leaner, no new path needed here.
           path: 'budget/category/:categoryName/account/:accountId',
           element: (
             <LazyRoute>
-              <CategoryDetail />
+              <CategoryDetailReading />
             </LazyRoute>
           ),
         },

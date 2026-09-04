@@ -219,12 +219,16 @@ function ListOfDebtors({ previousRoute, accountType }: AccountPropType) {
             <BoxContainer key={account_id}>
               <BoxRow>
                 {/* Absolute on purpose. The detail route is declared once, at
-                    /fintrack/debts/debtors/:debtorId, and a relative `to`
+                    /fintrack/debts/debtor/:debtorId, and a relative `to`
                     resolves against whichever route currently renders this
                     list — a destination that moves when the list is mounted
-                    somewhere else. */}
+                    somewhere else.
+
+                    Singular "debtor", not the plural "debtors" Accounting
+                    Dashboard still uses: this is the leaner reading, reached
+                    only from this list. */}
                 <Link
-                  to={`/fintrack/debts/debtors/${account_id}`}
+                  to={`/fintrack/debts/debtor/${account_id}`}
                   state={{ previousRoute, debtorDetailedData: debtor }}
                 >
                   <div className='debtor box__title hover'>{account_name}</div>
