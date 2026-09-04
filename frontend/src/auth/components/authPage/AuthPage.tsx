@@ -89,7 +89,11 @@ export default function AuthPage() {
  
   //redirectPath to initial page - fixed
   const redirectPath = INITIAL_PAGE_ADDRESS;
-  navigateTo(redirectPath);
+  // replace, so the auth screen does not stay under the app in the history
+  // stack. Pushing left "/" one step back from the first tracker page, and "/"
+  // renders AuthPage with no session check — a signed-in user pressing back
+  // landed on the login form.
+  navigateTo(redirectPath, { replace: true });
 
   // console.log("🚀 ~ handleSignInWithNavigation ~ redirectPath:", redirectPath)
 
@@ -106,7 +110,9 @@ export default function AuthPage() {
    const result = await handleSignUpDomain(credentials);
 
    if(result.success){
-    navigateTo(INITIAL_PAGE_ADDRESS ??' /fintrack');
+    // replace, for the same reason as the sign-in above: registering must not
+    // leave the auth screen one step back from the app.
+    navigateTo(INITIAL_PAGE_ADDRESS ??' /fintrack', { replace: true });
    }
 
 // Errors are already stored in useAuthStore and displayed by AuthUI

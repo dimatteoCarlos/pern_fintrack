@@ -12,6 +12,7 @@ import 'react-toastify/dist/ReactToastify.css'; //it seems not necessary
 
 // 🛡️ AUTHENTICATION & PROTECTION
 import ProtectedRoute from './auth/components/protectedRoute/ProtectedRoute';
+import PublicOnlyRoute from './auth/components/publicOnlyRoute/PublicOnlyRoute';
 import AuthPage from './auth/components/authPage/AuthPage';
 
 // 🏗️ LAYOUT COMPONENTS (Load immediately - core structure)
@@ -147,9 +148,13 @@ const LazyRoute = ({ children }: { children: React.ReactNode }) => (
 function App() {
   const router = createBrowserRouter([
     // 🔄 REDIRECT ROUTES
+    // Behind the guard, so a live session never lands on the login form. The
+    // route rendered AuthPage to anyone, which is why the back button out of the
+    // tracker showed a signed-in owner the sign-in screen.
     {
       path: '/',
-      element: <AuthPage />,
+      element: <PublicOnlyRoute />,
+      children: [{ index: true, element: <AuthPage /> }],
     },
 
     // 🔐 AUTHENTICATION ROUTES
