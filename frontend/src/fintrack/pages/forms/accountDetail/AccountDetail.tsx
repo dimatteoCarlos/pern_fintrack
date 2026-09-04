@@ -18,6 +18,7 @@ import CurrencyBadge from '../../../general_components/currencyBadge/CurrencyBad
 import AccountBalanceSummary from '../accountDetailSharedComponents/accountBalanceSummary/AccountBalanceSummary.tsx';
 import AccountTransactionsList from '../accountDetailSharedComponents/accountTransactionsList/AccountTransactionsList.tsx';
 import { AccountTransactionDetailModal } from '../accountDetailSharedComponents/accountTransactionDetailModal/AccountTransactionDetailModal.tsx';
+import AccountPocketCommitments from './components/AccountPocketCommitments.tsx';
 import CoinSpinner from '../../../loader/coin/CoinSpinner.tsx';
 import { useTransactionDetail } from '../../../hooks/useTransactionDetail.ts';
 
@@ -252,6 +253,26 @@ function AccountDetail() {
                 </div>
               </div>
             </div>
+
+            {/* Above the statement and not inside it, deliberately. What this
+                account has committed to pockets is a standing state like the
+                balance over it — the read that serves it takes no month — while
+                everything below the picker is a window on a list of movements.
+                Placed under the picker it would look windowed by it and would
+                contradict itself every time the reader stepped back a month.
+
+                It draws nothing at all on an account type that holds no
+                unassigned cash, which is every type but bank. */}
+            {accountId && (
+              <AccountPocketCommitments
+                accountId={accountId}
+                allocated={accountDetail.allocated}
+                unassignedCash={accountDetail.unassignedCash}
+                isOverAllocated={accountDetail.isOverAllocated}
+                pockets={accountDetail.pockets}
+                currencyCode={accountDetail.currency_code}
+              />
+            )}
 
             {/* --- TRANSACTION STATEMENT SECTION --- */}
             <div
