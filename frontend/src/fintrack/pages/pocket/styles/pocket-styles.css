@@ -1251,8 +1251,12 @@ button.line__container {
  min-width: 0;
 }
 
+/* One step up from --font-size-2xs, not two. Two lands on --font-size-sm, the
+   size of the account name and of the allocated amount, and the row would then
+   hold three figures none of which is the headline. 12px is the floor a figure
+   can be read at on a phone; 10px was under it. */
 .pocketHero__accountFact {
- font-size: var(--font-size-2xs);
+ font-size: var(--font-size-xs);
  color: var(--color-content-on-dark-subtle);
  font-variant-numeric: tabular-nums;
  white-space: nowrap;
@@ -1263,16 +1267,6 @@ button.line__container {
    it, which is why this rule changes nothing else about the line. */
 .pocketHero__accountFact--over {
  color: var(--color-status-alert);
-}
-
-/* The currency, under the amount instead of beside the two figures on the left.
-   As a third item on that line it wrapped in every single row, spending a whole
-   line of height per account to state three letters, while this column stood
-   empty. */
-.pocketHero__accountUnit {
- font-size: var(--font-size-3xs);
- letter-spacing: var(--letter-spacing-wide);
- color: var(--color-content-on-dark-subtle);
 }
 
 /* How close the account is to its own edge — committed over balance — spanning

@@ -335,13 +335,13 @@ function PocketFundingAccounts({
            {amountFor(account, account.allocated)}
           </span>
 
-          {/* Under the amount rather than beside the two figures on the left.
-              As a third item on that line it wrapped in every row, spending a
-              whole line of height per account to state three letters; this
-              column was standing empty. */}
-          <span className='pocketHero__accountUnit'>
-           {(account.currency_code ?? DEFAULT_CURRENCY).toUpperCase()}
-          </span>
+          {/* No currency code under the amount. currencyFormat already prints
+              the unit inside the figure — a symbol for the accounting currency
+              and the ISO code for any other — so the row stated it twice, and
+              the board is single-currency by design, which made it the same
+              three letters repeated down every row. It also fell back to
+              DEFAULT_CURRENCY, so it printed a unit for an account whose
+              currency the read had not answered for. */}
 
           {/* The WORD carries this reading and the colour only seconds it: an
               account over its own balance has to survive a monochrome print and
