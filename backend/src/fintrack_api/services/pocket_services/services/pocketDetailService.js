@@ -98,7 +98,7 @@ export const pocketDetailService = {
  async getDetail(pool, userId, pocketId, timeZone) {
   const [today, row] = await Promise.all([
    getCalendarToday(pool, timeZone),
-   getPocketForUser(pool, userId, pocketId),
+   getPocketForUser(pool, userId, pocketId, timeZone),
   ]);
 
   if (row === null) {

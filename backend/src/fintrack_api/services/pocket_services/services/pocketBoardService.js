@@ -19,6 +19,17 @@
 // often the owner changed their mind, not how fast money arrived, so runRate and
 // projectedDate do not ship; requiredMonthly is a division of the remainder by
 // the horizon and needs no history at all.
+//
+// The plan's line does not contradict that. It asks where a plan SHOULD be by
+// now, from the target, the deadline and the day the plan was made — three
+// stored values and no sequence of rows. The rejected figure asked how fast the
+// owner has been moving, which is the question that needs a history.
+//
+// The board reads one month. Every figure is cumulative to that month's close,
+// or to today when the current month is asked for, and the movement figures say
+// what happened inside it. That contradicts the earlier statement that this
+// endpoint carries nothing; the parameter is optional and its absence still
+// means the current month.
 
 import { getCalendarToday, getPocketsForUser } from '../db/pocketRepository.js';
 import {
@@ -27,9 +38,39 @@ import {
 } from '../db/accountAllocationRepository.js';
 import { makePocketStatus } from '../core/makePocketStatus.js';
 import { makeAccountAllocation } from '../core/makeAccountAllocation.js';
+import { POCKET_LEVELS } from '../core/pocketLevel.js';
 import { toAmount, toRate, money } from '../../budget_services/core/money.js';
 
 const HUNDRED = 100;
+
+/**
+ * The one date every comparison on this board reads.
+ *
+ * The current month is evaluated at today, so the board keeps saying what is
+ * true now. A past month is evaluated at its own close, so a figure read in
+ * September for August answers as August ended and does not drift a day further
+ * every day.
+ *
+ * Both labels are already on the owner's calendar — today comes from
+ * getCalendarToday and the month from the validated parameter — so this is
+ * label arithmetic and touches no zone. Day 0 of the following month is the last
+ * day of this one, which is the only Date use here and it never leaves UTC.
+ *
+ * @param {string} monthStart - YYYY-MM-01
+ * @param {string} today - YYYY-MM-DD on the owner's calendar
+ * @returns {string} YYYY-MM-DD
+ */
+const resolveEvaluationDate = (monthStart, today) => {
+ if (monthStart.slice(0, 7) === today.slice(0, 7)) {
+  return today;
+ }
+
+ const year = Number(monthStart.slice(0, 4));
+ const month = Number(monthStart.slice(5, 7));
+ const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+ return `${monthStart.slice(0, 7)}-${String(lastDay).padStart(2, '0')}`;
+};
 
 // The rule the budget module settled and this one adopts unchanged: amounts in
 // two currencies are not added at an implicit 1:1. Every pocket is written in
@@ -103,6 +144,29 @@ const makeSummary = (pockets, accountAllocations) => {
   fundedCount: pockets.filter((p) => p.funded).length,
   overdueCount: pockets.filter((p) => p.overdue).length,
   uncoveredCount: pockets.filter((p) => p.uncovered).length,
+  // One count per level, folded from the level each row already carries. The
+  // client used to derive these from the same rows while the cards read the
+  // served flags, which is two answers to one question — the defect the header
+  // of this file exists to prevent.
+  //
+  // Every key is present with a zero, never only the levels that occurred: a
+  // screen reading levelCounts.behind must not have to distinguish "none" from
+  // "the server did not mention it".
+  levelCounts: POCKET_LEVELS.reduce(
+   (acc, level) => ({
+    ...acc,
+    [level]: pockets.filter((p) => p.level === level).length,
+   }),
+   {},
+  ),
+  // aheadCount is GONE. RULED 2026-09-04 (POCKET_DECISIONS.md #24): being at or
+  // above the plan's line is algebraically the same condition as the ratio being
+  // at or below 1, so the axis it counted did not cross the live band — it
+  // partitioned it, and it is now the level `ahead`. Keeping the count would
+  // have left levelCounts.ahead and aheadCount answering one question with two
+  // slightly different numbers, which is the defect the header of this file
+  // exists to prevent. A screen that wants it reads levelCounts.ahead.
+  //
   // The accounts a pocket actually draws on, the board's fold of the sourceCount
   // each row already carries. getAccountAllocations returns every account the
   // owner holds, including the ones committed to nothing, because the account
@@ -138,6 +202,10 @@ const makeSummary = (pockets, accountAllocations) => {
   totalTarget: null,
   totalRemaining: null,
   totalExcess: null,
+  totalAheadOfPlan: null,
+  totalMovedInMonth: null,
+  totalCommittedInMonth: null,
+  totalReleasedInMonth: null,
   overallProgress: null,
   currency: null,
   ...counts,
@@ -160,12 +228,33 @@ const makeSummary = (pockets, accountAllocations) => {
    const allocated = money(p.allocated);
    const gap = target.minus(allocated);
 
+   // Bounded to the pockets that READ ahead, not to every pocket holding
+   // positive slack. RULED 2026-09-04 (#24.5): the readings row prints this
+   // amount beside levelCounts.ahead, and a count over one population next to a
+   // sum over a wider one is a row that does not add up — a pocket a rounding
+   // above its line, or one already past its target, would put money in the sum
+   // without appearing in the count.
+   const ahead = p.level === 'ahead' ? money(p.aheadOfPlan ?? 0) : money(0);
+
    return {
     allocated: acc.allocated.plus(allocated),
     target: acc.target.plus(target),
     remaining: gap.isPositive() ? acc.remaining.plus(gap) : acc.remaining,
     excess: gap.isNegative() ? acc.excess.plus(gap.negated()) : acc.excess,
     covered: acc.covered.plus(gap.isPositive() ? allocated : target),
+    // Only the positive side. A pocket behind its line does not cancel the slack
+    // another one holds: the question this figure answers is how much money can
+    // be moved, and a shortfall over there is not a source over here. Same
+    // clamp-before-summing rule the excess above obeys, for the same reason.
+    ahead: ahead.isPositive() ? acc.ahead.plus(ahead) : acc.ahead,
+    // The month's movement nets by design — here the sign IS the fact, because
+    // a release in one pocket and a commitment in another did happen inside the
+    // same month and the portfolio moved by their difference. The two gross
+    // halves are summed beside it so the net never has to be decomposed by a
+    // consumer.
+    moved: acc.moved.plus(money(p.movedInMonth ?? 0)),
+    committed: acc.committed.plus(money(p.committedInMonth ?? 0)),
+    released: acc.released.plus(money(p.releasedInMonth ?? 0)),
    };
   },
   {
@@ -174,6 +263,10 @@ const makeSummary = (pockets, accountAllocations) => {
    remaining: money(0),
    excess: money(0),
    covered: money(0),
+   ahead: money(0),
+   moved: money(0),
+   committed: money(0),
+   released: money(0),
   },
  );
 
@@ -182,6 +275,10 @@ const makeSummary = (pockets, accountAllocations) => {
   totalTarget: toAmount(sums.target),
   totalRemaining: toAmount(sums.remaining),
   totalExcess: toAmount(sums.excess),
+  totalAheadOfPlan: toAmount(sums.ahead),
+  totalMovedInMonth: toAmount(sums.moved),
+  totalCommittedInMonth: toAmount(sums.committed),
+  totalReleasedInMonth: toAmount(sums.released),
   overallProgress: toRate(sums.covered.dividedBy(sums.target).times(HUNDRED)),
   currency,
   ...counts,
@@ -190,25 +287,37 @@ const makeSummary = (pockets, accountAllocations) => {
 
 export const pocketBoardService = {
  /**
-  * The board of one user.
+  * The board of one user, as of the close of one month.
+  *
+  * The month is the caller's; the CURRENT month never travels. The controller
+  * resolves it on the owner's calendar and refuses a later one with 422, so the
+  * only month that reaches here is one that has begun.
+  *
+  * Coverage is deliberately NOT month-bounded. It asks whether the accounts
+  * cover what is committed to them, which is a question about the balances the
+  * owner holds now — there is no historical balance in this module, and a
+  * coverage figure read at a past close would be an invention.
   *
   * @param {import('pg').Pool} pool
   * @param {string} userId - from the token
   * @param {string} timeZone - the owner's IANA zone, resolved by the controller
-  * @returns {Promise<{summary: object, pockets: object[], meta: {notices: string[]}}>}
+  * @param {string} monthStart - YYYY-MM-01, validated by the controller
+  * @returns {Promise<{summary: object, pockets: object[], meta: object}>}
   */
- async getBoard(pool, userId, timeZone) {
+ async getBoard(pool, userId, timeZone, monthStart) {
   const [today, rows, accountRows, holdingRows] = await Promise.all([
    getCalendarToday(pool, timeZone),
-   getPocketsForUser(pool, userId),
+   getPocketsForUser(pool, userId, monthStart, timeZone),
    getAccountAllocations(pool, userId),
    getPocketSourceHoldings(pool, userId),
   ]);
 
+  const evaluationDate = resolveEvaluationDate(monthStart, today);
+
   const uncovered = findUncoveredPockets(accountRows, holdingRows);
 
   const pockets = rows.map((row) => ({
-   ...makePocketStatus(row, today),
+   ...makePocketStatus(row, evaluationDate),
    uncovered: uncovered.has(row.pocketId),
   }));
 
@@ -222,6 +331,19 @@ export const pocketBoardService = {
     ? [MIXED_CURRENCY_NOTICE]
     : [];
 
-  return { summary, pockets, meta: { notices } };
+  return {
+   summary,
+   pockets,
+   meta: {
+    // What this payload answers, what the stepper may not step past, and the
+    // date every comparison on it was made at. The screen needs all three: it
+    // labels the badge with the first, disables the forward arrow at the
+    // second, and has no way to derive the third.
+    referenceMonth: monthStart.slice(0, 7),
+    currentMonth: today.slice(0, 7),
+    evaluationDate,
+    notices,
+   },
+  };
  },
 };

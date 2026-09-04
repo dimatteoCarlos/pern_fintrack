@@ -55,11 +55,31 @@ export async function getCalendarToday(db, timeZone) {
  * other criteria the screen offers and both are served on the row, so no sort
  * costs a query parameter.
  *
+ * Everything is read as of the close of one month. Four aggregates come off the
+ * SAME unbounded outer join, each with its own FILTER: the committed total up to
+ * that close, the net that moved inside the month, and the month's two gross
+ * halves. One join and one pass is the rule this file's header states — two
+ * queries with two windows is exactly how a header and a list come to disagree.
+ *
+ * The bound lives in the FILTER and never in the join condition, so a pocket
+ * with nothing committed before the close reads zero instead of disappearing.
+ * The pocket population itself is bound on the day the plan was made, so a
+ * pocket created in September is absent from a board read at the close of
+ * August.
+ *
+ * Both bounds convert a local month boundary into an instant to meet a
+ * TIMESTAMPTZ column, once per operand and in one direction. They cast to
+ * ::timestamp and never to ::date: with a date, Postgres picks the overload
+ * taking an instant and the window shifts by the zone offset the wrong way
+ * (measured at budgetTransactionRepository.js:177-186).
+ *
  * @param {import('pg').Pool} pool
  * @param {string} userId - UUID from the token, never from the client
+ * @param {string} monthStart - first day of the selected month, YYYY-MM-01
+ * @param {string} timeZone - the owner's IANA zone
  * @returns {Promise<object[]>} raw rows
  */
-export async function getPocketsForUser(pool, userId) {
+export async function getPocketsForUser(pool, userId, monthStart, timeZone) {
  const { rows } = await pool.query(
   `
   SELECT
@@ -67,18 +87,38 @@ export async function getPocketsForUser(pool, userId) {
    p.name                                  AS name,
    p.note                                  AS note,
    p.target_amount::text                   AS target,
-   COALESCE(SUM(pa.amount), 0)::text       AS allocated,
+   to_char(p.created_at AT TIME ZONE $3, 'YYYY-MM-DD') AS "planStart",
+   COALESCE(SUM(pa.amount) FILTER (
+    WHERE pa.allocation_actual_date < (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)
+   ), 0)::text                             AS allocated,
+   COALESCE(SUM(pa.amount) FILTER (
+    WHERE pa.allocation_actual_date >= ($2::timestamp AT TIME ZONE $3)
+      AND pa.allocation_actual_date <  (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)
+   ), 0)::text                             AS "movedInMonth",
+   COALESCE(SUM(pa.amount) FILTER (
+    WHERE pa.amount > 0
+      AND pa.allocation_actual_date >= ($2::timestamp AT TIME ZONE $3)
+      AND pa.allocation_actual_date <  (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)
+   ), 0)::text                             AS "committedInMonth",
+   COALESCE(-SUM(pa.amount) FILTER (
+    WHERE pa.amount < 0
+      AND pa.allocation_actual_date >= ($2::timestamp AT TIME ZONE $3)
+      AND pa.allocation_actual_date <  (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)
+   ), 0)::text                             AS "releasedInMonth",
    to_char(p.desired_date, 'YYYY-MM-DD')   AS "desiredDate",
-   COUNT(DISTINCT pa.source_account_id)::int AS "sourceCount",
+   COUNT(DISTINCT pa.source_account_id) FILTER (
+    WHERE pa.allocation_actual_date < (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)
+   )::int                                  AS "sourceCount",
    lower(ct.currency_code)                 AS currency
   FROM pockets p
   JOIN currencies ct ON ct.currency_id = p.currency_id
   LEFT JOIN pocket_allocations pa ON pa.pocket_id = p.pocket_id
   WHERE p.user_id = $1
+   AND p.created_at < (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)
   GROUP BY p.pocket_id, ct.currency_code
   ORDER BY p.desired_date ASC, p.name ASC
   `,
-  [userId],
+  [userId, monthStart, timeZone],
  );
 
  return rows;
@@ -93,12 +133,19 @@ export async function getPocketsForUser(pool, userId) {
  * answering 404 for one and 403 for the other lets a caller walk the id space
  * and learn which pockets are other users'.
  *
+ * planStart is the day the plan was made, on the owner's calendar. The status
+ * builder divides the target over the months from it to the deadline, so the
+ * zone has to be the owner's for the detail screen to agree with the board. The
+ * three write paths that call this only prove ownership and never build a
+ * status; they leave the zone unset and the default keeps the read valid.
+ *
  * @param {import('pg').Pool|import('pg').PoolClient} db
  * @param {string} userId - UUID from the token
  * @param {number} pocketId
+ * @param {string} [timeZone] - the owner's IANA zone; only planStart reads it
  * @returns {Promise<object|null>} the raw row, or null when there is none
  */
-export async function getPocketForUser(db, userId, pocketId) {
+export async function getPocketForUser(db, userId, pocketId, timeZone = 'UTC') {
  const { rows } = await db.query(
   `
   SELECT
@@ -106,6 +153,7 @@ export async function getPocketForUser(db, userId, pocketId) {
    p.name                                  AS name,
    p.note                                  AS note,
    p.target_amount::text                   AS target,
+   to_char(p.created_at AT TIME ZONE $3, 'YYYY-MM-DD') AS "planStart",
    COALESCE(SUM(pa.amount), 0)::text       AS allocated,
    to_char(p.desired_date, 'YYYY-MM-DD')   AS "desiredDate",
    COUNT(DISTINCT pa.source_account_id)::int AS "sourceCount",
@@ -117,7 +165,7 @@ export async function getPocketForUser(db, userId, pocketId) {
    AND p.pocket_id = $2
   GROUP BY p.pocket_id, ct.currency_code
   `,
-  [userId, pocketId],
+  [userId, pocketId, timeZone],
  );
 
  return rows[0] ?? null;

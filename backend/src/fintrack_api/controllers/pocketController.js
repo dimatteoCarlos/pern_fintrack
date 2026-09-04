@@ -19,11 +19,13 @@ import { pocketBoardService } from '../services/pocket_services/services/pocketB
 import { pocketDetailService } from '../services/pocket_services/services/pocketDetailService.js';
 import { pocketWriteService } from '../services/pocket_services/services/pocketWriteService.js';
 import { pocketAllocationService } from '../services/pocket_services/services/pocketAllocationService.js';
+import { getCalendarToday } from '../services/pocket_services/db/pocketRepository.js';
 import {
  pocketParamsSchema,
  createPocketBodySchema,
  updatePocketBodySchema,
  allocationBodySchema,
+ boardQuerySchema,
 } from '../../validation/zod/pocketValidators.js';
 
 /**
@@ -68,14 +70,49 @@ const respondWithServiceError = (res, next, error) => {
  return next(error);
 };
 
-/** GET /api/fintrack/pocket/board */
+/**
+ * GET /api/fintrack/pocket/board?month=YYYY-MM
+ *
+ * The month is optional and its absence means the current one. The current
+ * month is resolved here on the owner's calendar and never accepted from the
+ * client: a browser in Auckland and one in Bogotá disagree about which month it
+ * is for several hours a day, and only the server knows which one is the
+ * owner's.
+ *
+ * A later month is refused with 422 rather than clamped. Clamping would answer
+ * a question the caller did not ask and label it with a month it did not name;
+ * the interface disables the forward arrow at the current month, so the refusal
+ * is unreachable from the screen and exists for the URL typed by hand.
+ */
 export async function getPocketBoard(req, res, next) {
  try {
   const userId = requireUserId(req, res);
   if (!userId) return;
 
+  const query = boardQuerySchema.safeParse(req.query);
+
+  if (!query.success) {
+   return respondWithZodIssues(res, query.error);
+  }
+
   const timeZone = await getUserTimeZone(pool, userId);
-  const board = await pocketBoardService.getBoard(pool, userId, timeZone);
+  const today = await getCalendarToday(pool, timeZone);
+  const currentMonth = `${today.slice(0, 7)}-01`;
+  const monthStart = query.data.month ?? currentMonth;
+
+  if (monthStart > currentMonth) {
+   return res.status(422).json({
+    status: 422,
+    message: `month ${monthStart.slice(0, 7)} is later than the current month ${currentMonth.slice(0, 7)}.`,
+   });
+  }
+
+  const board = await pocketBoardService.getBoard(
+   pool,
+   userId,
+   timeZone,
+   monthStart,
+  );
 
   // 200 with an empty pockets[] and a null-figured summary, never 400. A user
   // who owns no pocket has asked a valid question and the answer is "none" —

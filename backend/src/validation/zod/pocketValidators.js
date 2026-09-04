@@ -8,6 +8,11 @@ import { z } from 'zod';
 // a schema that accepted a code the converter cannot resolve would turn a typo
 // into a 500 at write time.
 import { SUPPORTED_CURRENCIES } from '../../fintrack_api/services/fx_services/core/fxConfig.js';
+// The month coercion the budget module already owns. Imported rather than
+// restated: it truncates the text to the first of the month and never builds a
+// Date, which is the only reason a month parameter cannot shift a day west of
+// UTC. A second copy of that regex is a second chance to get it wrong.
+import { monthBound } from './budgetValidators.js';
 
 // Every schema here is strict, for the reason budgetValidators states: Zod
 // strips an unknown key silently, so a caller still sending a retired field —
@@ -138,5 +143,22 @@ export const allocationBodySchema = z
   amount: positiveAmount,
   currency: typedCurrency,
   allocationDate: calendarDate.optional(),
+ })
+ .strict();
+
+/**
+ * GET /api/fintrack/pocket/board?month=YYYY-MM
+ *
+ * Optional, and the omission means the current month. Present, it must not be
+ * later than that — a 422 the handler raises, because a schema cannot see the
+ * owner's calendar and the current month never travels from the client.
+ *
+ * A full date is accepted and truncated to its month, which is what monthBound
+ * does for every other month parameter in the app: the board reads a month, and
+ * any day inside it names the same window.
+ */
+export const boardQuerySchema = z
+ .object({
+  month: monthBound.optional(),
  })
  .strict();

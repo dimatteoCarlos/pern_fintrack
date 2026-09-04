@@ -15,6 +15,8 @@
 // states.
 
 import { toAmount, toRate, money } from '../../budget_services/core/money.js';
+import { makePlanSchedule } from './planSchedule.js';
+import { makePocketLevel } from './pocketLevel.js';
 
 const HUNDRED = 100;
 
@@ -76,13 +78,32 @@ const computeRequiredMonthly = (remaining, daysRemaining) => {
  * @param {string|number} row.target - NUMERIC as text
  * @param {string|number} row.allocated - NUMERIC as text
  * @param {string} row.desiredDate - YYYY-MM-DD on the owner's calendar
+ * @param {string} row.planStart - YYYY-MM-DD, the day the plan was made
  * @param {number} row.sourceCount - distinct accounts the pocket draws on
  * @param {string} row.currency - lowercase code
- * @param {string} today - YYYY-MM-DD on the owner's calendar
+ * @param {string} [row.movedInMonth] - net of the selected month, NUMERIC as text
+ * @param {string} [row.committedInMonth] - the month's positive rows
+ * @param {string} [row.releasedInMonth] - the month's negative rows, as magnitude
+ * @param {string} today - the EVALUATION date, YYYY-MM-DD on the owner's
+ *   calendar: today when the current month is selected, the last day of the
+ *   month otherwise. Every date comparison on the row reads at this one point.
  * @returns {Readonly<object>}
  */
 export function makePocketStatus(
- { pocketId, name, note, target, allocated, desiredDate, sourceCount, currency },
+ {
+  pocketId,
+  name,
+  note,
+  target,
+  allocated,
+  desiredDate,
+  planStart,
+  sourceCount,
+  currency,
+  movedInMonth,
+  committedInMonth,
+  releasedInMonth,
+ },
  today,
 ) {
  if (!Number.isInteger(pocketId)) {
@@ -101,10 +122,31 @@ export function makePocketStatus(
   throw new Error('PocketStatus: today is required and must be a YYYY-MM-DD label');
  }
 
+ if (typeof planStart !== 'string' || planStart.length === 0) {
+  throw new Error('PocketStatus: planStart is required and must be a YYYY-MM-DD label');
+ }
+
  const targetAmount = money(target);
  const allocatedAmount = money(allocated);
  const remaining = targetAmount.minus(allocatedAmount);
  const daysRemaining = daysBetween(today, desiredDate);
+ const requiredMonthly = computeRequiredMonthly(remaining, daysRemaining);
+
+ // The plan's line, and the ratio that classifies against it. Computed from the
+ // same three figures this function already holds, so the level a screen paints
+ // and the pace it prints cannot come from two different divisions.
+ const schedule = makePlanSchedule(
+  { targetAmount, allocatedAmount, planStart, desiredDate, daysRemaining },
+  today,
+ );
+
+ const overdue = daysRemaining < 0 && allocatedAmount.lessThan(targetAmount);
+
+ // Null and not zero when the caller did not ask for a month. The detail screen
+ // reads one pocket over its whole life and has no month to report; a zero there
+ // would state that nothing moved, which is a different claim.
+ const monthAmount = (value) =>
+  value === undefined || value === null ? null : toAmount(money(value));
 
  return Object.freeze({
   pocketId,
@@ -119,14 +161,40 @@ export function makePocketStatus(
   remaining: toAmount(remaining),
   progress: toRate(allocatedAmount.dividedBy(targetAmount).times(HUNDRED)),
   desiredDate,
+  planStart,
   daysRemaining,
   // Null after the date, not the remainder. $1,000 owed on a goal whose deadline
   // passed is not "$1,000 per month", and a figure under a label it does not
   // answer is worse than a figure withheld — the screen says the date passed and
   // prints the remainder beside it.
-  requiredMonthly: computeRequiredMonthly(remaining, daysRemaining),
+  requiredMonthly,
+  // The plan's line: what the already-due instalments required, how far this
+  // pocket sits from it, and the ratio between the pace it now needs and the
+  // pace it set. All four are null together when the plan's window holds no
+  // full calendar month.
+  ...schedule,
+  // What moved inside the selected month, as three readings of one fact: the net
+  // is what the tile prints, and the two halves are served because a net of -180
+  // states neither how much went in nor how much came out.
+  movedInMonth: monthAmount(movedInMonth),
+  committedInMonth: monthAmount(committedInMonth),
+  releasedInMonth: monthAmount(releasedInMonth),
   funded: allocatedAmount.greaterThanOrEqualTo(targetAmount),
-  overdue: daysRemaining < 0 && allocatedAmount.lessThan(targetAmount),
+  overdue,
+  // One of seven, decided here and never on the client. The screen maps it to a
+  // word and a colour; the flags above stay served because the card prints them
+  // as sentences, not because a consumer should re-classify from them.
+  //
+  // Both figures of the schedule reach the classifier: the ratio decides the
+  // band, and the signed amount is what stops a pocket short of its whole target
+  // from reading Ahead on the one date the two disagree (#24.4).
+  level: makePocketLevel({
+   targetAmount,
+   allocatedAmount,
+   overdue,
+   paceRatio: schedule.paceRatio,
+   aheadOfPlan: schedule.aheadOfPlan,
+  }),
   sourceCount,
   currency,
  });
