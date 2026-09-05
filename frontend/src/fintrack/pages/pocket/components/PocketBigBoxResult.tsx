@@ -151,6 +151,14 @@ function PocketBigBoxResult({
   );
  }
 
+ // Nothing to measure, so nothing is drawn. Three tiles of dashes over an
+ // unpainted track say the schedule was measured and came out empty, when
+ // there is no schedule to measure — but a message here would be the THIRD
+ // "no pockets yet" on one screen: the list owns that sentence, and the card
+ // below answers again for whoever opens it. A null summary is not this state:
+ // the board has not answered yet, and the dashes are right for that.
+ if (summary !== null && summary.pocketCount === 0) return null;
+
  // The furthest deadline and the lifetime progress both left this component
  // with the schedule redesign: the equation measures against the plan now, and
  // neither figure explains any of its three amounts. The lifetime pair belongs
@@ -285,7 +293,13 @@ function PocketBigBoxResult({
         The two meta lines are gone with the demotion. "of a $X target" and "to
         reach every target" existed only because the target had no tile of its
         own to be stated in; each now repeats the line above or below it. */}
-    <div className='pocketHero__equation'>
+    {/* EMPTY is its own state here too, and it is the whole hero: three tiles
+        of dashes over an unpainted track say the schedule was measured and
+        came out empty, when there is no schedule to measure. The message is
+        what the reader can act on. The cards below stay, closed, and answer
+        the same way when opened. */}
+    <>
+     <div className='pocketHero__equation'>
      {/* One word each, because the three sit in one row under one heading and a
          label only has to tell its own tile from the two beside it. "Total" and
          "Still to" were carrying nothing and were what forced the row to stack
@@ -451,6 +465,7 @@ function PocketBigBoxResult({
       )}
      </div>
     </div>
+     </>
    </div>
   </div>
  );
@@ -580,6 +595,26 @@ export function PocketBoardReadings() {
 
      {isPortfolioOpen && (
       <div className='pocketHero__cardBody' id={PORTFOLIO_BODY_ID}>
+       {/* EMPTY is its own state and not a row of dashes. With nothing to
+           measure, the two sentences below print the whole structure with
+           every amount a dash and every count a zero, which states in symbols
+           that the arithmetic ran and came out empty — it did not run at all.
+           The two empties are told apart because the answer to each is a
+           different action: make a pocket, or give a pocket a plan. Same
+           shape as the withheld-totals notice at the top of this component. */}
+       {summary.pocketCount === 0 ? (
+        <p className='pocketHero__cardEmpty'>
+         No pockets yet. Create one with a target and a date, and this card
+         measures it against its own plan.
+        </p>
+       ) : scheduledPocketCount === 0 ? (
+        <p className='pocketHero__cardEmpty'>
+         None of your {summary.pocketCount} pockets carries a plan. A target
+         and a date are what a pocket is measured against, and this card is
+         where that reading lands.
+        </p>
+       ) : (
+        <>
        <p className='pocketHero__reading'>
         {/* The two operands of the ratio, in words. This is exactly why the
             served percentage is unclamped: a reader divides these two by eye,
@@ -640,6 +675,8 @@ export function PocketBoardReadings() {
          {percent(summary.overallProgress)} overall progress
         </span>
        </p>
+        </>
+       )}
       </div>
      )}
     </div>

@@ -1598,6 +1598,16 @@ button.line__container {
 
 /* ── The portfolio card's body ───────────────────────────────────────────── */
 
+/* The empty state, where the two sentences below would otherwise print their
+   whole structure in dashes and zeros. Muted like the lifetime line it
+   replaces, and left to wrap: it is a sentence, not a reading. */
+.pocketHero__cardEmpty {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ line-height: 1.4;
+ color: var(--color-content-on-dark-muted);
+}
+
 /* The arithmetic behind the bar, as a sentence rather than a row of tiles: the
    figures here explain the ratio above and are not read against each other, so
    a grid would give four equal columns to four unequal facts. It wraps freely —
