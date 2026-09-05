@@ -143,7 +143,7 @@ scope premise above in front of it. A bar cannot mislead a reader about a figure
 the page no longer claims to show, and adherence to the schedule is now the
 page's whole subject.
 
-The numerator is the committed amount of the pockets that have a plan window and
+The numerator is the allocated amount of the pockets that have a plan window and
 the denominator is what those same plans required by the selected close. Three
 conditions come with the reversal, and the bar is wrong without them:
 
@@ -151,9 +151,9 @@ conditions come with the reversal, and the bar is wrong without them:
   required by August 2026* — never the bare word *progress*. The hero and the
   cards then divide by different figures on purpose, and only the label keeps a
   reader from comparing them.
-- **The fill clamps at 100% and the surplus prints as a sentence.** Committed
-  passes the line by any amount; a clipped bar with no sentence loses how far
-  ahead the owner stands.
+- **The fill clamps at 100% and the surplus prints as a sentence.** The
+  allocated amount passes the line by any amount; a clipped bar with no sentence
+  loses how far ahead the owner stands.
 - **The lifetime reading is not dropped from the product before the overview
   carries it.** The bar changes now; the hero's lifetime tiles stay until then.
 
@@ -172,8 +172,8 @@ fields already on the row — no query change and no migration:
 | Field | What it holds |
 |---|---|
 | `totalScheduledByNow` | the sum of `scheduledByNow`: what the plans required **up to the evaluation date, prorated by day** — each target spread evenly across the days from the day its plan was made to its deadline (ruled 2026-09-04, decisions §29) |
-| `scheduledPocketsAllocated` | the committed amount of those same pockets, printed beside what those plans required |
-| `scheduleAdherence` | the share of what the plans required that is actually committed, **served as a percentage**, nullable and **not clamped** |
+| `scheduledPocketsAllocated` | the allocated amount of those same pockets, printed beside what those plans required |
+| `scheduleAdherence` | the share of what the plans required that is actually allocated, **served as a percentage**, nullable and **not clamped** |
 | `totalScheduleGap` | the sum of `aheadOfPlan`, **signed**: positive is slack held, negative is the shortfall |
 | `totalRequiredMonthly` | the sum of `requiredMonthly`: what this month asks for |
 | `scheduledPocketCount` | how many pockets have a plan window at all |
@@ -373,8 +373,8 @@ them, and it joins them N:N.
 | figure | source | meaning |
 |---|---|---|
 | `accountBalance` | `user_accounts.account_balance` | real money, ties to the statement |
-| `allocated` | `SUM(pocket_allocations.amount)` for that account | committed to pockets |
-| `unassignedCash` | `accountBalance − allocated` | not yet committed; **may be negative** |
+| `allocated` | `SUM(pocket_allocations.amount)` for that account | allocated to pockets |
+| `unassignedCash` | `accountBalance − allocated` | unassigned, what no plan has claimed; **may be negative** |
 
 The third figure is **`unassignedCash`**, never "available balance". The
 available balance is still the full `accountBalance`: a pocket never blocks a
@@ -705,7 +705,7 @@ uses — never the browser's clock).
 | **L1** | one allocation row | what one decision was, and in which currency it was typed |
 | **L2** | the (pocket, source account) pair | how much of *this* account *this* pocket holds |
 | **L3** | one pocket | is this goal covered, and on what pace |
-| **L4** | one account | how much of this account is committed, and how much is free |
+| **L4** | one account | how much of this account is allocated, and how much is unassigned |
 | **L5** | the board | are my goals covered, taken together |
 | **L6** | the app | **nothing in V1.** No pocket figure enters the overview or the accounting dashboard (`Q10`, `Q11`). §17 proposes what could — pocket figures folded over *accounts* rather than over pockets, and savings figures read from `transactions`, which touch the pocket tables not at all |
 
@@ -840,7 +840,7 @@ dash, never as `0` or `NaN`.
 ### 7.1 Board — `/fintrack/pocket`
 
 **Hero:** `Total allocated` · `Total target` · `Total remaining` ·
-`Overall progress` · `Funded n/m`, plus `Committed above goal` as its own line
+`Overall progress` · `Funded n/m`, plus `Allocated above target` as its own line
 whenever it is non-zero. The last one exists so that `Total remaining` can answer
 *what is still to allocate* without an excess elsewhere cancelling it (§6.3).
 
@@ -925,16 +925,16 @@ date, source count, note.
   only in symbols. Tile labels are authored in sentence case and uppercased by
   CSS.
 - **The two left tiles of the equation are labelled `Required to date` and
-  `Committed to date`**, and the two labels move together. Both figures are
+  `Allocated to date`**, and the two labels move together. Both figures are
   cumulative from each plan's creation up to the evaluation date — prorated by
   day, so the figure moves every day and not once a month (decisions §29) — and
   both count only the pockets that have a plan window. Without the
-  phrase a reader takes the committed figure for the portfolio's total, which is
+  phrase a reader takes the allocated figure for the portfolio's total, which is
   the different figure on the lifetime strip. **Neither label names the month**:
   the badge does, and a label carrying a month would have to change as the
   stepper moves.
 - **The month's movement reads `840.00 net committed in August`**, inside the
-  committed tile. The word `net` is not decoration — the figure is what came in
+  allocated tile. The word `net` is not decoration — the figure is what came in
   less what was released, and without it a release makes the figure look wrong.
   It is its own served fold over **only the pockets with a plan window**
   (`scheduledPocketsMovedInMonth`), the same six the tile's own balance counts,
@@ -959,10 +959,10 @@ date, source count, note.
   entirely** — `No plan window covers August 2026 · 0 of 8 pockets on a plan` —
   because there is no line to be on either side of.
 - **The lifetime strip stays on this page** and reads
-  `Lifetime · all 8 pockets · 9,600.00 committed of 24,000.00 total target — 40%`.
+  `Lifetime · all 8 pockets · 9,600.00 allocated of 24,000.00 total target — 40%`.
   **The population clause is not optional** — it is the one line on the card drawn
   from every pocket, sitting directly under three figures drawn from the pockets
-  on a plan, and the difference between the two committed amounts is exactly the
+  on a plan, and the difference between the two allocated amounts is exactly the
   money held by the pockets with no plan window. The clause is shaped to echo
   `n of m pockets on a plan` above it so the two populations read as a pair. It
   is never narrowed to the scheduled few: this is the board's lifetime standing
@@ -970,6 +970,51 @@ date, source count, note.
   pocket page only when the app-wide overview carries the question, and the
   overview's own KPI catalog currently refuses every pocket goal figure by name,
   so the strip has nowhere to go yet (see the note in section 27).
+
+**One word per quantity: `allocated` names the amount, `commit` and `release`
+name the act — RULED 2026-09-04.** The two words had been standing for one thing
+in two places, so the same balance read `Committed to date` in the hero and
+`Still to allocate` on the card beneath it.
+
+**The test is one sentence.** If it answers *how much is there*, it is
+`allocated`. If it answers *how much moved, and which way*, it is `committed` or
+`released`.
+
+They were never two names for one thing; they are two axes that crossed in the
+presentation layer. Measured across the pocket services, the word for the act
+carries eight identifiers — the month's positive half and the board's fold of it
+(`committedInMonth`, `totalCommittedInMonth`), SQL's own transaction keyword,
+which is an unrelated collision, and one error message — while the word for the
+amount carries more than thirty, the table `pocket_allocations` among them.
+Everything else was prose in comments.
+
+**So the rule costs nothing in the payload.** The month's positive half is a
+flow and already complies: no served field is renamed and no contract moves. It
+is a rule about labels.
+
+Three consequences, each a live case:
+
+- **A standing condition takes the amount's word.** The flag raised when an
+  account's unassigned cash goes negative (`isOverAllocated`) reads
+  `over-allocated`, on the funding card and on the detail's source rows alike.
+  Being over is a state of a balance, not a movement.
+- **The month's net keeps `committed` and `released`, and they may not be
+  replaced.** There the direction IS the fact, and the pair has no counterpart in
+  the other vocabulary — no *de-allocated* reads as English.
+- **`Still to allocate` stays**, and it is the one label that looks like an
+  exception and is not. It does not name the quantity — the quantity answers to
+  `remaining` — it names what the owner still has to do about it. It also sits
+  directly under `Allocated` on the same card, where the pair reads as a
+  sequence rather than as two names for one figure.
+
+**The class names stay neutral** — `accountPockets__figureValue--over`,
+`pocketHero__accountFact--over`, `pocketDetail__flag`,
+`pocketHero__accountFlag`. None of them carries either word, so none of them
+moves when the label does.
+
+**Comments are in scope.** A comment that argues about "a single committed
+figure" restores the word as surely as a label does, and the sweep of 2026-09-04
+corrected four of them.
 
 **The seven level words are untouched, and the hero's axis words change instead
 — RULED 2026-09-04.** This reverses a ruling taken earlier the same day, which
@@ -1825,7 +1870,7 @@ intent. Every commit passes the four gates of `CLAUDE.md`.
 | 5 | `feat(pocket): add allocate and release` | §8.3, §8.4, with the row lock |
 | 6 | `feat(pocket): add pocket deletion` | §8.5 |
 | 7 | `feat(account): expose allocated and unassigned` | §8.6 |
-| 8 | `feat(pocket): rebuild the board hero` | `PocketBigBoxResult.tsx` — named props, the L5 totals of §6.2, `Committed above goal` as its own line |
+| 8 | `feat(pocket): rebuild the board hero` | `PocketBigBoxResult.tsx` — named props, the L5 totals of §6.2, `Allocated above target` as its own line |
 | 9 | `feat(pocket): rebuild the pocket card` | `ListPocket.tsx` — allocated, target, remaining, the progress bar, the date, `sourceCount` |
 | 10 | `feat(pocket): add the board control bar` | search, sort and the five filters (§7.1) |
 | 11 | `feat(pocket): rebuild the detail hero` | `SummaryPocketDetailBox.tsx` — the formatted target, coverage, the funded and overdue badges |
@@ -1955,7 +2000,7 @@ already rewriting — never a neighbouring one.
     the account detail; no figure renders as `0` or `NaN` while unknown.
 15. The board's `Total allocated` and the sum of the cards' `allocated` agree.
 15b. One pocket over-funded and one short by the same amount: `Total remaining`
-    reports the shortfall, not zero, and `Committed above goal` reports the excess
+    reports the shortfall, not zero, and `Allocated above target` reports the excess
     (§6.3). This is the test the current `makeSummary` fails.
 15c. No client file computes a figure named in §6.2 — the components read and clamp.
 16. `APP LOADED OK` on the boot test before every commit (Gate 3).
