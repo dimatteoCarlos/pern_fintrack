@@ -1775,8 +1775,62 @@ all: the first tile read zero on a live board and nothing on screen explained it
   because the distance from its start month to the evaluation month is zero.
   That is the creation-month rule holding, not the ruling failing.
 
-**Open:** whether the creation-month rule stays as it is. It is a second
-decision, it was not part of the ruling above, and it belongs to the backend.
+**Confirmed 2026-09-04 by the backend, and it is what runs now.** The creation
+month still funds nothing, and it survives as a CONSEQUENCE rather than as a
+branch of its own: a pocket created in the evaluation month has its start month
+equal to that month, so the distance is zero and the floor at
+`planSchedule.js:120` holds it there. It reads no requirement until the month
+after the one it was made in. The double-count worry was checked rather than
+taken on trust — a year plan of eleven instalments of 100 reads 800 inside
+September where it read 700, exactly one instalment more, and still reads 700
+when August is picked on the stepper. The 1st and the 30th of September both
+read 800, so the line moves by month and never by day.
+
+### The third rule, ruled by Carlos and not yet implemented
+
+A pocket created in the month being viewed, with its commitment date and target
+in that SAME month, must count in the board's figures. Today it does not: the
+window holds no full calendar month, so `planMonths` is zero, the guard at
+`planSchedule.js:97` returns early and all four of the row's schedule values are
+null together. The pocket is invisible to every figure on this card.
+
+His words were *"ese pocket ya está en el plan para ese mes"*, and they reach
+further than the case that prompted them, which is why the backend is putting
+two readings to him rather than picking one:
+
+| reading | what changes | what it costs |
+| --- | --- | --- |
+| the creation month funds, everywhere | the window gains a month at both ends of the arithmetic; a plan created and due in September owes its whole target at that month's close, and a pocket created in September with a December deadline owes one instalment inside September instead of zero | every existing plan's instalment count moves by one — eleven instalments of 100 become twelve of 91.67 — so every amount the module prints for every pocket changes |
+| only a deadline inside the creation month publishes a line | the guard relaxes for that one shape and nothing else | the creation month would fund a plan that ends inside it and fund nothing in a plan that runs two months, an inconsistency with no explanation available on screen |
+
+The frontend recommends the first. It is what the sentence says, and the second
+ships the inconsistency. Either way the change is the backend's: nothing on this
+screen decides what a plan has required.
+
+**Two consequences here, whichever is chosen.** The variance meta
+`nothing due yet` stops firing on a fresh board, because a new pocket gains a
+denominator on the day it is made. And the extreme adherence below gets MORE
+common rather than less, for the same reason.
+
+### The bar meets an adherence of 3052% and survives it — measured 2026-09-04
+
+The reading the unclamped rule was always going to produce, now real on the
+developer's own board: `Required to date` 8.50 against 259.45 committed, so the
+quotient of sums is 3052.35%. Measured at 360 and 480 wide with the API serving
+the committed code:
+
+| what | what it does |
+| --- | --- |
+| the fill | clamps at the track, 283 of 283px, wearing `--over` and its 45 degree stripe |
+| the label | prints the TRUE figure, `3052%`, flush right |
+| the accessible value | `aria-valuenow` 100, `aria-valuetext` `3052%` — a progress bar whose value exceeds its maximum is invalid, and the screen reader hears what the sighted label says |
+| the row at 360px | 283px wide; the label ends at 247 and the percentage occupies 44 of the 67 that remain. No collision |
+
+The collision was worth measuring and not assuming: the label in that row is
+`white-space: nowrap` and `.pocketHero__progressHead` carries `min-width: 0`
+with no `overflow: hidden`, so a label that stops fitting does not truncate — it
+spills over the figure. It fits at four digits. It has not been measured at five,
+which a board with a required-to-date under a dollar would produce.
 
 ### The frame at four viewport heights — RUN 2026-09-04, three assertions pass
 
