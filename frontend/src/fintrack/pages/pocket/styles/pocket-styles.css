@@ -1588,12 +1588,6 @@ button.line__container {
  transition: width var(--motion-slow);
 }
 
-/* Past what the schedule asked for. The fill is clamped at the track, so LENGTH
-   alone cannot tell this apart from a board that landed exactly on its line —
-   both paint a full bar. The texture carries the difference, and it survives a
-   monochrome print and every kind of colour blindness where a hue does not.
-   Same device the funding accounts card uses for an account committed past its
-   own balance. The 45deg has no token: the scale declares no angles. */
 /* ── The portfolio card's body ───────────────────────────────────────────── */
 
 /* The arithmetic behind the bar, as a sentence rather than a row of tiles: the
@@ -1657,12 +1651,28 @@ button.line__container {
  white-space: nowrap;
 }
 
+/* Past what the schedule asked for. The fill is clamped at the track, so LENGTH
+   alone cannot tell this apart from a board that landed exactly on its line —
+   both paint a full bar. The texture carries the difference, and it survives a
+   monochrome print and every kind of colour blindness where a hue does not.
+   Same device the funding accounts card uses for an account committed past its
+   own balance.
+
+   A THIN stripe, not an even one. It used to alternate 4px clear and 4px of the
+   deep surface, which is pure black, so half the bar was black and the green
+   underneath read as a much darker, duller hue than the scale declares — the
+   developer did not recognise it as the same green. The dark run is a third of
+   the period now, so the texture still carries the over-schedule state while
+   the colour stays the colour. The stripe keeps the deep surface rather than a
+   darker green: black is what survives a monochrome print, which is the reason
+   the texture exists at all, and a green-on-green stripe would not.
+   The 45deg has no token: the scale declares no angles. */
 .pocketHero__barFill--over {
  background-color: var(--color-schedule-over);
  background-image: repeating-linear-gradient(
   45deg,
-  transparent 0 var(--space-1),
-  var(--color-surface-deep) var(--space-1) var(--space-2)
+  transparent 0 var(--space-2),
+  var(--color-surface-deep) var(--space-2) calc(var(--space-2) + var(--space-1))
  );
 }
 
