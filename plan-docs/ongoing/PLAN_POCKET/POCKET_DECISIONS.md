@@ -3352,6 +3352,14 @@ this section's.
 
 ## 28. What a plan requires to date includes the current month — RULED 2026-09-04
 
+> **The ruling stands; its mechanism was replaced the same day by section 29.**
+> The figure still counts the month in progress, and more strictly than this
+> section describes: the line is now continuous in days, so the current month is
+> included day by day rather than as a whole instalment. **Sections 28.1, 28.2
+> and 28.5 are superseded** — 28.5 because the case it left open is now solved.
+> 28.3 states a real consequence but its measured figures are the monthly
+> reading and are historical. **28.4 and 28.6 are untouched by section 29.**
+
 **The developer's ruling.** The figure the hero prints as *Required to date* runs
 through the close of the **current** month, not only through the months already
 closed. Inside September the instalment for September is owed.
@@ -3364,7 +3372,7 @@ way rent behaves, and that counting the current month makes a board read behind
 on the 1st and heal by the 30th with the owner having done nothing — and the
 developer ruled anyway. It is settled.
 
-### 28.1 The rule, and the branch it removed
+### 28.1 The rule, and the branch it removed — SUPERSEDED by section 29
 
 The count of due months is the distance from the plan's creation month to the
 evaluation month. It replaced a rule that took the last **closed** month, which
@@ -3379,7 +3387,7 @@ unconditionally, so the past-month reading does not move and no month is counted
 twice. Asserted at both paths, and at the first and the last day of a month,
 which must agree because the line moves by month and never by day.
 
-### 28.2 The creation month still funds nothing, and it is a SEPARATE rule
+### 28.2 The creation month still funds nothing, and it is a SEPARATE rule — SUPERSEDED by section 29
 
 A plan made on the 20th did not have that month to fund. That rule lives where
 the plan window is built and **the ruling above does not reach it**. It survives
@@ -3405,6 +3413,10 @@ against what the plans required therefore reads 3052.35% — unclamped, as a
 quotient of sums, per section 25.5. The tile is off zero, which was the point,
 and the reading the bar has to survive changed from *absent* to *extreme*.
 
+*(Those three figures are the monthly reading and are historical. Section 29
+replaced the line hours later and re-measured the same board: 42.10 required,
+285.83 committed against it, 678.93%.)*
+
 ### 28.4 A deadline can no longer be created in the past
 
 Creating a pocket accepted any well-formed date as its deadline, including one
@@ -3416,7 +3428,7 @@ reserves for what a schema cannot see (422).
 whether a date is past depends on the owner's calendar, and the validator has
 neither identity nor zone.
 
-### 28.5 What this does NOT decide, and it is the developer's next call
+### 28.5 What this does NOT decide, and it is the developer's next call — RESOLVED by section 29
 
 **A pocket created on the 20th whose deadline falls later in the SAME month.**
 The developer named this case as a commitment that ought to be required for that
@@ -3443,6 +3455,126 @@ its source, timestamp and target currency.
 **Addition, not redefinition.** The accounting target keeps its name and its
 meaning, per the rule of section 27.3b: a served field whose name does not state
 its scope cannot have its meaning changed safely.
+
+---
+
+## 29. The plan's line is continuous in days — RULED 2026-09-04
+
+**The developer's ruling.** The target is spread evenly across the days from the
+day the plan was made to its deadline, and read at the evaluation date. It
+replaced a line that stepped once per calendar month, ruled hours earlier in
+section 28.
+
+**Where it came from.** Working through the case section 28.5 left open — a
+pocket created on the 20th with a deadline later in the same month — the
+developer asked the question the whole section turns on: *if the criterion is
+already a division by days, why is the line divided by months?* Prorating by day
+is not an extension of the monthly rule; it is the simpler rule the monthly one
+was approximating.
+
+### 29.1 The rule
+
+`makePlanSchedule` divides the target by the whole days between `planStart` and
+`desiredDate`, and multiplies that daily rate by the days elapsed at the
+evaluation date. Both ends are clamped: never below zero, never above the target.
+
+The plan window is the only thing that decides whether a line exists, and it is
+now a duration rather than a calendar shape. **A window of one day publishes a
+line; a window of zero days does not.**
+
+### 29.2 Three defects it fixes, and they are why the change was worth making
+
+- **A plan made and due inside one month has a line.** This is exactly the case
+  section 28.5 left open. Under the monthly rule the window held no full calendar
+  month, so all four schedule fields were withheld together and the commitment
+  the owner made for *this* month measured against nothing. Asserted: a 500
+  target from the 20th to the 25th reads 200 on the 22nd and 500 on the deadline.
+- **A plan made on the 30th is not billed for the whole month it barely saw.**
+  Under a monthly step it owed a full instalment on day one and two of them on
+  day two. Asserted: it owes nothing on the 30th and one day of it on the 1st.
+- **The line stops jumping on the 1st.** An owner who contributes on the 5th read
+  as behind from the 1st to the 5th of every month, having changed nothing.
+  Asserted: the turn of the month moves the line by one day, not by one
+  instalment.
+
+### 29.3 Two served figures that disagreed by construction now agree
+
+The forward pace, `requiredMonthly` in `makePocketStatus.js`, has always divided
+the remainder by days over the mean month. The old line divided the target by
+whole months. **Two denominators described one plan**, and the old code carried a
+comment warning that a pocket sitting exactly on its line rated **1.14 instead of
+1**.
+
+Both now speak in days, so the mean month cancels out of the ratio entirely and
+`paceRatio` is `requiredMonthly` over `planInstalment` exactly. Asserted: a
+pocket sitting exactly on its line rates **1**.
+
+This is the argument that matters. A warning comment describing a known
+disagreement between two served figures is a defect deferred, not a defect
+documented.
+
+### 29.4 The monthly figure survives as presentation, and no screen renders it
+
+`planInstalment` is now the daily rate times the mean Gregorian month, served
+because a month is the unit an owner thinks in. It is derived from the same daily
+rate the line uses, so the two cannot disagree.
+
+**Measured before the change was made, and it is what collapsed the main
+objection to prorating:** `planInstalment` is served and typed and **rendered by
+no screen**. Only `scheduledByNow` is painted. There is no visible instalment
+figure that a fractional first month could contradict.
+
+### 29.5 The seven levels are untouched; the population inside them moves
+
+`pocketLevel.js` is unchanged in behaviour: the same seven words, the same
+evaluation order, `AT_RISK_RATIO` still 2, `ON_TRACK_RATIO` still 1,
+`ON_TRACK_BAND` still 0.05. **The colour scale ruled in section 24.6 stands.**
+
+What moved is the classifier's input. `paceRatio` used to be the remainder over
+the instalments left, over the instalment; it is now the remainder over the days
+left, over the daily rate. **The same pocket can cross a threshold without any
+threshold changing**, and that is a stated consequence, not a defect to be
+reported later.
+
+The change bites hardest at the end of a plan. Measured: a pocket 180 short of a
+500 target on its last day divides that remainder by a single day and rates
+**88.56**, so it is caught by the at-risk test rather than reaching the low-ratio
+branch far below, where the monthly shape left it at `behind`. That is a stricter
+reading and the right one — the plan has a day left and needs 88 times its own
+pace.
+
+### 29.6 Measured on the live board, beside the monthly reading it replaced
+
+| figure | monthly | daily |
+| --- | --- | --- |
+| required to date | 8.50 | 42.10 |
+| committed by the pockets with a line | 259.45 | 285.83 |
+| the signed gap | 250.96 | 243.73 |
+| share committed against what was required | 3052.35% | 678.93% |
+| pockets with a line | 3 | 4 |
+| under the schedule | 0 | 1 |
+| over the schedule | 3 | 3 |
+
+**One pocket changed level, and it is a correction.** `ahorro`, made 2026-08-09
+and due 2026-09-10, spanned no full calendar month, so it published no line and
+read `onTrack` — not because it was on track but because nothing was measuring
+it. Its first monthly instalment would have fallen due after its own deadline. It
+now has a line of 40.63 against 26.38 committed, needs two and a half times the
+pace it set with six days left, and reads `atRisk`.
+
+**The count of pockets with a line rose because of that one pocket**, and the
+board's committed-against-required figure rose with it: a pocket that was outside
+the measured population is now inside it.
+
+### 29.7 What still publishes no line
+
+**Only a plan whose deadline is on or before the day it was made.** Two shapes
+reach it, both legacy: the pocket created and dated the same day, and the pocket
+whose creation stamp is migration 020's own date. Section 28.4 stops any new one
+from being created.
+
+All four schedule fields stay null together, the card says the plan has no
+window, and the classifier reads `onTrack` rather than inventing a pace.
 
 ---
 

@@ -171,7 +171,7 @@ fields already on the row — no query change and no migration:
 
 | Field | What it holds |
 |---|---|
-| `totalScheduledByNow` | the sum of `scheduledByNow`: what the plans required **through the close of the selected month, that month included** (ruled 2026-09-04, decisions §28) |
+| `totalScheduledByNow` | the sum of `scheduledByNow`: what the plans required **up to the evaluation date, prorated by day** — each target spread evenly across the days from the day its plan was made to its deadline (ruled 2026-09-04, decisions §29) |
 | `scheduledPocketsAllocated` | the committed amount of those same pockets, printed beside what those plans required |
 | `scheduleAdherence` | the share of what the plans required that is actually committed, **served as a percentage**, nullable and **not clamped** |
 | `totalScheduleGap` | the sum of `aheadOfPlan`, **signed**: positive is slack held, negative is the shortfall |
@@ -206,11 +206,11 @@ two gross halves stay board-wide and **do not decompose the scoped net**.
 The negative test is strictly below zero, so a pocket that has committed
 precisely what its plan asked for falls to the over side. The tie-break is not
 cosmetic: with it the two counts partition the whole population of pockets that
-have a plan window, so they always sum to `scheduledPocketCount`. A pocket with
-no full calendar month in its window has no difference against a schedule at all
-— that difference is null together with the other three schedule fields
-(`planSchedule.js`, `planMonths < 1`) — and falls outside both counts, which is
-the same exclusion the ratio and the amount it divides already make.
+have a plan window, so they always sum to `scheduledPocketCount`. A pocket whose
+deadline falls on or before the day its plan was made has no difference against a
+schedule at all — that difference is null together with the other three schedule
+fields (`planSchedule.js`, `planDays <= 0`) — and falls outside both counts,
+which is the same exclusion the ratio and the amount it divides already make.
 
 **Both counts are served and neither is subtracted on the client.** Both are
 non-null on any board, an empty one included, and the percentage above is served
@@ -246,7 +246,8 @@ hundredths of the pace ratio either side of the line (`ON_TRACK_BAND`) — so it
 straddles the axis, and a pocket reading *On track* can be on either side of it.
 
 **Why the amounts do not travel alone.** The four schedule fields are null together when a
-plan's window holds no full calendar month (`planSchedule.js`, `planMonths < 1`).
+plan has no duration — a deadline on or before the day the plan was made
+(`planSchedule.js`, `planDays <= 0`).
 Those pockets are excluded from the line, so they must also be excluded from the
 amount measured against it — which is why `totalAllocated` cannot be what the
 adherence figure divides, and why the count ships beside the percentage, so the
@@ -725,6 +726,11 @@ preconditions, which is why neither may be computed twice (§6.4).
 | L3 | `overdue` | `today > D AND A < T` | `makePocketStatus` | badge, and the `Overdue` filter |
 | L3 | `daysRemaining` | `D − today` | `makePocketStatus` | detail hero |
 | L3 | `requiredMonthly` | `remaining ≤ 0 → 0`; `daysRemaining ≤ 0 → null`; else `remaining / (daysRemaining / 30.44)` | `makePocketStatus` | detail hero; the consequence line of the edit modal (§5) |
+| L3 | `scheduledByNow` | `T / planDays × elapsedDays`, both counts clamped into `[0, planDays]` | `makePlanSchedule` | board hero, tile 1; portfolio card |
+| L3 | `aheadOfPlan` | `A − scheduledByNow`, **signed** | `makePlanSchedule` | board hero, the variance tile |
+| L3 | `planInstalment` | `T / planDays × 30.44` — presentation of the daily rate, **rendered by no screen today** | `makePlanSchedule` | — |
+| L3 | `paceRatio` | `daysRemaining < 0 → null`; `remaining ≤ 0 → 0`; else `(remaining / MAX(daysRemaining, 1)) / (T / planDays)` | `makePlanSchedule` | never printed; it is what `level` is decided from |
+| L3 | `level` | one of seven, evaluated top down from `paceRatio` and `aheadOfPlan` | `makePocketLevel` | the card's word and colour |
 | L3 | `uncovered` | at least one source account of the pocket has `accountBalance < accountAllocated` | the service — it needs L4 | coverage warning, and the `Uncovered` filter |
 | L3 | `sourceCount` | `COUNT(DISTINCT source_account_id)` | SQL | card |
 | L4 | `accountAllocated` | `COALESCE(SUM(amount), 0)` over that account's rows | SQL, in the **account** read path | account detail; source table, column 2 |
@@ -920,8 +926,9 @@ date, source count, note.
   CSS.
 - **The two left tiles of the equation are labelled `Required to date` and
   `Committed to date`**, and the two labels move together. Both figures are
-  cumulative from each plan's creation through the close of the month in the
-  stepper, and both count only the pockets that have a plan window. Without the
+  cumulative from each plan's creation up to the evaluation date — prorated by
+  day, so the figure moves every day and not once a month (decisions §29) — and
+  both count only the pockets that have a plan window. Without the
   phrase a reader takes the committed figure for the portfolio's total, which is
   the different figure on the lifetime strip. **Neither label names the month**:
   the badge does, and a label carrying a month would have to change as the
@@ -945,12 +952,21 @@ date, source count, note.
   beside the arrears and invites adding the two. They are not added: the
   accumulated difference against the schedule is already inside the pace, which
   divides what is left of the target by the time left
-  (`computeRequiredMonthly`, `makePocketStatus.js:52-62`).
+  (`computeRequiredMonthly`, `makePocketStatus.js:39-49`). Since the line moved
+  to days it also agrees with `planInstalment` by construction: the ratio between
+  them is `paceRatio` exactly, where the two used to disagree by the mean month.
 - **When no plan window covers the selected month the third segment is dropped
   entirely** — `No plan window covers August 2026 · 0 of 8 pockets on a plan` —
   because there is no line to be on either side of.
 - **The lifetime strip stays on this page** and reads
-  `Lifetime · 9,600.00 committed of 24,000.00 total target — 40%`. It leaves the
+  `Lifetime · all 8 pockets · 9,600.00 committed of 24,000.00 total target — 40%`.
+  **The population clause is not optional** — it is the one line on the card drawn
+  from every pocket, sitting directly under three figures drawn from the pockets
+  on a plan, and the difference between the two committed amounts is exactly the
+  money held by the pockets with no plan window. The clause is shaped to echo
+  `n of m pockets on a plan` above it so the two populations read as a pair. It
+  is never narrowed to the scheduled few: this is the board's lifetime standing
+  and it counts everything. It leaves the
   pocket page only when the app-wide overview carries the question, and the
   overview's own KPI catalog currently refuses every pocket goal figure by name,
   so the strip has nowhere to go yet (see the note in section 27).
