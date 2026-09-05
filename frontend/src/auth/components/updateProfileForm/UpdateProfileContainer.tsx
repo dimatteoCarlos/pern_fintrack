@@ -37,7 +37,10 @@ import {
   NormalizedProfileUpdateResultType,
   UpdateProfileFormDataType,
 } from '../../types/authTypes';
-import { DEFAULT_CURRENCY } from '../../../fintrack/helpers/constants';
+import {
+  DEFAULT_CURRENCY,
+  SELECT_CURRENCY_OPTIONS,
+} from '../../../fintrack/helpers/constants';
 import { CurrencyType } from '../../../fintrack/types/types';
 import { updateProfileSchema } from '../../validation/zod_schemas/userSchemas';
 import {
@@ -82,11 +85,11 @@ const DEFAULT_USER_FORM_DATA: UpdateProfileFormDataType = {
 };
 
 // 🎨 UI CONSTANT
-const currencyOptions: CurrencyOptionType[] = [
-  { value: 'usd', label: 'USD - US Dollar' },
-  { value: 'eur', label: 'EUR - Euro' },
-  { value: 'cop', label: 'COP - Colombian Peso' },
-];
+// The options are generated once from the supported currencies, in
+// currencyConstants.ts. This file wrote out three of the five by hand until
+// 2026-09-05, so an owner could not select the bolivar or the Mexican peso even
+// though the rest of the application accepted both.
+const currencyOptions: CurrencyOptionType[] = SELECT_CURRENCY_OPTIONS;
 
 const PROFILE_FIELD_MAPPING = {
   user_firstname: 'firstname',

@@ -3,7 +3,10 @@
 /* 🌟 ===============================
 🏷️ IMPORT TYPE DEFINITIONS
 =============================== 🌟 */
-import { DEFAULT_CURRENCY } from '../../fintrack/helpers/constants';
+import {
+  DEFAULT_CURRENCY,
+  SUPPORTED_CURRENCIES,
+} from '../../fintrack/helpers/constants';
 import { CurrencyType } from '../../fintrack/types/types';
 import {
   UpdateProfileFormDataType,
@@ -214,10 +217,13 @@ export const normalizeCurrency = (
 
   const normalized = currency.toLowerCase() as CurrencyType;
 
-  // Validate against common currency codes
-  const validCurrencies: CurrencyType[] = ['usd', 'eur', 'cop'];
-
-  return validCurrencies.includes(normalized) ? normalized : defaultCurrency;
+  // Validated against the supported set rather than a list written out here.
+  // This function held three of the five currencies until 2026-09-05, so an
+  // owner whose currency was the bolivar or the Mexican peso had it silently
+  // rewritten to the default every time a profile passed through.
+  return SUPPORTED_CURRENCIES.includes(normalized)
+    ? normalized
+    : defaultCurrency;
 };
 //-----------------------------------------
 /**

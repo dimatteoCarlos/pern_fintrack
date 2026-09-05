@@ -6,7 +6,6 @@ import {
 } from '../types/responseApiTypes';
 import {
   AccountingListType,
-  CurrencyType,
   DropdownOptionType,
   VariantType,
 } from '../types/types';
@@ -43,35 +42,13 @@ export const LOCAL_STORAGE_KEY = {
 };
 
 //-------------------------
+// Every currency constant lives in currencyConstants.ts and reaches consumers of
+// this file through this line. Do not redeclare one below it: a local export
+// wins over a star re-export, so a redeclaration does not conflict — it silently
+// splits the application in two, half reading each copy. That is what happened
+// to the locale map and the default currency until 2026-09-05.
 export * from './currencyConstants';
 //-------------------------
-//=================================
-// 🔄 Order for circular currency toggle (USD → COP → EUR → VES → MXN → USD)
-export const CURRENCY_CYCLE: CurrencyType[] = ['usd',  'cop', 'eur', 'ves', 'mxn'];
-
-export const CURRENCY_OPTIONS:Record<CurrencyType, string> = {
-  usd: 'en-US',
-  cop: 'cop-CO',
-  eur: 'en-US',
-  ves: 'es-VE',
-  mxn: 'es-MX',
-};
-
-const currencyNames = new Intl.DisplayNames(['en'], { type: 'currency' });
-
-
-export const SELECT_CURRENCY_OPTIONS: DropdownOptionType<CurrencyType>[] = [
-  { value: 'usd', label: `USD - ${currencyNames.of('USD')}` },
-  { value: 'cop', label: `COP - ${currencyNames.of('COP')}` },
-  { value: 'eur', label: `EUR - ${currencyNames.of('EUR')}` },
-  { value: 'ves', label: `VES - ${currencyNames.of('VES')}` },
-  { value: 'mxn', label: `MXN - ${currencyNames.of('MXN')}` },
-];
-
-// console.log(SELECT_CURRENCY_OPTIONS)
-
-export const DEFAULT_CURRENCY = (import.meta.env.VITE_ACCOUNTING_CURRENCY_CODE || 'usd' ) as CurrencyType;
-//==================================
 
 // How far back a calendar may offer an operative date, in whole calendar months
 // counting the current one: 1 is the current month alone, 2 also opens the
