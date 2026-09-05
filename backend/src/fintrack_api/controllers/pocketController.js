@@ -162,12 +162,23 @@ export async function createPocket(req, res, next) {
 
   const body = createPocketBodySchema.parse(req.body);
 
+  // A pocket does not owe an instalment for a month it has no deadline in. The
+  // desired_date is the commitment: it cannot be today or in the past.
+  const timeZone = await getUserTimeZone(pool, userId);
+  const today = await getCalendarToday(pool, timeZone);
+
+  if (body.desiredDate <= today) {
+   return res.status(422).json({
+    status: 422,
+    message: `desired date ${body.desiredDate} cannot be today or in the past`,
+   });
+  }
+
   const pocketId = await pocketWriteService.createPocket(userId, body);
 
   // The whole detail payload, not just the id. The screen that follows a
   // creation is the detail screen, and a second request for a pocket this
   // handler just wrote is a round trip with nothing to learn.
-  const timeZone = await getUserTimeZone(pool, userId);
   const detail = await pocketDetailService.getDetail(
    pool,
    userId,
