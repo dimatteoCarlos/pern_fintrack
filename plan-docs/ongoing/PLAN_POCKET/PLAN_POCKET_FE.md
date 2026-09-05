@@ -1778,8 +1778,48 @@ all: the first tile read zero on a live board and nothing on screen explained it
 **Open:** whether the creation-month rule stays as it is. It is a second
 decision, it was not part of the ruling above, and it belongs to the backend.
 
-### Still not done, and it is the last item on the unit's own verification list
+### The frame at four viewport heights — RUN 2026-09-04, three assertions pass
 
-The page's frame at four viewport heights — 915, 740, 735 and 568 — with the
-summary in view, the list scrolling under it and the create control reachable at
-every one. Nobody has run it.
+Measured against the live board at 360px wide, signed in, with the probe at
+`plan-docs/playwright/pocketShellHeights.mjs`. The three questions the unit put
+were: does the summary stay in view, does the list scroll inside its own box
+rather than growing the page, and is the create control reachable. All three
+hold at all four heights.
+
+| viewport | page grows | summary in view | scroller height | it has to scroll | create control |
+| --- | --- | --- | --- | --- | --- |
+| 360x915 | no | yes | 510px | 1353px over | reachable, top 812 |
+| 360x740 | no | yes | 335px | 1528px over | reachable, top 637 |
+| 360x735 | no | yes | 386px | 1344px over | reachable, top 632 |
+| 360x568 | no | yes | 233px | 1431px over | reachable, top 465 |
+
+**A 5px shorter screen gives 51px more list.** At 735 the shared height query at
+`generalStyles.css:619` sets `--topSpaceHeight: 0rem`, which removes the 44px
+white band `.top--whiteSpace` above the header, and the pocket hero steps from
+109px to 98px in the same band. At 740 neither trim applies, so the frame pays
+for both and is shorter than at 735. The worst case on this page is not the
+shortest screen; it is the band from 736 to about 810. The threshold lives in a
+sheet every page imports, so moving it is not a pocket decision.
+
+**What the open portfolio card costs, measured with the toolbar as the ruler.**
+The card is the only one of the four open by default. Sweeping the height with
+it open, the toolbar is whole from about 810px, cut between 745 and 810, and
+entirely off the box below 745:
+
+| viewport | toolbar visible, card open | toolbar visible, card shut |
+| --- | --- | --- |
+| 360x740 | 0px of 58 | 58px, and the first pocket appears |
+| 360x735 | 32px of 58 | 58px |
+| 360x568 | 0px of 58 | 13px of 58 |
+
+The toolbar sitting inside the scroller is the recorded decision, not a defect,
+so none of this fails an assertion. What it does mean is that on a phone under
+810px the board opens on four cards and no pocket at all.
+
+**Recommendation, not applied:** close the portfolio card by default, like the
+other three. It was opened by default because the bar above it prints a
+percentage and nothing else, so the arithmetic belongs next to it — that reason
+holds on a tall screen and costs the whole toolbar on a short one. A
+height-conditional default would work too and is worse: it puts a fourth number
+(810px) beside height bands of 735 and 568, and makes the same card open on one
+phone and shut on another for a reason the reader cannot see.
