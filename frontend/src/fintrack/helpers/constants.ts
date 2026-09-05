@@ -48,6 +48,13 @@ export const LOCAL_STORAGE_KEY = {
 // splits the application in two, half reading each copy. That is what happened
 // to the locale map and the default currency until 2026-09-05.
 export * from './currencyConstants';
+
+// The star above re-exports the name, it does not BIND it here: a module's own
+// body cannot read what it only forwards. ACCOUNT_DEFAULT below reads
+// DEFAULT_CURRENCY, so this file has to import it like any other consumer.
+// Without this line the constant is undefined at module evaluation and the app
+// dies on load with a ReferenceError.
+import { DEFAULT_CURRENCY } from './currencyConstants';
 //-------------------------
 
 // How far back a calendar may offer an operative date, in whole calendar months
