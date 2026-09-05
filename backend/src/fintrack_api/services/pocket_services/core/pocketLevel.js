@@ -69,11 +69,13 @@ export function makePocketLevel({
   return 'overdue';
  }
 
- // A plan whose window holds no full calendar month publishes no instalment, so
- // there is no pace to fall behind. It reads on track and the card says the plan
- // has no window instead of printing a pace it cannot compute. Two cases: a
- // pocket created days before its own deadline, and the legacy pocket whose
- // creation stamp is migration 020's own date.
+ // A plan with no duration publishes no line, so there is no pace to fall behind.
+ // It reads on track and the card says the plan has no window instead of
+ // printing a pace it cannot compute. The condition is a deadline on or before
+ // the day the plan was made, and only two shapes reach it now: a pocket created
+ // and dated the same day, and the legacy pocket whose creation stamp is
+ // migration 020's own date. A pocket created days before its own deadline used
+ // to land here and no longer does — a window of one day has a line.
  if (paceRatio === null) {
   return 'onTrack';
  }
@@ -105,9 +107,15 @@ export function makePocketLevel({
  // is a stricter reading than the 'behind' the old shape reached, and the right
  // one: the plan has a day left and needs 88 times its own pace.
  //
- // The guard stays because the disagreement it settles does not depend on that
- // case: a low ratio with the money standing short is reachable whenever a
- // pocket has time but has not used it.
+ // The guard stays, but its live case is now narrow and it is worth writing down
+ // rather than leaving a reader to assume it is wide. With the deadline still
+ // ahead, a ratio at or below one and a non-negative difference are the SAME
+ // statement: both divide the same target by the same window, so
+ // remainder / daysLeft <= dailyRate reduces to allocated >= scheduled. The two
+ // can only disagree where that reduction breaks, which is the floor on the days
+ // left — the deadline day itself, where daysLeft is forced to one. There a
+ // remainder smaller than 0.95 of a single day's rate rates below the band while
+ // the target stands unmet, and 'ahead' would print over a card reading short.
  //
  // The two finished states above are what keep a met goal out of 'ahead': a
  // completed pocket also sits above its own schedule, so the evaluation order
