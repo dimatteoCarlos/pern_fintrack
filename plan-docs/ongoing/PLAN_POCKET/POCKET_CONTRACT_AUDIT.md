@@ -807,11 +807,12 @@ on its line.
 
 Concepts and reasoning: `POCKET_DECISIONS.md` sections 25 and 27, and the
 obligation recorded in `POCKET_MODULE_SPEC.md` §0ter. This amends the two
-contract changes above in two places and nowhere else. **Not yet implemented —
-the shape is frozen here first, as the standing rule requires.** A rename of one
-level word was drafted here and withdrawn the same day; what remains of it is
-recorded below, so that a reader meeting the draft elsewhere knows it is not
-contracted.
+contract changes above in two places and nowhere else. **Served —
+`pocketBoardService.js:339-369`, `pocketTypes.ts:191-242`,
+`PocketBigBoxResult.tsx:454-578`** (`59c09c5a`, `a6cc7f86`, `44949a45`). A rename
+of one level word was drafted here and withdrawn the same day; what remains of
+it is recorded below, so that a reader meeting the draft elsewhere knows it is
+not contracted.
 
 ### Nine new fields on the header
 

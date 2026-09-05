@@ -1,5 +1,9 @@
 # POCKET FE — RECONCILIATION AGAINST THE MERGED CODE
 
+> **OBSOLETE, 2026-09-05.** Already marked stale by its own 2026-08-30
+> correction below; three FE feature waves have shipped since. Superseded by
+> the working tree and by `PLAN_POCKET_FE.md`.
+
 **Measured 2026-08-29 on `fix/auth-screen`, after the merge `68cb4f1`
 *"merge(pocket): land the pocket backend and board"* (15 commits, 39 files,
 3713 insertions). Lives in `plan-docs/ongoing/`, which `.gitignore:123`

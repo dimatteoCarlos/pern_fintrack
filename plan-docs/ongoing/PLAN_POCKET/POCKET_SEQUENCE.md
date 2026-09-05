@@ -380,6 +380,9 @@ two-decimal amount formatter.
 
 ### Unit 8 — the account detail's committed-cash block
 
+**Closed.** `AccountPocketCommitments.tsx` is wired at
+`AccountDetail.tsx:21,279`, gated by account type as this unit specified.
+
 **What it unblocks.** Nothing in this module. It is the first of the three
 cross-module integrations and it is the one that consumes capability the backend
 already serves and nothing declares.
@@ -679,6 +682,32 @@ lands.
 
 **Acceptance criterion.** A search for `pocket_saving` under `frontend/src/`
 returns nothing.
+
+---
+
+### Unit 14 — the schedule fold, added 2026-09-05 to a sequence that had no unit for it
+
+**Closed.** Built and shipped the same day it was specified, across three
+commits: `feat(pocket): the board type carries the schedule fold` (`a6cc7f86`),
+`feat(pocket): the header folds the schedule` (`59c09c5a`), `feat(pocket): the
+hero measures the schedule` (`44949a45`). Concepts and reasoning:
+`POCKET_DECISIONS.md` §25 and §27; contracted in `POCKET_MODULE_SPEC.md` §0ter
+and `POCKET_CONTRACT_AUDIT.md`'s "Contract change 2026-09-04 (second)".
+
+**What it unblocks.** The two pace questions §0ter ranked as the board's only
+gaps — how much to set aside this month, and whether the owner is on schedule —
+now both answer from the header instead of a per-row read.
+
+**Files.**
+
+- `backend/src/fintrack_api/services/pocket_services/services/pocketBoardService.js:339-369`
+  — the nine fields folded
+- `frontend/src/fintrack/types/pocketTypes.ts:191-242` — the nine fields typed
+- `frontend/src/fintrack/pages/pocket/components/PocketBigBoxResult.tsx:454-578`
+  — the fold rendered
+
+**Acceptance criterion.** Already met: all nine fields render on the board
+header with no query change and no migration, as §0ter specified.
 
 ---
 

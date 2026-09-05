@@ -1,5 +1,10 @@
 # POCKET FRONTEND — INVENTORY OF WHAT EXISTS
 
+> **OBSOLETE, 2026-09-05.** Three FE feature waves shipped since this snapshot
+> (the month-bounded board and seven levels, the header schedule fold, the hero
+> and portfolio-card schedule reads). Superseded by the working tree and by
+> `PLAN_POCKET_FE.md`, which restates whatever here is still current.
+
 **Measured 2026-08-29, read-only, from source. No file was modified and no git
 state was changed.**
 Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.

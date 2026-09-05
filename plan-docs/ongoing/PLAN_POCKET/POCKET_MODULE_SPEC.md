@@ -112,8 +112,8 @@ another module is built — the fourth.
 
 | # | The question, in the owner's words | The figure that answers it | State |
 |---|---|---|---|
-| 1 | *How much do I have to put aside **this month**?* | the sum of `requiredMonthly` across live pockets | **missing** — computed per row (`makePocketStatus.js:133`), never folded |
-| 2 | *Am I where my own plans say I should be by now?* | `totalAllocated` against the sum of `scheduledByNow`, and the shortfall between them | **half missing** — the fold keeps only the positive side, as `totalAheadOfPlan`; the deficit is discarded on the way in (`pocketBoardService.js:249`) |
+| 1 | *How much do I have to put aside **this month**?* | `totalRequiredMonthly` | served — folded at `pocketBoardService.js:339-369` |
+| 2 | *Am I where my own plans say I should be by now?* | `totalScheduledByNow`, `scheduledPocketsAllocated`, `scheduleAdherence`, `totalScheduleGap` | served — both sides of the shortfall are folded, not only the positive one (`pocketBoardService.js:339-369`) |
 | 3 | *Which pocket needs money first?* | the row's `level`, and `levelCounts` in the header | served |
 | 4 | *How far am I from everything I have promised myself?* | `totalTarget`, `totalAllocated`, `totalRemaining`, `overallProgress` | served — the hero's three tiles; the overview's question under the scope premise above |
 | 5 | *Did I actually do anything this month?* | `totalCommittedInMonth`, `totalReleasedInMonth`, `totalMovedInMonth` | served, board-wide and unchanged — the hero prints the net over the pockets on a plan instead, a separate fold (§7.1) |

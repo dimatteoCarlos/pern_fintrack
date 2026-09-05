@@ -1,5 +1,11 @@
 # POCKET — THE VISUAL PROPOSAL, VERIFIED AGAINST WHAT THE SERVER ACTUALLY SENDS
 
+> **OBSOLETE, 2026-09-05.** Its central open question, "Pocket or Goal" (§5.4),
+> was closed the same day by `POCKET_DECISIONS.md` §21, which goes further than
+> this document's own recommendation. Its visual/token proposals are superseded
+> by the shipped `PocketBigBoxResult.tsx`, `PocketCard.tsx`, `pocket-styles.css`
+> and by the newer mockup `plan-docs/design-refs/pocket-hero/schedule-bar.html`.
+
 **Measured 2026-08-29 on `fix/auth-screen`, HEAD `610e399` *"feat(budget): open
 the editor from the category card"*. Lives in `plan-docs/ongoing/`, which
 `.gitignore:123` re-includes: this file is versioned. No file under `frontend/` or `backend/` was

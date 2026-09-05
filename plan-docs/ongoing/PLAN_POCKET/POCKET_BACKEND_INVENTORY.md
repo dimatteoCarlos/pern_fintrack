@@ -1,5 +1,10 @@
 # POCKET BACKEND — INVENTORY OF WHAT IS IMPLEMENTED
 
+> **OBSOLETE, 2026-09-05.** Superseded by `POCKET_CONTRACT_AUDIT.md`, which now
+> carries every dated contract change (the month parameter, `level`,
+> `levelCounts`, the schedule fold) this inventory predates. Kept for history,
+> not for reference.
+
 **Measured 2026-08-29, read-only, from source. No database was connected.**
 Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.
 

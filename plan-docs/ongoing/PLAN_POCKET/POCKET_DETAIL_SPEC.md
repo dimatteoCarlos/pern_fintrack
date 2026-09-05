@@ -1,5 +1,11 @@
 # POCKET — THE DETAIL CHAIN, EXECUTABLE SPECIFICATION
 
+> **OBSOLETE, 2026-09-05.** The unit it specifies is built (`PocketDetail.tsx`,
+> `SummaryPocketDetailBox.tsx`, `pocketDetailService.js`) and its own §8 already
+> records all five open decisions as shipped facts, not open questions.
+> Superseded by the code itself, and by `POCKET_CONTRACT_AUDIT.md` /
+> `PLAN_POCKET_FE.md` for anything still needing a written contract.
+
 **Written 2026-08-29 on `fix/auth-screen`, after `8c7ca8f` *"fix(pocket): read
 the board the server answers"*. Lives in `plan-docs/ongoing/`, which
 `.gitignore:123` re-includes: this file is versioned. No file under `frontend/` or `backend/` was
