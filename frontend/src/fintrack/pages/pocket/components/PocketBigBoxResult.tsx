@@ -373,19 +373,26 @@ function PocketBigBoxResult({
      {/* The label names the DENOMINATOR and the month, never the bare word
          progress: two percentages now live on this board measuring different
          things, and one of them unnamed makes the reader work out which. */}
-     <div className='pocketHero__progressRow'>
-      <span className='pocketHero__progressHead'>
-       <BarChartSvg className='pocketHero__glyph' />
-       <span className='pocketHero__label'>
-        {nothingDueYet
-         ? 'No instalment has fallen due yet'
-         : `of what your plans required${monthSuffix || ' this month'}`}
-       </span>
+     <p className='pocketHero__progressRow'>
+      <BarChartSvg className='pocketHero__glyph' />
+      {/* The figure sits INSIDE the sentence, as the approved mockup draws it.
+          Pushed to the far end of the row it read as a loose number at the end
+          of a line; here "3052% of what your plans required this month" is one
+          statement, and the words that name the denominator are the words the
+          figure is read against. It also stops being the element that overflows
+          on a narrow board: a sentence wraps where a nowrap label and a flush
+          right figure collide. */}
+      <span>
+       {!nothingDueYet && (
+        <>
+         <b className='pocketHero__pct'>{percent(adherence)}</b>{' '}
+        </>
+       )}
+       {nothingDueYet
+        ? 'No instalment has fallen due yet'
+        : `of what your plans required${monthSuffix || ' this month'}`}
       </span>
-      {!nothingDueYet && (
-       <span className='pocketHero__pct'>{percent(adherence)}</span>
-      )}
-     </div>
+     </p>
 
      <div
       className='pocketHero__bar'
@@ -581,8 +588,10 @@ export function PocketBoardReadings() {
           &middot;{' '}
           {/* The pace to FINISH, never a bill due this month: the shortfall is
               already spread inside this figure, and wording it as due would
-              invite adding it to what the schedule already asked for. */}
-          <b className='pocketHero__num'>{amount(totalRequiredMonthly)}</b> a
+              invite adding it to what the schedule already asked for.
+              "per month" and not "a month", which reads as a duration rather
+              than a rate to anyone whose first language is not English. */}
+          <b className='pocketHero__num'>{amount(totalRequiredMonthly)}</b> per
           month to finish on time
          </>
         )}

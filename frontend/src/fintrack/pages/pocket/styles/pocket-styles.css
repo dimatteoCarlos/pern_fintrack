@@ -982,21 +982,21 @@ button.line__container {
  gap: var(--space-2);
 }
 
+/* A sentence with a glyph in front of it, not a label opposite a figure. The
+   row used to be space-between with the percentage flush right; the approved
+   mockup carries the figure inside the words, so there is nothing left to push
+   apart. Baseline and not center: the glyph now sits beside running text that
+   can take two lines, and centring would float it against the block. */
 .pocketHero__progressRow {
  display: flex;
- align-items: center;
- justify-content: space-between;
- gap: var(--space-3);
-}
-
-/* The glyph travels with the label it decorates, so the row keeps two children
-   and the percentage stays flush right. On its own it became a third child and
-   space-between spread all three. */
-.pocketHero__progressHead {
- display: flex;
- align-items: center;
+ align-items: baseline;
  gap: var(--space-2);
  min-width: 0;
+ margin: 0;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-medium);
+ line-height: 1.3;
+ color: var(--color-content-on-dark-muted);
 }
 
 /* At the height of the text beside it. It drew at --size-glyph-hero, four
@@ -1007,24 +1007,27 @@ button.line__container {
    --size-control-sm at 2rem, and the label beside this one is 12-14px. The
    literal is the one the approved mockup uses and an inline glyph size is to
    be agreed as a token; it is not invented here. */
-.pocketHero__progressHead .pocketHero__glyph {
+.pocketHero__progressRow .pocketHero__glyph {
  width: 1rem;
  height: 1rem;
+ flex-shrink: 0;
 }
 
 /* Filled at this size, outlined at the other two. The set is drawn with a
    0.375 pen on a 24 unit grid, which lands under a quarter of a device pixel
    at 16px and stops resolving; the three bars survive as a fill where the
    outline does not. */
-.pocketHero__progressHead .pocketHero__glyph rect {
+.pocketHero__progressRow .pocketHero__glyph rect {
  fill: currentColor;
 }
 
+/* Inside the sentence now, so it takes the sentence's size and separates
+   itself by weight and colour instead. index.css sets font-size on the
+   universal selector, so an inline element does not inherit the size of the
+   line it sits in and has to restate it. */
 .pocketHero__pct {
- /* One step above the label it sits opposite: the figure is the reading, the
-    label only names it. */
- font-size: var(--font-size-base);
- font-weight: var(--font-weight-semibold);
+ font-size: inherit;
+ font-weight: var(--font-weight-bold);
  color: var(--color-content-on-dark);
  font-variant-numeric: tabular-nums;
 }
