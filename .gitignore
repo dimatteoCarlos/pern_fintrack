@@ -95,7 +95,15 @@ storybook-static/
 # ===============================
 SCRIPTS
 scripts/
-*scripts"backen/.gitignore" 
+*scripts"backen/.gitignore"
+
+# backend/scripts/ holds development tooling, not scratch files. The rule above
+# is a bare directory name, so it matches at any depth and swallowed this
+# folder. A negation on the file alone would not work: git does not re-include a
+# path inside an excluded directory, so the directory has to be re-included
+# first.
+!backend/scripts/
+!backend/scripts/**
 
 # ===============================
 # 🌿 AGENT WORKTREES

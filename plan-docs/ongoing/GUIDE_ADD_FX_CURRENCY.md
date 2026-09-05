@@ -261,6 +261,48 @@ Verified with `tsc --noEmit`: clean, exit code 0.
 
 ---
 
+## The script that does steps 1 to 6
+
+`backend/scripts/addCurrency.js` applies every edit this guide describes:
+
+```
+node scripts/addCurrency.js <code> <locale>
+node scripts/addCurrency.js jpy ja-JP --dry-run
+```
+
+Read the rest of this document anyway. The script performs the procedure; it
+does not replace understanding what it touched, and two of its refusals only
+make sense against the defects recorded below.
+
+**It is all-or-nothing.** Every one of the seven anchors is located and verified
+before a single byte is written. If a file was reformatted and an anchor no
+longer resolves, the run aborts having written nothing and names the file. A
+half-applied currency — one the API accepts and the client cannot name — is the
+one outcome worse than not running it.
+
+**The acceptance test runs first, not last.** This guide puts confirming a real
+rate at the end. That is the wrong order for a script: a currency no provider
+serves cannot be converted, so the cascade is asked *before* anything is
+written, and its answer seeds the `fixedRates` floor. Pass `--rate` to override
+it, or `--offline --rate N` to skip the network entirely.
+
+**It refuses a malformed locale.** `Intl` never throws on one — it falls back
+silently, which is how `'cop-CO'` survived. The script asks the formatter which
+locale it actually resolved to and compares the language subtag, so the defect
+cannot be reintroduced by a typo.
+
+**Two regression guards.** Before writing, it checks that `currencySchema` has
+not gone back to a hardcoded `z.enum`, and that `constants.ts` has not started
+redeclaring a currency constant under its own star re-export. Both are defects
+that were live and neither announced itself.
+
+**What it deliberately leaves to a human:** the position in `CURRENCY_CYCLE`
+(that order is a judgement about which currencies sit next to each other),
+applying the migration, restarting the backend, and the typecheck. It runs no
+git command and never touches the database.
+
+---
+
 ## Order of work
 
 | # | Step | Reversible | Blocks |
