@@ -40,17 +40,6 @@ const lastDayOfMonth = (year, month) =>
  new Date(Date.UTC(year, month, 0)).getUTCDate();
 
 /**
- * Whether a calendar date is the last day of its own month.
- */
-const isMonthEnd = (isoDate) => {
- const year = Number(isoDate.slice(0, 4));
- const month = Number(isoDate.slice(5, 7));
- const day = Number(isoDate.slice(8, 10));
-
- return day === lastDayOfMonth(year, month);
-};
-
-/**
  * The close of a month, as a YYYY-MM-DD label, from its month index.
  *
  * The inverse of monthIndex: with months numbered 1..12, the year is the index
@@ -116,16 +105,21 @@ export function makePlanSchedule(
 
  const instalment = targetAmount.dividedBy(planMonths);
 
- // The current month's instalment is not yet due. Inside September what is owed
- // is the instalments through August, so the last closed month is the previous
- // one unless the evaluation date is itself a month end — which is exactly what
- // a past month selected on the stepper resolves to.
- const lastClosedMonth = isMonthEnd(evaluationDate)
-  ? monthIndex(evaluationDate)
-  : monthIndex(evaluationDate) - 1;
-
+ // What is owed runs through the CURRENT month, not through the last closed one.
+ // Inside September the instalments through September are due, so the count is
+ // the distance from the creation month to the evaluation month. The month-end
+ // branch this replaces is now redundant: a past month selected on the stepper
+ // resolves the evaluation date to that month's close, and the index of that
+ // close is that month, so the past-month reading is unchanged and nothing is
+ // counted twice.
+ //
+ // The creation month still funds nothing, and that is a SEPARATE rule stated at
+ // planMonths above. It survives here as a consequence: a pocket created this
+ // month has startMonth equal to the evaluation month, so the distance is zero
+ // and the floor holds it there. Such a pocket reads no requirement until the
+ // month after the one it was made in.
  const dueMonths = Math.min(
-  Math.max(lastClosedMonth - startMonth, 0),
+  Math.max(monthIndex(evaluationDate) - startMonth, 0),
   planMonths,
  );
 
