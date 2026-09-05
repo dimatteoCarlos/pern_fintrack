@@ -212,14 +212,21 @@ function PocketBigBoxResult({
    ? ''
    : ` in ${formatBudgetMonthLabel(referenceMonth)}`;
 
- // "BY" the month and never "in" it, and the month is always named. The ratio
- // above the bar is CUMULATIVE on both sides — everything committed to those
- // pockets against everything their plans have asked for since they started —
- // so "required this month" invited exactly the reading the developer arrived
- // at, that the figure divides by one instalment. The movement line keeps the
- // suffix above, where "in" is the truth: that one really is the month's own.
+ // Where the plans' line is READ, which is not the same date in both cases. The
+ // board evaluates the current month at TODAY and a past month at its close, so
+ // naming the current month here would claim the whole of it — and the line is
+ // now continuous in days, so only the days elapsed have been asked for.
+ //
+ // "By" and never "in": the ratio above the bar is CUMULATIVE on both sides,
+ // everything committed to those pockets against everything their plans have
+ // asked for since they started. "Required this month" invited exactly the
+ // reading the developer arrived at, that the figure divides by one instalment.
+ // The movement line keeps the suffix above, where "in" is the truth: that one
+ // really is the month's own.
  const scheduleThrough =
-  referenceMonth === null
+  referenceMonth === null ||
+  currentMonth === null ||
+  referenceMonth === currentMonth
    ? ' to date'
    : ` by ${formatBudgetMonthLabel(referenceMonth)}`;
 
@@ -408,7 +415,7 @@ function PocketBigBoxResult({
      <div
       className='pocketHero__bar'
       role='progressbar'
-      aria-label='Committed against what the plans required by the close of the selected month'
+      aria-label={`Committed against what the plans required${scheduleThrough}`}
       aria-valuemin={0}
       aria-valuemax={100}
       // Clamped, unlike the label beside it. A progress bar whose current value
