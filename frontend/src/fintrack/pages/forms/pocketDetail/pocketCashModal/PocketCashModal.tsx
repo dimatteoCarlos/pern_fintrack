@@ -73,14 +73,17 @@ const COPY: Record<
  }
 > = {
  allocate: {
-  title: 'Commit money',
+  // The bare verb. Every figure on this panel is money, so naming it in the
+  // title says nothing the panel has not already said — and the noun that used
+  // to sit here, cash, named an account type this app does not have.
+  title: 'Commit',
   // The mirror of the release line below, and read as a pair they state the
   // whole model in two sentences: nothing moves, only what the money is spoken
   // for changes. Both fit the panel's one line of about forty-four characters.
   //
-  // It does not open by naming the commit. The title reads "Commit cash" and
-  // the button reads "Commit", so a third statement of it would spend the only
-  // line on what the reader has already been told twice.
+  // It does not open by naming the commit. The title and the button both read
+  // "Commit", so a third statement of it would spend the only line on what the
+  // reader has already been told twice.
   //
   // "Allocated" is this module's frozen word for what is committed to a goal
   // (POCKET_DECISIONS 18.1), and it is the word the hero's own tile carries.
@@ -96,12 +99,14 @@ const COPY: Record<
    `${figure} committed to ${pocket} from ${account}`,
  },
  release: {
-  title: 'Release money',
+  title: 'Release',
   // One line, which the panel is 310px wide and 14px tall enough to hold at
   // about forty-four characters. What went is the half the panel already says
-  // twice: the title reads "Release cash" and the button reads "Release", so an
-  // explanation that opens by restating the release spends its only line on it.
-  // Where the money goes is the part nothing else on the panel states.
+  // twice: the title and the button both read "Release", so an explanation
+  // that opens by restating the release spends its only line on it. What the
+  // money STOPS being is the part nothing else on the panel states, and the
+  // line is the mirror of the commit one above so the pair reads as one model:
+  // nothing moves, only what the money is spoken for changes.
   //
   // "Unassigned" and not "unallocated": allocated is this module's word for what
   // IS committed to a goal (POCKET_DECISIONS 18.1), and unassigned is its word
