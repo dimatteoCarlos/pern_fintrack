@@ -484,7 +484,7 @@ function PocketDetail() {
 
           {/* The ACCOUNT's own state, not this pocket's share of it. */}
           {source.covered === false && (
-           <span className='pocketDetail__flag'>over-committed</span>
+           <span className='pocketDetail__flag'>over-allocated</span>
           )}
          </div>
         </li>

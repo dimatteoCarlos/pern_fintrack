@@ -4,7 +4,7 @@
 // 👛 WHICH POCKETS THIS ACCOUNT IS FUNDING, and how much each one holds.
 //
 // The account's own read already served this and the screen threw it away: the
-// total committed to pockets, the cash no plan has claimed, the over-committed
+// total allocated to pockets, the cash no plan has claimed, the over-allocated
 // flag and the per-pocket breakdown all arrive with the account and none of
 // them was drawn. The owner could see from a pocket which accounts fund it and
 // never the reverse — which goals are drawing on THIS account — so the answer
@@ -132,8 +132,8 @@ function AccountPocketCommitments({
     </button>
    </div>
 
-   {/* Both figures and never one: a single "committed" reads as money the owner
-       can no longer spend, and a single "not committed" reads as the available
+   {/* Both figures and never one: a single "allocated" reads as money the owner
+       can no longer spend, and a single "unassigned" reads as the available
        balance. A pocket blocks no spending — the available balance is still the
        whole balance — and what is left here is only the cash no plan has
        claimed yet.
@@ -143,13 +143,13 @@ function AccountPocketCommitments({
        and inventing one would be the screen editing the owner's plans. */}
    <p className='accountPockets__figures'>
     <span className='accountPockets__figure'>
-     <span className='accountPockets__figureLabel'>committed</span>
+     <span className='accountPockets__figureLabel'>allocated</span>
      <b className='accountPockets__figureValue'>{amount(allocated)}</b>
     </span>
 
     {unassignedCash !== undefined && (
      <span className='accountPockets__figure'>
-      <span className='accountPockets__figureLabel'>not committed</span>
+      <span className='accountPockets__figureLabel'>unassigned</span>
       <b
        className={`accountPockets__figureValue${
         isOverAllocated === true ? ' accountPockets__figureValue--over' : ''
@@ -166,7 +166,7 @@ function AccountPocketCommitments({
        every kind of colour blindness. */}
    {isOverAllocated === true && (
     <p className='accountPockets__flag'>
-     Committed past this account&apos;s balance.
+     Allocated past this account&apos;s balance.
     </p>
    )}
 

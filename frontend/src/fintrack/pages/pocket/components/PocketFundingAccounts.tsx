@@ -55,7 +55,7 @@ const DASH = '—';
 // only from here would be a fourth near-identical file of the three that
 // already exist. It is also the screen that already RECEIVES what this card
 // cannot show — its own read serves the total committed to pockets, the cash no
-// plan has claimed, the over-committed flag and the per-pocket breakdown, and
+// plan has claimed, the over-allocated flag and the per-pocket breakdown, and
 // renders none of them. Until that page is allowed to print them the link is
 // correct and its destination is incomplete: it lands on the right account and
 // that account still says nothing about the goals drawing on it.
@@ -306,8 +306,8 @@ function PocketFundingAccounts({
           {/* THREE amounts and not one, shown together so that no single one of
               them can be read as "available" — the same reason the pocket
               detail's own source rows carry three. A pocket blocks no spending,
-              so the balance is still the whole balance, and what is not
-              committed is only the cash no plan has claimed yet.
+              so the balance is still the whole balance, and what is
+              unassigned is only the cash no plan has claimed yet.
 
               It can read negative, which is a deficit the screen reports and
               does not correct. It is never split across the pockets drawing on
@@ -321,7 +321,7 @@ function PocketFundingAccounts({
               : ''
             }`}
            >
-            not committed {amountFor(account, account.unassignedCash)}
+            unassigned {amountFor(account, account.unassignedCash)}
            </span>
 
            <span className='pocketHero__accountFact'>
@@ -348,7 +348,7 @@ function PocketFundingAccounts({
               every kind of colour blindness. Same wording the pocket detail's
               own source rows use for the same state. */}
           {account.isOverAllocated === true && (
-           <span className='pocketHero__accountFlag'>over-committed</span>
+           <span className='pocketHero__accountFlag'>over-allocated</span>
           )}
          </span>
 
