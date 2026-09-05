@@ -30,9 +30,9 @@ import AccountActionsTrigger from '../../../general_components/accountActionsTri
 import AccountActionsMenu from '../../../editionAndDeletion/components/accountActionMenu/AccountActionsMenu.tsx';
 import DeletePocketModal from './deletePocketModal/DeletePocketModal.tsx';
 import AllocationEntryModal from './allocationEntryModal/AllocationEntryModal.tsx';
-import PocketCashModal, {
- PocketCashDirection,
-} from './pocketCashModal/PocketCashModal.tsx';
+import PocketAllocationModal, {
+ PocketAllocationDirection,
+} from './pocketAllocationModal/PocketAllocationModal.tsx';
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import RateTooltip from '../../../general_components/rateTooltip/RateTooltip.tsx';
 import { StatusSquare } from '../../../general_components/boxComponents/BoxComponents.tsx';
@@ -99,8 +99,8 @@ function PocketDetail() {
  // Which money decision is open, or none. One piece of state and not two
  // flags: the two are alternatives, and two booleans would admit a state
  // where both panels are open at once.
- const [cashDirection, setCashDirection] =
-  useState<PocketCashDirection | null>(null);
+ const [allocationDirection, setAllocationDirection] =
+  useState<PocketAllocationDirection | null>(null);
 
  // Which history entry is open, held whole rather than by id: the list is
  // already in memory, so looking the row up again by id would be a second
@@ -362,22 +362,22 @@ function PocketDetail() {
     <button
      type='button'
      className={`pocketDetail__action${
-      cashDirection === 'release' ? '' : ' pocketDetail__action--primary'
+      allocationDirection === 'release' ? '' : ' pocketDetail__action--primary'
      }`}
-     onClick={() => setCashDirection('allocate')}
+     onClick={() => setAllocationDirection('allocate')}
     >
-     Commit cash
+     Commit
     </button>
 
     <button
      type='button'
      className={`pocketDetail__action${
-      cashDirection === 'release' ? ' pocketDetail__action--primary' : ''
+      allocationDirection === 'release' ? ' pocketDetail__action--primary' : ''
      }`}
-     onClick={() => setCashDirection('release')}
+     onClick={() => setAllocationDirection('release')}
      disabled={sources.length === 0}
     >
-     Release cash
+     Release
     </button>
    </div>
 
@@ -457,8 +457,8 @@ function PocketDetail() {
 
      {sources.length === 0 ? (
       <p className='pocketDetail__empty'>
-       No account has committed cash to this pocket yet. Committing from one
-       adds it here.
+       No account has committed to this pocket yet. Committing from one adds it
+       here.
       </p>
      ) : (
       <ul className='pocketDetail__list'>
@@ -473,7 +473,7 @@ function PocketDetail() {
           </span>
 
           <span className='pocketDetail__rowSubtitle'>
-           unassigned cash: {amountOrDash(source.accountUnassignedCash)}
+           unassigned: {amountOrDash(source.accountUnassignedCash)}
           </span>
          </div>
 
@@ -593,8 +593,8 @@ function PocketDetail() {
     />
    )}
 
-   {cashDirection && (
-    <PocketCashModal
+   {allocationDirection && (
+    <PocketAllocationModal
      pocketId={pocket.pocketId}
      pocketName={pocket.name}
      plan={{
@@ -604,9 +604,9 @@ function PocketDetail() {
       remaining: pocket.remaining,
      }}
      currency={currency}
-     direction={cashDirection}
+     direction={allocationDirection}
      sources={sources}
-     onClose={() => setCashDirection(null)}
+     onClose={() => setAllocationDirection(null)}
     />
    )}
 

@@ -1,4 +1,4 @@
-// frontend/src/fintrack/pages/forms/pocketDetail/pocketCashModal/PocketSourcePicker.tsx
+// frontend/src/fintrack/pages/forms/pocketDetail/pocketAllocationModal/PocketSourcePicker.tsx
 // 🏦 SOURCE PICKER: which account the cash moves between.
 //
 // One list, two meanings, and the caller decides which. Committing draws from
@@ -59,7 +59,7 @@ function PocketSourcePicker({
 
  if (options.length === 0) {
   return (
-   <p className='pocketCash__empty'>
+   <p className='pocketAllocation__empty'>
     No account can be used for this yet.
    </p>
   );
@@ -69,7 +69,7 @@ function PocketSourcePicker({
   // A radio group and not a select: the choice carries three figures per option
   // and a native select can show only the label. role and aria-checked are what
   // make a list of buttons announce itself as one choice among several.
-  <div className='pocketCash__picker' role='radiogroup'>
+  <div className='pocketAllocation__picker' role='radiogroup'>
    {options.map((option) => {
     const isSelected = option.accountId === selectedAccountId;
 
@@ -79,14 +79,14 @@ function PocketSourcePicker({
       role='radio'
       aria-checked={isSelected}
       key={`source-${option.accountId}`}
-      className={`pocketCash__source ${isSelected ? 'is-selected' : ''}`.trim()}
+      className={`pocketAllocation__source ${isSelected ? 'is-selected' : ''}`.trim()}
       onClick={() => onSelect(option.accountId)}
       disabled={disabled}
      >
-      <span className='pocketCash__sourceName'>{option.accountName}</span>
+      <span className='pocketAllocation__sourceName'>{option.accountName}</span>
 
-      <span className='pocketCash__sourceFigures'>
-       <span className='pocketCash__sourceFigure'>
+      <span className='pocketAllocation__sourceFigures'>
+       <span className='pocketAllocation__sourceFigure'>
         Balance {asMoney(option.balance)}
        </span>
 
@@ -94,11 +94,11 @@ function PocketSourcePicker({
            screen printed both words for it, the plan strip above saying
            allocated while these rows said committed. Allocated is the word the
            module froze (POCKET_DECISIONS 18.1). */}
-       <span className='pocketCash__sourceFigure'>
+       <span className='pocketAllocation__sourceFigure'>
         Allocated {asMoney(option.committed)}
        </span>
 
-       <span className='pocketCash__sourceFigure pocketCash__sourceFigure--ceiling'>
+       <span className='pocketAllocation__sourceFigure pocketAllocation__sourceFigure--ceiling'>
         {ceilingLabel} {asMoney(option.ceiling)}
        </span>
       </span>

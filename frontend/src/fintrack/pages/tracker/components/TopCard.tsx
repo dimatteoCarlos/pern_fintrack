@@ -334,7 +334,7 @@ const TopCard = <TFormDataType extends Record<string, unknown>>({
             name={title1}
             type='text'
             /* The browser's own form history was offering past amounts over
-               the account selector below it. Same setting PocketCashModal's
+               the account selector below it. Same setting PocketAllocationModal's
                amount field already carries. */
             autoComplete='off'
             placeholder={trackerName}

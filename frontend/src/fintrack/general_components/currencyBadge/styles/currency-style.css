@@ -34,8 +34,8 @@
 /* Split from .tracker: same ink, but no border. The bordered pill on a cream
    panel is what got this reverted once (24a9841); dark text at 13:1 on the
    panel does not need a border to read, and the ring below covers focus.
-   PocketCashModal already painted this correctly on its own before this
-   change (pocketCashModal-styles.css, dark ink on cream) -- passing 'light'
+   PocketAllocationModal already painted this correctly on its own before this
+   change (pocketAllocationModal-styles.css, dark ink on cream) -- passing 'light'
    here makes that agree by rule instead of by a stylesheet-load-order
    coincidence, since both selectors shared the same specificity. */
 .icon-currency.light {

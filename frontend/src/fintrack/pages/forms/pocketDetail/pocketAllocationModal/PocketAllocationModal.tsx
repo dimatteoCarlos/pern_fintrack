@@ -1,4 +1,4 @@
-// frontend/src/fintrack/pages/forms/pocketDetail/pocketCashModal/PocketCashModal.tsx
+// frontend/src/fintrack/pages/forms/pocketDetail/pocketAllocationModal/PocketAllocationModal.tsx
 // 💸 COMMIT AND RELEASE: the two decisions that make every other figure in this
 // module stop reading zero.
 //
@@ -55,14 +55,14 @@ import { useModalDialog } from '../../../../../hooks/useModalDialog.ts';
 import TransactionDateTrigger from '../../../../general_components/transactionDateTrigger/TransactionDateTrigger.tsx';
 import { useTransactionDate } from '../../../../hooks/useTransactionDate.ts';
 
-import './styles/pocketCashModal-styles.css';
+import './styles/pocketAllocationModal-styles.css';
 
-export type PocketCashDirection = 'allocate' | 'release';
+export type PocketAllocationDirection = 'allocate' | 'release';
 
 // Everything the direction decides, stated once so no branch is spelled out
 // twice in the body below.
 const COPY: Record<
- PocketCashDirection,
+ PocketAllocationDirection,
  {
   title: string;
   explanation: string;
@@ -139,21 +139,21 @@ type PocketPlan = {
  remaining: number;
 };
 
-type PocketCashModalPropType = {
+type PocketAllocationModalPropType = {
  pocketId: number;
  pocketName: string;
  plan: PocketPlan;
  // The pocket's accounting currency. Every figure the picker shows is stated in
  // it, and it is what the amount field starts in.
  currency: CurrencyType;
- direction: PocketCashDirection;
+ direction: PocketAllocationDirection;
  // The accounts already funding this pocket, from the detail payload. Read only
  // in the releasing direction, where they are the whole set.
  sources: PocketSource[];
  onClose: () => void;
 };
 
-function PocketCashModal({
+function PocketAllocationModal({
  pocketId,
  pocketName,
  plan,
@@ -161,7 +161,7 @@ function PocketCashModal({
  direction,
  sources,
  onClose,
-}: PocketCashModalPropType) {
+}: PocketAllocationModalPropType) {
  const amountRef = useRef<HTMLInputElement>(null);
 
  const copy = COPY[direction];
@@ -436,19 +436,19 @@ function PocketCashModal({
  const isLoadingSources = direction === 'allocate' && banks === null;
 
  return createPortal(
-  <div className='pocketCash__overlay'>
-   <div className='pocketCash__panel' {...dialogProps}>
+  <div className='pocketAllocation__overlay'>
+   <div className='pocketAllocation__panel' {...dialogProps}>
     {/* Two lines, not one sentence joined by a middot. The verb says what the
         panel does and the name says which pocket it does it to — two different
         questions, and on one line a long name was crowded against the action
         it had nothing to do with. Both stay inside the h2, so the accessible
         name the dialog is labelled by is unchanged. */}
-    <h2 className='pocketCash__title' id={titleId}>
-     <span className='pocketCash__action'>{copy.title}</span>
-     <span className='pocketCash__pocketName'>{pocketName}</span>
+    <h2 className='pocketAllocation__title' id={titleId}>
+     <span className='pocketAllocation__action'>{copy.title}</span>
+     <span className='pocketAllocation__pocketName'>{pocketName}</span>
     </h2>
 
-    <p className='pocketCash__body'>{copy.explanation}</p>
+    <p className='pocketAllocation__body'>{copy.explanation}</p>
 
     {/* What the amount below is measured against. The modal asked how much to
         commit and stated nothing about the plan, so the decision had to be
@@ -459,22 +459,22 @@ function PocketCashModal({
         the plan; what is allocated and what is still to allocate are where the
         pocket stands against it. The sum of the last two IS the target, which
         is what lets the owner check the row without arithmetic. */}
-    <dl className='pocketCash__plan'>
-     <div className='pocketCash__planItem'>
-      <dt className='pocketCash__planLabel'>Target</dt>
-      <dd className='pocketCash__planValue'>{planAmount(plan.target)}</dd>
+    <dl className='pocketAllocation__plan'>
+     <div className='pocketAllocation__planItem'>
+      <dt className='pocketAllocation__planLabel'>Target</dt>
+      <dd className='pocketAllocation__planValue'>{planAmount(plan.target)}</dd>
      </div>
 
-     <div className='pocketCash__planItem'>
-      <dt className='pocketCash__planLabel'>By</dt>
-      <dd className='pocketCash__planValue'>
+     <div className='pocketAllocation__planItem'>
+      <dt className='pocketAllocation__planLabel'>By</dt>
+      <dd className='pocketAllocation__planValue'>
        {formatCalendarDate(plan.desiredDate)}
       </dd>
      </div>
 
-     <div className='pocketCash__planItem'>
-      <dt className='pocketCash__planLabel'>Allocated</dt>
-      <dd className='pocketCash__planValue'>{planAmount(plan.allocated)}</dd>
+     <div className='pocketAllocation__planItem'>
+      <dt className='pocketAllocation__planLabel'>Allocated</dt>
+      <dd className='pocketAllocation__planValue'>{planAmount(plan.allocated)}</dd>
      </div>
 
      {/* Over target when the shortfall has gone negative: the same figure, and
@@ -485,30 +485,30 @@ function PocketCashModal({
          that never changes. The colour is the one this module already gives a
          pocket above its target — the info level of pocketStatus.ts — so the
          panel and the board cannot say the same state two ways. */}
-     <div className='pocketCash__planItem'>
+     <div className='pocketAllocation__planItem'>
       <dt
-       className={`pocketCash__planLabel${
-        plan.remaining < 0 ? ' pocketCash__planLabel--overTarget' : ''
+       className={`pocketAllocation__planLabel${
+        plan.remaining < 0 ? ' pocketAllocation__planLabel--overTarget' : ''
        }`}
       >
        {plan.remaining < 0 ? 'Over target' : 'Still to allocate'}
       </dt>
-      <dd className='pocketCash__planValue'>
+      <dd className='pocketAllocation__planValue'>
        {planAmount(Math.abs(plan.remaining))}
       </dd>
      </div>
     </dl>
 
     {banksFailed && (
-     <p className='pocketCash__error' role='alert'>
+     <p className='pocketAllocation__error' role='alert'>
       The accounts could not be loaded.
      </p>
     )}
 
     {isLoadingSources && !banksFailed ? (
-     <div className='pocketCash__skeleton' aria-hidden='true'>
-      <div className='pocketCash__skeletonRow'></div>
-      <div className='pocketCash__skeletonRow'></div>
+     <div className='pocketAllocation__skeleton' aria-hidden='true'>
+      <div className='pocketAllocation__skeletonRow'></div>
+      <div className='pocketAllocation__skeletonRow'></div>
      </div>
     ) : (
      <PocketSourcePicker
@@ -528,14 +528,14 @@ function PocketCashModal({
         for it. Positioning it against this box instead is what puts it there,
         and the scoping keeps that out of the six other callers of the shared
         tooltip. */}
-    <div className='pocketCash__amountBlock'>
-     <div className='pocketCash__labelRow'>
+    <div className='pocketAllocation__amountBlock'>
+     <div className='pocketAllocation__labelRow'>
       {/* The label alone. The date moved into the field below, which is where
           the four tracker forms put it. It stays a group so the row keeps two
           children and its space-between goes on holding the converted figure
           at the right end. */}
-      <span className='pocketCash__labelGroup'>
-       <label className='pocketCash__label' htmlFor='pocketCashAmount'>
+      <span className='pocketAllocation__labelGroup'>
+       <label className='pocketAllocation__label' htmlFor='pocketAllocationAmount'>
         Amount
        </label>
       </span>
@@ -549,7 +549,7 @@ function PocketCashModal({
           and would not fit a label's line. */}
       {conversion.status === 'querying' && (
        <span
-        className='pocketCash__fxPreview pocketCash__fxPreview--querying'
+        className='pocketAllocation__fxPreview pocketAllocation__fxPreview--querying'
         aria-live='polite'
        >
         Converting to {accountingCurrency.toUpperCase()}…
@@ -558,12 +558,12 @@ function PocketCashModal({
 
       {conversion.status === 'resolved' && convertedText && (
        <RateTooltip tipText={rateTooltipText} surface='light'>
-        <span className='pocketCash__fxPreview'>{convertedText}</span>
+        <span className='pocketAllocation__fxPreview'>{convertedText}</span>
        </RateTooltip>
       )}
      </div>
 
-     <div className='pocketCash__amountRow'>
+     <div className='pocketAllocation__amountRow'>
       {/* The date leads the figure it qualifies: the amount is the decision's
           headline and the day is a fact about that decision, so the field
           reads as one sentence — this much, on this day. The row already held
@@ -571,8 +571,8 @@ function PocketCashModal({
       <TransactionDateTrigger {...dateProps} />
 
       <input
-       id='pocketCashAmount'
-       className='pocketCash__amount'
+       id='pocketAllocationAmount'
+       className='pocketAllocation__amount'
        type='text'
        inputMode='decimal'
        autoComplete='off'
@@ -596,21 +596,21 @@ function PocketCashModal({
     </div>
 
     {ceilingText && selected && (
-     <p className='pocketCash__ceiling'>
+     <p className='pocketAllocation__ceiling'>
       Up to {ceilingText} from {selected.accountName}
      </p>
     )}
 
     {conversion.status === 'failed' && (
-     <div className='pocketCash__fxFailure' role='status'>
-      <span className='pocketCash__fxFailureText'>
+     <div className='pocketAllocation__fxFailure' role='status'>
+      <span className='pocketAllocation__fxFailureText'>
        No rate for {typedCurrency.toUpperCase()} right now. The amount is still
        sent; the server resolves the rate when it writes the row.
       </span>
 
       <button
        type='button'
-       className='pocketCash__fxRetry'
+       className='pocketAllocation__fxRetry'
        onClick={conversion.retry}
        disabled={isSubmitting}
       >
@@ -620,15 +620,15 @@ function PocketCashModal({
     )}
 
     {errorMessage && (
-     <p className='pocketCash__error' role='alert'>
+     <p className='pocketAllocation__error' role='alert'>
       {errorMessage}
      </p>
     )}
 
-    <div className='pocketCash__actions'>
+    <div className='pocketAllocation__actions'>
      <button
       type='button'
-      className='pocketCash__button pocketCash__button--quiet'
+      className='pocketAllocation__button pocketAllocation__button--quiet'
       onClick={onClose}
       disabled={isSubmitting}
      >
@@ -637,7 +637,7 @@ function PocketCashModal({
 
      <button
       type='button'
-      className='pocketCash__button pocketCash__button--confirm'
+      className='pocketAllocation__button pocketAllocation__button--confirm'
       onClick={() => void onSubmit()}
       disabled={isSubmitting || selectedAccountId === null || !isAmountUsable}
      >
@@ -650,4 +650,4 @@ function PocketCashModal({
  );
 }
 
-export default PocketCashModal;
+export default PocketAllocationModal;
