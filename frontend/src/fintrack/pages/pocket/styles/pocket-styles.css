@@ -1010,8 +1010,8 @@ button.line__container {
    literal is the one the approved mockup uses and an inline glyph size is to
    be agreed as a token; it is not invented here. */
 .pocketHero__progressRow .pocketHero__glyph {
- width: 1rem;
- height: 1rem;
+ width: 1.25rem;
+ height: 1.25rem;
  flex-shrink: 0;
 }
 
@@ -1583,6 +1583,13 @@ button.line__container {
 
 .pocketHero__barFill {
  height: 100%;
+ /* A floor, so a tiny share still draws as a BAR. The fill is 8px tall with a
+    full radius, so at one per cent it measured 3px wide and rendered as a dot —
+    a shape that says "a mark" rather than "a small amount". Two heights is the
+    least that still reads as a length. It costs a small overstatement at the
+    bottom of the scale, which is the cheaper of the two errors: the figure
+    beside it states the true share. */
+ min-width: var(--space-4);
  border-radius: var(--radius-full);
  background-color: var(--color-accent);
  transition: width var(--motion-slow);
