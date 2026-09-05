@@ -90,8 +90,12 @@ function PocketSourcePicker({
         Balance {asMoney(option.balance)}
        </span>
 
+       {/* "Allocated" and not "Committed". They are one quantity and this
+           screen printed both words for it, the plan strip above saying
+           allocated while these rows said committed. Allocated is the word the
+           module froze (POCKET_DECISIONS 18.1). */}
        <span className='pocketCash__sourceFigure'>
-        Committed {asMoney(option.committed)}
+        Allocated {asMoney(option.committed)}
        </span>
 
        <span className='pocketCash__sourceFigure pocketCash__sourceFigure--ceiling'>

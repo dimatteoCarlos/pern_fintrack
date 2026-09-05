@@ -73,7 +73,7 @@ const COPY: Record<
  }
 > = {
  allocate: {
-  title: 'Commit cash',
+  title: 'Commit money',
   // The mirror of the release line below, and read as a pair they state the
   // whole model in two sentences: nothing moves, only what the money is spoken
   // for changes. Both fit the panel's one line of about forty-four characters.
@@ -96,7 +96,7 @@ const COPY: Record<
    `${figure} committed to ${pocket} from ${account}`,
  },
  release: {
-  title: 'Release cash',
+  title: 'Release money',
   // One line, which the panel is 310px wide and 14px tall enough to hold at
   // about forty-four characters. What went is the half the panel already says
   // twice: the title reads "Release cash" and the button reads "Release", so an
@@ -107,8 +107,11 @@ const COPY: Record<
   // IS committed to a goal (POCKET_DECISIONS 18.1), and unassigned is its word
   // for what is not — the ceiling label on the commit side of this same object
   // reads Unassigned, and the deletion modal ends on the same word.
-  explanation: 'Returns to the account as unassigned cash.',
-  ceilingLabel: 'Held here',
+  explanation: 'Stays in the account, no longer allocated.',
+  // What THIS pocket holds in the account, which is the most a release may
+  // take from it. Named for the pocket and not for the account: "here" had no
+  // account in view under the amount field and could be read as the pocket.
+  ceilingLabel: 'To this pocket',
   submit: 'Release',
   pending: 'Releasing…',
   // The mirror of the line above, and the preposition is the whole difference:
@@ -587,9 +590,9 @@ function PocketCashModal({
      </div>
     </div>
 
-    {ceilingText && (
+    {ceilingText && selected && (
      <p className='pocketCash__ceiling'>
-      {copy.ceilingLabel}: {ceilingText}
+      Up to {ceilingText} from {selected.accountName}
      </p>
     )}
 
