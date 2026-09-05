@@ -25,6 +25,10 @@ import PocketFundingAccounts from './PocketFundingAccounts';
 import BarChartSvg from '../../../../assets/pocketSvg/barChartSvg.svg?react';
 import BullsEyeSvg from '../../../../assets/pocketSvg/bullsEyeSvg.svg?react';
 import WalletSvg from '../../../../assets/pocketSvg/walletSvg.svg?react';
+// The portfolio card's own mark. A single continuous stroke, which is what
+// keeps it apart from the three filled slabs of the bar chart glyph two rows
+// above it on the same panel.
+import PulseSvg from '../../../../assets/pocketSvg/pulseSvg.svg?react';
 // The accordion's own mark, and the same asset the accounting dashboard's
 // groups already toggle with: one glyph rotated, never two pointing opposite
 // ways, so the state reads as the same control moved rather than swapped.
@@ -34,6 +38,7 @@ import ArrowDownLightSvg from '../../../../assets/ArrowDownLightSvg.svg?react';
 // once: the button and the region it opens have to agree on the string.
 const STATUS_BODY_ID = 'pocketHero-statusBody';
 const TARGET_BODY_ID = 'pocketHero-nextTargetBody';
+const PORTFOLIO_BODY_ID = 'pocketHero-portfolioBody';
 
 // The whole summary and the rows it was folded from, not four figures picked
 // out of ten. The parent used to narrow the payload before handing it over,
@@ -435,8 +440,23 @@ export function PocketBoardReadings() {
  // questions, so opening the partition is not a request for the next deadline.
  // Component state and not the URL, unlike the list's own filters — a card left
  // open is a glance, not a reading someone returns to or shares.
+ // Open by default, alone among the four. It reads the bar directly above it,
+ // which prints a percentage and nothing else — and on a board whose plans have
+ // required nothing yet the bar prints no percentage either, so a closed card
+ // would leave the whole schedule unexplained on a first visit.
+ const [isPortfolioOpen, setIsPortfolioOpen] = useState(true);
  const [isStatusOpen, setIsStatusOpen] = useState(false);
  const [isTargetOpen, setIsTargetOpen] = useState(false);
+
+ // The schedule fold, read off the store's summary here exactly as the hero
+ // above reads it: this component takes the whole payload rather than having
+ // figures threaded down to it.
+ const totalScheduledByNow = summary?.totalScheduledByNow ?? null;
+ const scheduledPocketsAllocated = summary?.scheduledPocketsAllocated ?? null;
+ const totalRequiredMonthly = summary?.totalRequiredMonthly ?? null;
+ const scheduledPocketCount = summary?.scheduledPocketCount ?? 0;
+ const underScheduleCount = summary?.underScheduleCount ?? 0;
+ const overScheduleCount = summary?.overScheduleCount ?? 0;
 
  const currency_code = summary?.currency ?? DEFAULT_CURRENCY;
  const formatNumberCountry = CURRENCY_OPTIONS[currency_code];
@@ -479,6 +499,103 @@ export function PocketBoardReadings() {
  return (
   <div className='pocketHero pocketHero--readings'>
    <div className='pocketHero__cards'>
+    {/* FIRST of the four, because it is the arithmetic behind the bar directly
+        above it — the two amounts the ratio divides, the population it counts,
+        and the pace left. A card explaining a figure belongs under that figure
+        and nowhere else in the stack.
+
+        The lifetime pair rides at its foot, under a rule, because it is the one
+        reading here that is NOT about the schedule: it measures against the
+        goals themselves. It sits in this card rather than in the hero because
+        it explains no tile up there, and it leaves the page entirely once the
+        overview module carries it. */}
+    <div className='pocketHero__card'>
+     <div className='pocketHero__cardHeadRow'>
+      <span className='pocketHero__cardHead'>
+       {/* A pulse and not the bar chart the ratio above already wears: two
+           identical glyphs read as two views of one thing. It names the STATE
+           of the portfolio, which is what this card reads. */}
+       <PulseSvg className='pocketHero__glyph' />
+
+       {/* No count in the bracket, unlike the two cards below. The population
+           this card counts is not the board's — it is the pockets holding a
+           plan window — and a bare figure after this heading would be read as
+           how many pockets there are. The body states it in full, as a pair. */}
+       <span className='pocketHero__label'>Pocket portfolio</span>
+      </span>
+
+      <button
+       type='button'
+       className={`pocketHero__toggle${isPortfolioOpen ? ' is-active' : ''}`}
+       onClick={() => setIsPortfolioOpen((open) => !open)}
+       aria-expanded={isPortfolioOpen}
+       aria-controls={PORTFOLIO_BODY_ID}
+       aria-label={
+        isPortfolioOpen ? 'Collapse pocket portfolio' : 'Expand pocket portfolio'
+       }
+      >
+       <ArrowDownLightSvg className='pocketHero__toggleChevron' />
+      </button>
+     </div>
+
+     {isPortfolioOpen && (
+      <div className='pocketHero__cardBody' id={PORTFOLIO_BODY_ID}>
+       <p className='pocketHero__reading'>
+        {/* The two operands of the ratio, in words. This is exactly why the
+            served percentage is unclamped: a reader divides these two by eye,
+            and a clamped figure would disagree with the division. */}
+        <b className='pocketHero__num'>{amount(scheduledPocketsAllocated)}</b>{' '}
+        committed of{' '}
+        <b className='pocketHero__num'>{amount(totalScheduledByNow)}</b>{' '}
+        required &middot;{' '}
+        {/* Both counts print. The complement is never recovered by subtraction:
+            one number beside a signed net pointing the other way reads as a
+            contradiction, and it makes the reader do arithmetic for a figure
+            the line can simply state.
+
+            "under" and "over schedule" — never "behind" and "ahead", which are
+            the classifier's words for a different partition. */}
+        <b className='pocketHero__num'>{scheduledPocketCount}</b> of{' '}
+        <b className='pocketHero__num'>{summary.pocketCount}</b> pockets on a
+        plan{' '}
+        <span className='pocketHero__counts'>
+         (<b className='pocketHero__num pocketHero__num--under'>
+          {underScheduleCount}
+         </b>{' '}
+         under /{' '}
+         <b className='pocketHero__num pocketHero__num--over'>
+          {overScheduleCount}
+         </b>{' '}
+         over schedule)
+        </span>
+        {totalRequiredMonthly !== null && (
+         <>
+          {' '}
+          &middot;{' '}
+          {/* The pace to FINISH, never a bill due this month: the shortfall is
+              already spread inside this figure, and wording it as due would
+              invite adding it to what the schedule already asked for. */}
+          <b className='pocketHero__num'>{amount(totalRequiredMonthly)}</b> a
+          month to finish on time
+         </>
+        )}
+       </p>
+
+       <p className='pocketHero__lifetime'>
+        Lifetime &middot; {amount(summary.totalAllocated)} committed of{' '}
+        {amount(summary.totalTarget)} total target &mdash;{' '}
+        {/* The ratio is NAMED. Two percentages measure different things on this
+            board — the bar divides by the schedule, this divides by the goals —
+            and an unnamed one asks the reader to work out which. The word is
+            the served field's own name, not a coinage. */}
+        <span className='pocketHero__ratioName'>
+         {percent(summary.overallProgress)} overall progress
+        </span>
+       </p>
+      </div>
+     )}
+    </div>
+
     <div className='pocketHero__card'>
      {/* The heading and its toggle on one line, the chevron at the far right.
          Both cards open independently: they answer different questions and a

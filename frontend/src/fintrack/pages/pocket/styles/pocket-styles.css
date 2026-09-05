@@ -1583,6 +1583,69 @@ button.line__container {
    monochrome print and every kind of colour blindness where a hue does not.
    Same device the funding accounts card uses for an account committed past its
    own balance. The 45deg has no token: the scale declares no angles. */
+/* ── The portfolio card's body ───────────────────────────────────────────── */
+
+/* The arithmetic behind the bar, as a sentence rather than a row of tiles: the
+   figures here explain the ratio above and are not read against each other, so
+   a grid would give four equal columns to four unequal facts. It wraps freely —
+   at 360px it takes three lines and that is the honest cost of stating the
+   operands in words. */
+.pocketHero__reading {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ line-height: 1.5;
+ color: var(--color-content-on-dark-muted);
+}
+
+/* index.css sets font-size on the universal selector, so an inline element does
+   not inherit the size of the line it sits in and has to restate it. */
+.pocketHero__num {
+ font-size: inherit;
+ font-weight: var(--font-weight-semibold);
+ color: var(--color-content-on-dark);
+ font-variant-numeric: tabular-nums;
+}
+
+/* The axis, and not the level scale: separate tokens so a change to one cannot
+   move the other. The words beside each figure carry the reading — the colour
+   only seconds it. */
+.pocketHero__num--under {
+ color: var(--color-schedule-under);
+}
+
+.pocketHero__num--over {
+ color: var(--color-schedule-over);
+}
+
+/* The parenthesis holds together with the phrase it qualifies, so the counts
+   never break leaving "schedule)" alone on the line under it. Not
+   overflow-wrap, which would also split an amount. */
+.pocketHero__counts {
+ font-size: inherit;
+ white-space: nowrap;
+}
+
+/* The lifetime pair, under a rule because it is the one reading in this card
+   that is NOT about the schedule: it divides by the goals themselves. Not a
+   fourth figure in the sentence above — it answers a different question, and it
+   leaves this page entirely once the overview module carries it. */
+.pocketHero__lifetime {
+ margin: 0;
+ padding-top: var(--space-2);
+ border-top: var(--border-width-thin) dashed var(--color-border-subtle);
+ font-size: var(--font-size-xs);
+ line-height: 1.5;
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* The named ratio holds together. Split, it leaves the word "progress" alone on
+   a line under the figure it names — the same orphan the counts rule prevents
+   for the parenthesis. */
+.pocketHero__ratioName {
+ font-size: inherit;
+ white-space: nowrap;
+}
+
 .pocketHero__barFill--over {
  background-color: var(--color-schedule-over);
  background-image: repeating-linear-gradient(
