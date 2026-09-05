@@ -3350,6 +3350,102 @@ this section's.
 
 ---
 
+## 28. What a plan requires to date includes the current month — RULED 2026-09-04
+
+**The developer's ruling.** The figure the hero prints as *Required to date* runs
+through the close of the **current** month, not only through the months already
+closed. Inside September the instalment for September is owed.
+
+**Where it came from.** The first tile of the hero read zero on the live board.
+The reason was that every instalment still lay ahead of the last closed month, so
+the tile was arithmetically right and useless. The frontend session put the
+counter-argument — that an instalment is not owed until its period closes, the
+way rent behaves, and that counting the current month makes a board read behind
+on the 1st and heal by the 30th with the owner having done nothing — and the
+developer ruled anyway. It is settled.
+
+### 28.1 The rule, and the branch it removed
+
+The count of due months is the distance from the plan's creation month to the
+evaluation month. It replaced a rule that took the last **closed** month, which
+needed a branch for the case where the evaluation date was itself a month end.
+
+**That branch was redundant under the new rule rather than lost, and the
+distinction matters because it is what makes stepping back to a past month
+safe.** Selecting a past month on the stepper resolves the evaluation date to
+that month's close, and the month index of that close is that month itself. The
+old rule's month-end branch returned the same value the new rule returns
+unconditionally, so the past-month reading does not move and no month is counted
+twice. Asserted at both paths, and at the first and the last day of a month,
+which must agree because the line moves by month and never by day.
+
+### 28.2 The creation month still funds nothing, and it is a SEPARATE rule
+
+A plan made on the 20th did not have that month to fund. That rule lives where
+the plan window is built and **the ruling above does not reach it**. It survives
+the change as a consequence rather than as a branch: a pocket created this month
+has its creation month equal to the evaluation month, so the distance is zero and
+the floor holds it there.
+
+**The stated consequence, so it is not a surprise on reload:** the figure rises
+for plans made in an earlier month and **stays at zero for plans made in this
+one**. A pocket created in September and read in September still requires
+nothing. It begins to require from the month after the one it was made in.
+
+### 28.3 The blast radius is the level scale, not one tile
+
+The same figure feeds the signed slack on every row and the discriminator the
+level classifier reads. **So this moves pockets between levels**, and a board can
+sit on the behind side for most of a month. That is a stated consequence of the
+ruling, not a defect to be reported later.
+
+**Measured on the local board the day it landed:** the portfolio's required to
+date rose from 0 to 8.50, committed against it is 259.45, and the share committed
+against what the plans required therefore reads 3052.35% — unclamped, as a
+quotient of sums, per section 25.5. The tile is off zero, which was the point,
+and the reading the bar has to survive changed from *absent* to *extreme*.
+
+### 28.4 A deadline can no longer be created in the past
+
+Creating a pocket accepted any well-formed date as its deadline, including one
+already past, so a plan could be born overdue and read as missed on the render
+that followed its own creation. It is refused now, with the status the module
+reserves for what a schema cannot see (422).
+
+**The check cannot live in the schema**, and that is why it is in the controller:
+whether a date is past depends on the owner's calendar, and the validator has
+neither identity nor zone.
+
+### 28.5 What this does NOT decide, and it is the developer's next call
+
+**A pocket created on the 20th whose deadline falls later in the SAME month.**
+The developer named this case as a commitment that ought to be required for that
+month. **It is not measured today and this ruling does not reach it either:** the
+window holds no full calendar month, so all four schedule fields are null
+together and the pocket publishes no plan line at all.
+
+Making that case measurable means **redefining the plan window itself**, not the
+count of due months — a different change, with the pace figure and the level
+scale downstream of it. It is left open deliberately.
+
+### 28.6 What the target carries, served for the first time
+
+Creating a pocket writes what the owner typed, in which currency, and the rate
+between that and the accounting currency. **Six columns, written since the module
+shipped and named by no SELECT**, so the pair was audited and unreadable: a
+target typed as 200,000 COP came back only as its converted figure, with no way
+for a screen to say what was entered or at which rate.
+
+Both reads carry them now, the board row and the detail row, so a screen never
+has to ask which one knows: the typed target and its currency, and the rate with
+its source, timestamp and target currency.
+
+**Addition, not redefinition.** The accounting target keeps its name and its
+meaning, per the rule of section 27.3b: a served field whose name does not state
+its scope cannot have its meaning changed safely.
+
+---
+
 ## Corrections applied 2026-08-30 — re-measured against the working tree
 
 **Not one decision was touched.** Sections 1 to 14 are marked history by this

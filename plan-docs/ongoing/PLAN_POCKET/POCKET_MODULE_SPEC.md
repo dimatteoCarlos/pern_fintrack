@@ -171,7 +171,7 @@ fields already on the row — no query change and no migration:
 
 | Field | What it holds |
 |---|---|
-| `totalScheduledByNow` | the sum of `scheduledByNow`: what the plans required by the selected close |
+| `totalScheduledByNow` | the sum of `scheduledByNow`: what the plans required **through the close of the selected month, that month included** (ruled 2026-09-04, decisions §28) |
 | `scheduledPocketsAllocated` | the committed amount of those same pockets, printed beside what those plans required |
 | `scheduleAdherence` | the share of what the plans required that is actually committed, **served as a percentage**, nullable and **not clamped** |
 | `totalScheduleGap` | the sum of `aheadOfPlan`, **signed**: positive is slack held, negative is the shortfall |
@@ -180,6 +180,15 @@ fields already on the row — no query change and no migration:
 | `underScheduleCount` | how many of those pockets stand strictly below their own line (`aheadOfPlan < 0`), never null |
 | `overScheduleCount` | how many stand at or above it (`aheadOfPlan >= 0`), never null |
 | `scheduledPocketsMovedInMonth` | the net moved within the selected month across those same pockets, **signed** and nullable |
+
+**The target carries its FX audit pair on the row — SHIPPED 2026-09-04.** Six
+columns were written at creation and named by no `SELECT`, so what the owner
+actually typed was audited and unreadable. Both reads carry them now, the board
+row and the detail row, so no screen has to ask which one knows: `originalTarget`
+and `originalCurrencyId` for what was typed and in which currency, and
+`exchangeRate`, `exchangeRateSource`, `exchangeRateTimestamp` and
+`exchangeRateTargetCurrencyId` for the conversion. **Addition only** — the
+accounting `target` keeps its name and its meaning. No consumer reads them yet.
 
 **The month's net gains a second figure and loses none — RULED 2026-09-04.** The
 three board-wide movement figures already served — the net moved in the month,
