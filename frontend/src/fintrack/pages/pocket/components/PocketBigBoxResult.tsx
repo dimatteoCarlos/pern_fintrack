@@ -187,8 +187,15 @@ function PocketBigBoxResult({
  // come due. So the figure stays — the server served it — and the words say
  // what actually happened instead of claiming a side of an axis that has not
  // started.
+ // Three words and not the sentence this used to be. The meta line never wraps
+ // — a second row there takes the height of a fourth line and pulls the three
+ // tiles out of alignment — so it clips, and every reading has to be short
+ // enough that the clip never fires. At 360px the column is about 303 and each
+ // tile about 95, where "committed before anything was due" ran to roughly 132
+ // and was cut mid-word. The long form survives where there is width for it:
+ // the bar's own label, which has the whole row.
  const scheduleSide = nothingDueYet
-  ? 'committed before anything was due'
+  ? 'nothing due yet'
   : scheduleGap === null
     ? null
     : scheduleGap < 0
