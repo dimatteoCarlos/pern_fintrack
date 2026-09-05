@@ -129,7 +129,10 @@ function PocketBigBoxResult({
  notice,
 }: PocketHeroPropType) {
  const currency_code = summary?.currency ?? DEFAULT_CURRENCY;
- const formatNumberCountry = CURRENCY_OPTIONS[currency_code];
+ // The locale is the reader's, never the amount's. Taken from the amount's own
+ // currency, Intl leaves every currency unmarked and the dollar, the Colombian
+ // peso and the Mexican peso all narrow to '$'.
+ const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 
  const amount = (value: number | null | undefined) =>
   value === null || value === undefined
@@ -514,7 +517,10 @@ export function PocketBoardReadings() {
  const overScheduleCount = summary?.overScheduleCount ?? 0;
 
  const currency_code = summary?.currency ?? DEFAULT_CURRENCY;
- const formatNumberCountry = CURRENCY_OPTIONS[currency_code];
+ // The locale is the reader's, never the amount's. Taken from the amount's own
+ // currency, Intl leaves every currency unmarked and the dollar, the Colombian
+ // peso and the Mexican peso all narrow to '$'.
+ const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 
  const amount = (value: number | null | undefined) =>
   value === null || value === undefined

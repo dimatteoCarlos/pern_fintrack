@@ -65,11 +65,11 @@ function MonthlyAverage({
     // negative. The same factor the averages above already apply.
     const sign = movement === 'income' ? -1 : 1;
 
-    return currencyFormat(
-      total.currency,
-      sign * total.amount,
-      CURRENCY_OPTIONS[total.currency],
-    );
+    // The locale is the reader's, never the amount's — the same one every other
+    // figure on this card already uses. Taken from the amount's own currency,
+    // Intl leaves every currency unmarked and the dollar, the Colombian peso
+    // and the Mexican peso all narrow to '$'.
+    return currencyFormat(total.currency, sign * total.amount, formatNumberCountry);
   };
   //convert input data structure into data to render structure
   const convertMovementData = (

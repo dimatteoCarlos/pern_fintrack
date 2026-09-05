@@ -216,7 +216,10 @@ function BudgetEditModal({
   },
  });
 
- const locale = CURRENCY_OPTIONS[currency ?? DEFAULT_CURRENCY];
+ // The locale is the reader's, never the amount's. Taken from the amount's own
+ // currency, Intl leaves every currency unmarked and the dollar, the Colombian
+ // peso and the Mexican peso all narrow to '$'.
+ const locale = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
  const asMoney = (value: number) =>
   numberFormatCurrency(value, 2, currency, locale);
 
@@ -393,9 +396,13 @@ function BudgetEditModal({
   // Said first when the two currencies differ: the figure in every sentence
   // below is the converted one, and without this line it reads as a number the
   // user never typed.
+  //
+  // On the reader's locale like every other amount, which is what makes the
+  // sentence legible: the origin currency is foreign by definition here, so
+  // Intl marks it with its code and the two figures cannot be confused.
   const converted =
    saved.originalCurrency !== saved.currency
-    ? `${numberFormatCurrency(saved.originalAmount, 2, saved.originalCurrency, CURRENCY_OPTIONS[saved.originalCurrency])} converted at ${saved.exchangeRate}. `
+    ? `${numberFormatCurrency(saved.originalAmount, 2, saved.originalCurrency, locale)} converted at ${saved.exchangeRate}. `
     : '';
 
   const replaced =

@@ -18,7 +18,7 @@ import {
   DATE_TIME_FORMAT_DEFAULT,
 } from './constants';
 
-import { CURRENCY_CYCLE } from './constants';
+import { CURRENCY_CYCLE, DEFAULT_CURRENCY } from './constants';
 
 // How many decimal places a currency actually has, asked of Intl rather than
 // listed here. The dollar and the peso have two, the yen has none, the Kuwaiti
@@ -59,7 +59,22 @@ export function currencyFormat(
   return formatFn.format(number);
 }
 //--------------------
-export function getCurrencySymbol(chosenCurrency = 'USD') {
+// The reader's own currency is shown as a symbol; any other currency is shown
+// as its ISO code.
+//
+// This is the rule Intl applies inside a formatted amount, restated here because
+// a symbol rendered on its own has no locale to disambiguate it: the dollar, the
+// Colombian peso and the Mexican peso all narrow to '$', so a bare symbol cannot
+// say which of the three it is. Marking the foreign one is what makes the
+// unmarked one mean "yours".
+export function getCurrencySymbol(
+  chosenCurrency = 'USD',
+  readerCurrency: string = DEFAULT_CURRENCY,
+) {
+  if (chosenCurrency.toUpperCase() !== readerCurrency.toUpperCase()) {
+    return chosenCurrency.toUpperCase();
+  }
+
   try {
     // Creamos un formateador de números específicamente para extraer el símbolo.
     // Usamos 'narrowSymbol' para obtener la forma más corta del símbolo (ej. $ en lugar de US$).
@@ -121,9 +136,11 @@ export function generateCurrencyOptions(
     // Para construir un label más descriptivo: "USD - US Dollar"
     // Usamos el API nativo de Intl.DisplayNames (Estándar 2026)
     try {
-      const locale = CURRENCY_OPTIONS[currencyCode];
-      // Nota: Intl.DisplayNames es compatible con la mayoría de navegadores modernos
-      const currencyName = new Intl.DisplayNames([locale], {
+      // The display language is the reader's, never the currency's. Asked in
+      // the currency's own locale, the list mixed four languages in one
+      // dropdown -- 'COP - peso colombiano' beside 'JPY - 日本円'. The
+      // interface is English, so the names are too.
+      const currencyName = new Intl.DisplayNames(['en'], {
         type: 'currency',
       }).of(currencyCode.toUpperCase());
 

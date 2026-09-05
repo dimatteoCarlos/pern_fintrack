@@ -44,7 +44,10 @@ function BudgetBigBoxResult({
   notice,
 }: BudgetHeroPropType) {
   const currency_code = currency ?? DEFAULT_CURRENCY;
-  const formatNumberCountry = CURRENCY_OPTIONS[currency_code];
+  // The locale is the reader's, never the amount's. Taken from the amount's own
+  // currency, Intl leaves every currency unmarked and the dollar, the Colombian
+  // peso and the Mexican peso all narrow to '$'.
+  const formatNumberCountry = CURRENCY_OPTIONS[DEFAULT_CURRENCY];
 
   const amount = (value: number | null) =>
     value === null

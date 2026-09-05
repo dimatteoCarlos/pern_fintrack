@@ -203,10 +203,14 @@ function PocketFundingAccounts({
 
   const currency_code = account.currency_code ?? DEFAULT_CURRENCY;
 
+  // The locale is the reader's, never the amount's. Taken from the amount's own
+  // currency, Intl leaves every currency unmarked and the dollar, the Colombian
+  // peso and the Mexican peso all narrow to '$' -- two accounts in different
+  // currencies then read identically.
   return currencyFormat(
    currency_code,
    value,
-   CURRENCY_OPTIONS[currency_code],
+   CURRENCY_OPTIONS[DEFAULT_CURRENCY],
   );
  };
 

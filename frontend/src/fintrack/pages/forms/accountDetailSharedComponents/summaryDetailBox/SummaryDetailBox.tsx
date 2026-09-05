@@ -7,6 +7,7 @@ import {
 } from '../../../../helpers/budgetStatus';
 import { DEFAULT_CURRENCY } from '../../../../helpers/constants';
 import {
+  currencyMinorUnit,
   getCurrencySymbol,
   numberFormatCurrency,
 } from '../../../../helpers/functions';
@@ -99,10 +100,24 @@ function SummaryDetailBox({
         </div>
         <div className='summary__data'>
           <div className='summary__data--amount'>
-            <span> {getCurrencySymbol(currency_code ?? defaultCurrency)}</span>
+            {/* The owner's currency is passed as the reader, so their own
+                currency shows as a symbol and any other shows as its ISO code.
+                Without it, a dollar, a Colombian peso and a Mexican peso all
+                render as a bare '$'. */}
+            <span>
+              {' '}
+              {getCurrencySymbol(currency_code ?? defaultCurrency, defaultCurrency)}
+            </span>
             {/* No currency argument: the symbol is the span above, and passing
-                one here would print it twice. */}
-            <span>{numberFormatCurrency(amount, 2)}</span>
+                one here would print it twice. The decimal count still has to
+                follow the currency, so it is passed explicitly — the branch
+                that derives it only runs when a currency is given. */}
+            <span>
+              {numberFormatCurrency(
+                amount,
+                currencyMinorUnit(currency_code ?? defaultCurrency),
+              )}
+            </span>
           </div>
         </div>
 

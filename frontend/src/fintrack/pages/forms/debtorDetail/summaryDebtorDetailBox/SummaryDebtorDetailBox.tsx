@@ -41,7 +41,10 @@ function SummaryDebtorDetailBox({ bubleInfo }: SummaryDetailPropType) {
     : `You're owed by ${type}`;
 
   const currency = currency_code ?? defaultCurrency;
-  const formatNumberCountry = CURRENCY_OPTIONS[currency];
+  // The locale is the reader's, never the amount's. Taken from the amount's own
+  // currency, Intl leaves every currency unmarked and the dollar, the Colombian
+  // peso and the Mexican peso all narrow to '$'.
+  const formatNumberCountry = CURRENCY_OPTIONS[defaultCurrency];
 
   // Through the shared formatter, like every other amount in the module. A
   // symbol concatenated with toFixed(2) printed '$-10.21' where the rest of the

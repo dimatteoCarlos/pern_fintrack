@@ -99,8 +99,11 @@ function AccountPocketCommitments({
  const rows = pockets ?? fetchedPockets;
 
  const currency_code = currencyCode ?? DEFAULT_CURRENCY;
+ // The locale is the reader's, never the amount's. Taken from the amount's own
+ // currency, Intl leaves every currency unmarked and the dollar, the Colombian
+ // peso and the Mexican peso all narrow to '$'.
  const amount = (value: number) =>
-  currencyFormat(currency_code, value, CURRENCY_OPTIONS[currency_code]);
+  currencyFormat(currency_code, value, CURRENCY_OPTIONS[DEFAULT_CURRENCY]);
 
  // The four keys travel together, so one of them decides for all four. Nothing
  // is drawn for an investment or a debtor account: the question does not apply
