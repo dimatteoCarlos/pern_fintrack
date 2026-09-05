@@ -15,33 +15,20 @@
 // states.
 
 import { toAmount, toRate, money } from '../../budget_services/core/money.js';
-import { makePlanSchedule } from './planSchedule.js';
+import {
+ makePlanSchedule,
+ daysBetween,
+ DAYS_PER_MONTH,
+} from './planSchedule.js';
 import { makePocketLevel } from './pocketLevel.js';
 
 const HUNDRED = 100;
-
-// The mean length of a Gregorian month in days. requiredMonthly answers "how
-// much per month", so the horizon has to be expressed in months, and 30 would
-// overstate the pace by half a percent every month.
-const DAYS_PER_MONTH = 30.44;
-
-const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // money.js is under budget_services only because the budget module needed the
 // rounding policy first. It is not budget-specific — it owns the app's scale and
 // rounding mode — and importing it is what keeps this module from carrying a
 // second answer to "what does two decimals mean". Moving it to a shared core is
 // a refactor of its own and is not done here.
-
-/**
- * Whole days between two calendar dates, both YYYY-MM-DD on the owner's clock.
- *
- * Parsed as UTC on purpose: both labels are read at the same offset, so the
- * offset cancels and the difference is the count of calendar days between them
- * rather than a duration that a daylight-saving hour could round the wrong way.
- */
-const daysBetween = (fromDate, toDate) =>
- Math.round((Date.parse(`${toDate}T00:00:00Z`) - Date.parse(`${fromDate}T00:00:00Z`)) / MILLISECONDS_PER_DAY);
 
 /**
  * How much must still be committed per month to reach the goal by its date.

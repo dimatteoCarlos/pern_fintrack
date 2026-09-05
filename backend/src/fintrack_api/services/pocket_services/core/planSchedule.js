@@ -9,49 +9,52 @@
 // out (POCKET_DECISIONS.md §23.1): a rate over the ledger measures how often the
 // owner changed their mind, not how fast money arrived.
 //
-// The line is STEP-WISE BY MONTH. A continuous line would climb every day, so
-// the same pocket would read on track on the 2nd and behind on the 28th with no
-// change in behaviour. Here the amount due moves only when a month closes, which
-// is the boundary every other figure on the board now uses.
+// The line is CONTINUOUS IN DAYS: the target spread evenly across the days from
+// the day the plan was made to its deadline, and read at the evaluation date.
+// It replaced a line that stepped once per calendar month (ruled 2026-09-04,
+// §28). Three things the step-wise line could not do, and this one does:
+//
+//  * A plan made and due inside one month has a line. The old rule needed a full
+//    calendar month to exist and withheld all four fields otherwise, so the
+//    commitment an owner made for THIS month measured against nothing.
+//  * A plan made on the 30th is not billed for the whole month it barely saw.
+//    Under a monthly step it owed a full instalment on day one and two of them
+//    on day two.
+//  * The line stops jumping on the 1st. An owner who contributes on the 5th read
+//    as behind from the 1st to the 5th of every month, having changed nothing.
+//
+// It also removes a disagreement the old shape had to warn about. The forward
+// pace divides the remainder by days, while the old line divided the target by
+// whole months, so two denominators described one plan and a pocket sitting
+// exactly on its line rated 1.14 instead of 1. Both now speak in days, and the
+// ratio below is the required pace over the plan's own pace, with the mean
+// month cancelling out of it entirely.
 
-import { toAmount } from '../../budget_services/core/money.js';
+import { toAmount, money } from '../../budget_services/core/money.js';
+
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// The mean length of a Gregorian month in days. The stored plan speaks in days;
+// this is only the unit the monthly figures are PRESENTED in, and 30 would
+// overstate a pace by half a percent every month.
+export const DAYS_PER_MONTH = 30.44;
 
 /**
- * A month as a single integer, so month arithmetic is subtraction.
+ * Whole days between two calendar dates, both YYYY-MM-DD on the owner's clock.
  *
- * Sliced from the text, never parsed into a Date: a date built from
- * 'YYYY-MM-DD' is UTC midnight, and reading it back through a local getter can
- * land in the previous month. Truncation has no zone to lose.
- */
-const monthIndex = (isoDate) => {
- const year = Number(isoDate.slice(0, 4));
- const month = Number(isoDate.slice(5, 7));
-
- return year * 12 + month;
-};
-
-/**
- * The last day of a month, as a number.
+ * Parsed as UTC on purpose: both labels are read at the same offset, so the
+ * offset cancels and the difference is the count of calendar days between them
+ * rather than a duration that a daylight-saving hour could round the wrong way.
  *
- * Day zero of the next month is the last day of this one. Built in UTC so the
- * node process's zone cannot move it.
+ * Exported and consumed by makePocketStatus, which owned it before the line
+ * moved to days. One copy, because two copies of date arithmetic is how a board
+ * and a card come to disagree about how many days are left.
  */
-const lastDayOfMonth = (year, month) =>
- new Date(Date.UTC(year, month, 0)).getUTCDate();
-
-/**
- * The close of a month, as a YYYY-MM-DD label, from its month index.
- *
- * The inverse of monthIndex: with months numbered 1..12, the year is the index
- * minus one divided by twelve, and the month is what the year leaves behind.
- */
-const monthCloseLabel = (index) => {
- const year = Math.floor((index - 1) / 12);
- const month = index - year * 12;
- const day = lastDayOfMonth(year, month);
-
- return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-};
+export const daysBetween = (fromDate, toDate) =>
+ Math.round(
+  (Date.parse(`${toDate}T00:00:00Z`) - Date.parse(`${fromDate}T00:00:00Z`)) /
+   MILLISECONDS_PER_DAY,
+ );
 
 /**
  * The plan's line for one pocket, at one evaluation date.
@@ -69,32 +72,13 @@ export function makePlanSchedule(
  { targetAmount, allocatedAmount, planStart, desiredDate, daysRemaining },
  evaluationDate,
 ) {
- const startMonth = monthIndex(planStart);
- const deadlineMonth = monthIndex(desiredDate);
+ const planDays = daysBetween(planStart, desiredDate);
 
- // The creation month does not count. A plan made on the 20th did not have that
- // month to fund, so its first instalment falls due at the close of the first
- // full month after it. Applied uniformly rather than only to plans made
- // mid-month: a rule that changed behaviour between the 1st and the 2nd would
- // put a discontinuity in the reading for no fact that justifies one.
- const planMonths = deadlineMonth - startMonth;
-
- // When the first instalment would fall due. The month after the creation month
- // closes on this date, and a deadline earlier than it means the plan expires
- // before it ever owed anything.
- const firstDueDate = monthCloseLabel(startMonth + 1);
-
- // A window holding no full calendar month publishes no line, so the pocket can
- // read neither behind nor at risk. The card says the plan has no window rather
- // than printing a pace built on nothing.
- //
- // Two shapes reach this: a deadline at or before the creation month, and a
- // plan made days before its own deadline — created on the 20th and due on the
- // 2nd of the next month crosses a month boundary but contains no full month,
- // so counting boundaries alone would hand it an instalment it never had a
- // month to pay. Both labels are YYYY-MM-DD, where lexicographic order is
- // chronological order.
- if (planMonths < 1 || firstDueDate > desiredDate) {
+ // A plan with no duration publishes no line, so the pocket reads neither behind
+ // nor at risk and the card says the plan has no window. Only one shape reaches
+ // this now — a deadline on or before the day the plan was made — where the old
+ // month-based rule also withheld every plan shorter than a full calendar month.
+ if (planDays <= 0) {
   return Object.freeze({
    planInstalment: null,
    scheduledByNow: null,
@@ -103,55 +87,46 @@ export function makePlanSchedule(
   });
  }
 
- const instalment = targetAmount.dividedBy(planMonths);
+ const dailyRate = targetAmount.dividedBy(planDays);
 
- // What is owed runs through the CURRENT month, not through the last closed one.
- // Inside September the instalments through September are due, so the count is
- // the distance from the creation month to the evaluation month. The month-end
- // branch this replaces is now redundant: a past month selected on the stepper
- // resolves the evaluation date to that month's close, and the index of that
- // close is that month, so the past-month reading is unchanged and nothing is
- // counted twice.
- //
- // The creation month still funds nothing, and that is a SEPARATE rule stated at
- // planMonths above. It survives here as a consequence: a pocket created this
- // month has startMonth equal to the evaluation month, so the distance is zero
- // and the floor holds it there. Such a pocket reads no requirement until the
- // month after the one it was made in.
- const dueMonths = Math.min(
-  Math.max(monthIndex(evaluationDate) - startMonth, 0),
-  planMonths,
+ // Clamped at both ends. The upper bound is what stops a plan past its deadline
+ // from being asked for more than its target; the lower one guards a board read
+ // at a month that closed before the plan existed, which the repository already
+ // filters but which must not produce a negative line if it ever arrives.
+ const elapsedDays = Math.min(
+  Math.max(daysBetween(planStart, evaluationDate), 0),
+  planDays,
  );
 
- const scheduled = instalment.times(dueMonths);
+ const scheduled = dailyRate.times(elapsedDays);
 
  // Signed on purpose: positive is committed beyond the line, negative is short
  // of it. The screen states the direction in words; the payload states the
  // amount once, so no consumer derives the other half and disagrees.
  const aheadOfPlan = allocatedAmount.minus(scheduled);
 
- // The instalments still ahead. Floored at one: when every instalment has fallen
- // due and a remainder survives, the plan has one month or less to close it, and
- // dividing by zero there would lose exactly the case the ratio exists to catch.
- const instalmentsLeft = Math.max(planMonths - dueMonths, 1);
-
  const remainder = targetAmount.minus(allocatedAmount);
 
+ // Floored at one day: when the deadline is today and a remainder survives, the
+ // plan has a day or less to close it, and dividing by zero there would lose
+ // exactly the case the ratio exists to catch.
+ const daysLeft = Math.max(daysRemaining, 1);
+
  return Object.freeze({
-  planInstalment: toAmount(instalment),
+  // What the plan asks for per month, which is the unit an owner thinks in even
+  // though the line itself is daily. Derived from the same daily rate the line
+  // uses, so the two cannot disagree.
+  planInstalment: toAmount(dailyRate.times(DAYS_PER_MONTH)),
   scheduledByNow: toAmount(scheduled),
   aheadOfPlan: toAmount(aheadOfPlan),
-  // How many of the planned contributions would have to be found at once. The
-  // discriminator between on track, behind and at risk, computed here rather
-  // than on the client so the colour a screen paints and the pace it prints
-  // cannot come from two divisions.
+  // The pace now required over the pace the plan set. The discriminator between
+  // on track, behind and at risk, computed here rather than on the client so the
+  // colour a screen paints and the pace it prints cannot come from two divisions.
   //
-  // Derived from the instalments left, NOT from requiredMonthly, and the
-  // difference is load-bearing: that figure divides the remainder by days over
-  // the mean length of a month, while the instalment divides the target by whole
-  // calendar months. Two denominators that disagree would put a pocket sitting
-  // exactly on its line at a ratio of 1.14 instead of 1. Both figures ship —
-  // they answer different questions — but only one of them may set a level.
+  // One at exactly the plan's pace, above one for a plan needing to accelerate.
+  // Both operands are daily rates taken from the same figures, so the mean month
+  // cancels: this ratio is also requiredMonthly over planInstalment, and those
+  // two served figures now agree by construction rather than by warning.
   //
   // Zero once the target is covered, and null once the deadline has passed:
   // those pockets are decided by a level above the ratio, and a number there
@@ -161,6 +136,10 @@ export function makePlanSchedule(
     ? null
     : remainder.lessThanOrEqualTo(0)
      ? 0
-     : remainder.dividedBy(instalmentsLeft).dividedBy(instalment).toDecimalPlaces(2).toNumber(),
+     : remainder
+        .dividedBy(money(daysLeft))
+        .dividedBy(dailyRate)
+        .toDecimalPlaces(2)
+        .toNumber(),
  });
 }

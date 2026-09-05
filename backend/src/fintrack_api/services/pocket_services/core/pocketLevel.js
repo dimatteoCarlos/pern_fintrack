@@ -87,19 +87,27 @@ export function makePocketLevel({
  }
 
  // Below the band, where the ratio says the pocket is running early. The signed
- // money decides which way, because on ONE date the two disagree and the money
- // is the one telling the truth. RULED 2026-09-04 (POCKET_DECISIONS.md #24.4):
- // at the close of the month a deadline falls in, when that deadline is the
- // last day of its month, every instalment has fallen due and instalmentsLeft
- // is floored at one — the ratio becomes the remainder over a single instalment
- // and reads low precisely because the plan has run out of months, not because
- // the pocket is doing well. A pocket 180 short of its whole target on its last
- // day is behind, and the card printing "180.00 behind the plan" has to sit
- // under a word that agrees with it.
+ // money decides which way, because the two can disagree and the money is the
+ // one telling the truth. RULED 2026-09-04 (POCKET_DECISIONS.md #24.4).
  //
- // Falling through to onTrack here was the first shape of this branch and it
- // was wrong for the same reason: on track claims the plan is being met, and
- // that pocket is not meeting it.
+ // A ratio below the band means the pace still needed is gentler than the pace
+ // the plan set. That is good news only if the money agrees; a pocket can reach
+ // a low ratio while standing short of its own line, and 'ahead' would then
+ // print over a card reading "180.00 behind the plan". Falling through to
+ // onTrack was the first shape of this branch and was wrong for the same
+ // reason: on track claims the plan is being met.
+ //
+ // The end-of-plan case this branch was originally written for no longer
+ // arrives here at all, and it is worth stating where it went. With the line
+ // continuous in days, a pocket 180 short of a 500 target on its last day
+ // divides that remainder by a single day and rates 88.56 — measured — so it is
+ // caught by the at-risk test far above rather than by anything down here. That
+ // is a stricter reading than the 'behind' the old shape reached, and the right
+ // one: the plan has a day left and needs 88 times its own pace.
+ //
+ // The guard stays because the disagreement it settles does not depend on that
+ // case: a low ratio with the money standing short is reachable whenever a
+ // pocket has time but has not used it.
  //
  // The two finished states above are what keep a met goal out of 'ahead': a
  // completed pocket also sits above its own schedule, so the evaluation order
