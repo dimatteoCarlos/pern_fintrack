@@ -13,7 +13,11 @@
  display: flex;
  flex-direction: column;
  gap: var(--space-2);
- margin: var(--space-4) 0;
+ /* No top margin: the form container above already pays one, and the two
+    stacked put 29px over the card against 15px under it. Measured ink to ink
+    at 470px wide — the block above ends at its own padding, the block below
+    adds none — so dropping this side leaves the same token on both. */
+ margin: 0 0 var(--space-4);
  padding: var(--space-3);
  background-color: var(--color-surface-raised);
  border: var(--border-width-thin) solid var(--color-border-subtle);
@@ -37,9 +41,17 @@
 
 .accountPockets__glyph {
  flex-shrink: 0;
- width: var(--font-size-lg);
- height: var(--font-size-lg);
- color: var(--color-content-on-dark-subtle);
+ width: var(--size-glyph-inline);
+ height: var(--size-glyph-inline);
+ color: var(--color-content-on-dark-muted);
+}
+
+/* The set is drawn with a 0.375 pen on a 24 unit grid to render at 4rem, where
+   that lands just under one device pixel. At this size it resolves to 0.28 of
+   a pixel and reads as fog. The weight is restated HERE and not in the asset,
+   which four other screens draw at the size it was made for. */
+.accountPockets__glyph path {
+ stroke-width: 1.75;
 }
 
 /* index.css sets a font size on the universal selector, so an inline element
