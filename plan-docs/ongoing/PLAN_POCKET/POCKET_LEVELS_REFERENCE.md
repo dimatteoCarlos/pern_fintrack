@@ -8,12 +8,23 @@ one worked example of every level on a single plan.
 (`backend/src/fintrack_api/services/pocket_services/core/pocketLevel.js`)
 carries the seven levels and the tolerance band, and the exported level
 order is frozen with seven entries. Ten cases covering the seven levels and
-the two special shapes were run against the worked examples of section 4 and
-land where this document says. The ruling it expands is
-`POCKET_DECISIONS.md` section 24 (2026-09-04); the payload shape is in
-`POCKET_CONTRACT_AUDIT.md` under the contract change of the same date. Where the
-two disagree with this file, they are the authority and this file is the
-explanation.
+the two special shapes were run against the classifier and land where this
+document says.
+
+**The line the classifier reads is continuous in days**, ruled later the same day
+and recorded as the ruling that the plan's line is spread evenly across the days
+from the day the plan was made to its deadline (`POCKET_DECISIONS.md` section
+29). It replaced a line that stepped once per calendar month. **The seven levels
+and their thresholds did not move with it** — what moved is the figure they read,
+so a pocket can cross a threshold without any threshold changing. The worked
+examples of sections 4 and 5 were recomputed onto the daily line by hand and have
+not been re-run, so their arithmetic is checkable but not asserted.
+
+The ruling the level scale itself expands — that being ahead of the line, on it
+and short of it are three readings rather than one — is `POCKET_DECISIONS.md`
+section 24 (2026-09-04); the payload shape is in `POCKET_CONTRACT_AUDIT.md` under
+the contract change of the same date. Where the two disagree with this file, they
+are the authority and this file is the explanation.
 
 **Where it is decided: one place, on the server.** The client maps a level to a
 word and a colour; it never derives one. A level computed twice is two answers to
@@ -70,71 +81,101 @@ corrected and another after it. That is the ruling working, not a defect.
 All amounts are decimals; the ratio is rounded to two places at the end and
 nowhere before.
 
-### Step 1 — the months the plan has
+### Step 1 — the days the plan has
 
 ```
-planMonths = month(deadline) − month(planStart)
+planDays = daysBetween(planStart, desiredDate)
 ```
 
-Months are compared as a single integer, `year × 12 + month`, sliced from the
-text of the date and never parsed into a `Date` — a date built from `YYYY-MM-DD`
-is UTC midnight and reading it back through a local getter can land in the
-previous month.
+Both labels are parsed at UTC midnight, deliberately, so the offset cancels and
+the result is a count of calendar days rather than a duration that a
+daylight-saving hour could round the wrong way. There is one copy of that
+arithmetic, exported from `planSchedule.js` and consumed by `makePocketStatus`,
+because two copies of date arithmetic is how a board and a card come to disagree
+about how many days are left.
 
-**The creation month does not count.** A plan made on the 20th did not have that
-month to fund, so its first instalment falls due at the close of the first full
-month after it. Applied uniformly and not only to plans made mid-month: a rule
-that behaved differently on the 1st and the 2nd would put a discontinuity in the
-reading for no fact that justifies one.
+**The window is a duration, not a calendar shape.** Nothing here asks which month
+a date falls in. The day the plan was made is the day the line starts at zero,
+not a month written off: a plan made on the 20th and due on the 25th has five
+days, and a plan made on the 30th is charged for the days of that month it
+actually had rather than for the whole of it.
 
 ### Step 2 — the guard: a plan with no window
 
 ```
-if planMonths < 1  OR  close(planStart month + 1) > deadline
+if planDays ≤ 0
     → planInstalment, scheduledByNow, aheadOfPlan and paceRatio are all null
 ```
 
-Two shapes reach it: a deadline at or before the creation month, and a plan made
-days before its own deadline — created on the 20th and due on the 2nd of the next
-month crosses a month boundary but contains no full month, so counting boundaries
-alone would hand it an instalment it never had a month to pay.
+**One shape reaches it: a deadline on or before the day the plan was made.** Two
+kinds of pocket hold it and both are legacy — one created and dated the same day,
+and the one carried over by migration 020, whose creation stamp is the
+migration's own date. A deadline already past is refused at creation with a 422,
+so no new pocket arrives here.
 
 Such a pocket **has no line**, so it can be neither ahead of one nor short of
 one. It falls to *On track* and the card states that the plan has no window
 rather than printing a pace built on nothing.
 
-### Step 3 — the instalment
+**A window of one day publishes a line.** The rule this replaced needed a full
+calendar month to exist and withheld all four schedule fields otherwise, so a
+plan made and due inside one month was measured by nothing at all — the owner had
+made a commitment for that month and the board had no figure to hold it against.
+
+### Step 3 — the daily rate
 
 ```
-instalment = target ÷ planMonths
+dailyRate = target ÷ planDays
 ```
 
-This is the plan's own pace: what it committed to per month, on the day it was
-made.
+This is the plan's own pace: what it committed to per day, on the day it was
+made. It does not round — the division stays exact until the payload boundary,
+where the amounts derived from it are taken to two places.
 
-### Step 4 — the instalments already due
+**The monthly figure is presentation, and it is derived from this one:**
 
 ```
-lastClosedMonth = month(evaluationDate)      if evaluationDate is a month end
-                  month(evaluationDate) − 1  otherwise
-
-dueMonths = clamp(lastClosedMonth − month(planStart), 0, planMonths)
+planInstalment = dailyRate × 30.44
 ```
 
-**The current month's instalment is not yet due.** Inside September what is owed
-is the instalments through August. A past month selected on the stepper resolves
-to that month's close, which is a month end, so its own instalment is counted.
+30.44 is the mean length of a Gregorian month; 30 would overstate a pace by half
+a percent every month. It is served because a month is the unit an owner thinks
+in, and **no screen renders it today**. It classifies nothing and it cannot
+disagree with the line, because it is the line's own rate in another unit.
 
-**This is what makes the line step-wise rather than continuous.** A continuous
-line would climb every day, so the same pocket would read *On track* on the 2nd
-and *Behind* on the 28th with no change in behaviour. Here the amount due moves
-only when a month closes, which is the boundary every other figure on this board
-uses.
+### Step 4 — the days already elapsed
+
+```
+elapsedDays = clamp(daysBetween(planStart, evaluationDate), 0, planDays)
+```
+
+**Clamped at both ends.** The upper bound is what stops a plan read past its
+deadline from being asked for more than its target. The lower one guards a board
+read at a month that closed before the plan existed — the repository already
+filters those out, but the line must not go negative if one ever arrives.
+
+**Why the line is continuous rather than step-wise.** A line that stepped once
+per calendar month was tried first and it has the worse of the two defects: it
+jumps a whole instalment at midnight on the 1st, so an owner who contributes on
+the 5th of every month reads *Behind* from the 1st to the 5th, every month,
+having changed nothing and having done precisely what the plan asks. The same
+step billed a plan made on the 30th for a full instalment on its first day and
+for two of them on its second. A daily line moves by one day's rate at the turn
+of the month, which is the smallest step the stored data supports, and the
+tolerance band below is what absorbs it.
+
+The objection that was put against a continuous line — that it climbs every day,
+so the same pocket reads *On track* on the 2nd and *Behind* on the 28th with no
+change in behaviour — describes a pocket that has contributed nothing for
+twenty-six days. That is a real change in behaviour and the reading should show
+it. What the step-wise version bought instead was a reading that stayed flat
+while an owner fell behind and then moved a whole instalment on a date that says
+nothing about that owner at all.
 
 ### Step 5 — where the plan should be, and where it actually is
 
 ```
-scheduledByNow = instalment × dueMonths
+scheduledByNow = dailyRate × elapsedDays
 aheadOfPlan    = committed − scheduledByNow        (signed)
 ```
 
@@ -142,40 +183,49 @@ aheadOfPlan    = committed − scheduledByNow        (signed)
 negative is short of it. The screen states the direction in words; the payload
 states the amount once, so no consumer derives the other half and disagrees.
 
-### Step 6 — the instalments still to come
+### Step 6 — the days still to come
 
 ```
-instalmentsLeft = max(planMonths − dueMonths, 1)
+daysRemaining = daysBetween(evaluationDate, desiredDate)
+daysLeft      = max(daysRemaining, 1)
 ```
 
-**Floored at one.** When every instalment has fallen due and a remainder
-survives, the plan has one month or less to close it; dividing by zero there
-would lose exactly the case the ratio exists to catch.
+**Floored at one.** When the deadline is the evaluation date itself and a
+remainder survives, the plan has a day or less to close it; dividing by zero
+there would lose exactly the case the ratio exists to catch.
 
 ### Step 7 — the ratio
 
 ```
 remainder = target − committed
 
-paceRatio = null                                     if the deadline has passed
-          = 0                                        if remainder ≤ 0
-          = (remainder ÷ instalmentsLeft) ÷ instalment   otherwise
+paceRatio = null                                  if the deadline has passed
+          = 0                                     if remainder ≤ 0
+          = (remainder ÷ daysLeft) ÷ dailyRate    otherwise
 ```
 
-**In words: what is now needed per month, over what the plan set per month.**
+**In words: what is now needed per day, over what the plan set per day.**
 
-It is dimensionless — a month against a month — which is why it works the same on
-a three-month plan and a five-year one. That is what it replaced: a fixed
-threshold of thirty days treated both identically, and the question the owner is
-actually asking is not *how long is left* but *can I still cover it*.
+It is dimensionless — a day against a day — which is why it works the same on a
+three-month plan and a five-year one. That is what it replaced: a fixed threshold
+of thirty days treated both identically, and the question the owner is actually
+asking is not *how long is left* but *can I still cover it*.
 
-**A note on the denominator.** The numerator is derived from the instalments
-left, NOT from the served `requiredMonthly`, and the difference is load-bearing:
-that figure divides the remainder by days over the mean length of a month, while
-the instalment divides the target by whole calendar months. Two denominators that
-disagree would put a pocket sitting exactly on its line at 1.14 instead of 1.
-Both figures ship — they answer different questions — but only one of them may
-set a level.
+**A note on the denominator.** Both operands are daily rates read off the same
+three stored values, so the two figures the payload serves in monthly terms are
+this ratio's own halves in another unit: the forward pace (`requiredMonthly` in
+`makePocketStatus.js`, the remainder over the days left, expressed per mean
+month) over the plan's own instalment (`planInstalment`, the daily rate over the
+same mean month). The mean month cancels, and `paceRatio` is `requiredMonthly ÷
+planInstalment` exactly.
+
+The rule this replaced divided the remainder by days on one side and the target
+by whole calendar months on the other, so two denominators described one plan: a
+pocket sitting exactly on its line rated **1.14 instead of 1**, and the code
+carried a comment telling consumers not to mix the two. **A pocket sitting
+exactly on its line now rates exactly 1.** The two served figures agree by
+construction rather than by warning, which is what lets the level boundary and
+the money figure describe one fact instead of two.
 
 ### Step 8 — the classification, top down
 
@@ -202,28 +252,28 @@ keeps *ahead* to pockets still in progress, which is the only place the word
 means anything.
 
 **Why *ahead* needs the money as well as the ratio.** See the worked example in
-section 5: at the close of the deadline's own month the instalments left are
-floored at one, and the ratio can read low while the pocket is short of its whole
-target. Without the second condition the card would print *"180.00 behind the
-plan"* under a level word saying *Ahead*.
+section 5: on the deadline day itself the days left are floored at one, and the
+ratio can read low while the pocket is short of its whole target. Without the
+second condition the card would print *"30.00 behind the plan"* under a level
+word saying *Ahead*.
 
 ### The tolerance band
 
 *On track* is the ratio within **five hundredths either side of 1**, not the
 point where it equals 1 exactly.
 
-**Why a band is required at all.** The instalment is a division that rarely
-terminates — 12,000 over eleven months is 1,090.909… — so exact equality is
-reached by almost no pocket after its first month. Split at the point and *On
-track* becomes a level that is defined and never fires, which is the same defect
-as the retired *Active* bucket that appeared on a filter and nowhere else on the
-screen it filtered.
+**Why a band is required at all.** The daily rate is a division that rarely
+terminates — 12,000 over 351 days is 34.188034… — so exact equality is reached by
+almost no pocket on almost no day. Split at the point and *On track* becomes a
+level that is defined and never fires, which is the same defect as the retired
+*Active* bucket that appeared on a filter and nowhere else on the screen it
+filtered.
 
 **Why the band is on the ratio and not on a sum of money.** A ratio tolerance is
 worth more money early in a plan and less money late in it, which is the property
-the ratio was chosen for when the thirty-day threshold was rejected. Half an
-instalment short with eleven months left is noise; half an instalment short with
-one month left is not. A fixed sum would call both by the same word.
+the ratio was chosen for when the thirty-day threshold was rejected. Half a
+month's worth of the plan short with eleven months left is noise; the same sum
+short with one month left is not. A fixed sum would call both by the same word.
 
 **Why it is symmetric.** *On track* has to mean the plan is being met as written,
 and a pocket two hundredths over its line is meeting it exactly as much as one
@@ -371,91 +421,94 @@ being read and never from a different plan:
 | target | **12,000.00** |
 | plan made | **2025-12-14** |
 | deadline | **2026-11-30** |
-| months of the plan | Nov 2026 − Dec 2025 = **11** |
-| instalment | 12,000 ÷ 11 = **1,090.909090…** |
+| days of the plan | 2026-11-30 − 2025-12-14 = **351** |
+| daily rate | 12,000 ÷ 351 = **34.188034…** |
+| the monthly presentation | 34.188034… × 30.44 = **1,040.68**, rendered by no screen |
 
-Evaluated at the **close of August 2026** unless the example says otherwise. At
-that date:
+Evaluated at the **close of August 2026**, `2026-08-31`, unless the example says
+otherwise. At that date:
 
 | | |
 | --- | --- |
-| last closed month | August (the evaluation date is a month end) |
-| instalments due | Aug − Dec = **8** |
-| the plan's line | 8 × 1,090.909… = **8,727.27** |
-| instalments left | 11 − 8 = **3** |
+| days elapsed | 2026-08-31 − 2025-12-14 = **260** |
+| the plan's line | 34.188034… × 260 = **8,888.89** |
+| days remaining | 351 − 260 = **91** |
+
+**A pocket committing exactly 8,888.89 rates exactly 1** and sits at the centre
+of the band. Every example below is a distance from that figure.
 
 ---
 
 ### On track
 
-**Committed 8,600.00.**
+**Committed 8,800.00.**
 
 ```
-remainder    = 12,000.00 − 8,600.00 = 3,400.00
-needed/month = 3,400.00 ÷ 3         = 1,133.33
-paceRatio    = 1,133.33 ÷ 1,090.91  = 1.04        inside 1 ± 0.05
-aheadOfPlan  = 8,600.00 − 8,727.27  = −127.27
+remainder   = 12,000.00 − 8,800.00     = 3,200.00
+needed/day  = 3,200.00 ÷ 91            =    35.164835…
+paceRatio   = 35.164835… ÷ 34.188034…  = 1.03        inside 1 ± 0.05
+aheadOfPlan = 8,800.00 − 8,888.89      =   −88.89
 ```
 
-**Reading: On track.** Short of the line by 127.27, which is a ninth of one
-instalment — the plan is being met as written and the shortfall is a rounding of
-behaviour, not a slippage. This is precisely the case the band exists to keep out
-of *Behind*.
+**Reading: On track.** Short of the line by 88.89, which is under three days of
+the plan's own rate — the plan is being met as written and the shortfall is a
+rounding of behaviour, not a slippage. This is precisely the case the band exists
+to keep out of *Behind*.
 
 ### Ahead
 
 **Committed 9,200.00.**
 
 ```
-remainder    = 12,000.00 − 9,200.00 = 2,800.00
-needed/month = 2,800.00 ÷ 3         =   933.33
-paceRatio    =   933.33 ÷ 1,090.91  = 0.86        below 0.95
-aheadOfPlan  = 9,200.00 − 8,727.27  = +472.73     above zero
+remainder   = 12,000.00 − 9,200.00     = 2,800.00
+needed/day  = 2,800.00 ÷ 91            =    30.769231…
+paceRatio   = 30.769231… ÷ 34.188034…  = 0.90        below 0.95
+aheadOfPlan = 9,200.00 − 8,888.89      = +311.11     above zero
 ```
 
-**Reading: Ahead.** Both conditions hold. The card prints *472.73 ahead of the
+**Reading: Ahead.** Both conditions hold. The card prints *311.11 ahead of the
 plan*, and this pocket is a source the owner can release from without breaking
 its own schedule — releasing that amount drops it to exactly its line.
 
-**The boundary, for contrast:** committed 8,890.91 gives a ratio of exactly 0.95
-and `aheadOfPlan` of +163.64. Anything between 8,727.27 and 8,890.91 is
+**The boundary, for contrast:** committed 9,044.44 gives a ratio of exactly 0.95
+and `aheadOfPlan` of +155.56. Anything between 8,888.89 and 9,044.44 is
 positively ahead in money and still reads *On track*. That is the band doing its
 job: a pocket a rounding above its line has not outperformed anything.
 
 ### Behind
 
-**Committed 6,727.27.**
+**Committed 6,888.89.**
 
 ```
-remainder    = 12,000.00 − 6,727.27 = 5,272.73
-needed/month = 5,272.73 ÷ 3         = 1,757.58
-paceRatio    = 1,757.58 ÷ 1,090.91  = 1.61        above 1.05, under 2
-aheadOfPlan  = 6,727.27 − 8,727.27  = −2,000.00
+remainder   = 12,000.00 − 6,888.89     = 5,111.11
+needed/day  = 5,111.11 ÷ 91            =    56.166056…
+paceRatio   = 56.166056… ÷ 34.188034…  = 1.64        above 1.05, under 2
+aheadOfPlan = 6,888.89 − 8,888.89      = −2,000.00
 ```
 
 **Reading: Behind.** Two thousand short, and the pace needed is a bit over one
-and a half times what the plan set. Recoverable by three months slightly better
-than planned.
+and a half times what the plan set. Recoverable over the remaining three months
+at a rate slightly better than planned.
 
 ### At risk
 
-**The same shortfall of 2,000, read two months later.** Committed 8,909.09,
-evaluated at the **close of October 2026**.
+**The same shortfall of 2,000, read two months later.** Committed 8,974.36,
+evaluated at the **close of October 2026**, `2026-10-31`.
 
 ```
-instalments due  = Oct − Dec        = 10
-the plan's line  = 10 × 1,090.909…  = 10,909.09
-instalments left = 11 − 10          = 1
-remainder        = 12,000.00 − 8,909.09 = 3,090.91
-needed/month     = 3,090.91 ÷ 1         = 3,090.91
-paceRatio        = 3,090.91 ÷ 1,090.91  = 2.83     at or above 2
-aheadOfPlan      = 8,909.09 − 10,909.09 = −2,000.00
+days elapsed    = 2026-10-31 − 2025-12-14   =        321
+the plan's line = 34.188034… × 321          =  10,974.36
+days remaining  = 351 − 321                 =         30
+remainder       = 12,000.00 − 8,974.36      =   3,025.64
+needed/day      = 3,025.64 ÷ 30             =     100.854666…
+paceRatio       = 100.854666… ÷ 34.188034…  = 2.95            at or above 2
+aheadOfPlan     = 8,974.36 − 10,974.36      =  −2,000.00
 ```
 
 **Reading: At risk.** The identical shortfall of 2,000 that read *Behind* in
-August. **What separates the two is not the size of the gap but whether an
-ordinary month still closes it** — and this is the whole argument for a ratio
-over a day count.
+August. **What separates the two is not the size of the gap but whether the time
+left still closes it** — and this is the whole argument for a ratio over a day
+count.
 
 ### Completed
 
@@ -504,48 +557,87 @@ that no longer exists is a number answering a question nobody asked.
 
 ### A plan with no window
 
-**A different plan:** target 1,500, made **2026-08-20**, deadline
-**2026-09-02**. Evaluated at the close of August.
+**A different plan:** target 1,500, made **2026-08-20**, deadline **2026-08-20** —
+the deadline is the day the plan was made.
 
 ```
-planMonths     = Sep − Aug = 1
-first due date = close of the month after creation = 2026-09-30
-2026-09-30 > 2026-09-02                    → the guard fires
+planDays = 2026-08-20 − 2026-08-20 = 0
+0 ≤ 0                                      → the guard fires
 planInstalment, scheduledByNow, aheadOfPlan, paceRatio = null
 ```
 
 **Reading: On track**, and the card states that the plan has no window instead of
-printing a pace. The window crosses a month boundary but contains no full month,
-so counting boundaries alone would hand it an instalment it never had a month to
-pay. The one legacy pocket carried over by migration 020 lands here too, because
-its creation stamp is the migration's own date.
+printing a pace. Only two kinds of pocket hold this shape and both are legacy: one
+created and dated the same day, and the one carried over by migration 020, whose
+creation stamp is the migration's own date. A deadline already past is refused at
+creation, so the population cannot grow.
+
+**The shape that used to land here and no longer does.** The same target of 1,500
+made on `2026-08-20` with a deadline of `2026-09-02` crosses a month boundary and
+contains no full calendar month, which was the second clause of the guard this
+replaced. It now has thirteen days of window and a line to be read against:
+
+```
+planDays    = 2026-09-02 − 2026-08-20 = 13
+dailyRate   = 1,500.00 ÷ 13           = 115.384615…
+elapsedDays = 2026-08-31 − 2026-08-20 = 11
+line        = 115.384615… × 11        = 1,269.23
+```
+
+The commitment its owner made for that month is now measured against 1,269.23
+instead of against nothing.
 
 ### The edge the money guard exists for
 
-**Back to the main plan.** Committed **11,820.00**, evaluated at the **close of
-November 2026** — which is also the deadline, `2026-11-30`, so the deadline has
-not passed and the pocket is not overdue.
+**On the line is now exactly a ratio of 1, so the two figures cannot point in
+opposite directions while the deadline is still ahead.** Write the target as `T`
+over `D` days, the days elapsed as `e` and the committed amount as `A`. The line
+is `T × e / D`, the days left are `D − e`, and the ratio is
+`(T − A) ÷ ((D − e) × T / D)`. Reducing, `ratio ≤ 1` holds exactly when
+`A ≥ T × e / D`, which is `aheadOfPlan ≥ 0`.
+
+**What separates them is the floor on the days left.** On the deadline day itself
+the days remaining are zero and the divisor is floored at one, so a remainder
+smaller than a single day of the plan's rate reads as a low ratio while the
+pocket stands short of its whole target.
+
+**Back to the main plan.** Committed **11,970.00**, evaluated at `2026-11-30` —
+the deadline itself, so it has not passed and the pocket is not overdue.
 
 ```
-instalments due  = Nov − Dec = 11 = planMonths     every instalment has fallen due
-instalments left = max(11 − 11, 1) = 1             floored
-the plan's line  = 11 × 1,090.909… = 12,000.00     the whole target
-remainder        = 12,000.00 − 11,820.00 =   180.00
-needed/month     =   180.00 ÷ 1          =   180.00
-paceRatio        =   180.00 ÷ 1,090.91   = 0.17    below 0.95
-aheadOfPlan      = 11,820.00 − 12,000.00 = −180.00 BELOW zero
+days elapsed    = 351 = planDays                clamped at the window
+the plan's line = 34.188034… × 351 = 12,000.00  the whole target
+days left       = max(0, 1) = 1                 floored
+remainder       = 12,000.00 − 11,970.00 =   30.00
+needed/day      = 30.00 ÷ 1             =   30.00
+paceRatio       = 30.00 ÷ 34.188034…    =    0.88   below 0.95
+aheadOfPlan     = 11,970.00 − 12,000.00 =  −30.00   BELOW zero
 ```
 
 **The ratio says ahead and the money says short.** The ratio is low only because
-the floor put a single instalment in the denominator, not because the pocket is
-doing well — it is 180 short of its entire goal on the last day it has.
+the floor put a single day in the denominator, not because the pocket is doing
+well — it is 30 short of its entire goal on the last day it has.
 
 **Reading: Behind**, because the *ahead* test requires `aheadOfPlan` above zero
-and it is negative. Without that second condition the card would print *"180.00
+and it is negative. Without that second condition the card would print *"30.00
 behind the plan"* directly under a level word saying *Ahead*.
 
-It is reachable on exactly one date per plan, and only when the deadline falls on
-the last day of a month — which is a common way to write a deadline.
+**Where the larger version of this case went.** The same pocket 180 short on the
+same day — committed 11,820.00 — divides that remainder by one day and needs
+`180.00 ÷ 34.188034… = 5.265` times the plan's own rate, **5.27** to two places.
+It is caught by the at-risk test five conditions above and never reaches the
+money guard at all. Under the monthly line the same figures put a whole
+instalment in the denominator and gave `180.00 ÷ 1,090.909… = 0.17`, where the
+guard was the only thing keeping the card honest. The daily reading is the
+stricter one and the right one: the plan has a day left and needs five times the
+pace it set.
+
+**The band the guard still covers is narrow, and it is still required.** Under
+the monthly line any remainder below 0.95 instalments reached it — on this plan
+about 1,036. Under the daily line it is any remainder below 0.95 of one day's
+rate, about 32.48 here, on exactly one date per plan: the deadline itself. It
+costs one condition and it is the only place the ratio and the money can
+disagree about direction.
 
 ---
 

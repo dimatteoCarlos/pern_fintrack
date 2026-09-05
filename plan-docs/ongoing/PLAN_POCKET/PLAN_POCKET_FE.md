@@ -1766,48 +1766,53 @@ heights they guard rather than being assumed.
 Neither was written down anywhere, which is why the question could be asked at
 all: the first tile read zero on a live board and nothing on screen explained it.
 
-- **The creation month does not count.** A plan made on the 20th did not have
-  that month to fund. A window holding no full calendar month publishes no line
-  at all, and the four per-row schedule values are null together.
-- **The current month counts as due.** Ruled 2026-09-04, replacing the earlier
-  rule that took only the closed months. The two interact and cannot be read
-  separately: a pocket created in the month being viewed still reads zero,
-  because the distance from its start month to the evaluation month is zero.
-  That is the creation-month rule holding, not the ruling failing.
+- **The plan is funded from the day it was made.** A plan made on the 20th starts
+  its line at zero on the 20th and owes one day of it on the 21st. A plan whose
+  deadline falls on or before the day it was made publishes no line at all, and
+  the four per-row schedule values are null together.
+- **Every day up to the evaluation date counts as due.** Ruled 2026-09-04. The
+  ruling that arrived first that day required the month in progress as a whole
+  instalment; the ruling that replaced it hours later spreads the target evenly
+  across the days of the window and reads it at the evaluation date, so the month
+  in progress is required day by day.
 
-**Confirmed 2026-09-04 by the backend, and it is what runs now.** The creation
-month still funds nothing, and it survives as a CONSEQUENCE rather than as a
-branch of its own: a pocket created in the evaluation month has its start month
-equal to that month, so the distance is zero and the floor at
-`planSchedule.js:120` holds it there. It reads no requirement until the month
-after the one it was made in. The double-count worry was checked rather than
-taken on trust — a year plan of eleven instalments of 100 reads 800 inside
-September where it read 700, exactly one instalment more, and still reads 700
-when August is picked on the stepper. The 1st and the 30th of September both
-read 800, so the line moves by month and never by day.
+**Confirmed 2026-09-04 by the backend, and it is what runs now.** A pocket
+created in the evaluation month is no longer excluded from the figures: it has as
+many days of line as it has been alive, so a plan made on the 20th and read on
+the 25th requires five days of its own rate. The double-count worry the earlier
+monthly rule raised does not arise, because there is no instalment to count twice
+— the line is a single multiplication of the daily rate by the days elapsed,
+clamped so it never exceeds the target. The 1st and the 2nd of September read
+figures one day of the plan's rate apart, which is the smallest step the stored
+data supports — the old line moved by a whole instalment across that same
+midnight and by nothing at all for the rest of the month.
 
-### The third rule, ruled by Carlos and not yet implemented
+### The third rule, ruled by Carlos — IMPLEMENTED 2026-09-04
 
 A pocket created in the month being viewed, with its commitment date and target
-in that SAME month, must count in the board's figures. Today it does not: the
-window holds no full calendar month, so `planMonths` is zero, the guard at
-`planSchedule.js:97` returns early and all four of the row's schedule values are
-null together. The pocket is invisible to every figure on this card.
+in that SAME month, must count in the board's figures. His words were *"ese
+pocket ya está en el plan para ese mes"*, and they reach further than the case
+that prompted them.
 
-His words were *"ese pocket ya está en el plan para ese mes"*, and they reach
-further than the case that prompted them, which is why the backend is putting
-two readings to him rather than picking one:
+**It counts now.** The backend took neither of the two readings the frontend put
+below and took a third: the plan's line is a duration in days, not a shape in
+months, so the target is divided by the days from the day the plan was made to
+its deadline and read at the evaluation date. A window of one day publishes a
+line. The only plan left with no line is one whose deadline falls on or before
+the day it was made, and creating one is refused, so the case that prompted the
+ruling simply has a denominator now.
+
+*(The two readings below are the record of what was offered and are historical.
+Both were framed in months and both are moot: the ruling that the plan's line is
+continuous in days removed the count of instalments from the arithmetic
+altogether.)*
 
 | reading | what changes | what it costs |
 | --- | --- | --- |
 | the creation month funds, everywhere | the window gains a month at both ends of the arithmetic; a plan created and due in September owes its whole target at that month's close, and a pocket created in September with a December deadline owes one instalment inside September instead of zero | every existing plan's instalment count moves by one — eleven instalments of 100 become twelve of 91.67 — so every amount the module prints for every pocket changes |
 | only a deadline inside the creation month publishes a line | the guard relaxes for that one shape and nothing else | the creation month would fund a plan that ends inside it and fund nothing in a plan that runs two months, an inconsistency with no explanation available on screen |
 
-The frontend recommends the first. It is what the sentence says, and the second
-ships the inconsistency. Either way the change is the backend's: nothing on this
-screen decides what a plan has required.
-
-**Two consequences here, whichever is chosen.** The variance meta
+**Two consequences the frontend named, and both landed.** The variance meta
 `nothing due yet` stops firing on a fresh board, because a new pocket gains a
 denominator on the day it is made. And the extreme adherence below gets MORE
 common rather than less, for the same reason.

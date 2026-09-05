@@ -678,6 +678,15 @@ it.
 | `committedInMonth` | `number \| null` | the month's positive rows | as above |
 | `releasedInMonth` | `number \| null` | the month's negative rows, as a magnitude | as above |
 
+*(Three of the meanings above are the ones this dated change introduced and have
+since moved. The ruling that the plan's line is continuous in days
+(`POCKET_DECISIONS.md` section 29, 2026-09-04) redefines `planInstalment` as the
+daily rate times the mean Gregorian month, presentation only and rendered by no
+screen; `scheduledByNow` as the daily rate times the days elapsed; and the null
+case of all four schedule fields as a deadline falling on or before the day the
+plan was made. The `level` list is six words here and gained a seventh, `ahead`,
+in the contract change recorded below.)*
+
 `allocated` and `sourceCount` keep their names and change their meaning: both are
 now bounded at the close of the selected month. Every other row field is
 unchanged.
@@ -866,10 +875,10 @@ strictly less than zero, so a pocket that has committed precisely what its plan
 asked for falls to the over side. With that tie-break the two counts partition
 the scheduled population exactly, so
 `underScheduleCount + overScheduleCount === scheduledPocketCount` is a property
-the client may rely on. A pocket whose window holds no full calendar month has a
-null difference against the schedule, together with the other three schedule
-figures on the row, and is in neither count — the same exclusion the ratio and
-the amount it divides already make.
+the client may rely on. A pocket whose deadline falls on or before the day its
+plan was made has a null difference against the schedule, together with the other
+three schedule figures on the row, and is in neither count — the same exclusion
+the ratio and the amount it divides already make.
 
 **Both counts are served, and both are non-null on any board, an empty one
 included.** Neither is recovered by subtracting the other on the client: no

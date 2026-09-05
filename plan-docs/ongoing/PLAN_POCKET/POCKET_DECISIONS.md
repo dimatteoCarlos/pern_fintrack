@@ -2602,6 +2602,15 @@ reasoning stand; the six-level table below is replaced by the seven-level one
 there, which splits the band this table calls `onTrack` into being ahead of the
 line, on it, and short of it.
 
+> **Superseded in part again by the ruling that the plan's line is continuous in
+> days (section 29, 2026-09-04).** The criterion — a level set by the pace the
+> plan still demands — stands and is untouched. What is replaced is the unit both
+> halves of the ratio are measured in: the denominator below is the target over
+> the plan's whole calendar months, and it is now the target over the plan's whole
+> days. The rule stated below that a plan with no full calendar month in its
+> window publishes nothing is replaced by a deadline falling on or before the day
+> the plan was made.
+
 **What was wrong.** The shipped classifier splits everything neither at target
 nor overdue by how near the deadline is, at a threshold of thirty days
 (`frontend/src/fintrack/helpers/pocketStatus.ts:24`, `:90-114`). Nearness to a
@@ -2677,7 +2686,17 @@ owner changed their mind, not how fast money arrived — and the reason written
 into `pocketBoardService.js:18-21` stands unamended. This ruling reads no
 sequence of rows: it reads the plan's two endpoints and one total.
 
-### 23.2 The line is step-wise by month, never continuous
+### 23.2 The line is step-wise by month, never continuous — SUPERSEDED by section 29
+
+> **Reversed by the ruling that the plan's line is continuous in days (section
+> 29, 2026-09-04).** The line is now the target spread evenly across the days
+> from the day the plan was made to its deadline. The argument below against a
+> continuous line was considered and overruled: the step-wise line jumps a whole
+> instalment on the 1st, so an owner contributing on the 5th read as behind from
+> the 1st to the 5th of every month having changed nothing, and a plan made on
+> the 30th owed a full instalment on day one and two of them on day two. The
+> ruling that what a plan requires to date includes the month in progress
+> (section 28) reached the same conclusion first and by a coarser route.
 
 **The target is divided into monthly instalments and the amount due rises only
 when a month closes.**
@@ -2836,6 +2855,15 @@ amount as `A`, the target as `T` over `M` months, so `I = T / M`:
 Substituting `T = M × I` and reducing, `ratio ≤ 1` is true exactly when
 `A ≥ d × I`, which is `aheadOfPlan ≥ 0`.
 
+*(The formula above is the monthly one and is historical: the ruling that the
+plan's line is continuous in days (section 29, 2026-09-04) replaced the whole
+months `M` and the instalments already due `d` with the plan's whole days and the
+days elapsed. **The identity survives verbatim** — write the target as `T` over
+`D` days and the days elapsed as `e`, and `ratio ≤ 1` is true exactly when
+`A ≥ T × e / D`, which is again `aheadOfPlan ≥ 0`. The conclusion this subsection
+draws from it, that being on the line and being above it were one level, is
+therefore untouched.)*
+
 **So *on track* has never meant "on the plan's line". It has meant "on the line
 or above it",** and the orthogonal *ahead of plan* filter of 23.3 was selecting a
 strict subset of it rather than crossing it. The two controls asked one question
@@ -2867,6 +2895,12 @@ positive.
 23.1. A window holding no full calendar month has no line, so the pocket is
 neither ahead of one nor short of one, and the card states that the plan has no
 window rather than printing a pace.
+
+*(The level table above stands and the fall to `onTrack` stands. The condition
+that produces it does not: under the ruling that the plan's line is continuous in
+days (section 29, 2026-09-04) a window of one day publishes a line, and the only
+plan left with no line is one whose deadline falls on or before the day it was
+made.)*
 
 ### 24.3 On track is a band around the line, never the point where the ratio is 1
 
@@ -2905,6 +2939,15 @@ is short of its whole target, not ahead of anything.
 ratio to be low.** Without it the card would print *"180.00 behind the plan"*
 under a level word saying *Ahead*. It costs one condition and closes the only
 case where the two figures disagree about direction.
+
+*(The condition stands; the edge it guards narrowed under the ruling that the
+plan's line is continuous in days (section 29, 2026-09-04). The floor is now on
+the days left rather than on the instalments left, so it bites on the deadline
+day alone and only for a remainder under one day of the plan's rate. A shortfall
+of the size described above no longer reaches this branch at all: measured, a
+pocket 180 short of a 500 target on its last day rates 88.56 and is caught by the
+at-risk test far above it. The worked arithmetic is in
+`POCKET_LEVELS_REFERENCE.md`, section 5.)*
 
 ### 24.5 What this costs, and what changes shape
 
@@ -3040,9 +3083,9 @@ population of pockets that have a plan window, so they always sum to
 without a reader having to wonder where the remainder went.
 
 The pockets outside both counts are the ones outside the percentage as well:
-when a plan's window holds no full calendar month, the difference against the
-schedule is null together with the other three schedule figures
-(`planSchedule.js`, `planMonths < 1`). They are excluded from the amount
+when a plan's deadline falls on or before the day the plan was made, the
+difference against the schedule is null together with the other three schedule
+figures (`planSchedule.js`, `planDays <= 0`). They are excluded from the amount
 required, from the amount committed against it and from both counts, by one rule
 applied consistently rather than three.
 
