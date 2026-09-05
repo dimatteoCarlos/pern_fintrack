@@ -988,10 +988,8 @@ button.line__container {
    apart. Baseline and not center: the glyph now sits beside running text that
    can take two lines, and centring would float it against the block. */
 .pocketHero__progressRow {
- display: flex;
- align-items: baseline;
- gap: var(--space-2);
- min-width: 0;
+ /* A paragraph and not a flex row. The glyph lives in the sentence now, so
+    there is no second child to align against and nothing to distribute. */
  margin: 0;
  /* The default UI size. One step under read as fine print beside the tiles it
     explains; this is the reading the bar draws, not a footnote to it. */
@@ -1009,10 +1007,17 @@ button.line__container {
    --size-control-sm at 2rem, and the label beside this one is 12-14px. The
    literal is the one the approved mockup uses and an inline glyph size is to
    be agreed as a token; it is not invented here. */
+/* Sunk to the bottom of the text's content box — the descender line — which is
+   the font's own metric and not a nudge. Aligning on the baseline put the
+   glyph's bottom edge there instead, which is a descender's depth too high. */
 .pocketHero__progressRow .pocketHero__glyph {
+ /* Inline-block and not the block an SVG is given elsewhere in this sheet: as
+    a flex item that made no difference, and in a sentence it took a line of
+    its own and pushed the words below it. */
+ display: inline-block;
  width: 1.25rem;
  height: 1.25rem;
- flex-shrink: 0;
+ vertical-align: text-bottom;
 }
 
 /* Filled at this size, outlined at the other two. The set is drawn with a

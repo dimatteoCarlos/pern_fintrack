@@ -392,7 +392,6 @@ function PocketBigBoxResult({
          progress: two percentages now live on this board measuring different
          things, and one of them unnamed makes the reader work out which. */}
      <p className='pocketHero__progressRow'>
-      <BarChartSvg className='pocketHero__glyph' />
       {/* The figure sits INSIDE the sentence, as the approved mockup draws it.
           Pushed to the far end of the row it read as a loose number at the end
           of a line; here "3052% of what your plans required this month" is one
@@ -401,6 +400,11 @@ function PocketBigBoxResult({
           on a narrow board: a sentence wraps where a nowrap label and a flush
           right figure collide. */}
       <span className='pocketHero__progressText'>
+       {/* Inside the sentence too, and inline rather than a flex item beside
+           it: an SVG has no baseline of its own, so flex synthesises one at its
+           bottom edge and baseline alignment floated it a descender's depth
+           above the words. In the text flow the font's own metrics place it. */}
+       <BarChartSvg className='pocketHero__glyph' />{' '}
        {!nothingDueYet && (
         <>
          <b className='pocketHero__pct'>{percent(adherence)}</b>{' '}
