@@ -993,7 +993,10 @@ button.line__container {
  gap: var(--space-2);
  min-width: 0;
  margin: 0;
- font-size: var(--font-size-sm);
+ /* One step under the default UI size. It is a caption naming what the bar
+    below it draws, not a reading in its own right — the figure inside it
+    carries the weight instead. */
+ font-size: var(--font-size-xs);
  font-weight: var(--font-weight-medium);
  line-height: 1.3;
  color: var(--color-content-on-dark-muted);
@@ -1021,10 +1024,16 @@ button.line__container {
  fill: currentColor;
 }
 
+/* The words themselves. index.css sets font-size on the universal selector, so
+   this span did NOT take the size of the paragraph holding it — it computed to
+   16px while the paragraph asked for 14, and stepping the paragraph down moved
+   nothing on screen. The percentage inside it inherits from here. */
+.pocketHero__progressText {
+ font-size: inherit;
+}
+
 /* Inside the sentence now, so it takes the sentence's size and separates
-   itself by weight and colour instead. index.css sets font-size on the
-   universal selector, so an inline element does not inherit the size of the
-   line it sits in and has to restate it. */
+   itself by weight and colour instead. */
 .pocketHero__pct {
  font-size: inherit;
  font-weight: var(--font-weight-bold);

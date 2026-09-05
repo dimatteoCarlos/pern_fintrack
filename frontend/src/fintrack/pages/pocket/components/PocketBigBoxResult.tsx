@@ -212,6 +212,17 @@ function PocketBigBoxResult({
    ? ''
    : ` in ${formatBudgetMonthLabel(referenceMonth)}`;
 
+ // "BY" the month and never "in" it, and the month is always named. The ratio
+ // above the bar is CUMULATIVE on both sides — everything committed to those
+ // pockets against everything their plans have asked for since they started —
+ // so "required this month" invited exactly the reading the developer arrived
+ // at, that the figure divides by one instalment. The movement line keeps the
+ // suffix above, where "in" is the truth: that one really is the month's own.
+ const scheduleThrough =
+  referenceMonth === null
+   ? ' to date'
+   : ` by ${formatBudgetMonthLabel(referenceMonth)}`;
+
  // What moved INSIDE the month, with its direction in words. A bare signed
  // number cannot say which of two opposite decisions happened, and committing
  // cash to a goal and releasing it back are exactly that pair.
@@ -382,7 +393,7 @@ function PocketBigBoxResult({
           figure is read against. It also stops being the element that overflows
           on a narrow board: a sentence wraps where a nowrap label and a flush
           right figure collide. */}
-      <span>
+      <span className='pocketHero__progressText'>
        {!nothingDueYet && (
         <>
          <b className='pocketHero__pct'>{percent(adherence)}</b>{' '}
@@ -390,7 +401,7 @@ function PocketBigBoxResult({
        )}
        {nothingDueYet
         ? 'No instalment has fallen due yet'
-        : `of what your plans required${monthSuffix || ' this month'}`}
+        : `of what your plans required${scheduleThrough}`}
       </span>
      </p>
 
