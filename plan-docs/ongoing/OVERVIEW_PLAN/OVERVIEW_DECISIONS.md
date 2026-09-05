@@ -837,3 +837,71 @@ clasificador tiene los siete niveles y la banda, y la lista congelada de niveles
 tiene siete entradas. Ese documento es de la sesión del módulo de bolsillos y se
 le reporta en vez de editarlo, para no escribir dos sesiones sobre el mismo
 archivo.
+
+
+---
+
+## D51 — The expense distribution block carries the budget, per category and accumulated
+
+**Asked for by the developer on 2026-09-04**, while reading the level-1 mockup.
+Two additions to the ranked expense bars: the planned amount of each category
+shown against its own bar, and a second cumulative curve accumulating the budget
+beside the one accumulating the spend.
+
+**Why it is worth the field.** The block answers *where the month went*. With the
+plan drawn beside the spend it also answers *where the month was supposed to go*,
+and the gap between the two curves is the only place on level 1 where the reader
+sees whether spending concentrates faster than the plan does. Neither figure
+answers that alone: a category over its budget is visible on the card as a
+variance, but a portfolio whose overspend is concentrated in its two largest
+categories is a different situation from one whose overspend is spread across
+six, and only the two curves side by side distinguish them.
+
+### Backend cost — one of the two is free, the other is two fields
+
+| addition | cost | where |
+|---|---|---|
+| The planned amount per category | **zero.** Already served. Every row of the expense distribution arrives from the budget module carrying the planned amount, the spend, what remains, the execution rate and an over-budget flag (`makeBudgetCategoryStatus.js:82-89`); the Overview module only decorates those rows with a rank and the running spend | nothing to write |
+| The accumulated budget and its share | **two fields.** The running total in `makeCategoryBreakdown.js:66-82` accumulates spend only — there is no running budget and no budget share. Add them next to the two that exist, at the same four-decimal scale the spend share already uses and for the same reason: two decimals is one-percent resolution, and a long tail would put several categories on the same point | `makeCategoryBreakdown.js` |
+
+**Why the two fields go on the server and not in the component.** The guard rule
+of this plan is that every financial figure is computed on the server and that one
+indicator has one formula and one implementation. A running sum written in a React
+component is a second implementation of an arithmetic the same module already
+performs one line above, and the two would drift the first time either changed.
+
+### Three rules the reading cannot break
+
+1. **The rows are ranked by spend, and the budget curve inherits that order.** It
+   is therefore the budget accumulated in spend rank, not a ranking of budget, and
+   it is not guaranteed to bend the way an accumulation of its own ranking bends —
+   a category small in spend and large in plan makes it rise steeply at a step
+   where the spend curve is already flat. The ordering has to be stated on the
+   block, because a reader who assumes two comparable curves misreads exactly that
+   step. **Re-ranking to make the curve look like a Pareto is forbidden:** it would
+   give the same screen two orderings of the same rows, which is the class of
+   defect this plan exists to prevent.
+2. **A category with no planned amount cannot enter the accumulation**, and the
+   figure renders as a dash and never as a zero. The planned amount is legitimately
+   absent for a category whose budget row does not exist and for one holding more
+   than one currency — the second already carries a null spend and ranks last by
+   the rule that governs it. **The running budget skips such a row and the curve
+   continues**, rather than ending at it: the block exists to compare the shape of
+   two accumulations, and a curve truncated at the first category without a plan
+   compares nothing from that row on. The cost is that the final point then means
+   *the plan for the categories that have one*, which is not the total budget, so
+   the end of the curve carries that wording whenever a row was skipped. This was
+   the only open question the decision left and it is now closed; the design states
+   the rule in words because no row in the mockup data can demonstrate it.
+3. **Over budget is a state and not only a position.** The flag is served per
+   category. It cannot be signalled by colour alone: the bars are already colour
+   coded by rank, so a colour signal would collide with the identity signal the
+   ring and the bars share.
+
+**Where the design of it lives:** the ranked bars of
+`plan-docs/design-refs/overview-level-1/overview-level-1.html`, the section headed
+*Where August went*.
+
+**What it does not change.** The block still stays in level 1 rather than moving to
+a new environment, and it is still not a chart inside a card. It gains a reading;
+it does not gain a home.

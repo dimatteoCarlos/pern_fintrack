@@ -16,15 +16,45 @@ for anything below that needs re-measuring.
 
 ## Nine facts a proposal has to respect
 
-### 1. A folded aggregate endpoint for level 1 is impossible
+### 1. ~~A folded aggregate endpoint for level 1 is impossible~~ — corrected 2026-09-04
 
-The domains do not share one validity window. The account transactions endpoint
-answers 422 for a month earlier than the account existed; the pocket board
-refuses only a month later than the current one. One request folding them would
-answer 422 for the narrowest domain and take the other four down with it.
+**The measurement below is real; the conclusion drawn from it is wrong, and it
+contradicts fact 10, decision D50 and the mockup of this same folder.**
 
-**Consequence:** level 1 is several requests, and with five domains on one screen
-the three fetch states become the main design problem rather than a detail.
+*Original text, kept because the measurement in it still holds:* «The domains do
+not share one validity window. The account transactions endpoint answers 422 for
+a month earlier than the account existed; the pocket board refuses only a month
+later than the current one. One request folding them would answer 422 for the
+narrowest domain and take the other four down with it. Consequence: level 1 is
+several requests.»
+
+**Why it does not follow.** The account-life 422 is real
+(`getTransactionsForAccountById.js:207-211`), and `GET /api/fintrack/overview`
+**never calls that endpoint**. `overviewPageService.js:21-49` imports six domain
+services and four repositories of `overview_services/db`; the only mentions of
+`getTransactionsForAccountById` anywhere in the module are comments citing it as
+the row shape being copied (`overviewTransactionRepository.js:10`, `:69`). The
+page folds over account *sets*, not over per-account statements: an account that
+did not exist in the requested month contributes nothing, which is the correct
+answer and exactly what the pocket board already does when it drops a pocket that
+did not exist at that close.
+
+The aggregate is not hypothetical. It is mounted (`overviewRoutes.js:17`), it
+resolves one window for all six domains through the shared guard
+(`resolveWindowOr422`, `overviewController.js:98-112`), and it returns the hero,
+the six domain cards, the monthly snapshot, the saving goals, the recent activity
+and both chart keys in one payload (`overviewPageService.js:150-190`). Seven of
+the eight blocks of the level-1 proposal are sourced from it, by that proposal's
+own table.
+
+**Consequence, replacing the one above:** level 1 is **one request**, not several
+— which is also the standing preference that one payload serving several views
+beats one request per view. The mockup already reflects this and says so:
+*"One request feeds this page, so the three states are page-wide, not per card."*
+The per-account 422 belongs to the drill-down of level 2, where the reader asked
+for one account's statement and the refusal is about that account. The three
+fetch states remain the hard part of level 1, but they are three states over one
+request rather than three states multiplied by five domains.
 
 ### 2. The expense distribution charts are already built and routed
 

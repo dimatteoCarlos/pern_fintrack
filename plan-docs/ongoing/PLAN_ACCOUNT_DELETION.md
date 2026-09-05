@@ -585,10 +585,11 @@ UPDATE user_accounts SET account_balance=$1, updated_at=$2 WHERE account_id=$3
 >    :780 and :818), accountCreationController.js:402 and :910,
 >    accountCategoryCreationcontroller.js:489
 >
->  updateAffectedAccountBalance(dbClient, newBalance, accountId)   still absolute
->    backend/src/utils/fintrackUtils/accountDeletionUtils/updateAffectedAccountBalance.js:8
->    called at delete_account/deleteAccountService.js:273 and :311, both on the
->    delete path, neither scoped by user_id
+>  updateAffectedAccountBalance(dbClient, newBalance, accountId)   REMOVED
+>    was backend/src/utils/fintrackUtils/accountDeletionUtils/updateAffectedAccountBalance.js:8
+>    the file no longer exists in the repository (zero matches for the name,
+>    re-measured 2026-09-04); its two callers on the delete path now call
+>    setAccountBalanceFromLedger instead
 > ```
 >
 > The inline writer at `transactionController.js:125-144` is gone — that range now
@@ -597,12 +598,18 @@ UPDATE user_accounts SET account_balance=$1, updated_at=$2 WHERE account_id=$3
 > Every pointer at `updateAccountBalance.js:13-33` or `:21` in this plan and in
 > the research log names a file that no longer exists.
 >
-> **What now needs a fresh decision.** The ordering consequence this unit
-> predicted has already been paid: the movement path inserts its rows first and
-> derives afterwards. What is left of the unit is exactly the delete path — one
-> absolute, user-unscoped writer with two callers — so the unit is no longer "the
-> single derived balance writer" but "retire the last absolute writer". Whether
-> that is done before or with the settlement engine is open.
+> **Corrected 2026-09-04 — the unit is closed, not left needing a fresh
+> decision.** `updateAffectedAccountBalance.js` is gone too, not merely
+> half-replaced. Both delete-path call sites now read
+> `setAccountBalanceFromLedger(dbClient, affectedAccountId, userId)` at
+> `delete_account/deleteAccountService.js:307` (per affected account, inside the
+> loop of `processRTAAnnulment`) and `:313` (the compensation account, once,
+> after the loop), both scoped by `user_id` inside the writer itself
+> (`setAccountBalanceFromLedger.js:59-60`). Landed in four commits dated
+> 2026-08-30, already on `HEAD`: `921bd216`, `83d22cab`, `d41aca25`, `3de47e4d`.
+> Unit 2 of §9 is **fully shipped**, and the "single derived balance writer" is
+> the name that still applies — no retitling and no further decision needed on
+> this unit.
 
 Two of them share the name `updateAccountBalance`. They are replaced by one
 function that derives the figure rather than accepting it:
@@ -722,22 +729,35 @@ The order is forced where stated and free otherwise.
      Waits on retroactive dating's read commit, which freezes the
      derivation this writer consumes. Building it first would propose a
      second definition of the same number.
-     PARTLY SHIPPED, uncommitted, measured 2026-08-30. setAccountBalanceFromLedger
-     exists and consumes derivedBalance.js; the movement and both creation
-     paths call it after inserting their rows; the inline writer and
-     updateAccountBalance.js are gone. What remains is the delete path's
-     updateAffectedAccountBalance, absolute and user-unscoped, with two
-     callers. See the corrected census in §7.
+     SHIPPED, committed, re-measured 2026-09-04. setAccountBalanceFromLedger
+     exists and consumes derivedBalance.js; the movement path, both creation
+     paths and both delete-path call sites call it after inserting their rows
+     or annulment rows. The inline writer, updateAccountBalance.js and
+     updateAffectedAccountBalance.js are all gone from the repository. Four
+     commits, all dated 2026-08-30: 921bd216, 83d22cab, d41aca25, 3de47e4d.
+     See the corrected census in §7.
 
   3  D1: how the existing drift is repaired                blocks unit 4
      An adjusting transaction that leaves a visible trail, or a dated freeze.
      The correct figures are already known - every balance is derivable.
      This is an audit-trail decision, not an accounting one.
+     CLOSED 2026-08-30 by the developer, per ESTADO_PLANES.md §4: neither
+     option above - a third, silent re-derivation, writing no row, on the
+     grounds that the drift was never a ledger error, only a wrong projection
+     of it. This document's own text above still poses D1 as open; that text
+     is superseded by the developer's decision, not by a measurement of this
+     file.
 
   4  repair the drift                                      needs 2 and 3
      Only after 2, or the repair leaks. Re-measure production first: the
      figure is from 2026-08-23 and was taken on a copy, and the per-account,
      per-movement-type breakdown is what revealed the second drift source.
+     EXECUTED 2026-08-30 on fintrack_dev, per ESTADO_PLANES.md §4: slack
+     -75.97 -> -90.22, banco 102.59 -> 90.58, inBestMen 2.14 -> 1.39, inside
+     one transaction using the shipped helpers (ascending-id lock, derivation
+     as a later statement). Zero accounts left unreconciled on that database.
+     Not independently re-verified here - it is a database measurement, not a
+     code one, and this pass does not query fintrack_dev.
 
   5  the seventh account_type, and the account-closure movement type
      Makes the boundary structural. Today it is a convention: the account is

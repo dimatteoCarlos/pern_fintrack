@@ -644,6 +644,47 @@ reconteo que el plan exige tiene que descontarlo.
 > decimal del proyecto en `transactionController.js:688-694`, con `money()` y
 > `toAmountString()` importados de `budget_services/core/money.js`.
 
+> **Corrected 2026-09-04 — the single balance writer is now fully closed, and
+> both the "second writer" and the "uncommitted" claim above are stale.**
+> `accountDeletionUtils/updateAffectedAccountBalance.js` no longer exists in the
+> repository at all — confirmed by a repo-wide search returning zero matches for
+> the name. The delete path now calls `setAccountBalanceFromLedger` directly, at
+> `backend/src/fintrack_api/services/delete_account/deleteAccountService.js:307`
+> (per affected account, inside the loop) and `:313` (the compensation account,
+> once, after the loop) — both user-scoped (`WHERE ua.account_id = $1 AND
+> ua.user_id = $2` inside `setAccountBalanceFromLedger.js:59-60`), unlike the
+> writer this replaces. The four commits that did it are all dated 2026-08-30,
+> the same day as the correction above, and are already on `HEAD`, not in the
+> working tree: `921bd216` (account opening), `83d22cab` (delete path balances
+> against the locked ledger), `d41aca25` (write the ledger's own figure),
+> `3de47e4d` (derive on the deletion path). **Unit 2 of `PLAN_ACCOUNT_DELETION.md`
+> §9 — "the single derived balance writer" — is closed, not partly shipped**, and
+> that plan's §7 census (last touched 2026-08-30) needs the same correction; it
+> still names `updateAffectedAccountBalance.js:8` as the surviving absolute
+> writer with two callers.
+>
+> **Everything else measured in this section still holds, verified again against
+> the same files on 2026-09-04.** The soft-delete path still passes one bind
+> value against a two-parameter query
+> (`deleteAccountService.js:400` and `:408` — `queryText` names `$1` and `$2`,
+> `dbClient.query(queryText, [targetAccountId])` supplies only one), so it still
+> fails at the database rather than executing a logical delete. The RTA pairing
+> is still written only between the affected account and the compensation
+> account — `recordAnnulmentTransaction.js:80-81` derives `sourceAccountId` and
+> `destinationAccountId` from `slackAccountId` and `affectedAccountId` alone, the
+> target account never appears as `account_id`, `source_account_id` or
+> `destination_account_id` in either inserted row — so it still never debits the
+> account being removed. And the physical delete still detaches nothing before
+> it runs: `deleteAccountService.js:330-332` (RTA branch) and the `HARD` branch of
+> `processStandardDelete` issue a bare `DELETE FROM user_accounts` with no
+> preceding `UPDATE ... SET source_account_id = NULL` / `destination_account_id =
+> NULL`, so under the `RESTRICT` shipped in unit 1 the confirm step still aborts
+> on any account that owns a transaction or is named as another account's
+> counterparty. No frontend path reaches `SOFT` or `HARD` at all —
+> `useRTAImpactAndDeletion.ts:99-103` hardcodes `deletionType: DELETION_TYPE_RTA`
+> — so RTA is the only reachable mode end to end, matching the header comment at
+> `deleteAccountService.js:9`.
+
 Faltan además: el séptimo tipo de cuenta para la cuenta de frontera, hoy identificada
 por una cadena
 literal; el endpoint de evaluación que reemplace el informe de impacto que hoy llega
@@ -1073,3 +1114,38 @@ nuevas de Overview quedan abiertas, no resueltas.
   porcentaje sin sujeto, clase CSS— siguen enunciados y sin ancla.
 - Ninguna consulta a base de datos, ni local ni de producción.
 - La sección 9 sigue siendo una medición de navegador que este pase no repite.
+
+---
+
+## Cuarto pase, 2026-09-04 — sobre `feat/vercel-serverless`, cabeza `aab5fa79`
+
+**Advertencia de alcance.** Entre el tercer pase (`fb4dc01`, 2026-08-31) y este,
+entraron **233 commits** — dos merges completos (`fix/auth-screen` y
+`feat/overview` a `main`, el 2026-09-02) y semanas de trabajo de auth, fx,
+tracker y sobre todo pocket. Este pase **no vuelve a auditar línea por línea**
+las secciones 1 a 9: verifica puntualmente los renglones que ese volumen de
+commits hacía más probable que hubieran cambiado, y dos de las tres correcciones
+que siguen muestran que **el propio tercer pase ya estaba mal en un punto al
+escribirse**, no sólo que envejeció.
+
+**Árbol de trabajo:** limpio salvo `OVERVIEW_PLAN/OVERVIEW_BRIEF_2026-09-04.md`
+y `OVERVIEW_PLAN/OVERVIEW_DECISIONS.md`, ambos con trabajo del 2026-09-04 sin
+commitear. Ese subplan mantiene su propio brief fresco y no se repite aquí.
+
+| sección | qué se corrigió |
+|---|---|
+| 4 — Borrado de cuenta | **Falso desde antes de escribirse este archivo.** La fila de §10 que da por vivo un "segundo escritor", `accountDeletionUtils/updateAffectedAccountBalance.js` con dos llamadores en `deleteAccountService.js:273`/`:311`, describe un archivo que **ya no existe**. El camino de borrado deriva hoy con `setAccountBalanceFromLedger` en `deleteAccountService.js:307` y `:313`, y el cambio es el commit `3de47e4d` *fix(balance): derive on the deletion path*, fechado **2026-08-30 23:21**, que es **anterior** a la cabeza sobre la que se escribió el tercer pase (`fb4dc01`, 2026-08-31 03:57) — verificado con `git merge-base --is-ancestor`. El escritor único cubre los tres caminos de dinero y el de borrado; lo que queda pendiente de la unidad 4 es únicamente lo que el resto de la sección ya listaba (cuentas de frontera por cadena literal, motor de liquidación, barrido de 68 lecturas), no un escritor duplicado. `deleteAccountService.js` sigue con **cero** menciones de `pocket`: el borrado sigue sin saber nada de bolsillos |
+| Migraciones (`PLAN_MIGRATION_CHAIN.md`, `HANDOFF_AGENTES.md` §F) | El documento dice "Estado: abierto" a fecha 2026-09-02 y no se tocó desde entonces, pero el código sí: `runMigrations.js` ya abre una transacción por archivo (commit `7bddaaa4`, *fix(db): one transaction per migration file*), `createTables.js` ya declara `transactions.opening_for_account_id` (commit `146022a2`), y un tercer commit (`64b465e7`, *fix(db): the two build paths agree*) cierra la paridad entre los dos caminos de construcción. El paquete F de `HANDOFF_AGENTES.md` está ejecutado en el código; el documento no lo registra. Lo único que sigue pendiente, y es decisión del desarrollador, es aplicar la cadena a producción |
+| 1 — Pocket | El módulo ganó una función entera que ninguna sección de este archivo nombra: **el ritmo contra el propio calendario del dueño** (`POCKET_MODULE_SPEC.md` §0ter, resuelto hoy). Nueve campos de pliegue —`totalScheduledByNow`, `scheduleAdherence`, `totalScheduleGap`, `totalRequiredMonthly`, dos conteos que particionan el tablero y el resto— ya se sirven (`pocketBoardService.js:339-357`) y ya se consumen en el héroe (`PocketBigBoxResult.tsx:165-578`) y en una cuarta tarjeta nueva que los explica (commit `aab5fa79`, hoy mismo). Y la decisión D9 de `DECISIONS_OPEN.md` —cuánto alto puede ocupar la cabecera del tablero de bolsillos— ya tiene techo escrito: `.home__layout:has(.pocketLayout) { max-height: 100dvh }` en `pocket-styles.css:48-49` |
+| 2 — Budget | Confirmado sin cambio, con ancla movida un renglón: el encabezado sigue derivando `isOverBudget` del signo del neto para el total, en `BudgetLayout.tsx:84` (no `:88`). Los cuatro llamadores que sí reciben la bandera servida por fila (paquete D de `HANDOFF_AGENTES.md`) están hechos: `budgetSquareState`/`budgetStatusLevel` en `helpers/budgetStatus.ts:41-56` toman `isOverBudget` como parámetro. Lo que el paquete D dejó fuera a propósito —el encabezado— sigue fuera |
+| 6 — Debts | Confirmado sin cambio: el título sigue en `DebtsLayout.tsx:75-79`, ternario sobre el signo de `total_debt_balance`. Un ítem menor de "lo demás vivo" ya cerró y no estaba anotado: `ListOfDebtors.tsx:219` usa `key={account_id}`, no índice de arreglo |
+| 5 — Unicidad de nombre | Confirmado sin cambio: `useAccountExistence` (renombrado del hook que este archivo cita) sigue con **dos** consumidores, `NewAccount.tsx:180` y `NewCategory.tsx:170`, y los dos siguen destructurando sólo `getSuggestions`/`checkDuplicate`. Ninguna de las cinco pantallas de edición gatea su envío |
+| 7 — Tracker UX | Una afirmación quedó falsa: "`CardNoteSave.tsx` no tiene ya ningún importador" ya no es cierto — el componente fue reincorporado y hoy lo importan las cinco pantallas del tracker (`Expense.tsx:25`, y lo mismo en `Income`, `Transfer`, `Debts`, `PnL`) |
+| 8 — Overview | **Superado por completo por el propio subplan.** `feat/overview` llegó a `main` el 2026-09-02 (`d5693f1d`) y de ahí a la rama actual — cero commits sin fundir. El backend está montado y nadie lo consume desde el frontend; la consulta de metas de ahorro sigue leyendo el modelo de bolsillo retirado y ahora está **servida y no leída**, en vez de sin fundir. Detalle completo, ya corregido y fechado hoy, en `OVERVIEW_PLAN/OVERVIEW_BRIEF_2026-09-04.md` — no se repite aquí |
+
+**Qué no se remidió en este pase, dicho para que no se lea como medido.** Las
+secciones 3 (Backdating, activa hasta 2026-09-02 en su propio plan y sin señal
+de regresión), 9 (Superficie del tablero, medición de navegador) y el resto de
+"lo demás vivo" de cada sección — vocabulario de bolsillos, defectos de hoja
+legada, hueco de FX, decisiones D1-D8 de `DECISIONS_OPEN.md` distintas de D9.
+Ninguna decisión abierta se cerró en este pase.
