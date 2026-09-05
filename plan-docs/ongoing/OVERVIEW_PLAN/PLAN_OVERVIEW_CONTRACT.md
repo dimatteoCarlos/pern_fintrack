@@ -117,10 +117,56 @@ type HeroSection = {
  netWorth: number; // H1 — nunca null, 0 es una cifra real
  cashPosition: number; // H2 — nunca null
  netMonthlyFlow: number; // H3 — nunca null, puede ser negativo
+ // La tasa de ahorro: H3 dividido entre el ingreso del mes. Expresada 0-1 como
+ // toda tasa de este contrato, y sin acotar en ninguno de los dos extremos.
+ // null + notice cuando el ingreso del mes es 0 o negativo, nunca 0: un mes sin
+ // ingreso no ahorro nada, no tiene tasa, y las dos cosas se leen igual una vez
+ // impresas como 0%.
+ savingsRate: number | null;
  currency: CurrencyType; // única para toda la respuesta — D7
  meta: SectionMeta;
 };
 ```
+
+### Cambio de tipo — 2026-09-05
+
+`HeroSection` gana **un campo**, `savingsRate`. Es un cambio de tipo, no una
+medicion, y por eso se registra aqui y no como un hallazgo.
+
+**No convierte al hero en cuatro cifras.** Divide H3 entre uno de los dos
+operandos con los que H3 ya se construye, asi que no agrega entrada, ni consulta,
+ni base temporal: es el mismo movimiento enunciado como participacion en vez de
+como monto. El precedente esta en este mismo contrato — `concentration` de la
+tarjeta de inversion es una tasa publicada al lado de las cifras absolutas de las
+que se deriva.
+
+**Rango.** Puede pasar de 1 y puede ser negativa, y ninguna de las dos se acota.
+Por encima de 1 es un mes real en el que entro una devolucion y se conservo mas de
+lo que ingreso; por debajo de 0 es un mes real en el que salio mas de lo que
+entro. Son respuestas, no errores.
+
+**Dos notices distintos, y la diferencia importa.** Uno dice que el mes no
+registro ingreso; el otro dice que el ingreso del mes salio negativo por
+devoluciones o reversos. En el segundo caso la division si se puede hacer y
+**miente**: un denominador negativo invierte el signo, de modo que un mes que
+perdio dinero reportaria una tasa positiva. Por eso se retiene en vez de
+publicarse invertida.
+
+**Requisito de frontend que abre este cambio.** El campo es `number | null`. Un
+`null` se pinta como guion con su notice al lado, nunca como `0%` — misma regla
+que ya rige para `delta`, `concentration` y `daysSinceLastContribution`.
+
+**Segundo requisito, medido al probar el campo: la tasa es para mostrar, nunca
+para reconstruir el monto.** Toda tasa de este contrato se redondea a dos
+decimales, asi que una tasa 0-1 tiene granularidad de 1%. Un mes que conservo un
+tercio de 3.000 publica `0.33`, y un cliente que multiplique de vuelta obtiene
+990 en vez de 1.000 — diez de diferencia contra un `netMonthlyFlow` que viaja al
+lado y dice 1.000.
+
+No es un defecto que se arregle subiendo la escala: subirla cambiaria todas las
+tasas del modulo, y el monto exacto **ya esta publicado** en el campo de al lado.
+Lo que se prohibe es derivar el monto de la tasa habiendo el monto. `concentration`
+de la tarjeta de inversion tiene exactamente la misma propiedad.
 
 ## 5. Tarjeta genérica de dominio (Income, Expense, Debt, Pocket, PnL)
 
@@ -604,6 +650,22 @@ type ExpenseCategoryStatus = {
  rank: number; // 1 = mayor actualSpent, orden descendente
  cumulativeActual: number; // suma corrida hasta esta fila, en el orden de rank
  cumulativePercentage: number; // cumulativeActual / SUM(actualSpent), 0-1
+
+ // D51 — the running plan, added 2026-09-04. Same two shapes as the two fields
+ // above and computed in the same pass of makeCategoryBreakdown.js, so the two
+ // accumulations can never be built over different orderings. The plan per
+ // category is NOT a new field: it is budgetAmount, already the fourth field of
+ // this type and already served.
+ //
+ // A row whose budgetAmount is null does not enter the accumulation and carries
+ // the running figure forward unchanged. The curve therefore continues past it
+ // instead of ending there, and its last point means "the plan of the categories
+ // that have one", which is not the total budget whenever any row was skipped —
+ // hasSkippedBudget says whether that happened, so the reader is told rather
+ // than left to compare two totals that were never meant to match.
+ cumulativeBudget: number; // suma corrida de budgetAmount, en el orden de rank
+ cumulativeBudgetPercentage: number; // cumulativeBudget / SUM(budgetAmount), 0-1
+ hasSkippedBudget: boolean; // true si alguna fila anterior no tenia plan
 };
 
 type GetOverviewDomainData = {
@@ -775,3 +837,41 @@ tipos de §4 a §12, verificados campo por campo contra los constructores de
 
 **Sin resolver:** los conteos sobre la base local que este archivo arrastra desde
 agosto. Siguen sin recomprobarse; no se leyó ninguna base de datos.
+
+
+---
+
+## Cambio de tipo — 2026-09-04
+
+**Este registro no es como los tres anteriores.** Los de 2026-08-30 y 2026-09-04
+abren declarando que ningun tipo, ninguna nulabilidad y ninguna decision se
+modificaron: eran mediciones. Este si modifica un tipo, y por eso se anota
+aparte en lugar de colarse como una fila mas de una tabla de correcciones.
+
+| seccion | que cambio |
+|---|---|
+| §11 · `ExpenseCategoryStatus` | tres campos nuevos al final del tipo: la suma corrida del plan, su cuota sobre el plan total y la bandera que dice si alguna fila quedo fuera de esa suma. Ninguno de los once campos anteriores cambia de forma ni de nulabilidad |
+
+**Por que el plan por categoria no aparece en esa lista.** Ya estaba. Es
+`budgetAmount`, el cuarto campo del tipo, que llega tal cual desde el modulo de
+presupuesto (`makeBudgetCategoryStatus.js:82-89`) y que este contrato declara
+desde su primera version. La peticion del desarrollador —el plan de cada
+categoria dibujado junto a su gasto— no cuesta ningun campo nuevo en el
+servidor; cuesta un elemento mas en el bloque que lo dibuja.
+
+**Requisito de frontend que este cambio crea.** El bloque de distribucion del
+gasto pinta dos barras por categoria, no una: la del gasto y la del plan, la
+segunda al lado de la primera, con el mismo origen y la misma escala, de modo que
+pasarse del plan se lea como una diferencia de longitud. Las dos curvas
+acumuladas se distinguen **por color y por textura a la vez**, no solo por el
+patron de trazo. La regla que las ordena a las dos es el gasto, y el bloque tiene
+que decirlo: una categoria pequena en gasto y grande en plan hace subir la curva
+del plan justo donde la del gasto ya esta plana, y un lector que suponga dos
+curvas comparables malinterpreta exactamente ese tramo. Reordenar para que la
+curva del plan parezca un Pareto queda prohibido — serian dos ordenaciones de las
+mismas filas en una pantalla, que es el defecto que §4.2 existe para evitar.
+
+**Lo que falta y no lo trae este registro.** Los tres campos estan declarados
+aqui y **no estan implementados**: `makeCategoryBreakdown.js:66-82` sigue
+acumulando solo el gasto. Es una deuda del mismo tipo que las dos que §13 ya
+arrastra —contrato por delante del servidor—, no una afirmacion que envejecio.

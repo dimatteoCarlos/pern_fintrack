@@ -905,3 +905,433 @@ performs one line above, and the two would drift the first time either changed.
 **What it does not change.** The block still stays in level 1 rather than moving to
 a new environment, and it is still not a chart inside a card. It gains a reading;
 it does not gain a home.
+
+
+### Enmienda 2026-09-04 — la forma que el desarrollador fijo sobre el dibujo
+
+Dos reglas sobre como se dibuja, decididas despues de ver la primera version del
+bloque y de rechazarla en estos dos puntos:
+
+1. **El plan es una barra propia al lado de la barra del gasto**, no la
+   continuacion punteada de la barra del gasto ni una linea trazada por encima de
+   ella. Dos barras por categoria, apareadas, compartiendo la etiqueta y la misma
+   escala horizontal. Es la lectura que menos pide del lector: comparar dos
+   longitudes que arrancan del mismo origen no exige leer ninguna leyenda, y
+   pasarse del plan queda dicho por cual de las dos es mas larga. La primera
+   version dibujaba el plan como la prolongacion de la propia barra, lo que hace
+   que la extension total signifique el plan y la parte solida el gasto — cierto,
+   pero solo si se conoce el convenio.
+2. **Las dos curvas acumuladas se diferencian por color ademas de por textura.**
+   Diferenciarlas solo por el patron de trazo deja el par a merced de la
+   resolucion: en el punto mas estrecho medido las dos curvas quedan a menos de
+   cuatro pixeles una de otra, y ahi un guion y una linea continua son la misma
+   mancha. Los dos codigos a la vez, no uno.
+
+La restriccion de la regla 3 de arriba —que pasarse del plan no puede senalarse
+solo con color, porque el color ya codifica el rango— sigue en pie y la regla 1
+la resuelve sin gastar ninguna senal: la comparacion de longitudes no es un color.
+
+**La regla 2 no se pudo cumplir entera, y falta un token para cumplirla.** Medido
+al implementarla: el bloque ya gasta **los seis** tonos de estado en la identidad
+de rango de estas mismas barras. De lo que queda, el neutro llega a 4.06:1 sobre
+esta tarjeta y no pasa el piso de 4.5:1; el de interaccion es la senal de hover y
+ademas cae en la misma familia azul que el rango 1; y los dos de contenido de
+insignia repiten el verde del rango 2 y el rojo del rango 6, y arrastran un
+significado de positivo/negativo que esta serie no tiene.
+
+Lo que falta es una **paleta de series de datos**: un tono por serie, declarado
+fuera de la paleta de estados, que es un tipo de token que este sistema todavia no
+tiene. **No se invento ninguno** — la regla dice que un valor sin token se
+pregunta, nunca se nombra por cuenta propia.
+
+**Lo aplicado mientras tanto, solo con tokens declarados:** la curva del gasto pasa
+a blanco (17.43:1 sobre la tarjeta) y la del plan conserva el gris de contenido
+atenuado (8.37:1) con su trazo discontinuo encima. El par queda diferenciado por
+**valor y textura**, que son dos codigos, en vez de por tono y textura. Cumple el
+fondo de la regla 2 —dos senales, no una— y no cumple su letra.
+
+**Decision pendiente del desarrollador:** si se crea la paleta de series de datos
+o si el par por valor y textura se da por bueno. Es la unica pregunta abierta que
+deja este bloque.
+
+**Cerrada la unica pregunta abierta que esta decision dejaba.** Una categoria sin
+plan no entra en la acumulacion, la curva continua y el final de la curva lleva
+escrito que ese total cubre solo las categorias que tienen plan. El contrato lo
+recoge con una bandera, `hasSkippedBudget`, para que el bloque sepa si tiene que
+escribirlo en vez de escribirlo siempre.
+
+
+---
+
+## D52 — Bolsillo no tiene tarjeta ni serie en el nivel 1, y el encabezado tiene una suma que sobra
+
+**Medido el 2026-09-04 sobre `main`, arbol de trabajo incluido.** No es una
+decision nueva sobre que mostrar: es lo que queda cuando se cruzan dos cosas que
+ya estaban escritas y que nadie habia puesto una al lado de la otra.
+
+### Lo que se cruza
+
+La seccion 3bis del catalogo de indicadores **sustituye P1-P4**, los cuatro
+indicadores de la tarjeta de bolsillo, por tres cifras que se pliegan sobre
+CUENTAS y viven en el encabezado: el efectivo que se puede gastar sin romper un
+compromiso, cuantas cuentas ya no cubren lo que tienen comprometido, y cuanto del
+efectivo visible esta comprometido. En la misma seccion queda descartada la serie
+de bolsillo con una frase que no admite lectura intermedia: una serie de
+asignaciones dibuja con que frecuencia el usuario cambio de idea, no como crecio
+su dinero.
+
+**D50 sigue proponiendo las dos.** Su bloque 2 son cinco tarjetas de dominio y
+una de ellas es bolsillo; su bloque 5 son tres series de seis meses y una de
+ellas es bolsillo. Las dos aparecen marcadas **servido**, sin coste.
+
+### Servido, si — desde un modelo desmontado
+
+La migracion `020` convirtio el bolsillo de una cuenta que guarda dinero en un
+plan que compromete dinero que se queda donde esta, y dejo en cero el conjunto de
+cuentas del tipo antiguo. **Cuatro lecturas del modulo Overview siguen leyendo ese
+conjunto**, no una:
+
+| # | que lee | donde | que publica hoy |
+|---|---|---|---|
+| 1 | el conjunto de cuentas de bolsillo del que salen el total y el conteo de la tarjeta | `overviewAccountRepository.js:201-208` | total 0, movimientos 0, delta 0 |
+| 2 | la serie de seis meses de ese mismo conjunto | mismo conjunto, via `overviewMonthlyRepository.js:231` | seis meses de 0 |
+| 3 | las metas de ahorro | `overviewPageRepository.js:56-58`, con `JOIN pocket_saving_accounts` | cero filas |
+| 4 | el termino de bolsillo del patrimonio y de la posicion de efectivo | `makeHeroSection.js:51-58` | suma 0 |
+
+Las tres primeras publican **ceros, no guiones**, que es exactamente lo que la
+regla 2 de forma del propio D50 prohibe en la misma pagina: una cifra que no se
+pudo obtener se dibuja como guion. El coste de D50 hay que releerlo: no es *cero
+para siete de los ocho bloques y una reescritura en el octavo*, son **tres bloques
+de ocho apoyados en un modelo que ya no existe**.
+
+### La cuarta es distinta y es la grave
+
+`makeHeroSection.js:51-58` calcula el patrimonio como banco + inversion + deuda +
+bolsillo, y la posicion de efectivo como banco + bolsillo. **Con el modelo viejo
+las dos eran correctas**: una cuenta de bolsillo guardaba dinero propio, separado
+del banco. Con el modelo nuevo una asignacion es una reclamacion sobre dinero que
+se queda en la cuenta real, asi que sumarla al saldo del banco cuenta el mismo
+euro dos veces — que es literalmente el defecto que la migracion `020` se
+escribio para eliminar, y aqui esta, en las dos cifras de portada.
+
+Hoy no se nota porque el sumando vale 0. **Eso no es que este bien: es que esta
+apagado.** El dia que alguien apunte esa lectura a `pocket_allocations` — el
+arreglo obvio, y el que un lector apurado haria — el patrimonio y el efectivo
+disponible se inflan en silencio por el importe comprometido. Y la posicion de
+efectivo tiene ademas el signo al reves respecto de lo ya decidido: lo comprometido
+se **resta** para llegar a lo disponible, no se suma.
+
+### Recomendacion — ~~una sola, y es quitar, no migrar~~ SUPERADA POR D53
+
+> **La mitad de esta recomendacion la derogo el desarrollador el 2026-09-04.**
+> La tarjeta de bolsillo **se queda**; lo que se cae es la forma que abajo se
+> rechaza, no el dominio. Ver **D53**, que explica por que las dos cosas conviven
+> sin contradecirse. El resto de esta seccion se conserva porque los cuatro
+> motivos siguen siendo validos **contra la forma compartida**, que es lo unico
+> contra lo que se escribieron.
+
+~~**El nivel 1 se queda sin tarjeta de bolsillo y sin serie de bolsillo, y la
+lectura de bolsillo del nivel 1 es la del encabezado.**~~ Cuatro razones, ninguna
+estetica:
+
+1. **No hay un saldo de bolsillo que ensenar.** Bajo el modelo nuevo el dinero
+   comprometido ya esta dentro del saldo del banco. Una tarjeta que publique
+   *guardado* al lado de un patrimonio que ya lo contiene es la misma cifra dos
+   veces en una pantalla.
+2. **No hay movimientos que contar.** La forma compartida de las tarjetas de
+   dominio es un total, el numero de movimientos detras de ese total y el cambio
+   contra el cierre anterior. Una asignacion no es una transaccion y no escribe
+   ninguna: el conteo del medio no existe, y una tarjeta a la que le falta un
+   tercio de su forma no es esa tarjeta.
+3. **La serie ya esta descartada** por la seccion 3bis, y no por falta de datos
+   sino porque mide otra cosa.
+4. **Las cifras de meta no entran en Overview** por la frontera que se fijo
+   primero para presupuesto y luego para bolsillos: contestan *estan cubiertas mis
+   metas*, que es la pregunta del tablero del modulo, no la de la pantalla de
+   inicio.
+
+Consecuencia sobre D50, que hay que escribir en su tabla: el bloque 2 son **cuatro**
+tarjetas de dominio — ingreso, gasto, deuda y resultado — mas la de inversion con
+su forma propia; y el bloque 5 son **dos** series de seis meses, ingreso y gasto.
+
+**Lo que esta recomendacion NO decide, a proposito.** El bloque 7, las metas de
+ahorro, no se quita: la pregunta *cuanto llevo guardado y cuanto falta* si es de
+pantalla de inicio, y su reescritura contra el modelo nuevo ya estaba primera en
+la fila. Lo unico que cambia es que deja de ser el unico bloque con coste.
+
+### Lo que hay que corregir en el codigo, en este orden
+
+**Corregido el 2026-09-04 por el dueno del backend de bolsillos.** La primera
+version de esta lista metia el patrimonio y la posicion de efectivo en un mismo
+paso, descrito como una retirada. **No son el mismo paso y no son la misma
+operacion**, y tratarlos como uno deja mal la cifra de efectivo disponible:
+
+- **El patrimonio es dinero que se posee.** Comprometer dinero a un plan no
+  cambia lo que se posee, asi que ahi el termino de bolsillo **se va, sin
+  sustituto**. Esto si no depende de nada.
+- **El efectivo disponible es dinero que se puede gastar ahora.** Lo comprometido
+  esta dentro del saldo del banco y no se puede gastar, asi que ahi el termino de
+  bolsillo **no se va: cambia de signo**, de sumar lo asignado a restarlo.
+  Quitarlo a secas deja el efectivo disponible igual al saldo del banco, que lo
+  sobrestima exactamente en lo comprometido — el mismo error que se esta
+  quitando del patrimonio, en la otra direccion y sobre la otra cifra.
+
+**Y hoy ya esta mal, no solo despues de la retirada.** Con el sumando en cero, la
+posicion de efectivo ya vale hoy el saldo del banco. La retirada no introduce el
+error: lo vuelve permanente si la resta no viaja con ella. Por eso los dos van en
+el mismo commit.
+
+**Matiz sobre el peligro, y reduce el que esta decision declaraba.** Restar lo
+comprometido **no exige** reapuntar la lectura del conjunto de cuentas de bolsillo
+al ledger de asignaciones, que es la maniobra peligrosa que esta decision senala.
+Son dos consultas distintas sobre las mismas filas y solo una es peligrosa:
+
+| pliegue | sobre que | que da | veredicto |
+|---|---|---|---|
+| por bolsillo, sumado al banco | `pockets` | lo comprometido, contado dos veces al sumarlo a un saldo que ya lo contiene | **es el peligro** |
+| por cuenta de origen, restado del banco | cuentas elegibles | lo que de ese saldo no se puede gastar | **es lo que hace falta** |
+
+Y el segundo **ya existe servido**: `accountAllocationService.js` publica por
+cuenta lo asignado, el efectivo sin asignar y si la cuenta esta sobreasignada,
+sobre el mismo conjunto elegible (`bank`, `cash`) que declara la seccion 3bis del
+catalogo. Es una importacion de servicio desde el read path de cuentas, no una
+llamada a un endpoint de bolsillos ni una consulta nueva — que es literalmente lo
+que 3bis pidio: **una cifra de bolsillo en el overview se pliega sobre cuentas,
+nunca sobre bolsillos.**
+
+**Segunda cosa que hay que arreglar en la misma cifra.** El saldo de banco del que
+sale la posicion de efectivo se toma del conjunto de `overviewAccountRepository.js:62`,
+que enumera cuatro tipos y **no incluye `cash`**, contra la decision que dice que
+toda formula que nombre banco incluye efectivo. La posicion de efectivo esta mal
+en dos direcciones a la vez: le falta el efectivo y le sobra lo comprometido.
+
+Orden final:
+
+1. **Patrimonio y posicion de efectivo, en un commit** (`makeHeroSection.js:51-58`).
+   Del patrimonio se va el termino; la posicion de efectivo se reconstruye. Es el
+   unico paso que puede hacer dano callado si se hace a medias, y **por dentro
+   tiene orden**, detallado justo debajo.
+2. **Las metas de ahorro se reescriben** contra `pockets` y `pocket_allocations`
+   (`overviewPageRepository.js:50-58`). Dos restricciones, las dos del dueno del
+   modulo: se suma **el importe en moneda contable, nunca el original** —el
+   original es metadato de origen y sumarlo mezcla monedas—, y se piden **suma de
+   meta y suma de asignado y nada mas**: ni nivel, ni ritmo, ni linea de plan. Esas
+   ya se calculan una vez en el servidor para el tablero, y derivarlas por segunda
+   vez de las mismas filas es el defecto que el clasificador se escribio para
+   evitar.
+3. **La tarjeta y la serie de bolsillo se retiran** del despachador de dominios y
+   del servicio de pagina, junto con el conjunto de cuentas que solo ellas usan.
+
+### El paso 1 por dentro — no se suma un saldo y se le resta lo comprometido
+
+**No se calcula un saldo de banco para restarle despues lo comprometido.** Se suma
+directamente el **efectivo sin asignar** que el modulo de bolsillos ya publica por
+cuenta: es el saldo menos lo comprometido, derivado en un solo sitio, y es la misma
+cifra contra la que el servicio de asignacion valida dentro de su bloqueo de fila.
+Rehacer la resta en el overview reconstruye exactamente la deriva que ese servicio
+se escribio una vez para evitar, y su cabecera lo dice con todas las letras: se
+escribe una vez porque tiene dos consumidores que no pueden discrepar. Una cifra,
+una derivacion, dos consumidores — ahora tres.
+
+**El conjunto de cuentas de esta cifra NO es el del patrimonio.** Aqui estaba la
+trampa, y es de orden: el repositorio filtra hacia abajo desde los ids que se le
+pasan (`accountAllocationRepository.js:66`), no puede anadir cuentas que el
+llamador no mando. Si el overview le pasa su enumeracion de cuatro tipos —que **no
+incluye efectivo**— las cuentas de efectivo no llegan nunca, el filtro de
+elegibilidad no tiene nada que admitir, y el efectivo disponible las sigue
+perdiendo **con aspecto de arreglado**, que es peor que perderlas a la vista.
+
+La salida no es ensanchar la enumeracion de cuatro a cinco y pasarla. **Son dos
+conjuntos que contestan dos preguntas distintas y conviene dejar de confundirlos:**
+
+| conjunto | pregunta que contesta | quien lo define |
+|---|---|---|
+| cuentas reales cuyos saldos forman el patrimonio | que poseo | el overview |
+| cuentas que tienen efectivo gastable | que puedo gastar hoy | el modulo de bolsillos: `bank` y `cash` |
+
+Confundirlos es lo que metio el tipo de cuenta retirado en el conjunto del
+patrimonio para empezar. La posicion de efectivo pide su propio conjunto de ids
+—banco y efectivo— y lo pasa al metodo por lotes, que devuelve un mapa por id en
+**una sola llamada**, no una por cuenta.
+
+### El clamp por cuenta no es opcional — corregido el 2026-09-04
+
+La version anterior de este paso decia que el termino **no** se acota en cero,
+porque el efectivo sin asignar se vuelve negativo cuando una cuenta esta
+sobreasignada y sumar los negativos es aritmeticamente correcto: el dueno tiene
+realmente menos. **Eso contradice una decision ya cerrada, y la contradice
+justamente en el caso que la decision existe para cubrir.**
+
+La seccion 3bis del catalogo define el efectivo libre como la suma de
+`MAX(saldo − asignado, 0)` sobre las cuentas elegibles, **acotada por cuenta antes
+de sumar**, y marca el clamp como obligatorio con este motivo: sin el, una cuenta
+con efectivo de sobra tapa a otra sobreasignada, y el encabezado publica efectivo
+libre que no se puede gastar sin romper un compromiso en otra parte.
+
+Las dos posturas no son dos opiniones sobre una cifra: son **dos cifras
+distintas**, y solo con alguna cuenta sobreasignada se separan.
+
+| pliegue | que contesta | cuando difiere |
+|---|---|---|
+| acotado por cuenta | cuanto puedo gastar sin romper ningun compromiso | siempre >= el otro |
+| sin acotar | saldo total menos compromisos totales | solo si alguna cuenta esta sobreasignada |
+
+**Lo que se pierde con el clamp ya esta servido al lado.** El argumento contrario
+—que el dueno realmente tiene menos— no se descarta: lo publica la otra cifra de
+la misma seccion, el **conteo de cuentas que ya no cubren lo que tienen
+comprometido**, que va junto al efectivo libre precisamente como esa senal. Y esa
+seccion explica por que es un conteo y no un monto: el deficit se enuncia en cada
+cuenta, y un total agregado de deficits se lee como una deuda que nadie tiene.
+
+Asi que la cifra que se expone va **acotada**, y el conteo viaja con ella. Lo que
+sigue en pie de la version anterior: el overview no puede imprimir un cero por una
+cuenta para la que el servicio no devolvio nada — eso es un guion, por la misma
+regla que el bloque 2 de esta propuesta cita.
+
+### Defecto nuevo, encontrado siguiendo esta cifra: dos saldos para las mismas cuentas
+
+El modulo de bolsillos **no lee** el saldo almacenado: lo reconstruye desde el
+ledger, y dice por que — la cifra que se muestra y la que el chequeo bloqueado
+exige tienen que ser el mismo numero, o el servidor rechaza un compromiso citando
+un techo que al dueno nunca se le enseno.
+
+El overview hace lo contrario: su saldo de banco suma la columna almacenada
+`ua.account_balance` (`overviewBalanceRepository.js:47`), y el propio archivo
+contempla por escrito que esa columna pueda derivar.
+
+Si el efectivo disponible se construye pidiendo la cifra al modulo de bolsillos y
+el patrimonio sigue sumando la columna almacenada, **el encabezado publica dos
+saldos de las mismas cuentas obtenidos por dos caminos distintos**, uno al lado
+del otro. Mientras no deriven coinciden y nadie lo nota; el dia que deriven, las
+dos cifras de portada dejan de reconciliar y no hay en pantalla nada que explique
+por que. Es el mismo defecto de fondo que esta decision persigue —una pregunta,
+dos derivaciones— y no lo introduce el paso 1: **lo hace visible**.
+
+**No se resuelve aqui.** Elegir cual de los dos caminos gana es una decision sobre
+el patrimonio, no sobre el efectivo disponible, y toca cuentas que este modulo no
+es el unico en leer. Queda anotada como la pregunta abierta que el paso 1 destapa,
+y es la unica que deja.
+
+### Measured 2026-09-05 — the fork is not between equals, and it is not on screen yet
+
+The inventory above was completed. Two facts, both measured, and they point in
+opposite directions from what was assumed when this passage was written.
+
+**First: reconstructing from the ledger is the majority, not the exception.** The
+by-type account balance endpoint reconstructs — every branch of it derives rather
+than reading the stored column, including those for bank, investment, debtor,
+pocket saving and category budget. The account detail path and the balance locking
+performed before a write do the same. Overview's monthly balance reader
+(`overviewBalanceRepository.js`) is the **one** reader summing the stored
+`ua.account_balance` column. So this is not a fork between two defensible
+conventions: it is one reader out of step with the rest of the codebase, and
+choosing between them is far less of a decision than this passage assumed.
+
+**Second, and it moves the urgency in the other direction: the two figures are not
+side by side today.** The Overview screen in the frontend calls the by-type
+balance endpoint five times — for income source, category budget, bank,
+investment and debtor — so **every balance the user sees on that page today is
+reconstructed from the ledger**. The new overview payload has no consumer at all:
+the frontend url configuration declares no route for it.
+
+**The consequence is worse than a visible mismatch, not better.** Nothing
+contradicts itself on screen right now. What happens instead is that the day the
+new page replaces the current one, the bank, investment and debt figures silently
+change source from derived to stored, with no visible cause and nothing on screen
+to attribute the difference to. A mismatch a user can see is a bug someone
+reports; a figure that changes when a page is swapped is a bug nobody can even
+describe.
+
+**Recommendation, now cheap enough to state plainly:** the overview monthly
+balance reader adopts the derived expression the rest of the codebase already
+shares, before the new page is wired to anything. It is one reader changing to
+match five, not a convention being chosen. Doing it while the page still has no
+consumer costs nothing and removes the silent-swap failure entirely.
+
+### Correccion a la razon 2 de la recomendacion
+
+Esta decision decia que el conteo del medio de la tarjeta **no existe** porque una
+asignacion no escribe ninguna transaccion. La primera mitad es exacta y el modulo
+la escribe en sus propias palabras: un bolsillo no tiene transacciones, porque
+ninguna asignacion movio nunca dinero (`pocketRepository.js:190`). La segunda no:
+**un conteo de filas de asignacion si existe** y esta a una consulta de distancia.
+
+El argumento correcto es otro, y es mas fuerte: meterlo en la forma compartida
+haria que **el mismo hueco signifique transacciones en cuatro tarjetas y
+asignaciones en la quinta**, que es peor defecto que un hueco vacio. La tarjeta se
+retira igual, por la razon buena.
+
+**Tercera confirmacion del dueno del modulo, sobre la serie.** El importe de una
+asignacion es un decimal con signo y con `CHECK (amount <> 0)`, asi que una
+liberacion es una fila negativa. Un pliegue de seis meses sobre esas filas oscila
+entre compromisos y liberaciones: la serie queda descartada tambien **por los
+datos**, no solo por el significado que ya le objetaba el catalogo.
+
+
+---
+
+## D53 — Overview tiene dominio de bolsillo, y lo que lleva son los indicadores globales y los compromisos globales
+
+**Decision del desarrollador, 2026-09-04.** Sus palabras: debe haber un dominio de
+bolsillo en overview, donde se manejen los indicadores globales y los compromisos
+globales.
+
+> **Procedencia, que hay que dejar escrita.** Esta decision llego a esta sesion
+> **relatada por la sesion que posee el backend de bolsillos**, no tecleada aqui.
+> Se registra porque es una decision de producto y quien la relata es quien
+> pregunto; queda pendiente de que el desarrollador la confirme en esta sesion si
+> alguna vez importa la letra exacta.
+
+### Por que esto no contradice a D52, aunque lo parezca
+
+D52 recomendaba quitar la tarjeta. **Lo que D52 rechazo no es lo que el
+desarrollador pidio**, y por eso las dos cosas se sostienen a la vez:
+
+| lo que D52 rechazo | lo que D53 pide |
+|---|---|
+| un saldo de bolsillo | el **compromiso** total, que es otra cantidad |
+| un conteo de movimientos en el hueco central de la forma compartida | conteos de metas y de estados, que si existen |
+| una serie de seis meses sobre filas de asignacion con signo | ninguna serie |
+
+Las cuatro razones de D52 se escribieron **contra la forma compartida** —total,
+conteo de movimientos y delta— y siguen siendo validas contra ella. Ninguna era
+un argumento contra que el dominio existiera.
+
+### Y coloca la cifra peligrosa donde significa lo que dice
+
+El compromiso total es exactamente la cifra que **no** puede sumarse al saldo del
+banco en el encabezado. Darle tarjeta propia es donde le corresponde: publicada
+como un compromiso, en el dominio que la posee, en vez de plegada dentro de una
+cifra de lo que el dueno posee.
+
+**Asi que el encabezado pierde el termino y la tarjeta lo gana**, y la pagina
+enuncia la cantidad **una vez, en el sitio donde quiere decir lo que dice**. Es
+mejor resultado que quitarla de la pagina, y el paso 1 de D52 no cambia ni una
+linea: de `makeHeroSection.js` sale igual.
+
+### Que hay servido para esta tarjeta hoy — todo, y desde un solo payload
+
+El tablero del modulo de bolsillos ya sirve, en una sola respuesta: el total
+comprometido, cuantas cuentas de origen lo respaldan, y —si se toma el alcance por
+mes— lo comprometido y lo liberado dentro del mes, que ya son campos separados.
+Y de indicadores: el total de meta, el progreso global, lo que resta, el exceso,
+la brecha con signo contra la linea de plan, la adherencia al calendario, y los
+conteos: los siete niveles mas fundadas, vencidas, descubiertas, cuantas tienen
+linea de plan y cuantas quedan por debajo y por encima de ella.
+
+**Es mas de lo que cabe en una tarjeta**, y ese es el problema de diseno que esta
+decision abre en vez de cerrar.
+
+**Recomendacion sobre que tres cifras lideran:** el total comprometido como cifra
+principal, el progreso contra la meta al lado, y el conteo de bolsillos que no
+llegan a su linea de plan como senal. Compromiso, posicion y lo que pide atencion
+— la misma triada que las demas tarjetas de dominio van a querer, lo que la hace
+defendible por consistencia y no solo por este dominio. El resto vive en el
+tablero, detras de la tarjeta de ruta que el desarrollador tambien pidio.
+
+**Coste de backend: cero en el modulo de bolsillos.** Todo lo de arriba esta
+servido. Lo que no existe es la llamada: Overview no invoca al tablero. Y esa
+llamada choca con una regla ya escrita —que Overview no llame a un endpoint de
+bolsillos, para no acoplar la pantalla de inicio a la disponibilidad de otro
+modulo—, asi que **la via es importar el servicio, no pedir el endpoint**, igual
+que se resolvio para el efectivo libre.
