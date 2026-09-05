@@ -304,13 +304,42 @@ cascade exists to survive — and it is also why `fixedRates` matters: had the
 GitHub provider been down too, the entry added in step 4 would have been the only
 answer.
 
-**One thing the yen exposed that the other five currencies never could.** JPY has
-no minor unit, and `currencyFormat` in `functions.ts:29-37` pins
+**One thing the yen exposed that the other five currencies never could, now
+settled.** JPY has no minor unit. `currencyFormat` pinned
 `minimumFractionDigits` and `maximumFractionDigits` at `2` for every currency, so
-a yen amount renders as `1,234.00` rather than `1,234`. The figure is right and
-the precision is false. It was left alone deliberately: the fixed `2` is there so
-a column of amounts keeps one decimal count and still adds up on screen, and
-relaxing it changes how every currency reads, not how this one does. **Open
-decision.** Any currency with a minor unit other than two — the yen, the Chilean
-peso, the Korean won, the Kuwaiti dinar with three — meets the same wall, so this
-is the next question to settle rather than a detail of the yen.
+a yen amount rendered as `1,234.00` — the figure right and the precision false.
+The decision was taken the same day, in favour of honest precision, and is
+described in the next section. **Nothing here is left to do when adding a
+currency with an unusual minor unit: the formatters read it from the currency.**
+
+---
+
+## Decimals follow the currency — decided 2026-09-05
+
+The question the yen forced: does a column of amounts keep one decimal count, or
+does each currency print the precision it actually has? **Honest precision won.**
+
+`currencyMinorUnit` in `frontend/src/fintrack/helpers/functions.ts` asks Intl how
+many decimal places a currency has rather than holding a list. Two functions
+consume it, and they are treated differently on purpose:
+
+| Function | Rule | Why |
+|---|---|---|
+| `currencyFormat` | the count **is** the currency's minor unit | every caller is rendering money in a named currency |
+| `numberFormatCurrency` | the minor unit is a **ceiling** on the `decimals` argument, applied only in the branch that has a currency | almost every caller passes `2` positionally, and a currency with no minor unit cannot carry it |
+
+**Why a ceiling and not a replacement in the second.** That function also formats
+things that are not money — an exchange rate at four decimal places, for
+instance, in `TransactionDetailModal.tsx`. Those calls pass no currency and reach
+the branch below, which is untouched. Clamping only downward means a caller can
+still ask for fewer digits and never silently gains digits it did not request.
+
+**What the old comment feared, and why it does not happen.** The fixed `2` was
+justified on the grounds that a varying decimal count stops a column of amounts
+adding up on screen. The count now varies by *currency*, not by row: every amount
+in one currency renders identically, and a column mixing currencies was never
+aligned to begin with.
+
+**Measured after the change**, at 1234.5: the five two-decimal currencies render
+exactly as before, the yen renders `￥1,235` instead of `¥1,234.00`, and a
+four-decimal exchange rate still renders `3.126,0812`.

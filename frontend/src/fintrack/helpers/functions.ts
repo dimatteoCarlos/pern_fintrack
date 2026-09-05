@@ -20,20 +20,41 @@ import {
 
 import { CURRENCY_CYCLE } from './constants';
 
+// How many decimal places a currency actually has, asked of Intl rather than
+// listed here. The dollar and the peso have two, the yen has none, the Kuwaiti
+// dinar has three. Returns 2 for a code Intl cannot resolve, which is the width
+// the backend stores.
+export function currencyMinorUnit(chosenCurrency: string): number {
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: chosenCurrency,
+    }).resolvedOptions().maximumFractionDigits;
+  } catch {
+    return 2;
+  }
+}
+
 export function currencyFormat(
   chosenCurrency = 'USD',
   number = 0,
   countryFormat = 'en-US',
 ) {
-// console.log('currency', chosenCurrency)
+  // The decimal count follows the currency, not a constant. It was pinned at 2
+  // for every currency until 2026-09-05, so a yen amount printed as 1,234.00 --
+  // a precision the yen does not have. The figure was right and the reading was
+  // false.
+  //
+  // The column still adds up on screen, because the count varies by CURRENCY
+  // and not by row: every amount in one currency renders identically, and a
+  // column mixing currencies was never aligned to begin with.
+  const digits = currencyMinorUnit(chosenCurrency);
+
   const formatFn = new Intl.NumberFormat(countryFormat, {
     style: 'currency',
     currency: chosenCurrency,
-    // Fixed at 2, both ends. The backend stores DECIMAL(15,2), so anything
-    // less discards a cent; a floating minimum varies the decimal count from
-    // row to row and a column of amounts no longer adds up on screen.
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
   });
   return formatFn.format(number);
 }
@@ -255,12 +276,23 @@ export function numberFormatCurrency(
 
   // Si se proporciona un código de moneda y es válido, usamos ese formato
   if (currency && isValidCurrencyCode(currency)) {
+    // The currency's own minor unit is a CEILING on the requested precision,
+    // never a floor. Almost every caller here passes 2 positionally because
+    // that is the width the backend stores, but a currency with no minor unit
+    // cannot carry it -- there is no half yen -- so 2 would print a precision
+    // that does not exist. Clamping only downward means a caller never
+    // silently gains digits it did not ask for.
+    //
+    // The branch below, for a figure with no currency, is untouched: an
+    // exchange rate is not money and its decimals are the caller's choice.
+    const digits = Math.min(decimals, currencyMinorUnit(currency));
+
     const formatter = new Intl.NumberFormat(formatNumberCountry, {
       style: 'currency',
       currency,
       useGrouping: true,
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
     });
     return formatter.format(enteredNumber); // Devolvemos el número formateado como moneda
   }

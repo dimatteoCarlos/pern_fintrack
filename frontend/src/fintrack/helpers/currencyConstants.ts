@@ -50,13 +50,10 @@ export const CURRENCY_OPTIONS: Record<CurrencyType, string> = {
  cop: 'es-CO',
  ves: 'es-VE',
  mxn: 'es-MX',
- // The yen has no minor unit, and this locale alone does not express that:
- // currencyFormat in functions.ts pins minimumFractionDigits and
- // maximumFractionDigits at 2 for every currency, so a yen amount renders as
- // 1,234.00 rather than 1,234. The figure is right and the precision is false.
- // Open decision, deliberately not resolved here — the fixed 2 is there so a
- // column of amounts keeps one decimal count, and relaxing it is a change to
- // how every currency reads, not to how this one does.
+ // The yen has no minor unit, and this locale expresses that on its own —
+ // 'ja-JP' formats 1234.5 as ￥1,235. currencyFormat used to override it with a
+ // fixed 2; since 2026-09-05 it reads the minor unit from the currency, so
+ // nothing here needs a special case.
  jpy: 'ja-JP',
 };
 
