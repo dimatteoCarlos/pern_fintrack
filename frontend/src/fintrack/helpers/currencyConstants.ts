@@ -25,6 +25,7 @@ export const SUPPORTED_CURRENCIES: CurrencyType[] = [
  'cop',
  'ves',
  'mxn',
+ 'jpy',
 ];
 
 // Circular order for the currency badge toggle. Deliberately NOT the order of
@@ -36,6 +37,7 @@ export const CURRENCY_CYCLE: CurrencyType[] = [
  'eur',
  'ves',
  'mxn',
+ 'jpy',
 ];
 
 // The locale each currency is formatted under. A locale, not a currency code —
@@ -48,6 +50,14 @@ export const CURRENCY_OPTIONS: Record<CurrencyType, string> = {
  cop: 'es-CO',
  ves: 'es-VE',
  mxn: 'es-MX',
+ // The yen has no minor unit, and this locale alone does not express that:
+ // currencyFormat in functions.ts pins minimumFractionDigits and
+ // maximumFractionDigits at 2 for every currency, so a yen amount renders as
+ // 1,234.00 rather than 1,234. The figure is right and the precision is false.
+ // Open decision, deliberately not resolved here — the fixed 2 is there so a
+ // column of amounts keeps one decimal count, and relaxing it is a change to
+ // how every currency reads, not to how this one does.
+ jpy: 'ja-JP',
 };
 
 const currencyNames = new Intl.DisplayNames(['en'], { type: 'currency' });

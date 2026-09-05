@@ -211,7 +211,7 @@ export type PocketsToRenderType = {
 //----------------------------------
 export type StatusType = boolean;
 
-export type CurrencyType = 'usd' | 'cop' | 'eur'| 'ves' | 'mxn';
+export type CurrencyType = 'usd' | 'cop' | 'eur'| 'ves' | 'mxn' | 'jpy';
 
 export type DebtorType = 'debtor' | 'lender';
 

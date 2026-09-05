@@ -57,6 +57,10 @@ export const fixedRates = {
   cop: 3500,
   ves: 820,
   mxn: 17,
+  // Yen per dollar. Approximate by design, like every entry here: this provider
+  // answers only when the four above it have failed, and it is a floor rather
+  // than a figure anyone trades on.
+  jpy: 156,
   // Placeholder (overridden by projection in fetchAllRates/fetchRate)
 };
 

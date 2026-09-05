@@ -33,8 +33,11 @@ export {
  FX_STATIC_FALLBACK_TTL_MS,
 };
 
-// List of supported currencies (can be extended later)
-export const SUPPORTED_CURRENCIES = ['usd', 'eur', 'cop', 'ves', 'mxn'];
+// The currencies the API accepts. Eleven call sites read this list, and two of
+// them are request validators, so this constant — not the currencies row — is
+// what lets a caller name a currency. Every code here needs a row in currencies
+// and an entry in fixedRates.
+export const SUPPORTED_CURRENCIES = ['usd', 'eur', 'cop', 'ves', 'mxn', 'jpy'];
 
 // The currency an official national source publishes for. Its historical arm
 // asks for a whole range and stores one row per validity, so it is also what

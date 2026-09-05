@@ -1,12 +1,12 @@
 # Adding a foreign currency for FX conversion
 
-Written 2026-09-05, measured against `main`. Every file, symbol and line named
-below was read, not inferred. The application supports five currencies today —
-`usd`, `eur`, `cop`, `ves` and `mxn` — and this document lists every place a
-sixth has to be declared, naming the actual identifiers to edit, in the order the
-work has to happen.
+Written 2026-09-05, measured against `main` and then exercised the same day by
+adding the Japanese yen — the worked example at the foot of this document. Every
+file, symbol and line named below was read, not inferred. The application
+supports six currencies today: `usd`, `eur`, `cop`, `ves`, `mxn` and `jpy`.
 
-**Read this first.** Adding a currency is one row in `currencies`, one entry in
+**Read this first.** Adding a currency is one row in `currencies` written twice —
+once in a migration and once in the boot seed — one entry in
 `SUPPORTED_CURRENCIES` on the server, one entry in `fixedRates`, and four
 declarations in the client. Exactly one of them is irreversible.
 
@@ -60,12 +60,27 @@ one has and has recorded a movement, the money tables refuse the delete — but 
 user who selected it and recorded nothing has their `currency_id` nulled without
 a word. Say this in the migration's own comment.
 
+**The boot path seeds the same rows, and moves in the same commit.**
+`tblCurrencies` in `backend/src/db/run_time_db_init/populateDB.js:114-133` holds
+the catalog as a `currenciesValues` array and writes it when the database is
+built at runtime instead of through the migration chain. Add the currency there
+too, with the same id and the same name.
+
+**And `npm run db:parity` catches it if you forget.** `schemaParity.js:45-46`
+names `currencies` in `SEEDED_CATALOGS` with all three of its columns, and the
+check builds a database by each path and compares the *rows*, not only the
+schema. So a missing boot seed fails the check rather than reporting green.
+
+Do not take the opposite claim in `028_align_currency_names.sql`'s comment as
+current — it says the parity check cannot see row divergence, which was true when
+that migration was written and has since stopped being true. It stands as the
+historical record of why 028 exists.
+
 **What you do NOT touch here.** `backend/src/db/run_time_db_init/createTables.js`
-and `backend/src/db/migrations/schemaParity.js` describe the *columns* of
-`currencies` — `schemaParity.js` lists them literally as `['currency_id',
-'currency_code', 'currency_name']`. A new row changes no column, so neither file
-is in scope. They matter only if a future change adds a column, and then both
-must move together or the parity check fails.
+and `schemaParity.js` itself. `SEEDED_CATALOGS` names the *columns* to compare,
+literally `['currency_id', 'currency_code', 'currency_name']`, and a new row
+changes no column. Both files matter only if a future change adds a column to
+`currencies`, and then they move together or the parity check fails.
 
 ---
 
@@ -94,6 +109,16 @@ The single highest-value edit in the procedure. Eleven call sites read it:
 Those last two are why this constant, not the database row, is what makes the
 currency real to the application: the row lets amounts reference it, this
 constant lets a request name it.
+
+**The profile validator now reads it too, and did not until 2026-09-05.**
+`currencySchema` in `backend/src/validation/zod/userSchemas.js` held its own
+`z.enum` of five codes, with the list written a second time inside its error
+message. The profile is the one place an owner chooses a currency at all, so a
+currency added everywhere else was still refused at the only endpoint that sets
+it. It was rewritten to the `.refine()` shape `budgetValidators.js` and
+`pocketValidators.js` already use, so the file leaves this procedure
+permanently. Nothing to edit there when adding a currency — verify it, do not
+change it.
 
 **A naming hazard to know about, not to fix.** `bancaDItaliaProvider.js:113`
 declares its own module-scoped `SUPPORTED_CURRENCIES`, listing the four
@@ -241,13 +266,51 @@ Verified with `tsc --noEmit`: clean, exit code 0.
 | # | Step | Reversible | Blocks |
 |---|---|---|---|
 | 1 | Migration inserting the `currencies` row | **no** | everything |
-| 2 | Add the code to `SUPPORTED_CURRENCIES` in `fxConfig.js` | yes | steps 3-5 |
-| 3 | Add the entry to `fixedRates` in `getFallbackRate.js` | yes | conversion when providers fail |
-| 4 | Restart the backend so `loadCurrencyCatalog()` re-reads | yes | catalog performance |
-| 5 | Widen `CurrencyType`, then the four client lists | yes | user-facing selection |
-| 6 | Confirm a real rate arrives from an aggregator | — | the whole feature |
+| 2 | Add the same row to `tblCurrencies` in `populateDB.js` | yes | the boot build path only |
+| 3 | Add the code to `SUPPORTED_CURRENCIES` in `fxConfig.js` | yes | steps 4-6 |
+| 4 | Add the entry to `fixedRates` in `getFallbackRate.js` | yes | conversion when providers fail |
+| 5 | Restart the backend so `loadCurrencyCatalog()` re-reads | yes | catalog performance |
+| 6 | Widen `CurrencyType`, then the four client lists | yes | user-facing selection |
+| 7 | Confirm a real rate arrives from an aggregator | — | the whole feature |
 
-**Step 6 is the acceptance test, not a formality.** Steps 1 through 5 make the
-application willing to accept the currency. Only a rate actually arriving makes
-it usable, and nothing in the code guarantees an aggregator covers a given code.
-Confirm it before declaring the work done.
+**The last step is the acceptance test, not a formality.** Steps 1 through 6 make
+the application willing to accept the currency. Only a rate actually arriving
+makes it usable, and nothing in the code guarantees an aggregator covers a given
+code. Confirm it before declaring the work done.
+
+---
+
+## Worked example — the Japanese yen, added 2026-09-05
+
+Run against `main`. Seven files, and the two the guide was missing are the two
+this exercise found.
+
+| Step | File | What was written |
+|---|---|---|
+| 1 | `030_add_jpy_currency.sql` | `currency_id` 6, `'jpy'`, `'Japanese Yen'` |
+| 2 | `populateDB.js:135` | the same row in `currenciesValues` |
+| 3 | `fxConfig.js:40` | `'jpy'` appended to `SUPPORTED_CURRENCIES` |
+| 4 | `getFallbackRate.js` | `jpy: 156` in `fixedRates` |
+| 6 | `types.ts:214` | `'jpy'` added to the `CurrencyType` union |
+| 6 | `currencyConstants.ts` | `SUPPORTED_CURRENCIES`, `CURRENCY_CYCLE`, and `CURRENCY_OPTIONS` mapping `jpy` to `'ja-JP'` |
+| 6 | `functions.ts:205` | `'JPY'` moved out of the commented block into `validCurrencyCodes` |
+| — | `userSchemas.js` | **not edited** — rewritten to derive from `SUPPORTED_CURRENCIES`, so it never needs editing again |
+
+**The acceptance test passed.** `fetchRatesFromProviders('usd', [...,'jpy'])`
+returned `156.2340721` from `githubFallbackProvider`, the fifth entry in the
+cascade, with no new routing code. The three keyed aggregators above it declined
+for want of an API key in this environment, which is exactly the condition the
+cascade exists to survive — and it is also why `fixedRates` matters: had the
+GitHub provider been down too, the entry added in step 4 would have been the only
+answer.
+
+**One thing the yen exposed that the other five currencies never could.** JPY has
+no minor unit, and `currencyFormat` in `functions.ts:29-37` pins
+`minimumFractionDigits` and `maximumFractionDigits` at `2` for every currency, so
+a yen amount renders as `1,234.00` rather than `1,234`. The figure is right and
+the precision is false. It was left alone deliberately: the fixed `2` is there so
+a column of amounts keeps one decimal count and still adds up on screen, and
+relaxing it changes how every currency reads, not how this one does. **Open
+decision.** Any currency with a minor unit other than two — the yen, the Chilean
+peso, the Korean won, the Kuwaiti dinar with three — meets the same wall, so this
+is the next question to settle rather than a detail of the yen.

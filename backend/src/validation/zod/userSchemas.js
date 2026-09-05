@@ -3,6 +3,12 @@
 // All validations based on ACTUAL database schema limits
 import { z } from 'zod';
 import { isIanaTimeZone } from '../../utils/fintrackUtils/date-utils/ianaTimeZone.js';
+// The one list of codes the FX state can price, imported rather than repeated —
+// the same treatment budgetValidators.js and pocketValidators.js already give
+// it. This file held its own copy of five codes, so a currency added everywhere
+// else was still refused here, and the profile was the one place an owner
+// chooses a currency at all.
+import { SUPPORTED_CURRENCIES } from '../../fintrack_api/services/fx_services/core/fxConfig.js';
 // ======================================
 // 🔤 CONSTANTS BASED ON DATABASE SCHEMA
 // ======================================
@@ -46,17 +52,16 @@ export const sanitizeText = (text) => {
 /**
  * Normalizes currency code to lowercase
  */
-export const currencySchema = z.enum(['usd', 'cop', 'eur', 'ves', 'mxn'], {
-  error: (issue, ctx) => {
-    if (issue.code === 'invalid_enum_value') {
-      return {
-        message: `Currency "${issue.received}" is not supported. Available options: usd, cop, eur, ves, mxn`
-      };
-    }
-    return { message: ctx.defaultError };
-  }
-})
-.optional();
+// Accepts exactly the codes the FX state can price, and prints them in the
+// error rather than a second copy of the list. Lowercase-only, as the enum this
+// replaces was: the client sends the code lowercased and the catalog stores it
+// that way.
+export const currencySchema = z
+  .string()
+  .refine((code) => SUPPORTED_CURRENCIES.includes(code), {
+    message: `Currency is not supported. Available options: ${SUPPORTED_CURRENCIES.join(', ')}`,
+  })
+  .optional();
 
 // ==========================
 // 🌍 TIME ZONE FIELD SCHEMA

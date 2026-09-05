@@ -1,0 +1,86 @@
+-- 030_add_jpy_currency.sql
+--
+-- Adds the Japanese yen to the currency catalog as currency_id 6.
+--
+-- WHY A MIGRATION AND NOT A SCHEMA CHANGE
+--
+-- No table that holds money knows which currencies exist. Every stored amount
+-- carries the same audit pair -- original_amount, original_currency_id,
+-- exchange_rate, exchange_rate_source, exchange_rate_timestamp and
+-- exchange_rate_target_currency_id -- and every currency column in it is a
+-- foreign key to currencies(currency_id). A new currency therefore needs a row
+-- those keys can point at, and nothing else: no column moves on transactions,
+-- pockets, pocket_allocations, the budget allocations or the debtor values.
+--
+-- WHY THE ID IS WRITTEN OUT
+--
+-- currency_id is declared INT PRIMARY KEY in 001_initial_migration.sql with no
+-- SERIAL, so every id in this catalog was assigned by hand: 1 usd, 2 eur, 3 cop,
+-- 4 ves, 5 mxn, seeded by 005_base_catalogs.sql. 6 is the next one and it is
+-- stated here rather than generated. realignCatalogSequences in populateDB.js
+-- covers catalogs that do own a sequence; this one does not.
+--
+-- THE NAME
+--
+-- 'Japanese Yen' is what Intl.DisplayNames(['en'], { type: 'currency' })
+-- returns for JPY, which is the string the frontend renders in every dropdown
+-- and label. 028_align_currency_names.sql established that the stored name is
+-- chosen to match what the interface already displays, so the column and the
+-- screen cannot contradict each other. 12 characters, well inside the
+-- VARCHAR(50) that 027_widen_currency_name.sql set.
+--
+-- THE BOOT PATH MOVES IN THE SAME COMMIT
+--
+-- populateDB.js:114-135 seeds these same rows when the database is built at
+-- runtime instead of through the migration chain. Leaving it behind would make
+-- the two build paths seed different catalogs: five currencies on one, six on
+-- the other.
+--
+-- npm run db:parity catches that. schemaParity.js:45-46 names currencies in
+-- SEEDED_CATALOGS with all three of its columns and compares the rows, not only
+-- the schema, so the check fails on a missing seed rather than reporting green.
+-- 028_align_currency_names.sql says the opposite in its own comment; that was
+-- true when 028 was written and the check has been extended since. The comment
+-- there is left as the historical record it is.
+--
+-- ---------------------------------------------------------------------------
+-- UP
+-- ---------------------------------------------------------------------------
+--
+-- Idempotent in the shape 008_update_currencies.sql uses, so a re-run is a no-op
+-- rather than a unique violation on currency_code.
+INSERT INTO currencies (currency_id, currency_code, currency_name)
+VALUES (6, 'jpy', 'Japanese Yen')
+ON CONFLICT (currency_id) DO UPDATE SET
+ currency_code = EXCLUDED.currency_code,
+ currency_name = EXCLUDED.currency_name;
+
+-- ---------------------------------------------------------------------------
+-- DOWN
+-- ---------------------------------------------------------------------------
+--
+-- Run manually, and read this before running it. The foreign keys pointing at
+-- currencies(currency_id) are NOT uniform:
+--
+--   currency_id, original_currency_id and exchange_rate_target_currency_id on
+--   every money table, and base_currency_id / target_currency_id on
+--   exchange_rates and daily_exchange_rates, are ON DELETE RESTRICT. They fail
+--   loudly, which is the correct outcome.
+--
+--   users.currency_id is ON DELETE SET NULL. It does not fail. It silently
+--   blanks the accounting currency of every user who selected the yen.
+--
+-- So the rollback is safe only while no user has adopted it. A user who
+-- selected it and recorded a movement is protected by the money tables; a user
+-- who selected it and recorded nothing is not protected by anything. Measure
+-- first:
+--
+--   SELECT user_id FROM users WHERE currency_id = 6;
+--
+-- and restore those users to their previous currency by hand afterwards, or do
+-- not run this at all.
+--
+-- BEGIN;
+-- DELETE FROM currencies WHERE currency_id = 6;
+-- DELETE FROM migrations WHERE filename = '030_add_jpy_currency.sql';
+-- COMMIT;

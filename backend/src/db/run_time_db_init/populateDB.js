@@ -131,6 +131,8 @@ export async function tblCurrencies(client = pool) {
     { currency_id: 4, currency_code: 'ves', currency_name: 'Venezuelan Bolívar' },
 
     { currency_id: 5, currency_code: 'mxn', currency_name: 'Mexican Peso' },
+
+    { currency_id: 6, currency_code: 'jpy', currency_name: 'Japanese Yen' },
   ];
 
   try {
