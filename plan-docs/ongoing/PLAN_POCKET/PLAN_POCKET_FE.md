@@ -1713,3 +1713,73 @@ written and never read (§1.2, §9.3); the four cross-module fields absent rathe
 than zero outside `bank` and `cash`, with `cash` unreachable behind the account
 detail's own allowlist (§1.7); the Account Detail defect of §6.1 in full; and the
 `503` an unavailable rate should answer instead of `500`.
+
+---
+
+## Corrections applied 2026-09-04 — the hero changed what it measures
+
+The board's headline stopped reporting the lifetime goal and started reporting
+the plan. Everything below is measured in the working tree, not read off a plan.
+§9.7 carries the reasoning and the resolution of the backend requirement; this
+section records what the code now contains, and closes three descriptions that
+were never written down at all.
+
+### What shipped
+
+| what changed | where | what it does now |
+| --- | --- | --- |
+| the three tiles of the equation | `PocketBigBoxResult.tsx`, the hero's `.pocketHero__equation` | `Required to date`, `Committed to date`, `Variance`. All three count ONLY the pockets holding a plan window, and the first states how many of the board those are, so a reader cannot take them for totals about every pocket |
+| the bar's denominator | same file, `.pocketHero__progress` | committed over what the plans required by the close of the selected month. Its label names the denominator and never reads "progress" alone, because two percentages now measure different things on this board |
+| the bar's clamping | same | the FILL clamps at the track and the label states the true value, which may exceed 100. The accessible value is clamped with the true figure in `aria-valuetext`: a progress bar whose current value exceeds its maximum is invalid, and a screen reader has to hear what the sighted label says |
+| the month's movement | same, inside the committed tile | the SCOPED net, over the scheduled pockets. It sits under a balance counting exactly those, and a sub-figure drawn from a wider population is not a part of the number above it. No gross halves exist at that scope, so the word "net" carries what they used to spell out |
+| a fourth reading card | same file, first of the four | `Pocket portfolio` — the arithmetic behind the bar directly above it. Open by default, alone among the four, because the bar prints a percentage and nothing else |
+| the lifetime pair | inside that card, under a rule | `Lifetime · X committed of Y total target — N% overall progress`. The ratio is NAMED, for the same reason the bar's label is |
+| two colour tokens | `tokens.css` | the schedule axis (`--color-schedule-over`, `--color-schedule-under`), declared separately from the level scale and with the values REPEATED rather than aliased, so a change to one scale cannot move the other |
+| a glyph | `assets/pocketSvg/pulseSvg.svg` | the portfolio card's mark. A calendar was drawn first and reverted: it named the window of months, and the card's subject is the state inside it |
+
+### Three things that were built and recorded nowhere
+
+Flagged by the backend session while the plan documents were being corrected,
+and confirmed in the tree. Each is a decision a later reader would undo by
+accident, which is the only reason they are worth a table.
+
+| what exists | why it must not be undone |
+| --- | --- |
+| the month stepper's two arrows sit on the shared month selector behind an opt-in prop, defaulted off, and the pocket layout is the only one of eight call sites that passes it | the bounds stay in the component. The next screen that wants a stepper must pass the prop, never copy the bounds locally |
+| the scroll boundary is the box holding the reading cards, the toolbar and the list, and the list's own overflow was REMOVED rather than nested inside it | nesting it back is the obvious "fix", and it is what would stop the toolbar staying put. The create control sits outside the scroller so the page's primary action never scrolls away |
+| the hero glyph has its own size token and was stepped down | any statement that this is blocked on a token that does not exist is stale |
+
+**The consequence, also unrecorded:** with the summary held above a scroller, the
+two height-degradation blocks became load-bearing. A short screen with an
+uncollapsed summary leaves nothing to scroll, so both need checking at the two
+heights they guard rather than being assumed.
+
+### Two facts that left the screen
+
+| fact | where it went |
+| --- | --- |
+| the furthest deadline on the board | to the overview module, ruled 2026-09-04. It is not lost and it is not homeless — it explains none of the hero's three amounts, and the overview reading is where it belongs. Pending there |
+| the count of funding accounts, which shared a slot in the committed tile | it survives in the heading of the funding accounts card, which is the same fact with a door on it |
+
+### The two rules that decide what a plan has required
+
+Neither was written down anywhere, which is why the question could be asked at
+all: the first tile read zero on a live board and nothing on screen explained it.
+
+- **The creation month does not count.** A plan made on the 20th did not have
+  that month to fund. A window holding no full calendar month publishes no line
+  at all, and the four per-row schedule values are null together.
+- **The current month counts as due.** Ruled 2026-09-04, replacing the earlier
+  rule that took only the closed months. The two interact and cannot be read
+  separately: a pocket created in the month being viewed still reads zero,
+  because the distance from its start month to the evaluation month is zero.
+  That is the creation-month rule holding, not the ruling failing.
+
+**Open:** whether the creation-month rule stays as it is. It is a second
+decision, it was not part of the ruling above, and it belongs to the backend.
+
+### Still not done, and it is the last item on the unit's own verification list
+
+The page's frame at four viewport heights — 915, 740, 735 and 568 — with the
+summary in view, the list scrolling under it and the create control reachable at
+every one. Nobody has run it.
