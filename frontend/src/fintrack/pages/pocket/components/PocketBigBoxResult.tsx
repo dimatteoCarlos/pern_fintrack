@@ -320,8 +320,12 @@ function PocketBigBoxResult({
       )}
      </div>
 
-     <div className='pocketHero__tile pocketHero__tile--committed'>
-      <span className='pocketHero__label'>Committed to date</span>
+     <div className='pocketHero__tile pocketHero__tile--allocated'>
+      {/* "Allocated" and not "committed": this is a BALANCE, how much stands
+          against the plans right now. Commit and release are the two acts that
+          move it, and they keep the word — the movement line below still reads
+          "net committed", correctly. */}
+      <span className='pocketHero__label'>Allocated to date</span>
       <span className='pocketHero__value'>
        {amount(committedOnPlan)}
       </span>
@@ -419,7 +423,7 @@ function PocketBigBoxResult({
      <div
       className='pocketHero__bar'
       role='progressbar'
-      aria-label={`Committed against what the plans required${scheduleThrough}`}
+      aria-label={`Allocated against what the plans required${scheduleThrough}`}
       aria-valuemin={0}
       aria-valuemax={100}
       // Clamped, unlike the label beside it. A progress bar whose current value
@@ -581,7 +585,7 @@ export function PocketBoardReadings() {
             served percentage is unclamped: a reader divides these two by eye,
             and a clamped figure would disagree with the division. */}
         <b className='pocketHero__num'>{amount(scheduledPocketsAllocated)}</b>{' '}
-        committed of{' '}
+        allocated of{' '}
         <b className='pocketHero__num'>{amount(totalScheduledByNow)}</b>{' '}
         required &middot;{' '}
         {/* Both counts print. The complement is never recovered by subtraction:
@@ -621,12 +625,12 @@ export function PocketBoardReadings() {
 
        <p className='pocketHero__lifetime'>
         {/* The POPULATION is declared, as the sentence above declares its own.
-            "committed" appears twice in this card against two different totals
+            "allocated" appears twice in this card against two different totals
             — the scheduled pockets above, every pocket here — and a rule alone
             does not tell a reader the universe changed under it. */}
         Lifetime &middot; all{' '}
         <b className='pocketHero__num'>{summary.pocketCount}</b> pockets
-        &middot; {amount(summary.totalAllocated)} committed of{' '}
+        &middot; {amount(summary.totalAllocated)} allocated of{' '}
         {amount(summary.totalTarget)} total target &mdash;{' '}
         {/* The ratio is NAMED. Two percentages measure different things on this
             board — the bar divides by the schedule, this divides by the goals —

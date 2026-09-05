@@ -617,7 +617,7 @@ button.line__container {
    what carries the hierarchy and it is unchanged: one step apart at the
    ceiling before, one step apart after. Only the whole group got quieter. */
 .pocketHero__tile--target .pocketHero__value,
-.pocketHero__tile--committed .pocketHero__value {
+.pocketHero__tile--allocated .pocketHero__value {
  font-size: clamp(var(--font-size-sm), 5.3cqi, var(--font-size-lg));
  line-height: 1.1;
 }
