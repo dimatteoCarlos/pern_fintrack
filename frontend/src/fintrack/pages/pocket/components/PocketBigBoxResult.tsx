@@ -447,11 +447,11 @@ export function PocketBoardReadings() {
  // questions, so opening the partition is not a request for the next deadline.
  // Component state and not the URL, unlike the list's own filters — a card left
  // open is a glance, not a reading someone returns to or shares.
- // Open by default, alone among the four. It reads the bar directly above it,
- // which prints a percentage and nothing else — and on a board whose plans have
- // required nothing yet the bar prints no percentage either, so a closed card
- // would leave the whole schedule unexplained on a first visit.
- const [isPortfolioOpen, setIsPortfolioOpen] = useState(true);
+ // Closed like the other three. It was open by default so the arithmetic sat
+ // next to the bar, which prints a percentage and nothing else; measured at
+ // 360px wide, that cost the whole toolbar below 745px of viewport height and
+ // opened the board on four cards and no pocket. The user opens it.
+ const [isPortfolioOpen, setIsPortfolioOpen] = useState(false);
  const [isStatusOpen, setIsStatusOpen] = useState(false);
  const [isTargetOpen, setIsTargetOpen] = useState(false);
 

@@ -1732,7 +1732,7 @@ were never written down at all.
 | the bar's denominator | same file, `.pocketHero__progress` | committed over what the plans required by the close of the selected month. Its label names the denominator and never reads "progress" alone, because two percentages now measure different things on this board |
 | the bar's clamping | same | the FILL clamps at the track and the label states the true value, which may exceed 100. The accessible value is clamped with the true figure in `aria-valuetext`: a progress bar whose current value exceeds its maximum is invalid, and a screen reader has to hear what the sighted label says |
 | the month's movement | same, inside the committed tile | the SCOPED net, over the scheduled pockets. It sits under a balance counting exactly those, and a sub-figure drawn from a wider population is not a part of the number above it. No gross halves exist at that scope, so the word "net" carries what they used to spell out |
-| a fourth reading card | same file, first of the four | `Pocket portfolio` — the arithmetic behind the bar directly above it. Open by default, alone among the four, because the bar prints a percentage and nothing else |
+| a fourth reading card | same file, first of the four | `Pocket portfolio` — the arithmetic behind the bar directly above it. Closed by default like the other three; the user opens it |
 | the lifetime pair | inside that card, under a rule | `Lifetime · X committed of Y total target — N% overall progress`. The ratio is NAMED, for the same reason the bar's label is |
 | two colour tokens | `tokens.css` | the schedule axis (`--color-schedule-over`, `--color-schedule-under`), declared separately from the level scale and with the values REPEATED rather than aliased, so a change to one scale cannot move the other |
 | a glyph | `assets/pocketSvg/pulseSvg.svg` | the portfolio card's mark. A calendar was drawn first and reverted: it named the window of months, and the card's subject is the state inside it |
@@ -1816,10 +1816,10 @@ The toolbar sitting inside the scroller is the recorded decision, not a defect,
 so none of this fails an assertion. What it does mean is that on a phone under
 810px the board opens on four cards and no pocket at all.
 
-**Recommendation, not applied:** close the portfolio card by default, like the
+**Applied 2026-09-04:** the portfolio card is now closed by default, like the
 other three. It was opened by default because the bar above it prints a
-percentage and nothing else, so the arithmetic belongs next to it — that reason
-holds on a tall screen and costs the whole toolbar on a short one. A
-height-conditional default would work too and is worse: it puts a fourth number
-(810px) beside height bands of 735 and 568, and makes the same card open on one
-phone and shut on another for a reason the reader cannot see.
+percentage and nothing else, so the arithmetic belonged next to it — that reason
+holds on a tall screen and costs the whole toolbar on a short one. The user
+opens it. A height-conditional default was considered and rejected: it puts a
+fourth number (810px) beside height bands of 735 and 568, and makes the same
+card open on one phone and shut on another for a reason the reader cannot see.
