@@ -609,7 +609,13 @@ export function PocketBoardReadings() {
        </p>
 
        <p className='pocketHero__lifetime'>
-        Lifetime &middot; {amount(summary.totalAllocated)} committed of{' '}
+        {/* The POPULATION is declared, as the sentence above declares its own.
+            "committed" appears twice in this card against two different totals
+            — the scheduled pockets above, every pocket here — and a rule alone
+            does not tell a reader the universe changed under it. */}
+        Lifetime &middot; all{' '}
+        <b className='pocketHero__num'>{summary.pocketCount}</b> pockets
+        &middot; {amount(summary.totalAllocated)} committed of{' '}
         {amount(summary.totalTarget)} total target &mdash;{' '}
         {/* The ratio is NAMED. Two percentages measure different things on this
             board — the bar divides by the schedule, this divides by the goals —
