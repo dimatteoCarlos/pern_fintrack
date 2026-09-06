@@ -19,6 +19,13 @@
 // 3 would return 0 for every user and look like an account nobody funded.
 
 import { toAmount } from '../../budget_services/core/money.js';
+import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+
+// NUMERIC, not FLOAT: capitalContributed and realizedPnl are NUMERIC sums of the
+// same ledger, and the card publishes capitalContributed + realizedPnl =
+// ledgerBalance. A float anchor breaks that identity by a cent and the card has no
+// way to explain the difference.
+const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 
 // V1-V5 in one statement.
 //
@@ -39,7 +46,7 @@ import { toAmount } from '../../budget_services/core/money.js';
 // column requires: `NULL NOT LIKE ...` is NULL, and a WHERE drops it.
 const INVESTMENT_FIGURES_QUERY = `
   WITH accounts AS (
-    SELECT ua.account_id, ua.account_balance
+    SELECT ua.account_id, ${DERIVED_BALANCE} AS account_balance
     FROM user_accounts ua
     WHERE ua.account_id = ANY($1::int[])
   ),

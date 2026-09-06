@@ -19,8 +19,18 @@
 // would end somewhere other than the figure the card publishes. Walking back
 // from the current balance cannot drift: the last point of the series IS the
 // card's total, by construction, which is what §4.2 asks for.
+//
+// The anchor the walk-back starts from is itself derived from the ledger rather
+// than read from user_accounts.account_balance, so neither end of the series
+// rests on a cache. Measured on fintrack_dev before the substitution: stored and
+// derived agree on all 31 accounts, so the change is numerically inert.
 
 import { toAmount } from '../../budget_services/core/money.js';
+import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+
+// NUMERIC, not FLOAT: this figure is the anchor a summed NUMERIC amount is
+// subtracted from, and a float anchor makes every month of the series inexact.
+const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 
 // One row per calendar month in the window, each carrying the balance as it
 // stood at the END of that month.
@@ -44,7 +54,7 @@ const MONTHLY_BALANCE_QUERY = `
     b.current_balance - COALESCE(SUM(t.amount), 0) AS total_amount
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
   CROSS JOIN (
-    SELECT COALESCE(SUM(ua.account_balance), 0) AS current_balance
+    SELECT COALESCE(SUM(${DERIVED_BALANCE}), 0) AS current_balance
     FROM user_accounts ua
     WHERE ua.account_id = ANY($1::int[])
   ) b

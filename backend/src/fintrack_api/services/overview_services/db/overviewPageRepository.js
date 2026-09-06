@@ -20,6 +20,11 @@
 
 import { toAmount } from '../../budget_services/core/money.js';
 import { extractNoteFromDescription } from '../../../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
+import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+
+// NUMERIC, not FLOAT: netWorth and cashPosition are composed from this figure plus
+// the domain cards (D27), so it has to agree with them to the cent.
+const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 
 // The bank balance, slack excluded.
 //
@@ -27,8 +32,18 @@ import { extractNoteFromDescription } from '../../../../utils/fintrackUtils/tran
 // account set makes and for the same reason: the catalog leaves that type out
 // until the phase 2b probe says whether it has real writes, and this module does
 // not get to close a question the catalog holds open.
+//
+// The balance comes from the ledger, not from user_accounts.account_balance. That
+// column is a cache the money paths rewrite only for the accounts a write touches,
+// so an account nothing has written since a back-dated insert keeps a figure that
+// no longer matches its own movements. Every other balance read in the codebase
+// already derives; this module was the exception.
+//
+// Measured on fintrack_dev before the substitution: stored and derived agree on all
+// 31 accounts of every type, so the change is numerically inert and any later
+// difference is real drift the derivation caught, not the substitution moving money.
 const BANK_BALANCE_QUERY = `
-  SELECT COALESCE(SUM(ua.account_balance), 0) AS bank_balance
+  SELECT COALESCE(SUM(${DERIVED_BALANCE}), 0) AS bank_balance
   FROM user_accounts ua
   JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
@@ -47,6 +62,11 @@ const BANK_BALANCE_QUERY = `
 // No GROUP BY currency_code. That is R202, the defect this module exists to
 // replace — the dashboard's version returns whichever currency group came back
 // first. Everything is already in the accounting currency (D7).
+//
+// ua.account_balance is deliberately NOT derived here. This query joins
+// pocket_saving_accounts, which migration 020 emptied along with every legacy
+// pocket row, so it returns no rows at all and deriving a balance for none of them
+// changes nothing. It needs repointing to the plan model, not re-anchoring.
 const SAVING_GOALS_QUERY = `
   SELECT
     ua.account_balance AS balance,
