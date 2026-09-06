@@ -11,6 +11,12 @@ Three marks are used and they mean three different things:
 - **Absent** — no field. Some are computed inside the server and thrown away,
  which is worse than absent and is marked as such.
 
+**None of the three marks says whether a person can see the figure**, and that
+turned out to matter more than the distinctions above. Corrected 2026-09-05: the
+Overview screen renders three figures — net worth, income, expenses — from five
+calls to the by-type balance endpoint, and never calls the payload this document
+measures. So every *served* below means **computed and unrendered**.
+
 ---
 
 ## 1. The finding that decides the layout

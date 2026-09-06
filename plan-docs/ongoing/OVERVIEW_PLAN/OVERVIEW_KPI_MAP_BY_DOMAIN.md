@@ -7,6 +7,13 @@ of 2026-09-04; that document argues the layout, this one lists the figures.
 or on a different time base than the block claims. *Absent* — no field; where the
 server computes it and discards it, that is said, because it is worse than absent.
 
+**Read every *served* mark below as *in the payload*, never as *on screen*.**
+Corrected 2026-09-05: the Overview screen renders three figures and never calls
+this payload, so **every** figure marked served in this document is computed and
+unrendered. The distinction and its measurement are in the companion document of
+computed-versus-derivable figures; it is repeated here because a reader who opens
+only this file would otherwise read *served* as *done*.
+
 **The rule that decides the split between the two columns.** A card is a state, so
 it carries a figure, the population behind it, and a direction of travel — three
 things, and the third is what makes the first mean something. Everything that

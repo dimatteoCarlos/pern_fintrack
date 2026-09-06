@@ -12,6 +12,36 @@ KPI map.
 for. Each row names the data that makes it computable, so the row is a measurement
 and not a wish.
 
+**Neither list says anything about what a person can see.** That is a third
+question, and the section below exists because this plan spent weeks treating it
+as the same one.
+
+## The three states, and why two of them were one until 2026-09-05
+
+**Corrected on the developer's challenge.** He asked where the cash position and
+free cash came from, since neither is in the app. Both claims in this plan were
+literally true and practically misleading, and the vocabulary was the reason: a
+single mark, *served*, covered a figure the payload carries and a figure a person
+can actually see. **Measured, those are almost never the same thing here.**
+
+| state | what it means | how to check it |
+|---|---|---|
+| **on screen** | a person using the app sees it | a component renders it |
+| **computed, unrendered** | some endpoint returns it and nothing displays it | the field exists; no component reads it |
+| **specified only** | a plan document defines it and no code computes it | no occurrence outside `plan-docs` |
+
+**The measurement that makes this urgent rather than pedantic.** The Overview
+screen renders **three** figures — net worth, income, expenses — and gets them
+from five separate calls to the by-type account balance endpoint. It does not
+call the overview page endpoint at all; the frontend url configuration declares
+no route for it. So **every figure in the new overview payload is in the second
+state**, without exception, including the ones this plan has been calling served.
+
+The savings rate built on 2026-09-05 is in that same second state, and saying so
+is the point of this section: it is finished, correct, proven against seven cases
+— and invisible.
+
+
 ---
 
 ## The nature marks, and why every row carries one
@@ -208,7 +238,8 @@ schedule, and a zero there would claim the plans required nothing.
 |---|---|---|
 | net worth | **P** | served, and **wrong** — it adds a pocket term that is money already inside the bank balance |
 | cash position | **P** | served, and **wrong twice** — it adds the committed amount instead of subtracting it, and its account set excludes cash accounts |
-| net monthly flow — income minus expense | **F** | served, and the only header figure with no defect |
+| net monthly flow — income minus expense | **F** | computed, and the only header figure with no defect |
+| **savings rate — what share of income was kept** | **F** | **built 2026-09-05**, computed and unrendered. `null` with a notice when income is zero or negative, never `0` |
 
 ---
 
@@ -296,8 +327,8 @@ last and why it matters.
 
 | indicator | nature | the data that makes it computable |
 |---|---|---|
-| **savings rate — what share of income stayed** | **F** | income and expense for the month are **both already in the payload**. It is one division of two figures the page has already fetched |
-| savings rate over six months | **T** | both six-month series are already served |
+| ~~savings rate — what share of income stayed~~ | **F** | **BUILT 2026-09-05** — moved to List A. Computed, unrendered |
+| savings rate over six months | **T** | both six-month series are already computed |
 | net cash change over the month | **F** | the monthly balance reader produces the bank balance at two month closes |
 
 ---
@@ -318,10 +349,10 @@ and the two are different claims about the same money.
 
 Ranked by what they cost against what they answer, and all three are in List B.
 
-1. **The savings rate.** Both terms are already in the payload the page fetches.
- One division. It is the only figure the page could show today that answers
- whether the owner is getting ahead, which is the question a personal finance
- overview exists to answer.
+1. ~~**The savings rate.**~~ **DONE 2026-09-05.** Built in the hero as the rate
+ form of net monthly flow — one division over two figures the payload already
+ carried, no new query and no new input. It is now in the second state: correct
+ and invisible, like everything else in that payload.
 2. **The bank balance as its own field.** Already computed, inside the header,
  and discarded. Publishing it costs a key.
 3. **Free cash, and the count of accounts that are short.** Both terms served per
