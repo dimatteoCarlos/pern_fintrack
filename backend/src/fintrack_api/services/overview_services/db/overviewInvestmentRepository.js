@@ -20,6 +20,7 @@
 
 import { toAmount } from '../../budget_services/core/money.js';
 import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 
 // NUMERIC, not FLOAT: capitalContributed and realizedPnl are NUMERIC sums of the
 // same ledger, and the card publishes capitalContributed + realizedPnl =
@@ -68,7 +69,7 @@ const INVESTMENT_FIGURES_QUERY = `
     FROM transactions t
     WHERE t.account_id = ANY($1::int[])
       AND t.movement_type_id = 9
-      AND (t.description IS NULL OR t.description NOT LIKE 'RTA Annulment Target(%')
+      AND (t.description IS NULL OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
   )
   SELECT
     (SELECT COUNT(*) FROM accounts) AS account_count,

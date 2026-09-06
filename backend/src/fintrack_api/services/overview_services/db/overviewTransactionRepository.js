@@ -31,6 +31,7 @@
 // ZONE picks the TIMESTAMPTZ overload and converts the bound the wrong way.
 
 import { extractNoteFromDescription } from '../../../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
+import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 
 const EXPENSE_PAGE_QUERY = `
   SELECT
@@ -132,7 +133,7 @@ const PNL_PAGE_QUERY = `
   LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE tr.account_id = ANY($1::int[])
     AND tr.movement_type_id = 9
-    AND (tr.description IS NULL OR tr.description NOT LIKE 'RTA Annulment Target(%')
+    AND (tr.description IS NULL OR tr.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
   ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
@@ -144,7 +145,7 @@ const PNL_COUNT_QUERY = `
   FROM transactions tr
   WHERE tr.account_id = ANY($1::int[])
     AND tr.movement_type_id = 9
-    AND (tr.description IS NULL OR tr.description NOT LIKE 'RTA Annulment Target(%')
+    AND (tr.description IS NULL OR tr.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
 `;

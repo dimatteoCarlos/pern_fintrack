@@ -35,6 +35,7 @@
 //    and can shift a day in the driver.
 
 import { toAmount } from '../../budget_services/core/money.js';
+import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 
 // Expense: the netting is SPENT_QUERY's, verbatim
 // (budgetTransactionRepository.js:181-197) and for D20's reason. movement_type_id
@@ -110,7 +111,7 @@ const MONTHLY_PNL_QUERY = `
   LEFT JOIN transactions t
     ON t.account_id = ANY($1::int[])
    AND t.movement_type_id = 9
-   AND (t.description IS NULL OR t.description NOT LIKE 'RTA Annulment Target(%')
+   AND (t.description IS NULL OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
    AND t.transaction_actual_date >= (m.month AT TIME ZONE $4)
    AND t.transaction_actual_date <  ((m.month + INTERVAL '1 month') AT TIME ZONE $4)
   GROUP BY m.month
