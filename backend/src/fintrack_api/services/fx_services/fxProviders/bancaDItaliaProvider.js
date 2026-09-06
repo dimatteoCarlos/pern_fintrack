@@ -110,7 +110,7 @@ function noteHostOutcome(error) {
 }
 
 
-const SUPPORTED_CURRENCIES = ['cop', 'eur', 'mxn', 'ves'];
+const SUPPORTED_CURRENCIES = ['cop', 'eur', 'jpy', 'mxn', 'ves'];
 
 /**
  * Normalize a requested day to the source's calendar day, 'YYYY-MM-DD'.
