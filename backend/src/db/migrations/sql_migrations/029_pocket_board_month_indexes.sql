@@ -52,11 +52,18 @@ CREATE INDEX IF NOT EXISTS idx_pockets_user_created
  ON pockets(user_id, created_at);
 
 -- DOWN ----------------------------------------------------------------------
-
--- Fully reversible: an index holds no data of its own, so dropping both returns
--- the schema to exactly what 020 left. The board's queries stay correct without
--- them and only get slower.
-
-DROP INDEX IF EXISTS idx_pockets_user_created;
-
-DROP INDEX IF EXISTS idx_pocket_allocations_pocket_date;
+--
+-- Run manually. Fully reversible: an index holds no data of its own, so
+-- dropping both returns the schema to exactly what 020 left. The board's
+-- queries stay correct without them and only get slower.
+--
+-- Commented out, like every other DOWN block on the chain, because
+-- runMigrations.js reads the whole file and executes it as one statement.
+-- Left live, these two lines dropped the indexes the UP section had just
+-- created, inside the same transaction, and the run still reported success and
+-- still wrote the ledger row.
+--
+-- BEGIN;
+-- DROP INDEX IF EXISTS idx_pockets_user_created;
+-- DROP INDEX IF EXISTS idx_pocket_allocations_pocket_date;
+-- COMMIT;
