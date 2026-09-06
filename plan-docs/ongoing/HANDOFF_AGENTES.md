@@ -228,8 +228,18 @@ primero es decisión de producto y el segundo depende de una decisión abierta.
 >   read-only connection of 2026-09-03 that applied `019` through `028` and
 >   verified each one against the live database, leaving 29 ledger rows. Pending
 >   is `029` and `030`.
+> - **Nothing is pending since the run of 2026-09-06.** Both files were applied
+>   and verified: 31 ledger rows closing on `030_add_jpy_currency.sql`, and both
+>   of `029`'s indexes present. Production and `sql_migrations/` hold the same
+>   chain. Recorded in `PLAN_CURRENCY_TO_PRODUCTION.md` §10.
 > - **The chain owner is the session named `backdating`.** Nobody else adds,
 >   renumbers or edits a file under `sql_migrations/`.
+> - **`feat/vercel-serverless` is deploy-only from 2026-09-06.** Nobody commits
+>   on it; it receives a merge from `main` when the backend is shipped. Until that
+>   day the branch everyone committed to was also the branch Vercel auto-deploys,
+>   so finished migration work and unfinished module work landed in the same
+>   place — and the branch did not carry the corrected `029`, which very nearly
+>   went to production in its defective form.
 >
 > The two rules of this section that **do** still stand, and that govern every
 > migration from here on: a correction is edited into the original migration and

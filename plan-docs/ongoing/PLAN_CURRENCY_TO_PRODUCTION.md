@@ -13,6 +13,10 @@ as written.
 The worked case throughout is the Japanese yen, added locally on 2026-09-05 by
 migration `030_add_jpy_currency.sql`. Nothing here is specific to it.
 
+**Executed 2026-09-06.** Route A, as recommended below. The yen is in production
+by both paths and this plan is now a record of a completed run, not a proposal.
+What it cost, and the two things that nearly broke it, are in §10.
+
 ---
 
 ## 0. The one-sentence version
@@ -34,6 +38,7 @@ two indexes.
 | Production's ledger reaches `028` | 29 rows: files `001`-`028` plus `supabase/001_production_alignment.sql` | `NEXT_SESSION.md` §2.1, measured 2026-09-03 on a read-only connection |
 | Files on disk | `001` through `030` | `sql_migrations/` |
 | **Therefore pending on production** | **`029` and `030` — two files** | derived from the two rows above |
+| ~~Pending~~ **Applied** | ledger at 31 rows closing on `030_add_jpy_currency.sql` | this session, 2026-09-06, after the run |
 
 ### Correction — what the first version of this plan got wrong
 
@@ -122,6 +127,11 @@ both Vercel projects track. If either project has auto-deployed since
 `a29f2f67`, **production is in that window right now**. Check the backend
 project's latest production deployment commit before anything else; the answer
 changes this plan from *scheduled* to *incident*.
+
+**Answered 2026-09-06: the window was open.** The backend's production
+deployment of 2026-09-05 18:21:42 postdates `a29f2f67`, which is the commit that
+put the yen into `SUPPORTED_CURRENCIES`. So the currency was offered and accepted
+while the catalog row it needs did not exist. Closed by the run recorded in §10.
 
 ---
 
@@ -400,7 +410,9 @@ only part of this document that survives the chain being fixed.
 
 ## 9. What this plan does not do
 
-- It does not apply `019` through `029` to production, or size that work.
+- It does not apply `019` through `028` to production, or size that work. Those
+ ten files were already applied on 2026-09-03. Route A applied `029` and `030`,
+ which is the whole of what this plan carries.
 - It does not change `ACCOUNTING_CURRENCY_CODE` or
  `VITE_ACCOUNTING_CURRENCY_CODE`. Adding a currency the app can *hold* is a
  catalog row; changing the currency the app *accounts in* re-denominates every
@@ -409,3 +421,69 @@ only part of this document that survives the chain being fixed.
  point at `fintrack_prod_data` or at Supabase.
 - It executes nothing against Supabase. Every step above that writes is
  authorised and run by the developer.
+
+---
+
+## 10. The run — what happened, 2026-09-06
+
+Route A, executed by this session with the developer's authorisation, against
+the production database reached through `DATABASE_URI`.
+
+**Target established before anything was written.** Twenty-nine ledger rows
+closing on `028_align_currency_names.sql`, `029` and `030` absent, five
+currencies, both `029` indexes missing, 782 transactions and 99 accounts. Two
+questions open since 2026-09-03 closed in the same reading: the alignment file
+does carry its ledger row, so the runner never tried to execute it, and
+`users.timezone` exists, so that file did what its row claims.
+
+**The signature, exactly as §5 predicts it.** Twenty-eight skips from `001` to
+`028`, then `029` and `030` each reporting `Running` and `Completed`, and
+`All migrations executed successfully`. No file below `029` reported `Running`.
+
+**Verified after.** Thirty-one ledger rows closing on `030_add_jpy_currency.sql`,
+six currencies including `6 jpy Japanese Yen`, **both `029` indexes present**,
+and 782 transactions and 99 accounts unchanged. The index count is the
+load-bearing number: the defective version of `029` would have written its ledger
+row and left the schema without them, permanently.
+
+**The provider half, which the migration does not cover.** The catalog row makes
+the yen storable; it does not make a rate reachable. `bancaDItaliaProvider.js`
+kept its own list of currencies it would serve and the yen was not on it, so
+every lookup was refused before a request went out and fell through to a 422.
+The refusal was ours, not the source's — the daily rates endpoint answers for the
+yen. Fixed in `0b602095` and verified through the app's own module, with the
+Colombian peso as a control: peso 3143.51 and yen 156.2468, both effective
+2026-09-04. A lifted gate proves the code stopped refusing; a rate proves the
+source answers.
+
+### The two things that nearly broke it
+
+**The deploy branch did not carry the fix.** The working tree was moved to
+`feat/vercel-serverless` mid-run, and none of `main`'s four database commits were
+ancestors of it. That branch still held the version of `029` whose DOWN block was
+live SQL. Running the migrator from there would have created the two indexes and
+dropped them inside the same transaction, reported success, and written the
+ledger row — after which the file can never run again. Caught by reading the file
+on disk before the run, not by reading git. **The chain runs what is on disk.**
+
+**The target could not be trusted from the file.** Three cycles of editing `.env`
+produced, in order, a pool still resolving to `fintrack_dev`, then a pool that
+failed authentication, then the real target. Each cycle was measured before
+anything was written and each was aborted on the measurement, so nothing reached
+the wrong database. The mechanism is that `dotenv` takes the **last** assignment
+of a repeated key and commented lines do not count, so enabling the production
+line does nothing while a local assignment survives below it.
+
+**The permanent test that settles it.** `fintrack_dev` carries an inert row,
+`012_backfill_budget_policies.sql`, beside the real
+`012_backfill_budget_allocations.sql`. Production does not. **Any measurement
+showing that row is `fintrack_dev`, whatever the ledger count says** — it is a
+name, not an arithmetic argument, and it cannot be misread the way a count can.
+
+### What changed as a rule
+
+`feat/vercel-serverless` is deploy-only from 2026-09-06. Nobody commits on it; it
+receives a merge from `main` when the backend is shipped. Until now the branch
+everyone committed to was also the branch Vercel auto-deploys, which is how
+finished migration work and unfinished module work came to land in the same
+place.

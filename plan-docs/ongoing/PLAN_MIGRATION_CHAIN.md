@@ -30,6 +30,14 @@ supersedes it: `plan-docs/NEXT_SESSION.md` §2.1 records a read-only connection 
 2026-09-03 that applied `019` through `028` and verified each one individually
 against the live database, leaving **29 rows**. Pending today is `029` and `030`.
 
+**Nothing is pending since 2026-09-06.** Both files were applied to production
+that day and verified against the database: 31 ledger rows closing on
+`030_add_jpy_currency.sql`, and both of `029`'s indexes present. Production and
+`sql_migrations/` now hold the same chain, so the next file written is the first
+one production will be missing. The run is recorded in
+`PLAN_CURRENCY_TO_PRODUCTION.md` §10 and the target checks it produced are in
+`db-migration-procedure.md` §5.0.
+
 **A third defect was found on 2026-09-06 and fixed**, and it is the kind this
 plan exists to prevent. `029_pocket_board_month_indexes.sql` carried its `DOWN`
 block as live SQL instead of comments, so the runner — which reads the whole file

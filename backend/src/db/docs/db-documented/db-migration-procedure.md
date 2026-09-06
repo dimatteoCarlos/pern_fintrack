@@ -47,13 +47,23 @@ two sources that already pointed that way agree with it:
   production 2026-08-27**, which is a reading of the live database and not of a
   dump.
 
-**One question is still open**, and it is worth closing on the next read-only
-connection: does the `timezone` column exist on production's `users` table? The
-alignment file's step 1 adds it with `ADD COLUMN IF NOT EXISTS`, and
-`002_accounts.sql:39` declares it inside `CREATE TABLE users` — which reaches a
-database built from zero and no other. Production's `users` predates the chain,
-so the alignment file is the only path by which it could have arrived. Every
-login query selects it.
+**Production is at `030` since 2026-09-06.** The run of that day applied the two
+files that were pending, `029_pocket_board_month_indexes.sql` and
+`030_add_jpy_currency.sql`, leaving the ledger at **31 rows**. Verified against
+the database rather than against the runner's output: six currencies including
+the yen, and both of `029`'s indexes present — that second reading is the one
+that matters, because the version of `029` in circulation until that morning
+wrote its ledger row while creating nothing. The full account is in
+`plan-docs/ongoing/PLAN_CURRENCY_TO_PRODUCTION.md` §10.
+
+**That question is closed. Measured 2026-09-06: the column exists.** It was open
+because the alignment file's step 1 adds `timezone` with `ADD COLUMN IF NOT
+EXISTS`, while `002_accounts.sql:39` declares it inside `CREATE TABLE users` —
+which reaches a database built from zero and no other. Production's `users`
+predates the chain, so the alignment file was the only path by which it could
+have arrived, and every login query selects it. The read taken immediately before
+the 2026-09-06 production run found it present, which confirms the alignment file
+did what its ledger row claims rather than merely being recorded.
 
 It exists because production was created before migrations `007` to `017` were
 written. It held the owner's data but not the structure those files add, and the
@@ -166,6 +176,31 @@ Production is Supabase. The connection string lives in `backend/.env` as
 The procedure below is what the alignment file was rehearsed against on
 2026-08-26, and what its execution has to follow. Each step exists because of
 something that can go wrong; none of them is ceremony.
+
+### 5.0 Prove which database you are about to write to
+
+Two checks, both before anything is written. The run of 2026-09-06 needed three
+attempts to reach production and each wrong target was caught here.
+
+**Identify the database by a name only one of them has, never by a count.**
+`fintrack_dev` carries an inert ledger row, `012_backfill_budget_policies.sql`,
+beside the real `012_backfill_budget_allocations.sql`. Production does not have
+it. Any reading that shows that row is `fintrack_dev`, whatever its ledger count
+says. A count can be coincidentally right; a filename cannot.
+
+The reason a wrong target is easy to reach: `dotenv` takes the **last**
+assignment of a repeated key, and commented lines do not count toward that. So
+uncommenting the production line changes nothing while a local assignment
+survives below it, and the pool goes on resolving to the local database while the
+file appears to say otherwise. A variable already present in `process.env` beats
+the file entirely, which is the safer route when one exists.
+
+**Read the migration files on disk, not the branch they came from.** The runner
+executes what `sql_migrations/` holds at that moment. On 2026-09-06 the working
+tree was on `feat/vercel-serverless`, which did not carry the corrected `029`,
+and the branch difference was invisible to every check that looked at the ledger
+rather than at the file. Confirm the pending files read the way the rehearsal
+proved them.
 
 ### 5.1 Rehearse on a copy of production data
 
