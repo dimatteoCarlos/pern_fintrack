@@ -6,7 +6,10 @@ the board the server answers"*. Lives in `plan-docs/ongoing/`, which
 modified.**
 
 Starting point: `POCKET_FE_RECONCILIATION.md`, which classified the plan's
-eighteen implementation units. This document does not repeat that classification.
+eighteen implementation units. **That document was deleted on 2026-09-06 as
+obsolete and remains in git history; the units were re-measured against the
+working tree in `plan-docs/completed/POCKET_COMPLETED.md` §5.** This document
+does not repeat that classification.
 It answers a different question: **for each of the seven endpoints, what does the
 server send, what does the frontend declare, and where do the two disagree.**
 

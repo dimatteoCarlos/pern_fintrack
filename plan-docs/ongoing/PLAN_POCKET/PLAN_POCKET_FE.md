@@ -4,10 +4,18 @@
 which `.gitignore:123` re-includes: this file is versioned.**
 
 This is the executable plan. It consumes `POCKET_DECISIONS.md` (the frozen
-model), `POCKET_BACKEND_INVENTORY.md` (the closed contract) and
-`POCKET_FE_INVENTORY.md` (the factual baseline) and does not restate them. Every
-field, type and status code below is taken from the backend inventory as the code
-spells it, not from the specification and not from memory.
+model) and, for the contract and the starting baseline,
+`POCKET_CONTRACT_AUDIT.md` — and does not restate them. Every field, type and
+status code below is taken from the contract as the code spells it, not from the
+specification and not from memory.
+
+> **The two documents this plan was originally read from were deleted on
+> 2026-09-06** — `POCKET_BACKEND_INVENTORY.md` (the closed contract) and
+> `POCKET_FE_INVENTORY.md` (the factual baseline). Both were obsolete: the
+> contract audit absorbed the first, and the module's final state is recorded in
+> `plan-docs/completed/POCKET_COMPLETED.md`. They remain readable in git history.
+> **This plan's unit table in §8 is superseded by that document's §5**, which
+> re-measured every unit against the working tree on 2026-09-06.
 
 ---
 
@@ -95,7 +103,9 @@ make them a base. The default action on a merge conflict in those three paths is
 ## 1. The contract — eight endpoints, field by field
 
 Seven pocket endpoints plus the account-detail endpoint that serves the four
-cross-module fields. Everything below is read from `POCKET_BACKEND_INVENTORY.md`.
+cross-module fields. Everything below was read from the backend inventory that
+`POCKET_CONTRACT_AUDIT.md` absorbed; the audit is where a contract question goes
+now.
 
 **Common to all seven pocket endpoints.** Base `/api/fintrack/pocket`, mounted
 under `verifyToken`. Identity comes from the token; no route reads a user id from

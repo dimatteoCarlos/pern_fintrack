@@ -11,7 +11,8 @@
 > | file | what it holds |
 > | --- | --- |
 > | `POCKET_MODULE_SPEC.md` | **the contract** — what must exist |
-> | `POCKET_BACKEND_INVENTORY.md` | **the measurement** — what does exist, endpoint by endpoint, plus nine defects |
+> | `POCKET_CONTRACT_AUDIT.md` | **the measurement** — what does exist, endpoint by endpoint. It absorbed `POCKET_BACKEND_INVENTORY.md`, which was deleted 2026-09-06 and stays in git history |
+> | `plan-docs/completed/POCKET_COMPLETED.md` | **the outcome** — what the module finally became, measured 2026-09-06 |
 > | this file | **the decisions** — what was decided and why |
 >
 > **Sections 15 to 18 are the current state and are newer than the spec.** They

@@ -7,11 +7,20 @@ under `frontend/` or `backend/` was modified while writing it, nothing was
 staged and nothing was committed.**
 
 It orders what remains of the Pocket module. It consumes `PLAN_POCKET_FE.md`
-(the plan), `POCKET_CONTRACT_AUDIT.md` (the end-to-end measurement),
-`POCKET_FE_RECONCILIATION.md` (the post-merge measurement),
-`POCKET_DETAIL_SPEC.md` (the detail chain's specification) and
-`POCKET_VISUAL_PROPOSAL.md` (the verified design), and restates none of them
-beyond what the ordering needs.
+(the plan) and `POCKET_CONTRACT_AUDIT.md` (the end-to-end measurement), and
+restates none of them beyond what the ordering needs.
+
+> **Three documents this sequence was built from were deleted on 2026-09-06** —
+> `POCKET_FE_RECONCILIATION.md` (the post-merge measurement),
+> `POCKET_DETAIL_SPEC.md` (the detail chain's specification) and
+> `POCKET_VISUAL_PROPOSAL.md` (the verified design). All three were obsolete once
+> `plan-docs/completed/POCKET_COMPLETED.md` recorded the module's final state.
+> They remain readable in git history.
+>
+> **Every mention of them below is left exactly as written and is not a broken
+> pointer.** §5's conflict table records what each document claimed and why the
+> code overruled it; erasing the names would turn a traceable ruling into an
+> assertion with no origin. Read those rows as history, not as a reading list.
 
 **Every claim that decides an order below was re-read from the source on this
 branch.** Where a document and the code disagree, the code wins and the
