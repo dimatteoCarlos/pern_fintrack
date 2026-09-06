@@ -1149,3 +1149,33 @@ de regresión), 9 (Superficie del tablero, medición de navegador) y el resto de
 "lo demás vivo" de cada sección — vocabulario de bolsillos, defectos de hoja
 legada, hueco de FX, decisiones D1-D8 de `DECISIONS_OPEN.md` distintas de D9.
 Ninguna decisión abierta se cerró en este pase.
+
+---
+
+## Quinto pase, 2026-09-06 — sobre `main`, cabeza `cea01cd9`
+
+**Advertencia de alcance.** Este pase **no re-audita nada**. Registra tres
+documentos que entraron hoy y que ninguna sección de este archivo nombra, y
+corrige las dos secciones que esos documentos dejan falsas. Es el primer pase
+escrito sobre `main`: el cuarto se escribió sobre `feat/vercel-serverless`, que
+no es rama de trabajo sino la de despliegue del backend, y que hoy está tres
+commits atrás de `main`.
+
+**Árbol de trabajo:** `deleteAccountService.js` y `PLAN_ACCOUNT_DELETION.md`
+modificados, y `accountDeletionUtils/eraseAccountTail.js` sin seguir. Los tres
+son trabajo en curso de la sesión de borrado de cuenta y no se tocan aquí.
+
+| sección | qué se corrigió |
+|---|---|
+| 1 — Pocket | **Cerrado, y con documento sucesor.** `plan-docs/completed/POCKET_COMPLETED.md` (commit `5bc8e045`) registra lo que el módulo quedó siendo: las dos tablas y las cuatro migraciones, los siete endpoints, los siete niveles con la banda de ±0.05 y el desempate por signo del dinero, y las diecinueve unidades remedidas. Escrito ése, los cinco documentos de `PLAN_POCKET/` que sólo describían el camino quedaron obsoletos por la regla que rige aquí —existe otro archivo actualizado con lo que se hizo finalmente— y se borraron en el commit `1b30b3c3`: el inventario de backend, la especificación de detalle, el inventario y la reconciliación de frontend, y la propuesta visual. Las citas que cuatro documentos vivos hacían a esos cinco se repuntaron en el mismo commit, porque borrar un documento citado no es gratis. **Y quedó registrada una trampa activa:** la columna de borrado de la unidad 7 de `PLAN_POCKET_FE.md` nombra `ListPocket.tsx` y `PocketBigBoxResult.tsx`, y los dos fueron reescritos en su lugar y **son el tablero vivo** —`PocketBigBoxResult.tsx`, 1.031 líneas, montado en `PocketLayout.tsx:152`—. Quien ejecute esa columna borra el tablero que funciona |
+| 8 — Overview | El subplan ganó hoy tres documentos que este archivo no nombra: la matriz de indicadores y el plan de recuperación (`OVERVIEW_INDICATOR_MATRIX.md` y `PLAN_OVERVIEW_RECOVERY.md`, commit `cea01cd9`) y el fallo sobre la divergencia de patrimonio neto (`OVERVIEW_DECISIONS.md`, commit `a6c17d20`). **Y la sección se corrige en el punto que decide el código:** aquí se habla de *una* lectura que apunta al modelo de bolsillo retirado, y son **dos, con tratamientos opuestos**. La que devuelve los identificadores de cuentas de bolsillo, `getPocketAccountIds` en `overviewAccountRepository.js:207-209`, alimenta el patrimonio neto de `makeHeroSection.js:110-114` y la posición de caja de `:117`; **ésa se borra, no se repunta**, porque el total comprometido de un bolsillo ya está dentro del saldo de la cuenta —lo prueba el techo de la guarda de asignación, saldo menos asignado, en `pocketAllocationService.js:345-347`— y repuntarla contaría el mismo dinero dos veces. La consulta de metas de ahorro, `SAVING_GOALS_QUERY` en `overviewPageRepository.js:70-81`, alimenta un indicador de progreso; **ésa sí se repunta** a la tabla `pockets`. Confundirlas embarca el defecto |
+| Nueva — Presentación de moneda y fecha | **No existía sección.** `PLAN_FX_DISPLAY.md` (commit `234550e9`) registra los hallazgos de la revisión. Son **dos fuentes de verdad distintas, y por eso dos commits y no uno**: el dinero y las tasas resuelven contra el catálogo `CURRENCY_OPTIONS` —decide la moneda del lector— y las fechas contra `DATE_TIME_FORMAT_DEFAULT` y `DATE_TEXT_FORMAT` en `frontend/src/fintrack/helpers/constants.ts:81-86`, donde decide **el tipo de fecha**: la primera fija separadores y orden, la segunda existe porque un nombre de mes en palabras convierte la configuración regional en idioma de interfaz, y la interfaz está en inglés. Quince apariciones vivas de la etiqueta `es-ES` en once archivos. La trampa que el documento deja escrita: `currencyFormat` declara su moneda por defecto en mayúsculas en `functions.ts:39` y las claves de `CURRENCY_OPTIONS` están en minúsculas, así que leer el mapa con ese valor falla contra el propio defecto de la función, devuelve `undefined`, e `Intl.NumberFormat` cae en silencio a la configuración regional del equipo |
+
+**Qué no se remidió en este pase, dicho para que no se lea como medido.**
+Ninguna sección salvo la 1 y la 8. Los seis paquetes de agente de
+`HANDOFF_AGENTES.md` §4 no se volvieron a medir. Ninguna consulta a base de
+datos, ni local ni de producción. Ninguna medición de navegador. Y de las dos
+decisiones abiertas de `DECISIONS_OPEN.md` no se cerró ninguna, pero **una está
+desfasada respecto del código**: el alto de la cabecera del tablero de bolsillos
+(D9) dice que no se toca nada de `pocket-styles.css` hasta que cierre, y el techo
+del contenedor ya está escrito en `pocket-styles.css:48`.

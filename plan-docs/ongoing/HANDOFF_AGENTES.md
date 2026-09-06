@@ -1,6 +1,7 @@
 # Qué se le entrega a un agente
 
-**Escrito 2026-08-30 sobre `fix/auth-screen`, cabeza `be6ebbf`.** Vive en
+**Escrito 2026-08-30 sobre `fix/auth-screen`, cabeza `be6ebbf`. Preámbulo
+corregido el 2026-09-06 sobre `main`, cabeza `cea01cd9`.** Vive en
 `plan-docs/ongoing/`, que el `.gitignore:123` re-incluye: este archivo sí se
 versiona.
 
@@ -16,7 +17,7 @@ Este documento define **la forma del paquete**, **el preámbulo que va en todos*
 ## 1. El preámbulo — va literal en cada prompt
 
 > Repositorio: `C:\AA1-WEB_DEVELOPER\REACT\apps\FINTRACK\pern_fintrack`, rama
-> `fix/auth-screen`. **Medí el árbol de trabajo, no el último commit ni los
+> `main`. **Medí el árbol de trabajo, no el último commit ni los
 > documentos**: hay archivos modificados sin commitear y varios planes están
 > desactualizados respecto del código. Donde un plan y el código discrepen, el
 > código manda y lo reportás.
@@ -45,7 +46,10 @@ Este documento define **la forma del paquete**, **el preámbulo que va en todos*
 > - **Nunca abras una frase con un identificador pelado.** El concepto en palabras
 >   primero, el identificador entre paréntesis al final.
 > - Nombrá archivo, línea, función y variable exactos.
-> - **No commitees.** Los commits los maneja la sesión principal.
+> - **No commitees ni pushees.** El commit lo hace la sesión que te despachó,
+>   dentro de su propio alcance. El árbol de trabajo es **uno solo y compartido**
+>   por cuatro sesiones que escriben a la vez: nunca `git add -A` ni `git add .`,
+>   se estaciona por ruta, y **nadie cambia de rama**.
 > - Al terminar: qué cambiaste archivo por archivo, qué valores necesitaste que no
 >   tienen token, y qué te quedó dudoso sin haber visto la pantalla.
 > - No leas ni imprimas ningún archivo `.env` ni `plan-docs/playwright/.credentials`.
