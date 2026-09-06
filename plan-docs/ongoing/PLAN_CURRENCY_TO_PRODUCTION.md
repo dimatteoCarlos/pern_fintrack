@@ -1,6 +1,9 @@
 # PLAN — taking a new FX currency to production
 
 Written 2026-09-05, against `main` at `98b105cb`.
+**Corrected 2026-09-06**: the first version was built on a superseded reading of
+production's ledger and recommended the wrong route. What changed, and why, is
+in §1 under "Correction".
 
 Companion to `GUIDE_ADD_FX_CURRENCY.md`. That guide ends where the local
 database accepts the currency; this one starts there and ends where production
@@ -16,8 +19,9 @@ migration `030_add_jpy_currency.sql`. Nothing here is specific to it.
 
 A new currency is **one row in a catalog**, and that row is the only thing on
 the server that a code deployment cannot carry — so the row goes first, and on
-this project putting it there is currently blocked by twelve unapplied
-migrations that have nothing to do with currencies.
+this project it now travels through an ordinary migration run, because the two
+files standing between production and the currency are one catalog insert and
+two indexes.
 
 ---
 
@@ -27,26 +31,55 @@ migrations that have nothing to do with currencies.
 |---|---|---|
 | The yen code is on the production branch | `main`, `feat/vercel-serverless`, `origin/main` and `origin/feat/vercel-serverless` are all `98b105cb` | `git rev-parse`, 2026-09-05 |
 | Both Vercel projects deploy from that branch | frontend and backend production branches were pointed at `feat/vercel-serverless` on 2026-08-22 | memory `two-vercel-projects` |
-| Production's ledger stops at `018` | 19 rows: files `001`-`018` plus `supabase/001_production_alignment.sql` | `PLAN_SUPABASE_MIGRATION.md` §1, measured 2026-08-27 |
+| Production's ledger reaches `028` | 29 rows: files `001`-`028` plus `supabase/001_production_alignment.sql` | `NEXT_SESSION.md` §2.1, measured 2026-09-03 on a read-only connection |
 | Files on disk | `001` through `030` | `sql_migrations/` |
-| **Therefore pending on production** | **`019` through `030` — twelve files** | derived from the two rows above |
+| **Therefore pending on production** | **`029` and `030` — two files** | derived from the two rows above |
 
-**The consequence that decides this whole plan.** The seventh row is not a
-schema observation, it is an operational constraint: the runner is not
-selective.
+### Correction — what the first version of this plan got wrong
+
+This table originally read "ledger stops at `018`, nineteen rows, twelve files
+pending", citing `PLAN_SUPABASE_MIGRATION.md` §1 of 2026-08-27. A later reading
+existed and was not checked. `NEXT_SESSION.md` §2.1 records a read-only
+connection of 2026-09-03 that applied `019` through `028` and verified each one
+individually **against the database**, not against the runner's output — down to
+`currency_name` accepting fifty characters (`027`) and the five currency names
+being English (`028`). It supersedes the August figure.
+
+Everything the first version derived from the old number is therefore wrong: the
+recommendation of an out-of-band apply, and the caveat that production's
+`currency_name` is still `VARCHAR(25)`. Both are corrected below.
+
+**What survives the correction**, because it does not depend on the count: the
+runner is not selective.
 
 ```js
-// runMigrations.js:49-58 — every unapplied file, in name order, no filter
+// runMigrations.js — every unapplied file, in name order, no filter
 const migrationFiles = fs.readdirSync(MIGRATIONS_DIR).filter(f => f.endsWith('.sql')).sort();
 for (const file of migrationFiles) {
  if (executedMigrations.includes(file)) { continue; }
 ```
 
-`npm run db:migrate` against production today does not apply the currency
-migration. It applies **twelve** migrations, of which the currency one is the
-last, and three of the other eleven create tables (`020` pocket tables, `021`
-`daily_exchange_rates`, `023` the query-coverage table). Adding a currency is a
-one-row change; running it through this door is not.
+That property was the whole argument against a plain migrate run while twelve
+files were pending, three of them creating tables. With two files pending — two
+indexes and one catalog row — the same property is now an argument *for* it: the
+runner does exactly what is wanted and nothing else.
+
+### The defect this correction uncovered, and why it had to be fixed first
+
+Rehearsing `029` revealed that it was a no-op reporting success. Its DOWN block
+was live SQL rather than commented out, unlike every other file on the chain,
+and since the runner reads the whole file and executes it as one statement, the
+two `DROP INDEX` lines undid the `CREATE INDEX` lines inside the same
+transaction. The run printed a checkmark and wrote the ledger row anyway.
+
+Measured on a database built from empty through the full chain: the ledger row
+for `029` present, zero of its two indexes created. Nobody saw it locally
+because `createTables.js:536` and `:539` create those same two indexes on every
+boot, so the runtime path masked it. Production does not run that path.
+
+Fixed inside `029` itself, per the rule that a correction is edited into the
+original migration and never added as a repairing one. Re-rehearsed from empty:
+both indexes present.
 
 ---
 
@@ -94,19 +127,27 @@ changes this plan from *scheduled* to *incident*.
 
 ## 3. The two routes, and the recommendation
 
-### Route A — run the backlog, then the currency migration
+Both routes are kept, with the arguments each was written under, because the
+choice turned entirely on how far behind production was and a future currency
+may meet a different backlog.
 
-Apply `019` through `030` in one `npm run db:migrate` against production.
+### Route A — run the pending files, currency migration included
+
+Apply everything pending in one `npm run db:migrate` against production. As of
+2026-09-06 that is `029` and `030`.
 
 - **For it:** ends with the ledger and the disk in agreement, which is where the
  project has to arrive eventually anyway. The currency needs no special
- handling.
-- **Against it:** it makes a one-row change into a twelve-file schema
- operation on live data, with its own rehearsal, its own dump, and a blast
- radius that includes three new tables and `028_align_currency_names.sql`
- rewriting the five existing currency names. It also cannot be sized here:
- `019`-`029` belong to the pocket, backdating and budget plans, and each needs
- its own review before it touches production data.
+ handling, and no row is written by hand.
+- **Against it, when the backlog is long:** it turns a one-row change into a
+ multi-file schema operation on live data, with its own rehearsal, its own dump,
+ and a blast radius that included three new tables and
+ `028_align_currency_names.sql` rewriting the five existing currency names. It
+ also could not be sized in this document, because those files belong to the
+ pocket, backdating and budget plans and each needs its own review.
+- **Against it today:** nothing. The files that carried that argument were
+ applied on 2026-09-03 and reviewed there. What remains is two indexes and a
+ catalog row.
 
 ### Route B — apply the currency migration alone, out of band, and record it
 
@@ -123,15 +164,28 @@ are dealt with on their own schedule.
  runner tolerates but a reader will not expect. It needs a comment in the
  ledger's story, which §5 provides.
 
-**Recommendation: Route B.** The two changes have different risk profiles and
-different owners, and binding them means the currency waits for the pocket and
-backdating migrations to be reviewed for production. Route A is the right
-*eventual* operation and belongs in `PLAN_MIGRATION_CHAIN.md` step 6, where the
-ledger-seeding procedure already lives — not in the path of a catalog row.
+**Recommendation: Route A — corrected 2026-09-06.**
 
-The precedent already exists: `supabase/001_production_alignment.sql` is exactly
-this move at a larger scale, and its step 9 wrote seventeen ledger rows for
-migrations it had subsumed.
+The first version recommended Route B, on the premise that Route A meant twelve
+files on live data. With the ledger at `028`, Route A means two files:
+`029_pocket_board_month_indexes.sql`, which creates two indexes and touches no
+row, and `030_add_jpy_currency.sql`, which is one idempotent
+`INSERT ... ON CONFLICT DO UPDATE` on a catalog table. Neither reads or writes
+user data. The backlog that made Route B worth its cost no longer exists.
+
+Route B is now the worse option for the reason it was always weakest: it writes
+a ledger row by hand and leaves the disk and the ledger describing different
+things, in exchange for skipping a single index migration that carries no risk.
+The precedent it leaned on — `supabase/001_production_alignment.sql`, whose step
+9 wrote seventeen ledger rows for migrations it had subsumed — is a procedure for
+a database the chain never built, not for one that is two files behind.
+
+**Route A also has to be the choice for a second reason.** `029` and `030` are
+adjacent on the chain, and the runner applies everything unapplied in name
+order. There is no supported way to take `030` and leave `029`; Route B would
+have to write `029`'s ledger row too, claiming an effect that was never applied
+— and after the defect described in §1, an unapplied `029` with a ledger row is
+precisely the state that had to be repaired.
 
 ---
 
@@ -150,7 +204,7 @@ not "deploy carefully next time" — it is **measure now**.
 
 ---
 
-## 5. The procedure, Route B
+## 5. The procedure, Route A
 
 Every step names what it is for. Steps 1 and 2 are read-only.
 
@@ -160,20 +214,25 @@ Run `plan-docs/on-hold/PLAN_DEPLOYMENT/db_guides/probe_production_state.mjs`
 against the live database. It is read-only.
 
 `SELECT filename FROM migrations ORDER BY id` turns the arithmetic argument of
-§1 into a list. Two things depend on the answer:
+§1 into a list. It confirms rather than discovers — §1 already records the
+2026-09-03 reading — and three things depend on it:
 
-- whether `030` is genuinely absent, which is the premise of everything below;
-- whether `013_normalize_category_budget_name_case.sql` is present. It is the
- only pending file that **rewrites existing data**, and if it were missing it
- would have to run before anything else, with its own rehearsal.
+- that the ledger names `001` through `028` and the alignment file, and neither
+ `029` nor `030`;
+- that `013_normalize_category_budget_name_case.sql` is present. It is the only
+ file on the chain that **rewrites existing data**, and it sits well below the
+ last applied row, so its absence would mean the ledger cannot be trusted at all;
+- that `029` is absent. If it were present without its two indexes, production
+ would already be carrying the defect described in §1, and the repair is to
+ delete that ledger row before the run — not to add a migration.
 
-**This step also settles a documented three-way disagreement.**
-`PLAN_SUPABASE_MIGRATION.md` §1-ter records that three documents describe
-production's state differently, and asks whoever runs this probe to correct all
-three. Two of them — `plan-docs/NEXT_SESSION.md` §2.1 and
-`backend/src/db/docs/db-documented/db-migration-procedure.md` §1 — still say the
-alignment file never executed. The third is a tracked file, so correcting it is
-a commit.
+**Correcting the record is part of this step.** `PLAN_SUPABASE_MIGRATION.md`
+§1-ter records that several documents describe production's state differently
+and asks whoever reads the live ledger to correct all of them. As of 2026-09-06
+`plan-docs/NEXT_SESSION.md` §2.1 is the current one and names the three that
+still lag: `db-migration-procedure.md` §1, `PLAN_MIGRATION_CHAIN.md` §4 paso 0,
+and `HANDOFF_AGENTES.md` §F. All three are tracked, so correcting them is a
+commit.
 
 **Output:** the list of filenames, pasted into this document with its date.
 
@@ -187,54 +246,66 @@ of §2 is open and steps 3-4 are urgent rather than scheduled.
 yen from `SUPPORTED_CURRENCIES` but leaves the frontend bundle offering it, and
 a rollback is a larger change than the `INSERT` that fixes it properly.
 
-### Step 3 — Rehearse against the restored copy
+### Step 3 — Rehearse with the runner, not with the statement
 
-Against `fintrack_prod_data` or a throwaway clone of it, never against
-`fintrack_dev`, and never against Supabase:
+**Done 2026-09-06. Result below.** The rehearsal drives the same tool that will
+run against production, because under Route A the operation *is* a runner
+invocation — rehearsing the bare `INSERT` would test a statement nobody is
+going to type.
 
-1. Confirm `currencies` holds five rows and no `currency_id = 6`.
-2. Apply the `INSERT` from `030_add_jpy_currency.sql` verbatim.
-3. Confirm six rows, and that `currency_name` was not truncated.
-4. Apply it a second time. It must be a no-op — the file is written
- `ON CONFLICT (currency_id) DO UPDATE`, and re-running it is a supported case,
- not an accident to avoid.
+`fintrack_prod_data` cannot be the target and this was measured, not assumed. It
+holds five currencies under the pre-alignment names (`Pesos col`, `Bs`,
+`Pesos mxn`), an **empty** migrations ledger, and `currency_name` still at
+`VARCHAR(25)` — the control copy restored from the 2026-08-21 dump, eleven
+migrations behind live production. Pointing the runner at a clone of it fails at
+`002_accounts.sql`: that file creates `users` with a `timezone` column and a
+trigger over it, `CREATE TABLE IF NOT EXISTS` skips the table that already
+exists, and the trigger then has no column to watch. **The chain is replayable
+from empty, not over an existing database.**
 
-**The truncation check is not ceremonial.** `027_widen_currency_name.sql` takes
-`currency_name` from `VARCHAR(25)` to `VARCHAR(50)` and it is **pending**, so
-production's column is still 25. `'Japanese Yen'` is twelve characters and fits.
-A future currency whose English name exceeds 25 characters does not, and would
-fail here — which is the reason this step measures rather than assumes.
+What was done instead, and what it proves:
 
-### Step 4 — Apply to production, in one transaction
+1. A throwaway database `fintrack_rehearsal`, created empty.
+2. `npm run db:migrate` against it with the target override, applying `001`
+ through `030` — so `029` and `030` land on a schema at exactly `028`, which is
+ the operation production will perform.
+3. The same command a second time. It applied nothing, which is what makes a
+ repeat run safe.
+4. Read back: six currencies including `6 jpy Japanese Yen`, `currency_name` at
+ width 50, both indexes of `029` present, 30 ledger rows.
 
-Two statements, together:
+Step 3 as originally written — apply the bare `INSERT`, confirm six rows, apply
+it again — also passed, and its truncation caveat is now void: it warned that
+production's `currency_name` was still `VARCHAR(25)` because `027` was pending.
+`027` was applied on 2026-09-03 and the column is 50. The check itself stays
+worth doing for a currency whose English name is long.
 
-```sql
-BEGIN;
+**What this rehearsal does not cover.** Neither pending file reads or writes user
+data — `029` is two `CREATE INDEX`, `030` is one catalog upsert — so an empty
+database exercises them fully. What it cannot measure is index build time on
+production's real `pockets` and `pocket_allocations`. Both are small tables and
+the runner holds a transaction while it builds, so the lock is brief; a faithful
+timing would need a current production dump, which is the developer's to take.
 
-INSERT INTO currencies (currency_id, currency_code, currency_name)
-VALUES (6, 'jpy', 'Japanese Yen')
-ON CONFLICT (currency_id) DO UPDATE SET
- currency_code = EXCLUDED.currency_code,
- currency_name = EXCLUDED.currency_name;
+### Step 4 — Apply to production with the runner
 
--- Recorded so the runner never applies 030 again once the backlog is cleared.
--- The ledger will name 030 while 019-029 are still absent: that is deliberate
--- and it is what Route B of PLAN_CURRENCY_TO_PRODUCTION.md decided.
-INSERT INTO migrations (filename)
-VALUES ('030_add_jpy_currency.sql')
-ON CONFLICT (filename) DO NOTHING;
+One command, pointed at production, applying `029` and then `030`. Each file
+gets its own transaction, and each ledger row commits with the change it records
+— so a failure in either leaves the other's row untouched and the run is simply
+repeated.
 
-COMMIT;
-```
+Nothing is written by hand. Route B's manual ledger row is gone with it, and
+with it the reason it was ever needed.
 
-The ledger row is not optional. Without it, whoever eventually runs Route A
-applies `030` a second time — harmless here because the file is idempotent, and
-not harmless as a habit.
+**Before the run:** a backup of production taken immediately beforehand, per
+`db-migration-procedure.md` §5. **After the run:** re-read the ledger and expect
+31 rows ending in `030_add_jpy_currency.sql`, six currency rows, and both indexes
+of `029` present — that last one specifically, because a ledger row for `029`
+without its indexes is exactly the state the defect in §1 produced.
 
 **Authorisation.** This is a write against live data and the developer
-authorises it in person. No agent session opens a connection to Supabase, and
-`.env` is not edited to point anywhere near it.
+authorises it in person and runs it. No agent session opens a connection to
+Supabase, and `.env` is not edited to point anywhere near it.
 
 ### Step 5 — Deploy the code, or confirm it is already deployed
 
@@ -313,8 +384,8 @@ ordering mistake in reverse and it produces the same 500.
 
 ## 8. Steady state — what this costs once the chain is aligned
 
-Route A's eventual completion is what makes the next currency cheap. Once the
-ledger and the disk agree:
+Route A's completion is what makes the next currency cheap, and after the run of
+§5 step 4 the ledger and the disk agree. From then on:
 
 1. Run the guide's script locally, review the seven edits, commit.
 2. Merge to the production branch.

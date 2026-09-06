@@ -214,6 +214,32 @@ primero es decisión de producto y el segundo depende de una decisión abierta.
 
 ### F — El corredor de migraciones y las seis que producción no tiene
 
+> **Correction — 2026-09-06.** In English, which superseded the Spanish-prose
+> rule on 2026-09-03. This package is **done and no longer needs distributing**,
+> and its premise moved twice. Do not hand it to an agent; read
+> `PLAN_MIGRATION_CHAIN.md` §0 instead, which carries the same corrections with
+> their measurements.
+>
+> - **The runner's two defects are fixed.** The migration and its ledger row now
+>   commit in one transaction per file, and the exit code is decided once after
+>   `pool.end()`. Everything below that describes `INSERT INTO migrations`
+>   landing in a separate transaction is describing code that no longer exists.
+> - **Production is two files behind, not six.** `NEXT_SESSION.md` §2.1 records a
+>   read-only connection of 2026-09-03 that applied `019` through `028` and
+>   verified each one against the live database, leaving 29 ledger rows. Pending
+>   is `029` and `030`.
+> - **The chain owner is the session named `backdating`.** Nobody else adds,
+>   renumbers or edits a file under `sql_migrations/`.
+>
+> The two rules of this section that **do** still stand, and that govern every
+> migration from here on: a correction is edited into the original migration and
+> never added as a repairing one, and whatever a migration adds to a table enters
+> `createTables.js` in the same commit. A third joins them, learned on 2026-09-06
+> from `029_pocket_board_month_indexes.sql`: **a `DOWN` block is written
+> commented out and marked "run manually"**. Left as live SQL it undoes the `UP`
+> section inside the same transaction, and the run still reports success and
+> still writes the ledger row.
+
 **Objetivo.** Que la cadena se pueda aplicar sin dejar una base a medias, y que
 las seis migraciones que esta rama agregó puedan llegar a producción.
 

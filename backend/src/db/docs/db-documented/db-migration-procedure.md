@@ -11,14 +11,21 @@ Companion documents: `db-lifecycle.md` (what migrations, seeds and resets are),
 
 ### The chain — `src/db/migrations/sql_migrations/`
 
-Numbered files, `001` to `028` today, with no gap; the next free number is
-`029`. They build a database **from zero**, in order: `002_accounts.sql` creates
+Numbered files, `001` to `030` today, with no gap; the next free number is
+`031`. They build a database **from zero**, in order: `002_accounts.sql` creates
 the tables that `014_category_budget_fx_columns.sql` later alters. A file assumes
 every lower-numbered file already ran.
 
+**From zero, and only from zero.** Pointing the runner at an existing database
+with an empty ledger does not replay the chain over it: measured 2026-09-06
+against a clone of `fintrack_prod_data`, the run fails at `002_accounts.sql`,
+because its `CREATE TABLE IF NOT EXISTS users` skips the table that is already
+there and the IANA trigger it then declares has no `timezone` column to watch.
+That is what `supabase/001_production_alignment.sql` exists for.
+
 List the directory before writing one rather than trusting the count above. That
 count goes stale on every migration, and it was three files behind until
-2026-09-03.
+2026-09-03 and two more behind until 2026-09-06.
 
 This is the only kind that is written from now on.
 
@@ -26,9 +33,12 @@ This is the only kind that is written from now on.
 
 `001_production_alignment.sql`, written 2026-08-21 and rehearsed 2026-08-26.
 
-**Whether it has run against production is disputed, and this document was the
-one carrying the oldest answer.** It said "not yet executed"; two later, tracked
-sources say otherwise:
+**It ran. Settled 2026-09-03, recorded here 2026-09-06.** This document used to
+say "not yet executed" and then, less wrongly, that the question was disputed.
+Neither stands: `plan-docs/NEXT_SESSION.md` §2.1 records a read-only connection
+to production on 2026-09-03 that read the ledger and found **29 rows** — the
+twenty-eight numbered files of the day plus `001_production_alignment.sql`. The
+two sources that already pointed that way agree with it:
 
 - the header of `sql_migrations/018_alter_transactions_account_fks_to_restrict.sql`
   states that the alignment file **ran on Supabase on 2026-08-22** and that its
@@ -37,12 +47,13 @@ sources say otherwise:
   production 2026-08-27**, which is a reading of the live database and not of a
   dump.
 
-Nothing in this repository can settle it from here, and neither can this
-document: only a connection to production can. **One question decides it — does
-the `timezone` column exist on the users table there?** The alignment file adds
-it, every login query selects it, and no other file creates it. Run the
-read-only probe, then correct whichever of the three documents is wrong; the
-planning notes name the other two.
+**One question is still open**, and it is worth closing on the next read-only
+connection: does the `timezone` column exist on production's `users` table? The
+alignment file's step 1 adds it with `ADD COLUMN IF NOT EXISTS`, and
+`002_accounts.sql:39` declares it inside `CREATE TABLE users` — which reaches a
+database built from zero and no other. Production's `users` predates the chain,
+so the alignment file is the only path by which it could have arrived. Every
+login query selects it.
 
 It exists because production was created before migrations `007` to `017` were
 written. It held the owner's data but not the structure those files add, and the

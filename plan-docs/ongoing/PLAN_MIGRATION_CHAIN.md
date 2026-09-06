@@ -7,6 +7,48 @@ retro-fechado, corregidas ambas el 2026-09-02.
 
 ---
 
+## 0. Correction — 2026-09-06
+
+Written in English, which superseded the Spanish-prose rule for this repository
+on 2026-09-03. Three things this document states as open are closed, and reading
+it without them wastes a session.
+
+**The two runner defects are fixed.** §1 and §4 steps 2-3 describe them as live.
+They are not:
+
+- The migration and its ledger row now commit **together**. `runMigrations.js`
+ opens one transaction per file, runs the file, inserts the ledger row and
+ commits, rolling back both on failure. The comment above that block states the
+ invariant and the reason no file in `sql_migrations/` may carry its own `BEGIN`.
+- The exit code is decided **once**, after `client.release()` and `pool.end()`,
+ through an `exitCode` variable. `process.exit` is no longer called from inside
+ the catch.
+
+**Production is not six files behind. It is two.** §1 and §4 paso 0 rest on the
+2026-08-27 reading — 19 ledger rows, pending `019` to `024`. A later reading
+supersedes it: `plan-docs/NEXT_SESSION.md` §2.1 records a read-only connection of
+2026-09-03 that applied `019` through `028` and verified each one individually
+against the live database, leaving **29 rows**. Pending today is `029` and `030`.
+
+**A third defect was found on 2026-09-06 and fixed**, and it is the kind this
+plan exists to prevent. `029_pocket_board_month_indexes.sql` carried its `DOWN`
+block as live SQL instead of comments, so the runner — which reads the whole file
+and executes it as one statement — created the two indexes and dropped them again
+inside the same transaction, then reported success and wrote the ledger row.
+Measured on a database built from empty through the whole chain: ledger row
+present, zero indexes. It went unseen because `createTables.js:536` and `:539`
+create the same two indexes on every boot, and the runtime path covered for it.
+All thirty files were scanned for the same shape; `029` was the only one, and
+`001`-`009` have no `DOWN` block at all, which is pre-convention rather than a
+defect.
+
+**What this adds to §3.** The reversal rule of §3 says a `DOWN` block is required
+from `025` onward. It now also has a form: **commented out, and marked "run
+manually"**, like every other file on the chain. A live `DOWN` is not a reversal,
+it is a self-cancelling migration that reports success.
+
+---
+
 ## 1. Qué está mal hoy
 
 El proyecto tiene dos caminos para construir un esquema y ninguno de los dos es
