@@ -1420,20 +1420,42 @@ at the plan model would add the same money a second time, in the hero and in the
 cash position both. Removal is not the cheaper option; it is the only one that
 sums correctly.
 
-### Two Overview reads touch the retired model and they need opposite treatments
+### Three Overview reads touch the retired model, and only one of them is deleted
 
 This is the trap the ruling has to name, because treating them as one problem is
-how the defect ships.
+how the defect ships. Remeasured 2026-09-06 in the overview worktree, after a
+first pass listed only two.
 
-| read | what it feeds | treatment |
-|---|---|---|
-| the pocket term in the hero (`overviewPageService.js:124`) | a term of two money identities | **delete it** |
-| the saving-goals query (`overviewPageRepository.js:70-81`) | progress against a target, a widget | **repoint it to the plan model** |
+| read | what it feeds | nature | treatment |
+|---|---|---|---|
+| the pocket term of the hero (`overviewPageService.js:124` → `makeHeroSection.js:114` and `:117`) | a term of two money identities | Position | **delete it** |
+| the pocket domain card (`overviewPocketService.js:30`) | a card of §5, and the hero's term above | Position | **repoint it to the plan model** |
+| the pocket series of the monthly snapshot (`overviewPageService.js:103` and `:117`) | the pocket entry of §8 | **Flow** (D28) | **repoint it, and not with the card's query** |
 
-The second joins the table migration 020 emptied and returns nothing, so the
-widget is blank rather than wrong. It is no term of any identity, so no double
-count is possible there and repointing is exactly right — the file's own comment
-already says it needs repointing and not re-anchoring.
+**The account id set is not itself the defect, and deleting it would break more
+than it fixes.** `getPocketAccountIds` (`overviewAccountRepository.js:207-209`)
+resolves the retired account type, and all three rows above descend from it — the
+hero's term only indirectly, through the card. So the deletion is narrow: the
+`pocketBalance` argument at `overviewPageService.js:124` and the two terms it
+feeds. The set and its two other consumers stay and get repointed, because the
+card is published in its own right and the snapshot entry is defined for pocket
+by §8.
 
-Whoever deletes the first and repoints the second is correct. **Whoever repoints
-both has shipped the double count.**
+**The third read is the one §14.2 of the contract exists to protect.** The card's
+total is a **Position** — the committed balance at the close — and the snapshot's
+pocket figure is a **Flow**, the net committed during the month (D28). Repointing
+both to the plan model with one query would collapse two natures into one and
+make the snapshot subtract a twelve-month average of movements from a balance,
+which is the exact defect D28 was written to prevent. Two queries, or one query
+read at two different pairs of dates.
+
+The saving-goals query (`overviewPageRepository.js:70-81`) joins the same emptied
+table and is a fourth site, but it is not an Overview figure at all: §9 says the
+goals are the pocket module's, reused and not recalculated. It joins the table
+migration 020 emptied and returns nothing, so the widget is blank rather than
+wrong, and it is no term of any identity — repointing it is right and no double
+count is possible there.
+
+Whoever deletes the hero's term and repoints the rest is correct. **Whoever
+repoints the hero's term has shipped the double count, in net worth and in the
+cash position both.**
