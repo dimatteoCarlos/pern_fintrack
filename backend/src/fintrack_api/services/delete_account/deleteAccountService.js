@@ -22,6 +22,7 @@ import { setAccountBalanceFromLedger } from '../../../utils/fintrackUtils/accoun
 
 import { recordAnnulmentTransaction } from '../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 import { lockAndDeriveBalances } from '../../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
+import { eraseAccountTail } from '../../../utils/fintrackUtils/accountDeletionUtils/eraseAccountTail.js';
 //=====================================
 // 📋 MESSAGES CONFIGURATION
 const messages = {
@@ -189,6 +190,7 @@ const processRTAAnnulment = async (
   impactReport,
   targetAccountName,
   transactionDate,
+  accountName,
 ) => {
   console.log(
     pc.yellow(
@@ -217,6 +219,10 @@ const processRTAAnnulment = async (
   const ledgerBalances = await lockAndDeriveBalances(dbClient, userId, [
     ...impactReport.map((row) => row.affectedAccountId),
     slackAccount.account_id,
+    // The RTA lock set is {A} u cp(A) (PLAN_ACCOUNT_DELETION.md §4.3); A
+    // itself was missing here, leaving two concurrent deletes of the same
+    // account unserialized.
+    targetAccountId,
   ]);
 
   const ledgerBalanceOf = (accountId) =>
@@ -326,14 +332,13 @@ const processRTAAnnulment = async (
     );
   }
   //--------------------------------------
-  // 6. Execute Hard Delete (CASCADE)
-  const deleteQuery =
-    'DELETE FROM user_accounts ua WHERE ua.account_id = $1 AND ua.user_id = $2';
-  await dbClient.query(deleteQuery, [targetAccountId, userId]);
+  // 6. Erase the target: detach and scrub every surviving reference to it,
+  // then drop its own rows and the account (PLAN_ACCOUNT_DELETION.md §4.1
+  // steps 6d/7d/8d). Required since migration 018 - a bare DELETE here fails
+  // under RESTRICT the moment any transaction still references this account.
+  await eraseAccountTail(dbClient, userId, targetAccountId, accountName);
   console.log(
-    pc.red(
-      `Target Account ${targetAccountId} and transactions DELETED (CASCADE).`,
-    ),
+    pc.red(`Target Account ${targetAccountId} and transactions ERASED.`),
   );
 
   return {
@@ -375,29 +380,33 @@ const processRTAAnnulment = async (
  */
 const processStandardDelete = async (
   dbClient,
+  userId,
   targetAccountId,
   deletionType,
   isAdmin,
   accountCheck,
 ) => {
-  let queryText, actionType;
+  let actionType;
 
   if (isAdmin && deletionType === DELETION_TYPE_HARD) {
-    // Hard delete (admin only)
+    // Hard delete (admin only): detach/scrub/drop, see eraseAccountTail.
     actionType = ADMIN_ACTION;
-    queryText =
-      'DELETE FROM user_accounts ua WHERE ua.account_id = $1 AND ua.user_id = $2';
     console.log(
       pc.red(`Admin HARD DELETE for account ${targetAccountId} by user ${userId}`),
     );
+    await eraseAccountTail(
+      dbClient,
+      userId,
+      targetAccountId,
+      accountCheck.rows[0].account_name,
+    );
+    return { actionType, deletionType, rowCount: 1 };
   } else if (deletionType === DELETION_TYPE_SOFT) {
     // Soft delete
     if (accountCheck.rows[0].deleted_at !== null) {
       throw createError(400, 'Account already soft deleted');
     }
     actionType = USER_ACTION;
-    queryText =
-      'UPDATE user_accounts ua SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE (ua.account_id = $1 AND ua.user_id = $2) AND ua.deleted_at IS NULL';
     console.log(
       pc.yellow(`User SOFT DELETE for account ${targetAccountId} by user ${userId}`),
     );
@@ -405,7 +414,13 @@ const processStandardDelete = async (
     throw createError(400, 'Invalid or unauthorized deletion type.');
   }
 
-  const result = await dbClient.query(queryText, [targetAccountId]);
+  // Only the soft-delete branch reaches here - hard delete returns above.
+  const queryText =
+    'UPDATE user_accounts ua SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE (ua.account_id = $1 AND ua.user_id = $2) AND ua.deleted_at IS NULL';
+  // $2 (user_id) was never bound before this fix: the query always required
+  // it but only targetAccountId was passed, so every soft delete threw a
+  // Postgres bind-count error before this change.
+  const result = await dbClient.query(queryText, [targetAccountId, userId]);
 
   if (result.rowCount === 0) {
     throw createError(
@@ -555,6 +570,10 @@ export const deleteAccountService = async (
           impactReport,
           targetAccountName,
           transactionDate,
+          // The name to scrub out of surviving descriptions: the account's
+          // actual current name, not the client-supplied targetAccountName
+          // used above to build the new annulment rows' text.
+          accountCheck.rows[0].account_name,
         );
 
         rtaResult = {
@@ -568,16 +587,16 @@ export const deleteAccountService = async (
             'RTA: No financial impact to correct. Proceeding to hard delete.',
           ),
         );
-        // Ejecutar hard delete directamente
-        // const deleteQuery =
-          // 'DELETE FROM user_accounts ua WHERE ua.account_id = $1';
-          const deleteQuery = 'DELETE FROM user_accounts ua WHERE ua.account_id = $1 AND ua.user_id = $2'
-
-        await dbClient.query(deleteQuery, [targetAccountId, userId]);
-
-        console.log(
-          pc.red(`Target Account ${targetAccountId} DELETED (CASCADE).`),
+        // Erase the target directly: no financial impact to correct, but
+        // still needs the detach/scrub/drop tail - see the call above.
+        await eraseAccountTail(
+          dbClient,
+          userId,
+          +targetAccountId,
+          accountCheck.rows[0].account_name,
         );
+
+        console.log(pc.red(`Target Account ${targetAccountId} ERASED.`));
 
         rtaResult = {
           adjustedAccounts: 0,
@@ -681,6 +700,7 @@ export const deleteAccountService = async (
       // 11. STANDARD_DELETE_EXECUTION
       const deleteResult = await processStandardDelete(
         dbClient,
+        userId,
         targetAccountId,
         deletionType,
         isAdmin,

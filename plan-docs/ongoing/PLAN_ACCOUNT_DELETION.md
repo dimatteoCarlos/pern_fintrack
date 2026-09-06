@@ -900,6 +900,35 @@ constraint (FK/CHECK) or stays convention. Flagged by `pern-fintrack-90` as a me
 request, because this unit is the natural place to make that call - but it isn't part of unit 5's
 scope and stays open.
 
+### Legacy route patched, 2026-09-06
+
+Migration 018 (unit 1) turned the three `transactions` foreign keys to
+`user_accounts` from `CASCADE` to `RESTRICT`. No application code ever
+detached a target account's transaction references before deleting it, so the
+legacy route - the only one that executes, per units 10/11 above - has been
+throwing a foreign-key violation on every deletion of an account with at least
+one transaction row, since that migration shipped.
+
+Applied §4.1's own DETACH/SCRUB/DROP algorithm (steps 6d/7d/8d) to the
+existing legacy service, as an interim patch, not as unit 6/7's replacement:
+
+- New shared helper `backend/src/utils/fintrackUtils/accountDeletionUtils/eraseAccountTail.js`,
+  called from all three places in `deleteAccountService.js` that used to run a
+  bare `DELETE FROM user_accounts` - the RTA path with financial impact, the
+  RTA path with none, and the plain hard-delete path.
+- `processStandardDelete` gained a `userId` parameter it was missing; its
+  hard-delete branch referenced `userId` in a log line while never receiving
+  it, throwing `ReferenceError` before the query ran.
+- The RTA lock set (§4.3, `{A} ∪ cp(A)`) now includes `targetAccountId`
+  itself in the `lockAndDeriveBalances` call in `processRTAAnnulment` - it was
+  locking every affected account and slack, but not the target, leaving two
+  concurrent deletes of the same account unserialized.
+
+`RESTRICT` remains the actual safety net; this patch's only job is making a
+correct call reach it. Units 6, 7, 9, 10 and 11 are unaffected and still fully
+open - the assessment endpoint, CLOSE, TRANSFER/DISCARD and the invariant
+assertions are not part of this change.
+
 ---
 
 ## 10. Out of scope
