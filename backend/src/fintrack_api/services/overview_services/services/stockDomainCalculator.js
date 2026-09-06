@@ -22,7 +22,10 @@
 // two that have to agree.
 
 import { getOldestAccountDate } from '../db/overviewAccountRepository.js';
-import { getMonthlyBalance } from '../db/overviewBalanceRepository.js';
+import {
+ getMonthlyBalance,
+ getMonthlyBalanceByLeg,
+} from '../db/overviewBalanceRepository.js';
 import {
  makeDomainCard,
  makePeriodDelta,
@@ -31,6 +34,16 @@ import {
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
 import { monthEndDate } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
+import { money } from '../../budget_services/core/money.js';
+
+// Said when the two legs do not add back to the total they were split from.
+//
+// Both figures reconstruct from the same balances and the same rows, so they
+// cannot disagree unless a read drifted. Publishing the pair without checking
+// would put a card on screen whose own three numbers fail to add up — the same
+// silent failure UNRECONCILED_BALANCE_NOTICE exists for on the investment card.
+export const UNRECONCILED_LEGS_NOTICE =
+ 'The two sides of the debt position do not add back to the net figure; some balance is counted on neither side.';
 
 /**
  * Everything a stock domain returns, for one month and one page.
@@ -44,6 +57,7 @@ import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
  * @param {Function} config.getAccountIds - the resolver for this domain's accounts
  * @param {Function} config.getTransactionsPage - the list for this domain's movements
  * @param {boolean} config.publishesTrend - §12 grants pocket a trend and denies debt one
+ * @param {boolean} [config.publishesLegs] - §5.1 grants debt the two legs; pocket has none to split
  * @returns {Promise<object>} GetOverviewDomainData for the domain
  */
 export async function readStockDomain(
@@ -51,7 +65,7 @@ export async function readStockDomain(
  userId,
  { window, page, pageSize, includeTransactionRows = true },
  timeZone,
- { domain, getAccountIds, getTransactionsPage, publishesTrend },
+ { domain, getAccountIds, getTransactionsPage, publishesTrend, publishesLegs = false },
 ) {
  const { referenceMonth, priorMonth, trendStart } = window;
 
@@ -60,7 +74,7 @@ export async function readStockDomain(
  // be answers about two different sets.
  const accountIds = await getAccountIds(pool, userId);
 
- const [months, oldestAccountDate, transactions] = await Promise.all([
+ const [months, oldestAccountDate, transactions, legMonths] = await Promise.all([
   getMonthlyBalance(pool, accountIds, trendStart, referenceMonth, timeZone),
   getOldestAccountDate(pool, userId, timeZone),
   getTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
@@ -68,6 +82,13 @@ export async function readStockDomain(
    pageSize,
    includeRows: includeTransactionRows,
   }),
+  // Only the reference month, not the trend window: the legs are a figure on the
+  // card, and §12 publishes no leg series to draw. A domain that does not split
+  // never issues this read at all, so the second statement is debt's cost, not
+  // every stock domain's.
+  publishesLegs
+   ? getMonthlyBalanceByLeg(pool, accountIds, referenceMonth, referenceMonth, timeZone)
+   : null,
  ]);
 
  // The last point of the series is the balance right now, by construction: the
@@ -79,6 +100,24 @@ export async function readStockDomain(
   priorMonth,
   oldestAccountDate,
  });
+
+ // The same reconstruction the total came from, kept split until the sign was
+ // read. totalAmount is NOT recomputed from these: §4.2 wants one figure to have
+ // one path, so the legs decompose the total, they never redefine it.
+ const legs = legMonths?.[0] ?? null;
+ const legFields = legs
+  ? {
+     payable: legs.payable,
+     receivable: legs.receivable,
+     settledCount: legs.settledCount,
+    }
+  : {};
+
+ // Compared through money for the reason every comparison in this module is: a
+ // cent of binary float error must not raise a flag that tells the user their
+ // books are inconsistent when they are not.
+ const legsReconcile =
+  !legs || money(legs.receivable).minus(legs.payable).equals(money(currentPoint.totalAmount));
 
  const card = makeDomainCard({
   domain,
@@ -93,7 +132,11 @@ export async function readStockDomain(
    periodStart: referenceMonth,
    periodEnd: monthEndDate(referenceMonth),
   },
-  notices: canCompare ? [] : [NO_PRIOR_PERIOD_NOTICE],
+  domainFields: legFields,
+  notices: [
+   ...(canCompare ? [] : [NO_PRIOR_PERIOD_NOTICE]),
+   ...(legsReconcile ? [] : [UNRECONCILED_LEGS_NOTICE]),
+  ],
  });
 
  return {
