@@ -23,6 +23,7 @@ import { setAccountBalanceFromLedger } from '../../../utils/fintrackUtils/accoun
 import { recordAnnulmentTransaction } from '../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 import { lockAndDeriveBalances } from '../../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 import { eraseAccountTail } from '../../../utils/fintrackUtils/accountDeletionUtils/eraseAccountTail.js';
+import { getAnnulmentImpactReport } from './getAnnulmentImpactReport.js';
 //=====================================
 // 📋 MESSAGES CONFIGURATION
 const messages = {
@@ -78,12 +79,6 @@ const messages = {
     status: 403,
     messagefn: () =>
       `Permission denied. RTA deletion requires administrative privileges.`,
-  },
-
-  noImpactReport: {
-    status: 400,
-    messagefn: () =>
-      `RTA execution requires a valid impactReport in the request body.`,
   },
 };
 //========================================
@@ -187,41 +182,53 @@ const processRTAAnnulment = async (
   dbClient,
   userId,
   targetAccountId,
-  impactReport,
   targetAccountName,
   transactionDate,
   accountName,
 ) => {
+  // 2. Get/Create Slack Account
+  const slackAccountInfo = await checkAndInsertAccount(dbClient, userId);
+
+  const slackAccount = slackAccountInfo.account;
+
+  // Lock the target account before computing its impact report. Every
+  // transaction-write path locks the accounts it touches through this same
+  // helper (in ascending id order), so once this lock is held here, nothing
+  // can add a new row naming the target as source/destination underneath the
+  // report queried next - closing the TOCTOU gap where a client-supplied
+  // impactReport, read before this transaction (or even this request) began,
+  // was trusted as-is at execution time (PLAN_ACCOUNT_DELETION.md unit 6).
+  await lockAndDeriveBalances(dbClient, userId, [targetAccountId]);
+
+  // Recomputed here, inside the open transaction, after the lock above -
+  // never the client-supplied copy the old code received as a parameter.
+  const impactReport = await getAnnulmentImpactReport(
+    dbClient,
+    userId,
+    targetAccountId,
+  );
+
   console.log(
     pc.yellow(
       `Executing RTA adjustments for ${impactReport.length} affected accounts...`,
     ),
   );
 
-  // 2. Get/Create Slack Account
-  const slackAccountInfo = await checkAndInsertAccount(dbClient, userId);
-
-  const slackAccount = slackAccountInfo.account;
-
   // Every account this annulment touches, locked and derived before a single
   // figure is computed from it: the compensation account and each affected one.
   //
-  // Two defects close here, the same pair the transfer and account-creation
-  // paths closed. The stored column has drifted from the ledger — the
-  // compensation account reads −75.97 stored against −90.22 derived — so every
-  // corrected balance was built on a wrong starting point and written back,
-  // carrying the error forward. And the impact report is read on the pool
-  // before this transaction opens, so nothing stopped a movement landing on an
-  // affected account between the report and the correction.
+  // The stored column has drifted from the ledger — the compensation account
+  // reads −75.97 stored against −90.22 derived — so every corrected balance
+  // was built on a wrong starting point and written back, carrying the error
+  // forward.
   //
   // The report keeps its own figure: that one is what the owner was SHOWN when
   // they confirmed, and it is now derived too.
   const ledgerBalances = await lockAndDeriveBalances(dbClient, userId, [
     ...impactReport.map((row) => row.affectedAccountId),
     slackAccount.account_id,
-    // The RTA lock set is {A} u cp(A) (PLAN_ACCOUNT_DELETION.md §4.3); A
-    // itself was missing here, leaving two concurrent deletes of the same
-    // account unserialized.
+    // The RTA lock set is {A} u cp(A) (PLAN_ACCOUNT_DELETION.md §4.3). Already
+    // held above, re-acquiring it here is a no-op within the same transaction.
     targetAccountId,
   ]);
 
@@ -491,9 +498,8 @@ export const deleteAccountService = async (
   targetAccountId,
   userRole,
   deletionType,
-  // CONDITIONAL RTA PARAMETERS:
-  impactReport = [], // 🔑 Passed from controller for RTA execution
-  targetAccountName = 'Unknown', // RTA execution data
+  // CONDITIONAL RTA PARAMETER:
+  targetAccountName = 'Unknown', // RTA execution data - cosmetic only, see processRTAAnnulment
 ) => {
   // =========================================
   // 🚀 RTA ANNULMENT EXECUTION (ATOMIC TRANSACTION)
@@ -531,19 +537,6 @@ export const deleteAccountService = async (
       );
     }
 
-    if (!impactReport || !Array.isArray(impactReport)) {
-      console.warn(
-        pc.yellow(
-          'RTA execution requires a valid impactReport in the request body.',
-        ),
-      );
-
-      throw createError(
-        messages.noImpactReport.status,
-        messages.noImpactReport.messagefn(),
-      );
-    }
-
     let dbClient;
     try {
       const transactionDate = new Date();
@@ -555,55 +548,27 @@ export const deleteAccountService = async (
         targetAccountId,
       );
 
-      // 3. RTA_IMPACT_VALIDATION - Validación de impactReport
-      console.log(
-        pc.yellow(`RTA: Processing ${impactReport.length} affected accounts`),
+      // 3. RTA PROCESS EXECUTION - processRTAAnnulment locks the target
+      // account, computes its own impact report inside this transaction
+      // (never a client-supplied one), and handles both the non-empty and
+      // zero-impact cases internally.
+      const rtaData = await processRTAAnnulment(
+        dbClient,
+        userId,
+        +targetAccountId,
+        targetAccountName,
+        transactionDate,
+        // The name to scrub out of surviving descriptions: the account's
+        // actual current name, not the client-supplied targetAccountName
+        // used above to build the new annulment rows' text.
+        accountCheck.rows[0].account_name,
       );
 
-      // 4.  RTA PROCESS EXECUTION
-      let rtaResult;
-      if (impactReport.length > 0) {
-        const rtaData = await processRTAAnnulment(
-          dbClient,
-          userId,
-          +targetAccountId,
-          impactReport,
-          targetAccountName,
-          transactionDate,
-          // The name to scrub out of surviving descriptions: the account's
-          // actual current name, not the client-supplied targetAccountName
-          // used above to build the new annulment rows' text.
-          accountCheck.rows[0].account_name,
-        );
-
-        rtaResult = {
-          adjustedAccounts: rtaData.adjustedAccounts,
-          finalSlackBalance: rtaData.finalSlackBalance,
-          actionType: 'RTA_ANNULMENT',
-        };
-      } else {
-        console.log(
-          pc.yellow(
-            'RTA: No financial impact to correct. Proceeding to hard delete.',
-          ),
-        );
-        // Erase the target directly: no financial impact to correct, but
-        // still needs the detach/scrub/drop tail - see the call above.
-        await eraseAccountTail(
-          dbClient,
-          userId,
-          +targetAccountId,
-          accountCheck.rows[0].account_name,
-        );
-
-        console.log(pc.red(`Target Account ${targetAccountId} ERASED.`));
-
-        rtaResult = {
-          adjustedAccounts: 0,
-          finalSlackBalance: 0,
-          actionType: 'RTA_ANNULMENT',
-        };
-      }
+      const rtaResult = {
+        adjustedAccounts: rtaData.adjustedAccounts,
+        finalSlackBalance: rtaData.finalSlackBalance,
+        actionType: 'RTA_ANNULMENT',
+      };
 
       // 5. COMMIT_HANDLER - (ÚNICO PUNTO DE COMMIT)
       await dbClient.query('COMMIT');
@@ -615,7 +580,7 @@ export const deleteAccountService = async (
         messages.rtaSuccess.messagefn(
           targetAccountName,
           targetAccountId,
-          impactReport.length,
+          rtaResult.adjustedAccounts,
         ),
       );
 
@@ -625,7 +590,7 @@ export const deleteAccountService = async (
         message: messages.rtaSuccess.messagefn(
           targetAccountName,
           targetAccountId,
-          impactReport.length,
+          rtaResult.adjustedAccounts,
         ),
 
         data: {

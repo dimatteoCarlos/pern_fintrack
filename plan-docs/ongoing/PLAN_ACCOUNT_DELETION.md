@@ -929,6 +929,36 @@ correct call reach it. Units 6, 7, 9, 10 and 11 are unaffected and still fully
 open - the assessment endpoint, CLOSE, TRANSFER/DISCARD and the invariant
 assertions are not part of this change.
 
+### Unit 6 started, 2026-09-06: RTA no longer trusts a client-supplied impact report
+
+`getAnnulmentImpactReport(userId, targetAccountId)` was read on `pool`, before
+the RTA execution transaction opened, and the result travelled to the client
+and back as `impactReport` in the execution request body - a TOCTOU gap: a
+stale or tampered copy was taken at face value when writing the financial
+adjustment.
+
+- `getAnnulmentImpactReport` now takes `dbClient` as its first parameter and
+  queries through it; the GET preview endpoint
+  (`accountDeleteController.js#generateImpactReport`) passes `pool`, unchanged
+  for that read-only path.
+- `processRTAAnnulment` (`deleteAccountService.js`) locks `targetAccountId`
+  first, then calls `getAnnulmentImpactReport(dbClient, userId,
+  targetAccountId)` itself, inside the open transaction, and computes both the
+  non-empty and zero-impact cases from that result. It no longer receives
+  `impactReport` as a parameter.
+- `executeAccountDeletion` (`accountDeleteController.js`) no longer reads or
+  validates `req.body.impactReport`; `deleteAccountService` dropped the
+  parameter entirely. `targetAccountName` is still read from the body - it is
+  cosmetic (annulment description text only), never a financial figure.
+
+**FE requirement:** `useRTAImpactAndDeletion.ts` (`~line 101`) still sends
+`impactReport` in the DELETE execution body. It is now ignored server-side, so
+nothing breaks, but it can be dropped from that payload as cleanup - it is
+dead weight, not a contract the backend reads.
+
+Still open for unit 6: an assessment endpoint that runs this same
+lock-then-compute step ahead of any deletion type, not just RTA.
+
 ---
 
 ## 10. Out of scope
