@@ -8,7 +8,9 @@
 import fs from 'fs';
 import path from 'path';
 import pc from 'picocolors';
-import { pool } from '../config/configDB.js';
+import pg from 'pg';
+import { pool as defaultPool } from '../config/configDB.js';
+import { getDbConfig, isProduction } from './dbMigrationConfig.js';
 /*
 // Alternative using dbMigrationConfig.js
 import { Client } from 'pg';
@@ -26,7 +28,45 @@ const client = new Client(config);
 */
 const MIGRATIONS_DIR = path.join(process.cwd(), 'src/db/migrations/sql_migrations'); //
 
+/**
+ * Decide which database this run migrates, and say so out loud.
+ *
+ * Default: the pool DATABASE_URI builds, carrying its SSL and pool settings.
+ * That is what a plain `npm run db:migrate` uses and the only path a production
+ * run takes.
+ *
+ * Override: DB_NAME names another database on the same server, for a rehearsal
+ * copy. bootstrapping.js already resolves its CREATE DATABASE target that way
+ * and then shells out to this file; until this branch existed it created one
+ * database and migrated a different one, with nothing in the output saying so.
+ *
+ * The override is refused under NODE_ENV=production: a stray DB_NAME there
+ * would point a production run at the wrong database and the ledger would
+ * record it as done.
+ *
+ * @returns {{pool: object, target: string}} the pool to migrate and its name
+ */
+function resolveTarget() {
+ const override = process.env.DB_NAME;
+
+ if (!override) {
+  return { pool: defaultPool, target: 'the database DATABASE_URI names' };
+ }
+
+ if (isProduction()) {
+  console.error(
+   pc.red('\n❌ DB_NAME override is not allowed when NODE_ENV=production.\n'),
+  );
+  process.exit(1);
+ }
+
+ return { pool: new pg.Pool(getDbConfig()), target: override };
+}
+
 async function runMigrations() {
+ const { pool, target } = resolveTarget();
+ console.log(pc.cyan(`Migration target: ${target}`));
+
  const client = await pool.connect();
  let exitCode = 0;
 
