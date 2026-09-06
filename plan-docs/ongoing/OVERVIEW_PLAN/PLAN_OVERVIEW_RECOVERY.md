@@ -402,10 +402,22 @@ becomes a rate whose denominator is no longer beside it.
 
 Ordered by dependency, not by value. Each step names what it unblocks.
 
-### P0 — Freeze the semantic contract · no code
+### P0 — Freeze the semantic contract · DONE, no code
 
-The three clocks, the five natures, and the domain-versus-Overview boundary
-written into `PLAN_OVERVIEW_CONTRACT.md`.
+**The temporal frame is written: `PLAN_OVERVIEW_CONTRACT.md` §14.** The three
+clocks, the five natures, the domain-versus-Overview boundary, and a reading
+convention the section added because two documents needed it — wherever a
+formula names the bank term it includes cash accounts (D45), so the three-term
+net worth and the `bank + cash` of the liquid figure name the same account set
+rather than two. The period window type of §3 now says which of the three clocks
+it is, so the rule is reachable from the place it governs.
+
+**One thing the section had to correct rather than restate.** The hero-composition
+decision (D27) fixes a four-term net worth that includes the pocket total, and
+the net-worth ruling (D54) removes exactly that term. The composition rule stands
+— the hero is built from the domain cards and inherits their corrections — and
+the term list does not. Writing the boundary without saying so would have left
+two live decisions contradicting each other in the same document.
 
 **The indicator matrix is written: `OVERVIEW_INDICATOR_MATRIX.md`.** Every
 indicator with its formula, temporal nature, owner, level, chart and endpoint,

@@ -104,6 +104,11 @@ type OverviewDomain =
 // cliente nunca la infiere de su propio reloj (mismo motivo que
 // budgetController.js:414-419: el reloj del cliente no es el calendario del
 // dueño de la cuenta).
+// Esta ventana es el reloj de analisis, uno de los tres que distingue
+// §14.1: la fecha de referencia responde donde estoy, esta ventana responde
+// que paso, y la actividad reciente (§10) elige la suya aparte. En el mes en
+// curso `periodEnd` es hoy, no el fin de mes: un flujo nunca fabrica los dias
+// que al mes le faltan.
 type PeriodWindow = {
  periodStart: string; // YYYY-MM-DD
  periodEnd: string; // YYYY-MM-DD
@@ -788,6 +793,120 @@ declaró que no mueven patrimonio.
 
 ---
 
+## 14. The temporal frame and the ownership boundary
+
+Added 2026-09-06, closing the first stage of `PLAN_OVERVIEW_RECOVERY.md`. Every
+section above states a **shape** — what a field is called and what type it has.
+This one states the two things a shape cannot carry: **when** a figure is read,
+and **who owns its definition**. Both were implicit until now, and each had
+already produced a defect by being implicit.
+
+Written in English, like the recovery plan and the indicator matrix; the
+sections above predate that rule and keep the language they were written in.
+
+### 14.1 The three clocks
+
+The largest correction the recovery plan made. These are three separate things,
+and the earlier plan documents treated them as one.
+
+| clock | the question it answers | its value |
+|---|---|---|
+| **reference date** | where do I stand? | the close of the month — or today, when the month is still running |
+| **analysis period** | what happened? | `periodStart` → the reference date |
+| **activity period** | what do I want to read? | chosen by the reader, independent of the other two |
+
+**A flow never fabricates the days an unfinished month has left.** The running
+month is measured `periodStart → referenceDate` and the payload says so; a closed
+month is measured `periodStart → periodEnd`. A figure that silently treats the
+running month as a whole one is not early, it is wrong.
+
+**Three concepts are not three request parameters.** The contract names all
+three; the request exposes a parameter only where the consumer actually chooses
+the value. §3 keeps the month as the single input and derives the reference date
+and the analysis period from it — the server always reports the window it used
+and the client never infers it from its own clock, which is the rule §3 already
+carries. Recent activity (§10) takes its own range on its own endpoint, because
+it is the one consumer that genuinely chooses that window. Publishing a
+reference date, an analysis start and an activity range as separate parameters
+would model the vocabulary instead of the interaction.
+
+### 14.2 The five temporal natures
+
+Every published figure is exactly one of these. A figure that cannot be
+classified is a figure whose question has not been settled, and it does not
+enter this contract until it can be.
+
+| nature | what it says | example in this contract |
+|---|---|---|
+| **Position** | what is true at one instant | `hero.netWorth` at the close of the reference month |
+| **Flow** | what moved across a period | `ExpenseCard.totalAmount` |
+| **Trend** | how a figure moved across a series of periods | — no field of this contract has this nature |
+| **Accumulation** | what has built up since an origin | `InvestmentCard.realizedResult`, since the account opened |
+| **Average** | the baseline a period is read against | the twelve-month mean of §8 |
+
+**The nature belongs to the figure, not to the field name.** `totalAmount` on the
+generic domain card of §5 is a Flow for income, expense and profit-and-loss, and
+a **Position** for debt and pocket — those two do not sum a period's movements,
+they state a balance at the close, which is exactly what §5.1 defines. One field
+name, two natures; a client that assumes the first reading for all five will
+misread two cards.
+
+**Four of the five carry fields and one carries none.** The twelve-month series
+is an input to the averages of §8 and is published as no figure of its own. That
+absence is recorded here rather than left to a reader's inference: a trend is
+level 2 work and nothing has been specified for it.
+
+The full assignment, figure by figure, is `OVERVIEW_INDICATOR_MATRIX.md`.
+
+### 14.3 What a domain owns, and what Overview owns
+
+**Overview composes; it does not recalculate.** A figure's definition belongs to
+the module that owns the data behind it, and Overview imports that service rather
+than writing a second query producing the same name. This is the one-figure,
+one-formula principle (`PLAN_OVERVIEW.md` §4.2) stated as an ownership rule, and
+it is the rule §7 already applies to the consolidated card and D27 already
+applies to the hero.
+
+| figure | owner | how Overview gets it |
+|---|---|---|
+| the budget of the period, categorised spend, the variance | budget | imported, without opening the budget contract (D6) |
+| the pocket target, what is committed, what remains, progress, the status counts | pocket | imported from `pocket_services`, never a query of Overview's own |
+| the goals figures of §9 | pocket | the same service — a separate query here would be the fourth copy of one figure, and §13 already records three overlapping ones |
+| the domain totals, counts and deltas of §5 | Overview | its own reads: no domain publishes a figure shaped for a card |
+| net worth, liquid net worth, cash position, free cash | Overview | composed from the domain figures, because no single domain owns a figure that spans them |
+
+**Overview owns exactly what no domain owns**, and that is a short list: the
+figures that cross domains. Everything else it publishes is somebody else's
+figure, restated by the same path.
+
+**D27 states the composition; D54 corrects its terms.** Composing the hero from
+the domain cards is still right, and it is why the hero inherits a domain's
+corrections instead of repeating a formula. What D54 removes is the pocket term
+from `netWorth` and from `cashPosition`: under the plan model an allocation is a
+commitment recorded against a real account's balance and the money never leaves
+it, so both figures already contain it through the bank term and adding
+`pocket.totalAmount` counts the same money twice. Commitments belong to free cash
+alone, floored per account before the sum.
+
+**The failure this rule exists to prevent has already happened in this module.**
+Net worth is computed in two places with a different number of terms — three on
+the screen a person can see today, four in this payload — and the second is the
+wrong one. Neither is an arithmetic mistake; both are a second path to one name.
+
+### 14.4 One reading convention, so two formulas are not read as two sets
+
+**Wherever a formula in this contract or in the matrix names `bank`, the term
+includes `cash`** (D45): a cash account is a bank account for every purpose of
+reading, and no formula distinguishes them. So the three-term net worth and the
+`bank + cash` of the liquid figure describe the **same** account set, stated at
+two levels of explicitness — the second spells the type out only because a figure
+named *liquid* that appeared to omit cash would be read as excluding it.
+
+This is a convention, not an implementation claim. §13 already records the code
+side: the real-account set and the cash position exclude `cash` today and by D45
+must include it.
+
+---
 ## Registro de correcciones — 2026-08-30
 
 Sólo mediciones. Ningún tipo, ninguna nulabilidad y ninguna decisión se
