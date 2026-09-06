@@ -1335,3 +1335,105 @@ llamada choca con una regla ya escrita —que Overview no llame a un endpoint de
 bolsillos, para no acoplar la pantalla de inicio a la disponibilidad de otro
 modulo—, asi que **la via es importar el servicio, no pedir el endpoint**, igual
 que se resolvio para el efectivo libre.
+## D54 — Net worth is the three real account kinds; the pocket term leaves it
+
+**The decision:** the application computes net worth in two places with a
+different number of terms, and this settles which one is right before the
+wrong one becomes visible.
+
+### What was measured
+
+| where | formula | terms |
+|---|---|---|
+| the live screen, `OverviewLayout.tsx:134-135` | bank + investment + debtor | three |
+| the new payload, `makeHeroSection.js:110-114` | bank + investment + debt + pocket | four |
+
+The live screen has never carried a pocket term. Under the model in force a
+pocket is a **plan**, and the money it commits never leaves the bank account it
+sits in — so the bank balance already contains it and adding a pocket total
+counts the same money twice.
+
+### The ruling
+
+**The three-term formula is correct and the pocket term is removed from the new
+payload.** Not as a later tidy-up: as a precondition. Two reasons, and the
+second is the one that matters.
+
+First, the alternative does not survive contact with the model. Keeping four
+terms would mean reading the pocket figure as something other than money —
+a commitment, a reservation — but a commitment is not a component of what the
+owner owns, and the money backing it is already inside the bank term. There is
+no reading of the fourth term that makes the sum right.
+
+Second, **the defect is latent today and becomes live at a known moment.** The
+pocket term is fed from the pocket card's total (`overviewPageService.js:124`),
+which reads the legacy table that migration 020 emptied — so it is zero now and
+the wrong formula produces the right number by accident. The step that repoints
+Pocket to the plan model turns that zero into a real committed total, and the
+same unchanged line starts double-counting on the day the pocket work lands.
+Whoever ships that step inherits a net worth defect they did not write.
+
+### The same defect has a second site, and it needs the opposite treatment
+
+`makeHeroSection.js:117` adds the pocket total to the bank balance to build the
+cash position. Under the retired model that was right — money had physically
+moved out of the bank into a pocket account, so it had to be added back. Under
+the plan model it never left, so this adds it a second time.
+
+**Pocket leaves both figures entirely.** Commitments are not a term of what the
+owner holds and not a term of what the owner has in cash; they belong to free
+cash alone, applied as a floor per account before the sum, so an account
+committed beyond its balance contributes zero rather than a negative that
+another account's surplus silently absorbs. This matches the hierarchy frozen
+in the recovery plan: net worth answers what is owned, available balance
+answers how much cash there is, free cash answers how much of it is unpromised.
+
+### What this does not fix, named so it is not mistaken for settled
+
+The live three-term figure is right in its **count of terms** and still carries
+two known limits. It reads the debtor position as one net total, so money owed
+to the owner is inside it — which is precisely what the liquid figure excludes,
+and why the two are different indicators rather than the same one twice. And it
+omits cash-typed accounts, which today is invisible because that type is
+unreachable: no creation route offers it and the coherence check at
+`accountCreationController.js:88-92` requires the body type to equal the URL
+segment. The omission becomes real the day a creation path is opened.
+
+### Why removal is the only correct answer, not the tidier of two
+
+The obvious alternative is to keep the fourth term and repoint it at the plan
+model — the pocket figure would stop being zero and start being the real
+committed total. **That is the one change that would turn a latent defect into
+a live one.**
+
+The plan model never moves money into an account of its own. An allocation is a
+commitment recorded against a real account's balance, and the balance keeps the
+money. The allocation guard proves it: committing is refused when the requested
+amount exceeds `accountBalance` minus `accountAllocated`
+(`pocketAllocationService.js:344-349`), which only subtracts because the
+committed money is still inside the balance. The figures file says the same in
+words — the available balance remains the whole account balance, because a
+pocket never blocks a spend (`makeAccountAllocation.js:15-18`).
+
+So the committed total is already inside the bank term. Pointing the pocket term
+at the plan model would add the same money a second time, in the hero and in the
+cash position both. Removal is not the cheaper option; it is the only one that
+sums correctly.
+
+### Two Overview reads touch the retired model and they need opposite treatments
+
+This is the trap the ruling has to name, because treating them as one problem is
+how the defect ships.
+
+| read | what it feeds | treatment |
+|---|---|---|
+| the pocket term in the hero (`overviewPageService.js:124`) | a term of two money identities | **delete it** |
+| the saving-goals query (`overviewPageRepository.js:70-81`) | progress against a target, a widget | **repoint it to the plan model** |
+
+The second joins the table migration 020 emptied and returns nothing, so the
+widget is blank rather than wrong. It is no term of any identity, so no double
+count is possible there and repointing is exactly right — the file's own comment
+already says it needs repointing and not re-anchoring.
+
+Whoever deletes the first and repoints the second is correct. **Whoever repoints
+both has shipped the double count.**
