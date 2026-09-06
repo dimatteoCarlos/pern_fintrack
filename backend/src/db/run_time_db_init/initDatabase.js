@@ -150,6 +150,25 @@ export async function initializeDatabase() {
     }
 
     // =======================================
+    // Currency catalog (idempotent, runs on every boot)
+    // =======================================
+    // Same reason as every ensure* call below: the first-time block above is
+    // skipped whenever app_initialization.tables_created is TRUE, so a currency
+    // added to the catalog only there reached a virgin database and nothing
+    // else. The call inside that block stays, because createTables() declares
+    // foreign keys against currencies and needs the rows already present.
+    //
+    // Safe to repeat: the seeder returns early once the table holds every row
+    // it writes, and each INSERT carries ON CONFLICT (currency_id) DO NOTHING.
+    // It only ever adds a missing row; renaming an existing one belongs to the
+    // migration chain, which is where 028_align_currency_names.sql did it.
+    //
+    // It does NOT reach production, for the reasons spelled out at the
+    // historical rate store below. There the catalog row arrives through
+    // 030_add_jpy_currency.sql and the runner.
+    await tblCurrencies(client);
+
+    // =======================================
     // [FX Migrations execute / Migraciones FX (siempre se ejecutan, son idempotentes)
     // =======================================
     await addFxAuditColumns(client);
