@@ -832,6 +832,63 @@ not block and are closed when the code reaches them:
      deleted, and nothing in the code may read it as deletion.
 ```
 
+### Unit 5 scoping, 2026-09-06
+
+**Names decided by the developer.** The new `account_type` is `boundary` — the term this document
+already uses for the concept (§4.2-§4.3), not an invented one, and not `system_boundary`: "system"
+implies internal machinery, which contradicts the RTA treating this account as "an ordinary
+counterparty" (§4.3). The new `movement_type`/`transaction_type` for closing an account is
+`account-closure`, mirroring `account-opening`'s exact naming convention.
+
+**Backward-compatibility scope, measured (Explore agent, 2026-09-06).** The `'slack'` literal falls
+into three patterns, and only one depends on `account_type`:
+
+| pattern | sites | depends on `account_type` | touched by this unit |
+|---|---|---|---|
+| A - inline name exclusion (`account_name != 'slack'`) | 8 | no | no |
+| B - parameterised name exclusion (`values:['slack']`) | 26 (`dashboardController.js`, `getAccountController.js`) | no | no |
+| C - identification/creation by name+type | 13, of which **3 hardcode `account_type_name = 'bank'`** (`accountUtils.js:63` `getSlackAccountId`; `checkAndInsertAccount.js:12` default param; its inline duplicate at `transactionController.js:229-260`) | yes, those 3 | yes, only those 3 |
+
+The 34 name-only sites (A+B) are untouched - the account's name doesn't change in this unit. Only the
+3 sites that today require `account_type_name = 'bank'` are updated, and they accept `'boundary'` OR
+`'bank'`, not `'boundary'` alone: if the backfill (N3, below) lands after this unit's migration,
+existing boundary accounts stay typed `'bank'` until it runs, and a strict `'boundary'`-only check
+would stop recognising them.
+
+**Done, 2026-09-06 - identification widened, insertion left unchanged.** All three sites now recognise
+the account under either type; none of them create a new one as `'boundary'` yet, because that type
+doesn't exist in any catalog until `backdating` applies the migration - inserting against it today
+would 404. This is a deliberate split, not a partial fix:
+
+- `accountUtils.js:56-75` (`getSlackAccountId`) - a read-only lookup, its `JOIN` now matches
+  `account_type_name IN ('bank', 'boundary')`.
+- `checkAndInsertAccount.js` - a generic check-or-create helper also used with explicit types for
+  unrelated accounts (`accountCreationController.js:648`), so only the omitted-type call shape (the one
+  every boundary-account caller uses) was widened: the existence check matches either type, the insert
+  path still resolves `'bank'` when no type is given. An explicit-type caller is untouched.
+- `transactionController.js:229-263` (`checkAndInsertSlackAccount`) - its existence check was already
+  type-agnostic (`WHERE account_name = $1 AND user_id = $2`, no join to `account_types`), so nothing
+  changed there; a comment now documents that its hardcoded `account_type_id` literal `1` is `'bank'`.
+
+Once N3 is resolved and `backdating` applies the migration, a follow-up change decides whether these
+sites should start inserting new boundary accounts as `'boundary'` - not part of this unit.
+
+**Open, blocking the migration:** the backfill scope for existing `'slack'` accounts - insert `boundary`
+rows for them in the same migration, or leave existing accounts as `'bank'` and backfill later. Needs
+further explanation from the developer plus a check with the migration chain owner; not decided here.
+
+**Migration authorship.** Per the 2026-09-06 session split (`agent-ownership-split` memory,
+`HANDOFF_AGENTES.md:232`), the session named `backdating` (listed in `ListAgents` as `pern-fintrack-32`
+- the rename didn't take) is sole owner of `backend/src/db/migrations/sql_migrations/`. No migration
+file for this unit is written until coordinating with it; this unit can still prepare the migration's
+exact content and the three call-site updates ahead of that.
+
+**Adjacent, not decided here:** whether the `movement_type` <-> `account_type` pairing (only
+`investment`, `account-opening` and `pnl` appear on `investment` accounts today) becomes a real
+constraint (FK/CHECK) or stays convention. Flagged by `pern-fintrack-90` as a measurement, not a
+request, because this unit is the natural place to make that call - but it isn't part of unit 5's
+scope and stays open.
+
 ---
 
 ## 10. Out of scope

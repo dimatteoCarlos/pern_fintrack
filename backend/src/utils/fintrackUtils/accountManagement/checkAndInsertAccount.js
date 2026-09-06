@@ -10,11 +10,20 @@ export const checkAndInsertAccount = async (
   clientOrPool,
   userId,
   accountName = 'slack',
-  accountType = 'bank',
+  accountType,
 ) => {
   //0 initial validation
   if (!userId) throw new Error('User ID is required');
   if (!accountName) throw new Error('Account name is required');
+
+  // When the caller omits accountType, this call identifies the boundary
+  // account (unit 5 of PLAN_ACCOUNT_DELETION.md): today typed 'bank', moving
+  // to 'boundary' once its migration lands. Match either until the backfill
+  // (open decision N3) runs, so an existing 'bank'-typed one isn't missed and
+  // duplicated. A caller that passes an explicit type keeps exact matching -
+  // this function is shared for other account types too.
+  const matchTypes = accountType ? [accountType] : ['bank', 'boundary'];
+  const insertAccountType = accountType || 'bank';
 
   // 1. Determine the database client connection:
   const isPool = clientOrPool === pool;
@@ -33,10 +42,10 @@ export const checkAndInsertAccount = async (
      JOIN account_types act ON ua.account_type_id = act.account_type_id
      WHERE ua.user_id =$1
       AND LOWER(ua.account_name) = LOWER($2)
-      AND LOWER(act.account_type_name) = LOWER($3)
+      AND LOWER(act.account_type_name) = ANY($3)
       AND ua.deleted_at IS NULL;
       `,
-      [userId, accountName, accountType],
+      [userId, accountName, matchTypes.map((type) => type.toLowerCase())],
     );
 
     if (chekAccountResult.rows.length > 0) {
@@ -53,11 +62,11 @@ export const checkAndInsertAccount = async (
       //Get account_type_id dynamically
       const accountTypeResult = await dbClient.query(
         'SELECT account_type_id FROM account_types WHERE LOWER(account_type_name) = LOWER($1)',
-        [accountType],
+        [insertAccountType],
       );
 
       if (accountTypeResult.rows.length === 0) {
-        throw new Error(`Account type '${accountType}' not found`);
+        throw new Error(`Account type '${insertAccountType}' not found`);
       }
 
       const accountTypeId = accountTypeResult.rows[0].account_type_id;

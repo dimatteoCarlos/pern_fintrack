@@ -240,6 +240,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
           console.log('slack account already exists');
           return chekAccountResult.rows[0];
         } else {
+          // account_type_id 1 is 'bank' - the boundary account's type until
+          // unit 5 of PLAN_ACCOUNT_DELETION.md backfills existing accounts to
+          // the structural 'boundary' type (open decision N3).
           const insertResult = await db.query(
             'INSERT INTO user_accounts (user_id,account_name,account_type_id,currency_id,account_starting_amount,account_balance,account_start_date) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
             [userId, 'slack', 1, 1, 0, 0, new Date()],
