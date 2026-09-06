@@ -7,8 +7,13 @@ supports six currencies today: `usd`, `eur`, `cop`, `ves`, `mxn` and `jpy`.
 
 **Read this first.** Adding a currency is one row in `currencies` written twice —
 once in a migration and once in the boot seed — one entry in
-`SUPPORTED_CURRENCIES` on the server, one entry in `fixedRates`, and four
-declarations in the client. Exactly one of them is irreversible.
+`SUPPORTED_CURRENCIES` on the server, one entry in `fixedRates`, four
+declarations in the client, and one conditional entry in the Banca d'Italia
+provider that decides whether back-dated movements work. Exactly one of them is
+irreversible.
+
+**Corrected 2026-09-06**, after the yen shipped able to price today and unable to
+price any past day. The conditional entry is step 3b and it was missing.
 
 **The architectural fact that makes this cheap.** No table that holds money knows
 which currencies exist. Every stored amount carries the same six-column audit
@@ -120,17 +125,32 @@ it. It was rewritten to the `.refine()` shape `budgetValidators.js` and
 permanently. Nothing to edit there when adding a currency — verify it, do not
 change it.
 
-**A naming hazard to know about, not to fix.** `bancaDItaliaProvider.js:113`
-declares its own module-scoped `SUPPORTED_CURRENCIES`, listing the four
-currencies that provider covers, and guards on it at lines 248 and 361. It is
-not a second global list and must not be edited to match. Leave it unless that
-provider actually covers the new currency.
+**A second list with the same name, which is a question to answer and not a
+hazard to avoid.** `bancaDItaliaProvider.js:113` declares its own module-scoped
+`SUPPORTED_CURRENCIES` naming the currencies that provider covers, and guards on
+it at lines 248 and 361. It is not a second global list, so it is never edited
+to *match* the global one. But it is not to be left alone either: whether that
+provider covers the new currency decides whether back-dated movements work at
+all, and that question is answered in step 3b, not skipped.
+
+> **Corrected 2026-09-06.** This paragraph used to read "a naming hazard to know
+> about, not to fix … must not be edited to match", with the condition tucked
+> into a closing sentence. It was followed as a prohibition: the yen was added on
+> 2026-09-05 without anyone asking whether Banca d'Italia publishes it — it does —
+> so every back-dated conversion in yen returned a 422 until 2026-09-06. The
+> instruction now names the check instead of naming the trap.
 
 ---
 
 ## Step 3 — Rate sourcing, which decides whether it works at all
 
-Steps 1 and 2 make the currency legal. This one makes it convertible.
+Steps 1 and 2 make the currency legal. This one makes it convertible — and
+"convertible" is two questions, not one. **Today's rate and a past day's rate
+come from different code and different sources.** Step 3a covers the first, step
+3b the second. A currency that passes 3a and fails 3b works in every screen that
+shows a current figure and refuses every movement dated before today.
+
+### Step 3a — Today's rate: the live cascade
 
 **The good news is architectural.** `fetchRatesFromProviders` in
 `fxProviderOrchestrator.js` walks the `PROVIDERS` array in priority order and
@@ -167,6 +187,45 @@ It is a floor, not a figure anyone trades on.
 national publisher issuing a daily series. A new currency without one inherits
 the shared business-day calendar the TRM source establishes for every other
 currency. Do not add a calendar; there is one and it is shared deliberately.
+
+### Step 3b — A past day's rate: Banca d'Italia, and it is not in that cascade
+
+**The cascade above answers "what is it worth today". It cannot answer "what was
+it worth on a given day".** That second question belongs to
+`historicalRateResolver.js`, which is what a back-dated movement travels, and it
+reaches exactly one source: `fetchBancaDItaliaRange`, imported at
+`historicalRateResolver.js:46` and called at `:365`. Banca d'Italia appears
+nowhere in `PROVIDERS`, and nothing else in the code serves a past day.
+
+So the module-scoped list at `bancaDItaliaProvider.js:113` is not decoration. If
+the new code is not in it, both guards — `:248` for one day, `:361` for a span —
+throw before a request is made, the resolver has no other arm to try, and the
+request ends in a **422**. The currency will look perfectly healthy everywhere a
+current figure is rendered.
+
+**The check, and it is empirical exactly like the aggregators in 3a.** Ask the
+daily rates endpoint for the code and read what comes back:
+
+```
+https://tassidicambio.bancaditalia.it/terzevalute-wf-web/rest/v1.0/dailyRates
+  ?referenceDate=<a recent weekday>&baseCurrencyIsoCode=<CODE>&currencyIsoCode=USD&lang=en
+```
+
+**A row is not a rate.** The source answers for currencies it lists but does not
+price — the North Korean won returns a row whose `avgRate` is the string `N.A.`
+— so accept it only on the three conditions `fetchOneDay` itself applies at
+`:199-212`: the `rates` array is non-empty, `exchangeConventionCode` is `C`, and
+`Number(avgRate)` is finite and positive. An empty array means the market was
+closed that day; step back a day and ask again, up to five times, which is what
+the provider does.
+
+**If it answers**, add the code to that array and back-dating works. **If it does
+not**, leave the array alone: an entry there is a claim about coverage, and a
+false one turns a clean 422 into a throw from inside the provider. Record that
+the currency is live-only.
+
+`addCurrency.js` performs this check and writes the entry only when the source
+answers, so following the script is following this step.
 
 ---
 
@@ -280,11 +339,26 @@ longer resolves, the run aborts having written nothing and names the file. A
 half-applied currency — one the API accepts and the client cannot name — is the
 one outcome worse than not running it.
 
-**The acceptance test runs first, not last.** This guide puts confirming a real
+**The declaration check runs before anything else.** A currency already present
+in `populateDB.js`, `fxConfig.js`, `getFallbackRate.js`, `types.ts` or
+`currencyConstants.ts` is refused by name, with the files listed, before a single
+request leaves the machine. It is the cheapest check and the only one that needs
+no network, so it goes first.
+
+**The acceptance test runs next, not last.** This guide puts confirming a real
 rate at the end. That is the wrong order for a script: a currency no provider
 serves cannot be converted, so the cascade is asked *before* anything is
 written, and its answer seeds the `fixedRates` floor. Pass `--rate` to override
 it, or `--offline --rate N` to skip the network entirely.
+
+**There are two rate checks, because there are two questions.** After the live
+cascade, the script asks Banca d'Italia whether it publishes the currency on past
+days — step 3b — applying the same three conditions `fetchOneDay` applies, so a
+listed-but-unpriced currency is a no. The eighth edit,
+`bancaDItaliaProvider.js:113`, is written **only when that source answers**. When
+it does not, the script says so and says what it costs: back-dated movements in
+that currency fall through to a 422. When the host cannot be reached the answer
+is neither yes nor no, and it says that too rather than guessing.
 
 **It refuses a malformed locale.** `Intl` never throws on one — it falls back
 silently, which is how `'cop-CO'` survived. The script asks the formatter which
@@ -345,6 +419,17 @@ for want of an API key in this environment, which is exactly the condition the
 cascade exists to survive — and it is also why `fixedRates` matters: had the
 GitHub provider been down too, the entry added in step 4 would have been the only
 answer.
+
+**And the acceptance test that did not exist yet failed, silently, for a day.**
+The table above is missing the entry this guide now calls step 3b:
+`bancaDItaliaProvider.js:113` was never touched, so `historicalRateResolver.js`
+refused every yen rate for a past day and every back-dated movement in yen ended
+in a 422 — while the live figure above kept resolving perfectly. Measured at boot
+the next morning: `cop 37/37, eur 37/37, ves 37/37, mxn 37/37, jpy 30/37`. The
+line was added on 2026-09-06 in `0b602095` after asking the source directly, and
+it does publish the yen: 156.2468 per dollar, effective 2026-09-04, against a
+Colombian peso control of 3143.51. **Seven files were right and the eighth was
+the one a user would notice.**
 
 **One thing the yen exposed that the other five currencies never could, now
 settled.** JPY has no minor unit. `currencyFormat` pinned

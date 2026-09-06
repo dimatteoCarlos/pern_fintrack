@@ -1,7 +1,9 @@
 // backend/scripts/addCurrency.js
 //
 // Adds a currency to every place the application declares one, following
-// plan-docs/ongoing/GUIDE_ADD_FX_CURRENCY.md. Seven files, one command.
+// plan-docs/ongoing/GUIDE_ADD_FX_CURRENCY.md. Seven files, one command, plus an
+// eighth that is written only when a measurement earns it -- see WHY THERE ARE
+// TWO RATE CHECKS.
 //
 //   node scripts/addCurrency.js <code> <locale> [options]
 //   node scripts/addCurrency.js jpy ja-JP
@@ -30,6 +32,23 @@
 // That is the wrong order for a script. A currency no provider serves is not a
 // currency this application can convert, so it is a precondition: the cascade is
 // asked before anything is written, and its answer seeds the static floor.
+//
+// Both rate checks run AFTER the declaration check, which is the cheapest and
+// the only one that can be answered without leaving the machine: a currency
+// already declared is refused before a single request goes out.
+//
+// WHY THERE ARE TWO RATE CHECKS
+//
+// Today's rate and a past day's rate come from different places. The cascade in
+// fxProviderOrchestrator.js serves the first; the second is served by
+// historicalRateResolver.js, which reaches Banca d'Italia and nothing else, and
+// Banca d'Italia is not in that cascade at all. So a currency can price today
+// perfectly and refuse every back-dated movement.
+//
+// That is not hypothetical. The yen passed the live check on 2026-09-05, shipped,
+// and every back-dated conversion in it returned a 422 until 2026-09-06, because
+// the provider's own module-scoped list did not name it. The guide said to leave
+// that list alone; it now says to measure it, and this script does the measuring.
 //
 // WHAT THIS SCRIPT DELIBERATELY DOES NOT DO
 //
@@ -61,6 +80,10 @@ const FILES = {
  fallbackRate: path.join(
   BACKEND,
   'src/fintrack_api/services/fx_services/fxProviders/getFallbackRate.js',
+ ),
+ bancaDItalia: path.join(
+  BACKEND,
+  'src/fintrack_api/services/fx_services/fxProviders/bancaDItaliaProvider.js',
  ),
  userSchemas: path.join(BACKEND, 'src/validation/zod/userSchemas.js'),
  types: path.join(ROOT, 'frontend/src/fintrack/types/types.ts'),
@@ -238,6 +261,24 @@ function editFallbackRate(source, { code, rate }) {
   `\n${indent}${code}: ${rate},` +
   source.slice(insertAt)
  );
+}
+
+// Inserts the code into the Banca d'Italia provider's own list, alphabetically.
+//
+// This one is NOT a global declaration and is not written unless the source was
+// asked and answered. It is a claim about what that provider covers, so an
+// entry added without a measurement is a lie the historical path believes.
+function editBancaDItalia(source, { code }) {
+ const pattern = /^(const SUPPORTED_CURRENCIES = \[)(.*)(\];)$/m;
+ const match = source.match(pattern);
+ if (!match) return null;
+
+ const codes = [...match[2].matchAll(/'([a-z]{3})'/g)].map((m) => m[1]);
+ if (codes.length === 0) return null;
+ if (codes.includes(code)) return source;
+
+ const merged = [...codes, code].sort();
+ return source.replace(pattern, `$1${merged.map((c) => `'${c}'`).join(', ')}$3`);
 }
 
 // Widens the CurrencyType union.
@@ -495,6 +536,70 @@ async function fetchLiveRate(code) {
  return Number.isFinite(rate) && rate > 0 ? { rate, source } : null;
 }
 
+// Asks Banca d'Italia whether it publishes this currency, walking back over
+// closed days the way the provider itself does.
+//
+// The live cascade above and this are two different questions. fetchLiveRate
+// asks whether TODAY'S rate can be had; this asks whether a rate for a PAST day
+// can be had, which is what a back-dated movement needs. Banca d'Italia is the
+// only source the historical resolver reaches for that, and it is not in the
+// live cascade at all, so a currency can pass the first check and still fail
+// every back-dated conversion. The yen did, in production, on 2026-09-06.
+//
+// Returns true, false, or null when the host could not be reached — which is a
+// third answer, not a no.
+async function probeBancaDItalia(code) {
+ const url = 'https://tassidicambio.bancaditalia.it/terzevalute-wf-web/rest/v1.0/dailyRates';
+ const day = new Date();
+ let reached = false;
+
+ for (let step = 0; step < 5; step += 1) {
+  const referenceDate = day.toISOString().slice(0, 10);
+  const query = new URLSearchParams({
+   referenceDate,
+   baseCurrencyIsoCode: code.toUpperCase(),
+   currencyIsoCode: 'USD',
+   lang: 'en',
+  });
+
+  try {
+   const response = await fetch(`${url}?${query}`, {
+    headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(8000),
+   });
+
+   reached = true;
+
+   if (response.ok) {
+    const body = await response.json();
+    const rows = Array.isArray(body?.rates) ? body.rates : null;
+
+    // An empty list is a closed market, so step back and ask again. Anything
+    // else is an answer about the currency itself.
+    if (rows && rows.length > 0) {
+     const row = rows[0];
+
+     // The same three conditions fetchOneDay applies, and for the same reason:
+     // this must accept exactly what the provider would accept. The source
+     // answers for currencies it lists but does not price -- the North Korean
+     // won comes back with avgRate 'N.A.' -- so a row is not a rate.
+     if (row.exchangeConventionCode !== 'C') return false;
+
+     const rate = Number(row.avgRate);
+     return Number.isFinite(rate) && rate > 0;
+    }
+   }
+  } catch {
+   // A connection failure says nothing about the currency. Keep walking; if
+   // every step fails the caller is told the question went unanswered.
+  }
+
+  day.setUTCDate(day.getUTCDate() - 1);
+ }
+
+ return reached ? false : null;
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -600,6 +705,20 @@ async function main() {
 
  console.log(`  rate ${rate} per USD (${rateSource})`);
 
+ // -- The second acceptance test: can a PAST day be priced? -----------------
+
+ const alreadyServed = new RegExp(`'${code}'`).test(
+  sources.bancaDItalia.match(/^const SUPPORTED_CURRENCIES = \[.*\];$/m)?.[0] ||
+   '',
+ );
+
+ let historical = alreadyServed ? true : false;
+
+ if (!alreadyServed && !flags.offline) {
+  console.log('  Asking Banca d\'Italia whether it publishes past days...');
+  historical = await probeBancaDItalia(code);
+ }
+
  // -- Apply every edit in memory; a null anchor aborts the run --------------
 
  const edits = [
@@ -613,6 +732,24 @@ async function main() {
   ],
   ['functions', editFunctions(sources.functions, { code })],
  ];
+
+ if (historical === true && !alreadyServed) {
+  edits.push([
+   'bancaDItalia',
+   editBancaDItalia(sources.bancaDItalia, { code }),
+  ]);
+  console.log('  Banca d\'Italia publishes it: the historical path is opened.');
+ } else if (historical === false) {
+  console.log(
+   '  Banca d\'Italia does not publish it: its list is left alone, and\n' +
+    '  back-dated movements in this currency will fall through to a 422.',
+  );
+ } else if (historical === null) {
+  console.log(
+   '  Banca d\'Italia could not be reached, so the question is unanswered.\n' +
+    '  Its list is left alone. Ask again before trusting a back-dated rate.',
+  );
+ }
 
  const missing = edits.filter(([, result]) => result === null);
  if (missing.length > 0) {
