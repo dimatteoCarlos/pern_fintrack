@@ -16,6 +16,13 @@ AL ELIMINAR TARGET, SE REVIERTE:
 1. Anulación: Cliente A → Slack (-$100)  // Reverse Profit
 2. Anulación: Slack → Cliente B (+$50)   // Reverse Loss
 */
+// Overview's overviewInvestmentRepository.js, overviewMonthlyRepository.js and
+// overviewTransactionRepository.js filter transactions on this exact prefix
+// (NOT LIKE '<prefix>%'). Changing the string here without updating those
+// four filters breaks them silently: annulment rows would start counting as
+// ordinary activity, with no error anywhere.
+export const RTA_ANNULMENT_TARGET_PREFIX = 'RTA Annulment Target(';
+
 /**
  * 🛠️ Helper function to construct the annulment transaction description.
  * @param {boolean} isProfit - True if the correction/annulment results in a profit for the affected account (adjustment > 0).
@@ -36,8 +43,7 @@ function buildAnnulmentDescription(
 ) {
   const action = isProfit ? 'DEPOSIT' : 'WITHDRAW';
   const sign = isProfit ? '+' : '-';
-  // Standardized prefix for RTA Annulmnet description
-  const prefix = `RTA Annulment Target(${targetAccountName}).`;
+  const prefix = `${RTA_ANNULMENT_TARGET_PREFIX}${targetAccountName}).`;
   return perspective === 'affected'
     ? `${prefix}Correction in ${affectedAccountName}: ${sign}${amount} ${currencyCode} to revert original "${action}". For Deletion of ${targetAccountName} account.`
     : `${prefix}Counterpart Adjustment: ${isProfit ? '-' : '+'}${amount} ${currencyCode} from ${affectedAccountName}. For Deletion of ${targetAccountName} account.`; //The Slack account registers the opposite sign

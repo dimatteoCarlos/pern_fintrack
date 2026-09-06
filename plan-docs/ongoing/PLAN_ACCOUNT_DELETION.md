@@ -370,6 +370,17 @@ It is also the counterparty's honest history: they did send 2.00, and it was lat
 reversed. These rows are detached and scrubbed like any other surviving row that
 names `A` (§8).
 
+**The description prefix `RTA Annulment Target(` is a cross-module invariant, not
+just wording.** Four Overview queries (`overviewInvestmentRepository.js:71`,
+`overviewMonthlyRepository.js:113`, `overviewTransactionRepository.js:135,147`)
+filter these rows out of investment/spend figures by matching that exact literal.
+Step 7d's SCRUB must strip the account name *inside* the parentheses only, never
+the prefix itself - rewriting it would desynchronize all four filters with no
+error, and annulment rows would silently start counting as ordinary activity. The
+prefix is now `RTA_ANNULMENT_TARGET_PREFIX`, exported from
+`recordAnnulmentTransaction.js`, for the four readers to import instead of
+hand-copying.
+
 ### 4.3 Lock sets
 
 ```
