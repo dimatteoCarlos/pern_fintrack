@@ -431,6 +431,11 @@ it does publish the yen: 156.2468 per dollar, effective 2026-09-04, against a
 Colombian peso control of 3143.51. **Seven files were right and the eighth was
 the one a user would notice.**
 
+The same measurement after the fix, on the next boot, closes the loop:
+`cop 37/37, eur 37/37, ves 37/37, mxn 37/37, jpy 37/37`. **That count is the
+cheapest acceptance test in this guide** — it appears in the boot log without
+being asked for, and a new currency short of the others is step 3b failing.
+
 **One thing the yen exposed that the other five currencies never could, now
 settled.** JPY has no minor unit. `currencyFormat` pinned
 `minimumFractionDigits` and `maximumFractionDigits` at `2` for every currency, so

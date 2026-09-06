@@ -456,6 +456,41 @@ Colombian peso as a control: peso 3143.51 and yen 156.2468, both effective
 2026-09-04. A lifted gate proves the code stopped refusing; a rate proves the
 source answers.
 
+**Both halves verified on the deployed application, 2026-09-06.** The push of
+`0b602095` was not proof that the backend project had rebuilt, so the deployed
+API was asked directly, from the tracker, in two conversions that differ only by
+date:
+
+| conversion | what came back | what it proves |
+|---|---|---|
+| 2 000 JPY dated **today** | `rate: 156,17`, no effective date | the **catalog row**. A conversion dated today takes `asOfDay = null` at `currencyController.js:130-131` and travels the live cascade, where Banca d'Italia has never been — this answered before the provider fix too |
+| 2 000 JPY dated **30 Aug** | `rate: 159,68`, **in force since 28/08/2026** | the **provider fix is deployed**. A past day routes to `historicalRateResolver`, whose only path to a business-day source is `fetchBancaDItaliaRange` |
+
+The rolled-back effective date is what makes the second row conclusive rather
+than merely successful. The market was closed on the 30th, and a business-day
+oracle answers with the last day it quoted. The CDN of last resort — the arm the
+yen fell to while the gate was closed — **invents movement on closed days**, so
+it would have returned a figure dated the 30th itself. A date earlier than the
+one asked for is the signature of the source we wanted.
+
+Neither conversion wrote a row: both were previews, which reach the same endpoint
+the write would. Verifying a production path without creating production data is
+the right way round.
+
+**The runtime check the local run had left open.** The application was booted
+against the local clone on port 5078 — target identified first by the phantom
+ledger row below, before anything ran, because `index.js:37` executes
+`initializeDatabase()` on every local boot and that path writes DDL. It reported
+six currencies in the catalog, an idempotent initialisation, the router answering
+on 5078, and the number that was outstanding:
+
+```
+FX warm-up for 2026-08-01..2026-09-06: cop 37/37, eur 37/37, ves 37/37, mxn 37/37, jpy 37/37.
+```
+
+The yen now covers every day of the window, level with the four established
+currencies. It stood at `30/37` while the gate was closed.
+
 ### The two things that nearly broke it
 
 **The deploy branch did not carry the fix.** The working tree was moved to
