@@ -1,5 +1,18 @@
 # INVENTARIO — endpoints e indicadores financieros
 
+> ## Status, set 2026-09-06: **historical measurement — true on its date, not maintained**
+>
+> Measured on 2026-09-01 across two trees, one of which no longer exists in the
+> form described: the Overview module was merged to `main` on 2026-09-02, so
+> the second row of the table below is struck through and the branch it names
+> was deleted along with the other August branches.
+>
+> **For indicators, use `OVERVIEW_INDICATOR_MATRIX.md`.** The endpoint half of
+> this inventory is the part that keeps its value: it is the only document
+> that enumerates the live routes and the legacy frontend beside the new
+> module, which is what the frontend stage of the recovery plan needs when it
+> retires the five by-type balance calls.
+
 **Vive en `plan-docs/ongoing/`, que el `.gitignore` exceptua explicitamente
 (`.gitignore:123`): este archivo si se versiona.**
 

@@ -1,5 +1,17 @@
 # Overview — measured brief, 2026-09-04
 
+> ## Status, set 2026-09-06: **historical measurement — true on its date, not maintained**
+>
+> A dated audit is a measurement, not a state. This brief was read out of the
+> code on 2026-09-04 and it is not updated as the code moves; two days later
+> the net-worth ruling (D54), the indicator matrix and §14 of the contract all
+> landed, and none of them are reflected here.
+>
+> **Do not start from this file.** Its successor as the cold-start document is
+> `PLAN_OVERVIEW_RECOVERY.md`, which carries the same facts remeasured plus
+> the work in dependency order. Read this one only to see what was known on
+> its date — which is what a brief written for one session is for.
+
 Written for a session starting cold on the Overview proposal. Everything here was
 read out of the code on 2026-09-04, not out of a plan. It is not a design and it
 decides nothing: it is the set of facts a proposal has to survive, plus the

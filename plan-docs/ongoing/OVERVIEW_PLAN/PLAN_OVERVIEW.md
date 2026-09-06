@@ -1,5 +1,29 @@
 # PLAN — Overview refactor
 
+> ## Status, set 2026-09-06: **partially superseded — read §4 and §5, ignore the rest**
+>
+> This file is the original plan, and it is the one document here that must
+> **not** be retired wholesale: two of its sections are still the only place
+> the rules they carry are written down.
+>
+> **Still authoritative.** §4, the guard rules — including the batch-payload
+> precedent (§4.1), which the data contract cites at its line 11 and again at
+> line 640, and the one-figure-one-formula principle (§4.2), which §14.3 of
+> the contract now restates as an ownership rule and which four documents
+> cite. And §5, the contract obligations: the eleven fields every indicator
+> entry declares.
+>
+> **Superseded.** The verdict (§1) and the measured terrain (§2) are a reading
+> of the code on 2026-08-20, before the module was merged. The phase sequence
+> (§6) is replaced by `PLAN_OVERVIEW_RECOVERY.md`, which says so at its line
+> 5. The open decisions (§8) are closed or reopened in `OVERVIEW_DECISIONS.md`,
+> which is the register of record.
+>
+> **Where to go instead.** For what work is pending and in what order:
+> `PLAN_OVERVIEW_RECOVERY.md`. For what each indicator means:
+> `OVERVIEW_INDICATOR_MATRIX.md`. For the payload shape:
+> `PLAN_OVERVIEW_CONTRACT.md`.
+
 > ⏳ ~~**TRIGGER — do not open until this fires.**
 > Fires when the budget branch **merges to production** (`PLAN_PRODUCTION_MERGE.md`),
 > not merely when it is code-complete. Overview's Expense domain card consumes

@@ -1,5 +1,19 @@
 # CATÁLOGO DE KPI — Overview, fase 1
 
+> ## Status, set 2026-09-06: **superseded as the indicator list, live as the entry format**
+>
+> **`OVERVIEW_INDICATOR_MATRIX.md` replaces this file for the question "which
+> indicators exist and what does each one mean".** The matrix carries what
+> this catalogue could not: the temporal nature of each figure, which module
+> owns its definition, and whether a person can actually see it on screen
+> today. Where the two disagree, the matrix is right and this file is a
+> reading of 2026-08-20.
+>
+> **What is still live here.** The eleven declared fields per entry, the format
+> `PLAN_OVERVIEW.md` §5 requires, and the anchors the decisions register cites
+> directly — the count-inherits-the-total rule (D21) argues from lines 132 and
+> 151 of this file. Those citations stay valid; the file is not to be deleted.
+
 **Lives in `plan-docs/ongoing/`, which `.gitignore:123` re-includes: this file is versioned.**
 
 Depende de D1-D13 cerradas en `OVERVIEW_DECISIONS.md`. Cada entrada declara los

@@ -344,6 +344,21 @@ funcione.
 > arriba no cambia; su implementación en esa rama lee una fuente que ya no es la
 > autoritativa, y eso se suma a lo que hay que reescribir antes de fundir.
 
+> **Reparado — remedido 2026-09-06.** El párrafo anterior describe un defecto
+> que ya no existe: el commit `2f8cec3d` reescribió las cuatro lecturas de saldo
+> sobre la expresión derivada del ledger, y `MONTHLY_BALANCE_QUERY` toma hoy
+> `COALESCE(SUM(${DERIVED_BALANCE}), 0)`. Se conserva la nota tachada por lo que
+> explica, no por lo que afirma del código.
+>
+> **Y el comentario de esa consulta contesta una pregunta que §14.1 deja
+> abierta para las posiciones.** Un flujo del mes en curso se mide hasta hoy;
+> una posición del mes en curso **no necesita un caso especial**, porque la
+> consulta se escribe desde el saldo actual hacia atrás y el último mes de la
+> ventana no resta nada. La fecha de corte de toda posición es por tanto una
+> sola regla, no dos: restar hacia adelante desde hoy. Quien escriba un `if`
+> para el mes en curso está reimplementando a mano lo que la forma de la
+> consulta ya garantiza.
+
 ## 5.2 `settledCount` — definicion normativa (D43)
 
 > `settledCount` es la cantidad de cuentas del **mismo conjunto sobre el que se
