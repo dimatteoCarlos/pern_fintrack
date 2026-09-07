@@ -3315,10 +3315,40 @@ old `true` on SOFT was the single value breaking this partition: a keeping path
 claiming an erasing path's consequence. The defect was visible as an asymmetry
 in the table before anyone read the creation guard.
 
-**Usable as a check.** A fifth deletion type, or a fifth consequence field,
-should land wholly on one side of this split. One that does not is either a
-genuinely new kind of consequence or a mistake, and the table says which
-question to ask first.
+**Usable as a check, but only over the fields it actually governs.** The first
+version of this rule said any fifth consequence field should land wholly on one
+side. `pern-fintrack-cf` applied it to the fields already in the array and it
+flags correct code — four of them cut across the partition, all verified in the
+file:
+
+- **The residual pair.** CLOSE publishes `requiresSettlement: !isSettled` and
+  SOFT publishes `leavesResidualUnsettled: !isSettled` — the same computed
+  value, under different names, on two options the partition puts together. Not
+  an inconsistency to merge: they describe the same residual from each path's
+  point of view, one as a step the operation performs and the other as a
+  consequence it leaves behind. Collapsing them into one field name would lose
+  that.
+- **Availability**, and it is the sharpest case. RTA carries `available: true`
+  unconditionally; HARD carries `available: isSettled` with the refusal quoted
+  under it. Those two agree on all three partitioned flags and disagree on
+  whether the option can be taken at all.
+- **CLOSE's `destinations`, `destinationCount` and `availablePolicies`**, and
+  **RTA's `impactReport`, `affectedAccountsCount`, `totalNetAdjustmentAmount`,
+  `unattributedAmount` and `unattributedTransactionCount`** — per-option sets
+  belonging to no side.
+
+**The narrower rule, which is the right one.** The partition governs exactly the
+flags naming **what the account row holds** — pocket backing, transaction
+history, the name — because the row holds all three and releases all three
+together. Everything else the endpoint publishes describes the **residual** or
+the **operation's own mechanics**, and those are per-path by nature. A new field
+must land wholly on one side only if it names something the row holds.
+
+Stated that way the check still catches what found the soft-delete name defect —
+a keeping path claiming an erasing path's consequence — and stops calling
+`available: isSettled` a mistake. The distinction it turns on is worth keeping
+in view: the partition is about **what a choice costs if taken**, never about
+**whether it can be taken**.
 
 **What is open is only the mechanism's scope**, and it is Carlos's, sitting
 beside the pocket proposal already with him: confirm that "release" means the
