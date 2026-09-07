@@ -17,13 +17,14 @@ export const checkAndInsertAccount = async (
   if (!accountName) throw new Error('Account name is required');
 
   // When the caller omits accountType, this call identifies the boundary
-  // account (unit 5 of PLAN_ACCOUNT_DELETION.md): today typed 'bank', moving
-  // to 'boundary' once its migration lands. Match either until the backfill
-  // (open decision N3) runs, so an existing 'bank'-typed one isn't missed and
-  // duplicated. A caller that passes an explicit type keeps exact matching -
-  // this function is shared for other account types too.
+  // account: the system's compensation counterpart, typed 'boundary' by
+  // 031_add_boundary_account_type.sql. 'bank' stays in the match list because a
+  // database whose chain has not reached 031 still holds the old type, and
+  // missing it there would create a duplicate with a zero balance instead of
+  // finding the account. A caller that passes an explicit type keeps exact
+  // matching - this function is shared for other account types too.
   const matchTypes = accountType ? [accountType] : ['bank', 'boundary'];
-  const insertAccountType = accountType || 'bank';
+  const insertAccountType = accountType || 'boundary';
 
   // 1. Determine the database client connection:
   const isPool = clientOrPool === pool;
@@ -34,16 +35,31 @@ export const checkAndInsertAccount = async (
 
   try {
     // 2. Check existence by User, Account Name, AND Account Type
-    // Compared in lowercase on both sides: names are stored as the user typed
-    // them. A case mismatch here does not return empty, it falls through to
-    // the INSERT below and creates a duplicate account with a zero balance.
+    // account_name matched exact-case: every caller passes the literal
+    // 'slack' (never a variable), and the 26+ read filters that exclude the
+    // boundary account from every aggregate compare account_name to 'slack'
+    // case-sensitively (031_add_boundary_account_type.sql). A LOWER() match
+    // here used to hand back a case-variant like 'Slack' as the compensation
+    // account while every read filter counted it as the owner's own -
+    // migration 031 measured no such row on fintrack_dev today, but nothing
+    // stopped one from being created. account_type_name still folds case:
+    // that side only ever compares against the fixed literals 'bank' and
+    // 'boundary' passed in by this file, never user input.
+    // ORDER BY + LIMIT: a user account named exactly 'slack' is possible too
+    // (nothing today reserves the name at creation) and would otherwise match
+    // this same query. Oldest account_id wins - the compensation account is
+    // always created by this function itself, the first time it's needed, so
+    // it predates any later colliding account. Not a full fix: preventing the
+    // collision belongs to account creation, out of this module's scope.
     const chekAccountResult = await dbClient.query(
       `SELECT ua.* FROM user_accounts ua
      JOIN account_types act ON ua.account_type_id = act.account_type_id
      WHERE ua.user_id =$1
-      AND LOWER(ua.account_name) = LOWER($2)
+      AND ua.account_name = $2
       AND LOWER(act.account_type_name) = ANY($3)
-      AND ua.deleted_at IS NULL;
+      AND ua.deleted_at IS NULL
+     ORDER BY ua.account_id ASC
+     LIMIT 1;
       `,
       [userId, accountName, matchTypes.map((type) => type.toLowerCase())],
     );

@@ -267,6 +267,7 @@ export async function tblAccountTypes(client = pool) {
     { account_type_id: 5, account_type_name: 'category_budget' }, //expense category
     { account_type_id: 6, account_type_name: 'income_source' },
     { account_type_id: 7, account_type_name: 'cash' },
+    { account_type_id: 8, account_type_name: 'boundary' }, //system counterpart
   ];
   const tblName = 'account_types';
   // The count the table must reach to be considered seeded is the number of
