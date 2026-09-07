@@ -91,11 +91,20 @@ const messages = {
 let cacheIds = null,
   cacheTimestamp = null;
 const CACHE_TimeToLive = 10 * 60 * 1000; //10 min
-const DEFAULT_IDS = {
-  pnlMovementTypeId: 1, // ID conocido de 'pnl'
-  depositTypeId: 1, // ID conocido de 'deposit'
-  withdrawTypeId: 2, // ID conocido de 'withdraw'
-};
+// Retired 2026-09-07, kept commented rather than deleted so the wrong values
+// stay visible as the hazard they were. All three were wrong against the base
+// catalog seed (005_base_catalogs.sql), and two were each other's: movement
+// type 1 is 'expense' and 'pnl' is 9; transaction type 1 is 'withdraw' and 2
+// is 'deposit', so the deposit and withdraw ids were swapped. A fallback that
+// invents catalog ids writes financial rows under a guessed type, which is
+// worse than refusing to write - annulment pairs would land as the owner's
+// ordinary expenses with their deposit/withdraw labels inverted. Found by
+// pern-fintrack-cf.
+// const DEFAULT_IDS = {
+//   pnlMovementTypeId: 1, // ID conocido de 'pnl'
+//   depositTypeId: 1, // ID conocido de 'deposit'
+//   withdrawTypeId: 2, // ID conocido de 'withdraw'
+// };
 
 //🎯 GET COMMON TRANSACTION IDs
 const getCommonIds = async (clientDb) => {
@@ -111,52 +120,30 @@ const getCommonIds = async (clientDb) => {
   }
   console.log('🔄 Fetching common IDs from database...');
 
+  const queries = [
+    clientDb.query(
+      "SELECT movement_type_id FROM movement_types WHERE movement_type_name = 'pnl'",
+    ),
+
+    clientDb.query(
+      "SELECT transaction_type_id FROM transaction_types WHERE transaction_type_name = 'deposit'",
+    ),
+
+    clientDb.query(
+      "SELECT transaction_type_id FROM transaction_types WHERE transaction_type_name = 'withdraw'",
+    ),
+  ];
+
+  let pnlRes, depositRes, withdrawRes;
+
+  // Only the query itself is guarded. A connection that drops is transient and
+  // a cache read moments old is still the truth; a catalog row that is absent
+  // is neither, so its check sits below, outside this handler's reach.
   try {
-    const queries = [
-      clientDb.query(
-        "SELECT movement_type_id FROM movement_types WHERE movement_type_name = 'pnl'",
-      ),
-
-      clientDb.query(
-        "SELECT transaction_type_id FROM transaction_types WHERE transaction_type_name = 'deposit'",
-      ),
-
-      clientDb.query(
-        "SELECT transaction_type_id FROM transaction_types WHERE transaction_type_name = 'withdraw'",
-      ),
-    ];
-
-    const [pnlRes, depositRes, withdrawRes] = await Promise.all(queries);
-
-    if (
-      pnlRes.rows.length === 0 ||
-      depositRes.rows.length === 0 ||
-      withdrawRes.rows.length === 0
-    ) {
-      throw createError(
-        500,
-        'Required transaction/movement types (pnl, deposit, withdraw) not found in DB.',
-        // "Service configuration error. Please contact administrator."
-      );
-    }
-
-    //Update cache
-    cacheIds = {
-      pnlMovementTypeId: pnlRes.rows[0].movement_type_id,
-
-      depositTypeId: depositRes.rows[0].transaction_type_id,
-
-      withdrawTypeId: withdrawRes.rows[0].transaction_type_id,
-    };
-
-    cacheTimestamp = Date.now();
-    console.log('✅ Common IDs cached successfully');
-
-    return cacheIds;
+    [pnlRes, depositRes, withdrawRes] = await Promise.all(queries);
   } catch (error) {
-    // 5. if error use default ids
     console.error('❌ Failed to fetch common IDs:', error);
-    // if old cahce exists use it as fallback
+
     if (
       cacheIds &&
       cacheIds.pnlMovementTypeId &&
@@ -166,9 +153,41 @@ const getCommonIds = async (clientDb) => {
       console.warn('⚠️ Using stale cache due to fetch error');
       return cacheIds;
     }
-    console.warn('🚨 Using DEFAULT IDs - database may be unavailable');
-    return DEFAULT_IDS;
+
+    throw createError(
+      500,
+      'Could not read the transaction/movement type catalog, and no cached ids are available.',
+    );
   }
+
+  // Was inside the try above, where the catch beneath it swallowed this throw
+  // and returned invented ids in its place - the guard written to fail loudly
+  // on a missing catalog row silently produced a wrong one instead. Raised
+  // here so it escapes (pern-fintrack-cf, 2026-09-07).
+  if (
+    pnlRes.rows.length === 0 ||
+    depositRes.rows.length === 0 ||
+    withdrawRes.rows.length === 0
+  ) {
+    throw createError(
+      500,
+      'Required transaction/movement types (pnl, deposit, withdraw) not found in DB.',
+    );
+  }
+
+  //Update cache
+  cacheIds = {
+    pnlMovementTypeId: pnlRes.rows[0].movement_type_id,
+
+    depositTypeId: depositRes.rows[0].transaction_type_id,
+
+    withdrawTypeId: withdrawRes.rows[0].transaction_type_id,
+  };
+
+  cacheTimestamp = Date.now();
+  console.log('✅ Common IDs cached successfully');
+
+  return cacheIds;
 }; //END of getCommonIds
 //---------------------------------------------
 //function for manually cleaning cache
