@@ -211,6 +211,48 @@ against production with no ledger, no ordering and no `DOWN`. Recorded in
 `f68a90f8`, which puts these reachability facts above `initializeDatabase()`
 itself.
 
+**What each missing migration breaks, worst first.** This is what an operator
+needs before deciding what to verify, and it is not the numeric order. Measured
+in `main` on 2026-09-07.
+
+- **034 absent — the account lists raise `column ua.closed_at does not exist`.**
+  A failed read on the paths every screen depends on: not a wrong figure, not
+  one feature. `LIVE_ACCOUNT` in `getAccountController.js` is interpolated into
+  nine queries in that controller alone, the shared account reader in
+  `accountUtils.js` carries a tenth, and the close preview, the
+  transfer-destination list, the soft-delete guard, the pocket allocation source
+  read, the category-budget creation path and the edit controller each reference
+  the column directly — eighteen executable references outside comments. **This
+  binds first and hardest, and it fails on a read.** A reader who skims will
+  otherwise assume the account-deletion feature is what is at risk; it is not.
+- **032 absent — a close fails on the foreign key** to the movement-type
+  catalog, because `movement_types` has no row 10. One feature, a write, and the
+  API stays up. It is not a boot failure: the seeder that would raise a check
+  violation sits in the first-time branch and is unreachable on an existing
+  database.
+- **031 absent — the Overview type-predicate reads invert** and admit the
+  compensation account into the owner's own figures. Wrong numbers rather than
+  an error, which is harder to detect and easier to survive.
+- **An abort anywhere stops the rest.** There is no partial-run position that
+  leaves a working API.
+
+**Why the first three collapse into one instruction.** The runner applies each
+file in its own transaction and, on failure, rolls back and throws out of the
+loop, exiting nonzero — nothing after the failing file runs. Since 031 precedes
+034 and 034 is unconditionally required for the API to answer, **any database
+carrying 034 necessarily ran 031 successfully.** So the silent failure cannot be
+observed on its own: a database that failed 031 never received 034, and its
+account lists raise before anyone can read an Overview figure. The loud failure
+always arrives first.
+
+Two consequences worth keeping. The subsumption rests entirely on the runner's
+ordering and its halt, so **applying files by hand out of order defeats it** —
+that is the one path to a database with 034 and without a successful 031, and it
+is operational discipline rather than something the code can enforce. And if the
+runner ever loses halt-on-failure, the four stop being equivalent immediately:
+034 still fails loudly, 031 becomes the only silent casualty. That is a property
+of `runMigrations.js` and it is this document's to keep.
+
 **031 must succeed, not merely be attempted.** The Overview reads now exclude
 the compensation account by type alone, and before 031 that account is
 bank-typed — 031's backfill is `SET account_type_id = 8 WHERE account_name =
@@ -270,6 +312,13 @@ Y el corredor, que debería ser la red de seguridad, no lo es: abre **una sola**
 transacción para la corrida entera (`runMigrations.js:35`) y el `COMMIT;` de
 `001_initial_migration.sql:47` se la lleva. Todo lo que corre después queda en
 autoconfirmación, y el `ROLLBACK` de la línea 81 ya no revierte nada.
+
+> **Fixed — verified 2026-09-07.** This paragraph states the problem as it was,
+> and step 2 of this plan closed it. The runner now opens a `BEGIN` per file
+> inside the loop, and on failure rolls back, throws out of the loop and exits
+> nonzero. No file in `sql_migrations` carries `BEGIN` or `COMMIT`. The
+> halt-on-failure behaviour is load-bearing for the production-run section in
+> §0-bis, which is why it is confirmed here rather than assumed still broken.
 
 ---
 
