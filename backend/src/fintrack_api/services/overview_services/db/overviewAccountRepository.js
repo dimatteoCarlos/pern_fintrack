@@ -50,16 +50,23 @@ const EXPENSE_ACCOUNT_IDS_QUERY = `
 // internal counterparty of pnl, income and expense, and no figure calls it the
 // user's money.
 //
-// cash (account_type_id 7) is deliberately absent. The catalog leaves it out
-// until the phase 2b probe says whether it has real writes, and inventing its
-// inclusion here would be this module deciding a question the catalog holds
-// open.
+// cash (account_type_id 7) is IN the set. It was left out while the catalog held
+// that question open, and the developer closed it on 2026-09-01 by decision
+// rather than by a count: a cash account reads as a bank account wherever a
+// figure is composed, so every set naming bank includes it (D45). Money paid into
+// a cash account is income exactly as money paid into a bank account is, and the
+// bank balance of the header already counts it.
+//
+// pocket_saving is still listed, and that is inertia rather than a decision:
+// migration 020 emptied every account of that type, so it contributes no ids.
+// Taking it out belongs to the work that repoints the pocket module (D54),
+// because the same line is rewritten there and against a different model.
 const INCOME_ACCOUNT_IDS_QUERY = `
   SELECT ua.account_id
   FROM user_accounts ua
   JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
-    AND act.account_type_name IN ('bank', 'investment', 'debtor', 'pocket_saving')
+    AND act.account_type_name IN ('bank', 'cash', 'investment', 'debtor', 'pocket_saving')
     AND ua.account_name != 'slack'
   ORDER BY ua.account_id
 `;

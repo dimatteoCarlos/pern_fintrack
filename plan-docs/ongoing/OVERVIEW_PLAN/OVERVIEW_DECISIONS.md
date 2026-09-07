@@ -1496,13 +1496,27 @@ instant.** What remains before the control can ship is no longer a measurement
 problem: it is the pocket term leaving net worth (D54) and the frontend never
 having called this payload at all.
 
-**The other half of D45 is not done, and it is not in this work.** The income
-account set still lists bank, investment, debtor and pocket_saving without cash
-(`overviewAccountRepository.js:62`), and carries the same superseded comment the
-bank query carried — that cash waits on a probe. A movement into a cash account
-is therefore money the balance now counts and the income figure still does not.
-That is a real disagreement between two figures on one screen, it is narrow, and
-it is named here so it is picked up as work rather than found as a bug.
+**The other half of D45 followed immediately, and the reason is that leaving it
+would have been worse than never starting.** The income account set listed bank,
+investment, debtor and pocket_saving without cash, and carried the same
+superseded comment the bank query carried — that cash waits on a probe. With the
+balance counting cash and the income set not, a deposit into a cash account would
+have been money one figure on the page sees and another does not, which is a
+sharper defect than the one being fixed. The set now reads
+`('bank', 'cash', 'investment', 'debtor', 'pocket_saving')`
+(`overviewAccountRepository.js:62`), and it feeds the income card, its count, its
+list and its entry in the monthly snapshot, so all four move together.
+
+`pocket_saving` stays on that line, and it is inertia rather than a decision:
+migration 020 emptied every account of that type, so it contributes no ids and
+removing it changes no figure. It comes out with the work that repoints the
+pocket module (D54), which rewrites the same line against a different model —
+doing it here would only make that rewrite conflict.
+
+**What is left of D45 is outside this module**: the legacy by-type balance
+endpoint still filters on an exact type name, so the screen that renders today
+excludes cash from every figure it shows. That screen is the one the payload is
+meant to replace, which is why it is named and not fixed.
 
 One figure on that card is still unbounded, named here so that whoever finds it
 later does not read it as an oversight of this work: the account count counts the
