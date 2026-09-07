@@ -128,10 +128,85 @@ type HeroSection = {
  // ingreso no ahorro nada, no tiene tasa, y las dos cosas se leen igual una vez
  // impresas como 0%.
  savingsRate: number | null;
+ // What the owner holds that is liquid, less what the owner owes, with money
+ // owed TO the owner left out. bank + investment − debt.payable, and the bank
+ // term already carries cash accounts (D45). null + notice only when the debt
+ // card did not report its payable leg, never 0: a figure that could not be
+ // computed and a figure that came out zero are different answers.
+ liquidNetWorth: number | null;
  currency: CurrencyType; // única para toda la respuesta — D7
  meta: SectionMeta;
 };
 ```
+
+### Type change — 2026-09-06
+
+`HeroSection` gains **one field**, `liquidNetWorth`, and unlike the savings rate
+it IS a fourth figure and is defended as one.
+
+**It answers a question none of H1-H3 answers.** Net worth counts money owed to
+the owner as wealth, which it is, and as available, which it is not — whether it
+arrives is someone else's decision. Liquid net worth is the same holdings with
+that leg removed. It adds no query and no time base: the payable leg comes off
+the debt card, which now publishes both legs of the position it nets.
+
+**It is composed from the payable leg, never from `netWorth`.** The two are
+arithmetically identical and only the first leaves
+`netWorth - liquidNetWorth == receivable` as something that can fail. Derived
+from net worth it is a tautology, and the one check that catches a flipped
+payable sign stops catching anything — flip that sign and the subtraction
+becomes an addition, which still prints a plausible figure.
+
+**Pocket commitments are NOT subtracted from it, and not from any hero figure.**
+The reason is not that free cash asks a different question. It is that a pocket
+does not constrain spending at all, which the correction below states in full.
+
+**Frontend requirement.** `liquidNetWorth` is `number | null` and the null case
+is real, so it renders as a dash or a skeleton and **never as 0** — a withheld
+figure and a figure that came out zero are different answers and read
+identically once printed. When it is withheld the hero carries a notice saying
+why, and that notice is what the view shows rather than a generic error. It sits
+beside `netWorth` and never replaces it: the pair is the point, because the gap
+between them IS what the owner is owed.
+
+**The pocket term leaves BOTH hero figures — corrected 2026-09-06.**
+The paragraph this replaces said the term changes sign rather than disappearing:
+that `netWorth` drops it and `cashPosition` subtracts it, and that removing it
+from both would overstate what is free. That was wrong, and the correction
+matters more than the arithmetic because it is about which verb the quantity
+governs.
+
+**What a pocket constrains is committing, not spending.** The allocation guard
+does refuse a commitment above the account balance less what that account has
+already allocated, and it names the remainder unassigned cash — the
+message the owner reads uses that name. But the function that computes the three
+figures a real account carries states, in its own words, that the available
+balance is still the whole account balance, because a pocket never blocks a spend
+and naming the remainder available would tell the owner they cannot spend money
+they can. An expense against committed money is always accepted, which is why
+that remainder may go negative and why a negative is a state rather than an
+error.
+
+**So a subtracting cash position would contradict the app, not protect the
+owner.** It would publish a smaller figure than the expense path will actually
+let them spend. The figure is the bank balance, and no pocket term appears in the
+hero at all.
+
+**And the shape is ruled out too, not only the formula.** The screen that picks
+which account funds a pocket shows the balance, what is committed and what is
+unassigned side by side, specifically so that no single one of the three can be
+called available. A lone published number describing spendable money is what that
+screen refuses to produce. If the Overview is later to warn about overcommitment,
+the committed total goes BESIDE the balance and never inside it — which
+is a contract decision to be proposed here first, not an arithmetic one.
+
+**Where this came from.** The developer stated it directly: a pocket is not an
+account and therefore cannot hold money, they are commitments against a bank
+account, and the way this branch reads the pocket total is wrong because the real
+source was already defined in the backend. The wording *money the pocket holds*
+was this session's own invention and appears in no definition anywhere; it is
+retracted. A peer session then found the ruling above and reversed this session's
+recommendation, which had been to subtract.
 
 ### Cambio de tipo — 2026-09-05
 
@@ -247,23 +322,38 @@ type DebtCard = DomainCardBase & {
  settledCount: number;
 };
 
-// ⛔ **Los tres campos de arriba están declarados y NO se sirven — medido
-// 2026-09-04.** `overviewDebtService.js:37-39` delega entero en
-// `readStockDomain`, que arma la tarjeta base y nada más
-// (`stockDomainCalculator.js:83-97`): `totalAmount`, `transactionCount`,
-// `delta`, `currency`, `window` y `meta`. Las cadenas `payable`, `receivable` y
-// `settledCount` no aparecen en un solo archivo de `overview_services/`.
+// ✅ **The three fields above are served — implemented and measured 2026-09-06.**
+// They were declared and served by nothing from 2026-09-04, and that record is
+// kept rather than deleted: this module's characteristic failure is a figure
+// computed in a repository that never reaches the payload, and the entry is what
+// makes it visible when it happens again.
 //
-// **El tipo no se recorta.** D39 y D43 son decisiones cerradas por el
-// desarrollador y §5.1 y §5.2 las definen normativamente: lo que falta es la
-// implementación, no la decisión. Recortar el tipo convertiría una deuda de
-// código en una decisión revocada en silencio.
+// **The cost was the one D39 predicted for itself.** The paragraph that used to
+// stand here said the legs need a new query rather than a copied `CASE`, because
+// `getMonthlyBalance` aggregates every account before subtracting and so admits
+// no cut by sign — the legs have to be rebuilt per account and grouped by sign
+// afterwards. That is exactly what `getDebtDomainFields` does
+// (`overviewBalanceRepository.js`), and it reaches the card through a reader the
+// shared stock body now takes, so pocket stays unaffected.
 //
-// **Y el coste sigue siendo el que D39 corrigió sobre sí misma:** una consulta
-// nueva, no un `CASE` copiado. El total al cierre lo produce
-// `getMonthlyBalance`, que agrega todas las cuentas antes de restar
-// (`overviewBalanceRepository.js`), así que no admite corte por signo — las
-// piernas exigen reconstruir por cuenta y agrupar por signo recién después.
+// **The cut is shared, not duplicated.** The month boundary is one function in
+// that repository called by both queries. The legs are a SPLIT of the position
+// and not a second computation of it, which is what makes
+// `totalAmount = receivable - payable` an audit and not a definition. Measured
+// on fintrack_dev over four months and the one owner holding debtor accounts:
+// the identity holds on every reading and no leg is ever published negative.
+// Flipping the payable sign in a copy of the hero breaks exactly ONE assertion
+// of six — the identity — while every other figure still
+// prints a plausible number. That is precisely why the check is written as an
+// identity and not as a range: nothing else in the hero notices.
+//
+// **`settledCount` reads the activity clause of §5.2 as excluding the row that
+// OPENS the account, not every row.** The definition's stated purpose is that a
+// debtor account created and never used is not a settled debtor, and account
+// creation writes an opening row, so counting any row at all would re-admit
+// exactly what the clause excludes. The two readings are different populations
+// and not a distinction without a difference: measured 2026-09-06, three of five
+// debtor accounts have a row before the cut and no movement of their own.
 
 type PocketCard = DomainCardBase & {
  domain: 'pocket';
@@ -589,8 +679,9 @@ mejor SQL.
 
 | campo | de dónde sale | decisión |
 |---|---|---|
-| `hero.netWorth` | saldo de banco + `investment.ledgerBalance` + `debt.totalAmount` + `pocket.totalAmount` | **D27**, corregido por **D46** |
-| `hero.cashPosition` | saldo de banco + `pocket.totalAmount` | **D27**, corregido por **D46** |
+| `hero.netWorth` | saldo de banco + `investment.ledgerBalance` + `debt.totalAmount` | **D27**, corregido por **D46** y por **D54** — sin término de bolsillo |
+| `hero.liquidNetWorth` | saldo de banco + `investment.ledgerBalance` − `debt.payable` | plan de patrimonio líquido, 2026-09-06 |
+| `hero.cashPosition` | saldo de banco, sin ningún otro término | **D27**, corregido por **D46**, **D54** y por la regla de gasto de 2026-09-06 — el término de bolsillo no aparece: un bolsillo limita comprometer, no gastar |
 | `hero.netMonthlyFlow` | `income.totalAmount − expense.totalAmount` | **D27** — hereda la corrección de D22 en vez de repetir la pata invertida |
 | `all.*` (cinco cifras) | copiadas de `hero` y de las tarjetas | §7, sin fórmula nueva |
 
@@ -782,7 +873,7 @@ type GetOverviewDomainResponse = ApiEnvelope<GetOverviewDomainData>;
 
 | pendiente | qué falta | bloquea |
 |---|---|---|
-| ~~Sonda de fase 2b (`account_type_id=7`, `cash`)~~ | **cerrada 2026-09-01 por D45** — una cuenta de efectivo es una cuenta bancaria y se lee como tal. Ya no hay nada que confirmar: la cifra no depende de si el tipo tiene escritura | nada. Lo que sí queda es trabajo de código: `hero.cashPosition` y el conjunto de cuentas reales deben incluir `cash`, y hoy no lo incluyen |
+| ~~Sonda de fase 2b (`account_type_id=7`, `cash`)~~ | **cerrada 2026-09-01 por D45** — una cuenta de efectivo es una cuenta bancaria y se lee como tal. Ya no hay nada que confirmar: la cifra no depende de si el tipo tiene escritura | nothing. The code work this cell asked for is done as well — the bank balance query selects `IN ('bank', 'cash')` in `getBankBalance`, so `hero.cashPosition` and everything composed from the bank term already include cash. Verified 2026-09-06 |
 | `financialGoals` cuando exista `pocket_services` | `PLAN_POCKET_ALERT.md` §10.2 B1 propone `services/pocket_services/` para servir el snapshot por pocket. G1-G3 debe leer de ahí y no de una consulta propia, o será la cuarta copia de la misma cifra — §8.2 de ese plan ya registra que hoy son tres consultas solapadas | nada hoy: G1-G3 ya funciona. Es deuda registrada, no un bloqueo |
 | R59 sobre G2/G3 | `accountCreationController.js:985-988` convierte un target ausente en `0.00`. **D30** ya decide qué hacer con esas filas; la base local no tiene ninguna (3 pockets, 3 targets reales) | nada hoy. El día que aparezca una, la regla ya está escrita |
 
@@ -793,9 +884,17 @@ type GetOverviewDomainResponse = ApiEnvelope<GetOverviewDomainData>;
 >   `pocketAllocationService.js:45` y `accountAllocationService.js:23` — pero la
 >   pregunta que sostenía dejó de importar: el desarrollador decidió que una
 >   cuenta de efectivo **es** una cuenta bancaria, así que se lee como banco
->   exista o no alguna. Lo que este contrato tiene que corregir ya no es una duda
->   sino una omisión: `hero.cashPosition` y el conjunto de cuentas reales excluyen
->   `cash`, y por D45 deben incluirlo.
+>   exista o no alguna. **And the omission this paragraph asked to correct is
+>   corrected — verified 2026-09-06.** The bank balance query selects
+>   `IN ('bank', 'cash')` in `getBankBalance`, with the reason in that file's
+>   header, so `hero.cashPosition`, `hero.netWorth` and `hero.liquidNetWorth`
+>   include cash by construction rather than by adding it separately.
+>
+>   It is written here and not only in §14.4 for a measured reason: the
+>   integration session was about to build the liquid net worth view believing
+>   the bank term excluded cash, because this document stated the convention in
+>   one section and contradicted it as pending work in two others. A reader who
+>   arrives through the pending list never sees §14.4.
 > - **`financialGoals` cuando exista `pocket_services`.** Ya existe:
 >   `backend/src/fintrack_api/services/pocket_services/` está en la rama de
 >   trabajo con `core/`, `db/` y `services/`, sus rutas montadas en

@@ -121,7 +121,9 @@ export const overviewPageService = {
    bankBalance,
    investmentBalance: investment.card.ledgerBalance,
    debtPosition: debt.card.totalAmount,
-   pocketBalance: pocket.card.totalAmount,
+   // The leg, not the net. Liquid net worth subtracts what is owed and leaves
+   // what is owed to the user out, which the net position cannot express.
+   payable: debt.card.payable,
    incomeTotal: income.card.totalAmount,
    expenseTotal: expense.card.totalAmount,
    currency: ACCOUNTING_CURRENCY_CODE,

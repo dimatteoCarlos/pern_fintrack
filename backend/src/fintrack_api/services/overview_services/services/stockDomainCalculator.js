@@ -14,6 +14,11 @@
 // minus another the way E3 and I3 are: it is the same balance read at the end of
 // two consecutive months, which is what the balance repository returns.
 //
+// What they do NOT share is the fields each adds on top of the base card. Debt
+// publishes three of its own (§6) and pocket publishes none, so the body takes a
+// reader for them rather than knowing what they are. Naming debt's fields here
+// would put debt's contract inside the body pocket also runs.
+//
 // This is also where D21 lands differently. On a flow card the count and the
 // total are made of the same rows, so the count comes off the same monthly
 // statement as the total. A balance is made of no rows at all, so there is
@@ -44,6 +49,8 @@ import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
  * @param {Function} config.getAccountIds - the resolver for this domain's accounts
  * @param {Function} config.getTransactionsPage - the list for this domain's movements
  * @param {boolean} config.publishesTrend - §12 grants pocket a trend and denies debt one
+ * @param {Function} [config.getDomainFields] - the fields this domain adds to the
+ *   base card, read at the same cut as the total; omitted by a domain that adds none
  * @returns {Promise<object>} GetOverviewDomainData for the domain
  */
 export async function readStockDomain(
@@ -51,7 +58,7 @@ export async function readStockDomain(
  userId,
  { window, page, pageSize, includeTransactionRows = true },
  timeZone,
- { domain, getAccountIds, getTransactionsPage, publishesTrend },
+ { domain, getAccountIds, getTransactionsPage, publishesTrend, getDomainFields },
 ) {
  const { referenceMonth, priorMonth, trendStart } = window;
 
@@ -60,7 +67,7 @@ export async function readStockDomain(
  // be answers about two different sets.
  const accountIds = await getAccountIds(pool, userId);
 
- const [months, oldestAccountDate, transactions] = await Promise.all([
+ const [months, oldestAccountDate, transactions, domainFields] = await Promise.all([
   getMonthlyBalance(pool, accountIds, trendStart, referenceMonth, timeZone),
   getOldestAccountDate(pool, userId, timeZone),
   getTransactionsPage(pool, accountIds, referenceMonth, timeZone, {
@@ -68,6 +75,12 @@ export async function readStockDomain(
    pageSize,
    includeRows: includeTransactionRows,
   }),
+  // In the same round trip as the total it has to agree with, not after it. An
+  // empty object for a domain that adds nothing, so the spread below is the same
+  // shape either way and no caller needs a branch.
+  getDomainFields
+   ? getDomainFields(pool, accountIds, referenceMonth, timeZone)
+   : {},
  ]);
 
  // The last point of the series is the balance right now, by construction: the
@@ -88,6 +101,7 @@ export async function readStockDomain(
   totalAmount: currentPoint.totalAmount,
   transactionCount: transactions.totalRows,
   delta,
+  domainFields,
   currency: ACCOUNTING_CURRENCY_CODE,
   window: {
    periodStart: referenceMonth,

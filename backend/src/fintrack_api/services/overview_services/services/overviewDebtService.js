@@ -7,6 +7,13 @@
 // the user is owed minus what the user owes, in one figure. Splitting it into
 // two would be a second formula for a number the ledger already keeps.
 //
+// The two legs published beside it are not that second formula. D1 still comes
+// from the balance series and is never recomputed from them (§4.2 — one figure,
+// one path); the legs are the same balances split by sign at the same cut, so
+// `totalAmount = receivable - payable` is something the card can be checked
+// against. The screen keeps deriving its "you owe" / "you're owed" label from
+// the sign of the total; the backend publishes figures and no labels.
+//
 // No trend (§12). The catalog defines no monthly debt flow to draw a series
 // from, and the field is absent rather than null for the same reason §6 omits
 // return % instead of publishing it empty.
@@ -14,6 +21,7 @@
 import {
  getDebtAccountIds,
 } from '../db/overviewAccountRepository.js';
+import { getDebtDomainFields } from '../db/overviewBalanceRepository.js';
 import { getDebtTransactionsPage } from '../db/overviewTransactionRepository.js';
 import { readStockDomain } from './stockDomainCalculator.js';
 
@@ -22,6 +30,7 @@ const DEBT_DOMAIN = {
  getAccountIds: getDebtAccountIds,
  getTransactionsPage: getDebtTransactionsPage,
  publishesTrend: false,
+ getDomainFields: getDebtDomainFields,
 };
 
 export const overviewDebtService = {
