@@ -979,20 +979,74 @@ calls it instead of inlining the two steps - a pure extraction, verified by
 boot test, RTA's own behavior unchanged. Two open decisions this does NOT
 settle, deliberately left to the developer rather than guessed:
 
-- **Should HARD's execution call `assessDeletionImpact` too**, purely to lock
+- ~~**Should HARD's execution call `assessDeletionImpact` too**, purely to lock
   the target (closing the same concurrency gap RTA already closed) and to
   return the impact it is about to leave uncorrected, without applying any
   of it - or does a type whose entire point is "no reversal" gain nothing
   from computing the reversal it will not make? Not called from
-  `processStandardDelete` yet.
-- **The impact-report's NULL-unsafe predicate** (`getAnnulmentImpactReport.js`,
+  `processStandardDelete` yet.~~
+
+  **Settled 2026-09-07: no, and half the question was already answered in the
+  code.** The concurrency half needs nothing: the hard-delete branch already
+  calls `lockAndDeriveBalances` on the target, for its own refusal when the
+  ledger residual is nonzero. The lock RTA acquires is therefore already held
+  by the time the erasure runs, and adding a second call would acquire it
+  twice rather than close a gap.
+
+  What remains is only whether the execution path should also *return* the
+  impact, and it should not, for two reasons that point the same way. The
+  report describes reversals this deletion type deliberately will not make, so
+  returning it from the execution path documents a correction that is not
+  happening at the moment it is not happening — the worst place to put it. And
+  a preview belongs before the confirmation, not in the response to it: by the
+  time the execution path could return anything, the account is gone. The
+  owner's preview is the assessment endpoint's job, which serves every deletion
+  type from one place; building a second, HARD-shaped copy inside the execution
+  path is how the two start disagreeing.
+- ~~**The impact-report's NULL-unsafe predicate** (`getAnnulmentImpactReport.js`,
   `tr.destination_account_id != tr.source_account_id`) silently drops a row
   whose counterparty was already nulled by an earlier deletion's DETACH step
   - the same mechanism behind the invariant-I violation above. What should
   happen to that residual amount: swept into the boundary/slack account, or
   surfaced as its own "no live counterparty" line in the report? Needs an
   answer before this gets a fix; a guessed one risks writing the wrong
-  correction rather than none.
+  correction rather than none.~~
+
+  **Settled 2026-09-07: surfaced as its own figure, and no money moves.** The
+  predicate itself was fixed earlier — it reads `IS DISTINCT FROM`, so the row
+  is no longer dropped by the comparison. What still dropped it was the join to
+  the account it belongs to, and that drop is correct arithmetic: the earlier
+  deletion already reversed those amounts against the compensation account, so
+  sweeping them anywhere now would settle them a second time and the report's
+  total would stop agreeing with the compensation balance the execution path
+  re-derives from the rows it actually wrote.
+
+  So the answer is neither of the two originally posed. The amount is reported
+  and not moved. `getUnattributedAnnulmentTotal` computes it from the same
+  shared expression the report is built on, so the two can never disagree about
+  which rows they describe, and it is returned **beside** the report rather
+  than inside it — the execution path iterates that array and writes a
+  settlement pair per entry, so an entry with no account id would be a write
+  aimed at nothing. Keeping it out of the array is what makes that structural
+  instead of a rule someone has to remember.
+
+  **Measured on `fintrack_dev`, 2026-09-07.** One account has this group at
+  all: the compensation account, two rows, totalling exactly −60.00. That is
+  the same −60.00 recorded above as the owner's accounts failing to net to
+  zero, now visible from the report's side rather than only from the ledger
+  sum. With the figure named, the report's lines plus the unattributed total
+  equal the account's whole signed activity against a distinct counterparty —
+  asserted in the probe rather than inspected, since a report that merely looks
+  complete is the failure being fixed.
+
+  **Frontend requirement this creates.** `GET
+  /account/delete/report_of_affected_accounts/:targetAccountId` now returns
+  `unattributedAmount` and `unattributedTransactionCount` beside
+  `impactReport`. Zero and zero is the ordinary case and needs no treatment.
+  Nonzero must be rendered as its own line, stating that this part of the
+  account's activity has no live counterparty and will not be credited to any
+  account — never summed into the report's own lines, and never hidden, which
+  is the state this replaces.
 
   **Evidence gathered, 2026-09-06, still Carlos's decision.**
   `pern-fintrack-cf` measured the live shape of this on `fintrack_dev` (named

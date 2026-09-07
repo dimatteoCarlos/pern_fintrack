@@ -21,6 +21,38 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'FLOAT');
  * the PnL Adjustment needed for the Affected Account (A).
  */
 
+// The target's own signed entries against a counterparty that is not itself.
+// Shared by the report below and by the unattributed total beside it, so the two
+// can never disagree about which rows they are talking about - the report says
+// where the money goes and the total says how much of it has nowhere to go, and
+// a drift between two copies of this would make those two answers describe
+// different sets of rows while still looking consistent.
+const TARGET_ACCOUNT_TRANSACTIONS_CTE = `
+ WITH TargetAccountTransactions AS
+ (
+  SELECT
+   -- Identify the Affected Account (A) by finding the ID that is NOT the Target ($2)
+
+   CASE
+    WHEN (tr.destination_account_id = $2)
+     THEN tr.source_account_id
+     ELSE tr.destination_account_id
+   END AS affected_account_id,
+   tr.amount --target account signed amount
+
+  FROM transactions tr
+
+  WHERE
+   tr.user_id =$1
+   AND tr.account_id = $2 -- 🔑 CRUCIAL: Filter rows to only the Target's signed entries
+   -- IS DISTINCT FROM, not !=: a prior deletion's DETACH step (eraseAccountTail.js)
+   -- can leave one side NULL. != against a NULL is NULL, which a WHERE clause
+   -- drops - silently discarding a real, non-self row instead of keeping it.
+   AND tr.destination_account_id IS DISTINCT FROM tr.source_account_id
+   AND tr.status='complete'--no effect so far
+ )
+`;
+
 export const getAnnulmentImpactReport = async (
   dbClient,
   userId,
@@ -35,31 +67,8 @@ export const getAnnulmentImpactReport = async (
   // 1️⃣ SQL: QUERY FOR RTA IMPACT CALCULATION REPORT
   //=====================================
   const reportQuery = `
- WITH TargetAccountTransactions AS
- (
-  SELECT
-   -- Identify the Affected Account (A) by finding the ID that is NOT the Target ($2)
-
-   CASE
-    WHEN (tr.destination_account_id = $2)
-     THEN tr.source_account_id
-     ELSE tr.destination_account_id
-   END AS affected_account_id, 
-   tr.amount --target account signed amount
-
-  FROM transactions tr
-
-  WHERE
-   tr.user_id =$1
-   AND tr.account_id = $2 -- 🔑 CRUCIAL: Filter rows to only the Target's signed entries
-   -- IS DISTINCT FROM, not !=: a prior deletion's DETACH step (eraseAccountTail.js)
-   -- can leave one side NULL. != against a NULL is NULL, which a WHERE clause
-   -- drops - silently discarding a real, non-self row instead of keeping it.
-   AND tr.destination_account_id IS DISTINCT FROM tr.source_account_id
-   AND tr.status='complete'--no effect so far
- )
-   
- SELECT 
+${TARGET_ACCOUNT_TRANSACTIONS_CTE}
+ SELECT
   tat.affected_account_id,
 -- SUM of the Target's signed amounts is the required PnL adjustment for the Affected Account
   SUM(tat.amount) AS   net_adjustment_amount,
@@ -76,14 +85,18 @@ export const getAnnulmentImpactReport = async (
  FROM TargetAccountTransactions tat
 
   -- INNER, deliberately: affected_account_id can be NULL, and dropping that
-  -- group is the correct arithmetic rather than a silent loss. A NULL
-  -- counterparty is the residue of an earlier deletion's DETACH step
-  -- (eraseAccountTail.js), and that deletion already reversed the amount -
-  -- its annulment row sits on this same account, against the compensation
-  -- account, so the two cancel here and the group arrives already settled.
-  -- Re-attributing it would settle it twice: the money would move again,
-  -- and the report's total would stop agreeing with the compensation
-  -- balance the execution path re-derives from the rows it actually wrote.
+  -- group is the correct arithmetic. A NULL counterparty is the residue of an
+  -- earlier deletion's DETACH step (eraseAccountTail.js), and that deletion
+  -- already reversed the amount - its annulment row sits on this same account,
+  -- against the compensation account, so the two cancel here and the group
+  -- arrives already settled. Re-attributing it would settle it twice: the money
+  -- would move again, and the report's total would stop agreeing with the
+  -- compensation balance the execution path re-derives from the rows it
+  -- actually wrote.
+  -- What the drop must not be is silent, which it was until
+  -- getUnattributedAnnulmentTotal below named it. Correct arithmetic that
+  -- disappears from the screen still reads to the owner as money that went
+  -- missing between the report and the ledger.
  JOIN
   user_accounts ua ON ua.account_id = tat.affected_account_id
 
@@ -153,6 +166,65 @@ export const getAnnulmentImpactReport = async (
   );
 
   return impactReport;
+};
+
+/*
+ * 📊 The part of the target's activity that has no live counterparty to be
+ * attributed to, named instead of dropped.
+ *
+ * The report above joins each group to the account it belongs to, so the group
+ * whose counterparty was already detached by an earlier deletion does not
+ * survive the join. That is the right arithmetic - the earlier deletion already
+ * reversed those amounts against the compensation account, so re-attributing
+ * them here would settle them a second time - but it left the owner looking at
+ * a report whose lines do not add up to the account's activity, with nothing on
+ * the screen to say why.
+ *
+ * RETURNED SEPARATELY, AND THAT IS THE WHOLE DESIGN. It is not another element
+ * of the impact report: the execution path iterates that array and writes a
+ * settlement pair per entry, so an entry with no account id would be a write
+ * aimed at nothing. This is a figure to display beside the report, never one to
+ * act on, and keeping it out of the array is what makes that unmistakable
+ * rather than a rule someone has to remember.
+ *
+ * @returns {Promise<{amount: number, transactionCount: number}>} zero and zero
+ *   when every counterparty is still live, which is the ordinary case.
+ */
+export const getUnattributedAnnulmentTotal = async (
+  dbClient,
+  userId,
+  targetAccountId,
+) => {
+  const unattributedQuery = `
+${TARGET_ACCOUNT_TRANSACTIONS_CTE}
+ SELECT
+  COALESCE(SUM(tat.amount), 0) AS unattributed_amount,
+  COUNT(*)::int AS transaction_count
+
+ FROM TargetAccountTransactions tat
+
+ WHERE tat.affected_account_id IS NULL
+ `;
+
+  const { rows } = await dbClient.query(unattributedQuery, [
+    userId,
+    targetAccountId,
+  ]);
+
+  const total = {
+    amount: parseFloat(rows[0].unattributed_amount),
+    transactionCount: rows[0].transaction_count,
+  };
+
+  if (total.transactionCount > 0) {
+    console.log(
+      pc.yellow(
+        `Target ${targetAccountId}: ${total.transactionCount} rows totalling ${total.amount} have no live counterparty and are excluded from the impact report.`,
+      ),
+    );
+  }
+
+  return total;
 };
 
 /*

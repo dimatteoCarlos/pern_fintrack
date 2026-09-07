@@ -7,6 +7,7 @@ import { pool } from '../../db/config/configDB.js';
 import {
   getAnnulmentImpactReport,
   getPocketAllocationImpact,
+  getUnattributedAnnulmentTotal,
 } from '../services/delete_account/getAnnulmentImpactReport.js';
 
 import { deleteAccountService } from '../services/delete_account/deleteAccountService.js';
@@ -71,9 +72,14 @@ export const generateImpactReport = async (req, res, next) => {
     // §5/Q8b via ACCOUNT_DELETION_METHODS.md): pockets this account backs,
     // shown so the owner sees them before confirming, never merged into
     // impactReport - that array's shape is relied on by processRTAAnnulment.
-    const [impactReport, pocketImpact] = await Promise.all([
+    // unattributed is the third read and is separate for the same reason:
+    // the amount whose counterparty an earlier deletion already detached. The
+    // report cannot carry it - it has no account to name - and the execution
+    // path must not act on it, since that earlier deletion already reversed it.
+    const [impactReport, pocketImpact, unattributed] = await Promise.all([
       getAnnulmentImpactReport(pool, userId, targetAccountId),
       getPocketAllocationImpact(pool, userId, targetAccountId),
+      getUnattributedAnnulmentTotal(pool, userId, targetAccountId),
     ]);
 
     // 3. SUCCESS RESPONSE
@@ -83,6 +89,12 @@ export const generateImpactReport = async (req, res, next) => {
       data: {
         impactReport: impactReport,
         pocketImpact,
+        // Displayed beside the report, never added to it. Zero and zero is the
+        // ordinary answer; a nonzero amount is activity of this account that no
+        // live account can be credited with, and the screen has to say so
+        // rather than let the lines silently fail to add up.
+        unattributedAmount: unattributed.amount,
+        unattributedTransactionCount: unattributed.transactionCount,
         targetAccountId,
         affectedAccountsCount: impactReport.length,
       },
