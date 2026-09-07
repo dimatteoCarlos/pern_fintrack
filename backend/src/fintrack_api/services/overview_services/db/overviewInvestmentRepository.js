@@ -19,6 +19,12 @@
 // written as transfers, so V1 reads movement types 6 and 8 and never 3. Reading
 // 3 would return 0 for every user and look like an account nobody funded.
 
+import {
+ ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID,
+ ACCOUNT_OPENING_MOVEMENT_TYPE_ID,
+ PNL_MOVEMENT_TYPE_ID,
+ TRANSFER_MOVEMENT_TYPE_ID,
+} from './movementTypes.js';
 import { toAmount } from '../../budget_services/core/money.js';
 import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
@@ -100,7 +106,7 @@ const INVESTMENT_FIGURES_QUERY = `
         FROM transactions t
         WHERE t.account_id = ua.account_id
           AND t.transaction_actual_date >= (SELECT next_month_start FROM bounds)
-      ), 0) AS account_balance
+      ), 0) AS derived_balance
     FROM user_accounts ua
     WHERE ua.account_id = ANY($1::int[])
   ),
@@ -108,37 +114,37 @@ const INVESTMENT_FIGURES_QUERY = `
     SELECT COALESCE(SUM(t.amount), 0) AS capital_contributed
     FROM transactions t
     WHERE t.account_id = ANY($1::int[])
-      AND t.movement_type_id IN (6, 8)
+      AND t.movement_type_id IN (${TRANSFER_MOVEMENT_TYPE_ID}, ${ACCOUNT_OPENING_MOVEMENT_TYPE_ID})
       AND t.transaction_actual_date < (SELECT next_month_start FROM bounds)
   ),
   last_funding AS (
     SELECT MAX(t.transaction_actual_date) AS last_contribution
     FROM transactions t
     WHERE t.account_id = ANY($1::int[])
-      AND t.movement_type_id = 6
+      AND t.movement_type_id = ${TRANSFER_MOVEMENT_TYPE_ID}
       AND t.amount > 0
       AND t.transaction_actual_date < (SELECT next_month_start FROM bounds)
   ),
   realized AS (
     SELECT
       COALESCE(SUM(t.amount) FILTER (
-        WHERE t.movement_type_id = 9
+        WHERE t.movement_type_id = ${PNL_MOVEMENT_TYPE_ID}
           AND (t.description IS NULL
                OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
       ), 0) AS realized_pnl,
       COALESCE(SUM(t.amount) FILTER (
-        WHERE t.movement_type_id = 10
+        WHERE t.movement_type_id = ${ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID}
            OR t.description LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%'
       ), 0) AS closure_adjustment
     FROM transactions t
     WHERE t.account_id = ANY($1::int[])
-      AND t.movement_type_id IN (9, 10)
+      AND t.movement_type_id IN (${PNL_MOVEMENT_TYPE_ID}, ${ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID})
       AND t.transaction_actual_date < (SELECT next_month_start FROM bounds)
   )
   SELECT
     (SELECT COUNT(*) FROM accounts) AS account_count,
-    (SELECT COALESCE(SUM(account_balance), 0) FROM accounts) AS ledger_balance,
-    (SELECT MAX(account_balance) FROM accounts) AS largest_balance,
+    (SELECT COALESCE(SUM(derived_balance), 0) FROM accounts) AS ledger_balance,
+    (SELECT MAX(derived_balance) FROM accounts) AS largest_balance,
     c.capital_contributed,
     r.realized_pnl,
     r.closure_adjustment,

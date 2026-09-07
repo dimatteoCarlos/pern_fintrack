@@ -30,6 +30,13 @@
 // ::timestamp on the lower bound is load-bearing — with a bare date, AT TIME
 // ZONE picks the TIMESTAMPTZ overload and converts the bound the wrong way.
 
+import {
+ DEBT_MOVEMENT_TYPE_ID,
+ EXPENSE_MOVEMENT_TYPE_ID,
+ INCOME_MOVEMENT_TYPE_ID,
+ PNL_MOVEMENT_TYPE_ID,
+ TRANSFER_MOVEMENT_TYPE_ID,
+} from './movementTypes.js';
 import { extractNoteFromDescription } from '../../../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 import { transactionRowColumns, TRANSACTION_ROW_SOURCE } from './transactionRowShape.js';
@@ -37,7 +44,7 @@ import { transactionRowColumns, TRANSACTION_ROW_SOURCE } from './transactionRowS
 const EXPENSE_PAGE_QUERY = `
   SELECT${transactionRowColumns('$3')}${TRANSACTION_ROW_SOURCE}
   WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id IN (1, 6)
+    AND tr.movement_type_id IN (${EXPENSE_MOVEMENT_TYPE_ID}, ${TRANSFER_MOVEMENT_TYPE_ID})
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
   ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
@@ -60,7 +67,7 @@ const EXPENSE_COUNT_QUERY = `
   SELECT COUNT(*) AS total_rows
   FROM transactions tr
   WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id IN (1, 6)
+    AND tr.movement_type_id IN (${EXPENSE_MOVEMENT_TYPE_ID}, ${TRANSFER_MOVEMENT_TYPE_ID})
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
 `;
@@ -68,7 +75,7 @@ const EXPENSE_COUNT_QUERY = `
 const INCOME_PAGE_QUERY = `
   SELECT${transactionRowColumns('$3')}${TRANSACTION_ROW_SOURCE}
   WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id = 2
+    AND tr.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID}
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
   ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
@@ -79,7 +86,7 @@ const INCOME_COUNT_QUERY = `
   SELECT COUNT(*) AS total_rows
   FROM transactions tr
   WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id = 2
+    AND tr.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID}
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
 `;
@@ -91,7 +98,7 @@ const INCOME_COUNT_QUERY = `
 const PNL_PAGE_QUERY = `
   SELECT${transactionRowColumns('$3')}${TRANSACTION_ROW_SOURCE}
   WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id = 9
+    AND tr.movement_type_id = ${PNL_MOVEMENT_TYPE_ID}
     AND (tr.description IS NULL OR tr.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
@@ -103,7 +110,7 @@ const PNL_COUNT_QUERY = `
   SELECT COUNT(*) AS total_rows
   FROM transactions tr
   WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id = 9
+    AND tr.movement_type_id = ${PNL_MOVEMENT_TYPE_ID}
     AND (tr.description IS NULL OR tr.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
@@ -112,7 +119,7 @@ const PNL_COUNT_QUERY = `
 const DEBT_PAGE_QUERY = `
   SELECT${transactionRowColumns('$3')}${TRANSACTION_ROW_SOURCE}
   WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id = 4
+    AND tr.movement_type_id = ${DEBT_MOVEMENT_TYPE_ID}
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
   ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
@@ -123,7 +130,7 @@ const DEBT_COUNT_QUERY = `
   SELECT COUNT(*) AS total_rows
   FROM transactions tr
   WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id = 4
+    AND tr.movement_type_id = ${DEBT_MOVEMENT_TYPE_ID}
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
 `;

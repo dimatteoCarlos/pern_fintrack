@@ -34,6 +34,12 @@
 //    because a pg DATE becomes a JS Date at the node process's local midnight
 //    and can shift a day in the driver.
 
+import {
+ EXPENSE_MOVEMENT_TYPE_ID,
+ INCOME_MOVEMENT_TYPE_ID,
+ PNL_MOVEMENT_TYPE_ID,
+ TRANSFER_MOVEMENT_TYPE_ID,
+} from './movementTypes.js';
 import { toAmount } from '../../budget_services/core/money.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 
@@ -49,8 +55,8 @@ const MONTHLY_EXPENSE_QUERY = `
     m.month::date::text AS month,
     COALESCE(SUM(
       CASE
-        WHEN t.movement_type_id = 1 THEN t.amount
-        WHEN t.movement_type_id = 6 THEN t.amount
+        WHEN t.movement_type_id = ${EXPENSE_MOVEMENT_TYPE_ID} THEN t.amount
+        WHEN t.movement_type_id = ${TRANSFER_MOVEMENT_TYPE_ID} THEN t.amount
         ELSE 0
       END
     ), 0) AS total_amount,
@@ -58,7 +64,7 @@ const MONTHLY_EXPENSE_QUERY = `
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
   LEFT JOIN transactions t
     ON t.account_id = ANY($1::int[])
-   AND t.movement_type_id IN (1, 6)
+   AND t.movement_type_id IN (${EXPENSE_MOVEMENT_TYPE_ID}, ${TRANSFER_MOVEMENT_TYPE_ID})
    AND t.transaction_actual_date >= (m.month AT TIME ZONE $4)
    AND t.transaction_actual_date <  ((m.month + INTERVAL '1 month') AT TIME ZONE $4)
   GROUP BY m.month
@@ -83,7 +89,7 @@ const MONTHLY_INCOME_QUERY = `
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
   LEFT JOIN transactions t
     ON t.account_id = ANY($1::int[])
-   AND t.movement_type_id = 2
+   AND t.movement_type_id = ${INCOME_MOVEMENT_TYPE_ID}
    AND t.transaction_actual_date >= (m.month AT TIME ZONE $4)
    AND t.transaction_actual_date <  ((m.month + INTERVAL '1 month') AT TIME ZONE $4)
   GROUP BY m.month
@@ -110,7 +116,7 @@ const MONTHLY_PNL_QUERY = `
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
   LEFT JOIN transactions t
     ON t.account_id = ANY($1::int[])
-   AND t.movement_type_id = 9
+   AND t.movement_type_id = ${PNL_MOVEMENT_TYPE_ID}
    AND (t.description IS NULL OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
    AND t.transaction_actual_date >= (m.month AT TIME ZONE $4)
    AND t.transaction_actual_date <  ((m.month + INTERVAL '1 month') AT TIME ZONE $4)
