@@ -25,6 +25,7 @@ import { setAccountBalanceFromLedger } from '../../utils/fintrackUtils/accountMa
 import { lockAndDeriveBalances } from '../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 import { insertAccount } from '../../utils/fintrackUtils/accountManagement/insertAccount.js';
 import { getTransactionTypeId } from '../../utils/fintrackUtils/accountDataRetrieval/getTransactionTypeId.js';
+import { assertUserCreatableAccountType } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 
 import { determineSourceAndDestinationAccounts } from '../../utils/fintrackUtils/accountManagement/determineSourceAndDestinationAccounts.js';
 import { prepareTransactionOption } from '../../utils/fintrackUtils/transactionManagement/prepareTransactionOption.js';
@@ -507,7 +508,21 @@ export const createDebtorAccount = async (req, res, next) => {
       'lend';
     const debtorTransactionType =
       selectedAccountTransactionType === 'lend' ? 'borrow' : 'lend';
-    const debtorAccountType = account_type ?? 'debtor';
+    // Both types are validated here, before the catalog lookup rather than
+    // after it. This is the one creation path that never checked the type it
+    // was handed: createBasicAccount compares the body against the URL
+    // segment and createCategoryBudgetAccount hardcodes its own, so a request
+    // naming 'boundary' only ever reached the catalog through here - and the
+    // catalog answers with the compensation type, whose accounts every
+    // dashboard query then removes from the owner's totals in silence.
+    const debtorAccountType = assertUserCreatableAccountType(
+      account_type ?? 'debtor',
+      'account_type',
+    );
+    assertUserCreatableAccountType(
+      selected_account_type,
+      'selected_account_type',
+    );
     //-------------------------------
     //NEW DEBTOR ACCOUNT BASIC DATA
     // Falls back to the accounting currency rather than a literal 'usd', which
@@ -597,11 +612,13 @@ export const createDebtorAccount = async (req, res, next) => {
     const debtorAccountTypeIdReqObj = accountTypeArr.filter(
       (type) => type.account_type_name == debtorAccountType.trim(),
     )[0];
-    const debtorAccountTypeIdReq = debtorAccountTypeIdReqObj.account_type_id;
-    // console.log('🚀 ~ createAccount ~ account_type_id:', debtorAccountTypeIdReq,'actypetArr', accountTypeArr);
-    if (debtorAccountTypeIdReq === undefined) {
-      throw new Error(`Account type "${debtorAccountType}" not found`);
+    // Before the dereference, not after it: reading .account_type_id off an
+    // undefined filter result threw a TypeError first, so this message could
+    // never be produced and the caller saw a 500 for a bad input.
+    if (!debtorAccountTypeIdReqObj) {
+      throw createError(400, `Account type "${debtorAccountType}" not found`);
     }
+    const debtorAccountTypeIdReq = debtorAccountTypeIdReqObj.account_type_id;
 
     //for selected account
     const selectedAccountTypeIdReqObj = accountTypeArr.filter(
@@ -609,17 +626,15 @@ export const createDebtorAccount = async (req, res, next) => {
         type.account_type_name.trim().toLowerCase() ==
         selected_account_type.trim().toLowerCase(),
     )[0];
-    const selectedAccountTypeIdReq =
-      selectedAccountTypeIdReqObj.account_type_id;
-
-    // console.log("🚀 ~ createDebtorAccount ~ selectedAccountTypeIdReqObj:", selectedAccountTypeIdReqObj)
-    // console.log('🚀 ~ createAccount ~ selected_account_type_id:', selectedAccountTypeIdReq);
-
-    if (selectedAccountTypeIdReq === undefined) {
-      throw new Error(
+    // Same ordering fix as the guard above.
+    if (!selectedAccountTypeIdReqObj) {
+      throw createError(
+        400,
         `Selected Account type "${selected_account_type}" not found`,
       );
     }
+    const selectedAccountTypeIdReq =
+      selectedAccountTypeIdReqObj.account_type_id;
     //----------------------------
     //verify and assure new debtor account does not exist in user_accounts table and handle error
     const debtorAccountExist = await verifyAccountExistence(

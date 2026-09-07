@@ -383,10 +383,13 @@ export async function tblCategoryNatureTypes(client = pool) {
   ) {
     // await client.query('ROLLBACK');
 
-    const { code, message } = handlePostgresErrorEs();
+    const { code, message } = handlePostgresErrorEs(error);
 
     // next(createError(code, message));
-    console.error('Error inserting tuples:', message || error);
+    // Both, not `message || error`: this catch is only reached on a database
+    // where the table is missing or short, which is the one boot where the
+    // chain and this DDL can disagree, and the message carries no stack.
+    console.error('Error inserting tuples:', message, error);
     throw createError(code, message);
   }
 }

@@ -20,6 +20,12 @@
 // stored balances from the ledger, and marking the account closed while leaving
 // its row and its transactions in place.
 //
+// It also covers the contract between the close screen and the engine: the
+// preview endpoint publishes a residual, the confirmation echoes it back, and
+// the settlement refuses if it has moved. Those are two files computing what
+// has to be the same number, and this is what checks that they agree - the
+// preview's own value is what gets echoed here, unmodified.
+//
 // The distinction that matters: a writer that is correct in isolation says
 // nothing about a path that computes the wrong residual, marks the wrong
 // account, or reports success after skipping a step. Those are the failures
@@ -47,6 +53,7 @@ import {
  CLOSE_POLICY_DISCARD,
  CLOSE_POLICY_TRANSFER,
 } from '../src/fintrack_api/controllers/accountDeleteController.js';
+import { getClosePreview } from '../src/fintrack_api/services/delete_account/getClosePreview.js';
 import { getInvestmentFigures } from '../src/fintrack_api/services/overview_services/db/overviewInvestmentRepository.js';
 import { derivedAccountBalanceSql } from '../src/utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 import {
@@ -171,6 +178,15 @@ try {
  console.log('');
  console.log('what the engine refuses:');
 
+ // TRANSFER shipped 2026-09-07 and is no longer refused outright. What it still
+ // refuses is a request that names no destination, which is what this call is:
+ // the seventh argument is absent. The rest of that policy - the eligibility
+ // rule and the settlement itself - is covered by verifyCloseTransfer.js.
+ //
+ // The eighth argument carries a correct residual on purpose. The engine parses
+ // the echo before it looks at the destination, so a call missing both would be
+ // refused for the echo and this assertion would pass while proving nothing
+ // about destinations - two different refusals wearing the same status code.
  const transferAttempt = await expectRejection(client, 'transfer', () =>
   processCloseAccount(
    client,
@@ -179,15 +195,118 @@ try {
    CLOSE_POLICY_TRANSFER,
    accountCheck,
    new Date(),
+   undefined,
+   residualBefore,
   ),
  );
  check(
-  'TRANSFER is refused with 400 while its destination rule has no selector',
+  'TRANSFER without a destination is refused with 400',
   transferAttempt.rejected && transferAttempt.status === 400,
   `${transferAttempt.status} ${String(transferAttempt.detail).slice(0, 70)}`,
  );
 
+ // ------------------------------------------------------------- the echo
+ // What the owner confirms is an amount, not an abstract operation, so the
+ // amount travels back with the confirmation and the engine refuses if it no
+ // longer describes the account (PLAN_ACCOUNT_DELETION.md §4.1 step 3).
+ //
+ // The two refusals are deliberately different codes. A request carrying no
+ // amount at all is malformed - no state of the database would make it valid,
+ // so 400. A request carrying an amount that was right when it was sent and is
+ // wrong now is a request the state moved underneath, so 409, the same code an
+ // ineligible destination answers.
+ const missingEcho = await expectRejection(client, 'no echo', () =>
+  processCloseAccount(
+   client,
+   target.user_id,
+   target.account_id,
+   CLOSE_POLICY_DISCARD,
+   accountCheck,
+   new Date(),
+   undefined,
+   undefined,
+  ),
+ );
+ check(
+  'CLOSE without an echoed residual is refused with 400',
+  missingEcho.rejected && missingEcho.status === 400,
+  `${missingEcho.status} ${String(missingEcho.detail).slice(0, 70)}`,
+ );
+
+ const staleEcho = await expectRejection(client, 'stale echo', () =>
+  processCloseAccount(
+   client,
+   target.user_id,
+   target.account_id,
+   CLOSE_POLICY_DISCARD,
+   accountCheck,
+   new Date(),
+   undefined,
+   money(residualBefore + 1),
+  ),
+ );
+ check(
+  'CLOSE echoing a residual the account no longer holds is refused with 409',
+  staleEcho.rejected && staleEcho.status === 409,
+  `${staleEcho.status} ${String(staleEcho.detail).slice(0, 70)}`,
+ );
+
+ // A cent apart, not a unit: the comparison is made in cents because both
+ // sides describe a DECIMAL(15,2) and arrive as floats, and a check that only
+ // caught whole-unit drift would let the rounding it exists to survive hide a
+ // real disagreement.
+ const centOffEcho = await expectRejection(client, 'cent off', () =>
+  processCloseAccount(
+   client,
+   target.user_id,
+   target.account_id,
+   CLOSE_POLICY_DISCARD,
+   accountCheck,
+   new Date(),
+   undefined,
+   money(residualBefore + 0.01),
+  ),
+ );
+ check(
+  'an echo one cent off is refused too, so the tolerance is not a unit',
+  centOffEcho.rejected && centOffEcho.status === 409,
+  `${centOffEcho.status} ${String(centOffEcho.detail).slice(0, 70)}`,
+ );
+
+ // ------------------------------------------------------- the two halves meet
+ // The echo is only worth anything if the figure the owner is shown is the
+ // figure the settlement will derive. Those are two different queries in two
+ // different files, and nothing but this checks that they agree: a preview
+ // serving the stored account_balance column instead of the derived residual
+ // would look right on the screen and be refused by the engine for a
+ // disagreement the owner neither caused nor can fix.
+ console.log('');
+ console.log('what the close screen is served:');
+
+ const preview = await getClosePreview(client, target.user_id, target.account_id);
+
+ check(
+  'the preview names the account the owner asked about',
+  preview.targetAccount.accountId === target.account_id,
+  `${preview.targetAccount.accountId} "${preview.targetAccount.accountName}"`,
+ );
+ check(
+  'the residual it publishes is the one derived here, not the stored balance column',
+  near(Number(preview.targetAccount.residual), residualBefore),
+  `preview ${preview.targetAccount.residual} vs ${residualBefore} derived independently`,
+ );
+ check(
+  'it carries the destinations and their count together, so the screen can offer the choice',
+  Array.isArray(preview.destinations) &&
+   preview.destinationCount === preview.destinations.length,
+  `${preview.destinationCount} eligible`,
+ );
+
  // ------------------------------------------------------------- the real run
+ // The echo sent back is the preview's own value, unmodified and still the
+ // string the driver produced - which is what a frontend echoing what it
+ // received will send. Using the script's own float here instead would test
+ // the engine against itself and skip the conversion the real path makes.
  const closeResult = await processCloseAccount(
   client,
   target.user_id,
@@ -195,6 +314,8 @@ try {
   CLOSE_POLICY_DISCARD,
   accountCheck,
   new Date(),
+  undefined,
+  preview.targetAccount.residual,
  );
 
  const residualAfter = await derivedBalanceOf(client, target.account_id);
@@ -228,6 +349,15 @@ try {
   'it reports closing exactly one account',
   closeResult.rowCount === 1,
   String(closeResult.rowCount),
+ );
+ // Stated as its own assertion rather than left implicit in the call having
+ // returned: three refusals above prove the echo can say no, and nothing there
+ // proves it ever says yes. A comparison wrong in the accepting direction
+ // refuses every close there is and passes all three.
+ check(
+  'an echo matching the derived residual is accepted',
+  near(closeResult.settledResidual, residualBefore),
+  `echoed ${residualBefore}, settled ${closeResult.settledResidual}`,
  );
 
  console.log('');
@@ -300,6 +430,9 @@ try {
  console.log('');
  console.log('what it refuses once the account is closed:');
 
+ // Echoing the residual the account actually holds now, which is zero: the
+ // refusal has to come from the account being closed, not from an echo that
+ // happens to be stale as well.
  const reCloseAttempt = await expectRejection(client, 'already closed', () =>
   processCloseAccount(
    client,
@@ -308,12 +441,33 @@ try {
    CLOSE_POLICY_DISCARD,
    closedRow,
    new Date(),
+   undefined,
+   0,
   ),
  );
  check(
   'closing an already-closed account is refused with 400',
   reCloseAttempt.rejected && reCloseAttempt.status === 400,
   `${reCloseAttempt.status} ${String(reCloseAttempt.detail).slice(0, 60)}`,
+ );
+
+ // The preview refuses it too, and refuses it as 404 rather than as its own
+ // code: a closed account has no close screen, and answering with a balance
+ // would offer the owner a confirmation the engine is going to reject anyway.
+ // The same 404 covers an account that does not exist and one belonging to
+ // someone else, so that the endpoint cannot be used to learn which.
+ const previewOfClosed = await getClosePreview(
+  client,
+  target.user_id,
+  target.account_id,
+ ).then(
+  (value) => ({ refused: false, value }),
+  (error) => ({ refused: true, status: error.status ?? error.statusCode }),
+ );
+ check(
+  'the preview refuses a closed account with 404, so no close screen can be opened on it',
+  previewOfClosed.refused && previewOfClosed.status === 404,
+  String(previewOfClosed.status),
  );
 
  // --------------------------------------------------- the no-settlement branch
@@ -346,6 +500,10 @@ try {
  );
 
  const emptyCheck = await accountRow(client, emptyId, target.user_id);
+ // Zero is an echo like any other and has to be sent: the engine requires the
+ // amount, and an account holding nothing is exactly where a check written as
+ // a truthiness test rather than a comparison would silently wave the request
+ // through.
  const emptyResult = await processCloseAccount(
   client,
   target.user_id,
@@ -353,6 +511,8 @@ try {
   CLOSE_POLICY_DISCARD,
   emptyCheck,
   new Date(),
+  undefined,
+  0,
  );
  const closureRowsAfterEmpty = await client.query(
   'SELECT COUNT(*)::int AS n FROM transactions WHERE movement_type_id = $1',

@@ -35,10 +35,22 @@ export function createError(statusCode, message, identity = {}) {
 
 //------------------------------
 export const handlePostgresErrorEs = (error) => {
-  let code = 500; // Código de estado HTTP por defecto
-  let message = error.message || 'Error interno del servidor'; // Mensaje por defecto
+  // The same guard the English twin carries, for the same reason: an error
+  // that declares .status was built by createError, and the switch below only
+  // matches SQLSTATE strings, so without this the default demotes it to 500.
+  if (error?.status) {
+    return {
+      code: error.status,
+      message: error.message,
+      errorCode: error.errorCode,
+      details: error.details,
+    };
+  }
 
-  switch (error.code) {
+  let code = 500; // Código de estado HTTP por defecto
+  let message = error?.message || 'Error interno del servidor'; // Mensaje por defecto
+
+  switch (error?.code) {
     case '23514': // Violación de CHECK constraint
       code = 400;
       message =
@@ -76,7 +88,7 @@ export const handlePostgresError = (error) => {
   // The identity travels with the status. A caller that destructures only
   // { code, message } ignores the two extra keys, which is why every existing
   // one keeps working unchanged.
-  if (error.status) {
+  if (error?.status) {
     return {
       code: error.status,
       message: error.message,
@@ -86,9 +98,9 @@ export const handlePostgresError = (error) => {
   }
 
   let code = 500; // Default HTTP status code
-  let message = error.message || 'Internal server error'; // Default message
+  let message = error?.message || 'Internal server error'; // Default message
 
-  switch (error.code) {
+  switch (error?.code) {
     case '23514': // CHECK constraint violation
       code = 400;
       message = 'Constraint violation: The start date cannot be in the future.';

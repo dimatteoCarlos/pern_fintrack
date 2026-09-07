@@ -74,7 +74,8 @@ export const mainTables = [
     account_start_date TIMESTAMPTZ NOT NULL, 
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMPTZ DEFAULT NULL
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    closed_at TIMESTAMPTZ DEFAULT NULL
 )`,
   },
   {
@@ -680,6 +681,40 @@ export async function ensureAccountTypeRequired(client = pool) {
    pc.green('user_accounts.account_type_id now RESTRICTs catalog deletion.'),
   );
  }
+}
+
+/**
+ * Add user_accounts.closed_at, the timestamp recording when an account was
+ * closed rather than deleted.
+ *
+ * The runtime counterpart of migration 034. The mainTables DDL above declares
+ * the column, but it is a CREATE TABLE IF NOT EXISTS and only runs on a virgin
+ * database, so an already-created one would never get it — the same reason
+ * ensureAccountTypeRequired() exists.
+ *
+ * Adds the column and nothing else. What fills it, what reads it and what
+ * clears the residue afterwards are code changes across four owners, and none
+ * of them belongs on a boot path.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureAccountClosedAt(client = pool) {
+ const { rows } = await client.query(`
+  SELECT EXISTS (
+   SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'user_accounts' AND column_name = 'closed_at'
+  ) AS present
+ `);
+
+ // Skips a no-op that would still take an ACCESS EXCLUSIVE lock on every boot.
+ if (rows[0].present) return;
+
+ // Nullable and with no default, so this rewrites no row: the lock is taken
+ // for a catalog update and released, whatever the size of the table.
+ await client.query(
+  'ALTER TABLE user_accounts ADD COLUMN closed_at TIMESTAMPTZ DEFAULT NULL',
+ );
+ console.log(pc.green('user_accounts.closed_at added.'));
 }
 
 /**

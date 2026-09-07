@@ -14,6 +14,7 @@ import {
   DELETION_TYPE_RTA,
   DELETION_TYPE_CLOSE,
   CLOSE_POLICY_DISCARD,
+  CLOSE_POLICY_TRANSFER,
   USER_ACTION,
 } from '../../controllers/accountDeleteController.js';
 
@@ -27,6 +28,7 @@ import { recordClosureSettlement } from '../../../utils/fintrackUtils/accountDel
 import { lockAndDeriveBalances } from '../../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 import { eraseAccountTail } from '../../../utils/fintrackUtils/accountDeletionUtils/eraseAccountTail.js';
 import { assessDeletionImpact } from './getAnnulmentImpactReport.js';
+import { assertTransferDestinationEligible } from './getCloseTransferDestinations.js';
 import { getCurrencyCode } from '../../../utils/currencyLookup.js';
 //=====================================
 // 📋 MESSAGES CONFIGURATION
@@ -517,15 +519,32 @@ const CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED = true;
 
 /**
  * 📝 PROCESS CLOSE ACCOUNT
- * CLOSE, DISCARD policy only (§3.1): settle the residual against the
- * boundary account, assert it is zero, then mark deleted_at - the row and
- * its transactions survive, unlike DELETE/HARD.
+ * CLOSE, both policies (§3.1): settle the residual against the counterpart the
+ * policy names, assert the account reached zero, then mark deleted_at - the row
+ * and its transactions survive, unlike DELETE/HARD.
+ *
+ *  - DISCARD settles against the boundary account. Every published figure
+ *    excludes it, so the owner's net worth falls by the residual.
+ *  - TRANSFER settles against an account the owner picked, checked here against
+ *    the frozen eligibility rule. Both accounts stay inside every published
+ *    set, so the pair cancels and net worth is unchanged (§3.1, "Net worth").
+ *
+ * The two share every step but the counterpart, which is why they are one
+ * function rather than two: the lock set, the derivation, the assertion and the
+ * mark are the parts that must not differ between policies.
  *
  * Exported so it can be exercised on a caller's own transaction. The only
  * other way in is deleteAccountService, which opens a connection and commits,
  * so nothing could check what this writes without really closing an account.
  * It takes the client rather than opening one, which is what makes a
- * rolled-back verification possible - see scripts/verifyCloseAccount.js.
+ * rolled-back verification possible - see scripts/verifyCloseAccount.js and
+ * scripts/verifyCloseTransfer.js.
+ *
+ * @param {number} [destinationAccountId] - TRANSFER only; the account the owner
+ *   picked. Ignored by DISCARD, which has no destination to pick.
+ * @param {number|string} expectedResidual - the residual the owner was shown
+ *   and confirmed, echoed back. Required for both policies: what the owner
+ *   approves is an amount, not an abstract operation.
  */
 export const processCloseAccount = async (
   dbClient,
@@ -534,6 +553,8 @@ export const processCloseAccount = async (
   policy,
   accountCheck,
   transactionDate,
+  destinationAccountId,
+  expectedResidual,
 ) => {
   if (!CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED) {
     // 409, not 503: this is not a transient outage a retry will clear - it is
@@ -557,32 +578,121 @@ export const processCloseAccount = async (
     throw createError(400, 'Account is already closed');
   }
 
-  if (policy !== CLOSE_POLICY_DISCARD) {
-    // TRANSFER needs a validated destination account (D2, destination
-    // eligibility - unit 9), still open. DISCARD needs no destination, so it
-    // ships first.
+  if (policy !== CLOSE_POLICY_DISCARD && policy !== CLOSE_POLICY_TRANSFER) {
     throw createError(
       400,
-      `CLOSE policy '${policy}' is not available yet. Only DISCARD is implemented; TRANSFER is blocked on destination-eligibility rules (D2).`,
+      `CLOSE policy '${policy}' is not recognised. Expected '${CLOSE_POLICY_DISCARD}' or '${CLOSE_POLICY_TRANSFER}'.`,
     );
   }
 
-  // Get/create the boundary account - the same compensation counterpart RTA
-  // uses, identified structurally by account_type (unit 5).
-  const boundaryAccountInfo = await checkAndInsertAccount(dbClient, userId);
-  const boundaryAccount = boundaryAccountInfo.account;
+  const isTransfer = policy === CLOSE_POLICY_TRANSFER;
 
-  // 1 LOCK + 2 ASSESS: lock target and boundary together, derive both
+  // The owner's echo of the residual, parsed here and compared after the lock
+  // (§4.1 step 3). Parsed before the lock for the same reason the destination
+  // id is: a malformed request should not take a row lock on its way to being
+  // refused. 400 rather than 409 - no state of the database makes a missing or
+  // unparseable number valid.
+  const confirmedResidual = Number(expectedResidual);
+
+  if (
+    expectedResidual === null ||
+    expectedResidual === undefined ||
+    expectedResidual === '' ||
+    !Number.isFinite(confirmedResidual)
+  ) {
+    throw createError(
+      400,
+      'CLOSE requires expectedResidual, the balance you were shown for this account. ' +
+        'Read it from the close preview endpoint and send it back with the request.',
+    );
+  }
+
+  // Which account the residual goes to. Resolved before the lock because the
+  // lock set has to name it (§4.3: CLOSE + TRANSFER locks { A, D }), and
+  // VALIDATED after it - see below.
+  let counterpartAccountId;
+  let counterpartAccountName;
+
+  if (isTransfer) {
+    // 400, not 409: a request that names no destination is malformed, and no
+    // state of the database would make it valid. An ineligible destination is
+    // the other case and answers 409, in getCloseTransferDestinations.js.
+    const requestedDestinationId = Number.parseInt(destinationAccountId, 10);
+
+    if (!Number.isInteger(requestedDestinationId)) {
+      throw createError(
+        400,
+        `CLOSE with the ${CLOSE_POLICY_TRANSFER} policy requires destinationAccountId, the account the residual is moved to.`,
+      );
+    }
+
+    counterpartAccountId = requestedDestinationId;
+  } else {
+    // Get/create the boundary account - the same compensation counterpart RTA
+    // uses, identified structurally by account_type (unit 5). Only DISCARD
+    // reaches this: creating a boundary account for a policy that never
+    // settles against one would leave a side effect behind for nothing.
+    const boundaryAccountInfo = await checkAndInsertAccount(dbClient, userId);
+    counterpartAccountId = boundaryAccountInfo.account.account_id;
+    counterpartAccountName = boundaryAccountInfo.account.account_name;
+  }
+
+  // 1 LOCK + 2 ASSESS: lock target and counterpart together, derive both
   // balances from the locked state.
   const balances = await lockAndDeriveBalances(dbClient, userId, [
     targetAccountId,
-    boundaryAccount.account_id,
+    counterpartAccountId,
   ]);
   const residual = parseFloat(balances.get(targetAccountId));
 
-  // 4 SETTLE: write the DISCARD pair only if there is something to settle.
-  // A target already at zero needs no transaction - a zero-amount row would
-  // carry no financial meaning.
+  // 3 VALIDATE, first half: the owner confirmed an amount, so the amount about
+  // to be settled has to be that one. Compared here rather than before the lock
+  // because only now is the residual the one the settlement will actually use -
+  // checked earlier, a transaction could still land in between and the check
+  // would have proved nothing.
+  //
+  // Compared in cents. Both sides describe a DECIMAL(15,2) column, but they
+  // arrive as floats - the derived residual through the driver, the echo
+  // through JSON - and 1.39 is not exactly representable in either, so a strict
+  // comparison would refuse requests that agree to the cent.
+  //
+  // This runs before the destination check because it needs no query: a request
+  // whose amount is already stale is refused without asking the database
+  // anything further. 409, not 400 - the request was valid when the owner sent
+  // it, and the state moved underneath it, which is the same reason an
+  // ineligible destination answers 409.
+  if (Math.round(confirmedResidual * 100) !== Math.round(residual * 100)) {
+    throw createError(
+      409,
+      `The balance of account ${targetAccountId} changed after you were shown it: ` +
+        `you confirmed ${confirmedResidual}, it now holds ${residual}. ` +
+        'Nothing was closed or settled. Review the new balance and confirm again.',
+    );
+  }
+
+  // 3 VALIDATE, second half, and deliberately after the lock rather than
+  // before it. Read first, the destination could be closed, retyped or
+  // re-currencied by another transaction between the check and the settlement,
+  // and the write would land on an account that was eligible only in the past.
+  //
+  // The destination is validated whether or not there is a residual to move.
+  // A request naming an ineligible account is wrong about what it asked for,
+  // and accepting it silently whenever the balance happens to be zero would
+  // make the rule hold only sometimes.
+  if (isTransfer) {
+    const destination = await assertTransferDestinationEligible(
+      dbClient,
+      userId,
+      targetAccountId,
+      counterpartAccountId,
+    );
+
+    counterpartAccountName = destination.accountName;
+  }
+
+  // 4 SETTLE: write the pair only if there is something to settle. A target
+  // already at zero needs no transaction - a zero-amount row would carry no
+  // financial meaning and would still show up in the closure term as a row.
   if (residual !== 0) {
     const currencyCode = await getCurrencyCode(
       dbClient,
@@ -593,7 +703,9 @@ export const processCloseAccount = async (
       userId,
       targetAccountId,
       targetAccountName: accountCheck.rows[0].account_name,
-      boundaryAccountId: boundaryAccount.account_id,
+      policy,
+      counterpartAccountId,
+      counterpartAccountName,
       residual,
       currencyId: accountCheck.rows[0].currency_id,
       currencyCode,
@@ -601,11 +713,7 @@ export const processCloseAccount = async (
     });
 
     await setAccountBalanceFromLedger(dbClient, targetAccountId, userId);
-    await setAccountBalanceFromLedger(
-      dbClient,
-      boundaryAccount.account_id,
-      userId,
-    );
+    await setAccountBalanceFromLedger(dbClient, counterpartAccountId, userId);
   }
 
   // 5 ASSERT residual(A) = 0 - re-derive rather than trust the arithmetic,
@@ -638,7 +746,13 @@ export const processCloseAccount = async (
   return {
     actionType: USER_ACTION,
     deletionType: DELETION_TYPE_CLOSE,
+    policy,
     settledResidual: residual,
+    // Where the residual went, so the response can state it rather than leave
+    // the owner to infer it from the policy name. Null under DISCARD: the
+    // boundary account is internal and its name means nothing to the owner.
+    destinationAccountId: isTransfer ? counterpartAccountId : null,
+    destinationAccountName: isTransfer ? counterpartAccountName : null,
     rowCount: 1,
   };
 }; //END of processCloseAccount
@@ -699,8 +813,10 @@ export const deleteAccountService = async (
   deletionType,
   // CONDITIONAL RTA PARAMETER:
   targetAccountName = 'Unknown', // RTA execution data - cosmetic only, see processRTAAnnulment
-  // CONDITIONAL CLOSE PARAMETER:
+  // CONDITIONAL CLOSE PARAMETERS:
   policy, // which settlement policy CLOSE applies (CLOSE_POLICY_DISCARD | CLOSE_POLICY_TRANSFER); ignored by every other deletion type
+  destinationAccountId, // where the residual goes under TRANSFER; ignored by DISCARD and by every other deletion type
+  expectedResidual, // the balance the owner was shown and confirmed; required by CLOSE under both policies, ignored by every other deletion type
 ) => {
   // =========================================
   // 🚀 RTA ANNULMENT EXECUTION (ATOMIC TRANSACTION)
@@ -879,6 +995,8 @@ export const deleteAccountService = async (
               policy,
               accountCheck,
               new Date(),
+              destinationAccountId,
+              expectedResidual,
             )
           : await processStandardDelete(
               dbClient,
@@ -899,7 +1017,12 @@ export const deleteAccountService = async (
           'executed',
         );
       } else if (deletionType === DELETION_TYPE_CLOSE) {
-        successMessage = `Account ${targetAccountId} closed. Residual settled: ${deleteResult.settledResidual}.`;
+        // Where the residual went is part of the outcome, not a detail: the
+        // two policies differ by exactly that, and a message that only names
+        // the amount reads identically for a transfer and for a write-off.
+        successMessage = deleteResult.destinationAccountId
+          ? `Account ${targetAccountId} closed. Residual settled: ${deleteResult.settledResidual}, transferred to "${deleteResult.destinationAccountName}".`
+          : `Account ${targetAccountId} closed. Residual settled: ${deleteResult.settledResidual}, discarded to the system account.`;
       } else {
         successMessage = messages.userAction.messagefn(
           targetAccountId,
@@ -916,7 +1039,10 @@ export const deleteAccountService = async (
           deletionType: deleteResult.deletionType,
           timestamp: new Date().toISOString(),
           ...(deletionType === DELETION_TYPE_CLOSE && {
+            policy: deleteResult.policy,
             settledResidual: deleteResult.settledResidual,
+            destinationAccountId: deleteResult.destinationAccountId,
+            destinationAccountName: deleteResult.destinationAccountName,
           }),
         },
       };

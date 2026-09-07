@@ -126,10 +126,76 @@ it means **closed**, never deleted: a deleted account has no row for a column
 to carry. Every query reading `deleted_at IS NULL` is asking *is this account
 in circulation*, and must be read that way.
 
-**Recommendation, to be executed at unit 7: rename it to `closed_at`.**
+~~**Recommendation, to be executed at unit 7: rename it to `closed_at`.**
 Recorded as D6 (§9). Unit 7 is the moment because unit 8 immediately
 afterwards visits 75 read sites, 8 of which filter this column — renaming
-first means unit 8 sweeps under the final name instead of being redone.
+first means unit 8 sweeps under the final name instead of being redone.~~
+
+**Superseded 2026-09-07: it is a second column, not a rename.** Both the
+recommendation above and the sentence above it rest on the same premise —
+that a deleted account has no row, so the column can only ever mean closed.
+That premise is false for soft delete, which keeps the row and sets the same
+column. Three measurements in `deleteAccountService.js` settle it:
+
+- **Two operations already write the column and neither knows about the
+  other.** The soft-delete branch refuses when it is set, with *Account
+  already soft deleted*; the close path refuses when it is set, with *Account
+  is already closed*. Whichever arrives second is refused by a message
+  describing a state the account may not be in.
+- **Hard delete never reads the column at all.** Its only guard is a refusal
+  when the ledger residual is nonzero, and closing an account leaves that
+  residual at exactly zero by construction — that is what the settlement is
+  for. A closed account therefore passes the hard-delete guard trivially.
+- **So closed-then-deleted is not hypothetical**, it is the path of least
+  resistance through the module today.
+
+Two states cannot share one column, and the answer is not a new name for the
+old one. **Decision: add `closed_at` beside `deleted_at`**, which keeps
+`deleted_at` meaning soft-deleted and renames nothing. The shape, agreed with
+`pern-fintrack-02`, who owns the migration chain and writes both halves:
+
+1. Add `closed_at`, nullable. Nothing renamed, nothing dropped, so no deploy
+   ordering problem in either direction — the frontend and backend are two
+   independent Vercel projects and there is no instant at which a schema
+   change lands on both at once.
+2. The close path writes **both** columns for the duration. This is what makes
+   the first migration safe alone: if it wrote only `closed_at`, every
+   existing `deleted_at IS NULL` reader would start showing closed accounts as
+   in circulation.
+3. The read sites move to the precise predicate — in circulation becomes
+   `deleted_at IS NULL AND closed_at IS NULL`, and a reader that wants history
+   keeps only the `deleted_at` filter. A semantic sweep, not a substitution,
+   so each site is a decision; this half is the deletion module's.
+4. A later migration stops the close path writing `deleted_at`. It drops no
+   column, and it is not a corrective migration: the first is deliberately
+   incomplete, which is what expand-and-contract means.
+
+**Nothing is backfilled, and that is a decision rather than an omission.** On
+`fintrack_dev` on 2026-09-07 no row of `user_accounts` carries `deleted_at`
+and `information_schema` lists no `closed_at` beside it — but that is dev, and
+production is Supabase, which nobody has read this session, so the migration
+cannot be written on the assumption that the column is empty. The decision
+holds either way and for the same reason: every pre-existing `deleted_at`
+means a delete, because nothing in the data distinguishes a soft delete from a
+close. Inferring it from the presence of a closure settlement row fails for an
+account closed with a zero residual, which writes no settlement row at all.
+Stated in the migration header, not left implicit. Correction from
+`pern-fintrack-02`, who owns the chain.
+
+**One step that is genuinely a second migration, and it has a deadline.** Rows
+closed during the dual-write window carry both columns. Clearing `deleted_at`
+on exactly those rows is a data migration, and it is writable only while the
+dual-write window still makes them distinguishable — after the close path
+stops writing `deleted_at`, those rows are indistinguishable from a soft
+delete forever, which is the same ambiguity the backfill decision above
+refuses to guess at.
+
+**The migration is three artefacts, not one.** `CREATE TABLE IF NOT EXISTS`
+never alters an existing table, so the `mainTables` DDL in `createTables.js`
+reaches only virgin databases: an idempotent `ensureClosedAt()` wired into
+`initializeDatabase()` is required for every database that already exists.
+Without it the two build paths diverge on the day the migration lands — the
+same defect Carlos flagged when he commissioned migration 033.
 
 ### 3.2 DELETE — the exceptional one
 
@@ -651,8 +717,13 @@ commit. The order is forced where stated and free otherwise.
      deletion type, not just RTA, is still open.
 
   7  the settlement engine and CLOSE                       §3.1, §4.1
-     OPEN. TRANSFER and DISCARD, the invariants, the deleted_at write path,
-     and the deleted_at -> closed_at rename (D6).
+     TRANSFER and DISCARD both SHIPPED (2026-09-07). The client's echo of
+     the residual SHIPPED the same day, with the close preview endpoint it
+     needed to have a trustworthy figure to echo - see "The residual echo"
+     below. Still open: the addition of closed_at beside deleted_at (D6,
+     settled as an added column rather than a rename), whose migration is
+     pern-fintrack-02's and whose dual-write and reader sweep are this
+     session's.
 
   8  the read sweep                                        
      OPEN. 75 FROM/JOIN of user_accounts across 21 files, 8 filtering
@@ -702,9 +773,13 @@ them:
  D5  whether `description` stops embedding the counterparty going forward.
      If it does, the scrub of §8 shrinks to a one-time backfill.
 
- D6  whether `deleted_at` is renamed to `closed_at`, at unit 7.
-     Recommended yes (§3.1). Until it is, the name means CLOSED, not
-     deleted, and nothing in the code may read it as deletion.
+ D6  SETTLED 2026-09-07 (§3.1). Not a rename: `closed_at` is added beside
+     `deleted_at`, because soft delete and close already write the same
+     column meaning different things and a closed account can still be
+     hard-deleted afterwards. Scheduled by Carlos; the migration and its
+     runtime counterpart belong to `pern-fintrack-02`, the read-site sweep
+     and the reopen path to this module. Until it lands, `deleted_at` on a
+     surviving row still means CLOSED and nothing may read it as deletion.
 ```
 
 ### Unit 5 scoping, 2026-09-06
@@ -908,20 +983,74 @@ calls it instead of inlining the two steps - a pure extraction, verified by
 boot test, RTA's own behavior unchanged. Two open decisions this does NOT
 settle, deliberately left to the developer rather than guessed:
 
-- **Should HARD's execution call `assessDeletionImpact` too**, purely to lock
+- ~~**Should HARD's execution call `assessDeletionImpact` too**, purely to lock
   the target (closing the same concurrency gap RTA already closed) and to
   return the impact it is about to leave uncorrected, without applying any
   of it - or does a type whose entire point is "no reversal" gain nothing
   from computing the reversal it will not make? Not called from
-  `processStandardDelete` yet.
-- **The impact-report's NULL-unsafe predicate** (`getAnnulmentImpactReport.js`,
+  `processStandardDelete` yet.~~
+
+  **Settled 2026-09-07: no, and half the question was already answered in the
+  code.** The concurrency half needs nothing: the hard-delete branch already
+  calls `lockAndDeriveBalances` on the target, for its own refusal when the
+  ledger residual is nonzero. The lock RTA acquires is therefore already held
+  by the time the erasure runs, and adding a second call would acquire it
+  twice rather than close a gap.
+
+  What remains is only whether the execution path should also *return* the
+  impact, and it should not, for two reasons that point the same way. The
+  report describes reversals this deletion type deliberately will not make, so
+  returning it from the execution path documents a correction that is not
+  happening at the moment it is not happening — the worst place to put it. And
+  a preview belongs before the confirmation, not in the response to it: by the
+  time the execution path could return anything, the account is gone. The
+  owner's preview is the assessment endpoint's job, which serves every deletion
+  type from one place; building a second, HARD-shaped copy inside the execution
+  path is how the two start disagreeing.
+- ~~**The impact-report's NULL-unsafe predicate** (`getAnnulmentImpactReport.js`,
   `tr.destination_account_id != tr.source_account_id`) silently drops a row
   whose counterparty was already nulled by an earlier deletion's DETACH step
   - the same mechanism behind the invariant-I violation above. What should
   happen to that residual amount: swept into the boundary/slack account, or
   surfaced as its own "no live counterparty" line in the report? Needs an
   answer before this gets a fix; a guessed one risks writing the wrong
-  correction rather than none.
+  correction rather than none.~~
+
+  **Settled 2026-09-07: surfaced as its own figure, and no money moves.** The
+  predicate itself was fixed earlier — it reads `IS DISTINCT FROM`, so the row
+  is no longer dropped by the comparison. What still dropped it was the join to
+  the account it belongs to, and that drop is correct arithmetic: the earlier
+  deletion already reversed those amounts against the compensation account, so
+  sweeping them anywhere now would settle them a second time and the report's
+  total would stop agreeing with the compensation balance the execution path
+  re-derives from the rows it actually wrote.
+
+  So the answer is neither of the two originally posed. The amount is reported
+  and not moved. `getUnattributedAnnulmentTotal` computes it from the same
+  shared expression the report is built on, so the two can never disagree about
+  which rows they describe, and it is returned **beside** the report rather
+  than inside it — the execution path iterates that array and writes a
+  settlement pair per entry, so an entry with no account id would be a write
+  aimed at nothing. Keeping it out of the array is what makes that structural
+  instead of a rule someone has to remember.
+
+  **Measured on `fintrack_dev`, 2026-09-07.** One account has this group at
+  all: the compensation account, two rows, totalling exactly −60.00. That is
+  the same −60.00 recorded above as the owner's accounts failing to net to
+  zero, now visible from the report's side rather than only from the ledger
+  sum. With the figure named, the report's lines plus the unattributed total
+  equal the account's whole signed activity against a distinct counterparty —
+  asserted in the probe rather than inspected, since a report that merely looks
+  complete is the failure being fixed.
+
+  **Frontend requirement this creates.** `GET
+  /account/delete/report_of_affected_accounts/:targetAccountId` now returns
+  `unattributedAmount` and `unattributedTransactionCount` beside
+  `impactReport`. Zero and zero is the ordinary case and needs no treatment.
+  Nonzero must be rendered as its own line, stating that this part of the
+  account's activity has no live counterparty and will not be credited to any
+  account — never summed into the report's own lines, and never hidden, which
+  is the state this replaces.
 
   **Evidence gathered, 2026-09-06, still Carlos's decision.**
   `pern-fintrack-cf` measured the live shape of this on `fintrack_dev` (named
@@ -2018,6 +2147,39 @@ insert fix just closed, and the settlement writer would tag both legs with the
 closing account's currency regardless. A predicate that costs nothing now and
 is load-bearing later cannot be added retroactively to rows already settled.
 
+**What the risk is actually waiting on, corrected 2026-09-07.** This section
+first said the risk becomes real the day something in the migration chain lets
+an account exist in a non-accounting currency. That is wrong, and the
+correction matters because it moves the risk from future to present: there is
+no gate in the chain to open. `user_accounts.currency_id` is declared
+`INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE
+CASCADE` — it references the whole catalog, all six rows, with no `CHECK` and
+no restriction to the accounting currency. Reported by `pern-fintrack-02` and
+verified here on the runtime DDL in `createTables.js`, plus a search of both
+build paths for any `CHECK` naming a currency column, which finds none on
+`user_accounts`.
+
+So an account in EUR is one INSERT away, not one migration away. The
+same-currency predicate is enforced today by the application only, and a seed,
+a script, a backfill or a second writer goes around an application guard
+without touching the schema. **Open, not commissioned:** closing this properly
+is a `CHECK` or a partial constraint on `user_accounts.currency_id`, which
+belongs to the session that owns the migration chain (`pern-fintrack-02`) and
+waits on Carlos scheduling it.
+
+**A module outside this one depends on the `bank` condition, 2026-09-07.** The
+overview's investment transaction list and the count beside it carry no
+movement-type filter at all; they are scoped by the investment account set
+instead. Both closure legs land on bank accounts because the eligibility rule
+says so, so both fall outside that set and neither list can publish a closure
+row. That safety is borrowed entirely from this rule and there is nothing in
+the overview query that would stop it: **the day closure eligibility admits
+account type `investment`, closure rows start appearing inside investment
+history and the count moves with them.** Measured by `pern-fintrack-cf` across
+its whole module; recorded here because the dependency runs from this rule
+into theirs and is invisible from either side alone. Anyone widening the
+destination rule reads this paragraph first.
+
 ## The DISCARD settlement verified against a database, 2026-09-07
 
 The settlement writer has been run against `fintrack_dev` through the
@@ -2146,9 +2308,283 @@ possible at all.
 
 ### What still stands between this and CLOSE reaching a user
 
-- TRANSFER answers 400 for want of a destination selector. The rule is frozen
-  above, so the selector implements it rather than re-deciding it.
+- ~~TRANSFER answers 400 for want of a destination selector.~~ Built
+  2026-09-07, below.
 - No frontend component triggers CLOSE: the close deletion type appears in the
   type definitions and in no button. Until one exists, the open gate changes
   nothing a user can reach — it makes the path exercisable rather than
   reachable.
+
+---
+
+## The TRANSFER policy built, 2026-09-07
+
+CLOSE now settles the residual either way: to the compensation account
+(DISCARD), or to an account the owner picked (TRANSFER). The eligibility rule
+was frozen above and this implements it rather than re-deciding it.
+
+### One query, two callers
+
+`getCloseTransferDestinations.js` holds the rule once. The selector endpoint
+asks it for the list to show; the write path asks it for the same list and
+requires the chosen destination to appear in it. Written instead as a list
+query plus a separate validating predicate, the two could drift under a later
+edit, and the failure would be a settlement written to an account the owner was
+never offered — with nothing in either query to say which of the two was wrong.
+
+The closing account's currency comes from a common table expression that the
+main query CROSS JOINs, not from a subquery in the WHERE clause. When the
+closing account does not exist or belongs to another owner, that expression is
+empty and the join yields nothing: the query degrades to a refusal — an empty
+selector and a rejected destination — instead of to an unfiltered list of every
+bank account the caller owns.
+
+The compensation account is excluded without being named, because migration 031
+gave it its own account type. Nothing in the rule mentions it.
+
+### Both legs carry the closure movement type, not the transfer type
+
+TRANSFER really is a transfer between two of the owner's accounts, and writing
+it as movement type 6 would have been the obvious reading. It is wrong, and the
+reason is measurable: **movement type 6 is read as spending by five consumers** —
+the budget's `actual_spent` in four queries of `budgetTransactionRepository.js`,
+the overview's monthly expense series, its month transaction list, and the
+category-budget cumulative figure in `getTransactionsForAccountById.js`. All of
+them sum signed amounts over an account set and none consults the transaction
+type. A negative type-6 leg on the closing account would publish as negative
+spending for the month of the closure, and the positive leg as spending on the
+destination.
+
+Movement type 10 is read by exactly one consumer, the Investment card's
+reconciliation, and it reads it as the closure adjustment — which is what the
+row is. The settlement stays identifiable by a column rather than by a
+description, which is the property the annulment prefix does not have.
+
+### What the two policies share, and where they differ
+
+They differ in the counterpart and in nothing else. The lock set, the
+derivation, the zero assertion and the mark are one code path, because those are
+the parts that must not differ between policies. There is one settlement writer
+for the same reason: the 18-column insert and its six FX columns exist once.
+
+The counterpart is resolved **before** the lock, because the lock set has to
+name it (§4.3: CLOSE + TRANSFER locks { A, D }), and validated **after** it.
+Read first, the destination could be closed, retyped or re-currencied by another
+transaction between the check and the settlement, and the write would land on an
+account that was eligible only in the past.
+
+The destination is validated whether or not there is a residual to move. A
+request naming an ineligible account is wrong about what it asked for, and
+accepting it silently whenever the balance happens to be zero would make the
+rule hold only sometimes.
+
+**DISCARD never creates a boundary account under TRANSFER.** The
+get-or-create call moved inside the DISCARD branch: creating a compensation
+account for a policy that never settles against one leaves a side effect behind
+for nothing.
+
+### Which refusal carries which code
+
+- **400** — the request names no destination. It is malformed, and no state of
+  the database would make it valid.
+- **409** — the destination is not eligible. Eligibility is a property of the
+  current state, not of the request's shape: the same request was valid a moment
+  ago if the destination has since been closed, and becomes valid again if the
+  owner reopens it. This is §4.1 step 3's own answer for VALIDATE.
+
+The message states the rule rather than which clause failed. Naming the failing
+clause would report on accounts the caller may not own — the query cannot
+distinguish "not yours" from "not a bank account" without reading rows outside
+the owner's set.
+
+### Verified against a database, 2026-09-07
+
+`backend/scripts/verifyCloseTransfer.js`, on `fintrack_dev`, inside a
+transaction it always rolls back. **Thirty-three assertions, all passing**, one
+skipped for want of a second owner on this deployment. Closing investment
+account 17 holding 1.39 into bank account 15 holding 3878.44.
+
+The count was recorded here as twenty-eight and was wrong when written — the
+script has not changed its assertions since except to gain the residual echo's,
+and it printed thirty-two the day the figure was recorded. Counted from the
+script's own output, not from the commit message that carried the error.
+
+**The selector.** Four eligible accounts, every one of them re-read from
+`user_accounts` rather than trusted from the query's own output: all four belong
+to the owner, are open, are bank accounts and share the closing currency. The
+account being closed is absent, all three investment accounts are absent, and so
+is the compensation account.
+
+**The refusals.** No destination answers 400. The account being closed as its
+own destination answers 409. An investment account answers 409.
+
+**The property that separates the policies**, and the one worth the probe: the
+two accounts together hold 3879.83 before and 3879.83 after. Under DISCARD that
+sum falls by the residual, because the counterpart sits on an account no
+published figure counts. A defect that sent the residual to the compensation
+account under either policy would still zero the target, still mark it closed
+and still report success — the owner would simply lose the money.
+
+**What it wrote**: exactly two rows, both carrying the closure movement and
+transaction types, both carrying the closing account's currency — which the
+eligibility rule had already forced the destination to share, so the pair agrees
+with both accounts it sits on. The descriptions say transferred, not discarded,
+which is how the probe knows the policy reached the writer and not just the
+engine.
+
+**What it left alone**: no compensation account created, and the existing one
+unmoved at −100166.14.
+
+**The published figures**: the closure term moves by the negation of the
+residual, the realised term does not move, the identity closes, and the card
+balance falls by the residual — the destination is a bank account, so its leg is
+outside the set the card reads. The money left the investment world without
+leaving the owner.
+
+**Rollback verified**: closure rows, account count, the closed account open
+again, and the destination back at 3878.44.
+
+The DISCARD probes were re-run unchanged after the writer's counterpart
+parameter was generalised: `verifyCloseAccount.js` and
+`verifyClosureSettlement.js` both still pass in full.
+
+### The frontend requirement this creates
+
+- `GET /api/fintrack/account/delete/close_preview/:targetAccountId` returns
+  `{ targetAccountId, targetAccount, destinations, destinationCount }`.
+  `targetAccount` carries `accountId`, `accountName`, `accountTypeName`,
+  `currencyCode` and `residual` as text; each destination carries `accountId`,
+  `accountName`, `accountTypeName`, `currencyCode` and `accountBalance` as text.
+  **An empty array is a legitimate answer, not an error**: an owner whose only
+  bank account is the one being closed has nowhere to transfer to and must use
+  DISCARD. The close screen renders that as its own state, not as an empty
+  dropdown. A 404 means no such open account of yours — the three cases are not
+  distinguished on purpose.
+
+  This route and this payload replace
+  `GET .../delete/transfer_destinations/:targetAccountId`, which served the
+  dropdown alone. Nothing consumed the old name: the endpoint and the rename
+  shipped the same day, before any frontend existed. The two fields it returned
+  are both still here under the same names.
+- `DELETE /api/fintrack/account/delete/:targetAccountId` takes
+  `policy: 'DISCARD' | 'TRANSFER'` in the body, `expectedResidual` under both
+  policies, and under TRANSFER also `destinationAccountId`, an id from that
+  list.
+- **`expectedResidual` is the preview's `targetAccount.residual` sent back
+  unchanged** — the string as received, not the formatted figure the screen
+  rendered. It must not be re-read from an account list: those publish the
+  stored `account_balance` column, which drifts from the derived residual the
+  settlement uses, and the request would be refused for a disagreement the owner
+  neither caused nor can fix.
+- Two refusals the close screen has to distinguish. **400** means the request
+  carried no residual at all, or one that will not parse — a bug in the screen,
+  not something the owner can act on. **409** means the balance moved between
+  the preview and the confirmation; the message names both figures, and the
+  screen's answer is to re-fetch the preview and ask the owner to confirm again.
+  Nothing was closed or settled in either case.
+- The success payload now carries `policy`, `settledResidual`,
+  `destinationAccountId` and `destinationAccountName`. The last two are null
+  under DISCARD, deliberately: the compensation account is internal and its name
+  means nothing to the owner. The screen states where the money went from these
+  rather than re-deriving it from the policy name.
+
+### The residual echo, shipped 2026-09-07
+
+~~**The client's echo of the residual** (§4.1 step 3) is not implemented, for
+either policy. The engine derives the residual inside its own lock and never
+compares it against the figure the owner was shown when they confirmed. Nothing
+today is wrong because of it — the derived figure is the right one — but the
+owner can confirm a number and have a different one settled if a transaction
+lands in between, with no refusal and nothing in the response to say so.~~
+
+Implemented for both policies, and it cost a second endpoint rather than a
+comparison, for a reason worth recording: **what the owner approves is an
+amount, not an abstract operation**, and the echo is worth nothing unless the
+amount they were shown is the amount the settlement will derive. Every account
+list in the application publishes the stored `account_balance` column; the
+settlement derives its residual from the ledger. The preview endpoint exists to
+serve a residual derived by the same expression the settlement uses.
+
+**Stated precisely, because the loose version of it is wrong.** The two figures
+are not known to disagree — measured by pern-fintrack-cf on `fintrack_dev`,
+2026-09-07: 31 accounts, zero discrepancies between `user_accounts.account_balance`
+and the derived figure. That column is largely maintained rather than cached:
+`setAccountBalanceFromLedger.js` rewrites it from the ledger under the lock on
+the money paths that call it, CLOSE's settlement included. So the argument for
+deriving here is **not** that the column is wrong.
+
+It is that **display and decision are different consumers of the same rows**. A
+measurement showing the projection in step licenses publishing that column in a
+list that displays it. It does not license substituting it where a decision is
+made, and the echo is exactly such a place: the settlement compares the owner's
+figure against a value it derives under its own lock, and that comparison exists
+so it does not have to assume the projection is in step. Reading the column
+there would make the check depend on the very thing the check is for. If the
+31-account measurement is ever cited as grounds for simplifying this endpoint to
+read the column, it does not say that.
+
+**And the maintenance is not universal**, which is the second reason and the
+concrete one. Account creation writes the opening ledger row and sets the new
+account's `account_balance` from a separately computed figure, then refreshes
+only the counterparty. Every creation path in the application does this — three
+of them, across two controllers, verified in this checkout on 2026-09-07 from a
+finding routed by pern-fintrack-02, who reported two:
+
+| what it creates | the refresh it makes | the account it never refreshes |
+|---|---|---|
+| bank, investment, income (`accountCreationController.js`) | `slackCounterAccountInfo.account_id`, guarded by `isTransfer` | the new account |
+| debtor (`accountCreationController.js`) | `slackCounterAccountInfo.account_id` | the new account |
+| category budget (`accountCategoryCreationcontroller.js`) | `counterAccountId`, guarded by `!isAccountOpening` | the new account |
+
+Those are every call site of `setAccountBalanceFromLedger` in both files, so
+this is the whole of the creation surface, not a sample of it. The guards are
+correct about the counterparty and silent about the account being created, which
+is why the omission does not read as one.
+
+On a freshly created account the two figures therefore agree because one path
+computed both consistently, not because either derives from the other. A preview
+reading the stored column could publish a residual the settlement contradicts,
+on exactly the accounts with no transaction history to reconcile them. The fix
+belongs to whoever owns account creation; this endpoint is already on the right
+side of it.
+
+**Why no migration closes this**, since it is the obvious first thought: a
+migration corrects rows, and the gap is in code. Recomputing every stored
+balance would make them agree at that instant and the next account created
+through an unrepaired path would diverge again. What would close it structurally
+is either every ledger writer calling the refresher — a code change, and the
+promise each future writer has to keep — or a database-level guarantee, which
+`GENERATED ALWAYS AS` cannot give here because a generated column reads only its
+own row and this figure aggregates over `transactions`. A trigger could, at the
+cost of moving money arithmetic into database logic. **None of that would change
+this endpoint**: even a column guaranteed correct is the projection the
+settlement declines to trust, and an echo sourced from it would make the check
+depend on what the check is for.
+
+**Where each half lives.** `getClosePreview.js` publishes the residual;
+`processCloseAccount` parses the echo before taking any lock (a malformed
+request should not lock a row on its way to being refused) and compares it
+immediately after deriving the residual under that lock, before the destination
+check (a request already stale in its amount is refused without asking the
+database anything further).
+
+**Compared in cents.** Both sides describe a `DECIMAL(15,2)`, and both arrive as
+floats — the derived residual through the driver, the echo through JSON — so
+`Math.round(x * 100)` on each. A strict comparison would refuse requests that
+agree to the cent.
+
+**The status codes are the contract's own distinction.** Missing or unparseable
+is 400: no state of the database makes it valid. An amount that no longer
+describes the account is 409: the request was valid when it was sent and the
+state moved underneath it — the same code an ineligible destination answers, for
+the same reason.
+
+**Verified end to end**, `verifyCloseAccount.js` on `fintrack_dev`, **twenty-nine
+assertions passing**: the preview's residual equals the one derived
+independently by the probe; that value, echoed back unmodified as the string the
+driver produced, is accepted; a missing echo is refused 400; an echo one unit
+off and an echo one cent off are both refused 409; and the preview refuses a
+closed account 404 so no close screen can be opened on one.
+`verifyCloseTransfer.js` asserts the same refusal under TRANSFER with an
+eligible destination named, so an echo implemented on the DISCARD branch alone
+would fail there rather than pass silently.

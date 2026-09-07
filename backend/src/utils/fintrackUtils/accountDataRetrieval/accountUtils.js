@@ -62,6 +62,50 @@ export async function getUserIdFromAccount(clientOrPool, accountId) {
  * purpose is that it cannot differ between the queries that publish a
  * user's money, and it was already duplicated verbatim in two of them.
  */
+/**
+ * The account types a request may ask for. This is the creation-side
+ * counterpart of NOT_BOUNDARY_ACCOUNT above: one keeps the compensation
+ * account out of what is published, this keeps it out of what is created.
+ *
+ * Written out rather than read from account_types, because the catalog says
+ * what CAN exist and this says what a user MAY ask for. 031 added 'boundary'
+ * to the catalog, and every controller that resolves a type by querying the
+ * catalog accepted it from that moment on, with nothing to notice.
+ */
+export const USER_CREATABLE_ACCOUNT_TYPES = Object.freeze([
+  'bank',
+  'cash',
+  'investment',
+  'debtor',
+  'pocket_saving',
+  'category_budget',
+  'income_source',
+]);
+
+/**
+ * Returns the normalised type name, or throws a 400 naming the field it came
+ * from. Throws rather than returning a boolean because every call site would
+ * otherwise write the same throw, and two of them wrote it one line after the
+ * dereference that made it unreachable.
+ *
+ * Case-insensitive, matching the comparison the debtor controller already
+ * makes on the source account type; the catalog names are all lowercase.
+ */
+export const assertUserCreatableAccountType = (accountTypeName, field) => {
+  const name = String(accountTypeName ?? '')
+    .trim()
+    .toLowerCase();
+
+  if (!USER_CREATABLE_ACCOUNT_TYPES.includes(name)) {
+    throw createError(
+      400,
+      `Account type "${name}" is not available on ${field}.`,
+    );
+  }
+
+  return name;
+};
+
 export const NOT_BOUNDARY_ACCOUNT =
  "AND act.account_type_name IS DISTINCT FROM 'boundary'";
 
