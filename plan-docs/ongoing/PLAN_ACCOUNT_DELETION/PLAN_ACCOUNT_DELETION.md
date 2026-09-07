@@ -635,8 +635,12 @@ commit. The order is forced where stated and free otherwise.
 
   5  the seventh account_type (`boundary`) and the account-closure
      movement type
-     IN PROGRESS - see "Unit 5 scoping" below. Makes the `slack` boundary
-     convention structural instead of a name match.
+     `boundary` account_type SHIPPED 2026-09-06, `b8480e4f` - see "Unit 5
+     scoping" below. Makes the `slack` boundary convention structural
+     instead of a name match for the account side. The `account-closure`
+     movement type is still open - it needs the CHECK-constraint rewrite
+     noted a few lines below (both the migration-chain shape and the
+     runtime-initializer shape), not part of `b8480e4f`.
 
   6  the assessment endpoint                               §4.1 step 2
      STARTED 2026-09-06 - see "Unit 6 started" below. The lock-then-compute
@@ -758,11 +762,14 @@ Once the backfill is resolved and `backdating` applies the migration, a
 follow-up change decides whether these sites should start inserting new
 boundary accounts as `'boundary'` - not part of this unit.
 
-**Open, blocking the migration:** the backfill scope for existing `'slack'`
-accounts - insert `boundary` rows for them in the same migration, or leave
-existing accounts as `'bank'` and backfill later. Needs further explanation
-from the developer plus a check with the migration chain owner; not decided
-here.
+**Settled, 2026-09-06 - `b8480e4f`.** The backfill scope question above is
+closed: `031_add_boundary_account_type.sql` backfills existing `'slack'`
+accounts to `boundary` in the same transaction as the type's own insertion,
+not in a later migration. The migration's own reasoning (quoted from its
+header): "a type with no rows in it is worse than no type at all" - the
+first read filter rewritten to `account_type_id <> 8` against an
+unbackfilled catalog would stop excluding the compensation account
+silently, with nothing on screen to say the figure had gone wrong.
 
 **Migration authorship.** Per the 2026-09-06 session split
 (`agent-ownership-split` memory), the session named `backdating` is sole
@@ -787,15 +794,17 @@ but the function is dead code, not a live site, so it shouldn't be counted
 alongside `checkAndInsertAccount.js` and `transactionController.js` as
 something a rename or a backfill gap would actually reach.
 
-**`backdating` has since written the migration** -
-`031_add_boundary_account_type.sql` exists on the shared tree, uncommitted,
-with matching updates to `checkAndInsertAccount.js`, `transactionController.js`
-and `populateDB.js`. Not yet applied to `fintrack_dev` as of this check
-(`account_types` still tops out at 7, `cash`). Their change to
-`checkAndInsertAccount.js` makes `insertAccountType` default to `'boundary'`
-unconditionally - flagged to them directly, since until 031 actually runs
-that default throws `Account type 'boundary' not found` on any lazy
-compensation-account creation on the shared dev database.
+**`backdating` has applied the migration - `b8480e4f`.**
+`031_add_boundary_account_type.sql` ran on `fintrack_dev` and everything is
+committed, including the matching updates to `checkAndInsertAccount.js`,
+`transactionController.js` and `populateDB.js`. Measured after applying, per
+`backdating`'s own report: `account_types` now holds eight rows; account 14
+(the one named `'slack'`) moved from `bank` to `boundary`; live `bank`
+accounts dropped from five to four; `npm run db:parity` is green on both
+build paths; the backend boots and loads the currency catalog. The
+sequencing risk flagged in the previous version of this paragraph -
+`insertAccountType` defaulting to `'boundary'` before the type existed - no
+longer applies, since the type and the default landed in the same commit.
 
 **Real vulnerability found by `overview-agent`, fixed here, 2026-09-06.**
 Nothing reserves the name `'slack'` at account creation - no `UNIQUE` on
@@ -814,9 +823,10 @@ hole - a `'Slack'` account, unnoticed by the case-sensitive read filters,
 used to be handed back as the compensation account) and orders by
 `account_id ASC LIMIT 1`, so if a genuine exact-name collision exists the
 oldest account wins deterministically instead of whichever row Postgres
-returns first - not a full fix, but no longer a coin flip. Left uncommitted:
-the file also carries `backdating`'s in-flight migration-support change
-above, and this unit doesn't commit over someone else's unstaged work.
+returns first - not a full fix, but no longer a coin flip. Committed as
+part of `b8480e4f` - `backdating` folded both changes into their own
+migration commit rather than splitting them out, with this unit's authorship
+of the two named explicitly in that commit's message.
 
 ### Legacy route patched, 2026-09-06
 
