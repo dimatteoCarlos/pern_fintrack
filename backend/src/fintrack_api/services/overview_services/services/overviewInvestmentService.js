@@ -2,14 +2,15 @@
 
 // The Investment domain calculator behind GET /overview/investment.
 //
-// The card of §6 carries no window and no delta, so this is the one domain whose
-// figures the requested month does not move: V1, V2, V4 and V5 are as of now and
-// V3 defaults to full history. The month bounds only the list beside the card.
+// Every figure is read at the reference month, the same instant the movement
+// list beside the card is bounded by. The card of §6 still carries no window
+// field, so nothing in the payload names the month back to the client — the
+// client knows it because it asked for it.
 //
-// That asymmetry is deliberate and worth stating in the response rather than
-// hiding: a client showing August and a card reading "as of today" would
-// otherwise look like a bug. The card has no window field to say so with — §6
-// does not give it one — so the notice does.
+// One figure is still unbounded, and it is recorded where it is computed: the
+// account count counts the accounts that exist now, not the ones that existed
+// at the reference month (the accounts CTE of the figures query). It is not
+// stated as a notice because a reader cannot act on it.
 //
 // No trend (§12) and no transactionCount (§6). The list is still returned
 // because §12 makes it mandatory for every domain, and it lists every movement
@@ -22,10 +23,6 @@ import { getInvestmentFigures } from '../db/overviewInvestmentRepository.js';
 import { getInvestmentTransactionsPage } from '../db/overviewTransactionRepository.js';
 import { makeInvestmentCard } from '../core/makeInvestmentCard.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
-
-// Said because the card and the list beside it answer as of different moments.
-export const AS_OF_NOW_NOTICE =
- 'The investment figures are stated as of now, not for the selected month; only the movement list below is bounded by it.';
 
 export const overviewInvestmentService = {
  /**
@@ -46,7 +43,7 @@ export const overviewInvestmentService = {
   const accountIds = await getInvestmentAccountIds(pool, userId);
 
   const [figures, transactions] = await Promise.all([
-   getInvestmentFigures(pool, accountIds, timeZone),
+   getInvestmentFigures(pool, accountIds, timeZone, window.referenceMonth),
    getInvestmentTransactionsPage(pool, accountIds, window.referenceMonth, timeZone, {
     page,
     pageSize,
@@ -62,7 +59,6 @@ export const overviewInvestmentService = {
    largestBalance: figures.largestBalance,
    daysSinceLastContribution: figures.daysSinceLastContribution,
    currency: ACCOUNTING_CURRENCY_CODE,
-   notices: [AS_OF_NOW_NOTICE],
   });
 
   return {

@@ -45,9 +45,42 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 //
 // V3 carries R212's exclusion with the NULL guard the nullable description
 // column requires: `NULL NOT LIKE ...` is NULL, and a WHERE drops it.
+// Every figure is read at the reference month, and the five bindings that took
+// go in together on purpose: bind the money and leave the age, and a closed month
+// shows that month's balances beside an age measured from today.
+//
+// bounds carries both. next_month_start is the instant the month AFTER the
+// reference begins in the owner's zone — R42, §4.5: the local timestamp converts
+// to an instant to meet a TIMESTAMPTZ column. reference_date is the close of the
+// month, or today when the month is still running, which is what LEAST says; the
+// running month needs no branch because it is simply the earlier of the two.
+//
+// The balance subtracts forward from today rather than summing from zero, the
+// same direction MONTHLY_BALANCE_QUERY takes, so the reference month subtracts
+// nothing and equals the balance now. Per account, not aggregated, because
+// largest_balance feeds the concentration figure and needs the rows.
+//
+// Known limit, left as it is: account_count is not bounded. An account opened
+// after the reference month contributes 0 to the balance and still counts, and
+// bounding it needs a creation date this query does not read.
 const INVESTMENT_FIGURES_QUERY = `
-  WITH accounts AS (
-    SELECT ua.account_id, ${DERIVED_BALANCE} AS account_balance
+  WITH bounds AS (
+    SELECT
+      (($3::date + INTERVAL '1 month') AT TIME ZONE $2) AS next_month_start,
+      LEAST(
+        (now() AT TIME ZONE $2)::date,
+        ($3::date + INTERVAL '1 month' - INTERVAL '1 day')::date
+      ) AS reference_date
+  ),
+  accounts AS (
+    SELECT
+      ua.account_id,
+      ${DERIVED_BALANCE} - COALESCE((
+        SELECT SUM(t.amount)
+        FROM transactions t
+        WHERE t.account_id = ua.account_id
+          AND t.transaction_actual_date >= (SELECT next_month_start FROM bounds)
+      ), 0) AS account_balance
     FROM user_accounts ua
     WHERE ua.account_id = ANY($1::int[])
   ),
@@ -56,6 +89,7 @@ const INVESTMENT_FIGURES_QUERY = `
     FROM transactions t
     WHERE t.account_id = ANY($1::int[])
       AND t.movement_type_id IN (6, 8)
+      AND t.transaction_actual_date < (SELECT next_month_start FROM bounds)
   ),
   last_funding AS (
     SELECT MAX(t.transaction_actual_date) AS last_contribution
@@ -63,6 +97,7 @@ const INVESTMENT_FIGURES_QUERY = `
     WHERE t.account_id = ANY($1::int[])
       AND t.movement_type_id = 6
       AND t.amount > 0
+      AND t.transaction_actual_date < (SELECT next_month_start FROM bounds)
   ),
   realized AS (
     SELECT COALESCE(SUM(t.amount), 0) AS realized_pnl
@@ -70,6 +105,7 @@ const INVESTMENT_FIGURES_QUERY = `
     WHERE t.account_id = ANY($1::int[])
       AND t.movement_type_id = 9
       AND (t.description IS NULL OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
+      AND t.transaction_actual_date < (SELECT next_month_start FROM bounds)
   )
   SELECT
     (SELECT COUNT(*) FROM accounts) AS account_count,
@@ -77,15 +113,16 @@ const INVESTMENT_FIGURES_QUERY = `
     (SELECT MAX(account_balance) FROM accounts) AS largest_balance,
     c.capital_contributed,
     r.realized_pnl,
-    ((now() AT TIME ZONE $2)::date - (f.last_contribution AT TIME ZONE $2)::date)
+    (b.reference_date - (f.last_contribution AT TIME ZONE $2)::date)
       AS days_since_last_contribution
   FROM contributions c
   CROSS JOIN realized r
   CROSS JOIN last_funding f
+  CROSS JOIN bounds b
 `;
 
 /**
- * The raw figures behind the Investment card, as of now.
+ * The raw figures behind the Investment card, read at the reference month.
  *
  * largestBalance comes back null only when the user has no investment account
  * at all; the caller turns that into V4's notice rather than into a 0, because a
@@ -98,10 +135,15 @@ const INVESTMENT_FIGURES_QUERY = `
  * @param {object} pool - Database pool
  * @param {number[]} accountIds - the user's investment accounts
  * @param {string} timeZone - IANA zone of the account owner
+ * @param {string} referenceMonth - 'YYYY-MM-01', the month every figure is read at
  * @returns {Promise<{accountCount: number, ledgerBalance: number, largestBalance: number|null, capitalContributed: number, realizedPnl: number, daysSinceLastContribution: number|null}>}
  */
-export async function getInvestmentFigures(pool, accountIds, timeZone = 'UTC') {
- const { rows } = await pool.query(INVESTMENT_FIGURES_QUERY, [accountIds ?? [], timeZone]);
+export async function getInvestmentFigures(pool, accountIds, timeZone = 'UTC', referenceMonth) {
+ const { rows } = await pool.query(INVESTMENT_FIGURES_QUERY, [
+  accountIds ?? [],
+  timeZone,
+  referenceMonth,
+ ]);
  const row = rows[0] ?? {};
 
  return {

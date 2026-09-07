@@ -1459,3 +1459,40 @@ count is possible there.
 Whoever deletes the hero's term and repoints the rest is correct. **Whoever
 repoints the hero's term has shipped the double count, in net worth and in the
 cash position both.**
+
+## The month selector loses one of its two blockers — 2026-09-06
+
+The month-selector ruling (D46) holds the control back until every input of the
+header reports on one time base, and names the two that do not: the bank balance
+and the investment figures. **The investment half landed today.** The decision is
+not amended and is not closed; what changed is the count of what blocks it.
+
+`getInvestmentFigures` now takes the reference month and reads every figure at it
+(`overviewInvestmentRepository.js`). That is five bindings, not the three the
+recovery plan first counted: the ledger balance of the account set, contributed
+capital, the realised result, the newest funding movement, and the instant the
+age of that movement counts back from.
+
+**And the sentence D46 cites is gone, deliberately.** The notice published on the
+investment card — *the investment figures are stated as of now, not for the
+selected month* — was true when it was written and false the moment the figures
+moved. Leaving it would have put a true number under a false disclaimer, which is
+the same failure shape already recorded for the open-defect note of the level-1
+sketch. **This is a payload change and the frontend inherits it:** a client
+reading the notices of the investment card receives one entry fewer, and no
+client may key on that sentence.
+
+**What still blocks the selector is the bank balance, alone.**
+`getBankBalance(pool, userId)` (`overviewPageRepository.js:121`) takes no month
+and its query takes only the user. Until it does, net worth for a past month
+still adds one current balance to three closing ones, and the conclusion of D46
+stands untouched: a control that relabels a figure it does not move is worse than
+no control. D46 cites this function at `:101`; it is at `:121` today, and only
+the anchor moved.
+
+One figure on that card is still unbounded, named here so that whoever finds it
+later does not read it as an oversight of this work: the account count counts the
+accounts that exist **now**. An account opened after the reference month
+contributes zero to the balance and still raises the count. Bounding it needs a
+creation date the query does not read. It carries no notice, because a notice
+should tell a reader something they can act on and this one could not.

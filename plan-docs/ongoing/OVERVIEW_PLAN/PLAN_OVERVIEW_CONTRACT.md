@@ -578,6 +578,25 @@ mejor SQL.
 > investment CARD, whose figures stand on their own; it cannot excuse an addition
 > that mixes two time bases, because the sum has no notice to carry and no reader
 > can subtract the wrong term back out.
+> **Half of this landed — 2026-09-06.** The investment term now respects the
+> requested month: `getInvestmentFigures` takes the reference month and every
+> figure of the card is read at it. So `netWorth` for a past month adds **one**
+> current balance to three closing ones, not two to two, and `cashPosition` no
+> longer mixes time bases at all — its only remaining term with the wrong base is
+> the bank balance, and the pocket term leaves that formula entirely under the
+> net-worth ruling (D54).
+>
+> **The notice cited above no longer exists, and the paragraph above must not be
+> read as asking for it back.** It said the investment figures were stated as of
+> now; that stopped being true when the figures moved, and a disclaimer that
+> contradicts the number under it is worse than no disclaimer. The reasoning of
+> the paragraph is untouched — a notice never repaired the addition — and what
+> repaired the addition was binding the term, which is what happened.
+>
+> **What remains is the bank balance.** `getBankBalance(pool, userId)` is at
+> `overviewPageRepository.js:121` today, not `:101`, and still takes no month.
+> Until it does, the month selector stays off the page: one term on a different
+> clock is enough to make the label a lie, and one is what is left.
 | `all.transactionCountAll` | suma de los cinco `transactionCount` de dominio | **D31** — un `COUNT(*)` duplicaría todo movimiento de dos patas |
 | `domainCards.*` | las seis calculadoras, tal cual | §12 |
 | `monthlySnapshot[]` | MS1 de la tarjeta; MS2/MS3 de una serie de 13 puntos | **D28** para pocket |
