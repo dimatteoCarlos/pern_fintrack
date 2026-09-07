@@ -2526,14 +2526,40 @@ read the column, it does not say that.
 **And the maintenance is not universal**, which is the second reason and the
 concrete one. Account creation writes the opening ledger row and sets the new
 account's `account_balance` from a separately computed figure, then refreshes
-only the counterparty — the refresh call in `accountCreationController.js` is
-guarded by `isTransfer` and names `slackCounterAccountInfo.account_id`. Verified
-in this checkout, 2026-09-07, on a finding routed by pern-fintrack-02. On a
-freshly created account the two figures agree because one path computed both
-consistently, not because either derives from the other. A preview reading the
-stored column could therefore publish a residual the settlement contradicts, on
-exactly the accounts with no history to reconcile them. The fix belongs to
-whoever owns account creation; this endpoint is already on the right side of it.
+only the counterparty. Every creation path in the application does this — three
+of them, across two controllers, verified in this checkout on 2026-09-07 from a
+finding routed by pern-fintrack-02, who reported two:
+
+| what it creates | the refresh it makes | the account it never refreshes |
+|---|---|---|
+| bank, investment, income (`accountCreationController.js`) | `slackCounterAccountInfo.account_id`, guarded by `isTransfer` | the new account |
+| debtor (`accountCreationController.js`) | `slackCounterAccountInfo.account_id` | the new account |
+| category budget (`accountCategoryCreationcontroller.js`) | `counterAccountId`, guarded by `!isAccountOpening` | the new account |
+
+Those are every call site of `setAccountBalanceFromLedger` in both files, so
+this is the whole of the creation surface, not a sample of it. The guards are
+correct about the counterparty and silent about the account being created, which
+is why the omission does not read as one.
+
+On a freshly created account the two figures therefore agree because one path
+computed both consistently, not because either derives from the other. A preview
+reading the stored column could publish a residual the settlement contradicts,
+on exactly the accounts with no transaction history to reconcile them. The fix
+belongs to whoever owns account creation; this endpoint is already on the right
+side of it.
+
+**Why no migration closes this**, since it is the obvious first thought: a
+migration corrects rows, and the gap is in code. Recomputing every stored
+balance would make them agree at that instant and the next account created
+through an unrepaired path would diverge again. What would close it structurally
+is either every ledger writer calling the refresher — a code change, and the
+promise each future writer has to keep — or a database-level guarantee, which
+`GENERATED ALWAYS AS` cannot give here because a generated column reads only its
+own row and this figure aggregates over `transactions`. A trigger could, at the
+cost of moving money arithmetic into database logic. **None of that would change
+this endpoint**: even a column guaranteed correct is the projection the
+settlement declines to trust, and an echo sourced from it would make the check
+depend on what the check is for.
 
 **Where each half lives.** `getClosePreview.js` publishes the residual;
 `processCloseAccount` parses the echo before taking any lock (a malformed
