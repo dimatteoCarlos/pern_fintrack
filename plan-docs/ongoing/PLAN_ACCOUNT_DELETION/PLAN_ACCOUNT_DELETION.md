@@ -752,8 +752,10 @@ commit. The order is forced where stated and free otherwise.
      being deployed rather than written.
 
   8  the read sweep                                        
-     OPEN. 75 FROM/JOIN of user_accounts across 21 files, 8 filtering
-     deleted_at IS NULL - each needs a recorded filter decision.
+     OPEN. 88 FROM/JOIN of user_accounts across 29 runtime files - each
+     needs a recorded filter decision. Measured 2026-09-07; the 75 across
+     21 this line carried before was fintrack_api alone, leaving utils/
+     (11 across 6) and auth_api/ (2 across 2) outside the count.
 
   9  D2: destination eligibility for TRANSFER              blocks unit 7's selector
      DECIDED 2026-09-07, Carlos. The eligible type is bank, alone. See
@@ -2953,3 +2955,97 @@ ignoring it. The screen it is for does not exist:
   `removesPocketAllocations` saying whether choosing it destroys that backing.
 - `residual` is text and must be echoed back to the close confirmation
   unchanged — formatted for display, never re-parsed and re-sent.
+
+## Deleting is settling, not reversing — Carlos's ruling, 2026-09-07
+
+Carlos, on being shown that a nonzero balance sent the owner to RTA:
+
+> si el usuario quiere borrar una cuenta, simplemente transfiere ese dinero
+> hacia afuera del sistema a traves de discard, o lo pasa a otra cuenta que el
+> seleccione (…) en cambio si lo dirigies a rta, entonces, se impulsa una
+> cadena de reversiones, que no es lo que el usuario tiene planteado
+
+**The ruling: an owner who wants an account gone wants its money moved out, not
+its history undone.** Reversal is a separate intention — "this account should
+never have counted" — and the code must stop offering it as the answer to the
+first question. Two defects follow from it, both fixed below, and one guard
+generalises to a third place.
+
+### 1. Both refusal messages named RTA and not CLOSE
+
+The engine's nonzero-balance refusal on hard delete used to read *"Use RTA to
+reverse its effects first"*, and the assessment endpoint quoted the same
+routing back in the HARD option's `reason`. That sent the ordinary case — an
+owner done with an account — to the one path that writes annulment rows against
+**other** accounts the owner never asked to touch.
+
+Both now lead with closing and offer reversal second, as the answer to a
+different question: *"Close it to move the residual out — transferred to an
+account you choose, or discarded — or use RTA instead if the account's effects
+on other accounts should be reversed."* Same 409, same gate; only the route it
+names changed. Grep either message by `cannot be hard-deleted until that is
+settled` in `deleteAccountService.js` and by `cannot be erased until that is
+settled` in `assessAccountDeletion.js`.
+
+### 2. A closed account was erasable, and the balance gate could not catch it
+
+Closing settles the residual and **keeps the row on purpose** — that preserved
+history is the entire product of closing. But hard delete only ever read the
+balance, and a closed account's balance is zero by construction, so the gate
+waved through exactly the rows the close existed to keep. Soft delete had
+refused this state all along; the two branches were simply testing different
+columns for the same thing.
+
+The hard-delete branch now tests `closed_at` before taking its lock — a refusal
+should not take one — and raises a 400 naming the settlement that already
+happened.
+
+### 3. The same guard belongs on RTA, and there for one reason more
+
+Raised by `e4`: the closed-state argument does not depend on which deletion
+type is asking, and RTA had no state test anywhere in its branch — the
+dispatcher's only refusal was non-existence. Since RTA ends in the **same**
+`eraseAccountTail`, a closed account was reachable for destruction through the
+other door.
+
+The second reason is money, and it is specific to RTA. Closing writes a
+settlement pair moving the residual to a live account; those rows belong to the
+closed account, and the impact report reads them. RTA would therefore compute an
+annulment reversing the destination's *receipt* of the residual while erasing
+the account that sent it — money taken back from a live account and returned to
+nothing. So the RTA guard is not merely consistency with hard delete; without
+it, RTA on a closed account is a balance defect.
+
+Both guards test `accountCheck.rows[0].closed_at`, which is in scope because the
+existence check is a `SELECT *`.
+
+**Verified against `fintrack_dev`, both branches**, with a probe account the
+script creates and destroys, copying a live bank account's column shape with
+both amount columns zeroed so the settlement gate cannot be what refuses it:
+closed → 400 and the row survives; reopened → erased. No existing account was
+passed to the deletion service.
+
+### The deployment order this makes mandatory
+
+All four state tests in `deleteAccountService.js` are written `closed_at !==
+null`, the form already used by soft delete and close. Against a schema where
+the column does **not** exist, `SELECT *` returns no such key, `undefined !==
+null` is true, and **every** soft, hard and RTA deletion is refused with a
+message saying the account was closed — for accounts that never were.
+
+Production has not run `034_add_account_closed_at.sql` yet, so **the backend
+must not be deployed ahead of it**. This is not a new dependency — close cannot
+write a column that does not exist — but before this change the other three
+deletion types would have survived a premature deploy, and now they will not.
+The chain is `pern-fintrack-02`'s; this is a note for their production run
+order, not a change to it. Loosening the comparison was considered and rejected:
+it would tolerate a schema state no deployment plan permits, and hide a broken
+deploy behind guards that silently do nothing.
+
+### Frontend requirement this creates
+
+None, and deliberately so. The assessment endpoint already 404s on a closed
+account — `getClosePreview`'s account query filters `deleted_at IS NULL AND
+closed_at IS NULL` — so the choose-a-deletion-type screen is unreachable for one
+and no card needs a new disabled state. A closed account's affordances belong to
+the closed-accounts list, not to this screen.

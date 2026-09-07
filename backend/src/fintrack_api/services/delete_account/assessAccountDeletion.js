@@ -151,10 +151,13 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
     available: isSettled,
     // The refusal the engine will raise, quoted before the owner meets it, and
     // naming the route to making it available - which is what makes this an
-    // assessment rather than a disabled button.
+    // assessment rather than a disabled button. CLOSE leads and RTA follows,
+    // matching the engine's own 409: an owner who is done with an account
+    // wants the residual moved out, while RTA reverses the account's effect on
+    // OTHER accounts and is the answer to a different question.
     reason: isSettled
      ? undefined
-     : `This account holds ${closePreview.targetAccount.residual} and cannot be erased until that is settled. Reverse its effects with RTA, or settle it with CLOSE.`,
+     : `This account holds ${closePreview.targetAccount.residual} and cannot be erased until that is settled. Close it to move the residual out, or use RTA instead if the account's effects on other accounts should be reversed.`,
     removesPocketAllocations: true,
     keepsHistory: false,
     releasesAccountName: true,
