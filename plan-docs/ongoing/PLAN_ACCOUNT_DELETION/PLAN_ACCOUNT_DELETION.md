@@ -3106,6 +3106,18 @@ An account soft-deleted in that state cannot then be settled:
   ruled against above, and here it is not a mis-routing in a message but the
   only door the code leaves open.
 
+**And while the state lasts, the money keeps counting.** Raised by
+`pern-fintrack-02`, who framed it better than the heading above did: "only RTA
+left" reads as an inconvenience, while "counted in net worth until RTA runs"
+reads as what it is. The mechanism, verified: `derivedAccountBalanceSql` returns
+`account_starting_amount + SUM(...)` over `transactions WHERE tr.account_id =
+ua.account_id` and tests neither state column — it cannot, since it reads the
+transaction rows rather than the account's state, so **filtering is entirely the
+caller's job**. A soft-deleted account therefore keeps a nonzero derived
+balance, and every consumer that does not filter for itself counts that money.
+The account controller filters, at its nine sites; the Overview deliberately
+does not, for reasons recorded below. So this is not only an exit problem.
+
 ### Why the refusal's own argument is what breaks
 
 It reasons from circulation: a deleted account "is no longer in circulation to
