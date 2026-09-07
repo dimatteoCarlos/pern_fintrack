@@ -25,9 +25,10 @@ import { createError } from '../../../../utils/errorHandling.js';
 // removed, and that account's spending is exactly what hasUncategorizedExpense
 // exists to reveal.
 //
-// account_name != 'slack' is deliberately absent too: slack is a bank account,
-// so it cannot appear in this result, and restating the filter would suggest it
-// could.
+// The compensation account needs no exclusion here: it cannot appear in a result
+// restricted to budget categories, whatever type it carries. The reason this
+// comment used to give — that it is a bank account — died at
+// 031, which gave it a structural type of its own.
 const EXPENSE_ACCOUNT_IDS_QUERY = `
   SELECT ua.account_id
   FROM user_accounts ua
@@ -46,9 +47,13 @@ const EXPENSE_ACCOUNT_IDS_QUERY = `
 // disagreement §4.2 forbids, and the reason the catalog's own annotation had the
 // direction inverted until it was checked against getIncomeConfig.
 //
-// slack is excluded by name because it is a bank account by type: it is the
-// internal counterparty of pnl, income and expense, and no figure calls it the
-// user's money.
+// The compensation account is excluded and belongs excluded: it is the internal
+// counterparty of pnl, income and expense, and no figure calls it the user's
+// money. Two predicates do it and the type is the one that carries it — a
+// set of five type names cannot admit the structural type 031 gave that account.
+// The reason this comment used to give, that it is a bank account by type, died
+// at that same migration. What the name comparison still does here is the harm
+// described at the profit-and-loss set below.
 //
 // cash (account_type_id 7) is IN the set. It was left out while the catalog held
 // that question open, and the developer closed it on 2026-09-01 by decision
@@ -80,6 +85,30 @@ const INCOME_ACCOUNT_IDS_QUERY = `
 // touches a bank or an investment account and slack, so the broader set returns
 // the same rows; it is written broad anyway, because narrowing it here would be
 // this module asserting something PL1 does not.
+//
+// Having no type filter makes the name comparison this set's SOLE exclusion of
+// the compensation account. The other three restrict by type and would keep that
+// account out on the type alone, since 031 gave it one and retyped every existing
+// one. Both build paths carry that type — the chain reaches it by
+// ordering, and the boot seed writes it directly — so the only
+// population below it is a chain deliberately stopped there, which is a
+// deployment position rather than a case this file can discover.
+//
+// The name comparison is not merely the weaker guard. It is actively wrong in one
+// case: an owner who genuinely names an account 'slack' has it dropped from their
+// own figures, silently, by the same predicate that keeps the system's
+// counterparty out. Excluding on type AND name is safe everywhere but fixes
+// nothing, because that case is excluded by the name half either way.
+//
+// What blocks the real fix is creation order, not the chain. The resolver takes
+// the oldest account matching the name and the two acceptable types, so if a user
+// account of that name predates the first compensation write, it becomes the
+// counterparty permanently — and a type-only predicate would then count
+// the system's compensation writes as the owner's money. Same name, same type,
+// opposite correct answers, and nothing on the read side can tell them apart. So
+// the name has to be reserved at account creation first; only then does moving to
+// the type predicate alone return that account to its owner. Established with the
+// migration session, 2026-09-06.
 const PNL_ACCOUNT_IDS_QUERY = `
   SELECT ua.account_id
   FROM user_accounts ua
@@ -88,8 +117,16 @@ const PNL_ACCOUNT_IDS_QUERY = `
   ORDER BY ua.account_id
 `;
 
-// The accounts of one type, slack excluded — the set Debt, Pocket and
-// Investment are each read over.
+// The accounts of one type, the compensation account excluded — the set
+// Debt, Pocket and Investment are each read over.
+//
+// Two predicates and they pull in opposite directions. The type is what keeps the
+// compensation account out, and it is load-bearing beyond this file: the closure
+// settlement's counterparty leg lands on that account, so the type predicate is
+// what keeps that leg outside the investment reconciliation. The name comparison
+// is the half that would wrongly drop an owner's own investment account named
+// 'slack'. Same statement, one predicate necessary and one harmful; the
+// profit-and-loss set above carries the reason neither can be touched yet.
 //
 // One statement with the type as a bind parameter, not three. A type name is a
 // value the catalog already holds, not a piece of SQL structure, so this is not
