@@ -2909,6 +2909,32 @@ assessment's HARD verdict against the balance the engine itself derives under
 its own lock. Match on every account, with both sides of the gate exercised —
 9 settled, 21 unsettled. Boot clean.
 
+### The scrub's collateral, measured 2026-09-07 — hypothesis closed
+
+The erasure tail replaces the account **name** as a bare substring:
+`REPLACE(description, <name>, '[deleted account]')`. Unanchored, so a name that
+is also an ordinary word — or a substring of one — rewrites text that is not a
+reference to the account at all. An account named `pago` would turn a
+counterparty's `Transferencia a pago mensual` into
+`Transferencia a [deleted account] mensual`.
+
+**Measured on `fintrack_dev`, simulated with nothing written**: for all 31
+accounts, over exactly the rows the two UPDATEs select — surviving rows
+referencing the account from the other side — **zero rows would be rewritten
+mid-word**. Shortest account name is 5 characters, median 17.
+
+**So the hazard is in the mechanism, not in the data, and it is not being
+fixed.** Anchoring the replacement to the machine-generated formats is possible
+but it would stop scrubbing the name out of an owner's free text, and whether a
+deletion is meant to erase the name from free text is exactly the open ruling on
+hard delete's erasure scope. Building the parser now would settle that ruling by
+implementation.
+
+This does **not** retire the name-ownership half of the read sweep. That one
+rests on a different failure — a namesake account's deletion rewriting a *closed*
+account's preserved history — which is about identity, not about word
+boundaries, and has no measurement here that weakens it.
+
 ### Frontend requirement this creates
 
 Nothing consumes this endpoint yet; it is new, and no existing screen breaks by
