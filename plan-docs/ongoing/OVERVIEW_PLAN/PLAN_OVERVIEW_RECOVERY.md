@@ -478,11 +478,43 @@ domain has a call site into it:
   (`overviewInvestmentRepository.js:59-68`). The card asserts that the first two
   sum to the third (`makeInvestmentCard.js:96-99`). **Bound only the balance and
   that identity fails on every historical month**, so the card publishes "this
-  does not reconcile" every time a past month is opened. All three predicates go
-  in together.
+  does not reconcile" every time a past month is opened. Those predicates go in
+  together.
 
 Also here: the bank balance stops filtering on the bank type alone, so **cash
 accounts enter Available Balance**. One predicate.
+
+**Remeasured 2026-09-06: it is five bindings, not three, and the two this stage
+was missing are the ones a person can see.** Counted in the code rather than
+taken from the paragraph above.
+
+| # | what gets bound | where |
+|---|---|---|
+| 1 | the ledger balance of the account set | the accounts CTE, `overviewInvestmentRepository.js:50-52` |
+| 2 | contributed capital | the contributions CTE, `:54-59` |
+| 3 | the realised result | the realized CTE, `:67-73` |
+| 4 | **the newest funding movement** | the last_funding CTE, `:60-66` — a bare `MAX` over every row |
+| 5 | **the instant the age counts back from** | `:80`, which reads `now()` |
+
+**The fourth and fifth are one figure, and leaving them is worse than leaving
+all five.** Days since the last contribution is a Position read at the reference
+date, like every other figure on the card. Bind the three money CTEs and leave
+these two, and opening a closed month gives that month's balances sitting beside
+an age measured from today — two clocks on one card, which is exactly the defect
+the temporal frame of the contract (§14.1) exists to prevent. The identity would
+reconcile and the card would still be wrong.
+
+The fifth is a substitution and not a predicate: `now()` becomes the reference
+date, so a closed month reports the age at that month's close and the running
+month reports it as of today. That falls out of the reference date being one
+value, and needs no branch.
+
+**And the bank read has no date parameter at all**, so it is not a predicate
+being narrowed but a signature being widened: `getBankBalance(pool, userId)`
+(`overviewPageRepository.js:121`) takes no month, and its query takes only the
+user (`:45-52`). It also excludes an account by literal name, `slack` (`:51`) —
+left exactly as it is here, and noted only so the next reader does not take it
+for an oversight of this stage.
 
 **Acceptance criterion, explicit because the wording invites the opposite.**
 This step talks about month close throughout, which can read as though every
