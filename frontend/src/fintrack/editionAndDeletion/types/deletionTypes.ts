@@ -95,7 +95,16 @@ export type ReportResponseType = {
   message: string;
   data: {
     impactReport: ImpactReportRowType[];
+    // Folded by the server, never in the browser. The component summed the
+    // rows itself until the payload carried this, and its sum was short by
+    // unattributedAmount below - the one figure no row holds.
+    totalNetAdjustmentAmount: number;
     pocketImpact: PocketImpactRowType[];
+    // Activity of the account being deleted that no live account can be
+    // credited with, because an earlier deletion already reversed it. Shown
+    // beside the total, never added to it: the annulment does not act on it.
+    unattributedAmount: number;
+    unattributedTransactionCount: number;
     targetAccountId: number | string; // ID of the account being deleted
     affectedAccountsCount: number;
   };

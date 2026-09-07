@@ -56,6 +56,21 @@ export const useRTAImpactAndDeletion = (
     [reportResponse?.data?.impactReport],
   );
 
+  // The total the server folded. Read, not recomputed: a sum over
+  // affectedAccountReport is short by the unattributed amount, which is
+  // exactly what the component used to do.
+  //
+  // null, not 0, when the field is absent. 0 is a real total and a dash is
+  // not, so the two cannot share a value.
+  const totalNetAdjustmentAmount =
+    reportResponse?.data?.totalNetAdjustmentAmount ?? null;
+
+  // Zero is the ordinary answer and renders no line at all, so null and 0
+  // reach the screen the same way here and the distinction costs nothing.
+  const unattributedAmount = reportResponse?.data?.unattributedAmount ?? null;
+  const unattributedTransactionCount =
+    reportResponse?.data?.unattributedTransactionCount ?? null;
+
   // Pockets losing backing from this account (POCKET_MODULE_SPEC.md §11.1
   // Q8b) - preview only, shown to the owner ahead of confirmation.
   const pocketImpact = useMemo(
@@ -148,6 +163,9 @@ export const useRTAImpactAndDeletion = (
   return {
     //Data and status from the GET request
     affectedAccountReport,
+    totalNetAdjustmentAmount,
+    unattributedAmount,
+    unattributedTransactionCount,
     pocketImpact,
     isLoadingReport,
     reportError,

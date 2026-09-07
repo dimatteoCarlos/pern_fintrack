@@ -13,6 +13,11 @@ import './impactReportUI.css';
 //TYPES DEFINITION AND IMPORT
 type ImpactReportUIPropsType = {
   report: ImpactReportRowType[];
+  // Folded by the server. null when the response does not carry it, which
+  // is not the same as 0 and does not render like it.
+  totalNetAdjustmentAmount: number | null;
+  unattributedAmount: number | null;
+  unattributedTransactionCount: number | null;
   // language?:LanguageKeyType;
   t: (key: keyof DictionaryDataType) => string;
 };
@@ -20,15 +25,30 @@ type ImpactReportUIPropsType = {
 //=============================
 // UI COMPONENT: ImpactReportUI
 //=============================
-const ImpactReportUI = ({ report, t }: ImpactReportUIPropsType) => {
-  const totalNetAdjustment = report.reduce(
-    (total, row) => total + row.affectedAccountNetAdjustmentAmount,
-    0,
-  );
+const ImpactReportUI = ({
+  report,
+  totalNetAdjustmentAmount,
+  unattributedAmount,
+  unattributedTransactionCount,
+  t,
+}: ImpactReportUIPropsType) => {
+  // The total is read, not summed here. A reduce over report is short by
+  // unattributedAmount, which no row carries: those transactions were
+  // already reversed by an earlier deletion and name no live account.
+  const hasTotal = totalNetAdjustmentAmount !== null;
+
+  // Zero is the ordinary answer and gets no line. A nonzero amount is the
+  // reason the rows do not add up to the total, so the screen states it
+  // rather than leaving the reader to find the gap.
+  const showsUnattributed =
+    unattributedAmount !== null && unattributedAmount !== 0;
 
   //Replace {count}
   const formatImpactReportTitle = (title: string) =>
     title.replace('{count}', report.length.toString());
+
+  const formatUnattributedNote = (note: string) =>
+    note.replace('{count}', (unattributedTransactionCount ?? 0).toString());
 
   //---------
   //RENDER
@@ -94,11 +114,31 @@ const ImpactReportUI = ({ report, t }: ImpactReportUIPropsType) => {
       <p className='impact-report-total'>
         {t('totalNetAdjustment')}
         <span
-          className={`total-amount ${totalNetAdjustment > 0 ? 'positive' : 'negative'}`}
+          className={`total-amount ${
+            hasTotal
+              ? totalNetAdjustmentAmount > 0
+                ? 'positive'
+                : 'negative'
+              : 'absent'
+          }`}
         >
-          {totalNetAdjustment.toFixed(2)} {DEFAULT_CURRENCY}
+          {hasTotal
+            ? `${totalNetAdjustmentAmount.toFixed(2)} ${DEFAULT_CURRENCY}`
+            : '—'}
         </span>
       </p>
+
+      {showsUnattributed && (
+        <p className='impact-report-unattributed'>
+          <span className='unattributed-label'>{t('unattributedAmount')}</span>
+          <span className='unattributed-amount'>
+            {unattributedAmount.toFixed(2)} {DEFAULT_CURRENCY}
+          </span>
+          <span className='unattributed-note'>
+            {formatUnattributedNote(t('unattributedNote'))}
+          </span>
+        </p>
+      )}
     </div>
   );
 };

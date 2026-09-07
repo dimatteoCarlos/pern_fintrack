@@ -114,6 +114,9 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
   const {
     //Data and status from the GET request
     affectedAccountReport,
+    totalNetAdjustmentAmount,
+    unattributedAmount,
+    unattributedTransactionCount,
     pocketImpact,
     isLoadingReport,
     reportError,
@@ -256,7 +259,15 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
     }
 
     //Impact REPORT exists
-    return <ImpactReportUI report={affectedAccountReport} t={translateText} />;
+    return (
+      <ImpactReportUI
+        report={affectedAccountReport}
+        totalNetAdjustmentAmount={totalNetAdjustmentAmount}
+        unattributedAmount={unattributedAmount}
+        unattributedTransactionCount={unattributedTransactionCount}
+        t={translateText}
+      />
+    );
   };
 
   //Get report title depending on report content
