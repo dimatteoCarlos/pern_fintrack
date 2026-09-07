@@ -18,6 +18,13 @@ import { deleteAccountService } from '../services/delete_account/deleteAccountSe
 export const DELETION_TYPE_RTA = 'RTA';
 export const DELETION_TYPE_HARD = 'HARD';
 export const DELETION_TYPE_SOFT = 'SOFT';
+export const DELETION_TYPE_CLOSE = 'CLOSE';
+
+// CLOSE's two settlement policies (PLAN_ACCOUNT_DELETION.md §3.1/§4.1 step 4).
+// Only DISCARD is implemented (unit 7, 2026-09-06) - TRANSFER needs
+// destination-eligibility rules (D2, unit 9) still open.
+export const CLOSE_POLICY_DISCARD = 'DISCARD';
+export const CLOSE_POLICY_TRANSFER = 'TRANSFER';
 
 export const ADMIN_ACTION = 'ADMIN_ACTION';
 export const USER_ACTION = 'USER_ACTION';
@@ -113,6 +120,11 @@ export const executeAccountDeletion = async (req, res, next) => {
     targetAccountName = req.body.targetAccountName;
   }
 
+  // CLOSE-only: which settlement policy to apply (DISCARD, or TRANSFER once
+  // D2 lands). Ignored by every other deletion type.
+  const policy =
+    deletionType === DELETION_TYPE_CLOSE ? req.body.policy : undefined;
+
   try {
     console.log(
       pc.magenta(
@@ -137,6 +149,7 @@ export const executeAccountDeletion = async (req, res, next) => {
       userRole,
       deletionType,
       targetAccountName,
+      policy,
     );
 
     // 4. SUCCESS RESPONSE

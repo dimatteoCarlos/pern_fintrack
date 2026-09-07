@@ -12,6 +12,8 @@ import {
   DELETION_TYPE_HARD,
   DELETION_TYPE_SOFT,
   DELETION_TYPE_RTA,
+  DELETION_TYPE_CLOSE,
+  CLOSE_POLICY_DISCARD,
   USER_ACTION,
 } from '../../controllers/accountDeleteController.js';
 
@@ -21,9 +23,11 @@ import { checkAndInsertAccount } from '../../../utils/fintrackUtils/accountManag
 import { setAccountBalanceFromLedger } from '../../../utils/fintrackUtils/accountManagement/setAccountBalanceFromLedger.js';
 
 import { recordAnnulmentTransaction } from '../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
+import { recordClosureSettlement } from '../../../utils/fintrackUtils/accountDeletionUtils/recordClosureSettlement.js';
 import { lockAndDeriveBalances } from '../../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 import { eraseAccountTail } from '../../../utils/fintrackUtils/accountDeletionUtils/eraseAccountTail.js';
-import { getAnnulmentImpactReport } from './getAnnulmentImpactReport.js';
+import { assessDeletionImpact } from './getAnnulmentImpactReport.js';
+import { getCurrencyCode } from '../../../utils/currencyLookup.js';
 //=====================================
 // 📋 MESSAGES CONFIGURATION
 const messages = {
@@ -191,18 +195,14 @@ const processRTAAnnulment = async (
 
   const slackAccount = slackAccountInfo.account;
 
-  // Lock the target account before computing its impact report. Every
-  // transaction-write path locks the accounts it touches through this same
-  // helper (in ascending id order), so once this lock is held here, nothing
-  // can add a new row naming the target as source/destination underneath the
-  // report queried next - closing the TOCTOU gap where a client-supplied
-  // impactReport, read before this transaction (or even this request) began,
-  // was trusted as-is at execution time (PLAN_ACCOUNT_DELETION.md unit 6).
-  await lockAndDeriveBalances(dbClient, userId, [targetAccountId]);
-
-  // Recomputed here, inside the open transaction, after the lock above -
-  // never the client-supplied copy the old code received as a parameter.
-  const impactReport = await getAnnulmentImpactReport(
+  // Locks the target account, then computes its impact report inside that
+  // lock - closing the TOCTOU gap where a client-supplied impactReport, read
+  // before this transaction (or even this request) began, was trusted as-is
+  // at execution time (PLAN_ACCOUNT_DELETION.md unit 6). Shared with any
+  // other deletion type that needs the same guarantee, via
+  // assessDeletionImpact - never the client-supplied copy the old code
+  // received as a parameter.
+  const impactReport = await assessDeletionImpact(
     dbClient,
     userId,
     targetAccountId,
@@ -395,12 +395,39 @@ const processStandardDelete = async (
 ) => {
   let actionType;
 
-  if (isAdmin && deletionType === DELETION_TYPE_HARD) {
-    // Hard delete (admin only): detach/scrub/drop, see eraseAccountTail.
+  // Administrative privilege suspended for account deletion (Carlos,
+  // 2026-09-07): any owner may run any deletion type on their own account
+  // for now. The original condition is kept rather than removed, so
+  // restoring the restriction is one line in each of the three sites that
+  // enforced it - here, and the two guards further down this file.
+  // if (isAdmin && deletionType === DELETION_TYPE_HARD) {
+  if (deletionType === DELETION_TYPE_HARD) {
+    // Hard delete: detach/scrub/drop, see eraseAccountTail.
     actionType = ADMIN_ACTION;
     console.log(
       pc.red(`Admin HARD DELETE for account ${targetAccountId} by user ${userId}`),
     );
+
+    // Interim guard (PLAN_ACCOUNT_DELETION.md "HARD/DELETE settlement gap",
+    // 2026-09-06). §3.2 requires settling the residual before erasure -
+    // "unless those rows already sum to zero, the global ledger stops
+    // closing" - and unit 7's settlement engine does not exist yet. Rather
+    // than erase a nonzero-balance account unsettled, refuse it. The lock
+    // closes the same concurrency gap RTA's own execution closed (unit 6):
+    // held here, nothing can change the balance between this check and the
+    // erasure below.
+    const targetBalances = await lockAndDeriveBalances(dbClient, userId, [
+      targetAccountId,
+    ]);
+    const targetBalance = parseFloat(targetBalances.get(targetAccountId));
+
+    if (targetBalance !== 0) {
+      throw createError(
+        409,
+        `Account ${targetAccountId} has a nonzero balance (${targetBalance}) and cannot be hard-deleted without settlement. Use RTA to reverse its effects first.`,
+      );
+    }
+
     await eraseAccountTail(
       dbClient,
       userId,
@@ -443,6 +470,140 @@ const processStandardDelete = async (
     rowCount: result.rowCount,
   };
 }; //END of processStandardDelete
+
+//========================================
+// 🔒 CLOSE PROCESSING (unit 7, PLAN_ACCOUNT_DELETION.md §3.1/§4.1)
+//========================================
+
+// Release gate ("Gate, stated per branch, not per person", plan doc, unit
+// 5/7 catalog decision): no movement_type_id 10 row may be written until
+// overviewInvestmentRepository.js's reconciliation accounts for that type on
+// BOTH main and feat/overview. main has no closure-adjustment term at all
+// today. Flip this only once that coordination with `cf` is actually done -
+// not when this code merely looks ready.
+const CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED = false;
+
+/**
+ * 📝 PROCESS CLOSE ACCOUNT
+ * CLOSE, DISCARD policy only (§3.1): settle the residual against the
+ * boundary account, assert it is zero, then mark deleted_at - the row and
+ * its transactions survive, unlike DELETE/HARD.
+ */
+const processCloseAccount = async (
+  dbClient,
+  userId,
+  targetAccountId,
+  policy,
+  accountCheck,
+  transactionDate,
+) => {
+  if (!CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED) {
+    // 409, not 503: this is not a transient outage a retry will clear - it is
+    // a permanent block on the current system state (main's investment card
+    // has no closure-adjustment term yet). 503 reads as retryable to generic
+    // client/proxy retry logic, which would loop forever on a gate that only
+    // a code change lifts (pern-fintrack-cf, 2026-09-06). Same reasoning as
+    // the HARD-delete guard above, which uses 409 for the same kind of
+    // state-dependent refusal.
+    throw createError(
+      409,
+      'CLOSE is not released yet: the investment card reconciliation on main ' +
+        'and feat/overview must account for movement_type_id 10 first (see ' +
+        'PLAN_ACCOUNT_DELETION.md, unit 5/7 catalog decision, "Gate, stated ' +
+        'per branch"). Coordinate with the Overview branch before clearing ' +
+        'this gate.',
+    );
+  }
+
+  if (accountCheck.rows[0].deleted_at !== null) {
+    throw createError(400, 'Account is already closed');
+  }
+
+  if (policy !== CLOSE_POLICY_DISCARD) {
+    // TRANSFER needs a validated destination account (D2, destination
+    // eligibility - unit 9), still open. DISCARD needs no destination, so it
+    // ships first.
+    throw createError(
+      400,
+      `CLOSE policy '${policy}' is not available yet. Only DISCARD is implemented; TRANSFER is blocked on destination-eligibility rules (D2).`,
+    );
+  }
+
+  // Get/create the boundary account - the same compensation counterpart RTA
+  // uses, identified structurally by account_type (unit 5).
+  const boundaryAccountInfo = await checkAndInsertAccount(dbClient, userId);
+  const boundaryAccount = boundaryAccountInfo.account;
+
+  // 1 LOCK + 2 ASSESS: lock target and boundary together, derive both
+  // balances from the locked state.
+  const balances = await lockAndDeriveBalances(dbClient, userId, [
+    targetAccountId,
+    boundaryAccount.account_id,
+  ]);
+  const residual = parseFloat(balances.get(targetAccountId));
+
+  // 4 SETTLE: write the DISCARD pair only if there is something to settle.
+  // A target already at zero needs no transaction - a zero-amount row would
+  // carry no financial meaning.
+  if (residual !== 0) {
+    const currencyCode = await getCurrencyCode(
+      dbClient,
+      accountCheck.rows[0].currency_id,
+    );
+
+    await recordClosureSettlement(dbClient, {
+      userId,
+      targetAccountId,
+      targetAccountName: accountCheck.rows[0].account_name,
+      boundaryAccountId: boundaryAccount.account_id,
+      residual,
+      currencyId: accountCheck.rows[0].currency_id,
+      currencyCode,
+      transactionDate,
+    });
+
+    await setAccountBalanceFromLedger(dbClient, targetAccountId, userId);
+    await setAccountBalanceFromLedger(
+      dbClient,
+      boundaryAccount.account_id,
+      userId,
+    );
+  }
+
+  // 5 ASSERT residual(A) = 0 - re-derive rather than trust the arithmetic,
+  // the same discipline the HARD-delete guard above applies before its own
+  // decision.
+  const postSettlementBalances = await lockAndDeriveBalances(
+    dbClient,
+    userId,
+    [targetAccountId],
+  );
+  const postResidual = parseFloat(postSettlementBalances.get(targetAccountId));
+  if (postResidual !== 0) {
+    throw createError(
+      500,
+      `Settlement failed to zero account ${targetAccountId} (residual ${postResidual}).`,
+    );
+  }
+
+  // 6c MARK: deleted_at = CURRENT_TIMESTAMP. CLOSE keeps the row - the
+  // column still means CLOSED, not DELETED, until D6's rename (unit 8).
+  const markResult = await dbClient.query(
+    'UPDATE user_accounts SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE account_id = $1 AND user_id = $2 AND deleted_at IS NULL RETURNING account_id',
+    [targetAccountId, userId],
+  );
+
+  if (markResult.rowCount === 0) {
+    throw createError(500, `Failed to close account ${targetAccountId}`);
+  }
+
+  return {
+    actionType: USER_ACTION,
+    deletionType: DELETION_TYPE_CLOSE,
+    settledResidual: residual,
+    rowCount: 1,
+  };
+}; //END of processCloseAccount
 
 //===================================
 // 🛡️ TRANSACTION MANAGEMENT
@@ -500,6 +661,8 @@ export const deleteAccountService = async (
   deletionType,
   // CONDITIONAL RTA PARAMETER:
   targetAccountName = 'Unknown', // RTA execution data - cosmetic only, see processRTAAnnulment
+  // CONDITIONAL CLOSE PARAMETER:
+  policy, // which settlement policy CLOSE applies (CLOSE_POLICY_DISCARD | CLOSE_POLICY_TRANSFER); ignored by every other deletion type
 ) => {
   // =========================================
   // 🚀 RTA ANNULMENT EXECUTION (ATOMIC TRANSACTION)
@@ -527,12 +690,15 @@ export const deleteAccountService = async (
   //validate deletion type
   if (deletionType === DELETION_TYPE_RTA) {
     // 1. TRANSACTION_SETUP - Inicialización y validación
-    if (!isAdmin) {
-      throw createError(
-        messages.rtaUserPermissionDenied.status,
-        messages.rtaUserPermissionDenied.messagefn(),
-      );
-    }
+    // Administrative privilege suspended (Carlos, 2026-09-07): RTA is open to
+    // the account's owner. Kept commented rather than removed so the
+    // restriction can be restored without rewriting it.
+    // if (!isAdmin) {
+    //   throw createError(
+    //     messages.rtaUserPermissionDenied.status,
+    //     messages.rtaUserPermissionDenied.messagefn(),
+    //   );
+    // }
 
     let dbClient;
     try {
@@ -642,16 +808,22 @@ export const deleteAccountService = async (
       await dbClient.query('BEGIN');
 
       // 10. STANDARD_DELETE_VALIDATION - specific validations
-      if (!isAdmin && deletionType === DELETION_TYPE_HARD) {
-        throw createError(
-          403,
-          'Hard delete requires administrative privileges',
-        );
-      }
+      // Administrative privilege suspended (Carlos, 2026-09-07): hard delete
+      // is open to the account's owner. Kept commented rather than removed.
+      // The balance check inside processStandardDelete is NOT a privilege
+      // check and stays in force - it refuses to erase an account whose
+      // ledger residual is not zero, for any caller.
+      // if (!isAdmin && deletionType === DELETION_TYPE_HARD) {
+      //   throw createError(
+      //     403,
+      //     'Hard delete requires administrative privileges',
+      //   );
+      // }
 
       if (
         deletionType !== DELETION_TYPE_SOFT &&
-        deletionType !== DELETION_TYPE_HARD
+        deletionType !== DELETION_TYPE_HARD &&
+        deletionType !== DELETION_TYPE_CLOSE
       ) {
         throw createError(
           messages.deletionTypeInvalid.status,
@@ -660,14 +832,24 @@ export const deleteAccountService = async (
       }
 
       // 11. STANDARD_DELETE_EXECUTION
-      const deleteResult = await processStandardDelete(
-        dbClient,
-        userId,
-        targetAccountId,
-        deletionType,
-        isAdmin,
-        accountCheck,
-      );
+      const deleteResult =
+        deletionType === DELETION_TYPE_CLOSE
+          ? await processCloseAccount(
+              dbClient,
+              userId,
+              targetAccountId,
+              policy,
+              accountCheck,
+              new Date(),
+            )
+          : await processStandardDelete(
+              dbClient,
+              userId,
+              targetAccountId,
+              deletionType,
+              isAdmin,
+              accountCheck,
+            );
       await dbClient.query('COMMIT');
 
       // 12. RESPONSE_FORMATTER
@@ -678,6 +860,8 @@ export const deleteAccountService = async (
           'HARD_DELETE',
           'executed',
         );
+      } else if (deletionType === DELETION_TYPE_CLOSE) {
+        successMessage = `Account ${targetAccountId} closed. Residual settled: ${deleteResult.settledResidual}.`;
       } else {
         successMessage = messages.userAction.messagefn(
           targetAccountId,
@@ -693,8 +877,9 @@ export const deleteAccountService = async (
           action: deleteResult.actionType,
           deletionType: deleteResult.deletionType,
           timestamp: new Date().toISOString(),
-          // accountsCorrected:,
-          // finalSlackBalance:
+          ...(deletionType === DELETION_TYPE_CLOSE && {
+            settledResidual: deleteResult.settledResidual,
+          }),
         },
       };
     } catch (error) {
