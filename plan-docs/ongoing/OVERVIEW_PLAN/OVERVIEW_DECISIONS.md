@@ -1609,6 +1609,24 @@ anywhere. The name match is immune to a partial backfill; the type match is not.
    silently. If a rename appears in any plan, step 2 goes to the front of the
    Overview queue.
 
+**Which set fails worst, and it is not the obvious one.** Raised by the session
+holding the pocket and goals work, corrected on one point here. Every set except
+one joins `account_types` and names the types it wants, so the compensation
+account entering them would be loud — a net worth off by −100166.14 is not a bug
+anyone ships. **The realised P/L set has no type predicate at all**
+(`overviewAccountRepository.js:81-87`): it is every account the owner holds minus
+the name, and it is written broad deliberately, because the rule it implements
+states no type and narrowing it here would assert something that rule does not.
+So the name is its only defence.
+
+And its failure mode is silence. Let the compensation account into that set and
+both legs of every annulment are inside one sum, so they cancel and the figure
+quietly loses exactly the annulment content — no absurd number, nothing to notice.
+**The trigger is renaming the compensation account, not an owner naming their own
+account `slack`**: the predicate excludes by name, so a colliding name excludes
+both accounts and the compensation leg still stays out. That makes step 3 above
+the dangerous one and step 2 the thing that has to precede it, which is the order
+already ruled — this only says why the margin is thinner than it looks.
 **Adjacent finding, and it is not Overview's to fix.** Summing every account of
 the development owner, the compensation account included, must give zero under
 double entry. It gives **−60.00**, entirely from two deletions whose annulment
