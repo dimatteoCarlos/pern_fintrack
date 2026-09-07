@@ -85,6 +85,128 @@ steps 1, 4, 5 and 6 as pending. None is:
 
 ---
 
+## 0-bis. Correction and retirement register — 2026-09-07
+
+Written in English. Measured in the `main` working tree on 2026-09-07. Every
+site below is cited by a greppable expression and not by a line number: a number
+carries the branch and the commit it was read in, and `feat/overview` is not
+`main`.
+
+### Two applied migrations carry prose that is false
+
+An applied migration is not edited, prose included (§5), so a correction is
+written in the file that **causes** the change. That rule has a limit, and the
+limit is why the register below exists at all.
+
+**031's near-miss paragraph and its "reconcile by hand" were void the day 031
+landed.** Its header describes a hazard — the compensation-account lookup in
+`checkAndInsertAccount.js` matching the name case-insensitively, so an account
+named `Slack` would be handed back as the compensation counterpart while every
+read filter counted it among the owner's — and disclaims it as "not this file's
+to fix". The exact-case match that closes that hazard shipped **in 031's own
+commit**. The correction is written above the lookup query in
+`backend/src/utils/fintrackUtils/accountManagement/checkAndInsertAccount.js`.
+What survives: the `NOTICE` still fires on a case-variant row and still reports
+two true things — those rows are left untouched, and the read filters do not
+exclude them. What died: the reason it states, and the instruction that follows
+from it.
+
+**031's rollback ordering note is false since 033.** It states that deleting the
+`account_types` row for `boundary` while an account still points at it "does not
+fail: it blanks the type on that account", and cites the boot DDL declaration of
+`user_accounts.account_type_id` as its authority. After `eeb5262b` that `DELETE`
+raises a foreign key violation, and the cited declaration now says the opposite
+of what 031 says it says. The correction is in 033's own header, which is where
+it belongs.
+
+**The rule, and the limit that produced this section.** The correction lives in
+the file that causes the change, and that only works forwards. A sealed file
+cannot correct itself, and it cannot correct what happens after it — 031's
+rollback note could not be corrected until 033 existed to correct it. Whatever
+034 seals will need 035 for the same reason, unless the correction has somewhere
+amendable to go. This document is that place.
+
+### Register — `user_accounts.account_type_id` is `NOT NULL` behind an `ON DELETE RESTRICT` foreign key
+
+Established by `033_require_account_type.sql` on both build paths (`eeb5262b`,
+2026-09-07): the migration covers the chain, and `ensureAccountTypeRequired()`
+in `createTables.js`, called from `initializeDatabase()`, covers a database that
+already has the table — `CREATE TABLE IF NOT EXISTS` never alters one.
+
+Keyed by the constraint and not by the migration number, because the reader this
+list exists for is someone editing a query, who has no reason to open a migration
+plan. What they can reach is the constraint that made their guard dead.
+
+**What makes a site retirable, and it is not the join keyword.** Every `LEFT
+JOIN` onto `account_types` that hangs off a guaranteed account row is now
+*equivalent* to an inner join, and equivalence is never a reason to touch working
+code. A site is retirable when it **states something the constraint made false**.
+A redundant guard costs nothing; a comment asserting that the column is nullable
+costs the next reader an hour. The distinction is the overview session's and it
+is the right one.
+
+| site | the statement the constraint falsified | owner | state |
+|---|---|---|---|
+| `dashboardMonthlyTotalAmountByType.js` | the join was added for the nullable case | coordination session | retired, `feb33c39` |
+| `getAnnulmentImpactReport.js` | the comment names the column nullable "until migration 033 enforces NOT NULL/RESTRICT" | deletion session | accepted by its owner, open |
+| `overviewAccountRepository.js`, the profit-and-loss account set | the comment stated the column is `ON DELETE SET NULL` | overview session | retired, `f561f9c9`, on `feat/overview` |
+
+**Equivalent under the constraint, and deliberately left alone.** An inner join
+returns the same rows here, but none of these sites states a nullable reason and
+none filters on the type — they select `account_type_name` and pass it outward.
+Changing them is tidying, and tidying is its own commit if it is anything.
+
+- `overviewTransactionRepository.js`, five occurrences of the same expression,
+ one per query.
+- the five-row recent-activity query in `overviewPageRepository.js`, whose join
+ was already `LEFT` before that module compared the type at all. It was never
+ written for the nullable case, so retiring it would be a decision the retirement
+ commit did not make. Its owner left it `LEFT` with the reason on the line.
+
+**Sites the constraint does not retire at all**, recorded so that the sweep does
+not overrun into them. These are not equivalent — turning them inner drops rows:
+
+- `transactionController.js`, the joins aliased `sat` and `dat`. They hang off
+ the transfer counterpart accounts `sa` and `da`, which are legitimately absent
+ on a movement that is not a transfer. The `LEFT` there is about the account,
+ not about the type.
+- `transactionController.js`, the join aliased `act`. It hangs off `ua`, which is
+ itself `LEFT JOIN`ed from `transactions.account_id`. Whether that account is
+ guaranteed is a separate constraint question, and 033 does not settle it.
+- `getTransactionsForAccountById.js`, already an inner join.
+
+**Why this list was never three entries.** 033's header names two retirable
+sites. A third was created in a commit that was in flight while 033 was being
+written. A migration header can only list what one author knew at one moment;
+every site found later is orphaned by construction. That is the whole argument
+for keeping the list here instead.
+
+**A count of sites is a count within one checkout, and this one is `main`'s.**
+Eight `LEFT JOIN`s onto `account_types` were open in `main` when this was
+measured, and exactly one of them carried a statement the constraint falsified.
+The site the overview session actually retired is not among the eight: it exists
+only on `feat/overview`, added there by a later commit, and no grep of `main`
+could see it. Two separate facts, and collapsing them loses the second: the
+branch is why the site was invisible from here, and the **merge** is why it went
+false. Nobody edited that comment. 033 landed on `main`, the branch merged it
+hours later for an unrelated reason, and a true sentence outlived its condition
+with no commit against the file to mark the moment. So the register
+records the tree each entry was read in, and cites shape rather than line: the
+one site that moved between branches proved the rule the same day it was written.
+
+### Convention from 034 onward
+
+A migration that establishes a constraint carries **one line pointing at this
+register** and does not try to hold the list itself. The migration is the
+pointer, the register is the list. 033 is applied and cannot gain that line,
+which is the argument for the convention rather than an exception to it.
+
+The same pointer belongs on the constraint's declaration in `createTables.js`:
+that file is the live schema declaration, it is amendable, and it is what a
+reader of either build path actually opens.
+
+---
+
 ## 1. Qué está mal hoy
 
 El proyecto tiene dos caminos para construir un esquema y ninguno de los dos es
