@@ -28,8 +28,14 @@ import {
  * (plan doc, "Unit 5/7 catalog decision").
  */
 
+// Which leg of the settlement pair a description is written for. Named because
+// the comparison below is exact: a misspelled literal does not fail, it falls
+// through to the counterpart branch and mislabels the row.
+const PERSPECTIVE_TARGET = 'target';
+const PERSPECTIVE_BOUNDARY = 'boundary';
+
 const buildDescription = (perspective, amount, currencyCode, accountName) =>
-  perspective === 'target'
+  perspective === PERSPECTIVE_TARGET
     ? `Account closure settlement: residual ${amount} ${currencyCode} discarded on closing "${accountName}".`
     : `Account closure settlement: counterpart adjustment of ${amount} ${currencyCode} for closing "${accountName}".`;
 
@@ -90,7 +96,7 @@ export const recordClosureSettlement = async (client, settlementData) => {
   const targetTransactionOption = {
     userId,
     description: buildDescription(
-      'target',
+      PERSPECTIVE_TARGET,
       absoluteAmount,
       currencyCode,
       targetAccountName,
@@ -120,7 +126,7 @@ export const recordClosureSettlement = async (client, settlementData) => {
   const boundaryTransactionOption = {
     userId,
     description: buildDescription(
-      'boundary',
+      PERSPECTIVE_BOUNDARY,
       absoluteAmount,
       currencyCode,
       targetAccountName,

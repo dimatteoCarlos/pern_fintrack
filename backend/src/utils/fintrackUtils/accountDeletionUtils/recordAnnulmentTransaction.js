@@ -34,10 +34,18 @@ export const RTA_ANNULMENT_TARGET_PREFIX = 'RTA Annulment Target(';
  * @param {boolean} isProfit - True if the correction/annulment results in a profit for the affected account (adjustment > 0).
  * @param {number} amount - The absolute value of the adjusted amount..
  * @param {string} currencyCode
- * @param {string} perspective - 'affected' or 'slack'.
+ * @param {string} perspective - PERSPECTIVE_AFFECTED or PERSPECTIVE_COUNTERPART.
  * @param {string} affectedAccountName - Name of the affected account.
  * @returns {string} Formatted description.
  */
+// Which leg of the annulment pair a description is written for. Named because
+// the comparison below is exact: a misspelled literal does not fail, it falls
+// through to the counterpart branch and mislabels the row. The counterpart is
+// no longer called 'slack' here either - the account is identified by its
+// boundary type, not by that name.
+const PERSPECTIVE_AFFECTED = 'affected';
+const PERSPECTIVE_COUNTERPART = 'counterpart';
+
 // Helper to build RTA transaction descriptions (as PnL movements)
 function buildAnnulmentDescription(
   isProfit,
@@ -50,7 +58,7 @@ function buildAnnulmentDescription(
   const action = isProfit ? 'DEPOSIT' : 'WITHDRAW';
   const sign = isProfit ? '+' : '-';
   const prefix = `${RTA_ANNULMENT_TARGET_PREFIX}${targetAccountName}).`;
-  return perspective === 'affected'
+  return perspective === PERSPECTIVE_AFFECTED
     ? `${prefix}Correction in ${affectedAccountName}: ${sign}${amount} ${currencyCode} to revert original "${action}". For Deletion of ${targetAccountName} account.`
     : `${prefix}Counterpart Adjustment: ${isProfit ? '-' : '+'}${amount} ${currencyCode} from ${affectedAccountName}. For Deletion of ${targetAccountName} account.`; //The Slack account registers the opposite sign
 }
@@ -112,7 +120,7 @@ export const recordAnnulmentTransaction = async (client, annulmentData) => {
       isProfit,
       absoluteAmount,
       currencyCode,
-      'affected',
+      PERSPECTIVE_AFFECTED,
       affectedAccountName,
       targetAccountName,
     ),
@@ -148,7 +156,7 @@ export const recordAnnulmentTransaction = async (client, annulmentData) => {
       isProfit,
       absoluteAmount,
       currencyCode,
-      'slack',
+      PERSPECTIVE_COUNTERPART,
       affectedAccountName,
       targetAccountName,
     ),
