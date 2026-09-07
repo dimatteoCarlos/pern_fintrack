@@ -1617,7 +1617,7 @@ The readers compare the name **case-sensitively** — `ua.account_name != 'slack
 is exact in Postgres. The creation helper matches it in **lowercase on both
 sides** (`checkAndInsertAccount.js:41-46`, `LOWER(ua.account_name) = LOWER($2)`).
 So a row stored as `Slack` is **the compensation account to every writer and an
-ordinary account to all 27 read filters at once**: the deletion machinery writes
+ordinary account to all 26 live read filters at once**: the deletion machinery writes
 counterpart legs into it, and every aggregate counts those legs as the owner's
 money.
 
@@ -1636,9 +1636,51 @@ still hold and still have to happen in that order. What it changes is the
 urgency: the name predicate was being treated as a safety net that holds until
 someone deliberately renames the account, and it is thinner than that. Two
 cheap repairs stand on their own ahead of the whole migration, and neither needs
-the new type: compare the name case-insensitively in the read filters so the
-readers and the writer agree on what the account is, and reserve the name at
-creation so an owner cannot take it. Recommended in that order.
+the new type: reserve the name at creation so an owner cannot take it, and
+compare the name case-insensitively in the read filters so the readers and the
+writer agree on what the account is.
+
+**That order was recorded the other way round an hour earlier and it was wrong.**
+The correction came from the pocket and goals session and it turns on a variant
+neither of us had: **the collision needs no difference in case at all.** There is
+no `UNIQUE` on `(user_id, account_name)` — `002_accounts.sql:90` declares
+`account_name VARCHAR(50) NOT NULL` and nothing more — and no schema validates
+account names, so an owner can create a bank account named exactly `slack`,
+lowercase, today. Verified here.
+
+That state is worse than the `Slack` one in both directions. Both rows are
+excluded by every read filter, so **the owner's own account vanishes from every
+aggregate and net worth silently drops by its balance**. And the creation helper
+selects without an `ORDER BY` and returns the first row, so **which of the two is
+treated as the compensation account is nondeterministic** — the deletion
+machinery may write counterpart legs into the owner's real account.
+
+Case-insensitive reads do not close that. They make the readers agree with the
+writer about `Slack`, which converts the case variant into the exact variant —
+one bad state traded for the worse one. Reserving the name closes both at once,
+and it is the only one of the three repairs that stops new bad data instead of
+reinterpreting data already stored. Hence the order above. **The reservation has
+to bind the owner-facing creation path only**: the internal writer creates the
+account under that exact name and must keep being allowed to.
+
+**A trap for whoever does step 2.** There are three comparison rules for this
+account, not two. `getSlackAccountId` (`accountUtils.js:56-77`) compares the name
+case-sensitively and matches either account type, and it has **zero callers** —
+grepped across the backend, the only hit is its own definition. It is not
+proposed for deletion here: an unimported function mid-refactor usually means the
+caller is not written yet. It is recorded because it reads as canonical and is
+not exercised by anything, so a reader who fixes the comparison there will
+believe the problem is solved and will have changed nothing.
+
+**How many sites there are, since three different counts have been quoted.** The
+number worth using is **26** — the exclusion predicates that actually run, 7
+written literally and 19 parameterised. The count of 34 quoted earlier is the
+whole surface: those 26, plus 3 exclusions written in JavaScript rather than SQL,
+1 comparison that is not an exclusion at all (the search-box conditional at
+`dashboardController.js:983`), the 2 positive resolvers, and 2 that are not live
+— a comment and a commented-out query line. Reconciled with the pocket and goals
+session; 26 is the answer to *what would a rename break*, 34 to *where is this
+name mentioned*.
 **Which set fails worst, and it is not the obvious one.** Raised by the session
 holding the pocket and goals work, corrected on one point here. Every set except
 one joins `account_types` and names the types it wants, so the compensation
