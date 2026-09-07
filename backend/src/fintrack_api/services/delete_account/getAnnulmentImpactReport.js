@@ -90,12 +90,12 @@ export const getAnnulmentImpactReport = async (
  JOIN
   currencies ct ON ua.currency_id = ct.currency_id
 
-  -- LEFT, not JOIN: account_type_id is nullable (ON DELETE SET NULL when the
-  -- catalog row goes) until migration 033 enforces NOT NULL/RESTRICT. An
-  -- INNER join drops the whole row - the account's financial adjustment along
-  -- with it - the moment the type is unknown; account_type_name is purely
-  -- informational downstream, so a NULL there costs nothing.
-  LEFT JOIN
+  -- INNER since migration 033: account_type_id is NOT NULL behind an
+  -- ON DELETE RESTRICT foreign key, so an account with no type is no longer
+  -- representable. This was a LEFT join for as long as it was, and the reason
+  -- was that an INNER one would drop the whole row - the account's financial
+  -- adjustment along with it - the moment the type went missing.
+ JOIN
   account_types acctype ON ua.account_type_id = acctype.account_type_id
 
 -- account_id and account_starting_amount replace account_balance here because
