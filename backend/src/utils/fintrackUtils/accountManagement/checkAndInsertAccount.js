@@ -1,6 +1,6 @@
 //backend/utils/checkAndInsertAccount.js
 import pc from 'picocolors';
-import { createError } from '../../errorHandling.js';
+import { createError, handlePostgresError } from '../../errorHandling.js';
 import { pool } from '../../../db/config/configDB.js';
 
 //Checks for the existence of a specific account (e.g., 'slack') by name and type.this check is restricted to bank account types with basic account data.

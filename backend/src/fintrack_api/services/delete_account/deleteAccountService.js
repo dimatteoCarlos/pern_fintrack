@@ -505,10 +505,7 @@ export const deleteAccountService = async (
   // 🚀 RTA ANNULMENT EXECUTION (ATOMIC TRANSACTION)
   // =========================================
   console.log('Executing:', 'RTA ANNULMENT EXECUTION FROM :');
-  // let dbClient;
-  let isAdmin =
-    userRole === 'admin' || userRole === 'super_admin' || userRole === 'user'; //override isAdmin
-  // let isAdmin = true//test
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
 
   console.log('deleteAccountService', userId);
 
