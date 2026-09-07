@@ -57,8 +57,13 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 // rows split two ways, and that is the point: the adjustment is DEFINED as the
 // rows the realised term drops. Written as a second CTE with its own predicate,
 // the two could drift apart under a later edit and the identity below would
-// break with nothing to say why. Here it cannot: every row of movement type 9
-// lands in exactly one of the two sums.
+// break with nothing to say why. Here it cannot: every profit-and-loss row and
+// every account-closure row lands in exactly one of the two sums.
+//
+// Both movement types are read and the closure type is not swapped in for the
+// other. A closure recorded before that type existed is a profit-and-loss row
+// carrying the annulment prefix; those rows do not migrate, and the identity has
+// to keep holding for every month that contains one.
 //
 // What a closure row is: deleting an account reverses the effect it had on the
 // accounts it touched, writing a pair of rows - one on the affected account and
@@ -87,15 +92,17 @@ const INVESTMENT_FIGURES_QUERY = `
   realized AS (
     SELECT
       COALESCE(SUM(t.amount) FILTER (
-        WHERE t.description IS NULL
-           OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%'
+        WHERE t.movement_type_id = 9
+          AND (t.description IS NULL
+               OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
       ), 0) AS realized_pnl,
       COALESCE(SUM(t.amount) FILTER (
-        WHERE t.description LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%'
+        WHERE t.movement_type_id = 10
+           OR t.description LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%'
       ), 0) AS closure_adjustment
     FROM transactions t
     WHERE t.account_id = ANY($1::int[])
-      AND t.movement_type_id = 9
+      AND t.movement_type_id IN (9, 10)
   )
   SELECT
     (SELECT COUNT(*) FROM accounts) AS account_count,
