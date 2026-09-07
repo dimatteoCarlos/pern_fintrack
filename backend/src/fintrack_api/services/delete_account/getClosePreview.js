@@ -6,12 +6,23 @@
  *
  * WHY THE RESIDUAL IS SERVED FROM HERE AND NOT READ OFF AN ACCOUNT LIST. The
  * settlement derives the residual from the ledger inside its own lock, while
- * every account list publishes the stored `account_balance` column, and the two
- * are not the same number - the stored column drifts, which is the whole reason
- * the derivation exists. A screen that echoed the stored figure back would be
- * refused by the settlement's own comparison for a disagreement neither the
- * owner nor the screen caused. So the figure the owner confirms is derived by
- * the same expression the settlement will derive it with.
+ * every account list publishes the stored `account_balance` column. Those two
+ * agree on every account measured so far, and mostly by design: on the money
+ * paths that call it, setAccountBalanceFromLedger.js rewrites the column from
+ * the ledger under the lock, this settlement included. The reason to derive
+ * here is not that the column is wrong.
+ *
+ * It is that a figure shown and a figure decided on are different things. The
+ * settlement compares the owner's echo against a value it derives under its own
+ * lock, and that comparison exists so it does not have to assume the stored
+ * column is in step. Serving the echo from that column would make the check
+ * depend on the very thing the check is for.
+ *
+ * And the assumption is not universally safe: account creation writes the
+ * opening ledger row and sets the new account's column from a separately
+ * computed figure, refreshing only the counterparty. On a freshly created
+ * account the two agree because one path computed both consistently, not
+ * because either was derived from the other.
  *
  * It is still not a promise. Between this read and the confirmation a
  * transaction can land, which is exactly what the echo exists to catch: this

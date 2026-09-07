@@ -2501,12 +2501,39 @@ Implemented for both policies, and it cost a second endpoint rather than a
 comparison, for a reason worth recording: **what the owner approves is an
 amount, not an abstract operation**, and the echo is worth nothing unless the
 amount they were shown is the amount the settlement will derive. Every account
-list in the application publishes the stored `account_balance` column. The
-settlement derives its residual from the ledger. Those two numbers are not the
-same — the stored one drifting is the whole reason the derivation exists — so an
-echo taken from a list would have been refused for a disagreement neither the
-owner nor the screen caused. The preview endpoint exists to serve a residual
-derived by the same expression the settlement uses.
+list in the application publishes the stored `account_balance` column; the
+settlement derives its residual from the ledger. The preview endpoint exists to
+serve a residual derived by the same expression the settlement uses.
+
+**Stated precisely, because the loose version of it is wrong.** The two figures
+are not known to disagree — measured by pern-fintrack-cf on `fintrack_dev`,
+2026-09-07: 31 accounts, zero discrepancies between `user_accounts.account_balance`
+and the derived figure. That column is largely maintained rather than cached:
+`setAccountBalanceFromLedger.js` rewrites it from the ledger under the lock on
+the money paths that call it, CLOSE's settlement included. So the argument for
+deriving here is **not** that the column is wrong.
+
+It is that **display and decision are different consumers of the same rows**. A
+measurement showing the projection in step licenses publishing that column in a
+list that displays it. It does not license substituting it where a decision is
+made, and the echo is exactly such a place: the settlement compares the owner's
+figure against a value it derives under its own lock, and that comparison exists
+so it does not have to assume the projection is in step. Reading the column
+there would make the check depend on the very thing the check is for. If the
+31-account measurement is ever cited as grounds for simplifying this endpoint to
+read the column, it does not say that.
+
+**And the maintenance is not universal**, which is the second reason and the
+concrete one. Account creation writes the opening ledger row and sets the new
+account's `account_balance` from a separately computed figure, then refreshes
+only the counterparty — the refresh call in `accountCreationController.js` is
+guarded by `isTransfer` and names `slackCounterAccountInfo.account_id`. Verified
+in this checkout, 2026-09-07, on a finding routed by pern-fintrack-02. On a
+freshly created account the two figures agree because one path computed both
+consistently, not because either derives from the other. A preview reading the
+stored column could therefore publish a residual the settlement contradicts, on
+exactly the accounts with no history to reconcile them. The fix belongs to
+whoever owns account creation; this endpoint is already on the right side of it.
 
 **Where each half lives.** `getClosePreview.js` publishes the residual;
 `processCloseAccount` parses the echo before taking any lock (a malformed
