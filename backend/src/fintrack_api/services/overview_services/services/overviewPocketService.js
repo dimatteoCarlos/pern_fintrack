@@ -38,7 +38,6 @@ import {
 } from '../db/overviewPocketRepository.js';
 import { makeDomainCard } from '../core/makeDomainCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
-import { monthEndDate } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
 // Said when the owner has planned no pocket at all. The card still publishes 0
@@ -64,7 +63,7 @@ export const overviewPocketService = {
   { window, page, pageSize, includeTransactionRows = true },
   timeZone = 'UTC',
  ) {
-  const { referenceMonth, trendStart } = window;
+  const { referenceMonth, trendStart, periodStart, periodEnd } = window;
 
   const [board, months, allocations] = await Promise.all([
    pocketBoardService.getBoard(pool, userId, timeZone, referenceMonth),
@@ -122,8 +121,8 @@ export const overviewPocketService = {
    },
    currency: ACCOUNTING_CURRENCY_CODE,
    window: {
-    periodStart: referenceMonth,
-    periodEnd: monthEndDate(referenceMonth),
+    periodStart,
+    periodEnd,
    },
    notices: hasPockets ? [] : [NO_POCKET_NOTICE],
   });

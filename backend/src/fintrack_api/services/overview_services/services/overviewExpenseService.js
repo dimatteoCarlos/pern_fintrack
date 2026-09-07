@@ -29,7 +29,6 @@ import {
 import { makeExpenseCard, NO_BUDGET_NOTICE } from '../core/makeExpenseCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
 import { makeCategoryBreakdown } from '../core/makeCategoryBreakdown.js';
-import { monthEndDate } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
 export const overviewExpenseService = {
@@ -53,7 +52,7 @@ export const overviewExpenseService = {
   { window, page, pageSize, includeTransactionRows = true },
   timeZone = 'UTC',
  ) {
-  const { referenceMonth, priorMonth, trendStart } = window;
+  const { referenceMonth, priorMonth, trendStart, periodStart, periodEnd } = window;
 
   // The id set every figure on this page is computed over, deleted categories
   // included (D19). Read once and passed to all three consumers: if categories
@@ -109,8 +108,8 @@ export const overviewExpenseService = {
    // they span currencies and the notice above already says so.
    currency: budgetStatus.totals.currency ?? ACCOUNTING_CURRENCY_CODE,
    window: {
-    periodStart: referenceMonth,
-    periodEnd: monthEndDate(referenceMonth),
+    periodStart,
+    periodEnd,
    },
    notices,
   });

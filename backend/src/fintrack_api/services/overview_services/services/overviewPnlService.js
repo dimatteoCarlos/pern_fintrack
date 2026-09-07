@@ -26,7 +26,6 @@ import {
  makePeriodDelta,
  NO_PRIOR_PERIOD_NOTICE,
 } from '../core/makeDomainCard.js';
-import { monthEndDate } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
 export const overviewPnlService = {
@@ -45,7 +44,7 @@ export const overviewPnlService = {
   { window, page, pageSize, includeTransactionRows = true },
   timeZone = 'UTC',
  ) {
-  const { referenceMonth, priorMonth, trendStart } = window;
+  const { referenceMonth, priorMonth, trendStart, periodStart, periodEnd } = window;
 
   // Read once and passed to both consumers, so the figure and the list are the
   // same rows. R212's exclusion lives in the statements rather than here: it
@@ -80,8 +79,8 @@ export const overviewPnlService = {
    delta,
    currency: ACCOUNTING_CURRENCY_CODE,
    window: {
-    periodStart: referenceMonth,
-    periodEnd: monthEndDate(referenceMonth),
+    periodStart,
+    periodEnd,
    },
    notices: canCompare ? [] : [NO_PRIOR_PERIOD_NOTICE],
    domainFields: {

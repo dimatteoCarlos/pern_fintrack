@@ -42,6 +42,14 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
+// Recent activity keeps its own default page, and it is the size of the teaser
+// the page carries. A caller that sends no parameter at all gets exactly what
+// GET /overview publishes, so the endpoint can be adopted without the list
+// changing under the reader on the first request. The ceiling is the shared one:
+// the reason for a cap is that pageSize arrives from the client, and that reason
+// does not vary by endpoint.
+const DEFAULT_ACTIVITY_PAGE_SIZE = 5;
+
 /**
  * GET /overview/:domain
  * Params: domain (one of the six the contract defines)
@@ -84,3 +92,44 @@ export const overviewDomainQuerySchema = z.object({
   message: `pageSize must not exceed ${MAX_PAGE_SIZE}`,
  }).default(DEFAULT_PAGE_SIZE),
 }).strict();
+/**
+ * GET /overview/activity
+ * Query: from (optional), to (optional), page, pageSize
+ *
+ * The one section of the contract whose period the READER chooses. Every other
+ * figure of this module is bound to the reference month; recent activity answers
+ * "what do I want to read", which is a different question from "what happened in
+ * the month I am studying" and cannot be derived from it.
+ *
+ * Both bounds are optional and the default is UNBOUNDED, which is the behaviour
+ * the page's teaser already has: it answers what happened last, not what
+ * happened in the month being studied. A user reading a month from last year
+ * would otherwise open the section and find it empty.
+ *
+ * to is a month and it is INCLUSIVE — the whole of it, not its first day. Naming
+ * a month as an upper bound and getting one day of it back is the trap a caller
+ * cannot see, because the response looks like a real answer.
+ *
+ * The ordering check is a refine and not a service rule: from later than to is a
+ * contradiction inside the request, which is exactly what a schema can see, and
+ * it answers 400 rather than returning an empty page that looks like an owner
+ * with no movements.
+ */
+export const overviewActivityQuerySchema = z.object({
+ from: monthBound.optional(),
+ to: monthBound.optional(),
+ page: z.coerce.number().int().positive({
+  message: 'page must be a positive integer',
+ }).default(DEFAULT_PAGE),
+ pageSize: z.coerce.number().int().positive({
+  message: 'pageSize must be a positive integer',
+ }).max(MAX_PAGE_SIZE, {
+  message: `pageSize must not exceed ${MAX_PAGE_SIZE}`,
+ }).default(DEFAULT_ACTIVITY_PAGE_SIZE),
+}).strict().refine(
+ (query) => !query.from || !query.to || query.from <= query.to,
+ {
+  message: 'from must not be later than to',
+  path: ['from'],
+ },
+);

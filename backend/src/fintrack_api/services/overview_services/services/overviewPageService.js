@@ -52,7 +52,7 @@ import { makeHeroSection } from '../core/makeHeroSection.js';
 import { makeAllCard } from '../core/makeAllCard.js';
 import { makeMonthlySnapshot } from '../core/makeMonthlySnapshot.js';
 import { makeFinancialGoals } from '../core/makeFinancialGoals.js';
-import { shiftMonths, monthEndDate } from '../core/monthArithmetic.js';
+import { shiftMonths } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
 // MS3's window. Thirteen points, not twelve: the reference month is the figure
@@ -77,7 +77,7 @@ export const overviewPageService = {
   * @returns {Promise<object>} GetOverviewData
   */
  async getOverviewPage(pool, userId, { window }, timeZone = 'UTC') {
-  const { referenceMonth } = window;
+  const { referenceMonth, periodStart, periodEnd } = window;
   const cardRequest = { window, ...CARD_ONLY };
 
   const snapshotStart = shiftMonths(referenceMonth, -SNAPSHOT_HISTORY_MONTHS);
@@ -150,10 +150,10 @@ export const overviewPageService = {
    currency: ACCOUNTING_CURRENCY_CODE,
   });
 
-  const periodWindow = {
-   periodStart: referenceMonth,
-   periodEnd: monthEndDate(referenceMonth),
-  };
+  // Read off the resolved window, not derived a second time. The window ends at
+  // the reference date, so a period rebuilt here from the month alone would put
+  // two different ends in one payload for any month still running.
+  const periodWindow = { periodStart, periodEnd };
 
   return {
    hero,

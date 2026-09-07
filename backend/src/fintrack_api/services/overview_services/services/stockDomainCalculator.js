@@ -39,7 +39,6 @@ import {
  NO_PRIOR_PERIOD_NOTICE,
 } from '../core/makeDomainCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
-import { monthEndDate } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
 /**
@@ -67,7 +66,7 @@ export async function readStockDomain(
  timeZone,
  { domain, getAccountIds, getTransactionsPage, publishesTrend, getDomainFields },
 ) {
- const { referenceMonth, priorMonth, trendStart } = window;
+ const { referenceMonth, priorMonth, trendStart, periodStart, periodEnd } = window;
 
  // Read once and passed to both consumers. The balance series and the list have
  // to be built over the same accounts or the figure and the rows under it would
@@ -111,8 +110,8 @@ export async function readStockDomain(
   domainFields,
   currency: ACCOUNTING_CURRENCY_CODE,
   window: {
-   periodStart: referenceMonth,
-   periodEnd: monthEndDate(referenceMonth),
+   periodStart,
+   periodEnd,
   },
   notices: canCompare ? [] : [NO_PRIOR_PERIOD_NOTICE],
  });

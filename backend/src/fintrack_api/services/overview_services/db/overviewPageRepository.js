@@ -242,25 +242,18 @@ const SAVING_GOALS_QUERY = `
   ORDER BY p.pocket_id
 `;
 
-// The five most recent movements, whatever domain they belong to.
+// What counts as a movement in this section, written once.
 //
-// Not bounded by the requested month, and that is deliberate: "recent activity"
-// answers what happened last, not what happened in the month being studied. A
-// user reading August in November would otherwise see a teaser that is three
-// months old and looks like the app stopped recording.
+// The teaser the page carries and the paged endpoint answer the same question
+// over the same rows; they differ in their bounds and in how much they return.
+// A predicate written twice would be two definitions of a movement for one
+// section, and the two would be free to drift.
 //
-// That much the plan of record upholds. What it retires is the rest of this
-// shape: recent activity is a top-level section with its OWN period, chosen by
-// the reader, on its own endpoint, returning every movement of that period
-// rather than a fixed five. So the statement below is not wrong about the month —
-// it is provisional about everything else, and the LIMIT is the part that goes.
-// Until that endpoint exists the teaser is what the page carries, and a reader
-// should not take the fixed five as a decision anyone defended.
-//
-// Same row shape as every other list in this module, so one component renders
-// them all.
-const RECENT_ACTIVITY_QUERY = `
-  SELECT${transactionRowColumns('$2')}${TRANSACTION_ROW_SOURCE}
+// $1 is the owner. No other placeholder appears here on purpose: the statements
+// that embed this number their own parameters differently, and a filter
+// carrying one of them could only be pasted into the statement it was written
+// for.
+const ACTIVITY_FILTER = `
   WHERE ua.user_id = $1
     -- The type was selected here and never compared until 2026-09-06, and the
     -- comparison was IS DISTINCT FROM because the type could be cleared. Migration
@@ -271,9 +264,60 @@ const RECENT_ACTIVITY_QUERY = `
     -- TRANSACTION_ROW_SOURCE. It was already LEFT before this module compared the
     -- type at all, so it was not written for the nullable case and retiring it is
     -- a decision this change did not make.
-    AND act.account_type_name <> 'boundary'
-  ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
+    AND act.account_type_name <> 'boundary'`;
+
+// Newest first, and the id breaks the tie. Two movements can carry the same
+// actual date, and a page boundary falling between them would show one row
+// twice and skip another without the second key.
+const ACTIVITY_ORDER = `
+  ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC`;
+
+// The five most recent movements, whatever domain they belong to.
+//
+// Not bounded by the requested month, and that is deliberate: recent activity
+// answers what happened last, not what happened in the month being studied. A
+// user reading August in November would otherwise see a teaser that is three
+// months old and looks like the app stopped recording.
+//
+// Same row shape as every other list in this module, so one component renders
+// them all.
+const RECENT_ACTIVITY_QUERY = `
+  SELECT${transactionRowColumns('$2')}${TRANSACTION_ROW_SOURCE}${ACTIVITY_FILTER}${ACTIVITY_ORDER}
   LIMIT 5
+`;
+
+// The same movements over a period the reader chooses, paginated.
+//
+// Both bounds are optional and a null one drops out of the statement rather
+// than widening to some far date: an unbounded read is the default of this
+// section, because what happened last is not a property of the month being
+// studied.
+//
+// The upper bound names a month and covers all of it. Comparing against the
+// first day of the month the caller named would return nothing for a request
+// whose two bounds are the same month, which is the most ordinary request there
+// is — and it would return it as an empty list, indistinguishable from an owner
+// with no movements.
+//
+// Both bounds are converted on the OWNER calendar for the same reason every
+// other bound in this module is: the column is TIMESTAMPTZ, and compared bare
+// Postgres resolves the literal through the session zone, so a movement at 8pm
+// on the last day of a month lands in the next one.
+const ACTIVITY_PAGE_QUERY = `
+  SELECT${transactionRowColumns('$4')}${TRANSACTION_ROW_SOURCE}${ACTIVITY_FILTER}
+    AND ($2::date IS NULL OR tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $4))
+    AND ($3::date IS NULL OR tr.transaction_actual_date < (($3::date + INTERVAL '1 month') AT TIME ZONE $4))${ACTIVITY_ORDER}
+  LIMIT $5 OFFSET $6
+`;
+
+// How many rows the page was cut out of. A whole second statement over the same
+// filter rather than a window function on the one above, the same choice the
+// domain lists make: the count has to answer for the whole set, and a count
+// computed beside a limited page is a count of the page.
+const ACTIVITY_COUNT_QUERY = `
+  SELECT COUNT(*) AS total_rows${TRANSACTION_ROW_SOURCE}${ACTIVITY_FILTER}
+    AND ($2::date IS NULL OR tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $4))
+    AND ($3::date IS NULL OR tr.transaction_actual_date < (($3::date + INTERVAL '1 month') AT TIME ZONE $4))
 `;
 
 /**
@@ -358,4 +402,38 @@ export async function getRecentActivity(pool, userId, timeZone = 'UTC') {
   ...row,
   note: extractNoteFromDescription(row.description),
  }));
+}
+
+/**
+ * One page of the movements of a period the reader chose, plus the size of the
+ * whole set.
+ *
+ * Both bounds may be null and that is the ordinary case, not a degenerate one.
+ *
+ * @param {object} pool - Database pool
+ * @param {string} userId - UUID from the token
+ * @param {{from: (string|null), to: (string|null)}} range - months, both inclusive
+ * @param {string} timeZone - IANA zone of the account owner
+ * @param {{page: number, pageSize: number}} paging - already validated as positive integers
+ * @returns {Promise<{rows: object[], totalRows: number}>}
+ */
+export async function getActivityPage(pool, userId, { from, to }, timeZone = 'UTC', { page, pageSize }) {
+ const offset = (page - 1) * pageSize;
+ const bounds = [userId, from ?? null, to ?? null, timeZone];
+
+ // Both in flight at once: the count does not depend on the page and the page
+ // does not depend on the count, so serialising them would pay for the slower
+ // one twice. Same shape as the domain lists, for the same reason.
+ const [rows, total] = await Promise.all([
+  pool.query(ACTIVITY_PAGE_QUERY, [...bounds, pageSize, offset]),
+  pool.query(ACTIVITY_COUNT_QUERY, bounds),
+ ]);
+
+ return {
+  rows: rows.rows.map((row) => ({
+   ...row,
+   note: extractNoteFromDescription(row.description),
+  })),
+  totalRows: Number(total.rows[0]?.total_rows ?? 0),
+ };
 }

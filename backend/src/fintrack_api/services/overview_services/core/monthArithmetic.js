@@ -61,7 +61,7 @@ export const monthEndDate = (month) => {
 export const TREND_MONTHS = 6;
 
 /**
- * The three months every domain calculator reads from, derived once.
+ * The window every domain calculator reads from, derived once.
  *
  * A calculator that shifted these itself would be free to disagree with the
  * next one about how far back a trend reaches or which month a delta compares
@@ -72,11 +72,60 @@ export const TREND_MONTHS = 6;
  * prior month in the same series as the reference one, and a series long enough
  * for six points is no more expensive to fetch than one long enough for two.
  *
+ * periodEnd is the REFERENCE DATE and not the last day of the month. A closed
+ * month has them equal; a running one does not, and publishing the month end
+ * for a running month states that a flow covers days that have not happened.
+ * The contract puts it as an obligation rather than a preference: a figure that
+ * silently treats the running month as a whole one is not early, it is wrong.
+ *
+ * Two clocks reach this function and only one of them decides anything. The
+ * month comes from the database, as every other month in this module does; the
+ * day only refines a position inside a month already chosen, and it is clamped
+ * to that month's last day. So a disagreement between the two clocks — process
+ * skew, or a request that straddles midnight on the last day of a month — can
+ * cost a day at the edge and can never report a date outside the month served.
+ *
  * @param {string} referenceMonth - 'YYYY-MM-01', already checked against the ceiling
- * @returns {{referenceMonth: string, priorMonth: string, trendStart: string}}
+ * @param {string} currentMonth - 'YYYY-MM-01' on the owner's calendar, from the database
+ * @param {string} today - 'YYYY-MM-DD' on the owner's calendar
+ * @returns {{referenceMonth: string, priorMonth: string, trendStart: string,
+ *   periodStart: string, periodEnd: string, isCurrentMonth: boolean}}
  */
-export const makeReportingWindow = (referenceMonth) => Object.freeze({
- referenceMonth,
- priorMonth: shiftMonths(referenceMonth, -1),
- trendStart: shiftMonths(referenceMonth, -(TREND_MONTHS - 1)),
-});
+export const makeReportingWindow = (referenceMonth, currentMonth, today) => {
+ if (!currentMonth || !today) {
+  throw new Error(
+   `makeReportingWindow needs the owner's current month and day, received: ${currentMonth}, ${today}`,
+  );
+ }
+
+ const monthEnd = monthEndDate(referenceMonth);
+ const isCurrentMonth = referenceMonth === currentMonth;
+
+ return Object.freeze({
+  referenceMonth,
+  priorMonth: shiftMonths(referenceMonth, -1),
+  trendStart: shiftMonths(referenceMonth, -(TREND_MONTHS - 1)),
+  periodStart: referenceMonth,
+  periodEnd: isCurrentMonth && today < monthEnd ? today : monthEnd,
+  isCurrentMonth,
+ });
+};
+
+/**
+ * The part of the window a response publishes.
+ *
+ * The trend bounds stay inside: a client reading a series gets the month on
+ * every point of it, so priorMonth and trendStart would be the same months
+ * under a second name. What a client cannot derive is which month it was served
+ * when it named none, and where inside that month the figures stop.
+ *
+ * One definition for both endpoints. Two handlers each picking their own fields
+ * would be two answers to "what period is this", which is the question the
+ * whole window exists to answer once.
+ *
+ * @param {object} window - a window from makeReportingWindow
+ * @returns {{referenceMonth: string, periodStart: string, periodEnd: string,
+ *   isCurrentMonth: boolean}}
+ */
+export const servedWindow = ({ referenceMonth, periodStart, periodEnd, isCurrentMonth }) =>
+ Object.freeze({ referenceMonth, periodStart, periodEnd, isCurrentMonth });

@@ -24,7 +24,6 @@ import {
  NO_PRIOR_PERIOD_NOTICE,
 } from '../core/makeDomainCard.js';
 import { makeTrendSeries } from '../core/makeTrendSeries.js';
-import { monthEndDate } from '../core/monthArithmetic.js';
 import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
 
 export const overviewIncomeService = {
@@ -48,7 +47,7 @@ export const overviewIncomeService = {
   { window, page, pageSize, includeTransactionRows = true },
   timeZone = 'UTC',
  ) {
-  const { referenceMonth, priorMonth, trendStart } = window;
+  const { referenceMonth, priorMonth, trendStart, periodStart, periodEnd } = window;
 
   // The id set every figure on this page is computed over. Read once and passed
   // to both consumers: built over two different sets, the list and the card
@@ -84,8 +83,8 @@ export const overviewIncomeService = {
    // not a second currency travelling with the card.
    currency: ACCOUNTING_CURRENCY_CODE,
    window: {
-    periodStart: referenceMonth,
-    periodEnd: monthEndDate(referenceMonth),
+    periodStart,
+    periodEnd,
    },
    notices: canCompare ? [] : [NO_PRIOR_PERIOD_NOTICE],
   });
