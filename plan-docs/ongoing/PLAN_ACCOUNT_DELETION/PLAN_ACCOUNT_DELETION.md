@@ -1336,10 +1336,120 @@ remains unverified against any row, because none is committed anywhere
 yet. The migration session's suggestion: test this by inserting a
 `movement_type_id = 10` row inside a transaction and rolling it back,
 which verifies the identity against a real row without ever publishing
-one. Not written yet. This sharpens, rather than replaces, the earlier
-candidate CI test for `CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED` staying
-`false` - that test guards the constant, this one would guard the
-arithmetic the constant is standing in front of.
+one. **Written, run and passing as of the entry below.** This sharpens,
+rather than replaces, the earlier candidate CI test for
+`CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED` staying `false` - that test
+guards the constant, this one guards the arithmetic the constant is
+standing in front of.
+
+### The gate's condition is now checkable, 2026-09-06/07
+
+**The rollback probe exists and passes (`cf`).** A transaction inserts a
+row carrying the account-closure movement type with no annulment prefix,
+runs the investment pass, asserts, and rolls back. All three properties
+hold on `fintrack_dev` against the code as it stands on `main`: the row
+is claimed by the closure-adjustment term, it is not claimed by the
+realised term, and the three published terms still sum to the ledger
+balance with it present. Figures, so the condition carries a number
+rather than a claim - baseline on the three investment accounts: realised
+2.30, closure adjustment -0.75, ledger balance 100044.62; with one
+settlement of -1234.56 present and uncommitted: realised unchanged at
+2.30, closure adjustment -1235.31, balance 98810.06, contributed plus the
+two terms equal to 98810.06 exactly. Zero closure rows in the table
+before and after. Nothing persisted, no release constant touched.
+
+**Its sixth assertion is the one worth tying the gate to.** It runs the
+PRE-CHANGE predicate - bounded to the profit-and-loss type alone, split on
+the description prefix - over the same row set and shows the identity
+would be off by exactly the settlement amount. That makes the test exhibit
+the false alarm rather than only confirm its absence, and it fails if
+either half of the reconciliation change is reverted. A check that only
+asserts the good state passes on code that never had the problem; this one
+tells them apart.
+
+**The writer's shape, asked by `pern-fintrack-02` and answered here from
+the file rather than from memory: both legs carry the closure movement
+type.** A settlement is a pair, and the probe inserted one hand-built row,
+so the probe's result only extends to a real settlement if the pair is
+uniform. It is: in `recordClosureSettlement.js`, both
+`targetTransactionOption` and `boundaryTransactionOption` set
+`movement_type_id: ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID`, unconditionally -
+`isTargetPositive` decides the amount sign and which side is source and
+which destination, and touches neither the movement type nor the
+transaction type. There is no differently-shaped second leg. The scope
+that makes this complete rather than partial: this is the DISCARD-policy
+writer, and `processCloseAccount` refuses every other policy with a 400
+(TRANSFER blocked on destination eligibility, D2, unimplemented), so the
+uniform pair is the only shape any live code path can emit.
+
+**Still to do before the constant flips, per `pern-fintrack-02`'s
+proposal, which I accepted rather than substituting my reading of the
+source for it:** have the probe call `recordClosureSettlement.js` inside
+the same rolled-back transaction instead of hand-building its row. That
+proves the reader and the writer agree, rather than proving the reader
+agrees with somebody's reading of the writer, and it keeps proving it if
+the writer's shape changes later. Requested `cf`'s script to extend with
+the real call; it needs a live database, so it lands as an integration
+script under the deletion module, not as a unit test pretending otherwise.
+Result goes to `cf` and `pern-fintrack-02` before
+`CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED` changes value.
+
+**Only one of the two legs is ever visible to the investment pass
+(`cf`, and it changes what the extended test proves).** The pair is
+double-entry with opposite amounts, and the counterpart leg lands on the
+boundary account - which every account set in the overview repository
+excludes. So the leg on the boundary account is outside the investment
+set, outside the three terms, and outside the derived balance, since the
+balance is computed over that same set. What a real DISCARD settlement
+shows the pass is exactly one row: the closure type, on the investment
+account, carrying the negation of the residual, unprefixed - which is
+the row the probe hand-builds. The consequence for the extended run,
+worth asserting by direction rather than by magnitude: the closure term
+must move **by the negation of the residual, not by zero**. Zero would
+mean both legs entered the set, which is a finding about the boundary
+exclusion rather than about the reconciliation - and both outcomes leave
+the identity closing, so an assertion that only checks the identity
+cannot tell them apart. Two properties of `cf`'s script to preserve if
+it lands in the repository: the sixth assertion, which is what makes it
+fail on a revert instead of passing on code that never had the problem,
+and the exhaustiveness comparison against the unfiltered sum, which
+catches a leg landing in neither branch - the identity alone can close by
+coincidence wherever the missing amount happens to be zero.
+
+**The boundary account's exclusion is by name, and migration 031 already
+did the work that lets it stop being - checked here rather than taken
+from the relay.** `cf` flagged the fragility: every aggregate keeps the
+compensation account out by comparing `account_name` to the literal
+`slack` (`overviewAccountRepository.js`, `AND ua.account_name != 'slack'`
+in each account set), and nothing reserves that name at creation, so an
+owner who names a real account exactly `slack` has it leave their own
+figures silently. Correct as stated, and the enabling half is already
+shipped: `031_add_boundary_account_type.sql` created the structural type
+`boundary` **and backfilled the existing compensation accounts into it in
+the same transaction**, for exactly this reason in its own words - "A
+type with no rows in it is worse than no type at all. The whole purpose
+of 'boundary' is to let a filter say `account_type_id <> 8` instead of
+`account_name <> 'slack'`." It deliberately left the name alone so all
+twenty-seven filters keep working through the retype untouched, which is
+what makes rewriting them safe to do afterwards rather than atomically
+with it.
+
+So this is not an unknown fragility but the unfinished half of a plan
+whose hard part is done, and the collision `cf` describes is precisely
+what the type predicate resolves: post-031 the compensation account is
+typed `boundary`, while an owner's colliding `slack` account carries a
+real type, so a type predicate separates them where the name predicate
+cannot. Two things for whoever rewrites those filters, neither of them
+this module's file: the comment justifying the name check - "slack is
+excluded by name because it is a bank account by type" - is **stale on
+any database at chain 031 or later**, and is the reason the rewrite looks
+unnecessary from inside that file; and the rewrite is only safe on a
+database that has run 031, since an earlier chain still types its
+compensation accounts `bank` - the same asymmetry `checkAndInsertAccount.js`
+already handles on the write side by matching `['bank', 'boundary']` when
+the caller omits a type. Note the split that leaves: post-031 the
+**writer** already resolves the boundary account safely, by type and by
+oldest id; the **readers** do not.
 
 **The trap for whoever writes the real fix, flagged by `pern-fintrack-02`
 before anyone attempts it: widening the `WHERE` to `movement_type_id IN
@@ -1483,6 +1593,39 @@ zero of the cash type - that is a property of this database's seed data
 today, not of the application, and a closure test exercised against either
 type on `fintrack_dev` will find nothing to
 run against.
+
+**That empty type does not reach this module's pocket reads - checked here
+rather than assumed, 2026-09-06/07.** `cf` broadcast that the retired
+pocket account type carries zero live accounts while the same database
+holds six planned pockets and twenty-three commitment rows, so a query
+that reaches pocket figures *through that account type* returns a
+structural zero instead of an error - and flagged it as possibly bearing
+on the deletion paths. It does not, for a structural reason worth
+recording rather than re-deriving: both places this module touches pocket
+data key on the commitment row's own source account, never on an account
+type. The read is `getPocketAllocationImpact`'s
+`WHERE pa.source_account_id = $1 AND pa.user_id = $2` in
+`getAnnulmentImpactReport.js`, and the write is the matching
+`DELETE FROM pocket_allocations WHERE source_account_id = $1 AND user_id = $2`
+in `eraseAccountTail.js`. Neither joins `account_types`, so neither can
+be silently emptied by a type that has no accounts under it - both see
+commitment rows directly, and would see any of those twenty-three that
+named the account being deleted.
+
+**Two further `cf` findings, checked and clean.** The product's existing,
+enforced, user-facing name for spendable cash is *unassigned cash* - bank
+balance less pocket allocations - and any new "available"/"free" figure
+would have to defer to it: this module publishes no such figure at all
+(nothing in `services/delete_account/` names one), so there is no
+conflicting framing to correct. And `cf`'s self-correction that "money the
+pocket holds" is not a real system concept - a pocket is a plan, an
+allocation is a commitment against a real account, and no allocation moves
+money - was checked against this module's own documents for propagation
+from the earlier wrong phrasing: the only place the wording appears is
+`RESEARCH_LOG.md`'s destination-eligibility row, which already states it
+the corrected way ("a pocket holds assignments, not funds, so it is not
+eligible") and is the reason a pocket was ruled out as a TRANSFER
+destination in the first place. Nothing to fix.
 
 **Corroborated independently, 2026-09-06 (`e4`).** A repo-wide sweep found no
 other endpoint answering a deliberately-disabled feature with a retryable
