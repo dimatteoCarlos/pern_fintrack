@@ -659,8 +659,9 @@ commit. The order is forced where stated and free otherwise.
      deleted_at IS NULL - each needs a recorded filter decision.
 
   9  D2: destination eligibility for TRANSFER              blocks unit 7's selector
-     OPEN. Which accounts may receive a residual: types, currency, closed
-     state.
+     DECIDED 2026-09-07, Carlos. The eligible type is bank, alone. See
+     "Destination eligibility decided" below for the rule, the reason, and
+     why withdrawal from the system is not a destination.
 
  10  DELETE                                                §3.2
      OPEN, behind units 6, 7, 9.
@@ -1937,3 +1938,65 @@ The component-by-component sequence is written when unit 7 opens.
 2026-09-06 (§9). Kept as the archive behind this plan's measurements and
 architecture decisions — not a document that needs reading for current
 state.
+
+---
+
+## Destination eligibility decided, 2026-09-07
+
+Closes the open decision on which accounts may receive a residual under
+CLOSE's TRANSFER policy (unit 9, D2). Decided by Carlos; this section is the
+frozen rule and the selector implements it rather than re-deciding it.
+
+**The rule.** A destination is eligible when all four hold: it belongs to the
+same owner, it is not deleted, it is not the account being closed, and its
+type is `bank`.
+
+**Why one type and not a set.** The research log's draft said "able to hold
+funds", which is not a property the schema carries — there is no column that
+states it, so it cannot be written as a predicate and every reader resolves it
+differently. Replacing the phrase with an explicit type was `e4`'s
+recommendation and is right for that reason. `e4` proposed three types — bank,
+investment and cash. Carlos narrowed it to `bank` alone, in his words the
+account "que el usuario puede mover mas facilmente": the destination is where
+the owner will actually reach the money afterwards, and a bank account is the
+one they can move without a further operation. Investment and cash are not
+excluded on principle; they are simply not the answer to "where does the owner
+want this to land", and a narrower rule is the one that can be widened later
+without invalidating rows already written.
+
+**What the other types would have meant**, kept because each exclusion is a
+stated reason rather than an omission:
+
+- `debtor` represents a person who owes the owner, so a residual sent there
+  fabricates a loan that was never made.
+- `income_source` would fabricate income the owner never earned.
+- `category_budget` is an expense envelope, so it would fabricate spending
+  capacity.
+- `pocket_saving` belongs to the model migration 020 retired, and under the
+  allocation model a pocket holds assignments rather than funds — the same
+  conclusion the research log already reached, with the second reason added.
+- `boundary` is the DISCARD policy itself; see below.
+
+**Withdrawal from the system is not a destination.** Carlos raised sending the
+residual to the boundary account when the intent is to take the money out of
+the books. That intent is correct and it is already built, but it is the other
+policy: DISCARD settles the residual against the boundary account, and the
+money leaves the owner's net worth because every published figure excludes
+that account. Offering the boundary account as a row in the destination list
+would give the owner two routes to the same write under two different names,
+one of them labelled with an internal account name that means nothing to them.
+So the owner chooses the policy first — send it to another account, or take it
+out of the books — and only the first choice asks for a destination.
+
+**Frontend requirement this creates.** The close screen presents the two
+policies as a choice, and the destination selector appears only under
+TRANSFER, listing the owner's non-deleted bank accounts excluding the account
+being closed. DISCARD needs no selector and must state where the residual goes
+rather than leaving it unexplained.
+
+**Still open, deliberately not decided here.** Whether a destination in a
+different currency from the closing account is eligible. The rule above says
+nothing about currency, and the settlement writer tags both legs with the
+closing account's currency, so a cross-currency destination would produce the
+same disagreement described in the closure-currency note. Decide it before the
+selector ships, not after.
