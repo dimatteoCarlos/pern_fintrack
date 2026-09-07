@@ -21,6 +21,7 @@
 import { toAmount } from '../../budget_services/core/money.js';
 import { extractNoteFromDescription } from '../../../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
 import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { transactionRowColumns, TRANSACTION_ROW_SOURCE } from './transactionRowShape.js';
 
 // NUMERIC, not FLOAT: netWorth and cashPosition are composed from this figure plus
 // the domain cards (D27), so it has to agree with them to the cent.
@@ -137,21 +138,7 @@ const SAVING_GOALS_QUERY = `
 // Same row shape as every other list in this module, so one component renders
 // them all.
 const RECENT_ACTIVITY_QUERY = `
-  SELECT
-    tr.*,
-    mt.movement_type_name,
-    trt.transaction_type_name,
-    act.account_type_name,
-    cr.currency_code,
-    ua.account_name,
-    ua.account_type_id,
-    (tr.transaction_actual_date AT TIME ZONE $2)::date::text AS transaction_local_date
-  FROM transactions tr
-  JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
-  JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
-  JOIN currencies cr ON cr.currency_id = tr.currency_id
-  JOIN user_accounts ua ON ua.account_id = tr.account_id
-  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
+  SELECT${transactionRowColumns('$2')}${TRANSACTION_ROW_SOURCE}
   WHERE ua.user_id = $1
     AND ua.account_name != 'slack'
     -- The type was selected here and never compared until 2026-09-06, and the
@@ -159,9 +146,10 @@ const RECENT_ACTIVITY_QUERY = `
     -- 033 made the column NOT NULL behind a RESTRICT foreign key, so it cannot be,
     -- and <> returns the same rows.
     --
-    -- The join above stays LEFT on purpose. It was already LEFT before this module
-    -- compared the type at all, so it was not written for the nullable case and
-    -- retiring it is a decision this change did not make.
+    -- The join this reads is LEFT on purpose and now lives in
+    -- TRANSACTION_ROW_SOURCE. It was already LEFT before this module compared the
+    -- type at all, so it was not written for the nullable case and retiring it is
+    -- a decision this change did not make.
     AND act.account_type_name <> 'boundary'
   ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
   LIMIT 5

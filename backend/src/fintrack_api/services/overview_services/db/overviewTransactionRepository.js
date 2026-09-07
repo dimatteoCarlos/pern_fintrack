@@ -32,23 +32,10 @@
 
 import { extractNoteFromDescription } from '../../../../utils/fintrackUtils/transactionManagement/extractNoteFromDescription.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
+import { transactionRowColumns, TRANSACTION_ROW_SOURCE } from './transactionRowShape.js';
 
 const EXPENSE_PAGE_QUERY = `
-  SELECT
-    tr.*,
-    mt.movement_type_name,
-    trt.transaction_type_name,
-    act.account_type_name,
-    cr.currency_code,
-    ua.account_name,
-    ua.account_type_id,
-    (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS transaction_local_date
-  FROM transactions tr
-  JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
-  JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
-  JOIN currencies cr ON cr.currency_id = tr.currency_id
-  JOIN user_accounts ua ON ua.account_id = tr.account_id
-  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
+  SELECT${transactionRowColumns('$3')}${TRANSACTION_ROW_SOURCE}
   WHERE tr.account_id = ANY($1::int[])
     AND tr.movement_type_id IN (1, 6)
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
@@ -79,21 +66,7 @@ const EXPENSE_COUNT_QUERY = `
 `;
 
 const INCOME_PAGE_QUERY = `
-  SELECT
-    tr.*,
-    mt.movement_type_name,
-    trt.transaction_type_name,
-    act.account_type_name,
-    cr.currency_code,
-    ua.account_name,
-    ua.account_type_id,
-    (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS transaction_local_date
-  FROM transactions tr
-  JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
-  JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
-  JOIN currencies cr ON cr.currency_id = tr.currency_id
-  JOIN user_accounts ua ON ua.account_id = tr.account_id
-  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
+  SELECT${transactionRowColumns('$3')}${TRANSACTION_ROW_SOURCE}
   WHERE tr.account_id = ANY($1::int[])
     AND tr.movement_type_id = 2
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
@@ -116,21 +89,7 @@ const INCOME_COUNT_QUERY = `
 // as false. Without the guard a real P/L row written without a description would
 // be missing from the list while the card still counted it.
 const PNL_PAGE_QUERY = `
-  SELECT
-    tr.*,
-    mt.movement_type_name,
-    trt.transaction_type_name,
-    act.account_type_name,
-    cr.currency_code,
-    ua.account_name,
-    ua.account_type_id,
-    (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS transaction_local_date
-  FROM transactions tr
-  JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
-  JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
-  JOIN currencies cr ON cr.currency_id = tr.currency_id
-  JOIN user_accounts ua ON ua.account_id = tr.account_id
-  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
+  SELECT${transactionRowColumns('$3')}${TRANSACTION_ROW_SOURCE}
   WHERE tr.account_id = ANY($1::int[])
     AND tr.movement_type_id = 9
     AND (tr.description IS NULL OR tr.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
@@ -151,21 +110,7 @@ const PNL_COUNT_QUERY = `
 `;
 
 const DEBT_PAGE_QUERY = `
-  SELECT
-    tr.*,
-    mt.movement_type_name,
-    trt.transaction_type_name,
-    act.account_type_name,
-    cr.currency_code,
-    ua.account_name,
-    ua.account_type_id,
-    (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS transaction_local_date
-  FROM transactions tr
-  JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
-  JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
-  JOIN currencies cr ON cr.currency_id = tr.currency_id
-  JOIN user_accounts ua ON ua.account_id = tr.account_id
-  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
+  SELECT${transactionRowColumns('$3')}${TRANSACTION_ROW_SOURCE}
   WHERE tr.account_id = ANY($1::int[])
     AND tr.movement_type_id = 4
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
@@ -200,21 +145,7 @@ const DEBT_COUNT_QUERY = `
 // figure counts it would make the same account show two different histories on
 // two screens.
 const INVESTMENT_PAGE_QUERY = `
-  SELECT
-    tr.*,
-    mt.movement_type_name,
-    trt.transaction_type_name,
-    act.account_type_name,
-    cr.currency_code,
-    ua.account_name,
-    ua.account_type_id,
-    (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS transaction_local_date
-  FROM transactions tr
-  JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
-  JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
-  JOIN currencies cr ON cr.currency_id = tr.currency_id
-  JOIN user_accounts ua ON ua.account_id = tr.account_id
-  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
+  SELECT${transactionRowColumns('$3')}${TRANSACTION_ROW_SOURCE}
   WHERE tr.account_id = ANY($1::int[])
     AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
