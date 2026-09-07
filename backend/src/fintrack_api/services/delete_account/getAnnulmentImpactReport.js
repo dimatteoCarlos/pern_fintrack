@@ -136,3 +136,44 @@ export const getAnnulmentImpactReport = async (
 
   return impactReport;
 };
+
+/*
+ * Every pocket that loses backing if targetAccountId is deleted, named and
+ * totalled, so the owner sees it before confirming (POCKET_MODULE_SPEC.md
+ * §11.1 Q8b: "the deletion of those allocations is a statement the service
+ * makes out loud... after the owner has seen the impact"). Read-only preview -
+ * the actual `DELETE FROM pocket_allocations` runs later, inside the
+ * deletion transaction, in eraseAccountTail.js.
+ */
+export const getPocketAllocationImpact = async (
+  dbClient,
+  userId,
+  targetAccountId,
+) => {
+  const pocketImpactQuery = `
+    SELECT
+      p.pocket_id,
+      p.name AS pocket_name,
+      SUM(pa.amount) AS amount_allocated,
+      cur.currency_code
+    FROM pocket_allocations pa
+    JOIN pockets p ON p.pocket_id = pa.pocket_id
+    JOIN currencies cur ON cur.currency_id = p.currency_id
+    WHERE pa.source_account_id = $1
+      AND pa.user_id = $2
+    GROUP BY p.pocket_id, p.name, cur.currency_code
+    HAVING SUM(pa.amount) != 0
+  `;
+
+  const { rows } = await dbClient.query(pocketImpactQuery, [
+    targetAccountId,
+    userId,
+  ]);
+
+  return rows.map((row) => ({
+    pocketId: row.pocket_id,
+    pocketName: row.pocket_name,
+    amountAllocated: parseFloat(row.amount_allocated),
+    currencyCode: row.currency_code,
+  }));
+};

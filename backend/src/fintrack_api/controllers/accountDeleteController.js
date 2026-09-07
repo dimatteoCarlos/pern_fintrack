@@ -4,7 +4,10 @@ import { createError } from '../../utils/errorHandling.js';
 import { pool } from '../../db/config/configDB.js';
 
 // 📚 SERVICES & UTILITIES
-import { getAnnulmentImpactReport } from '../services/delete_account/getAnnulmentImpactReport.js';
+import {
+  getAnnulmentImpactReport,
+  getPocketAllocationImpact,
+} from '../services/delete_account/getAnnulmentImpactReport.js';
 
 import { deleteAccountService } from '../services/delete_account/deleteAccountService.js';
 
@@ -52,12 +55,15 @@ export const generateImpactReport = async (req, res, next) => {
     );
 
     // 2. CALL SERVICE
-    // The service handles the SQL logic to calculate the net financial impact
-    const impactReport = await getAnnulmentImpactReport(
-      pool,
-      userId,
-      targetAccountId,
-    );
+    // The service handles the SQL logic to calculate the net financial impact.
+    // pocketImpact is a separate, additive read (PLAN_ACCOUNT_DELETION.md
+    // §5/Q8b via ACCOUNT_DELETION_METHODS.md): pockets this account backs,
+    // shown so the owner sees them before confirming, never merged into
+    // impactReport - that array's shape is relied on by processRTAAnnulment.
+    const [impactReport, pocketImpact] = await Promise.all([
+      getAnnulmentImpactReport(pool, userId, targetAccountId),
+      getPocketAllocationImpact(pool, userId, targetAccountId),
+    ]);
 
     // 3. SUCCESS RESPONSE
     return res.status(200).json({
@@ -65,6 +71,7 @@ export const generateImpactReport = async (req, res, next) => {
       message: 'RTA Impact Report generated successfully.',
       data: {
         impactReport: impactReport,
+        pocketImpact,
         targetAccountId,
         affectedAccountsCount: impactReport.length,
       },

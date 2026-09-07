@@ -56,6 +56,13 @@ export const useRTAImpactAndDeletion = (
     [reportResponse?.data?.impactReport],
   );
 
+  // Pockets losing backing from this account (POCKET_MODULE_SPEC.md §11.1
+  // Q8b) - preview only, shown to the owner ahead of confirmation.
+  const pocketImpact = useMemo(
+    () => reportResponse?.data?.pocketImpact || [],
+    [reportResponse?.data?.pocketImpact],
+  );
+
   // console.log('fetchUse data structure:',
   //  {reportResponse}, {isLoadingReport}, {reportError},{fetchUseStatus}, 'apidata data:', reportResponse?.data )
 
@@ -140,6 +147,7 @@ export const useRTAImpactAndDeletion = (
   return {
     //Data and status from the GET request
     affectedAccountReport,
+    pocketImpact,
     isLoadingReport,
     reportError,
 

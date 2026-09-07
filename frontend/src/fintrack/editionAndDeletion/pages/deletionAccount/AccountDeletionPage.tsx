@@ -107,6 +107,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
   const {
     //Data and status from the GET request
     affectedAccountReport,
+    pocketImpact,
     isLoadingReport,
     reportError,
 
@@ -355,6 +356,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
         mainStatusFromParent={mainStatusFromParent}
         message={modalMessage}
         affectedAccountsReportCount={affectedAccountReport.length}
+        pocketImpact={pocketImpact}
       />
     </div>
   );

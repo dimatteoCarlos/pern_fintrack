@@ -31,6 +31,15 @@ export type ImpactReportRowType = {
   affectedAccountCurrencyCode: string;
 };
 
+// Pockets that lose backing if this account is deleted (getPocketAllocationImpact,
+// POCKET_MODULE_SPEC.md §11.1 Q8b) - preview only, shown before confirmation.
+export type PocketImpactRowType = {
+  pocketId: number;
+  pocketName: string;
+  amountAllocated: number;
+  currencyCode: string;
+};
+
 //PAYLOD SENT TO BACKEND FOR DELETE ACCOUNT EXECUTION
 //Define the format  of the request(req.body) expected by executeAccountDeletion controller
 
@@ -87,6 +96,7 @@ export type ReportResponseType = {
   message: string;
   data: {
     impactReport: ImpactReportRowType[];
+    pocketImpact: PocketImpactRowType[];
     targetAccountId: number | string; // ID of the account being deleted
     affectedAccountsCount: number;
   };

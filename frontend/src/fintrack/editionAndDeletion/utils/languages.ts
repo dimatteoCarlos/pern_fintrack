@@ -52,6 +52,11 @@ export type DictionaryDataType ={
  description: string;
  affectedAccounts: string;
  willBeAdjusted: string;
+
+ //Pocket impact block (InitialConfirmationDeleteAccountUI)
+ pocketImpactTitle: string;
+ pocketImpactTotalLabel: string;
+ pocketImpactNote: string;
  processing: string;
  apiError: string;
  clickToConfirm: string;
@@ -157,8 +162,13 @@ accountDetailsTitle: "Target Account Details (Deletion)",
 //Titles and headers
 title:'Confirm Account Deletion',
 description:'You are about to initiate the Retrospective Total Annulment (RTA) deletion method for this account. ', 
-affectedAccounts:'account(s) will be adjusted.', 
+affectedAccounts:'account(s) will be adjusted.',
 willBeAdjusted:'will be adjusted.',
+
+//Pocket impact block
+pocketImpactTitle:'This account currently supports:',
+pocketImpactTotalLabel:'Total allocated:',
+pocketImpactNote:'Deleting this account removes these allocations from the affected pockets. The money itself is not deleted; only the pocket assignments are removed.',
 
 //States and messages
 processing:'Processing annulment...',
@@ -267,6 +277,11 @@ title: "Confirmar Eliminación de Cuenta",
 description: "Está a punto de iniciar el proceso de Anulación Retrospectiva Total (ART) para esta cuenta.",
 affectedAccounts: "cuenta(s) impactada(s) será(n) ajustada(s).",
 willBeAdjusted: "serán ajustadas.",
+
+//Pocket impact block
+pocketImpactTitle: "Esta cuenta actualmente respalda:",
+pocketImpactTotalLabel: "Total asignado:",
+pocketImpactNote: "Al eliminar esta cuenta se eliminan estas asignaciones de los pockets afectados. El dinero no se elimina; solo se elimina la asignación al pocket.",
 
 // Estados y mensajes
 processing: "Procesando anulación...",

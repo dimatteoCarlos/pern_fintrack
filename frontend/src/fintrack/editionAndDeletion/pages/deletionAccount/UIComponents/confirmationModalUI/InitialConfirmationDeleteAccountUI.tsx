@@ -21,6 +21,7 @@ type InitialConfirmationDeleteAccountUIPropsType =
 export const InitialConfirmationDeleteAccountUI = ({
   t,
   affectedAccountsReportCount = 0,
+  pocketImpact = [],
   buttonDisabled = false,
   mainStatusFromParent = 'idle',
   onClose,
@@ -61,6 +62,33 @@ export const InitialConfirmationDeleteAccountUI = ({
         <span className='count-number'>{affectedAccountsReportCount}</span>
         <span className='affected-account'>{t('affectedAccounts')}</span>
       </p>
+
+      {/* Pocket impact: named per POCKET_MODULE_SPEC.md §11.1 Q8b - the owner
+          sees which pockets lose backing before confirming, since deleting
+          this account removes their allocation rows in the same transaction. */}
+      {pocketImpact.length > 0 && (
+        <div className='pocket-impact-block'>
+          <p className='pocket-impact-title'>{t('pocketImpactTitle')}</p>
+          <ul className='pocket-impact-list'>
+            {pocketImpact.map((row) => (
+              <li key={row.pocketId} className='pocket-impact-row'>
+                <span className='pocket-impact-name'>{row.pocketName}</span>
+                <span className='pocket-impact-amount'>
+                  {row.amountAllocated.toFixed(2)} {row.currencyCode}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className='pocket-impact-total'>
+            {t('pocketImpactTotalLabel')}{' '}
+            {pocketImpact
+              .reduce((total, row) => total + row.amountAllocated, 0)
+              .toFixed(2)}{' '}
+            {pocketImpact[0].currencyCode}
+          </p>
+          <p className='pocket-impact-note'>{t('pocketImpactNote')}</p>
+        </div>
+      )}
 
       {/* Processing Indicator */}
       {buttonDisabled && (
