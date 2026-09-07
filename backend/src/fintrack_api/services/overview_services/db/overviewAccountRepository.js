@@ -105,12 +105,21 @@ const INCOME_ACCOUNT_IDS_QUERY = `
 // defence and remove nothing, which costs the next reader the work of checking
 // the list to find out.
 //
-// The join is LEFT and the comparison is IS DISTINCT FROM, and one fact forces
-// both: the account type column is ON DELETE SET NULL, so a row can carry no
-// type. An inner join would drop such a row from a set written deliberately
-// broad, and a NULL type compared with <> yields NULL, which a WHERE discards.
-// An account with no type is not the compensation account, and this shape says
-// so.
+// The join is inner and the comparison is <>. Both were LEFT and IS DISTINCT
+// FROM until migration 033 made user_accounts.account_type_id NOT NULL behind a
+// RESTRICT foreign key: an account can no longer carry no type, and deleting a
+// referenced catalog row is refused rather than blanking the column. The case
+// they were written for cannot occur.
+//
+// Worth recording how this one went stale, because it is the reason a register
+// of retirable sites cannot live in a migration header: nobody edited these
+// lines. 033 landed on main, this branch merged it hours later for an unrelated
+// purpose, and the merge is what made the sentence false. No commit against this
+// file marks the moment.
+//
+// The swap is an equivalence and not a judgement call: account_types
+// .account_type_name is itself NOT NULL, so with a matching row guaranteed, <>
+// and IS DISTINCT FROM return the same set for every value the column can hold.
 //
 // No name comparison is removed anywhere. That waits on the name being reserved
 // at account creation, for the reason stated below.
@@ -141,10 +150,10 @@ const INCOME_ACCOUNT_IDS_QUERY = `
 const PNL_ACCOUNT_IDS_QUERY = `
   SELECT ua.account_id
   FROM user_accounts ua
-  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
+  JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
     AND ua.account_name != 'slack'
-    AND act.account_type_name IS DISTINCT FROM 'boundary'
+    AND act.account_type_name <> 'boundary'
   ORDER BY ua.account_id
 `;
 

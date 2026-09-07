@@ -154,11 +154,15 @@ const RECENT_ACTIVITY_QUERY = `
   LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
     AND ua.account_name != 'slack'
-    -- The type was selected here and never compared until 2026-09-06. The join
-    -- above is already LEFT, so the comparison has to be IS DISTINCT FROM:
-    -- a NULL type compared with <> yields NULL, which a WHERE discards, and would
-    -- drop every movement on an account whose type was cleared.
-    AND act.account_type_name IS DISTINCT FROM 'boundary'
+    -- The type was selected here and never compared until 2026-09-06, and the
+    -- comparison was IS DISTINCT FROM because the type could be cleared. Migration
+    -- 033 made the column NOT NULL behind a RESTRICT foreign key, so it cannot be,
+    -- and <> returns the same rows.
+    --
+    -- The join above stays LEFT on purpose. It was already LEFT before this module
+    -- compared the type at all, so it was not written for the nullable case and
+    -- retiring it is a decision this change did not make.
+    AND act.account_type_name <> 'boundary'
   ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
   LIMIT 5
 `;
