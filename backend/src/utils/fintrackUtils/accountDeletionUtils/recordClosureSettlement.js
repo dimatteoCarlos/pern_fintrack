@@ -2,6 +2,12 @@
 
 import pc from 'picocolors';
 import { createError, handlePostgresError } from '../../errorHandling.js';
+import { getCurrencyIdSync } from '../../currencyLookup.js';
+import { ACCOUNTING_CURRENCY_CODE } from '../../../fintrack_api/config/fintrackConfig.js';
+import {
+  DEFAULT_EXCHANGE_RATE,
+  DEFAULT_EXCHANGE_RATE_SOURCE,
+} from '../../../fintrack_api/services/fx_services/core/fxConfig.js';
 import {
   ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID,
   ACCOUNT_CLOSURE_TRANSACTION_TYPE_ID,
@@ -57,6 +63,15 @@ export const recordClosureSettlement = async (client, settlementData) => {
   const isTargetPositive = residual > 0;
   const absoluteAmount = Math.abs(residual);
 
+  // FX provenance, stated rather than left to the column defaults. A closure
+  // settlement is an internal movement in the account's own currency, so the
+  // conversion genuinely is a no-op - but the defaults declare original_amount
+  // 0 and original_currency_id 1, which is false whenever the residual is not
+  // zero or the account is not in currency 1. Same fallback semantics as
+  // recordTransaction.js, the system's general writer (pern-fintrack-02).
+  const accountingCurrencyId = getCurrencyIdSync(ACCOUNTING_CURRENCY_CODE);
+  const exchangeRateTimestamp = new Date();
+
   // Zeroing the target: its leg is the exact negation of the residual: a
   // positive balance is discarded (withdrawn), a negative one is forgiven
   // (deposited). The boundary account carries the opposite amount, so the
@@ -92,6 +107,14 @@ export const recordClosureSettlement = async (client, settlementData) => {
     // Not read back - every consumer of account_balance_after_tr derives the
     // figure from the ledger instead (§7, the single balance writer).
     account_balance: 0.0,
+    // Key order is the bind order: the insert passes Object.values, so these
+    // six must stay last and in the same order as the columns appended below.
+    original_amount: targetAmount,
+    original_currency_id: currencyId,
+    exchange_rate: DEFAULT_EXCHANGE_RATE,
+    exchange_rate_source: DEFAULT_EXCHANGE_RATE_SOURCE,
+    exchange_rate_timestamp: exchangeRateTimestamp,
+    exchange_rate_target_currency_id: accountingCurrencyId,
   };
 
   const boundaryTransactionOption = {
@@ -112,15 +135,25 @@ export const recordClosureSettlement = async (client, settlementData) => {
     destination_account_id: destinationAccountId,
     transaction_actual_date: transactionDate,
     account_balance: 0.0,
+    // Same as the target leg above, and for the same reason.
+    original_amount: boundaryAmount,
+    original_currency_id: currencyId,
+    exchange_rate: DEFAULT_EXCHANGE_RATE,
+    exchange_rate_source: DEFAULT_EXCHANGE_RATE_SOURCE,
+    exchange_rate_timestamp: exchangeRateTimestamp,
+    exchange_rate_target_currency_id: accountingCurrencyId,
   };
 
   const insertQuery = `
    INSERT INTO transactions(
     user_id, description, movement_type_id, status, amount, currency_id,
     account_id, source_account_id, transaction_type_id, destination_account_id,
-    transaction_actual_date, account_balance_after_tr
+    transaction_actual_date, account_balance_after_tr,
+    original_amount, original_currency_id, exchange_rate, exchange_rate_source,
+    exchange_rate_timestamp, exchange_rate_target_currency_id
    )
-   VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+   VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+    $13, $14, $15, $16, $17, $18)
    RETURNING transaction_id, account_id, amount;
   `;
 
