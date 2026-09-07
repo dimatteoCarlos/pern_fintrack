@@ -2617,3 +2617,81 @@ closed account 404 so no close screen can be opened on one.
 `verifyCloseTransfer.js` asserts the same refusal under TRANSFER with an
 eligible destination named, so an echo implemented on the DISCARD branch alone
 would fail there rather than pass silently.
+
+---
+
+## The read sweep, `e4`'s half, 2026-09-07
+
+Eleven sites across seven files. What the sweep found is that "exclude the
+account" is not one question, so it does not get one predicate.
+
+### Two forms, decided by what the site asks
+
+**Circulation — may money move here, should the owner see this.** Both stamps:
+`deleted_at IS NULL AND closed_at IS NULL`. Correct during the dual-write and
+after it, so this half has no ordering against the deletion session's. Three
+sites: the `LIVE_ACCOUNT` fragment in `getAccountController.js`, which nine list
+queries interpolate; the owner's own account list in `accountUtils.js`, the one
+already excluding the compensation account by name and type; and the pocket
+allocation source list in `accountAllocationRepository.js`.
+
+**Name ownership — does this name already belong to someone.** The opposite:
+`(closed_at IS NOT NULL OR deleted_at IS NULL)`. A closed account **keeps** its
+name; a soft-deleted one releases it. Two sites: the rename collision check in
+`accountEditController.js` and the category-plus-subcategory-plus-nature
+uniqueness check in `accountCategoryCreationcontroller.js`.
+
+The reason is the erasure tail. It rewrites surviving descriptions with
+`REPLACE(description, <account name>, '[deleted account]')`, keyed on the name
+and not on the account id. Free a closed account's name, let the owner open a
+namesake of the same type, and deleting the namesake rewrites the closed
+account's own preserved rows — the history the close exists to keep.
+
+**The visible consequence, for the developer to accept or refuse.** An owner who
+closes an account named `Santander` cannot open a new `Santander` of the same
+type. The refusal reads `An account named Santander already exists.`
+
+**Not a permanent fix, and the condition matters.** Keying the erasure tail on
+the account id removes the whole class. That is larger: the descriptions are
+historical data already written. Until then, the overview module's five
+`account_name != 'slack'` comparisons can only become the type predicate
+`NOT_BOUNDARY_ACCOUNT` if a reserved name stays reserved across a close — which
+is what this predicate now guarantees.
+
+### Three sites deliberately not swept, each stating its reason on the line
+
+- **`getUserIdFromAccount`** in `accountUtils.js` resolves who owns a row. That
+  is identity, not circulation. A `closed_at` test makes the reopen path fail to
+  resolve the owner of the account it is reopening.
+- **The compensation account lookups** — one in `accountUtils.js`, one in
+  `transactionController.js`, and the find-or-create in
+  `checkAndInsertAccount.js`. No path can close that row: the `boundary` type is
+  not user-creatable and CLOSE only transfers to `bank`. In the find-or-create
+  the cost is asymmetric — a row this query fails to see is not excluded, it is
+  duplicated, and a second row named `slack` walks into the
+  `ORDER BY account_id ASC LIMIT 1` collision that file already documents.
+
+### Two prose comments corrected
+
+`accountUtils.js`'s header and the uniqueness comment in
+`accountCategoryCreationcontroller.js` both asserted in words that every query
+filters `deleted_at IS NULL`. Neither appears in a search for the predicate, and
+both go false the day CLOSE stops writing that column.
+
+### Frontend requirement this creates
+
+`GET /api/fintrack/account/:accountId` (the read-by-id route, which serves the
+account the deletion flow has just acted on) now ships **`is_closed`** beside
+the existing `is_deleted`, both booleans derived from the stored stamps.
+
+**The close screen must read `is_closed`, not `is_deleted`.** While CLOSE
+dual-writes both stamps a closed account reports `is_deleted: true`, so a screen
+branching on `is_deleted` tells the owner their account was deleted immediately
+after they closed it. `is_closed` says what actually happened and stays correct
+after the dual-write ends.
+
+Neither flag is a filter on this route. It keeps serving the account in every
+state on purpose; the flags are what let the screen tell the states apart.
+
+The overview module consumes no route of this controller and reads neither flag,
+verified by sweep on its side, so nothing there waits on this.

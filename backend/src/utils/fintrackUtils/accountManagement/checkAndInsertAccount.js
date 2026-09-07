@@ -69,6 +69,9 @@ export const checkAndInsertAccount = async (
      WHERE ua.user_id =$1
       AND ua.account_name = $2
       AND LOWER(act.account_type_name) = ANY($3)
+      -- Not swept. This is find-or-create, so a row this query fails to see
+      -- is not excluded, it is duplicated - and a second row named 'slack'
+      -- walks straight into the ORDER BY + LIMIT collision described above.
       AND ua.deleted_at IS NULL
      ORDER BY ua.account_id ASC
      LIMIT 1;

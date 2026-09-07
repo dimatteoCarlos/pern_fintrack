@@ -62,6 +62,7 @@ export async function getAccountAllocations(db, userId, accountIds = null) {
   LEFT JOIN pocket_allocations pa ON pa.source_account_id = ua.account_id
   WHERE ua.user_id = $1
    AND ua.deleted_at IS NULL
+   AND ua.closed_at IS NULL
    AND ua.account_name <> 'slack'
    AND act.account_type_name IS DISTINCT FROM 'boundary'
    AND ($2::int[] IS NULL OR ua.account_id = ANY($2::int[]))

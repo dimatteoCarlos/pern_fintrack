@@ -251,6 +251,9 @@ export const transferBetweenAccounts = async (req, res, next) => {
             WHERE ua.account_name = $1
               AND ua.user_id = $2
               AND act.account_type_name = 'boundary'
+              -- Not swept, same reason as the lookup in accountUtils.js: no
+              -- path can close the compensation account, and failing to find
+              -- it here is worse than finding a closed one.
               AND ua.deleted_at IS NULL
             ORDER BY ua.account_id ASC
             LIMIT 1`,

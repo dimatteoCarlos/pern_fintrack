@@ -145,9 +145,11 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
     // check existence of category AND subcategory and nature,name existence
     // Uniqueness is per user: the same category under another user is not a
     // conflict. Scoped through user_accounts, which is where ownership lives.
-    // deleted_at IS NULL prepares the ground for honouring soft deletion; it
-    // changes nothing today, since verifyAccountExistence above does not filter
-    // deleted rows either and rejects the request first.
+    // The stamps are tested the way the rename collision tests them, and for
+    // the same reason: this asks whether the name is taken, not whether money
+    // may move. A soft-deleted category releases its name; a closed one keeps
+    // it, because its transactions are kept and the erasure tail matches an
+    // account name as a substring of their descriptions.
     const categoryAndSubcategoryAndNatureQuery = {
       text: `SELECT 1
       FROM category_budget_accounts cba
@@ -158,7 +160,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       AND LOWER(cba.category_name) = $2
       AND LOWER(cnt.category_nature_type_name) = $3
       AND LOWER(cba.subcategory) = $4
-      AND ua.deleted_at IS NULL
+      AND (ua.closed_at IS NOT NULL OR ua.deleted_at IS NULL)
     `,
       values: [userId, category_name, nature_type_name_req, subcategory],
     };
