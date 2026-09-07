@@ -1609,6 +1609,36 @@ anywhere. The name match is immune to a partial backfill; the type match is not.
    silently. If a rename appears in any plan, step 2 goes to the front of the
    Overview queue.
 
+**The exclusion is already breakable, without a rename.** This is the correction
+to the paragraph above: it puts the danger at step 3, and step 3 is not needed.
+Raised by the pocket and goals session, verified in the code here.
+
+The readers compare the name **case-sensitively** — `ua.account_name != 'slack'`
+is exact in Postgres. The creation helper matches it in **lowercase on both
+sides** (`checkAndInsertAccount.js:41-46`, `LOWER(ua.account_name) = LOWER($2)`).
+So a row stored as `Slack` is **the compensation account to every writer and an
+ordinary account to all 27 read filters at once**: the deletion machinery writes
+counterpart legs into it, and every aggregate counts those legs as the owner's
+money.
+
+**And nothing reserves the name.** `accountCreationController.js` has no
+reserved-name guard — no check on the name at all beyond the ordinary ones — so
+an owner creating a bank account called `Slack` reaches this state today, with no
+migration and no rename anywhere near it.
+
+**Measured before recording it:** every compensation account in the development
+database is stored exactly `slack`, one row, typed as a bank account. So the gap
+is reachable and not yet realised, which is the good version of this news and the
+reason it is worth fixing before it is a data repair.
+
+**What it changes about the order.** Nothing in the sequence — the three steps
+still hold and still have to happen in that order. What it changes is the
+urgency: the name predicate was being treated as a safety net that holds until
+someone deliberately renames the account, and it is thinner than that. Two
+cheap repairs stand on their own ahead of the whole migration, and neither needs
+the new type: compare the name case-insensitively in the read filters so the
+readers and the writer agree on what the account is, and reserve the name at
+creation so an owner cannot take it. Recommended in that order.
 **Which set fails worst, and it is not the obvious one.** Raised by the session
 holding the pocket and goals work, corrected on one point here. Every set except
 one joins `account_types` and names the types it wants, so the compensation
