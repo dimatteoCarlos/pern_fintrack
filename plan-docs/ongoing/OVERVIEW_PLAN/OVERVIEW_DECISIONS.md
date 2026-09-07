@@ -1567,6 +1567,58 @@ on the one owner holding investment accounts: the identity holds in all fifteen,
 an independently written query agrees with the adjustment in all fifteen, and the
 card no longer warns in any of them.
 
+## The compensation account: why it stays out, and when the name match may go — ruled 2026-09-06
+
+Asked by the account-deletion session, which is giving that account a structural
+type and proposed that Overview switch its filters to the type in the same change.
+**Ruled no.** The filters are Overview's, so the sequencing call is Overview's.
+
+**It is a contra account, not a wallet, and that is why every aggregate excludes
+it.** Measured on the development database: its derived balance for the one
+development owner is **−100166.14**, because every account opening credits the
+opened account and debits this one. Add it to net worth and net worth collapses
+toward zero. The exclusion is not a tidiness rule and it is not negotiable — only
+the mechanism of the exclusion is up for change.
+
+**Today the mechanism is the account's name**, in 34 places (`account_name !=
+'slack'`) plus 3 that identify it by name and type. That is fragile in two
+directions and the deletion session is right about both: an owner who names their
+own account `slack` vanishes from every aggregate, and a compensation account
+under any other name is silently counted.
+
+**But the same-change switch would create the silent window it is meant to
+prevent.** Unit 5 of `PLAN_ACCOUNT_DELETION.md` does not change the account's
+name — the plan says so where it splits the call sites into three patterns — so
+the name filters keep returning exactly today's rows all through the type
+migration. What is still open in that plan is the **backfill scope**: type every
+existing account now, or leave them as `bank` and backfill later. Under the
+second choice, an Overview that matched on type in the same change would let
+every not-yet-typed compensation account walk into net worth, with no error
+anywhere. The name match is immune to a partial backfill; the type match is not.
+
+**The order, three steps and not two:**
+
+1. The migration types every existing compensation account, name unchanged.
+   Overview is untouched and its exclusions keep holding, partial backfill or not.
+2. Overview switches to matching on the type, in its own change, once no account
+   named `slack` is still typed `bank` — that query is the gate. Keep the name
+   predicate beside the type predicate for one release: a mistyped account stays
+   excluded while the type becomes the real authority.
+3. Only then is the name free to change. **This is the step that is genuinely
+   coupled**: a rename landing before step 2 breaks 34 filters at once and
+   silently. If a rename appears in any plan, step 2 goes to the front of the
+   Overview queue.
+
+**Adjacent finding, and it is not Overview's to fix.** Summing every account of
+the development owner, the compensation account included, must give zero under
+double entry. It gives **−60.00**, entirely from two deletions whose annulment
+wrote only the compensation leg and never the leg on the affected account. The
+other six recorded deletions cancel to the cent, so the mechanism is right and
+those two are exceptions; both target names are test fixtures. Relayed to the
+deletion session, which owns it. **The useful shape of this for Overview is that
+the sum-to-zero identity is a server-side integrity assertion, never a figure on
+a card** — it is the one legitimate use for reading that account at all.
+
 **And it answers half of an open question.** What was outstanding was the count
 of annulment-prefixed rows on investment accounts in production. The development
 answer is **one row, of −0.75, and one is enough** — the size never mattered,
