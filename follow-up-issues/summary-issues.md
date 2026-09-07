@@ -244,7 +244,7 @@ Ninguno.
 
 ## 📈 Accounts and Overview
 
-### ✅ LISTO (9/10)
+### ✅ LISTO (11/11)
 
 - [x] List all accounts in Accounting, including income, expense, debtors, investment, bank, and pocket
 - [x] Implement pages for account details
@@ -255,10 +255,12 @@ Ninguno.
 - [x] Include deposits and withdrawals in the PnL tracker
 - [x] Correct the issue where account details were not updating after transactions
 - [x] Fix the issue where new debtor profiles did not refresh bank balances immediately
+- [x] **NUEVO 2026-09-06 — el total comprometido de un bolsillo se contaba dos veces en el patrimonio neto del panel general. RESUELTO 2026-09-06, en dos commits y en ese orden.** El encabezado sumaba el saldo de bolsillo a banco, inversión y deuda para el patrimonio neto, y otra vez para la posición de caja, leyéndolo sobre el tipo de cuenta de bolsillo retirado. El saldo bancario ya contenía ese dinero: el techo de la guarda de asignación es saldo menos asignado, y eso sólo se sostiene si el comprometido está dentro del saldo (`pocket_services/services/pocketAllocationService.js:345-347`). **La lectura se borró, no se repuntó** (`f4b999d9`), y ese borrado era la guarda que hacía seguro el repunte: la doble suma valía cero sólo porque el tipo retirado no devolvía cuentas, y se habría encendido en el instante del repunte. Después se repuntó todo lo demás al modelo de plan (`f0388039`), incluido el widget de metas, que además no obedecía al mes
+- [x] **NUEVO 2026-09-06 — las tres cifras del recuadro principal decidían si eran números mirando la variable equivocada. RESUELTO 2026-09-06 (`d75b4709`).** La fila de gastos comprobaba el total de ingresos, así que un gasto roto se imprimía como dinero real y un gasto válido se vaciaba cada vez que fallaba ingresos (`pages/overview/OverviewLayout.tsx:186-190`). Además, una cifra que no se pudo calcular se forzaba a cero: son el dinero del propio usuario, y un cero afirma que no tiene nada. Ahora viaja como nulo y `BigBoxResult` pinta una raya
 
-### 🔄 PENDIENTE (1/10)
+### 🔄 PENDIENTE (0/11)
 
-- [ ] **NUEVO 2026-09-06 — el total comprometido de un bolsillo se cuenta dos veces en el patrimonio neto del panel general.** El encabezado suma el saldo de bolsillo a banco, inversión y deuda para el patrimonio neto, y otra vez para la posición de caja (`overview_services/core/makeHeroSection.js:110-115` y `:117`), leyéndolo sobre el tipo de cuenta de bolsillo retirado (`overview_services/db/overviewAccountRepository.js:207-209`). El saldo bancario ya contiene ese dinero: el techo de la guarda de asignación es saldo menos asignado, y eso sólo se sostiene si el comprometido está dentro del saldo (`pocket_services/services/pocketAllocationService.js:345-347`). **El fallo es que esa lectura se borra, no se repunta.** El razonamiento está en `plan-docs/ongoing/ESTADO_PLANES.md`, sección 8, quinto pase
+Ninguno.
 
 ---
 

@@ -545,19 +545,40 @@ comportamiento e introduce el defecto de estilo.
 
 ## Panel general
 
-**El total comprometido de un bolsillo se cuenta dos veces en el patrimonio
-neto.** PENDIENTE. El encabezado suma el saldo de bolsillo a banco, inversión y
-deuda para el patrimonio neto, y otra vez para la posición de caja
-(`backend/src/fintrack_api/services/overview_services/core/makeHeroSection.js:110-115`
-y `:117`), leyéndolo sobre el tipo de cuenta de bolsillo retirado
-(`backend/src/fintrack_api/services/overview_services/db/overviewAccountRepository.js:207-209`).
-El saldo bancario ya contiene ese dinero: el techo de la guarda de asignación es
-saldo menos ya asignado, y eso sólo se sostiene si el comprometido está dentro
-del saldo
+**El total comprometido de un bolsillo se contaba dos veces en el patrimonio
+neto.** RESUELTO 2026-09-06, en dos commits y en ese orden. El encabezado sumaba
+el saldo de bolsillo a banco, inversión y deuda para el patrimonio neto, y otra
+vez para la posición de caja, leyéndolo sobre el tipo de cuenta de bolsillo
+retirado. El saldo bancario ya contenía ese dinero: el techo de la guarda de
+asignación es saldo menos ya asignado, y eso sólo se sostiene si el comprometido
+está dentro del saldo
 (`backend/src/fintrack_api/services/pocket_services/services/pocketAllocationService.js:345-347`).
-**El fallo registrado es que esa lectura se borra, no se repunta**: repuntarla a
-las tablas nuevas de bolsillo conservaría el doble conteo. El razonamiento
-completo está en `plan-docs/ongoing/ESTADO_PLANES.md`, sección 8, quinto pase.
+
+**La lectura se borró, no se repuntó** (`f4b999d9`), y ese borrado era la guarda
+que hacía seguro el repunte: repuntarla a las tablas nuevas conservaría el doble
+conteo, y hoy la doble suma valía cero sólo porque el tipo retirado no devolvía
+cuentas, así que se habría encendido en el instante del repunte.
+
+Después se repuntó todo lo demás al modelo de plan (`f0388039`): la tarjeta
+compone sus cifras pidiéndoselas a `pocketBoardService`, que ya las calcula para
+la pantalla del tablero, y tres lecturas temporales nuevas sirven la serie, la
+instantánea mensual y la lista de asignaciones del mes. El widget de metas se
+repuntó al mismo libro mayor y se le dio el mes de referencia, que no tenía. El
+razonamiento completo está en `plan-docs/ongoing/OVERVIEW_PLAN/PLAN_OVERVIEW_RECOVERY.md`,
+etapa P2.
+
+**Las tres cifras del recuadro principal decidían si eran números mirando la
+variable equivocada.** RESUELTO 2026-09-06 (`d75b4709`). La fila de gastos
+comprobaba el total de ingresos en lugar del de gastos
+(`frontend/src/fintrack/pages/overview/OverviewLayout.tsx:186-190`), así que un
+gasto roto se imprimía como dinero real y un gasto válido se vaciaba cada vez que
+fallaba ingresos.
+
+Se corrigió también el respaldo a cero que traía la misma línea. Las tres filas
+son el dinero del propio usuario: imprimir 0 ante una petición que nunca contestó
+afirma que no tiene nada, que es distinto de no saberlo. La cifra viaja ahora
+como nula y `BigBoxResult` pinta una raya, siguiendo la regla de que cargando,
+error y vacío son tres estados distintos y ninguno es un número.
 
 ## Marcas de trabajo pendiente en los comentarios
 
