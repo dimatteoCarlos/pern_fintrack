@@ -3184,10 +3184,17 @@ soft-deleted account with a nonzero derived balance, that row still needs an
 exit the gate will never give it.
 
 **The measurement that settles which fixes are needed**, and the only thing
-standing between one and both: soft-deleted accounts carrying a nonzero derived
-balance in production, read-only. Zero rows and the gate alone suffices; one row
+standing between one and both: accounts in production carrying a nonzero derived
+balance that are **soft-deleted and never closed** — `deleted_at IS NOT NULL AND
+closed_at IS NULL` — read-only. Zero rows and the gate alone suffices; one row
 and the exit is needed as well, for that row. No session here connects to
-production — this rides along with the ledger read Carlos already has in hand.
+production; this rides along with the ledger read Carlos already has in hand.
+
+The population is exactly that narrow, and `pern-fintrack-cf` supplied the
+reason from a read of this service: the soft-delete `UPDATE` requires **both**
+stamps null, so a closed account can never afterwards be soft-deleted. A closed
+account therefore cannot enter this state at all, and the query must not widen
+to every row carrying `deleted_at`, which a close also sets.
 
 **Routing.** `pern-fintrack-02` and `pern-fintrack-cf` are not owners here.
 
@@ -3221,3 +3228,78 @@ not what is stuck.
 zero closed**. Derived balances, not the stored column. So no account is
 stranded today; the door is open and nobody has walked through it. This can be
 fixed deliberately, with no migration and no data repair.
+
+## OPEN: releasing a pocket commitment cannot work on the erasing paths, 2026-09-07
+
+Routed here by `pern-fintrack-cf` and it is this module's to answer. Carlos
+ruled that an account removed by any method releases its pocket commitments, and
+the coordination session's mechanism is a **negative row in the allocation
+ledger** per pocket-and-source pair. That mechanism cannot be applied to HARD or
+RTA, and the reason is structural rather than a matter of effort.
+
+### The schema, verified rather than relayed
+
+In the boot DDL, `pocket_allocations` declares `source_account_id INT NOT NULL
+REFERENCES user_accounts(account_id) ON DELETE RESTRICT ON UPDATE CASCADE` and
+`amount DECIMAL(15,2) NOT NULL CHECK (amount <> 0)`. Its own table comment
+states the design: *"Append-only, hence no updated_at: a correction is a new row
+of the opposite sign, never an edit. source_account_id RESTRICTs so deleting an
+account stays a decision taken in a service with an impact report."*
+
+So the table was built for releases — and built to block account deletion while
+any row points at the account.
+
+### Why the two cannot both be had
+
+**A release row carries `source_account_id` like every other row.** It does not
+free the foreign-key edge; it adds a second row holding it. That leaves exactly
+two possibilities on an erasing path, and they are mutually exclusive:
+
+- **Delete the allocation rows.** RESTRICT is satisfied, the account is erased,
+  and the append-only ledger loses the **original positive rows** as well. A
+  month that closed while the account was live stops showing a commitment it
+  genuinely had — `cf`'s cumulative sum is the consumer that would forget it.
+- **Write release rows and keep them.** The history survives and **the account
+  can never be hard-deleted**, because RESTRICT still holds against every row,
+  releases included.
+
+There is no third option under this schema. `ON DELETE SET NULL` is unavailable
+because the column is `NOT NULL`; `CASCADE` would destroy the same history as
+the first option while doing it silently, on any account deletion, and it is a
+migration in `pern-fintrack-02`'s chain besides.
+
+### What the code does today, which is `cf`'s direct question
+
+`eraseAccountTail` runs `DELETE FROM pocket_allocations WHERE source_account_id
+= $1 AND user_id = $2` before dropping the transactions and the account row. So
+**the allocation table is already covered** — the RESTRICT fix does hold for it,
+there is no crash waiting on this path, and today's behaviour is the first
+option: erase the rows, lose the history.
+
+### The reading this produces, and it is not a defect
+
+**Preserving allocation history and erasing the account are mutually exclusive.
+Choosing history means the account row must survive — which is precisely what
+CLOSE is for.** So the coherent statement of Carlos's rule is not one mechanism
+applied four times but one *outcome* reached two ways: CLOSE and SOFT keep the
+row, so a commitment is released with a negative row and the history stands;
+HARD and RTA erase the row, so the commitment goes with it and the allocation
+history goes too.
+
+The assessment endpoint already discloses exactly this split, and did before the
+question was asked: `removesPocketAllocations` is `false` for CLOSE and SOFT,
+`true` for HARD and RTA. The owner is told which choice destroys the backing
+before choosing. Nothing in the engine needs to change for that to be true.
+
+**What is open is only the mechanism's scope**, and it is Carlos's, sitting
+beside the pocket proposal already with him: confirm that "release" means the
+negative row on the two keeping paths and means erasure on the two erasing ones.
+If instead a release row is wanted on every path, the account can no longer be
+erased at all, and HARD and RTA stop existing as operations — which is a
+different product, not a different implementation.
+
+**Routing.** The pocket-side helper and the controller pair are the coordination
+session's; the allocation-ledger comment that credits the wrong writer is
+`cf`'s own and they are fixing it; `pern-fintrack-02` is not involved. What is
+in this module is the call site inside the close transaction and the
+`removesPocketAllocations` field, both already built.
