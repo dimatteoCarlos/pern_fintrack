@@ -6,14 +6,30 @@ file keeps the raw measurements, the superseded drafts and the reasoning that pr
 each ruling. **Where the two disagree, this file wins** — the other is a record of how
 we got here, not of where we are.
 
-`plan-docs/ongoing/` is re-included by `.gitignore:123`. This folder is versioned.
+**State, 2026-09-06 — the implementation is closed and the verification is not.**
+Every commit of section 7 has landed, the account-creation path joined the plan late and
+closed with it, and the FX chain closed on 2026-08-31. What has never been exercised is
+section 9: **none of its seventeen checks has been run**, and the one that matters most —
+a back-dated row lands in its chronological position and every later balance recomputes —
+has no substitute. **This document is filed as a record of what was built, not as a
+certificate that it was verified.** Section 11 carries the residue.
 
-**V1 carries no migration.** Not on `transactions`, not on `exchange_rates`.
+`plan-docs/completed/` is re-included by `.gitignore:133`. This folder is versioned.
 
-**Branch: `feat/backdating`, off `feat/budget` at its tip** — not off `main`. Four
-commits that live only on `feat/budget` rewrite `getTransactionsForAccountById.js`, the
-same file section 5 rewrites, and branching elsewhere turns each into a merge conflict
-in the one file where a mis-resolved conflict produces a wrong balance silently.
+**V1 carried two migrations, both on the FX side of the block.**
+`021_create_daily_exchange_rates.sql` opened the historical rate store, and
+`022_add_transaction_opening_for_account.sql` gave the opening leg the column that
+identifies it. Neither touches a money column: the first is a new table, the second a
+nullable marker on `transactions`. *(This replaces "V1 carries no migration", which was
+true when the plan was frozen and false from the day the store landed.)*
+
+**Branch: `feat/backdating`.** *(The restriction this line carried — branch off
+`feat/budget` at its tip, never off `main`, because four commits living only there rewrite
+`getTransactionsForAccountById.js` and each would return as a merge conflict in the one
+file where a mis-resolved conflict produces a wrong balance silently — is spent.
+`feat/budget` merged into `feat/pocket` and thence into `main` and no longer exists in the
+repository, so those four commits are in the base of every branch and the conflict cannot
+occur.)*
 
 ---
 
@@ -1390,9 +1406,23 @@ release is scope and cost, not quality.
 **Recommendation: drop it from V1**, returning later if corroboration in the recent window
 is wanted. The plan will say "removed from V1" only once the developer says so.
 
+> **Ruled by the developer 2026-09-06: removed from V1.** The condition the line above
+> sets is met, so the plan says it. **Nothing is deleted by the ruling**, because nothing
+> was ever connected: the string `AllRatesToday` appears in no file of `backend/src` or
+> `frontend/src`, and the nine files of `fx_services/fxProviders/` are all other arms.
+> What closes here is a document question, not a code path — reversing it still costs
+> one arm in one file, and that arm would have to be written first.
+
 The credential rotation itself **left this plan**: it is operational security maintenance
 that gates the deploy, not this module's design, and lives in
 `PLAN_DEPLOYMENT/PLAN_PRODUCTION_MERGE.md` section 4, item 9.
+
+**Dropping the arm does not close the credential, and the action on it changed.** The key
+is live in `backend/.env` and its value was pasted into a chat transcript on 2026-08-24,
+which makes it public. **Revoke it at the provider and delete the line** — a rotation
+would leave a second live secret behind the first, and it would be a secret nothing reads.
+Only the developer can perform either half: no agent session revokes anything at a
+provider, and none edits `.env`.
 
 ---
 
@@ -1487,7 +1517,10 @@ in the code and one whole class of verification are not.
 | the deletion corrected balances from the stored column | `83d22ca` | deleting `cuenta precargada` wrote the compensation account at 11.95, now −2.30 — the sign flips |
 | two implementations of `updateAccountBalance` | `be6ebbf` | same SQL byte for byte; only one logged its error |
 
-**What remains is the verification, and one gap on the creation path (§9.2).**
+**What remains is the verification, and nothing else.** *(Corrected 2026-09-06: this
+line named a second item, the creation-path gap of section 9.2. It closed on 2026-08-31 —
+`68730da` dates and bounds the opening, `f650d96` gives its refusals stable codes, and
+`3c6e1e0` with migration `022` replaced the inference of the opening leg with a column.)*
 
 **None of the seventeen checks of §9 has been run.** There is no test runner, so
 each one is a hand exercise against the live app, and the app has not been driven
@@ -1505,6 +1538,13 @@ every later balance recomputes — has no substitute and has not been done.
 
 ## 9.2 The creation path never joined this plan — found 2026-08-30
 
+> **This section is closed, and is kept for its ordering argument.** Every row of its
+> table and the floor decision it leaves open were settled between 2026-08-30 and
+> 2026-08-31, each marked in place; the sections that closed them are 9.2.1, 9.3 and
+> 9.4.25. What is worth keeping is *why* the two landed in the order they did: the opening
+> leg had to be identified before the opening amount could be valued at a historical rate,
+> because a row-selection defect fixed second reads as a currency discrepancy.
+
 Every screen that records a **movement** sends the chosen day and the backend
 prices it at that day's rate. Every screen that **opens an account** does not.
 The block was scoped to transactions and the creation controllers were never
@@ -1520,8 +1560,8 @@ scope at each of them as `account_start_date`.
 
 | defect | effect | state |
 |---|---|---|
-| the opening amount is converted undated | opening a euro account dated in June values it at **today's** rate, which is the exact defect this plan exists to close | open, blocked |
-| nothing rejects a future opening day | neither controller validates the date at all — no format check, no future check, no month floor | open, blocked |
+| the opening amount is converted undated | opening a euro account dated in June values it at **today's** rate, which is the exact defect this plan exists to close | **closed by `68730da`** — all four creation-path callers pass `openingRateDay` and `openingTimeZone`, section 9.3 |
+| nothing rejects a future opening day | neither controller validates the date at all — no format check, no future check, no month floor | **closed by `68730da`**, its refusals given machine-readable codes by `f650d96`, section 9.3 |
 | the calendar offered 1900–2100 | `NewAccount.tsx` passed no `maxDate`, so it fell to the component default; a forward-dated account is then hidden from every tracker selector by `isAccountOpenOn` with nothing on screen saying why | closed by `5144129` |
 
 **Why the two backend rows are blocked and not merely pending.** Two reasons,
@@ -1553,6 +1593,12 @@ ruling nobody has made. Two candidates: the first day of the current month, the
 same window movements live in; or the earliest day the rate cascade can price,
 which measured at 2019-12-27 for the euro. Neither is assumed — the form still
 offers 1900 as its floor until this is settled.
+
+> **Closed.** The first candidate won, and then stopped being a literal. `68730da`
+> bounded the opening day to the month in course, and section 9.4.25 replaced that bound
+> with `earliestDatableDay(today, BACKDATING_WINDOW_MONTHS)` — the one function both
+> enforcement sites call, so account creation cannot acquire a softer policy than
+> movements. The pickers no longer offer 1900.
 
 ### 9.2.1 The blockers cleared, and a fifth undated site — measured 2026-08-30
 
@@ -2799,7 +2845,9 @@ owner reads, never a wrong row. Making the server declare the window in a
 payload the tracker already fetches would remove the mirror; it was not done
 here because it enlarges a temporary test relaxation into a contract change.
 
-**FE requirement still open.** `PnL.tsx:388` computes its own
+**FE requirement — closed, verified 2026-09-06.** The frontend session made the
+change: `PnL.tsx:390` computes `monthFloor: earliestDatableDay()` inside the memo, so all
+five forms read one floor. What it said while it was open: `PnL.tsx:388` computes its own
 `monthFloor` in a local `useMemo` and does not use `useTransactionDate`'s
 bounds, so the P&L calendar stays clamped to the current month while the other
 four forms open. The file is owned by the frontend session and was committed by
@@ -2811,3 +2859,62 @@ it the same day, so it was deliberately not touched. One line: replace the
 `details.currentMonthStart` key now describe a window that may reach further
 back than the current month. They keep their names because `NewAccount.tsx`
 matches on the code; the owner-facing sentences were reworded instead.
+
+---
+
+## 11. The state this record closes on — 2026-09-06
+
+**Why this section exists.** Everything above is a plan and reads forward. This section
+reads backward: what the module ended up being, what was never exercised, and what a later
+session has to know before it opens any of it again.
+
+### What was built
+
+| block | where it landed |
+|---|---|
+| the write path — the day travels, is validated on the owner's calendar, and composes one instant for both legs | `1208310`, `6adc8de`, `664ad5c` |
+| the derived balance — every figure summed from the ledger, the stored per-row column retired | `a2bd75a`, `f8cce22`, `f7cae5b`, `17a0714`, `260c54f`, `7bc1aa7`, `921bd21`, `83d22ca` |
+| the historical rate store and the cascade that reads it | `e0bfc60` (migration `021`), `41502fd`, `e7dc38a`, `95b321d`, `ddadb7d`, `34b6e18` |
+| the five tracker screens, and the bounds their pickers offer | `81dbb5c`, `7693fb0`, `29db31e` |
+| the account-creation path, which joined the plan after it was frozen | `68730da`, `f650d96`, `b4e02fe` |
+| the opening leg identified by a column instead of inferred from the direction of the money | `7434601` (migration `022`), `3c6e1e0` |
+| the back-dating window made configurable, one number for both enforcement sites | section 9.4.25 |
+
+### What was never run
+
+**The seventeen checks of section 9.** Half of one is done: the frontend typecheck exits
+0, re-run 2026-09-06. The other sixteen and a half need the application driven by hand
+against a live database, and that has not happened since the first of these commits.
+
+**One of them can never be run again.** Comparing the derived series row for row against
+the stored `account_balance_after_tr` existed only until section 5.3 retired the writers.
+It ran inside that window, and the accounts that failed it failed on defects the stored
+column already carried, not on the derivation (section 5.4).
+
+**One of them has no substitute.** Chronological consistency — a back-dated row lands in
+its position and every later balance recomputes, `balance(n) = balance(n-1) + amount(n)`
+— is the property the whole block exists to satisfy, and nothing else in the seventeen
+tests it. It is check 6.
+
+### What sits outside this document
+
+**A live credential, and it is the only item here with consequence outside the
+repository.** `API_KEY_AllRatesToday` is in `backend/.env` and its value was pasted into a
+chat transcript on 2026-08-24. The action is **revoke at the provider and delete the
+line**, not rotate. It is item 9 of section 4 of
+`PLAN_DEPLOYMENT/PLAN_PRODUCTION_MERGE.md`, it is open, and only the developer can perform
+it.
+
+### What a session needs before it can close section 9
+
+The application booted against a database it has **proven** is the local one, and driven
+through the five tracker screens by hand. There is no runner to install and no fixture to
+write. The check that costs the most is number 6: one account with several movements, one
+row inserted between two of them, and the whole series read afterwards.
+
+**The proof of which database is the migration ledger's contents, never its row count.**
+`fintrack_dev` carries `012_backfill_budget_policies.sql` and production does not; both
+hold 31 rows. A local boot writes DDL — `index.js:57` guards `startServer()` behind
+`!process.env.VERCEL`, and `startServer()` calls `initializeDatabase()` at `:37` — so the
+target is identified by filename before anything is started.
+
