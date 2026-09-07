@@ -3049,3 +3049,73 @@ account — `getClosePreview`'s account query filters `deleted_at IS NULL AND
 closed_at IS NULL` — so the choose-a-deletion-type screen is unreachable for one
 and no card needs a new disabled state. A closed account's affordances belong to
 the closed-accounts list, not to this screen.
+
+## OPEN: a soft-deleted account holding money has only RTA left, 2026-09-07
+
+Found while answering Carlos's question about which operations remain available
+after each one. It is a dead end reachable today, not a hypothetical.
+
+### The four states, measured per branch
+
+| account state | SOFT | CLOSE | HARD | RTA |
+|---|---|---|---|---|
+| live, balance 0 | yes | yes | yes | yes |
+| live, balance ≠ 0 | yes | yes | no — 409, settle first | yes |
+| soft deleted | no — already | **no — 400** | yes, only if balance 0 | yes |
+| closed | no — 400 | no — already closed | no — 400 | no — 400 |
+
+### The trap
+
+SOFT is the only one of the four operations that does nothing with the balance.
+Its entire write is `SET deleted_at = CURRENT_TIMESTAMP, updated_at =
+CURRENT_TIMESTAMP` — no balance read, no lock, no settlement row, and **no
+gate**, so it accepts an account holding any amount. CLOSE moves the residual
+out, RTA annuls it, HARD refuses until it is zero; SOFT hides the account with
+the money still inside. The assessment endpoint already states this per option
+as `leavesResidualUnsettled`.
+
+An account soft-deleted in that state cannot then be settled:
+
+- **CLOSE refuses it** — "was deleted and cannot be closed. Closing settles a
+  residual, and a deleted account is no longer in circulation to hold one."
+- **HARD refuses it** — the 409 settlement gate still applies, and nothing has
+  settled the residual.
+- **Nothing can restore it.** Grepped all of `backend/src`: no statement
+  anywhere sets `deleted_at = NULL`. There is no restore, reactivate or
+  undelete path.
+- **RTA is the only exit** — which is precisely the chain of reversals Carlos
+  ruled against above, and here it is not a mis-routing in a message but the
+  only door the code leaves open.
+
+### Why the refusal's own argument is what breaks
+
+It reasons from circulation: a deleted account "is no longer in circulation to
+hold" a residual. But circulation is visibility, not money. The account's
+transaction rows are untouched and its derived balance is unchanged, so it does
+hold one. The premise is false in exactly the case that matters.
+
+### Recommendation: let a soft-deleted account be closed
+
+Lift the `deleted_at` refusal in the CLOSE preconditions, keeping the
+`closed_at` one. Closing is "move the money out and stop", which is the only
+non-destructive exit from this state and the same answer already given for live
+accounts.
+
+**The cost, and why this is recorded rather than implemented.** Closing
+re-reserves the account's name, while soft delete had released it — the ruling
+already stated per option as `releasesAccountName`. If the owner created a
+replacement account under the old name after soft-deleting the original,
+closing the original produces two accounts sharing a name, one of them closed
+and name-owning. That naming rule lives in account creation validation, which
+is `pern-fintrack-e4`'s, not this module's.
+
+**Routing.** The naming half goes to `pern-fintrack-e4`. `pern-fintrack-02` and
+`pern-fintrack-cf` are not owners here; broadcast only. The one-line change to
+the CLOSE preconditions is this module's and waits on the naming answer.
+
+### Measured, so the urgency is known
+
+`fintrack_dev`, 2026-09-07: 31 accounts, **all 31 live — zero soft-deleted,
+zero closed**. Derived balances, not the stored column. So no account is
+stranded today; the door is open and nobody has walked through it. This can be
+fixed deliberately, with no migration and no data repair.
