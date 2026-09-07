@@ -107,6 +107,16 @@ export const getAccountInfo = async (
   // Text values compared in lowercase on both sides: account names are stored
   // as the user typed them, so an exact match would miss Bancolombia when the
   // request carries bancolombia. Ids are compared as they are.
+  //
+  // DO NOT DROP the account type predicate from the by-id branch. Owner plus id
+  // already identifies the row, so the clause reads as redundant and its removal
+  // would look like tidying. It is not: transformMovementType derives the
+  // movement type from the account types the REQUEST declared, never from the
+  // accounts that were found, so this predicate is the only thing making that
+  // declaration answerable to reality. Without it a request body naming the
+  // retired pocket_saving type writes a pocket movement against an ordinary bank
+  // account, and the retired account model starts accumulating rows again. No
+  // test covers it.
   const accountQuery = byId
     ? `SELECT ua.* FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
