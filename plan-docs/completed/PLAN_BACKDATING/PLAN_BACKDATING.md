@@ -956,21 +956,42 @@ coordination session asked whether a row written by the account-closure path wou
 with anything settled here. It does not, and three conditions hold for any future writer on
 that column.
 
-- **The date carried is the decision's, never the run's.** `pocketRepository.js` buckets
-  the board by month with `pa.allocation_actual_date >= ($2::timestamp AT TIME ZONE $3)`
-  and its matching upper bound, resolved on the owner's calendar. A row written today for a
-  decision effective in a past month lands in the wrong bucket, and the screen then reports
-  a coverage that was not true of the month it is displaying.
-- **Use `insertAllocation` in `accountAllocationRepository.js`, not a fresh `INSERT`.** Its
-  `CASE` already anchors a supplied day at `TIME '12:00'` in the owner's zone, for the
-  reason its own header gives: midday is maximally far from both boundaries, while a bare
-  `YYYY-MM-DD` casts to midnight and lands a day early for every owner west of the server.
-  A new `INSERT` elsewhere reintroduces a bug already fixed here.
+- **The row carries the decision's instant, and for a decision taken inside the transaction
+  that means leaving the day argument null.** `insertAllocation` in
+  `accountAllocationRepository.js` falls to `CURRENT_TIMESTAMP` when no day is given, which
+  is the transaction's start time — the identical value `deleteAccountService.js` writes to
+  `closed_at`, `deleted_at` and `updated_at` in one `UPDATE`, for the reason stated above
+  it. Passing a calendar day instead re-anchors the row to `TIME '12:00'` in the owner's
+  zone and detaches the release from the closure it compensates by up to twelve hours. The
+  noon anchoring exists to protect a day the **owner typed**; a system row written inside
+  the transaction already has a real instant, and flattening it loses information rather
+  than protecting any.
+- **Use that function, never a fresh `INSERT` in the calling service.** Its `CASE` holds the
+  zone handling that a hand-written statement gets wrong: a bare `YYYY-MM-DD` casts to
+  midnight and lands a day early for every owner west of the server. This is the half of
+  the first condition that survives whichever date the writer carries.
+- **Enumerate from the function that already excludes a released pair, not from the raw
+  ledger.** `amount` is `CHECK (amount <> 0)`, so a compensating row computed for a pair
+  whose allocations already net to zero raises `23514` and rolls back the whole
+  transaction. `accountAllocationRepository.js` carries `HAVING SUM(pa.amount) <> 0` at
+  three sites, so a fully released pair never reaches the writer. The protection is a
+  consequence of the enumeration source, not a step anyone remembers to add — which is
+  exactly why a reader who enumerates from `pocket_allocations` directly gets the abort.
 - **The owner's window does not bind the system, and must not be applied to it.** The window
   is `[max(first day of the current month, the account's opening), today]` and it governs
-  what the owner may choose. A system row for a decision effective earlier is correct even
-  though the date picker would refuse that day. Clamping it into the window to make the two
-  agree would move the row into a month the decision did not happen in.
+  what the owner may choose. Today every system writer takes its instant from its own
+  transaction, so the two never disagree. Should a writer ever stand in for a decision the
+  owner dated earlier, its row is correct even though the date picker would refuse that day,
+  and clamping it into the window would move the row into a month the decision did not
+  happen in.
+
+**Corrected 2026-09-07, same day it was written.** The first version of this list said the
+closure row had to carry a supplied closure date, on the reasoning that `pocketRepository.js`
+buckets the board by month in the owner's zone and a past-dated closure would otherwise land
+one month late. The month argument is sound and the instruction drawn from it was wrong:
+`closed_at` has exactly one writer and it is `CURRENT_TIMESTAMP`, so closure is always the
+instant of the request and there is no past-dated closure to protect against. The error was
+an absence claimed from a truncated search rather than from the file.
 
 #### Class B — the running series ordered by the date. Retroactive, and the reason for §5.
 
