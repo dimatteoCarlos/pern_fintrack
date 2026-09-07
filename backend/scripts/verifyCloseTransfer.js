@@ -458,9 +458,12 @@ try {
   String(residualAfter),
  );
  check(
-  'its row survives and is marked closed',
-  closedRow.rows.length === 1 && closedRow.rows[0].deleted_at !== null,
-  `${closedRow.rows.length} row, deleted_at ${closedRow.rows[0] && closedRow.rows[0].deleted_at}`,
+  'its row survives and is marked closed on both columns, to the same instant',
+  closedRow.rows.length === 1 &&
+   closedRow.rows[0].closed_at !== null &&
+   closedRow.rows[0].deleted_at !== null &&
+   Number(closedRow.rows[0].closed_at) === Number(closedRow.rows[0].deleted_at),
+  `${closedRow.rows.length} row, closed_at ${closedRow.rows[0] && closedRow.rows[0].closed_at}`,
  );
  check(
   'its transactions survive, plus the settlement leg',
@@ -480,8 +483,10 @@ try {
  );
  check(
   'the destination stays open - it received money, it was not closed too',
-  destinationRow.rows[0] && destinationRow.rows[0].deleted_at === null,
-  `deleted_at ${destinationRow.rows[0] && destinationRow.rows[0].deleted_at}`,
+  destinationRow.rows[0] &&
+   destinationRow.rows[0].deleted_at === null &&
+   destinationRow.rows[0].closed_at === null,
+  `deleted_at ${destinationRow.rows[0] && destinationRow.rows[0].deleted_at}, closed_at ${destinationRow.rows[0] && destinationRow.rows[0].closed_at}`,
  );
 
  // The property that separates TRANSFER from DISCARD. Under DISCARD this sum
@@ -607,9 +612,11 @@ try {
   `${accountsBefore.rows[0].n} -> ${accountsPost.rows[0].n}`,
  );
  check(
-  'the account this probe closed is open again',
-  stillOpen.rows.length === 1 && stillOpen.rows[0].deleted_at === null,
-  `deleted_at ${stillOpen.rows[0] && stillOpen.rows[0].deleted_at}`,
+  'the account this probe closed is open again, on both columns',
+  stillOpen.rows.length === 1 &&
+   stillOpen.rows[0].deleted_at === null &&
+   stillOpen.rows[0].closed_at === null,
+  `deleted_at ${stillOpen.rows[0] && stillOpen.rows[0].deleted_at}, closed_at ${stillOpen.rows[0] && stillOpen.rows[0].closed_at}`,
  );
  check(
   'the destination holds what it held before the probe',

@@ -374,9 +374,21 @@ try {
   `${closedRow.rows.length} row`,
  );
  check(
-  'it is marked closed',
-  closedRow.rows[0] && closedRow.rows[0].deleted_at !== null,
-  String(closedRow.rows[0] && closedRow.rows[0].deleted_at),
+  'it is marked closed on closed_at, the column that means this',
+  closedRow.rows[0] && closedRow.rows[0].closed_at !== null,
+  String(closedRow.rows[0] && closedRow.rows[0].closed_at),
+ );
+ // The dual-write, asserted as one fact rather than two: closed_at is what
+ // CLOSE means, deleted_at is written beside it only until every reader has
+ // been swept. Dropping the second write early is the failure this catches -
+ // it would put closed accounts back in circulation wherever the sweep has not
+ // reached, and nothing else here would notice.
+ check(
+  'deleted_at is written too, and to the same instant - the sweep has not happened yet',
+  closedRow.rows[0] &&
+   closedRow.rows[0].deleted_at !== null &&
+   Number(closedRow.rows[0].deleted_at) === Number(closedRow.rows[0].closed_at),
+  `closed_at ${closedRow.rows[0] && closedRow.rows[0].closed_at}, deleted_at ${closedRow.rows[0] && closedRow.rows[0].deleted_at}`,
  );
  check(
   'its transactions survive, plus the settlement leg',
@@ -531,9 +543,72 @@ try {
   String(emptyResult.settledResidual),
  );
  check(
-  'it is still marked closed',
-  emptyRow.rows[0] && emptyRow.rows[0].deleted_at !== null,
-  String(emptyRow.rows[0] && emptyRow.rows[0].deleted_at),
+  'it is still marked closed, on both columns',
+  emptyRow.rows[0] &&
+   emptyRow.rows[0].closed_at !== null &&
+   emptyRow.rows[0].deleted_at !== null,
+  `closed_at ${emptyRow.rows[0] && emptyRow.rows[0].closed_at}`,
+ );
+
+ // ------------------------------------------- the two states are now distinct
+ // What migration 034 was for. Before it, one column carried both states, so
+ // this account - soft deleted and never closed - was refused by CLOSE with
+ // "already closed", a message describing a state it was not in. The refusal
+ // is asserted on its text, not just its status: both cases answer 400, so a
+ // check on the code alone would pass with the two messages swapped.
+ console.log('');
+ console.log('a soft-deleted account is not a closed one:');
+
+ const softDeleted = await client.query(
+  `INSERT INTO user_accounts
+     (user_id, account_name, account_type_id, currency_id,
+      account_starting_amount, account_balance, account_start_date, deleted_at)
+   VALUES ($1, $2, $3, $4, 0, 0, $5, CURRENT_TIMESTAMP) RETURNING account_id, deleted_at, closed_at`,
+  [
+   target.user_id,
+   'probe soft-deleted account',
+   bankType.rows[0].account_type_id,
+   accountingCurrencyId,
+   new Date(),
+  ],
+ );
+ const softDeletedId = softDeleted.rows[0].account_id;
+
+ check(
+  'the probe built the state it meant to: deleted, never closed',
+  softDeleted.rows[0].deleted_at !== null && softDeleted.rows[0].closed_at === null,
+  `deleted_at set, closed_at ${softDeleted.rows[0].closed_at}`,
+ );
+
+ const softCheck = await accountRow(client, softDeletedId, target.user_id);
+ const closeSoftDeleted = await expectRejection(client, 'soft deleted', () =>
+  processCloseAccount(
+   client,
+   target.user_id,
+   softDeletedId,
+   CLOSE_POLICY_DISCARD,
+   softCheck,
+   new Date(),
+   undefined,
+   0,
+  ),
+ );
+ check(
+  'CLOSE refuses it as deleted, not as already closed',
+  closeSoftDeleted.rejected &&
+   closeSoftDeleted.status === 400 &&
+   /was deleted/.test(String(closeSoftDeleted.detail)) &&
+   !/already closed/.test(String(closeSoftDeleted.detail)),
+  `${closeSoftDeleted.status} ${String(closeSoftDeleted.detail).slice(0, 60)}`,
+ );
+
+ // And the same distinction from the other side: the account CLOSE closed
+ // above carries both columns, so the message has to come from closed_at
+ // winning the order, not from deleted_at happening to be set.
+ check(
+  'the closed account is still refused as closed, with both columns set',
+  reCloseAttempt.rejected && /already closed/.test(String(reCloseAttempt.detail)),
+  String(reCloseAttempt.detail).slice(0, 60),
  );
 
  // ------------------------------------------------------------------ rollback
@@ -562,9 +637,11 @@ try {
   `${accountsBefore.rows[0].n} -> ${accountsPost.rows[0].n}`,
  );
  check(
-  'the account this probe closed is open again',
-  stillOpen.rows.length === 1 && stillOpen.rows[0].deleted_at === null,
-  `deleted_at ${stillOpen.rows[0] && stillOpen.rows[0].deleted_at}`,
+  'the account this probe closed is open again, on both columns',
+  stillOpen.rows.length === 1 &&
+   stillOpen.rows[0].deleted_at === null &&
+   stillOpen.rows[0].closed_at === null,
+  `deleted_at ${stillOpen.rows[0] && stillOpen.rows[0].deleted_at}, closed_at ${stillOpen.rows[0] && stillOpen.rows[0].closed_at}`,
  );
 
  const allPassed = results.every(Boolean);

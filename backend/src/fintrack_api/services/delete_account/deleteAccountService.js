@@ -457,7 +457,18 @@ const processStandardDelete = async (
     );
     return { actionType, deletionType, rowCount: 1 };
   } else if (deletionType === DELETION_TYPE_SOFT) {
-    // Soft delete
+    // Soft delete. The two refusals are separate now that closed_at exists:
+    // both states set deleted_at, so a single message on that column described
+    // whichever state the account was NOT in half the time. closed_at is
+    // checked first because a closed account carries both columns during the
+    // dual-write window, and "closed" is the more specific of the two.
+    if (accountCheck.rows[0].closed_at !== null) {
+      throw createError(
+        400,
+        `Account ${targetAccountId} was closed and settled. A closed account cannot be soft deleted; its balance has already been moved and its row is kept deliberately.`,
+      );
+    }
+
     if (accountCheck.rows[0].deleted_at !== null) {
       throw createError(400, 'Account already soft deleted');
     }
@@ -574,8 +585,23 @@ export const processCloseAccount = async (
     );
   }
 
+  // The two states are distinguishable as of migration 034, and this is the
+  // refusal that needed it. Both set deleted_at, so a single check on that
+  // column answered "already closed" to an account that had been soft deleted
+  // and never closed - a message describing the wrong state, and the reason
+  // closed_at was added rather than deleted_at renamed.
+  //
+  // closed_at first: a closed account carries both columns while the dual-write
+  // stands, and closed is the more specific answer.
+  if (accountCheck.rows[0].closed_at !== null) {
+    throw createError(400, `Account ${targetAccountId} is already closed.`);
+  }
+
   if (accountCheck.rows[0].deleted_at !== null) {
-    throw createError(400, 'Account is already closed');
+    throw createError(
+      400,
+      `Account ${targetAccountId} was deleted and cannot be closed. Closing settles a residual, and a deleted account is no longer in circulation to hold one.`,
+    );
   }
 
   if (policy !== CLOSE_POLICY_DISCARD && policy !== CLOSE_POLICY_TRANSFER) {
@@ -732,10 +758,30 @@ export const processCloseAccount = async (
     );
   }
 
-  // 6c MARK: deleted_at = CURRENT_TIMESTAMP. CLOSE keeps the row - the
-  // column still means CLOSED, not DELETED, until D6's rename (unit 8).
+  // 6c MARK: CLOSE keeps the row and writes BOTH columns, for as long as the
+  // readers have not been swept.
+  //
+  // closed_at is the real one - it is what this path means, and migration 034
+  // added it beside deleted_at rather than renaming it precisely so that both
+  // states could exist at once. deleted_at is written alongside because every
+  // reader still filters on it: stopping now would put closed accounts back in
+  // circulation everywhere the sweep has not reached. It comes out when the
+  // sweep is deployed, not when it is written.
+  //
+  // CURRENT_TIMESTAMP is the transaction's start time, so all three columns get
+  // one identical value rather than three readings of the clock - which is why
+  // 034 declares closed_at with the same type as deleted_at.
+  //
+  // The guard stays deleted_at IS NULL and must not become closed_at IS NULL
+  // while the dual-write stands: a soft-deleted account carries deleted_at and
+  // no closed_at, and a closed_at guard would let this path close it.
   const markResult = await dbClient.query(
-    'UPDATE user_accounts SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE account_id = $1 AND user_id = $2 AND deleted_at IS NULL RETURNING account_id',
+    `UPDATE user_accounts
+        SET closed_at = CURRENT_TIMESTAMP,
+            deleted_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+      WHERE account_id = $1 AND user_id = $2 AND deleted_at IS NULL
+      RETURNING account_id`,
     [targetAccountId, userId],
   );
 

@@ -157,15 +157,38 @@ old one. **Decision: add `closed_at` beside `deleted_at`**, which keeps
 1. Add `closed_at`, nullable. Nothing renamed, nothing dropped, so no deploy
    ordering problem in either direction — the frontend and backend are two
    independent Vercel projects and there is no instant at which a schema
-   change lands on both at once.
+   change lands on both at once. **SHIPPED 2026-09-07**, migration 034 by
+   `pern-fintrack-02`: `ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ DEFAULT
+   NULL`, declared on both build paths — the chain file and an idempotent
+   `ensureAccountClosedAt()` on boot — so a database gets the column whichever
+   way it was built, in either order, without erroring.
 2. The close path writes **both** columns for the duration. This is what makes
    the first migration safe alone: if it wrote only `closed_at`, every
    existing `deleted_at IS NULL` reader would start showing closed accounts as
-   in circulation.
+   in circulation. **SHIPPED 2026-09-07.** The mark step writes
+   `closed_at`, `deleted_at` and `updated_at` in one statement, so all three
+   take the transaction's start time and cannot disagree about the instant an
+   account closed — which is why the column was declared with `deleted_at`'s
+   exact type. The guard stays `deleted_at IS NULL` and must not become
+   `closed_at IS NULL` while the dual-write stands: a soft-deleted account
+   carries `deleted_at` and no `closed_at`, so a `closed_at` guard would let
+   CLOSE reopen and settle it.
 3. The read sites move to the precise predicate — in circulation becomes
    `deleted_at IS NULL AND closed_at IS NULL`, and a reader that wants history
    keeps only the `deleted_at` filter. A semantic sweep, not a substitution,
-   so each site is a decision; this half is the deletion module's.
+   so each site is a decision; this half is the deletion module's. **OPEN**, and
+   it is the only thing left before step 4.
+
+**What the second column bought immediately, in the same commit.** The two
+refusals that named the wrong state can now name the right one. Before it, both
+soft delete and CLOSE tested `deleted_at !== null` — one column carrying two
+states — so CLOSE answered *"Account is already closed"* to an account that had
+been soft deleted and never closed, and soft delete answered *"already soft
+deleted"* to one that had been closed. Each now tests `closed_at` first, because
+a closed account carries both columns while the dual-write stands and *closed*
+is the more specific answer, then falls through to `deleted_at`. Asserted on the
+message text rather than the status, since both cases answer 400 and a check on
+the code alone passes with the two messages swapped.
 4. A later migration stops the close path writing `deleted_at`. It drops no
    column, and it is not a corrective migration: the first is deliberately
    incomplete, which is what expand-and-contract means.
@@ -717,13 +740,14 @@ commit. The order is forced where stated and free otherwise.
      deletion type, not just RTA, is still open.
 
   7  the settlement engine and CLOSE                       §3.1, §4.1
-     TRANSFER and DISCARD both SHIPPED (2026-09-07). The client's echo of
-     the residual SHIPPED the same day, with the close preview endpoint it
-     needed to have a trustworthy figure to echo - see "The residual echo"
-     below. Still open: the addition of closed_at beside deleted_at (D6,
-     settled as an added column rather than a rename), whose migration is
-     pern-fintrack-02's and whose dual-write and reader sweep are this
-     session's.
+     SHIPPED 2026-09-07, all of it: TRANSFER, DISCARD, the client's echo of
+     the residual with the close preview endpoint it needed to have a
+     trustworthy figure to echo, migration 034 adding closed_at beside
+     deleted_at (D6, settled as an added column rather than a rename), and
+     the close path's dual-write of both columns. What remains of D6 is the
+     reader sweep, which is unit 8 rather than this one, and the later
+     migration that stops writing deleted_at, which waits on that sweep
+     being deployed rather than written.
 
   8  the read sweep                                        
      OPEN. 75 FROM/JOIN of user_accounts across 21 files, 8 filtering
@@ -1879,7 +1903,12 @@ query shape. Split agreed: list is `e4`'s, reopen action and its endpoint
 are mine.
 
 **Correction one, on sequencing - a single decision with two orderings, not
-two decisions, put to Carlos by `e4`, not settled here.** If the recovery
+two decisions, put to Carlos by `e4`, not settled here.** Written when D6 was
+expected to be a rename; it was settled on 2026-09-07 as an added column
+instead, and the sequencing question survives that unchanged because what it
+turns on is when the queries behind the screen stop saying "deleted" where they
+mean "closed" - which is now the reader sweep rather than a rename. Read
+"the sweep" for "the rename" throughout the paragraph below. If the recovery
 surface ships before D6's `deleted_at` -> `closed_at` rename, it ships a
 screen whose entire purpose is reopening accounts while every query behind
 it, `e4`'s list included, still says "deleted" where it means "closed." Ship
