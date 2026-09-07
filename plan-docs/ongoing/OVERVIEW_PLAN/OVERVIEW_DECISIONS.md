@@ -829,6 +829,42 @@ entrada por entrada que dejó la decisión de que un bolsillo es una asignación
 **Sin resolver:** los conteos sobre la base local que este archivo arrastra desde
 agosto. Ninguno se recomprobó.
 
+**And as of 2026-09-06 that phrase no longer identifies a database.** Three
+exist on this machine: the development one, a rehearsal one behind it by two
+migrations, and a seventeen-table restore whose nature is a question with the
+developer. Every measurement this file carries says *la base local* or *datos
+locales* and names none of them.
+
+What is verifiable: every probe this session ran read the development database,
+through the application's own connection, and neither of the other two has been
+opened here. What is not verifiable from this file is that its August figures
+were read on the same one — they were taken before anyone knew the others
+existed, which is the open item stated directly above rather than a new one.
+
+**From today a recorded measurement names the database and the checkout it was
+taken in.** Both halves are needed and for different reasons: the working trees
+hold different code, and the three databases hold different schemas. A figure
+without either is a number whose origin cannot be reconstructed.
+
+**There are five working trees, not two — corrected 2026-09-06, hours
+after the paragraph above was written.** The main checkout, three feature
+checkouts, and a generated worktree inside the main checkout's own `.claude/`
+directory, which no filename search presents as a separate tree. Two sessions
+enumerated them independently.
+
+**Record the path and the branch, never the session name.** Three of those
+directories are named after sessions and at least one name misleads: the
+migration session has never worked in the checkout named for it, having committed
+on `main` in the main checkout, so that tree sits stale with none of its work in
+it. A reader who follows the name reaches an empty tree and concludes the work was
+never done.
+
+Found by the migration session, and the mechanism is worth keeping because it
+will recur: the guard every shared probe carries refuses any connection string
+containing the word *prod*, which is right — it cannot tell a local restore
+from the real thing. It refuses cleanly rather than erroring, so a sweep that
+never touched that database comes back looking complete.
+
 **Encontrado y no corregido aquí, porque pertenece a otro plan:** la cabecera de
 `PLAN_POCKET/POCKET_LEVELS_REFERENCE.md` se declara *especificación congelada,
 todavía sin implementar*, y dice que el clasificador embarcado lleva seis niveles
@@ -1567,6 +1603,40 @@ on the one owner holding investment accounts: the identity holds in all fifteen,
 an independently written query agrees with the adjustment in all fifteen, and the
 card no longer warns in any of them.
 
+**The fix is branch-local, and the branch it is missing from is the one that
+ships — corrected here 2026-09-06, hours after the line above was written.**
+The commit that added the adjustment term (`afbcb0b3`) is contained by
+`feat/overview` alone. `main`'s copy of the query still states the two-term
+identity in its file header, still bounds the realised term to profit-and-loss
+rows while excluding the annulment-prefixed ones, and still derives the balance
+from every row of the account except the one that opens it. So on `main` the
+card warns every owner who has ever deleted an investment account, today, and
+the paragraph above says the defect is fixed.
+
+Measured independently by two sessions before being written down: this one and
+the migration session, each reading `main` rather than taking the other's word.
+The correction to `main` is a separate item with the developer, deliberately not
+folded into the closure work below — it is reachable now and gated on nothing,
+while the closure work waits on a writer with no date. **Recommended form:
+`main` takes the existing term rather than having an equivalent authored from
+nothing.** Two independently written versions of one accounting identity is how
+two branches start disagreeing about what a card publishes. One caveat for
+whoever moves it: `main`'s version of the query has no month boundary at all, so
+its figures are as-of-now while this branch's are as-of-month-cut, and the term
+arrives carrying a cut it has to lose.
+
+**Closed the same day, and in the recommended form.** The developer transplanted
+the term onto `main` by hand rather than authoring an equivalent, and pushed it.
+The transplant is faithful: the two complementary sums arrived exactly as written
+here, without the month boundary, because the commit that binds every investment
+figure to the requested month is not on that branch and the partition is
+unaffected by its absence. The caveat above about the term arriving carrying a cut
+it has to lose is what the hand edit removed, and it was the right call.
+
+So the item that stood here as open with the developer is closed, and the false
+alarm it describes no longer fires on either branch for an annulment. What `main`
+does not yet have is the widening below.
+
 ## The compensation account: why it stays out, and when the name match may go — ruled 2026-09-06
 
 Asked by the account-deletion session, which is giving that account a structural
@@ -1778,3 +1848,148 @@ accounts that exist **now**. An account opened after the reference month
 contributes zero to the balance and still raises the count. Bounding it needs a
 creation date the query does not read. It carries no notice, because a notice
 should tell a reader something they can act on and this one could not.
+
+## The tenth movement type: account closure, and the term that has to see it — recorded 2026-09-06
+
+Asked by the migration session, which is adding a dedicated movement type and
+transaction type for account closure (both id 10 and id 6 respectively, in
+migration 032) and wanted to know before committing whether Overview's readers
+break. Recorded here at their request rather than left in a message thread,
+because the constraint has to be readable by whoever writes the first closure
+row, and that may be none of the sessions now holding the context.
+
+**Measured, and the reassuring half is true.** Nothing under
+`overview_services/` hardcodes the count of movement types, so the catalog rows
+themselves are inert. Fifteen movement-type predicates exist in that directory
+and every one of them is an inclusion list — no negation, no exclusion by
+difference. A row of a type that did not exist when they were written is
+invisible to all fifteen. The migration can ship alone and nothing breaks,
+because nothing can break until a row of the new type exists.
+
+**And that safety is exactly what makes one figure unsafe.** Exclusion by
+construction is safe for a plain sum over an enumerated set. It is not safe for
+a reconciliation between an unbounded side and a bounded one. The investment
+card publishes such a reconciliation: contributed capital plus the realised
+result plus the closure adjustment against the ledger balance. The balance term
+is the derived-balance expression, which sums **every** row of the account
+except the one that opens it and carries no movement-type predicate at all. The
+three explaining terms are enumerated. So a closure written under the new type
+lands inside the balance and inside none of the terms, and the card tells the
+owner their books do not reconcile while their money is fine. **It is the same
+false alarm as the annulment defect above, arriving from a second source** —
+which is the argument for treating the shape as the defect rather than patching
+each source as it appears.
+
+**The fix, and why it reads both types instead of switching.** In the realised
+results common table expression of `INVESTMENT_FIGURES_QUERY`
+(`overviewInvestmentRepository.js`), the pass widens to profit-and-loss rows
+**and** closure rows together, and the movement type moves down into the two
+`FILTER` clauses: the realised term takes profit-and-loss rows whose description
+does not start with the annulment prefix, and the adjustment term takes every
+closure row plus the profit-and-loss rows that do carry the prefix. Rows already
+stored under the old type **do not migrate**, so pointing the adjustment term at
+the new type alone would break the identity backwards, on every past month
+containing a closure. Reading both is not defensive duplication; it is the only
+reading under which history stays reconciled.
+
+The property to preserve through that edit is the one the annulment fix
+established and this extends rather than re-derives: **one pass, two
+complementary filters, every row in exactly one term.** No row is dropped and
+none is counted twice, and the two terms cannot be pulled apart by a later edit
+because neither is defined by its own independent predicate.
+
+**The three other sites that identify a closure by its description need
+nothing.** The monthly profit-and-loss reader and the two transaction-list
+readers are each already bounded to the profit-and-loss type, so a row of the
+new type never reaches them. Their description exclusions stay in place anyway
+— the old rows are still there and still carry the prefix.
+
+**What the writer will actually write, settled with the deletion session
+2026-09-06.** The closure writer is the front half of CLOSE in the
+account-deletion plan (its unit 7, the settlement engine): **open, not started,
+no committed date.** It will write the closure movement type with its own
+description text and **no annulment prefix**, because a closure is not an
+annulment — the account is being retired on purpose, not undone, and reusing
+the prefix would misrepresent the row to the very filters that read it. That is
+why the two filter conditions above stay separate instead of collapsing into a
+single prefix test: the old rows are corrections and the new ones are deliberate
+retirements, and they reach the same published figure for different reasons.
+
+**Sequencing, and it is a gate on the writer rather than on the migration.** The
+catalog rows can ship alone. What must not land before the readers is the first
+closure row. The deletion session has recorded that as a release gate stated per
+branch, and the migration session has put the warning in `032`'s header, where
+whoever authors the first violation will be standing.
+
+**Per branch matters here, and it is why this entry names files rather than
+sessions.** When this was written the closure adjustment term existed on
+`feat/overview` alone, and satisfying the gate against this branch still broke
+`main`.
+
+**That changed within the hour and the residue is narrower and sharper.** `main`
+now carries the term and is pushed. What it carries is the annulment split: its
+realised pass is still bounded to profit-and-loss rows and partitions them by the
+description prefix, so a row of the closure movement type is excluded before
+either filter runs. The catalog row for that type is on `main` already. So a
+settlement written there lands inside the balance and inside none of the three
+published terms.
+
+**This is not a regression and describing it as one would be wrong.** The live
+defect — the card warning every owner who had ever deleted an
+investment account — is fixed and stays fixed. The closure movement
+type never had a working path in that query, and it cannot produce a row on any
+committed code path: the settlement writer is untracked and its release constant
+is uncommitted and false. A live defect closed and a prospective one left open.
+
+**What it produces is an ordering constraint, and that is the load-bearing part.**
+The widening below has to reach `main` BEFORE the settlement writer does. Not in
+the same change and not after it. The writer being untracked is what buys the time
+to do it in that order.
+
+**And the gate cannot be worded by the field's name.** A field of that name now
+exists on `main`, so a condition reading *the closure adjustment term exists* is
+satisfied while the hazard is untouched. The condition has to assert the property:
+that a settlement row of the closure movement type is claimed by the closure term
+and not by the realised one, and that the identity closes over it. Raised by the
+migration session, who also supplied the way to assert it against a row that
+cannot exist yet — insert one inside a transaction, assert, roll back.
+Nothing persists and the assertion is about behaviour rather than about a name.
+
+**Written the same day, and the reason for holding it is what changed.** It was
+held because the type has no rows and the writer did not exist, so the edit could
+not be shown to do anything — the same argument that governs the account-type
+predicates. Hours later the deletion session began building that writer, and the
+release gate they recorded says the reader lands ahead of the first row and never
+after it. From that point holding it stops being caution and becomes the thing
+the writer waits on.
+
+**What it can and cannot show today, stated rather than glossed.** With no rows
+of the new type in `fintrack_dev`, the widening is a no-op: measured on that
+database from the `pern_fintrack_overview` checkout, every figure of the card is
+unchanged and the identity holds on every month it held on before. That the
+split is correct for real closure rows cannot be shown until the writer produces
+one, and it is the deletion session that will say when that is.
+
+**Committed 2026-09-06, and what makes it final rather than merely written.** The
+developer authorized each session to commit and push the block it judges complete
+— a block and not a file, nothing that could still be modified, only
+final decisions. The decision here is settled in both halves that can move: the
+two movement types are read together, and the split is by movement type with the
+description prefix kept only to hold the old rows that never migrate.
+
+**The trap that makes the second half load-bearing, found by the migration
+session.** Widening the pass to both types while leaving the split on the
+description string alone would route every settlement into the realised term,
+because a settlement carries no annulment prefix by design. The closure would be
+published as investment profit — the exact outcome the new movement
+type exists to prevent, arrived at by fixing half the problem. Both halves move
+together or neither moves. Verified across all four combinations of movement type
+and prefix by two sessions independently: disjoint, exhaustive, no row dropped and
+none counted twice.
+
+**One thing here will change and it is not a decision.** The closure movement type
+is written as a literal because no named constant for it exists in any commit on
+any branch — the deletion session's constant is untracked working-tree
+state. When they commit it, this literal becomes that import, by this
+repository's own idiom for a catalog id. That is an idiom conversion following
+another session's commit, not a revision of what was decided.
