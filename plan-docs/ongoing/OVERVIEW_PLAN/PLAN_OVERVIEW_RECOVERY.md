@@ -158,7 +158,7 @@ outside every balance figure Overview publishes today.
 | item | ruling |
 |---|---|
 | **month floor** | 60 months, borrowed from the budget module's own span limit. **This is a new decision, not a restoration** — Overview has never had a floor. It is a **history boundary of the interface**, not part of the financial temporality: it says how far back a month may be selected, never what a month means |
-| **expense variance** | stays `budget − categorised`. Budget is assigned per category; uncategorised spend has no line to charge. The **uncategorised amount** becomes a fourth field so the card reconciles by showing the gap rather than absorbing it |
+| **expense variance** | stays `budget − categorised`. Budget is assigned per category; uncategorised spend has no line to charge. ~~The **uncategorised amount** becomes a fourth field~~ — **corrected 2026-09-07: the frozen contract publishes a BOOLEAN, `hasUncategorizedExpense`, and the amount is `totalAmount − categorizedExpense`, a subtraction over two fields already on the card. The contract outranks this plan, which governs sequencing only. One case is not recoverable that way and is the only ground on which the field could be reopened: `categorizedExpense` is nullable, and with it null the client has nothing to subtract from** |
 | **debt directions** | extracted into a shared SQL builder beside the derived-balance builder, so the legacy screen and Overview share one definition. Not copied into the Overview repository |
 | **pocket naming** | `allocated` keeps its name and is the canonical term: the signed net of allocations after releases, which the contract prose states. **`netAllocated` is not used anywhere in this plan.** A rename touches nine SQL sites and three services outside the pocket module and buys clarity the structure already has |
 | **total net worth** | **stays computed** even though the hero publishes the liquid figure. `netWorth − liquidNetWorth == receivable` is the only check that catches an inverted payable sign |
@@ -286,7 +286,66 @@ The amount stays, always. It is defined in every case the rate is not, so the
 card always has something true to print and the rate is the enrichment, never
 the fallback.
 
-### 2. The investment reconciliation — gated on one production count
+### 2. The investment reconciliation — SETTLED 2026-09-06, section kept for the mechanism
+
+> **Correction — 2026-09-07. The gate below is closed and the finding it rests
+> on is out of date. Read this block before the section.**
+>
+> **The identity holds.** A third term was added to the card on 2026-09-06:
+> contributed capital plus realised result plus **closure adjustment** equals the
+> ledger balance. The gap the section describes was exactly the account-deletion
+> row no term claimed; the term that claims it now exists
+> (`closure_adjustment`, a `FILTER` in the investment figures statement). The
+> local measurement of 2026-09-07 closes at 0.00 for every owner.
+>
+> **No production count is needed and none was taken.** The gate asked for one to
+> decide whether the failure was widespread. The failure has a mechanism and a
+> fix, so its frequency stopped being the question.
+>
+> **Two arms, and the honest statement of why it holds.** The closure term
+> matches a row by movement type **or** by the annulment description prefix. On
+> data written by the deployed backend today it holds by the **prefix**, because
+> the closure movement type is a catalog entry no row carries yet — and the
+> settlement writer that would produce those rows runs only for a close whose
+> remaining balance is not zero, so under the deactivation rule currently under
+> discussion it may never write one. The identity is not weaker for it — both
+> arms are written by account-deletion paths, so the term claims the same rows
+> either way. What it means is that the prefix arm carries the term in practice,
+> and the prefix sits on free text a later edit can rewrite.
+>
+> **The field's name is imprecise and always was.** The annulment arm comes from
+> the reversal path, a different deletion type from a close, so that arm was never
+> a closure artifact. Retiring the settlement writer would not make the name newly
+> wrong; it would remove the arm that made it literally accurate. Renaming the
+> field is a contract change and is not proposed here.
+>
+> **The last paragraph of this section is still live and is now a question in
+> front of the developer.** Nothing ties a movement type to an account type, and
+> the server does not restrict the pair: the movement name arrives in the query
+> string and the allowed-pairs rules in `transactionController.js` are prose
+> comments, not code. An expense written against an investment account would
+> break this identity — the card would fire its notice, so not silently there —
+> and would be invisible to the expense card, which reads only budget-category
+> accounts. The recommendation is an allowed-pairs table in the transaction
+> controller, which is not this module and not this session's scope.
+>
+> **It is an application-layer rule and NOT the schema constraint that was
+> declined on 2026-09-07.** That decline stands and this does not reopen it: a
+> constraint tying a movement type to an account type would express a rule about
+> business meaning as a schema rule, which is the shape that already stalled the
+> accounting currency, and the census supporting it was nine rows on three
+> accounts of one owner. The table proposed here is enforced where the movement
+> name arrives from the query string, which is the right place precisely because
+> the rule is a business rule.
+>
+> **The type predicate already in that file is NOT coverage for this.** The
+> account lookup joins the account-type table and tests the type name, and that
+> predicate is what makes the request's declared types answerable to reality —
+> the rewrite derives from the types the REQUEST declared, never from the accounts
+> that were found. It stops a request from lying about an account's type. It does
+> not stop a truthful request from pairing a legal type with an illegal movement.
+> One guard, one question; the second question has no site. Verified by the
+> coordination session 2026-09-07.
 
 The card asserts that contributed capital plus realised profit and loss equals
 the ledger balance (`makeInvestmentCard.js:96-99`). It does not hold. The gap is
@@ -399,6 +458,42 @@ becomes a rate whose denominator is no longer beside it.
 ---
 
 # PART 3 — THE WORK
+
+## Status board — measured 2026-09-07
+
+Every row below was measured in the code, not read off this plan. Grouped by
+what blocks what, because the order is a dependency chain and not a priority
+list: nothing in the frontend can be trusted before the contract tests exist,
+and the contract tests cannot be written before the payload stops changing.
+
+| stage | state | what is actually left | blocked by |
+|---|---|---|---|
+| **P0** — freeze the semantic contract | **DONE** | — | — |
+| **P1a** — re-anchor the four balance reads | **DONE** | — | — |
+| **P1b** — bank and investment obey the reference month | **DONE** | — | — |
+| **P2** — repoint pocket to the plan model | **DONE** | — | — |
+| **P3** — complete the level-1 indicators | **DONE 2026-09-07** | nothing. Free cash, the investment account count and the profit-and-loss investment split were the whole remaining gap; the rest was already built when this plan was written | — |
+| **P4** — the API contract | **NOT STARTED** | recent activity as its own endpoint with its own range — the route file publishes two routes and neither is it; the window builder rewrite — it still freezes exactly three fields derived from one month; and the contract tests, of which none exists anywhere under `backend/` outside `node_modules/` — the scope matters, since the dependency tree holds nearly two hundred and a later reader grepping the backend for tests will find those | nothing. It is the next stage and it can start now |
+| **P5** — frontend | **NOT STARTED, and smaller than this plan says** | the month selector and the cards, against the new payload. The screen still builds three figures from five calls to the by-type balance endpoint | **P4's contract tests.** The plan makes them the gate, and the reason holds: the frontend must not be the first consumer to discover a figure changed shape |
+| **P6** — level 2 | **NOT STARTED, specified 2026-09-07** | trends, breakdowns, the Pareto renderer, and the domain analyses returned to their domains — now defined figure by figure in `PLAN_OVERVIEW_LEVEL2.md` | **P4, not P5.** A payload needs no screen; it needs a frozen contract |
+
+**Two items this plan lists as open that are already done, corrected here rather
+than left to be rediscovered.**
+
+| item | state |
+|---|---|
+| the one-line expense guard (P5) | **DONE on both checkouts.** The screen no longer tests the income total to decide whether the expense total is a number; a single predicate now guards each of the three rows, and the comment above it records what the defect was |
+| the eight zero fallbacks (listed as deliberately out of scope) | **DONE.** No `\|\| 0` default survives on any of the five reads. A request that never answered leaves the value undefined and prints a dash; a type the owner genuinely holds none of answers null and prints a true zero. The two answers no longer collapse into one figure |
+
+**What is verified and what is not.** The boot test passes and the builders are
+covered by unit probes — sixteen assertions on the hero, including the identity
+that catches an inverted payable sign, and eleven on the investment card.
+Neither statement added in P3 has ever been executed against a database: this
+session holds no query authorisation beyond the single count granted on
+2026-09-07, so the SQL is checked against the schema by column and by alias and
+no further. That gap is the developer's to close and is recorded here rather
+than worked around.
+
 
 Ordered by dependency, not by value. Each step names what it unblocks.
 
@@ -601,24 +696,47 @@ the card turning into a miniature Pocket board.
 pocket total · the snapshot's pocket row · **and Free Cash, the third hero
 figure**.
 
-### P3 — Complete and correct the L1 indicators
+### P3 — Complete and correct the L1 indicators · DONE 2026-09-07
+
+> **State — 2026-09-07: P3 is complete.** Measured in the code rather than read
+> off this table, and several rows below described a state the module had already
+> left behind when the plan was written. Each row now carries what was actually
+> found and what was actually done. Two rows were refused on the frozen
+> contract's authority and say so.
 
 | domain | action |
 |---|---|
-| **hero** | publish Liquid Net Worth, Available Balance, Free Cash per the formulas in §1.5. **Pocket leaves both Liquid Net Worth and Available Balance entirely.** Commitments apply only in Free Cash, through the per-account floor before aggregation — not as a sign flip inside a cash figure. Keep total net worth computed for the identity check |
-| **income** | publish what already exists: received, change, movement count |
-| **expense** | add the uncategorised amount as a fourth field; leave variance against categorised spend. **Uncategorised is a disclosure figure, not a budget category** — it exists so `spent = categorised + uncategorised` is visible, and it is never charged against a budget line |
-| **investment** | restore the account count (**a dropped field, one line**) and add a reconciliation field (**a new contract field — today it is only a notice sentence**) |
-| **debt** | emit both directions through the shared builder, normalising the payable leg to a **positive magnitude** |
-| **pocket** | target, allocated, remaining, progress — plus the status counts as one summary line |
-| **profit and loss** | realised result, change, movement count — named per §1.4 |
+| **hero** | **DONE.** Liquid net worth and the three-term net worth were already built before this plan's P3 was opened; free cash was the only figure missing and is now published, read per account and floored per account before the sum. **Pocket leaves both liquid net worth and the cash position entirely** — the commitment appears only in free cash, beside the balance and never inside it. Total net worth stays computed for the identity check. The published hero is five values, not three: net worth, liquid net worth, cash position, free cash and the net monthly flow, plus the savings rate as a second reading of the flow |
+| **income** | **DONE** — received, change and movement count all published |
+| **expense** | ~~add the uncategorised amount as a fourth field~~; leave variance against categorised spend. **Uncategorised is a disclosure figure, not a budget category** — it exists so `spent = categorised + uncategorised` is visible, and it is never charged against a budget line. **Corrected 2026-09-07: the frozen contract publishes `hasUncategorizedExpense`, a boolean, and the amount is one subtraction over two published fields. NOT DONE and not to be done under this row** |
+| **investment** | **DONE 2026-09-07, and both halves of this row were wrong as written.** `accountCount` is published — but it is a **NEW field of the contract, not a restored one**: no version of the type ever declared it, and the `accountCount` elsewhere in the contract belongs to the expense-category status type. The **reconciliation field is refused**: §6 says the client reconciles and the server publishes the terms and never the difference between them, the contract is frozen and this plan governs sequencing only. The difference is one subtraction over four published fields; what a client cannot reconstruct is the decimal tolerance, which is what the notice exists for |
+| **debt** | **DONE before this plan was written.** Both legs are emitted and the payable one is normalised to a positive magnitude, which is what liquid net worth composes from |
+| **pocket** | **DONE** — target, allocated, remaining, progress, and the settled count as one summary line |
+| **profit and loss** | **DONE, and one field beyond the row.** Realised result, change and movement count were already published; added 2026-09-07 is `realizedFromInvestment`, the share of the month's result that landed on investment accounts. It is a `FILTER` over the rows the total already summed — a split, never a second statement — so an owner can tell this figure from the investment card's instead of guessing whether they are the same money seen twice |
 
-### P4 — The API contract
+### P4 — The API contract · NOT STARTED, and unblocked
 
 `GET /overview` and `GET /overview/:domain` already exist. This is a revision,
-not a design — but a larger one than "review": the window builder is rewritten,
-since it freezes exactly three fields all derived from one month
-(`monthArithmetic.js:78-82`).
+not a design.
+
+> **Premise corrected 2026-09-07, and the real defect is a different one.** This
+> section said the window builder needs rewriting because it freezes three fields
+> derived from one month. Measured: that is true and it is not a defect. Once
+> recent activity moves to its own endpoint, those three fields are exactly the
+> concepts the contract says the window carries — a reference month, the prior
+> month the delta compares against, and the start of the analysis period. The
+> reference date the contract also names is computed inline in exactly ONE
+> statement, the investment figures query, so there is no duplication to
+> consolidate either.
+>
+> What is actually wrong is bigger and was not written down. **The page response
+> never tells the client which month it served.** A client that omits the month
+> gets back figures for the current month on the owner's calendar and has no
+> field naming it — the six domain cards each publish their own period, and the
+> page publishes none. The contract's own rule is that the server always reports
+> the window it used and the client never infers it from its own clock, so this
+> is a violation of a stated term rather than a missing convenience. The window
+> work in this stage is to publish it, not to rewrite the builder.
 
 **Three concepts do not mean three parameters.** Expose all three temporal
 concepts in the contract, but expose a *request parameter* only where the
@@ -636,15 +754,23 @@ must not be the first consumer to discover that a figure changed from a number
 to `{ amount, rate }`, or that the pocket figures changed from legacy to plan
 semantics.
 
-### P5 — Frontend
+### P5 — Frontend · NOT STARTED, blocked by P4's contract tests
 
 The month selector, then the cards. Last, deliberately: a screen wired before P1
 would show three silently changed balances.
 
-Independent one-line fix, shippable at any time: the live screen tests the income
-total to decide whether the **expense** total is a number
-(`OverviewLayout.tsx:189`), so a broken expense prints as real and a valid expense
-blanks when income breaks.
+~~Independent one-line fix, shippable at any time: the live screen tests the
+income total to decide whether the **expense** total is a number, so a broken
+expense prints as real and a valid expense blanks when income breaks.~~
+
+**Corrected 2026-09-07 by measurement: this is already fixed, on both checkouts.**
+A single predicate now guards each of the three figures on its own amount, and the
+comment above it states the defect in the past tense. The eight zero fallbacks
+this plan lists as deliberately out of scope are fixed as well — no `|| 0` default
+survives on any of the five reads, and the comment records why: it collapsed two
+different answers, a request that never returned and a genuine zero, into the same
+figure. So P5 carries no shippable independent fix any more; what remains of it is
+the month selector and the cards, and those wait on P4.
 
 #### What the three sketches already show that a ruling has since deleted
 
@@ -705,10 +831,22 @@ double count. Their only exposure is the label.
   sketches and the plan, and it is not a defect in the sketch so much as the
   reason the hero has to be redesigned rather than corrected.
 
-### P6 — Level 2
+### P6 — Level 2 · NOT STARTED, specification written 2026-09-07
 
 Trends, breakdowns, the Pareto renderer, and the domain analyses returned to
 their domains.
+
+> **The blocker was never P5 and it is now removed.** Both the contract and the
+> indicator matrix stated that nothing had been specified for level 2, so the
+> stage had no contract to build against and the four nouns above were its entire
+> definition. `PLAN_OVERVIEW_LEVEL2.md` now specifies it: what level 2 is, the
+> test a candidate figure has to pass, what each of the six domains publishes
+> with its nature and its null semantics, the one prohibition it may lift and on
+> what condition, what it is refused, and where the code lives.
+>
+> Its backend does not depend on P5 — a screen is not a precondition for a
+> payload. It depends on **P4**, because adding fields to a payload whose contract
+> is being revised is exactly what the contract tests exist to prevent.
 
 ### Definition of done, per stage
 
@@ -722,6 +860,7 @@ stage from being declared finished early.
 | **P3** | every level-1 indicator has a formula, a temporal nature, an owner, a null semantics and a currency semantics |
 | **P4** | the payload contract is frozen and the contract tests pass |
 | **P5** | the live screen has no remaining dependency on the by-type balance endpoint for any Overview figure |
+| **P6** | every level-2 view reads a figure the level-1 payload already publishes, or an endpoint owned by the domain it belongs to — no second aggregation of rows a card has already summed |
 
 The last one is the point of the whole plan: today that screen reads five
 separate calls to build three figures.
@@ -848,7 +987,7 @@ the omissions are decisions rather than oversights.
 | **P1b** | **Run 2026-09-06 against the local development database. The binding passes; the identity fails, and not for the reason this row expected.** Fifteen months read on the one owner holding investment accounts. The running month comes back identical to the pre-change query, figure for figure, so nothing was bounded away that should not have been. Every month before the first movement holds the identity exactly. The two months that carry movements are short by the same 0.75 — and a discrepancy that is identical in a month which bounds nothing away cannot be a bounding error. Its cause is one annulment row; the finding is in the decisions register, under the heading naming the deleted account |
 | **P2** | the pocket total in Overview equals the board's own total for the same month |
 | **P3 hero** | `netWorth − liquidNetWorth == receivable`, for every case where both are reported. **This is the single check that catches the inverted payable sign** — get it backwards and this fails immediately instead of producing a plausible wrong number |
-| **P3 expense** | spent equals categorised plus uncategorised, on a month that has uncategorised spend |
+| **P3 expense** | **corrected 2026-09-07.** There is no uncategorised field to check. Verify instead that `hasUncategorizedExpense` is true exactly when `totalAmount > categorizedExpense`, on a month that has uncategorised spend and on one that does not |
 | **P3 debt** | the legs emitted by the Overview card match the legacy endpoint's two directions **in magnitude**, the payable leg differing only in sign |
 | **all** | unit-level probes importing the builders directly, no database, following the pattern used for the savings rate. Boot test `APP LOADED OK` |
 
