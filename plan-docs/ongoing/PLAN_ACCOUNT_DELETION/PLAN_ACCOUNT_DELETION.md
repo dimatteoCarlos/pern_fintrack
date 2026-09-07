@@ -3198,6 +3198,46 @@ to every row carrying `deleted_at`, which a close also sets.
 
 **Routing.** `pern-fintrack-02` and `pern-fintrack-cf` are not owners here.
 
+### The anchor the scrub needs does not exist yet — Carlos, 2026-09-07
+
+Carlos read `"Alquiler # 7"` in a description and ruled the format wrong: the
+space is being read as part of the account id. He is right, and the survey done
+to answer him found the defect is larger than the one spelling he saw. **The
+same fact is written four different ways**, across the two description
+compositions in the transfer controller.
+
+| position | composition | result |
+|---|---|---|
+| source row, source account | `"${name} #${id}"` | `"Alquiler #7"` |
+| source row, destination account | `"${name} # ${id}"` | `"Alquiler # 7"` |
+| destination row, destination account | `"${name} (${type}) # ${id}` | `"Alquiler (bank_account) # 7` |
+| destination row, source account | `"${name}" # ${id}` | `"Alquiler" # 7` |
+
+The third never closes its opening quote and injects the account type between
+the name and the id; the fourth puts the id outside the closing quote.
+
+**This is why the scrub is a bare substring replace.** The erasure tail runs
+`REPLACE(description, <name>, '[deleted account]')` with no delimiter, and the
+open ruling asks whether it should instead be anchored so it cannot touch the
+owner's typed note. With four spellings there is no single anchor to match, so
+the anchored form was never available to write — the format defect is the cause,
+not a neighbouring problem.
+
+**Recommendation: one canonical spelling, `"<name>" #<id> (<type>)`.** The name
+fully delimited by quotes, the id glued to its hash, the type outside. The scrub
+then anchors on `"<name>" #<id>`, which an owner would have to type verbatim —
+quotes and id included — to hit by accident. Normalising the format is the
+enabling change for the anchored scrub rather than a cosmetic fix beside it.
+
+**The cost to weigh: normalising the writer does not normalise the ledger.**
+Existing rows keep the four legacy spellings permanently. So either the scrub
+matches five spellings, or a data migration normalises history first — and that
+migration belongs to the migration chain, not to this module.
+
+**Routing.** `transactionController.js` is not this session's file. The format
+change and any normalising migration go to coordination and the migration chain
+respectively; what this module owns is the scrub that consumes the result.
+
 ### What the gate costs on the published contract — `pern-fintrack-02`, 2026-09-07
 
 The gate is a precondition in the service **and** a shape change on the
