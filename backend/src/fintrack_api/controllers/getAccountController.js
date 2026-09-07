@@ -594,6 +594,73 @@ export const getAccounts = async (req, res, next) => {
 }; //END OF getAccounts
 
 //**********************************
+//GET THE OWNER'S CLOSED ACCOUNTS
+//endpoint:
+// http://localhost:5078/api/fintrack/account/closed
+//
+// The inverse of LIVE_ACCOUNT, which every list above interpolates. A closed
+// account is not gone: its transactions are kept and readable, and this is the
+// only list that serves it.
+//
+// closed_at IS NOT NULL alone, and NOT `deleted_at IS NULL` beside it. CLOSE
+// writes both stamps during the dual-write window, so a deleted_at test would
+// return nothing at all today; and a soft-deleted account carries deleted_at
+// and no closed_at, so it cannot reach this list either way. The predicate is
+// therefore correct before and after the dual-write ends, with no ordering
+// against the deletion module's work.
+//
+// The compensation account is excluded by name and type like everywhere else:
+// it is not the owner's account and nothing can close it.
+export const getClosedAccounts = async (req, res, next) => {
+  console.log(pc[backendColor]('getClosedAccounts'));
+
+  try {
+    const userId = requireUserId(req, res);
+    if (!userId) return;
+
+    const closedAccountsQuery = {
+      text: `SELECT ua.*, ct.currency_code, act.account_type_name,
+        ${DERIVED_BALANCE} AS account_balance,
+        CAST(ua.account_starting_amount AS FLOAT)
+      FROM user_accounts ua
+      JOIN account_types act ON ua.account_type_id = act.account_type_id
+      JOIN currencies ct ON ua.currency_id = ct.currency_id
+      WHERE ua.user_id = $1
+      AND ua.account_name != $2
+      ${NOT_BOUNDARY_ACCOUNT}
+      AND ua.closed_at IS NOT NULL
+      -- Most recently closed first: the account the owner is looking for is
+      -- almost always the one they just closed.
+      ORDER BY ua.closed_at DESC, ua.account_id DESC
+      `,
+      values: [userId, 'slack'],
+    };
+
+    const closedAccountsResult = await pool.query(closedAccountsQuery);
+    const accountList = closedAccountsResult.rows;
+
+    // 200 with an empty list, not the 400 the live list answers with. An owner
+    // who has closed nothing is the normal case, and a screen cannot tell a
+    // 400 meaning 'you have none' from a 400 meaning 'your request was wrong'.
+    const data = { rows: accountList.length, accountList };
+
+    const message = accountList.length
+      ? 'Closed account list successfully completed'
+      : 'No closed accounts';
+    console.log('success:', pc[backendColor](message));
+
+    res.status(200).json({ status: 200, message, data });
+  } catch (error) {
+    console.error(pc.red('Error while getting closed accounts'));
+    if (process.env.NODE_ENV === 'development') {
+      console.log(error.stack);
+    }
+    const { code, message } = handlePostgresError(error);
+    next(createError(code, message));
+  }
+}; //END OF getClosedAccounts
+
+//**********************************
 //GET ACCOUNT INFO BY ACCOUNT_ID
 //endpoint example:
 // http://localhost:5000/api/fintrack/account/${accountId}?&user=${user}

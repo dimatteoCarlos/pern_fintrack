@@ -21,6 +21,7 @@ import {
   getAllAccountsByType,
   getAccountById,
   getAccountsByCategory,
+  getClosedAccounts,
   // getCategoryBudgetFullDataEndpoint,
 } from '../controllers/getAccountController.js';
 
@@ -76,6 +77,10 @@ router.post('/new_account/category_budget', createCategoryBudgetAccount);
 router.get('/allAccounts', getAccounts);
 
 router.get('/type', getAllAccountsByType);
+
+// Before '/:accountId', which is a catch-all: registered after it, 'closed'
+// would be read as an account id and answer from the by-id route instead.
+router.get('/closed', getClosedAccounts);
 
 router.get('/:accountId', getAccountById);
 //-----

@@ -2695,3 +2695,30 @@ state on purpose; the flags are what let the screen tell the states apart.
 
 The overview module consumes no route of this controller and reads neither flag,
 verified by sweep on its side, so nothing there waits on this.
+
+### The closed-accounts list, `e4`'s half of the seam
+
+`GET /api/fintrack/account/closed` returns
+`{ status, message, data: { rows, accountList } }`. Each row is the same shape
+the live account list serves — `ua.*` plus `currency_code`,
+`account_type_name`, the ledger-derived `account_balance` and the starting
+amount — so a screen already rendering account rows renders these unchanged.
+`closed_at` rides along on `ua.*` and is what the list is ordered by, most
+recently closed first.
+
+**An empty list is a 200, not the 400 the live list answers with.** An owner who
+has closed nothing is the normal case, and a screen cannot tell a 400 meaning
+"you have none" from a 400 meaning "your request was malformed".
+
+**The predicate is `closed_at IS NOT NULL` alone.** Not `deleted_at IS NULL`
+beside it: CLOSE writes both stamps during the dual-write window, so that test
+would return nothing at all today. A soft-deleted account carries `deleted_at`
+and no `closed_at`, so it cannot reach this list either way. Correct before and
+after the dual-write ends, with no ordering against the deletion module's work.
+
+**Registered before `/:accountId`**, which is a catch-all. Registered after it,
+`closed` is read as an account id and answered by the by-id route.
+
+The **reopen action and its endpoint remain the deletion session's**, per the
+seam agreed on 2026-09-06. This list renders an empty state until a close lands
+through the UI, and gains a per-row action when that endpoint exists.
