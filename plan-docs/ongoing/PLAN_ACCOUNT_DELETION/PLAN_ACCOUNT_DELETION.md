@@ -2087,14 +2087,68 @@ everything, so the usual way a wrong figure gets noticed does not apply. The
 script asserts the rule explicitly for that reason, so a database where the two
 diverge makes it visible at the point of the write rather than never.
 
-### What still stands between this and CLOSE working
+## The CLOSE engine verified end to end, and the gate cleared, 2026-09-07
 
-- The release gate in `deleteAccountService.js` rejects every CLOSE request
-  with a 409 while it reads false. Flipping it is Carlos's decision and is not
-  taken here. Its comment is stale in the same block — it says main has no
-  closure-adjustment term, and main has had one since the Investment card
-  shipped it — and must be corrected when the value changes.
-- TRANSFER answers 400 for want of a destination rule. The rule is frozen
+The settlement writer being correct in isolation said nothing about the path
+around it, which is most of what CLOSE does: locking the target and the
+boundary account together, deriving the residual from the locked state rather
+than from the stored column, settling only when there is something to settle,
+re-deriving afterwards to prove the account reached zero, rewriting both stored
+balances from the ledger, and marking the account closed while leaving its row
+and its transactions in place. A writer that is right cannot rule out a path
+that computes the wrong residual, marks the wrong account, or reports success
+after skipping a step.
+
+`backend/scripts/verifyCloseAccount.js` covers that path on `fintrack_dev`,
+inside a transaction it always rolls back. Nineteen assertions, all passing.
+The engine is imported directly because the only other way in opens its own
+connection and commits, so nothing could check what CLOSE writes without really
+closing an account.
+
+**Both branches of the engine, not only the one that writes.** Closing an
+account holding 1.39: the residual it reports settling equals the one derived
+independently, the account re-derives to zero, its row survives with
+`deleted_at` set, its transactions survive plus the settlement leg, the stored
+balance is rewritten from the ledger rather than left stale, and the boundary
+account's stored balance agrees with its own ledger. Closing an account already
+at zero: marked closed with **no settlement row written at all**, because a
+zero-amount pair would carry no financial meaning and would still appear in the
+closure term as a row.
+
+**Both refusals.** TRANSFER answers 400 while its destination rule has no
+selector, and closing an already-closed account answers 400. Each was run
+inside a savepoint, so a refusal cannot leave the transaction unusable for the
+checks after it.
+
+**The published figures.** The closure term moves by the negation of the
+residual, the realised term does not move, the identity closes, and the card's
+balance falls by the residual rather than staying put — which is the assertion
+that proves the boundary counterpart stayed outside the published set.
+
+**Rollback verified**: closure rows and account count both identical
+afterwards, and the account the probe closed is open again.
+
+### The gate is cleared
+
+`CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED` now reads true. Its condition was that
+no closure row be written until the Investment card's reconciliation accounted
+for that movement type on **both** branches, and both were checked rather than
+assumed: `main` sums the closure movement type together with the historic
+annulment-prefixed rows, `feat/overview` sums the movement type. The comment
+that claimed main had no such term at all was true when written and stopped
+being true when the Investment card shipped one; it is corrected in the same
+edit, and it now records what the measurement covered so a later reader knows
+what it does not.
+
+`processCloseAccount` is exported for the same reason. It takes a caller's
+client rather than opening one, which is what makes a rolled-back verification
+possible at all.
+
+### What still stands between this and CLOSE reaching a user
+
+- TRANSFER answers 400 for want of a destination selector. The rule is frozen
   above, so the selector implements it rather than re-deciding it.
 - No frontend component triggers CLOSE: the close deletion type appears in the
-  type definitions and in no button.
+  type definitions and in no button. Until one exists, the open gate changes
+  nothing a user can reach — it makes the path exercisable rather than
+  reachable.

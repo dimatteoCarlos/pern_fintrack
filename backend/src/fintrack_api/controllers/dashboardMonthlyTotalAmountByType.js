@@ -133,7 +133,10 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
           LEFT JOIN category_budget_accounts cba ON tr.account_id = cba.account_id
           LEFT JOIN pocket_saving_accounts psa ON tr.account_id = psa.account_id
           LEFT JOIN user_accounts ua ON tr.account_id = ua.account_id
-          LEFT JOIN account_types act ON ua.account_type_id = act.account_type_id
+          -- Inner, unlike the joins above it: 033 made account_type_id NOT
+          -- NULL behind a RESTRICT foreign key, so an account with no
+          -- catalog row cannot exist and a LEFT join preserves nothing.
+          JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON tr.currency_id = ct.currency_id
       
         WHERE ua.user_id = $1

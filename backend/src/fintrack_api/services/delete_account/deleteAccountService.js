@@ -495,20 +495,39 @@ const processStandardDelete = async (
 //========================================
 
 // Release gate ("Gate, stated per branch, not per person", plan doc, unit
-// 5/7 catalog decision): no movement_type_id 10 row may be written until
-// overviewInvestmentRepository.js's reconciliation accounts for that type on
-// BOTH main and feat/overview. main has no closure-adjustment term at all
-// today. Flip this only once that coordination with `cf` is actually done -
-// not when this code merely looks ready.
-const CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED = false;
+// 5/7 catalog decision): no movement_type_id 10 row could be written until
+// overviewInvestmentRepository.js's reconciliation accounted for that type on
+// BOTH main and feat/overview.
+//
+// Cleared 2026-09-07, Carlos, on measurements rather than on this code looking
+// ready. Both branches carry the closure-adjustment term - main sums the
+// closure movement type together with the historic annulment-prefixed rows,
+// feat/overview sums the movement type. The earlier claim here that main had
+// no such term at all was true when written and stopped being true when the
+// Investment card shipped it.
+//
+// What the measurement covered, so a later reader knows what it does not: a
+// real settlement written through this path on fintrack_dev moves the card's
+// closure term by exactly the negation of the residual and leaves the realised
+// term alone, the identity closes, and only the target leg is inside the
+// published account set - the boundary counterpart stays out. Rolled back both
+// times. See scripts/verifyClosureSettlement.js for the writer and
+// scripts/verifyCloseAccount.js for this whole path.
+const CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED = true;
 
 /**
  * 📝 PROCESS CLOSE ACCOUNT
  * CLOSE, DISCARD policy only (§3.1): settle the residual against the
  * boundary account, assert it is zero, then mark deleted_at - the row and
  * its transactions survive, unlike DELETE/HARD.
+ *
+ * Exported so it can be exercised on a caller's own transaction. The only
+ * other way in is deleteAccountService, which opens a connection and commits,
+ * so nothing could check what this writes without really closing an account.
+ * It takes the client rather than opening one, which is what makes a
+ * rolled-back verification possible - see scripts/verifyCloseAccount.js.
  */
-const processCloseAccount = async (
+export const processCloseAccount = async (
   dbClient,
   userId,
   targetAccountId,
