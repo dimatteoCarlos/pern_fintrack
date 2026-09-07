@@ -3198,6 +3198,73 @@ to every row carrying `deleted_at`, which a close also sets.
 
 **Routing.** `pern-fintrack-02` and `pern-fintrack-cf` are not owners here.
 
+### What the gate costs on the published contract — `pern-fintrack-02`, 2026-09-07
+
+The gate is a precondition in the service **and** a shape change on the
+assessment endpoint, in the same commit. Raised by `pern-fintrack-02`, whose
+first version of it also attached a cost they then withdrew; both halves are
+recorded because the withdrawn half is the one that would have reached Carlos as
+a reason the decision was bigger than it is.
+
+**The coupling, verified in the file.** The SOFT entry publishes `available:
+true` as a bare literal and, directly under it, `leavesResidualUnsettled:
+!isSettled` computed from `isSettled = residual === 0`. So for an account
+holding money the endpoint states in one object that soft delete is available
+and that it will leave the residual unsettled. Under the gate, `available` is
+false for exactly the population where `leavesResidualUnsettled` is true: the
+screen would offer what the service refuses.
+
+**But the adjustment needs no new field, and that is the withdrawn half.** The
+HARD entry already carries this exact shape — `available: isSettled` with
+`reason: isSettled ? undefined : ...`, and a comment saying why naming the route
+out is what makes it an assessment rather than a disabled button. A gated SOFT
+adopts that shape: `available` becomes the settled test, `reason` carries the
+refusal, and the routes out are the two HARD already names. The change is a
+shape SOFT borrows from a sibling, not a contract redesign.
+
+**And `leavesResidualUnsettled` retires rather than being reconciled.** Under
+the gate it can only be true where the operation is refused, so it would never
+be published true on a taken option — a perfect inverse of `available`, carrying
+nothing `available` does not. The field stops describing a consequence and
+starts describing a precondition, which is the class shift, and the precondition
+already has a home in `reason`.
+
+**Nothing downstream pays for it today.** Measured here rather than accepted:
+across the whole frontend, `leavesResidualUnsettled`, `releasesAccountName`,
+`keepsHistory`, `removesPocketAllocations`, `requiresSettlement` and
+`availablePolicies` return **zero matches**, and so does the assessment endpoint
+itself — no URL entry, no options type, no reading of any consequence field. The
+controller wires it and nothing calls it. So the shape change is free, **and
+only until the deletion screens read the assessment**: gate and contract change
+belong in one commit, written before the wiring rather than after it.
+
+### The screen already promises the reversal that does not exist — `pern-fintrack-e4`, 2026-09-07
+
+Theirs to fix, recorded here because it is evidence for the decision rather than
+context. The soft-delete confirmation tells the owner the account "can be
+reactivated later" and "puede reactivarse más adelante", in both dictionaries,
+and the dialog's stylesheet carries a comment justifying a low-stakes confirm on
+the grounds that soft delete is fully reversible. **No writer clears
+`deleted_at` anywhere** — re-verified independently for this entry, zero matches
+in `backend/src` for any statement setting it back to null. There is no
+reactivation path and never has been.
+
+**The sentence is two claims and only one is false**, which matters if it is
+rewritten. "Its balance, transactions and history stay exactly as they are" is
+accurate, and it is the most honest description of soft delete anywhere in the
+product — it is the trap this section documents, stated to the owner's face.
+Only "and it can be reactivated later" is unsupported. A rewrite that replaces
+the whole sentence would delete the one line already telling an owner the money
+stays inside.
+
+**Three instances now, all the same defect class.** A consequence published to
+the owner that the service does not honour: the name-release flag on SOFT
+(fixed), the availability contradiction the gate would create (above, not yet
+reachable), and this reversibility promise (live in two languages today). The
+first two were reachable only by reading the endpoint; this one is on the
+screen. That is the argument for checking the whole published object against any
+ruling rather than the one field the ruling names.
+
 ### What the Overview does with that stranded money — `pern-fintrack-cf`, 2026-09-07
 
 Reported unprompted and it bears directly on the decision. The Overview
