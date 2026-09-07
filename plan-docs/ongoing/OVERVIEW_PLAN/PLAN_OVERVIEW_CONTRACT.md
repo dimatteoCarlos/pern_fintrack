@@ -735,6 +735,56 @@ type RecentActivitySection = {
 };
 ```
 
+### 10.1 `GET /overview/activity` — the reader chooses this period
+
+Added 2026-09-07. §14.1 names three clocks and says this one is the only period a
+consumer genuinely chooses, so it takes its own endpoint rather than a parameter
+on the page. The teaser above stays exactly as it is: the page keeps publishing
+five rows, and this endpoint is an addition rather than a move.
+
+```ts
+type GetOverviewActivityParams = {
+ from?: string;      // YYYY-MM, inclusive. Absent means unbounded below
+ to?: string;        // YYYY-MM, inclusive — the WHOLE month, not its first day
+ page?: number;      // default 1
+ pageSize?: number;  // default 5 — the size of the teaser; max 100, the shared ceiling
+};
+
+type GetOverviewActivityData = {
+ transactions: {
+  rows: MovementTransactionDataType[];
+  page: number;
+  pageSize: number;
+  totalRows: number;
+ };
+ // Echoed, and null on an end the reader did not bound. An unbounded read is
+ // the default, so a response naming no range would leave a client unable to
+ // tell an unbounded answer from the one it asked for.
+ range: {
+  from: string | null;
+  to: string | null;
+ };
+};
+
+type GetOverviewActivityResponse = ApiEnvelope<GetOverviewActivityData>;
+```
+
+**No `ServedWindow` here, and no month ceiling.** The period of this section is
+independent of the month the page reports, so publishing the reference month
+beside it would answer a question nobody asked. And the 422 the other two
+endpoints raise exists because a report about a month that has not happened is
+not a report — this endpoint publishes no figure about a month, it filters rows
+that exist, and a transaction can carry a future actual date in this schema.
+
+**Default unbounded, and that is the teaser's own rule.** Recent activity answers
+what happened last, not what happened in the month being studied: a user reading
+August in November would otherwise open the section and find it empty.
+
+**Frontend requirement.** The section becomes a top-level view with its own range
+control and its own pagination. The five-row teaser on the page keeps its current
+payload and its current shape; what changes is that it now has somewhere to link
+to. Nothing on the page has to change for this endpoint to exist.
+
 ## 11. `GET /overview`
 
 ```ts
@@ -744,7 +794,25 @@ type GetOverviewParams = {
  month?: string; // YYYY-MM, opcional, sólo pasado
 };
 
+// The window the server actually used. Added 2026-09-07, and §14.1 already
+// required it: "el servidor siempre reporta la ventana que usó y el cliente
+// nunca la infiere de su propio reloj". Nothing published it, so a client that
+// sent no month could not tell which month it was given.
+//
+// periodEnd is the REFERENCE DATE and not the last day of the month. The two are
+// equal for a closed month and are not for the month in course, and §14.1 is
+// explicit that a flow never fabricates the days an unfinished month has left.
+// The same value reaches card.window.periodEnd on every card from this same
+// object, so a payload cannot name two different ends for one period.
+type ServedWindow = {
+ referenceMonth: string;  // YYYY-MM-01 — echoed even when the request named no month
+ periodStart: string;     // YYYY-MM-01 — the first day of that month
+ periodEnd: string;       // YYYY-MM-DD — month end, or today for the month in course
+ isCurrentMonth: boolean;
+};
+
 type GetOverviewData = {
+ window: ServedWindow;
  hero: HeroSection;
  all: AllCard;
  domainCards: {
@@ -789,6 +857,16 @@ type ExpenseYtdShare = {
 
 type GetOverviewResponse = ApiEnvelope<GetOverviewData>;
 ```
+
+**Frontend requirement of the served window, 2026-09-07.** The month selector
+reads `window.referenceMonth` instead of holding the month it sent: a request
+that names no month is answered with the owner's current month, and only the
+response knows which that is. `window.isCurrentMonth` is what decides whether
+the period label reads a month name or "so far this month", and `periodEnd` is
+the date that label ends at — for the month in course it is today, not the last
+day of the month, so a component printing the month end would state a period the
+figures were not cut at. No component has to change for the payload to carry the
+field; the ones above are what it unlocks.
 
 **No carga filas de transacción** fuera de `recentActivity` (§5 de
 `PLAN_OVERVIEW.md`, obligación de contrato) — un domain card completo con su
@@ -966,6 +1044,11 @@ type ExpenseCategoryStatus = {
 };
 
 type GetOverviewDomainData = {
+ // The same object §11 publishes, attached by the same expression in the
+ // controller. Two handlers each picking their own fields would be two answers
+ // to "what period is this", which is the question the window exists to answer
+ // once.
+ window: ServedWindow;
  card: IncomeCard | ExpenseCard | InvestmentCard | DebtCard | PocketCard | PnlCard;
  transactions: {
   rows: MovementTransactionDataType[];

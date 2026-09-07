@@ -165,19 +165,17 @@ question once the term existed.
 
 **Which arm carries it, on data written today.** The closure term matches by
 movement type **or** by the annulment prefix. No row carries the closure movement
-type yet, and the writer that would produce one runs only for a close whose
-remaining balance is not zero — so on current data the term is carried entirely
-by the prefix, which sits on free text. A string edit in the deletion module
-therefore moves this figure silently.
+type yet, so on current data the term is carried entirely by the prefix, which
+sits on free text. A string edit in the deletion module therefore moves this
+figure silently.
 
 **The field's name is imprecise, and was before any of this.** The annulment arm
 is written by the reversal path, a different deletion type from a close, so that
-arm has always been a deletion artifact rather than a closure one. Retiring the
-settlement writer would not make the name newly wrong; it would remove the arm
-that made it literally accurate. What the two arms cost is the figure's use as
-evidence: a nonzero adjustment is not proof a settlement was written, and a zero
-one is not proof no account was closed — an account emptied before closing leaves
-no transaction row at all, only the stamp.
+arm has always been a deletion artifact rather than a closure one. What makes the
+name imprecise is the two-arm shape. What the two arms cost is the use of the
+figure as evidence: a nonzero adjustment is not proof a settlement was written,
+and a zero one is not proof no account was closed — an account emptied before
+closing leaves no transaction row at all, only the stamp.
 
 **What the identity still cannot survive** is a movement type outside the four
 the terms name landing on an investment account — an expense, for instance.

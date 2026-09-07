@@ -305,19 +305,17 @@ the fallback.
 > **Two arms, and the honest statement of why it holds.** The closure term
 > matches a row by movement type **or** by the annulment description prefix. On
 > data written by the deployed backend today it holds by the **prefix**, because
-> the closure movement type is a catalog entry no row carries yet — and the
-> settlement writer that would produce those rows runs only for a close whose
-> remaining balance is not zero, so under the deactivation rule currently under
-> discussion it may never write one. The identity is not weaker for it — both
-> arms are written by account-deletion paths, so the term claims the same rows
-> either way. What it means is that the prefix arm carries the term in practice,
-> and the prefix sits on free text a later edit can rewrite.
+> the closure movement type is a catalog entry no row carries yet. The identity
+> is not weaker for it — both arms are written by account-deletion paths, so the
+> term claims the same rows either way. What it means is that the prefix arm
+> carries the term in practice, and the prefix sits on free text a later edit
+> can rewrite.
 >
 > **The field's name is imprecise and always was.** The annulment arm comes from
 > the reversal path, a different deletion type from a close, so that arm was never
-> a closure artifact. Retiring the settlement writer would not make the name newly
-> wrong; it would remove the arm that made it literally accurate. Renaming the
-> field is a contract change and is not proposed here.
+> a closure artifact. What makes the name imprecise is the two-arm shape, not
+> anything the deletion module does or stops doing. Renaming the field is a
+> contract change and is not proposed here.
 >
 > **The last paragraph of this section is still live and is now a question in
 > front of the developer.** Nothing ties a movement type to an account type, and
@@ -473,7 +471,7 @@ and the contract tests cannot be written before the payload stops changing.
 | **P1b** — bank and investment obey the reference month | **DONE** | — | — |
 | **P2** — repoint pocket to the plan model | **DONE** | — | — |
 | **P3** — complete the level-1 indicators | **DONE 2026-09-07** | nothing. Free cash, the investment account count and the profit-and-loss investment split were the whole remaining gap; the rest was already built when this plan was written | — |
-| **P4** — the API contract | **NOT STARTED** | recent activity as its own endpoint with its own range — the route file publishes two routes and neither is it; the window builder rewrite — it still freezes exactly three fields derived from one month; and the contract tests, of which none exists anywhere under `backend/` outside `node_modules/` — the scope matters, since the dependency tree holds nearly two hundred and a later reader grepping the backend for tests will find those | nothing. It is the next stage and it can start now |
+| **P4** — the API contract | **BUILT 2026-09-07, not committed** | nothing on the three pieces. The activity endpoint is routed at `/activity` ahead of the parameterised route and answers on a range the caller chooses; the window now publishes the month it served and ends the month in course at the reference date instead of its last day; and the suite runs on the platform test runner with thirty-three assertions over the window, the request schemas, the hero and the investment card. What is left is the gate and the commit | nothing |
 | **P5** — frontend | **NOT STARTED, and smaller than this plan says** | the month selector and the cards, against the new payload. The screen still builds three figures from five calls to the by-type balance endpoint | **P4's contract tests.** The plan makes them the gate, and the reason holds: the frontend must not be the first consumer to discover a figure changed shape |
 | **P6** — level 2 | **NOT STARTED, specified 2026-09-07** | trends, breakdowns, the Pareto renderer, and the domain analyses returned to their domains — now defined figure by figure in `PLAN_OVERVIEW_LEVEL2.md` | **P4, not P5.** A payload needs no screen; it needs a frozen contract |
 
@@ -714,7 +712,7 @@ figure**.
 | **pocket** | **DONE** — target, allocated, remaining, progress, and the settled count as one summary line |
 | **profit and loss** | **DONE, and one field beyond the row.** Realised result, change and movement count were already published; added 2026-09-07 is `realizedFromInvestment`, the share of the month's result that landed on investment accounts. It is a `FILTER` over the rows the total already summed — a split, never a second statement — so an owner can tell this figure from the investment card's instead of guessing whether they are the same money seen twice |
 
-### P4 — The API contract · NOT STARTED, and unblocked
+### P4 — The API contract · BUILT 2026-09-07, awaiting its gate
 
 `GET /overview` and `GET /overview/:domain` already exist. This is a revision,
 not a design.
@@ -753,6 +751,38 @@ Recent Activity becomes its own endpoint with its own period.
 must not be the first consumer to discover that a figure changed from a number
 to `{ amount, rate }`, or that the pocket figures changed from legacy to plan
 semantics.
+
+> **Built 2026-09-07.** Three pieces, and one of them turned out larger than the
+> premise above.
+>
+> **The served window.** Both responses now carry the month they served, the
+> period they cut the figures at, and whether that month is still running. The
+> larger finding is inside it: the period was ending at the last day of the
+> month for every request, including a month in course, which the contract calls
+> wrong rather than early — a flow never fabricates the days an unfinished month
+> has left. The period now ends at the reference date, and the six cards read it
+> from the same object instead of each deriving a month end, so a payload cannot
+> name two different ends. Two clocks meet there and only one decides: the month
+> comes from the database as every other month in this module does, the day only
+> refines a position inside it, and it is clamped to that month, so a request
+> that straddles midnight can cost a day and can never report a date outside the
+> month served.
+>
+> **The activity endpoint.** Declared at `/activity` AHEAD of the parameterised
+> route, and the order carries behaviour now — below it the handler would never
+> run and the request would answer 400 calling activity an invalid domain, which
+> is a correct message about the wrong reading of the URL. Both range bounds are
+> optional and the default is unbounded, which is the rule the teaser already
+> followed; the upper bound names a month and covers all of it. It takes no month
+> ceiling on purpose: this endpoint publishes no figure about a month, it filters
+> rows that exist, and a transaction can carry a future actual date. The teaser
+> the page publishes is unchanged — this is an addition, not a move.
+>
+> **The suite.** The platform test runner, no dependency added: the project had
+> `node:test` available and a placeholder `test` script. Thirty-three assertions
+> over the window, the three request schemas, the hero and the investment card,
+> in `backend/test/overview/` mirroring the module path. The two probes written
+> during P3 are in it, so the checks that were session-local are now repo checks.
 
 ### P5 — Frontend · NOT STARTED, blocked by P4's contract tests
 
