@@ -466,7 +466,18 @@ substitution showed the investment card's reconciliation failing. It is
 pre-existing — stored and derived agree on those accounts — and it is open
 decision 4.
 
-### P1b — Make bank and investment obey the reference month
+### P1b — Make bank and investment obey the reference month · DONE, commits `4f9be6a0` and `229286df`
+
+**Both halves are in the working tree, not deployed**, the same standing P1a has.
+Investment went first (`4f9be6a0`): five date bindings, and the notice that told
+the reader its figures ignored the month was removed in the same commit, because
+leaving it would have put a true number under a false disclaimer. The bank
+balance followed (`229286df`), and carried the cash-account predicate of D45 with
+it — which is why the figure changes and not only its time base.
+
+**The count below says three bindings and it is five.** The remeasurement that
+corrects it is further down this stage and was written before the code; nothing
+in it changed.
 
 **Not a change of arguments.** The reconstruction SQL is generic but neither
 domain has a call site into it:

@@ -1460,12 +1460,13 @@ Whoever deletes the hero's term and repoints the rest is correct. **Whoever
 repoints the hero's term has shipped the double count, in net worth and in the
 cash position both.**
 
-## The month selector loses one of its two blockers — 2026-09-06
+## The month selector loses both of its blockers — 2026-09-06
 
 The month-selector ruling (D46) holds the control back until every input of the
 header reports on one time base, and names the two that do not: the bank balance
-and the investment figures. **The investment half landed today.** The decision is
-not amended and is not closed; what changed is the count of what blocks it.
+and the investment figures. **Both landed today**, in that order. The decision is
+not amended — it was right — and it is not closed by this note either: what it
+asked for is built, and whether the control ships is still a decision.
 
 `getInvestmentFigures` now takes the reference month and reads every figure at it
 (`overviewInvestmentRepository.js`). That is five bindings, not the three the
@@ -1482,13 +1483,26 @@ sketch. **This is a payload change and the frontend inherits it:** a client
 reading the notices of the investment card receives one entry fewer, and no
 client may key on that sentence.
 
-**What still blocks the selector is the bank balance, alone.**
-`getBankBalance(pool, userId)` (`overviewPageRepository.js:121`) takes no month
-and its query takes only the user. Until it does, net worth for a past month
-still adds one current balance to three closing ones, and the conclusion of D46
-stands untouched: a control that relabels a figure it does not move is worse than
-no control. D46 cites this function at `:101`; it is at `:121` today, and only
-the anchor moved.
+**The bank balance followed, and it carried a second change with it.**
+`getBankBalance` now takes the reference month and the owner's zone, and reads
+the balance at that month's close by the same subtract-forward arithmetic. In the
+same query the type predicate widened from the bank type alone to bank and cash,
+which is not part of D46 at all — it is the code catching up with the ruling that
+a cash account reads as a bank account wherever a figure is composed (D45), whose
+own text names this query as a pending consequence.
+
+**So every term of net worth and of the cash position is now read at one
+instant.** What remains before the control can ship is no longer a measurement
+problem: it is the pocket term leaving net worth (D54) and the frontend never
+having called this payload at all.
+
+**The other half of D45 is not done, and it is not in this work.** The income
+account set still lists bank, investment, debtor and pocket_saving without cash
+(`overviewAccountRepository.js:62`), and carries the same superseded comment the
+bank query carried — that cash waits on a probe. A movement into a cash account
+is therefore money the balance now counts and the income figure still does not.
+That is a real disagreement between two figures on one screen, it is narrow, and
+it is named here so it is picked up as work rather than found as a bug.
 
 One figure on that card is still unbounded, named here so that whoever finds it
 later does not read it as an oversight of this work: the account count counts the
