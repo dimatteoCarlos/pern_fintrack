@@ -82,12 +82,35 @@ export const generateImpactReport = async (req, res, next) => {
       getUnattributedAnnulmentTotal(pool, userId, targetAccountId),
     ]);
 
+    // Folded here rather than in the browser, which is where it was being
+    // summed: adding money on the client is the thing this codebase does not
+    // do, and the client's sum was short by exactly the unattributed amount
+    // below, because it added the rows it could see.
+    //
+    // It sums impactReport and nothing else, so the total describes what the
+    // annulment is going to do. The unattributed amount is deliberately NOT
+    // folded in - the execution path never acts on it, an earlier deletion
+    // already reversed it, and a total that included it would name a figure no
+    // operation produces. It keeps its own line beside this one.
+    //
+    // Rounded to cents because the rows are floats: summing them raw yields
+    // the usual trailing artefact, and this figure is displayed rather than
+    // compared, so the artefact would reach the screen verbatim.
+    const totalNetAdjustmentAmount =
+      Math.round(
+        impactReport.reduce(
+          (running, row) => running + row.affectedAccountNetAdjustmentAmount,
+          0,
+        ) * 100,
+      ) / 100;
+
     // 3. SUCCESS RESPONSE
     return res.status(200).json({
       status: 200,
       message: 'RTA Impact Report generated successfully.',
       data: {
         impactReport: impactReport,
+        totalNetAdjustmentAmount,
         pocketImpact,
         // Displayed beside the report, never added to it. Zero and zero is the
         // ordinary answer; a nonzero amount is activity of this account that no

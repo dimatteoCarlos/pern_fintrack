@@ -2788,3 +2788,48 @@ asks about.
 The overview module's own caller, `overviewInvestmentService.js`, passes the
 argument correctly. Nothing in that module is wrong; the stale callers were all
 in this module's probes.
+
+---
+
+## The impact report's folded total, SHIPPED 2026-09-07
+
+`GET` on the RTA impact route now ships **`totalNetAdjustmentAmount`** in `data`,
+beside the existing `unattributedAmount` and `unattributedTransactionCount`.
+
+**Why the server folds it.** The component was summing the rows in the browser.
+That breaks the standing rule against adding money on the client, and the sum it
+produced was short by exactly the unattributed amount — because it added the
+rows it could see, and the unattributed figure is by definition not one of them.
+
+**It sums `impactReport` and nothing else**, so the total describes what the
+annulment is going to do. Two decisions behind that, both settled here because
+the arithmetic belongs to this module:
+
+- **The unattributed amount is excluded**, keeping its own line. The execution
+  path never acts on it — an earlier deletion already reversed it — so a total
+  including it would name a figure no operation produces. This also keeps the
+  table's total and the sum of its visible rows in agreement, which is what a
+  reader checks first.
+- **It is a number, not text.** The residual is text because the owner echoes it
+  back and the driver's float conversion would round it in transit. Nothing
+  echoes this total: the service recomputes the report inside the transaction,
+  so a client copy cannot drive the adjustment. Every other figure in this
+  response is already a number.
+
+**Rounded to cents** because the rows are floats and summing them raw yields the
+usual trailing artefact. This figure is displayed rather than compared, so the
+artefact would reach the screen verbatim.
+
+### Frontend requirement this creates
+
+The frontend has **no knowledge of any of these three fields** — zero
+occurrences, and the response type declares only `impactReport` and
+`affectedAccountsCount`. So the work is the type, the plumbing and the render
+together, not just swapping a sum:
+
+- The response type gains `totalNetAdjustmentAmount`, `unattributedAmount` and
+  `unattributedTransactionCount`.
+- The component stops summing rows and renders the served total.
+- The unattributed amount renders as its own line whenever it is nonzero, and
+  says what it is: activity of this account that no live account can be credited
+  with. Zero and zero is the ordinary answer and needs no line.
