@@ -51,6 +51,15 @@ actually does, in the current code, with file:line anchors.
   7. Commit.
 - **Trust boundary — open issue (unit 6):** step 1's report is computed on `pool` (outside any lock) and handed to the client; step 3 trusts whatever `impactReport` the client sends back at execution time, rather than recomputing it itself inside the open transaction. A stale or tampered `impactReport` is currently taken at face value. This is the unit currently being worked: give `getAnnulmentImpactReport` a `dbClient` parameter, have `processRTAAnnulment` call it itself right after the lock (replacing the client-supplied array), and drop `impactReport` from what the execution endpoint requires in the request body.
 - **FIXED, 2026-09-06.** Same `eraseAccountTail` fix as HARD delete, above.
+- **Confirmed defect, found 2026-09-06 (open):** if the account being deleted
+  here was itself the affected counterparty of an earlier RTA annulment, its
+  own leg of that annulment pair is destroyed by `eraseAccountTail`'s 8d
+  DROP while boundary's mirrored leg survives untouched — boundary's derived
+  balance is left permanently off by that leg's amount, with nothing raised
+  anywhere. Confirmed against `fintrack_dev` (`transaction_id` 182 and 185,
+  `-10.00` and `-50.00`). Root cause, evidence and the recommended fix (a
+  `related_transaction_id` link, `backdating`'s migration) are in
+  `PLAN_ACCOUNT_DELETION.md` §5, "Confirmed violation of invariant I."
 
 ## 4. Pocket deletion — separate module, separate endpoint
 
@@ -112,3 +121,14 @@ endpoint that actually exists.
   slice ad hoc.
 - Units 9, 10 and 11 (invariant assertions, full lock-set enforcement across
   all types, and the CLOSE UI) remain open behind these two.
+- **SOFT and HARD have no frontend trigger of their own — this is WIP to
+  build, not a reason to leave the report RTA-shaped.** `AccountDeletionPage.tsx`
+  is the only live delete screen and it always executes as RTA
+  (`useRTAImpactAndDeletion.ts:98-103` sends `deletionType: 'RTA'`
+  unconditionally); the "Confirm Hard Deletion" button label is cosmetic.
+  An owner can never deactivate an account (SOFT) or knowingly skip the
+  reversal (HARD, when impact exists) from the UI today. Two real screens are
+  missing: a SOFT toggle (reversible, `deleted_at`, no impact report needed —
+  §1) and a genuine HARD confirmation path for when the owner explicitly
+  wants no reversal. Scoped as its own unit, not folded into §6's two items
+  above since neither of those is a prerequisite for it.

@@ -413,6 +413,62 @@ evaluated in one currency.
 invariant the database cannot enforce; the three referential ones are
 guaranteed by the foreign keys, and identity lives in free text.
 
+### Confirmed violation of invariant I, found 2026-09-06
+
+`overview-agent` measured, read-only on `fintrack_dev`: summing every account
+of the same owner, boundary account included, should net to zero under
+double entry. It comes to `-60.00`. Traced with a read-only script against
+the live rows (kept at `eraseAccountTail.js`'s own reasoning, not guesswork):
+
+- `RTA_TEST_TARGET_RTA`'s deletion wrote the usual annulment pair — its
+  counterparty `RTA_TEST_COUNTERPARTY_RTA` got a `+10`/`-10` correction row,
+  boundary got the mirrored `-10`. `RTA_TEST_COUNTERPARTY_RTA` was later
+  deleted too. That second deletion's `eraseAccountTail` ran `DELETE FROM
+  transactions WHERE account_id = $1` unconditionally over
+  `RTA_TEST_COUNTERPARTY_RTA`'s own rows (§4.1 step 8d) - which erased its
+  half of the first annulment along with everything else it owned. Boundary's
+  mirrored row (`transaction_id 182`, `account_id 14`) was never touched,
+  because it belongs to boundary, not to the account being erased.
+- Same mechanism, `UNIT6_TARGET` / `UNIT6_COUNTERPARTY_1788738324084`,
+  `transaction_id 185`, `-50.00`.
+- The other six recorded annulments cancel to the cent - only pairs where the
+  counterparty side was *itself later deleted* are affected.
+
+**Root cause:** an RTA annulment pair (`recordAnnulmentTransaction.js`) is
+two `transactions` rows on two different `account_id`s, correlated only by
+matching text in `description`. Nothing links them at the schema level.
+`eraseAccountTail`'s 8d DROP treats "every row this `account_id` owns" as
+free to erase - correct for an ordinary account, wrong for one that is half
+of a still-load-bearing pair whose other half lives on boundary and survives.
+Invariant I, if it had been asserted at commit time, would have caught this
+the moment it happened; the legacy route (§9, "Legacy route patched") predates
+the invariant engine and asserts nothing.
+
+**Recommended fix, not yet built - needs a schema decision before it can be
+written safely:**
+
+1. Give `recordAnnulmentTransaction` a way to link the pair it writes -
+   a nullable, self-referencing `related_transaction_id` on `transactions`,
+   set on both inserted rows to point at each other. Free to add at that
+   call site; the two rows are already written together.
+2. `eraseAccountTail`'s 8d DROP, before deleting a target's own rows, deletes
+   any row's `related_transaction_id` counterpart too (wherever it lives -
+   boundary or elsewhere) and re-derives that counterpart owner's balance
+   through the existing `setAccountBalanceFromLedger` writer. An annulment
+   pair then either survives whole or is erased whole; boundary can never be
+   left holding half of one.
+
+**Why not patched now:** text-matching the pair well enough to delete the
+right row (same target name, opposite account, no coincidental collision) is
+the fragile alternative, and `migrations-must-be-right-the-first-time`
+applies here as much as to a schema file - a wrong match deletes the wrong
+transaction. The link column is `backdating`'s file
+(`agent-ownership-split`), scoped separately from unit 5's boundary-type
+migration; this fix waits for that coordination rather than shipping a
+text-matched guess. Flagged, not silently deferred: this is a real,
+production-reachable bug (any live RTA delete whose counterparty is later
+itself deleted hits it), not dev-only noise.
+
 ---
 
 ## 6. Referential safety
