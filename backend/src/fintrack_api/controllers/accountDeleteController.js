@@ -8,11 +8,14 @@ import {
   getAnnulmentImpactReport,
   getPocketAllocationImpact,
   getUnattributedAnnulmentTotal,
+  foldNetAdjustmentTotal,
 } from '../services/delete_account/getAnnulmentImpactReport.js';
 
 import { deleteAccountService } from '../services/delete_account/deleteAccountService.js';
 
 import { getClosePreview } from '../services/delete_account/getClosePreview.js';
+
+import { assessAccountDeletion } from '../services/delete_account/assessAccountDeletion.js';
 
 // ===================================
 // ⚙️ DELETION METHOD CONSTANTS
@@ -82,27 +85,15 @@ export const generateImpactReport = async (req, res, next) => {
       getUnattributedAnnulmentTotal(pool, userId, targetAccountId),
     ]);
 
-    // Folded here rather than in the browser, which is where it was being
-    // summed: adding money on the client is the thing this codebase does not
-    // do, and the client's sum was short by exactly the unattributed amount
-    // below, because it added the rows it could see.
+    // Folded on the server rather than in the browser, which is where it was
+    // being summed: adding money on the client is the thing this codebase does
+    // not do, and the client's sum was short by exactly the unattributed
+    // amount below, because it added the rows it could see.
     //
-    // It sums impactReport and nothing else, so the total describes what the
-    // annulment is going to do. The unattributed amount is deliberately NOT
-    // folded in - the execution path never acts on it, an earlier deletion
-    // already reversed it, and a total that included it would name a figure no
-    // operation produces. It keeps its own line beside this one.
-    //
-    // Rounded to cents because the rows are floats: summing them raw yields
-    // the usual trailing artefact, and this figure is displayed rather than
-    // compared, so the artefact would reach the screen verbatim.
-    const totalNetAdjustmentAmount =
-      Math.round(
-        impactReport.reduce(
-          (running, row) => running + row.affectedAccountNetAdjustmentAmount,
-          0,
-        ) * 100,
-      ) / 100;
+    // The fold itself lives beside the report it sums, not here, because the
+    // assessment endpoint is a second consumer of it. Two copies of a money
+    // fold is how two screens start quoting different totals for one account.
+    const totalNetAdjustmentAmount = foldNetAdjustmentTotal(impactReport);
 
     // 3. SUCCESS RESPONSE
     return res.status(200).json({
@@ -184,6 +175,69 @@ export const getCloseAccountPreview = async (req, res, next) => {
       data: {
         targetAccountId,
         ...preview,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =========================================
+// 🧭 DELETION ASSESSMENT HANDLER
+// Endpoint: GET /api/fintrack/account/delete/assessment/:targetAccountId
+// =========================================
+/**
+ * Every deletion type this account can take, and what each one costs, in one
+ * read (PLAN_ACCOUNT_DELETION.md unit 6).
+ *
+ * The two preview endpoints above each answer for a type the owner has already
+ * picked. This answers the question that comes before them, and it is the only
+ * place that states the thing neither of them can: the types are not four equal
+ * choices. Hard delete refuses a nonzero residual for any caller, and its own
+ * refusal names RTA as the way to reach zero.
+ *
+ * Read-only and unlocked, on purpose - see the service for why a lock taken
+ * here would be released before the owner confirms anything and would guarantee
+ * nothing. Neither preview endpoint changes; this one is additive, so the
+ * screens already reading them keep working unmodified.
+ */
+export const getDeletionAssessment = async (req, res, next) => {
+  const { userId } = req.user;
+
+  if (!userId) {
+    const message = 'User ID is required';
+    console.warn(pc.blueBright(message));
+    return res.status(400).json({ status: 400, message });
+  }
+
+  const targetAccountId = parseInt(req.params.targetAccountId, 10);
+
+  if (!targetAccountId || isNaN(targetAccountId)) {
+    return next(
+      createError(
+        400,
+        'Target Account ID is required and must be a valid number.',
+      ),
+    );
+  }
+
+  try {
+    console.log(
+      pc.magenta(`Assessing deletion options for account ${targetAccountId}`),
+    );
+
+    const assessment = await assessAccountDeletion(
+      pool,
+      userId,
+      targetAccountId,
+    );
+
+    return res.status(200).json({
+      status: 200,
+      message: 'Deletion assessment generated successfully.',
+      data: {
+        targetAccountId,
+        ...assessment,
       },
     });
   } catch (error) {

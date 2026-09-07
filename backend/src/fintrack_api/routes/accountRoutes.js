@@ -40,6 +40,7 @@ import {
   executeAccountDeletion,
   generateImpactReport,
   getCloseAccountPreview,
+  getDeletionAssessment,
 } from '../controllers/accountDeleteController.js';
 //----------------------------------
 // ROUTES
@@ -108,6 +109,25 @@ router.get(
 // Route for partially update an existing account
 // PATCH /api/fintrack/account/edit/:accountId
 router.patch('/edit/:accountId', patchAccountById);
+
+// =================================
+// 🧭 DELETION ASSESSMENT (READ)
+// 📝 Every deletion type this account can take and what each one costs, in one
+// read - reachable before the owner has chosen a type, which is what the two
+// routes below cannot be: each of them answers for a type already picked.
+// Path: GET /api/fintrack/account/delete/assessment/:targetAccountId
+//
+// Three segments, so '/:accountId' above cannot swallow it - the same reason
+// the two routes below work.
+//
+// Additive. Neither preview route changes, so the screens reading them today
+// keep working; this one exists for the screen that has to choose between them.
+//--------------------------------------
+router.get(
+  '/delete/assessment/:targetAccountId',
+  verifyUser, // 🛡️ Authentication required
+  getDeletionAssessment,
+);
 
 // =================================
 // 🗑 ACCOUNT DELETION & RECONCILIATION ROUTE

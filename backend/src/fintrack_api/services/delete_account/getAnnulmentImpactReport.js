@@ -227,6 +227,34 @@ ${TARGET_ACCOUNT_TRANSACTIONS_CTE}
   return total;
 };
 
+/**
+ * What the annulment will move in total: the report's own rows, summed.
+ *
+ * Lives beside the report rather than in the controller that first needed it,
+ * because the assessment endpoint became a second consumer and two copies of a
+ * money fold is how the impact screen and the assessment screen start quoting
+ * different totals for the same account.
+ *
+ * The unattributed amount is NOT a caller's to add afterwards. It is excluded
+ * by construction here: the execution path never acts on it, so a total
+ * carrying it would name a figure no operation produces.
+ *
+ * Rounded to cents because the row amounts are floats. Summing them raw yields
+ * the usual trailing artefact, and this figure is displayed rather than
+ * compared against anything, so the artefact would reach the screen verbatim.
+ *
+ * @param {Array<{affectedAccountNetAdjustmentAmount: number}>} impactReport
+ * @returns {number} zero for an empty report, which is the ordinary case for an
+ *   account that never faced another account.
+ */
+export const foldNetAdjustmentTotal = (impactReport) =>
+ Math.round(
+  impactReport.reduce(
+   (running, row) => running + row.affectedAccountNetAdjustmentAmount,
+   0,
+  ) * 100,
+ ) / 100;
+
 /*
  * Locks the target account, then computes what erasing it would need to
  * reverse. The lock closes the same gap RTA's own execution closed (unit 6,

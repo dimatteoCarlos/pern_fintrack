@@ -735,9 +735,11 @@ commit. The order is forced where stated and free otherwise.
      settlement engine, not this unit.
 
   6  the assessment endpoint                               §4.1 step 2
-     STARTED 2026-09-06 - see "Unit 6 started" below. The lock-then-compute
-     step is built for RTA; a standalone endpoint reachable ahead of any
-     deletion type, not just RTA, is still open.
+     SHIPPED 2026-09-07 - see "Unit 6 closed" below. The lock-then-compute
+     step for RTA landed 2026-09-06; the standalone endpoint reachable ahead
+     of any deletion type is GET /account/delete/assessment/:targetAccountId,
+     and it deliberately takes no lock - a preview's lock is released before
+     the confirmation it would have to protect.
 
   7  the settlement engine and CLOSE                       §3.1, §4.1
      SHIPPED 2026-09-07, all of it: TRANSFER, DISCARD, the client's echo of
@@ -2833,3 +2835,95 @@ together, not just swapping a sum:
 - The unattributed amount renders as its own line whenever it is nonzero, and
   says what it is: activity of this account that no live account can be credited
   with. Zero and zero is the ordinary answer and needs no line.
+
+**Shipped by `e4`, 2026-09-07, `6bbfca8a`.** Six frontend files. One decision
+taken there and worth keeping: an absent field reads as `null`, not `0`, and an
+absent total renders an em dash — zero is a real total and a reader must not be
+shown a value that means "we did not measure this". The unattributed line hides
+for both `null` and zero, correct in both cases.
+
+---
+
+## Unit 6 closed: the deletion assessment endpoint, SHIPPED 2026-09-07
+
+`GET /api/fintrack/account/delete/assessment/:targetAccountId` — one read,
+reachable **before** the owner has chosen a deletion type.
+
+**What it is for.** The two preview endpoints each answer for a type already
+picked: the impact report answers "what will RTA do", the close preview answers
+"what will CLOSE do". Neither can be asked first, so the choice between them was
+being made with nothing to base it on.
+
+**The thing it states that nothing else does: the four types are not four equal
+choices.** Hard delete refuses an account whose ledger residual is not zero, for
+any caller — the administrative gate was suspended 2026-09-07, so the balance
+check is the only gate left — and its own refusal names RTA as the way to reach
+zero. The options are an order, not a menu, and an assessment listing four equal
+choices would be lying about three of them. Each option therefore carries its
+own availability, and a refused one carries the reason plus the route to making
+it available.
+
+**Per-type consequences, each read from the service the execution path uses**,
+so a consequence stated is one the engine applies:
+
+| | CLOSE | SOFT | RTA | HARD |
+|---|---|---|---|---|
+| available | always | always | always | only when the residual is zero |
+| residual | settled by policy | left unsettled | reversed per counterparty | must already be zero |
+| pocket allocations | survive | survive | deleted | deleted |
+| transaction history | kept | kept | erased | erased |
+| account name | **kept** | released | released | released |
+
+The pocket row is measured, not assumed: `pocket_allocations` is deleted in
+exactly one place, the erasure tail, which CLOSE and SOFT never run. So a closed
+account's allocations survive, backed by an account settled to zero. That is a
+consequence to show, not a defect to fix here — an allocation is an append-only
+record, and deleting it on close would destroy history for the same reason
+keeping the transactions does not.
+
+**It takes no lock, deliberately, against this unit's own wording.** The plan
+describes the assessment as the lock-then-compute step, and for an *execution*
+path that is right — `assessDeletionImpact` exists for exactly that and RTA
+calls it. A lock taken in a preview is released when the request ends, long
+before the owner confirms, so it would cost contention and buy no guarantee.
+What protects the confirmation is the execution path deriving again under its
+own lock and refusing on a mismatch, which is already built.
+
+**The exact-zero comparison is load-bearing.** The assessment tests
+`parseFloat(residual) === 0`, matching the engine's `!== 0` exactly, because
+both derive from the same `derivedAccountBalanceSql` expression — the preview
+through `getClosePreview`, the engine through `lockAndDeriveBalances`. A
+tolerance here would let the assessment offer an option the execution then
+refuses with a 409 the owner had no way to predict.
+
+**The fold moved.** `foldNetAdjustmentTotal` now lives beside the report it
+sums, in `getAnnulmentImpactReport.js`, because this endpoint is its second
+consumer. Two copies of a money fold is how two screens start quoting different
+totals for one account.
+
+**Additive.** Neither preview endpoint changed, so `6bbfca8a` and everything
+else reading them keeps working unmodified.
+
+**Verified on `fintrack_dev`:** all 30 live non-boundary accounts, asserting the
+assessment's HARD verdict against the balance the engine itself derives under
+its own lock. Match on every account, with both sides of the gate exercised —
+9 settled, 21 unsettled. Boot clean.
+
+### Frontend requirement this creates
+
+Nothing consumes this endpoint yet; it is new, and no existing screen breaks by
+ignoring it. The screen it is for does not exist:
+
+- A **choose-a-deletion-type screen**, rendering one card per option from
+  `options`, in the array's order.
+- An unavailable option renders **disabled with its `reason` shown**, never
+  hidden. The reason is the whole point — an owner who cannot see why hard
+  delete is refused cannot act on it, and the reason names the action that
+  makes it available.
+- `availablePolicies` on the CLOSE option drives the policy control. A
+  single-entry `['DISCARD']` is a legitimate state, not a loading failure: the
+  owner has no other bank account of that currency to receive the residual.
+- `pocketImpact` renders once, beside the options, with each option's
+  `removesPocketAllocations` saying whether choosing it destroys that backing.
+- `residual` is text and must be echoed back to the close confirmation
+  unchanged — formatted for display, never re-parsed and re-sent.
