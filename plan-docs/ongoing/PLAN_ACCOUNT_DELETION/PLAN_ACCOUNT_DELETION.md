@@ -762,18 +762,19 @@ lock-then-compute step ahead of any deletion type, not just RTA.
 
 ### Open defects carried forward from the research log
 
-Four items the log raised were never carried into this plan and are still
-true of the code on `main` today:
+Four items the log raised were never carried into this plan. Two are fixed,
+two are still open on `main` today:
 
-- **The admin gate for hard delete and RTA accepts every role.**
-  `deleteAccountService.js:504` reads `userRole === 'admin' || userRole ===
-  'super_admin' || userRole === 'user'` - the `|| userRole === 'user'` clause
-  satisfies `isAdmin` for any authenticated caller, so the 403 checks that
-  follow it never fire. A bug, not a design gap.
-- **`checkAndInsertAccount.js` masks its own errors.** It calls
-  `handlePostgresError` around line 100 but only imports `createError`
-  (`checkAndInsertAccount.js:3`) - a real Postgres error on this path throws
-  `ReferenceError: handlePostgresError is not defined` instead of surfacing.
+- **FIXED, 2026-09-06.** The admin gate for hard delete and RTA accepted
+  every role: `deleteAccountService.js:504` read `userRole === 'admin' ||
+  userRole === 'super_admin' || userRole === 'user'` - the `|| userRole ===
+  'user'` clause satisfied `isAdmin` for any authenticated caller, so the 403
+  checks that follow it never fired. A leftover test override, not a design
+  gap - removed.
+- **FIXED, 2026-09-06.** `checkAndInsertAccount.js` called
+  `handlePostgresError` around line 100 but only imported `createError` -
+  a real Postgres error on this path threw `ReferenceError:
+  handlePostgresError is not defined` instead of surfacing. Import added.
 - **`movement_types`'s CHECK constraint has two different shapes** - none in
   the migration chain, nine enumerated values in the runtime initializer.
   Adding `account-closure` or a new `boundary` account type (unit 5) needs a
@@ -790,8 +791,9 @@ true of the code on `main` today:
   NULL-unsafe predicate and the missing `deleted_at` filter — are still
   open.
 
-The other three are not closed by this note - they are tracked here so the
-log can stay archived without losing them.
+The `movement_types` dual-shape hazard and `getAnnulmentImpactReport.js`'s
+remaining two defects are still open - tracked here so the log can stay
+archived without losing them.
 
 ---
 
