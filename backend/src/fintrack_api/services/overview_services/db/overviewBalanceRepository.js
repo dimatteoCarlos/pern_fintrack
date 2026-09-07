@@ -22,8 +22,14 @@
 //
 // The anchor the walk-back starts from is itself derived from the ledger rather
 // than read from user_accounts.account_balance, so neither end of the series
-// rests on a cache. Measured on fintrack_dev before the substitution: stored and
-// derived agree on all 31 accounts, so the change is numerically inert.
+// rests on the stored column. Measured on fintrack_dev before the substitution:
+// stored and derived agreed on all 31 accounts, so the change was numerically
+// inert on that data.
+//
+// That measurement says the two computations agree, not that anything forces
+// them to, and the difference matters here because this anchor is what the whole
+// series hangs from. See the account-creation exception recorded at the bank
+// balance in overviewPageRepository.js.
 
 import { toAmount } from '../../budget_services/core/money.js';
 import {
