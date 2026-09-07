@@ -1,12 +1,18 @@
 // src/fintrack_api/services/overview_services/db/overviewInvestmentRepository.js
 
-// The five figures of the Investment card (V1-V5), in ONE query.
+// The figures of the Investment card (V1-V5 and the closure adjustment), in
+// ONE query.
 //
-// They are five readings of the same account set, and the card publishes an
-// accounting identity over three of them — capitalContributed + realizedPnl =
-// ledgerBalance (§6). Three figures that must add up cannot come from three
-// round trips with writes able to land between them, or the card would show an
-// identity that does not hold and no way to tell why.
+// They are readings of the same account set, and the card publishes an
+// accounting identity over four of them — capitalContributed + realizedPnl +
+// closureAdjustment = ledgerBalance (§6). Figures that must add up cannot come
+// from separate round trips with writes able to land between them, or the card
+// would show an identity that does not hold and no way to tell why.
+//
+// The closure adjustment is the newest of them. It exists because the identity
+// had two terms over a balance holding three kinds of row, so the card told
+// every owner who had ever deleted an investment account that their books were
+// inconsistent.
 //
 // The card of §6 carries no period. V1 is capital moved as of now, V2 is the
 // balance as of now, V3 defaults to full history and V4/V5 are as of now, so
@@ -22,16 +28,16 @@ import { toAmount } from '../../budget_services/core/money.js';
 import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 
-// NUMERIC, not FLOAT: capitalContributed and realizedPnl are NUMERIC sums of the
-// same ledger, and the card publishes capitalContributed + realizedPnl =
-// ledgerBalance. A float anchor breaks that identity by a cent and the card has no
-// way to explain the difference.
+// NUMERIC, not FLOAT: capitalContributed, realizedPnl and closureAdjustment are
+// NUMERIC sums of the same ledger, and the card publishes capitalContributed +
+// realizedPnl + closureAdjustment = ledgerBalance. A float anchor breaks that
+// identity by a cent and the card has no way to explain the difference.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 
-// V1-V5 in one statement.
+// Every figure in one statement.
 //
-// Every branch scopes itself to the same account id array, so the identity
-// V1 + V3 = V2 is stated over one set rather than three that could differ.
+// Every branch scopes itself to the same account id array, so the identity is
+// stated over one set rather than several that could differ.
 //
 // V1 sums movement types 6 and 8. `amount` is signed per leg, so a withdrawal
 // subtracts itself and the total is net capital moved, not gross deposits. The
@@ -44,7 +50,21 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 // date. V5 is a consistency signal, and opening an account once is not a habit.
 //
 // V3 carries R212's exclusion with the NULL guard the nullable description
-// column requires: `NULL NOT LIKE ...` is NULL, and a WHERE drops it.
+// column requires: `NULL NOT LIKE ...` is NULL, and a FILTER drops it — which
+// would silently lose a row from BOTH sums, not just from the realised one.
+//
+// The realised result and the closure adjustment are one pass over one set of
+// rows split two ways, and that is the point: the adjustment is DEFINED as the
+// rows the realised term drops. Written as a second CTE with its own predicate,
+// the two could drift apart under a later edit and the identity below would
+// break with nothing to say why. Here it cannot: every row of movement type 9
+// lands in exactly one of the two sums.
+//
+// What a closure row is: deleting an account reverses the effect it had on the
+// accounts it touched, writing a pair of rows - one on the affected account and
+// its opposite on the internal counterparty. It is neither capital the owner put
+// in nor a result the market produced, and it does move the balance, which is
+// why a two-term identity over these accounts was never going to hold.
 const INVESTMENT_FIGURES_QUERY = `
   WITH accounts AS (
     SELECT ua.account_id, ${DERIVED_BALANCE} AS account_balance
@@ -65,11 +85,17 @@ const INVESTMENT_FIGURES_QUERY = `
       AND t.amount > 0
   ),
   realized AS (
-    SELECT COALESCE(SUM(t.amount), 0) AS realized_pnl
+    SELECT
+      COALESCE(SUM(t.amount) FILTER (
+        WHERE t.description IS NULL
+           OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%'
+      ), 0) AS realized_pnl,
+      COALESCE(SUM(t.amount) FILTER (
+        WHERE t.description LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%'
+      ), 0) AS closure_adjustment
     FROM transactions t
     WHERE t.account_id = ANY($1::int[])
       AND t.movement_type_id = 9
-      AND (t.description IS NULL OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
   )
   SELECT
     (SELECT COUNT(*) FROM accounts) AS account_count,
@@ -77,6 +103,7 @@ const INVESTMENT_FIGURES_QUERY = `
     (SELECT MAX(account_balance) FROM accounts) AS largest_balance,
     c.capital_contributed,
     r.realized_pnl,
+    r.closure_adjustment,
     ((now() AT TIME ZONE $2)::date - (f.last_contribution AT TIME ZONE $2)::date)
       AS days_since_last_contribution
   FROM contributions c
@@ -98,7 +125,7 @@ const INVESTMENT_FIGURES_QUERY = `
  * @param {object} pool - Database pool
  * @param {number[]} accountIds - the user's investment accounts
  * @param {string} timeZone - IANA zone of the account owner
- * @returns {Promise<{accountCount: number, ledgerBalance: number, largestBalance: number|null, capitalContributed: number, realizedPnl: number, daysSinceLastContribution: number|null}>}
+ * @returns {Promise<{accountCount: number, ledgerBalance: number, largestBalance: number|null, capitalContributed: number, realizedPnl: number, closureAdjustment: number, daysSinceLastContribution: number|null}>}
  */
 export async function getInvestmentFigures(pool, accountIds, timeZone = 'UTC') {
  const { rows } = await pool.query(INVESTMENT_FIGURES_QUERY, [accountIds ?? [], timeZone]);
@@ -112,6 +139,7 @@ export async function getInvestmentFigures(pool, accountIds, timeZone = 'UTC') {
    : toAmount(row.largest_balance),
   capitalContributed: toAmount(row.capital_contributed ?? 0),
   realizedPnl: toAmount(row.realized_pnl ?? 0),
+  closureAdjustment: toAmount(row.closure_adjustment ?? 0),
   daysSinceLastContribution: row.days_since_last_contribution === null
    || row.days_since_last_contribution === undefined
    ? null
