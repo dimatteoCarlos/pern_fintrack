@@ -185,6 +185,16 @@ const ACCOUNT_IDS_BY_TYPE_QUERY = `
 //
 // NULL when the user has no accounts at all, which the service reads the same
 // way as "younger than the prior month": there is nothing to compare to.
+//
+// The one set in this file that excludes the compensation account by NO predicate
+// of its own, and it is safe by creation order rather than by chance: that account
+// is created lazily on the first compensation write, which needs an account to
+// compensate against, so it can never hold the minimum. A predicate here would be
+// dead for the same reason the four removed on 2026-09-06 were. Measured on
+// fintrack_dev: it ties with the owner's first accounts, so the figure is right
+// either way. The exception is the reserved-name gap stated above - an owner's own
+// account of that name, created first, both becomes the counterparty and
+// legitimately opens the window, so there is nothing to exclude.
 const OLDEST_ACCOUNT_DATE_QUERY = `
   SELECT (MIN(ua.created_at) AT TIME ZONE $2)::date::text AS oldest_account_date
   FROM user_accounts ua
