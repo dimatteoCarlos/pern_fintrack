@@ -56,6 +56,7 @@ export const overviewInvestmentService = {
    capitalContributed: figures.capitalContributed,
    ledgerBalance: figures.ledgerBalance,
    realizedPnl: figures.realizedPnl,
+   closureAdjustment: figures.closureAdjustment,
    largestBalance: figures.largestBalance,
    daysSinceLastContribution: figures.daysSinceLastContribution,
    currency: ACCOUNTING_CURRENCY_CODE,

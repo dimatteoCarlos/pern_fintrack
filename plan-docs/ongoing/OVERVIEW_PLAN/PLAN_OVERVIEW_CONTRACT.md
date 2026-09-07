@@ -399,10 +399,39 @@ registra para que nadie las cruce esperando que cuadren.
 
 ## 6. Tarjeta de Investment (bespoke — no extiende `DomainCardBase`)
 
-Cinco cifras absolutas, ninguna es un total agregable con las otras tarjetas.
+Seis cifras absolutas, ninguna es un total agregable con las otras tarjetas.
 `D9` prohíbe expresamente publicar retorno % o valor de mercado — quedan fuera
 del tipo, no como `null` sino ausentes: un campo `null` invita a un cliente a
 preguntar "¿por qué está vacío?"; un campo que no existe no invita nada.
+> **The identity gained a third term — 2026-09-06.** It had two, over a balance
+> that holds three kinds of row, so it did not hold for anyone who had ever
+> deleted an investment account and the card told them their books were
+> inconsistent. Measured on the development database: contributed 100043.07 plus
+> realised 2.30 against a balance of 100044.62, short by exactly one reversal row
+> of −0.75. Found by the check that the month binding had to pass, which is why
+> it is written here and not by whoever met it on screen.
+>
+> **Why the missing amount is not simply added back into the realised result.**
+> The other half of that reversal is a +0.75 row sitting in the internal
+> counterparty account, which is not an investment account and is excluded from
+> this card's set by name and by type. Folding it in would close the number and
+> mislabel an account closure as money the market produced; the counterparty
+> account also carries reversals from every other module, so it cannot be added
+> to an investment figure at all.
+>
+> **The two sums are one pass over one set of rows.** The realised result and the
+> adjustment are `FILTER` clauses over the same movement type before the same
+> cut, so the adjustment is defined as the rows the realised term drops. Written
+> as two independent predicates they could drift apart and the identity would
+> break with nothing to say why.
+>
+> **Frontend requirement.** The investment card renders a fourth money row for
+> `closureAdjustment`, labelled as an adjustment from closed accounts and never
+> as a gain or a loss. It is 0 for most owners, and a row reading 0 invites the
+> question the field does not answer — so hide the row when the value is 0 and
+> show it otherwise, including when it is positive. It must not be folded into
+> `realizedPnl` for display: the sum would read as an investment result, which is
+> the exact confusion the field exists to prevent.
 
 ```ts
 type InvestmentCard = {
@@ -410,14 +439,20 @@ type InvestmentCard = {
  capitalContributed: number; // V1 — nunca null, 0 válido (cuenta recién abierta)
  ledgerBalance: number; // V2 — nunca null
  realizedPnl: number; // V3 — nunca null, 0 válido
+ // Added 2026-09-06. What account deletions moved on these accounts: the
+ // reversal row the deletion writes is neither contributed capital nor a
+ // realised result, and it is in the balance. Never null; 0 means no
+ // investment account was ever deleted, which is the common case.
+ closureAdjustment: number;
  // V4 — null + notice "sin cuentas de inversión" si el usuario no tiene
  // ninguna; nunca 0 en ese caso. Con una sola cuenta, 1 es correcto.
  concentration: number | null;
  // V5 — null + notice "sin aportes registrados" si no hubo aportes más
  // allá de la apertura.
  daysSinceLastContribution: number | null;
- // Identidad contable capitalContributed + realizedPnl = ledgerBalance.
- // El cliente reconcilia, el servidor no publica una sexta cifra derivada.
+ // Identidad contable capitalContributed + realizedPnl + closureAdjustment
+ // = ledgerBalance. El cliente reconcilia; el servidor publica los términos y
+ // nunca la diferencia entre ellos.
  currency: CurrencyType;
  meta: SectionMeta;
 };

@@ -1518,7 +1518,7 @@ endpoint still filters on an exact type name, so the screen that renders today
 excludes cash from every figure it shows. That screen is the one the payload is
 meant to replace, which is why it is named and not fixed.
 
-## A deleted account makes the investment card call the books inconsistent — measured 2026-09-06
+## A deleted account made the investment card call the books inconsistent — measured and fixed 2026-09-06
 
 **This is not caused by the month binding and it is not new.** It was found by
 the check that binding was supposed to pass, which is the only reason it is
@@ -1547,12 +1547,25 @@ also right. What cannot be right is an identity of two terms over a balance that
 has three kinds of row in it. Every user who has ever deleted an investment
 account is told their books are inconsistent, and they are not.
 
-**Recommendation, and it is the developer's to take.** Publish the annulment
-adjustment as a term of its own on the card, so the identity reads contributed
-plus realised plus adjustments against the balance. The alternative — silencing
-the notice when annulment rows exist — costs less and hides a real number that
-the reader has no other way to see. Adding the term needs a field in §6 of the
-contract, which is why it is not done here.
+**Decided and implemented the same day, on the developer's instruction.** The
+annulment adjustment is published as a term of its own (`closureAdjustment`), so
+the identity reads contributed plus realised plus adjustments against the
+balance. Two alternatives were weighed and rejected: silencing the notice when
+annulment rows exist costs less and hides a real number the reader has no other
+way to see, and dropping the exclusion from the realised term closes the identity
+with no new field but relabels an account closure as an investment loss.
+
+**Where it lives.** The two sums are `FILTER` clauses over one pass of movement
+type 9 in `INVESTMENT_FIGURES_QUERY`, so the adjustment is defined as the rows
+the realised term drops rather than by a second predicate that could drift from
+it. The field is declared in §6 of the contract with the frontend requirement
+beside it: a fourth money row, hidden at 0, never folded into the realised
+result.
+
+**Verified against the local development database, read only.** Fifteen months
+on the one owner holding investment accounts: the identity holds in all fifteen,
+an independently written query agrees with the adjustment in all fifteen, and the
+card no longer warns in any of them.
 
 **And it answers half of an open question.** What was outstanding was the count
 of annulment-prefixed rows on investment accounts in production. The development

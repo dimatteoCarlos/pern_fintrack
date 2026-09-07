@@ -2,11 +2,11 @@
 
 // The InvestmentCard of §6 — bespoke, and deliberately not a DomainCardBase.
 //
-// Its five figures are not a total, a count and a delta. capitalContributed and
-// ledgerBalance are stocks, realizedPnl is a flow, concentration is a ratio and
-// daysSinceLastContribution is an age. Forcing them into the shared shape would
-// need four of them to pretend to be something they are not, and the contract
-// says so in as many words.
+// Its figures are not a total, a count and a delta. capitalContributed and
+// ledgerBalance are stocks, realizedPnl and closureAdjustment are flows,
+// concentration is a ratio and daysSinceLastContribution is an age. Forcing them
+// into the shared shape would need most of them to pretend to be something they
+// are not, and the contract says so in as many words.
 //
 // D9 forbids publishing a return percentage or a market value. They are absent
 // from the type rather than present and null: a null field invites a client to
@@ -38,15 +38,22 @@ export const EMPTY_PORTFOLIO_NOTICE =
 export const NO_CONTRIBUTIONS_NOTICE =
  'No contribution has been recorded beyond the account opening.';
 
-// Said when capitalContributed + realizedPnl does not equal ledgerBalance.
+// Said when capitalContributed + realizedPnl + closureAdjustment does not equal
+// ledgerBalance.
 //
-// §6 leaves the reconciliation to the client and refuses to publish a sixth
-// derived figure, which this respects — it publishes no number. But a card whose
-// three figures silently fail to add up is the harder half of that pair to
-// notice, the same argument that put hasUncategorizedExpense on the expense
-// card instead of folding the gap into a subtraction.
+// §6 leaves the reconciliation to the client and refuses to publish a derived
+// figure for it, which this respects — it publishes no number. But a card whose
+// figures silently fail to add up is the harder half of that pair to notice, the
+// same argument that put hasUncategorizedExpense on the expense card instead of
+// folding the gap into a subtraction.
+//
+// The third term was added on 2026-09-06 and it is why this notice is now rare
+// rather than routine. It used to fire for every owner who had ever deleted an
+// investment account: the deletion writes a reversal row that moves the balance
+// and is neither contribution nor result, so a two-term identity could not hold
+// and the card called correct books inconsistent.
 export const UNRECONCILED_BALANCE_NOTICE =
- 'Contributed capital and realized P/L do not add up to the ledger balance; some movement on these accounts is neither.';
+ 'Contributed capital, realized P/L and closure adjustments do not add up to the ledger balance; some movement on these accounts is none of the three.';
 
 /**
  * Build the frozen InvestmentCard.
@@ -56,6 +63,8 @@ export const UNRECONCILED_BALANCE_NOTICE =
  * @param {number} figures.capitalContributed - V1, never null: 0 is a new account
  * @param {number} figures.ledgerBalance - V2, never null
  * @param {number} figures.realizedPnl - V3, never null: 0 is a real answer
+ * @param {number} figures.closureAdjustment - what account deletions moved on
+ *   these accounts, never null: 0 means none was ever deleted
  * @param {number|null} figures.largestBalance - the biggest single balance, null with no accounts
  * @param {number|null} figures.daysSinceLastContribution - V5
  * @param {string} figures.currency
@@ -67,6 +76,7 @@ export const makeInvestmentCard = ({
  capitalContributed,
  ledgerBalance,
  realizedPnl,
+ closureAdjustment,
  largestBalance,
  daysSinceLastContribution,
  currency,
@@ -93,7 +103,10 @@ export const makeInvestmentCard = ({
  // Compared through money for the reason every comparison in this module is:
  // a cent of binary float error must not raise a flag that tells the user their
  // books are inconsistent when they are not.
- const reconciles = money(capitalContributed).plus(realizedPnl).equals(money(ledgerBalance));
+ const reconciles = money(capitalContributed)
+  .plus(realizedPnl)
+  .plus(closureAdjustment)
+  .equals(money(ledgerBalance));
  if (accountCount > 0 && !reconciles) {
   cardNotices.push(UNRECONCILED_BALANCE_NOTICE);
  }
@@ -103,6 +116,7 @@ export const makeInvestmentCard = ({
   capitalContributed,
   ledgerBalance,
   realizedPnl,
+  closureAdjustment,
   concentration,
   daysSinceLastContribution,
   currency,
