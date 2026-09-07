@@ -2,6 +2,7 @@
 
 import pc from 'picocolors';
 import { derivedAccountBalanceSql } from '../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { lockAndDeriveBalances } from '../../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 
 // The account's opening amount plus its movements. What the stored column was
 // supposed to hold and no longer does.
@@ -51,8 +52,11 @@ export const getAnnulmentImpactReport = async (
   WHERE
    tr.user_id =$1
    AND tr.account_id = $2 -- 🔑 CRUCIAL: Filter rows to only the Target's signed entries
-   AND tr.destination_account_id != tr.source_account_id -- Ignore self affected account
-   AND tr.status='complete'--no effect so far 
+   -- IS DISTINCT FROM, not !=: a prior deletion's DETACH step (eraseAccountTail.js)
+   -- can leave one side NULL. != against a NULL is NULL, which a WHERE clause
+   -- drops - silently discarding a real, non-self row instead of keeping it.
+   AND tr.destination_account_id IS DISTINCT FROM tr.source_account_id
+   AND tr.status='complete'--no effect so far
  )
    
  SELECT 
@@ -71,13 +75,26 @@ export const getAnnulmentImpactReport = async (
 
  FROM TargetAccountTransactions tat
 
- JOIN 
+  -- LEFT, not JOIN: affected_account_id itself can be NULL - a prior
+  -- deletion's DETACH step (eraseAccountTail.js) nulls a transaction's
+  -- reference to a counterparty account that no longer exists. An INNER
+  -- join drops that row - the unattributable amount along with it - before
+  -- the owner ever sees it. Carlos's ruling (2026-09-06, option B): surface
+  -- it explicitly rather than fold it silently into another account's total.
+ LEFT JOIN
   user_accounts ua ON ua.account_id = tat.affected_account_id
- 
- JOIN
+
+  -- LEFT too, and for the same row: with ua absent, ua.currency_id is NULL,
+  -- and an INNER join here would drop the same row a second time.
+ LEFT JOIN
   currencies ct ON ua.currency_id = ct.currency_id
 
-  JOIN
+  -- LEFT, not JOIN: account_type_id is nullable (ON DELETE SET NULL when the
+  -- catalog row goes) until migration 033 enforces NOT NULL/RESTRICT. An
+  -- INNER join drops the whole row - the account's financial adjustment along
+  -- with it - the moment the type is unknown; account_type_name is purely
+  -- informational downstream, so a NULL there costs nothing.
+  LEFT JOIN
   account_types acctype ON ua.account_type_id = acctype.account_type_id
 
 -- account_id and account_starting_amount replace account_balance here because
@@ -118,9 +135,14 @@ export const getAnnulmentImpactReport = async (
 
     affectedAccountType: row.affected_account_type_name,
 
-    affectedAccountCurrentBalance: parseFloat(
-      row.affected_account_current_balance,
-    ),
+    // No live counterparty (affected_account_id itself NULL) means no live
+    // account row either, so the derived-balance subquery has nothing to
+    // correlate against and returns SQL NULL. parseFloat(null) is NaN, and
+    // this figure reaches a screen - it must stay null, never NaN.
+    affectedAccountCurrentBalance:
+      row.affected_account_current_balance === null
+        ? null
+        : parseFloat(row.affected_account_current_balance),
 
     affectedAccountNetAdjustmentAmount: parseFloat(row.net_adjustment_amount),
 
@@ -135,6 +157,26 @@ export const getAnnulmentImpactReport = async (
   );
 
   return impactReport;
+};
+
+/*
+ * Locks the target account, then computes what erasing it would need to
+ * reverse. The lock closes the same gap RTA's own execution closed (unit 6,
+ * PLAN_ACCOUNT_DELETION.md "Unit 6 started"): once held, no concurrent
+ * transaction can add a new row naming the target as source/destination
+ * underneath the report computed next. Shared so any deletion type's
+ * execution path can get the same guarantee, not only RTA - HARD does not
+ * call this yet, since using it there is an open scope question (whether a
+ * type that deliberately applies no reversal still needs the lock and a
+ * preview of what it is skipping), not a decided change.
+ */
+export const assessDeletionImpact = async (
+  dbClient,
+  userId,
+  targetAccountId,
+) => {
+  await lockAndDeriveBalances(dbClient, userId, [targetAccountId]);
+  return getAnnulmentImpactReport(dbClient, userId, targetAccountId);
 };
 
 /*
