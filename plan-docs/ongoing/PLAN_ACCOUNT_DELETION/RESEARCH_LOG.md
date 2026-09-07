@@ -1,5 +1,13 @@
 # PLAN — ACCOUNT DELETION
 
+> ## Status of this file, fixed 2026-09-06: **historical**
+>
+> **Not a source of current facts and must not be read as one.** Every
+> measurement and architecture decision this log produced is folded forward
+> into `PLAN_ACCOUNT_DELETION.md`, which is the plan of record. Read this file
+> only to trace the audit trail behind a specific cited figure (`§10`, `§12`,
+> `§13`, `§14`, …) — never to learn what is true of the code today.
+
 **Opened 2026-08-22. Amended 2026-08-23: hard delete is the design.**
 
 The deletion method is settled — **hard delete only**, honouring the right of
