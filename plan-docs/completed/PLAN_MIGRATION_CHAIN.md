@@ -211,6 +211,21 @@ against production with no ledger, no ordering and no `DOWN`. Recorded in
 `f68a90f8`, which puts these reachability facts above `initializeDatabase()`
 itself.
 
+**"Run the chain" is not yet an executable instruction against production, and
+this section must not be read as one.** The runner skips a file only when the
+`migrations` ledger holds its row. Production's ledger is **empty** while its
+schema was built by `createTables.js`, so a run from 001 does not resume at 031 —
+it starts at 001 and stops at the second file, which is measured and recorded in
+§2. What has to happen first is marking as applied the migrations whose effect
+the schema already has. That procedure exists, in section 7 of
+`backend/src/db/docs/db-documented/db-migration-procedure.md`, and it is
+**written and never executed**. Executing it is a separate decision and the
+developer authorises it.
+
+So the prerequisite has two parts in this order: seed the ledger to match what
+production's schema already contains, then run the outstanding files. Everything
+below describes the second part and assumes the first is done.
+
 **What each missing migration breaks, worst first.** This is what an operator
 needs before deciding what to verify, and it is not the numeric order. Measured
 in `main` on 2026-09-07.
