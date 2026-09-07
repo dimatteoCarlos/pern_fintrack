@@ -1,0 +1,156 @@
+-- 034_add_account_closed_at.sql
+--
+-- ============================================================================
+-- Migration 034: adds user_accounts.closed_at, a nullable timestamp recording
+--   when an account was closed, so that closing an account and deleting one
+--   stop writing the same column.
+-- Depends on: 002_accounts.sql, which declares user_accounts and its
+--   deleted_at column as TIMESTAMPTZ DEFAULT NULL. This file matches that
+--   declaration exactly.
+-- Not measured against a database, deliberately. ADD COLUMN of a nullable
+--   column with no default rewrites no row and reads no data, so nothing about
+--   the current contents can change what this file does. One dated fact is
+--   recorded, and it is the deletion session's, taken on fintrack_dev on
+--   2026-09-07: no row of user_accounts carries deleted_at there today. That is
+--   not evidence the column is unused - a row that carried it may since have
+--   been hard-deleted, which erases the row and the evidence together.
+--   Production was NOT read. Nobody opened Supabase this session, so nothing
+--   here rests on the column being empty there.
+-- ============================================================================
+--
+-- WHY A COLUMN AND NOT A RENAME
+--
+-- deleted_at is written by two operations that mean different things, and the
+-- module cannot tell them apart. deleteAccountService.js refuses a soft delete
+-- when the column is set, with "Account already soft deleted" (:461), and
+-- refuses a close on the identical predicate with "Account is already closed"
+-- (:573). Both then write the same column, at :474 and :689. Whichever
+-- operation arrives second is refused by a message describing a state the
+-- account may not be in.
+--
+-- Hard delete does not read the column at all. Its only guard in that branch is
+-- a nonzero-residual refusal (:436-448), and a closed account sits at exactly
+-- zero by construction - that is what the settlement is for. So a closed
+-- account passes the hard-delete guard trivially, and closed-then-deleted is
+-- not a hypothetical sequence but the cheapest path through the module.
+--
+-- Two states, one column. A rename would move the ambiguity rather than close
+-- it, and it would break every reader deployed before it: the frontend and the
+-- backend deploy as two independent Vercel projects, so there is no instant at
+-- which a renamed column reaches both. Adding a column renames nothing and
+-- drops nothing, so every reader deployed before this file keeps reading
+-- deleted_at and keeps behaving exactly as it does today.
+--
+-- WHY NOTHING IS BACKFILLED
+--
+-- Nothing in the data distinguishes a row that was soft-deleted from a row that
+-- was closed. Both carry a timestamp in the same column and nothing else. The
+-- obvious heuristic - infer a close from the presence of a closure settlement
+-- row - fails for an account closed with a zero residual, which writes no such
+-- row at all.
+--
+-- So every pre-existing deleted_at means a delete. That is a decision, stated
+-- here rather than left implicit, and it is the only safe one: a guess would
+-- write a wrong lifecycle state under the appearance of a migration, and on a
+-- production database this file has not read.
+--
+-- WHY ADD COLUMN IF NOT EXISTS
+--
+-- Not defensive habit - the two build paths make it reachable. The runtime
+-- counterpart of this file, ensureAccountClosedAt() in createTables.js, adds
+-- the same column on every boot of a database that already has the table. A
+-- developer who boots the server before running the chain arrives at this file
+-- with the column already present, and a bare ADD COLUMN would fail there while
+-- succeeding everywhere else. The ledger prevents a second run of this file; it
+-- does not prevent the other path getting here first.
+--
+-- WHAT THIS FILE DOES NOT DO, AND WHO OWNS THE REST
+--
+-- It adds a column and stops. Three things follow it and none is here:
+--
+--   1. The close path writes BOTH columns for a period. That dual-write is what
+--      makes this migration safe on its own - if the close path wrote only
+--      closed_at, every unswept "deleted_at IS NULL" reader would immediately
+--      start showing closed accounts as in circulation. Deletion session's.
+--   2. The read sites move to the precise predicate: in circulation becomes
+--      "deleted_at IS NULL AND closed_at IS NULL", while a site that wants
+--      history keeps only the deleted_at filter. That is a decision per site,
+--      not a substitution.
+--   3. The close path stops writing deleted_at, and only then is the residue
+--      cleared from rows that carry both.
+--
+-- Step 2 has FOUR owners, not one, and that is the part most likely to be
+-- mis-scheduled. The predicate to sweep is the string "deleted_at IS NULL"
+-- against user_accounts; it appears in the account utilities, the account
+-- creation, edit and category controllers, the compensation-account lookup, the
+-- transaction controller, the pocket allocation repository, the deletion
+-- service and its transfer-destination query, and the Overview account
+-- repository. No count is given on purpose: a number in a migration header
+-- carries the branch it was taken on, and two sessions measured this one
+-- differently on the same day. An unswept site does not error - it shows a
+-- closed account as in circulation, silently.
+--
+-- Two of the sites to sweep are PROSE, and a grep for the predicate will not
+-- find them. accountUtils.js:6 states "Every query filters deleted_at IS NULL",
+-- and accountCategoryCreationcontroller.js:148 states that the filter "prepares
+-- the ground for honouring soft deletion". Both are true today and both become
+-- false the moment the close path stops writing deleted_at. They have no author
+-- at that moment and no edit against the file marks it - the same class of
+-- failure the retirement register in plan-docs/completed/PLAN_MIGRATION_CHAIN.md
+-- was created for.
+--
+-- THE ORDER OF 3, AND WHY IT IS NOT A DEADLINE
+--
+-- Rows closed during the dual-write window carry both columns. Clearing the
+-- residue must happen after the swept readers are DEPLOYED, not before: a
+-- swept reader tests both columns and is correct whether or not deleted_at is
+-- set, so once it is live the residue is inert and can be cleared at leisure.
+--
+-- It must not be done earlier, and specifically it must not be made
+-- self-healing on boot. An UPDATE clearing deleted_at wherever closed_at is set
+-- is idempotent, and it converges on the wrong state: it strips the very flag
+-- that keeps unswept readers correct, which is the break the dual-write exists
+-- to prevent, arriving sooner and more quietly than the one it was guarding
+-- against. Idempotent is not the same as safe.
+--
+-- NO INDEX
+--
+-- The swept predicate does not exist in the codebase yet. Indexing a predicate
+-- that no query uses is a guess about a plan nobody has measured, and it takes
+-- a write cost on every insert from the day it lands. When the sweep is done
+-- and the predicate is real, it can be measured and indexed on its own.
+--
+-- NO REGISTER ENTRY
+--
+-- From 034 onward a migration that establishes a constraint carries one line
+-- pointing at the retirement register in
+-- plan-docs/completed/PLAN_MIGRATION_CHAIN.md, rather than trying to hold the
+-- list of what it makes retirable. This file establishes no constraint - it
+-- adds a nullable column - so it retires nothing and has no entry there. The
+-- line is absent on purpose, not by omission.
+--
+-- ============================================================================
+
+-- UP ------------------------------------------------------------------------
+
+ALTER TABLE user_accounts
+ ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ DEFAULT NULL;
+
+-- DOWN ----------------------------------------------------------------------
+--
+-- Run manually, and read this before running it.
+--
+-- Reversing is safe ONLY while nothing has been written to the column. This
+-- file writes no rows, so a rollback taken before the close path begins its
+-- dual-write loses nothing. After that it is lossy in a way 033's reversal was
+-- not: closed_at is the only thing distinguishing a closed account from a
+-- deleted one, and dropping it merges the two states back together with no way
+-- to tell which row was which. The rows survive; the distinction does not.
+--
+-- Reverse this only together with the dual-write that fills it.
+--
+-- BEGIN;
+-- ALTER TABLE user_accounts
+--  DROP COLUMN closed_at;
+-- DELETE FROM migrations WHERE filename = '034_add_account_closed_at.sql';
+-- COMMIT;

@@ -31,6 +31,7 @@ import {
   ensurePocketTables,
   ensureBudgetAllocationBackfill,
   ensureAccountTypeRequired,
+  ensureAccountClosedAt,
   ensureCategoryBudgetCurrency,
   ensureCategoryBudgetFxColumns,
   recreateExchangeRatesTable,
@@ -234,6 +235,11 @@ export async function initializeDatabase() {
     // Runtime counterpart of migration 033. After the catalog seed above, not
     // before: the foreign key it re-adds points at account_types.
     await ensureAccountTypeRequired(client);
+
+    // Runtime counterpart of migration 034. Order against the call above does
+    // not matter - it adds a column and touches no catalog - but it stays here
+    // so both user_accounts schema steps read as one block.
+    await ensureAccountClosedAt(client);
 
     // Runtime counterpart of migration 011, for the databases this file does
     // reach: a local or self-hosted one that has never had the runner pointed
