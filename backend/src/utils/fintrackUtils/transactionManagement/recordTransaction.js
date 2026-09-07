@@ -7,7 +7,7 @@
 
 import pc from 'picocolors';
 import { pool } from '../../../db/config/configDB.js';
-import { handlePostgresError } from '../../errorHandling.js';
+import { createError, handlePostgresError } from '../../errorHandling.js';
 import { getCurrencyIdSync } from '../../../utils/currencyLookup.js';
 
 import { ACCOUNTING_CURRENCY_CODE } from '../../../fintrack_api/config/fintrackConfig.js';
@@ -109,7 +109,13 @@ export async function recordTransaction(clientOrPool = null, option) {
   } catch (error) {
     const message = error.message || `Error when recording transaction.`;
     console.error(pc.redBright(message), 'from record transaction');
-    throw handlePostgresError(error);
+    // An Error, not the handler's plain result object. All five callers catch
+    // this and run it through handlePostgresError again; that object puts an
+    // HTTP status on .code, which matches no SQLSTATE case, so a correctly
+    // classified 400 came back out of the second pass as a 500.
+    const { code, message: classified, errorCode, details } =
+      handlePostgresError(error);
+    throw createError(code, classified, { errorCode, details });
   }
 }
 
