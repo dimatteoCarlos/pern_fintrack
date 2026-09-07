@@ -19,6 +19,7 @@ import {
   derivedAccountBalanceSql,
   withDerivedBalance,
 } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { NOT_BOUNDARY_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 
 const backendColor = 'greenBright';
 const errorColor = 'red';
@@ -36,14 +37,6 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua');
 // display the account it has just deleted, so those keep serving it and ship
 // is_deleted beside it instead.
 const LIVE_ACCOUNT = 'AND ua.deleted_at IS NULL';
-
-// Excludes the internal compensation account by what it is, not by what it is
-// called. The name filter beside it stays until 'slack' is reserved at account
-// creation: after 031 an account of that name typed 'bank' can still be
-// captured as the compensation account, and no type predicate can see it. The
-// pre-031 typing is a second, weaker reason and expires on its own.
-const NOT_BOUNDARY_ACCOUNT =
- "AND act.account_type_name IS DISTINCT FROM 'boundary'";
 
 //BASIC FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {

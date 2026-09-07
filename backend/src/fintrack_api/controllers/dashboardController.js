@@ -16,19 +16,12 @@ import { extractNoteFromDescription } from '../../utils/fintrackUtils/transactio
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import { resolveZonedWindow } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { derivedAccountBalanceSql } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { NOT_BOUNDARY_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 
 // The dashboard's totals come from the ledger, like every list beneath them.
 // Summing the stored column here while the lists derive would put a headline
 // figure above a list that contradicts it.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua');
-
-// Excludes the internal compensation account by what it is, not by what it is
-// called. The name filter beside it stays until 'slack' is reserved at account
-// creation: after 031 an account of that name typed 'bank' can still be
-// captured as the compensation account, and no type predicate can see it. The
-// pre-031 typing is a second, weaker reason and expires on its own.
-const NOT_BOUNDARY_ACCOUNT =
- "AND act.account_type_name IS DISTINCT FROM 'boundary'";
 
 //COMMON FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {

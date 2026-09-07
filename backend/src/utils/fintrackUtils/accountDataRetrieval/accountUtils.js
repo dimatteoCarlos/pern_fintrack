@@ -48,6 +48,24 @@ export async function getUserIdFromAccount(clientOrPool, accountId) {
 }
 
 /**
+ * Excludes the internal compensation account from a result set, by what the
+ * account IS rather than by what it is called. Appended to a WHERE whose
+ * query has already joined account_types as `act`.
+ *
+ * The name filter beside it at each call site stays until 'slack' is
+ * reserved at account creation: after 031 an account of that name typed
+ * 'bank' can still be captured as the compensation account, and no type
+ * predicate can see it. The pre-031 typing is a second, weaker reason and
+ * expires on its own.
+ *
+ * One definition rather than one per controller: the predicate's whole
+ * purpose is that it cannot differ between the queries that publish a
+ * user's money, and it was already duplicated verbatim in two of them.
+ */
+export const NOT_BOUNDARY_ACCOUNT =
+ "AND act.account_type_name IS DISTINCT FROM 'boundary'";
+
+/**
  * Get the 'slack' compensation account ID for a user.
  * @param {Object} clientOrPool - Database client or pool.
  * @param {string} userId - User UUID.
