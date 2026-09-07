@@ -126,10 +126,76 @@ it means **closed**, never deleted: a deleted account has no row for a column
 to carry. Every query reading `deleted_at IS NULL` is asking *is this account
 in circulation*, and must be read that way.
 
-**Recommendation, to be executed at unit 7: rename it to `closed_at`.**
+~~**Recommendation, to be executed at unit 7: rename it to `closed_at`.**
 Recorded as D6 (§9). Unit 7 is the moment because unit 8 immediately
 afterwards visits 75 read sites, 8 of which filter this column — renaming
-first means unit 8 sweeps under the final name instead of being redone.
+first means unit 8 sweeps under the final name instead of being redone.~~
+
+**Superseded 2026-09-07: it is a second column, not a rename.** Both the
+recommendation above and the sentence above it rest on the same premise —
+that a deleted account has no row, so the column can only ever mean closed.
+That premise is false for soft delete, which keeps the row and sets the same
+column. Three measurements in `deleteAccountService.js` settle it:
+
+- **Two operations already write the column and neither knows about the
+  other.** The soft-delete branch refuses when it is set, with *Account
+  already soft deleted*; the close path refuses when it is set, with *Account
+  is already closed*. Whichever arrives second is refused by a message
+  describing a state the account may not be in.
+- **Hard delete never reads the column at all.** Its only guard is a refusal
+  when the ledger residual is nonzero, and closing an account leaves that
+  residual at exactly zero by construction — that is what the settlement is
+  for. A closed account therefore passes the hard-delete guard trivially.
+- **So closed-then-deleted is not hypothetical**, it is the path of least
+  resistance through the module today.
+
+Two states cannot share one column, and the answer is not a new name for the
+old one. **Decision: add `closed_at` beside `deleted_at`**, which keeps
+`deleted_at` meaning soft-deleted and renames nothing. The shape, agreed with
+`pern-fintrack-02`, who owns the migration chain and writes both halves:
+
+1. Add `closed_at`, nullable. Nothing renamed, nothing dropped, so no deploy
+   ordering problem in either direction — the frontend and backend are two
+   independent Vercel projects and there is no instant at which a schema
+   change lands on both at once.
+2. The close path writes **both** columns for the duration. This is what makes
+   the first migration safe alone: if it wrote only `closed_at`, every
+   existing `deleted_at IS NULL` reader would start showing closed accounts as
+   in circulation.
+3. The read sites move to the precise predicate — in circulation becomes
+   `deleted_at IS NULL AND closed_at IS NULL`, and a reader that wants history
+   keeps only the `deleted_at` filter. A semantic sweep, not a substitution,
+   so each site is a decision; this half is the deletion module's.
+4. A later migration stops the close path writing `deleted_at`. It drops no
+   column, and it is not a corrective migration: the first is deliberately
+   incomplete, which is what expand-and-contract means.
+
+**Nothing is backfilled, and that is a decision rather than an omission.** On
+`fintrack_dev` on 2026-09-07 no row of `user_accounts` carries `deleted_at`
+and `information_schema` lists no `closed_at` beside it — but that is dev, and
+production is Supabase, which nobody has read this session, so the migration
+cannot be written on the assumption that the column is empty. The decision
+holds either way and for the same reason: every pre-existing `deleted_at`
+means a delete, because nothing in the data distinguishes a soft delete from a
+close. Inferring it from the presence of a closure settlement row fails for an
+account closed with a zero residual, which writes no settlement row at all.
+Stated in the migration header, not left implicit. Correction from
+`pern-fintrack-02`, who owns the chain.
+
+**One step that is genuinely a second migration, and it has a deadline.** Rows
+closed during the dual-write window carry both columns. Clearing `deleted_at`
+on exactly those rows is a data migration, and it is writable only while the
+dual-write window still makes them distinguishable — after the close path
+stops writing `deleted_at`, those rows are indistinguishable from a soft
+delete forever, which is the same ambiguity the backfill decision above
+refuses to guess at.
+
+**The migration is three artefacts, not one.** `CREATE TABLE IF NOT EXISTS`
+never alters an existing table, so the `mainTables` DDL in `createTables.js`
+reaches only virgin databases: an idempotent `ensureClosedAt()` wired into
+`initializeDatabase()` is required for every database that already exists.
+Without it the two build paths diverge on the day the migration lands — the
+same defect Carlos flagged when he commissioned migration 033.
 
 ### 3.2 DELETE — the exceptional one
 
@@ -651,8 +717,9 @@ commit. The order is forced where stated and free otherwise.
      deletion type, not just RTA, is still open.
 
   7  the settlement engine and CLOSE                       §3.1, §4.1
-     OPEN. TRANSFER and DISCARD, the invariants, the deleted_at write path,
-     and the deleted_at -> closed_at rename (D6).
+     TRANSFER and DISCARD both SHIPPED (2026-09-07). Still open: the
+     addition of closed_at beside deleted_at (D6, settled as an added
+     column rather than a rename) and the client's echo of the residual.
 
   8  the read sweep                                        
      OPEN. 75 FROM/JOIN of user_accounts across 21 files, 8 filtering
@@ -702,9 +769,13 @@ them:
  D5  whether `description` stops embedding the counterparty going forward.
      If it does, the scrub of §8 shrinks to a one-time backfill.
 
- D6  whether `deleted_at` is renamed to `closed_at`, at unit 7.
-     Recommended yes (§3.1). Until it is, the name means CLOSED, not
-     deleted, and nothing in the code may read it as deletion.
+ D6  SETTLED 2026-09-07 (§3.1). Not a rename: `closed_at` is added beside
+     `deleted_at`, because soft delete and close already write the same
+     column meaning different things and a closed account can still be
+     hard-deleted afterwards. Scheduled by Carlos; the migration and its
+     runtime counterpart belong to `pern-fintrack-02`, the read-site sweep
+     and the reopen path to this module. Until it lands, `deleted_at` on a
+     surviving row still means CLOSED and nothing may read it as deletion.
 ```
 
 ### Unit 5 scoping, 2026-09-06
@@ -2017,6 +2088,39 @@ destinations that reproduce the account/row disagreement the compensation
 insert fix just closed, and the settlement writer would tag both legs with the
 closing account's currency regardless. A predicate that costs nothing now and
 is load-bearing later cannot be added retroactively to rows already settled.
+
+**What the risk is actually waiting on, corrected 2026-09-07.** This section
+first said the risk becomes real the day something in the migration chain lets
+an account exist in a non-accounting currency. That is wrong, and the
+correction matters because it moves the risk from future to present: there is
+no gate in the chain to open. `user_accounts.currency_id` is declared
+`INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE
+CASCADE` — it references the whole catalog, all six rows, with no `CHECK` and
+no restriction to the accounting currency. Reported by `pern-fintrack-02` and
+verified here on the runtime DDL in `createTables.js`, plus a search of both
+build paths for any `CHECK` naming a currency column, which finds none on
+`user_accounts`.
+
+So an account in EUR is one INSERT away, not one migration away. The
+same-currency predicate is enforced today by the application only, and a seed,
+a script, a backfill or a second writer goes around an application guard
+without touching the schema. **Open, not commissioned:** closing this properly
+is a `CHECK` or a partial constraint on `user_accounts.currency_id`, which
+belongs to the session that owns the migration chain (`pern-fintrack-02`) and
+waits on Carlos scheduling it.
+
+**A module outside this one depends on the `bank` condition, 2026-09-07.** The
+overview's investment transaction list and the count beside it carry no
+movement-type filter at all; they are scoped by the investment account set
+instead. Both closure legs land on bank accounts because the eligibility rule
+says so, so both fall outside that set and neither list can publish a closure
+row. That safety is borrowed entirely from this rule and there is nothing in
+the overview query that would stop it: **the day closure eligibility admits
+account type `investment`, closure rows start appearing inside investment
+history and the count moves with them.** Measured by `pern-fintrack-cf` across
+its whole module; recorded here because the dependency runs from this rule
+into theirs and is invisible from either side alone. Anyone widening the
+destination rule reads this paragraph first.
 
 ## The DISCARD settlement verified against a database, 2026-09-07
 
