@@ -211,20 +211,60 @@ against production with no ledger, no ordering and no `DOWN`. Recorded in
 `f68a90f8`, which puts these reachability facts above `initializeDatabase()`
 itself.
 
-**"Run the chain" is not yet an executable instruction against production, and
-this section must not be read as one.** The runner skips a file only when the
-`migrations` ledger holds its row. Production's ledger is **empty** while its
-schema was built by `createTables.js`, so a run from 001 does not resume at 031 —
-it starts at 001 and stops at the second file, which is measured and recorded in
-§2. What has to happen first is marking as applied the migrations whose effect
-the schema already has. That procedure exists, in section 7 of
-`backend/src/db/docs/db-documented/db-migration-procedure.md`, and it is
-**written and never executed**. Executing it is a separate decision and the
-developer authorises it.
+**Corrected 2026-09-07 — the seeding prerequisite this paragraph stated does not
+exist.** It said production's ledger was empty, that a run from 001 would stop at
+the second file, and that the ledger had to be seeded first. All three are false
+of production and all three are true of `fintrack_prod_data`, the control copy
+restored from the 2026-08-21 23:04 dump. This is the same confusion §4 paso 0
+resolved on 2026-09-02 and the header of this file superseded on 2026-09-06: the
+empty ledger is a property of the copy, not of the live database.
 
-So the prerequisite has two parts in this order: seed the ledger to match what
-production's schema already contains, then run the outstanding files. Everything
-below describes the second part and assumes the first is done.
+What production's ledger holds was measured twice on read-only connections, both
+readings recorded outside this file. `PLAN_CURRENCY_TO_PRODUCTION.md` §2, in the
+row `Production's ledger reaches 028`, records **29 rows** on 2026-09-03 — files
+`001` through `028` plus `supabase/001_production_alignment.sql` — each name
+verified individually rather than counted. The `Applied` row of the same table
+records **31** after the run of 2026-09-06, closing on `030_add_jpy_currency.sql`.
+So `runMigrations.js` skips `001` through `030` by name and resumes at `031`,
+which is exactly what the rest of this section describes. There is no first part
+to do before it.
+
+**The halt at `002_accounts.sql` is real and is not about production.**
+`PLAN_CURRENCY_TO_PRODUCTION.md` §3, under `fintrack_prod_data cannot be the
+target`, measured it on 2026-09-06 against that copy and reached the mechanism
+below independently. It is why the rehearsal ran against a database created
+empty: the chain is replayable from empty, not over an existing schema.
+
+**What no one has measured is today.** Every reading above predates this session,
+the most recent by one day, and nobody working on this tree has connected since.
+The ledger's current contents cost one read-only query — `SELECT filename FROM
+migrations ORDER BY id` — and the developer is the only one who runs it. The
+prerequisite for `031` to `034` is that query returning the thirty-one names, not
+a seeding procedure.
+
+**A guard against a missing object is not a guard against a narrower table**, and
+this is the trap in reading the halt out of the file text. Every statement in
+002 is guarded — `CREATE TABLE IF NOT EXISTS`, `DROP TRIGGER IF EXISTS` before
+its `CREATE TRIGGER` — so the file looks re-runnable against any schema that
+already has the objects. It is not re-runnable against one whose table has fewer
+columns: `CREATE TABLE IF NOT EXISTS users` is a no-op that does **not** add the
+missing column, and the `CREATE TRIGGER ... UPDATE OF timezone ON users` that
+follows raises. Add the clause that stops the next reader concluding the halt is
+impossible: **both build paths in the tree agree — the schema it was measured on
+agrees with neither.** `createTables.js` declares `timezone` and the same
+trigger, so a database built by today's boot DDL carries them; the halt is a
+statement about `fintrack_prod_data`, whose schema predates `eb9a0894`, not about
+either path lacking the column. Two peers have now read the file, seen the two
+paths agree, and concluded there was nothing there.
+
+The stranding hazard this implies is already closed, and is worth naming so
+nobody reopens it: `eb9a0894` edited an applied migration in place instead of
+adding an `ALTER`, so the column has no chain route onto a database whose ledger
+already names 002. `backend/src/db/migrations/supabase/001_production_alignment.sql`
+adds the column and the trigger in its first section and writes its
+`('002_accounts.sql')` ledger row afterwards, in that order. Any decision that
+writes a ledger row by hand has to preserve it: mark 002 applied before the
+column exists and both the column and the trigger are stranded permanently.
 
 **What each missing migration breaks, worst first.** This is what an operator
 needs before deciding what to verify, and it is not the numeric order. Measured
@@ -417,6 +457,12 @@ una copia anterior a ella. El libro vacío es una propiedad de la copia, no de
 producción.
 
 **Lo pendiente en producción son seis archivos, no veinticuatro: 019 a 024.**
+
+**Superado el 2026-09-06.** Ese conteo era correcto el 2026-09-02 y hoy no lo es:
+`019` a `028` se aplicaron el 2026-09-03 y `029` y `030` el 2026-09-06, dejando el
+libro en treinta y una filas. Lo que sigue vigente de este paso es la conclusión
+sobre el instrumento — el libro vacío pertenece a `fintrack_prod_data` — no la
+cuenta de pendientes. El encabezado de este archivo lleva la cuenta viva.
 
 Un primer conteo escrito aquí el mismo día dijo siete. Sumaba la
 `013_normalize_category_budget_name_case.sql`, porque el paso 9 de la alineación
