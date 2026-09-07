@@ -86,6 +86,30 @@ const INCOME_ACCOUNT_IDS_QUERY = `
 // the same rows; it is written broad anyway, because narrowing it here would be
 // this module asserting something PL1 does not.
 //
+// An account's identity is its NAME and its TYPE together, both, at every
+// predicate — ruled 2026-09-06. This set is one of the two places in
+// this module and its page-level sibling where that changed anything: it had no
+// type filter and no join at all, so it gains both. The other one is the
+// recent-activity list, which selected the type without ever comparing it.
+//
+// The four remaining predicates across the two files were left alone on purpose.
+// Each restricts the type with an inclusive list — five types here in the
+// income set, two in the bank balance, one in the saving goals, and a parameter
+// closed by the only three wrappers exported over the by-type helper — and
+// 'boundary' is in none of them. Adding the comparison there would read as a
+// defence and remove nothing, which costs the next reader the work of checking
+// the list to find out.
+//
+// The join is LEFT and the comparison is IS DISTINCT FROM, and one fact forces
+// both: the account type column is ON DELETE SET NULL, so a row can carry no
+// type. An inner join would drop such a row from a set written deliberately
+// broad, and a NULL type compared with <> yields NULL, which a WHERE discards.
+// An account with no type is not the compensation account, and this shape says
+// so.
+//
+// No name comparison is removed anywhere. That waits on the name being reserved
+// at account creation, for the reason stated below.
+//
 // Having no type filter makes the name comparison this set's SOLE exclusion of
 // the compensation account. The other three restrict by type and would keep that
 // account out on the type alone, since 031 gave it one and retyped every existing
@@ -112,8 +136,10 @@ const INCOME_ACCOUNT_IDS_QUERY = `
 const PNL_ACCOUNT_IDS_QUERY = `
   SELECT ua.account_id
   FROM user_accounts ua
+  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
     AND ua.account_name != 'slack'
+    AND act.account_type_name IS DISTINCT FROM 'boundary'
   ORDER BY ua.account_id
 `;
 

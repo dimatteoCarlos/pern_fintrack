@@ -56,6 +56,15 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 // Measured on fintrack_dev before the substitution: stored and derived agree on all
 // 31 accounts of every type, so the change is numerically inert and any later
 // difference is real drift the derivation caught, not the substitution moving money.
+
+// An account's identity is its NAME and its TYPE together, both, at every
+// predicate that excludes the system's compensation account — ruled
+// 2026-09-06. Of the three queries below only the recent-activity list changed:
+// it selected the type and never compared it. The bank balance and the saving
+// goals already restrict the type with an inclusive list that cannot admit that
+// account, so they satisfy the rule as they stand and gained nothing. The
+// account sets repository carries the full argument, including why no name
+// comparison may be dropped yet.
 const BANK_BALANCE_QUERY = `
   WITH bounds AS (
     SELECT (($2::date + INTERVAL '1 month') AT TIME ZONE $3) AS next_month_start
@@ -131,6 +140,11 @@ const RECENT_ACTIVITY_QUERY = `
   LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
     AND ua.account_name != 'slack'
+    -- The type was selected here and never compared until 2026-09-06. The join
+    -- above is already LEFT, so the comparison has to be IS DISTINCT FROM:
+    -- a NULL type compared with <> yields NULL, which a WHERE discards, and would
+    -- drop every movement on an account whose type was cleared.
+    AND act.account_type_name IS DISTINCT FROM 'boundary'
   ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
   LIMIT 5
 `;
