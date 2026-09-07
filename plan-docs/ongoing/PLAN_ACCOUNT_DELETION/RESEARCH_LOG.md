@@ -1,5 +1,13 @@
 # PLAN — ACCOUNT DELETION
 
+> ## Status of this file, fixed 2026-09-06: **historical**
+>
+> **Not a source of current facts and must not be read as one.** Every
+> measurement and architecture decision this log produced is folded forward
+> into `PLAN_ACCOUNT_DELETION.md`, which is the plan of record. Read this file
+> only to trace the audit trail behind a specific cited figure (`§10`, `§12`,
+> `§13`, `§14`, …) — never to learn what is true of the code today.
+
 **Opened 2026-08-22. Amended 2026-08-23: hard delete is the design.**
 
 The deletion method is settled — **hard delete only**, honouring the right of
@@ -2421,10 +2429,14 @@ every account type in the catalog.
 
 ### 13.11 The code this specification lands on — re-verified 2026-08-26
 
-Three findings come from `on-hold/diagnostic/account_deletion.md`, an earlier
-evaluation of the same flow. That file is on-hold, so none of it was taken on
-faith: each was re-read against the current source today. **All three still
-hold**, and all three are on the path 13.7 rewrites.
+Three findings come from an earlier evaluation of the same flow, written
+2026-08-21 as `on-hold/diagnostic/account_deletion.md`. That file was **deleted
+2026-09-06** once every finding in it had a home: its seven backend ones are
+re-measured in this log and in `PLAN_ACCOUNT_DELETION.md`, and the four with no
+successor were written into `REMARKS.md` as `R265` to `R268`. It was on-hold when
+this subsection was written, so none of it was taken on faith: each was re-read
+against the current source. **All three still hold**, and all three are on the
+path 13.7 rewrites.
 
 **A. Only one of the three deletion paths executes at all.**
 

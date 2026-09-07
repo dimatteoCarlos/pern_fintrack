@@ -287,3 +287,76 @@ moving on, not a rounding error.
 - **Never run `db:reset` against anything but a disposable local database.**
 - **Never commit a production dump.** It holds personal data.
 - **Never deploy a `NOT NULL` before the code that fills it.** Section 3.
+
+---
+
+## 7. Seeding the ledger of a database built by the boot DDL
+
+**When this applies.** A database whose schema came from
+`run_time_db_init/createTables.js` — the DDL that `initializeDatabase()` runs on
+every server start — rather than from the chain. Its ledger is empty or short
+while its schema already carries the effect of files nobody ran through the
+runner, because the boot path writes no ledger row at all: its own flag is
+`app_initialization`.
+
+**Why the runner cannot fix it by being run.** Pointed at such a database it
+reads `SELECT filename FROM migrations`, finds nothing, and starts at `001`. A
+`CREATE TABLE IF NOT EXISTS` over a table that already exists is a no-op, so the
+tables are skipped without acquiring one column, while the `ALTER TABLE`s and the
+backfills do run — and a ledger row is written for every file, declaring success
+over a database that received a fraction of them. Measured: the chain from `001`
+fails at the second file. This is the situation `001_production_alignment.sql`
+was written for (section 1), and why it writes its own ledger rows.
+
+### 7.1 What decides whether a file may be marked
+
+One question per file, and the answer is a reading of the target database, never
+of the file list.
+
+| the file's effect | where it is read on the target | may be marked when |
+|---|---|---|
+| schema — a table, a column, a constraint, an index | `information_schema.columns`, `pg_constraint`, `pg_indexes` | the object is present with the same declaration |
+| data — a backfill, a catalog seed, a normalisation | the rows themselves | the rows the file would write are already there |
+
+**The schema half has a tool.** `npm run db:parity` builds one throwaway database
+by each path — `fintrack_parity_chain` from the chain, `fintrack_parity_boot`
+from the boot DDL — and compares the columns, the constraints and the six seeded
+catalogs, treating the three bookkeeping tables as expected differences rather
+than as drift. It answers whether the boot path reproduces the chain's shape
+**today**: green means a database built by that path has the schema of every file
+on the chain, and no schema-effect file needs its own reading. Red names the
+divergences, and each one is a file that must not be marked.
+
+**The data half has no tool, and it is where the mistake gets made.** A backfill
+leaves nothing in the schema to read. `012_backfill_budget_policies.sql` is the
+case that matters: its effect is rows, `fintrack_dev` carries it and production
+does not, and on 2026-09-06 both ledgers held 31 rows. Read the rows.
+
+### 7.2 The rehearsal, which never happens on the target
+
+1. Restore a copy of the target into a local database.
+2. Seed the ledger there, one statement per file judged present:
+   ```sql
+   INSERT INTO migrations (filename) VALUES ('NNN_name.sql')
+   ON CONFLICT (filename) DO NOTHING;
+   ```
+3. Run `npm run db:migrate` against the copy. It must execute only the files left
+   out, and finish clean.
+4. Read the final state: the ledger's **filenames**, and the objects and rows the
+   executed files claim to have created.
+
+Only then the target itself, through the whole of section 5 — the proof of which
+database is about to be written to (5.0), the backup taken immediately before
+(5.3), and the verification on two axes (5.2).
+
+### 7.3 What must never be done here
+
+- **Never mark a file whose effect has not been read on that database.** The
+  ledger row is a claim that the effect is present, and the runner never revisits
+  a file it names.
+- **Never mark in bulk from the directory listing.** It says which files exist,
+  not which ones ran.
+- **Never identify a database by its ledger count.** Two databases hold 31 rows
+  and differ by one filename.
+- **Never seed the ledger and run the chain in one pass.** Read the ledger back
+  between the two.

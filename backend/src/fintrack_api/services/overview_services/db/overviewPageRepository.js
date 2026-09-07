@@ -92,25 +92,39 @@ const BANK_BALANCE_QUERY = `
 // indistinguishable from a deliberate zero and must not enter the denominator of
 // anything. Summing here would bury that choice inside an aggregate.
 //
+// D30 is now unreachable rather than wrong. pockets.target_amount is NOT NULL
+// with CHECK (> 0) (020_create_pocket_tables.sql), so no row this statement can
+// return carries a null or a zero target. The branch stays in makeFinancialGoals
+// because retiring it changes the null semantics the contract publishes, and
+// every indicator's null semantics is settled once, in P3.
+//
 // No GROUP BY currency_code. That is R202, the defect this module exists to
 // replace — the dashboard's version returns whichever currency group came back
 // first. Everything is already in the accounting currency (D7).
 //
-// ua.account_balance is deliberately NOT derived here. This query joins
-// pocket_saving_accounts, which migration 020 emptied along with every legacy
-// pocket row, so it returns no rows at all and deriving a balance for none of them
-// changes nothing. It needs repointing to the plan model, not re-anchoring.
+// Repointed at the plan model. It used to read pocket_saving_accounts joined to
+// an account balance, and migration 020 emptied both, so the widget rendered
+// blank rather than wrong. A pocket holds no money now: the balance of a goal is
+// what the real accounts have COMMITTED to it, summed from the allocation
+// ledger.
+//
+// Both bounds are the pocket board's own (pocketRepository.js:97-118), and they
+// are here so this widget and the pocket card cannot disagree on one page: the
+// ledger is cut at the close of the reference month, and a pocket planned after
+// that close is not yet a goal. Without the month the widget would answer "now"
+// beside a card answering August.
 const SAVING_GOALS_QUERY = `
   SELECT
-    ua.account_balance AS balance,
-    psa.target AS target
-  FROM user_accounts ua
-  JOIN account_types act ON act.account_type_id = ua.account_type_id
-  JOIN pocket_saving_accounts psa ON psa.account_id = ua.account_id
-  WHERE ua.user_id = $1
-    AND act.account_type_name = 'pocket_saving'
-    AND ua.account_name != 'slack'
-  ORDER BY ua.account_id
+    COALESCE(SUM(pa.amount) FILTER (
+      WHERE pa.allocation_actual_date < (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)
+    ), 0) AS balance,
+    p.target_amount AS target
+  FROM pockets p
+  LEFT JOIN pocket_allocations pa ON pa.pocket_id = p.pocket_id
+  WHERE p.user_id = $1
+    AND p.created_at < (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)
+  GROUP BY p.pocket_id
+  ORDER BY p.pocket_id
 `;
 
 // The five most recent movements, whatever domain they belong to.
@@ -169,18 +183,24 @@ export async function getBankBalance(pool, userId, referenceMonth, timeZone = 'U
 }
 
 /**
- * One row per pocket: what it holds and what it is aiming at.
+ * One row per pocket: what is committed to it and what it is aiming at.
  *
- * target arrives as null when it was never set, and as a number otherwise — the
- * caller decides what a 0 means (D30), because only the caller knows R59 wrote
- * some of them.
+ * balance is the committed total at the close of the given month, not a balance
+ * the pocket holds — no allocation ever moved money, and the funding accounts
+ * still carry it.
+ *
+ * target can no longer arrive as null under the plan model, and the return type
+ * still admits it: the caller's D30 branch is what publishes the contract's null
+ * semantics, and that is settled in P3, not here.
  *
  * @param {object} pool - Database pool
  * @param {string} userId - UUID from the token
+ * @param {string} month - the month to read at, as 'YYYY-MM-01'
+ * @param {string} timeZone - IANA zone of the account owner
  * @returns {Promise<Array<{balance: number, target: number|null}>>}
  */
-export async function getSavingGoals(pool, userId) {
- const { rows } = await pool.query(SAVING_GOALS_QUERY, [userId]);
+export async function getSavingGoals(pool, userId, month, timeZone = 'UTC') {
+ const { rows } = await pool.query(SAVING_GOALS_QUERY, [userId, month, timeZone]);
 
  return rows.map((row) => ({
   balance: toAmount(row.balance ?? 0),

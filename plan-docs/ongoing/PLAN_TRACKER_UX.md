@@ -145,8 +145,8 @@ different months.
 
 **Two consequences to carry, so neither is re-read as pending:**
 
-- The `fix(tracker)` commit that `on-hold/PLAN_UX_SCREENS/PLAN_DEBTS.md` §11.3
-  reserved for R66 **no longer exists**. That plan's live items drop to one: the
+- The `fix(tracker)` commit that the cancelled debts proposal reserved for R66
+  **no longer exists**. That document was folded into `ongoing/PLAN_DEBTS/DEBTS_AUDIT.md` §16 on 2026-09-06 and deleted; its live items drop to one: the
   count of debtors whose balance is zero, computed on the server and rendered
   nowhere.
 - ~~R66 is no longer what blocks the datepicker. **What blocks it now is commit 8**,
@@ -205,7 +205,7 @@ Each carries a recommendation. ~~None is decided; the developer decides.~~
 | **Q2** | If the submit moves, does the `+` beside `Note` disappear or become a real "add note" control? | **Disappear.** Two commit paths on one form is how the two get out of step. The note is already a plain field |
 | **Q3** | One layout for the five screens, or per movement? | **One.** T5 shows the drift has already started, and a second layout doubles every later decision |
 | **Q4** | Does the card state which movement it is recording, or does the navbar above it remain the only place? | **State it.** The navbar is a tab strip; a form that submits money should name what it submits |
-| **Q5** | Does this block adopt `tokens.css` (T6) or stay on the legacy `--creme` / `--dark` family? | **Defer.** It is the same job as `PLAN_AUTH_STYLES.md` and it is bigger than this view. Record it, do not bundle it |
+| **Q5** | Does this block adopt `tokens.css` (T6) or stay on the legacy `--creme` / `--dark` family? | **Defer.** It is the same job as the authentication stylesheet retrofit (`on-hold/PLAN_AUTH/PLAN_AUTH_FRONTEND.md` §11) and it is bigger than this view. Record it, do not bundle it |
 | **Q6** | The date control's whole presentation contract — see below | one answer, four parts |
 | ~~**Q7**~~ | ~~all five screens at once, or Expense first?~~ | **SETTLED 2026-08-30 — not a recommendation, a sequencing rule.** See below |
 
@@ -245,7 +245,7 @@ genuinely open is the expansion behaviour and whether today reads as a choice or
 | refused | reason |
 |---|---|
 | Fix T3 on the way past | It is one word, and it is still a change to a frozen working screen. It goes in a commit that says so |
-| Rewrite the five screens' CSS onto tokens | Q5. That is `PLAN_AUTH_STYLES.md`'s job repeated on another module, with its own gates |
+| Rewrite the five screens' CSS onto tokens | Q5. That is the authentication stylesheet retrofit's job repeated on another module (`on-hold/PLAN_AUTH/PLAN_AUTH_FRONTEND.md` §11), with its own gates |
 | Touch `CardNote.tsx`'s hardcoded `90` | It belongs to the **J1** constants change, already sequenced inside the budget module |
 | Start before budget closes | D7. This file exists so the measurement is not lost, not so the work starts |
 

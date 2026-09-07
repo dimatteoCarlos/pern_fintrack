@@ -1,8 +1,8 @@
 // backend/src/fintrack_api/services/delete_account/accountAnnulmentService.js
 
 import pc from 'picocolors';
-import { pool } from '../../../db/config/configDB.js';
 import { derivedAccountBalanceSql } from '../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { lockAndDeriveBalances } from '../../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 
 // The account's opening amount plus its movements. What the stored column was
 // supposed to hold and no longer does.
@@ -21,7 +21,11 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'FLOAT');
  * the PnL Adjustment needed for the Affected Account (A).
  */
 
-export const getAnnulmentImpactReport = async (userId, targetAccountId) => {
+export const getAnnulmentImpactReport = async (
+  dbClient,
+  userId,
+  targetAccountId,
+) => {
   console.log(pc.blue('getAnnulmentImpactReport'));
   console.log(
     pc.blue(`Generating RTA impact report for Target ID: ${targetAccountId}`),
@@ -48,8 +52,11 @@ export const getAnnulmentImpactReport = async (userId, targetAccountId) => {
   WHERE
    tr.user_id =$1
    AND tr.account_id = $2 -- 🔑 CRUCIAL: Filter rows to only the Target's signed entries
-   AND tr.destination_account_id != tr.source_account_id -- Ignore self affected account
-   AND tr.status='complete'--no effect so far 
+   -- IS DISTINCT FROM, not !=: a prior deletion's DETACH step (eraseAccountTail.js)
+   -- can leave one side NULL. != against a NULL is NULL, which a WHERE clause
+   -- drops - silently discarding a real, non-self row instead of keeping it.
+   AND tr.destination_account_id IS DISTINCT FROM tr.source_account_id
+   AND tr.status='complete'--no effect so far
  )
    
  SELECT 
@@ -68,13 +75,27 @@ export const getAnnulmentImpactReport = async (userId, targetAccountId) => {
 
  FROM TargetAccountTransactions tat
 
- JOIN 
+  -- INNER, deliberately: affected_account_id can be NULL, and dropping that
+  -- group is the correct arithmetic rather than a silent loss. A NULL
+  -- counterparty is the residue of an earlier deletion's DETACH step
+  -- (eraseAccountTail.js), and that deletion already reversed the amount -
+  -- its annulment row sits on this same account, against the compensation
+  -- account, so the two cancel here and the group arrives already settled.
+  -- Re-attributing it would settle it twice: the money would move again,
+  -- and the report's total would stop agreeing with the compensation
+  -- balance the execution path re-derives from the rows it actually wrote.
+ JOIN
   user_accounts ua ON ua.account_id = tat.affected_account_id
- 
+
  JOIN
   currencies ct ON ua.currency_id = ct.currency_id
 
-  JOIN
+  -- LEFT, not JOIN: account_type_id is nullable (ON DELETE SET NULL when the
+  -- catalog row goes) until migration 033 enforces NOT NULL/RESTRICT. An
+  -- INNER join drops the whole row - the account's financial adjustment along
+  -- with it - the moment the type is unknown; account_type_name is purely
+  -- informational downstream, so a NULL there costs nothing.
+  LEFT JOIN
   account_types acctype ON ua.account_type_id = acctype.account_type_id
 
 -- account_id and account_starting_amount replace account_balance here because
@@ -89,7 +110,7 @@ export const getAnnulmentImpactReport = async (userId, targetAccountId) => {
 
 -- HAVING SUM(tat.amount) !=0;
  `;
-  const rawReportResults = await pool.query(reportQuery, [
+  const rawReportResults = await dbClient.query(reportQuery, [
     userId,
     targetAccountId,
   ]);
@@ -132,4 +153,65 @@ export const getAnnulmentImpactReport = async (userId, targetAccountId) => {
   );
 
   return impactReport;
+};
+
+/*
+ * Locks the target account, then computes what erasing it would need to
+ * reverse. The lock closes the same gap RTA's own execution closed (unit 6,
+ * PLAN_ACCOUNT_DELETION.md "Unit 6 started"): once held, no concurrent
+ * transaction can add a new row naming the target as source/destination
+ * underneath the report computed next. Shared so any deletion type's
+ * execution path can get the same guarantee, not only RTA - HARD does not
+ * call this yet, since using it there is an open scope question (whether a
+ * type that deliberately applies no reversal still needs the lock and a
+ * preview of what it is skipping), not a decided change.
+ */
+export const assessDeletionImpact = async (
+  dbClient,
+  userId,
+  targetAccountId,
+) => {
+  await lockAndDeriveBalances(dbClient, userId, [targetAccountId]);
+  return getAnnulmentImpactReport(dbClient, userId, targetAccountId);
+};
+
+/*
+ * Every pocket that loses backing if targetAccountId is deleted, named and
+ * totalled, so the owner sees it before confirming (POCKET_MODULE_SPEC.md
+ * §11.1 Q8b: "the deletion of those allocations is a statement the service
+ * makes out loud... after the owner has seen the impact"). Read-only preview -
+ * the actual `DELETE FROM pocket_allocations` runs later, inside the
+ * deletion transaction, in eraseAccountTail.js.
+ */
+export const getPocketAllocationImpact = async (
+  dbClient,
+  userId,
+  targetAccountId,
+) => {
+  const pocketImpactQuery = `
+    SELECT
+      p.pocket_id,
+      p.name AS pocket_name,
+      SUM(pa.amount) AS amount_allocated,
+      cur.currency_code
+    FROM pocket_allocations pa
+    JOIN pockets p ON p.pocket_id = pa.pocket_id
+    JOIN currencies cur ON cur.currency_id = p.currency_id
+    WHERE pa.source_account_id = $1
+      AND pa.user_id = $2
+    GROUP BY p.pocket_id, p.name, cur.currency_code
+    HAVING SUM(pa.amount) != 0
+  `;
+
+  const { rows } = await dbClient.query(pocketImpactQuery, [
+    targetAccountId,
+    userId,
+  ]);
+
+  return rows.map((row) => ({
+    pocketId: row.pocket_id,
+    pocketName: row.pocket_name,
+    amountAllocated: parseFloat(row.amount_allocated),
+    currencyCode: row.currency_code,
+  }));
 };

@@ -1,4 +1,4 @@
-# Adding a foreign currency for FX conversion
+# Adding and removing a foreign currency for FX conversion
 
 Written 2026-09-05, measured against `main` and then exercised the same day by
 adding the Japanese yen — the worked example at the foot of this document. Every
@@ -14,6 +14,11 @@ irreversible.
 
 **Corrected 2026-09-06**, after the yen shipped able to price today and unable to
 price any past day. The conditional entry is step 3b and it was missing.
+
+**Extended 2026-09-06** with the removal path, at the foot of this document.
+`backend/scripts/removeCurrency.js` is the counterpart of the add script and it is
+not the add run backwards: the keys that hold a currency in place are not uniform,
+and two of them blank an owner's setting instead of failing.
 
 **The architectural fact that makes this cheap.** No table that holds money knows
 which currencies exist. Every stored amount carries the same six-column audit
@@ -475,3 +480,105 @@ aligned to begin with.
 **Measured after the change**, at 1234.5: the five two-decimal currencies render
 exactly as before, the yen renders `￥1,235` instead of `¥1,234.00`, and a
 four-decimal exchange rate still renders `3.126,0812`.
+
+---
+
+## Removing a currency
+
+`backend/scripts/removeCurrency.js`, written 2026-09-06. The same declaration
+sites, the same all-or-nothing posture, one migration written and not applied.
+
+```
+node scripts/removeCurrency.js <code>
+node scripts/removeCurrency.js chf --dry-run
+```
+
+**Removal is not addition run backwards, and that asymmetry is the whole design.**
+Before a currency exists nothing points at it, so the worst outcome of a
+half-applied add is a code the client cannot name. Before one is removed a great
+deal can point at it, and the foreign keys holding those rows are not uniform:
+
+| the column | on | on delete | what a `DELETE` does |
+|---|---|---|---|
+| `currency_id`, `original_currency_id`, `exchange_rate_target_currency_id` | the money tables — transactions, pockets, allocations, budget, debtor values | `RESTRICT` | fails, and the runner rolls the whole file back |
+| `base_currency_id`, `target_currency_id` | `exchange_rates`, `daily_exchange_rates`, `exchange_rate_query_coverage` | `RESTRICT` | fails, which is why the migration deletes those rows first |
+| `users.currency_id`, `income_source_accounts.currency_id` | the owner's own settings | **`SET NULL`** | **succeeds, and silently blanks the accounting currency of every owner who chose the code** |
+
+The third row is why this is a script and not a hand-written `DELETE`.
+`confdeltype = 'n'` in `pg_constraint` is what identifies those keys, and nothing
+in the application announces what they do.
+
+**It is answered twice.** Once by a read-only census, before anything is written,
+and once by a guard inside the generated migration — because the census counts
+rows in one database and the migration may be applied to another.
+
+**Three refusals, cheapest first.**
+
+- **The accounting currency.** `ACCOUNTING_CURRENCY_CODE` is what every stored
+  amount is converted into, and every conversion resolves its target through the
+  catalog. Removing it does not degrade the application, it stops it. The check
+  needs neither network nor database, so it goes first.
+- **A code not declared in `populateDB.js`.** No catalog row to remove, and no
+  `currency_id` to write a migration against.
+- **Rows in a money table.** Each one is somebody's money or somebody's setting,
+  and what to do with it is a decision rather than a cleanup — a migration of its
+  own, before this one.
+
+**The census discovers rather than lists.** It reads every foreign key to
+`currencies` out of `pg_constraint` and counts rows per key, so a table added
+after the script was written is still counted, and it prints each key's delete
+rule so the silent ones are named on screen. It connects through the same
+`getDbConfig()` the migration runner uses, and refuses a target naming `prod` or
+`supabase` — the refusal `schemaParity.js:221` already makes. `--offline` skips
+the census and says loudly what was therefore not confirmed.
+
+**The stray sweep.** `backend/src` and `frontend/src` are read for the code in
+quotes outside the declaration sites. Each hit is either a use that will break or
+a comment that will lie. `sql_migrations/` is skipped on purpose: an applied
+migration is the record of what was done on a date, not a live reference, and
+rewriting one to drop a currency would falsify the record. `--ignore-strays`
+writes anyway, once a human has read every line.
+
+**The migration it writes**, `NNN_remove_<code>_currency.sql`, carries the guard
+as a `DO $$ ... $$` block that finds the `SET NULL` keys at run time and raises
+instead of blanking a row. Then it deletes the rate rows, then the `currencies`
+row. The money tables are left to their `RESTRICT` keys deliberately: failing
+loudly is the correct outcome and needs no help from the file. Its `DOWN` is
+commented out and marked to be run by hand, like every reverse from `025` onward.
+
+**Both build paths move together.** The migration deletes the catalog row from a
+database built by the chain; the same run removes it from `populateDB.js`, which
+is where a database built by `createTables.js` takes its catalog. `npm run
+db:parity` compares the two.
+
+**Comments leave with the entry that owns them.** The yen's three lines above
+`fixedRates.jpy` and the four above `CURRENCY_OPTIONS.jpy` go with it; a comment
+at the head of a list does not, because that one explains the list. The rule is
+that a comment block is taken only when the line above it is another entry.
+
+**What it deliberately leaves to a human:** reading the migration before applying
+it, `npm run db:migrate`, `npm run db:parity`, the restart, and the client
+typecheck. It writes to no database and runs no git command.
+
+### Order of work — removal
+
+| # | Step | Reversible | Note |
+|---|---|---|---|
+| 1 | Census: what points at the currency | — | read-only, and refuses production |
+| 2 | The source edits and the migration file | yes | all-or-nothing, written in one run |
+| 3 | `npm run db:migrate` | **partly** | the catalog row comes back; the rate rows do not |
+| 4 | `npm run db:parity` | — | confirms the two build paths still agree |
+| 5 | Restart the backend | yes | `loadCurrencyCatalog()` reads the catalog once at startup |
+| 6 | `npx tsc --noEmit` from `frontend/` | — | `CurrencyType` is narrower, so every stale use is a compile error |
+
+**Step 6 is the acceptance test, the way confirming a real rate is the acceptance
+test of an addition.** The sweep guesses from quoted strings; the compiler does
+not. Narrowing `CurrencyType` turns every remaining use of the code into an
+error, and that is the point of narrowing it.
+
+**The one thing the reverse cannot restore** is the deleted history in
+`daily_exchange_rates`. The `DOWN` block restores the catalog row, and the source
+edits are undone by re-running `addCurrency.js`, but past days' rates come back
+only if a source still publishes them — and Banca d'Italia's historical arm is
+the only one that answers for a past day at all (step 3b). A currency re-added
+after its history was deleted is not the currency it was.

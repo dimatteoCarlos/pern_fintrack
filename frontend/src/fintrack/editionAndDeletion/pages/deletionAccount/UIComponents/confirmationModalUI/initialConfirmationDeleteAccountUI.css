@@ -177,6 +177,55 @@ frontend/src/editionAndDeletion/pages/deletionAccount/UIComponents/confirmationM
 }
 
 /* ============================================
+   POCKET IMPACT BLOCK
+============================================ */
+.pocket-impact-block {
+  padding: var(--confirm-spacing-4);
+  margin-bottom: var(--confirm-spacing-6);
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--confirm-radius-lg);
+}
+
+.pocket-impact-title {
+  font-weight: var(--confirm-font-semibold);
+  color: var(--confirm-text);
+  margin: 0 0 var(--confirm-spacing-2) 0;
+  font-size: var(--confirm-text-base);
+}
+
+.pocket-impact-list {
+  list-style: none;
+  margin: 0 0 var(--confirm-spacing-2) 0;
+  padding: 0;
+}
+
+.pocket-impact-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--confirm-spacing-3);
+  padding: 0.25rem 0;
+  font-size: var(--confirm-text-sm);
+  color: var(--confirm-gray-700);
+}
+
+.pocket-impact-total {
+  font-weight: var(--confirm-font-semibold);
+  color: var(--confirm-text);
+  margin: 0 0 var(--confirm-spacing-2) 0;
+  font-size: var(--confirm-text-base);
+  border-top: 1px solid #fde68a;
+  padding-top: var(--confirm-spacing-2);
+}
+
+.pocket-impact-note {
+  color: var(--confirm-gray-600);
+  margin: 0;
+  font-size: var(--confirm-text-sm);
+  line-height: 1.4;
+}
+
+/* ============================================
    PROCESSING INDICATOR
 ============================================ */
 .processing-indicator {

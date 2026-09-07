@@ -55,23 +55,28 @@ const EXPENSE_ACCOUNT_IDS_QUERY = `
 // at that same migration. What the name comparison still does here is the harm
 // described at the profit-and-loss set below.
 //
-// cash (account_type_id 7) is IN the set. It was left out while the catalog held
-// that question open, and the developer closed it on 2026-09-01 by decision
-// rather than by a count: a cash account reads as a bank account wherever a
-// figure is composed, so every set naming bank includes it (D45). Money paid into
-// a cash account is income exactly as money paid into a bank account is, and the
-// bank balance of the header already counts it.
+// cash (account_type_id 7) is IN the set, and this is the half of the merge that
+// came from this branch. It was left out while the catalog held the question
+// open, and the developer closed it on 2026-09-01 by decision rather than by a
+// count: a cash account reads as a bank account wherever a figure is composed, so
+// every set naming bank includes it (D45). Money paid into a cash account is
+// income exactly as money paid into a bank account is, and the bank balance of
+// the header already counts it. The comment main carried here deferred to the
+// probe that decision replaced, so it does not survive the merge.
 //
-// pocket_saving is still listed, and that is inertia rather than a decision:
-// migration 020 emptied every account of that type, so it contributes no ids.
-// Taking it out belongs to the work that repoints the pocket module (D54),
-// because the same line is rewritten there and against a different model.
+// pocket_saving is OUT, and that is the half that came from main. Migration 020
+// emptied that type and turned a pocket into a plan committing money that stays
+// in the real account, so it contributes no row today — and leaving the name
+// written would put income back into this set the moment anyone recreated such an
+// account. This branch still listed it and called that inertia rather than a
+// decision, deferring the removal to the pocket repointing (D54); main did the
+// repointing, so the removal arrives with it and the deferral is spent.
 const INCOME_ACCOUNT_IDS_QUERY = `
   SELECT ua.account_id
   FROM user_accounts ua
   JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
-    AND act.account_type_name IN ('bank', 'cash', 'investment', 'debtor', 'pocket_saving')
+    AND act.account_type_name IN ('bank', 'cash', 'investment', 'debtor')
     AND ua.account_name != 'slack'
   ORDER BY ua.account_id
 `;
@@ -93,7 +98,7 @@ const INCOME_ACCOUNT_IDS_QUERY = `
 // recent-activity list, which selected the type without ever comparing it.
 //
 // The four remaining predicates across the two files were left alone on purpose.
-// Each restricts the type with an inclusive list — five types here in the
+// Each restricts the type with an inclusive list — four types here in the
 // income set, two in the bank balance, one in the saving goals, and a parameter
 // closed by the only three wrappers exported over the by-type helper — and
 // 'boundary' is in none of them. Adding the comparison there would read as a
@@ -275,17 +280,6 @@ async function getAccountIdsByType(pool, userId, accountTypeName) {
  */
 export async function getDebtAccountIds(pool, userId) {
  return getAccountIdsByType(pool, userId, 'debtor');
-}
-
-/**
- * The pocket_saving accounts of a user — the set the pocket balance is read over.
- *
- * @param {object} pool - Database pool
- * @param {string} userId - UUID from the token
- * @returns {Promise<number[]>} account ids, ascending
- */
-export async function getPocketAccountIds(pool, userId) {
- return getAccountIdsByType(pool, userId, 'pocket_saving');
 }
 
 /**

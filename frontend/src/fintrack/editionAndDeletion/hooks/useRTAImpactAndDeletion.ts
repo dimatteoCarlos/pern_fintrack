@@ -56,6 +56,13 @@ export const useRTAImpactAndDeletion = (
     [reportResponse?.data?.impactReport],
   );
 
+  // Pockets losing backing from this account (POCKET_MODULE_SPEC.md §11.1
+  // Q8b) - preview only, shown to the owner ahead of confirmation.
+  const pocketImpact = useMemo(
+    () => reportResponse?.data?.pocketImpact || [],
+    [reportResponse?.data?.pocketImpact],
+  );
+
   // console.log('fetchUse data structure:',
   //  {reportResponse}, {isLoadingReport}, {reportError},{fetchUseStatus}, 'apidata data:', reportResponse?.data )
 
@@ -96,9 +103,10 @@ export const useRTAImpactAndDeletion = (
     }
 
     // 1. Build the RTA Payload (Body for the DELETE request)
+    // impactReport is not sent: the backend recomputes it itself inside the
+    // locked transaction (unit 6, 2026-09-06) and no longer reads this field.
     const payload: RTAExecutionPayloadType = {
       deletionType: DELETION_TYPE_RTA,
-      impactReport: affectedAccountReport,
       targetAccountName,
     };
 
@@ -140,6 +148,7 @@ export const useRTAImpactAndDeletion = (
   return {
     //Data and status from the GET request
     affectedAccountReport,
+    pocketImpact,
     isLoadingReport,
     reportError,
 

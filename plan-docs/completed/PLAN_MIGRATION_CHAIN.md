@@ -1,7 +1,14 @@
 # PLAN_MIGRATION_CHAIN — dejar la cadena en condiciones de aplicarse
 
-Estado: abierto. Escrito el 2026-09-02.
-Rama de trabajo: `fix/auth-screen`.
+**State: closed 2026-09-06.** All six steps of section 4 have landed and section 0
+names what each one produced. Written 2026-09-02 on the branch `fix/auth-screen`;
+everything it asked for is on `main` today.
+
+*Written in Spanish, before the English-prose rule of 2026-09-03. Section 0 and the
+closing blocks follow the rule; the body is left as it was written rather than
+translated, because a translation would restate measurements instead of preserving
+them.*
+
 Origen: sección F de `HANDOFF_AGENTES.md` y la sección 9.4.24 del plan de
 retro-fechado, corregidas ambas el 2026-09-02.
 
@@ -54,6 +61,27 @@ defect.
 from `025` onward. It now also has a form: **commented out, and marked "run
 manually"**, like every other file on the chain. A live `DOWN` is not a reversal,
 it is a self-cancelling migration that reports success.
+
+**The four remaining steps landed too, measured 2026-09-06.** Section 4 describes
+steps 1, 4, 5 and 6 as pending. None is:
+
+- **Step 1, the column the boot path did not declare.** `createTables.js:204`
+ declares `opening_for_account_id INTEGER REFERENCES user_accounts(account_id) ON
+ DELETE RESTRICT ON UPDATE CASCADE`, so a database built by the boot path no longer
+ fails on every insert that names it.
+- **Step 4, the reversal from `025` onward.** `migrations/TEMPLATE_migration.sql`
+ exists and carries the form the correction above gives it: the `DOWN` block
+ commented out and marked to be run by hand.
+- **Step 5, parity between the two build paths.** `migrations/schemaParity.js`,
+ `npm run db:parity`. It builds one throwaway database by each path and compares
+ the columns, the constraints and the six seeded catalogs, refusing to run against
+ a connection string that names production.
+- **Step 6, how the ledger receives a database built by the DDL.** Written as
+ section 7 of `backend/src/db/docs/db-documented/db-migration-procedure.md`: which
+ reading decides that a file may be marked, why a backfill cannot be judged from
+ the schema, the rehearsal on a restored copy, and the four things that must never
+ be done. **Written, not executed** — exactly as the step specifies, and
+ executing it stays the developer's separate decision.
 
 ---
 
@@ -398,8 +426,33 @@ arranque ya decía `RESTRICT` y tenía razón, así que la migración `026` llev
 cadena hasta donde el arranque ya estaba, y no al revés.
 
 **`npm run db:parity` reporta cero diferencias: mismas columnas y mismas
-restricciones en los dos caminos.** Lo que la comprobación sigue sin mirar son
-las filas sembradas, donde los dos caminos todavía difieren.
+restricciones de clave primaria, unicidad y clave foránea en los dos caminos.**
+La enumeración es la del párrafo anterior y el resumen tiene que repetirla: un
+lector que llega aquí y lee «mismas restricciones» entiende todas, y la
+comprobación no leía las de tipo `CHECK`.
+
+**Corregido el 2026-09-06, medido en el árbol de trabajo de `main`.** Dos cosas
+que este cierre daba por ciertas dejaron de serlo:
+
+- Las filas sembradas sí se comparan. `SEEDED_CATALOGS` declara los catálogos y
+  el mensaje de éxito dice «same columns, same constraints and same seeded rows
+  on both paths». La frase de arriba sobre lo que «sigue sin mirar» quedó vieja
+  cuando esa comparación entró.
+- Las restricciones `CHECK` no se comparaban. `readConstraints` filtraba
+  `contype IN ('f','u','p')` y nunca `'c'`, así que cualquier divergencia de
+  `CHECK` entre los dos caminos era invisible para la herramienta hecha para
+  verla. Había exactamente una, en `movement_types`, y es la que reconcilia
+  `032_add_account_closure_movement_type.sql`. La consulta lee ahora también
+  `'c'`, con `pg_get_constraintdef` como valor comparado.
+
+**Y una advertencia sobre cómo se cita una corrida verde.** La herramienta
+compara la cadena contra el arranque — los dos caminos entre sí, nunca contra un
+esquema de referencia — y ambos salen del checkout donde se ejecuta. En
+`feat/overview`, donde la cadena se detiene en 030 y el sembrador no trae el tipo
+de cuenta `boundary`, la corrida reporta verde: los dos caminos coinciden y
+ninguno está al día. Verde significa consistencia interna dentro de un checkout,
+no que el checkout esté al día. Toda medición registrada aquí dice en qué árbol
+se tomó.
 
 ---
 
@@ -420,6 +473,13 @@ verifica después. **Escrito, no ejecutado.**
 procedimiento es la decisión aparte, y la autoriza el desarrollador.
 
 **Commit.** `docs(db): the ledger seeding procedure for production`.
+
+> **Closed 2026-09-06.** The procedure is section 7 of
+> `backend/src/db/docs/db-documented/db-migration-procedure.md`. It is written and
+> not executed, which is what this step asked for. Its schema half leans on the
+> parity check step 5 produced; its data half deliberately does not, because a
+> backfill leaves nothing in the schema to read and
+> `012_backfill_budget_policies.sql` is the file that proves it.
 
 ---
 

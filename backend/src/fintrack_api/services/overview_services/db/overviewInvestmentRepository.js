@@ -1,6 +1,7 @@
 // src/fintrack_api/services/overview_services/db/overviewInvestmentRepository.js
 
-// The five figures of the Investment card (V1-V5), in ONE query.
+// The figures of the Investment card (V1-V5 and the closure adjustment), in
+// ONE query.
 //
 // They are readings of the same account set, and the card publishes an
 // accounting identity over four of them — capitalContributed + realizedPnl +
@@ -22,13 +23,13 @@ import { toAmount } from '../../budget_services/core/money.js';
 import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 import { RTA_ANNULMENT_TARGET_PREFIX } from '../../../../utils/fintrackUtils/accountDeletionUtils/recordAnnulmentTransaction.js';
 
-// NUMERIC, not FLOAT: capitalContributed and realizedPnl are NUMERIC sums of the
-// same ledger, and the card publishes capitalContributed + realizedPnl =
-// ledgerBalance. A float anchor breaks that identity by a cent and the card has no
-// way to explain the difference.
+// NUMERIC, not FLOAT: capitalContributed, realizedPnl and closureAdjustment are
+// NUMERIC sums of the same ledger, and the card publishes capitalContributed +
+// realizedPnl + closureAdjustment = ledgerBalance. A float anchor breaks that
+// identity by a cent and the card has no way to explain the difference.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 
-// V1-V5 in one statement.
+// Every figure in one statement.
 //
 // Every branch scopes itself to the same account id array and to the same cut,
 // so the identity is stated over one set rather than several that could differ.

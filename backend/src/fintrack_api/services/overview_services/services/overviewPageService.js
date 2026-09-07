@@ -28,13 +28,12 @@ import { overviewInvestmentService } from './overviewInvestmentService.js';
 import {
  getExpenseAccountIds,
  getIncomeAccountIds,
- getPocketAccountIds,
 } from '../db/overviewAccountRepository.js';
 import {
  getMonthlyExpense,
  getMonthlyIncome,
- getMonthlyPocketNet,
 } from '../db/overviewMonthlyRepository.js';
+import { getMonthlyAllocatedNet } from '../db/overviewPocketRepository.js';
 import {
  getBankBalance,
  getSavingGoals,
@@ -87,7 +86,6 @@ export const overviewPageService = {
    recentActivity,
    expenseAccountIds,
    incomeAccountIds,
-   pocketAccountIds,
   ] = await Promise.all([
    overviewExpenseService.getExpenseDomainData(pool, userId, cardRequest, timeZone),
    overviewIncomeService.getIncomeDomainData(pool, userId, cardRequest, timeZone),
@@ -95,12 +93,15 @@ export const overviewPageService = {
    overviewDebtService.getDebtDomainData(pool, userId, cardRequest, timeZone),
    overviewPocketService.getPocketDomainData(pool, userId, cardRequest, timeZone),
    overviewInvestmentService.getInvestmentDomainData(pool, userId, cardRequest, timeZone),
+   // Both are read at the reference month, and the two bindings arrived from
+   // opposite sides of this merge: the bank balance from this branch, the saving
+   // goals from the pocket repointing on main. Leaving either unbound gives the
+   // page one figure from a closed month beside one from today.
    getBankBalance(pool, userId, referenceMonth, timeZone),
-   getSavingGoals(pool, userId),
+   getSavingGoals(pool, userId, referenceMonth, timeZone),
    getRecentActivity(pool, userId, timeZone),
    getExpenseAccountIds(pool, userId),
    getIncomeAccountIds(pool, userId),
-   getPocketAccountIds(pool, userId),
   ]);
 
   // The thirteen-month series MS2/MS3 average over. Fetched separately from the
@@ -114,7 +115,11 @@ export const overviewPageService = {
    // Pocket's snapshot is a FLOW even though its card is a stock (D28). All four
    // entries of the widget have to be the same kind of quantity or MS4 subtracts
    // an average of movements from a balance.
-   getMonthlyPocketNet(pool, pocketAccountIds, snapshotStart, referenceMonth, timeZone),
+   //
+   // Read over the allocation ledger and scoped by user rather than by a set of
+   // accounts: a pocket is a plan now, not an account, so there is no account set
+   // to pass. Same figure the board publishes as the month's net movement.
+   getMonthlyAllocatedNet(pool, userId, snapshotStart, referenceMonth, timeZone),
   ]);
 
   const hero = makeHeroSection({
@@ -138,7 +143,7 @@ export const overviewPageService = {
    hero,
    all: makeAllCard({
     // The same value the hero published, not a second addition of the same
-    // four numbers.
+    // three numbers.
     netWorth: hero.netWorth,
     totalIncomePeriod: income.card.totalAmount,
     totalExpensePeriod: expense.card.totalAmount,

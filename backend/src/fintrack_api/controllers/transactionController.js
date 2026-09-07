@@ -107,6 +107,16 @@ export const getAccountInfo = async (
   // Text values compared in lowercase on both sides: account names are stored
   // as the user typed them, so an exact match would miss Bancolombia when the
   // request carries bancolombia. Ids are compared as they are.
+  //
+  // DO NOT DROP the account type predicate from the by-id branch. Owner plus id
+  // already identifies the row, so the clause reads as redundant and its removal
+  // would look like tidying. It is not: transformMovementType derives the
+  // movement type from the account types the REQUEST declared, never from the
+  // accounts that were found, so this predicate is the only thing making that
+  // declaration answerable to reality. Without it a request body naming the
+  // retired pocket_saving type writes a pocket movement against an ordinary bank
+  // account, and the retired account model starts accumulating rows again. No
+  // test covers it.
   const accountQuery = byId
     ? `SELECT ua.* FROM user_accounts ua
       JOIN account_types act ON ua.account_type_id = act.account_type_id
@@ -231,8 +241,19 @@ export const transferBetweenAccounts = async (req, res, next) => {
       const db = dbClient || pool;
       try {
         //Check existence using the transaction client
+        // Name AND type, both. Resolved by name alone this captured any
+        // account of the user called 'slack' - including one they created
+        // themselves - and posted the compensation legs into it.
         const chekAccountResult = await db.query(
-          'SELECT * FROM user_accounts WHERE account_name = $1 AND user_id = $2',
+          `SELECT ua.*
+             FROM user_accounts ua
+             JOIN account_types act ON ua.account_type_id = act.account_type_id
+            WHERE ua.account_name = $1
+              AND ua.user_id = $2
+              AND act.account_type_name = 'boundary'
+              AND ua.deleted_at IS NULL
+            ORDER BY ua.account_id ASC
+            LIMIT 1`,
           ['slack', userId],
         );
 
@@ -240,12 +261,38 @@ export const transferBetweenAccounts = async (req, res, next) => {
           console.log('slack account already exists');
           return chekAccountResult.rows[0];
         } else {
-          // account_type_id 1 is 'bank' - the boundary account's type until
-          // unit 5 of PLAN_ACCOUNT_DELETION.md backfills existing accounts to
-          // the structural 'boundary' type (open decision N3).
+          // The compensation account is typed 'boundary' since
+          // 031_add_boundary_account_type.sql. Resolved by name rather than by
+          // a hardcoded id, and it throws when the catalog row is absent:
+          // account_type_id is nullable, so a missing type would insert an
+          // untyped account instead of failing.
+          const boundaryTypeResult = await db.query(
+            "SELECT account_type_id FROM account_types WHERE account_type_name = 'boundary'",
+          );
+          if (boundaryTypeResult.rows.length === 0) {
+            throw new Error(
+              "Account type 'boundary' not found: the migration chain has not reached 031",
+            );
+          }
+          // Resolved from the configured accounting currency, not a literal:
+          // every other creation path stores the accounting currency, so a
+          // hardcoded id makes this the only account in another one whenever
+          // ACCOUNTING_CURRENCY_CODE is set to anything but its usd default.
+          const accountingCurrencyId = await getCurrencyId(
+            db,
+            ACCOUNTING_CURRENCY_CODE,
+          );
           const insertResult = await db.query(
             'INSERT INTO user_accounts (user_id,account_name,account_type_id,currency_id,account_starting_amount,account_balance,account_start_date) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
-            [userId, 'slack', 1, 1, 0, 0, new Date()],
+            [
+              userId,
+              'slack',
+              boundaryTypeResult.rows[0].account_type_id,
+              accountingCurrencyId,
+              0,
+              0,
+              new Date(),
+            ],
           );
           console.log(
             'slack account created successfully',
@@ -706,8 +753,11 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //---check for enough funds on source account
     if (
       sourceLedgerBalance.lessThan(money(numericAmount)) &&
-      ((sourceAccountTypeName === 'bank' &&
-        sourceAccountInfo.account_name !== 'slack') ||
+      // No name exemption for the compensation account: it is typed
+      // 'boundary' since 031, so it never reaches this bank branch. Keeping
+      // the name test would exempt a user's OWN bank account named 'slack'
+      // from the funds check.
+      (sourceAccountTypeName === 'bank' ||
         sourceAccountTypeName === 'investment' ||
         sourceAccountTypeName === 'pocket_saving' ||
         sourceAccountTypeName === 'category_budget') //reversal of a expense

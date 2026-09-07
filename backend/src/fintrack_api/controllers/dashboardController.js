@@ -16,6 +16,7 @@ import { extractNoteFromDescription } from '../../utils/fintrackUtils/transactio
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import { resolveZonedWindow } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 import { derivedAccountBalanceSql } from '../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+import { NOT_BOUNDARY_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 
 // The dashboard's totals come from the ledger, like every list beneath them.
 // Summing the stored column here while the lists derive would put a headline
@@ -595,6 +596,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
             WHERE ua.user_id = $1
               AND (act.account_type_name = $2)
               AND ua.account_name != $3
+              ${NOT_BOUNDARY_ACCOUNT}
               AND tr.amount !=0
 
             AND (
@@ -652,6 +654,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           WHERE tr.user_id = $1
            AND (act.account_type_name = $2)
            AND ua.account_name != $3
+           ${NOT_BOUNDARY_ACCOUNT}
            AND tr.amount !=0
 
             AND (
@@ -718,6 +721,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
 
           WHERE ua.user_id = $1
             AND (act.account_type_name = $2) AND ua.account_name != $3
+            ${NOT_BOUNDARY_ACCOUNT}
 
           ORDER BY tr.transaction_actual_date DESC, ${DERIVED_BALANCE} DESC, ua.account_name ASC
           `,
@@ -742,6 +746,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           JOIN pocket_saving_accounts psa ON ua.account_id = psa.account_id
             WHERE ua.user_id = $1
               AND (act.account_type_name = $2) AND ua.account_name != $3
+              ${NOT_BOUNDARY_ACCOUNT}
                AND( mt.movement_type_name = $4  OR mt.movement_type_name=$7)
                   AND (
                     (tr.transaction_actual_date >= ($5::timestamp AT TIME ZONE $8)
@@ -788,6 +793,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
             JOIN debtor_accounts dbt ON ua.account_id = dbt.account_id
             WHERE ua.user_id = $1
           AND (act.account_type_name = $2) AND ua.account_name != $3
+          ${NOT_BOUNDARY_ACCOUNT}
           AND (mt.movement_type_name = $4  OR (tp.transaction_type_name = $5 OR tp.transaction_type_name = $6))
 
           ORDER BY tr.transaction_actual_date DESC, 
@@ -824,6 +830,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           JOIN transaction_types tp ON tp.transaction_type_id = tr.transaction_type_id
           WHERE ua.user_id = $1
             AND ua.account_name != $2
+            ${NOT_BOUNDARY_ACCOUNT}
             AND (mt.movement_type_name = $3)
 
           ORDER BY tr.transaction_actual_date DESC,
@@ -963,6 +970,7 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
      AND tr.created_at < (($3::date + INTERVAL '1 day') AT TIME ZONE $6))
   )
   AND (ua.account_name != $5)
+  ${NOT_BOUNDARY_ACCOUNT}
   AND (
    tr.description ILIKE '%'||$4||'%' 
   OR CAST(tr.status AS TEXT)  ILIKE '%'||$4||'%'
@@ -1087,6 +1095,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
     -- slack exclusion used to apply to the created_at branch alone and a slack
     -- row still came through on its transaction_actual_date.
     AND ua.account_name != $4
+    ${NOT_BOUNDARY_ACCOUNT}
 
     AND (mt.movement_type_name = $6 OR mt.movement_type_name = $8 )
     AND (trt.transaction_type_name = $5 OR act.account_type_name = $7)

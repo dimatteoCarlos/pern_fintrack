@@ -142,6 +142,134 @@
   
   .content-title {
     font-size: 1.25rem;
-    
+
+  }
+}
+
+/* ============================================
+   OTHER DELETION METHODS - SOFT and HARD triggers
+   (ACCOUNT_DELETION_METHODS.md §6)
+
+   Built on tokens.css rather than the legacy :root block above: this section
+   sits on the same light card the RTA report already uses, which is the
+   panel surface tokens.css names explicitly (--color-surface-panel paired
+   with --color-content-primary/secondary, and the feedback triads that state
+   "valid on inverse and on panel"). --radius-lg is avoided on purpose - see
+   the collision this file itself causes at tokens.css:321-327.
+============================================ */
+.deletion-methods-section {
+  margin-top: var(--space-6);
+  padding: var(--space-6);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-panel);
+  box-shadow: var(--shadow-md);
+}
+
+.deletion-methods-title {
+  margin: 0 0 var(--space-2) 0;
+  color: var(--color-content-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.deletion-methods-description {
+  margin: 0 0 var(--space-4) 0;
+  color: var(--color-content-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.deletion-methods-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.deletion-method-button {
+  min-height: var(--size-touch-target);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width-thin) solid transparent;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  /* Named properties, not `all`: a shorthand transition also animates the
+     outline and makes the focus ring arrive late. */
+  transition: background-color var(--motion-fast), border-color var(--motion-fast),
+    transform var(--motion-press);
+}
+
+/* index.css sets `button { outline: none }`, so the ring has to be declared
+   here. --color-border-strong (dark), not --color-border-inverse (white):
+   this button sits on the light panel surface, not on the dark app one. */
+.deletion-method-button:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-border-strong);
+  outline-offset: var(--border-width-thick);
+}
+
+.deletion-method-button:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* SOFT: calm and reversible, so it reads as informational rather than as a
+   warning - the feedback-info triad is the one tokens.css calibrates for
+   this exact surface (valid on inverse and on panel). */
+.deletion-method-button--soft {
+  border-color: var(--color-feedback-info-border);
+  color: var(--color-feedback-info-content);
+}
+
+.deletion-method-button--soft:hover {
+  background-color: var(--color-feedback-info-surface);
+  border-color: var(--color-feedback-info-content);
+  transform: translateY(-1px);
+}
+
+.deletion-method-button--soft:active {
+  background-color: var(--color-feedback-info-surface);
+  border-color: var(--color-feedback-info-content);
+  transform: translateY(0);
+}
+
+/* HARD: the feedback-error triad, the same reasoning as SOFT above but for
+   the destructive method. */
+.deletion-method-button--hard {
+  border-color: var(--color-feedback-error-border);
+  color: var(--color-feedback-error-content);
+}
+
+.deletion-method-button--hard:hover {
+  background-color: var(--color-feedback-error-surface);
+  border-color: var(--color-feedback-error-content);
+  transform: translateY(-1px);
+}
+
+.deletion-method-button--hard:active {
+  background-color: var(--color-feedback-error-surface);
+  border-color: var(--color-feedback-error-content);
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deletion-method-button {
+    transition: none;
+  }
+
+  .deletion-method-button--soft:hover,
+  .deletion-method-button--hard:hover {
+    transform: none;
+  }
+}
+
+/* Mobile-first from 360px: stacked buttons become a row from 480px up. */
+@media (min-width: 480px) {
+  .deletion-methods-actions {
+    flex-direction: row;
+  }
+
+  .deletion-method-button {
+    flex: 1 1 0;
   }
 }

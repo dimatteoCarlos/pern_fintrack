@@ -46,6 +46,20 @@ export const eraseAccountTail = async (
     [targetAccountId, targetAccountName],
   );
 
+  // pocket_allocations.source_account_id is NOT NULL and RESTRICTs (unlike
+  // transactions' two nullable FKs above), so it cannot be detached the same
+  // way - the row itself has to go. This is the explicit, out-loud deletion
+  // POCKET_MODULE_SPEC.md §11.1 Q8b decided on: "the service deletes the
+  // allocation rows and the account in the same transaction" - never a
+  // silent cascade, and RESTRICT stays in place as the guard rail below.
+  // Still open: the owner is not yet shown which pockets lose backing before
+  // confirming (Q8b's report-then-confirm half) - that belongs to the
+  // standalone assessment endpoint, PLAN_ACCOUNT_DELETION.md unit 6.
+  await dbClient.query(
+    'DELETE FROM pocket_allocations WHERE source_account_id = $1 AND user_id = $2',
+    [targetAccountId, userId],
+  );
+
   // 8d DROP: the target's own rows, then the account itself. RESTRICT is
   // still the guard rail - if any reference to targetAccountId survived the
   // two UPDATEs above, this DELETE fails exactly as it does today, instead

@@ -2614,3 +2614,229 @@ account detail and this one. The **category detail is the only screen with a
 real selector**, a `MonthPicker` of its own. So "the same treatment as the
 other account details" cannot mean copying a selector that the other account
 details do not have; the selector to reuse is the category's.
+
+---
+
+## 16. Absorbed from `on-hold/PLAN_UX_SCREENS/PLAN_DEBTS.md` — 2026-09-06
+
+*Section 16, not finding 16. This document cites the numbered findings of its §3 as
+"finding N" and its sections as "§N"; the two sequences overlap in the teens and
+this is the only place it matters.*
+
+**Why this is here.** That document was a proposal for time-based and rate-based
+indicators — opportunity cost, the weighted effective rate and three aging
+figures — and the developer **cancelled all of it on 2026-08-21**. Its twelve
+local findings were promoted to the findings register as `R227`–`R236`, migration
+`018` was cancelled unwritten, and its sections 1 to 10 are record, not
+specification. **What was cancelled is not reproduced here.**
+
+What is reproduced is the part that was never part of the proposal and had no
+other home: the legacy figures the server already computes, the parity work with
+the Budget board opened 2026-08-26, and the screen pattern decided 2026-08-29.
+None of it appeared in this audit before today — measured by search, not assumed.
+
+Two overlaps, stated so nobody re-measures them: the count of debtors whose
+balance is zero is **finding 8** of this audit, and the backdating guard the
+absorbed document tracked closed in `6adc8de`, which §13.1 already records.
+
+### 16.1 The legacy figures that survive, and what was left of that block
+
+Both are already computed by the server today. Neither needs a migration, a
+contract change or a new query.
+
+| # | KPI | where it lives today |
+|---|---|---|
+| K5 | `Receivable`, `Payable`, `Total`, `Debtors`, `Lenders` | `dashboardController.js:216-226`, from `ua.account_balance`. Role is the sign of the balance, as `SummaryDebtorDetailBox.tsx` already renders it |
+| K6 | `debtors_without_debt` | `dashboardController.js:222`. Computed, **still never rendered** — the only open piece of work this block still has |
+
+**Both anchors above are the 2026-08-21 ones and both are stale — corrected here on
+the fold.** The five figures are no longer summed from the stored column: the debtor
+branch at `dashboardController.js:222-228` sums `${DERIVED_BALANCE}`, the ledger
+derivation. And the count of debtors whose balance is zero is the alias
+`debtors_without_Debt` at **`:228`**, not `:222` — which is the anchor finding 8
+and §13.2 of this audit already carry. The findings themselves are unchanged: the
+count is computed, transmitted and never rendered.
+
+The Overview debt card is unaffected: it publishes `totalAmount` signed,
+`transactionCount`, `delta`, `currency` and `window`, and never carried a rate
+or an age.
+
+**What was left of that block when it was folded:**
+
+| item | state |
+|---|---|
+| Render `debtors_without_debt` | Open, and small. It is a display of a figure the server already returns |
+| ~~**R66** — the guard at `transactionController.js:475-478`~~ | **CLOSED 2026-08-29, `6adc8de`.** Fixed by commit 2 of `ongoing/PLAN_BACKDATING/`, the block that owned it. The guard those line numbers point at no longer exists: `date` is not destructured in that controller any more, and the validation that replaced it bounds the day on the owner's calendar and composes one instant for both legs. **Its `fix(tracker)` commit is withdrawn, not reassigned** |
+| **The list's parity with the Budget board — §16.2 below** | **Open, opened 2026-08-26.** Four commits, no migration, no contract change. It is the largest live item and it owes nothing to the cancelled proposal |
+| `Q1` of the cancelled proposal — when the block fires | Moot at this size. What remains is not a block |
+
+**Header state, as the absorbed document closed:** it was no longer one revision
+from frozen. It was a **record of a cancelled proposal** plus **one** small live
+item and the parity work now in §16.2.
+
+### 16.2 Bring the Debts list up to the Budget board — opened 2026-08-26
+
+**This is live work, not part of the cancelled proposal.** It is a UX parity item
+the developer asked for on 2026-08-26: the Debts list should behave like the
+Budget list. Nothing here depends on the cancelled proposal, on migration `018`, or on any KPI.
+
+The geometry half is already shipped — `fix(debts): anchor the board and give it
+a card` (`12d8c38`) put the board under the header and gave the list a card of
+its own on `--color-surface-deep`, and `style(board): unify the four hero anchors`
+(`b7d06c6`) put the hero on the same anchor as the other three boards. What is
+left is the list's own behaviour.
+
+
+#### 16.2.1 The three items
+
+| # | item | Budget does it at | Debts does it at |
+|---|---|---|---|
+| D-1 | the list scrolls inside a frame, not the page | `budget-styles.css:284-337` | nothing — the page scrolls as a document |
+| D-2 | the create button sits **after** the list, outside the scroll | `Budget.tsx:54-60` | `Debtors.tsx:22-28`, **above** the title |
+| D-3 | a controls bar over the list, and a titled header for it | `BudgetListControls.tsx`, `Budget.tsx:46-52` | none; `CardTitle` carries only the word `Summary` |
+
+
+#### 16.2.2 The scroll frame (`D-1`)
+
+Budget hands the leftover height down one level at a time and lets only the list
+scroll. The shell stops scrolling as a document, which is what keeps the navbar
+on screen:
+
+```
+.home__layout:has(.budgetLayout)   height: 100dvh; min-height: 0; overflow-y: hidden
+  .budgetLayout                    flex: 1; min-height: 0     <- Debts already has this
+    .content__presentation         flex: 1; min-height: 0
+    .cards__presentation           flex: 1; min-height: 0
+      .categoryList                flex: 1; min-height: 0; overflow-y: auto
+```
+
+`.debtsLayout` already carries its half of the handoff, added by `12d8c38` for a
+different reason — the board floated to the middle of the viewport. The rest is
+missing.
+
+**The list needs a class of its own.** Debts renders `.list__main__container`
+(`ListOfDebtors.tsx:88`), and so do five other lists across budget, pocket,
+pocket detail and account detail. The stylesheets are global rather than modules,
+so a rule on that class would confine all six. Budget solved exactly this by
+adding `.categoryList` beside it (`ListCategory.tsx:199`); Debts needs the same,
+named for what it lists.
+
+**Height degradation comes with it.** Once the board is a frame, every rem above
+the list is a rem the list does not get. Budget tightens its title at 735px and
+again at 568px (`budget-styles.css:341-360`). Debts needs the same two steps,
+measured against its own header, which is a cream panel of a different height.
+
+
+#### 16.2.3 The button after the list (`D-2`)
+
+Budget moved `New Category` below the list and commented the copy above it
+pending removal (`Budget.tsx:31-42`, decision `D13`). The reasoning applies here
+unchanged, and is recorded in that comment: the copy above the titles spends its
+height out of the list on a short screen, while the one after the list sits
+outside the scroll and stays in view.
+
+Debts renders `New Debtor` first, before `CardTitle` (`Debtors.tsx:22-30`). It
+moves after `ListOfDebtors`. One button, not two — Debts never had the duplicate
+Budget is still carrying, and it should not acquire one.
+
+
+#### 16.2.4 The controls bar (`D-3`)
+
+**What transfers unchanged:** the single row on one surface at 360px, the four
+segments told apart by hairlines rather than by four boxes, the icon sizing off
+the control's font size, and the `--size-control-sm` height taken once at every
+viewport rather than per band. All of it is described in the header comment of
+`budgetListControls.css:1-13`.
+
+**What does not transfer: the fourth control.** Budget's is a boolean toggle over
+`isOverBudget`. Debts has no such flag. The developer named the filter as
+**lender and debtor**, which is a role, and a role is not a boolean — it is
+`all`, `lender`, `debtor`: three states in a control built for two.
+
+**Where the role comes from:** it is the sign of `ua.account_balance`, exactly as
+`dashboardController.js:216-226` computes `Debtors` and `Lenders` today and as
+`SummaryDebtorDetailBox.tsx` already renders it. No contract change, no new
+field, no backend commit.
+
+**The sort keys are Debts' own.** `ListOfDebtors.tsx:76-83` sorts today with a
+hardcoded rule — creditors first, then by absolute balance, then by signed
+balance. A controlled sort replaces it, and the keys are the name and the
+balance. There is no `Category` key here and no subcategory: **Debts has no
+categories**, which is the one structural difference the developer named.
+
+**The titles the bar sits under.** `CardTitle` already takes `legend`, `subtitle`
+and `subLegend` (`Budget.tsx:46-52`), four labels for the four cells of a budget
+row. Debts passes only the child word today. What its cells are called is open:
+its row carries a name, a role and a signed amount, which is three, not four.
+
+**The component is named for Budget and typed for it.**
+`BudgetListControls.tsx` takes `BudgetSortKey`, `BudgetSortDirection` and
+`BudgetQuickFilter`, and its own header comment scopes it to "budget level 1
+today, level 2 when it grows its own". `useBudgetListFilter` lives in
+`budget/hooks/`. Reusing either for Debts means generalising the names and the
+types, which touches a module that was committed and is working. **Copying is the
+safer first move**; generalising is the follow-up, once two callers exist and the
+shape is known rather than guessed.
+
+
+#### 16.2.5 Open decisions
+
+| # | question |
+|---|---|
+| Q11 | Is the role filter three states in one control, two independent toggles, or a segmented control? A boolean cannot hold `all`, `lender` and `debtor` |
+| Q12 | Copy `BudgetListControls` and `useBudgetListFilter` into Debts, or generalise them in place and re-point Budget at the generalised version? |
+| Q13 | What are the row's labels, given it carries three cells and `CardTitle` is built for four? |
+
+
+#### 16.2.6 Commit shape
+
+Four commits, one per component, each whole, in this order. The frame goes first
+because the other three are measured inside it.
+
+| # | message | files |
+|---|---|---|
+| 1 | `style(debts): let only the list scroll` | `debts-styles.css`, `ListOfDebtors.tsx` for the new list class |
+| 2 | `fix(debts): move the button after the list` | `Debtors.tsx` |
+| 3 | `feat(debts): add the list controls bar` | new component, new hook, new stylesheet |
+| 4 | `feat(debts): title the list header` | `Debtors.tsx` |
+
+**No migration and no contract change.** Every figure the bar needs is already
+served.
+
+### 16.3 Screen decisions of 2026-08-29
+
+**The board pattern, adopted from the shape the other modules already use:**
+
+```
+ Hero (global)  ->  Search and filters  ->  List  ->  Detail
+```
+
+**The two concepts stay the ones the domain already names: *You owe* and
+*You are owed*.** Neither `Active Debts` nor `Net Position` is introduced. The
+reason is not brevity: those two figures already express the situation clearly,
+and a third invented aggregate on top of them adds a number the reader has to
+learn without answering a question the first two left open. Each row is enriched
+with contextual information under those same two words, not with a new vocabulary.
+
+**The module's question, which is what decides what belongs on it:** *who owes me
+and whom do I owe?* Anything that does not answer that belongs on another screen.
+
+### 16.4 The database measurements of 2026-08-21, kept because they have no successor
+
+Eight questions answered against the local database on 2026-08-21, before the
+proposal was cancelled. The cancellation killed the figures they were measured
+**for**, not the facts they established, and this audit's own measurement window
+is 2026-08-29 — it never re-asked most of them. `M2` in particular is the one
+that keeps being rediscovered: the stored opening amount and the running balance
+of a debtor account **do** diverge, on real data.
+
+| # | what | status |
+|---|---|---|
+| M1 | The SQL behind both debtor endpoints | ✅ **Answered.** Neither touches `transactions`. Serving the cost is a new join, a window function and a new grouping on `dashboardController.js:216-232` and `:383-398` — a rewrite of the aggregate, not a column added to a SELECT list, and the largest single piece of work in the block |
+| M2 | Whether `debtor_accounts.value` and `ua.account_balance` can diverge | ✅ **Answered 2026-08-21 — they do.** Account 37 holds `value = 0.11` against `account_balance = -10.21`. `value` is the opening amount, not the live balance; the read path never selects it. The previous file's "the figure in the accounting currency" is corrected in §1.4 |
+| M3 | How a debt is settled | ⚠️ **Partly answered.** `recordAnnulmentTransaction.js` writes a real transaction row, and every status in the database is `complete` — no annulled or reversed rows exist locally to observe. Under the balance model a settled debt reaches `B = 0` and stops accruing for free, so this no longer gates the formula. **It still gates the display**: a settled debtor at `B = 0` contributes `0` to `SUM(cost)` and is excluded from K3's denominator, which is correct, but nothing yet decides whether it stays in the row list |
+| M4 | Whether a debtor date can be set in the future | ⚠️ **Measured empty, not forbidden.** Zero future-dated `transaction_actual_date` and zero future `account_start_date` today, and no constraint prevents either. A future date makes `days` negative and the cost a credit. **The aggregation must clamp `t` to `NOW()`**, or the endpoint must refuse |
+| M5 | The rendered height at 360px of the hero (with the financial pair and the aging line) **and of a three-line row** | ❌ **Not measured — no browser in this session.** The cancelled proposal's hero-layout arithmetic (its §4.3) gave the width, which is enough to conclude eight hero cells do not fit at 360px, but not the height; its §4.5 did the same for the row. Both compete for the same viewport and must be measured together. **It was the block's one outstanding measurement.** It gated three steps of a commit sequence that no longer exists; what survives of it is the height budget the parity work of §16.2 has to fit the list into |
+| M8 | Whether the debtor model stores a due date, a deadline or a maturity | ✅ **Answered 2026-08-21 — it does not.** Every column in `public` matching `%due%`, `%deadline%`, `%maturit%`, `%desired%` or `%expir%` is `pocket_saving_accounts.desired_date` or `refresh_tokens.expiration_date`; neither belongs to debts. Neither `accountCreationController.js:530-536` nor `accountEditController.js` accepts one for a debtor. **This is what forbids the name `Days Past Due`** (§3.4.1) |
+| M6 | How many `transactions` rows a debtor account has, and whether debt movements write `transaction_actual_date` | ✅ **Answered 2026-08-21.** Two debtor accounts, four rows, zero NULL dates, every account opened by an `account-opening` row whose `account_balance_after_tr` equals the opening amount. The history is complete from opening, so the integral has no gap to guess at |
+| M7 | Whether any debtor's `ua.account_balance` differs from its latest `account_balance_after_tr` | ✅ **Answered 2026-08-21 — no divergence.** Both accounts reconcile exactly, and `SUM(amount) OVER (...)` reproduces the running balance on every row. **n = 2**, so this measures the data, not the write path: the reconciliation guard in §8 step 8 still ships, because it is what makes the figure self-checking on data this session has not seen |

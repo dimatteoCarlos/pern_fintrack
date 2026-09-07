@@ -171,18 +171,23 @@ export const makeHeroSection = ({
  }
 
  return Object.freeze({
-  // H1 — the account kinds that hold money of their own: bank, investment and
-  // debt. No pocket term, because the bank balance already carries it.
+  // H1 — the three account kinds the catalog counts as real money. A pocket is
+  // not a fourth. Committing money to one moves nothing, so the committed total
+  // is already inside bankBalance: the allocation guard proves it by computing
+  // its ceiling as the account balance minus what is allocated
+  // (pocketAllocationService.js:345-347). Adding it here counted it twice.
   netWorth: toAmount(
-   money(bankBalance).plus(investmentBalance).plus(debtPosition),
+   money(bankBalance)
+    .plus(investmentBalance)
+    .plus(debtPosition),
   ),
   // The same holdings with the receivable leg taken out, so what is left is what
   // the owner controls. Negative is a real answer: it says the debts outweigh
   // everything liquid. null only when the payable leg did not arrive.
   liquidNetWorth,
-  // H2 — what is spendable without selling a position or collecting a
-  // debt, which is the bank balance itself. Committing money to a pocket does not
-  // stop the owner spending it, so there is no term to subtract (see the header).
+  // H2 — what is spendable without selling a position or collecting a debt.
+  // Bank alone, for the same reason: a pocket total is a commitment against this
+  // figure, never an addition to it.
   cashPosition: toAmount(money(bankBalance)),
   // H3 — whether the month moved forward or back. Negative is a real answer and
   // the most useful one the figure has.

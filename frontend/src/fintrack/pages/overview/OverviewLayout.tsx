@@ -113,22 +113,36 @@ function OverviewLayout() {
   //income account balance is negative (withdraws) and expense account balance is positive (deposits)
   const { netWorth, totalIncome, totalExpense } = useMemo(() => {
     //--Parameters to render into bubble info
-    const totalIncome = -Number(incomeBalanceApiData?.data?.total_balance) || 0;
+    // No || 0 default on any of the five: it collapsed two different
+    // answers into the same figure. A request that never answered leaves
+    // apiData undefined and Number(undefined) is NaN, which now survives to
+    // asFigure and prints a dash; a type the user genuinely holds none of
+    // answers total_balance null and Number(null) is 0, which still prints
+    // zero because that zero is true. The default printed the first as the
+    // second, so a dead request stated the user holds nothing.
+    // Negating turns an empty income into -0, which formats as -$0.00, so it
+    // is normalised the way netWorthRaw already is below.
+    const totalIncomeRaw = -Number(incomeBalanceApiData?.data?.total_balance);
+    const totalIncome = totalIncomeRaw == 0 ? 0 : totalIncomeRaw;
 
-    const totalExpense = expenseBalanceApiData?.data?.total_balance || 0;
+    // Number() here for the same reason as the other four: without it the
+    // value reaches asFigure as whatever the response carried, and a string
+    // is not NaN, so a malformed figure would print instead of blanking.
+    const totalExpense = Number(expenseBalanceApiData?.data?.total_balance);
 
     //--Parameters to calculate net worth
-    //  const totalBankBalance =
-    //   (Number(bankBalanceApiData?.data?.total_balance) ?? 0) ;
+    // NaN propagates through the sum on purpose: net worth missing one of
+    // its three components is not the user's net worth, and publishing the
+    // other two as the whole understates it silently.
+    const totalBankBalance = Number(bankBalanceApiData?.data?.total_balance);
 
-    const totalBankBalance =
-      Number(bankBalanceApiData?.data?.total_balance) || 0;
+    const totalInvestmentBalance = Number(
+      investmentBalanceApiData?.data?.total_balance,
+    );
 
-    const totalInvestmentBalance =
-      Number(investmentBalanceApiData?.data?.total_balance) || 0;
-
-    const totalDebtorBalance =
-      Number(debtorBalanceApiData?.data?.total_debt_balance) || 0;
+    const totalDebtorBalance = Number(
+      debtorBalanceApiData?.data?.total_debt_balance,
+    );
     // console.log("🚀 ~ operatingProfit:", (totalIncome - totalExpense)==0?0:totalIncome-totalExpense;)
 
     const netWorthRaw =
@@ -183,10 +197,17 @@ function OverviewLayout() {
   ]);
 
   //==================================
+  // A figure the page could not compute is published as null, never as 0: the
+  // three rows are the user's own money, and 0 states they hold nothing.
+  //
+  // The guard used to read totalIncome on all three rows, so a broken expense
+  // printed as real money and a valid expense blanked whenever income broke.
+  const asFigure = (amount: number) => (Number.isNaN(amount) ? null : amount);
+
   const bigScreenInfo = [
-    { title: 'net worth', amount: isNaN(netWorth) ? 0 : netWorth },
-    { title: 'income', amount: isNaN(totalIncome) ? 0 : totalIncome },
-    { title: 'expenses', amount: isNaN(totalIncome) ? 0 : totalExpense },
+    { title: 'net worth', amount: asFigure(netWorth) },
+    { title: 'income', amount: asFigure(totalIncome) },
+    { title: 'expenses', amount: asFigure(totalExpense) },
   ];
   //loader for any loading process
   const isAnyLoading =

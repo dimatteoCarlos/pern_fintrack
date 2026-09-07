@@ -1,5 +1,5 @@
 //frontend/src/editionAndDeletion/pages/deletionAccount/UIComponents/confirmationModalUI/RTAConfirmationModal.ts/
-import { ModalStatusType } from "../../../../types/deletionTypes.ts";
+import { ModalStatusType, PocketImpactRowType } from "../../../../types/deletionTypes.ts";
 import { DictionaryDataType } from "../../../../utils/languages.ts";
 
 import StatusModalUI from "../statusModalUI/StatusModalUI.tsx";
@@ -19,6 +19,7 @@ export type RTAConfirmationModalPropsType={
  mainStatusFromParent:ModalStatusType;
  message:string;
  affectedAccountsReportCount:number;
+ pocketImpact:PocketImpactRowType[];
 }
 // ====================================
 // 🎯 RTA CONFIRMATION MODAL COMPONENT
@@ -33,7 +34,7 @@ export const RTAConfirmationModal = (props:RTAConfirmationModalPropsType) => {
 };
 
 const RTAConfirmationDialog = ({
- t, affectedAccountsReportCount, onClose, onConfirm, message, mainStatusFromParent
+ t, affectedAccountsReportCount, onClose, onConfirm, message, mainStatusFromParent, pocketImpact
 }:RTAConfirmationModalPropsType) => {
 const buttonDisabled = mainStatusFromParent === 'executing';
 
@@ -65,6 +66,7 @@ switch (mainStatusFromParent){
  return(
   <InitialConfirmationDeleteAccountUI
    t={t} affectedAccountsReportCount={affectedAccountsReportCount}
+   pocketImpact={pocketImpact}
    buttonDisabled={buttonDisabled}
 
    onClose={onClose}

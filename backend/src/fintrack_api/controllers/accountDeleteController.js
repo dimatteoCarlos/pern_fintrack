@@ -1,9 +1,13 @@
 //backend/src/fintrack_api/controllers/accountDeleteController.js
 import pc from 'picocolors';
 import { createError } from '../../utils/errorHandling.js';
+import { pool } from '../../db/config/configDB.js';
 
 // 📚 SERVICES & UTILITIES
-import { getAnnulmentImpactReport } from '../services/delete_account/getAnnulmentImpactReport.js';
+import {
+  getAnnulmentImpactReport,
+  getPocketAllocationImpact,
+} from '../services/delete_account/getAnnulmentImpactReport.js';
 
 import { deleteAccountService } from '../services/delete_account/deleteAccountService.js';
 
@@ -14,6 +18,13 @@ import { deleteAccountService } from '../services/delete_account/deleteAccountSe
 export const DELETION_TYPE_RTA = 'RTA';
 export const DELETION_TYPE_HARD = 'HARD';
 export const DELETION_TYPE_SOFT = 'SOFT';
+export const DELETION_TYPE_CLOSE = 'CLOSE';
+
+// CLOSE's two settlement policies (PLAN_ACCOUNT_DELETION.md §3.1/§4.1 step 4).
+// Only DISCARD is implemented (unit 7, 2026-09-06) - TRANSFER needs
+// destination-eligibility rules (D2, unit 9) still open.
+export const CLOSE_POLICY_DISCARD = 'DISCARD';
+export const CLOSE_POLICY_TRANSFER = 'TRANSFER';
 
 export const ADMIN_ACTION = 'ADMIN_ACTION';
 export const USER_ACTION = 'USER_ACTION';
@@ -51,11 +62,15 @@ export const generateImpactReport = async (req, res, next) => {
     );
 
     // 2. CALL SERVICE
-    // The service handles the SQL logic to calculate the net financial impact
-    const impactReport = await getAnnulmentImpactReport(
-      userId,
-      targetAccountId,
-    );
+    // The service handles the SQL logic to calculate the net financial impact.
+    // pocketImpact is a separate, additive read (PLAN_ACCOUNT_DELETION.md
+    // §5/Q8b via ACCOUNT_DELETION_METHODS.md): pockets this account backs,
+    // shown so the owner sees them before confirming, never merged into
+    // impactReport - that array's shape is relied on by processRTAAnnulment.
+    const [impactReport, pocketImpact] = await Promise.all([
+      getAnnulmentImpactReport(pool, userId, targetAccountId),
+      getPocketAllocationImpact(pool, userId, targetAccountId),
+    ]);
 
     // 3. SUCCESS RESPONSE
     return res.status(200).json({
@@ -63,6 +78,7 @@ export const generateImpactReport = async (req, res, next) => {
       message: 'RTA Impact Report generated successfully.',
       data: {
         impactReport: impactReport,
+        pocketImpact,
         targetAccountId,
         affectedAccountsCount: impactReport.length,
       },
@@ -93,23 +109,21 @@ export const executeAccountDeletion = async (req, res, next) => {
   }
 
   // 2. RTA SPECIFIC DATA EXTRACTION (From the confirmation body)
-  let impactReport = [];
+  // impactReport is no longer read from the request: the service recomputes
+  // it itself inside the transaction (PLAN_ACCOUNT_DELETION.md unit 6), so a
+  // stale or tampered client copy can no longer drive the financial
+  // adjustment. targetAccountName stays client-supplied - it is only used to
+  // build the annulment rows' display text, never a financial figure.
   let targetAccountName = 'Unknown Account';
 
   if (deletionType === DELETION_TYPE_RTA) {
-    impactReport = req.body.impactReport;
     targetAccountName = req.body.targetAccountName;
-
-    // Validation check for RTA data integrity
-    if (!impactReport || !Array.isArray(impactReport)) {
-      return next(
-        createError(
-          400,
-          'RTA deletion requires a valid impactReport array in the body.',
-        ),
-      );
-    }
   }
+
+  // CLOSE-only: which settlement policy to apply (DISCARD, or TRANSFER once
+  // D2 lands). Ignored by every other deletion type.
+  const policy =
+    deletionType === DELETION_TYPE_CLOSE ? req.body.policy : undefined;
 
   try {
     console.log(
@@ -126,7 +140,6 @@ export const executeAccountDeletion = async (req, res, next) => {
       targetAccountId,
       userRole,
       deletionType,
-      impactReport,
       targetAccountName,
     });
 
@@ -135,8 +148,8 @@ export const executeAccountDeletion = async (req, res, next) => {
       targetAccountId,
       userRole,
       deletionType,
-      impactReport,
       targetAccountName,
+      policy,
     );
 
     // 4. SUCCESS RESPONSE

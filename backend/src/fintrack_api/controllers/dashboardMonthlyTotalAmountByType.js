@@ -14,6 +14,7 @@ import pc from 'picocolors';
 import { pool } from '../../db/config/configDB.js';
 import { validate as uuidValidate } from 'uuid';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
+import { NOT_BOUNDARY_ACCOUNT } from '../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
 import {
   isCalendarDate,
@@ -132,6 +133,7 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
           LEFT JOIN category_budget_accounts cba ON tr.account_id = cba.account_id
           LEFT JOIN pocket_saving_accounts psa ON tr.account_id = psa.account_id
           LEFT JOIN user_accounts ua ON tr.account_id = ua.account_id
+          LEFT JOIN account_types act ON ua.account_type_id = act.account_type_id
           JOIN currencies ct ON tr.currency_id = ct.currency_id
       
         WHERE ua.user_id = $1
@@ -145,6 +147,25 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
               OR
               (tr.movement_type_id = 5 AND tr.transaction_type_id = 2) -- Saving
             )
+            -- The compensation account was excluded from this query by
+            -- nothing at all. It stayed out only because the three pairs
+            -- admitted above are not the movement types it writes, which
+            -- is a property of that list rather than a rule this query
+            -- states: adding profit-and-loss or account-closure to it,
+            -- which publishing closures needs, walks the account in with
+            -- no error. It enters as the owner's own spending, under the
+            -- name 'slack', carrying a negative amount into a SUM - so it
+            -- understates the monthly total, and a total that falls reads
+            -- as a good month rather than as a defect.
+            --
+            -- It covers ONE leg. A deletion writes a pair and only the
+            -- counterpart sits on the boundary account: the annulment's
+            -- affected leg and the closure's target leg are the owner's own
+            -- account, which no account-type predicate can remove. Annulment
+            -- rows stay catchable by their RTA description prefix; closure
+            -- rows carry no prefix by design, so for those the movement-type
+            -- list above is the whole defence.
+            ${NOT_BOUNDARY_ACCOUNT}
               
         GROUP BY 
             EXTRACT(MONTH FROM (tr.transaction_actual_date AT TIME ZONE $4)),

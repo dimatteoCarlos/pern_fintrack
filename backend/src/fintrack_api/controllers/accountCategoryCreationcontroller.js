@@ -445,7 +445,7 @@ export const createCategoryBudgetAccount = async (req, res, next) => {
       transaction_actual_date,
       currency_code,
       account_name: counterAccountInfo.account.account_name,
-      account_type_name: 'bank',
+      account_type_name: 'boundary',
       account_type_id: counterAccountInfo.account.account_type_id,
       account_balance: parseFloat(newCounterAccountBalance),
       //FX metadata
