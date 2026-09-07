@@ -607,6 +607,88 @@ export async function ensureCategoryBudgetCurrency(client = pool) {
 }
 
 /**
+ * Give an existing database the account-closure catalog entries: movement type
+ * 10, transaction type 6, and a movement_types check constraint that admits the
+ * new name.
+ *
+ * The runtime counterpart of migration 032, which had none. The other two
+ * carriers of that catalog are both unreachable on a database that already
+ * exists: the seeder declares the check inline in its CREATE TABLE, which only
+ * runs when the table is absent, and tblMovementTypes() is called once inside
+ * the first-time branch of initializeDatabase() rather than on every boot. So
+ * an already-initialized database never receives either the rows or the check,
+ * and a close fails on the foreign key because movement_types has no row 10.
+ *
+ * The check is realigned before the rows are inserted, not after: the old
+ * constraint does not admit 'account-closure', so the insert would violate it.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureAccountClosureCatalog(client = pool) {
+ const present = await client.query(`
+  SELECT to_regclass('public.movement_types') IS NOT NULL AS table_exists
+ `);
+
+ // A virgin database gets both from the seeder's CREATE TABLE and its insert
+ // loop, which carry the current list already.
+ if (!present.rows[0].table_exists) return;
+
+ const { rows: checks } = await client.query(`
+  SELECT con.conname, pg_get_constraintdef(con.oid) AS definition
+   FROM pg_constraint con
+   JOIN pg_class rel ON rel.oid = con.conrelid
+   JOIN pg_namespace ns ON ns.oid = rel.relnamespace
+   WHERE ns.nspname = 'public'
+    AND rel.relname = 'movement_types'
+    AND con.contype = 'c'
+ `);
+
+ // Skips a no-op that would still take an ACCESS EXCLUSIVE lock on every boot.
+ if (!checks.some((row) => row.definition.includes("'account-closure'"))) {
+  for (const { conname } of checks) {
+   await client.query(
+    `ALTER TABLE movement_types DROP CONSTRAINT "${conname.replace(/"/g, '""')}"`,
+   );
+  }
+
+  // The value order matches migration 032 and the seeder exactly:
+  // pg_get_constraintdef renders an inline column check and a named table
+  // check identically, so the two build paths compare equal only while both
+  // lists stay in this order.
+  await client.query(`
+   ALTER TABLE movement_types
+    ADD CONSTRAINT movement_types_movement_type_name_check
+    CHECK (movement_type_name IN (
+     'expense','income','investment','debt','pocket','transfer','receive',
+     'account-opening','pnl','account-closure'))
+  `);
+  console.log(pc.green('movement_types check constraint realigned.'));
+ }
+
+ const inserted = await client.query(`
+  WITH movement AS (
+   INSERT INTO movement_types (movement_type_id, movement_type_name)
+   VALUES (10, 'account-closure')
+   ON CONFLICT (movement_type_id) DO NOTHING
+   RETURNING 1
+  ), transaction_kind AS (
+   INSERT INTO transaction_types (transaction_type_id, transaction_type_name)
+   VALUES (6, 'account-closure')
+   ON CONFLICT (transaction_type_id) DO NOTHING
+   RETURNING 1
+  )
+  SELECT
+   (SELECT count(*) FROM movement) AS movement_rows,
+   (SELECT count(*) FROM transaction_kind) AS transaction_rows
+ `);
+
+ const { movement_rows, transaction_rows } = inserted.rows[0];
+ if (Number(movement_rows) > 0 || Number(transaction_rows) > 0) {
+  console.log(pc.green('account-closure catalog entries added.'));
+ }
+}
+
+/**
  * Close user_accounts.account_type_id: NOT NULL, and RESTRICT instead of
  * SET NULL when an account_types row is deleted.
  *
