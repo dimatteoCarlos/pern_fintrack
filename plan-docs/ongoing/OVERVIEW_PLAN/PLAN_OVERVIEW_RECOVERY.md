@@ -481,7 +481,57 @@ month were a full month. It is not:
 
 **Unblocks:** the reference month meaning one thing across the whole page.
 
-### P2 — Repoint Pocket to the plan model
+### P2 — Repoint Pocket to the plan model · DONE, commits `f4b999d9` and `f0388039`
+
+**Committed on `main`, not deployed**, the same standing as P1a: nothing on
+screen calls the Overview payload yet, so the gap costs nothing today.
+
+Done in two steps and in this order, because the order was the safety. The first
+commit **deleted** the pocket term from net worth and from the cash position
+(`makeHeroSection.js`), the second repointed every remaining read. Deleting had
+to come first: the double count was invisible only because the account-id read
+asked for the emptied type and returned nothing, so the term added zero. It would
+have gone live the instant the read was repointed. Committing money to a pocket
+moves nothing, so the committed total is already inside the bank balance — the
+allocation guard proves it by computing its ceiling as the account balance minus
+what is allocated (`pocketAllocationService.js:345-347`).
+
+**The card's figures are not computed in the Overview module.** They are asked of
+`pocketBoardService.getBoard`, which already computes them for the board screen,
+so the exit condition below holds by construction rather than by review. The
+committed total is the card's own `totalAmount` and is not restated under a
+second name; target, remaining and progress travel as the card's fields with the
+three counts beside them. One deliberate divergence from the board: it reports
+null amounts on an empty board and the card reports 0, because the ALL card adds
+this figure — a notice carries what the null was saying.
+
+**Three temporal reads the board is not asked** are new, in
+`overviewPocketRepository.js`: the committed total at each month's close for the
+six-point series, the net committed inside each month for the thirteen-point
+snapshot, and the month's allocations for the list. Both bounds are copied from
+the board's own statement (`pocketRepository.js:97-118`) — the ledger cut on the
+day the decision was taken, the population cut on the day the plan was made.
+
+**The saving-goals read was repointed and also given the reference month**, which
+it never had. Without it the widget answered "now" beside a card answering the
+selected month.
+
+**Deleted with their last callers**, so nothing in this module reads the emptied
+type any more: the pocket account-id resolver, the monthly net over pocket
+accounts, and the movement-type-5 list. The retired type also left the income
+account set (`overviewAccountRepository.js:62`), where it contributed no row and
+would have re-entered the moment such an account was created again.
+
+**Two things left open, deliberately, and they belong to later stages.** The
+goals widget computes what is left as a plain subtraction
+(`makeFinancialGoals.js:74-80`) while the card clamps per pocket before summing,
+so an over-funded goal cancels an underfunded one in the first figure and not in
+the second — two figures with the same name, on one page, that differ.
+Recommendation: the widget adopts the clamped reading and reports the excess
+beside it, in P4 with the rest of the contract. And the absent-target branch of
+that same file is now unreachable, since the plan model's target column is
+NOT NULL with CHECK (> 0); the code stays because every indicator's null
+semantics is settled once, in P3.
 
 Overview stops reading the emptied legacy table and reads the plan model.
 Publishes four global figures — **target, allocated, remaining, progress** —
