@@ -3034,13 +3034,32 @@ null` is true, and **every** soft, hard and RTA deletion is refused with a
 message saying the account was closed — for accounts that never were.
 
 Production has not run `034_add_account_closed_at.sql` yet, so **the backend
-must not be deployed ahead of it**. This is not a new dependency — close cannot
-write a column that does not exist — but before this change the other three
-deletion types would have survived a premature deploy, and now they will not.
-The chain is `pern-fintrack-02`'s; this is a note for their production run
-order, not a change to it. Loosening the comparison was considered and rejected:
-it would tolerate a schema state no deployment plan permits, and hide a broken
-deploy behind guards that silently do nothing.
+must not be deployed ahead of it**.
+
+**Corrected 2026-09-07, by `pern-fintrack-02`.** This section first claimed the
+other three deletion types would have survived a premature deploy and now will
+not — that this commit created the ordering constraint. It does not. The live
+account filter `AND ua.deleted_at IS NULL AND ua.closed_at IS NULL` is defined
+once in `getAccountController.js` and interpolated at **nine** sites, all of
+them account lists. Verified in the file. On a schema without the column those
+nine raise `42703 column ua.closed_at does not exist`, so an owner cannot
+obtain a list of accounts and never reaches a delete control to have it
+refused. The deletion module does not hard-lock on that schema; it is
+unreachable behind a screen that already failed.
+
+So the constraint is unconditional and predates this commit. What the commit
+changes is **what fails second**, and it changes it in the safer direction: a
+`42703` from the list is louder than a `400` claiming an account was closed,
+and it arrives first. `PLAN_MIGRATION_CHAIN.md` already ranks 034 first among
+the four outstanding files on exactly that ground. This work strengthens that
+ranking rather than altering it.
+
+Loosening the comparison was considered and rejected, and `02` ruled the same
+way independently: it would tolerate a schema state no deployment plan permits
+and hide a broken deploy behind guards that silently do nothing. That "nothing
+is closed" would happen to be *true* on a pre-034 schema, since close cannot
+write a column that does not exist, is not a reason to write code depending on
+it — and it would buy nothing, because the app is already dead there.
 
 ### Frontend requirement this creates
 
@@ -3101,17 +3120,74 @@ Lift the `deleted_at` refusal in the CLOSE preconditions, keeping the
 non-destructive exit from this state and the same answer already given for live
 accounts.
 
-**The cost, and why this is recorded rather than implemented.** Closing
-re-reserves the account's name, while soft delete had released it — the ruling
-already stated per option as `releasesAccountName`. If the owner created a
-replacement account under the old name after soft-deleting the original,
-closing the original produces two accounts sharing a name, one of them closed
-and name-owning. That naming rule lives in account creation validation, which
-is `pern-fintrack-e4`'s, not this module's.
+**The naming cost was imaginary — answered by `pern-fintrack-e4`, 2026-09-07.**
+This section first held the change back because closing re-reserves a name that
+soft delete had released, so an owner who created a replacement under the old
+name would end with two accounts sharing it. That collision cannot be
+constructed. `verifyAccountExistence` — the guard the creation path calls —
+matches on the owner, the lowercased account name and the lowercased type, and
+that is the entire predicate: no `deleted_at` test, no `closed_at` test.
+Verified in the file, and separately measured: `user_accounts` carries exactly
+one uniqueness object, `user_accounts_pkey` on `account_id`. **No unique index
+on the name exists anywhere.** So a soft-deleted row still holds its name, the
+replacement account can never be created, and lifting the refusal cannot produce
+a collision. Nothing in `e4`'s file needs a step first.
 
-**Routing.** The naming half goes to `pern-fintrack-e4`. `pern-fintrack-02` and
-`pern-fintrack-cf` are not owners here; broadcast only. The one-line change to
-the CLOSE preconditions is this module's and waits on the naming answer.
+**The defect that fell out of it is this module's, and it is fixed.** The
+assessment endpoint published `releasesAccountName: true` for SOFT — telling an
+owner they could reuse a name the creation guard would refuse on the next
+screen. That false promise is what made this section design around a collision
+that does not exist. Corrected to `false`.
+
+**Frontend requirement this creates.** The value flips on an endpoint nothing
+consumes yet, so nothing breaks. When the choose-a-deletion-type screen is
+built, the SOFT card must not offer freeing the name as a benefit of soft
+deleting — only the two erasing options release one.
+
+The rule underneath is simpler than the one the field encoded: **the name
+returns to circulation only when the row is deleted.** CLOSE and SOFT keep the
+row, so both hold their names; HARD and RTA erase it through
+`eraseAccountTail`'s `DELETE FROM user_accounts`, so both release. The two
+`true` values on HARD and RTA were right and stay. `e4` offered to change the
+creation guard instead, so that soft delete genuinely releases a name, and
+recommended against it: a released name lets a replacement exist beside the
+original, and any future restore path would then have two accounts contending
+for one name. Keeping the name reserved in every surviving state has no such
+branch. Agreed — the field was corrected, the guard untouched.
+
+**Still not implemented, and now for a better reason.** `e4` is reporting to
+Carlos on industry practice for soft-deleting an account that holds money. If
+the ruling is that **SOFT must not accept a nonzero balance at all**, the dead
+end closes at the entrance rather than at the exit, and lifting the CLOSE
+refusal becomes unnecessary. That is the stronger fix if it is available: it
+prevents the state instead of adding a way out of it. The CLOSE precondition
+change waits on Carlos.
+
+**Routing.** `pern-fintrack-02` and `pern-fintrack-cf` are not owners here.
+
+### What the Overview does with that stranded money — `pern-fintrack-cf`, 2026-09-07
+
+Reported unprompted and it bears directly on the decision. The Overview
+deliberately does **not** filter the soft-delete column: verified, the only
+three references to it in `overview_services` are comments recording that
+decision, and there are no predicates on either state column anywhere in the
+module. The reason recorded is that deleting an account marks the column and
+nothing else, so its transactions survive it — a category deleted last week
+still spent money last week.
+
+So money in a soft-deleted account **is still counted** in the bank balance and
+in net worth. `cf` holds that this is correct and is not proposing to change it:
+soft delete is a hide, not a settlement; the money exists and the row exists, so
+filtering it would make a real balance vanish from the owner's net worth while
+the money is still there, which is the worse error.
+
+**The consequence for this decision is a point in favour.** If the CLOSE
+refusal is lifted, the owner's totals do not move — a close settles a balance
+those reads were already counting, to a destination they also count. The repair
+is invisible in the figures, which is what a repair should be. It also means the
+Overview is the surface where stranded money stays visible, and possibly the
+only one: this module's assessment endpoint reports what each operation costs,
+not what is stuck.
 
 ### Measured, so the urgency is known
 

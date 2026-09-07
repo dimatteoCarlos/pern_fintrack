@@ -115,9 +115,11 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
     // consequence worth showing rather than a defect to fix here.
     removesPocketAllocations: false,
     keepsHistory: true,
-    // The ruling behind the read sweep: a closed account keeps its name, a
-    // soft-deleted one releases it. Stated per option because it is the one
-    // consequence an owner is likely to be surprised by later.
+    // One thing decides whether the name returns to circulation: does a row
+    // survive. verifyAccountExistence matches on owner, lowercased name and
+    // lowercased type with no state test, and the schema carries no unique
+    // index on the name, so any surviving row holds its name against a new
+    // creation forever. CLOSE keeps the row, so the name stays taken.
     releasesAccountName: false,
    },
    {
@@ -130,7 +132,12 @@ export const assessAccountDeletion = async (db, userId, targetAccountId) => {
     leavesResidualUnsettled: !isSettled,
     removesPocketAllocations: false,
     keepsHistory: true,
-    releasesAccountName: true,
+    // Was true, and that was a promise the creation guard refuses (found by
+    // pern-fintrack-e4, 2026-09-07). Soft delete keeps the row and
+    // verifyAccountExistence has no state test, so the name stays taken: an
+    // owner told the name was free met "already exists" on the next screen.
+    // Only HARD and RTA release one, because only they delete the row.
+    releasesAccountName: false,
    },
    {
     deletionType: DELETION_TYPE_RTA,
