@@ -1994,9 +1994,26 @@ TRANSFER, listing the owner's non-deleted bank accounts excluding the account
 being closed. DISCARD needs no selector and must state where the residual goes
 rather than leaving it unexplained.
 
-**Still open, deliberately not decided here.** Whether a destination in a
-different currency from the closing account is eligible. The rule above says
-nothing about currency, and the settlement writer tags both legs with the
-closing account's currency, so a cross-currency destination would produce the
-same disagreement described in the closure-currency note. Decide it before the
-selector ships, not after.
+**Currency, decided 2026-09-07.** A fifth condition: the destination's stored
+currency must equal the closing account's stored currency. Not "must be the
+accounting currency" — that phrasing is true today and becomes the wrong test
+the moment an account can be stored in anything else, which is the exact
+failure mode this round was spent on.
+
+The predicate is a no-op today and nothing can violate it. Every user-facing
+creation path stores the accounting currency and never the currency the
+request sent: both paths in `accountCreationController.js` pass the resolved
+accounting currency id to the shared insert helper, the category-budget
+controller does the same, and as of 2026-09-07 both compensation-account
+inserts do too. The request's currency converts the amount and is kept as FX
+provenance only. Measured by `e4` and verified here against the controller
+rather than restated.
+
+It is written anyway because "all eligible accounts" and "all same-currency
+accounts" are the same set **by construction, not by constraint** — nothing in
+the schema or the code enforces it. The day accounts can hold different
+currencies, a selector without this predicate silently starts offering
+destinations that reproduce the account/row disagreement the compensation
+insert fix just closed, and the settlement writer would tag both legs with the
+closing account's currency regardless. A predicate that costs nothing now and
+is load-bearing later cannot be added retroactively to rows already settled.
