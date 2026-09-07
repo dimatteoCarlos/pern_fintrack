@@ -157,6 +157,14 @@ export const dashboardMonthlyTotalAmountByType = async (req, res, next) => {
             -- name 'slack', carrying a negative amount into a SUM - so it
             -- understates the monthly total, and a total that falls reads
             -- as a good month rather than as a defect.
+            --
+            -- It covers ONE leg. A deletion writes a pair and only the
+            -- counterpart sits on the boundary account: the annulment's
+            -- affected leg and the closure's target leg are the owner's own
+            -- account, which no account-type predicate can remove. Annulment
+            -- rows stay catchable by their RTA description prefix; closure
+            -- rows carry no prefix by design, so for those the movement-type
+            -- list above is the whole defence.
             ${NOT_BOUNDARY_ACCOUNT}
               
         GROUP BY 
