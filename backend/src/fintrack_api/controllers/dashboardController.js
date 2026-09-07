@@ -22,6 +22,14 @@ import { derivedAccountBalanceSql } from '../../utils/fintrackUtils/accountDataR
 // figure above a list that contradicts it.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua');
 
+// Excludes the internal compensation account by what it is, not by what it is
+// called. The name filter beside it stays until 'slack' is reserved at account
+// creation: after 031 an account of that name typed 'bank' can still be
+// captured as the compensation account, and no type predicate can see it. The
+// pre-031 typing is a second, weaker reason and expires on its own.
+const NOT_BOUNDARY_ACCOUNT =
+ "AND act.account_type_name IS DISTINCT FROM 'boundary'";
+
 //COMMON FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
   const backendColor =
@@ -595,6 +603,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
             WHERE ua.user_id = $1
               AND (act.account_type_name = $2)
               AND ua.account_name != $3
+              ${NOT_BOUNDARY_ACCOUNT}
               AND tr.amount !=0
 
             AND (
@@ -652,6 +661,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           WHERE tr.user_id = $1
            AND (act.account_type_name = $2)
            AND ua.account_name != $3
+           ${NOT_BOUNDARY_ACCOUNT}
            AND tr.amount !=0
 
             AND (
@@ -718,6 +728,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
 
           WHERE ua.user_id = $1
             AND (act.account_type_name = $2) AND ua.account_name != $3
+            ${NOT_BOUNDARY_ACCOUNT}
 
           ORDER BY tr.transaction_actual_date DESC, ${DERIVED_BALANCE} DESC, ua.account_name ASC
           `,
@@ -742,6 +753,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           JOIN pocket_saving_accounts psa ON ua.account_id = psa.account_id
             WHERE ua.user_id = $1
               AND (act.account_type_name = $2) AND ua.account_name != $3
+              ${NOT_BOUNDARY_ACCOUNT}
                AND( mt.movement_type_name = $4  OR mt.movement_type_name=$7)
                   AND (
                     (tr.transaction_actual_date >= ($5::timestamp AT TIME ZONE $8)
@@ -788,6 +800,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
             JOIN debtor_accounts dbt ON ua.account_id = dbt.account_id
             WHERE ua.user_id = $1
           AND (act.account_type_name = $2) AND ua.account_name != $3
+          ${NOT_BOUNDARY_ACCOUNT}
           AND (mt.movement_type_name = $4  OR (tp.transaction_type_name = $5 OR tp.transaction_type_name = $6))
 
           ORDER BY tr.transaction_actual_date DESC, 
@@ -824,6 +837,7 @@ export const dashboardMovementTransactions = async (req, res, next) => {
           JOIN transaction_types tp ON tp.transaction_type_id = tr.transaction_type_id
           WHERE ua.user_id = $1
             AND ua.account_name != $2
+            ${NOT_BOUNDARY_ACCOUNT}
             AND (mt.movement_type_name = $3)
 
           ORDER BY tr.transaction_actual_date DESC,
@@ -963,6 +977,7 @@ export const dashboardMovementTransactionsSearch = async (req, res, next) => {
      AND tr.created_at < (($3::date + INTERVAL '1 day') AT TIME ZONE $6))
   )
   AND (ua.account_name != $5)
+  ${NOT_BOUNDARY_ACCOUNT}
   AND (
    tr.description ILIKE '%'||$4||'%' 
   OR CAST(tr.status AS TEXT)  ILIKE '%'||$4||'%'
@@ -1087,6 +1102,7 @@ export const dashboardMovementTransactionsByType = async (req, res, next) => {
     -- slack exclusion used to apply to the created_at branch alone and a slack
     -- row still came through on its transaction_actual_date.
     AND ua.account_name != $4
+    ${NOT_BOUNDARY_ACCOUNT}
 
     AND (mt.movement_type_name = $6 OR mt.movement_type_name = $8 )
     AND (trt.transaction_type_name = $5 OR act.account_type_name = $7)

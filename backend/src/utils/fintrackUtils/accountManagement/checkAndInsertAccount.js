@@ -2,8 +2,10 @@
 import pc from 'picocolors';
 import { createError, handlePostgresError } from '../../errorHandling.js';
 import { pool } from '../../../db/config/configDB.js';
+import { getCurrencyId } from '../../currencyLookup.js';
+import { ACCOUNTING_CURRENCY_CODE } from '../../../fintrack_api/config/fintrackConfig.js';
 
-//Checks for the existence of a specific account (e.g., 'slack') by name and type.this check is restricted to bank account types with basic account data.
+//Checks for the existence of a specific account (e.g., 'slack') by name and type.
 //If not found, it inserts it. Handles both transactional client and standalone pool usage.
 
 export const checkAndInsertAccount = async (
@@ -18,12 +20,12 @@ export const checkAndInsertAccount = async (
 
   // When the caller omits accountType, this call identifies the boundary
   // account: the system's compensation counterpart, typed 'boundary' by
-  // 031_add_boundary_account_type.sql. 'bank' stays in the match list because a
-  // database whose chain has not reached 031 still holds the old type, and
-  // missing it there would create a duplicate with a zero balance instead of
-  // finding the account. A caller that passes an explicit type keeps exact
-  // matching - this function is shared for other account types too.
-  const matchTypes = accountType ? [accountType] : ['bank', 'boundary'];
+  // 031_add_boundary_account_type.sql, which retyped the existing ones in the
+  // same transaction. One identity, one type: matching 'bank' as well would
+  // accept a user's own bank account named 'slack' as the compensation
+  // counterpart, which is the collision this rule exists to prevent. A caller
+  // passing an explicit type keeps exact matching - shared for other types too.
+  const matchTypes = accountType ? [accountType] : ['boundary'];
   const insertAccountType = accountType || 'boundary';
 
   // 1. Determine the database client connection:
@@ -43,8 +45,8 @@ export const checkAndInsertAccount = async (
     // account while every read filter counted it as the owner's own -
     // migration 031 measured no such row on fintrack_dev today, but nothing
     // stopped one from being created. account_type_name still folds case:
-    // that side only ever compares against the fixed literals 'bank' and
-    // 'boundary' passed in by this file, never user input.
+    // that side only ever compares against the fixed literal 'boundary' or a
+    // type name a caller passes, never raw user input.
     // This exact-case match shipped in 031's own commit, which invalidates
     // two passages of that migration's prose from the moment it landed. Its
     // header disclaims this fix as "not this file's to fix", which is wrong
@@ -96,14 +98,22 @@ export const checkAndInsertAccount = async (
       }
 
       const accountTypeId = accountTypeResult.rows[0].account_type_id;
+      // Resolved from the configured accounting currency, not a literal:
+      // every other creation path stores the accounting currency, so a
+      // hardcoded id makes this the only account in another one whenever
+      // ACCOUNTING_CURRENCY_CODE is set to anything but its usd default.
+      const accountingCurrencyId = await getCurrencyId(
+        dbClient,
+        ACCOUNTING_CURRENCY_CODE,
+      );
       //-------------------------------------
       const insertResult = await dbClient.query(
         'INSERT INTO user_accounts (user_id,account_name,account_type_id,currency_id,account_starting_amount,account_balance,account_start_date) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
         [
           userId,
           accountName,
-          accountTypeId, //1, //bank
-          1, //usd // Assuming 1 for usd/Default currency, adjust if dynamic currency is needed.
+          accountTypeId,
+          accountingCurrencyId,
           0, // starting_amount
           0, //balance
           new Date(),

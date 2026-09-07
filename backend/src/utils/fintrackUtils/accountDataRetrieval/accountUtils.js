@@ -55,16 +55,16 @@ export async function getUserIdFromAccount(clientOrPool, accountId) {
  */
 export async function getSlackAccountId(clientOrPool, userId) {
   const db = clientOrPool || pool;
-  // Matches both types on purpose: 'boundary' is the structural type (unit 5
-  // of PLAN_ACCOUNT_DELETION.md), 'bank' is what every account created before
-  // that migration still has until the backfill (open decision N3) runs.
+  // Name AND type, both: the compensation account is the one named 'slack'
+  // typed 'boundary'. Matching 'bank' as well would hand back a user's own bank
+  // account of that name as the system's counterpart.
   const query = `
     SELECT ua.account_id
     FROM user_accounts ua
     JOIN account_types act ON ua.account_type_id = act.account_type_id
     WHERE ua.user_id = $1
       AND ua.account_name = 'slack'
-      AND act.account_type_name IN ('bank', 'boundary')
+      AND act.account_type_name = 'boundary'
       AND ua.deleted_at IS NULL
   `;
   const result = await db.query(query, [userId]);
@@ -107,6 +107,7 @@ export async function getAccountsByType(userId, accountType) {
     WHERE ua.user_id = $1
       AND act.account_type_name = $2
       AND ua.account_name != 'slack'
+      AND act.account_type_name IS DISTINCT FROM 'boundary'
       AND ua.deleted_at IS NULL
     ORDER BY ua.account_name ASC
   `;

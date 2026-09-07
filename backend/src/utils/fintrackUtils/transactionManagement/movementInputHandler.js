@@ -87,19 +87,23 @@ const accountType=body.accountType
 //??body.accountType==''?'bank':body.accountType
 
 return {
-  // Both sides stay on the name path. One of them is always the slack account,
-  // which has no id of its own to send, and PnL is left unchanged here on
-  // purpose: it already posts account_id, so enabling it is a one-line change
-  // once that id is verified, in its own commit.
+  // Both sides stay on the name path. One of them is always the compensation
+  // account, which has no id of its own to send, and PnL is left on the name
+  // path on purpose: it already posts account_id, so enabling the id is a
+  // one-line change once that id is verified, in its own commit.
+  //
+  // Its type is 'boundary', not 'bank': getAccountInfo matches on name AND
+  // type, and 031_add_boundary_account_type.sql retyped the account. Sending
+  // 'bank' resolved nothing and killed the movement with a 404.
   sourceAccountId: null,
   sourceAccountName: isProfit ? 'slack' : body.account,
   sourceAccountTransactionType: 'withdraw',
-  sourceAccountTypeName: isProfit ? 'bank' : accountType,
+  sourceAccountTypeName: isProfit ? 'boundary' : accountType,
 
   destinationAccountId: null,
   destinationAccountName: isProfit ? body.account : 'slack',
   destinationAccountTransactionType: 'deposit',
-  destinationAccountTypeName: isProfit ? accountType : 'bank',
+  destinationAccountTypeName: isProfit ? accountType : 'boundary',
 
 }
 };

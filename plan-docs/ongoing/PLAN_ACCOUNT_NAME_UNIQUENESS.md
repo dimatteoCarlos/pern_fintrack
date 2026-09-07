@@ -496,3 +496,124 @@ tri-state return, and `isIndexReady` beside `isLoading`.
 than answered: whether the pocket form still needs a name check at all (unit
 **U6**). The block at §7 states the measurement; the decision is the developer's.
 
+
+---
+
+## 12. The reserved name — found 2026-09-06
+
+Found by the backdating session while verifying the closure settlement, measured
+again here before it was written down. It is a uniqueness rule this plan does
+not yet state: not "this name is already taken by another account of yours", but
+"this name belongs to the system and no account of yours may carry it".
+
+### What the code does
+
+The internal compensation account — the counterpart every annulment leg and
+every closure settlement writes against — is not identified by a flag or a
+column. It is resolved by **name and type**: the account named `slack` whose
+type is `bank` or `boundary`, oldest `account_id` first, in
+[`checkAndInsertAccount.js`](backend/src/utils/fintrackUtils/accountManagement/checkAndInsertAccount.js).
+It is created lazily, by that same function, the first time a path needs it.
+
+Its own comment justifies the oldest-wins ordering this way: the compensation
+account "is always created by this function itself, the first time it's needed,
+so it predates any later colliding account". **Nothing enforces that.** Creation
+is lazy, so a user who creates a bank account named exactly `slack` before their
+first deletion or closure gets a lower `account_id` than the compensation
+account would have had — and that user account is handed back as the
+compensation counterpart, permanently.
+
+### Why it is worse than a wrong lookup
+
+The read filters that keep the compensation account out of every published
+figure exclude it **by name**, comparing `account_name` to the literal `slack`.
+So the two halves fail in opposite directions at the same time:
+
+- the **writers** treat the user's own account as the system's, and post
+ settlement and annulment legs into it;
+- the **readers** treat it as the system's too, and subtract it from every
+ balance, total and list.
+
+The result is money the user did not make, landing in an account the user cannot
+see. Neither half reports anything, because from each side the account is
+exactly what it expects.
+
+### It blocks the filter cleanup, and that is the reason it is urgent
+
+Migration
+[`031_add_boundary_account_type.sql`](backend/src/db/migrations/sql_migrations/031_add_boundary_account_type.sql)
+added the structural type `boundary` and retyped the existing compensation
+accounts into it, stating in its own header that the twenty-seven read filters
+matching the account name should come to match the type instead — "a name is not
+a type, and every one of those filters is one rename away from being wrong".
+
+**That rewrite is not safe until this unit ships.** After 031 a bank-typed
+account named `slack` can exist again, and two cases become indistinguishable to
+any type-only predicate:
+
+- the compensation account already existed with a lower id, so the user's `slack`
+ is genuinely theirs — and a type predicate correctly returns it to their figures;
+- no compensation account existed yet, so oldest-wins handed the user's own
+ account back as the counterpart — and the same type predicate now counts the
+ system's compensation writes as the owner's money.
+
+Same name, same type, opposite correct answers, told apart only by creation
+order against the helper's history. Reversed, the cleanup converts a bug that
+**hides** the owner's money into one that **shows them money that is not
+theirs** — the worse failure, and silent in both directions.
+
+So the order is fixed: reserve the name at creation first, which makes the second
+case unreachable and turns the collision into a countable set of legacy rows;
+only then drop the name filter. Adding the type predicate **beside** the name
+filter is safe meanwhile and is what the account read controllers do today; it is
+the removal of the name filter that waits.
+
+### Where the guard goes
+
+Not another read filter — the source comment concedes the scope itself
+("preventing the collision belongs to account creation, out of this module's
+scope"). The three user-facing creation controllers all funnel through
+[`insertAccount.js`](backend/src/utils/fintrackUtils/accountManagement/insertAccount.js),
+which is the one chokepoint that covers all of them
+([`accountCreationController.js`](backend/src/fintrack_api/controllers/accountCreationController.js)
+twice, [`accountCategoryCreationcontroller.js`](backend/src/fintrack_api/controllers/accountCategoryCreationcontroller.js)
+once). Two inserts bypass it and have to be handled deliberately: the
+compensation account's own insert inside `checkAndInsertAccount.js`, which must
+stay exempt or the account can never be created at all, and the account insert
+inside [`transactionController.js`](backend/src/fintrack_api/controllers/transactionController.js)
+that creates an account on the fly.
+
+**The count was taken, not assumed**: those three are every statement inserting
+into `user_accounts` in the whole backend. There is no fourth path, so the two
+exemptions above are the complete set. A reservation with an unlisted bypass is
+a reservation that does nothing, which is why this is stated rather than left to
+be re-measured later.
+
+### The unit
+
+| unit | what it does | where |
+|---|---|---|
+| **U8** — the system name is refused at creation | reject the reserved account name before the insert, with the same `400` shape every other creation refusal uses, and surface it in the form the way the units of §7 surface a duplicate. Prerequisite of the read-filter cleanup above | `insertAccount.js`, the bypassing insert in `transactionController.js`, and the three creation forms |
+
+### Open decisions
+
+**D-f — is the reservation exact-case or case-folded?**
+Recommendation: **case-folded**, and the reason is forward-looking rather than
+defensive. The hazard a case variant used to create is already closed: the
+resolver matched the name case-insensitively from 2026-08-05 (`270d705f`) until
+the very commit that added migration 031 (`b8480e4f`) made it exact-case, so
+today a `Slack` account cannot be handed back as the compensation account. What
+argues for case-folding is that the exact-case match is one commit old and one
+revert away from returning, and that revert would look like a bug fix to whoever
+makes it. A reservation forbidding only the literal `slack` would silently stop
+being sufficient. Case-folding it holds regardless of how the resolver matches,
+which is what a constraint whose whole job is to be true later has to do.
+
+**D-g — what happens to a colliding account that already exists?**
+Recommendation: **nothing, and it does not block U8.** Migration 031 measured
+`fintrack_dev` on 2026-09-06 inside a read-only transaction: 31 accounts, of
+which exactly one is named `slack` — account 14, and that one **is** the
+compensation account. Nine accounts carry a mixed-case name and none is a
+variant. So no legacy collision exists on that database. No production database
+has been measured, and that measurement is the precondition for the filter
+cleanup, not for this unit.

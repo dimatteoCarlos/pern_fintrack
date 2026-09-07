@@ -37,6 +37,14 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua');
 // is_deleted beside it instead.
 const LIVE_ACCOUNT = 'AND ua.deleted_at IS NULL';
 
+// Excludes the internal compensation account by what it is, not by what it is
+// called. The name filter beside it stays until 'slack' is reserved at account
+// creation: after 031 an account of that name typed 'bank' can still be
+// captured as the compensation account, and no type predicate can see it. The
+// pre-031 typing is a second, weaker reason and expires on its own.
+const NOT_BOUNDARY_ACCOUNT =
+ "AND act.account_type_name IS DISTINCT FROM 'boundary'";
+
 //BASIC FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
   const backendColor =
@@ -302,6 +310,7 @@ export const getAllAccountsByType = async (req, res, next) => {
        JOIN currencies ct ON ua.currency_id = ct.currency_id
        WHERE ua.user_id = $1
        AND act.account_type_name = $2 AND ua.account_name != $3
+       ${NOT_BOUNDARY_ACCOUNT}
        ${LIVE_ACCOUNT}
        ORDER BY ua.account_name ASC, account_balance DESC
        `,
@@ -322,6 +331,7 @@ export const getAllAccountsByType = async (req, res, next) => {
    JOIN category_nature_types cnt ON cba.category_nature_type_id = cnt.category_nature_type_id
    WHERE ua.user_id =$1
    AND act.account_type_name = $2 AND ua.account_name != $3
+   ${NOT_BOUNDARY_ACCOUNT}
    ${LIVE_ACCOUNT}
    ORDER BY ABS(${DERIVED_BALANCE}) DESC
        `,
@@ -338,6 +348,7 @@ JOIN account_types act ON ua.account_type_id = act.account_type_id
 JOIN currencies ct ON ua.currency_id = ct.currency_id
   WHERE ua.user_id =$1
   AND act.account_type_name = $2 AND ua.account_name != $3
+  ${NOT_BOUNDARY_ACCOUNT}
   ${LIVE_ACCOUNT}
   ORDER BY ABS(${DERIVED_BALANCE}) DESC
 `,
@@ -354,6 +365,7 @@ JOIN account_types act ON ua.account_type_id = act.account_type_id
 JOIN currencies ct ON ua.currency_id = ct.currency_id
   WHERE ua.user_id =$1
   AND act.account_type_name = $2 AND ua.account_name != $3
+  ${NOT_BOUNDARY_ACCOUNT}
   ${LIVE_ACCOUNT}
   ORDER BY ABS(${DERIVED_BALANCE}) DESC
       `,
@@ -379,6 +391,7 @@ JOIN currencies ct ON ua.currency_id = ct.currency_id
 JOIN pocket_saving_accounts ps ON ua.account_id = ps.account_id
 WHERE ua.user_id =$1
 AND act.account_type_name = $2 AND ua.account_name != $3
+${NOT_BOUNDARY_ACCOUNT}
 ${LIVE_ACCOUNT}
 ORDER BY ps.target DESC, ABS(${DERIVED_BALANCE}) DESC
 `,
@@ -407,6 +420,7 @@ ORDER BY ps.target DESC, ABS(${DERIVED_BALANCE}) DESC
     ON ua.account_id = dac.account_id
    WHERE ua.user_id =$1
    AND act.account_type_name = $2 AND ua.account_name != $3
+   ${NOT_BOUNDARY_ACCOUNT}
    ${LIVE_ACCOUNT}
    ORDER BY account_balance ASC
 `,
@@ -426,6 +440,7 @@ ORDER BY ps.target DESC, ABS(${DERIVED_BALANCE}) DESC
           JOIN currencies ct ON ua.currency_id = ct.currency_id
           WHERE ua.user_id = $1
           AND( act.account_type_name = $2 OR act.account_type_name=$3) AND ua.account_name != $4
+          ${NOT_BOUNDARY_ACCOUNT}
           ${LIVE_ACCOUNT}
         ORDER BY ua.account_type_id ASC, ua.account_name ASC, account_balance DESC
        `,
@@ -533,6 +548,7 @@ export const getAccounts = async (req, res, next) => {
        JOIN currencies ct ON ua.currency_id = ct.currency_id
        WHERE ua.user_id = $1
        AND ua.account_name != $2
+       ${NOT_BOUNDARY_ACCOUNT}
        ${LIVE_ACCOUNT}
        -- The expression and not the output name: ua.* already ships a column
        -- called account_balance, so the bare name is ambiguous here.
@@ -705,6 +721,7 @@ export const getAccountById = async (req, res, next) => {
       WHERE ua.user_id =$1
         AND act.account_type_name = $2
         AND ua.account_id = $3 AND ua.account_name != $4
+        ${NOT_BOUNDARY_ACCOUNT}
       ORDER BY ua.created_at DESC, ua.updated_at DESC 
       `,
           values: [userId, account_type_name, accountId, 'slack'],
@@ -722,6 +739,7 @@ export const getAccountById = async (req, res, next) => {
     WHERE ua.user_id =$1
     AND ua.account_id = $2
     AND act.account_type_name = $3 AND ua.account_name != $4
+    ${NOT_BOUNDARY_ACCOUNT}
 `,
           values: [userId, accountId, account_type_name, 'slack'],
         },
@@ -751,6 +769,7 @@ export const getAccountById = async (req, res, next) => {
         WHERE ua.user_id =$1
         AND ua.account_id = $2
         AND act.account_type_name = $3 AND ua.account_name != $4
+        ${NOT_BOUNDARY_ACCOUNT}
 `,
           values: [userId, accountId, account_type_name, 'slack'],
         },

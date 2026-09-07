@@ -241,8 +241,19 @@ export const transferBetweenAccounts = async (req, res, next) => {
       const db = dbClient || pool;
       try {
         //Check existence using the transaction client
+        // Name AND type, both. Resolved by name alone this captured any
+        // account of the user called 'slack' - including one they created
+        // themselves - and posted the compensation legs into it.
         const chekAccountResult = await db.query(
-          'SELECT * FROM user_accounts WHERE account_name = $1 AND user_id = $2',
+          `SELECT ua.*
+             FROM user_accounts ua
+             JOIN account_types act ON ua.account_type_id = act.account_type_id
+            WHERE ua.account_name = $1
+              AND ua.user_id = $2
+              AND act.account_type_name = 'boundary'
+              AND ua.deleted_at IS NULL
+            ORDER BY ua.account_id ASC
+            LIMIT 1`,
           ['slack', userId],
         );
 
@@ -263,13 +274,21 @@ export const transferBetweenAccounts = async (req, res, next) => {
               "Account type 'boundary' not found: the migration chain has not reached 031",
             );
           }
+          // Resolved from the configured accounting currency, not a literal:
+          // every other creation path stores the accounting currency, so a
+          // hardcoded id makes this the only account in another one whenever
+          // ACCOUNTING_CURRENCY_CODE is set to anything but its usd default.
+          const accountingCurrencyId = await getCurrencyId(
+            db,
+            ACCOUNTING_CURRENCY_CODE,
+          );
           const insertResult = await db.query(
             'INSERT INTO user_accounts (user_id,account_name,account_type_id,currency_id,account_starting_amount,account_balance,account_start_date) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
             [
               userId,
               'slack',
               boundaryTypeResult.rows[0].account_type_id,
-              1,
+              accountingCurrencyId,
               0,
               0,
               new Date(),
@@ -734,8 +753,11 @@ export const transferBetweenAccounts = async (req, res, next) => {
     //---check for enough funds on source account
     if (
       sourceLedgerBalance.lessThan(money(numericAmount)) &&
-      ((sourceAccountTypeName === 'bank' &&
-        sourceAccountInfo.account_name !== 'slack') ||
+      // No name exemption for the compensation account: it is typed
+      // 'boundary' since 031, so it never reaches this bank branch. Keeping
+      // the name test would exempt a user's OWN bank account named 'slack'
+      // from the funds check.
+      (sourceAccountTypeName === 'bank' ||
         sourceAccountTypeName === 'investment' ||
         sourceAccountTypeName === 'pocket_saving' ||
         sourceAccountTypeName === 'category_budget') //reversal of a expense

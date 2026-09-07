@@ -292,7 +292,7 @@ export const createBasicAccount = async (req, res, next) => {
     const { transaction_type_id, countertransaction_type_id } =
       transactionTypeDescriptionIds;
 
-    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account ${counterAccountInfo.account.account_name} (bank, ID: ${counterAccountInfo.account.account_id}). Amount:${counterAccountTransactionAmount} ${currency_code}. Reference: ${newAccountName}). Date: ${formatDateToDDMMYYYY(transaction_actual_date)}`;
+    const counterTransactionDescription = `Transaction: ${counterTransactionType}. Account ${counterAccountInfo.account.account_name} (boundary, ID: ${counterAccountInfo.account.account_id}). Amount:${counterAccountTransactionAmount} ${currency_code}. Reference: ${newAccountName}). Date: ${formatDateToDDMMYYYY(transaction_actual_date)}`;
 
     const slackCounterAccountInfo = {
       user_id: userId,
@@ -305,7 +305,7 @@ export const createBasicAccount = async (req, res, next) => {
       transaction_actual_date: transaction_actual_date,
       currency_code,
       account_name: counterAccountInfo.account.account_name,
-      account_type_name: 'bank',
+      account_type_name: 'boundary',
       account_type_id: counterAccountInfo.account.account_type_id,
       account_balance: parseFloat(newCounterAccountBalance),
       // FX metadata
@@ -882,7 +882,7 @@ export const createDebtorAccount = async (req, res, next) => {
       transaction_actual_date,
       currency_code: ACCOUNTING_CURRENCY_CODE,
       account_name: counterAccountInfo.account.account_name,
-      account_type_name: 'bank',
+      account_type_name: 'boundary',
       account_type_id: counterAccountInfo.account.account_type_id,
       account_balance: newCounterAccountBalance,
       ...counterFxMetadata,

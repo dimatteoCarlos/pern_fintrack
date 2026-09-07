@@ -51,6 +51,16 @@
 // movement_types.movement_type_id, the 'account-opening' row.
 export const ACCOUNT_OPENING_MOVEMENT_TYPE_ID = 8;
 
+// movement_types.movement_type_id and transaction_types.transaction_type_id,
+// both the 'account-closure' row (032_add_account_closure_movement_type.sql).
+// Not read by this file's own balance derivation - a closure settlement is a
+// real movement of money and stays inside the sum, unlike the opening row
+// above. Named here anyway, next to the opening pair, per this file's own
+// idiom for a catalog id used in a query: a named export, never an inlined
+// literal (see the settlement writer, recordClosureSettlement.js).
+export const ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID = 10;
+export const ACCOUNT_CLOSURE_TRANSACTION_TYPE_ID = 6;
+
 /**
  * A common table expression naming, for every movement of one account, the
  * balance that account holds once that movement has been applied.
