@@ -950,6 +950,28 @@ that a same-day entry would not have moved.
 **Nothing in this class is modified.** The pocket sums are a second ledger with its own
 `allocation_actual_date` and this plan does not touch it.
 
+**What this plan does govern there is a system writer, and the rule follows from the layer
+table above: the backend controls what the system may write.** Added 2026-09-07, when the
+coordination session asked whether a row written by the account-closure path would collide
+with anything settled here. It does not, and three conditions hold for any future writer on
+that column.
+
+- **The date carried is the decision's, never the run's.** `pocketRepository.js` buckets
+  the board by month with `pa.allocation_actual_date >= ($2::timestamp AT TIME ZONE $3)`
+  and its matching upper bound, resolved on the owner's calendar. A row written today for a
+  decision effective in a past month lands in the wrong bucket, and the screen then reports
+  a coverage that was not true of the month it is displaying.
+- **Use `insertAllocation` in `accountAllocationRepository.js`, not a fresh `INSERT`.** Its
+  `CASE` already anchors a supplied day at `TIME '12:00'` in the owner's zone, for the
+  reason its own header gives: midday is maximally far from both boundaries, while a bare
+  `YYYY-MM-DD` casts to midnight and lands a day early for every owner west of the server.
+  A new `INSERT` elsewhere reintroduces a bug already fixed here.
+- **The owner's window does not bind the system, and must not be applied to it.** The window
+  is `[max(first day of the current month, the account's opening), today]` and it governs
+  what the owner may choose. A system row for a decision effective earlier is correct even
+  though the date picker would refuse that day. Clamping it into the window to make the two
+  agree would move the row into a month the decision did not happen in.
+
 #### Class B — the running series ordered by the date. Retroactive, and the reason for §5.
 
 ```
