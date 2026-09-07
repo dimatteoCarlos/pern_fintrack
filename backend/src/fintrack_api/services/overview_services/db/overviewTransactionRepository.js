@@ -183,38 +183,11 @@ const DEBT_COUNT_QUERY = `
     AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
 `;
 
-const POCKET_PAGE_QUERY = `
-  SELECT
-    tr.*,
-    mt.movement_type_name,
-    trt.transaction_type_name,
-    act.account_type_name,
-    cr.currency_code,
-    ua.account_name,
-    ua.account_type_id,
-    (tr.transaction_actual_date AT TIME ZONE $3)::date::text AS transaction_local_date
-  FROM transactions tr
-  JOIN movement_types mt ON mt.movement_type_id = tr.movement_type_id
-  JOIN transaction_types trt ON trt.transaction_type_id = tr.transaction_type_id
-  JOIN currencies cr ON cr.currency_id = tr.currency_id
-  JOIN user_accounts ua ON ua.account_id = tr.account_id
-  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
-  WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id = 5
-    AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
-    AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
-  ORDER BY tr.transaction_actual_date DESC, tr.transaction_id DESC
-  LIMIT $4 OFFSET $5
-`;
-
-const POCKET_COUNT_QUERY = `
-  SELECT COUNT(*) AS total_rows
-  FROM transactions tr
-  WHERE tr.account_id = ANY($1::int[])
-    AND tr.movement_type_id = 5
-    AND tr.transaction_actual_date >= ($2::timestamp AT TIME ZONE $3)
-    AND tr.transaction_actual_date <  (($2::date + INTERVAL '1 month') AT TIME ZONE $3)
-`;
+// Pocket has no list here. Movement type 5 was a funding transfer into a
+// pocket_saving account, and migration 020 emptied that type: committing money
+// to a pocket writes an allocation and moves nothing, so there is no transaction
+// to list. The month's allocations are read from the ledger instead
+// (overviewPocketRepository.js).
 
 // Investment lists every movement that touched an investment account, with no
 // movement filter at all, and that is the one list in this file whose rows are
@@ -384,27 +357,6 @@ export async function getDebtTransactionsPage(pool, accountIds, month, timeZone,
  return readTransactionsPage(
   pool,
   { page: DEBT_PAGE_QUERY, count: DEBT_COUNT_QUERY },
-  accountIds,
-  month,
-  timeZone,
-  paging,
- );
-}
-
-/**
- * One page of the pocket movements of a month, plus the size of the whole set.
- *
- * @param {object} pool - Database pool
- * @param {number[]} accountIds - the user's pocket_saving accounts
- * @param {string} month - the month to list, as 'YYYY-MM-01'
- * @param {string} timeZone - IANA zone of the account owner
- * @param {object} paging - { page, pageSize, includeRows }
- * @returns {Promise<{rows: object[], totalRows: number}>}
- */
-export async function getPocketTransactionsPage(pool, accountIds, month, timeZone, paging) {
- return readTransactionsPage(
-  pool,
-  { page: POCKET_PAGE_QUERY, count: POCKET_COUNT_QUERY },
   accountIds,
   month,
   timeZone,

@@ -54,12 +54,17 @@ const EXPENSE_ACCOUNT_IDS_QUERY = `
 // until the phase 2b probe says whether it has real writes, and inventing its
 // inclusion here would be this module deciding a question the catalog holds
 // open.
+//
+// pocket_saving is gone from the list. Migration 020 emptied that type and
+// turned a pocket into a plan that commits money staying in the real account, so
+// the type contributes no row today — and leaving it written would put income
+// back into a set the moment anyone recreated such an account.
 const INCOME_ACCOUNT_IDS_QUERY = `
   SELECT ua.account_id
   FROM user_accounts ua
   JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
-    AND act.account_type_name IN ('bank', 'investment', 'debtor', 'pocket_saving')
+    AND act.account_type_name IN ('bank', 'investment', 'debtor')
     AND ua.account_name != 'slack'
   ORDER BY ua.account_id
 `;
@@ -195,17 +200,6 @@ async function getAccountIdsByType(pool, userId, accountTypeName) {
  */
 export async function getDebtAccountIds(pool, userId) {
  return getAccountIdsByType(pool, userId, 'debtor');
-}
-
-/**
- * The pocket_saving accounts of a user — the set the pocket balance is read over.
- *
- * @param {object} pool - Database pool
- * @param {string} userId - UUID from the token
- * @returns {Promise<number[]>} account ids, ascending
- */
-export async function getPocketAccountIds(pool, userId) {
- return getAccountIdsByType(pool, userId, 'pocket_saving');
 }
 
 /**

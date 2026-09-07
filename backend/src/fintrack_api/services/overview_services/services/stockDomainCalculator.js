@@ -1,18 +1,23 @@
 // src/fintrack_api/services/overview_services/services/stockDomainCalculator.js
 
-// The body Debt and Pocket share.
+// The body of a stock domain: one whose headline figure is a BALANCE.
 //
-// The flow domains each earned their own file because they genuinely differ:
-// expense carries a budget block and a category breakdown, income carries
-// neither, pnl publishes no trend and filters a description. Debt and Pocket
-// differ in four values and nothing else — which account set, which list, which
-// name, and whether a trend is published — so they are one body called twice
-// rather than one body written twice.
+// Debt is the only caller today. It was written for two — Pocket came through
+// here as well, because both were read the same way: one account set, one
+// balance series, and the movements on those accounts. That stopped being true
+// when migration 020 turned a pocket into a plan with no account and no
+// transactions of its own, and Pocket now composes its card from the pocket
+// board (overviewPocketService.js).
 //
-// What makes them one body is that their headline figure is a BALANCE. Neither
-// D1 nor P1 is a sum of the period's rows, so neither delta can be one total
-// minus another the way E3 and I3 are: it is the same balance read at the end of
-// two consecutive months, which is what the balance repository returns.
+// The file is kept as it is rather than folded into the debt calculator. The
+// shape it holds is the one every balance-headed domain needs, and inlining it
+// would put a rule the contract states once back inside a single domain — the
+// arrangement D21 already showed the cost of.
+//
+// What makes a domain belong here is that its total is not a sum of the period's
+// rows. D1 is not, so its delta cannot be one total minus another the way E3 and
+// I3 are: it is the same balance read at the end of two consecutive months,
+// which is what the balance repository returns.
 //
 // This is also where D21 lands differently. On a flow card the count and the
 // total are made of the same rows, so the count comes off the same monthly
@@ -39,11 +44,11 @@ import { ACCOUNTING_CURRENCY_CODE } from '../../../config/fintrackConfig.js';
  * @param {string} userId - UUID from the token, never from the client body
  * @param {object} request - { window, page, pageSize, includeTransactionRows }
  * @param {string} timeZone - IANA zone of the account owner
- * @param {object} config - the four values that separate one stock domain from the other
- * @param {string} config.domain - 'debt' or 'pocket'
+ * @param {object} config - the four values that separate one stock domain from the next
+ * @param {string} config.domain - one of the six of §3
  * @param {Function} config.getAccountIds - the resolver for this domain's accounts
  * @param {Function} config.getTransactionsPage - the list for this domain's movements
- * @param {boolean} config.publishesTrend - §12 grants pocket a trend and denies debt one
+ * @param {boolean} config.publishesTrend - §12 denies debt a series
  * @returns {Promise<object>} GetOverviewDomainData for the domain
  */
 export async function readStockDomain(
