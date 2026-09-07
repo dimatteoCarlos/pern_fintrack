@@ -183,10 +183,17 @@ function OverviewLayout() {
   ]);
 
   //==================================
+  // A figure the page could not compute is published as null, never as 0: the
+  // three rows are the user's own money, and 0 states they hold nothing.
+  //
+  // The guard used to read totalIncome on all three rows, so a broken expense
+  // printed as real money and a valid expense blanked whenever income broke.
+  const asFigure = (amount: number) => (Number.isNaN(amount) ? null : amount);
+
   const bigScreenInfo = [
-    { title: 'net worth', amount: isNaN(netWorth) ? 0 : netWorth },
-    { title: 'income', amount: isNaN(totalIncome) ? 0 : totalIncome },
-    { title: 'expenses', amount: isNaN(totalIncome) ? 0 : totalExpense },
+    { title: 'net worth', amount: asFigure(netWorth) },
+    { title: 'income', amount: asFigure(totalIncome) },
+    { title: 'expenses', amount: asFigure(totalExpense) },
   ];
   //loader for any loading process
   const isAnyLoading =
