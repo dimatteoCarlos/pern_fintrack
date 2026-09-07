@@ -3170,10 +3170,24 @@ branch. Agreed — the field was corrected, the guard untouched.
 **Still not implemented, and now for a better reason.** `e4` is reporting to
 Carlos on industry practice for soft-deleting an account that holds money. If
 the ruling is that **SOFT must not accept a nonzero balance at all**, the dead
-end closes at the entrance rather than at the exit, and lifting the CLOSE
-refusal becomes unnecessary. That is the stronger fix if it is available: it
-prevents the state instead of adding a way out of it. The CLOSE precondition
-change waits on Carlos.
+end closes at the entrance rather than at the exit. That is the stronger fix and
+the one to take: it prevents the state instead of adding a way out of it.
+
+**But the gate is forward-only, so it cannot retire the exit work.** Raised by
+`pern-fintrack-02`, correcting this section's first version, which said lifting
+the CLOSE refusal "becomes unnecessary". A refusal on SOFT stops new rows
+entering the state; it does nothing for rows already in it. Development holds
+none — measured above, 31 accounts and all 31 live. **Production has never been
+read for this, by anyone.** So "the state stops being reachable" is true of the
+future and unproven of the present, and if production holds even one
+soft-deleted account with a nonzero derived balance, that row still needs an
+exit the gate will never give it.
+
+**The measurement that settles which fixes are needed**, and the only thing
+standing between one and both: soft-deleted accounts carrying a nonzero derived
+balance in production, read-only. Zero rows and the gate alone suffices; one row
+and the exit is needed as well, for that row. No session here connects to
+production — this rides along with the ledger read Carlos already has in hand.
 
 **Routing.** `pern-fintrack-02` and `pern-fintrack-cf` are not owners here.
 
