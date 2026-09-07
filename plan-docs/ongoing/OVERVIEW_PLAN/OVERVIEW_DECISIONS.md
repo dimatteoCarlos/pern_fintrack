@@ -1621,10 +1621,51 @@ ordinary account to all 26 live read filters at once**: the deletion machinery w
 counterpart legs into it, and every aggregate counts those legs as the owner's
 money.
 
-**And nothing reserves the name.** `accountCreationController.js` has no
-reserved-name guard — no check on the name at all beyond the ordinary ones — so
-an owner creating a bank account called `Slack` reaches this state today, with no
-migration and no rename anywhere near it.
+**Correction, and it is mine.** An earlier version of this entry said account
+creation has no name guard at all. It has one, it folds case on both sides, and I
+recorded the opposite from a peer's measurement without opening the file. Read
+here afterwards: `verifyAccountExistence.js:19-28` rejects a name that already
+exists for that owner **at that account type**, comparing `LOWER` on both sides,
+and it runs on all three creation paths. The edit controller carries the same
+check for renames (`accountEditController.js:239-262`), also case-folded, so a
+**rename** into a collision is already refused. The reservation is still needed;
+the reason is narrower than what was written and the reachable paths are these
+two.
+
+**Path one, and it is the severe one: the guard has nothing to compare against
+yet.** The compensation account is created lazily, not at signup. In
+`accountCreationController.js` the name check runs at line 150 and the
+compensation account is only created at line 265 — so for the very first account
+an owner ever creates, a bank account named `slack` passes the check because no
+compensation account exists to collide with. Then line 265 runs,
+`checkAndInsertAccount` matches on `LOWER(name)` and type in (`bank`,
+`boundary`), and **adopts the account the owner just created as the compensation
+account.** From then on the deletion machinery writes counterpart legs into the
+owner's real account and every read filter excludes it.
+
+**Path two: the guard is scoped per account type, deliberately.** Two accounts of
+different types may share a name and that is by design — the development database
+already holds an `income_source` and an `investment` account both named
+`ingresos`. So an owner can create a **cash** or **investment** account named
+`slack` at any time. It is not adopted as the compensation account, because the
+resolver matches only the bank and boundary types, but all 26 name-only read
+filters drop it, so **the owner's account silently disappears from every
+aggregate**.
+
+**One consequence recorded earlier is wrong and is withdrawn:** that the resolver
+picking the first of two rows without an `ORDER BY` makes the choice
+nondeterministic. Two accounts of the same owner, same type and same name folded
+cannot both exist — the creation guard refuses the second. The resolver's missing
+`ORDER BY` is untidy and not a live defect.
+
+**Half of path one has since been closed elsewhere, and not by this module.** The
+deletion session reports narrowing the resolver to compare the name exact-case and
+to order by account id, on `main`, which stops a `Slack` account from ever being
+adopted as the compensation account. Not verified here — this branch predates it
+— and it is recorded as theirs. It does not close the path above: the account that
+gets adopted is named exactly `slack`, so an exact-case comparison still matches
+it. Reserving the name remains the repair, and path two is untouched by any of
+this.
 
 **Measured before recording it:** every compensation account in the development
 database is stored exactly `slack`, one row, typed as a bank account. So the gap
