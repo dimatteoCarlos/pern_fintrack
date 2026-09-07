@@ -1107,6 +1107,50 @@ question from the original D4 framing (which asked about both together).
 Not fixed, not attempted - broadcast to all three peers, held pending a
 decision.
 
+**LIVE CRASH, confirmed by `pern-fintrack-e4`, 2026-09-06 - not a pending
+design choice, a hard failure today.** `createTables.js:178` declares
+`transactions.account_id INTEGER NOT NULL REFERENCES
+user_accounts(account_id) ON DELETE RESTRICT`.
+`recordAnnulmentTransaction` inserts two rows per report row - one at its
+own line 108 with `account_id: affectedAccountId`, one at line 136 with
+`account_id: slackAccountId`. For the orphaned row, the first insert
+writes `account_id: null` and violates the `NOT NULL`, aborting the whole
+RTA transaction. Before `30bbd526`, the inner join silently dropped this
+row, so execution never reached it and the deletion completed on an
+understated report; after it, the row is present and correctly reported,
+and execution now hits the constraint - a better failure (loud, correct
+number) than the one before it (silent, wrong number), per `e4`'s framing,
+but still a failure. **Reachable, not theoretical**: any account being
+deleted that has a transaction whose counterparty was itself deleted
+earlier - ordinary history in a database where more than one account has
+ever been deleted. Not behind the CLOSE release gate - this is the RTA
+path.
+
+Checked, per `e4`'s ask, whether the two other reads of a null
+`affectedAccountId` in the same loop have their own failure modes:
+neither does. `lockAndDeriveBalances`'s `WHERE ua.account_id = ANY($1::int[])`
+accepts a `null` array element without error - it simply never matches a
+row, so `ledgerBalanceOf(null)` resolves through `Map.get(null)` to
+`undefined`, and `parseFloat(undefined)` is `NaN`, not a crash.
+`setAccountBalanceFromLedger(dbClient, null, userId)`'s `WHERE
+ua.account_id = $1` behaves the same way - zero rows match, `NOT NULL`
+constraints on `user_accounts` are never reached, no throw. The
+`NOT NULL` on `transactions.account_id` is the only hard stop; it fires
+first in the loop, before either of these two would otherwise produce a
+wrong-but-silent number.
+
+`e4`'s recommendation, put to Carlos directly, not yet ruled: when there
+is no live counterparty, post the reversing leg against the compensation
+account alone (the only account that exists, and the one
+`totalAffectedAccountAdjustement`'s arithmetic already assumes it lands
+on - skipping the row outright would make the predicted and the
+ledger-derived `finalSlackBalance` disagree by exactly the orphaned
+amount, the disagreement `deleteAccountService.js`'s own comment on that
+loop says should not happen). Compatible with Carlos's "B" - that ruling
+governs what the report shows before confirmation, not where the money
+lands once confirmed. Not implemented; `deleteAccountService.js` and
+`recordAnnulmentTransaction` untouched pending the ruling.
+
 ### Unit 5/7 catalog decision, 2026-09-06: the settlement pair keeps both ids
 
 Gating question from `backdating`: does CLOSE's settlement write its own
