@@ -691,6 +691,25 @@ them:
 
 ### Unit 5 scoping, 2026-09-06
 
+**This unit renames no account.** It converts the existing `slack` account's
+`account_type` to `boundary`; the account's `account_name` stays `'slack'`
+throughout, including through a partial backfill. That is what keeps
+Overview's 34 name-based filters (`account_name != 'slack'`) valid and
+unaffected by this unit or by how long the backfill takes — a name change is
+what would break them silently, and none is planned here or anywhere else in
+this document. If one is ever proposed, it goes to `overview-agent` first,
+per the sequencing `overview-agent` set: name only moves after Overview's
+filters have already switched to `account_type_id`, itself gated on the
+backfill being provably complete.
+
+**Why boundary must stay out of every published figure — measured, not just
+argued.** Boundary is a contra account: every account-opening credits the new
+account and debits boundary, so boundary's balance is the mirror image of
+everything every account in the system has ever held. On `fintrack_dev`,
+boundary's own derived balance for the test owner is `-100,166.14`. Summing
+that into net worth doesn't shade the number, it collapses it toward zero —
+the type filters exist for this reason, not as a technicality.
+
 **Names decided by the developer.** The new `account_type` is `boundary` —
 the term this document already uses for the concept (§4.2-§4.3), not an
 invented one, and not `system_boundary`: "system" implies internal
