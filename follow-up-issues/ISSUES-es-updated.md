@@ -1,6 +1,40 @@
 TÓPICOS LISTOS, PENDIENTES Y CONSULTAS AL CLIENTE
 
-GESTION DE MULTIPLES SESIONES. PENDIENTE. 
+> **REMEDIDO EL 2026-09-06 SOBRE LA RAMA `main`, CABEZA `20de666d`.**
+>
+> Cada elemento que cambió de estado en esta pasada se verificó contra el árbol
+> de trabajo de ese día, y el archivo y la línea que lo prueban van entre
+> paréntesis al lado. Un cambio de estado sin prueba no cuenta.
+>
+> **Qué NO se remidió — no leerlo como medido:**
+>
+> - Los elementos que ya estaban marcados LISTO antes de esta pasada **no se
+>   reauditaron uno por uno**. Tres resultaron falsos mientras se verificaba otra
+>   cosa y quedaron corregidos aquí; el resto conserva su estado anterior sin
+>   comprobar.
+> - **Nada se probó en un navegador.** Ningún formulario enviado, ninguna
+>   pantalla redimensionada, ninguna sesión dejada expirar. Todo elemento cuya
+>   prueba es visual o interactiva queda PENDIENTE con la comprobación que le
+>   debe un humano escrita al lado.
+> - **Ninguna base de datos fue leída**, ni local ni remota, y la aplicación
+>   nunca se levantó. Los elementos sobre tipos de columna almacenados, desfases
+>   de hora y estabilidad en producción no son verificables desde el código y
+>   quedan PENDIENTE.
+> - **Nada se midió fuera de `main`.** Los hallazgos que viven en otras ramas
+>   quedan fuera de esta pasada.
+> - `backend/src` y `frontend/src` se barrieron buscando marcas de trabajo
+>   pendiente en los comentarios — `TODO`, `FIXME`, `HACK`, `XXX` — y **no hay
+>   ninguna**: cero coincidencias en ambos árboles. Ese barrido no aportó
+>   elementos.
+>
+> Los conteos por grupo están en `summary-issues.md` y la misma lista en inglés
+> en `issues-en.md`. Los tres archivos cuentan lo mismo a esta fecha:
+> **123 elementos — 77 LISTO, 46 PENDIENTE.**
+
+---
+
+
+GESTION DE MULTIPLES SESIONES. PENDIENTE. Sigue siendo una decision de diseno nunca tomada; no hay codigo que la implemente ni que la impida.
 Como se gestionan: 
 Multiples sesiones de un mismo usuario. 
 Multiples usuarios. 
@@ -22,11 +56,11 @@ Validar el monto target en linea al crear una cuenta pocket. LISTO.
 
 Verificar auth refresh token y la logica de refresh toekn automatico.LISTO.
 
-Porque expira la sesion, si existe un refresh token, que deberia estar actualizado?. PENDIENTE.
+Porque expira la sesion, si existe un refresh token, que deberia estar actualizado?. PENDIENTE. **El mecanismo ya esta medido, el sintoma no.** La cookie de refresco se escribe sin vida util: ni `maxAge` ni `expires` (`backend/src/utils/authUtils/cookieConfig.js:10-15`), asi que es una cookie de sesion y muere al cerrar el navegador, mientras el token que lleva dentro esta firmado por 8.9 dias (`backend/src/utils/authUtils/authFn.js:95-98`). Falta la comprobacion humana: cerrar el navegador, reabrirlo y confirmar que la sesion se perdio con el token todavia vigente.
 
-Como hacer para recordar al usuario y mantenerlo activo mientras refresh token este vigente. Verificar si esto es deseable. PENDIENTE
+Como hacer para recordar al usuario y mantenerlo activo mientras refresh token este vigente. Verificar si esto es deseable. PENDIENTE. Bloqueado por la misma cookie sin vida util del punto anterior, y por una decision de producto sobre cuanto debe durar el recuerdo.
 
-Definir y aplicar un esquema de roles de autorizacion. PENDIENTE.
+Definir y aplicar un esquema de roles de autorizacion. PENDIENTE. **Definido y nunca aplicado.** La escalera de roles, el guardia de administrador y la fabrica de autorizacion dinamica existen los tres (`backend/src/auth_api/middlewares/authMiddleware.js:228-294`) y **ningun archivo de rutas importa alguno de ellos**: cada ruta protegida usa solo verificacion de token o de propiedad.
 
 ADICIONALES PENDIENTES:
 
@@ -34,24 +68,25 @@ ADICIONALES PENDIENTES:
 
 | #   | Problema                                        | Ubicación              | Severidad | Propuesta                  |
 | :-- | :---------------------------------------------- | :--------------------- | :-------- | :------------------------- |
-| 1   | isAuthenticated no se sincroniza con storage    | useAuth.ts + authStore | 🔴 Alta   | Crear issue técnico aparte |
-| 2   | 403/401 no disparan logout + redirect           | authFetch.ts           | 🔴 Alta   | Issue aparte (middleware)  |
-| 3   | Validación de campos no se limpia en NewAccount | NewAccount.tsx         | 🟡 Media  | Issue de feature           |
-| 4   | Toast/overlay persiste después de error         | useFetchLoad.ts        | 🟡 Media  | Issue de UI                |
-| 5   | openSignupModalHandler usa estado incorrecto    | AuthPage.tsx           | 🟢 Baja   | Arreglar en Commit 6       |
+| 1   | La bandera de autenticacion en memoria se separaba del token en almacenamiento | `auth_utils/invalidateSession.ts:29-55` + `auth/hooks/useAuth.ts:170-229` | 🔴 Alta | **LISTO 2026-09-06.** Una sola funcion limpia almacenamiento y estado juntos y es el unico camino que limpia cualquiera de los dos; el arranque de sesion revalida el token guardado contra el servidor en cada montaje y llama a esa funcion cuando falla |
+| 2   | Un 401 no terminaba la sesion ni redirigia | `auth_utils/authFetch.ts:56-96`, `auth_utils/authRefreshManager.ts:59-69`, `components/protectedRoute/ProtectedRoute.tsx:40-53` | 🔴 Alta | **LISTO 2026-09-06.** Reintento unico detras de un refresco de vuelo unico; el refresco fallido guarda la direccion de retorno e invalida la sesion; el guardia de ruta redirige llevando la razon de expiracion |
+| 2b  | Un 403 sigue sin terminar la sesion | `auth_utils/authFetch.ts:58` | 🔴 Alta | **PENDIENTE.** La rama de reintento prueba el codigo de estado solo contra 401, asi que un 403 cae al lanzamiento generico y deja la sesion obsoleta en pie |
+| 3   | La validacion de campos no se limpia en el formulario de cuenta nueva | `pages/forms/newAccount/NewAccount.tsx` | 🟡 Media | **PENDIENTE.** No verificable leyendo codigo. Falta la comprobacion humana: llenar el formulario, provocar un error de validacion, cambiar el tipo de cuenta y ver si el mensaje se limpia |
+| 4   | El indicador de carga persistia despues de un error | `hooks/useFetchLoad.ts:137-151` | 🟡 Media | **LISTO 2026-09-06** para la capa de carga: el hook baja la bandera en su `finally` pase lo que pase, y expone un reseteo que limpia datos, error y fallo juntos. El reseteo del toast en cada formulario sigue pendiente de comprobacion humana |
+| 5   | El manejador que abre el registro usaba el estado equivocado | `auth/components/authPage/AuthPage.tsx:255-260` | 🟢 Baja | **LISTO 2026-09-06.** Pone el modo de inicio de sesion en falso y fija el estado de interfaz de registro, que es el estado correcto para abrir el registro |
 
 ---
 
 BACKEND
-Organizar la asignacion de la duracion de cookies y tokens. PENDIENTE.
+Organizar la asignacion de la duracion de cookies y tokens. PENDIENTE. El ayudante de cookie fija banderas pero **ninguna vida util** (`backend/src/utils/authUtils/cookieConfig.js:8-23`), y las duraciones viven en cuatro sitios cuyos comentarios contradicen sus valores: token de acceso de 1h (`backend/src/utils/authUtils/authFn.js:59-62`), token de refresco de 8.9d (`:95-98`), y un campo de respuesta de 3600 segundos rotulado *60 minutos* en un endpoint (`backend/src/auth_api/controllers/authController.js:192`) y *15 minutos* en otros dos (`:335`, `backend/src/auth_api/controllers/authRefreshToken.js:112`).
 
 GENERAL
 
 como hacer DEPLOYMENT.Se logro hacer despliegue del FRONTEND en vercel. LISTO.
 El despliegue del BACKEND en vercel, se requiere hacer adaptaciones para que opere como SERVERLESS.Listo.
-Backend en vercel, aun no funciona en forma estable.PENDIENTE.
+Backend en vercel, aun no funciona en forma estable.PENDIENTE. La adaptacion sin servidor si esta hecha y declarada (`backend/vercel.json`); la estabilidad solo es medible en produccion y esta pasada no midio produccion.
 
-Como verificar dinamicamente componentes no usados o rotos.LISTO. Con npx knip. Pero no funciona bien para backend. Se reorganizaron algunas carpetas.PENDIENTE buscar una mejor solucion.
+Como verificar dinamicamente componentes no usados o rotos.LISTO. Con npx knip. Pero no funciona bien para backend. Se reorganizaron algunas carpetas.PENDIENTE buscar una mejor solucion. Confirmado abierto por ausencia: **no hay archivo de configuracion de knip ni la dependencia en ningun `package.json` del repositorio**, asi que no queda nada fijado para repetir la corrida.
 
 POCKET DETAIL
 Revisar pocket detail, para accounting view detail, y para budget pocket. No se esta renderizando los datos de las cuentas pocket saving.LISTO
@@ -64,7 +99,9 @@ Responsiveness en transfer, al agregar una linea en To:, no se ve la ui completa
 
 TRANSFER. ¿Se puede ser responsive, para que no haya scroll?.Si, LISTO hasta un tamano de 360 x 700px.
 
-Para responsiveness a alturas menores de 700px, se requiere activar el scroll dentro de cards_presentation--tracker y el main navbar container fixed sin ocultar el card. Tambien se puede disminuir altura del tracker navbar container. Para alcanzar un ancho minimo de 320 px hay que ajustar tamanos de altura y ancho del tracker navbar container. PENDIENTE.
+Para responsiveness a alturas menores de 700px, se requiere activar el scroll dentro de cards_presentation--tracker y el main navbar container fixed sin ocultar el card. **LISTO 2026-09-06**: la tarjeta toma una altura maxima derivada del viewport y su propio desbordamiento vertical por debajo de 701 px (`frontend/src/fintrack/pages/tracker/styles/tracker-style.css:728-741`).
+
+Para alcanzar un ancho minimo de 320 px hay que ajustar tamanos de altura y ancho del tracker navbar container. PENDIENTE. La consulta de ancho mas estrecha de esa hoja es de 370 px y solo reduce el tamano de fuente de una etiqueta (`tracker-style.css:631-635`); nada atiende los 320 px.
 
 FIX update of total account balance. LISTO.
 
@@ -98,23 +135,23 @@ En la práctica, esto podría ser una característica técnica compleja diseñad
 FINTRACK: ACTIVIDADES O ISSUES LISTOS O PENDIENTES.
 
 En el frontend, limitar el numero de caracteres en todos los campos de los formularios.LISTO.
-Queda pendiente arreglar para creacion de cuentas de budget, NewCategory account. PENDIENTE.
+Queda pendiente arreglar para creacion de cuentas de budget, NewCategory account. **LISTO 2026-09-06**: las cuatro entradas de nombre llevan los topes compartidos (`frontend/src/fintrack/pages/forms/newCategory/NewCategory.tsx:479,496,515,532`).
 
 En el frontend. El input del datepicker, acepta otros caracteres aparte de la fecha puesta por el datepicker. LISTO,.
 
-Optimar AccountDeletionPage, usando useReducer Hook, para manejo de estados del modal, en vez de usar funcion centralizada con useMemo.PENDIENTE.
+Optimar AccountDeletionPage, usando useReducer Hook, para manejo de estados del modal, en vez de usar funcion centralizada con useMemo.PENDIENTE. Confirmado abierto por ausencia: **`useReducer` no aparece en ningun archivo de `frontend/src`**.
 
 POSIBLES BUGS:
 
 El orden de las transacciones debe ser primero el retiro o withdraw y despues received o deposit?.
 
-DEBTS. Revisar la presentacion de los movimientos debts en el overview, , deberian ser del ultimo al primero , es decir descendentes en fecha y hora.
+DEBTS. Revisar la presentacion de los movimientos debts en el overview, , deberian ser del ultimo al primero , es decir descendentes en fecha y hora. LISTO (ya figuraba resuelto en `issues-en.md` y en `summary-issues.md`; aqui habia quedado sin marcar y se reconcilia).
 
 Reflejar los nombres y apellidos de los debtors, con primera letra en mayuscula.LISTO.
 
-EXPENSE. si se crea una cuenta con mas de 25 caraceteres, se muestra un error warning, pero igualmente se crea con categoria en blanco. errores de pg.
+EXPENSE. si se crea una cuenta con mas de 25 caraceteres, se muestra un error warning, pero igualmente se crea con categoria en blanco. errores de pg. PENDIENTE. Falta la comprobacion humana: enviar el nombre demasiado largo y leer la fila creada en la base de datos.
 
-arreglar los colores de los toast de acuerdo con e tipo de error o mensaje. En creacion de cuentas, perfiles, etc.
+arreglar los colores de los toast de acuerdo con e tipo de error o mensaje. En creacion de cuentas, perfiles, etc. **LISTO 2026-09-06**: un ayudante mapea el rango del estado de respuesta a tipo y color de fondo del toast — exito, error, advertencia e informacion — (`frontend/src/fintrack/helpers/showToastByStatus.ts:10-15`), consumido por el componente de mensaje compartido y por el modal de asignacion de bolsillo. **Defecto nuevo que deja:** escribe cuatro literales de color en vez de consumir variables de diseno (`:11-14`).
 
 se muestran varios toast renderizados, con la misma informacion?. LISTO.
 
@@ -133,16 +170,16 @@ Ajustar los formularios del frontend, para que envien acount_id al backend, pqar
 
 modificar el backend para que en las transacciones se haga la busqueda por account_id y no por nombre account_name. Se modifico considerando ambas opciones, priorizando las busqueda por account id, en transaction between accounts. LISTO
 
-Exportación de Datos: Habilitar la exportación de movimientos en formatos como PDF, Excel y .csv.PENDIENTE.
+Exportación de Datos: Habilitar la exportación de movimientos en formatos como PDF, Excel y .csv.PENDIENTE. Confirmado abierto por ausencia: **no hay biblioteca de PDF, de hoja de calculo ni de CSV en ningun `package.json` del repositorio**.
 
 Balance de Inversiones: Aclarar con usuario Cleinte, el cálculo del balance total de las inversiones.
 
 PÁGINA DE DETALLE DE INGRESOS: Definir si se debe crear una página de detalle para las cuentas de income. Se implemento en modo edicion con accounting dashboard,donde se puede ver el detalle de cualquier cuenta, menos la cuenta interna SLACK.LISTO.
 
 BACKEND Y SEGURIDAD
-la hora de transaction-atual-date en el controller transfer between accounts, tiene 4 horas adicionales con respecto al momento que se hace la transaction?.PENDIENTE.
+la hora de transaction-atual-date en el controller transfer between accounts, tiene 4 horas adicionales con respecto al momento que se hace la transaction?.PENDIENTE. No verificable desde el codigo. Falta la comprobacion humana: leer una fila almacenada y comparar su marca de tiempo con el momento real de la transferencia.
 
-como guardar los montos numericos en la bbdd como number o decimal, y no como string, o porque se recuperan como strings?. los campos account_starting_amount se ven asi: '0.00', account_balance: '75.00'.PENDIENTE
+como guardar los montos numericos en la bbdd como number o decimal, y no como string, o porque se recuperan como strings?. los campos account_starting_amount se ven asi: '0.00', account_balance: '75.00'.PENDIENTE. **La causa esta medida**: no hay ningun analizador de tipos registrado en `backend/src`, asi que rige el predeterminado del controlador de Postgres y una columna `numeric` llega como cadena. Falta la comprobacion humana: leer los tipos de columna en la base de datos y decidir si la cadena es el comportamiento buscado, porque la aritmetica de dinero usa una biblioteca decimal que la prefiere.
 
 Autenticación de Usuarios: Implementar la autenticación de usuarios y verificar el userId antes de permitir el acceso a las funciones principales.LISTO.
 
@@ -154,15 +191,15 @@ FRONTEND Y UI/UX En detailed account page/view, colocar la flecha de regreso y l
 
 Manejo de Errores: Mejorar los mensajes de error para que sean más claros para el usuario.Unificar y estandarizar manejo de errores, para que sea reusable en otras aplicaciones. PENDIENTE
 
-Cálculo de % Profit: Corregir el cálculo que muestra NaN.
+Cálculo de % Profit: Corregir el cálculo que muestra NaN. **LISTO 2026-09-06**: el divisor esta guardado y el porcentaje vale cero por defecto cuando el capital invertido es cero (`frontend/src/fintrack/pages/overview/components/InvestmentAccBalance.tsx:100-117`). **Resto abierto:** la guarda compara estrictamente contra el numero cero, asi que si la API devuelve el monto como la cadena `'0.00'` — ver el punto abierto sobre valores numericos que llegan como cadenas — la guarda no lo atrapa y la division da infinito en vez de NaN.
 
-Validación de Fechas: Bloquear fechas futuras en el selector de fechas para las transacciones y la creación de pockets. y determinar regla de negocios para las fechas en las transacciones entre cuentas. Ya se hace en la edicion de datos de cuentas pocket. PENDIENTE.
+Validación de Fechas: Bloquear fechas futuras en el selector de fechas para las transacciones y la creación de pockets. **LISTO 2026-09-06**: el selector compartido acepta una cota superior (`frontend/src/fintrack/general_components/datepicker/Datepicker.tsx:103`), el disparador de fecha de transaccion la pasa (`general_components/transactionDateTrigger/TransactionDateTrigger.tsx:31,111`) y el selector de mes se acota al mes en curso (`general_components/monthPicker/MonthPicker.tsx:149,193`). Determinar la regla de negocio para las fechas en las transacciones entre cuentas sigue PENDIENTE: existe una ventana de retrofecha en las constantes del frontend, pero ninguna regla impide una transaccion con fecha anterior a la cuenta a la que pertenece.
 
-Error de Monto Inicial: Revisar el error del monto inicial de la cuenta cuando no hay transacciones.PENDIENTE.
+Error de Monto Inicial: Revisar el error del monto inicial de la cuenta cuando no hay transacciones.PENDIENTE. Falta la comprobacion humana: crear una cuenta sin transacciones y leer la pantalla.
 
 Formularios: Implementar el reseteo de los mensajes de toast y la limpieza de variables después de enviar un formulario.PENDIENTE.
 
-Indicador de Carga: Agregar un indicador de loading en los formularios.PENDIENTE.
+Indicador de Carga: Agregar un indicador de loading en los formularios.PENDIENTE. Varias pantallas de detalle ya leen una bandera de carga, pero ningun barrido confirma que todos los formularios la tengan. Falta la comprobacion humana, formulario por formulario.
 
 # Descripción de Transacciones: Estandarizar y mejorar las descripciones de las transacciones.PENDIENTE, a gusto del usuario.
 
@@ -428,3 +465,232 @@ Validación de Fechas: Bloquear fechas futuras en el selector de fechas para las
 Error de Monto Inicial: Revisar el error del monto inicial de la cuenta cuando no hay transacciones.
 
 Indicador de Carga: Agregar un indicador de loading en los formularios.
+
+---
+
+# DEFECTOS INCORPORADOS EL 2026-09-06
+
+Los que siguen ya estaban medidos y registrados en otros documentos, o se
+midieron en esta pasada, y no figuraban en esta lista. Se incorporan con su
+ubicación exacta. Ninguno se corrigió: esta pasada es documentación, no código.
+
+## Configuración regional y formato de dinero
+
+**La moneda por defecto del formateador de dinero no se encuentra en el catálogo
+de monedas.** PENDIENTE. Está declarada en mayúsculas
+(`frontend/src/fintrack/helpers/functions.ts:39`) y todas las claves del catálogo
+son minúsculas (`frontend/src/fintrack/helpers/currencyConstants.ts:22-58`), así
+que leer el catálogo con ese valor falla contra el propio defecto de la función,
+devuelve indefinido, y el formateador de números cae en silencio a la
+configuración regional del equipo donde se ejecuta. El silencio es el defecto
+entero: nada lanza excepción y la cifra igual se imprime, con separadores que no
+son los que el mapa declara.
+
+**Quince apariciones vivas de la etiqueta de configuración regional española en
+once archivos del frontend, con la interfaz en inglés.** PENDIENTE. El detalle
+sitio por sitio está en `plan-docs/ongoing/PLAN_FX_DISPLAY.md`, sección 2. Se
+concentran en las vistas previas de conversión y en la tarjeta de auditoría de
+cambio, que nombran una configuración regional que no es la del lector ni la de
+la moneda.
+
+**Las dos constantes de formato de fecha no coinciden en qué idioma habla la
+interfaz.** PENDIENTE. Una es una configuración regional española y la otra
+inglesa (`frontend/src/fintrack/helpers/constants.ts:81-86`); la segunda lleva su
+razón escrita al lado — un mes deletreado convierte la configuración regional en
+el idioma de la interfaz — y la primera no.
+
+**Un comentario apunta a un rango de líneas que ya no contiene lo que dice.**
+PENDIENTE. La nota de la tarjeta superior del tracker cita el archivo de
+constantes en las líneas 57 a 59
+(`frontend/src/fintrack/pages/tracker/components/TopCard.tsx:213`); la constante
+que describe vive hoy en las líneas 83 a 86.
+
+## Hojas de estilo
+
+Los tres defectos catalogados que `CLAUDE.md` nombra, ahora medidos sobre las 80
+hojas de estilo de `frontend/src`.
+
+**Ocho variables de diseño consumidas y definidas en ningún sitio.** PENDIENTE.
+Un par de color mal escrito dos veces en la hoja del panel general
+(`frontend/src/fintrack/pages/overview/styles/overview-styles.css:284-285`), un
+tamaño de fuente y una altura de línea en la barra principal
+(`frontend/src/fintrack/general_components/mainNavbar/styles/mainNavbar.css:135-136`)
+y cuatro pasos de espaciado en los estilos de página compartidos
+(`frontend/src/fintrack/pages/styles/generalStyles.css:63,67,71,75`). Cada una
+resuelve a nada en tiempo de ejecución.
+
+**Catorce bloques de regla declaran la misma propiedad dos veces.** PENDIENTE.
+Dos de ellos están en el mismo archivo, sobre el mismo selector, bajo dos
+consultas de altura idénticas
+(`frontend/src/fintrack/pages/tracker/styles/tracker-style.css:728-741` y
+`:743-749`, ambas fijando el desbordamiento vertical de la tarjeta). Los otros
+doce se reparten entre las hojas de autenticación, borrado de cuenta, botón de
+envío, entrada de radio, presupuesto, deudas, bolsillos y estilos generales.
+
+**La consulta de esquema de color del sistema está invertida.** PENDIENTE. El
+bloque se titula soporte de modo oscuro, pide el esquema claro y lo llena de
+valores oscuros
+(`frontend/src/fintrack/editionAndDeletion/pages/deletionAccount/UIComponents/accountDetailsUI/accountDetailsUI.css:163-190`),
+así que un lector con el sistema en claro recibe el panel oscuro y un lector con
+el sistema en oscuro no recibe nada.
+
+**Cincuenta y nueve declaraciones llevan `!important`.** PENDIENTE. La regla de
+estilo del proyecto lo prohíbe sin excepción.
+
+**El ayudante de toast escribe cuatro literales de color.** PENDIENTE. Valores
+hexadecimales y un color de texto blanco en línea, en vez de consumir variables
+(`frontend/src/fintrack/helpers/showToastByStatus.ts:11-14`). Es el mismo archivo
+que resolvió el punto de los colores del toast por tipo de mensaje: resuelve el
+comportamiento e introduce el defecto de estilo.
+
+## Panel general
+
+**El total comprometido de un bolsillo se cuenta dos veces en el patrimonio
+neto.** PENDIENTE. El encabezado suma el saldo de bolsillo a banco, inversión y
+deuda para el patrimonio neto, y otra vez para la posición de caja
+(`backend/src/fintrack_api/services/overview_services/core/makeHeroSection.js:110-115`
+y `:117`), leyéndolo sobre el tipo de cuenta de bolsillo retirado
+(`backend/src/fintrack_api/services/overview_services/db/overviewAccountRepository.js:207-209`).
+El saldo bancario ya contiene ese dinero: el techo de la guarda de asignación es
+saldo menos ya asignado, y eso sólo se sostiene si el comprometido está dentro
+del saldo
+(`backend/src/fintrack_api/services/pocket_services/services/pocketAllocationService.js:345-347`).
+**El fallo registrado es que esa lectura se borra, no se repunta**: repuntarla a
+las tablas nuevas de bolsillo conservaría el doble conteo. El razonamiento
+completo está en `plan-docs/ongoing/ESTADO_PLANES.md`, sección 8, quinto pase.
+
+## Marcas de trabajo pendiente en los comentarios
+
+**No hay ninguna.** El barrido de `TODO`, `FIXME`, `HACK` y `XXX` sobre
+`backend/src` y `frontend/src` devuelve cero coincidencias en ambos árboles, así
+que no aportó ningún elemento a esta lista. Se deja escrito porque la ausencia
+también es una medición: el próximo lector no tiene que repetir el barrido.
+
+---
+
+# REGISTRO DEL EDITOR DE CUENTAS
+
+**De dónde salen y por qué están aquí.** Los once se midieron el 2026-08-20 y
+vivían sólo en `plan-docs/on-hold/PLAN_EDIT_BLOCK/PLAN_EditAccount.md`, sección
+«U4 — el registro». **Git no rastrea ese archivo** — `plan-docs/*` está en el
+archivo de exclusiones — así que borrar la carpeta destruía la única copia. Se
+incorporan aquí, se remidieron el 2026-09-06 y llevan las líneas de hoy; donde el
+ancla se había desplazado se da la actual y se anota el desplazamiento. Sus
+etiquetas internas (E-1 … E-11) se conservan sólo como referencia hacia atrás a
+ese documento.
+
+**Hallazgo estructural al lado de los once:** el endpoint de escritura de cuenta
+no lleva middleware de validación
+(`backend/src/fintrack_api/routes/accountRoutes.js:104`), así que el esquema del
+frontend es la única puerta sobre ese payload.
+
+## Los dos que dejan cuentas reales sin poder editarse
+
+**🔴 Alta — Una columna nula deja la cuenta entera sin poder editarse (E-1).**
+PENDIENTE. El cargador copia a estado de formulario cualquier valor que no sea
+`undefined`, así que un `NULL` de Postgres llega como `null`
+(`frontend/src/fintrack/editionAndDeletion/pages/editionAccount/EditAccount.tsx:251`).
+Los dos esquemas que usan los campos aceptan sólo `undefined`, nunca `null`
+(`frontend/src/fintrack/editionAndDeletion/validations_zod/commonEditionSchemas.ts:118-123`),
+y un error en un campo aborta el envío completo en vez de ese campo
+(`EditAccount.tsx:325-334`). Columnas anulables vivas que alcanza: `subcategory`
+(`backend/src/db/migrations/sql_migrations/002_accounts.sql:150`), `debtor_name` y
+`debtor_lastname` (`:176-177`). **La corrección es una decisión:** volver los
+esquemas tolerantes al nulo, o normalizar `null` a `undefined` en la carga.
+
+**🔴 Alta — Un bolsillo con fecha objetivo vencida no se guardaba nunca (E-2).**
+**LISTO 2026-09-06.** El bolsillo salió por completo de este editor: el mapa de
+tipo a esquema no tiene clave de bolsillo
+(`frontend/src/fintrack/editionAndDeletion/validations_zod/editSchemas.ts:64-70`)
+y el cargador deja escrito que ningún campo de fecha sobrevive ahí
+(`EditAccount.tsx:252-254`). El bolsillo tiene ahora su propia pantalla, que
+envía sólo los campos que cambiaron precisamente para que un plazo vencido
+intacto nunca se revalide
+(`frontend/src/fintrack/pages/forms/editPocket/EditPocket.tsx:249-253`). **Resto
+abierto:** el propio campo de plazo sigue acotado a hoy (`EditPocket.tsx:521`),
+así que un plazo vencido no puede corregirse a una fecha pasada si el dueño lo
+toca.
+
+## Los otros nueve
+
+**La vista previa del nombre de un deudor discrepaba de lo que guarda el servidor
+(E-3).** **LISTO 2026-09-06.** El cliente une apellido y nombre con coma y
+espacio, y el comentario registra que ése es el separador que usan los dos
+caminos de escritura
+(`frontend/src/fintrack/editionAndDeletion/validations_zod/accountEditSchema.ts:175-187`),
+coincidiendo con el servidor
+(`backend/src/fintrack_api/controllers/accountEditController.js:219`).
+
+**🟡 Media — El monto adeudado de un deudor no se edita en ningún sitio (E-4).**
+PENDIENTE. La columna existe
+(`backend/src/db/migrations/sql_migrations/002_accounts.sql:170`) y la devuelve el
+endpoint de lectura, pero la rama de deudor del endpoint de escritura fija sólo
+nombre, apellido y nota
+(`backend/src/fintrack_api/controllers/accountEditController.js:187-191`).
+Tampoco se puede reasignar la cuenta vinculada. **Decisión pendiente:** ¿el monto
+adeudado pertenece a este editor, o sólo a una transacción?
+
+**🟡 Media — Editar la meta de un bolsillo deja obsoletos sus metadatos de
+cambio (E-5).** PENDIENTE. El endpoint de escritura fija la meta y no toca
+ninguna de las seis columnas de cambio que la acompañan
+(`backend/src/fintrack_api/controllers/accountEditController.js:91-92`), que la
+migración 015 declara no nulas con el argumento escrito de que el controlador
+siempre envía las seis. Después de una edición la cifra cambió y su origen
+declarado sigue describiendo la conversión anterior.
+
+**🟢 Baja — La bandera de campo obligatorio no valida nada y contradice a los
+esquemas (E-6).** PENDIENTE. Su único consumidor es el asterisco de la etiqueta
+(`frontend/src/fintrack/editionAndDeletion/pages/editionAccount/UniversalDynamicInput.tsx:256`,
+desplazado desde 242). Hay tres discrepancias: campos marcados obligatorios cuyo
+esquema es opcional — el asterisco miente —, campos no marcados cuyo esquema exige
+la clave, y un campo sin asterisco que bloquea el guardado al vaciarse.
+**Decisión pendiente:** ¿la bandera debe validar, o sólo rotular?
+
+**🟢 Baja — Un campo muerto viaja en cada guardado (E-7).** PENDIENTE. El tipo de
+cuenta se añade al payload con el comentario de que el controlador lo necesita
+(`frontend/src/fintrack/editionAndDeletion/pages/editionAccount/EditAccount.tsx:341-344`);
+el controlador nunca lo lee, resuelve el tipo consultando la fila. El comentario
+es falso.
+
+**🟢 Baja — La nota de un bolsillo vive en dos tablas y una tapa a la otra
+(E-8).** PENDIENTE. El endpoint de escritura fija una nota en la fila de cuenta
+compartida
+(`backend/src/fintrack_api/controllers/accountEditController.js:59`) y otra vez
+en la fila propia del bolsillo (`:97`); el endpoint de lectura selecciona ambas
+con asterisco y la segunda tapa a la primera por orden de columna. Coherente hoy
+sólo porque este endpoint es su único escritor.
+
+**La rama de presupuesto del endpoint de escritura quedó inalcanzable (E-9).**
+**LISTO 2026-09-06.** La rama ya no existe y el endpoint declara por escrito que
+ignora una clave de presupuesto en el payload, porque el monto es una decisión de
+cuatro partes — importe, moneda, mes y rango — que pertenece al endpoint de
+presupuesto
+(`backend/src/fintrack_api/controllers/accountEditController.js:104-107`); la
+clave del frontend está comentada con la misma razón
+(`frontend/src/fintrack/editionAndDeletion/validations_zod/editSchemas.ts:29-36`).
+
+**🟡 Media — Los topes de longitud del frontend son más estrechos que las
+columnas, y uno tiene un carácter de margen (E-10).** PENDIENTE. El nombre de
+cuenta está acotado a 28 caracteres
+(`frontend/src/fintrack/validations/utils/constants.ts:4-13`) contra una columna
+de 50, y para una cuenta de presupuesto el servidor deriva ese nombre de
+categoría, subcategoría y naturaleza, cuyos topes son 10, 10 y 5 — un peor caso
+de 27 con los dos separadores. Ampliar cualquiera de los tres hace que el editor
+rechace un valor que él mismo no escribió.
+
+**🟡 Media — Tres tipos de cuenta no reciben moneda del endpoint de lectura
+(E-11).** PENDIENTE. Las cuentas de banco, inversión y fuente de ingreso tienen
+superficies editables idénticas y vacías — el endpoint de escritura no tiene caso
+para ellas y están ausentes de su mapa de tablas
+(`backend/src/fintrack_api/controllers/accountEditController.js:309-313`) —, lo
+cual es correcto. La asimetría es que la unión con la moneda está comentada para
+ellas en el endpoint de lectura, así que cualquier vista que lea de ahí la moneda
+de una cuenta bancaria obtiene `undefined`.
+
+---
+
+# RECUENTO AL CIERRE DE LA PASADA DEL 2026-09-06
+
+**123 elementos — 77 LISTO, 46 PENDIENTE.** El desglose por grupo está en
+`summary-issues.md`, que debe coincidir línea por línea con `issues-en.md` y con
+este archivo.
