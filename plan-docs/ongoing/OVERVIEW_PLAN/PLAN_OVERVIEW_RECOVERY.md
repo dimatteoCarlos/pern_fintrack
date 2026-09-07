@@ -795,7 +795,7 @@ the omissions are decisions rather than oversights.
 | step | check |
 |---|---|
 | **P1a** | diff stored against derived per account **before** editing. Agreement means the change is inert and safe; disagreement is a separate bug |
-| **P1b** | for a past month, the investment reconciliation identity still holds — contributed plus realised equals the balance. If it fails, the three CTEs were not bounded together |
+| **P1b** | **Run 2026-09-06 against the local development database. The binding passes; the identity fails, and not for the reason this row expected.** Fifteen months read on the one owner holding investment accounts. The running month comes back identical to the pre-change query, figure for figure, so nothing was bounded away that should not have been. Every month before the first movement holds the identity exactly. The two months that carry movements are short by the same 0.75 — and a discrepancy that is identical in a month which bounds nothing away cannot be a bounding error. Its cause is one annulment row; the finding is in the decisions register, under the heading naming the deleted account |
 | **P2** | the pocket total in Overview equals the board's own total for the same month |
 | **P3 hero** | `netWorth − liquidNetWorth == receivable`, for every case where both are reported. **This is the single check that catches the inverted payable sign** — get it backwards and this fails immediately instead of producing a plausible wrong number |
 | **P3 expense** | spent equals categorised plus uncategorised, on a month that has uncategorised spend |

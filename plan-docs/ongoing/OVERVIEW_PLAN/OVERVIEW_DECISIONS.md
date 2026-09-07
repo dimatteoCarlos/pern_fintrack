@@ -1518,6 +1518,48 @@ endpoint still filters on an exact type name, so the screen that renders today
 excludes cash from every figure it shows. That screen is the one the payload is
 meant to replace, which is why it is named and not fixed.
 
+## A deleted account makes the investment card call the books inconsistent — measured 2026-09-06
+
+**This is not caused by the month binding and it is not new.** It was found by
+the check that binding was supposed to pass, which is the only reason it is
+written down now rather than by whoever met it on screen.
+
+**What the card asserts.** `makeInvestmentCard` compares contributed capital
+plus the realised result against the ledger balance, and publishes a notice
+telling the user their figures do not reconcile when they differ
+(`makeInvestmentCard.js:96-99`). It is a good check and it is worth keeping.
+
+**What was measured.** On the development database, one owner holds three
+investment accounts. Their movements are three transfers totalling 43.07, three
+account-opening rows totalling 100000.00, and three realised-result rows
+totalling 1.55 — **one of which carries the annulment prefix and is −0.75**.
+The realised term excludes annulment rows by design; the ledger balance does
+not, because the balance is what the account actually holds. So the two sides
+differ by exactly the annulment: 100043.07 + 2.30 against a balance of
+100044.62. **The card warns the user on every month from that annulment
+onward.**
+
+**The identity is the thing that is wrong, not the data and not the exclusion.**
+An annulment row is written by the account-deletion machinery when an account is
+closed. It moves the balance and it is neither a contribution nor a result, so
+excluding it from the realised term is right and including it in the balance is
+also right. What cannot be right is an identity of two terms over a balance that
+has three kinds of row in it. Every user who has ever deleted an investment
+account is told their books are inconsistent, and they are not.
+
+**Recommendation, and it is the developer's to take.** Publish the annulment
+adjustment as a term of its own on the card, so the identity reads contributed
+plus realised plus adjustments against the balance. The alternative — silencing
+the notice when annulment rows exist — costs less and hides a real number that
+the reader has no other way to see. Adding the term needs a field in §6 of the
+contract, which is why it is not done here.
+
+**And it answers half of an open question.** What was outstanding was the count
+of annulment-prefixed rows on investment accounts in production. The development
+answer is **one row, of −0.75, and one is enough** — the size never mattered,
+the existence did. The production count is still unmeasured and no agent session
+queries production.
+
 One figure on that card is still unbounded, named here so that whoever finds it
 later does not read it as an oversight of this work: the account count counts the
 accounts that exist **now**. An account opened after the reference month
