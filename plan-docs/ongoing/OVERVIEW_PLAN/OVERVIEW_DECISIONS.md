@@ -1632,16 +1632,32 @@ check for renames (`accountEditController.js:239-262`), also case-folded, so a
 the reason is narrower than what was written and the reachable paths are these
 two.
 
-**Path one, and it is the severe one: the guard has nothing to compare against
-yet.** The compensation account is created lazily, not at signup. In
-`accountCreationController.js` the name check runs at line 150 and the
-compensation account is only created at line 265 — so for the very first account
-an owner ever creates, a bank account named `slack` passes the check because no
-compensation account exists to collide with. Then line 265 runs,
-`checkAndInsertAccount` matches on `LOWER(name)` and type in (`bank`,
-`boundary`), and **adopts the account the owner just created as the compensation
-account.** From then on the deletion machinery writes counterpart legs into the
-owner's real account and every read filter excludes it.
+**Path one: the guard has nothing to compare against yet.** The compensation
+account is created lazily, not at signup. In `accountCreationController.js` the
+name check runs at line 150 and the compensation account is only created at line
+262 — so for the very first account an owner ever creates, a bank account named
+`slack` passes the check because no compensation account exists to collide with.
+The owner ends up holding a second row named `slack`, and **all 26 name-only read
+filters drop it, so the account disappears from every aggregate.**
+
+**What this path is NOT, and an earlier version of this entry had it wrong.** It
+said the resolver then adopts the owner's account as the compensation account and
+the deletion machinery starts writing counterpart legs into it. It cannot: the
+call order is `verifyAccountExistence` at :150, `checkAndInsertAccount` at :262,
+`insertAccount` at :321, so **the owner's row does not exist yet when the resolver
+runs** — it resolves or creates the compensation account first and the owner's
+row lands after it. Read here after the pocket and goals session raised the
+ordering. The money outcome is the same and the repair is the same; the mechanism
+is not, and a defect filed under the wrong mechanism gets fixed in the wrong
+place.
+
+**Where adoption would come from, if it ever did.** Not from that resolver but
+from the one in `transactionController.js:234-237`, which matches on name and
+owner with **no join to the type catalog at all**. Give it an owner who holds an
+account named `slack` of any type and no compensation account yet, and it hands
+back the owner's account. No path reaches that state today, because the creation
+controller makes the compensation account before any account of the owner's
+exists. It is recorded because it is one reordering away from being live.
 
 **Path two: the guard is scoped per account type, deliberately.** Two accounts of
 different types may share a name and that is by design — the development database
@@ -1660,12 +1676,12 @@ cannot both exist — the creation guard refuses the second. The resolver's miss
 
 **Half of path one has since been closed elsewhere, and not by this module.** The
 deletion session reports narrowing the resolver to compare the name exact-case and
-to order by account id, on `main`, which stops a `Slack` account from ever being
-adopted as the compensation account. Not verified here — this branch predates it
-— and it is recorded as theirs. It does not close the path above: the account that
-gets adopted is named exactly `slack`, so an exact-case comparison still matches
-it. Reserving the name remains the repair, and path two is untouched by any of
-this.
+to order by account id, on `main`. Not verified here — this branch predates it —
+and it is recorded as theirs. It hardens the resolver against a state the call
+order already prevents, which is worth having: the ordering is what makes adoption
+unreachable, and an ordering is a much easier thing to break by accident than a
+predicate. It does not close either path above, because neither depends on the
+resolver. Reserving the name remains the repair.
 
 **Measured before recording it:** every compensation account in the development
 database is stored exactly `slack`, one row, typed as a bank account. So the gap
