@@ -45,6 +45,13 @@ export const checkAndInsertAccount = async (
     // stopped one from being created. account_type_name still folds case:
     // that side only ever compares against the fixed literals 'bank' and
     // 'boundary' passed in by this file, never user input.
+    // This exact-case match shipped in 031's own commit, which makes two
+    // statements in that migration's prose wrong from the moment it landed:
+    // its header disclaims this fix as "not this file's to fix", and its
+    // NOTICE tells the operator to reconcile case-variant rows by hand. The
+    // condition both describe was closed here, in that same commit. An
+    // applied migration's text cannot be edited, so the correction lives
+    // here rather than there.
     // ORDER BY + LIMIT: a user account named exactly 'slack' is possible too
     // (nothing today reserves the name at creation) and would otherwise match
     // this same query. Oldest account_id wins - the compensation account is
