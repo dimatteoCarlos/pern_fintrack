@@ -34,7 +34,7 @@ actually does, in the current code, with file:line anchors.
   2. `eraseAccountTail(dbClient, userId, targetAccountId, accountCheck.rows[0].account_name)` — detach every surviving `transactions` row that names this account as source/destination (FK → NULL, name scrubbed from `description`), delete the account's own transactions, delete the `user_accounts` row (`eraseAccountTail.js` L18-60).
   3. Commit.
 - **What it deliberately skips:** no reversal of the financial impact this account had on counterparties — their historical net position from transacting with the deleted account is left as-is (only the dangling reference is nulled). That correction is RTA's job, below.
-- **Known gap:** `eraseAccountTail` does not touch `pocket_allocations.source_account_id`. If the target account backs a pocket allocation, this call now hits a **second** RESTRICT (`pocket_allocations_source_account_id_fkey`, `createTables.js` L501-502) instead of the one migration 018 added. Not yet fixed — see §5.
+- **FIXED, 2026-09-06.** `eraseAccountTail` deletes `pocket_allocations` rows naming this account as `source_account_id`, before the transactions DETACH/SCRUB above — see §5.
 
 ## 3. RTA — Retroactive Total Annulment (reverse impact, then erase)
 
@@ -50,7 +50,7 @@ actually does, in the current code, with file:line anchors.
   6. `eraseAccountTail(...)` — same detach/scrub/drop as HARD delete.
   7. Commit.
 - **Trust boundary — open issue (unit 6):** step 1's report is computed on `pool` (outside any lock) and handed to the client; step 3 trusts whatever `impactReport` the client sends back at execution time, rather than recomputing it itself inside the open transaction. A stale or tampered `impactReport` is currently taken at face value. This is the unit currently being worked: give `getAnnulmentImpactReport` a `dbClient` parameter, have `processRTAAnnulment` call it itself right after the lock (replacing the client-supplied array), and drop `impactReport` from what the execution endpoint requires in the request body.
-- **Known gap:** same `pocket_allocations` exposure as HARD delete, via the shared `eraseAccountTail`.
+- **FIXED, 2026-09-06.** Same `eraseAccountTail` fix as HARD delete, above.
 
 ## 4. Pocket deletion — separate module, separate endpoint
 
@@ -65,21 +65,41 @@ module and their own delete path:
 - **Repository:** `pocketRepository.js#deletePocket(db, userId, pocketId)` (L346): `DELETE FROM pockets WHERE pocket_id = $1 AND user_id = $2`.
 - **Cascade:** `pocket_allocations.pocket_id` is `ON DELETE CASCADE` — deleting the pocket row removes its allocations automatically. No RESTRICT involved on this side.
 - **Policy:** hard delete, allowed at any net balance (`POCKET_MODULE_SPEC.md` §11 Q8).
-- **Where it does NOT belong:** the account-deletion flows above (SOFT/HARD/RTA) must never reach into `pockets`/`pocket_allocations` to delete a pocket on the account's behalf — only detach the account's own `pocket_allocations.source_account_id` reference (§5). Removing a pocket is exclusively this module's own action, from its own menu.
+- **Where it does NOT belong:** the account-deletion flows above (SOFT/HARD/RTA) must never reach into `pockets` to delete a pocket on the account's behalf — only the account's own `pocket_allocations` rows are removed, never the pocket itself (§5). Removing a pocket is exclusively this module's own action, from its own menu.
 
-## 5. Open gap — pocket_allocations RESTRICT (not yet built)
+## 5. FIXED, 2026-09-06 — pocket_allocations RESTRICT
 
 `pocket_allocations.source_account_id` is `ON DELETE RESTRICT` by design
 (`createTables.js` L492-493: "deleting an account stays a decision taken in a
-service with an impact report"). `POCKET_MODULE_SPEC.md` §11.1 Q8b already
-decided the account-deletion service must show the impact report and detach
-these rows in the same transaction as the account delete — but no code does
-this today (`grep` for `pocket_allocations` in
-`backend/src/fintrack_api/services/delete_account/` returns nothing). Any
-account backing a pocket allocation will hit this RESTRICT on HARD or RTA
-delete right now. Fix belongs in `eraseAccountTail.js`, mirroring
-`removePocket`'s read-before-write pattern — not yet implemented, not yet
-approved.
+service with an impact report"). `POCKET_MODULE_SPEC.md` §11.1 Q8b decided the
+account-deletion service must show the impact report and delete these rows
+explicitly, in the same transaction as the account delete — never a silent
+cascade.
+
+Both halves are now built:
+
+- **Delete, in-transaction:** `eraseAccountTail.js` runs `DELETE FROM
+  pocket_allocations WHERE source_account_id = $1 AND user_id = $2` before
+  dropping the target's own transactions and the account row itself. Since
+  `source_account_id` is `NOT NULL`, this is a genuine row deletion, not a
+  DETACH-to-NULL like the two `transactions` FKs above it in the same file.
+- **Report, before confirmation:** `getPocketAllocationImpact(dbClient,
+  userId, targetAccountId)` (`getAnnulmentImpactReport.js`) names every
+  pocket that loses backing and the amount, grouped and summed. Wired into
+  the existing preview endpoint (`accountDeleteController.js#generateImpactReport`,
+  additive `pocketImpact` field, `impactReport`'s own shape untouched) and
+  rendered in the confirmation dialog itself
+  (`InitialConfirmationDeleteAccountUI.tsx`) when non-empty, naming each
+  pocket, the total, and Q8b's own load-bearing sentence: the money is not
+  deleted, only the pocket assignment is.
+
+This reached the one live, user-facing deletion flow because the frontend has
+no separate pure-HARD-delete path today — `useRTAImpactAndDeletion.ts` always
+calls the RTA preview endpoint first, even for the zero-impact case (its
+button just relabels to "Confirm Hard Deletion"). A true standalone
+assessment endpoint ahead of every deletion type, decoupled from RTA, is
+still unit 6's open remainder (§6 below) — this fix rides the one preview
+endpoint that actually exists.
 
 ## 6. Planned, not built — CLOSE and the assessment endpoint
 
