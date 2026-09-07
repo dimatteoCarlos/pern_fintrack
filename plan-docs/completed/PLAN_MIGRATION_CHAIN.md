@@ -363,7 +363,7 @@ Los dos divergen. Cuando divergen, la base construida por el segundo camino
 arranca sin fallar y rompe en tiempo de ejecución, que es la peor forma de
 enterarse.
 
-Y el corredor, que debería ser la red de seguridad, no lo es: abre **una sola**
+Y `runMigrations.js`, que debería ser la red de seguridad, no lo es: abre **una sola**
 transacción para la corrida entera (`runMigrations.js:35`) y el `COMMIT;` de
 `001_initial_migration.sql:47` se la lleva. Todo lo que corre después queda en
 autoconfirmación, y el `ROLLBACK` de la línea 81 ya no revierte nada.
@@ -383,7 +383,7 @@ autoconfirmación, y el `ROLLBACK` de la línea 81 ya no revierte nada.
 |---|---|---|
 | Copia local de producción: tablas, transacciones, filas del libro | 17 tablas, 785 transacciones, **libro vacío** | 2026-09-01 |
 | Dónde se detiene la cadena sobre esa copia | en el segundo archivo: `002_accounts.sql` le cuelga un disparador sobre `users.timezone` a una tabla que ya existe sin esa columna | 2026-09-01 |
-| Transacción del corredor tras un archivo que trae `COMMIT;` | `txid_current_if_assigned()` devuelve nulo; una tabla creada después sobrevive al `ROLLBACK` | 2026-09-02 |
+| Transacción de `runMigrations.js` tras un archivo que trae `COMMIT;` | `txid_current_if_assigned()` devuelve nulo; una tabla creada después sobrevive al `ROLLBACK` | 2026-09-02 |
 | Archivo de varias sentencias sin control de transacción propio | **atómico**: Postgres lo envuelve en una transacción implícita; una falla en la segunda sentencia no deja la primera | 2026-09-02 |
 | Sentencias de transacción por archivo | 001-007 traen `BEGIN;`/`COMMIT;` propios; 008-024 no traen ninguna (los `BEGIN` de 014-020 son bloques PL/pgSQL) | 2026-09-02 |
 | Libro de `fintrack_dev` | 25 filas para 24 archivos; sobra `012_backfill_budget_policies.sql` (08-08) junto a la real `012_backfill_budget_allocations.sql` (08-14); nada en disco sin registrar | 2026-09-02 |
@@ -401,7 +401,7 @@ que lo nombre, y la corrida siguiente lo repite.
 
 | decisión | razón |
 |---|---|
-| Una transacción por archivo, y la abre el corredor; a 001-007 se les quitan las suyas | el esquema del archivo y su fila del libro tienen que confirmarse juntos, que es el invariante que hoy se rompe |
+| Una transacción por archivo, y la abre `runMigrations.js`; a 001-007 se les quitan las suyas | el esquema del archivo y su fila del libro tienen que confirmarse juntos, que es el invariante que hoy se rompe |
 | La columna que falta entra por `createTables.js`, sin migración nueva | ese archivo construye bases vacías; agregarle una columna no toca ninguna base con datos |
 | La fila fantasma del libro se deja como está | corregirla es reescribir historia sobre una base que se reconstruye, y en producción no existe |
 | La regla del reverso rige **desde la 025 en adelante** | un `DOWN` escrito hoy para una migración ya aplicada es un reverso que nadie va a ejecutar y que nadie puede probar; además obligaría a tocar archivos que el límite de alcance declara intocables |
@@ -475,7 +475,7 @@ una medición **contra la base viva**, con los dos sondeos de solo lectura de
 **19 filas**, la misma cuenta que `fintrack_dev`. Diecinueve son los dieciocho
 archivos de la cadena hasta la 018 más el propio archivo de alineación, y no
 dejan lugar para que falte ninguno. Entre el 22 y el 27 de agosto alguien corrió
-el corredor contra producción y aplicó lo que quedaba, 013 y 018.
+`runMigrations.js` contra producción y aplicó lo que quedaba, 013 y 018.
 
 **Lo que igual se confirma por su nombre, y cuesta una consulta.** La cuenta de
 diecinueve es un argumento aritmético, no una lista. `SELECT filename FROM
@@ -494,9 +494,9 @@ la medición más nueva es la suya. Los otros dos —`NEXT_SESSION.md` §2.1 y
 ejecutó.
 
 **Y su encabezado cree en el invariante que no existe.** La línea 16 de esa misma
-013 dice que el corredor envuelve cada archivo en una transacción junto con su
+013 dice que `runMigrations.js` envuelve cada archivo en una transacción junto con su
 `INSERT INTO migrations`, y declara seguir la convención de la 010 a la 012. Eso
-es justamente lo que el corredor no hace. El paso 2 no cambia una convención: la
+es justamente lo que `runMigrations.js` no hace. El paso 2 no cambia una convención: la
 construye por primera vez, y cuatro archivos ya escritos la dan por cierta.
 
 ---
@@ -533,7 +533,7 @@ del archivo que nombra.
 
 **Qué cambia.**
 
-- El corredor deja de abrir una transacción alrededor del bucle. Abre una **por
+- `runMigrations.js` deja de abrir una transacción alrededor del bucle. Abre una **por
   archivo**, antes de leerlo, y la confirma después de escribir su fila del
   libro. Un fallo revierte el archivo y su fila juntos.
 - La creación de la tabla `migrations` y la lectura del libro quedan fuera de esa
@@ -544,7 +544,7 @@ del archivo que nombra.
   sentencia de esquema.
 
 **Por qué no al revés.** Dejar que cada archivo maneje su transacción y que el
-corredor no abra nada deja la fila del libro fuera, y reproduce el mismo defecto
+`runMigrations.js` no abra nada deja la fila del libro fuera, y reproduce el mismo defecto
 en pequeño.
 
 **Verificación.**
@@ -595,7 +595,7 @@ nuevos. Las veinticuatro ya aplicadas quedan sin reverso **por decisión
 declarada**, no por olvido: eso se anota en el encabezado de la plantilla para
 que el próximo lector no lo lea como una omisión.
 
-**Lo que no incluye.** Un corredor de reversos. Escribir el `DOWN` y ejecutarlo
+**Lo que no incluye.** Una herramienta que ejecute los `DOWN`. Escribirlo y correrlo
 son dos trabajos; este plan sólo obliga a escribirlo.
 
 **Commit.** `docs(db): migrations declare an explicit reverse`.
@@ -734,7 +734,7 @@ se tomó.
 
 **El problema que queda abierto después de todo lo anterior.** Si producción se
 levantó por `createTables.js` con el libro vacío, correr la cadena desde 001
-falla en el segundo archivo. Ya está medido. Arreglar el corredor no lo resuelve:
+falla en el segundo archivo. Ya está medido. Arreglar `runMigrations.js` no lo resuelve:
 lo que falta es marcar como aplicadas las migraciones cuyo efecto el esquema ya
 tiene, que es exactamente lo que hizo el archivo de alineación con sus diecisiete
 filas.
