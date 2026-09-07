@@ -3198,6 +3198,52 @@ to every row carrying `deleted_at`, which a close also sets.
 
 **Routing.** `pern-fintrack-02` and `pern-fintrack-cf` are not owners here.
 
+### The 409 routes to an operation with no button — `pern-fintrack-cf`, 2026-09-07
+
+The hard-delete refusal names CLOSE as the first remedy, and CLOSE cannot be
+invoked from any interface that exists. Raised by `pern-fintrack-cf`, and the
+half that makes it this session's problem is that **the refusal text is this
+session's own commit**.
+
+**Verified on both sides.** The frontend's deletion-type union declares exactly
+three members — returns-to-assets, hard and soft — with no close constant, no
+close member, no preview URL and no component. Hard and soft are both genuinely
+wired: the standard deletion hook takes the type as a positional argument and
+two components supply it, one passing hard and one passing soft. So CLOSE alone
+is absent, not "the assessment screen is unbuilt". On the backend the refusal
+reads: the account holds an amount and cannot be hard-deleted until that is
+settled, close it to move the residual out — transferred to an account of the
+owner's choosing, or discarded — or use returns-to-assets instead if the
+account's effects on other accounts should be reversed.
+
+**What this session's commit changed, stated plainly.** The previous wording was
+"use RTA to reverse its effects first", which named the one remedy that has a
+button. Leading with CLOSE was the right call on the merits and stays — an owner
+who is finished with an account wants the residual moved out, not other
+accounts' history rewritten — but it moved the reachable remedy to second place
+and put an unreachable one first. The message became semantically better and
+operationally worse in the same edit.
+
+**The message is not false, and that decides the fix.** CLOSE is implemented,
+branch-complete in the service and invocable at the API; what is missing is the
+button. So the defect is the absent frontend, not the wording, and the wording
+should not be softened to describe the gap — an error message that says a
+remedy exists but has no screen is worse than one that names the remedy.
+
+**This makes the sequencing constraint live rather than prospective.** `cf` first
+anchored it on the assessment endpoint, which has no consumer and so proves
+nothing an owner can meet; the 409 above is raised by the execution path and does
+reach a screen. An owner with money in an account presses hard delete today and
+is instructed to perform an operation with no button. So the close flow reaching
+the interface is owed independently of the soft-delete ruling — and it is also a
+precondition of it, since gating soft delete while close is unreachable would
+leave an owner holding money with no non-destructive option at all: hard refuses,
+close cannot be invoked, returns-to-assets destroys and rewrites elsewhere, and
+soft would refuse too.
+
+**Routing.** The close frontend is this session's, per coordination. Neither the
+overview nor the migration chain owns anything here.
+
 ### The anchor the scrub needs does not exist yet — Carlos, 2026-09-07
 
 Carlos read `"Alquiler # 7"` in a description and ruled the format wrong: the
