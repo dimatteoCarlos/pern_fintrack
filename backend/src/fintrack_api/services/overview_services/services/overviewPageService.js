@@ -121,7 +121,6 @@ export const overviewPageService = {
    bankBalance,
    investmentBalance: investment.card.ledgerBalance,
    debtPosition: debt.card.totalAmount,
-   pocketBalance: pocket.card.totalAmount,
    incomeTotal: income.card.totalAmount,
    expenseTotal: expense.card.totalAmount,
    currency: ACCOUNTING_CURRENCY_CODE,
@@ -136,7 +135,7 @@ export const overviewPageService = {
    hero,
    all: makeAllCard({
     // The same value the hero published, not a second addition of the same
-    // four numbers.
+    // three numbers.
     netWorth: hero.netWorth,
     totalIncomePeriod: income.card.totalAmount,
     totalExpensePeriod: expense.card.totalAmount,

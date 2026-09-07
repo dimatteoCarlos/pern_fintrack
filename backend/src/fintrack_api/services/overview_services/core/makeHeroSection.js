@@ -77,7 +77,6 @@ const savingsRateOf = (income, netFlow) =>
  * @param {number} input.bankBalance - the only figure no card carries
  * @param {number} input.investmentBalance - InvestmentCard.ledgerBalance (V2)
  * @param {number} input.debtPosition - DebtCard.totalAmount (D1)
- * @param {number} input.pocketBalance - PocketCard.totalAmount (P1)
  * @param {number} input.incomeTotal - IncomeCard.totalAmount (I1)
  * @param {number} input.expenseTotal - ExpenseCard.totalAmount (E1)
  * @param {string} input.currency
@@ -88,7 +87,6 @@ export const makeHeroSection = ({
  bankBalance,
  investmentBalance,
  debtPosition,
- pocketBalance,
  incomeTotal,
  expenseTotal,
  currency,
@@ -106,15 +104,20 @@ export const makeHeroSection = ({
  }
 
  return Object.freeze({
-  // H1 — the four account kinds the catalog counts as real money.
+  // H1 — the three account kinds the catalog counts as real money. A pocket is
+  // not a fourth. Committing money to one moves nothing, so the committed total
+  // is already inside bankBalance: the allocation guard proves it by computing
+  // its ceiling as the account balance minus what is allocated
+  // (pocketAllocationService.js:345-347). Adding it here counted it twice.
   netWorth: toAmount(
    money(bankBalance)
     .plus(investmentBalance)
-    .plus(debtPosition)
-    .plus(pocketBalance),
+    .plus(debtPosition),
   ),
   // H2 — what is spendable without selling a position or collecting a debt.
-  cashPosition: toAmount(money(bankBalance).plus(pocketBalance)),
+  // Bank alone, for the same reason: a pocket total is a commitment against this
+  // figure, never an addition to it.
+  cashPosition: toAmount(money(bankBalance)),
   // H3 — whether the month moved forward or back. Negative is a real answer and
   // the most useful one the figure has.
   netMonthlyFlow: toAmount(netFlow),
