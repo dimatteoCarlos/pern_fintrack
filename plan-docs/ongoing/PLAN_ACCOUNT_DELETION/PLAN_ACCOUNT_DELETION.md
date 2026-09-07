@@ -776,6 +776,48 @@ pairing (only `investment`, `account-opening` and `pnl` appear on
 convention. Flagged as a measurement, not a request - it isn't part of unit
 5's scope and stays open.
 
+**Corrections from `overview-agent`, 2026-09-06.** The 34 above counts every
+textual occurrence of `'slack'`; the number that answers "what would a rename
+break" is 26 (the live SQL exclusion predicates that actually run) - reconcile
+against their own message if the two numbers are needed side by side, it's
+their count to own. Separately: `accountUtils.js:56-77` (`getSlackAccountId`)
+has zero callers anywhere in `backend/src` - confirmed by grep. It was listed
+above as one of the three sites this unit widened; the widening is harmless
+but the function is dead code, not a live site, so it shouldn't be counted
+alongside `checkAndInsertAccount.js` and `transactionController.js` as
+something a rename or a backfill gap would actually reach.
+
+**`backdating` has since written the migration** -
+`031_add_boundary_account_type.sql` exists on the shared tree, uncommitted,
+with matching updates to `checkAndInsertAccount.js`, `transactionController.js`
+and `populateDB.js`. Not yet applied to `fintrack_dev` as of this check
+(`account_types` still tops out at 7, `cash`). Their change to
+`checkAndInsertAccount.js` makes `insertAccountType` default to `'boundary'`
+unconditionally - flagged to them directly, since until 031 actually runs
+that default throws `Account type 'boundary' not found` on any lazy
+compensation-account creation on the shared dev database.
+
+**Real vulnerability found by `overview-agent`, fixed here, 2026-09-06.**
+Nothing reserves the name `'slack'` at account creation - no `UNIQUE` on
+`(user_id, account_name)`, no validation. An owner can create an ordinary
+bank account named exactly `'slack'`; every read filter then excludes their
+own account as if it were the boundary one, and
+`checkAndInsertAccount.js`'s existence check, matching on name with no
+`ORDER BY`, could hand either row back as "the" compensation account -
+meaning RTA could start writing annulment legs into a real user account.
+Preventing the collision at creation is out of this module's scope
+(`accountCreationController.js`, per `agent-ownership-split` - already with
+the developer). What's in scope and fixed: `checkAndInsertAccount.js`'s
+existence check now compares `account_name` exact-case instead of
+`LOWER()` on both sides (closes the cheaper case-variant version of the same
+hole - a `'Slack'` account, unnoticed by the case-sensitive read filters,
+used to be handed back as the compensation account) and orders by
+`account_id ASC LIMIT 1`, so if a genuine exact-name collision exists the
+oldest account wins deterministically instead of whichever row Postgres
+returns first - not a full fix, but no longer a coin flip. Left uncommitted:
+the file also carries `backdating`'s in-flight migration-support change
+above, and this unit doesn't commit over someone else's unstaged work.
+
 ### Legacy route patched, 2026-09-06
 
 Migration 018 (unit 1) turned the three `transactions` foreign keys to
