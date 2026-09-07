@@ -282,6 +282,14 @@ try {
  );
 
  // ---------------------------------------------------------------- rejections
+ // The residual is derived here rather than just before the settlement because
+ // every refusal below has to carry a CORRECT echo of it. The engine parses the
+ // echo before it looks at the destination, so a call omitting both would be
+ // refused for the echo and each destination assertion would pass without ever
+ // reaching the rule it names. Nothing between here and the run moves this
+ // balance: every rejection below is rolled back to its savepoint.
+ const residualBefore = await derivedBalanceOf(client, target.account_id);
+
  console.log('');
  console.log('what the engine refuses:');
 
@@ -296,6 +304,7 @@ try {
    accountCheck,
    new Date(),
    undefined,
+   residualBefore,
   ),
  );
  check(
@@ -313,6 +322,7 @@ try {
    accountCheck,
    new Date(),
    target.account_id,
+   residualBefore,
   ),
  );
  check(
@@ -332,6 +342,7 @@ try {
    // Another of the owner's investment accounts if there is one, otherwise the
    // boundary account. Either is a type the rule does not admit.
    investmentIds.find((id) => id !== target.account_id) ?? boundaryId,
+   residualBefore,
   ),
  );
  check(
@@ -354,6 +365,7 @@ try {
     accountCheck,
     new Date(),
     foreign.rows[0].account_id,
+    residualBefore,
    ),
   );
   check(
@@ -365,8 +377,30 @@ try {
   console.log('  SKIP  no other owner on this database to attempt a cross-owner transfer');
  }
 
+ // The echo the owner sends back is checked under both policies, and this is
+ // the assertion that says so for TRANSFER: the destination named here is the
+ // eligible one the run below uses, so the only thing wrong with the request is
+ // the amount. Without it, an echo implemented on the DISCARD branch alone
+ // would leave every TRANSFER settling whatever the balance had become.
+ const staleEcho = await expectRejection(client, () =>
+  processCloseAccount(
+   client,
+   target.user_id,
+   target.account_id,
+   CLOSE_POLICY_TRANSFER,
+   accountCheck,
+   new Date(),
+   destination.accountId,
+   money(residualBefore + 0.01),
+  ),
+ );
+ check(
+  'TRANSFER echoing a residual the account no longer holds is refused with 409, destination or no destination',
+  staleEcho.rejected && staleEcho.status === 409,
+  `${staleEcho.status} ${String(staleEcho.detail).slice(0, 60)}`,
+ );
+
  // ------------------------------------------------------------- the real run
- const residualBefore = await derivedBalanceOf(client, target.account_id);
  const transactionsBefore = await countTransactions(client, target.account_id);
  const cardBefore = await getInvestmentFigures(client, investmentIds, TIME_ZONE);
  const closureRowsBeforeRun = await countClosureRows(client);
@@ -379,6 +413,7 @@ try {
   accountCheck,
   new Date(),
   destination.accountId,
+  residualBefore,
  );
 
  const residualAfter = await derivedBalanceOf(client, target.account_id);

@@ -38,7 +38,7 @@ import { verifyUser } from '../../auth_api/middlewares/authMiddleware.js';
 import {
   executeAccountDeletion,
   generateImpactReport,
-  listCloseTransferDestinations,
+  getCloseAccountPreview,
 } from '../controllers/accountDeleteController.js';
 //----------------------------------
 // ROUTES
@@ -116,17 +116,22 @@ router.get(
 );
 
 // =================================
-// 🎯 CLOSE / TRANSFER DESTINATION LIST (READ)
-// 📝 The accounts eligible to receive the residual when this one is closed.
-// Path: GET /api/fintrack/account/delete/transfer_destinations/:targetAccountId
+// 🎯 CLOSE PREVIEW (READ)
+// 📝 What the close screen shows before the owner confirms: the residual the
+// account still holds, and the accounts eligible to receive it under TRANSFER.
+// Path: GET /api/fintrack/account/delete/close_preview/:targetAccountId
 //
 // Three segments, so it cannot be swallowed by '/:accountId' above, which
 // matches one - the same reason the report route beside it works.
+//
+// The residual here is the figure the DELETE below echoes back in
+// expectedResidual. It is derived from the ledger, not read from the stored
+// balance column, so that the two agree.
 //--------------------------------------
 router.get(
-  '/delete/transfer_destinations/:targetAccountId',
+  '/delete/close_preview/:targetAccountId',
   verifyUser, // 🛡️ Authentication required
-  listCloseTransferDestinations,
+  getCloseAccountPreview,
 );
 
 // ==================================
@@ -134,8 +139,10 @@ router.get(
 // Purpose: Executes SOFT, HARD, CLOSE or RTA deletion atomically.
 // Path: DELETE /api/fintrack/account/delete/:targetAccountId
 // Payload (RTA): Must contain deletionType, impactReport, and targetAccountName in the body.
-// Payload (CLOSE): deletionType, policy ('DISCARD' | 'TRANSFER'), and under
-//   TRANSFER destinationAccountId, an id from the list route above.
+// Payload (CLOSE): deletionType, policy ('DISCARD' | 'TRANSFER'),
+//   expectedResidual (the residual read from the preview route above, sent back
+//   unchanged - the settlement refuses with 409 if the balance moved since),
+//   and under TRANSFER destinationAccountId, an id from that same preview.
 // ====================================
 // 📝 Route for final deletion (Soft or Atomic Hard Delete)
 // DELETE /api/fintrack/account/delete/:accountId

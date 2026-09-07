@@ -12,7 +12,7 @@ import {
 
 import { deleteAccountService } from '../services/delete_account/deleteAccountService.js';
 
-import { listTransferDestinations } from '../services/delete_account/getCloseTransferDestinations.js';
+import { getClosePreview } from '../services/delete_account/getClosePreview.js';
 
 // ===================================
 // ⚙️ DELETION METHOD CONSTANTS
@@ -105,22 +105,30 @@ export const generateImpactReport = async (req, res, next) => {
   }
 };
 // =========================================
-// 🎯 CLOSE TRANSFER DESTINATION HANDLER
-// Endpoint: GET /api/fintrack/account/delete/transfer_destinations/:targetAccountId
+// 🎯 CLOSE PREVIEW HANDLER
+// Endpoint: GET /api/fintrack/account/delete/close_preview/:targetAccountId
 // =========================================
 /**
- * The accounts that may receive the residual when this account is closed under
- * the TRANSFER policy.
+ * What the close screen shows before the owner confirms: the residual the
+ * account still holds, and the accounts that may receive it under TRANSFER.
  *
- * Read-only, and the same query the write path validates against - so the list
- * the owner is shown and the rule the settlement enforces cannot disagree.
+ * Read-only, and the destination list is the same query the write path
+ * validates against - so the list the owner is shown and the rule the
+ * settlement enforces cannot disagree.
  *
- * An empty array is a legitimate answer, not an error: an owner whose only bank
- * account is the one being closed has nowhere to transfer to and must use
- * DISCARD. The frontend has to render that as its own state rather than as an
- * empty dropdown, which is why the count travels beside the list.
+ * WHY THE RESIDUAL TRAVELS WITH THE LIST. The confirmation echoes the residual
+ * back and the settlement refuses if it has moved (§4.1 step 3), so the screen
+ * needs a figure derived the way the settlement derives it - not the stored
+ * account_balance column an account list would give it, which drifts. It also
+ * needs the residual whichever policy the owner picks, and the destinations
+ * only under TRANSFER, but needs them at the moment the choice is offered.
+ *
+ * Renamed from listCloseTransferDestinations, and the path with it: the payload
+ * now serves the whole screen rather than one dropdown on it. Nothing consumed
+ * either name - the endpoint and this change shipped the same day, before any
+ * frontend existed - and the previous payload's two fields are both still here.
  */
-export const listCloseTransferDestinations = async (req, res, next) => {
+export const getCloseAccountPreview = async (req, res, next) => {
   const { userId } = req.user;
 
   if (!userId) {
@@ -142,24 +150,17 @@ export const listCloseTransferDestinations = async (req, res, next) => {
 
   try {
     console.log(
-      pc.magenta(
-        `Listing CLOSE/TRANSFER destinations for account ${targetAccountId}`,
-      ),
+      pc.magenta(`Building the CLOSE preview for account ${targetAccountId}`),
     );
 
-    const destinations = await listTransferDestinations(
-      pool,
-      userId,
-      targetAccountId,
-    );
+    const preview = await getClosePreview(pool, userId, targetAccountId);
 
     return res.status(200).json({
       status: 200,
-      message: 'Eligible transfer destinations retrieved successfully.',
+      message: 'Close preview retrieved successfully.',
       data: {
         targetAccountId,
-        destinations,
-        destinationCount: destinations.length,
+        ...preview,
       },
     });
   } catch (error) {
@@ -215,6 +216,16 @@ export const executeAccountDeletion = async (req, res, next) => {
       ? req.body.destinationAccountId
       : undefined;
 
+  // The residual the owner was shown, echoed back with the confirmation, and
+  // passed through raw for the same reason as the destination: the figure it
+  // has to match is derived inside the service's own lock, and a comparison
+  // made here would be against a balance another transaction can still change
+  // before the settlement runs.
+  const expectedResidual =
+    deletionType === DELETION_TYPE_CLOSE
+      ? req.body.expectedResidual
+      : undefined;
+
   try {
     console.log(
       pc.magenta(
@@ -241,6 +252,7 @@ export const executeAccountDeletion = async (req, res, next) => {
       targetAccountName,
       policy,
       destinationAccountId,
+      expectedResidual,
     );
 
     // 4. SUCCESS RESPONSE

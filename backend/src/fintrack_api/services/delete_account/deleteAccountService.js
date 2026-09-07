@@ -542,6 +542,9 @@ const CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED = true;
  *
  * @param {number} [destinationAccountId] - TRANSFER only; the account the owner
  *   picked. Ignored by DISCARD, which has no destination to pick.
+ * @param {number|string} expectedResidual - the residual the owner was shown
+ *   and confirmed, echoed back. Required for both policies: what the owner
+ *   approves is an amount, not an abstract operation.
  */
 export const processCloseAccount = async (
   dbClient,
@@ -551,6 +554,7 @@ export const processCloseAccount = async (
   accountCheck,
   transactionDate,
   destinationAccountId,
+  expectedResidual,
 ) => {
   if (!CLOSE_SETTLEMENT_RELEASE_GATE_CLEARED) {
     // 409, not 503: this is not a transient outage a retry will clear - it is
@@ -582,6 +586,26 @@ export const processCloseAccount = async (
   }
 
   const isTransfer = policy === CLOSE_POLICY_TRANSFER;
+
+  // The owner's echo of the residual, parsed here and compared after the lock
+  // (§4.1 step 3). Parsed before the lock for the same reason the destination
+  // id is: a malformed request should not take a row lock on its way to being
+  // refused. 400 rather than 409 - no state of the database makes a missing or
+  // unparseable number valid.
+  const confirmedResidual = Number(expectedResidual);
+
+  if (
+    expectedResidual === null ||
+    expectedResidual === undefined ||
+    expectedResidual === '' ||
+    !Number.isFinite(confirmedResidual)
+  ) {
+    throw createError(
+      400,
+      'CLOSE requires expectedResidual, the balance you were shown for this account. ' +
+        'Read it from the close preview endpoint and send it back with the request.',
+    );
+  }
 
   // Which account the residual goes to. Resolved before the lock because the
   // lock set has to name it (§4.3: CLOSE + TRANSFER locks { A, D }), and
@@ -621,10 +645,35 @@ export const processCloseAccount = async (
   ]);
   const residual = parseFloat(balances.get(targetAccountId));
 
-  // 3 VALIDATE, and deliberately after the lock rather than before it. Read
-  // first, the destination could be closed, retyped or re-currencied by
-  // another transaction between the check and the settlement, and the write
-  // would land on an account that was eligible only in the past.
+  // 3 VALIDATE, first half: the owner confirmed an amount, so the amount about
+  // to be settled has to be that one. Compared here rather than before the lock
+  // because only now is the residual the one the settlement will actually use -
+  // checked earlier, a transaction could still land in between and the check
+  // would have proved nothing.
+  //
+  // Compared in cents. Both sides describe a DECIMAL(15,2) column, but they
+  // arrive as floats - the derived residual through the driver, the echo
+  // through JSON - and 1.39 is not exactly representable in either, so a strict
+  // comparison would refuse requests that agree to the cent.
+  //
+  // This runs before the destination check because it needs no query: a request
+  // whose amount is already stale is refused without asking the database
+  // anything further. 409, not 400 - the request was valid when the owner sent
+  // it, and the state moved underneath it, which is the same reason an
+  // ineligible destination answers 409.
+  if (Math.round(confirmedResidual * 100) !== Math.round(residual * 100)) {
+    throw createError(
+      409,
+      `The balance of account ${targetAccountId} changed after you were shown it: ` +
+        `you confirmed ${confirmedResidual}, it now holds ${residual}. ` +
+        'Nothing was closed or settled. Review the new balance and confirm again.',
+    );
+  }
+
+  // 3 VALIDATE, second half, and deliberately after the lock rather than
+  // before it. Read first, the destination could be closed, retyped or
+  // re-currencied by another transaction between the check and the settlement,
+  // and the write would land on an account that was eligible only in the past.
   //
   // The destination is validated whether or not there is a residual to move.
   // A request naming an ineligible account is wrong about what it asked for,
@@ -767,6 +816,7 @@ export const deleteAccountService = async (
   // CONDITIONAL CLOSE PARAMETERS:
   policy, // which settlement policy CLOSE applies (CLOSE_POLICY_DISCARD | CLOSE_POLICY_TRANSFER); ignored by every other deletion type
   destinationAccountId, // where the residual goes under TRANSFER; ignored by DISCARD and by every other deletion type
+  expectedResidual, // the balance the owner was shown and confirmed; required by CLOSE under both policies, ignored by every other deletion type
 ) => {
   // =========================================
   // 🚀 RTA ANNULMENT EXECUTION (ATOMIC TRANSACTION)
@@ -946,6 +996,7 @@ export const deleteAccountService = async (
               accountCheck,
               new Date(),
               destinationAccountId,
+              expectedResidual,
             )
           : await processStandardDelete(
               dbClient,

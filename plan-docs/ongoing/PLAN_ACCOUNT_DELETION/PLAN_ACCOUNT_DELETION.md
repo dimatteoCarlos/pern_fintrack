@@ -717,9 +717,13 @@ commit. The order is forced where stated and free otherwise.
      deletion type, not just RTA, is still open.
 
   7  the settlement engine and CLOSE                       §3.1, §4.1
-     TRANSFER and DISCARD both SHIPPED (2026-09-07). Still open: the
-     addition of closed_at beside deleted_at (D6, settled as an added
-     column rather than a rename) and the client's echo of the residual.
+     TRANSFER and DISCARD both SHIPPED (2026-09-07). The client's echo of
+     the residual SHIPPED the same day, with the close preview endpoint it
+     needed to have a trustworthy figure to echo - see "The residual echo"
+     below. Still open: the addition of closed_at beside deleted_at (D6,
+     settled as an added column rather than a rename), whose migration is
+     pern-fintrack-02's and whose dual-write and reader sweep are this
+     session's.
 
   8  the read sweep                                        
      OPEN. 75 FROM/JOIN of user_accounts across 21 files, 8 filtering
@@ -2396,9 +2400,14 @@ the owner's set.
 ### Verified against a database, 2026-09-07
 
 `backend/scripts/verifyCloseTransfer.js`, on `fintrack_dev`, inside a
-transaction it always rolls back. **Twenty-eight assertions, all passing**, one
+transaction it always rolls back. **Thirty-three assertions, all passing**, one
 skipped for want of a second owner on this deployment. Closing investment
 account 17 holding 1.39 into bank account 15 holding 3878.44.
+
+The count was recorded here as twenty-eight and was wrong when written — the
+script has not changed its assertions since except to gain the residual echo's,
+and it printed thirty-two the day the figure was recorded. Counted from the
+script's own output, not from the commit message that carried the error.
 
 **The selector.** Four eligible accounts, every one of them re-read from
 `user_accounts` rather than trusted from the query's own output: all four belong
@@ -2441,27 +2450,88 @@ parameter was generalised: `verifyCloseAccount.js` and
 
 ### The frontend requirement this creates
 
-- `GET /api/fintrack/account/delete/transfer_destinations/:targetAccountId`
-  returns `{ destinations, destinationCount }`, each destination carrying
-  `accountId`, `accountName`, `accountTypeName`, `currencyCode` and
-  `accountBalance` as text. **An empty array is a legitimate answer, not an
-  error**: an owner whose only bank account is the one being closed has nowhere
-  to transfer to and must use DISCARD. The close screen renders that as its own
-  state, not as an empty dropdown.
+- `GET /api/fintrack/account/delete/close_preview/:targetAccountId` returns
+  `{ targetAccountId, targetAccount, destinations, destinationCount }`.
+  `targetAccount` carries `accountId`, `accountName`, `accountTypeName`,
+  `currencyCode` and `residual` as text; each destination carries `accountId`,
+  `accountName`, `accountTypeName`, `currencyCode` and `accountBalance` as text.
+  **An empty array is a legitimate answer, not an error**: an owner whose only
+  bank account is the one being closed has nowhere to transfer to and must use
+  DISCARD. The close screen renders that as its own state, not as an empty
+  dropdown. A 404 means no such open account of yours — the three cases are not
+  distinguished on purpose.
+
+  This route and this payload replace
+  `GET .../delete/transfer_destinations/:targetAccountId`, which served the
+  dropdown alone. Nothing consumed the old name: the endpoint and the rename
+  shipped the same day, before any frontend existed. The two fields it returned
+  are both still here under the same names.
 - `DELETE /api/fintrack/account/delete/:targetAccountId` takes
-  `policy: 'DISCARD' | 'TRANSFER'` in the body, and under TRANSFER also
-  `destinationAccountId`, an id from that list.
+  `policy: 'DISCARD' | 'TRANSFER'` in the body, `expectedResidual` under both
+  policies, and under TRANSFER also `destinationAccountId`, an id from that
+  list.
+- **`expectedResidual` is the preview's `targetAccount.residual` sent back
+  unchanged** — the string as received, not the formatted figure the screen
+  rendered. It must not be re-read from an account list: those publish the
+  stored `account_balance` column, which drifts from the derived residual the
+  settlement uses, and the request would be refused for a disagreement the owner
+  neither caused nor can fix.
+- Two refusals the close screen has to distinguish. **400** means the request
+  carried no residual at all, or one that will not parse — a bug in the screen,
+  not something the owner can act on. **409** means the balance moved between
+  the preview and the confirmation; the message names both figures, and the
+  screen's answer is to re-fetch the preview and ask the owner to confirm again.
+  Nothing was closed or settled in either case.
 - The success payload now carries `policy`, `settledResidual`,
   `destinationAccountId` and `destinationAccountName`. The last two are null
   under DISCARD, deliberately: the compensation account is internal and its name
   means nothing to the owner. The screen states where the money went from these
   rather than re-deriving it from the policy name.
 
-### Still open in this step
+### The residual echo, shipped 2026-09-07
 
-**The client's echo of the residual** (§4.1 step 3) is not implemented, for
+~~**The client's echo of the residual** (§4.1 step 3) is not implemented, for
 either policy. The engine derives the residual inside its own lock and never
 compares it against the figure the owner was shown when they confirmed. Nothing
 today is wrong because of it — the derived figure is the right one — but the
 owner can confirm a number and have a different one settled if a transaction
-lands in between, with no refusal and nothing in the response to say so.
+lands in between, with no refusal and nothing in the response to say so.~~
+
+Implemented for both policies, and it cost a second endpoint rather than a
+comparison, for a reason worth recording: **what the owner approves is an
+amount, not an abstract operation**, and the echo is worth nothing unless the
+amount they were shown is the amount the settlement will derive. Every account
+list in the application publishes the stored `account_balance` column. The
+settlement derives its residual from the ledger. Those two numbers are not the
+same — the stored one drifting is the whole reason the derivation exists — so an
+echo taken from a list would have been refused for a disagreement neither the
+owner nor the screen caused. The preview endpoint exists to serve a residual
+derived by the same expression the settlement uses.
+
+**Where each half lives.** `getClosePreview.js` publishes the residual;
+`processCloseAccount` parses the echo before taking any lock (a malformed
+request should not lock a row on its way to being refused) and compares it
+immediately after deriving the residual under that lock, before the destination
+check (a request already stale in its amount is refused without asking the
+database anything further).
+
+**Compared in cents.** Both sides describe a `DECIMAL(15,2)`, and both arrive as
+floats — the derived residual through the driver, the echo through JSON — so
+`Math.round(x * 100)` on each. A strict comparison would refuse requests that
+agree to the cent.
+
+**The status codes are the contract's own distinction.** Missing or unparseable
+is 400: no state of the database makes it valid. An amount that no longer
+describes the account is 409: the request was valid when it was sent and the
+state moved underneath it — the same code an ineligible destination answers, for
+the same reason.
+
+**Verified end to end**, `verifyCloseAccount.js` on `fintrack_dev`, **twenty-nine
+assertions passing**: the preview's residual equals the one derived
+independently by the probe; that value, echoed back unmodified as the string the
+driver produced, is accepted; a missing echo is refused 400; an echo one unit
+off and an echo one cent off are both refused 409; and the preview refuses a
+closed account 404 so no close screen can be opened on one.
+`verifyCloseTransfer.js` asserts the same refusal under TRANSFER with an
+eligible destination named, so an echo implemented on the DISCARD branch alone
+would fail there rather than pass silently.
