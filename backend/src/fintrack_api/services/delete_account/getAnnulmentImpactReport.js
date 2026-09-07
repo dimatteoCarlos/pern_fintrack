@@ -75,18 +75,19 @@ export const getAnnulmentImpactReport = async (
 
  FROM TargetAccountTransactions tat
 
-  -- LEFT, not JOIN: affected_account_id itself can be NULL - a prior
-  -- deletion's DETACH step (eraseAccountTail.js) nulls a transaction's
-  -- reference to a counterparty account that no longer exists. An INNER
-  -- join drops that row - the unattributable amount along with it - before
-  -- the owner ever sees it. Carlos's ruling (2026-09-06, option B): surface
-  -- it explicitly rather than fold it silently into another account's total.
- LEFT JOIN
+  -- INNER, deliberately: affected_account_id can be NULL, and dropping that
+  -- group is the correct arithmetic rather than a silent loss. A NULL
+  -- counterparty is the residue of an earlier deletion's DETACH step
+  -- (eraseAccountTail.js), and that deletion already reversed the amount -
+  -- its annulment row sits on this same account, against the compensation
+  -- account, so the two cancel here and the group arrives already settled.
+  -- Re-attributing it would settle it twice: the money would move again,
+  -- and the report's total would stop agreeing with the compensation
+  -- balance the execution path re-derives from the rows it actually wrote.
+ JOIN
   user_accounts ua ON ua.account_id = tat.affected_account_id
 
-  -- LEFT too, and for the same row: with ua absent, ua.currency_id is NULL,
-  -- and an INNER join here would drop the same row a second time.
- LEFT JOIN
+ JOIN
   currencies ct ON ua.currency_id = ct.currency_id
 
   -- LEFT, not JOIN: account_type_id is nullable (ON DELETE SET NULL when the
@@ -135,14 +136,9 @@ export const getAnnulmentImpactReport = async (
 
     affectedAccountType: row.affected_account_type_name,
 
-    // No live counterparty (affected_account_id itself NULL) means no live
-    // account row either, so the derived-balance subquery has nothing to
-    // correlate against and returns SQL NULL. parseFloat(null) is NaN, and
-    // this figure reaches a screen - it must stay null, never NaN.
-    affectedAccountCurrentBalance:
-      row.affected_account_current_balance === null
-        ? null
-        : parseFloat(row.affected_account_current_balance),
+    affectedAccountCurrentBalance: parseFloat(
+      row.affected_account_current_balance,
+    ),
 
     affectedAccountNetAdjustmentAmount: parseFloat(row.net_adjustment_amount),
 

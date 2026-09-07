@@ -1107,6 +1107,12 @@ question from the original D4 framing (which asked about both together).
 Not fixed, not attempted - broadcast to all three peers, held pending a
 decision.
 
+**RESOLVED AND REVERTED, 2026-09-06/07 - read the resolution below before
+acting on anything in this entry. The crash described here was created by
+`30bbd526` and removed by reverting it; the reasoning that follows is kept
+because it is how the underlying arithmetic was finally understood, not
+because it still describes the code.**
+
 **LIVE CRASH, confirmed by `pern-fintrack-e4`, 2026-09-06 - not a pending
 design choice, a hard failure today.** `createTables.js:178` declares
 `transactions.account_id INTEGER NOT NULL REFERENCES
@@ -1150,6 +1156,69 @@ loop says should not happen). Compatible with Carlos's "B" - that ruling
 governs what the report shows before confirmation, not where the money
 lands once confirmed. Not implemented; `deleteAccountService.js` and
 `recordAnnulmentTransaction` untouched pending the ruling.
+
+**Resolution: Carlos withdrew B, the join is back to INNER, and the crash
+is gone with it (2026-09-07).** Carlos's words, relayed by `e4`: "bueno,
+entonces que la decision de B, no aplica," and then, on the revert
+itself, "si ya evaluaste pros y cons y esta tu recomendacion?, entonces
+dale." So the LEFT JOIN on `user_accounts` that `30bbd526` introduced no
+longer has a ruling behind it, and it is not being kept as a compromise
+on top of one.
+
+**`e4` retracted the compensation-account recommendation above, and the
+arithmetic that overturned it is the part worth keeping.** Traced
+independently here before reverting anything, because it reverses a fix
+this session had already pushed. A transfer of 90 from C to T writes two
+rows, `account_id = C` for -90 and `account_id = T` for +90, both naming
+C as source and T as destination. Deleting C by RTA reports T as affected
+for -90 and writes the reversing pair, which puts -90 on T against the
+compensation account and +90 on the compensation account itself. The
+erasure tail then nulls the source on T's surviving +90 row and deletes
+C's own row. **T is now holding both halves**: +90 with a NULL
+counterparty, and -90 against the compensation account. They cancel
+inside T.
+
+So when T is deleted later, the NULL group's +90 arrives at the report
+**already reversed** - its reversal is the other row, sitting in the same
+account. An INNER join drops a group that is settled, not an amount that
+is lost, and the earlier framing of this as a silently wrong number was
+wrong. Compensating it a second time would move the same money twice and
+would break the agreement between the report's total and the compensation
+balance the execution path re-derives from the rows it actually wrote.
+The pre-`30bbd526` behaviour was correct arithmetic. `30bbd526` fixed
+something that was not broken and, through `transactions.account_id NOT
+NULL`, converted it into a hard abort of the whole deletion.
+
+**What changed in the file, and what deliberately did not.** The
+`user_accounts` join is INNER again with the reasoning above written into
+it, and the `currencies` join follows it back for the reason it followed
+it out - with `ua` guaranteed present, `ua.currency_id` is present. The
+`account_types` join **stays LEFT**: that one is right for its own
+separate reason, since `account_type_id` is nullable until 033 and the
+type name is purely informational, so a NULL there costs nothing while an
+INNER join would drop a real financial adjustment. The `IS DISTINCT FROM`
+guard on the source/destination comparison stays exactly as it is; it
+addresses a different failure and is still true - a row whose source was
+nulled but whose destination is a live account is still correctly kept by
+it and still survives the INNER join. The NULL guard on the balance was
+**removed** rather than left as harmless: `user_accounts.account_starting_amount`
+is `NOT NULL` and the derived-balance subquery `COALESCE`s its SUM, so
+with `ua` guaranteed present the figure can no longer be NULL, and a
+guard against an unreachable state would have gone on advertising a
+nullable balance that nothing can produce.
+
+**The durable fix is recorded here and deliberately not commissioned.**
+The erasure tail nulls the counterparty reference; the plan's own
+procedure (RESEARCH_LOG.md §5.2 step 1) says to RE-POINT it at the
+internal counterparty account instead. Re-pointing removes the NULL group
+at its source rather than dropping it at read time. It is not this
+block's work and was not attempted: it changes the erasure tail shared by
+CLOSE, HARD and RTA, and it does not repair the rows already nulled on
+`fintrack_dev`, which need a backfill of their own. **Open block:
+divergence between §5.2 step 1 and `eraseAccountTail.js`, plus the
+backfill for rows already detached.** Both halves have to land together -
+re-pointing alone leaves the existing NULL rows behind, and a backfill
+alone leaves the next deletion creating more of them.
 
 ### Unit 5/7 catalog decision, 2026-09-06: the settlement pair keeps both ids
 
