@@ -26,12 +26,26 @@ import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accoun
 // the domain cards (D27), so it has to agree with them to the cent.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 
-// The bank balance, slack excluded.
+// The bank balance at the close of the reference month, slack excluded.
 //
-// cash (account_type_id 7) is deliberately absent, the same omission the income
-// account set makes and for the same reason: the catalog leaves that type out
-// until the phase 2b probe says whether it has real writes, and this module does
-// not get to close a question the catalog holds open.
+// cash (account_type_id 7) is IN the set. The catalog question this module used
+// to defer to — whether that type has real writes — was closed by decision and
+// not by a count: a cash account reads as a bank account everywhere a figure is
+// composed, so every formula naming bank includes it (D45). The schema keeps the
+// two types apart, because there they record where the money came from, which is
+// a different question from what it is worth.
+//
+// The month is bound the way every other closing balance in this module is
+// bound: subtract forward from the current derived balance rather than summing
+// from zero. The reference month subtracts nothing and equals the balance now, so
+// the running month needs no branch. R42, §4.5: the month boundary goes local ->
+// instant to meet a TIMESTAMPTZ column.
+//
+// An account opened after the reference month contributes nothing rather than
+// its starting amount, and that falls out of the arithmetic instead of needing a
+// predicate: the derivation excludes the row that opens the account while the
+// subtraction below does not, so the opening credit cancels the starting amount
+// the derivation kept.
 //
 // The balance comes from the ledger, not from user_accounts.account_balance. That
 // column is a cache the money paths rewrite only for the accounts a write touches,
@@ -43,11 +57,21 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 // 31 accounts of every type, so the change is numerically inert and any later
 // difference is real drift the derivation caught, not the substitution moving money.
 const BANK_BALANCE_QUERY = `
-  SELECT COALESCE(SUM(${DERIVED_BALANCE}), 0) AS bank_balance
+  WITH bounds AS (
+    SELECT (($2::date + INTERVAL '1 month') AT TIME ZONE $3) AS next_month_start
+  )
+  SELECT COALESCE(SUM(
+    ${DERIVED_BALANCE} - COALESCE((
+      SELECT SUM(t.amount)
+      FROM transactions t
+      WHERE t.account_id = ua.account_id
+        AND t.transaction_actual_date >= (SELECT next_month_start FROM bounds)
+    ), 0)
+  ), 0) AS bank_balance
   FROM user_accounts ua
   JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
-    AND act.account_type_name = 'bank'
+    AND act.account_type_name IN ('bank', 'cash')
     AND ua.account_name != 'slack'
 `;
 
@@ -112,14 +136,21 @@ const RECENT_ACTIVITY_QUERY = `
 `;
 
 /**
- * The balance held in the user's bank accounts, slack excluded.
+ * The balance held in the user's bank and cash accounts at the close of one
+ * month, slack excluded.
  *
  * @param {object} pool - Database pool
  * @param {string} userId - UUID from the token, never from the client body
+ * @param {string} referenceMonth - 'YYYY-MM-01', the month the balance is read at
+ * @param {string} timeZone - IANA zone of the account owner
  * @returns {Promise<number>} never null: 0 is a real balance
  */
-export async function getBankBalance(pool, userId) {
- const { rows } = await pool.query(BANK_BALANCE_QUERY, [userId]);
+export async function getBankBalance(pool, userId, referenceMonth, timeZone = 'UTC') {
+ const { rows } = await pool.query(BANK_BALANCE_QUERY, [
+  userId,
+  referenceMonth,
+  timeZone,
+ ]);
  return toAmount(rows[0]?.bank_balance ?? 0);
 }
 

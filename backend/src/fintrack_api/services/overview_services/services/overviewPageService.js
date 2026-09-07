@@ -95,7 +95,7 @@ export const overviewPageService = {
    overviewDebtService.getDebtDomainData(pool, userId, cardRequest, timeZone),
    overviewPocketService.getPocketDomainData(pool, userId, cardRequest, timeZone),
    overviewInvestmentService.getInvestmentDomainData(pool, userId, cardRequest, timeZone),
-   getBankBalance(pool, userId),
+   getBankBalance(pool, userId, referenceMonth, timeZone),
    getSavingGoals(pool, userId),
    getRecentActivity(pool, userId, timeZone),
    getExpenseAccountIds(pool, userId),
