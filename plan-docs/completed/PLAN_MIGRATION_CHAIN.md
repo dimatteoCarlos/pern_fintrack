@@ -426,8 +426,33 @@ arranque ya decía `RESTRICT` y tenía razón, así que la migración `026` llev
 cadena hasta donde el arranque ya estaba, y no al revés.
 
 **`npm run db:parity` reporta cero diferencias: mismas columnas y mismas
-restricciones en los dos caminos.** Lo que la comprobación sigue sin mirar son
-las filas sembradas, donde los dos caminos todavía difieren.
+restricciones de clave primaria, unicidad y clave foránea en los dos caminos.**
+La enumeración es la del párrafo anterior y el resumen tiene que repetirla: un
+lector que llega aquí y lee «mismas restricciones» entiende todas, y la
+comprobación no leía las de tipo `CHECK`.
+
+**Corregido el 2026-09-06, medido en el árbol de trabajo de `main`.** Dos cosas
+que este cierre daba por ciertas dejaron de serlo:
+
+- Las filas sembradas sí se comparan. `SEEDED_CATALOGS` declara los catálogos y
+  el mensaje de éxito dice «same columns, same constraints and same seeded rows
+  on both paths». La frase de arriba sobre lo que «sigue sin mirar» quedó vieja
+  cuando esa comparación entró.
+- Las restricciones `CHECK` no se comparaban. `readConstraints` filtraba
+  `contype IN ('f','u','p')` y nunca `'c'`, así que cualquier divergencia de
+  `CHECK` entre los dos caminos era invisible para la herramienta hecha para
+  verla. Había exactamente una, en `movement_types`, y es la que reconcilia
+  `032_add_account_closure_movement_type.sql`. La consulta lee ahora también
+  `'c'`, con `pg_get_constraintdef` como valor comparado.
+
+**Y una advertencia sobre cómo se cita una corrida verde.** La herramienta
+compara la cadena contra el arranque — los dos caminos entre sí, nunca contra un
+esquema de referencia — y ambos salen del checkout donde se ejecuta. En
+`feat/overview`, donde la cadena se detiene en 030 y el sembrador no trae el tipo
+de cuenta `boundary`, la corrida reporta verde: los dos caminos coinciden y
+ninguno está al día. Verde significa consistencia interna dentro de un checkout,
+no que el checkout esté al día. Toda medición registrada aquí dice en qué árbol
+se tomó.
 
 ---
 

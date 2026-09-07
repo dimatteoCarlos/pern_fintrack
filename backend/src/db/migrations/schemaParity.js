@@ -126,6 +126,12 @@ async function readShape(uri) {
 // Reads the constraints of a database as a map of rule to its delete/update
 // action. The name Postgres generates is not comparable between two databases
 // built by different paths; the columns and the referenced table are.
+//
+// CHECK is read as well, and its value is the definition Postgres deparses
+// rather than an action, so two lists of accepted values that differ report as
+// a difference instead of matching on the column name alone. It was excluded
+// until 032, and the one thing it was hiding was the constraint that migration
+// exists to reconcile.
 async function readConstraints(uri) {
  const client = new pg.Client({ connectionString: uri });
  await client.connect();
@@ -140,24 +146,27 @@ async function readConstraints(uri) {
              FROM unnest(con.confkey) k
              JOIN pg_attribute att ON att.attrelid = fre.oid AND att.attnum = k), '') AS ref_cols,
           COALESCE(con.confdeltype::text, '') AS on_delete,
-          COALESCE(con.confupdtype::text, '') AS on_update
+          COALESCE(con.confupdtype::text, '') AS on_update,
+          pg_get_constraintdef(con.oid) AS def
    FROM pg_constraint con
    JOIN pg_class rel ON rel.oid = con.conrelid
    JOIN pg_namespace ns ON ns.oid = rel.relnamespace
    LEFT JOIN pg_class fre ON fre.oid = con.confrelid
-   WHERE ns.nspname = 'public' AND con.contype IN ('f','u','p')
+   WHERE ns.nspname = 'public' AND con.contype IN ('f','u','p','c')
    ORDER BY 1, 2, 3
  `);
  await client.end();
 
  const rules = new Map();
  for (const r of rows) {
-  const kind = { f: 'FK', u: 'UNIQUE', p: 'PK' }[r.kind];
+  const kind = { f: 'FK', u: 'UNIQUE', p: 'PK', c: 'CHECK' }[r.kind];
   const key =
    kind === 'FK'
     ? `FK ${r.tbl}(${r.cols}) -> ${r.ref_tbl}(${r.ref_cols})`
     : `${kind} ${r.tbl}(${r.cols})`;
-  rules.set(key, kind === 'FK' ? `del=${r.on_delete} upd=${r.on_update}` : '');
+  const value =
+   kind === 'FK' ? `del=${r.on_delete} upd=${r.on_update}` : kind === 'CHECK' ? r.def : '';
+  rules.set(key, value);
  }
  return rules;
 }
@@ -309,7 +318,7 @@ async function main() {
    for (const [key, action] of chainRules) {
     if (ACCEPTED_TABLES[constraintTable(key)]) continue;
     if (!bootRules.has(key) || bootRules.get(key) === action) continue;
-    console.log(pc.yellow(`  ACTION DIFFERS: ${key}`));
+    console.log(pc.yellow(`  DIFFERS: ${key}`));
     console.log(pc.gray(`      chain: ${action}`));
     console.log(pc.gray(`      boot:  ${bootRules.get(key)}`));
     differences += 1;

@@ -404,6 +404,7 @@ export async function tblMovementTypes(client = pool) {
     { movement_type_id: 7, movement_type_name: 'receive' },
     { movement_type_id: 8, movement_type_name: 'account-opening' },
     { movement_type_id: 9, movement_type_name: 'pnl' },
+    { movement_type_id: 10, movement_type_name: 'account-closure' }, //mirrors account-opening
   ];
   const tblName = 'movement_types';
   const minCount = movementTypeValues.length;
@@ -419,7 +420,7 @@ export async function tblMovementTypes(client = pool) {
       console.log(pc.yellow`${tblName} table does not exist. Creating it...'`);
       const createQuery = `CREATE TABLE movement_types (
         movement_type_id INT PRIMARY KEY NOT NULL,
-        movement_type_name VARCHAR(50) NOT NULL UNIQUE CHECK(movement_type_name IN ('expense','income','investment','debt','pocket','transfer','receive','account-opening','pnl'))
+        movement_type_name VARCHAR(50) NOT NULL UNIQUE CHECK(movement_type_name IN ('expense','income','investment','debt','pocket','transfer','receive','account-opening','pnl','account-closure'))
 )`;
       await client.query(createQuery);
     }
@@ -435,8 +436,10 @@ export async function tblMovementTypes(client = pool) {
     // await client.query('BEGIN');
     //run through the data and insert every tuple
     for (const type of movementTypeValues) {
+      //the seeder decides it is unpopulated by row count, so adding a value
+      //makes an already-seeded database re-run the whole loop
       const queryText = `INSERT INTO movement_types(movement_type_id,
-      movement_type_name) VALUES ($1,$2)`;
+      movement_type_name) VALUES ($1,$2) ON CONFLICT (movement_type_id) DO NOTHING`;
       const values = [type.movement_type_id, type.movement_type_name];
       await client.query(queryText, values);
       console.log(pc.green(`inserted: ${tblName}, ${type.movement_type_name}`));
@@ -464,6 +467,7 @@ export async function tbltransactionTypes(client = pool) {
     { transaction_type_id: 3, transaction_type_name: 'lend' },
     { transaction_type_id: 4, transaction_type_name: 'borrow' },
     { transaction_type_id: 5, transaction_type_name: 'account-opening' },
+    { transaction_type_id: 6, transaction_type_name: 'account-closure' },
   ];
 
   const tblName = 'transaction_types';
@@ -495,8 +499,9 @@ export async function tbltransactionTypes(client = pool) {
     // await client.query('BEGIN');
     //run through the data and insert every tuple
     for (const type of transactionTypeValues) {
+      //same reason as movement_types: the row count is the populated test
       const queryText = `INSERT INTO transaction_types(transaction_type_id,
-      transaction_type_name) VALUES ($1,$2)`;
+      transaction_type_name) VALUES ($1,$2) ON CONFLICT (transaction_type_id) DO NOTHING`;
       const values = [type.transaction_type_id, type.transaction_type_name];
       await client.query(queryText, values);
       console.log(`inserted: ${tblName}, ${type.transaction_type_name}`);
