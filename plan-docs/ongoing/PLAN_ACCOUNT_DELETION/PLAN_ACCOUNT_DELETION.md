@@ -2146,9 +2146,164 @@ possible at all.
 
 ### What still stands between this and CLOSE reaching a user
 
-- TRANSFER answers 400 for want of a destination selector. The rule is frozen
-  above, so the selector implements it rather than re-deciding it.
+- ~~TRANSFER answers 400 for want of a destination selector.~~ Built
+  2026-09-07, below.
 - No frontend component triggers CLOSE: the close deletion type appears in the
   type definitions and in no button. Until one exists, the open gate changes
   nothing a user can reach — it makes the path exercisable rather than
   reachable.
+
+---
+
+## The TRANSFER policy built, 2026-09-07
+
+CLOSE now settles the residual either way: to the compensation account
+(DISCARD), or to an account the owner picked (TRANSFER). The eligibility rule
+was frozen above and this implements it rather than re-deciding it.
+
+### One query, two callers
+
+`getCloseTransferDestinations.js` holds the rule once. The selector endpoint
+asks it for the list to show; the write path asks it for the same list and
+requires the chosen destination to appear in it. Written instead as a list
+query plus a separate validating predicate, the two could drift under a later
+edit, and the failure would be a settlement written to an account the owner was
+never offered — with nothing in either query to say which of the two was wrong.
+
+The closing account's currency comes from a common table expression that the
+main query CROSS JOINs, not from a subquery in the WHERE clause. When the
+closing account does not exist or belongs to another owner, that expression is
+empty and the join yields nothing: the query degrades to a refusal — an empty
+selector and a rejected destination — instead of to an unfiltered list of every
+bank account the caller owns.
+
+The compensation account is excluded without being named, because migration 031
+gave it its own account type. Nothing in the rule mentions it.
+
+### Both legs carry the closure movement type, not the transfer type
+
+TRANSFER really is a transfer between two of the owner's accounts, and writing
+it as movement type 6 would have been the obvious reading. It is wrong, and the
+reason is measurable: **movement type 6 is read as spending by five consumers** —
+the budget's `actual_spent` in four queries of `budgetTransactionRepository.js`,
+the overview's monthly expense series, its month transaction list, and the
+category-budget cumulative figure in `getTransactionsForAccountById.js`. All of
+them sum signed amounts over an account set and none consults the transaction
+type. A negative type-6 leg on the closing account would publish as negative
+spending for the month of the closure, and the positive leg as spending on the
+destination.
+
+Movement type 10 is read by exactly one consumer, the Investment card's
+reconciliation, and it reads it as the closure adjustment — which is what the
+row is. The settlement stays identifiable by a column rather than by a
+description, which is the property the annulment prefix does not have.
+
+### What the two policies share, and where they differ
+
+They differ in the counterpart and in nothing else. The lock set, the
+derivation, the zero assertion and the mark are one code path, because those are
+the parts that must not differ between policies. There is one settlement writer
+for the same reason: the 18-column insert and its six FX columns exist once.
+
+The counterpart is resolved **before** the lock, because the lock set has to
+name it (§4.3: CLOSE + TRANSFER locks { A, D }), and validated **after** it.
+Read first, the destination could be closed, retyped or re-currencied by another
+transaction between the check and the settlement, and the write would land on an
+account that was eligible only in the past.
+
+The destination is validated whether or not there is a residual to move. A
+request naming an ineligible account is wrong about what it asked for, and
+accepting it silently whenever the balance happens to be zero would make the
+rule hold only sometimes.
+
+**DISCARD never creates a boundary account under TRANSFER.** The
+get-or-create call moved inside the DISCARD branch: creating a compensation
+account for a policy that never settles against one leaves a side effect behind
+for nothing.
+
+### Which refusal carries which code
+
+- **400** — the request names no destination. It is malformed, and no state of
+  the database would make it valid.
+- **409** — the destination is not eligible. Eligibility is a property of the
+  current state, not of the request's shape: the same request was valid a moment
+  ago if the destination has since been closed, and becomes valid again if the
+  owner reopens it. This is §4.1 step 3's own answer for VALIDATE.
+
+The message states the rule rather than which clause failed. Naming the failing
+clause would report on accounts the caller may not own — the query cannot
+distinguish "not yours" from "not a bank account" without reading rows outside
+the owner's set.
+
+### Verified against a database, 2026-09-07
+
+`backend/scripts/verifyCloseTransfer.js`, on `fintrack_dev`, inside a
+transaction it always rolls back. **Twenty-eight assertions, all passing**, one
+skipped for want of a second owner on this deployment. Closing investment
+account 17 holding 1.39 into bank account 15 holding 3878.44.
+
+**The selector.** Four eligible accounts, every one of them re-read from
+`user_accounts` rather than trusted from the query's own output: all four belong
+to the owner, are open, are bank accounts and share the closing currency. The
+account being closed is absent, all three investment accounts are absent, and so
+is the compensation account.
+
+**The refusals.** No destination answers 400. The account being closed as its
+own destination answers 409. An investment account answers 409.
+
+**The property that separates the policies**, and the one worth the probe: the
+two accounts together hold 3879.83 before and 3879.83 after. Under DISCARD that
+sum falls by the residual, because the counterpart sits on an account no
+published figure counts. A defect that sent the residual to the compensation
+account under either policy would still zero the target, still mark it closed
+and still report success — the owner would simply lose the money.
+
+**What it wrote**: exactly two rows, both carrying the closure movement and
+transaction types, both carrying the closing account's currency — which the
+eligibility rule had already forced the destination to share, so the pair agrees
+with both accounts it sits on. The descriptions say transferred, not discarded,
+which is how the probe knows the policy reached the writer and not just the
+engine.
+
+**What it left alone**: no compensation account created, and the existing one
+unmoved at −100166.14.
+
+**The published figures**: the closure term moves by the negation of the
+residual, the realised term does not move, the identity closes, and the card
+balance falls by the residual — the destination is a bank account, so its leg is
+outside the set the card reads. The money left the investment world without
+leaving the owner.
+
+**Rollback verified**: closure rows, account count, the closed account open
+again, and the destination back at 3878.44.
+
+The DISCARD probes were re-run unchanged after the writer's counterpart
+parameter was generalised: `verifyCloseAccount.js` and
+`verifyClosureSettlement.js` both still pass in full.
+
+### The frontend requirement this creates
+
+- `GET /api/fintrack/account/delete/transfer_destinations/:targetAccountId`
+  returns `{ destinations, destinationCount }`, each destination carrying
+  `accountId`, `accountName`, `accountTypeName`, `currencyCode` and
+  `accountBalance` as text. **An empty array is a legitimate answer, not an
+  error**: an owner whose only bank account is the one being closed has nowhere
+  to transfer to and must use DISCARD. The close screen renders that as its own
+  state, not as an empty dropdown.
+- `DELETE /api/fintrack/account/delete/:targetAccountId` takes
+  `policy: 'DISCARD' | 'TRANSFER'` in the body, and under TRANSFER also
+  `destinationAccountId`, an id from that list.
+- The success payload now carries `policy`, `settledResidual`,
+  `destinationAccountId` and `destinationAccountName`. The last two are null
+  under DISCARD, deliberately: the compensation account is internal and its name
+  means nothing to the owner. The screen states where the money went from these
+  rather than re-deriving it from the policy name.
+
+### Still open in this step
+
+**The client's echo of the residual** (§4.1 step 3) is not implemented, for
+either policy. The engine derives the residual inside its own lock and never
+compares it against the figure the owner was shown when they confirmed. Nothing
+today is wrong because of it — the derived figure is the right one — but the
+owner can confirm a number and have a different one settled if a transaction
+lands in between, with no refusal and nothing in the response to say so.

@@ -38,6 +38,7 @@ import { verifyUser } from '../../auth_api/middlewares/authMiddleware.js';
 import {
   executeAccountDeletion,
   generateImpactReport,
+  listCloseTransferDestinations,
 } from '../controllers/accountDeleteController.js';
 //----------------------------------
 // ROUTES
@@ -114,11 +115,27 @@ router.get(
   generateImpactReport,
 );
 
+// =================================
+// 🎯 CLOSE / TRANSFER DESTINATION LIST (READ)
+// 📝 The accounts eligible to receive the residual when this one is closed.
+// Path: GET /api/fintrack/account/delete/transfer_destinations/:targetAccountId
+//
+// Three segments, so it cannot be swallowed by '/:accountId' above, which
+// matches one - the same reason the report route beside it works.
+//--------------------------------------
+router.get(
+  '/delete/transfer_destinations/:targetAccountId',
+  verifyUser, // 🛡️ Authentication required
+  listCloseTransferDestinations,
+);
+
 // ==================================
 // 💣 DELETE EXECUTION ENDPOINT (WRITE)
-// Purpose: Executes SOFT, HARD, or RTA deletion atomically.
+// Purpose: Executes SOFT, HARD, CLOSE or RTA deletion atomically.
 // Path: DELETE /api/fintrack/account/delete/:targetAccountId
 // Payload (RTA): Must contain deletionType, impactReport, and targetAccountName in the body.
+// Payload (CLOSE): deletionType, policy ('DISCARD' | 'TRANSFER'), and under
+//   TRANSFER destinationAccountId, an id from the list route above.
 // ====================================
 // 📝 Route for final deletion (Soft or Atomic Hard Delete)
 // DELETE /api/fintrack/account/delete/:accountId

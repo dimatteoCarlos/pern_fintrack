@@ -187,7 +187,9 @@ try {
   userId: target.user_id,
   targetAccountId: target.account_id,
   targetAccountName: target.account_name,
-  boundaryAccountId,
+  // The parameter is the counterpart, whichever policy chose it. Under the
+  // DISCARD this probe exercises, that is the boundary account.
+  counterpartAccountId: boundaryAccountId,
   residual: RESIDUAL,
   currencyId: target.currency_id,
   currencyCode,

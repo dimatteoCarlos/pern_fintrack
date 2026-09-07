@@ -171,6 +171,10 @@ try {
  console.log('');
  console.log('what the engine refuses:');
 
+ // TRANSFER shipped 2026-09-07 and is no longer refused outright. What it still
+ // refuses is a request that names no destination, which is what this call is:
+ // the seventh argument is absent. The rest of that policy - the eligibility
+ // rule and the settlement itself - is covered by verifyCloseTransfer.js.
  const transferAttempt = await expectRejection(client, 'transfer', () =>
   processCloseAccount(
    client,
@@ -182,7 +186,7 @@ try {
   ),
  );
  check(
-  'TRANSFER is refused with 400 while its destination rule has no selector',
+  'TRANSFER without a destination is refused with 400',
   transferAttempt.rejected && transferAttempt.status === 400,
   `${transferAttempt.status} ${String(transferAttempt.detail).slice(0, 70)}`,
  );

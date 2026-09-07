@@ -11,6 +11,8 @@ import {
 
 import { deleteAccountService } from '../services/delete_account/deleteAccountService.js';
 
+import { listTransferDestinations } from '../services/delete_account/getCloseTransferDestinations.js';
+
 // ===================================
 // ⚙️ DELETION METHOD CONSTANTS
 // Constants defined here establish the accepted API contract for deletion types
@@ -21,8 +23,10 @@ export const DELETION_TYPE_SOFT = 'SOFT';
 export const DELETION_TYPE_CLOSE = 'CLOSE';
 
 // CLOSE's two settlement policies (PLAN_ACCOUNT_DELETION.md §3.1/§4.1 step 4).
-// Only DISCARD is implemented (unit 7, 2026-09-06) - TRANSFER needs
-// destination-eligibility rules (D2, unit 9) still open.
+// DISCARD sends the residual to the system's compensation account, TRANSFER to
+// an account the owner picks from the eligible ones. Both implemented as of
+// 2026-09-07; the eligibility rule is frozen in the plan doc and lives in
+// getCloseTransferDestinations.js.
 export const CLOSE_POLICY_DISCARD = 'DISCARD';
 export const CLOSE_POLICY_TRANSFER = 'TRANSFER';
 
@@ -88,6 +92,69 @@ export const generateImpactReport = async (req, res, next) => {
     next(error);
   }
 };
+// =========================================
+// 🎯 CLOSE TRANSFER DESTINATION HANDLER
+// Endpoint: GET /api/fintrack/account/delete/transfer_destinations/:targetAccountId
+// =========================================
+/**
+ * The accounts that may receive the residual when this account is closed under
+ * the TRANSFER policy.
+ *
+ * Read-only, and the same query the write path validates against - so the list
+ * the owner is shown and the rule the settlement enforces cannot disagree.
+ *
+ * An empty array is a legitimate answer, not an error: an owner whose only bank
+ * account is the one being closed has nowhere to transfer to and must use
+ * DISCARD. The frontend has to render that as its own state rather than as an
+ * empty dropdown, which is why the count travels beside the list.
+ */
+export const listCloseTransferDestinations = async (req, res, next) => {
+  const { userId } = req.user;
+
+  if (!userId) {
+    const message = 'User ID is required';
+    console.warn(pc.blueBright(message));
+    return res.status(400).json({ status: 400, message });
+  }
+
+  const targetAccountId = parseInt(req.params.targetAccountId, 10);
+
+  if (!targetAccountId || isNaN(targetAccountId)) {
+    return next(
+      createError(
+        400,
+        'Target Account ID is required and must be a valid number.',
+      ),
+    );
+  }
+
+  try {
+    console.log(
+      pc.magenta(
+        `Listing CLOSE/TRANSFER destinations for account ${targetAccountId}`,
+      ),
+    );
+
+    const destinations = await listTransferDestinations(
+      pool,
+      userId,
+      targetAccountId,
+    );
+
+    return res.status(200).json({
+      status: 200,
+      message: 'Eligible transfer destinations retrieved successfully.',
+      data: {
+        targetAccountId,
+        destinations,
+        destinationCount: destinations.length,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ============================================
 // 💣 DELETE EXECUTION HANDLER
 // Endpoint: DELETE /api/fintrack/accounts/:targetAccountId
@@ -120,10 +187,21 @@ export const executeAccountDeletion = async (req, res, next) => {
     targetAccountName = req.body.targetAccountName;
   }
 
-  // CLOSE-only: which settlement policy to apply (DISCARD, or TRANSFER once
-  // D2 lands). Ignored by every other deletion type.
+  // CLOSE-only: which settlement policy to apply, and under TRANSFER the
+  // account the owner picked to receive the residual. Ignored by every other
+  // deletion type.
+  //
+  // The destination is passed through raw rather than parsed here. The service
+  // validates it inside its own transaction, with the row locked, because an
+  // eligibility answered in the controller would be answered before the lock
+  // and could be stale by the time the settlement writes.
   const policy =
     deletionType === DELETION_TYPE_CLOSE ? req.body.policy : undefined;
+
+  const destinationAccountId =
+    deletionType === DELETION_TYPE_CLOSE
+      ? req.body.destinationAccountId
+      : undefined;
 
   try {
     console.log(
@@ -150,6 +228,7 @@ export const executeAccountDeletion = async (req, res, next) => {
       deletionType,
       targetAccountName,
       policy,
+      destinationAccountId,
     );
 
     // 4. SUCCESS RESPONSE
