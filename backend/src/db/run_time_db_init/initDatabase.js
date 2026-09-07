@@ -86,6 +86,13 @@ async function assertBudgetFrequenciesMatchConfig(client) {
 // ===========================
 // 📊 DATA BASE INITIALIZATION
 // ============================
+// NOT ON THE DEPLOYED REQUEST PATH. vercel.json builds and routes to
+// backend/index.js, which imports src/app.js and nothing else. The only caller
+// that boots a server is src/index.js, and it guards startServer() with
+// `if (!process.env.VERCEL)`; the other two callers are the standalone init-db
+// script and the parity harness. So every ensure* below serves local
+// development and attended runs, and a deployed instance never executes one.
+// Production receives a schema change exclusively through the migration chain.
 export async function initializeDatabase() {
   const client = await pool.connect();
 

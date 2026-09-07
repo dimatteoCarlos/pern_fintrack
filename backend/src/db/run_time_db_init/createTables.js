@@ -622,6 +622,9 @@ export async function ensureCategoryBudgetCurrency(client = pool) {
  * The check is realigned before the rows are inserted, not after: the old
  * constraint does not admit 'account-closure', so the insert would violate it.
  *
+ * Reaches local databases only, like every ensure* here: a deployed instance
+ * never calls initializeDatabase(). See the note above it for why.
+ *
  * @param {object} client - Database client (pool or transaction)
  */
 export async function ensureAccountClosureCatalog(client = pool) {
