@@ -66,7 +66,7 @@ export const mainTables = [
     table: `CREATE TABLE IF NOT EXISTS user_accounts (account_id SERIAL PRIMARY KEY NOT NULL, 
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
     account_name VARCHAR(50) NOT NULL,
-    account_type_id INT  REFERENCES account_types(account_type_id) ON DELETE SET NULL ON UPDATE CASCADE, 
+    account_type_id INT NOT NULL REFERENCES account_types(account_type_id) ON DELETE RESTRICT ON UPDATE CASCADE,
     currency_id INT NOT NULL REFERENCES currencies(currency_id) ON DELETE RESTRICT ON UPDATE CASCADE, 
     account_starting_amount DECIMAL(15,2) NOT NULL,
     account_balance DECIMAL(15,2) NOT NULL DEFAULT 0.00,
@@ -602,6 +602,83 @@ export async function ensureCategoryBudgetCurrency(client = pool) {
    'ALTER TABLE category_budget_accounts ALTER COLUMN currency_id SET NOT NULL',
   );
   console.log(pc.green('category_budget_accounts.currency_id is now NOT NULL.'));
+ }
+}
+
+/**
+ * Close user_accounts.account_type_id: NOT NULL, and RESTRICT instead of
+ * SET NULL when an account_types row is deleted.
+ *
+ * The runtime counterpart of migration 033. The mainTables DDL above declares
+ * both, but it is a CREATE TABLE IF NOT EXISTS and only runs on a virgin
+ * database, so an already-created one would never get either — the same reason
+ * addFxAuditColumns() exists.
+ *
+ * Refuses rather than repairs when untyped rows exist: the type an account
+ * should have is not derivable from anything the row carries, so a guess here
+ * would write a wrong type under the appearance of a migration. It leaves the
+ * schema untouched and says what is blocking, which is recoverable; a wrong
+ * type is not.
+ *
+ * @param {object} client - Database client (pool or transaction)
+ */
+export async function ensureAccountTypeRequired(client = pool) {
+ const { rows } = await client.query(`
+  SELECT
+   (SELECT count(*)::int FROM user_accounts WHERE account_type_id IS NULL) AS untyped,
+   (SELECT is_nullable FROM information_schema.columns
+     WHERE table_name = 'user_accounts' AND column_name = 'account_type_id') AS is_nullable,
+   (SELECT con.conname FROM pg_constraint con
+     JOIN pg_class rel ON rel.oid = con.conrelid
+     JOIN pg_attribute att
+      ON att.attrelid = rel.oid AND att.attnum = ANY (con.conkey)
+     WHERE rel.relname = 'user_accounts'
+      AND con.contype = 'f'
+      AND att.attname = 'account_type_id') AS fk_name,
+   (SELECT con.confdeltype FROM pg_constraint con
+     JOIN pg_class rel ON rel.oid = con.conrelid
+     JOIN pg_attribute att
+      ON att.attrelid = rel.oid AND att.attnum = ANY (con.conkey)
+     WHERE rel.relname = 'user_accounts'
+      AND con.contype = 'f'
+      AND att.attname = 'account_type_id') AS on_delete
+ `);
+ const { untyped, is_nullable, fk_name, on_delete } = rows[0];
+
+ if (untyped > 0) {
+  console.warn(
+   pc.yellow(
+    `user_accounts: ${untyped} row(s) carry a NULL account_type_id. ` +
+     'Leaving the column nullable and the foreign key as it is. Assign a ' +
+     'type to those accounts, then restart.',
+   ),
+  );
+  return;
+ }
+
+ // Both guards skip a no-op that would still take an ACCESS EXCLUSIVE lock on
+ // every boot.
+ if (is_nullable === 'YES') {
+  await client.query(
+   'ALTER TABLE user_accounts ALTER COLUMN account_type_id SET NOT NULL',
+  );
+  console.log(pc.green('user_accounts.account_type_id is now NOT NULL.'));
+ }
+
+ // 'r' is RESTRICT. The name is looked up rather than assumed: it is generated
+ // by Postgres, and a hardcoded one fails silently on the database where it
+ // differs.
+ if (fk_name && on_delete !== 'r') {
+  await client.query(`ALTER TABLE user_accounts DROP CONSTRAINT "${fk_name}"`);
+  await client.query(`
+   ALTER TABLE user_accounts
+    ADD CONSTRAINT user_accounts_account_type_id_fkey
+    FOREIGN KEY (account_type_id) REFERENCES account_types (account_type_id)
+    ON DELETE RESTRICT ON UPDATE CASCADE
+  `);
+  console.log(
+   pc.green('user_accounts.account_type_id now RESTRICTs catalog deletion.'),
+  );
  }
 }
 

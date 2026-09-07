@@ -30,6 +30,7 @@ import {
   ensureExchangeRateQueryCoverageTable,
   ensurePocketTables,
   ensureBudgetAllocationBackfill,
+  ensureAccountTypeRequired,
   ensureCategoryBudgetCurrency,
   ensureCategoryBudgetFxColumns,
   recreateExchangeRatesTable,
@@ -229,6 +230,10 @@ export async function initializeDatabase() {
     // They delete financial rows and report what they acted on, which belongs to
     // an attended migration run, not to a boot.
     await ensurePocketTables(client);
+
+    // Runtime counterpart of migration 033. After the catalog seed above, not
+    // before: the foreign key it re-adds points at account_types.
+    await ensureAccountTypeRequired(client);
 
     // Runtime counterpart of migration 011, for the databases this file does
     // reach: a local or self-hosted one that has never had the runner pointed
