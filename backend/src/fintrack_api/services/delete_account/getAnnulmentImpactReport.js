@@ -1,7 +1,6 @@
 // backend/src/fintrack_api/services/delete_account/accountAnnulmentService.js
 
 import pc from 'picocolors';
-import { pool } from '../../../db/config/configDB.js';
 import { derivedAccountBalanceSql } from '../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
 
 // The account's opening amount plus its movements. What the stored column was
@@ -21,7 +20,11 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'FLOAT');
  * the PnL Adjustment needed for the Affected Account (A).
  */
 
-export const getAnnulmentImpactReport = async (userId, targetAccountId) => {
+export const getAnnulmentImpactReport = async (
+  dbClient,
+  userId,
+  targetAccountId,
+) => {
   console.log(pc.blue('getAnnulmentImpactReport'));
   console.log(
     pc.blue(`Generating RTA impact report for Target ID: ${targetAccountId}`),
@@ -89,7 +92,7 @@ export const getAnnulmentImpactReport = async (userId, targetAccountId) => {
 
 -- HAVING SUM(tat.amount) !=0;
  `;
-  const rawReportResults = await pool.query(reportQuery, [
+  const rawReportResults = await dbClient.query(reportQuery, [
     userId,
     targetAccountId,
   ]);

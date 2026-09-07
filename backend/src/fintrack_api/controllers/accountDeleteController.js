@@ -1,6 +1,7 @@
 //backend/src/fintrack_api/controllers/accountDeleteController.js
 import pc from 'picocolors';
 import { createError } from '../../utils/errorHandling.js';
+import { pool } from '../../db/config/configDB.js';
 
 // 📚 SERVICES & UTILITIES
 import { getAnnulmentImpactReport } from '../services/delete_account/getAnnulmentImpactReport.js';
@@ -53,6 +54,7 @@ export const generateImpactReport = async (req, res, next) => {
     // 2. CALL SERVICE
     // The service handles the SQL logic to calculate the net financial impact
     const impactReport = await getAnnulmentImpactReport(
+      pool,
       userId,
       targetAccountId,
     );
@@ -93,22 +95,15 @@ export const executeAccountDeletion = async (req, res, next) => {
   }
 
   // 2. RTA SPECIFIC DATA EXTRACTION (From the confirmation body)
-  let impactReport = [];
+  // impactReport is no longer read from the request: the service recomputes
+  // it itself inside the transaction (PLAN_ACCOUNT_DELETION.md unit 6), so a
+  // stale or tampered client copy can no longer drive the financial
+  // adjustment. targetAccountName stays client-supplied - it is only used to
+  // build the annulment rows' display text, never a financial figure.
   let targetAccountName = 'Unknown Account';
 
   if (deletionType === DELETION_TYPE_RTA) {
-    impactReport = req.body.impactReport;
     targetAccountName = req.body.targetAccountName;
-
-    // Validation check for RTA data integrity
-    if (!impactReport || !Array.isArray(impactReport)) {
-      return next(
-        createError(
-          400,
-          'RTA deletion requires a valid impactReport array in the body.',
-        ),
-      );
-    }
   }
 
   try {
@@ -126,7 +121,6 @@ export const executeAccountDeletion = async (req, res, next) => {
       targetAccountId,
       userRole,
       deletionType,
-      impactReport,
       targetAccountName,
     });
 
@@ -135,7 +129,6 @@ export const executeAccountDeletion = async (req, res, next) => {
       targetAccountId,
       userRole,
       deletionType,
-      impactReport,
       targetAccountName,
     );
 

@@ -583,7 +583,9 @@ commit. The order is forced where stated and free otherwise.
      convention structural instead of a name match.
 
   6  the assessment endpoint                               §4.1 step 2
-     OPEN. Replaces the impact report the client sends today.
+     STARTED 2026-09-06 - see "Unit 6 started" below. The lock-then-compute
+     step is built for RTA; a standalone endpoint reachable ahead of any
+     deletion type, not just RTA, is still open.
 
   7  the settlement engine and CLOSE                       §3.1, §4.1
      OPEN. TRANSFER and DISCARD, the invariants, the deleted_at write path,
@@ -724,9 +726,39 @@ existing legacy service, as an interim patch, not as unit 6/7's replacement:
   target, leaving two concurrent deletes of the same account unserialized.
 
 `RESTRICT` remains the actual safety net; this patch's only job is making a
-correct call reach it. Units 6, 7, 9, 10 and 11 are unaffected and still
-fully open - the assessment endpoint, CLOSE, TRANSFER/DISCARD and the
-invariant assertions are not part of this change.
+correct call reach it. Units 7, 9, 10 and 11 are unaffected and still fully
+open - CLOSE, TRANSFER/DISCARD and the invariant assertions are not part of
+this change. Unit 6 is addressed next.
+
+### Unit 6 started, 2026-09-06: RTA no longer trusts a client-supplied impact report
+
+`getAnnulmentImpactReport(userId, targetAccountId)` used to run on `pool`,
+before the RTA execution transaction opened, and the result travelled to the
+client and back as `impactReport` in the execution request body - a TOCTOU
+gap: a stale or tampered copy was taken at face value when writing the
+financial adjustment.
+
+- `getAnnulmentImpactReport` now takes `dbClient` as its first parameter and
+  queries through it; the GET preview endpoint
+  (`accountDeleteController.js#generateImpactReport`) passes `pool`,
+  unchanged for that read-only path.
+- `processRTAAnnulment` (`deleteAccountService.js`) locks `targetAccountId`
+  first, then calls `getAnnulmentImpactReport(dbClient, userId,
+  targetAccountId)` itself, inside the open transaction, and computes both
+  the non-empty and zero-impact cases from that result. It no longer
+  receives `impactReport` as a parameter.
+- `executeAccountDeletion` (`accountDeleteController.js`) no longer reads or
+  validates `req.body.impactReport`; `deleteAccountService` dropped the
+  parameter entirely. `targetAccountName` is still read from the body - it
+  is cosmetic (annulment description text only), never a financial figure.
+
+**FE requirement:** `useRTAImpactAndDeletion.ts` (`~line 101`) still sends
+`impactReport` in the DELETE execution body. It is now ignored server-side,
+so nothing breaks, but it should be dropped from that payload as cleanup -
+it is dead weight, not a contract the backend reads.
+
+Still open for unit 6: a standalone assessment endpoint that runs this same
+lock-then-compute step ahead of any deletion type, not just RTA.
 
 ### Open defects carried forward from the research log
 
@@ -751,14 +783,15 @@ true of the code on `main` today:
   transaction it is meant to inform; its `destination_account_id !=
   source_account_id` predicate is NULL-unsafe, so a NULLed counterparty
   drops that row from the report silently instead of surfacing it; and it
-  applies no `deleted_at` filter. **The first of the three is fixed on the
-  `feat/deletion` branch** (unit 6, not yet merged to `main`): the function
-  now takes the transaction's own `dbClient` and is called after the target
-  account is locked, so the report can no longer be computed outside the
-  transaction it informs.
+  applies no `deleted_at` filter. **The first of the three is fixed, unit 6
+  above:** the function now takes the transaction's own `dbClient` and is
+  called after the target account is locked, so the report can no longer be
+  computed outside the transaction it informs. The other two — the
+  NULL-unsafe predicate and the missing `deleted_at` filter — are still
+  open.
 
-None of the four is closed by this note - they are tracked here so the log
-can stay archived without losing them.
+The other three are not closed by this note - they are tracked here so the
+log can stay archived without losing them.
 
 ---
 
