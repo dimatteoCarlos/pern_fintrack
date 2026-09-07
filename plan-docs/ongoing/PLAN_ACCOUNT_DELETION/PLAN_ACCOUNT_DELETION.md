@@ -2017,3 +2017,84 @@ destinations that reproduce the account/row disagreement the compensation
 insert fix just closed, and the settlement writer would tag both legs with the
 closing account's currency regardless. A predicate that costs nothing now and
 is load-bearing later cannot be added retroactively to rows already settled.
+
+## The DISCARD settlement verified against a database, 2026-09-07
+
+The settlement writer has been run against `fintrack_dev` through the
+verification script `backend/scripts/verifyClosureSettlement.js`, which opens a
+transaction, calls the real writer rather than a hand-built row, measures the
+Investment card's figures before and after, and rolls back. Eighteen
+assertions, both directions of the residual, all passing, and the closure row
+count identical before and after.
+
+**What the run establishes.** Closing an investment account holding +1234.56:
+the closure-adjustment term moves by exactly −1234.56, the realised term does
+not move, the ledger balance moves by the same amount, the card's identity
+closes, and the two terms remain exhaustive against the unfiltered sum over
+both movement types. Reversed with a residual of −500, every figure moves the
+other way by 500 and the pair's source and destination swap with it.
+
+**The result that a single hand-built row could not have produced.** The writer
+emits a pair, and only one leg of it is inside the account set the card
+publishes: the target leg lands on the closing account, the counterpart on the
+boundary account, which every overview set excludes. That is why the term moves
+by the negation of the residual and not by zero. The zero case is its own
+failing assertion in the script rather than an inference from the first, so a
+boundary exclusion that stopped working would fail loudly instead of leaving a
+figure that merely looks stable.
+
+**What it does not establish.** Every assertion is on the movement of a figure
+and never on its value. The closure term reads non-zero on any database with
+deletion history, because it is defined as what account deletions moved on
+these accounts and admits both the settlement rows and the pre-existing
+profit-and-loss rows carrying the annulment prefix — closures recorded before
+the closure movement type existed, which do not migrate. A passing run says the
+term claims a settlement correctly, not that a settlement is separable from the
+deletion history already in it. `cf` verified the other half on live data: the
+identity holds across two months without any closure row present.
+
+**The catalog agreement is checked before the write, not after.** The script
+refuses to run when the movement and transaction type ids the writer stamps
+disagree with the ids the catalog assigned. A settlement written under that
+disagreement is misfiled rather than wrong-valued: every figure still adds up
+and the rows sit in the wrong population with nothing to say so.
+
+**FX provenance is asserted on all six columns, not on the two that were
+false.** Four of the six defaults happen to be correct for an internal
+movement, so a row left to the defaults presents as well formed and invites no
+second look — which is what makes it worse to audit than a row that is wrong
+throughout.
+
+### The settlement's currency, recorded 2026-09-07
+
+**Both legs take `currency_id` from the closing account, and neither reads the
+compensation account's own.** This is deliberate — a settlement is one movement
+and its two legs are the same amount in the same unit — but it means that if
+the boundary account were ever stored in a different currency, its leg would
+carry a currency that disagrees with the account it sits on, with no error
+possible anywhere: no constraint compares the two, and the boundary account is
+excluded from every published figure, so the disagreement would never surface
+in a number anyone reads.
+
+Not a live defect. `02` measured the deployment: all 31 accounts sit on
+currency 1, the boundary account included, and every transaction row carries
+FX target currency 1, so the historic backfill is consistent here too. Both
+close as no correction needed.
+
+It is recorded because the property that makes it silent is permanent. The
+account whose row would carry the disagreement is the one account excluded from
+everything, so the usual way a wrong figure gets noticed does not apply. The
+script asserts the rule explicitly for that reason, so a database where the two
+diverge makes it visible at the point of the write rather than never.
+
+### What still stands between this and CLOSE working
+
+- The release gate in `deleteAccountService.js` rejects every CLOSE request
+  with a 409 while it reads false. Flipping it is Carlos's decision and is not
+  taken here. Its comment is stale in the same block — it says main has no
+  closure-adjustment term, and main has had one since the Investment card
+  shipped it — and must be corrected when the value changes.
+- TRANSFER answers 400 for want of a destination rule. The rule is frozen
+  above, so the selector implements it rather than re-deciding it.
+- No frontend component triggers CLOSE: the close deletion type appears in the
+  type definitions and in no button.
