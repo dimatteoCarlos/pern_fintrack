@@ -194,6 +194,41 @@ with no commit against the file to mark the moment. So the register
 records the tree each entry was read in, and cites shape rather than line: the
 one site that moved between branches proved the rule the same day it was written.
 
+### The production run — three facts no migration file states
+
+**The chain is the only path into production.** `vercel.json` builds and routes
+to `backend/index.js`, which imports `./src/app.js` and nothing else.
+`src/index.js` is the only caller that boots a server and it guards
+`startServer()` with `if (!process.env.VERCEL)`. `initializeDatabase()` has
+three callers — that guarded bootstrap, the standalone init-db script and the
+parity harness — and none is on a request path; `src/app.js` imports neither an
+initializer nor the migration runner. So **no `ensure*()` function has ever run
+in production and none can**. All four outstanding migrations — 031, 032, 033,
+034 — require an attended run; nothing self-heals on deploy. The alternative,
+wiring the initializer into the serverless handler, was weighed and rejected:
+its first-time branch would build the whole schema from the JavaScript path
+against production with no ledger, no ordering and no `DOWN`. Recorded in
+`f68a90f8`, which puts these reachability facts above `initializeDatabase()`
+itself.
+
+**031 must succeed, not merely be attempted.** The Overview reads now exclude
+the compensation account by type alone, and before 031 that account is
+bank-typed — 031's backfill is `SET account_type_id = 8 WHERE account_name =
+'slack' AND account_type_id = 1`. An inclusive list containing `bank`, or a test
+of inequality against `boundary`, therefore **admits the system's compensation
+writes into the owner's own figures** on a pre-031 database. 031's guard clause
+aborts the file when an account named `slack` carries an unexpected type, and an
+abort stops the rest of the chain too, leaving exactly the state those reads
+invert on. The guard is correct and stays; the consequence is that the Overview
+payload must not be rendered to anyone until 031 has run **and returned
+success**.
+
+**Ignore the "Reconcile by hand" that 031 emits.** Its near-miss `NOTICE` fires
+on a case-variant row and states a hazard that its own commit closed — see the
+first register entry above. Acting on it means retyping an owner's genuine
+account into a system type on a false premise, which is the outcome 031's guard
+clause exists to prevent.
+
 ### Convention from 034 onward
 
 A migration that establishes a constraint carries **one line pointing at this
@@ -219,6 +254,13 @@ el camino oficial.
   invocado por `initializeDatabase()` desde `backend/src/index.js:37` en **cada
   arranque del servidor**. Es el camino por el que se construyó producción, y su
   libro de migraciones quedó vacío.
+
+> **Corrected 2026-09-07.** "Every server start" holds for a local start only.
+> The deployed instance never calls `initializeDatabase()` at all — it enters
+> through `backend/index.js`, which imports the Express app directly, and the
+> only bootstrap is guarded by `if (!process.env.VERCEL)`. Production was built
+> by this DDL at some earlier point, but it no longer receives anything from it.
+> See "The production run — three facts no migration file states" in §0-bis.
 
 Los dos divergen. Cuando divergen, la base construida por el segundo camino
 arranca sin fallar y rompe en tiempo de ejecución, que es la peor forma de
