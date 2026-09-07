@@ -1993,3 +1993,178 @@ any branch — the deletion session's constant is untracked working-tree
 state. When they commit it, this literal becomes that import, by this
 repository's own idiom for a catalog id. That is an idiom conversion following
 another session's commit, not a revision of what was decided.
+
+## The pocket term leaves the hero, and the settlement is measured over a real row
+
+Two things closed on 2026-09-06 that had been standing as open decisions in this
+file. Neither was settled by a preference; one was settled by the developer and
+the other by a measurement.
+
+**The pocket term does not appear in any hero figure, and the question this file
+recorded as open was malformed.** It asked whether the pocket card adopts the
+allocation-based source or the block ships with the pocket term as it stands. One
+of those two options was a read over a set that no longer exists: the pocket
+migration copied every pocket account into the plan tables and then deleted the
+accounts, leaving the account type in the catalog only so historical records keep
+their meaning. Measured on the development database, summing every owner: zero
+live accounts of that type, against six planned pockets and twenty-three
+commitment rows totalling 304.27. So the figure the branch published was a
+structural zero rather than a small number.
+
+**The same shape as the dead saving band, and worth naming as a class.** A figure
+computed over a set a migration emptied does not fail, does not warn, and does
+not read as broken — it publishes 0, which is a number a reviewer
+accepts. Two figures in this module have now been found in exactly that state.
+Anything read over an account TYPE is a candidate; the saving goals widget still
+queries the retired pocket account table and is the next one to check.
+
+**The arithmetic ruling, which is separate and reversed this session's own
+recommendation.** Having established the source, the remaining question was
+whether spendable cash subtracts what is committed. It does not. A pocket
+constrains COMMITTING, not SPENDING: the allocation guard refuses a commitment
+above the account balance less what is allocated and names that remainder
+unassigned cash, but the function computing it rules that the available balance
+is still the whole account balance, because a pocket never blocks a spend and
+naming the remainder available would tell the owner they cannot spend money they
+can. Publishing a subtracting figure would contradict what the expense path
+accepts. The contract carries the full statement.
+
+**The error class behind it, recorded because it is the third instance in one
+session.** Each time, the same SQL or arithmetic shape was classified by its form
+rather than by what the quantity or column GOVERNS. An outer join is right where
+a type name is informational and wrong where it is a matching criterion. A
+subtraction is right where it bounds a commitment and wrong where it describes a
+spend. The shape is identical and the answer inverts.
+
+**The closure settlement is now measured over a real row, which retires a limit
+this file and the commit message both stated as open.** The commit said
+correctness over real closure rows could not be shown until a writer produced
+one. It can, without one: a settlement inserted inside a transaction that rolls
+back, with the figures pass run against that same connection so it reads
+uncommitted state. Nothing persists, no release constant is touched, and the
+check ranges over the row nobody can otherwise obtain. Proposed by the migration
+session.
+
+**What it measured.** Baseline on the three investment accounts: realised 2.30,
+closure adjustment −0.75, ledger balance 100044.62. With one
+settlement of −1234.56 present and uncommitted: realised unchanged,
+closure adjustment −1235.31, balance 98810.06, and the three terms
+sum to 98810.06 exactly. The unfiltered sum of every admitted row equals the two
+branches added together, so nothing is dropped by both filters with the settlement
+in the set. Closure rows in the table: zero before, zero after.
+
+**The assertion worth keeping is the sixth one.** It runs the PRE-CHANGE
+predicate over the same rows — bounded to the profit-and-loss type
+alone, split on the description prefix — and requires the identity to
+be off by exactly the settlement amount. That makes the check exhibit the false
+alarm rather than only confirm its absence, so it fails on a revert of either
+half. A check that asserts only the good state also passes on code that never had
+the problem.
+
+**Only one leg of a settlement is ever in scope, which is why one row was the
+right shape.** A settlement is a double-entry pair: the target leg carries the
+negation of the residual on the account being closed, the counterpart leg carries
+the residual on the boundary account, and both carry the closure movement type
+unconditionally with no annulment prefix by design. The counterpart leg is
+therefore outside the investment account set, outside the three terms and outside
+the derived balance, which is computed over that same set. The probe's single row
+was the correct restriction of the pair — established after the fact,
+which is not the same as having been right.
+
+**What excludes it is the account TYPE, and this was corrected within the hour by
+two sessions.** The first statement of it here credited the predicate comparing
+the account name to a literal. That predicate is present, but a set restricted to
+one account type cannot admit an account of a different type whatever it is
+called, so the type is what carries the conclusion and the name is a second and
+weaker guard. The distinction is not academic: it is why the conclusion survives
+a colliding account name, which the name predicate alone would not.
+
+**And the compensation account is no longer a bank account.** Migration 031 added
+a dedicated structural type for it and backfilled the existing accounts into that
+type in the same transaction, precisely so a filter can exclude it structurally
+instead of by name. It deliberately left the account NAME untouched, so every
+existing name-based filter keeps working across the retype — which is
+what makes rewriting them afterwards safe rather than something that had to happen
+atomically with the migration. Only a database whose chain has not reached 031
+still types the account bank, which is why the helper that resolves it matches on
+both types while inserting only the new one.
+
+**The fragility this produced, narrowed to the one set it actually applies to.**
+Saying the compensation account is excluded by name rather than by type reads as
+though every read filter were equally exposed, and that is wrong. Of the four
+account sets in this module, the expense set restricts to one type, the income set
+to five, and the by-type set to whichever is asked — all three exclude a
+structurally typed compensation account without needing the name at all. The
+exception is the realised profit-and-loss set, which has NO type filter by design,
+because the figure it feeds is stated over every account rather than over
+investment accounts. There the name comparison is the sole exclusion, and it is
+the one site where a rewrite is not merely tidying.
+
+**One comment in this module is now stale in its reason rather than in its
+claim.** The expense set says the name comparison is deliberately absent because
+the compensation account is a bank account and so cannot appear in a result
+restricted to budget categories. The conclusion still holds — it cannot
+appear — but the reason given stopped being true at 031, and a comment
+whose reason is wrong is what makes the next reader conclude no rewrite is needed.
+
+**The worse version, found by the migration session and worth the whole entry.**
+The compensation account is resolved with oldest-id-wins over the name plus the
+two acceptable types. The comment justifying that ordering says the account is
+always created by that function itself the first time it is needed, so it predates
+any later colliding account — and nothing enforces it, because every
+call site creates it lazily on first need. An owner who creates a bank account
+with that name BEFORE their first compensation write is handed their own account
+as the counterparty: closure settlements and annulment legs write into it, while
+every read filter simultaneously excludes it from their figures. So it is not
+merely that their account leaves their totals; the system also writes into it. The
+fix belongs at account creation, as a reserved name, and not in another read
+filter — which the helper's own comment concedes.
+
+## The debt legs, and a field the development database cannot exercise
+
+The debt card publishes two legs and a count beside the position it nets, and
+the claim made for them is that `totalAmount = receivable - payable` is an audit
+rather than a definition. That is only true if the two sides are computed by
+different routes, so it was run rather than asserted: the position sums the
+balances and subtracts what happened after the month cut, the legs sum per
+account and split by sign. Measured on fintrack_dev at the close of September,
+the one owner holding debtor accounts: position −6.09 against a
+receivable of 21.85 less a payable of 27.94. Both legs come out as positive
+magnitudes, as the contract requires, because the direction is carried by the
+field name.
+
+**A past month is read as well as the current one, and only the past month tests
+anything.** The current month's cut is in the future, so no row is ever on the far
+side of it and the subtraction is inert. At the July cut every figure is zero,
+which is the correct answer for accounts that did not exist yet — and
+it is correct for a reason worth writing down: the balance expression excludes the
+row that opens an account, while the post-cut subtraction does not, so an account
+created after the cut has its whole opening amount subtracted back out. That
+asymmetry is what makes a not-yet-created account read zero instead of reading its
+starting amount.
+
+**The count of settled debtors is correct by construction and unobservable on
+this data.** It counts accounts at exactly zero that have a movement of their own,
+and no debtor account on the development database sits at zero — so it
+is 0 whether the activity clause excludes the opening row or counts any row at
+all. A check run against that database would have confirmed the good state and
+passed just as well on code that never made the distinction, which is the failure
+this file already names once.
+
+**So the clause was exercised on rows built for it inside a transaction that
+rolled back.** Four debtor accounts: one at zero carrying only its opening row,
+one at zero with two movements of its own, one on each side of zero. The query
+reports one settled and the reading it rejects reports two, which is the
+difference the clause exists to make — a debtor created and never used
+is not a settled debtor, and creation itself writes a row. The repository function
+was handed the transaction's own connection rather than the pool, so it read the
+uncommitted rows; nothing persisted. Same pattern as the closure settlement probe
+above.
+
+**What the comment already claimed was re-measured before being trusted.** It says
+three of five debtor accounts have a row before the cut and no movement of their
+own. Correct, per account: two accounts carry four and two movements of their own,
+three carry none. A first pass compared the settled count against a raw count of
+accounts-with-any-row and appeared to contradict it — those are
+different quantities, and the assertion was passing for the wrong reason rather
+than the comment being wrong.
