@@ -3288,8 +3288,37 @@ history goes too.
 
 The assessment endpoint already discloses exactly this split, and did before the
 question was asked: `removesPocketAllocations` is `false` for CLOSE and SOFT,
-`true` for HARD and RTA. The owner is told which choice destroys the backing
+`true` for RTA and HARD. The owner is told which choice destroys the backing
 before choosing. Nothing in the engine needs to change for that to be true.
+
+### One question governs all three consequence flags
+
+`cf` cited `keepsHistory` beside the pocket flag, which prompted reading all
+three together. In array order — CLOSE, SOFT, RTA, HARD — they are:
+
+| option | `removesPocketAllocations` | `keepsHistory` | `releasesAccountName` |
+|---|---|---|---|
+| CLOSE | false | true | false |
+| SOFT | false | true | false |
+| RTA | true | false | true |
+| HARD | true | false | true |
+
+**The same partition three times.** Every consequence this endpoint publishes
+reduces to one question: **does the account row survive the operation?** Pocket
+backing, transaction history and the name are all held by the row and all
+released with it. That is why the pocket rule above cannot be a mechanism chosen
+per path — the three flags are not three independent policies, they are three
+views of one fact.
+
+It also says what the `releasesAccountName` correction above really fixed. The
+old `true` on SOFT was the single value breaking this partition: a keeping path
+claiming an erasing path's consequence. The defect was visible as an asymmetry
+in the table before anyone read the creation guard.
+
+**Usable as a check.** A fifth deletion type, or a fifth consequence field,
+should land wholly on one side of this split. One that does not is either a
+genuinely new kind of consequence or a mistake, and the table says which
+question to ask first.
 
 **What is open is only the mechanism's scope**, and it is Carlos's, sitting
 beside the pocket proposal already with him: confirm that "release" means the
