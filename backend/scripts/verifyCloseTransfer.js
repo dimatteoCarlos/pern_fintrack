@@ -65,6 +65,25 @@ const readOption = (flag, fallback) => {
 
 const TIME_ZONE = readOption('--zone', 'America/Caracas');
 
+// getInvestmentFigures gained a fourth parameter when feat/overview bound every
+// figure on the card to a reference month. It has no default, and an omitted one
+// reaches the query as NULL, so the card comes back all zeros rather than
+// raising - the card assertions below then compare 0 against 0 and pass while
+// measuring nothing. Derived in the zone the query converts with, or the first
+// hours of a month in a western zone would name the previous one.
+const referenceMonthIn = (timeZone) => {
+ const parts = new Intl.DateTimeFormat('en-CA', {
+  timeZone,
+  year: 'numeric',
+  month: '2-digit',
+ }).formatToParts(new Date());
+ const year = parts.find((part) => part.type === 'year').value;
+ const month = parts.find((part) => part.type === 'month').value;
+ return `${year}-${month}-01`;
+};
+
+const REFERENCE_MONTH = referenceMonthIn(TIME_ZONE);
+
 const near = (a, b) => Math.abs(a - b) < 0.005;
 const money = (n) => Number(n.toFixed(2));
 
@@ -227,7 +246,7 @@ try {
  // output: asking the same query whether it filtered correctly proves nothing.
  const offeredIds = offered.map((row) => row.accountId);
  const offeredRows = await client.query(
-  `SELECT ua.account_id, ua.deleted_at, ua.currency_id, at2.account_type_name, ua.user_id
+  `SELECT ua.account_id, ua.deleted_at, ua.closed_at, ua.currency_id, at2.account_type_name, ua.user_id
      FROM user_accounts ua
      JOIN account_types at2 ON at2.account_type_id = ua.account_type_id
     WHERE ua.account_id = ANY($1::int[])`,
@@ -235,17 +254,67 @@ try {
  );
 
  check(
-  'every account offered belongs to this owner, is open, is a bank account and shares the closing currency',
+  'every account offered belongs to this owner, is open on both columns, is a bank account and shares the closing currency',
   offeredRows.rows.length === offered.length &&
    offeredRows.rows.every(
     (row) =>
      row.user_id === target.user_id &&
      row.deleted_at === null &&
+     row.closed_at === null &&
      row.account_type_name === TRANSFER_DESTINATION_ACCOUNT_TYPE &&
      row.currency_id === target.currency_id,
    ),
   `${offered.length} checked against user_accounts`,
  );
+
+ // The destination filter tests closed_at on its own, and this is the assertion
+ // that proves it. The account below carries closed_at and NOT deleted_at -
+ // the state every closed account will be in once the close path stops writing
+ // the second column. Built with both columns set it would be excluded by the
+ // old deleted_at predicate too and would prove nothing about the new one.
+ const closedBank = await client.query(
+  `SELECT account_type_id FROM account_types WHERE LOWER(account_type_name) = $1`,
+  [TRANSFER_DESTINATION_ACCOUNT_TYPE],
+ );
+ const closedDestination = await client.query(
+  `INSERT INTO user_accounts
+     (user_id, account_name, account_type_id, currency_id,
+      account_starting_amount, account_balance, account_start_date, closed_at)
+   VALUES ($1, $2, $3, $4, 0, 0, $5, CURRENT_TIMESTAMP)
+   RETURNING account_id, deleted_at, closed_at`,
+  [
+   target.user_id,
+   'probe closed destination',
+   closedBank.rows[0].account_type_id,
+   target.currency_id,
+   new Date(),
+  ],
+ );
+ const closedDestinationId = closedDestination.rows[0].account_id;
+
+ check(
+  'the probe built the state it meant to: closed, never deleted',
+  closedDestination.rows[0].closed_at !== null &&
+   closedDestination.rows[0].deleted_at === null,
+  'closed_at set, deleted_at null',
+ );
+
+ const offeredWithClosed = await listTransferDestinations(
+  client,
+  target.user_id,
+  target.account_id,
+ );
+
+ check(
+  'a closed bank account of the right currency is not offered as a destination',
+  !offeredWithClosed.map((row) => row.accountId).includes(closedDestinationId),
+  `account ${closedDestinationId} withheld from ${offeredWithClosed.length} offered`,
+ );
+
+ // The settlement has to refuse it too, not merely decline to advertise it, and
+ // that assertion lives in the rejections section below - it needs the echoed
+ // residual, which is derived there so that every refusal carries a correct one.
+ // This account stays alive until then.
  check(
   'the account being closed is not offered as its own destination',
   !offeredIds.includes(target.account_id),
@@ -294,6 +363,33 @@ try {
  console.log('what the engine refuses:');
 
  const accountCheck = await accountRow(client, target.account_id, target.user_id);
+
+ // The closed account built above, named directly rather than picked from the
+ // list. The selector and the write path share one query precisely so that a
+ // destination the screen could not offer cannot be settled against by a caller
+ // that names it anyway, and this is the assertion that holds them together.
+ const closedDestinationRejected = await expectRejection(client, () =>
+  processCloseAccount(
+   client,
+   target.user_id,
+   target.account_id,
+   CLOSE_POLICY_TRANSFER,
+   accountCheck,
+   new Date(),
+   closedDestinationId,
+   residualBefore,
+  ),
+ );
+ check(
+  'naming a closed account as the destination is refused with 409',
+  closedDestinationRejected.rejected &&
+   closedDestinationRejected.status === 409,
+  `${closedDestinationRejected.status} ${String(closedDestinationRejected.detail).slice(0, 70)}`,
+ );
+
+ await client.query('DELETE FROM user_accounts WHERE account_id = $1', [
+  closedDestinationId,
+ ]);
 
  const noDestination = await expectRejection(client, () =>
   processCloseAccount(
@@ -402,7 +498,12 @@ try {
 
  // ------------------------------------------------------------- the real run
  const transactionsBefore = await countTransactions(client, target.account_id);
- const cardBefore = await getInvestmentFigures(client, investmentIds, TIME_ZONE);
+ const cardBefore = await getInvestmentFigures(
+  client,
+  investmentIds,
+  TIME_ZONE,
+  REFERENCE_MONTH,
+ );
  const closureRowsBeforeRun = await countClosureRows(client);
 
  const closeResult = await processCloseAccount(
@@ -425,7 +526,12 @@ try {
   target.user_id,
  );
  const transactionsAfter = await countTransactions(client, target.account_id);
- const cardAfter = await getInvestmentFigures(client, investmentIds, TIME_ZONE);
+ const cardAfter = await getInvestmentFigures(
+  client,
+  investmentIds,
+  TIME_ZONE,
+  REFERENCE_MONTH,
+ );
  const closureRowsAfterRun = await countClosureRows(client);
 
  console.log('');

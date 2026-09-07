@@ -44,9 +44,16 @@ import { listTransferDestinations } from './getCloseTransferDestinations.js';
 // confirm, and the pg driver's float conversion would round it on the way out.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 
-// deleted_at IS NULL is part of the lookup, not a separate check: an account
-// that is already closed has no close screen, and answering with its balance
+// Both columns are part of the lookup, not a separate check: an account that is
+// already closed or deleted has no close screen, and answering with its balance
 // would offer the owner a confirmation the settlement is going to refuse.
+//
+// closed_at is named explicitly even though a closed account also carries
+// deleted_at today. The comment above claimed to exclude closed accounts while
+// the predicate only tested deleted_at, and it was true by accident - closing
+// happened to write that column too. It stops being true at the step where
+// closing no longer does, and a preview that served a closed account would hand
+// the owner a residual for an account whose residual has already been settled.
 const CLOSING_ACCOUNT_QUERY = `
   SELECT
     ua.account_id,
@@ -60,6 +67,7 @@ const CLOSING_ACCOUNT_QUERY = `
   WHERE ua.user_id = $1
     AND ua.account_id = $2
     AND ua.deleted_at IS NULL
+    AND ua.closed_at IS NULL
 `;
 
 /**

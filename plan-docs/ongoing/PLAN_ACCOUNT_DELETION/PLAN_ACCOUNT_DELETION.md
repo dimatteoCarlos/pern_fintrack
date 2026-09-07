@@ -2722,3 +2722,69 @@ after the dual-write ends, with no ordering against the deletion module's work.
 The **reopen action and its endpoint remain the deletion session's**, per the
 seam agreed on 2026-09-06. This list renders an empty state until a close lands
 through the UI, and gains a per-row action when that endpoint exists.
+
+---
+
+## The read sweep, the deletion module's half, SHIPPED 2026-09-07
+
+Four predicates in three files, all in `services/delete_account/`. Three swept,
+one deliberately left, and the one left is the interesting one.
+
+### Three swept to circulation form
+
+Both stamps, `deleted_at IS NULL AND closed_at IS NULL`, matching `e4`'s half:
+
+- **The destination selector**, `ELIGIBLE_DESTINATIONS_QUERY` in
+  `getCloseTransferDestinations.js`. A destination has to be able to *receive*
+  money. A closed account's residual has already been settled to zero, and
+  moving more into it reopens a balance nobody can close again without a second
+  settlement.
+- **The close preview's account lookup**, `CLOSING_ACCOUNT_QUERY` in
+  `getClosePreview.js`. This one had a comment claiming it excluded closed
+  accounts while the predicate only tested `deleted_at` — true by accident,
+  because closing happened to write that column too.
+- **The soft-delete `UPDATE` guard** in `deleteAccountService.js`. Not redundant
+  with the precondition above it: the precondition reads `accountCheck`,
+  selected earlier in the transaction, while the guard is evaluated by the
+  `UPDATE` itself. A close committing in between passes the first and must fail
+  the second, or a settled account is stamped as an ordinary deletion.
+
+### The one not swept, and it must not be
+
+**CLOSE's own MARK step** keeps `WHERE ... AND deleted_at IS NULL`. Swapping it
+for `closed_at IS NULL` while the dual-write stands would let CLOSE settle and
+close a **soft-deleted** account, which carries `deleted_at` and no `closed_at`.
+It becomes `closed_at IS NULL` alone at step 3, when CLOSE stops writing
+`deleted_at`, and the line carries a comment saying so.
+
+### What the probes now assert
+
+The new assertions are built on an account carrying `closed_at` and **not**
+`deleted_at` — the state every closed account reaches once step 3 lands. Built
+with both stamps set they would be excluded by the old predicate too and would
+prove nothing about the new one. A closed bank account of the right currency is
+withheld from the destination list, and naming it directly is refused with 409
+by the write path, which shares the selector's query.
+
+### A defect this work uncovered in all three probe scripts
+
+`getInvestmentFigures` gained a fourth parameter, `referenceMonth`, when
+`feat/overview` bound every figure on the Investment card to a reference month.
+It has **no default**, and an omitted one reaches the query as `NULL`: the
+`bounds` CTE yields `NULL`, every date comparison against it is `NULL`, and the
+card returns **all zeros rather than raising**.
+
+All three verification scripts called it with three arguments. In
+`verifyCloseAccount.js` and `verifyCloseTransfer.js` the closure-term assertions
+read `0 -> 0` and failed loudly. In `verifyClosureSettlement.js` the same zeros
+were reported as `zero on this database` — a sentence describing a card that had
+never been read at all.
+
+The month is computed in the same zone the query converts with. Derived in UTC
+it would name the previous month during the first hours of a month in a western
+zone, and the settlement the probe writes would land outside the window it then
+asks about.
+
+The overview module's own caller, `overviewInvestmentService.js`, passes the
+argument correctly. Nothing in that module is wrong; the stale callers were all
+in this module's probes.

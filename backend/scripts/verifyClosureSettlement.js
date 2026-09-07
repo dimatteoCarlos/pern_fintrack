@@ -83,6 +83,25 @@ const readOption = (flag, fallback) => {
 const RESIDUAL = Number(readOption('--residual', 1234.56));
 const TIME_ZONE = readOption('--zone', 'America/Caracas');
 
+// getInvestmentFigures gained a fourth parameter when feat/overview bound every
+// figure on the card to a reference month. It has no default, and an omitted one
+// reaches the query as NULL, so the card comes back all zeros rather than
+// raising. This probe reports the closure term as "zero on this database" when
+// it reads zero, which is exactly the wrong thing to say about a card that was
+// never read at all. Derived in the zone the query converts with.
+const referenceMonthIn = (timeZone) => {
+ const parts = new Intl.DateTimeFormat('en-CA', {
+  timeZone,
+  year: 'numeric',
+  month: '2-digit',
+ }).formatToParts(new Date());
+ const year = parts.find((part) => part.type === 'year').value;
+ const month = parts.find((part) => part.type === 'month').value;
+ return `${year}-${month}-01`;
+};
+
+const REFERENCE_MONTH = referenceMonthIn(TIME_ZONE);
+
 if (!Number.isFinite(RESIDUAL) || RESIDUAL === 0) {
  console.error('--residual must be a nonzero number');
  process.exit(1);
@@ -164,7 +183,12 @@ try {
  );
  console.log(`closure rows before the write: ${before.rows[0].n}`);
 
- const baseline = await getInvestmentFigures(client, accountIds, TIME_ZONE);
+ const baseline = await getInvestmentFigures(
+  client,
+  accountIds,
+  TIME_ZONE,
+  REFERENCE_MONTH,
+ );
  console.log(
   `baseline closure term: ${baseline.closureAdjustment}` +
    (near(baseline.closureAdjustment, 0)
@@ -196,7 +220,12 @@ try {
   transactionDate: new Date(),
  });
 
- const after = await getInvestmentFigures(client, accountIds, TIME_ZONE);
+ const after = await getInvestmentFigures(
+  client,
+  accountIds,
+  TIME_ZONE,
+  REFERENCE_MONTH,
+ );
 
  // Exhaustiveness control: the same rows the card partitions, summed without
  // any predicate. The two terms have to account for all of it.

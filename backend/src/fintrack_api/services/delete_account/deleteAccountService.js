@@ -481,8 +481,17 @@ const processStandardDelete = async (
   }
 
   // Only the soft-delete branch reaches here - hard delete returns above.
+  //
+  // Both columns in the guard, and closed_at is not redundant with the
+  // precondition above it. The precondition read accountCheck, which was
+  // selected earlier in this transaction; the guard is evaluated by the UPDATE
+  // itself. A close committing in between passes the first and must not pass
+  // the second - otherwise a settled account is stamped as soft deleted and the
+  // row that was kept deliberately reads as an ordinary deletion. rowCount 0
+  // then raises the 500 below, which is the right answer: the caller's read of
+  // the account is stale.
   const queryText =
-    'UPDATE user_accounts ua SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE (ua.account_id = $1 AND ua.user_id = $2) AND ua.deleted_at IS NULL';
+    'UPDATE user_accounts ua SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE (ua.account_id = $1 AND ua.user_id = $2) AND ua.deleted_at IS NULL AND ua.closed_at IS NULL';
   // $2 (user_id) was never bound before this fix: the query always required
   // it but only targetAccountId was passed, so every soft delete threw a
   // Postgres bind-count error before this change.
