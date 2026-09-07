@@ -585,6 +585,65 @@ total to decide whether the **expense** total is a number
 (`OverviewLayout.tsx:189`), so a broken expense prints as real and a valid expense
 blanks when income breaks.
 
+#### What the three sketches already show that a ruling has since deleted
+
+Read 2026-09-06. The sketches predate the rulings, so none of this is a mistake
+anyone made — it is the cost of the sketches being older than the decisions, and
+it is written down here so the cost is paid once.
+
+**Two figures the net-worth ruling removes (D54), both in the level-1 outline
+`bosquejo-overview-nivel-1.html`.**
+
+| where | what it shows |
+|---|---|
+| `:401` and `:656` | the cash position defined in the sketch's own words as bank plus pocket, and rendered |
+| `:667` | the note under the hero stating net worth as bank + investment + debt + pocket |
+
+The second is the one to be careful with: the sketch already flags that line as a
+defect, but it flags it as a **time-base** problem. It is a double count as well,
+and fixing the time base alone would leave the wrong figure with a note saying it
+had been fixed.
+
+**Three period labels, and here the sketch is more right than it looks.** The
+month selector's rationale (`:629`) rules that the control picks a whole month
+and not a month to date, and argues that August read in November is a closed
+month, so calling it month-to-date would be false eleven months of the year.
+**That argument is correct and the temporal frame of the contract (§14.1) does
+not contradict it.** The rule is not that every month is measured to today; it is
+that the *running* month is. The sketch's error is narrower than it appears: it
+conflates what the control selects with what the label says.
+
+So the repair is not to make the selector pick a month to date. It is to make the
+**label conditional on which month was picked** — a closed month reads
+`agosto 2026`, the running month reads as month to date. The labels that need the
+second form are `Flujo · agosto 2026` (`:663`, `:683`, `:690`, `:697`, `:748`,
+`:759`, `:770`) and `Posición · cierre de agosto` (`:705`, `:712`), plus the bare
+month chip in the monthly snapshot proposal (`propuesta-snapshot-mensual.html`
+`:665`, `:689`, `:713`, and its loading, error and empty states at `:855-941`)
+and the single label in the spend-distribution proposal
+(`propuesta-pareto-gasto.html` `:712`, `:926`, `:945`, `:961`, `:1263`).
+
+Neither proposal carries a wealth, cash or pocket term, so neither inherits the
+double count. Their only exposure is the label.
+
+**Two more, found in the same read and worth more than the labels.**
+
+- The outline defines the pocket total as *dinero disponible en pockets*
+  (`:465`, in its table of definitions; the card it describes is at `:710`).
+  A pocket is a plan and not a container; the money is in the bank account and
+  is spendable. The word *disponible* states the retired model in the one place
+  a reader will believe it.
+- **The sketches carry raw hex values**, e.g. `#3E6577` at `:705` and `:712`
+  and `#8A6520` at `:748`. They are sketches and the rule does not bind them,
+  but P5 translates these blocks into real stylesheets, where a colour must come
+  from a token. Whoever does that asks for the missing tokens rather than
+  carrying the literals across.
+- **The hero is still the old triad** — net worth, cash position, net flow — and
+  not the hierarchy this plan freezes: what is owned, how much of it is cash, and
+  how much of that cash is unpromised. This is the largest gap between the
+  sketches and the plan, and it is not a defect in the sketch so much as the
+  reason the hero has to be redesigned rather than corrected.
+
 ### P6 — Level 2
 
 Trends, breakdowns, the Pareto renderer, and the domain analyses returned to
