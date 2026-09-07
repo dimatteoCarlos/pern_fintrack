@@ -100,6 +100,17 @@ const MONTHLY_INCOME_QUERY = `
 // realized P/L with the compensating rows an account deletion writes, and the
 // only thing telling them apart is the description prefix.
 //
+// The account-closure type is not read here. A closure settlement is money
+// leaving a closed account, not a result the owner earned, so it stays outside a
+// sum of realized P/L however many rows carry that type.
+//
+// The exclusion does leave this statement out of step with the derived balance,
+// which sums every row of an account except its single opening row and so keeps
+// a closure settlement. That gap only shows where a balance is compared against
+// terms enumerated by type, and the module has one such place — the investment
+// reconciliation, which claims the closure type in its own third term. This card
+// compares nothing against a balance; it publishes a flow.
+//
 // The IS NULL branch is load-bearing, not defensive noise: description is
 // nullable (003_transactions.sql:21), and `NULL NOT LIKE ...` is NULL, which a
 // join treats as no match. Without it a real P/L row that was written without a
@@ -108,11 +119,34 @@ const MONTHLY_INCOME_QUERY = `
 // The sum comes out signed the way the user means it: on a profit the non-slack
 // leg is the deposit and on a loss it is the withdraw, so gains add and losses
 // subtract without a CASE.
+//
+// The account type is joined for one figure, and it answers a question the card
+// could not answer before: how much of the month's realised result came from
+// investment accounts. This domain reads EVERY account except the internal
+// counterparty, so its total mixes two economically different things — a result
+// the market produced on a position, and a result recorded against a bank or a
+// debtor account. Without the split, an owner comparing this card against the
+// investment card finds two figures that agree on some data and diverge on other
+// data, with nothing on either card saying why.
+//
+// It is a SPLIT of the same sum and not a second statement, and that is what
+// makes it trustworthy: the FILTER runs over exactly the rows the total already
+// summed, so the investment share cannot exceed the total and the two cannot be
+// built over different cuts. The remainder is the subtraction, which is why only
+// one of the two halves is published.
+//
+// Both joins are LEFT and have to stay LEFT. The outer source is a generated
+// month series, so an inner join anywhere below it drops every month with no
+// profit-and-loss row, and the series grows the gaps the delta and the chart both
+// assume are absent.
 const MONTHLY_PNL_QUERY = `
   SELECT
     m.month::date::text AS month,
     COALESCE(SUM(t.amount), 0) AS total_amount,
-    COUNT(t.transaction_id) AS transaction_count
+    COUNT(t.transaction_id) AS transaction_count,
+    COALESCE(SUM(t.amount) FILTER (
+      WHERE act.account_type_name = 'investment'
+    ), 0) AS investment_amount
   FROM generate_series($2::date, $3::date, INTERVAL '1 month') AS m(month)
   LEFT JOIN transactions t
     ON t.account_id = ANY($1::int[])
@@ -120,6 +154,8 @@ const MONTHLY_PNL_QUERY = `
    AND (t.description IS NULL OR t.description NOT LIKE '${RTA_ANNULMENT_TARGET_PREFIX}%')
    AND t.transaction_actual_date >= (m.month AT TIME ZONE $4)
    AND t.transaction_actual_date <  ((m.month + INTERVAL '1 month') AT TIME ZONE $4)
+  LEFT JOIN user_accounts ua ON ua.account_id = t.account_id
+  LEFT JOIN account_types act ON act.account_type_id = ua.account_type_id
   GROUP BY m.month
   ORDER BY m.month
 `;
@@ -128,6 +164,18 @@ const MONTHLY_PNL_QUERY = `
 // pocket_saving accounts, which migration 020 emptied. A pocket is a plan now
 // and its movements are allocation rows, so the snapshot's pocket entry is read
 // from the allocation ledger instead (overviewPocketRepository.js).
+//
+// "Emptied" is a state, not a guarantee, and the difference bounds what any
+// predicate here may assume. 020 deletes every transaction touching a legacy
+// pocket account and then the accounts themselves, but it deliberately leaves
+// both catalog values in place — the account type and the pocket movement type
+// are still seeded and still pass every foreign key. So no row carries them
+// today and nothing in the schema stops one from being written tomorrow. Every
+// account set this module builds by INCLUSION is unaffected; the one built by
+// exclusion is the profit-and-loss set, which admits every type but the internal
+// counterparty and would therefore admit a legacy pocket account while no hero
+// figure counts its balance. Left as it is because that set is defined by what
+// it excludes on purpose, and recorded so the asymmetry is a known one.
 
 /**
  * Run one of the monthly statements and read its rows.
@@ -158,6 +206,14 @@ const readMonthlyRows = async (pool, sql, accountIds, from, to, timeZone) => {
   // COUNT comes back as a string from the driver on bigint columns; Number is
   // exact here because a month's transaction count cannot leave the safe range.
   transactionCount: Number(row.transaction_count ?? 0),
+  // Only the profit-and-loss statement selects this column. Absent where it is
+  // not selected rather than defaulted to 0: an income month reporting an
+  // investment share of 0 would assert a split that has no meaning for income,
+  // and a caller reading the field would have no way to tell the assertion from
+  // a real zero.
+  ...(row.investment_amount === undefined
+   ? {}
+   : { investmentAmount: toAmount(row.investment_amount ?? 0) }),
  }));
 };
 

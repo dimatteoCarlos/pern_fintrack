@@ -80,15 +80,27 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 // carrying the annulment prefix; those rows do not migrate, and the identity has
 // to keep holding for every month that contains one.
 //
+// The term has two arms and they are fed by different writes, so the figure is
+// not evidence about any one operation: a nonzero value does not identify which
+// arm produced it, and a zero value does not prove no account was ever removed,
+// since an account carrying no balance leaves no row in this table at all. The
+// field keeps its contract name — renaming it is a contract change, not a
+// comment — and this paragraph exists so a reader does not treat the amount as a
+// count of anything.
+//
 // What a closure row is: deleting an account reverses the effect it had on the
 // accounts it touched, writing a pair of rows - one on the affected account and
 // its opposite on the internal counterparty. It is neither capital the owner put
 // in nor a result the market produced, and it does move the balance, which is
 // why a two-term identity over these accounts was never going to hold.
 //
-// Known limit, left as it is: account_count is not bounded. An account opened
-// after the reference month contributes 0 to the balance and still counts, and
-// bounding it needs a creation date this query does not read.
+// Known limit, and now a published one: account_count is not bounded. An account
+// opened after the reference month contributes 0 to the balance and still counts,
+// and bounding it needs a creation date this query does not read. The card used
+// to consume this figure only to choose between two notices, so the limit stayed
+// internal; it is now a field of the card, which means a past month can report
+// three accounts beside a balance built from the two that were open then.
+// Bounding it is a change to THIS statement and not to the card.
 const INVESTMENT_FIGURES_QUERY = `
   WITH bounds AS (
     SELECT

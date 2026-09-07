@@ -84,6 +84,32 @@ export const overviewPnlService = {
     periodEnd: monthEndDate(referenceMonth),
    },
    notices: canCompare ? [] : [NO_PRIOR_PERIOD_NOTICE],
+   domainFields: {
+    // How much of the month's realised result landed on investment accounts.
+    //
+    // The card's total spans every account except the internal counterparty,
+    // which is the definition §1.4 gives this domain and not a defect to narrow.
+    // What was missing is the ability to READ that total: an owner seeing this
+    // figure beside the investment card's realised result had no way to tell
+    // whether they are the same money seen twice or two different results that
+    // happen to agree.
+    //
+    // On the development data they do agree, and that is a property of the data —
+    // no bank or debtor account there carries a profit-and-loss row — rather than
+    // of the model. With this field the agreement is legible as an agreement
+    // instead of being mistaken for a duplicated card.
+    //
+    // It is NOT the investment card's figure under another name. That one is an
+    // accumulation over the whole history of the investment accounts; this is a
+    // flow bounded by the reference month. The two coincide only for an owner
+    // whose entire investment history falls inside the month being read.
+    //
+    // The remainder — what came from every other account — is this subtracted
+    // from totalAmount, and it is deliberately not published as a second field:
+    // both terms are already on the card, and a figure a client obtains by
+    // subtracting two published numbers is not a figure the server owes it.
+    realizedFromInvestment: currentPoint.investmentAmount,
+   },
   });
 
   return {
