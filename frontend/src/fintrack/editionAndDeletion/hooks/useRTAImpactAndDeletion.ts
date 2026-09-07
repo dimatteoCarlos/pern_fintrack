@@ -103,9 +103,10 @@ export const useRTAImpactAndDeletion = (
     }
 
     // 1. Build the RTA Payload (Body for the DELETE request)
+    // impactReport is not sent: the backend recomputes it itself inside the
+    // locked transaction (unit 6, 2026-09-06) and no longer reads this field.
     const payload: RTAExecutionPayloadType = {
       deletionType: DELETION_TYPE_RTA,
-      impactReport: affectedAccountReport,
       targetAccountName,
     };
 

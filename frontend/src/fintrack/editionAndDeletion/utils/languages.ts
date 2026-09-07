@@ -125,8 +125,28 @@ reportTitleWithImpact:string;
  accountLabel: string;
  errorTimeLabel: string;
  backToActionsButton: string;
- 
- } 
+
+// 🎯 OTHER DELETION METHODS SECTION (AccountDeletionPage) - SOFT and HARD,
+// alongside the RTA flow above (ACCOUNT_DELETION_METHODS.md §6)
+ otherMethodsSectionTitle: string;
+ otherMethodsSectionDescription: string;
+
+// SoftDeactivateAccountUI
+ softDeactivateTriggerButton: string;
+ softDeactivateTitle: string;
+ softDeactivateDescription: string;
+ softDeactivateConfirmButton: string;
+ softDeactivateSuccessMessage: string;
+
+// HardDeleteConfirmationUI
+ hardDeleteTriggerButton: string;
+ hardDeleteTitle: string;
+ hardDeleteDescription: string;
+ hardDeleteWarning: string;
+ hardDeleteConfirmButton: string;
+ hardDeleteSuccessMessage: string;
+
+ }
 
 //Default Language
 export const defaultLanguage:LanguageKeyType='en';
@@ -247,9 +267,25 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   errorTimeLabel: "Error Time",
   backToActionsButton: "Back to Accounting Dashboard",
 
+// 🎯 OTHER DELETION METHODS - ENGLISH
+  otherMethodsSectionTitle: "Other deletion methods",
+  otherMethodsSectionDescription: "Prefer not to run the annulment above? Deactivate the account instead, or erase it permanently without reversing its impact on other accounts.",
+
+  softDeactivateTriggerButton: "Deactivate Account",
+  softDeactivateTitle: "Deactivate this account?",
+  softDeactivateDescription: "This deactivates the account instead of erasing it. Its balance, transactions and history stay exactly as they are, and it can be reactivated later. No financial impact report is needed for this action.",
+  softDeactivateConfirmButton: "Deactivate Account",
+  softDeactivateSuccessMessage: "{targetAccountName} has been deactivated.",
+
+  hardDeleteTriggerButton: "Erase Without Reversal",
+  hardDeleteTitle: "Erase this account without reversing its impact?",
+  hardDeleteDescription: "This permanently erases the account and its own transactions. It cannot be undone.",
+  hardDeleteWarning: "Every counterparty's historical balance from transacting with this account is left exactly as it is - nothing gets corrected. This is different from the Retrospective Total Annulment above, which reverses that impact first. Choose this only when you explicitly do not want that correction.",
+  hardDeleteConfirmButton: "Erase Without Reversal",
+  hardDeleteSuccessMessage: "{targetAccountName} has been permanently erased.",
 
  }
- , 
+ ,
 
  es:{
 //AccountDeletionPage
@@ -360,6 +396,23 @@ totalNetAdjustment: 'Ajuste Neto Total:',
   accountLabel: "Cuenta",
   errorTimeLabel: "Hora del Error",
   backToActionsButton: "Volver a Panel de Cuentas",
+
+// 🎯 OTHER DELETION METHODS - SPANISH
+  otherMethodsSectionTitle: "Otros métodos de eliminación",
+  otherMethodsSectionDescription: "¿Prefiere no ejecutar la anulación anterior? Desactive la cuenta en su lugar, o elimínela de forma permanente sin revertir su impacto en otras cuentas.",
+
+  softDeactivateTriggerButton: "Desactivar Cuenta",
+  softDeactivateTitle: "¿Desactivar esta cuenta?",
+  softDeactivateDescription: "Esto desactiva la cuenta en lugar de eliminarla. Su saldo, transacciones e historial permanecen exactamente iguales, y puede reactivarse más adelante. Esta acción no requiere un reporte de impacto financiero.",
+  softDeactivateConfirmButton: "Desactivar Cuenta",
+  softDeactivateSuccessMessage: "{targetAccountName} ha sido desactivada.",
+
+  hardDeleteTriggerButton: "Eliminar Sin Reversión",
+  hardDeleteTitle: "¿Eliminar esta cuenta sin revertir su impacto?",
+  hardDeleteDescription: "Esto elimina permanentemente la cuenta y sus propias transacciones. No se puede deshacer.",
+  hardDeleteWarning: "El saldo histórico de cada contraparte que transaccionó con esta cuenta queda exactamente igual: no se corrige nada. Esto es distinto de la Anulación Retrospectiva Total de arriba, que revierte ese impacto antes de eliminar. Elija esta opción solo cuando explícitamente no quiera esa corrección.",
+  hardDeleteConfirmButton: "Eliminar Sin Reversión",
+  hardDeleteSuccessMessage: "{targetAccountName} ha sido eliminada permanentemente.",
 
  }
 };

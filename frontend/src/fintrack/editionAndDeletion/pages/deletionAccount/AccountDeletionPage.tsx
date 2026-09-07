@@ -33,6 +33,8 @@ import { RTAConfirmationModal } from './UIComponents/confirmationModalUI/RTAConf
 import ReportErrorUI from './UIComponents/reportErrorUI/ReportErrorUI.tsx';
 import ProceedButtonUI from './UIComponents/proceedButtonUI/ProceedButtonUI.tsx';
 import PostOperationView from './UIComponents/postOperationView/PostOperationView.tsx';
+import { SoftDeactivateAccountUI } from './UIComponents/softDeletionUI/SoftDeactivateAccountUI.tsx';
+import { HardDeleteConfirmationUI } from './UIComponents/hardDeletionUI/HardDeleteConfirmationUI.tsx';
 // Where a reader with no navigation state belongs. Named once so the guard
 // below and the back navigation cannot disagree about it.
 const ACCOUNTING_DASHBOARD_ROUTE = '/fintrack/tracker/accounting';
@@ -93,6 +95,11 @@ const AccountDeletionView = ({
   // UI LOCAL STATE
   //----------------------------------
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Independent of the RTA modal above: SOFT and HARD are two more triggers
+  // this same page now offers (ACCOUNT_DELETION_METHODS.md §6), neither
+  // reads the RTA impact report and neither shares its open/close state.
+  const [isSoftModalOpen, setIsSoftModalOpen] = useState(false);
+  const [isHardModalOpen, setIsHardModalOpen] = useState(false);
   // const prevAccountIdRef = useRef(targetAccountId);
   //-------------------------------------------
   //-------------------------------
@@ -344,6 +351,36 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
               </div>
             )}
           </main>
+
+          {/* 🎯 OTHER DELETION METHODS: SOFT and HARD, both reachable
+              independently of the RTA impact report above
+              (ACCOUNT_DELETION_METHODS.md §6) */}
+          <section className='deletion-methods-section'>
+            <h2 className='deletion-methods-title'>
+              {translateText('otherMethodsSectionTitle')}
+            </h2>
+            <p className='deletion-methods-description'>
+              {translateText('otherMethodsSectionDescription')}
+            </p>
+            <div className='deletion-methods-actions'>
+              <button
+                type='button'
+                className='deletion-method-button deletion-method-button--soft'
+                onClick={() => setIsSoftModalOpen(true)}
+                aria-label={translateText('softDeactivateTriggerButton')}
+              >
+                {translateText('softDeactivateTriggerButton')}
+              </button>
+              <button
+                type='button'
+                className='deletion-method-button deletion-method-button--hard'
+                onClick={() => setIsHardModalOpen(true)}
+                aria-label={translateText('hardDeleteTriggerButton')}
+              >
+                {translateText('hardDeleteTriggerButton')}
+              </button>
+            </div>
+          </section>
         </>
       )}
 
@@ -357,6 +394,26 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
         message={modalMessage}
         affectedAccountsReportCount={affectedAccountReport.length}
         pocketImpact={pocketImpact}
+      />
+
+      {/* 🎯 SOFT DEACTIVATION - reversible, no impact report */}
+      <SoftDeactivateAccountUI
+        t={translateText}
+        isOpen={isSoftModalOpen}
+        targetAccountId={targetAccountId}
+        targetAccountName={targetAccountName}
+        onClose={() => setIsSoftModalOpen(false)}
+        onDeactivated={handleBackToAccountingDashboard}
+      />
+
+      {/* 🎯 HARD DELETE - permanent, no reversal of the impact on counterparties */}
+      <HardDeleteConfirmationUI
+        t={translateText}
+        isOpen={isHardModalOpen}
+        targetAccountId={targetAccountId}
+        targetAccountName={targetAccountName}
+        onClose={() => setIsHardModalOpen(false)}
+        onErased={handleBackToAccountingDashboard}
       />
     </div>
   );
