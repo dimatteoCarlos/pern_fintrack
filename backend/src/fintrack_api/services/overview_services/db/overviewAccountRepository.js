@@ -52,8 +52,10 @@ const EXPENSE_ACCOUNT_IDS_QUERY = `
 // money. Two predicates do it and the type is the one that carries it — a
 // set of five type names cannot admit the structural type 031 gave that account.
 // The reason this comment used to give, that it is a bank account by type, died
-// at that same migration. What the name comparison still does here is the harm
-// described at the profit-and-loss set below.
+// at that same migration. The name comparison that used to sit here is gone for
+// the reason argued at the profit-and-loss set below: the inclusive type list
+// cannot admit the compensation account, so the comparison excluded only an
+// owner's own account that happened to carry that name.
 //
 // cash (account_type_id 7) is IN the set, and this is the half of the merge that
 // came from this branch. It was left out while the catalog held the question
@@ -77,12 +79,21 @@ const INCOME_ACCOUNT_IDS_QUERY = `
   JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
     AND act.account_type_name IN ('bank', 'cash', 'investment', 'debtor')
-    AND ua.account_name != 'slack'
   ORDER BY ua.account_id
 `;
 
 // The accounts a realized P/L figure is read over: every account the user owns
-// except slack.
+// except the system's compensation account.
+//
+// The set is wider than the domain and that is deliberate. A realised gain or
+// loss belongs to an investment position, but the deletion path writes annulment
+// rows carrying this movement type onto whatever account the money passed
+// through. Measured 2026-09-07: of the rows carrying it, investment holds 3, bank
+// holds 5 and all five are annulment, the compensation account holds 12 of which
+// 10 are annulment, and category_budget, pocket_saving, income_source and debtor
+// hold none. Narrowing the set to the domain would change no published figure
+// today and would drop the indirect rows a hard deletion produces the day one
+// lands on a type the narrow list forgot.
 //
 // No account type filter, because PL1 states none. It covers movement_type_id 9
 // across all accounts, which is what separates it from Investment.V3 — the same
@@ -121,38 +132,48 @@ const INCOME_ACCOUNT_IDS_QUERY = `
 // .account_type_name is itself NOT NULL, so with a matching row guaranteed, <>
 // and IS DISTINCT FROM return the same set for every value the column can hold.
 //
-// No name comparison is removed anywhere. That waits on the name being reserved
-// at account creation, for the reason stated below.
+// The name comparison this set used to carry is gone, and so is the ruling that
+// kept it. That ruling held that the compensation account is identified by its
+// name and its type together, so neither half could be dropped until the name was
+// reserved at account creation. The blocking case it described was an owner's
+// account named 'slack' predating the first compensation write and becoming the
+// counterparty permanently, at which point a type-only predicate would count the
+// system's writes as the owner's money.
 //
-// Having no type filter makes the name comparison this set's SOLE exclusion of
-// the compensation account. The other three restrict by type and would keep that
-// account out on the type alone, since 031 gave it one and retyped every existing
-// one. Both build paths carry that type — the chain reaches it by
-// ordering, and the boot seed writes it directly — so the only
-// population below it is a chain deliberately stopped there, which is a
-// deployment position rather than a case this file can discover.
+// That case cannot happen. The resolver requires the type: checkAndInsertAccount
+// matches account_name together with LOWER(account_type_name) = ANY(['boundary']),
+// so an owner's bank or cash account of that name cannot become the counterparty
+// however old it is. Migration 031 typed every compensation account and the
+// resolver stopped accepting anything else, which is what falsified the premise.
+// A name reservation was never the operative precondition in any case, because
+// the type predicate reads no names and no name can make it wrong.
 //
-// The name comparison is not merely the weaker guard. It is actively wrong in one
-// case: an owner who genuinely names an account 'slack' has it dropped from their
-// own figures, silently, by the same predicate that keeps the system's
-// counterparty out. Excluding on type AND name is safe everywhere but fixes
-// nothing, because that case is excluded by the name half either way.
+// What the name comparison did do, at all five sites that carried it, was drop an
+// owner's own account genuinely named 'slack' out of their own figures with no
+// error and no notice. So this is not the retirement of a redundant guard, it is
+// the removal of a live defect — which is the test this module applies before
+// touching a predicate that works.
 //
-// What blocks the real fix is creation order, not the chain. The resolver takes
-// the oldest account matching the name and the two acceptable types, so if a user
-// account of that name predates the first compensation write, it becomes the
-// counterparty permanently — and a type-only predicate would then count
-// the system's compensation writes as the owner's money. Same name, same type,
-// opposite correct answers, and nothing on the read side can tell them apart. So
-// the name has to be reserved at account creation first; only then does moving to
-// the type predicate alone return that account to its owner. Established with the
-// migration session, 2026-09-06.
+// Measured before removal, 2026-09-07: every account caught by either predicate
+// on the development database is one row, named 'slack' and typed 'boundary'.
+// Nothing carries that name without that type, so the type predicate loses no
+// exclusion; nothing carries that type under another name, so the name comparison
+// was not leaking either. The two selected identically, and only one of them is
+// right for the wrong input.
+//
+// The hole this leaves is on the write side and is not compensated for here.
+// createBasicAccount resolves the requested type against the catalog and does not
+// call assertUserCreatableAccountType, which guards the debtor path only, so
+// 'boundary' is still requestable on that route. A user-created account of that
+// type would be excluded from these figures as though it were the system's. That
+// defect reaches the read sites already using the type predicate exactly as it
+// reaches these five, so it belongs at creation and not in a read. Routed
+// 2026-09-07; supersedes the precondition agreed with the migration session.
 const PNL_ACCOUNT_IDS_QUERY = `
   SELECT ua.account_id
   FROM user_accounts ua
   JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
-    AND ua.account_name != 'slack'
     AND act.account_type_name <> 'boundary'
   ORDER BY ua.account_id
 `;
@@ -160,13 +181,12 @@ const PNL_ACCOUNT_IDS_QUERY = `
 // The accounts of one type, the compensation account excluded — the set
 // Debt, Pocket and Investment are each read over.
 //
-// Two predicates and they pull in opposite directions. The type is what keeps the
-// compensation account out, and it is load-bearing beyond this file: the closure
-// settlement's counterparty leg lands on that account, so the type predicate is
-// what keeps that leg outside the investment reconciliation. The name comparison
-// is the half that would wrongly drop an owner's own investment account named
-// 'slack'. Same statement, one predicate necessary and one harmful; the
-// profit-and-loss set above carries the reason neither can be touched yet.
+// The type is what keeps the compensation account out, and it is load-bearing
+// beyond this file: the closure settlement's counterparty leg lands on that
+// account, so the type predicate is what keeps that leg outside the investment
+// reconciliation. The name comparison that used to sit beside it wrongly dropped
+// an owner's own investment account named 'slack', and it is gone — the
+// profit-and-loss set above carries why.
 //
 // One statement with the type as a bind parameter, not three. A type name is a
 // value the catalog already holds, not a piece of SQL structure, so this is not
@@ -185,7 +205,6 @@ const ACCOUNT_IDS_BY_TYPE_QUERY = `
   JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
     AND act.account_type_name = $2
-    AND ua.account_name != 'slack'
   ORDER BY ua.account_id
 `;
 

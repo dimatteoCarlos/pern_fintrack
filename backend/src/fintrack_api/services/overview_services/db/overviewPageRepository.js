@@ -48,24 +48,41 @@ const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 // subtraction below does not, so the opening credit cancels the starting amount
 // the derivation kept.
 //
-// The balance comes from the ledger, not from user_accounts.account_balance. That
-// column is a cache the money paths rewrite only for the accounts a write touches,
-// so an account nothing has written since a back-dated insert keeps a figure that
-// no longer matches its own movements. Every other balance read in the codebase
-// already derives; this module was the exception.
+// The balance comes from the ledger, not from user_accounts.account_balance.
 //
-// Measured on fintrack_dev before the substitution: stored and derived agree on all
-// 31 accounts of every type, so the change is numerically inert and any later
-// difference is real drift the derivation caught, not the substitution moving money.
+// That column is not a cache, which is what this comment used to call it. It has
+// one writer, setAccountBalanceFromLedger, which recomputes it with the same
+// derived expression every read path imports, under the account's row lock, on
+// every money path. Calling it a cache and naming a back-dated insert as the way
+// it goes stale described a mechanism that does not exist.
+//
+// It has exactly one unrefreshed path, and it is account creation. Both creation
+// controllers write the new account's opening row and the counterparty row, then
+// call the refresher for the counterparty only. The new account's stored balance
+// and its own opening row are built from two distinct fields of the same options
+// object, so they agree because two computations agree, not because one derives
+// from the other. An account created with a currency conversion where the two
+// round differently is born divergent, and nothing revisits it: every later money
+// path overwrites the column from the ledger, so the divergence is self-correcting
+// on the first movement and permanent on an account that never moves. Found by the
+// migration-chain session and verified here on 2026-09-07; the fix is one refresher
+// call at creation and that file is not this module's.
+//
+// Which is why deriving is not a preference here. Measured on fintrack_dev before
+// the substitution, stored and derived agreed on all 31 accounts of every type, so
+// the change was numerically inert on that data — but a count can only be evidence
+// about the rows that exist, and the row that would falsify it is the one nobody
+// has created yet. The derivation does not depend on the agreement holding.
 
-// An account's identity is its NAME and its TYPE together, both, at every
-// predicate that excludes the system's compensation account — ruled
-// 2026-09-06. Of the three queries below only the recent-activity list changed:
-// it selected the type and never compared it. The bank balance and the saving
-// goals already restrict the type with an inclusive list that cannot admit that
-// account, so they satisfy the rule as they stand and gained nothing. The
-// account sets repository carries the full argument, including why no name
-// comparison may be dropped yet.
+// The system's compensation account is excluded by its TYPE at every predicate
+// below, and by nothing else. The 2026-09-06 ruling that required the name as
+// well was retired on 2026-09-07: the resolver that creates that account matches
+// on the type, so an owner's own account sharing the name cannot become the
+// counterparty, and the name comparison only dropped that owner's account out of
+// their own figures. The account sets repository carries the argument and the
+// measurement. The bank balance restricts the type with an inclusive list that
+// cannot admit the compensation account; the recent-activity list compares the
+// type directly.
 const BANK_BALANCE_QUERY = `
   WITH bounds AS (
     SELECT (($2::date + INTERVAL '1 month') AT TIME ZONE $3) AS next_month_start
@@ -82,7 +99,6 @@ const BANK_BALANCE_QUERY = `
   JOIN account_types act ON act.account_type_id = ua.account_type_id
   WHERE ua.user_id = $1
     AND act.account_type_name IN ('bank', 'cash')
-    AND ua.account_name != 'slack'
 `;
 
 // G1-G3, one row per pocket rather than a total.
@@ -140,7 +156,6 @@ const SAVING_GOALS_QUERY = `
 const RECENT_ACTIVITY_QUERY = `
   SELECT${transactionRowColumns('$2')}${TRANSACTION_ROW_SOURCE}
   WHERE ua.user_id = $1
-    AND ua.account_name != 'slack'
     -- The type was selected here and never compared until 2026-09-06, and the
     -- comparison was IS DISTINCT FROM because the type could be cleared. Migration
     -- 033 made the column NOT NULL behind a RESTRICT foreign key, so it cannot be,
