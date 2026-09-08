@@ -7,6 +7,7 @@ import {
   DEFAULT_CURRENCY,
 } from '../../../helpers/constants.ts';
 import { AccountListType } from '../../../types/responseApiTypes.ts';
+import PanelState from './PanelState.tsx';
 import { useEffect, useState } from 'react';
 
 //----------------------------
@@ -20,6 +21,9 @@ export type AccountPropType = {
   accounts: AccountListType[] | null;
   isLoading: boolean;
   error: string | null;
+  // Asks the shared accounts request again. Overview.tsx owns the fetch, so the
+  // retry the error state offers has to come down with the state it belongs to.
+  onRetry: () => void;
 };
 
 //--default values------------
@@ -33,6 +37,7 @@ function AccountBalance({
   accounts,
   isLoading,
   error,
+  onRetry,
 }: AccountPropType) {
 
  //--STATES---------------------
@@ -62,15 +67,25 @@ function AccountBalance({
     updateAccounts();
   }, [accounts, isLoading, error]);
 
-  if (isLoading) {
+  // Loading and error both live in PanelState, which returns null when it has
+  // nothing to say. The inline #fff this replaces was the only hardcoded colour
+  // left in the block, and "Loading..." was a word where the rule asks for a
+  // skeleton.
+  if (isLoading || error) {
     return (
-      <span className='loading__msg' style={{ color: '#fff' }}>
-        Loading...
-      </span>
+      <PanelState
+        title='Account Balance'
+        subject='Your bank accounts'
+        isLoading={isLoading}
+        error={error}
+        onRetry={onRetry}
+      />
     );
   }
 
-  if (!accountsToRender || error) return null; 
+  // An owner with no bank account is the third state and it is not an error, so
+  // the panel renders nothing rather than a message about a failure.
+  if (!accountsToRender.length) return null;
   //--------
   return (
     <>

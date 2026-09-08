@@ -5,6 +5,7 @@ import { StatusSquare } from '../../../general_components/boxComponents/BoxCompo
 import { CardTitle } from '../../../general_components/CardTitle.tsx';
 import { currencyFormat } from '../../../helpers/functions.ts';
 import { AccountListType } from '../../../types/responseApiTypes.ts';
+import PanelState from './PanelState.tsx';
 
 import {
   //ACCOUNT_DEFAULT ,
@@ -22,6 +23,9 @@ type AccountPropType = {
   accounts: AccountListType[] | null;
   isLoading: boolean;
   error: string | null;
+  // Asks the shared accounts request again. Overview.tsx owns the fetch, so the
+  // retry the error state offers has to come down with the state it belongs to.
+  onRetry: () => void;
 };
 
 //temporary values------------
@@ -40,6 +44,7 @@ function InvestmentAccountBalance({
   accounts,
   isLoading,
   error,
+  onRetry,
 }: AccountPropType) {
 
   //--STATES---------------------
@@ -78,9 +83,26 @@ function InvestmentAccountBalance({
   }, [accounts, isLoading, error]);
 
  // MAIN RENDER ----------------------
+ // Loading and error both live in PanelState, which returns null when it has
+ // nothing to say. Returning null on error was a dead end: no message, no way
+ // back, and indistinguishable from an owner who holds no investment account.
+  if (isLoading || error) {
+    return (
+      <PanelState
+        title='Investment Accounts'
+        subject='Your investment accounts'
+        isLoading={isLoading}
+        error={error}
+        onRetry={onRetry}
+      />
+    );
+  }
+
  // accounts is null until the one request Overview makes has answered, which is
- // the state this card used to read off its own apiData.
-  if (!accounts || isLoading || error) return null; 
+ // the state this card used to read off its own apiData. An owner with no
+ // investment account is the third state and renders nothing, because it is a
+ // real answer and not a failure.
+  if (!accounts || !investmentAccountsToRender.length) return null;
   
   return (
     <>

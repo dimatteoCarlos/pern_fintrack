@@ -721,3 +721,79 @@ a.icon {
  background: transparent;
  border: 1px solid var(--color-content-on-dark-subtle);
 }
+
+/*------------*/
+/* The two account panels' loading and error states. Both returned null on
+   error, which is the dead end the project's own rule forbids: an error is a
+   message AND a retry. Written to match the debtor list's treatment rather than
+   invented here, so the two screens fail the same way. */
+
+.overviewLayout .panelState {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ gap: var(--space-4);
+ padding: var(--space-8) var(--space-4);
+ text-align: center;
+}
+
+.overviewLayout .panelState__text {
+ margin: 0;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-regular);
+ letter-spacing: var(--letter-spacing-wide);
+ color: var(--color-content-on-dark-subtle);
+}
+
+/* Retry, which is what separates an error from an empty panel: the reader can
+   do something about it. */
+.overviewLayout .panelState__retry {
+ min-height: var(--size-touch-target);
+ padding: var(--space-2) var(--space-6);
+ border: var(--border-width-thin) solid var(--color-border-inverse);
+ border-radius: var(--radius-full);
+ background-color: transparent;
+ color: var(--color-content-on-dark);
+ font-family: inherit;
+ font-size: var(--font-size-sm);
+ font-weight: var(--font-weight-semibold);
+ letter-spacing: var(--letter-spacing-wide);
+ cursor: pointer;
+ transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.overviewLayout .panelState__retry:hover {
+ background-color: var(--color-surface-inverse);
+ color: var(--color-content-primary);
+}
+
+.overviewLayout .panelState__retry:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-inverse);
+ outline-offset: var(--border-width-thick);
+}
+
+.overviewLayout .panelState__retry:active {
+ background-color: var(--color-accent);
+ color: var(--color-accent-content);
+}
+
+.overviewLayout .panelState__retry:disabled {
+ opacity: 0.5;
+ pointer-events: none;
+}
+
+/* The placeholder holds the shape the panel is about to take, so it is a row of
+   tiles and not a spinner: the row does not jump when the answer lands. */
+.overviewLayout .panelState__skeleton {
+ display: flex;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+}
+
+.overviewLayout .panelState__tile {
+ flex: 1 1 9.475rem;
+ height: 4rem;
+ border-radius: var(--radius-xl);
+ background-color: var(--color-surface-loading);
+}

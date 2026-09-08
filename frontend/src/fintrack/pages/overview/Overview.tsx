@@ -171,6 +171,7 @@ function Overview() {
     apiData: accountsByTypeData,
     isLoading: accountsLoading,
     error: accountsError,
+    refetch: refetchAccounts,
   } = useFetch<AccountByTypeResponseType>(urlAccountsByType);
 
   // Split here and not inside each card: the division is a property of this one
@@ -478,6 +479,7 @@ function Overview() {
             accounts={bankAccounts}
             isLoading={accountsLoading}
             error={accountsError}
+            onRetry={refetchAccounts}
           />
         }
 
@@ -487,6 +489,7 @@ function Overview() {
             accounts={investmentAccounts}
             isLoading={accountsLoading}
             error={accountsError}
+            onRetry={refetchAccounts}
           />
         }
 {/* ------------------ */}
