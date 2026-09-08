@@ -29,21 +29,59 @@ const REACTIVE_MONTHS = 3;
 const STABLE_MONTHS = 12;
 
 /**
- * The mean of the months that had activity, or null if none did.
+ * The mean of the months that had activity, and how many of them there were.
  *
- * null and not 0: no active month in the window means the question has no
- * answer, and the frontend renders a dash. A 0 would claim the user typically
- * moves nothing, which is a different and false statement.
+ * null and not 0 for the average: no active month in the window means the
+ * question has no answer, and the frontend renders a dash. A 0 would claim the
+ * user typically moves nothing, which is a different and false statement.
+ *
+ * The count is 0 rather than null in that same case, because it is not a
+ * withheld figure: zero active months is the answer, and it is the denominator
+ * the average would have been divided by. It is published because the widget
+ * has to say what the average is an average OF - a figure over three active
+ * months and one over three months of which one was active are the same number
+ * and do not carry the same weight. MonthlyAverage.tsx already printed it, from
+ * its own browser-side count.
  */
-const activeMonthAverage = (months) => {
+const activeMonthFigures = (months) => {
  const active = months.filter((entry) => entry.transactionCount > 0);
 
  if (active.length === 0) {
-  return null;
+  return { average: null, activeMonths: 0 };
  }
 
  const total = active.reduce((sum, entry) => sum.plus(entry.totalAmount), money(0));
- return toAmount(total.dividedBy(active.length));
+
+ return {
+  average: toAmount(total.dividedBy(active.length)),
+  activeMonths: active.length,
+ };
+};
+
+/**
+ * The calendar year to date of the reference month, inclusive.
+ *
+ * Read off the same thirteen-month series and not from a query of its own: a
+ * window of thirteen months ending on the reference month always contains every
+ * month of that month's calendar year, because a year to date is at most twelve.
+ * So the figure needs no round trip and cannot disagree with the months above
+ * it, which are the same entries summed over a different span.
+ *
+ * Every month of the year counts, active or not. This is a total and not a mean,
+ * so it has no denominator to protect and an empty month contributes 0 to it
+ * honestly. That is the opposite of the rule the averages follow, and the two
+ * differ because the questions differ.
+ *
+ * Never null: the reference month is always in its own year, so there is always
+ * at least one entry to sum.
+ */
+const calendarYearToDate = (months, referenceMonth) => {
+ const year = referenceMonth.slice(0, 4);
+ const inYear = months.filter((entry) => entry.month.startsWith(year));
+
+ return toAmount(
+  inYear.reduce((sum, entry) => sum.plus(entry.totalAmount), money(0)),
+ );
 };
 
 /**
@@ -61,20 +99,27 @@ export const makeMonthlySnapshot = ({ domain, months, currency, notices = [] }) 
  const current = months[months.length - 1];
  const history = months.slice(0, -1);
 
- const activeMonthAverage3m = activeMonthAverage(history.slice(-REACTIVE_MONTHS));
- const activeMonthAverage12m = activeMonthAverage(history.slice(-STABLE_MONTHS));
+ const reactive = activeMonthFigures(history.slice(-REACTIVE_MONTHS));
+ const stable = activeMonthFigures(history.slice(-STABLE_MONTHS));
 
  return Object.freeze({
   domain,
   domainMonthlyActual: current.totalAmount,
-  activeMonthAverage3m,
+  activeMonthAverage3m: reactive.average,
+  activeMonths3m: reactive.activeMonths,
   // MS4 compares against the stable figure, not the reactive one. Measuring a
   // month against a number that already moves fast cannot tell you whether the
   // month is unusual — both would have moved together.
-  activeMonthAverage12m,
-  varianceVsAverage: activeMonthAverage12m === null
+  activeMonthAverage12m: stable.average,
+  activeMonths12m: stable.activeMonths,
+  varianceVsAverage: stable.average === null
    ? null
-   : toAmount(money(current.totalAmount).minus(activeMonthAverage12m)),
+   : toAmount(money(current.totalAmount).minus(stable.average)),
+  // The reference month's calendar year, summed from the series above rather
+  // than fetched. It is the second of the two figures MonthlyAverage.tsx renders
+  // that this builder did not carry, and the reason that component still
+  // recomputes everything in the browser off a separate request.
+  yearToDate: calendarYearToDate(months, current.month),
   currency,
   meta: Object.freeze({
    notices: Object.freeze([...notices]),
