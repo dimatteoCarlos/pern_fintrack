@@ -304,7 +304,7 @@ Closing a `category_budget` account takes it out of every past month through
   `ACCOUNTS_QUERY` at `budgetTransactionRepository.js:132-133`.
 - **The allocation rows are gone.** `budget_monthly_allocations.account_id`
   cascades from `category_budget_accounts`
-  (`010_create_budget_tables.sql:41-43`).
+  (`010_create_budget_tables.sql:42-43`).
 
 **And it is not only the budget side that falls.** `SERIES_QUERY` at
 `budgetTransactionRepository.js:317` and `SPENT_BY_MONTH_QUERY` at `:353` both
@@ -401,7 +401,7 @@ written before section 7.
   verified here.)
 - **The key.** `account_id INTEGER NOT NULL REFERENCES
   category_budget_accounts(account_id) ON DELETE CASCADE` at
-  `010_create_budget_tables.sql:41-43` becomes a reference to the registry.
+  `010_create_budget_tables.sql:42-43` becomes a reference to the registry.
   Declared in three build paths, not one — the same file,
   `supabase/001_production_alignment.sql:402` and `createTables.js:407`.
 - **The readers.** Two need a past-month branch: the id set at
@@ -1135,12 +1135,57 @@ Fix 1 adds the seventh, and it is the only change decision B makes to the key se
 | 4 | `transactions.opening_for_account_id` | the opening marker |
 | 5 | `pocket_allocations.source_account_id` | the pocket source |
 | 6 | `debtor_accounts.selected_account_id` | `002_accounts.sql:179-180`; repointing it also stops it blanking a different account's row |
-| 7 | **`budget_monthly_allocations.account_id`** | `010_create_budget_tables.sql:41-43`, plus `supabase/001_production_alignment.sql:402` and `createTables.js:407` — **three build paths, and a sweep that finds only the first under-reports** |
+| 7 | **`budget_monthly_allocations.account_id`** | `010_create_budget_tables.sql:42-43`, `supabase/001_production_alignment.sql:401-402` and `createTables.js:406-407` — **three declarations, two files touched**, see below |
 
 **The four extension primary keys are still not repointed.** They keep
 `ON DELETE CASCADE` by the owner's ruling of 2026-09-07, and key 7 is what lets
 the budget rows survive that cascade: they stop hanging off
 `category_budget_accounts` and hang off the registry instead.
+
+#### Key 7 is three declarations and two edits, not three edits
+
+**Two of the three are sealed, and the migration session is right that this
+changes the shape of the work.** The three carry identical text — verified here,
+line by line:
+
+```sql
+ account_id           INTEGER       NOT NULL
+  REFERENCES category_budget_accounts(account_id) ON DELETE CASCADE,
+```
+
+| Declaration | Status |
+|---|---|
+| `010_create_budget_tables.sql:42-43` | **applied**, named in the ledger of `fintrack_dev` and of `fintrack_rehearsal`, and in the alignment file's own ledger step — sealed, prose included |
+| `supabase/001_production_alignment.sql:401-402` | **applied and published**, ran against Supabase on 2026-08-22 — sealed |
+| `createTables.js:406-407` | not a migration; it is the boot path and is edited in place |
+
+**So key 7 is a NEW chain file carrying an `ALTER`, plus the matching edit to
+`createTables.js`** so a database built from scratch by the boot path comes out
+with the same key. It cannot be earlier than 035: `034_add_account_closed_at.sql`
+is the last file on disk, and the registry table has to exist before the `ALTER`
+runs — same file with the registry first, or an earlier one.
+
+**The constraint name has to be dropped by the name Postgres generated**, because
+the declaration is inline and unnamed. Measured read-only by the migration session
+on both local databases and identical on both:
+`budget_monthly_allocations_account_id_fkey`, `FOREIGN KEY (account_id)
+REFERENCES category_budget_accounts(account_id) ON DELETE CASCADE`. Same name on
+the chain-built database and on the development one, so one `DROP CONSTRAINT`
+covers every environment. `fintrack_prod_data` has no `budget_monthly_allocations`
+at all, which is consistent with it being the 2026-08-21 dump: the alignment file
+is what creates that table in production. (Their measurement, on databases the
+owner authorized them to read; not re-run here.)
+
+**The DOWN is real only until the first CLOSE, and that belongs in the header
+before the file is written rather than discovered afterwards.** Pointing
+`account_id` back at `category_budget_accounts` requires every surviving
+`budget_monthly_allocations.account_id` to still exist in that table. Key 7 exists
+precisely so allocations outlive the category, so the first closed category leaves
+rows whose `account_id` is in the registry and not in the extension table, and
+from that moment the DOWN cannot run without deleting exactly the rows the change
+was made to preserve. **Same shape as 013's DOWN** (3.8.12), and it should be
+stated the same way: real until the feature is used once, after which the rollback
+is a data decision and not a schema one.
 
 #### Why this contract keeps the reader change small
 
@@ -1177,8 +1222,39 @@ the extension ruling accepts it everywhere else.
 | Question | Recommendation |
 |---|---|
 | Whether `close_reason` is mandatory | **yes, free text.** No statement reads it, so it constrains nothing technically; it is the only record of why an irreversible action was taken |
-| Who writes the registry row at creation | **a trigger before insert on `user_accounts`.** Two creation controllers plus the boot path cannot all be kept honest by convention, and this schema already carries a trigger (`assert_iana_timezone`, `002_accounts.sql`), so it is not a foreign idiom here |
+| Who writes the registry row at creation | **a trigger before insert on `user_accounts`**, for the reason below — but the precedent is weaker than an earlier draft of this row claimed |
 | Whether the backfill stamps existing live accounts or leaves them null | **leaves them null.** Those accounts are live, so their values are read from `user_accounts`; stamping them would create the two-writer problem this shape avoids |
+
+**The trigger, and a correction to how this plan justified it.** An earlier draft
+of the row above said the schema already carries a trigger *so it is not a foreign
+idiom here*. That overstates the precedent, and the migration session is right to
+refuse it. Measured: `trg_users_timezone_is_iana` is the schema's **only** trigger,
+and its function raises or returns —
+
+```sql
+  IF NOT EXISTS (SELECT 1 FROM pg_timezone_names WHERE name = NEW.timezone) THEN
+    RAISE EXCEPTION 'Invalid IANA time zone: %', NEW.timezone
+      USING ERRCODE = '22023';
+  END IF;
+  RETURN NEW;
+```
+
+— so it is an **assertion** trigger and it writes nothing. A registry writer
+inserts into a second table. **This schema has no side-effecting trigger, and a
+registry trigger would be its first.** The reason for it still holds — two
+creation controllers plus the boot path cannot be kept honest by convention — but
+the header says it is a deliberate step up, not something borrowed from
+`assert_iana_timezone`.
+
+**And it has to be declared in all three build paths, which is why the existing
+one survives.** `assert_iana_timezone` is declared at `002_accounts.sql:57` with
+its trigger at `:69`, at `supabase/001_production_alignment.sql:99` and `:111`,
+and at `createTables.js:35` and `:47`. A registry trigger written only into the
+chain file leaves the boot path building a database whose registry never fills,
+and **`db:parity` compares tables and columns, so it would not see a missing
+trigger** unless someone extends it. (Correction and the parity point from the
+migration session; the three declaration sites and the single-trigger count
+verified here.)
 
 ---
 
