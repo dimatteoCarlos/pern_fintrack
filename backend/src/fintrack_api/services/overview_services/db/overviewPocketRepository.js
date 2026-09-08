@@ -105,6 +105,15 @@ const MONTHLY_ALLOCATED_NET_QUERY = `
 // database is kept in the one accounting currency (D7); the allocation's six
 // origin columns are the audit trail of what the owner typed, and publishing one
 // of them here would invite a consumer to add two units.
+// The one month filter both statements read. Duplicated text is how a page and
+// its count come to disagree about which rows exist, and the two are issued
+// together to answer one request, so the filter is declared once. The
+// placeholders are the same three in both: the owner, the month, the zone.
+const ALLOCATIONS_FILTER = `
+  WHERE pa.user_id = $1
+    AND pa.allocation_actual_date >= ($2::timestamp AT TIME ZONE $3)
+    AND pa.allocation_actual_date <  (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)`;
+
 const ALLOCATIONS_PAGE_QUERY = `
   SELECT
     pa.allocation_id::text  AS "allocationId",
@@ -117,11 +126,18 @@ const ALLOCATIONS_PAGE_QUERY = `
     lower(cr.currency_code) AS currency
   FROM pocket_allocations pa
   JOIN pockets p ON p.pocket_id = pa.pocket_id
-  JOIN user_accounts ua ON ua.account_id = pa.source_account_id
+  -- LEFT, and it is the only one of the three that is. This join supplies a
+  -- label and not a row: the allocation's amount, date, pocket and source
+  -- account id are all on pa, so an account whose row is gone costs the name
+  -- and nothing else. Inner, it dropped the whole allocation from this page
+  -- while the count beside it still counted the row, and a paginator offered a
+  -- page that came back short.
+  --
+  -- The other two joins cannot lose a row and stay inner: an allocation cannot
+  -- outlive its pocket, and currencies is a catalog nothing deletes from.
+  LEFT JOIN user_accounts ua ON ua.account_id = pa.source_account_id
   JOIN currencies cr ON cr.currency_id = p.currency_id
-  WHERE pa.user_id = $1
-    AND pa.allocation_actual_date >= ($2::timestamp AT TIME ZONE $3)
-    AND pa.allocation_actual_date <  (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)
+  ${ALLOCATIONS_FILTER}
   ORDER BY pa.allocation_actual_date DESC, pa.allocation_id DESC
   LIMIT $4 OFFSET $5
 `;
@@ -129,9 +145,7 @@ const ALLOCATIONS_PAGE_QUERY = `
 const ALLOCATIONS_COUNT_QUERY = `
   SELECT COUNT(*) AS total_rows
   FROM pocket_allocations pa
-  WHERE pa.user_id = $1
-    AND pa.allocation_actual_date >= ($2::timestamp AT TIME ZONE $3)
-    AND pa.allocation_actual_date <  (($2::timestamp + INTERVAL '1 month') AT TIME ZONE $3)
+  ${ALLOCATIONS_FILTER}
 `;
 
 /**
@@ -215,6 +229,11 @@ export async function getAllocationsPage(
   rows: rows.rows.map((row) => ({
    ...row,
    amount: toAmount(row.amount),
+   // Declared rather than left to the driver. The source account's join is
+   // LEFT, so this is the one field of the row that can be absent, and a
+   // consumer reading it has to branch on null instead of on a missing key.
+   // sourceAccountId is still there, so the row stays identifiable.
+   sourceAccountName: row.sourceAccountName ?? null,
   })),
   totalRows: Number(total.rows[0]?.total_rows ?? 0),
  };
