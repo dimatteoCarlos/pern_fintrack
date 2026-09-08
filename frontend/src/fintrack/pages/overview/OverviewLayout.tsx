@@ -101,6 +101,13 @@ function OverviewLayout() {
          header's flow by CSS: the header is positioned from a constant height,
          so a child adding to it would move every absolute box below.
 
+         No surface prop, so it takes the default the budget board also takes:
+         'light' names the surface it SITS ON, which is .layout__header painting
+         --light, and it paints the dark-filled pill with the cream label that
+         reads on it. It used to pass 'dark', the variant built for a pill that
+         lands on the page's own ground - the wrong half of the pair for a
+         control the CSS below keeps inside the white header.
+
          The arrows are the shared component's, behind its opt-in prop, so the
          bounds are held in one place. currentMonth is the ceiling the server
          raises its 422 against — a local wrapper holding a second copy of it
@@ -108,7 +115,6 @@ function OverviewLayout() {
      <MonthPicker
       month={referenceMonth}
       currentMonth={currentMonth}
-      surface='dark'
       withSteppers
       isLoading={isLoading}
       onSelect={selectMonth}

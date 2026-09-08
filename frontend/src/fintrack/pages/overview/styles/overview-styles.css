@@ -47,12 +47,24 @@
    badge and both arrows in .monthStepper, and the skeleton is wrapped with them,
    so the same box exists before the first month arrives.
 
+   translate(-50%, -100%) and not -50%, which is the whole of the fix for a
+   month that read as sitting on a black band. At -50% the pill was CENTRED on
+   the header's bottom edge, so its upper half sat on the white header and its
+   lower half on the page's own dark ground - one control on two grounds, and
+   the dark half is what the reader sees behind the label. At -100% its bottom
+   edge lands on that same edge and the pill sits wholly inside the header.
+
+   No length is named on either axis, so the pill follows the band rather than a
+   measurement of it, and the header's box does not grow: it is absolute with no
+   declared height, so padding to reserve the space would paint it over the hero
+   instead of pushing the hero down.
+
    z-index because the hero is painted after this in document order. */
 .overviewLayout .headerContent__container > .monthStepper {
  position: absolute;
  top: 100%;
  left: 50%;
- transform: translate(-50%, -50%);
+ transform: translate(-50%, -100%);
  z-index: 2;
 }
 
