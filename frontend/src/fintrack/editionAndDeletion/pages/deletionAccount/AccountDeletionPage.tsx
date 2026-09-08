@@ -301,7 +301,12 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
    //No impact REPORT
     if (affectedAccountReport.length === 0) {
      // console.log('no report');
-      return <NoImpactReportUI t={translateText} />;
+      return (
+        <NoImpactReportUI
+          isProjectionShown={isAnnulmentOffered}
+          t={translateText}
+        />
+      );
     }
 
     //Impact REPORT exists
@@ -311,6 +316,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
         totalNetAdjustmentAmount={totalNetAdjustmentAmount}
         unattributedAmount={unattributedAmount}
         unattributedTransactionCount={unattributedTransactionCount}
+        isProjectionShown={isAnnulmentOffered}
         t={translateText}
       />
     );
@@ -318,6 +324,12 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
 
   //Get report title depending on report content
   const getReportTitle = () => {
+    // The annulment's two titles both announce an impact, which is the right
+    // word only while the annulment is the operation on offer. Under CLOSE the
+    // section is information about the account and says so.
+    if (!isAnnulmentOffered) {
+      return translateText('relatedAccountsHeading');
+    }
     if (affectedAccountReport.length === 0) {
       return translateText('reportTitleNoImpact');
     }
@@ -428,26 +440,16 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
             </summary>
 
             <div className='account-relations__body'>
-              <p className='account-relations__note'>
-                {translateText('relatedAccountsNote')}
-              </p>
+              {isAnnulmentOffered && (
+                <p className='account-relations__note'>
+                  {translateText('relatedAccountsNote')}
+                </p>
+              )}
 
               <h3 className='content-title'>{getReportTitle()}</h3>
 
               {renderReportContent()}
 
-              {/* The annulment runs from here, where its own projection is on
-                  screen. Offered only while the balance refuses the close -
-                  it is the alternative to closing, not a step towards it. */}
-              {isAnnulmentOffered && !isLoadingReport && !reportError && (
-                <div className='action-section'>
-                  <ProceedButtonUI
-                    onClick={() => setIsModalOpen(true)}
-                    t={translateText}
-                    disabled={isExecutingDeletion}
-                  />
-                </div>
-              )}
             </div>
           </details>
 
@@ -484,6 +486,21 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
               <p className='deletion-methods-blocked' role='note'>
                 {translateText('closeOnlyBlockedNotice')}
               </p>
+            )}
+
+            {/* THE OTHER ROUTE, directly under the notice that says why it is
+                here. It used to sit inside the account-relations section,
+                which the owner asked to be information about the account -
+                and it sat above this notice, so the button arrived before its
+                reason. Offered only while the balance refuses the close. */}
+            {isAnnulmentOffered && !isLoadingReport && !reportError && (
+              <div className='action-section'>
+                <ProceedButtonUI
+                  onClick={() => setIsModalOpen(true)}
+                  t={translateText}
+                  disabled={isExecutingDeletion}
+                />
+              </div>
             )}
 
             <div className='deletion-methods-actions'>

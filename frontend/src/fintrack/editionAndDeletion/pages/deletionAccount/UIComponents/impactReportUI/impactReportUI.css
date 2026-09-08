@@ -50,6 +50,17 @@
 
 }
 
+/* THE SAME BLOCK, READ AS INFORMATION. Red states a consequence, and under
+   CLOSE there is none to state: no balance in the table changes. Built on the
+   feedback-info triad of tokens.css, the same one .deletion-methods-blocked
+   uses on the page above, so the two informational blocks on this screen
+   agree with each other. */
+.impact-report-warning--informational {
+  background: var(--color-feedback-info-surface);
+  border-color: var(--color-feedback-info-border);
+  color: var(--color-feedback-info-content);
+}
+
 .impact-warning-title {
   font-weight: 600;
   margin-bottom: 0.25rem;
