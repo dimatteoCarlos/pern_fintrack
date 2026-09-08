@@ -3066,6 +3066,23 @@ so far"). The erasure has no such filter:
   `recordClosureSettlement.js:187` and `:216`, and
   `prepareTransactionOption.js:23`. All seven write `'complete'`, so the count
   changes and the conclusion does not.
+- **None of the seven takes the status as a parameter.** Every one writes
+  `status: 'complete'` as a literal inside an object body, so no caller can pass
+  a different value through any existing path. A second status therefore cannot
+  arrive by configuration or by a caller's argument: it needs an edit to one of
+  those seven files, or a new insert path that bypasses all of them. Both are
+  changes a reviewer sees, which is what makes the routing in the last bullet of
+  this case workable.
+- **`prepareTransactionOption.js:23` is a shared builder, but not of ordinary
+  movements.** Its own header calls it a standardized transaction option object
+  for database insertion, and its six call sites are all account creation -
+  `accountCreationController.js:393`, `:406`, `:928`, `:940` and
+  `accountCategoryCreationcontroller.js:485`, `:497` - so what it builds is the
+  opening and funding legs. Ordinary movements do not pass through it:
+  `transactionController.js:823-826` and `:864-868` build their two option
+  objects inline. Stated because the relayed description of this file as the
+  central writer for ordinary movements would send a future author to the wrong
+  file.
 - **No other value has ever existed.** The migration session queried the
   distinct values across four databases on 2026-09-08 and found `'complete'`
   alone: 785 rows on `fintrack_prod_data`, the untouched 2026-08-21 dump, 780 on
