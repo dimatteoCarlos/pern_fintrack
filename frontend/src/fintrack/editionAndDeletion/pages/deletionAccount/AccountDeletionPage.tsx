@@ -359,6 +359,11 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
             actionKey={
               CLOSE_IS_THE_ONLY_METHOD ? 'closeAccountAction' : 'rtaDeletionAction'
             }
+            titleKey={
+              CLOSE_IS_THE_ONLY_METHOD
+                ? 'closeOnlyDetailsTitle'
+                : 'accountDetailsTitle'
+            }
             t={translateText}
             // showStatusIndicator
           />
@@ -403,7 +408,11 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
               )}
               <button
                 type='button'
-                className='deletion-method-button deletion-method-button--close'
+                className={`deletion-method-button deletion-method-button--close${
+                  CLOSE_IS_THE_ONLY_METHOD
+                    ? ' deletion-method-button--only'
+                    : ''
+                }`}
                 onClick={() => setIsCloseModalOpen(true)}
                 aria-label={translateText('closeAccountTriggerButton')}
               >

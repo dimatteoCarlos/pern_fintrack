@@ -137,6 +137,7 @@ reportTitleWithImpact:string;
  // (deletionMethodPolicy.ts). Separate keys rather than edits to the four
  // above, so turning the flag off restores the wording with it.
  closeOnlyPageTitle: string;
+ closeOnlyDetailsTitle: string;
  closeOnlySectionTitle: string;
  closeOnlySectionDescription: string;
  closeAccountAction: string;
@@ -333,6 +334,7 @@ reportTitleWithImpact:"Impact on Affected Accounts",
   otherMethodsSectionDescription: "Prefer not to run the annulment above? Deactivate the account instead, or erase it permanently without reversing its impact on other accounts.",
 
   closeOnlyPageTitle: "Close Account",
+  closeOnlyDetailsTitle: "Account to Close",
   closeOnlySectionTitle: "Close this account",
   closeOnlySectionDescription: "Closing removes the account and keeps its history: every movement that names it stays readable, under the same name it had. The balance must be zero first.",
   closeAccountAction: "Close (the account goes, its history stays)",
@@ -484,6 +486,7 @@ totalNetAdjustment: 'Ajuste Neto Total:',
   otherMethodsSectionDescription: "¿Prefiere no ejecutar la anulación anterior? Desactive la cuenta en su lugar, o elimínela de forma permanente sin revertir su impacto en otras cuentas.",
 
   closeOnlyPageTitle: "Cierre de Cuenta",
+  closeOnlyDetailsTitle: "Cuenta a Cerrar",
   closeOnlySectionTitle: "Cerrar esta cuenta",
   closeOnlySectionDescription: "El cierre elimina la cuenta y conserva su historia: todo movimiento que la nombra sigue siendo legible, con el nombre que tenía. El saldo debe estar en cero primero.",
   closeAccountAction: "Cierre (la cuenta se va, su historia queda)",
