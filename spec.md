@@ -30,7 +30,13 @@ PERN_FINTRACK is a full-stack financial tracking application built on the PERN s
 
 ### 4. Communication Standards
 
+The operative rules live in `CLAUDE.md`, section "Answering the Developer". This
+section is the summary; when the two disagree, `CLAUDE.md` wins.
+
 - Explanations must be clear, direct, and concise. No verbosity, no restating what the code already shows, no filler preamble.
+- Actions lead: what was done and what is pending, before any reasoning.
+- No metaphors. Name the file, the function, the column, the constant — a figure of speech replaces the mechanism with a picture that cannot be checked against the code.
+- Use the identifiers the code uses, not paraphrases of them. A paraphrase cannot be grepped.
 - State the change, the reason it is needed, and the effect. Nothing else.
 - One edit per intent. Do not mix cosmetic changes (quote style, spacing) into a functional fix — it hides the real change in noise.
 

@@ -132,6 +132,16 @@ export const url_movement_transaction_record: string =
   BASE_URL_APP + 'transaction/transfer-between-accounts';
 
 //=======================================
+//THE OVERVIEW PAGE, one request for the whole screen
+//GET http://localhost:5078/api/fintrack/overview/?month=YYYY-MM
+//
+//month is optional and past-only. Omitted, the server resolves the current month
+//on the owner's calendar; the response reports which month it served either way.
+//The handler wraps its result as { status, message, data }, unlike the budget
+//endpoints — overviewApi.ts unwraps it.
+export const url_get_overview: string = BASE_URL_APP + 'overview';
+
+//=======================================
 //endpoints for OVERVIEWLAYOUT page
 //endpoint:  http://localhost:5000/api/fintrack/dashboard/balance/type
 // export const url_get_total_account_balance_by_type: string =

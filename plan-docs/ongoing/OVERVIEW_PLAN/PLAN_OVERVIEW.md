@@ -46,8 +46,8 @@
 > "start" means:** the backend answers and **no screen asks.** No frontend file
 > calls either Overview route. So the work in front of the module is not the
 > backend of §5 and §6 — it is a first screen, over a payload that already
-> exists. The map of this folder and the consolidated register of open decisions
-> are in `OVERVIEW_BRIEF_2026-09-04.md` and at the end of `OVERVIEW_DECISIONS.md`.
+> exists. The map of this folder is in `OVERVIEW_PLAN.md`, section 6, and the
+> consolidated register of open decisions at the end of `OVERVIEW_DECISIONS.md`.
 
 **Written 2026-08-20.** `plan-docs/ongoing/` is re-included by `.gitignore:123`: this file is versioned.
 

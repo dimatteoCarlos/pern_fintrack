@@ -1,254 +1,155 @@
-// frontend/src/pages/overview/OverviewLayout.tsx
-import { useEffect, useMemo, useState } from 'react';
+// frontend/src/fintrack/pages/overview/OverviewLayout.tsx
+//
+// The three figures at the top of Overview, for one month.
+//
+// It used to issue five requests to /dashboard/balance/type and add the answers
+// up here: three of them fed a net worth computed in this file, and income and
+// expenses were ACCOUNT BALANCES over all time — the cumulative income ever
+// received and the cumulative spend ever recorded, with no period at all. One
+// request to /overview replaces all five, and the arithmetic moves to the
+// service that owns it, so the figure on this screen and the figure on a domain
+// screen cannot disagree.
+//
+// /dashboard is untouched and still answers: the two aggregates run side by side
+// while the frontend switches screen by screen (D6).
+
+import { useCallback, useEffect } from 'react';
+import { Outlet, useSearchParams } from 'react-router-dom';
 
 import { BigBoxResult } from './components/BigBoxResult.tsx';
 import { TitleHeader } from '../../general_components/titleHeader/TitleHeader.tsx';
+import MonthPicker from '../../general_components/monthPicker/MonthPicker.tsx';
 import CoinSpinner from '../../loader/coin/CoinSpinner.tsx';
+import { useOverviewStore } from '../../stores/useOverviewStore.ts';
+
 import './styles/overview-styles.css';
-import { MessageToUser } from '../../general_components/messageToUser/MessageToUser.tsx';
-// import Overview from './Overview.tsx';
 
-import { url_get_total_account_balance_by_type } from '../../../urlConfig.ts';
-
-import {
-  BalanceBankRespType,
-  BalanceIncomeRespType,
-  DebtorRespType,
-} from '../../types/responseApiTypes.ts';
-
-import { useFetch } from '../../hooks/useFetch.ts';
-import { Outlet } from 'react-router-dom';
 //==================
 //==MAIN COMPONENT==
 //==================
 function OverviewLayout() {
-  //Saving Goals
-  //--states
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [lastErrorMessage, setLastErrorMessage] = useState<string | null>(null);
+ // The page's single request. This header and every block the Outlet renders are
+ // drawn from it, which is why it is issued here rather than per component.
+ const hero = useOverviewStore((state) => state.hero);
+ const domainCards = useOverviewStore((state) => state.domainCards);
+ const referenceMonth = useOverviewStore((state) => state.referenceMonth);
+ const currentMonth = useOverviewStore((state) => state.currentMonth);
+ const isLoading = useOverviewStore((state) => state.isLoading);
+ const error = useOverviewStore((state) => state.error);
+ const fetchOverview = useOverviewStore((state) => state.fetchOverview);
 
-  //data fetching balance of account type income_source and category_budget
-  const {
-    apiData: incomeBalanceApiData,
-    isLoading: incomeBalanceIsLoading,
-    error: incomeBalanceError,
-    // status: incomeBalanceStatus,
-  } = useFetch<BalanceIncomeRespType>(
-    `${url_get_total_account_balance_by_type}/?type=income_source`,
-  );
-  // console.log(
-  // '🚀 ~ OverviewLayout ~ incomeBalanceApiData:',JSON.stringify({
-  // incomeBalanceApiData,
-  //   incomeBalanceError,
-  //   // incomeBalanceStatus
-  // })
-  // );
-  const {
-    apiData: expenseBalanceApiData,
-    isLoading: expenseBalanceIsLoading,
-    error: expenseBalanceError,
-    // status: expenseBalanceStatus,
-  } = useFetch<BalanceIncomeRespType>(
-    `${url_get_total_account_balance_by_type}/?type=category_budget`,
-  );
-  // console.log(
-  //   '🚀 ~ OverviewLayout ~ expenseBalanceApiData:',JSON.stringify({
-  //   // expenseBalanceApiData,
-  //   // expenseBalanceError,
-  //   expenseBalanceStatus})
-  // );
+ // The month lives in the URL, the convention the budget and pocket boards
+ // already use. It is not held in state here: the account and level-3
+ // destinations are routes declared BESIDE this layout (App.tsx:342-354), so a
+ // month in state would die the moment one of them is opened.
+ const [searchParams, setSearchParams] = useSearchParams();
+ const monthParam = searchParams.get('month');
 
-  //--Calculation of Net Worth-----------
-  //--bank account total balance
-  const {
-    apiData: bankBalanceApiData,
-    isLoading: bankBalanceIsLoading,
-    error: bankBalanceError,
-    // status: bankBalanceStatus,
-  } = useFetch<BalanceBankRespType>(
-    `${url_get_total_account_balance_by_type}/?type=bank`,
-  );
-  //  console.log(
-  //   '🚀 ~ OverviewLayout ~ bankBalanceApiData:',JSON.stringify({
-  //   // bankBalanceApiData,
-  //   // bankBalanceIsLoading,
-  //   // bankBalanceError,
-  //   bankBalanceStatus,})
-  //     );
+ // Absent, nothing is sent and the server resolves the current month on the
+ // owner's calendar. Only a month the reader stepped to ever travels.
+ useEffect(() => {
+  fetchOverview(monthParam ?? undefined);
+ }, [fetchOverview, monthParam]);
 
-  //--investment account total balance
-  const {
-    apiData: investmentBalanceApiData,
-    isLoading: investmentBalanceIsLoading,
-    error: investmentBalanceError,
-    // status: investmentBalanceStatus,
-  } = useFetch<BalanceBankRespType>(
-    `${url_get_total_account_balance_by_type}/?type=investment`,
-  );
-  //  console.log(
-  //   '🚀 ~ OverviewLayout ~ investmentBalanceApiData:',JSON.stringify({
-  //   // investmentBalanceApiData,
-  //   // investmentBalanceIsLoading,
-  //   // investmentBalanceError,
-  //   investmentBalanceStatus,})
-  // );
-  //--debtor accounts total balance
-  const {
-    apiData: debtorBalanceApiData,
-    isLoading: debtorBalanceIsLoading,
-    error: debtorBalanceError,
-    // status: debtorBalanceStatus,
-  } = useFetch<DebtorRespType>(
-    `${url_get_total_account_balance_by_type}/?type=debtor`,
-  );
-  // console.log(
-  //     '🚀 ~ OverviewLayout ~ debtorBalanceApiData:',
-  //  JSON.stringify({
-  //     // debtorBalanceApiData,
-  //     debtorBalanceIsLoading,
-  //     // debtorBalanceError,
-  //     debtorBalanceStatus,})
-  //   );
-  //-------------------------
-  //income account balance is negative (withdraws) and expense account balance is positive (deposits)
-  const { netWorth, totalIncome, totalExpense } = useMemo(() => {
-    //--Parameters to render into bubble info
-    // No || 0 default on any of the five: it collapsed two different
-    // answers into the same figure. A request that never answered leaves
-    // apiData undefined and Number(undefined) is NaN, which now survives to
-    // asFigure and prints a dash; a type the user genuinely holds none of
-    // answers total_balance null and Number(null) is 0, which still prints
-    // zero because that zero is true. The default printed the first as the
-    // second, so a dead request stated the user holds nothing.
-    // Negating turns an empty income into -0, which formats as -$0.00, so it
-    // is normalised the way netWorthRaw already is below.
-    const totalIncomeRaw = -Number(incomeBalanceApiData?.data?.total_balance);
-    const totalIncome = totalIncomeRaw == 0 ? 0 : totalIncomeRaw;
+ // Replaced, not pushed: the month is the scope of the page, not a step the back
+ // button should walk through one month at a time.
+ //
+ // Merged rather than written whole, so a query parameter another block owns is
+ // not cleared by picking a month.
+ const selectMonth = useCallback(
+  (month: string) => {
+   setSearchParams(
+    (previous) => {
+     const next = new URLSearchParams(previous);
+     next.set('month', month);
+     return next;
+    },
+    { replace: true },
+   );
+  },
+  [setSearchParams],
+ );
 
-    // Number() here for the same reason as the other four: without it the
-    // value reaches asFigure as whatever the response carried, and a string
-    // is not NaN, so a malformed figure would print instead of blanking.
-    const totalExpense = Number(expenseBalanceApiData?.data?.total_balance);
+ // The same argument the effect sends, so the button asks for the month on
+ // screen and not for whatever the server would resolve today.
+ const retry = useCallback(() => {
+  fetchOverview(monthParam ?? undefined);
+ }, [fetchOverview, monthParam]);
 
-    //--Parameters to calculate net worth
-    // NaN propagates through the sum on purpose: net worth missing one of
-    // its three components is not the user's net worth, and publishing the
-    // other two as the whole understates it silently.
-    const totalBankBalance = Number(bankBalanceApiData?.data?.total_balance);
+ //==================================
+ // null and never 0: a figure that has not arrived is not a figure of zero, and
+ // BigBoxResult renders null as a dash. Both sources are read from the payload
+ // and nothing is added up here.
+ //
+ // No negation on income. The legacy figure was the income_source account
+ // balance, which is a sum of WITHDRAW rows and therefore negative, so this file
+ // flipped its sign. The card publishes the month's income as a flow, and
+ // flipping a flow would report every month's income as a loss.
+ const bigScreenInfo = [
+  { title: 'net worth', amount: hero?.netWorth ?? null },
+  { title: 'income', amount: domainCards?.income.totalAmount ?? null },
+  { title: 'expenses', amount: domainCards?.expense.totalAmount ?? null },
+ ];
 
-    const totalInvestmentBalance = Number(
-      investmentBalanceApiData?.data?.total_balance,
-    );
+ return (
+  <main className='overviewLayout '>
+   <div className='layout__header'>
+    <div className='headerContent__container '>
+     <TitleHeader />
 
-    const totalDebtorBalance = Number(
-      debtorBalanceApiData?.data?.total_debt_balance,
-    );
-    // console.log("🚀 ~ operatingProfit:", (totalIncome - totalExpense)==0?0:totalIncome-totalExpense;)
+     {/* Same level the budget and pocket boards put it at, floated out of the
+         header's flow by CSS: the header is positioned from a constant height,
+         so a child adding to it would move every absolute box below.
 
-    const netWorthRaw =
-      +totalBankBalance + totalInvestmentBalance + totalDebtorBalance;
+         The arrows are the shared component's, behind its opt-in prop, so the
+         bounds are held in one place. currentMonth is the ceiling the server
+         raises its 422 against — a local wrapper holding a second copy of it
+         is how a forward arrow comes to step past the month that exists. */}
+     <MonthPicker
+      month={referenceMonth}
+      currentMonth={currentMonth}
+      surface='dark'
+      withSteppers
+      isLoading={isLoading}
+      onSelect={selectMonth}
+     />
+    </div>
+   </div>
 
-    // console.log("🚀 ~ OverviewLayout ~ netWorthRaw:", netWorthRaw, totalBankBalance,
-    // totalInvestmentBalance,
-    // totalDebtorBalance)
+   {isLoading && (
+    <div
+     className='loader__container'
+     style={{ position: 'absolute', left: '50%', top: '20%', zIndex: '1' }}
+    >
+     <CoinSpinner />
+    </div>
+   )}
 
-    const netWorth = netWorthRaw == 0 ? 0 : netWorthRaw;
+   {/* The failure takes the figures' own place, the way the pocket and debts
+       boards already answer. It used to be a red line that erased itself after
+       two seconds while the figures it contradicted stayed on screen, so the
+       reader was left with three numbers and no way to know one request had
+       failed. No figure survives a failed request, so no figure is drawn. */}
+   {error ? (
+    <div className='total__container flex-col-sb boardState' role='alert'>
+     <p className='boardState__text'>The overview could not be loaded.</p>
 
-    return { totalIncome, totalExpense, netWorth };
-  }, [
-    incomeBalanceApiData?.data?.total_balance,
-    expenseBalanceApiData?.data?.total_balance,
-    bankBalanceApiData?.data?.total_balance,
-    debtorBalanceApiData?.data?.total_debt_balance,
-    investmentBalanceApiData?.data?.total_balance,
-  ]);
+     {/* The reason, in the words the failure arrived with. A month later than
+         the current one answers 422 with a message naming the ceiling, and a
+         single generic sentence here would throw that away. */}
+     <p className='boardState__detail'>{error}</p>
 
-  //---show error message
-  useEffect(() => {
-    const error =
-      bankBalanceError ||
-      expenseBalanceError ||
-      incomeBalanceError ||
-      investmentBalanceError ||
-      debtorBalanceError;
+     <button type='button' className='boardState__retry' onClick={retry}>
+      Try again
+     </button>
+    </div>
+   ) : (
+    <BigBoxResult bigScreenInfo={bigScreenInfo} />
+   )}
 
-    if (error && error !== lastErrorMessage) {
-      setErrorMessage(error);
-      setLastErrorMessage(error);
-
-      const timer = setTimeout(() => {
-        setErrorMessage(null);
-
-        //allows to show the same error later
-        setTimeout(() => {
-          setLastErrorMessage(null);
-        }, 1000);
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [
-    incomeBalanceError,
-    expenseBalanceError,
-    bankBalanceError,
-    investmentBalanceError,
-    debtorBalanceError,
-    lastErrorMessage,
-  ]);
-
-  //==================================
-  // A figure the page could not compute is published as null, never as 0: the
-  // three rows are the user's own money, and 0 states they hold nothing.
-  //
-  // The guard used to read totalIncome on all three rows, so a broken expense
-  // printed as real money and a valid expense blanked whenever income broke.
-  const asFigure = (amount: number) => (Number.isNaN(amount) ? null : amount);
-
-  const bigScreenInfo = [
-    { title: 'net worth', amount: asFigure(netWorth) },
-    { title: 'income', amount: asFigure(totalIncome) },
-    { title: 'expenses', amount: asFigure(totalExpense) },
-  ];
-  //loader for any loading process
-  const isAnyLoading =
-    bankBalanceIsLoading ||
-    investmentBalanceIsLoading ||
-    incomeBalanceIsLoading ||
-    expenseBalanceIsLoading ||
-    debtorBalanceIsLoading;
-
-  return (
-    <main className='overviewLayout '>
-      <div className='layout__header'>
-        <div className='headerContent__container '>
-          <TitleHeader />{' '}
-        </div>
-      </div>
-
-      {isAnyLoading && (
-        <div
-          className='loader__container'
-          style={{ position: 'absolute', left: '50%', top: '20%', zIndex: '1' }}
-        >
-          <CoinSpinner />
-        </div>
-      )}
-
-      <BigBoxResult bigScreenInfo={bigScreenInfo} />
-
-      {errorMessage && (
-        <MessageToUser
-          isLoading={false}
-          // isLoading={isLoading}
-          messageToUser={errorMessage ?? ''}
-          error={errorMessage}
-          variant={'form'}
-        />
-      )}
-
-      <Outlet />
-    </main>
-  );
+   <Outlet />
+  </main>
+ );
 }
 
 export default OverviewLayout;

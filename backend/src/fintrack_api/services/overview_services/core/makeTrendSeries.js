@@ -20,11 +20,22 @@
  * exclude empty months because they answer "how much do I need in an ACTIVE
  * month".
  *
+ * points cuts the series to its LAST n months, and it exists because one fetch
+ * now serves two lengths. A request carrying an analysis reads the long window
+ * once, and the card's six-point chart is the tail of that same array rather
+ * than a second query over a narrower range — so the two series cannot report
+ * different values for a month they both contain.
+ *
+ * Taken from the end and never from the start: the series is ascending and the
+ * reference month is its last point, which is the one point both lengths must
+ * share.
+ *
  * @param {Array<{month: string, totalAmount: number}>} months - ascending, no gaps
+ * @param {number} [points] - how many trailing months to publish; all of them when omitted
  * @returns {Array<{month: string, value: number}>}
  */
-export const makeTrendSeries = (months) =>
- months.map((entry) => ({
+export const makeTrendSeries = (months, points) =>
+ (points === undefined ? months : months.slice(-points)).map((entry) => ({
   month: entry.month.slice(0, 7),
   value: entry.totalAmount,
  }));

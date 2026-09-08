@@ -59,16 +59,21 @@ const RESPONSE = (res, status, message, data = null) => {
 //
 // It answers a different question from the budget module, not the same one less
 // precisely:
-//  - budgetAccount is cba.budget, the legacy column. The budget endpoints price
-//    from budget_policy_allocations, which carry a frequency and a validity
-//    range, so the two disagree for anything but an unedited monthly budget.
+//  - budgetAccount is cba.budget, the legacy column. The budget module prices
+//    from budget_monthly_allocations, one row per calendar month, so the two
+//    disagree for any budget edited after the month it was first set.
 //  - balanceAccount is the account balance, with no period. remainingBudget in
 //    the new system is the accumulated budget minus what was spent inside the
 //    requested window.
 //  - Math.round drops the cents that the DECIMAL(15,2) column stores.
 //
-// Replacement: GET /api/fintrack/budget/summary, which returns remainingBudget
-// and executionPercentage for an explicit period.
+// Replacement: POST /api/fintrack/budget/accounts/status, which returns
+// remainingBudget and executionPercentage for an explicit period. /summary was
+// removed; budgetRoutes.js records that it answered the same question.
+// Retired 2026-09-07: both call sites are commented out, the live one at the
+// account detail and the unreachable one inside getCategoryBudgetFullData. The
+// function is kept so the defect it documents stays readable beside the code
+// that replaced it.
 const calculateBudgetMetrics = (balanceAccount, budgetAccount) => {
   const remain = Math.round(
     parseFloat(budgetAccount) - parseFloat(balanceAccount),
@@ -230,10 +235,16 @@ const getCategoryBudgetFullData = async (userId, accountId) => {
     }
 
     const accountData = accountResult.rows[0];
-    const { remain, statusAlert } = calculateBudgetMetrics(
-      parseFloat(accountData.account_balance),
-      parseFloat(accountData.budget),
-    );
+    // Same defect as the live site below, on a route that is commented out at
+    // accountRoutes.js:98. Kept commented so re-enabling the route does not
+    // re-enable the subtraction with it. This statement also selects ua.*, so
+    // the value it read was the stored column and not the derivation.
+    // const { remain, statusAlert } = calculateBudgetMetrics(
+    //   parseFloat(accountData.account_balance),
+    //   parseFloat(accountData.budget),
+    // );
+    const remain = null;
+    const statusAlert = null;
 
     // 📊 GET TRANSACTIONS DATA
     const transactionsData = await getAccountTransactions(userId, accountId);
@@ -973,18 +984,32 @@ export const getAccountById = async (req, res, next) => {
     );
 
     // 🧮 ENRICH CATEGORY ACCOUNT WITH BUDGET CALCULATIONS
-    //budget remain and status alert for category_budget account type
-    if (account_type_name.trim().toLowerCase() === 'category_budget') {
-      const { remain, statusAlert } = calculateBudgetMetrics(
-        parseFloat(data.accountList[0].account_balance),
-        parseFloat(data.accountList[0].budget),
-      );
-
-      data.accountList[0].remain = remain;
-      data.accountList[0].statusAlert = statusAlert;
-
-      // console.log('remain and statusAlert',data.accountList[0].remain, data.accountList[0].statusAlert,'data', data )
-    }
+    //
+    // Commented out rather than corrected, because the subtraction has no
+    // correct form on this endpoint. It compared two figures that do not share
+    // a period: the account's balance is the accumulated spend since the
+    // account opened, since movementInputHandler.js declares the expense
+    // movement as bank -> category_budget and the category account's leg is a
+    // deposit; category_budget_accounts.budget is the legacy plan column that
+    // migration 010 kept, and the plan that varies by month lives in
+    // budget_monthly_allocations. On any account used for more than a month,
+    // remain came out negative and statusAlert stayed true for good.
+    //
+    // The figure for a stated period is GET /api/fintrack/budget/summary, which
+    // returns remainingBudget and executionPercentage. Nothing renders these two
+    // fields — every call site in the frontend is already commented out — and
+    // responseApiTypes.ts declares both optional, so removing them from the
+    // payload breaks no type.
+    //
+    // if (account_type_name.trim().toLowerCase() === 'category_budget') {
+    //   const { remain, statusAlert } = calculateBudgetMetrics(
+    //     parseFloat(data.accountList[0].account_balance),
+    //     parseFloat(data.accountList[0].budget),
+    //   );
+    //
+    //   data.accountList[0].remain = remain;
+    //   data.accountList[0].statusAlert = statusAlert;
+    // }
     //----------------------------
     // 🎯 ENRICH A CASH-HOLDING ACCOUNT WITH ITS POCKET COMMITMENTS
     //
@@ -1142,6 +1167,10 @@ export const getAccountsByCategory = async (req, res, next) => {
     }
     //------------------------------------
     //--GET ACCOUNTS INFO BY CATEGORY NAME
+    // The alias order is load-bearing: ua.* already ships the stored
+    // account_balance, so this statement emits two columns of that name and the
+    // driver keeps the last one. Moving the derived expression above ua.* would
+    // silently serve the stored column instead.
     const accountsResult = await pool.query({
       text: `SELECT ua.*, ${DERIVED_BALANCE} AS account_balance, CAST(ua.Account_starting_amount AS FLOAT), cba.*,CAST(cba.budget AS FLOAT),
        cur.currency_code,act.account_type_name ,cnt.category_nature_type_name

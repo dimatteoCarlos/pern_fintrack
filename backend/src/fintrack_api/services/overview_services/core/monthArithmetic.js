@@ -60,8 +60,19 @@ export const monthEndDate = (month) => {
 // stability a visual series does not need.
 export const TREND_MONTHS = 6;
 
+// Thirteen points, and the reason the number is odd: the reference month is the
+// figure being judged and the twelve before it are what it is judged against, so
+// the month under study never enters its own baseline.
+//
+// The same span the monthly snapshot already averaged over. It used to be a
+// constant of the page service, which derived its own start month from the
+// reference one — a second place deriving a month bound, which is the defect
+// class the period end was just moved out of. One window resolves the period and
+// every reader takes its bounds from it.
+export const ANALYSIS_MONTHS = 13;
+
 /**
- * The three months every domain calculator reads from, derived once.
+ * The window every domain calculator reads from, derived once.
  *
  * A calculator that shifted these itself would be free to disagree with the
  * next one about how far back a trend reaches or which month a delta compares
@@ -72,11 +83,85 @@ export const TREND_MONTHS = 6;
  * prior month in the same series as the reference one, and a series long enough
  * for six points is no more expensive to fetch than one long enough for two.
  *
+ * periodEnd is the REFERENCE DATE and not the last day of the month. A closed
+ * month has them equal; a running one does not, and publishing the month end
+ * for a running month states that a flow covers days that have not happened.
+ * The contract puts it as an obligation rather than a preference: a figure that
+ * silently treats the running month as a whole one is not early, it is wrong.
+ *
+ * Two clocks reach this function and only one of them decides anything. The
+ * month comes from the database, as every other month in this module does; the
+ * day only refines a position inside a month already chosen, and it is clamped
+ * to that month's last day. So a disagreement between the two clocks — process
+ * skew, or a request that straddles midnight on the last day of a month — can
+ * cost a day at the edge and can never report a date outside the month served.
+ *
+ * analysisStart is the long window, and it is resolved here for the same reason
+ * trendStart is: two readers shifting their own months are two answers to how
+ * far back a series reaches. Every domain gets it whether or not it publishes a
+ * long series, because a window is the period of the request and not a menu each
+ * consumer picks from.
+ *
  * @param {string} referenceMonth - 'YYYY-MM-01', already checked against the ceiling
- * @returns {{referenceMonth: string, priorMonth: string, trendStart: string}}
+ * @param {string} currentMonth - 'YYYY-MM-01' on the owner's calendar, from the database
+ * @param {string} today - 'YYYY-MM-DD' on the owner's calendar
+ * @returns {{referenceMonth: string, currentMonth: string, priorMonth: string,
+ *   trendStart: string, analysisStart: string, periodStart: string,
+ *   periodEnd: string, isCurrentMonth: boolean}}
  */
-export const makeReportingWindow = (referenceMonth) => Object.freeze({
+export const makeReportingWindow = (referenceMonth, currentMonth, today) => {
+ if (!currentMonth || !today) {
+  throw new Error(
+   `makeReportingWindow needs the owner's current month and day, received: ${currentMonth}, ${today}`,
+  );
+ }
+
+ const monthEnd = monthEndDate(referenceMonth);
+ const isCurrentMonth = referenceMonth === currentMonth;
+
+ return Object.freeze({
+  referenceMonth,
+  // Carried out rather than consumed and dropped. It is the ceiling
+  // resolveWindowOr422 raises its 422 against, so a client that cannot read it
+  // discovers the bound only by asking for a month and being refused.
+  currentMonth,
+  priorMonth: shiftMonths(referenceMonth, -1),
+  trendStart: shiftMonths(referenceMonth, -(TREND_MONTHS - 1)),
+  analysisStart: shiftMonths(referenceMonth, -(ANALYSIS_MONTHS - 1)),
+  periodStart: referenceMonth,
+  periodEnd: isCurrentMonth && today < monthEnd ? today : monthEnd,
+  isCurrentMonth,
+ });
+};
+
+/**
+ * The part of the window a response publishes.
+ *
+ * The trend bounds stay inside: a client reading a series gets the month on
+ * every point of it, so priorMonth and trendStart would be the same months
+ * under a second name. What a client cannot derive is which month it was served
+ * when it named none, where inside that month the figures stop, and which month
+ * is the latest it may ask for.
+ *
+ * currentMonth is that last one, and isCurrentMonth does not cover it: the flag
+ * says whether the served month IS the ceiling and never says which month the
+ * ceiling is, so a client on any earlier month has no bound to offer. A month
+ * control computing it from the browser clock is the defect this module exists
+ * to remove.
+ *
+ * One definition for both endpoints. Two handlers each picking their own fields
+ * would be two answers to "what period is this", which is the question the
+ * whole window exists to answer once.
+ *
+ * @param {object} window - a window from makeReportingWindow
+ * @returns {{referenceMonth: string, currentMonth: string, periodStart: string,
+ *   periodEnd: string, isCurrentMonth: boolean}}
+ */
+export const servedWindow = ({
  referenceMonth,
- priorMonth: shiftMonths(referenceMonth, -1),
- trendStart: shiftMonths(referenceMonth, -(TREND_MONTHS - 1)),
-});
+ currentMonth,
+ periodStart,
+ periodEnd,
+ isCurrentMonth,
+}) =>
+ Object.freeze({ referenceMonth, currentMonth, periodStart, periodEnd, isCurrentMonth });

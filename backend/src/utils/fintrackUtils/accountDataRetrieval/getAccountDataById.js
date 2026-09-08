@@ -1,4 +1,39 @@
-//backend/utils/getAccountById/getAccountDataById.ts
+// backend/src/utils/fintrackUtils/accountDataRetrieval/getAccountDataById.js
+//
+// RETIRED — an unfinished draft that has never been able to run. It is commented
+// out rather than deleted, per the standing rule on superseded code.
+//
+// The live path it duplicates is getAccountById in getAccountController.js,
+// wired to GET /:accountId in accountRoutes.js.
+//
+// THREE FAULTS, ANY ONE OF WHICH STOPS IT
+//
+// 1. The pool import names "../../src/db/configDB". From this directory that
+//    resolves to src/utils/fintrackUtils/src/db/configDB, which does not exist;
+//    the module is at src/db/config/configDB.js. The specifier also carries no
+//    .js extension, which ESM requires. The file throws on load.
+// 2. getSpecificAccountQuery is called and never imported, and no module in the
+//    repository defines it. A ReferenceError, if the load ever succeeded.
+// 3. calculateBudgetMetrics is called and never imported either. Its only two
+//    copies are the module-local const in calculateBudgetMetrics.js, which
+//    exports nothing, and the one in getAccountController.js, now retired.
+//
+// AND THE FIGURE IT WOULD HAVE PUBLISHED IS WRONG
+//
+// The enrichment block subtracts an account balance from category_budget_accounts.budget.
+// A category_budget account's balance is accumulated spend over the account's
+// whole life: movementInputHandler.js declares the expense movement as
+// bank -> category_budget, so every spend deposits onto that account and no
+// movement takes it back down. budget is one month's plan. Subtracting a
+// lifetime total from a monthly figure yields a remainder that falls further
+// behind every month the account lives. Migration 010 moved the plan into
+// budget_monthly_allocations, one row per month, and the figure a caller wants
+// is served by GET /api/fintrack/budget/summary.
+//
+// The SELECT below also reads `ua.*`, which carries the stored account_balance
+// column instead of the ledger derivation (derivedBalance.js).
+
+/**
 
 // Service layer: fetches account data and enriches it based on account type
 // (for category_budget accounts: adds remain and statusAlert fields)
@@ -77,3 +112,4 @@ try{
     };
   }
 }
+*/

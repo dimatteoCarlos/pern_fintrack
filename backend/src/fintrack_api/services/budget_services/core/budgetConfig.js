@@ -8,10 +8,12 @@
 // with the code that read it.
 //
 // MONTHS_PER_PERIOD survives for exactly one reader, and not a budget one:
-// assertBudgetFrequenciesMatchConfig in initDatabase.js, the boot guard over the
-// budget_frequency_types seed. Both it and this file are removed by the
-// migration that drops the old budget tables (§9.4); until that migration runs
-// the table still exists and the guard still describes it truthfully.
+// assertBudgetFrequenciesMatchConfig in initDatabase.js, a boot guard that
+// nothing calls. No file in the chain creates the table it guards any more, and
+// a database still holds it only if its migrations table names
+// 012_backfill_budget_policies.sql, the file commit 3b72371f deleted on
+// 2026-08-12 — fintrack_dev names it, the production copy does not. So removing
+// the guard and this file is ordinary cleanup, with no migration to wait for.
 export const MONTHS_PER_PERIOD = {
   monthly: 1,
   quarterly: 3,

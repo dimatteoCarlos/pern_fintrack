@@ -62,6 +62,32 @@ export const ACCOUNT_CLOSURE_MOVEMENT_TYPE_ID = 10;
 export const ACCOUNT_CLOSURE_TRANSACTION_TYPE_ID = 6;
 
 /**
+ * The amount each movement contributes to a balance.
+ *
+ * Written once because it was written three times: the grouped builder, the
+ * running series and the correlated scalar expression each carried this CASE
+ * independently, so a change to the exclusion in one was invisible from the
+ * other two and nothing would have failed until two screens disagreed about
+ * one account.
+ *
+ * The exclusion is one ROW, not one movement type: only the credit leg that
+ * opens the account is dropped, because the account's opening amount is already
+ * in `account_starting_amount` and counting the leg would double it. The funding
+ * account's debit leg carries the same movement type and a NULL
+ * `opening_for_account_id`, so it stays in every sum.
+ *
+ * What still differs between the three is the cast and the handling of an
+ * account with no rows, and both differences are stated where they occur.
+ *
+ * @returns {string} - A CASE expression, to sit inside a SUM
+ */
+function movementAmountSql() {
+ return `CASE WHEN tr.movement_type_id = ${ACCOUNT_OPENING_MOVEMENT_TYPE_ID}
+                 AND tr.account_id = tr.opening_for_account_id
+            THEN 0 ELSE tr.amount END`;
+}
+
+/**
  * A common table expression naming, for every movement of one account, the
  * balance that account holds once that movement has been applied.
  *
@@ -160,9 +186,7 @@ export function userAccountBalancesCte(userIdPlaceholder = '$1') {
           CAST(
             ua.account_starting_amount
             + COALESCE(SUM(
-                CASE WHEN tr.movement_type_id = ${ACCOUNT_OPENING_MOVEMENT_TYPE_ID}
-                       AND tr.account_id = tr.opening_for_account_id
-                  THEN 0 ELSE tr.amount END
+                ${movementAmountSql()}
               ), 0)
           AS FLOAT) AS balance
         FROM
@@ -218,9 +242,7 @@ export function derivedAccountBalanceSql(accountAlias = 'ua', castAs = 'FLOAT') 
         SELECT CAST(
           ${accountAlias}.account_starting_amount
           + COALESCE(SUM(
-              CASE WHEN tr.movement_type_id = ${ACCOUNT_OPENING_MOVEMENT_TYPE_ID}
-                     AND tr.account_id = tr.opening_for_account_id
-                THEN 0 ELSE tr.amount END
+              ${movementAmountSql()}
             ), 0)
         AS ${castAs})
         FROM transactions tr
@@ -231,6 +253,24 @@ export function derivedAccountBalanceSql(accountAlias = 'ua', castAs = 'FLOAT') 
 /**
  * The series itself. Private, so the account id it reads is only ever one of the
  * two forms the exported builders construct.
+ *
+ * Two things differ from the grouped and scalar builders and both are
+ * deliberate, so neither is a drift to be corrected.
+ *
+ * FLOAT is fixed here rather than the caller's choice. Every consumer of this
+ * series publishes it as `account_balance_after_tr`, which
+ * MovementTransactionDataType declares as `number`; asking for NUMERIC would
+ * hand the driver's string to a field typed as a number. The scalar builder
+ * takes the cast from its caller because one of its callers does decimal
+ * arithmetic with the result, and no caller of this one does.
+ *
+ * No COALESCE, because a window SUM over the rows of a result set always has at
+ * least the current row and can never be NULL. An account with no rows yields
+ * no series rows at all, which is a different case, and it is handled by the
+ * readers rather than here: both return early on an empty list
+ * (getTransactionsForAccountById.js:443, getAccountController.js:157-172).
+ * In practice the case barely arises, since every account carries its own
+ * opening row from creation.
  *
  * @param {string} accountIdSql - A bind placeholder, or the ledger_account subquery
  * @returns {string}
@@ -243,9 +283,7 @@ function ledgerBody(accountIdSql) {
           CAST(
             ua.account_starting_amount
             + SUM(
-                CASE WHEN tr.movement_type_id = ${ACCOUNT_OPENING_MOVEMENT_TYPE_ID}
-                       AND tr.account_id = tr.opening_for_account_id
-                  THEN 0 ELSE tr.amount END
+                ${movementAmountSql()}
               ) OVER (
                 ORDER BY tr.transaction_actual_date ASC, tr.transaction_id ASC
                 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW

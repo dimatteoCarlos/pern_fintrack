@@ -32,6 +32,30 @@
  margin-inline: auto;
 }
 
+/* Out of the header's flow, the same way the budget and pocket boards carry it.
+   .layout__header is absolute with no declared height, so it grows with its
+   children while the hero below now sits in the normal flow: a stepper left in
+   the header's column would make the header taller and paint it over the hero
+   instead of pushing it down.
+
+   top: 100% resolves against .layout__header — .headerContent__container is
+   static, and .overviewLayout deliberately is not positioned — so the control
+   lands on the header's bottom edge and the transform straddles it. No length is
+   named, so the two bands can move with their tokens and this follows.
+
+   One selector and not the two the budget board needs: withSteppers wraps the
+   badge and both arrows in .monthStepper, and the skeleton is wrapped with them,
+   so the same box exists before the first month arrives.
+
+   z-index because the hero is painted after this in document order. */
+.overviewLayout .headerContent__container > .monthStepper {
+ position: absolute;
+ top: 100%;
+ left: 50%;
+ transform: translate(-50%, -50%);
+ z-index: 2;
+}
+
 /* The 4rem was clearance for the absolute hero and has nothing left to clear;
    the section below now sits one gap under it, like the other three boards. */
 .overviewLayout .content__presentation {

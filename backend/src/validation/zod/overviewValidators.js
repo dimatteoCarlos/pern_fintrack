@@ -14,6 +14,7 @@
 
 import { z } from 'zod';
 import { monthBound } from './budgetValidators.js';
+import { ANALYSIS_LEVELS } from '../../fintrack_api/services/overview_services/core/analysisLevels.js';
 
 // The six domains of §3 of the contract. A literal list rather than a catalog
 // read: a domain is a calculator this module either has or does not have, not a
@@ -41,6 +42,14 @@ export const OVERVIEW_DOMAINS = [
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
+
+// Recent activity keeps its own default page, and it is the size of the teaser
+// the page carries. A caller that sends no parameter at all gets exactly what
+// GET /overview publishes, so the endpoint can be adopted without the list
+// changing under the reader on the first request. The ceiling is the shared one:
+// the reason for a cap is that pageSize arrives from the client, and that reason
+// does not vary by endpoint.
+const DEFAULT_ACTIVITY_PAGE_SIZE = 5;
 
 /**
  * GET /overview/:domain
@@ -83,4 +92,57 @@ export const overviewDomainQuerySchema = z.object({
  }).max(MAX_PAGE_SIZE, {
   message: `pageSize must not exceed ${MAX_PAGE_SIZE}`,
  }).default(DEFAULT_PAGE_SIZE),
+ // The depth of the level-2 section, and the one query parameter with no
+ // default: absent means no analysis, so a client that has not been updated
+ // receives exactly the payload it received before this existed. The levels are
+ // imported and never restated — a second list of them here could only drift
+ // from the one the builders read.
+ //
+ // An unrecognised value answers 400 naming the key rather than being read as
+ // "no analysis". Asking for a depth this server does not have is a mistake, and
+ // silently serving a shallower payload would look like an empty result.
+ analysis: z.enum(ANALYSIS_LEVELS, {
+  message: `analysis must be one of: ${ANALYSIS_LEVELS.join(', ')}`,
+ }).optional(),
 }).strict();
+/**
+ * GET /overview/activity
+ * Query: from (optional), to (optional), page, pageSize
+ *
+ * The one section of the contract whose period the READER chooses. Every other
+ * figure of this module is bound to the reference month; recent activity answers
+ * "what do I want to read", which is a different question from "what happened in
+ * the month I am studying" and cannot be derived from it.
+ *
+ * Both bounds are optional and the default is UNBOUNDED, which is the behaviour
+ * the page's teaser already has: it answers what happened last, not what
+ * happened in the month being studied. A user reading a month from last year
+ * would otherwise open the section and find it empty.
+ *
+ * to is a month and it is INCLUSIVE — the whole of it, not its first day. Naming
+ * a month as an upper bound and getting one day of it back is the trap a caller
+ * cannot see, because the response looks like a real answer.
+ *
+ * The ordering check is a refine and not a service rule: from later than to is a
+ * contradiction inside the request, which is exactly what a schema can see, and
+ * it answers 400 rather than returning an empty page that looks like an owner
+ * with no movements.
+ */
+export const overviewActivityQuerySchema = z.object({
+ from: monthBound.optional(),
+ to: monthBound.optional(),
+ page: z.coerce.number().int().positive({
+  message: 'page must be a positive integer',
+ }).default(DEFAULT_PAGE),
+ pageSize: z.coerce.number().int().positive({
+  message: 'pageSize must be a positive integer',
+ }).max(MAX_PAGE_SIZE, {
+  message: `pageSize must not exceed ${MAX_PAGE_SIZE}`,
+ }).default(DEFAULT_ACTIVITY_PAGE_SIZE),
+}).strict().refine(
+ (query) => !query.from || !query.to || query.from <= query.to,
+ {
+  message: 'from must not be later than to',
+  path: ['from'],
+ },
+);

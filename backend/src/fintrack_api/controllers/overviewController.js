@@ -20,12 +20,14 @@
 // contract defines and this phase has not built.
 
 import {
+ overviewActivityQuerySchema,
  overviewDomainParamsSchema,
  overviewDomainQuerySchema,
  overviewPageQuerySchema,
 } from '../../validation/zod/overviewValidators.js';
 
 import { overviewPageService } from '../services/overview_services/services/overviewPageService.js';
+import { overviewActivityService } from '../services/overview_services/services/overviewActivityService.js';
 
 import { overviewExpenseService } from '../services/overview_services/services/overviewExpenseService.js';
 import { overviewIncomeService } from '../services/overview_services/services/overviewIncomeService.js';
@@ -33,11 +35,12 @@ import { overviewPnlService } from '../services/overview_services/services/overv
 import { overviewDebtService } from '../services/overview_services/services/overviewDebtService.js';
 import { overviewPocketService } from '../services/overview_services/services/overviewPocketService.js';
 import { overviewInvestmentService } from '../services/overview_services/services/overviewInvestmentService.js';
-import { makeReportingWindow } from '../services/overview_services/core/monthArithmetic.js';
+import { makeReportingWindow, servedWindow } from '../services/overview_services/core/monthArithmetic.js';
 import { getCurrentMonth } from '../services/budget_services/db/budgetTransactionRepository.js';
 import { pool } from '../../db/config/configDB.js';
 import { requireUserId } from '../../utils/authUtils/requireUserId.js';
 import { getUserTimeZone } from '../../utils/fintrackUtils/date-utils/getUserTimeZone.js';
+import { todayInZone } from '../../utils/fintrackUtils/date-utils/resolveZonedWindow.js';
 
 // Which calculator answers for which domain.
 //
@@ -109,7 +112,10 @@ const resolveWindowOr422 = async (res, timeZone, month) => {
   return null;
  }
 
- return makeReportingWindow(month ?? currentMonth);
+ // The day is read here and not inside the window builder so the whole request
+ // works from one instant: the reference date of the page and of every card it
+ // composes is the same day, even for a request that crosses midnight.
+ return makeReportingWindow(month ?? currentMonth, currentMonth, todayInZone(timeZone));
 };
 
 /** GET /api/fintrack/overview */
@@ -129,7 +135,12 @@ export async function getOverview(req, res, next) {
   res.status(200).json({
    status: 200,
    message: 'Overview retrieved successfully',
-   data,
+   // The window is attached here rather than composed by the service, and the
+   // same expression attaches it to the domain response below. The obligation
+   // is that the server reports the period it used and the client never infers
+   // it from its own clock; a payload built by six calculators that each named
+   // their own period could report six.
+   data: { ...data, window: servedWindow(window) },
   });
  } catch (error) {
   if (error.name === 'ZodError') {
@@ -149,7 +160,9 @@ export async function getOverviewDomain(req, res, next) {
   if (!userId) return;
 
   const { domain } = overviewDomainParamsSchema.parse(req.params);
-  const { month, page, pageSize } = overviewDomainQuerySchema.parse(req.query);
+  const { month, page, pageSize, analysis } = overviewDomainQuerySchema.parse(
+   req.query,
+  );
 
   const calculator = DOMAIN_CALCULATORS[domain];
 
@@ -168,12 +181,20 @@ export async function getOverviewDomain(req, res, next) {
   const window = await resolveWindowOr422(res, timeZone, month);
   if (!window) return;
 
-  const data = await calculator(pool, userId, { window, page, pageSize }, timeZone);
+  // analysis travels with the request rather than being resolved per domain:
+  // every calculator reads the same key, and one that has no level-2 section
+  // ignores it.
+  const data = await calculator(
+   pool,
+   userId,
+   { window, page, pageSize, analysis },
+   timeZone,
+  );
 
   res.status(200).json({
    status: 200,
    message: `Overview data for domain ${domain} retrieved successfully`,
-   data,
+   data: { ...data, window: servedWindow(window) },
   });
  } catch (error) {
   if (error.name === 'ZodError') {
@@ -181,6 +202,52 @@ export async function getOverviewDomain(req, res, next) {
   }
   // A repository raising createError carries its own status; anything without
   // one is unexpected and belongs to the error handler.
+  if (error.status) {
+   return res.status(error.status).json({ status: error.status, message: error.message });
+  }
+  next(error);
+ }
+}
+
+/**
+ * GET /api/fintrack/overview/activity
+ *
+ * No month ceiling, and that is a decision rather than an omission. The 422 the
+ * other two handlers raise exists because a report about a month that has not
+ * happened is not a report. This handler publishes no figure about a month: it
+ * filters rows that exist. A transaction can carry a future actual date in this
+ * schema, so refusing a future bound would make those rows unreadable while
+ * every balance already counts them.
+ *
+ * No reporting window either. The period here belongs to the reader and is
+ * independent of the month the page is reporting, so binding it to the owner
+ * calendar month would answer a question nobody asked.
+ */
+export async function getOverviewActivity(req, res, next) {
+ try {
+  const userId = requireUserId(req, res);
+  if (!userId) return;
+
+  const { from, to, page, pageSize } = overviewActivityQuerySchema.parse(req.query);
+
+  const timeZone = await getUserTimeZone(pool, userId);
+
+  const data = await overviewActivityService.getActivity(
+   pool,
+   userId,
+   { from, to, page, pageSize },
+   timeZone,
+  );
+
+  res.status(200).json({
+   status: 200,
+   message: 'Overview activity retrieved successfully',
+   data,
+  });
+ } catch (error) {
+  if (error.name === 'ZodError') {
+   return respondWithZodIssues(res, error);
+  }
   if (error.status) {
    return res.status(error.status).json({ status: error.status, message: error.message });
   }

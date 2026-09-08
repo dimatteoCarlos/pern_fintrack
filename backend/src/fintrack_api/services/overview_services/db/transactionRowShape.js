@@ -28,7 +28,19 @@
  * that each page statement and its count statement stay whole and comparable.
  * That decision is about the filters, and the filters stay written out in every
  * statement. What moves here is only the part that must never differ.
+ *
+ * account_balance is the ledger derivation, not the stored column. Selecting
+ * ua.account_balance shipped the same defect the module's own header describes
+ * for account_balance_after_tr: a figure the write path maintains travelling
+ * under the name every other endpoint uses for the figure the ledger produces.
+ * The field is declared in MovementTransactionDataType, so it stays on the wire
+ * and only its source changes. FLOAT and not NUMERIC because the declared type
+ * is number and the driver hands NUMERIC over as a string.
  */
+
+import { derivedAccountBalanceSql } from '../../../../utils/fintrackUtils/accountDataRetrieval/derivedBalance.js';
+
+const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'FLOAT');
 
 /**
  * The selected columns, in the order the declared type lists them.
@@ -66,7 +78,7 @@ export function transactionRowColumns(timeZonePlaceholder) {
     ua.account_name,
     ua.account_type_id,
     ua.account_starting_amount,
-    ua.account_balance,
+    ${DERIVED_BALANCE} AS account_balance,
     ua.account_start_date,
     (tr.transaction_actual_date AT TIME ZONE ${timeZonePlaceholder})::date::text AS transaction_local_date`;
 }

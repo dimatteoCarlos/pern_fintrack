@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview Nivel 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap">
+<style>
+ *, *::before, *::after { box-sizing: border-box; }
+ img, svg { max-width: 100%; height: auto; }
+
+ /* Misma paleta de lectura que bosquejo-overview-nivel-1.html, para que los dos
+    archivos se lean como un par. No son tokens de la app: P5 pide los tokens
+    reales antes de traducir cualquier bloque a una hoja de estilos. */
+ :root {
+  --ground: #10161B;
+  --ground-deep: #0A0F13;
+  --sheet: #C9D6DD;
+  --sheet-ink: #1A2429;
+  --sheet-mute: #5A6E78;
+  --sheet-rule: #B0C1CA;
+  --rule: #2C3B45;
+  --rule-soft: #1D2830;
+  --paper-ink: #A9BDC7;
+  --paper-mute: #6E838E;
+  --bright: #E4EEF3;
+
+  --nat-position: #7FA6B8;
+  --nat-flow: #C98A2E;
+  --nat-none: #6E838E;
+  --alarm: #C4553C;
+
+  --nat-position-sheet: #3E6577;
+  --nat-flow-sheet: #8A6520;
+
+  /* La rampa del Pareto, para que la fila de gasto se lea igual que en el
+     bosquejo de nivel 1 y el lector reconozca la misma fila. */
+  --ramp-1: #C98A2E;
+  --ramp-2: #B07E33;
+  --ramp-3: #8F6A32;
+  --ramp-4: #6E5530;
+  --ramp-5: #4E402C;
+  --ramp-6: #3C3529;
+
+  /* Los tres valores que NO tienen equivalente en el bosquejo de nivel 1,
+     porque son de la afordancia de navegación y el nivel 1 no navega. Van a la
+     lista de brechas del final: ninguno tiene token todavía. */
+  --nav-hint: #45606E;
+  --nav-hover: #FFFFFF;
+  --focus-ring: #7FA6B8;
+
+  --font-display: 'Chivo', system-ui, -apple-system, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, monospace;
+  --font-prose: 'Newsreader', Georgia, serif;
+
+  --s1: 0.375rem;
+  --s2: 0.75rem;
+  --s3: 1.25rem;
+  --s4: 2rem;
+  --s5: 3.25rem;
+  --s6: 5rem;
+ }
+
+ body {
+  margin: 0;
+  background: var(--ground);
+  background-image:
+   linear-gradient(var(--rule-soft) 1px, transparent 1px),
+   linear-gradient(90deg, var(--rule-soft) 1px, transparent 1px);
+  background-size: 44px 44px;
+  color: var(--paper-ink);
+  font-family: var(--font-prose);
+  font-size: 1rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+ }
+
+ .wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--s5) var(--s3) var(--s6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+ }
+
+ /* ---- masthead ---- */
+
+ .masthead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: var(--s3);
+ }
+ .masthead__eyebrow {
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+ }
+ .masthead__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.9rem, 6vw, 3.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--bright);
+  margin: 0;
+  text-wrap: balance;
+ }
+ .masthead__lede {
+  margin: 0;
+  font-size: 1.08rem;
+  max-width: 62ch;
+ }
+ .masthead__note {
+  margin: 0;
+  font-size: 0.94rem;
+  color: var(--paper-mute);
+  max-width: 74ch;
+ }
+ .masthead__note b { color: var(--paper-ink); }
+
+ /* ---- bloques ---- */
+
+ .block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+ }
+ .block__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  border-left: 2px solid var(--rule);
+  padding-left: var(--s2);
+ }
+ .block__kicker {
+  font-family: var(--font-code);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+ }
+ .block__name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.15rem, 3.4vw, 1.55rem);
+  color: var(--bright);
+  margin: 0;
+  letter-spacing: -0.01em;
+ }
+ .block__prose {
+  margin: 0;
+  max-width: 74ch;
+ }
+ .block__prose b { color: var(--bright); }
+ .block__prose code,
+ .masthead__note code,
+ .cell code {
+  font-family: var(--font-code);
+  font-size: 0.86em;
+  color: var(--nat-position);
+ }
+
+ /* ---- tabla de ruteo ---- */
+
+ .table-scroll { overflow-x: auto; }
+
+ table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+ }
+ th, td {
+  text-align: left;
+  padding: var(--s2);
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+ }
+ th {
+  font-family: var(--font-code);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+ }
+ tbody tr:last-child td { border-bottom: none; }
+ .cell--domain {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--bright);
+  white-space: nowrap;
+ }
+ .cell--none { color: var(--nat-none); font-style: italic; }
+ .cell code { color: var(--nat-position); white-space: nowrap; }
+
+ /* ---- panel crema, la superficie donde vive una fila de nivel 2 ---- */
+
+ .sheet {
+  background: var(--sheet);
+  color: var(--sheet-ink);
+  padding: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+ }
+ .sheet__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s2);
+ }
+ .sheet__total {
+  font-family: var(--font-code);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--sheet-mute);
+ }
+ .sheet__note {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--sheet-mute);
+  max-width: 68ch;
+ }
+ .sheet__note code {
+  font-family: var(--font-code);
+  font-size: 0.86em;
+  color: var(--nat-position-sheet);
+ }
+
+ /* ---- LA FILA. El objeto que este bosquejo existe para definir ---- */
+
+ .rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+ }
+ .rows li { border-bottom: 1px solid rgba(26, 36, 41, 0.12); }
+ .rows li:last-child { border-bottom: none; }
+
+ /* Un boton, no un enlace envolviendo la fila: la fila entera es el area de
+    activacion, y el nombre de la categoria viaja codificado en el segmento de
+    URL, asi que la construccion del destino es una funcion y no un href
+    literal. Reset del boton para que herede la fila. */
+ .row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s1);
+  background: none;
+  border: 0;
+  border-radius: 2px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+ }
+ .row__label {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+ }
+ .row__swatch {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 1px;
+ }
+ .row__name {
+  font-family: var(--font-display);
+  font-size: 0.94rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* La subrayadura es la mitad textual de la afordancia y solo aparece al
+     apuntar: en reposo la lleva el chevron, que no depende de un puntero. */
+  text-decoration: underline transparent 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 120ms ease;
+ }
+ .row__amount {
+  font-family: var(--font-code);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+ }
+ .row__share {
+  font-family: var(--font-code);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--sheet-mute);
+  white-space: nowrap;
+  min-width: 3.6em;
+  text-align: right;
+ }
+
+ /* Pocket no lleva participacion, y por eso no usa .row__share. La cifra de esa
+    fila es el avance contra la meta de cada pocket: no es una parte de un total
+    y las filas no suman 100. Ponerla en la misma columna y con el mismo formato
+    que las participaciones de gasto e ingreso invita a leerla como una parte de
+    la suma, asi que aqui es otro objeto — una barra de avance mas la cifra
+    rotulada contra su propia meta. Fallo de Carlos, 2026-09-08. */
+ .row__progress {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s1);
+  white-space: nowrap;
+ }
+ .row__progress-track {
+  width: 2.6em;
+  height: 4px;
+  flex: none;
+  border-radius: 2px;
+  background: var(--sheet-rule);
+  overflow: hidden;
+ }
+ .row__progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--nat-position-sheet);
+ }
+ .row__progress-label {
+  font-family: var(--font-code);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--sheet-mute);
+ }
+
+ /* El chevron en reposo. Presente y de bajo enfasis, porque una afordancia que
+    solo existe al apuntar no existe en una pantalla tactil. */
+ .row__go {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--nav-hint);
+  transition: color 120ms ease, transform 120ms ease;
+ }
+
+ .row:hover { background: rgba(26, 36, 41, 0.05); }
+ .row:hover .row__name { text-decoration-color: currentColor; }
+ .row:hover .row__go { color: var(--sheet-ink); transform: translateX(2px); }
+
+ /* Anillo de 2px a 2px de separacion, la regla de estados del sistema. */
+ .row:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  background: rgba(26, 36, 41, 0.05);
+ }
+ .row:active { background: rgba(26, 36, 41, 0.1); }
+
+ /* La fila que NO navega. No es un estado deshabilitado: es una fila valida
+    que no tiene destino, asi que conserva su tipografia, su monto y su
+    participacion completos y solo pierde el chevron y el cursor. */
+ .row--static {
+  cursor: default;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+ }
+ .row--static:hover { background: none; }
+ .row--static .row__name { text-decoration: none; }
+
+ .row__nogo {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  color: var(--sheet-mute);
+ }
+
+ /* ---- estados, dibujados uno por uno ---- */
+
+ .states {
+  display: grid;
+  gap: var(--s2);
+  grid-template-columns: 1fr;
+ }
+ .state {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s1);
+  border-top: 1px solid rgba(26, 36, 41, 0.12);
+  padding-top: var(--s2);
+ }
+ .state:first-child { border-top: none; padding-top: 0; }
+ .state__name {
+  font-family: var(--font-code);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sheet-mute);
+ }
+ /* El estado de foco se dibuja sin depender del teclado del lector. */
+ .row--is-focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  background: rgba(26, 36, 41, 0.05);
+ }
+ .row--is-hover { background: rgba(26, 36, 41, 0.05); }
+ .row--is-hover .row__name { text-decoration-color: currentColor; }
+ .row--is-hover .row__go { color: var(--sheet-ink); transform: translateX(2px); }
+
+ /* ---- el destino, representado y no rediseñado ---- */
+
+ .dest {
+  display: grid;
+  gap: var(--s2);
+  grid-template-columns: 1fr;
+ }
+ .dest__card {
+  border: 1px dashed var(--rule);
+  padding: var(--s2) var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+ }
+ .dest__route {
+  font-family: var(--font-code);
+  font-size: 0.82rem;
+  color: var(--nat-position);
+  word-break: break-all;
+ }
+ .dest__owner {
+  font-size: 0.86rem;
+  color: var(--paper-mute);
+ }
+ .dest__owner b { color: var(--paper-ink); }
+
+ /* ---- avisos ---- */
+
+ .flag {
+  border-left: 2px solid var(--alarm);
+  padding: var(--s2) var(--s3);
+  background: var(--ground-deep);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+ }
+ .flag__name {
+  font-family: var(--font-code);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--alarm);
+ }
+ .flag p { margin: 0; font-size: 0.94rem; max-width: 74ch; }
+ .flag p b { color: var(--bright); }
+
+ .gaps {
+  border-top: 1px solid var(--rule);
+  padding-top: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+ }
+ .gaps ol { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: var(--s2); }
+ .gaps li { max-width: 76ch; }
+ .gaps code {
+  font-family: var(--font-code);
+  font-size: 0.86em;
+  color: var(--nat-position);
+ }
+
+ @media (min-width: 768px) {
+  .states { grid-template-columns: repeat(2, 1fr); }
+  .state { border-top: none; padding-top: 0; }
+  .dest { grid-template-columns: repeat(2, 1fr); }
+ }
+
+ @media (min-width: 1024px) {
+  .pair { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s3); align-items: start; }
+ }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+ <header class="masthead">
+  <div class="masthead__eyebrow">Nivel 3 · rutas leídas de App.tsx el 2026-09-08</div>
+  <h1 class="masthead__title">Overview Nivel 3</h1>
+  <p class="masthead__lede">El nivel 3 no es una pantalla que Overview dibuje. Es una salida: el usuario abre una fila de un desglose de nivel 2 y aterriza en una pantalla que ya es de otro módulo.</p>
+  <p class="masthead__note">Por eso este bosquejo dibuja <b>la fila y su afordancia</b>, y del destino sólo representa cuál es y quién lo posee. Rediseñar la pantalla destino sería salir de Overview.</p>
+  <p class="masthead__note">Los colores viven en el <code>:root</code> de este archivo y son paleta de lectura, igual que en el bosquejo de nivel 1. Tres valores nuevos —la pista de navegación en reposo, el realce al apuntar y el anillo de foco— <b>no tienen token todavía</b> y están en la lista de brechas del final.</p>
+ </header>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 1</div>
+   <h2 class="block__name">A dónde va cada dominio</h2>
+  </div>
+  <p class="block__prose">Cinco de los seis dominios abren una pantalla de detalle. Resultado del ejercicio no abre ninguna, y no es un olvido: sus dos partes son agrupaciones de movimientos, no entidades, así que no hay nada singular que abrir.</p>
+  <p class="block__prose">Cada camino de ruta está leído de <code>App.tsx</code>, nunca inferido del nombre de la carpeta. Todos cuelgan del padre <code>/fintrack</code>, declarado en <code>App.tsx:168</code>.</p>
+  <div class="table-scroll">
+   <table>
+    <thead>
+     <tr>
+      <th>dominio</th>
+      <th>arreglo de nivel 2</th>
+      <th>campo de identidad</th>
+      <th>ruta que se construye</th>
+      <th>pantalla</th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td class="cell--domain">deuda</td>
+      <td class="cell"><code>byCounterparty[]</code></td>
+      <td class="cell"><code>accountId</code></td>
+      <td class="cell"><code>/fintrack/debts/debtor/:debtorId</code></td>
+      <td class="cell"><code>DebtorDetailReading</code></td>
+     </tr>
+     <tr>
+      <td class="cell--domain">inversión</td>
+      <td class="cell"><code>balanceByAccount[]</code></td>
+      <td class="cell"><code>accountId</code></td>
+      <td class="cell"><code>/fintrack/overview/account/:accountId</code></td>
+      <td class="cell"><code>OverviewAccountReading</code></td>
+     </tr>
+     <tr>
+      <td class="cell--domain">ingreso</td>
+      <td class="cell"><code>bySource[]</code></td>
+      <td class="cell"><code>accountId</code>, anulable</td>
+      <td class="cell"><code>/fintrack/overview/account/:accountId</code></td>
+      <td class="cell"><code>OverviewAccountReading</code></td>
+     </tr>
+     <tr>
+      <td class="cell--domain">pocket</td>
+      <td class="cell"><code>progressByPocket[]</code></td>
+      <td class="cell"><code>pocketId</code></td>
+      <td class="cell"><code>/fintrack/pocket/pockets/:pocketId</code></td>
+      <td class="cell"><code>PocketDetail</code></td>
+     </tr>
+     <tr>
+      <td class="cell--domain">gasto</td>
+      <td class="cell"><code>expenseCategories[]</code></td>
+      <td class="cell"><code>categoryName</code></td>
+      <td class="cell"><code>/fintrack/budget/category/:categoryName</code></td>
+      <td class="cell"><code>CategoryAccountList</code></td>
+     </tr>
+     <tr>
+      <td class="cell--domain">resultado</td>
+      <td class="cell"><code>byAccountType</code></td>
+      <td class="cell cell--none">ninguno</td>
+      <td class="cell cell--none">no navega</td>
+      <td class="cell cell--none">ninguna</td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+
+  <div class="flag">
+   <div class="flag__name">Dos rutas por destino, y Overview toma la de lectura</div>
+   <p>Cuenta y deudor tienen cada uno un par: <code>overview/accounts/:accountId</code> abre <code>AccountDetail</code> y <code>debts/debtors/:debtorId</code> abre <code>DebtorDetail</code>, las dos de edición. <b>Overview es una superficie de lectura, así que enlaza a la variante de lectura</b> — la singular en cuenta, la singular en deudor. El documento de nivel 3 dice "detalle de cuenta" y "detalle de deudor" sin distinguirlas; hay dos de cada una y ésta es la elección.</p>
+  </div>
+
+  <div class="flag">
+   <div class="flag__name">En deuda el parámetro se llama distinto que el campo</div>
+   <p>El desglose publica <code>accountId</code> y la ruta declara <code>:debtorId</code>. Es el mismo entero con dos nombres, y está medido en la pantalla, no supuesto: <code>DebtorDetailReading.tsx:81</code> hace <code>const { debtorId: accountId } = useParams();</code> y con ese valor arma <code>url_get_account_by_id</code>. <b>El enlace pasa el <code>accountId</code> tal cual</b>; no hay conversión ni búsqueda intermedia.</p>
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 2</div>
+   <h2 class="block__name">Los cuatro estados de la fila</h2>
+  </div>
+  <p class="block__prose">La fila entera es el área de activación y es un <b>botón</b>, no un enlace envolviendo el contenido: el nombre de categoría viaja codificado en el segmento de URL, así que el destino se construye con una función y no con un <code>href</code> literal.</p>
+  <p class="block__prose">La afordancia son dos mitades y sólo una depende del puntero. <b>El chevron está en reposo</b>, de bajo énfasis, porque una afordancia que sólo aparece al apuntar no existe en una pantalla táctil. La subrayadura del nombre es la mitad que aparece al apuntar.</p>
+
+  <div class="sheet">
+   <h3 class="sheet__title"><span>Estados</span><span class="sheet__total">una sola fila, cuatro veces</span></h3>
+   <div class="states">
+
+    <div class="state">
+     <div class="state__name">1 · navegable en reposo</div>
+     <ul class="rows">
+      <li>
+       <button type="button" class="row" aria-label="Abrir mercado">
+        <span class="row__label">
+         <span class="row__swatch" style="background: var(--ramp-1)"></span>
+         <span class="row__name">mercado</span>
+        </span>
+        <span class="row__amount">1.284,40</span>
+        <span class="row__share">31,2 %</span>
+        <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+       </button>
+      </li>
+     </ul>
+    </div>
+
+    <div class="state">
+     <div class="state__name">2 · al apuntar</div>
+     <ul class="rows">
+      <li>
+       <button type="button" class="row row--is-hover" aria-label="Abrir mercado">
+        <span class="row__label">
+         <span class="row__swatch" style="background: var(--ramp-1)"></span>
+         <span class="row__name">mercado</span>
+        </span>
+        <span class="row__amount">1.284,40</span>
+        <span class="row__share">31,2 %</span>
+        <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+       </button>
+      </li>
+     </ul>
+    </div>
+
+    <div class="state">
+     <div class="state__name">3 · foco de teclado — anillo 2px, separación 2px</div>
+     <ul class="rows">
+      <li>
+       <button type="button" class="row row--is-focus" aria-label="Abrir mercado">
+        <span class="row__label">
+         <span class="row__swatch" style="background: var(--ramp-1)"></span>
+         <span class="row__name">mercado</span>
+        </span>
+        <span class="row__amount">1.284,40</span>
+        <span class="row__share">31,2 %</span>
+        <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+       </button>
+      </li>
+     </ul>
+    </div>
+
+    <div class="state">
+     <div class="state__name">4 · no navegable — fila válida sin destino</div>
+     <ul class="rows">
+      <li>
+       <div class="row row--static">
+        <span class="row__label">
+         <span class="row__swatch" style="background: var(--nat-none)"></span>
+         <span class="row__name">sin cuenta de origen</span>
+        </span>
+        <span class="row__amount">340,00</span>
+        <span class="row__share">7,1 %</span>
+        <span class="row__nogo" aria-hidden="true">—</span>
+       </div>
+      </li>
+     </ul>
+    </div>
+
+   </div>
+   <p class="sheet__note">El cuarto estado <b>no es deshabilitado</b>. Conserva tipografía, monto y participación completos: es una fila real de la distribución y sólo pierde el chevron y el cursor. Un gris de deshabilitado diría que algo falló, y no falló nada.</p>
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 3</div>
+   <h2 class="block__name">La fila en contexto — dos desgloses completos</h2>
+  </div>
+  <p class="block__prose">La afordancia se juzga en una lista, no en una fila sola: lo que importa es que se lea navegable sin competir con la cifra que el usuario vino a leer.</p>
+
+  <div class="pair">
+
+   <div class="sheet">
+    <h3 class="sheet__title"><span>Gasto por categoría</span><span class="sheet__total">4.117,20</span></h3>
+    <ul class="rows">
+     <li>
+      <button type="button" class="row" aria-label="Abrir mercado">
+       <span class="row__label"><span class="row__swatch" style="background: var(--ramp-1)"></span><span class="row__name">mercado</span></span>
+       <span class="row__amount">1.284,40</span>
+       <span class="row__share">31,2 %</span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+     <li>
+      <button type="button" class="row" aria-label="Abrir arriendo">
+       <span class="row__label"><span class="row__swatch" style="background: var(--ramp-2)"></span><span class="row__name">arriendo</span></span>
+       <span class="row__amount">980,00</span>
+       <span class="row__share">23,8 %</span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+     <li>
+      <button type="button" class="row" aria-label="Abrir transporte">
+       <span class="row__label"><span class="row__swatch" style="background: var(--ramp-3)"></span><span class="row__name">transporte</span></span>
+       <span class="row__amount">612,75</span>
+       <span class="row__share">14,9 %</span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+     <li>
+      <button type="button" class="row" aria-label="Abrir restaurantes">
+       <span class="row__label"><span class="row__swatch" style="background: var(--ramp-4)"></span><span class="row__name">restaurantes</span></span>
+       <span class="row__amount">488,15</span>
+       <span class="row__share">11,9 %</span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+     <li>
+      <button type="button" class="row" aria-label="Abrir salud">
+       <span class="row__label"><span class="row__swatch" style="background: var(--ramp-5)"></span><span class="row__name">salud</span></span>
+       <span class="row__amount">421,90</span>
+       <span class="row__share">10,2 %</span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+     <li>
+      <button type="button" class="row" aria-label="Abrir suscripciones">
+       <span class="row__label"><span class="row__swatch" style="background: var(--ramp-6)"></span><span class="row__name">suscripciones</span></span>
+       <span class="row__amount">330,00</span>
+       <span class="row__share">8,0 %</span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+    </ul>
+    <p class="sheet__note">Seis filas, seis navegables. El destino es <code>CategoryAccountList</code>, que resuelve la categoría comparando <code>account.categoryName === categoryName</code> contra la lista de cuentas viva.</p>
+   </div>
+
+   <div class="sheet">
+    <h3 class="sheet__title"><span>Ingreso por fuente</span><span class="sheet__total">4.790,00</span></h3>
+    <ul class="rows">
+     <li>
+      <button type="button" class="row" aria-label="Abrir sueldo">
+       <span class="row__label"><span class="row__swatch" style="background: var(--nat-flow-sheet)"></span><span class="row__name">sueldo</span></span>
+       <span class="row__amount">3.200,00</span>
+       <span class="row__share">66,8 %</span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+     <li>
+      <button type="button" class="row" aria-label="Abrir consultoría">
+       <span class="row__label"><span class="row__swatch" style="background: var(--nat-flow-sheet)"></span><span class="row__name">consultoría</span></span>
+       <span class="row__amount">850,00</span>
+       <span class="row__share">17,7 %</span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+     <li>
+      <button type="button" class="row" aria-label="Abrir arriendo recibido">
+       <span class="row__label"><span class="row__swatch" style="background: var(--nat-flow-sheet)"></span><span class="row__name">arriendo recibido</span></span>
+       <span class="row__amount">400,00</span>
+       <span class="row__share">8,4 %</span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+     <li>
+      <div class="row row--static">
+       <span class="row__label"><span class="row__swatch" style="background: var(--nat-none)"></span><span class="row__name">sin cuenta de origen</span></span>
+       <span class="row__amount">340,00</span>
+       <span class="row__share">7,1 %</span>
+       <span class="row__nogo" aria-hidden="true">—</span>
+      </div>
+     </li>
+    </ul>
+    <p class="sheet__note">La cuarta fila es la del <code>accountId</code> nulo. <b>No se inventa un id para ella y no se la esconde</b>: tiene monto y participación, y participa del total de arriba. Es la única fila del desglose que se dibuja sin enlace.</p>
+   </div>
+
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 4</div>
+   <h2 class="block__name">Pocket y resultado del ejercicio</h2>
+  </div>
+
+  <div class="pair">
+
+   <div class="sheet">
+    <h3 class="sheet__title"><span>Avance por pocket</span><span class="sheet__total">6.400,00 comprometidos</span></h3>
+    <ul class="rows">
+     <li>
+      <button type="button" class="row" aria-label="Abrir viaje japón">
+       <span class="row__label"><span class="row__swatch" style="background: var(--nat-position-sheet)"></span><span class="row__name">viaje japón</span></span>
+       <span class="row__amount">2.800,00</span>
+       <span class="row__progress">
+        <span class="row__progress-track"><span class="row__progress-fill" style="width: 70%"></span></span>
+        <span class="row__progress-label">70 % de su meta</span>
+       </span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+     <li>
+      <button type="button" class="row" aria-label="Abrir fondo de emergencia">
+       <span class="row__label"><span class="row__swatch" style="background: var(--nat-position-sheet)"></span><span class="row__name">fondo de emergencia</span></span>
+       <span class="row__amount">2.400,00</span>
+       <span class="row__progress">
+        <span class="row__progress-track"><span class="row__progress-fill" style="width: 48%"></span></span>
+        <span class="row__progress-label">48 % de su meta</span>
+       </span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+     <li>
+      <button type="button" class="row" aria-label="Abrir cambio de portátil">
+       <span class="row__label"><span class="row__swatch" style="background: var(--nat-position-sheet)"></span><span class="row__name">cambio de portátil</span></span>
+       <span class="row__amount">1.200,00</span>
+       <span class="row__progress">
+        <span class="row__progress-track"><span class="row__progress-fill" style="width: 80%"></span></span>
+        <span class="row__progress-label">80 % de su meta</span>
+       </span>
+       <svg class="row__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="9 5 16 12 9 19"></polyline></svg>
+      </button>
+     </li>
+    </ul>
+    <p class="sheet__note">El enlace se arma con el <code>pocketId</code> que la fila ya publica. <b>Ninguna conversión a id de cuenta y ninguna búsqueda entre la fila y la URL</b> — un pocket es un plan, no una cuenta.</p>
+    <p class="sheet__note"><b>La cifra de la derecha no es una participación y las filas no suman 100.</b> Cada una es el avance contra la meta de su propio pocket, así que lleva barra y rótulo y no la columna de participación que usan gasto e ingreso. 70, 48 y 80 no se comparan entre sí: comparan cada plan consigo mismo.</p>
+   </div>
+
+   <div class="sheet">
+    <h3 class="sheet__title"><span>Resultado por tipo de cuenta</span><span class="sheet__total">+512,30</span></h3>
+    <ul class="rows">
+     <li>
+      <div class="row row--static">
+       <span class="row__label"><span class="row__swatch" style="background: var(--nat-position-sheet)"></span><span class="row__name">inversión</span></span>
+       <span class="row__amount">+388,10</span>
+       <span class="row__share">75,8 %</span>
+       <span class="row__nogo" aria-hidden="true">—</span>
+      </div>
+     </li>
+     <li>
+      <div class="row row--static">
+       <span class="row__label"><span class="row__swatch" style="background: var(--nat-none)"></span><span class="row__name">otras</span></span>
+       <span class="row__amount">+124,20</span>
+       <span class="row__share">24,2 %</span>
+       <span class="row__nogo" aria-hidden="true">—</span>
+      </div>
+     </li>
+    </ul>
+    <p class="sheet__note">Las dos partes se dibujan sin enlace. <b>Que un movimiento haya caído en una cuenta no convierte la partición en una lista de entidades</b>: son agrupaciones de cuentas de tipos distintos y no hay nada singular que abrir. El usuario que sigue la parte de inversión llega al dominio de inversión, que tiene su propio nivel 3.</p>
+   </div>
+
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 5</div>
+   <h2 class="block__name">El destino, representado y no rediseñado</h2>
+  </div>
+  <p class="block__prose">Overview no toca ninguna de estas cuatro pantallas. Se dibujan como recuadro punteado para dejar constancia de cuál es y de quién es, y nada más: un commit de nivel 3 que cambie la pantalla destino ya salió de Overview.</p>
+  <div class="dest">
+   <div class="dest__card">
+    <div class="dest__route">/fintrack/debts/debtor/:debtorId</div>
+    <div class="dest__owner"><b>DebtorDetailReading</b> — módulo de deudas</div>
+   </div>
+   <div class="dest__card">
+    <div class="dest__route">/fintrack/overview/account/:accountId</div>
+    <div class="dest__owner"><b>OverviewAccountReading</b> — pantallas de cuenta</div>
+   </div>
+   <div class="dest__card">
+    <div class="dest__route">/fintrack/pocket/pockets/:pocketId</div>
+    <div class="dest__owner"><b>PocketDetail</b> — módulo de pockets</div>
+   </div>
+   <div class="dest__card">
+    <div class="dest__route">/fintrack/budget/category/:categoryName</div>
+    <div class="dest__owner"><b>CategoryAccountList</b> — módulo de presupuesto</div>
+   </div>
+  </div>
+
+  <div class="flag">
+   <div class="flag__name">El nombre de categoría se codifica al entrar y se decodifica al salir</div>
+   <p>Es el único de los cinco campos de identidad que no es un entero, y viaja en un segmento de URL. Medido: hoy nadie lo codifica — <code>CategoryDetail.tsx:86</code> y <code>CategoryDetailReading.tsx:89</code> interpolan el nombre crudo, y el único <code>encodeURIComponent</code> del frontend está en <code>urlConfig.ts:258</code>, sobre un mes. La migración 013 pasa el nombre a minúsculas pero <b>no restringe ningún carácter</b>, así que un nombre con <code>/</code>, <code>#</code> o <code>?</code> rompe la ruta. <b>El enlace que Overview construye codifica</b>; esto no es una petición de cambio a las dos pantallas existentes.</p>
+  </div>
+
+  <div class="flag">
+   <div class="flag__name">Una categoría con una sola cuenta aterriza en una lista de una fila</div>
+   <p>La ruta profunda <code>budget/category/:categoryName/account/:accountId</code> abre una cuenta, y <code>CategoryDetail.tsx:69-77</code> se niega a renderizar sin <code>accountId</code>. El desglose de gasto agrupa por nombre y descarta los ids, así que Overview no puede direccionarla. <b>Ese paso extra se acepta y no es una brecha</b>: publicar un arreglo de ids en las filas de categoría lo quitaría, y no vale un cambio en un constructor de otro módulo por un clic en una pantalla que ya funciona.</p>
+  </div>
+ </section>
+
+ <section class="block">
+  <div class="block__head">
+   <div class="block__kicker">Bloque 6</div>
+   <h2 class="block__name">De dónde sale la URL</h2>
+  </div>
+  <p class="block__prose">Una regla, cinco aplicaciones: <b>la fila lleva su propia identidad y el componente la lee de la fila</b> en vez de reconstruirla. Lo que eso descarta es un componente que toma un nombre de la fila, busca una coincidencia en la lista de cuentas y arma la ruta con lo que encontró, cuando el backend ya publicó el id.</p>
+  <p class="block__prose"><b>La URL se deriva de la fila en el momento de navegar.</b> No se guarda en un store y no se duplica en estado local: no hay estado de entidad seleccionada que mantener, porque la fila que se pulsó es la única entrada que la URL necesita. Un clic que fija un id, dispara un efecto, hace una búsqueda y después navega son cuatro pasos reemplazando uno.</p>
+ </section>
+
+ <section class="gaps">
+  <div class="block__kicker">Brechas</div>
+  <ol>
+   <li><b>Tres valores de color sin token.</b> La pista de navegación en reposo (<code>--nav-hint</code>), el realce del chevron al apuntar (<code>--nav-hover</code>) y el anillo de foco (<code>--focus-ring</code>). El bosquejo de nivel 1 no los tiene porque el nivel 1 no navega. Hay que pedirlos antes de traducir este bloque a una hoja de estilos.</li>
+   <li><b>El desglose de nivel 2 no tiene mockup.</b> Este archivo define la fila y su afordancia, no el bloque que la contiene: el encabezado, el orden, el corte de la cola y los estados de carga del desglose siguen sin dibujar, y eso bloquea el commit 6 de P5. La fila aquí se dibuja sobre un panel crema genérico porque es la superficie que el sistema declara para paneles de datos, no porque el desglose esté decidido.</li>
+   <li><b>El texto de la fila sin destino está inventado.</b> "sin cuenta de origen" es una etiqueta que ningún constructor publica: el backend manda un aviso cuando alguna fila trae <code>accountId</code> nulo, y no manda una etiqueta para esa fila. Hay que decidir qué dice, y decidirlo es del lado del producto.</li>
+   <li><b>El chevron como afordancia es una elección de este bosquejo, no una regla del sistema.</b> Ningún otro componente de FinTrack marca hoy una fila de lista como abrible, así que no hay precedente que copiar. Si aparece uno, gana el precedente.</li>
+   <li><b>Cerrada el 2026-09-08: la cifra de pocket no se presenta como participación del total.</b> En los otros desgloses el porcentaje es la parte del total; en pocket es el avance contra la meta de cada pocket, que no suma 100. Sale de la columna de participación y pasa a barra de avance con el rótulo <i>de su meta</i>, que es un objeto distinto de un número de porcentaje y no se puede leer como una parte de la suma.</li>
+  </ol>
+ </section>
+
+</div>
+</body>
+</html>

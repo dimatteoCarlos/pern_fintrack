@@ -7,8 +7,9 @@ Rama de trabajo: `feat/overview`, creada 2026-08-20 desde `feat/budget` (`254093
 Este archivo es el registro vivo. Una decisión entra aquí cuando queda cerrada,
 con la fecha y el motivo. Las abiertas se listan al final con su recomendación.
 
-Fuentes: `PLAN_OVERVIEW.md` (especificación) y `PLAN_OVERVIEW_EVAL.md`
-(evaluación, 2026-08-20).
+Fuentes: `OVERVIEW_PLAN.md` (el plan de registro) y `PLAN_OVERVIEW.md`
+(especificación). La evaluación del 2026-08-20 se borró el 2026-09-07: sus
+veredictos ya estaban absorbidos en las decisiones de este archivo.
 
 ---
 

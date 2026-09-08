@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon --experimental-specifier-resolution=node src/index.js",
     "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test \"test/**/*.test.js\"",
     "init-db": "node src/db/run_time_db_init/init-db.js",
     "db:bootstrap": "node src/db/migrations/bootstrapping.js",
     "db:reset": "node src/db/migrations/runResetDb.js",

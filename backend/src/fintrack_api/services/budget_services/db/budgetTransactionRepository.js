@@ -12,6 +12,10 @@
 // arithmetic begins. The public shape stays number.
 
 import { toAmount } from '../core/money.js';
+import {
+ spentAmountSql,
+ spentMovementTypeList,
+} from '../../../../utils/fintrackUtils/transactionManagement/spentAmountSql.js';
 
 /**
  * Get total net spent for a single account in a period.
@@ -21,18 +25,12 @@ import { toAmount } from '../core/money.js';
 export async function getTotalSpentByAccountAndPeriod(pool, accountId, startDate, endDate) {
   const query = `
     SELECT
-      COALESCE(SUM(
-        CASE
-          WHEN movement_type_id = 1 THEN amount
-          WHEN movement_type_id = 6 THEN amount
-          ELSE 0
-        END
-      ), 0) AS actual_spent
-    FROM transactions
-    WHERE account_id = $1
-      AND transaction_actual_date >= $2
-      AND transaction_actual_date < $3
-      AND movement_type_id IN (1, 6)
+      COALESCE(SUM(${spentAmountSql('t')}), 0) AS actual_spent
+    FROM transactions t
+    WHERE t.account_id = $1
+      AND t.transaction_actual_date >= $2
+      AND t.transaction_actual_date < $3
+      AND t.movement_type_id IN (${spentMovementTypeList()})
   `;
   const result = await pool.query(query, [accountId, startDate, endDate]);
   return toAmount(result.rows[0].actual_spent ?? 0);
@@ -52,7 +50,7 @@ export async function getTransactionsByAccountAndPeriod(pool, accountId, startDa
     WHERE account_id = $1
       AND transaction_actual_date >= $2
       AND transaction_actual_date < $3
-      AND movement_type_id IN (1, 6)
+      AND movement_type_id IN (${spentMovementTypeList()})
     ORDER BY transaction_actual_date ASC
   `;
   const result = await pool.query(query, [accountId, startDate, endDate]);
@@ -188,17 +186,13 @@ const SPENT_QUERY = `
   SELECT
     t.account_id,
     COALESCE(SUM(
-      CASE
-        WHEN t.movement_type_id = 1 THEN t.amount
-        WHEN t.movement_type_id = 6 THEN t.amount
-        ELSE 0
-      END
+      ${spentAmountSql('t')}
     ), 0) AS actual_spent
   FROM transactions t
   WHERE t.account_id = ANY($1)
     AND t.transaction_actual_date >= ($2::timestamp AT TIME ZONE $4)
     AND t.transaction_actual_date <  ($3::timestamp AT TIME ZONE $4)
-    AND t.movement_type_id IN (1, 6)
+    AND t.movement_type_id IN (${spentMovementTypeList()})
   GROUP BY t.account_id
 `;
 
@@ -355,17 +349,13 @@ const SPENT_BY_MONTH_QUERY = `
     t.account_id,
     date_trunc('month', t.transaction_actual_date AT TIME ZONE $4)::date::text AS budget_month,
     COALESCE(SUM(
-      CASE
-        WHEN t.movement_type_id = 1 THEN t.amount
-        WHEN t.movement_type_id = 6 THEN t.amount
-        ELSE 0
-      END
+      ${spentAmountSql('t')}
     ), 0) AS actual_spent
   FROM transactions t
   WHERE t.account_id = ANY($1)
     AND t.transaction_actual_date >= ($2::timestamp AT TIME ZONE $4)
     AND t.transaction_actual_date <  (($3::date + INTERVAL '1 month') AT TIME ZONE $4)
-    AND t.movement_type_id IN (1, 6)
+    AND t.movement_type_id IN (${spentMovementTypeList()})
   GROUP BY t.account_id, 2
 `;
 
