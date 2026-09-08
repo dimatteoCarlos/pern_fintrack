@@ -30,6 +30,20 @@
   --nat-none: #6E838E;
   --alarm: #C4553C;
 
+  /* Variantes sobre panel crema de las dos naturalezas de arriba, mas la
+     rampa del Pareto y el gris del skeleton. Son la paleta de lectura DE
+     ESTE BOSQUEJO, no tokens de la app: P5 pide los tokens reales antes de
+     traducir cualquier bloque a una hoja de estilos. */
+  --nat-position-sheet: #3E6577;
+  --nat-flow-sheet: #8A6520;
+  --nat-good-sheet: #2F6B4F;
+  --ramp-1: #C98A2E;
+  --ramp-2: #B07E33;
+  --ramp-3: #8F6A32;
+  --ramp-4: #6E5530;
+  --ramp-5: #4E402C;
+  --skeleton: rgba(90, 110, 120, 0.3);
+
   --font-display: 'Chivo', system-ui, -apple-system, sans-serif;
   --font-code: 'JetBrains Mono', ui-monospace, monospace;
   --font-prose: 'Newsreader', Georgia, serif;
@@ -352,10 +366,11 @@
 <div class="wrap">
 
  <header class="masthead">
-  <div class="masthead__eyebrow">Fase 4 · revisión 2 · matriz conceptual antes del código</div>
+  <div class="masthead__eyebrow">Fase 4 · revisión 3 · corregido contra el código medido el 2026-09-07</div>
   <h1 class="masthead__title">Overview Nivel 1</h1>
   <p class="masthead__lede">Cada elemento del Nivel 1 clasificado por lo que representa, su naturaleza, su período y su fuente — y después dibujado. Ninguna cifra se decide desde el componente.</p>
-  <p class="masthead__note">Plano, no maqueta: el azul es para leer estructura, no color. El color real sale de los tokens — la app es oscura, los paneles de datos son crema con texto oscuro.</p>
+  <p class="masthead__note">Plano, no maqueta: el azul es para leer estructura, no color. El color real sale de los tokens — la app es oscura, los paneles de datos son crema con texto oscuro. Los colores de este archivo viven en su propio <code>:root</code> y son paleta de lectura, no tokens de la app: <b>P5 pide los tokens que falten antes de traducir cualquier bloque a una hoja de estilos.</b></p>
+  <p class="masthead__note">Revisión 3: cada fila de la matriz y cada bloque se volvió a medir contra el constructor que lo publica. Los dos cambios de fondo son que <b>ya no hay mezcla temporal</b> — toda posición se lee al cierre del mes elegido — y que <b>el hero pasó de tres cifras a seis</b>.</p>
  </header>
 
  <section class="legend">
@@ -389,21 +404,39 @@
     <tbody>
      <tr>
       <td><strong>Net worth</strong></td>
-      <td>Todo lo que tengo menos todo lo que debo</td>
+      <td>Banco y efectivo, más inversión, más la posición de deuda con su signo</td>
       <td><span class="tag tag--position">Posición</span></td>
-      <td><span style="color: var(--alarm);">mixto — defecto abierto</span></td>
+      <td>cierre del mes elegido</td>
       <td><code>hero.netWorth</code></td>
       <td>Sí</td>
       <td>KPI</td>
      </tr>
      <tr>
-      <td><strong>Cash position</strong></td>
-      <td>Dinero líquido: banco más pocket</td>
+      <td><strong>Liquid net worth</strong></td>
+      <td>Lo mismo sin lo que otros me deben — lo que controlo</td>
       <td><span class="tag tag--position">Posición</span></td>
-      <td><span style="color: var(--alarm);">mixto — defecto abierto</span></td>
+      <td>cierre del mes elegido</td>
+      <td><code>hero.liquidNetWorth</code></td>
+      <td>Sí</td>
+      <td>KPI</td>
+     </tr>
+     <tr>
+      <td><strong>Cash position</strong></td>
+      <td>Dinero líquido: banco <b>y efectivo</b>. El pocket no suma ni resta</td>
+      <td><span class="tag tag--position">Posición</span></td>
+      <td>cierre del mes elegido</td>
       <td><code>hero.cashPosition</code></td>
       <td>Sí</td>
       <td>KPI</td>
+     </tr>
+     <tr>
+      <td><strong>Free cash</strong></td>
+      <td>Cuánto de ese saldo no está prometido a ningún pocket</td>
+      <td><span class="tag tag--position">Posición</span></td>
+      <td>cierre del mes elegido</td>
+      <td><code>hero.freeCash</code></td>
+      <td>Sí</td>
+      <td>KPI, en par con el anterior</td>
      </tr>
      <tr>
       <td><strong>Flujo neto</strong></td>
@@ -413,6 +446,15 @@
       <td><code>hero.netMonthlyFlow</code></td>
       <td>Sí</td>
       <td>KPI</td>
+     </tr>
+     <tr>
+      <td><strong>Savings rate</strong></td>
+      <td>El mismo flujo dicho como proporción de lo que entró</td>
+      <td><span class="tag tag--flow">Flujo</span></td>
+      <td>mes elegido</td>
+      <td><code>hero.savingsRate</code></td>
+      <td>Sí</td>
+      <td>KPI — razón 0-1, no tasa sobre 100</td>
      </tr>
 
      <tr>
@@ -462,7 +504,7 @@
      </tr>
      <tr>
       <td><strong>Pocket</strong></td>
-      <td>Dinero disponible en pockets</td>
+      <td>Lo <b>comprometido</b> a los pockets — un plan, no un contenedor</td>
       <td><span class="tag tag--position">Posición</span></td>
       <td>cierre del mes</td>
       <td><code>domainCards.pocket.totalAmount</code></td>
@@ -473,7 +515,7 @@
       <td><strong>Investment</strong></td>
       <td>Valor en libros de la cartera</td>
       <td><span class="tag tag--position">Posición</span></td>
-      <td><b>a hoy</b> — ignora el selector</td>
+      <td>cierre del mes elegido — sólo <code>accountCount</code> es a hoy</td>
       <td><code>domainCards.investment.ledgerBalance</code></td>
       <td>Sí</td>
       <td>KPI + aviso</td>
@@ -520,7 +562,7 @@
       <td><strong>Financial goals</strong></td>
       <td>Ahorrado, meta y lo que falta</td>
       <td><span class="tag tag--position">Posición</span></td>
-      <td><b>a hoy</b> — sin ventana</td>
+      <td>cierre del mes elegido</td>
       <td><code>financialGoals.*</code></td>
       <td>Sí</td>
       <td>KPI</td>
@@ -568,7 +610,7 @@
       <td><strong>Bank balance</strong></td>
       <td>Saldo en cuentas de banco</td>
       <td><span class="tag tag--position">Posición</span></td>
-      <td><b>a hoy</b></td>
+      <td>cierre del mes elegido</td>
       <td>Entra al hero. <b>No hay dominio Bank</b></td>
       <td>Sólo vía hero</td>
       <td>—</td>
@@ -597,7 +639,7 @@
 
   <p class="note"><b>Moneda: una sola en toda la pantalla.</b> Cada bloque publica la moneda contable del sistema, porque eso es lo que la base almacena; la moneda que el frontend envía al registrar es metadata de origen para el cambio, no una segunda unidad. La única excepción es <code>recentActivity</code>, donde cada fila trae la suya y por eso el bloque no publica ninguna.</p>
 
-  <p class="note note--assume"><b>Charts confirmado: Nivel 1, fuera de las cards.</b> Quedan dos supuestos pendientes de tu confirmación. La etiqueta del promedio dice <code>Promedio mensual · 3M</code> con el conteo real debajo, porque el divisor son los meses activos y omitirlo haría falsa la cifra. Y los dominios son los <b>seis</b> que el backend sirve: sin Bank, sin Savings, con PnL.</p>
+  <p class="note"><b>Charts confirmado: Nivel 1, fuera de las cards.</b> Los dos supuestos que quedaban ya están medidos en el código. La etiqueta del promedio dice <code>Promedio mensual · 3M</code> con el conteo real debajo, porque el divisor son los meses activos y omitirlo haría falsa la cifra. Y los dominios son los <b>seis</b> que el backend sirve — <code>OVERVIEW_DOMAINS</code> los lista: sin Bank, sin Savings, con PnL.</p>
  </section>
 
  <section class="block">
@@ -632,11 +674,13 @@
     <div class="cell" style="flex: 0 1 18rem;">
      <div class="cell__label">Período</div>
      <div class="cell__figure cell__figure--sm">◀&nbsp;&nbsp;Agosto 2026&nbsp;&nbsp;▶</div>
-     <div class="cell__key">window.periodStart · window.periodEnd</div>
+     <div class="cell__key">window.referenceMonth · window.isCurrentMonth · window.periodStart · window.periodEnd</div>
     </div>
    </div>
   </div>
-  <p class="note"><b>El selector no manda sobre toda la pantalla.</b> Investment, financial goals y recent activity lo ignoran por diseño. Por eso cada cifra declara su período en su propia etiqueta, en vez de heredarlo del título de la página.</p>
+  <p class="note"><b>El selector lee el mes de la RESPUESTA, no el que mandó.</b> Una petición puede no nombrar ningún mes y entonces sólo la respuesta sabe cuál se sirvió, así que el componente toma <code>window.referenceMonth</code> en vez de recordar lo que envió. Y lo que decide la etiqueta condicional es <code>window.isCurrentMonth</code>: la regla estaba escrita y el campo que la resuelve no, que es la diferencia entre una regla y un insumo. El fin de período es la fecha de referencia y no el último día del mes — un componente que imprimiera el fin de mes declararía un período distinto de aquel al que se cortaron las cifras.</p>
+  <p class="note"><b>Casi toda la pantalla obedece el selector, y la excepción es una sola: recent activity.</b> Investment y financial goals ya no lo ignoran — sus consultas reciben el mes de referencia igual que las cards. Lo único deliberadamente fuera del mes es el teaser de actividad, porque responde qué pasó último y no qué pasó en el mes que se estudia. Aun así cada cifra declara su período en su propia etiqueta, en vez de heredarlo del título de la página.</p>
+  <p class="note note--warn"><b>La etiqueta es condicional; el control no.</b> El control elige un mes entero siempre, pero la etiqueta no puede: un mes cerrado se lee <em>agosto 2026</em> y el mes en curso se lee <em>septiembre a la fecha</em>. Escribirla fija, como estaba en este bosquejo, afirma que el mes está completo cuando todavía corre. La regla vale para todas las etiquetas de período de abajo, aunque el ejemplo esté dibujado sobre un mes cerrado.</p>
  </section>
 
  <section class="block">
@@ -644,27 +688,53 @@
    <span class="block__index">02</span>
    <h2 class="block__name">Hero</h2>
   </div>
-  <p class="block__why">Tres cifras. El hero nunca recalcula: compone desde las cards ya resueltas.</p>
+  <p class="block__why">Seis cifras en pantalla: cuatro posiciones y dos lecturas del mes. El hero nunca recalcula — compone desde las cards ya resueltas. La única entrada que no viene de una card es el saldo de banco, porque es el único stock que ninguna publica: no hay dominio Bank.</p>
   <div class="sheet sheet--dark">
    <div class="grid-3">
     <div class="cell">
      <div class="cell__label">Patrimonio neto</div>
      <div class="cell__figure">$ 24,180.55</div>
-     <div class="cell__scope" style="color: var(--nat-position);">Posición · a hoy</div>
+     <div class="cell__scope" style="color: var(--nat-position);">Posición · cierre de agosto</div>
+     <div class="cell__sub">banco y efectivo + inversión + posición de deuda</div>
+    </div>
+    <div class="cell">
+     <div class="cell__label">Patrimonio líquido</div>
+     <div class="cell__figure">$ 22,430.55</div>
+     <div class="cell__scope" style="color: var(--nat-position);">Posición · cierre de agosto</div>
+     <div class="cell__sub">lo mismo sin lo que me deben</div>
     </div>
     <div class="cell">
      <div class="cell__label">Posición en efectivo</div>
      <div class="cell__figure">$ 8,420.10</div>
-     <div class="cell__scope" style="color: var(--nat-position);">Posición · a hoy</div>
+     <div class="cell__scope" style="color: var(--nat-position);">Posición · cierre de agosto</div>
+     <div class="cell__sub">banco y efectivo — sin término de pocket</div>
+    </div>
+    <div class="cell">
+     <div class="cell__label">Efectivo libre</div>
+     <div class="cell__figure">$ 3,300.10</div>
+     <div class="cell__scope" style="color: var(--nat-position);">Posición · cierre de agosto</div>
+     <div class="cell__sub">lo que ningún pocket tiene prometido</div>
     </div>
     <div class="cell">
      <div class="cell__label">Flujo neto</div>
      <div class="cell__figure">+ $ 1,265.40</div>
      <div class="cell__scope" style="color: var(--nat-flow);">Flujo · agosto 2026</div>
+     <div class="cell__sub">ingreso menos gasto del mes</div>
+    </div>
+    <div class="cell">
+     <div class="cell__label">Tasa de ahorro</div>
+     <div class="cell__figure">29.4%</div>
+     <div class="cell__scope" style="color: var(--nat-flow);">Flujo · agosto 2026</div>
+     <div class="cell__sub">el mismo flujo como proporción de lo que entró</div>
     </div>
    </div>
   </div>
-  <p class="note note--warn"><b>Defecto abierto.</b> El patrimonio suma banco e inversión, que son <em>a hoy</em>, con deuda y pocket, que son cierre del mes. Con el mes en curso las dos lecturas coinciden y nadie lo nota; <b>al elegir un mes pasado la cifra queda mitad y mitad</b>. La posición en efectivo, igual. Sólo el flujo neto es puramente del mes.</p>
+  <p class="note"><b>La mezcla temporal está cerrada.</b> Las cuatro posiciones se leen al <b>cierre del mes elegido</b>, no a hoy. De las dos salidas que este bosquejo proponía — declararlo <em>a hoy</em> en pantalla, o que el saldo acepte la ventana — se tomó la segunda: <code>getBankBalance</code>, <code>getFreeCash</code> y las cifras de inversión reciben el mes de referencia. Elegir un mes pasado ya no deja la cifra mitad y mitad.</p>
+  <p class="note"><b>El patrimonio son tres términos, y el de pocket no es uno de ellos.</b> Banco y efectivo, más inversión, más la posición de deuda con su signo — un saldo de deudor ya viene neto, así que se <em>suma</em> y nunca se resta. El pocket salió porque comprometer no mueve dinero: la plata sigue dentro de la cuenta de banco, y sumarla otra vez la contaba dos veces.</p>
+  <p class="note"><b>El patrimonio líquido no se deriva del neto.</b> Se compone de los dos stocks menos la pierna de lo que debo, y no como <em>patrimonio menos lo que me deben</em>. Son idénticos en aritmética y sólo el primero deja <code>netWorth − liquidNetWorth == receivable</code> como algo que puede fallar y delatar un signo invertido. Si la card de deuda no trae su pierna, la cifra es <code>null</code> con aviso — nunca cero.</p>
+  <p class="note"><b>Posición en efectivo y efectivo libre se leen en par, nunca fundidas.</b> La primera dice lo que las cuentas tienen y se puede gastar; la segunda, cuánto de eso no está prometido a ningún pocket. Un pocket no bloquea un gasto — un gasto contra dinero comprometido siempre se acepta — así que restarlo del saldo le diría al dueño que no puede gastar dinero que sí puede.</p>
+  <p class="note note--warn"><b>El efectivo libre puede salir MAYOR que la posición en efectivo, y no es un defecto.</b> El piso se aplica por cuenta antes de sumar: una cuenta en descubierto aporta su saldo negativo a la primera y aporta cero a la segunda. Sin ese piso, el excedente de una cuenta taparía el faltante de otra, que es la respuesta equivocada.</p>
+  <p class="note"><b>La tasa de ahorro no es una cuarta figura.</b> Divide el flujo neto por uno de los dos operandos con que ya se armó: mismo período, misma fuente, ninguna consulta nueva. Es una <b>razón 0-1</b>, como toda razón de este contrato, y no se recorta por arriba ni por abajo: sobre 1 es un mes con reintegros, bajo 0 es un mes que perdió. Es <code>null</code> — nunca <code>0</code> — cuando el mes no tuvo ingreso o lo tuvo negativo, porque un mes sin ingreso no ahorró nada: no tiene tasa.</p>
  </section>
 
  <section class="block">
@@ -680,21 +750,21 @@
     <div class="cell">
      <div class="cell__label">Income</div>
      <div class="cell__figure">$ 4,300.00</div>
-     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__scope" style="color: var(--nat-flow-sheet);">Flujo · agosto 2026</div>
      <div class="cell__sub">▲ 7.7% vs julio</div>
     </div>
 
     <div class="cell">
      <div class="cell__label">Expense</div>
      <div class="cell__figure">$ 3,034.60</div>
-     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__scope" style="color: var(--nat-flow-sheet);">Flujo · agosto 2026</div>
      <div class="cell__sub">▼ 3.7% vs julio · budget $3,200</div>
     </div>
 
     <div class="cell">
      <div class="cell__label">PnL</div>
      <div class="cell__figure">+ $ 1,265.40</div>
-     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__scope" style="color: var(--nat-flow-sheet);">Flujo · agosto 2026</div>
      <div class="cell__sub">▲ 24.1% vs julio</div>
     </div>
 
@@ -702,32 +772,34 @@
      <div class="cell__label">Debt</div>
      <div class="cell__figure cell__figure--sm">You owe &nbsp;<b>$ 2,300.00</b></div>
      <div class="cell__figure cell__figure--sm">You're owed &nbsp;<b>$ 1,750.00</b></div>
-     <div class="cell__scope" style="color: #3E6577;">Posición · cierre de agosto</div>
-     <div class="cell__sub">4 deudores · 2 acreedores</div>
+     <div class="cell__scope" style="color: var(--nat-position-sheet);">Posición · cierre de agosto</div>
+     <div class="cell__sub">2 deudas saldadas al cierre</div>
     </div>
 
     <div class="cell">
-     <div class="cell__label">Pocket</div>
+     <div class="cell__label">Pocket · comprometido</div>
      <div class="cell__figure">$ 5,120.00</div>
-     <div class="cell__scope" style="color: #3E6577;">Posición · cierre de agosto</div>
-     <div class="cell__sub">▲ $400.00 vs cierre de julio</div>
+     <div class="cell__scope" style="color: var(--nat-position-sheet);">Posición · cierre de agosto</div>
+     <div class="cell__sub">▲ $400.00 comprometido en el mes</div>
     </div>
 
     <div class="cell">
      <div class="cell__label">Investment</div>
      <div class="cell__figure">$ 11,600.00</div>
-     <div class="cell__scope" style="color: #3E6577;">Posición · <b>a hoy</b></div>
-     <div class="cell__sub">no sigue el mes elegido</div>
+     <div class="cell__scope" style="color: var(--nat-position-sheet);">Posición · cierre de agosto</div>
+     <div class="cell__sub">3 cuentas — el conteo sí es a hoy</div>
     </div>
 
    </div>
   </div>
 
-  <p class="note"><b>Debt deja de ser un neto.</b> Un neto de −$550 no distingue entre "debes 550" y "te deben 1,750 y debes 2,300", que son situaciones opuestas. Las dos piernas se muestran por separado, con la lengua que la app ya usa en <code>DebtsLayout.tsx:66</code>. El neto queda pendiente de decidir: puede aclarar o puede introducir una tercera cifra que nadie pidió.</p>
+  <p class="note"><b>Debt deja de ser sólo un neto.</b> Un neto de −$550 no distingue entre "debes 550" y "te deben 1,750 y debes 2,300", que son situaciones opuestas. Las dos piernas se muestran por separado, con la lengua que la app ya usa en <code>DebtsLayout.tsx:66</code>, y ambas salen como <b>magnitudes positivas</b>: la dirección la lleva el nombre del campo, así que un <code>payable</code> negativo sería una doble negación. El neto también viaja, como <code>totalAmount</code>, y las tres cifras juntas dejan <code>totalAmount = receivable − payable</code> como una comprobación auditable — las piernas se suman por cuenta y después se parten por signo, mientras el total suma primero, así que coinciden por aritmética y no por construcción.</p>
+  <p class="note"><b>El tercer campo de la card es <code>settledCount</code></b>: cuántos deudores quedaron en cero al cierre del mes, contando sólo los que tuvieron movimiento propio. La fila que ABRE la cuenta no cuenta — una cuenta creada y nunca usada no es una deuda saldada, y como la creación escribe una fila, contar cualquier fila readmitiría justo lo que la regla excluye.</p>
 
-  <p class="note"><b>Pocket muestra el saldo disponible, no lo ahorrado este mes.</b> Es una posición. Lo aportado, lo retirado y el neto del mes se descubren en el Nivel 2.</p>
+  <p class="note"><b>El total de pocket es lo COMPROMETIDO, no un saldo que el pocket tenga.</b> Bajo el modelo de plan ninguna asignación mueve dinero: la plata sigue en la cuenta de banco que la prometió, y por eso el hero no la suma al patrimonio ni se la resta al efectivo. El delta tampoco es "vs cierre de julio" recalculado: es el neto comprometido dentro del mes, leído sobre el mismo libro y nunca reconstruido como diferencia de dos puntos de la serie.</p>
+  <p class="note"><b>La card publica siete cifras y el Nivel 1 pinta dos.</b> Además del total y su delta viajan <code>target</code>, <code>remaining</code>, <code>progress</code> y tres conteos de estado — <code>fundedCount</code>, <code>overdueCount</code>, <code>uncoveredCount</code>. Dibujarlas todas convertiría la card en un tablero en miniatura, que es exactamente lo que la regla visual del Nivel 1 prohíbe. El resto se descubre en el Nivel 2. Ojo con la escala: <code>progress</code> es una tasa <b>sobre 100</b>, no una razón 0-1 como <code>savingsRate</code> o <code>share</code>; mezclarlas imprime a cien veces el tamaño.</p>
 
-  <p class="note note--warn"><b>Pocket nunca debería ser negativo, y eso es una regla del dominio, no de la vista.</b> Si no se puede retirar más de lo disponible, el retiro se rechaza en el backend. Un Overview que muestre un pocket negativo estaría señalando una violación del modelo, y la card <b>no debe taparla</b> con un <code>Math.max(0, saldo)</code>. <em>Sin verificar: falta comprobar si el esquema hoy impone ese invariante.</em></p>
+  <p class="note"><b>La pregunta de "pocket negativo" cambió con el modelo, y ya no tiene objeto en esta card.</b> El total no es un saldo del que se pueda retirar de más, sino la suma de asignaciones vigentes al cierre del mes; una liberación se guarda como fila negativa, así que la suma ya viene neta y ningún predicado extra las saca. Lo que sí puede quedar negativo es el remanente de una cuenta sobre-comprometida — un gasto contra dinero comprometido siempre se acepta — y eso se reporta aparte, dentro del efectivo libre y con piso <b>por cuenta</b>, en vez de taparse con un <code>Math.max(0, …)</code> en la vista.</p>
 
   <p class="note"><b>Sin <code>delta</code> no se inventa un cero.</b> Cuando no hubo período previo completo el backend manda <code>null</code> y la card pinta un guion.</p>
  </section>
@@ -745,29 +817,29 @@
     <div class="cell">
      <div class="cell__label">Income</div>
      <div class="cell__figure">$ 4,300.00</div>
-     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__scope" style="color: var(--nat-flow-sheet);">Flujo · agosto 2026</div>
      <div class="cell__sub">Promedio mensual · 3M &nbsp; $ 4,050.00</div>
      <div class="cell__sub" style="color: var(--sheet-mute);">sobre 3 de 3 meses con movimiento</div>
      <div class="cell__sub">Promedio mensual · 12M &nbsp; $ 3,890.00</div>
      <div class="cell__sub" style="color: var(--sheet-mute);">sobre 11 de 12 meses con movimiento</div>
-     <div class="cell__sub" style="color: #2F6B4F;">▲ $ 410.00 sobre el promedio</div>
+     <div class="cell__sub" style="color: var(--nat-good-sheet);">▲ $ 410.00 sobre el promedio</div>
     </div>
 
     <div class="cell">
      <div class="cell__label">Expense</div>
      <div class="cell__figure">$ 3,034.60</div>
-     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__scope" style="color: var(--nat-flow-sheet);">Flujo · agosto 2026</div>
      <div class="cell__sub">Promedio mensual · 3M &nbsp; $ 2,910.00</div>
      <div class="cell__sub" style="color: var(--sheet-mute);">sobre 3 de 3 meses con movimiento</div>
      <div class="cell__sub">Promedio mensual · 12M &nbsp; $ 3,150.00</div>
      <div class="cell__sub" style="color: var(--sheet-mute);">sobre 12 de 12 meses con movimiento</div>
-     <div class="cell__sub" style="color: #2F6B4F;">▼ $ 115.40 bajo el promedio</div>
+     <div class="cell__sub" style="color: var(--nat-good-sheet);">▼ $ 115.40 bajo el promedio</div>
     </div>
 
     <div class="cell">
-     <div class="cell__label">Pocket · neto del mes</div>
+     <div class="cell__label">Pocket · neto comprometido en el mes</div>
      <div class="cell__figure">+ $ 400.00</div>
-     <div class="cell__scope" style="color: #8A6520;">Flujo · agosto 2026</div>
+     <div class="cell__scope" style="color: var(--nat-flow-sheet);">Flujo · agosto 2026</div>
      <div class="cell__sub">Promedio mensual · 3M &nbsp; —</div>
      <div class="cell__sub">Promedio mensual · 12M &nbsp; —</div>
      <div class="cell__sub" style="color: var(--sheet-mute);">sin historia suficiente</div>
@@ -776,7 +848,7 @@
    </div>
   </div>
 
-  <p class="note"><b>Aquí pocket entra como flujo, no como saldo</b>, aunque su card sea un saldo. Si el snapshot usara el balance, la varianza restaría un promedio de movimientos a una posición: una cifra sin significado. Y este neto <b>sí puede ser negativo</b> — un mes donde retiraste más de lo que metiste — sin contradecir que el saldo nunca lo sea.</p>
+  <p class="note"><b>Aquí pocket entra como flujo, no como posición</b>, aunque su card sea una posición. Si el snapshot usara el total comprometido, la varianza restaría un promedio de movimientos a una posición: una cifra sin significado. Y este neto <b>sí puede ser negativo</b> — un mes donde liberaste más de lo que comprometiste — sin contradecir nada de la card. Se lee sobre el libro de asignaciones y por usuario, no por un conjunto de cuentas: bajo el modelo de plan un pocket ya no es una cuenta.</p>
 
   <p class="note"><b>El divisor son los meses activos.</b> Un mes sin movimiento no entra, así que un mes vacío no diluye el promedio; y si no hubo ninguno, la cifra es <code>null</code>, nunca <code>0</code>. Por eso la línea de abajo dice sobre cuántos meses se calculó: sin ella, "Promedio mensual · 3M" afirmaría algo que la cifra no cumple.</p>
 
@@ -788,27 +860,31 @@
    <span class="block__index">05</span>
    <h2 class="block__name">Financial goals</h2>
   </div>
-  <p class="block__why">No recibe ventana: una meta de ahorro no tiene versión de agosto. Sin barra de progreso — el porcentaje es una cifra.</p>
+  <p class="block__why"><b>Sí recibe la ventana</b>, al revés de lo que decía este bosquejo: <code>getSavingGoals</code> toma el mes de referencia, así que lo ahorrado se lee al cierre del mes elegido y no a hoy. Dejarlo sin atar ponía una cifra de hoy al lado de cifras de un mes cerrado. Sin barra de progreso.</p>
   <div class="sheet">
    <div class="row">
     <div class="cell">
      <div class="cell__label">Ahorrado</div>
      <div class="cell__figure">$ 5,120.00</div>
-     <div class="cell__scope" style="color: #3E6577;">Posición · a hoy</div>
+     <div class="cell__scope" style="color: var(--nat-position-sheet);">Posición · cierre de agosto</div>
+     <div class="cell__key">financialGoals.goalsTotalBalance</div>
     </div>
     <div class="cell">
      <div class="cell__label">Meta</div>
      <div class="cell__figure">$ 8,000.00</div>
-     <div class="cell__scope" style="color: #3E6577;">Posición · a hoy</div>
+     <div class="cell__scope" style="color: var(--nat-position-sheet);">Posición · cierre de agosto</div>
+     <div class="cell__key">financialGoals.goalsTotalTarget</div>
     </div>
     <div class="cell">
      <div class="cell__label">Falta</div>
      <div class="cell__figure">$ 2,880.00</div>
-     <div class="cell__sub">64% alcanzado</div>
+     <div class="cell__scope" style="color: var(--nat-position-sheet);">Posición · cierre de agosto</div>
+     <div class="cell__key">financialGoals.goalsTotalRemaining</div>
     </div>
    </div>
   </div>
-  <p class="note"><b>El progreso se mide sólo sobre los pockets que tienen meta.</b> Restar el ahorro de un pocket sin meta reportaría avance hacia un objetivo al que ese dinero nunca apuntó. Si ninguno tiene meta, el bloque lo dice y las tres cifras van en guion — <b>una meta ausente no es una meta de cero</b>.</p>
+  <p class="note"><b>Son exactamente tres cifras y ningún porcentaje.</b> El "64% alcanzado" que este bosquejo dibujaba no existe en el payload: <code>makeFinancialGoals</code> publica el ahorrado, la meta y lo que falta, y nada más. O el frontend lo calcula y asume la división por cero, o el bloque se queda con las tres — y quedarse con las tres es lo que respeta la regla de que la card lleva cifra y no mini tabla.</p>
+  <p class="note"><b>Lo que falta se mide sólo sobre los pockets que TIENEN meta.</b> Restar el ahorro de un pocket sin meta reportaría avance hacia un objetivo al que ese dinero nunca apuntó. Si ninguno tiene meta, la meta y el faltante son <code>null</code> y van en guión — <b>una meta ausente no es una meta de cero</b>. El ahorrado sí es siempre un número.</p>
  </section>
 
  <section class="block">
@@ -848,11 +924,11 @@
     <div class="cell">
      <div class="cell__label">Distribución del gasto · agosto</div>
      <div class="bar-strip" aria-hidden="true">
-      <span style="flex: 34; background: #C98A2E;"></span>
-      <span style="flex: 24; background: #B07E33;"></span>
-      <span style="flex: 17; background: #8F6A32;"></span>
-      <span style="flex: 13; background: #6E5530;"></span>
-      <span style="flex: 12; background: #4E402C;"></span>
+      <span style="flex: 34; background: var(--ramp-1);"></span>
+      <span style="flex: 24; background: var(--ramp-2);"></span>
+      <span style="flex: 17; background: var(--ramp-3);"></span>
+      <span style="flex: 13; background: var(--ramp-4);"></span>
+      <span style="flex: 12; background: var(--ramp-5);"></span>
      </div>
      <div class="cell__sub">Vivienda 34% · Comida 24% · Transporte 17% · Servicios 13% · Otros 12%</div>
      <div class="cell__key">charts.expenseCategories</div>
@@ -874,7 +950,7 @@
    <div class="grid-3">
     <div class="cell">
      <div class="cell__label">Cargando</div>
-     <div class="bar-strip" style="height: 1.6rem;" aria-hidden="true"><span style="flex: 1; background: rgba(90,110,120,0.3);"></span></div>
+     <div class="bar-strip" style="height: 1.6rem;" aria-hidden="true"><span style="flex: 1; background: var(--skeleton);"></span></div>
      <div class="cell__sub">skeleton, nunca un cero</div>
     </div>
     <div class="cell">
@@ -916,13 +992,13 @@
      </tr>
      <tr>
       <td><strong>Mezcla temporal del hero</strong></td>
-      <td>El patrimonio y el efectivo cruzan dos tiempos</td>
-      <td>Dos salidas: declararlo <em>a hoy</em> en pantalla, o que el saldo de banco acepte la ventana</td>
+      <td><b>Cerrado</b> — las cuatro posiciones se leen al cierre del mes elegido</td>
+      <td>Se tomó la segunda salida: <code>getBankBalance</code>, <code>getFreeCash</code> y <code>getSavingGoals</code> reciben el mes de referencia, y las cifras de inversión también. La única lectura a hoy que queda en toda la página es <code>accountCount</code> de inversión, y atarla necesita una fecha de creación que esa consulta no lee</td>
      </tr>
      <tr>
       <td><strong>Invariante pocket ≥ 0</strong></td>
-      <td>Sin verificar si el esquema lo impone</td>
-      <td>Medir primero; si no lo impone, es una regla de dominio, no un parche de vista</td>
+      <td><b>Sin objeto</b> — el total dejó de ser un saldo retirable</td>
+      <td>Bajo el modelo de plan el total es la suma de asignaciones vigentes y una liberación es una fila negativa. Lo que queda por vigilar es el remanente por cuenta, y ya se reporta con piso por cuenta dentro del efectivo libre</td>
      </tr>
     </tbody>
    </table>
@@ -968,25 +1044,25 @@
      </tr>
      <tr>
       <td><strong>PnL</strong></td>
-      <td>Resultado del mes <b>con signo</b> · nº de movimientos · delta</td>
+      <td>Resultado del mes <b>con signo</b> · <code>realizedFromInvestment</code> · nº de movimientos · delta</td>
       <td>—</td>
       <td>YTD · nº de depósitos y retiros · balance histórico</td>
      </tr>
      <tr>
       <td><strong>Debt</strong></td>
-      <td>Neto <b>con signo</b> · nº de movimientos · delta</td>
+      <td>Neto <b>con signo</b> · <code>receivable</code> · <code>payable</code> · <code>settledCount</code> · nº de movimientos · delta</td>
       <td>—</td>
-      <td><b>receivable / payable</b> · <code>settledCount</code> · YTD</td>
+      <td>YTD</td>
      </tr>
      <tr>
       <td><strong>Pocket</strong></td>
-      <td>Saldo al cierre · nº de movimientos · delta vs cierre anterior · serie de 6 meses de cierres</td>
-      <td>—</td>
-      <td>YTD · aportado y retirado por separado</td>
+      <td>Comprometido al cierre · <code>target</code> · <code>remaining</code> · <code>progress</code> · <code>fundedCount</code> · <code>overdueCount</code> · <code>uncoveredCount</code> · nº de asignaciones · neto comprometido del mes · serie de 6 meses</td>
+      <td>No hay ningún pocket</td>
+      <td>YTD · comprometido y liberado por separado</td>
      </tr>
      <tr>
       <td><strong>Investment</strong></td>
-      <td><code>ledgerBalance</code> · <code>capitalContributed</code> · <code>realizedPnl</code> · <code>concentration</code> · <code>daysSinceLastContribution</code></td>
+      <td><code>ledgerBalance</code> · <code>capitalContributed</code> · <code>realizedPnl</code> · <code>closureAdjustment</code> · <code>accountCount</code> · <code>concentration</code> · <code>daysSinceLastContribution</code></td>
       <td>Sin cuentas de inversión · cartera vacía · sin aportes registrados · <b>el balance no reconcilia</b></td>
       <td><code>totalAmount</code> · <code>delta</code> · <code>window</code> · <code>transactionCount</code> · serie · YTD · rendimiento&nbsp;%</td>
      </tr>
@@ -994,15 +1070,21 @@
    </table>
   </div>
 
-  <p class="note"><b>Investment es la excepción de forma, no de contenido.</b> No lleva total, delta ni ventana porque sus cifras son <em>a hoy</em>, y publica cuatro avisos que ninguna otra card tiene. El de reconciliación es el más valioso: dice que aportado más realizado no cuadra con el saldo en libros.</p>
+  <p class="note"><b>Investment es la excepción de forma, no de tiempo.</b> No lleva <code>totalAmount</code>, <code>delta</code>, <code>window</code> ni <code>transactionCount</code>, y la razón no es que sus cifras sean a hoy — <b>sí obedecen el mes elegido</b>, como todas las demás. Es que no son un total, un conteo y una comparación: hay dos stocks, dos flujos, una razón y una edad, y meterlas en la forma compartida obligaría a casi todas a fingir ser otra cosa. El único campo verdaderamente a hoy es <code>accountCount</code>, que cuenta las cuentas que existen ahora y no las que existían en el mes leído; en un mes pasado puede reportar tres cuentas al lado de un saldo construido con las dos que estaban abiertas entonces.</p>
+
+  <p class="note"><b>La reconciliación son TRES términos, no dos.</b> Aportado más resultado realizado <em>más ajuste de cierre</em> tiene que igualar el saldo en libros. El tercero se agregó el 2026-09-06 y es lo que volvió raro el aviso en vez de rutinario: borrar una cuenta de inversión escribe una fila de reversa que mueve el saldo y no es ni aporte ni resultado, así que la identidad de dos términos fallaba para todo dueño que hubiera borrado una cuenta, y la card llamaba inconsistentes a libros correctos.</p>
+
+  <p class="note"><b>El servidor publica los cuatro campos y NUNCA la diferencia.</b> La resta es del cliente, y le cuesta una sola operación sobre campos que ya tiene. Lo que el cliente no puede reconstruir es la <b>tolerancia</b>: la comparación corre por la librería decimal, y una resta en punto flotante encuentra un centavo de diferencia donde el servidor no encontró ninguna. Por eso el aviso es una frase y no un número.</p>
 
   <p class="note"><b>El rendimiento porcentual no existe y es deliberado.</b> Sin precio de mercado, un retorno calculado sobre el valor en libros sería una cifra no honesta. Los campos están <b>ausentes</b>, no en null.</p>
 
-  <p class="note"><b>Cuatro de los seis dominios sólo tienen la base.</b> Income, PnL, Debt y Pocket publican tres cifras cada uno. Es suficiente para el Nivel 1 — un KPI principal más una comparación — pero significa que Debt no puede mostrar las dos piernas hasta que el backend las publique.</p>
+  <p class="note"><b>Sólo dos de los seis dominios se quedan en la base.</b> Income y PnL publican las tres cifras compartidas y nada más, y para el Nivel 1 alcanza: un KPI principal más una comparación. Los otros cuatro la extienden — Expense con el presupuesto y el gasto categorizado, Debt con las dos piernas y las deudas saldadas, Pocket con meta, faltante, progreso y tres conteos de estado, e Investment con una forma propia que no usa la base en absoluto.</p>
  </section>
 
  <footer class="foot">
-  <p>Todo lo dibujado sale de <code>GET /overview</code> tal como está hoy, salvo lo marcado como <b>falta</b>. Ninguna cifra se recalcula en el cliente: ése fue el defecto R202 que abrió el módulo entero — un total consolidado que discrepaba del detalle que tenía al lado.</p>
+  <p>Todo lo dibujado sale de <code>GET /overview</code> tal como está hoy, salvo lo marcado como <b>falta</b>. Ninguna cifra se recalcula en el cliente: un total consolidado que discrepaba del detalle que tenía al lado fue el defecto que abrió el módulo entero.</p>
+  <p><b>Lo que esta revisión cerró, y de dónde salió.</b> La mezcla temporal del hero, las dos piernas de deuda, el término de pocket en el patrimonio, el término de pocket en el efectivo, la ventana de las metas y el tercer término de la reconciliación de inversión. Ninguno se leyó de un plan: los seis se midieron contra el constructor que publica la cifra. <b>Lo único que sigue faltando en backend es el YTD por dominio</b> — no existe ningún campo acumulado en el módulo, y nunca se suma en el cliente.</p>
+  <p><b>Tres cosas de este bosquejo viven en la rama y no en el checkout principal, y conviene saberlo antes de construir contra ellas.</b> La ventana servida con su mes de referencia y su indicador de mes en curso, la parte del resultado que cayó en inversión, y la pantalla de actividad con su propio rango: las tres están construidas en <code>feat/overview</code> y escritas en el contrato congelado, y ninguna existe en el código de <code>main</code>. El contrato manda sobre la forma, así que el dibujo es correcto — pero un frontend que arranque contra <code>main</code> no las va a encontrar servidas.</p>
   <p>El orden es: hecho financiero → modelo de dominio → KPI aprobado → read model de Overview → UI. Nunca al revés, y nunca diseñando alrededor del nombre de un endpoint que ya existe.</p>
  </footer>
 

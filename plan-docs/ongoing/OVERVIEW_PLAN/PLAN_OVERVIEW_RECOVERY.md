@@ -607,13 +607,20 @@ figure**.
 |---|---|
 | **hero** | publish Liquid Net Worth, Available Balance, Free Cash per the formulas in §1.5. **Pocket leaves both Liquid Net Worth and Available Balance entirely.** Commitments apply only in Free Cash, through the per-account floor before aggregation — not as a sign flip inside a cash figure. Keep total net worth computed for the identity check |
 | **income** | publish what already exists: received, change, movement count |
-| **expense** | add the uncategorised amount as a fourth field; leave variance against categorised spend. **Uncategorised is a disclosure figure, not a budget category** — it exists so `spent = categorised + uncategorised` is visible, and it is never charged against a budget line |
+| **expense** | publish a flag saying uncategorised spending EXISTS; the amount itself stays at level 2. **Carlos, 2026-09-07: that figure should be zero**, so a level-1 field would spend a card slot on a number that is normally nothing — the flag is what a level-1 reader needs, and the amount is a level-2 answer to the question the flag raises. Uncategorised remains a disclosure figure, never a budget category: it exists so `spent = categorised + uncategorised` is visible, and it is never charged against a budget line |
 | **investment** | restore the account count (**a dropped field, one line**) and add a reconciliation field (**a new contract field — today it is only a notice sentence**) |
 | **debt** | emit both directions through the shared builder, normalising the payable leg to a **positive magnitude** |
 | **pocket** | target, allocated, remaining, progress — plus the status counts as one summary line |
 | **profit and loss** | realised result, change, movement count — named per §1.4 |
 
-### P4 — The API contract
+### P4 — The API contract · DONE, uncommitted
+
+Closed 2026-09-07, measured rather than declared: `GET /overview` and
+`GET /overview/:domain` serve, Recent Activity is its own route with its own
+period rather than a parameter on the page, and the contract tests pass — 69
+across six files, no database. The exit condition this stage set for itself,
+that the payload contract is frozen and its tests pass, is met.
+
 
 `GET /overview` and `GET /overview/:domain` already exist. This is a revision,
 not a design — but a larger one than "review": the window builder is rewritten,
