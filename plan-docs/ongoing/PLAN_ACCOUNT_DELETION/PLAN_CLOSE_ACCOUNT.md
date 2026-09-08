@@ -27,7 +27,7 @@ design can advance; they can still move.
 | Method conceptualization | received, evaluated, accepted with three measured collisions |
 | Matrix by account type | settled: six types close, one never does, one no longer exists |
 | Historical identity design | the registry, ruled by the migration session; its extension half reversed by the owner on 2026-09-07 |
-| Schema | **written and merged** on 2026-09-08 (`035_create_account_registry.sql`); applied to no database, and the migration suspension still holds |
+| Schema | **written and merged** on 2026-09-08 (`035_create_account_registry.sql`); applied to no production database. The suspension that held it there was lifted on 2026-09-08 — see below |
 | Historical identity contract | **closed by the owner on 2026-09-08** — fourteen columns, 4.6 |
 | Implementation spec | written against the closed contract, section 7 |
 | Close operation | **written and merged** on 2026-09-08, all three blocks |
@@ -310,7 +310,28 @@ and where it landed:
 | Telling the owner the budget goes with the account | say it before he confirms | built, on the close dialog |
 | Whether a closed account appears in pickers and in history | history yes, pickers no | **needs no code** — see below |
 | Migration 032's account-closure catalog row | leave it | nothing to do |
-| Lifting the migration suspension | not yet | nothing to do |
+| Lifting the migration suspension | not yet | **superseded the same day** — see below |
+
+**THE SUSPENSION IS LIFTED, AND IT CHANGES WHEN CLOSE CAN WORK IN
+PRODUCTION.** Recorded by the migration session at `f175ed3f`, whose message
+states that the owner lifted it on 2026-09-08 and that it is a change of
+permission rather than of method. This session did not hear that from the owner
+directly and does not record it as an instruction to itself; it records what
+the commit says, and the commit is in `main`.
+
+Why it matters to this module, and it is not a detail. The close makes three
+writes, and the first of them is an `INSERT INTO account_registry`
+(`deleteAccountService.js:1226`). On a database that has not run the chain
+there is no such relation, so that statement raises `42P01` and the whole close
+transaction rolls back. **CLOSE cannot work in production at all until the
+chain runs there** — not partially, not with degraded history: the operation
+fails outright. Every measurement in this plan was made against `fintrack_dev`
+or the rehearsal, and none of it describes what production does today.
+
+The run itself is the migration session's and none of its conditions are
+relaxed by the lifting: through `db:align` and `db:migrate` and never `psql`,
+`DB_EXPECTED` and `DB_REMOTE_OK` typed explicitly, `db:state` captured before
+and after. Nothing in this module runs it or may run it.
 
 **The closing reason is capped in the database, not in the form.** A limit that
 lives only in the interface is not honoured by a second writer, and the column
