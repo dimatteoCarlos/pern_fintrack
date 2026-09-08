@@ -368,13 +368,14 @@
  --radius-xs: 0.25rem;
  --radius-sm: 0.5rem;
  --radius-md: 0.75rem;
- /* COLLISION - do not consume this one yet. Three leaves of the account
-    deletion flow write --radius-lg: 0.5rem into the global :root
-    (accountDeletionPage.css:17, loadingReportUI.css:15,
-    impactReportUI.css:19). Those stylesheets ship in a lazy chunk and load
-    after this file, so the value below holds until that route is visited and
-    0.5rem holds for the rest of the session afterwards. Removing those three
-    writes is a cleanup item. */
+ /* THE COLLISION IS GONE, 2026-09-08. Three leaves of the account deletion
+    flow used to write --radius-lg: 0.5rem into the global :root
+    (accountDeletionPage.css, loadingReportUI.css, impactReportUI.css). They
+    ship in a lazy chunk that loads after this file, so the value below held
+    only until that route was visited and 0.5rem held for the rest of the
+    session afterwards - app-wide, not on that page. All three writes are now
+    commented out and their uses read --radius-sm, which is the same 0.5rem
+    they intended. Safe to consume. */
  --radius-lg: 0.875rem;
  --radius-xl: 1rem;
  --radius-full: 9999px;

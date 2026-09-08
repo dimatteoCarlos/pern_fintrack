@@ -1,7 +1,19 @@
 /* =====================================
    ACCOUNT DELETION PAGE STYLES
 ===================================== */
-/* CSS Variables */
+/* THE LOCAL TOKEN BLOCK, RETIRED. It was declared on :root, which is the
+   document root and not this page, so --radius-lg and --shadow-lg were written
+   over the design system's own values for the whole application from the
+   moment this route was visited. --radius-lg is the one that mattered:
+   tokens.css:378 declares 0.875rem and this wrote 0.5rem, and tokens.css
+   already records the collision and names the three files that cause it. The
+   other two are impactReportUI.css and loadingReportUI.css.
+
+   Every name below is now read from tokens.css. --shadow-lg was byte-identical
+   to the design system's, --spacing-N map onto --space-N, and 0.5rem is
+   exactly --radius-sm. The colours change, because the page is meant to sit on
+   the product's dark ground and was sitting on a light grey of its own.
+
 :root {
   --primary-color: #3b82f6;
   --danger-color: #dc2626;
@@ -17,12 +29,25 @@
   --radius-lg: 0.5rem;
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
+*/
 
-/* Page Container */
+/* THE ONE VALUE THAT HAS NO TOKEN, and it is not invented as one. A hairline
+   divider drawn INSIDE a white card has no counterpart in tokens.css:
+   --color-border-subtle is rgba(232, 228, 218, 0.4), calibrated against the
+   dark surfaces and effectively invisible on white, and --color-border-strong
+   is #141414, far heavier than the line this replaces. Scoped to this page and
+   prefixed so it cannot collide with a design-system name the way the block
+   above did. Waiting on a decision from the owner. */
+.account-deletion-page {
+  --deletion-divider-on-light: #e5e7eb;
+}
+
+/* Page Container. The product's dark ground, which is what the mockup draws
+   and what every other board in the application sits on. */
 .account-deletion-page {
   min-height: 100vh;
-  background-color: var(--gray-100);
-  padding: var(--spacing-8);
+  background-color: var(--color-surface-app);
+  padding: var(--space-8);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   max-width: 1200px;
   margin: 0 auto;
@@ -34,9 +59,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-8);
-  padding-bottom: var(--spacing-4);
-  border-bottom: 2px solid var(--gray-200);
+  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--border-width-thick) solid var(--color-border-subtle);
   /* border:2px solid red; */
   }
 
@@ -48,9 +73,11 @@
 .page-title {
  flex-grow: 1;
  text-align: center;
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--gray-800);
+  font-size: var(--font-size-2xl);
+  /* 700 rather than the 800 this carried: --font-weight-bold is the heaviest
+     weight the scale declares, and a weight with no token is not invented. */
+  font-weight: var(--font-weight-bold);
+  color: var(--color-content-on-dark);
   margin: 0;
   width: 100%;
   /* border:1px solid red; */
@@ -74,46 +101,65 @@
 }
 
 .language-dropdown {
- padding: 0.5rem 0.75rem;
- border: 1px solid var(--gray-200);
- border-radius: var(--radius-lg);
- background: white;
- color: var(--gray-800);
- font-weight: 500;
+ padding: var(--space-2) var(--space-3);
+ border: var(--border-width-thin) solid var(--color-border-subtle);
+ border-radius: var(--radius-sm);
+ /* A control on the dark ground, drawn white the way every header and navbar
+    in the product is, so its text takes the on-inverse content token. */
+ background: var(--color-surface-inverse);
+ color: var(--color-content-primary);
+ font-weight: var(--font-weight-medium);
  cursor: pointer;
- transition: border-color 0.32s ease;
-
+ transition: border-color var(--motion-fast);
 }
 
 .language-dropdown:hover {
-  border-color: var(--primary-color);
+ border-color: var(--color-interactive-hover);
+}
+
+/* The four states this control never declared. The ring is drawn in the strong
+   border token and not the inverse one, because the control itself is white:
+   a white ring on a white select is no ring at all. */
+.language-dropdown:focus-visible {
+ outline: var(--border-width-thick) solid var(--color-border-strong);
+ outline-offset: var(--border-width-thick);
+}
+
+.language-dropdown:active {
+ border-color: var(--color-border-strong);
+}
+
+.language-dropdown:disabled {
+ opacity: 0.5;
+ pointer-events: none;
 }
 
 /* Main Content */
 .main-content {
-  background: white;
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-8);
+  background: var(--color-surface-inverse);
+  border-radius: var(--radius-sm);
+  padding: var(--space-8);
   box-shadow: var(--shadow-lg);
-  margin-top: var(--spacing-6);
+  margin-top: var(--space-6);
 
 }
 
 .content-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--gray-800);
-  margin-bottom: var(--spacing-6);
-  padding-bottom: var(--spacing-4);
-  border-bottom: 1px solid var(--gray-200);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-content-primary);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--border-width-thin) solid
+    var(--deletion-divider-on-light);
 
 }
 
 /* Action Section */
 .action-section {
-  margin-top: var(--spacing-8);
-  padding-top: var(--spacing-6);
-  border-top: 1px solid var(--gray-200);
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: var(--border-width-thin) solid var(--deletion-divider-on-light);
   display: flex;
   justify-content: flex-end;
   /* background-color: orange; */
@@ -122,17 +168,17 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .account-deletion-page {
-    padding: var(--spacing-4);
+    padding: var(--space-4);
   }
   
   .page-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--spacing-4);
+    gap: var(--space-4);
   }
   
   .main-content {
-    padding: var(--spacing-4);
+    padding: var(--space-4);
   }
   
   .page-title {
