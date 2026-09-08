@@ -347,6 +347,43 @@ correct and only its conclusion is not.
 | 3 | Freeze every elapsed month into a settled-month snapshot, read instead of recomputed | far more than asked | a new subsystem, and it would also freeze the retroactive budget edit the code deliberately allows | no |
 | 4 | Change nothing; warn on the close screen | nothing; it only tells the user the past will move | one line of copy | fallback only if 1 is deferred |
 
+#### RULED: fix 1, by the owner, 2026-09-08
+
+**The owner closed this on 2026-09-08** — *de las cuatro opciones de 3.7, yo
+cerraria Fix 1* — and stated the rule the fix has to satisfy in his own words:
+*un cierre en septiembre no puede alterar el resultado historico de marzo*, which
+he narrowed himself so it cannot be misread as freezing the past: *una accion
+sobre la cuenta en septiembre no puede modificar retrospectivamente marzo*. He
+names what this is: **a temporality defect, not an acceptable consequence of
+CLOSE.**
+
+What the ruling commits to, in the five steps he wrote out:
+
+1. `budget_monthly_allocations.account_id` references the registry.
+2. The allocation rows survive CLOSE.
+3. CLOSE writes a terminating zero for the current month.
+4. The budget readers can find a closed category for elapsed months.
+5. From the closing month onward the series ends at zero.
+
+**A second ruling in the same message settles the question 3.8 left open** —
+whether the history of a closed account must stay correct in elapsed months: *si:
+el historico de una cuenta cerrada debe seguir siendo correcto en los meses
+transcurridos.* The resolution rule he wrote for the twelve Overview reads and
+`ledgerBody`:
+
+```text
+open account   -> read identity and stock from user_accounts
+closed account -> read historical identity from the registry
+                  read the surviving movements unchanged
+```
+
+**He also ruled what that is NOT:** *no hay que reconstruir la historia
+modificando transactions*, and *A no significa simplemente cambiar 13 JOINs* —
+because 3.8.3 measured four distinct mechanisms and only one of them is a join.
+It means introducing one historical population and letting the reads that need
+the past see it. The contract for that population is 4.6, which he ordered
+written before section 7.
+
 #### Fix 1, in detail
 
 - **The terminating zero, which is required by any design that keeps the rows
@@ -977,6 +1014,171 @@ those rows has to re-answer them.
 Everything else measured — the dashboard, the account reads, the budget
 transaction repository, the creatable-type helper and the export — joins in from
 the accounts table and needs no change.
+
+---
+
+### 4.6 The historical identity contract
+
+**The owner ordered this written before section 7, and gave the reason** — *no
+conviene disenar el registry definitivo antes, porque el problema del presupuesto
+determina una parte de su contrato.* The sequence matters: fix 1 adds a seventh
+referencing key and a reader that has to resolve a closed category, so a registry
+designed before that ruling would have been designed against the wrong consumer
+set.
+
+**He also corrected the column set this plan had been carrying.** Sections 4.3 and
+4.5 say the registry stamps *name, type, currency and starting amount and nothing
+else*. That is too narrow. The correction below is measured rather than accepted
+on his say-so: every column is in the contract because a named statement reads it
+and would resolve to nothing without it.
+
+#### The measurement: what the codebase reads off an account
+
+Every reference to a `user_accounts` column through the `ua` alias in
+`backend/src`, counted **on this branch** — `main` differs, and the two places it
+differs are called out where they fall:
+
+| Column | Reads | Decisive consumer, and what fails without it |
+|---|---|---|
+| `account_id` | 133 | the join key of all of them, and the correlation `WHERE tr.account_id = ${accountAlias}.account_id` inside the balance builder (`derivedBalance.js:227`) |
+| `account_name` | 91 | display, and for a spending category it is the **only** surviving source of `category_name`, `subcategory` and the nature — 3.6 measures all three as segments of it |
+| `user_id` | 67 | the ownership filter; without it a historical row cannot be scoped to an owner and cannot be returned at all |
+| `account_type_id` | 67 | **classifies the movement into its domain.** `TRANSACTION_ROW_SOURCE` left-joins the type catalog on it (`transactionRowShape.js:84`); a null type lands a movement in neither part of a split total |
+| `currency_id` | 46 | `COALESCE(cba.currency_id, ua.currency_id) AS currency_id` at `budgetTransactionRepository.js:125` — the fallback arm of a **fix 1 reader**, whose preferred arm dies with the extension row |
+| `account_starting_amount` | 27 | the first term of the balance formula: `${accountAlias}.account_starting_amount` at `derivedBalance.js:219` |
+| `account_start_date` | 26 | `transactionRowShape.js:70`, `getTransactionsForAccountById.js:99`, and the budget's `ACCOUNTS_QUERY` at `budgetTransactionRepository.js:131` |
+| `deleted_at` | 12 | soft-delete state; a closed account has no row that could carry it |
+| `closed_at` | 10 | the closure stamp added by `034_add_account_closed_at.sql` |
+| `account_balance` | 3 | one live read on this branch, none on `main` — measured below |
+| `created_at` | 2 | `SELECT (MIN(ua.created_at) AT TIME ZONE $2)::date::text` at `overviewAccountRepository.js:213`, the whole-population delta guard of 3.8.5 |
+| `updated_at` | 1 | one `ORDER BY ua.created_at DESC, ua.updated_at DESC` over a list of live accounts (`getAccountController.js:790`) |
+| `note` | 0 | nothing reads it off the accounts table anywhere in `backend/src` |
+
+**The stored balance column, and a correction to 4.1.** The table in 4.1 lists
+`account_balance` among the things these queries read off the account, calling it
+*the fast-read cached column*. Measured: of its three occurrences, two are inside
+commented-out statements (`dashboardController.js:682` and `:699`) and one is
+live — `ua.account_balance,` at `transactionRowShape.js:69`. **On `main` that same
+line reads `${DERIVED_BALANCE} AS account_balance`**, so the branch carries the
+defect and the fix arrives with the merge, exactly as the three Overview
+statements of 3.8.11 do. Everywhere else the name is the derived expression
+wearing it: nineteen `AS account_balance` sites across `dashboardController.js`,
+`getAccountController.js`, `transactionController.js`, the two close-path reads
+and `overviewInvestmentRepository.js`.
+
+**Twenty-six statements ship the stored column anyway, through `ua.*`**, and
+`getAccountController.js:933` says so in its own comment: *Every branch above
+selects ua.\*, so every one of them shipped the stored...*. Those that also alias
+the derived expression overwrite it in the row object before any caller sees it
+(`getAccountController.js:1146` is the clearest, selecting `ua.*` and
+`${DERIVED_BALANCE} AS account_balance` in the same list).
+
+**So the column does not enter the registry.** It stays on `user_accounts` by the
+owner's ruling of 2026-09-07 — *yo dejaria la columna, solo como informacion de
+consulta rapida* — and stamping it would mean preserving a figure whose only live
+reader is a defect the merge removes.
+
+#### The contract
+
+The row exists for every account from the moment the account is created.
+
+| Column | Written at creation | Stamped at closure | Nullable | Why there and not elsewhere |
+|---|---|---|---|---|
+| `account_id` | yes | — | no | the identity itself; it is what the seven keys reference |
+| `user_id` | yes | — | no | the ownership filter, and it is known at creation and never changes |
+| `account_name` | — | yes | yes | the live value is read from `user_accounts` and can change until the last instant |
+| `account_type_id` | — | yes | yes | same, and the edit path can move an account between types |
+| `currency_id` | — | yes | yes | same |
+| `account_starting_amount` | — | yes | yes | same |
+| `account_start_date` | — | yes | yes | same |
+| `created_at` | — | yes | yes | same |
+| `closed_at`, `closed_by`, `close_reason` | — | yes | yes | the closure record, on the same row, by the rule in 4.3: an event that happens at most once per account belongs on the account's row |
+
+**Two columns at creation and the rest at closure is not a compromise, it is the
+only shape with no ambiguous state.** While the account is live its descriptive
+values are read from `user_accounts`, which is where they change; the registry's
+copies stay null and no two writers have to be kept in agreement. At closure the
+source is about to disappear and can no longer change, so the stamp is taken once
+and is final. A reader resolves in one step: **present in `user_accounts`, read
+live; absent, read the stamp** — which is the rule the owner wrote.
+
+**Not null on the two creation columns, nullable on every stamp, and the null has
+exactly one meaning:** *erased before this registry existed*. 4.4 measures why it
+cannot be otherwise — for an account the old mechanism already erased, the type
+and the currency lived on the accounts table and its extension row and both are
+gone, so a backfilled row can only carry nulls. Every reader that consults a stamp
+needs a branch for that null.
+
+**What is deliberately absent, each absence measured rather than assumed:**
+
+- **`account_balance`** — written on every account write, read by one statement
+  that `main` has already fixed; the derived formula reproduces it from
+  `account_starting_amount` plus the surviving transaction rows.
+- **`note`** — no statement in `backend/src` reads it off the accounts table. It
+  is lost at close and no figure moves. Recorded so it is not found later as a
+  surprise.
+- **`updated_at`** — its one reader orders a list of live accounts.
+- **`deleted_at`** — CLOSE deletes the row, so a closed account cannot carry a
+  soft-delete timestamp. The two states stop being confusable by construction,
+  which is the ambiguity `034_add_account_closed_at.sql` exists to end.
+- **The type-specific columns** — the budget amount, the category's nature key,
+  the debtor's terms, the currency audit pairs. The owner ruled the extension row
+  is deleted with the account (4.3), so there is nothing to stamp.
+
+#### What points at the registry: seven keys, not six
+
+Fix 1 adds the seventh, and it is the only change decision B makes to the key set:
+
+| # | Key | Where it is declared |
+|---|---|---|
+| 1-3 | `transactions.account_id`, `.source_account_id`, `.destination_account_id` | `018_alter_transactions_account_fks_to_restrict.sql` |
+| 4 | `transactions.opening_for_account_id` | the opening marker |
+| 5 | `pocket_allocations.source_account_id` | the pocket source |
+| 6 | `debtor_accounts.selected_account_id` | `002_accounts.sql:179-180`; repointing it also stops it blanking a different account's row |
+| 7 | **`budget_monthly_allocations.account_id`** | `010_create_budget_tables.sql:41-43`, plus `supabase/001_production_alignment.sql:402` and `createTables.js:407` — **three build paths, and a sweep that finds only the first under-reports** |
+
+**The four extension primary keys are still not repointed.** They keep
+`ON DELETE CASCADE` by the owner's ruling of 2026-09-07, and key 7 is what lets
+the budget rows survive that cascade: they stop hanging off
+`category_budget_accounts` and hang off the registry instead.
+
+#### Why this contract keeps the reader change small
+
+**The balance formula is already a builder that takes an alias.**
+`derivedAccountBalanceSql(accountAlias, castAs)` (declared at
+`derivedBalance.js:203`) reads exactly two things off whatever alias it is handed:
+`${accountAlias}.account_starting_amount` at `:219` and
+`${accountAlias}.account_id` at `:227`. Both are in the contract. **So a
+historical population carrying those two columns satisfies the builder without the
+builder changing at all**, and the twelve Overview reads plus `ledgerBody` change
+where they take their population from, not how they compute.
+
+**That is the practical content of the owner's warning that this is not thirteen
+joins.** Of the four mechanisms in 3.8.3 only the first is a join. The second
+builds an id set `FROM user_accounts` and applies it as `t.account_id = ANY($1)`,
+so it is fixed by widening the set. The third reads stock directly off
+`user_accounts`, so it is fixed by pointing at the historical population. The
+fourth is the cascade, which no read can fix; key 7 handles it for the budget and
+the extension ruling accepts it everywhere else.
+
+#### What no contract recovers
+
+- **`category_nature_type_id` as a catalog key.** The nature's name survives as
+  the third segment of `account_name`, split by `parseCategoryAccountName`
+  (`newCategoryHelper.ts:26-33`); the foreign key into `category_nature_types`
+  does not.
+- **The original capitalization of a budget category**, for the twenty-eight
+  accounts sized in 3.8.12, because `account_name_case_backup_013.account_id`
+  cascades.
+- **`note`**, as above.
+
+#### Still open inside this contract
+
+| Question | Recommendation |
+|---|---|
+| Whether `close_reason` is mandatory | **yes, free text.** No statement reads it, so it constrains nothing technically; it is the only record of why an irreversible action was taken |
+| Who writes the registry row at creation | **a trigger before insert on `user_accounts`.** Two creation controllers plus the boot path cannot all be kept honest by convention, and this schema already carries a trigger (`assert_iana_timezone`, `002_accounts.sql`), so it is not a foreign idiom here |
+| Whether the backfill stamps existing live accounts or leaves them null | **leaves them null.** Those accounts are live, so their values are read from `user_accounts`; stamping them would create the two-writer problem this shape avoids |
 
 ---
 
@@ -1648,7 +1850,7 @@ it names the one loss his ruling does **not** cover.
 | Decision | Recommendation |
 |---|---|
 | Whether the confirmation screen warns that the budget goes with the account | **yes.** His ruling settles what happens; it does not say whether the user is told before it happens, and the deletion is not reversible. One line on the close screen. |
-| Which of the four fixes for the retroactive lowering is taken | **fix 1 in 3.7** — repoint `budget_monthly_allocations.account_id` at the registry, write a terminating zero at closure, and let the budget readers include closed accounts for elapsed months. The owner asked for a fix on 2026-09-07 and has not chosen among the four. |
+| Which of the four fixes for the retroactive lowering is taken | **CLOSED — fix 1, ruled by the owner on 2026-09-08.** Repoint `budget_monthly_allocations.account_id` at the registry, write a terminating zero at closure, and let the budget readers find a closed category for elapsed months. Recorded in 3.7, and its consequence for the registry in 4.6. |
 | Whether a closed account still appears in a picker or a historical list | a filter on a read, not a schema change; nothing depends on it, and it waits for the close screen |
 
 **One thing no decision here changes.** The statement at
