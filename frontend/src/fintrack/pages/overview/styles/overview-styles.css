@@ -437,9 +437,14 @@ a.icon {
 
 /* Nature and period. The two natures are told apart by the word, not by a
    colour: neither has a token, and a value invented here would enter the
-   palette without review. */
+   palette without review.
+
+   --font-size-2xs and not --font-size-3xs: the smallest step is 0.5rem and
+   --font-size-root clamps the root between 14px and 16px, so 3xs lands between
+   7px and 8px. It exists as the floor of a container-query clamp in pocket,
+   which is a different job from setting a caption outright. */
 .overviewLayout .domainCard__scope {
- font-size: var(--font-size-3xs);
+ font-size: var(--font-size-2xs);
  letter-spacing: 0.65px;
  text-transform: uppercase;
  color: var(--color-content-on-dark-subtle);
