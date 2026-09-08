@@ -308,13 +308,24 @@ BEGIN
  -- swallowed the conflict so that re-running the backfill in section 3 would not
  -- fail against rows this trigger had written - but that backfill inserts into
  -- account_registry directly and never fires this trigger, so nothing it does
- -- reaches this statement. What does reach it is a reissued account id: TRUNCATE
+ -- reaches this statement. What can reach it is a reissued account id: TRUNCATE
  -- TABLE ... RESTART IDENTITY CASCADE at initDatabase.js:300 resets the
  -- user_accounts sequence while this table, which no foreign key ties to it,
  -- keeps every row. The next account is then issued id 1 and meets the registry
  -- row of a different account 1, carrying its closure stamp, its category and
  -- its currency. Swallowed, the new account inherits them in silence. Raised,
  -- the insert stops on the one state that must never pass.
+ --
+ -- THAT TRUNCATE CANNOT RUN AS SHIPPED, measured 2026-09-08 by the deletion
+ -- session and recorded here so nobody re-derives the hazard as live. It sits
+ -- behind const tableActions = { isTruncate: false, ... } at initDatabase.js:286,
+ -- written as a literal in the same function and assigned nowhere else in
+ -- backend/src, so the branch at :288 is never entered. The hazard is latent,
+ -- exactly like the ON CONFLICT timing that moved this trigger to AFTER INSERT:
+ -- one flag away rather than one request away. It is still the right thing to
+ -- fail on, because a clause that swallows it costs nothing to remove and the
+ -- state it hides - an account wearing another account's closure - is not one
+ -- any later reader could diagnose from the data.
  INSERT INTO account_registry (account_id, user_id)
  VALUES (NEW.account_id, NEW.user_id);
 
