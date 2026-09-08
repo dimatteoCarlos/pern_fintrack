@@ -901,3 +901,42 @@ a.icon {
 .overviewLayout .domainCard__share--over {
  color: var(--color-status-alert);
 }
+
+/*------------*/
+/* The bottom navbar, held on screen while Overview scrolls.
+
+   Nothing is added to make it stick: .mainNavbar__container already declares
+   position: sticky and bottom: 0 (mainNavbar.css:29-30). The declaration was
+   inert, and this is the one line that was defeating it. .home__layout carries
+   overflow-x: auto (generalStyles.css:201), and a box with one axis auto and
+   the other visible computes the visible one to auto too, which makes the shell
+   a scroll container. A sticky child is offset against its nearest scroll
+   container, and this one never scrolls: the shell's height grows with its
+   content and the document is what scrolls. So the navbar was pinned to a
+   viewport that does not move, which is the same as not being pinned.
+
+   clip and not visible, so the horizontal containment the shell was after
+   survives: clip cuts an overflowing child without becoming a scroll container,
+   and leaves overflow-y visible, so the sticky resolves against the viewport.
+
+   Scoped with :has() and not written on .home__layout, which is the shell of
+   every screen: budget-styles.css:285 and debts-styles.css:141 hold the same
+   shape for the same reason. Those two boards reach the navbar the other way -
+   the page is capped at one viewport and an inner panel takes the scroll - and
+   that route is not open here, because ScrollJump reads window.scrollY and
+   document.documentElement.scrollHeight, both of which stop moving the moment
+   the document stops being the scroller. */
+.home__layout:has(.overviewLayout) {
+ overflow-x: clip;
+}
+
+/* The jump control clears the navbar it would otherwise sit on top of. It is
+   fixed to the viewport at bottom: var(--space-4), and the navbar now occupies
+   that same corner, so the two overlapped - visible in the screenshot as the
+   round button covering the rightmost navbar slot.
+
+   Guarded by the same :has(), because the clearance is owed to a pinned navbar
+   and the navbar is only pinned on this board. */
+.home__layout:has(.overviewLayout) .scrollJump {
+ bottom: calc(var(--navbar-bottom-height) + var(--space-4));
+}
