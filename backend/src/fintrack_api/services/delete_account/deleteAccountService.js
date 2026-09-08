@@ -27,9 +27,19 @@ import { recordAnnulmentTransaction } from '../../../utils/fintrackUtils/account
 import { recordClosureSettlement } from '../../../utils/fintrackUtils/accountDeletionUtils/recordClosureSettlement.js';
 import { lockAndDeriveBalances } from '../../../utils/fintrackUtils/accountManagement/lockAndDeriveBalances.js';
 import { eraseAccountTail } from '../../../utils/fintrackUtils/accountDeletionUtils/eraseAccountTail.js';
+// The creation-side whitelist, reused as the deletion-side guard: an account
+// type a user may not create is one they may not destroy either.
+import { USER_CREATABLE_ACCOUNT_TYPES } from '../../../utils/fintrackUtils/accountDataRetrieval/accountUtils.js';
 import { assessDeletionImpact } from './getAnnulmentImpactReport.js';
 import { assertTransferDestinationEligible } from './getCloseTransferDestinations.js';
 import { getCurrencyCode } from '../../../utils/currencyLookup.js';
+
+// The name the system reserves for the compensation counterpart. Belongs in
+// accountUtils.js beside NOT_BOUNDARY_ACCOUNT; declared here because that file
+// is another session's to edit, and requested from its owner. The literal
+// already appears in fifteen files, so naming it here centralises nothing -
+// this is the only one of those comparisons gating a destructive action.
+const BOUNDARY_ACCOUNT_NAME = 'slack';
 //=====================================
 // 📋 MESSAGES CONFIGURATION
 const messages = {
@@ -258,6 +268,18 @@ const processRTAAnnulment = async (
 
   let finalSlackBalance = ledgerBalanceOf(slackAccount.account_id);
 
+  // A NON-EMPTY REPORT IS NOT THE SAME AS A REVERSAL THAT MOVES ANYTHING,
+  // measured 2026-09-07. An account created with a starting amount and never
+  // used since has exactly one qualifying row - its own opening, whose source is
+  // the compensation account - so the report holds a single entry whose affected
+  // account IS slackAccount. The loop below then hands recordAnnulmentTransaction
+  // an affectedAccountId equal to its slackAccountId, so both legs are written on
+  // that one account, +adjustment and -adjustment, and the ledger nets them to
+  // zero. The erasure afterwards drops the target's own row and keeps the
+  // compensation account's counter row, so the residual leaves the books with no
+  // entry this deletion wrote - the same outcome the hard delete produces on the
+  // same account, which it refuses with a 409. For that shape the two paths
+  // differ by the gate alone, not by what they do.
   if (impactReport.length > 0) {
     // 1. Fetch Common IDs (Movement/Transaction Types)
     const { pnlMovementTypeId, depositTypeId, withdrawTypeId } =
@@ -353,6 +375,38 @@ const processRTAAnnulment = async (
     // What the service reports is what the column holds, not what was predicted.
     finalSlackBalance = parseFloat(slackRow.account_balance);
   } else {
+    // This log line is wrong about one thing only: what follows is NOT the hard
+    // delete. That path refuses with 409 unless the target derives to zero; RTA
+    // reaches the same erasure with no balance gate at all.
+    //
+    // An earlier version of this comment claimed the gap was reachable through
+    // an account opened with a starting amount whose opening row names itself as
+    // both source and destination. RETRACTED 2026-09-07, same session: the two
+    // halves are mutually exclusive. A funded opening names the compensation
+    // account as its source, so it is distinct and enters the report.
+    //
+    // THE REASON FIRST GIVEN FOR THAT RETRACTION WAS ALSO WRONG, and the
+    // difference decides how a future gate is written (pern-fintrack-02, checked
+    // here in the writers). It ran: self-referential implies the transaction type
+    // is 'account-opening', which implies the amount is zero. The middle step
+    // does not hold for bank, income_source or investment: createBasicAccount
+    // calls neither helper. It sets both key columns from its own isTransfer,
+    // which IS the nonzero-amount test, while its transaction type is 'deposit'
+    // for bank and investment at any amount, zero included. So a zero-amount bank
+    // account carries a self-referential opening row typed 'deposit', and a
+    // predicate keyed on the type name misses it. The 'account-opening' rule is
+    // reached only from the category-budget controller. Test the two columns
+    // against each other, never the type name.
+    //
+    // What is still true and is why this branch keeps a comment: the residual
+    // and the impact report are computed from different sources. The residual is
+    // the stored account_starting_amount column plus the account's rows with its
+    // own opening zeroed (derivedBalance.js, three sites); the report sums rows.
+    // They agree by construction - the column adds back exactly what the zeroing
+    // removes - not by a rule anything enforces. No reachable row is known to
+    // make them disagree; none is claimed here either. Whether RTA should carry
+    // the zero gate anyway is one of the four deletion types Carlos reopened on
+    // 2026-09-07, and it is a design question rather than a defect report.
     console.log(
       pc.yellow(
         'RTA: No net financial impact to correct. Proceeding to hard delete.',
@@ -436,6 +490,13 @@ const processStandardDelete = async (
     // the close existed to keep. SOFT already refuses this; the omission here
     // was that the two branches tested different columns for the same state.
     // Checked before the lock: a refusal should not take one.
+    //
+    // KNOWN DEFECT where 034 has not been applied: accountCheck selects ua.*,
+    // so this is a property read, undefined !== null is true, and every hard
+    // delete is refused with a message asserting the account was closed and
+    // settled when it never was. Not repaired here - loosening the comparison
+    // turns it into a permit on exactly the databases where the system-account
+    // guard's type arm is blind, so it is Carlos's call, not a cleanup.
     if (accountCheck.rows[0].closed_at !== null) {
       throw createError(
         400,
@@ -541,11 +602,21 @@ const processStandardDelete = async (
 // BOTH main and feat/overview.
 //
 // Cleared 2026-09-07, Carlos, on measurements rather than on this code looking
-// ready. Both branches carry the closure-adjustment term - main sums the
-// closure movement type together with the historic annulment-prefixed rows,
-// feat/overview sums the movement type. The earlier claim here that main had
-// no such term at all was true when written and stopped being true when the
-// Investment card shipped it.
+// ready. Both branches carry the SAME closure-adjustment term: the filter is
+// identical at origin - the closure movement type OR a description beginning
+// with the annulment prefix - and the realised term excludes those same
+// prefixed rows under a NULL-safe negation. An earlier version of this line
+// said feat/overview sums the movement type alone, which understated it
+// (pern-fintrack-cf, verified here by comparing the two trees at that
+// expression); the version before that said main had no such term at all,
+// which was true when written and stopped being true when the Investment card
+// shipped it.
+//
+// What that means for a later reader checking whether this gate's precondition
+// still holds: feat/vercel-serverless has no close path, so no closure-typed
+// row can exist in data it writes and the term is carried there by the prefix
+// alone - free text that the erasure tail's REPLACE can rewrite. That tail
+// ships on the branch; the movement type that would back the term up does not.
 //
 // What the measurement covered, so a later reader knows what it does not: a
 // real settlement written through this path on fintrack_dev moves the card's
@@ -901,8 +972,15 @@ export const deleteAccountService = async (
   console.log('deleteAccountService', userId);
 
   // 1. Initial Validation: Check if the Target Account exists
+  // The type name joins in for the system-account guard below. INNER is safe:
+  // 033_require_account_type.sql made account_type_id NOT NULL, so no account
+  // row can fail to match. Every existing reader of accountCheck takes named
+  // columns off ua.*, which this leaves untouched.
   const accountCheck = await pool.query(
-    'SELECT * FROM user_accounts ua WHERE ua.account_id = $1 AND ua.user_id = $2',
+    `SELECT ua.*, act.account_type_name
+       FROM user_accounts ua
+       JOIN account_types act ON ua.account_type_id = act.account_type_id
+      WHERE ua.account_id = $1 AND ua.user_id = $2`,
     [targetAccountId, userId],
   );
 
@@ -912,6 +990,44 @@ export const deleteAccountService = async (
       messages.notFound.messagefn(targetAccountId),
     );
   }
+
+ // Carlos's ruling, 2026-09-07: the compensation account, and any other
+ // account the system creates for itself, cannot be deleted by any method.
+ // Reusing the creation whitelist keeps creation and deletion on one list so
+ // they cannot drift. Before the branch deliberately, so one guard covers all
+ // four deletion types.
+ //
+ // Both arms ask about the row, never about a resolved account: the resolver
+ // can fork, and a resolve-and-compare guard would protect one sibling only.
+ const targetAccountTypeName = String(
+  accountCheck.rows[0].account_type_name ?? '',
+ ).toLowerCase();
+
+ // The name arm is not redundant: the type only exists once 031 has run, and
+ // before it this account is typed 'bank', which is on the whitelist. Full
+ // argument, including the accepted false positive and the retirement
+ // condition, in PLAN_ACCOUNT_DELETION.md under the system-account guard.
+ //
+ // storedAccountName, not the targetAccountName parameter this function
+ // already carries: that one is client-supplied and cosmetic by its own
+ // declaration. A guard must read the stored row.
+ const storedAccountName = accountCheck.rows[0].account_name;
+ const isBoundaryByName =
+  String(storedAccountName ?? '')
+   .trim()
+   .toLowerCase() === BOUNDARY_ACCOUNT_NAME;
+
+ if (
+  !USER_CREATABLE_ACCOUNT_TYPES.includes(targetAccountTypeName) ||
+  isBoundaryByName
+ ) {
+  throw createError(
+   403,
+   isBoundaryByName
+    ? `Account ${targetAccountId} is named '${storedAccountName}', the name the system reserves for the compensation counterpart it posts closures and reversals against. It cannot be closed, deleted or reversed. Rename it first if it is your own account.`
+    : `Account ${targetAccountId} is a '${targetAccountTypeName}' account created and maintained by the system. It cannot be closed, deleted or reversed.`,
+  );
+ }
   //------------------------------------------
   // 🚀 RTA Annulment Flow (Atomic Transaction)
   // ------------------------------------------
@@ -938,6 +1054,14 @@ export const deleteAccountService = async (
     // reads them. RTA would annul the destination's receipt of the residual
     // while erasing the account that sent it, so the residual would be taken
     // back from a live account and returned to nothing.
+    //
+    // Same pre-034 defect as the hard-delete branch's copy of this test, held
+    // for the same reason. With that one, no deletion type can be applied to a
+    // closed account - which fixes its OWN name in its settlement pair, but not
+    // the counterpart's: the erasure rewrite is keyed on the account being
+    // deleted, so under TRANSFER, deleting the counterpart later replaces its
+    // name in the closed account's surviving leg. Under DISCARD the
+    // counterpart is the compensation account, which the guard above refuses.
     if (accountCheck.rows[0].closed_at !== null) {
       throw createError(
         400,
