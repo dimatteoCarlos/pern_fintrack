@@ -7,6 +7,7 @@ import { ModalStatusType } from '../../../../types/deletionTypes.ts';
 import { DictionaryDataType } from '../../../../utils/languages.ts';
 
 import { StandardDeletionDialog } from '../standardDeletionUI/StandardDeletionDialog.tsx';
+import CharacterCounter from '../../../../../general_components/characterCounter/CharacterCounter.tsx';
 
 import './closeAccountUI.css';
 
@@ -55,6 +56,12 @@ export const CloseAccountUI = ({
  onClose,
  onClosed,
 }: CloseAccountUIPropType) => {
+// The schema's ceiling on the reason (036's chk_close_reason_length), restated
+// here so the field stops at it rather than letting the owner write past it and
+// meet a refusal on submit. The form is the courtesy; the database is the
+// enforcement, and neither replaces the other.
+const CLOSE_REASON_MAX_LENGTH = 255;
+
  const reasonFieldId = useId();
  const [closeReason, setCloseReason] = useState('');
 
@@ -181,6 +188,10 @@ export const CloseAccountUI = ({
         letting the owner discover it in a 400. */}
     <label className="close-account__label" htmlFor={reasonFieldId}>
      {t('closeAccountReasonLabel')}
+     <CharacterCounter
+      value={closeReason}
+      maxLength={CLOSE_REASON_MAX_LENGTH}
+     />
     </label>
 
     <textarea
@@ -190,6 +201,7 @@ export const CloseAccountUI = ({
      onChange={(event) => setCloseReason(event.target.value)}
      placeholder={t('closeAccountReasonPlaceholder')}
      rows={3}
+     maxLength={CLOSE_REASON_MAX_LENGTH}
      required
      aria-required="true"
      disabled={isClosing}

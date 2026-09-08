@@ -738,6 +738,12 @@ const processStandardDelete = async (
  *   account_type_name joined in. The type is what decides whether the
  *   zero-balance refusal applies, so this path never re-queries it.
  */
+// 036_cap_close_reason_length.sql's chk_close_reason_length, restated so the
+// refusal above can name the number. Changing one without the other makes the
+// service refuse what the database accepts, or hand the caller a constraint
+// name instead of a field name.
+export const CLOSE_REASON_MAX_LENGTH = 255;
+
 export const processCloseAccount = async (
   dbClient,
   userId,
@@ -818,6 +824,28 @@ export const processCloseAccount = async (
         'deleted by this operation and the registry entry is what survives ' +
         'it, so the reason is the only record of why the account stopped ' +
         'existing.',
+    );
+  }
+
+  // AND IT HAS A CEILING, for the same reason and by the same division of
+  // labour as the check above: 036 declares chk_close_reason_length as
+  // (close_reason IS NULL OR length(close_reason) <= 255), so the database is
+  // the enforcement and this is what makes the refusal readable and keeps it
+  // ahead of the lock.
+  //
+  // length() and not a byte count, matching the constraint: the owner types
+  // characters, and an accented reason would otherwise get fewer of them for
+  // the same visible length.
+  //
+  // Measured against the TRIMMED reason, which is also what gets stored, so a
+  // string this accepts cannot fail the CHECK on the way in.
+  if (reason.length > CLOSE_REASON_MAX_LENGTH) {
+    throw createError(
+      400,
+      `closeReason is limited to ${CLOSE_REASON_MAX_LENGTH} characters and ` +
+        `carried ${reason.length}. The registry entry is the only record of ` +
+        'why the account stopped existing, so the reason is a line of text ' +
+        'rather than a document.',
     );
   }
 
