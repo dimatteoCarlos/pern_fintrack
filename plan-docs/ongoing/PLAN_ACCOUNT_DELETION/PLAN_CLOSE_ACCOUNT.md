@@ -25,8 +25,8 @@ design can advance; they can still move.
 | Block | State |
 |---|---|
 | Method conceptualization | received, evaluated, accepted with three measured collisions |
-| Matrix by account type | written, three gaps open |
-| Historical identity design | ruled by the migration session — the shape changed |
+| Matrix by account type | written; the spending category is the one type still sin decidir |
+| Historical identity design | the registry, ruled by the migration session; its extension half reversed by the owner on 2026-09-07 |
 | Schema | designed, not written; the migration suspension still holds |
 | Phases | defined |
 | Frontend | not started; the screen goes to the design session |
@@ -49,14 +49,16 @@ design can advance; they can still move.
 
 ## 2. What CLOSE is
 
-**CLOSE is a terminal operation that physically deletes an account whose balance
-has already been brought to zero, leaves its transactions intact, and records
-that the account existed and was closed.**
+**CLOSE is a terminal operation that physically deletes an account row and its
+extension row, leaves every transaction intact, and records that the account
+existed and was closed.** On the four types that hold money it first refuses
+unless the balance is already zero; on the income source the owner waived that
+condition (5.1).
 
 Four negations that bound the scope as much as the sentence above:
 
-- **It moves no money.** No transfer, no settlement, no compensation. If there is
-  a balance, it refuses.
+- **It moves no money.** No transfer, no settlement, no compensation. Where the
+  zero condition applies, a non-zero balance is refused rather than settled.
 - **It reverts and modifies no transaction.** Neither the account's own nor the
   counterparty's.
 - **It writes no transaction of its own.** Closing is a lifecycle fact, not an
@@ -66,10 +68,11 @@ Four negations that bound the scope as much as the sentence above:
 
 ### Why it is not the hard delete that already exists
 
-Both delete the account row. The difference is countable: **after a hard delete
-the transactions table has fewer rows; after a close it has exactly the same
-rows.** The current hard delete runs a delete over the account's own transactions
-before deleting the account (`eraseAccountTail.js`). CLOSE touches none.
+Both delete the account row, and both let the cascade take the extension row.
+The difference is countable and it is in one table: **after a hard delete the
+transactions table has fewer rows; after a close it has exactly the same rows.**
+The current hard delete runs a delete over the account's own transactions before
+deleting the account (`eraseAccountTail.js`). CLOSE touches none.
 
 That is why this plan never calls CLOSE a hard delete: in this codebase that
 phrase already names the operation that does the opposite to history.
@@ -103,21 +106,36 @@ both as the transaction's owner and as the account being opened, so it occupies
 two of the restricting references above. **There is therefore no such thing as an
 account with no transactions.**
 
-### 3.3 The detail tables cascade, and that is the only thing that destroys them
+### 3.3 The detail tables cascade, and that is what CLOSE needs them to do
 
 The four one-to-one extension tables — income source, spending category, debtor
 and pocket saving (`002_accounts.sql`, at lines 122, 140, 165 and 191) — each
-declare their primary key as a reference to the account **with cascade**.
-Deleting the account row silently removes the category's budget amount, the
-saving target and the debtor's terms. The pocket module's migration already
-measured that cascade against real data and recorded the loss
-(`020_create_pocket_tables.sql`).
+declare their primary key as a reference to the account **with cascade**. The
+spending category's is the exact form of all four:
 
-**The cascade is the sole destroyer: the erasure tail never touches those four
-tables** (`eraseAccountTail.js` writes only to transactions, pocket allocations
-and the accounts table). That is what makes section 4.3's answer possible —
-repoint those four keys and the rows simply do not die, so nothing has to be
-copied before the delete.
+```sql
+account_id INT PRIMARY KEY
+  REFERENCES user_accounts(account_id)
+  ON DELETE CASCADE,
+```
+
+These four are not among the six references that block the delete in 3.1. They
+never refused anything; they follow it.
+
+**The cascade is the only thing that touches those tables at all.** No
+`DELETE FROM category_budget_accounts` or any of its three siblings exists
+anywhere in `backend/src`, and the erasure tail does not write to them either
+(`eraseAccountTail.js` touches transactions, pocket allocations and the accounts
+table only). The pocket module's migration already measured this cascade against
+real data and recorded what it removed (`020_create_pocket_tables.sql`).
+
+**The owner ruled on 2026-09-07 that this is the behaviour CLOSE wants** —
+*cuando se borra hay tambien que eliminarla de esta otra tabla, buscando no por
+nombre sino por id*. The cascade matches the ruling exactly: it deletes the
+extension row by the account id, in the same statement as the account, with no
+name matching anywhere. So this plan writes no code and no migration for those
+four tables; it leaves them alone. Section 4.3 records the design change that
+follows.
 
 ### 3.4 A snapshot column already exists, and it is already wrong
 
@@ -142,7 +160,8 @@ that this plan neither fixes nor owns.
 ### 4.1 The problem, measured
 
 **An inner join drops the row when the account is absent, and raises nothing.** A
-closed category's May expense would stop adding to May's total, silently. The
+May salary posted from an income source closed in June would stop adding to May's
+income total, silently. The
 inventory below is measured per branch, because the two branches carry different
 readers and a single number would be wrong on both.
 
@@ -216,23 +235,44 @@ be observed.
 
 - One row per account, created **when the account is created**, not when it is
   closed. Nothing ever deletes from it.
-- **Nine keys are repointed at the registry** instead of at the accounts table:
+- **Six keys are repointed at the registry** instead of at the accounts table:
   the three on transactions, the opening marker, the pocket allocation's source,
-  and the primary keys of the four extension tables. Since no row is ever deleted
-  there, restrict never fires and costs nothing, the referencing columns keep a
-  real constraint, and the accounts table becomes freely deletable because
-  nothing references it any more.
-- **Nothing from the extension tables is copied into the registry.** Repointing
-  their four primary keys means the cascade never fires, so the budget amount,
-  the saving target, the debtor's terms and their currency audit columns survive
-  in place, keyed by an id that resolves in the registry — the same state the
-  transaction rows are in. Roughly thirty type-specific columns stay typed,
-  constrained and foreign-keyed instead of becoming a sparse block on the
-  registry of which at most eleven are ever non-null, which is the same
-  denormalization the owner declined for transactions, one table over.
+  and the debtor's selected account. Since no row is ever deleted there, restrict
+  never fires and costs nothing, the referencing columns keep a real constraint,
+  and the accounts table becomes freely deletable because the only references
+  left to it are the four extension keys, which cascade.
+- **The four extension primary keys are not repointed. They keep the cascade
+  they have, and the owner ruled it explicitly on 2026-09-07**: *cuando se borra
+  hay tambien que eliminarla de esta otra tabla, buscando no por nombre sino por
+  id*. That is already what the schema does and it needs no code —
+  `002_accounts.sql:141-143` declares
+  `account_id INT PRIMARY KEY REFERENCES user_accounts(account_id) ON DELETE
+  CASCADE`, so deleting the account deletes the extension row by id, in the same
+  statement, with no name matching anywhere. The other three tables are declared
+  the same way at lines 122, 165 and 191. **Nothing in the codebase deletes from
+  any of those four tables** — no `DELETE FROM category_budget_accounts` or its
+  three siblings exists in `backend/src` — so the cascade is not merely the
+  simplest route, it is the only one.
+- **This reverses the extension half of the migration session's design, and the
+  reason it does is the owner's, not a measurement.** That session repointed the
+  four keys so the roughly thirty type-specific columns — the budget amount, the
+  spending category's nature and subcategory, the debtor's terms, the currency
+  audit pairs — would survive the close. The owner's position is that a closed
+  account leaves no row behind in any table, which makes surviving extension
+  rows the thing to remove rather than the thing to preserve. The preservation
+  argument was sound about databases and wrong about this product.
+- **What is lost at close, stated so nobody discovers it later:** for a spending
+  category, `category_name`, `category_nature_type_id`, `subcategory` and
+  `budget`; for an income source, a debtor and a pocket saving, the equivalent
+  columns on their own tables. The registry stamps name, type, currency and
+  starting amount and nothing else, so a report that wants a closed category's
+  old budget amount cannot have it. **No reader measured on this branch asks for
+  one**, and the transactions that carry the spending are untouched.
 - The debtor's copied account-name column stops being a defect for free: its
-  reference blanks itself only because it points at the accounts table, and
-  repointed at the registry it never blanks.
+  `selected_account_id` reference blanks itself only because it points at the
+  accounts table, and repointed at the registry it never blanks. That key is
+  about a *different* account from the one the row belongs to, so the owner's
+  ruling does not reach it.
 - **While the account is live the registry row carries the id and the owner
   only**, with the descriptive columns null; the live values keep being read from
   the accounts table exactly as today. **Name, type, currency and starting amount
@@ -263,35 +303,36 @@ precisely what the type-required migration exists to forbid on the live side.
 **The stamped columns therefore have to be nullable, with null meaning "erased
 before this registry existed", and every reader needs a branch for it.**
 
-Repointing the four extension keys does not change this. It preserves the future
-only: for accounts the old mechanism already erased, the extension rows went with
-the cascade at the time, exactly as the name did.
+The cascade on the four extension keys does not change this either. For accounts
+the old mechanism already erased, the extension rows went with the cascade at the
+time, exactly as the name did — and under the owner's ruling that is also what a
+future close does, so the two eras behave alike on this point.
 
-### 4.5 What surviving extension rows expose
+### 4.5 Three sites that would have been a problem, and are not
 
-Repointing has a cost that stamping would not have had, and it is measured rather
-than assumed. Almost every reader of the four extension tables joins in **from**
-the accounts table, which is self-filtering — the parent row is gone, so the join
-matches nothing. Three sites do not, and they are the ones the closing phase has
-to settle:
+**This section recorded the cost of letting extension rows survive. The owner's
+ruling that they are deleted with the account removes all three.** They are kept
+here because each one was measured and because a future proposal to preserve
+those rows has to re-answer them.
 
-- **The category name is released on close, and the code already says it should
-  not be.** The collision check that decides whether a category name is taken
-  (`accountCategoryCreationcontroller.js`) joins the accounts table and tests the
-  two lifecycle stamps, with a comment stating in as many words that a
-  soft-deleted category releases its name while **a closed one keeps it, because
-  its transactions are kept**. Delete the row and that join matches nothing, so
-  the rule the code states is inverted by the new close. This is the concrete
-  form of the name-uniqueness question and it belongs to whoever writes the
-  account-name uniqueness plan (`PLAN_ACCOUNT_NAME_UNIQUENESS.md`), who has to
-  know these rows persist.
-- **One read reaches an extension row without the parent.** The edit path reads
-  the stored category name parts directly on the extension table's account id
-  (`accountEditController.js`), with no join to the accounts table, so a closed
-  category's row is reachable through it.
-- **One write reaches one without the parent.** The budget writer updates the
-  category's budget by account id alone (`budgetAllocationService.js`), so
-  nothing in the statement stops a budget being written onto a closed category.
+- **The category name.** The collision check that decides whether a category name
+  is taken (`accountCategoryCreationcontroller.js`) joins the accounts table and
+  ends `AND (ua.closed_at IS NOT NULL OR ua.deleted_at IS NULL)`, with a comment
+  stating that a soft-deleted category releases its name while a closed one keeps
+  it. With both rows deleted the name is released, so the code's stated rule is
+  inverted — but that is a consequence of deleting the account row, which the
+  owner ruled first, and it is the same for every type. It belongs to whoever
+  writes the account-name uniqueness plan (`PLAN_ACCOUNT_NAME_UNIQUENESS.md`).
+- **The edit read.** `accountEditController.js` reads the stored category name
+  parts directly on the extension table's account id with no join to the accounts
+  table. With the extension row deleted it returns nothing, which is the correct
+  behaviour for a closed account and needs no guard.
+- **The budget write.** `budgetAllocationService.js` updates the category's
+  budget by account id alone. With the extension row deleted the update matches
+  zero rows instead of writing onto a closed category, so the defect this section
+  reported does not arise. **It remains a real weakness in that service** — it
+  will still silently write nothing rather than report a missing account — and it
+  goes to whoever owns the budget service, as a separate matter from this plan.
 
 Everything else measured — the dashboard, the account reads, the budget
 transaction repository, the creatable-type helper and the export — joins in from
@@ -301,70 +342,145 @@ the accounts table and needs no change.
 
 ## 5. Which types CLOSE applies to
 
-**The owner ruled on 2026-09-07 that a spending category is not an account and
-therefore does not close** — in his words, *las categorias no se cierran, porque
-no son cuentas*. That narrows the method to the four types that hold money.
+The owner said on 2026-09-07 *las categorias no se cierran, porque no son
+cuentas*, and later the same day **withdrew that as a decision**: *una cuenta de
+categoría ya no puede desaparecer por cierre, eso no es correcto, no lo puedes
+declarar como decidido*. The spending category is therefore **sin decidir**, and
+nothing in this document may record it as settled in either direction. In the
+same message he ruled the income source the other way: *las cuentas income
+tambien son borrables*.
 
-| Type | Closes? | Why |
-|---|---|---|
-| Bank | yes | holds money the owner can move out |
-| Cash | yes | same, and the ordinary transfer path can empty it — see 5.1 |
-| Investment | yes | holds a position that can be liquidated into a liquid account |
-| Debtor | yes | holds an amount owed in one direction or the other |
-| Spending category | **no** | classifies movements; it is not an account |
-| Income source | **no** | same shape as the category, ruled the same day |
-| Pocket saving | **no** | the type is to be removed entirely — see 5.2 |
-| Compensation | **no** | the system's counterparty; the refusal is already written |
+| Type | `account_types.account_type_name` | Closes? | Why |
+|---|---|---|---|
+| Bank | `bank` | yes | holds money the owner can move out |
+| Cash | `cash` | yes | same, and the ordinary transfer path can empty it |
+| Investment | `investment` | yes | holds a position that can be liquidated into a liquid account |
+| Debtor | `debtor` | yes | holds an amount owed in one direction or the other |
+| Income source | `income_source` | yes, **without the zero condition** | owner's ruling, 2026-09-07: *tambien es borrable, pero no se le exige que sea saldo cero* — see 5.1 |
+| Spending category | `category_budget` | **sin decidir** | the owner withdrew the ruling that it does not close and stated it is a unique account row like any other; the zero condition would have to be waived for it too — see 5.1 |
+| Pocket saving | `pocket_saving` | **no** | the type is to be removed entirely — see 5.2 |
+| Compensation | `boundary` | **no** | the system's counterparty; the refusal is already written |
 
-**The schema disagrees with the concept, and that has to be said plainly rather
-than argued.** A spending category is stored as a row in `user_accounts` with an
-extension row in `category_budget_accounts`, and it carries a derived balance
-like any other. The ruling is about what the product offers, not about what the
-tables hold. **Not yet ruled and needed before the phase list is final:** what a
-user does with a category they no longer want, since CLOSE will not take it.
+The first seven catalog rows are seeded by `005_base_catalogs.sql:37-44`;
+`boundary` is added later by `031_add_boundary_account_type.sql`.
 
-### 5.1 The zero check is one condition, not a family rule
+**A category and an income source are both rows in `user_accounts` with an
+extension row and a derived balance, exactly like a bank account.** Whether
+either one closes is a question about what the product offers, and the schema
+does not answer it either way.
 
-With the classifying types out of scope the rule collapses to
-**derived balance equal to zero**, computed by `derivedAccountBalanceSql` in
-`derivedBalance.js` — the starting amount plus every movement except the
-account's own opening row. There is no per-type formula to design. A debtor's
-balance is signed by direction, but zero is zero in both directions, so nothing
-special is owed there either.
+### 5.1 The zero condition cannot be one rule for every type that closes
 
-The earlier draft of this document proposed a rule per family of account type.
-That was only necessary because the classifying types were in scope; they are
-not, and the rule is gone rather than simplified.
+For the four types that hold money the condition is **derived balance equal to
+zero**, computed by `derivedAccountBalanceSql` in `derivedBalance.js` — the
+starting amount plus every movement except the account's own opening row. A
+debtor's balance is signed by direction, but zero is zero in both directions, so
+nothing special is owed there.
 
-### 5.2 The pocket saving type is removed, and its rows deleted
+**On an income source that same condition refuses every account that was ever
+used, and this is read off the writers, not off a database.** Recording income
+inserts two rows: the source leg carries `amount: -numericAmount`
+(`transactionController.js:828`) and the destination leg carries
+`amount: numericAmount` (`transactionController.js:869`). The income source is
+always the source leg — `getIncomeConfig` sets
+`sourceAccountTypeName: 'income_source'` (`movementInputHandler.js:24`) — so
+every income posts a negative row on it and its derived balance runs further
+below zero with each one. An income source reaches zero only if it never
+received anything.
 
-**The owner ruled the type does not exist and that any surviving rows are to be
-deleted physically.** That is separate work from CLOSE, and it has one hard
-dependency worth stating before it is scheduled: **those rows cannot be deleted
-today**, because they are accounts and every account is blocked by its own
-opening row and the references section 3 enumerates. The physical deletion is
-therefore only possible after the registry lands and the keys are repointed —
-the same phase order CLOSE needs.
+**The same measurement applies to the spending category with the sign
+reversed.** `getExpenseConfig` sets
+`destinationAccountTypeName: 'category_budget'` (`movementInputHandler.js:16`),
+so a category only ever receives the positive leg and its balance runs above
+zero. If the owner rules that the category closes, it inherits this problem
+unchanged.
 
-Two other facts about the type, measured:
+**The owner ruled this himself on 2026-09-07, in the same message that made the
+income source closable:** *la cuenta income_source tambien es borrable, pero no
+se le exige que sea saldo cero*. So the zero refusal applies to `bank`, `cash`,
+`investment` and `debtor`, and not to `income_source`. The reasoning agrees with
+the measurement above — the figure on an income source is accumulated historical
+income, not a holding, so no money sits there for the owner to move out first
+and the refusal would protect nothing.
 
-- The frontend contains **no reference to it at all**, so nothing creates one
-  through the application, but it is still in the creatable-type whitelist
-  (`accountUtils.js`) and the controllers still serve it, so the API accepts one.
-- **The newer pocket module is a different thing entirely** — its own table and
-  allocations over real accounts, with its own deletion, and it never touches
-  `pocket_saving_accounts`. Deleting a pocket there is not closing an account and
-  is outside this plan.
+CLOSE is unchanged on an income source in every other respect: it moves no
+money, writes no transaction, reverts nothing, and deletes the row.
 
-**Needed before the deletion runs, and it is the owner's alone:** whether any
-account of this type exists in production, and whose.
+**For the spending category the same waiver is a recommendation, not a ruling.**
+Its balance is accumulated historical spending, equally not a holding, so if the
+owner rules that the category closes the zero refusal should be waived there
+too — otherwise only a category nobody ever spent on could be closed.
 
-### 5.3 The income source falls the same way
+### 5.2 The pocket saving type: already deleted, and still creatable
 
-An income source classifies movements exactly as a spending category does, holds
-no money the owner can move, and its derived balance is accumulated historical
-income. The owner's ruling named categories; asked whether the symmetry carried,
-he confirmed it does. Neither type closes.
+The owner ruled the type does not exist and that any surviving rows are to be
+deleted physically. **An applied migration already did exactly that, and this
+plan owes nothing.** `020_create_pocket_tables.sql:392-395` runs
+
+```sql
+DELETE FROM user_accounts ua
+ USING account_types act
+ WHERE act.account_type_id = ua.account_type_id
+   AND act.account_type_name = 'pocket_saving';
+```
+
+with no user filter, no date filter and no guard: every row of the type in the
+database, unconditionally. It is applied on the development database. Its own
+rollback notes record production holding zero such accounts when measured, and
+the type-required migration's header, measured on the development database on
+2026-09-07, lists the type as seeded and unreferenced.
+
+**So there is nothing to delete, and no new work is scheduled.** A migration
+would be a corrective migration for something an applied file already did, which
+this chain does not accept, and a script would delete zero rows. The earlier
+draft of this section listed the deletion as blocked on the registry; that was
+wrong, and it is not blocked, it is finished.
+
+**What is genuinely unfinished is the half that lets the rows come back.** The
+same migration deliberately left the catalog row in place, the boot path
+re-seeds it (`populateDB.js:256` inserts the type by name) and the runtime
+builder still creates its table (`createTables.js:130`). The type therefore
+remains creatable, and the earlier deletion is final only for as long as nothing
+writes a new one. Removing the catalog row is a migration with a real rollback
+and a self-verifying property the retype-by-name migration lacks — the account
+type reference now refuses a delete rather than blanking silently, so it either
+succeeds against a genuinely empty population or errors. **It is gated on a code
+sweep of the paths that still name the type** — the movement input handler, the
+account edit controller, the account read helper, the creatable-type whitelist
+and several dashboard branches — because today those are reads returning zero
+rows, and removing the catalog row first would make the write paths among them
+harmful. The sweep is not part of this plan and the migration is written after
+it, never before.
+
+**The newer pocket module is a different thing entirely** — its own table and
+allocations over real accounts, with its own deletion, and it never touches
+`pocket_saving_accounts`. Deleting a pocket there is not closing an account.
+
+### 5.3 The income source closes, and what that costs
+
+**The owner ruled on 2026-09-07 that an income source closes** — *las cuentas
+income tambien son borrables* — reversing the recommendation recorded earlier
+the same day, which had argued from a symmetry with the spending category. The
+earlier text is superseded, not qualified.
+
+Three consequences, each measured:
+
+- **The balance refusal does not apply to it**, for the reason set out in 5.1:
+  the income leg is always negative on the income source, so the zero condition
+  would refuse every income source that ever received anything.
+- **Its extension row is deleted with it, by the cascade.**
+  `income_source_accounts` keeps its own `ON DELETE CASCADE` primary key
+  (`002_accounts.sql:122`), which is what the owner ruled for the spending
+  category and applies identically here. Nothing on that row is stamped
+  anywhere, so whatever it held is gone.
+- **Every reader that joins the accounts table to attribute income by source is
+  in the join inventory of 4.1** and behaves the same way it does for any other
+  closed account: an inner join drops the movement, a left join keeps it with a
+  null type. Closing an income source is not a special case for those readers.
+
+What is **not** ruled and is not assumed here: whether a closed income source
+still appears in the income form's source picker. That is a read filter, and it
+sits with the other picker questions in 10.3.
 
 ---
 
@@ -394,34 +510,36 @@ complete.
 |---|---|---|
 | 0 | Production measurement of how much history the previous mechanism already destroyed | the owner: no session queries production |
 | 1 | The registry table, its backfill from live accounts, and the trigger that keeps issuance honest | the migration suspension lifting |
-| 2 | The nine keys repointed at the registry, plus their hand-written boot-path counterparts | phase 1 |
-| 3 | The readers resolving through the registry, and the three sites that reach a surviving extension row | phase 2 |
+| 2 | The six keys repointed at the registry, plus their hand-written boot-path counterparts | phase 1 |
+| 3 | The readers resolving through the registry | phase 2 |
 | 4 | The close operation and its screen | phase 3 |
 | 5 | The other three methods commented out and the surplus screens retired | phase 4 |
 
 Phase two carries a hazard worth stating: schema parity builds both paths from
 scratch and is **structurally blind** to a gap in the boot path, so it reports
 clean while the runtime table builder lacks the new table and the repointed keys.
-Those nine keys and the table need hand-written counterparts in
-`createTables.js`, and no automated check will notice their absence.
+Those six keys and the table need hand-written counterparts in
+`createTables.js`, and no automated check will notice their absence. The four
+extension keys are untouched, so they need no counterpart.
 
 ### Inside phase four
 
 1. Validate the account and refuse the system ones — **the guard is already
    written**: it refuses by non-creatable type and by reserved name, and both
    arms are evaluated before any branch (`deleteAccountService.js`).
-2. Apply the zero-balance gate according to the type's family.
+2. Refuse unless the derived balance is zero — on `bank`, `cash`, `investment`
+   and `debtor` only. `income_source` skips this step by the owner's ruling.
 3. Release the pocket allocations with the existing mechanism.
 4. Stamp the registry row — name, type, currency, starting amount — and write the
    closure fields, reason included.
 5. Delete the account row.
 
 **The order is load-bearing:** the stamp happens before the delete and inside the
-same database transaction, or the type and the currency go with the row and the
-surviving transactions become uninterpretable. The type-specific attributes are
-not part of that risk, because repointing preserves them without a copy — which
-is the reason the irreversible step preserves and only the reversible step, a
-filter on a read, chooses.
+same database transaction, or the name, type and currency go with the row and the
+surviving transactions become uninterpretable. The type-specific attributes on
+the extension row are deliberately **not** stamped — the owner ruled that row is
+deleted — so the four columns the registry carries are the whole of what a closed
+account leaves behind, and step 4 has to write all four.
 
 ### The frontend, per phase
 
@@ -524,38 +642,62 @@ design.
 
 | Decision | Ruling |
 |---|---|
-| Which types close | only the four that hold money; a spending category is not an account |
-| The pocket saving type | it does not exist; any surviving rows are deleted physically, after the registry lands |
-| The zero condition | derived balance equal to zero, one rule for all four types |
+| The four money types close | `bank`, `cash`, `investment` and `debtor` |
+| The income source closes | *las cuentas income tambien son borrables*, reversing the recommendation recorded earlier the same day |
+| The income source is exempt from the zero condition | *tambien es borrable, pero no se le exige que sea saldo cero* |
+| The extension row is deleted with the account, by id | *cuando se borra hay tambien que eliminarla de esta otra tabla, buscando no por nombre sino por id*. The cascade on `002_accounts.sql:141-143` already does exactly this, so no code and no migration are owed — but it reverses the migration session's plan to repoint those four keys, and the repointing count drops from nine to six (4.3) |
+| The pocket saving type | it does not exist; any surviving rows are deleted physically — already done by an applied migration, see 5.2 |
+| The zero condition, on the four money types | derived balance equal to zero, for `bank`, `cash`, `investment` and `debtor` only |
 | The close reason | a new field on the close, stored on the registry row |
 | The other three methods | their route registrations and their service bodies are commented out, not removed |
 | The migration ledger read | authorized and performed |
+| The close screen is not commissioned yet | *no hacer nada*, 2026-09-07, in answer to whether the design session should be given phase four now |
 
 ### 10.2 Settled the same day, on a recommendation the owner endorsed
 
 | Decision | Ruling |
 |---|---|
 | A closed account's name is **not** renamed with a suffix | deleting the row already frees the name — the rename collision check joins the accounts table and finds nothing. A suffix would be stored as the registry's historical name and would then appear on transactions that happened before the close. To tell two same-named accounts apart in a report, the screen uses the closure date the registry already carries. |
-| An income source does **not** close | it classifies movements and holds no money the owner can move, exactly like a spending category |
-| Removing a spending category is **not** part of this plan | recorded so the gap stays visible: a category is a row in the accounts table with a derived balance, and after this plan no method removes it |
 
-### 10.3 Deferred, because nothing is at risk either way
+**Two rows that stood here earlier the same day have been removed, not
+amended.** The income source was recorded as not closing, and the spending
+category as outside this plan; the owner reversed the first and withdrew the
+second — *no lo puedes declarar como decidido*. Neither is a settled decision
+and neither may be cited as one.
 
-| Decision | Who rules |
-|---|---|
-| Whether a closed account still appears in a picker or a historical list — a filter on a read, not a schema change | owner |
+### 10.3 Open, and the owner rules
+
+| Decision | Pros of closing it | Cons of closing it | Recommendation |
+|---|---|---|---|
+| Whether a spending category closes | a category the owner stopped using disappears from every picker and every list instead of accumulating forever; it is the only removal path the module would offer, since no other method survives | its derived balance is above zero for every category ever spent on (5.1), so the zero refusal has to be waived for it exactly as for the income source; the collision check's own comment at `accountCategoryCreationcontroller.js:163` states that a closed category **keeps** its name, and closing by deleting the row inverts that rule | **it closes, on the same terms as the income source** — the balance on a category is accumulated historical spending, not a holding, so the refusal protects nothing, and the alternative leaves `user_accounts` with rows no method can ever remove. Recorded as a recommendation only; the owner has not ruled. |
+| Whether a closed account still appears in a picker or a historical list | — | — | a filter on a read, not a schema change; nothing in the schema depends on it |
+
+**What does not change whichever way the category goes.** The statement at
+`accountCategoryCreationcontroller.js:163` names `ua.closed_at`
+syntactically — `AND (ua.closed_at IS NOT NULL OR ua.deleted_at IS NULL)` — so
+it fails against a database lacking that column no matter how the scope is
+drawn. The deployment blocker in section 8 is untouched by this decision.
 
 Outside this plan's scope but found by it, and with no owning session running:
 **the budget writer updates a category's budget by account id alone**
 (`budgetAllocationService.js`), while the same service's other statement joins the
-accounts table and is self-filtering. Once extension rows survive a close, the
-first path can write a budget onto a closed category and the second cannot. It
-goes to whoever owns the budget service.
+accounts table and is self-filtering. With the extension row now deleted by the
+cascade, the first path writes zero rows instead of writing onto a closed
+category, so it is no longer a risk this plan creates — it stays a weakness of
+that service, which reports nothing when the account is missing. It goes to
+whoever owns the budget service.
 
 Two decisions that stood in the first version of this document are **closed, not
-deferred**: whether the registry stamps the type-specific attributes, and what
-happens to the debtor's copied account-name column. Repointing the four extension
-keys answers both by preserving everything, so there is nothing left to choose.
+deferred**, and the owner closed them in opposite directions on the same day:
+
+- **Whether the registry stamps the type-specific attributes: it does not.** The
+  extension row is deleted with the account, so there is nothing to stamp and
+  nothing to reconcile. The registry carries name, type, currency and starting
+  amount, and that is the entire historical record of a closed account.
+- **What happens to the debtor's copied account-name column: nothing, and its
+  reference stops blanking.** `debtor_accounts.selected_account_id` is repointed
+  at the registry, which is a different account from the one the debtor row
+  belongs to, so the ruling above does not reach it.
 
 ---
 
