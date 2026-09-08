@@ -189,15 +189,22 @@
 /* The drawn box is smaller than the tap target it sits inside — see the
    ::after below — which is what brings the pill's own height down: nothing
    is drawn at rest, no border and no fill, so the chevron reads as a mark
-   inside the pill rather than a circle sitting beside it. */
+   inside the pill rather than a circle sitting beside it.
+
+   --space-6 and not --space-8: the arrow was the tallest child, so IT set the
+   row's height and the badge beside it never did. At 2rem the row measured 34px
+   against the 25.6px of .budgetLayout .month-badge, which is the same control
+   without a stepper. At 1.5rem the badge becomes the tallest child and the row
+   measures 27.6px — the remaining 2px is this pill's own outline, which the
+   badge alone does not carry. */
 .monthStepper__arrow {
  position: relative;
  display: inline-flex;
  align-items: center;
  justify-content: center;
  flex-shrink: 0;
- width: var(--space-8);
- height: var(--space-8);
+ width: var(--space-6);
+ height: var(--space-6);
  padding: 0;
  border: none;
  border-radius: var(--radius-full);
@@ -213,7 +220,7 @@
 .monthStepper__arrow::after {
  content: '';
  position: absolute;
- inset: calc((var(--space-8) - var(--size-touch-target)) / -2);
+ inset: calc((var(--space-6) - var(--size-touch-target)) / -2);
 }
 
 /* Sized off the spacing scale, the way .pocketHero__chevron already is: the
