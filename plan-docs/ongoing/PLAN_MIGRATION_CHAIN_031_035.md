@@ -170,6 +170,20 @@ left by `013_normalize_category_budget_name_case.sql`, still points at
 are the four extension primary keys, which cascade"*; the count is five, not
 four, and the conclusion survives because this one cascades too.
 
+**The trigger was exercised, not assumed.** `trg_register_account_identity`
+fires `AFTER INSERT ON user_accounts`, and until an account is created nothing
+proves it. Probed on `fintrack_dev` inside a transaction that was rolled back:
+the insert produced a matching `account_registry` row with the owner carried
+across, and the counts afterwards are unchanged at 31 and 31. Only
+`account_id` and `user_id` are written, so every other column of an open
+account's registry row is NULL, which is why an identity read has to fall back
+to `user_accounts` rather than replace it.
+
+**The backend boots against the migrated schema.** `node src/index.js` on port
+5078 reached *"Server running"* with the boot path reporting every table already
+present and creating nothing, so the seven repointed keys do not collide with
+`initDatabase.js`.
+
 **The alignment script has no runner and its ledger row was typed by hand.**
 `src/db/migrations/supabase/001_production_alignment.sql` exists on disk, and
 nothing under `backend/src` or `backend/scripts` reads that path, applies it, or
