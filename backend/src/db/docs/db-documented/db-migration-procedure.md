@@ -355,11 +355,15 @@ DB_NAME=fintrack_prod_rehearsal_full DB_EXPECTED=fintrack_prod_rehearsal_full np
 DB_NAME=fintrack_prod_rehearsal_full DB_EXPECTED=fintrack_prod_rehearsal_full npm run db:migrate
 ```
 
-**The chain step runs nineteen files, not eighteen.** The alignment stamps
-`001`-`012` and `014`-`017` and leaves `013` out deliberately, so the runner
-takes `013_normalize_category_budget_name_case.sql` first and `018` through
-`035` after it. That is where `account_name_case_backup_013` comes from on a
-rehearsed copy.
+**The chain step runs twenty files, and the number is the last file plus one.**
+The alignment stamps `001`-`012` and `014`-`017` and leaves `013` out
+deliberately, so the runner takes `013_normalize_category_budget_name_case.sql`
+first and `018` through `036` after it. That is where
+`account_name_case_backup_013` comes from on a rehearsed copy. It was nineteen
+until `036` was written on 2026-09-08, so read the count off the highest
+numbered file rather than off this sentence. Measured: a copy of
+`fintrack_prod_data` aligned and then migrated on 2026-09-08 reported twenty
+files completed and `7 of 7 repointed keys reach account_registry`.
 
 ### 5.2 Verify on two axes
 
@@ -464,12 +468,13 @@ DB_EXPECTED=<production database name> DB_REMOTE_OK=1 npm run db:migrate
  defect, because an operator who sees a refusal on the first line of a
  production procedure has to decide whether the document or the runner is wrong
  while connected to production.
-- **What is pending is `031` through `036` — six files, not nineteen.** The
- record puts production at `030` with the alignment applied and the ledger at 31
- rows, read 2026-09-06. Nineteen is the rehearsal's number, and it is right
- there: a rehearsal copy starts from the 2026-08-21 dump, so it needs the
- alignment plus `013` and `018`-`035`. Production has moved since that dump was
- taken: the runs of 2026-08-27 and 2026-09-06 carried it to `030`.
+- **What is pending is `031` through `036` — six files.** The record puts
+ production at `030` with the alignment applied and the ledger at 31 rows, read
+ 2026-09-06. The rehearsal's twenty is a different number for a different
+ database and both are right: a rehearsal copy starts from the 2026-08-21 dump,
+ so it needs the alignment plus `013` and `018`-`036`. Production has moved
+ since that dump was taken — the runs of 2026-08-27 and 2026-09-06 carried it to
+ `030` — so it needs neither the alignment nor anything below `031`.
 - **The count above is a record, and 5.0 is what turns it into a measurement.**
  Read the ledger before writing. If it does not show 31 rows ending at
  `030_add_jpy_currency.sql`, stop: the pending set is not the one this section
