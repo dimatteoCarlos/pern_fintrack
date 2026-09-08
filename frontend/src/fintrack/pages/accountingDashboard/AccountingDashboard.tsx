@@ -716,8 +716,10 @@ const AccountingDashboard = () => {
               to={OPEN_ACCOUNT_ROUTE}
               state={{ previousRoute: location.pathname }}
               className='accounting__openAccount'
-              aria-label='Open account'
-              title='Open account'
+              aria-label='Open a new account'
+              // The tip the stylesheet prints under the mark. No title as well:
+              // the two would stack, the native one arriving a second later.
+              data-tip='Open a new account'
              >
               <OpenAccountSvg
                className='accounting__openAccount-glyph'
