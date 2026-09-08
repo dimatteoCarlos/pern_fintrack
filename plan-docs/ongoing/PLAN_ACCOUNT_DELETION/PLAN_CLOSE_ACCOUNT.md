@@ -1081,6 +1081,9 @@ reader is a defect the merge removes.
 #### The contract
 
 The row exists for every account from the moment the account is created.
+**Eleven columns in nine rows** — an earlier draft of this section said nine
+columns, counting the table's rows instead of the columns in them. The closure
+record is three columns on one row. With the three added below it is fourteen.
 
 | Column | Written at creation | Stamped at closure | Nullable | Why there and not elsewhere |
 |---|---|---|---|---|
@@ -1088,7 +1091,7 @@ The row exists for every account from the moment the account is created.
 | `user_id` | yes | — | no | the ownership filter, and it is known at creation and never changes |
 | `account_name` | — | yes | yes | the live value is read from `user_accounts` and can change until the last instant |
 | `account_type_id` | — | yes | yes | same, and the edit path can move an account between types |
-| `currency_id` | — | yes | yes | same |
+| `currency_id` | — | yes | yes | same, and it must be the **resolved** value. `ACCOUNTS_QUERY` reads `COALESCE(cba.currency_id, ua.currency_id) AS currency_id` (`budgetTransactionRepository.js:125`); once both rows are gone the COALESCE has no second operand, so the stamp has to be the answer that expression would have given |
 | `account_starting_amount` | — | yes | yes | same |
 | `account_start_date` | — | yes | yes | same |
 | `created_at` | — | yes | yes | same |
@@ -1121,9 +1124,107 @@ needs a branch for that null.
 - **`deleted_at`** — CLOSE deletes the row, so a closed account cannot carry a
   soft-delete timestamp. The two states stop being confusable by construction,
   which is the ambiguity `034_add_account_closed_at.sql` exists to end.
-- **The type-specific columns** — the budget amount, the category's nature key,
-  the debtor's terms, the currency audit pairs. The owner ruled the extension row
-  is deleted with the account (4.3), so there is nothing to stamp.
+- **The type-specific columns** — the budget amount, the debtor's terms, the
+  currency audit pairs. The owner ruled the extension row is deleted with the
+  account (4.3), so there is nothing to stamp. **Three of them are the exception
+  fix 1 creates**, immediately below.
+
+#### Three columns fix 1 forces back in, and why they reopen a closed decision
+
+**Key 7 keeps the allocation rows alive; on its own it changes nothing a reader
+can see.** Found by the Overview session, measured by the migration session,
+verified here. **Four independent removals stand between a closed
+`category_budget` account and its budget figure, and any one of them empties the
+result. Key 7 closes the fourth only.**
+
+| # | The removal | Where |
+|---|---|---|
+| 1 | the id array never names the account — `SELECT ua.account_id FROM user_accounts ua JOIN account_types act ... AND act.account_type_name = 'category_budget'`, and everything downstream filters `WHERE ua.account_id = ANY($1)` | `overviewAccountRepository.js:32-39` |
+| 2 | the driving table — `FROM user_accounts ua` | `budgetTransactionRepository.js:132` |
+| 3 | the inner join onto the extension table — `JOIN category_budget_accounts cba ON cba.account_id = ua.account_id` | `budgetTransactionRepository.js:133` |
+| 4 | the allocation cascade | closed by key 7 |
+
+**Removals 2 and 3 are two, not one.** CLOSE destroys a row on each side of that
+join, and a registry that perfectly restores the `user_accounts` side still loses
+the row on the extension side.
+
+**What the statement selects decides the contract, not what the group key needs.**
+`ACCOUNTS_QUERY` reads seven columns and **three come off the table that
+cascades**:
+
+| Selected | Line | Published as |
+|---|---|---|
+| `cba.category_name` | `:122` | `categoryName` at `:264` |
+| `cba.subcategory` | `:123` | `subcategory` at `:265` |
+| `cba.category_nature_type_id` | via `LEFT JOIN category_nature_types cnt ON cnt.category_nature_type_id = cba.category_nature_type_id` at `:134-135`, read as `cnt.category_nature_type_name AS nature` at `:124` | `nature` at `:268` |
+
+All three are declared on `category_budget_accounts`, whose primary key carries
+`ON DELETE CASCADE` (`002_accounts.sql:140-143`, the nature key at `:147-148`).
+The statement also orders on `cba.category_name, ua.account_name` at `:137`.
+
+**So the three go into the registry, stamped at closure from the extension row in
+the same transaction, before the cascade fires** — `category_name`, `subcategory`,
+`category_nature_type_id`. The last one is the **catalog key, not the name text**:
+`category_nature_types` rows are never deleted, so one stamped integer keeps the
+existing LEFT JOIN answerable and removes an entry from *What no contract
+recovers*.
+
+**Why this reopens a decision 10.3 records as closed.** 10.3 closes *whether the
+registry stamps the type-specific attributes: it does not*, on the reason *the
+extension row is deleted with the account, so there is nothing to stamp*. **Fix 1
+falsifies that reason for one type**: after key 7 a `category_budget` account
+leaves rows behind, and those rows need columns that died with the extension row.
+The decision was correct on its own premise and the premise changed — the same
+pattern as 3.5 being superseded by 3.7. **It stays a bounded exception**: only
+`category_budget` leaves surviving rows, so nothing is stamped for the other five
+types and their roughly thirty type-specific columns still die at close.
+
+**Parsing `account_name` instead is a convention, not an invariant, and it is the
+option this plan should not take.** 3.6 records that the three segments of a
+`category_budget` account name are the category, the subcategory and the nature.
+The migration session measured the agreement holding across **111
+`category_budget` accounts** — 94 on the production copy, 17 on the development
+database — every one splitting into exactly three parts on `/`, segment 1 equal to
+`category_name` and segment 2 equal to `subcategory` lowercased and trimmed, zero
+exceptions. **Nothing enforces it.** `010_create_budget_tables.sql` declares only
+`uq_budget_allocation_month` at `:48` and `chk_budget_month_is_first` at `:49`;
+there is no CHECK and no trigger binding the composite to its parts. Two lines
+hold it:
+
+```js
+? `${category_name}/${subcategory}/${nature_type_name_req}`        // accountCategoryCreationcontroller.js:82
+normalizeAccountName(`${categoryName}/${subcategory}/${nature}`)   // accountEditController.js:175
+```
+
+**And this schema already has a stored name that went stale exactly that way** —
+`debtor_accounts.selected_account_name` (`002_accounts.sql:182`), which
+`020_create_pocket_tables.sql:386` has to set to NULL because nothing kept it in
+agreement with the account it names.
+
+**What it costs to omit them, on each side of the change.** Today, before any
+registry exists, removals 1 to 3 mean the closed category contributes to no group
+at all: the surviving budget becomes an amount nothing reads, and there is no
+empty row left behind to notice. **After a registry-sourced reader that omits
+`category_name`, the failure inverts and becomes loud**: the row arrives with a
+null group key, `makeCategoryGroups` folds it in at
+`budgetCalculationService.js:265-268`, and `:271-272` sorts the keys with
+`.sort(([a], [b]) => a.localeCompare(b))` — **a null key raises a `TypeError`
+before any group is built**, so the whole payload fails rather than one category,
+and only when there are at least two groups, because a one-element sort never
+calls the comparator. Had it survived that, `makeBudgetCategoryStatus.js:40-41`
+refuses it anyway: *categoryName is required and must be a non-empty string*.
+Neither outcome is acceptable, and the second is what the registry would ship.
+
+**The chain owner's ruling on how this migrates, recorded as theirs.** None of the
+pieces is demonstrable alone — not the registry `CREATE TABLE`, not its
+population, not the `ALTER` that repoints
+`budget_monthly_allocations_account_id_fkey` — because three other removals still
+stand behind each of them. **So they go in one chain file, not a sequence, and it
+ships in the same block as the read change**, with the header naming the four
+removals and saying which the file closes and which the reader closes. That is a
+deliberate exception to the usual preference for the smallest possible migration:
+a file whose effect cannot be shown becomes a ledger row a later session reads as
+proof the problem is solved.
 
 #### What points at the registry: seven keys, not six
 
@@ -1230,10 +1331,11 @@ the extension ruling accepts it everywhere else.
 
 #### What no contract recovers
 
-- **`category_nature_type_id` as a catalog key.** The nature's name survives as
+- **`category_nature_type_id` as a catalog key — removed from this list if the
+  owner rules the three stamps above.** Without them the nature survives only as
   the third segment of `account_name`, split by `parseCategoryAccountName`
-  (`newCategoryHelper.ts:26-33`); the foreign key into `category_nature_types`
-  does not.
+  (`newCategoryHelper.ts:26-33`), and the foreign key into `category_nature_types`
+  does not survive at all.
 - **The original capitalization of a budget category**, for the twenty-eight
   accounts sized in 3.8.12, because `account_name_case_backup_013.account_id`
   cascades.
@@ -1245,6 +1347,7 @@ the extension ruling accepts it everywhere else.
 |---|---|
 | Whether `close_reason` is mandatory | **yes, free text.** No statement reads it, so it constrains nothing technically; it is the only record of why an irreversible action was taken |
 | Who writes the registry row at creation | **a trigger before insert on `user_accounts`**, for the reason below — but the precedent is weaker than an earlier draft of this row claimed |
+| Whether the registry stamps `category_name`, `subcategory` and `category_nature_type_id` | **yes.** It reopens a decision 10.3 closed, because fix 1 falsified that decision's premise for this one type; detail above |
 | Whether the backfill stamps existing live accounts or leaves them null | **leaves them null.** Those accounts are live, so their values are read from `user_accounts`; stamping them would create the two-writer problem this shape avoids |
 
 **The trigger, and a correction to how this plan justified it.** An earlier draft
