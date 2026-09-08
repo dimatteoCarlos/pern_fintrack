@@ -349,14 +349,33 @@ database from the dump.
 **Schema first, then code.** Decided by Carlos on 2026-09-08, and for this batch
 it is not a preference between two workable orders.
 
-The reason is measurable today. Five files on `main` reference
-`account_registry` — `overviewAccountRepository.js`, `accountIdentity.js`,
-`transactionRowShape.js`, `deleteAccountService.js` and
-`assessAccountDeletion.js` — and **zero files on `origin/feat/vercel-serverless`
-do**. So the deployed backend has no reader of the registry at all, which is why
-production is sound today with 035 unapplied. The moment `main` merges into the
-deploy branch, those five reach production; if 035 has not run by then, every
-one of them queries a table that does not exist.
+The reason is measurable today. `git grep -l account_registry` over
+`backend/src` returns **ten paths on `main` and zero on
+`origin/feat/vercel-serverless`**, so the deployed backend does not mention the
+table anywhere, let alone query it. That is why production is sound today with
+035 unapplied.
+
+Of those ten, **three execute SQL against the table** and they are what the
+merge would carry into production:
+
+- `accountIdentity.js:120` declares `account_registry ar` inside
+ `accountIdentityCte`. It is the only definition.
+- `overviewAccountRepository.js` embeds that CTE in five statements, at lines
+ 44, 88, 191, 221 and 255, which resolve the income, expense and
+ profit-and-loss account ids, the ids of one requested type, and the oldest
+ account date. Every card on the Overview page is cut against one of them.
+- `deleteAccountService.js:1226` writes the closure stamp with
+ `INSERT INTO account_registry`.
+
+The other seven mention it without querying it, and the distinction matters
+because a grep alone overstates the exposure: `transactionRowShape.js` and
+`assessAccountDeletion.js` name it only in comments, `035`, `036` and
+`runAlignment.js` are the chain itself, this document is the tenth, and
+`createTables.js` is the boot path that builds the table rather than reading it.
+
+If 035 has not run when the merge lands, the three above meet a relation that
+does not exist: the Overview page errors rather than degrading, and the close
+fails on its stamp.
 
 The order is therefore forced in one direction only. Running the chain early
 costs nothing, because the deployed code ignores what it adds. Deploying the
