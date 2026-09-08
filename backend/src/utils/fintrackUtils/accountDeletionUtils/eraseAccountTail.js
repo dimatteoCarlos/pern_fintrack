@@ -52,9 +52,10 @@ export const eraseAccountTail = async (
   // POCKET_MODULE_SPEC.md §11.1 Q8b decided on: "the service deletes the
   // allocation rows and the account in the same transaction" - never a
   // silent cascade, and RESTRICT stays in place as the guard rail below.
-  // Still open: the owner is not yet shown which pockets lose backing before
-  // confirming (Q8b's report-then-confirm half) - that belongs to the
-  // standalone assessment endpoint, PLAN_ACCOUNT_DELETION.md unit 6.
+  // Q8b's report-then-confirm half is closed: the assessment endpoint publishes
+  // pocketImpact with removesPocketAllocations per deletion type, so the owner
+  // sees which pockets lose backing, and which choices leave them alone, before
+  // confirming anything. CLOSE and SOFT never reach this line.
   await dbClient.query(
     'DELETE FROM pocket_allocations WHERE source_account_id = $1 AND user_id = $2',
     [targetAccountId, userId],

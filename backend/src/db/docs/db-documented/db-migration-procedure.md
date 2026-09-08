@@ -328,9 +328,24 @@ on the chain, and no schema-effect file needs its own reading. Red names the
 divergences, and each one is a file that must not be marked.
 
 **The data half has no tool, and it is where the mistake gets made.** A backfill
-leaves nothing in the schema to read. `012_backfill_budget_policies.sql` is the
-case that matters: its effect is rows, `fintrack_dev` carries it and production
-does not, and on 2026-09-06 both ledgers held 31 rows. Read the rows.
+leaves nothing in the schema to read, so the parity check above stays silent on
+it while the file list looks complete. The two worked examples are in
+`001_production_alignment.sql`, which faced this question for real and answered
+it both ways in one statement. It marks `012_backfill_budget_allocations.sql`,
+whose rows it had produced. It leaves `013_normalize_category_budget_name_case.sql`
+out, and the comment above its `INSERT INTO migrations` says why: the file does
+not normalize name case, so the row is not earned and `013` receives it when
+`013` runs. Two data migrations, opposite decisions, and the difference is a
+reading of the rows.
+
+**A ledger row can outlive its file, which is what makes the identity test in
+§5.0 work.** `fintrack_dev` carries a row for `012_backfill_budget_policies.sql`,
+a file no longer in `sql_migrations/`; production never had it. The runner
+iterates the directory, so a row naming a file that is not on disk changes
+nothing about what runs — it only breaks a count, and it breaks it in the
+direction that looks like production is missing a backfill. Corrected here on
+2026-09-07, after a session derived exactly that gap from a count and found no
+such gap on reading the names.
 
 ### 7.2 The rehearsal, which never happens on the target
 

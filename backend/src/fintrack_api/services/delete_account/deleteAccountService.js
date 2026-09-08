@@ -429,23 +429,42 @@ const processStandardDelete = async (
       pc.red(`Admin HARD DELETE for account ${targetAccountId} by user ${userId}`),
     );
 
-    // Interim guard (PLAN_ACCOUNT_DELETION.md "HARD/DELETE settlement gap",
+    // A closed account is not erasable (Carlos, 2026-09-07). CLOSE settles the
+    // residual and keeps the row on purpose - that preserved history is the
+    // whole product of closing. HARD read only the balance, and a closed
+    // account's balance is zero by construction, so it erased exactly the rows
+    // the close existed to keep. SOFT already refuses this; the omission here
+    // was that the two branches tested different columns for the same state.
+    // Checked before the lock: a refusal should not take one.
+    if (accountCheck.rows[0].closed_at !== null) {
+      throw createError(
+        400,
+        `Account ${targetAccountId} was closed and settled. A closed account cannot be hard deleted; its balance has already been moved and its row is kept deliberately.`,
+      );
+    }
+
+    // Settlement guard (PLAN_ACCOUNT_DELETION.md "HARD/DELETE settlement gap",
     // 2026-09-06). §3.2 requires settling the residual before erasure -
     // "unless those rows already sum to zero, the global ledger stops
-    // closing" - and unit 7's settlement engine does not exist yet. Rather
-    // than erase a nonzero-balance account unsettled, refuse it. The lock
-    // closes the same concurrency gap RTA's own execution closed (unit 6):
-    // held here, nothing can change the balance between this check and the
-    // erasure below.
+    // closing". Rather than erase a nonzero-balance account unsettled, refuse
+    // it. The lock closes the same concurrency gap RTA's own execution closed
+    // (unit 6): held here, nothing can change the balance between this check
+    // and the erasure below.
     const targetBalances = await lockAndDeriveBalances(dbClient, userId, [
       targetAccountId,
     ]);
     const targetBalance = parseFloat(targetBalances.get(targetAccountId));
 
+    // CLOSE leads and RTA follows, because they answer different intentions
+    // (Carlos, 2026-09-07). Moving the residual out is what an owner who is
+    // done with an account wants; RTA reverses the account's effect on OTHER
+    // accounts, writing annulment pairs against rows the owner never touched.
+    // The previous wording named RTA alone, sending the ordinary case to the
+    // one path that rewrites other accounts' history.
     if (targetBalance !== 0) {
       throw createError(
         409,
-        `Account ${targetAccountId} has a nonzero balance (${targetBalance}) and cannot be hard-deleted without settlement. Use RTA to reverse its effects first.`,
+        `Account ${targetAccountId} holds ${targetBalance} and cannot be hard-deleted until that is settled. Close it to move the residual out - transferred to an account you choose, or discarded - or use RTA instead if the account's effects on other accounts should be reversed.`,
       );
     }
 
@@ -481,8 +500,17 @@ const processStandardDelete = async (
   }
 
   // Only the soft-delete branch reaches here - hard delete returns above.
+  //
+  // Both columns in the guard, and closed_at is not redundant with the
+  // precondition above it. The precondition read accountCheck, which was
+  // selected earlier in this transaction; the guard is evaluated by the UPDATE
+  // itself. A close committing in between passes the first and must not pass
+  // the second - otherwise a settled account is stamped as soft deleted and the
+  // row that was kept deliberately reads as an ordinary deletion. rowCount 0
+  // then raises the 500 below, which is the right answer: the caller's read of
+  // the account is stale.
   const queryText =
-    'UPDATE user_accounts ua SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE (ua.account_id = $1 AND ua.user_id = $2) AND ua.deleted_at IS NULL';
+    'UPDATE user_accounts ua SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE (ua.account_id = $1 AND ua.user_id = $2) AND ua.deleted_at IS NULL AND ua.closed_at IS NULL';
   // $2 (user_id) was never bound before this fix: the query always required
   // it but only targetAccountId was passed, so every soft delete threw a
   // Postgres bind-count error before this change.
@@ -899,6 +927,23 @@ export const deleteAccountService = async (
     //     messages.rtaUserPermissionDenied.messagefn(),
     //   );
     // }
+
+    // A closed account is not reversible either (Carlos's ruling on hard
+    // delete, 2026-09-07, extended here for the same reason and one more).
+    // RTA ends in the same eraseAccountTail, so without this it destroys the
+    // preserved history and the pocket allocations through the other door -
+    // raised by `e4` while the hard-delete guard was being written.
+    // The extra reason is money: closing wrote a settlement pair moving the
+    // residual out, those rows belong to this account, and the impact report
+    // reads them. RTA would annul the destination's receipt of the residual
+    // while erasing the account that sent it, so the residual would be taken
+    // back from a live account and returned to nothing.
+    if (accountCheck.rows[0].closed_at !== null) {
+      throw createError(
+        400,
+        `Account ${targetAccountId} was closed and settled. A closed account cannot be reverted with RTA; its residual has already been moved and reversing it now would take that amount back from the account that received it.`,
+      );
+    }
 
     let dbClient;
     try {

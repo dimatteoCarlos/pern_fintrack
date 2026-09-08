@@ -142,3 +142,44 @@
 
 
 
+
+/* No figure at all, not a zero one: the server did not send the fold. */
+.total-amount.absent {
+  color: var(--gray-500);
+  font-weight: 700;
+  margin-left: 0.5rem;
+}
+
+/* Caution, not error: the amount is real and already reversed, so it reads in
+   the same yellow the warning above uses rather than the red of a loss. */
+.impact-report-unattributed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--yellow-300);
+  border-radius: var(--radius-lg);
+  background-color: var(--yellow-50);
+}
+
+.impact-report-unattributed .unattributed-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--yellow-800);
+}
+
+.impact-report-unattributed .unattributed-amount {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--yellow-800);
+}
+
+/* Full width so the sentence wraps under the figure instead of beside it. */
+.impact-report-unattributed .unattributed-note {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--gray-500);
+}

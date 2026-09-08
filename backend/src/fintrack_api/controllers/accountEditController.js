@@ -236,6 +236,8 @@ export const patchAccountById = async (req, res, next) => {
     // user is not a conflict, and a bank account and a pocket may share one.
     // An account never collides with itself, so an edit that leaves the name
     // untouched is accepted, and a soft-deleted account does not hold its name.
+    // A CLOSED one does hold it, which is the opposite of the rule the rest of
+    // the sweep applies - see the predicate below for why.
     if (userAccountFields.account_name !== undefined) {
       const nameCollision = await client.query({
         text: `SELECT ua.account_id FROM user_accounts ua
@@ -245,7 +247,14 @@ export const patchAccountById = async (req, res, next) => {
                   AND LOWER(ua.account_name) = LOWER($2)
                   AND LOWER(act.account_type_name) = LOWER($3)
                   AND ua.account_id <> $4
-                  AND ua.deleted_at IS NULL`,
+                  -- Name ownership, not circulation, so closed is the
+                  -- opposite of deleted here. A closed account keeps its
+                  -- name because its history is kept: the erasure tail
+                  -- rewrites descriptions by matching the account name as a
+                  -- substring, so freeing the name of a closed account lets
+                  -- a later namesake's deletion rewrite the closed
+                  -- account's own preserved rows.
+                  AND (ua.closed_at IS NOT NULL OR ua.deleted_at IS NULL)`,
         values: [
           userId,
           userAccountFields.account_name,

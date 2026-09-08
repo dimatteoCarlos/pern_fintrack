@@ -46,6 +46,11 @@ export const TRANSFER_DESTINATION_ACCOUNT_TYPE = 'bank';
 // screen.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua', 'NUMERIC');
 
+// Both columns, because a destination has to be able to receive money: a closed
+// account's residual has already been settled to zero and moving more into it
+// would reopen a balance nobody can close again without a second settlement.
+// deleted_at alone was sufficient only while closing also wrote it.
+//
 // The closing account's currency comes from a CTE rather than from a caller's
 // copy, so both callers read the same source.
 //
@@ -73,6 +78,7 @@ const ELIGIBLE_DESTINATIONS_QUERY = `
   CROSS JOIN closing
   WHERE ua.user_id = $1
     AND ua.deleted_at IS NULL
+    AND ua.closed_at IS NULL
     AND ua.account_id <> $2
     AND act.account_type_name = $3
     AND ua.currency_id = closing.currency_id

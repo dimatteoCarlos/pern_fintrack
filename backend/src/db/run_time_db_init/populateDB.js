@@ -162,10 +162,11 @@ export async function tblCurrencies(client = pool) {
     }
 
     console.log(currenciesValues);
-    //initiate a transaction
-    // await client.query('BEGIN');
-    //run through the data and insert every tuple
-
+    // The caller owns the transaction. initializeDatabase() wraps every catalog
+    // function in one BEGIN/COMMIT, so a COMMIT here would close it early and a
+    // ROLLBACK would discard the tables created after it. This one also runs a
+    // second time on every boot outside any transaction, where a partial insert
+    // is repaired by the row-count check on the next call.
     for (const currency of currenciesValues) {
       const queryText = `INSERT INTO currencies(currency_id,currency_code, currency_name) VALUES ($1,$2,$3)
       ON CONFLICT (currency_id) DO NOTHING`;
@@ -178,13 +179,8 @@ export async function tblCurrencies(client = pool) {
       // console.log('inerted: currency', currency.currency_code);
     }
 
-    //confirm transaction
-    // await client.query('COMMIT');
     // console.log('All tuples inserted successfully.');
-  } catch (
-    error // Revertir la transacción en caso de error
-  ) {
-    // await client.query('ROLLBACK');
+  } catch (error) {
     console.error(pc.orange('Error inserting tuples:', error));
     throw error;
   }
@@ -228,10 +224,9 @@ export async function tblUserRoles(client = pool) {
       return;
     }
 
-    //initiate a transaction
-    // await client.query('BEGIN');
-
-    //run through the data and insert every tuple
+    // The caller owns the transaction: initializeDatabase() wraps every catalog
+    // function in one BEGIN/COMMIT, so a COMMIT here would close it early and a
+    // ROLLBACK would discard the tables created after it.
     for (const role of rolesValues) {
       const queryText = `INSERT INTO user_roles(user_role_id, user_role_name) VALUES ($1,$2)
       ON CONFLICT (user_role_id) DO NOTHING`;
@@ -243,13 +238,8 @@ export async function tblUserRoles(client = pool) {
       );
     }
 
-    //confirm transaction
-    // await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
-  } catch (
-    error // Revertir la transacción en caso de error
-  ) {
-    // await client.query('ROLLBACK');
+  } catch (error) {
     console.error(pc.red('Error inserting tuples:', tblName, error));
     throw error;
   }
@@ -298,9 +288,9 @@ export async function tblAccountTypes(client = pool) {
       return;
     }
 
-    //initiate a transaction
-    // await client.query('BEGIN');
-    //run through the data and insert every tuple
+    // The caller owns the transaction: initializeDatabase() wraps every catalog
+    // function in one BEGIN/COMMIT, so a COMMIT here would close it early and a
+    // ROLLBACK would discard the tables created after it.
     for (const type of accountTypeValues) {
       const queryText = `INSERT INTO account_types(account_type_id,
       account_type_name) VALUES ($1,$2)
@@ -310,13 +300,8 @@ export async function tblAccountTypes(client = pool) {
       console.log(pc.green(`inserted: ${tblName}, ${type.account_type_name}`));
     }
 
-    //confirm transaction
-    // await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
-  } catch (
-    error // Revertir la transacción en caso de error
-  ) {
-    // await client.query('ROLLBACK');
+  } catch (error) {
     console.error('Error inserting tuples:', error);
     throw error;
   }
@@ -359,9 +344,9 @@ export async function tblCategoryNatureTypes(client = pool) {
       return;
     }
 
-    //initiate a transaction
-    // await client.query('BEGIN');
-    //run through the data and insert every tuple
+    // The caller owns the transaction: initializeDatabase() wraps every catalog
+    // function in one BEGIN/COMMIT, so a COMMIT here would close it early and a
+    // ROLLBACK would discard the tables created after it.
     for (const type of categoryNatureTypeValues) {
       const queryText = `INSERT INTO category_nature_types(category_nature_type_id,
       category_nature_type_name) VALUES ($1,$2)`;
@@ -375,14 +360,8 @@ export async function tblCategoryNatureTypes(client = pool) {
       );
     }
 
-    //confirm transaction
-    // await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
-  } catch (
-    error // Revertir la transacción en caso de error
-  ) {
-    // await client.query('ROLLBACK');
-
+  } catch (error) {
     const { code, message } = handlePostgresErrorEs(error);
 
     // next(createError(code, message));
@@ -435,9 +414,9 @@ export async function tblMovementTypes(client = pool) {
       return;
     }
 
-    //initiate a transaction
-    // await client.query('BEGIN');
-    //run through the data and insert every tuple
+    // The caller owns the transaction: initializeDatabase() wraps every catalog
+    // function in one BEGIN/COMMIT, so a COMMIT here would close it early and a
+    // ROLLBACK would discard the tables created after it.
     for (const type of movementTypeValues) {
       //the seeder decides it is unpopulated by row count, so adding a value
       //makes an already-seeded database re-run the whole loop
@@ -448,13 +427,8 @@ export async function tblMovementTypes(client = pool) {
       console.log(pc.green(`inserted: ${tblName}, ${type.movement_type_name}`));
     }
 
-    //confirm transaction
-    // await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
-  } catch (
-    error // Revertir la transacción en caso de error
-  ) {
-    // await client.query('ROLLBACK');
+  } catch (error) {
     console.error('Error inserting tuples:', error);
     throw error;
   }
@@ -498,9 +472,9 @@ export async function tbltransactionTypes(client = pool) {
       return;
     }
 
-    //initiate a transaction
-    // await client.query('BEGIN');
-    //run through the data and insert every tuple
+    // The caller owns the transaction: initializeDatabase() wraps every catalog
+    // function in one BEGIN/COMMIT, so a COMMIT here would close it early and a
+    // ROLLBACK would discard the tables created after it.
     for (const type of transactionTypeValues) {
       //same reason as movement_types: the row count is the populated test
       const queryText = `INSERT INTO transaction_types(transaction_type_id,
@@ -510,13 +484,8 @@ export async function tbltransactionTypes(client = pool) {
       console.log(`inserted: ${tblName}, ${type.transaction_type_name}`);
     }
 
-    //confirm transaction
-    // await client.query('COMMIT');
     console.log(pc.yellow('All tuples inserted successfully.'));
-  } catch (
-    error // reverse transaction in case of error
-  ) {
-    // await client.query('ROLLBACK');
+  } catch (error) {
     console.error('Error inserting tuples:', error);
     throw error;
   }

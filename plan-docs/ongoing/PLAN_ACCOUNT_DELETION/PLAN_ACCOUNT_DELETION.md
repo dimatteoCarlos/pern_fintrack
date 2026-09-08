@@ -735,9 +735,11 @@ commit. The order is forced where stated and free otherwise.
      settlement engine, not this unit.
 
   6  the assessment endpoint                               §4.1 step 2
-     STARTED 2026-09-06 - see "Unit 6 started" below. The lock-then-compute
-     step is built for RTA; a standalone endpoint reachable ahead of any
-     deletion type, not just RTA, is still open.
+     SHIPPED 2026-09-07 - see "Unit 6 closed" below. The lock-then-compute
+     step for RTA landed 2026-09-06; the standalone endpoint reachable ahead
+     of any deletion type is GET /account/delete/assessment/:targetAccountId,
+     and it deliberately takes no lock - a preview's lock is released before
+     the confirmation it would have to protect.
 
   7  the settlement engine and CLOSE                       §3.1, §4.1
      SHIPPED 2026-09-07, all of it: TRANSFER, DISCARD, the client's echo of
@@ -750,8 +752,10 @@ commit. The order is forced where stated and free otherwise.
      being deployed rather than written.
 
   8  the read sweep                                        
-     OPEN. 75 FROM/JOIN of user_accounts across 21 files, 8 filtering
-     deleted_at IS NULL - each needs a recorded filter decision.
+     OPEN. 88 FROM/JOIN of user_accounts across 29 runtime files - each
+     needs a recorded filter decision. Measured 2026-09-07; the 75 across
+     21 this line carried before was fintrack_api alone, leaving utils/
+     (11 across 6) and auth_api/ (2 across 2) outside the count.
 
   9  D2: destination eligibility for TRANSFER              blocks unit 7's selector
      DECIDED 2026-09-07, Carlos. The eligible type is bank, alone. See
@@ -2617,3 +2621,897 @@ closed account 404 so no close screen can be opened on one.
 `verifyCloseTransfer.js` asserts the same refusal under TRANSFER with an
 eligible destination named, so an echo implemented on the DISCARD branch alone
 would fail there rather than pass silently.
+
+---
+
+## The read sweep, `e4`'s half, 2026-09-07
+
+Eleven sites across seven files. What the sweep found is that "exclude the
+account" is not one question, so it does not get one predicate.
+
+### Two forms, decided by what the site asks
+
+**Circulation — may money move here, should the owner see this.** Both stamps:
+`deleted_at IS NULL AND closed_at IS NULL`. Correct during the dual-write and
+after it, so this half has no ordering against the deletion session's. Three
+sites: the `LIVE_ACCOUNT` fragment in `getAccountController.js`, which nine list
+queries interpolate; the owner's own account list in `accountUtils.js`, the one
+already excluding the compensation account by name and type; and the pocket
+allocation source list in `accountAllocationRepository.js`.
+
+**Name ownership — does this name already belong to someone.** The opposite:
+`(closed_at IS NOT NULL OR deleted_at IS NULL)`. A closed account **keeps** its
+name; a soft-deleted one releases it. Two sites: the rename collision check in
+`accountEditController.js` and the category-plus-subcategory-plus-nature
+uniqueness check in `accountCategoryCreationcontroller.js`.
+
+The reason is the erasure tail. It rewrites surviving descriptions with
+`REPLACE(description, <account name>, '[deleted account]')`, keyed on the name
+and not on the account id. Free a closed account's name, let the owner open a
+namesake of the same type, and deleting the namesake rewrites the closed
+account's own preserved rows — the history the close exists to keep.
+
+**The visible consequence, for the developer to accept or refuse.** An owner who
+closes an account named `Santander` cannot open a new `Santander` of the same
+type. The refusal reads `An account named Santander already exists.`
+
+**Not a permanent fix, and the condition matters.** Keying the erasure tail on
+the account id removes the whole class. That is larger: the descriptions are
+historical data already written. Until then, the overview module's five
+`account_name != 'slack'` comparisons can only become the type predicate
+`NOT_BOUNDARY_ACCOUNT` if a reserved name stays reserved across a close — which
+is what this predicate now guarantees.
+
+### Three sites deliberately not swept, each stating its reason on the line
+
+- **`getUserIdFromAccount`** in `accountUtils.js` resolves who owns a row. That
+  is identity, not circulation. A `closed_at` test makes the reopen path fail to
+  resolve the owner of the account it is reopening.
+- **The compensation account lookups** — one in `accountUtils.js`, one in
+  `transactionController.js`, and the find-or-create in
+  `checkAndInsertAccount.js`. No path can close that row: the `boundary` type is
+  not user-creatable and CLOSE only transfers to `bank`. In the find-or-create
+  the cost is asymmetric — a row this query fails to see is not excluded, it is
+  duplicated, and a second row named `slack` walks into the
+  `ORDER BY account_id ASC LIMIT 1` collision that file already documents.
+
+### Two prose comments corrected
+
+`accountUtils.js`'s header and the uniqueness comment in
+`accountCategoryCreationcontroller.js` both asserted in words that every query
+filters `deleted_at IS NULL`. Neither appears in a search for the predicate, and
+both go false the day CLOSE stops writing that column.
+
+### Frontend requirement this creates
+
+`GET /api/fintrack/account/:accountId` (the read-by-id route, which serves the
+account the deletion flow has just acted on) now ships **`is_closed`** beside
+the existing `is_deleted`, both booleans derived from the stored stamps.
+
+**The close screen must read `is_closed`, not `is_deleted`.** While CLOSE
+dual-writes both stamps a closed account reports `is_deleted: true`, so a screen
+branching on `is_deleted` tells the owner their account was deleted immediately
+after they closed it. `is_closed` says what actually happened and stays correct
+after the dual-write ends.
+
+Neither flag is a filter on this route. It keeps serving the account in every
+state on purpose; the flags are what let the screen tell the states apart.
+
+The overview module consumes no route of this controller and reads neither flag,
+verified by sweep on its side, so nothing there waits on this.
+
+### The closed-accounts list, `e4`'s half of the seam
+
+`GET /api/fintrack/account/closed` returns
+`{ status, message, data: { rows, accountList } }`. Each row is the same shape
+the live account list serves — `ua.*` plus `currency_code`,
+`account_type_name`, the ledger-derived `account_balance` and the starting
+amount — so a screen already rendering account rows renders these unchanged.
+`closed_at` rides along on `ua.*` and is what the list is ordered by, most
+recently closed first.
+
+**An empty list is a 200, not the 400 the live list answers with.** An owner who
+has closed nothing is the normal case, and a screen cannot tell a 400 meaning
+"you have none" from a 400 meaning "your request was malformed".
+
+**The predicate is `closed_at IS NOT NULL` alone.** Not `deleted_at IS NULL`
+beside it: CLOSE writes both stamps during the dual-write window, so that test
+would return nothing at all today. A soft-deleted account carries `deleted_at`
+and no `closed_at`, so it cannot reach this list either way. Correct before and
+after the dual-write ends, with no ordering against the deletion module's work.
+
+**Registered before `/:accountId`**, which is a catch-all. Registered after it,
+`closed` is read as an account id and answered by the by-id route.
+
+The **reopen action and its endpoint remain the deletion session's**, per the
+seam agreed on 2026-09-06. This list renders an empty state until a close lands
+through the UI, and gains a per-row action when that endpoint exists.
+
+---
+
+## The read sweep, the deletion module's half, SHIPPED 2026-09-07
+
+Four predicates in three files, all in `services/delete_account/`. Three swept,
+one deliberately left, and the one left is the interesting one.
+
+### Three swept to circulation form
+
+Both stamps, `deleted_at IS NULL AND closed_at IS NULL`, matching `e4`'s half:
+
+- **The destination selector**, `ELIGIBLE_DESTINATIONS_QUERY` in
+  `getCloseTransferDestinations.js`. A destination has to be able to *receive*
+  money. A closed account's residual has already been settled to zero, and
+  moving more into it reopens a balance nobody can close again without a second
+  settlement.
+- **The close preview's account lookup**, `CLOSING_ACCOUNT_QUERY` in
+  `getClosePreview.js`. This one had a comment claiming it excluded closed
+  accounts while the predicate only tested `deleted_at` — true by accident,
+  because closing happened to write that column too.
+- **The soft-delete `UPDATE` guard** in `deleteAccountService.js`. Not redundant
+  with the precondition above it: the precondition reads `accountCheck`,
+  selected earlier in the transaction, while the guard is evaluated by the
+  `UPDATE` itself. A close committing in between passes the first and must fail
+  the second, or a settled account is stamped as an ordinary deletion.
+
+### The one not swept, and it must not be
+
+**CLOSE's own MARK step** keeps `WHERE ... AND deleted_at IS NULL`. Swapping it
+for `closed_at IS NULL` while the dual-write stands would let CLOSE settle and
+close a **soft-deleted** account, which carries `deleted_at` and no `closed_at`.
+It becomes `closed_at IS NULL` alone at step 3, when CLOSE stops writing
+`deleted_at`, and the line carries a comment saying so.
+
+### What the probes now assert
+
+The new assertions are built on an account carrying `closed_at` and **not**
+`deleted_at` — the state every closed account reaches once step 3 lands. Built
+with both stamps set they would be excluded by the old predicate too and would
+prove nothing about the new one. A closed bank account of the right currency is
+withheld from the destination list, and naming it directly is refused with 409
+by the write path, which shares the selector's query.
+
+### A defect this work uncovered in all three probe scripts
+
+`getInvestmentFigures` gained a fourth parameter, `referenceMonth`, when
+`feat/overview` bound every figure on the Investment card to a reference month.
+It has **no default**, and an omitted one reaches the query as `NULL`: the
+`bounds` CTE yields `NULL`, every date comparison against it is `NULL`, and the
+card returns **all zeros rather than raising**.
+
+All three verification scripts called it with three arguments. In
+`verifyCloseAccount.js` and `verifyCloseTransfer.js` the closure-term assertions
+read `0 -> 0` and failed loudly. In `verifyClosureSettlement.js` the same zeros
+were reported as `zero on this database` — a sentence describing a card that had
+never been read at all.
+
+The month is computed in the same zone the query converts with. Derived in UTC
+it would name the previous month during the first hours of a month in a western
+zone, and the settlement the probe writes would land outside the window it then
+asks about.
+
+The overview module's own caller, `overviewInvestmentService.js`, passes the
+argument correctly. Nothing in that module is wrong; the stale callers were all
+in this module's probes.
+
+---
+
+## The impact report's folded total, SHIPPED 2026-09-07
+
+`GET` on the RTA impact route now ships **`totalNetAdjustmentAmount`** in `data`,
+beside the existing `unattributedAmount` and `unattributedTransactionCount`.
+
+**Why the server folds it.** The component was summing the rows in the browser.
+That breaks the standing rule against adding money on the client, and the sum it
+produced was short by exactly the unattributed amount — because it added the
+rows it could see, and the unattributed figure is by definition not one of them.
+
+**It sums `impactReport` and nothing else**, so the total describes what the
+annulment is going to do. Two decisions behind that, both settled here because
+the arithmetic belongs to this module:
+
+- **The unattributed amount is excluded**, keeping its own line. The execution
+  path never acts on it — an earlier deletion already reversed it — so a total
+  including it would name a figure no operation produces. This also keeps the
+  table's total and the sum of its visible rows in agreement, which is what a
+  reader checks first.
+- **It is a number, not text.** The residual is text because the owner echoes it
+  back and the driver's float conversion would round it in transit. Nothing
+  echoes this total: the service recomputes the report inside the transaction,
+  so a client copy cannot drive the adjustment. Every other figure in this
+  response is already a number.
+
+**Rounded to cents** because the rows are floats and summing them raw yields the
+usual trailing artefact. This figure is displayed rather than compared, so the
+artefact would reach the screen verbatim.
+
+### Frontend requirement this creates
+
+The frontend has **no knowledge of any of these three fields** — zero
+occurrences, and the response type declares only `impactReport` and
+`affectedAccountsCount`. So the work is the type, the plumbing and the render
+together, not just swapping a sum:
+
+- The response type gains `totalNetAdjustmentAmount`, `unattributedAmount` and
+  `unattributedTransactionCount`.
+- The component stops summing rows and renders the served total.
+- The unattributed amount renders as its own line whenever it is nonzero, and
+  says what it is: activity of this account that no live account can be credited
+  with. Zero and zero is the ordinary answer and needs no line.
+
+**Shipped by `e4`, 2026-09-07, `6bbfca8a`.** Six frontend files. One decision
+taken there and worth keeping: an absent field reads as `null`, not `0`, and an
+absent total renders an em dash — zero is a real total and a reader must not be
+shown a value that means "we did not measure this". The unattributed line hides
+for both `null` and zero, correct in both cases.
+
+---
+
+## Unit 6 closed: the deletion assessment endpoint, SHIPPED 2026-09-07
+
+`GET /api/fintrack/account/delete/assessment/:targetAccountId` — one read,
+reachable **before** the owner has chosen a deletion type.
+
+**What it is for.** The two preview endpoints each answer for a type already
+picked: the impact report answers "what will RTA do", the close preview answers
+"what will CLOSE do". Neither can be asked first, so the choice between them was
+being made with nothing to base it on.
+
+**The thing it states that nothing else does: the four types are not four equal
+choices.** Hard delete refuses an account whose ledger residual is not zero, for
+any caller — the administrative gate was suspended 2026-09-07, so the balance
+check is the only gate left — and its own refusal names RTA as the way to reach
+zero. The options are an order, not a menu, and an assessment listing four equal
+choices would be lying about three of them. Each option therefore carries its
+own availability, and a refused one carries the reason plus the route to making
+it available.
+
+**Per-type consequences, each read from the service the execution path uses**,
+so a consequence stated is one the engine applies:
+
+| | CLOSE | SOFT | RTA | HARD |
+|---|---|---|---|---|
+| available | always | always | always | only when the residual is zero |
+| residual | settled by policy | left unsettled | reversed per counterparty | must already be zero |
+| pocket allocations | survive | survive | deleted | deleted |
+| transaction history | kept | kept | erased | erased |
+| account name | **kept** | released | released | released |
+
+The pocket row is measured, not assumed: `pocket_allocations` is deleted in
+exactly one place, the erasure tail, which CLOSE and SOFT never run. So a closed
+account's allocations survive, backed by an account settled to zero. That is a
+consequence to show, not a defect to fix here — an allocation is an append-only
+record, and deleting it on close would destroy history for the same reason
+keeping the transactions does not.
+
+**It takes no lock, deliberately, against this unit's own wording.** The plan
+describes the assessment as the lock-then-compute step, and for an *execution*
+path that is right — `assessDeletionImpact` exists for exactly that and RTA
+calls it. A lock taken in a preview is released when the request ends, long
+before the owner confirms, so it would cost contention and buy no guarantee.
+What protects the confirmation is the execution path deriving again under its
+own lock and refusing on a mismatch, which is already built.
+
+**The exact-zero comparison is load-bearing.** The assessment tests
+`parseFloat(residual) === 0`, matching the engine's `!== 0` exactly, because
+both derive from the same `derivedAccountBalanceSql` expression — the preview
+through `getClosePreview`, the engine through `lockAndDeriveBalances`. A
+tolerance here would let the assessment offer an option the execution then
+refuses with a 409 the owner had no way to predict.
+
+**The fold moved.** `foldNetAdjustmentTotal` now lives beside the report it
+sums, in `getAnnulmentImpactReport.js`, because this endpoint is its second
+consumer. Two copies of a money fold is how two screens start quoting different
+totals for one account.
+
+**Additive.** Neither preview endpoint changed, so `6bbfca8a` and everything
+else reading them keeps working unmodified.
+
+**Verified on `fintrack_dev`:** all 30 live non-boundary accounts, asserting the
+assessment's HARD verdict against the balance the engine itself derives under
+its own lock. Match on every account, with both sides of the gate exercised —
+9 settled, 21 unsettled. Boot clean.
+
+### The scrub's collateral, measured 2026-09-07 — hypothesis closed
+
+The erasure tail replaces the account **name** as a bare substring:
+`REPLACE(description, <name>, '[deleted account]')`. Unanchored, so a name that
+is also an ordinary word — or a substring of one — rewrites text that is not a
+reference to the account at all. An account named `pago` would turn a
+counterparty's `Transferencia a pago mensual` into
+`Transferencia a [deleted account] mensual`.
+
+**Measured on `fintrack_dev`, simulated with nothing written**: for all 31
+accounts, over exactly the rows the two UPDATEs select — surviving rows
+referencing the account from the other side — **zero rows would be rewritten
+mid-word**. Shortest account name is 5 characters, median 17.
+
+**So the hazard is in the mechanism, not in the data, and it is not being
+fixed.** Anchoring the replacement to the machine-generated formats is possible
+but it would stop scrubbing the name out of an owner's free text, and whether a
+deletion is meant to erase the name from free text is exactly the open ruling on
+hard delete's erasure scope. Building the parser now would settle that ruling by
+implementation.
+
+This does **not** retire the name-ownership half of the read sweep. That one
+rests on a different failure — a namesake account's deletion rewriting a *closed*
+account's preserved history — which is about identity, not about word
+boundaries, and has no measurement here that weakens it.
+
+### Frontend requirement this creates
+
+Nothing consumes this endpoint yet; it is new, and no existing screen breaks by
+ignoring it. The screen it is for does not exist:
+
+- A **choose-a-deletion-type screen**, rendering one card per option from
+  `options`, in the array's order.
+- An unavailable option renders **disabled with its `reason` shown**, never
+  hidden. The reason is the whole point — an owner who cannot see why hard
+  delete is refused cannot act on it, and the reason names the action that
+  makes it available.
+- `availablePolicies` on the CLOSE option drives the policy control. A
+  single-entry `['DISCARD']` is a legitimate state, not a loading failure: the
+  owner has no other bank account of that currency to receive the residual.
+- `pocketImpact` renders once, beside the options, with each option's
+  `removesPocketAllocations` saying whether choosing it destroys that backing.
+- `residual` is text and must be echoed back to the close confirmation
+  unchanged — formatted for display, never re-parsed and re-sent.
+
+## Deleting is settling, not reversing — Carlos's ruling, 2026-09-07
+
+Carlos, on being shown that a nonzero balance sent the owner to RTA:
+
+> si el usuario quiere borrar una cuenta, simplemente transfiere ese dinero
+> hacia afuera del sistema a traves de discard, o lo pasa a otra cuenta que el
+> seleccione (…) en cambio si lo dirigies a rta, entonces, se impulsa una
+> cadena de reversiones, que no es lo que el usuario tiene planteado
+
+**The ruling: an owner who wants an account gone wants its money moved out, not
+its history undone.** Reversal is a separate intention — "this account should
+never have counted" — and the code must stop offering it as the answer to the
+first question. Two defects follow from it, both fixed below, and one guard
+generalises to a third place.
+
+### 1. Both refusal messages named RTA and not CLOSE
+
+The engine's nonzero-balance refusal on hard delete used to read *"Use RTA to
+reverse its effects first"*, and the assessment endpoint quoted the same
+routing back in the HARD option's `reason`. That sent the ordinary case — an
+owner done with an account — to the one path that writes annulment rows against
+**other** accounts the owner never asked to touch.
+
+Both now lead with closing and offer reversal second, as the answer to a
+different question: *"Close it to move the residual out — transferred to an
+account you choose, or discarded — or use RTA instead if the account's effects
+on other accounts should be reversed."* Same 409, same gate; only the route it
+names changed. Grep either message by `cannot be hard-deleted until that is
+settled` in `deleteAccountService.js` and by `cannot be erased until that is
+settled` in `assessAccountDeletion.js`.
+
+### 2. A closed account was erasable, and the balance gate could not catch it
+
+Closing settles the residual and **keeps the row on purpose** — that preserved
+history is the entire product of closing. But hard delete only ever read the
+balance, and a closed account's balance is zero by construction, so the gate
+waved through exactly the rows the close existed to keep. Soft delete had
+refused this state all along; the two branches were simply testing different
+columns for the same thing.
+
+The hard-delete branch now tests `closed_at` before taking its lock — a refusal
+should not take one — and raises a 400 naming the settlement that already
+happened.
+
+### 3. The same guard belongs on RTA, and there for one reason more
+
+Raised by `e4`: the closed-state argument does not depend on which deletion
+type is asking, and RTA had no state test anywhere in its branch — the
+dispatcher's only refusal was non-existence. Since RTA ends in the **same**
+`eraseAccountTail`, a closed account was reachable for destruction through the
+other door.
+
+The second reason is money, and it is specific to RTA. Closing writes a
+settlement pair moving the residual to a live account; those rows belong to the
+closed account, and the impact report reads them. RTA would therefore compute an
+annulment reversing the destination's *receipt* of the residual while erasing
+the account that sent it — money taken back from a live account and returned to
+nothing. So the RTA guard is not merely consistency with hard delete; without
+it, RTA on a closed account is a balance defect.
+
+Both guards test `accountCheck.rows[0].closed_at`, which is in scope because the
+existence check is a `SELECT *`.
+
+**Verified against `fintrack_dev`, both branches**, with a probe account the
+script creates and destroys, copying a live bank account's column shape with
+both amount columns zeroed so the settlement gate cannot be what refuses it:
+closed → 400 and the row survives; reopened → erased. No existing account was
+passed to the deletion service.
+
+### The deployment order this makes mandatory
+
+All four state tests in `deleteAccountService.js` are written `closed_at !==
+null`, the form already used by soft delete and close. Against a schema where
+the column does **not** exist, `SELECT *` returns no such key, `undefined !==
+null` is true, and **every** soft, hard and RTA deletion is refused with a
+message saying the account was closed — for accounts that never were.
+
+Production has not run `034_add_account_closed_at.sql` yet, so **the backend
+must not be deployed ahead of it**.
+
+**Corrected 2026-09-07, by `pern-fintrack-02`.** This section first claimed the
+other three deletion types would have survived a premature deploy and now will
+not — that this commit created the ordering constraint. It does not. The live
+account filter `AND ua.deleted_at IS NULL AND ua.closed_at IS NULL` is defined
+once in `getAccountController.js` and interpolated at **nine** sites, all of
+them account lists. Verified in the file. On a schema without the column those
+nine raise `42703 column ua.closed_at does not exist`, so an owner cannot
+obtain a list of accounts and never reaches a delete control to have it
+refused. The deletion module does not hard-lock on that schema; it is
+unreachable behind a screen that already failed.
+
+So the constraint is unconditional and predates this commit. What the commit
+changes is **what fails second**, and it changes it in the safer direction: a
+`42703` from the list is louder than a `400` claiming an account was closed,
+and it arrives first. `PLAN_MIGRATION_CHAIN.md` already ranks 034 first among
+the four outstanding files on exactly that ground. This work strengthens that
+ranking rather than altering it.
+
+Loosening the comparison was considered and rejected, and `02` ruled the same
+way independently: it would tolerate a schema state no deployment plan permits
+and hide a broken deploy behind guards that silently do nothing. That "nothing
+is closed" would happen to be *true* on a pre-034 schema, since close cannot
+write a column that does not exist, is not a reason to write code depending on
+it — and it would buy nothing, because the app is already dead there.
+
+### Frontend requirement this creates
+
+None, and deliberately so. The assessment endpoint already 404s on a closed
+account — `getClosePreview`'s account query filters `deleted_at IS NULL AND
+closed_at IS NULL` — so the choose-a-deletion-type screen is unreachable for one
+and no card needs a new disabled state. A closed account's affordances belong to
+the closed-accounts list, not to this screen.
+
+## OPEN: a soft-deleted account holding money has only RTA left, 2026-09-07
+
+Found while answering Carlos's question about which operations remain available
+after each one. It is a dead end reachable today, not a hypothetical.
+
+### The four states, measured per branch
+
+| account state | SOFT | CLOSE | HARD | RTA |
+|---|---|---|---|---|
+| live, balance 0 | yes | yes | yes | yes |
+| live, balance ≠ 0 | yes | yes | no — 409, settle first | yes |
+| soft deleted | no — already | **no — 400** | yes, only if balance 0 | yes |
+| closed | no — 400 | no — already closed | no — 400 | no — 400 |
+
+### The trap
+
+SOFT is the only one of the four operations that does nothing with the balance.
+Its entire write is `SET deleted_at = CURRENT_TIMESTAMP, updated_at =
+CURRENT_TIMESTAMP` — no balance read, no lock, no settlement row, and **no
+gate**, so it accepts an account holding any amount. CLOSE moves the residual
+out, RTA annuls it, HARD refuses until it is zero; SOFT hides the account with
+the money still inside. The assessment endpoint already states this per option
+as `leavesResidualUnsettled`.
+
+An account soft-deleted in that state cannot then be settled:
+
+- **CLOSE refuses it** — "was deleted and cannot be closed. Closing settles a
+  residual, and a deleted account is no longer in circulation to hold one."
+- **HARD refuses it** — the 409 settlement gate still applies, and nothing has
+  settled the residual.
+- **Nothing can restore it.** Grepped all of `backend/src`: no statement
+  anywhere sets `deleted_at = NULL`. There is no restore, reactivate or
+  undelete path.
+- **RTA is the only exit** — which is precisely the chain of reversals Carlos
+  ruled against above, and here it is not a mis-routing in a message but the
+  only door the code leaves open.
+
+**And while the state lasts, the money keeps counting.** Raised by
+`pern-fintrack-02`, who framed it better than the heading above did: "only RTA
+left" reads as an inconvenience, while "counted in net worth until RTA runs"
+reads as what it is. The mechanism, verified: `derivedAccountBalanceSql` returns
+`account_starting_amount + SUM(...)` over `transactions WHERE tr.account_id =
+ua.account_id` and tests neither state column — it cannot, since it reads the
+transaction rows rather than the account's state, so **filtering is entirely the
+caller's job**. A soft-deleted account therefore keeps a nonzero derived
+balance, and every consumer that does not filter for itself counts that money.
+The account controller filters, at its nine sites; the Overview deliberately
+does not, for reasons recorded below. So this is not only an exit problem.
+
+### Why the refusal's own argument is what breaks
+
+It reasons from circulation: a deleted account "is no longer in circulation to
+hold" a residual. But circulation is visibility, not money. The account's
+transaction rows are untouched and its derived balance is unchanged, so it does
+hold one. The premise is false in exactly the case that matters.
+
+### Recommendation: let a soft-deleted account be closed
+
+Lift the `deleted_at` refusal in the CLOSE preconditions, keeping the
+`closed_at` one. Closing is "move the money out and stop", which is the only
+non-destructive exit from this state and the same answer already given for live
+accounts.
+
+**The naming cost was imaginary — answered by `pern-fintrack-e4`, 2026-09-07.**
+This section first held the change back because closing re-reserves a name that
+soft delete had released, so an owner who created a replacement under the old
+name would end with two accounts sharing it. That collision cannot be
+constructed. `verifyAccountExistence` — the guard the creation path calls —
+matches on the owner, the lowercased account name and the lowercased type, and
+that is the entire predicate: no `deleted_at` test, no `closed_at` test.
+Verified in the file, and separately measured: `user_accounts` carries exactly
+one uniqueness object, `user_accounts_pkey` on `account_id`. **No unique index
+on the name exists anywhere.** So a soft-deleted row still holds its name, the
+replacement account can never be created, and lifting the refusal cannot produce
+a collision. Nothing in `e4`'s file needs a step first.
+
+**The defect that fell out of it is this module's, and it is fixed.** The
+assessment endpoint published `releasesAccountName: true` for SOFT — telling an
+owner they could reuse a name the creation guard would refuse on the next
+screen. That false promise is what made this section design around a collision
+that does not exist. Corrected to `false`.
+
+**Frontend requirement this creates.** The value flips on an endpoint nothing
+consumes yet, so nothing breaks. When the choose-a-deletion-type screen is
+built, the SOFT card must not offer freeing the name as a benefit of soft
+deleting — only the two erasing options release one.
+
+The rule underneath is simpler than the one the field encoded: **the name
+returns to circulation only when the row is deleted.** CLOSE and SOFT keep the
+row, so both hold their names; HARD and RTA erase it through
+`eraseAccountTail`'s `DELETE FROM user_accounts`, so both release. The two
+`true` values on HARD and RTA were right and stay. `e4` offered to change the
+creation guard instead, so that soft delete genuinely releases a name, and
+recommended against it: a released name lets a replacement exist beside the
+original, and any future restore path would then have two accounts contending
+for one name. Keeping the name reserved in every surviving state has no such
+branch. Agreed — the field was corrected, the guard untouched.
+
+**Still not implemented, and now for a better reason.** `e4` is reporting to
+Carlos on industry practice for soft-deleting an account that holds money. If
+the ruling is that **SOFT must not accept a nonzero balance at all**, the dead
+end closes at the entrance rather than at the exit. That is the stronger fix and
+the one to take: it prevents the state instead of adding a way out of it.
+
+**But the gate is forward-only, so it cannot retire the exit work.** Raised by
+`pern-fintrack-02`, correcting this section's first version, which said lifting
+the CLOSE refusal "becomes unnecessary". A refusal on SOFT stops new rows
+entering the state; it does nothing for rows already in it. Development holds
+none — measured above, 31 accounts and all 31 live. **Production has never been
+read for this, by anyone.** So "the state stops being reachable" is true of the
+future and unproven of the present, and if production holds even one
+soft-deleted account with a nonzero derived balance, that row still needs an
+exit the gate will never give it.
+
+**The measurement that settles which fixes are needed**, and the only thing
+standing between one and both: accounts in production carrying a nonzero derived
+balance that are **soft-deleted and never closed** — `deleted_at IS NOT NULL AND
+closed_at IS NULL` — read-only. Zero rows and the gate alone suffices; one row
+and the exit is needed as well, for that row. No session here connects to
+production; this rides along with the ledger read Carlos already has in hand.
+
+The population is exactly that narrow, and `pern-fintrack-cf` supplied the
+reason from a read of this service: the soft-delete `UPDATE` requires **both**
+stamps null, so a closed account can never afterwards be soft-deleted. A closed
+account therefore cannot enter this state at all, and the query must not widen
+to every row carrying `deleted_at`, which a close also sets.
+
+**Routing.** `pern-fintrack-02` and `pern-fintrack-cf` are not owners here.
+
+### The 409 routes to an operation with no button — `pern-fintrack-cf`, 2026-09-07
+
+The hard-delete refusal names CLOSE as the first remedy, and CLOSE cannot be
+invoked from any interface that exists. Raised by `pern-fintrack-cf`, and the
+half that makes it this session's problem is that **the refusal text is this
+session's own commit**.
+
+**Verified on both sides.** The frontend's deletion-type union declares exactly
+three members — returns-to-assets, hard and soft — with no close constant, no
+close member, no preview URL and no component. Hard and soft are both genuinely
+wired: the standard deletion hook takes the type as a positional argument and
+two components supply it, one passing hard and one passing soft. So CLOSE alone
+is absent, not "the assessment screen is unbuilt". On the backend the refusal
+reads: the account holds an amount and cannot be hard-deleted until that is
+settled, close it to move the residual out — transferred to an account of the
+owner's choosing, or discarded — or use returns-to-assets instead if the
+account's effects on other accounts should be reversed.
+
+**What this session's commit changed, stated plainly.** The previous wording was
+"use RTA to reverse its effects first", which named the one remedy that has a
+button. Leading with CLOSE was the right call on the merits and stays — an owner
+who is finished with an account wants the residual moved out, not other
+accounts' history rewritten — but it moved the reachable remedy to second place
+and put an unreachable one first. The message became semantically better and
+operationally worse in the same edit.
+
+**The message is not false, and that decides the fix.** CLOSE is implemented,
+branch-complete in the service and invocable at the API; what is missing is the
+button. So the defect is the absent frontend, not the wording, and the wording
+should not be softened to describe the gap — an error message that says a
+remedy exists but has no screen is worse than one that names the remedy.
+
+**This makes the sequencing constraint live rather than prospective.** `cf` first
+anchored it on the assessment endpoint, which has no consumer and so proves
+nothing an owner can meet; the 409 above is raised by the execution path and does
+reach a screen. An owner with money in an account presses hard delete today and
+is instructed to perform an operation with no button. So the close flow reaching
+the interface is owed independently of the soft-delete ruling — and it is also a
+precondition of it, since gating soft delete while close is unreachable would
+leave an owner holding money with no non-destructive option at all: hard refuses,
+close cannot be invoked, returns-to-assets destroys and rewrites elsewhere, and
+soft would refuse too.
+
+**Routing.** The close frontend is this session's, per coordination. Neither the
+overview nor the migration chain owns anything here.
+
+### The anchor the scrub needs does not exist yet — Carlos, 2026-09-07
+
+Carlos read `"Alquiler # 7"` in a description and ruled the format wrong: the
+space is being read as part of the account id. He is right, and the survey done
+to answer him found the defect is larger than the one spelling he saw. **The
+same fact is written four different ways**, across the two description
+compositions in the transfer controller.
+
+| position | composition | result |
+|---|---|---|
+| source row, source account | `"${name} #${id}"` | `"Alquiler #7"` |
+| source row, destination account | `"${name} # ${id}"` | `"Alquiler # 7"` |
+| destination row, destination account | `"${name} (${type}) # ${id}` | `"Alquiler (bank_account) # 7` |
+| destination row, source account | `"${name}" # ${id}` | `"Alquiler" # 7` |
+
+The third never closes its opening quote and injects the account type between
+the name and the id; the fourth puts the id outside the closing quote.
+
+**This is why the scrub is a bare substring replace.** The erasure tail runs
+`REPLACE(description, <name>, '[deleted account]')` with no delimiter, and the
+open ruling asks whether it should instead be anchored so it cannot touch the
+owner's typed note. With four spellings there is no single anchor to match, so
+the anchored form was never available to write — the format defect is the cause,
+not a neighbouring problem.
+
+**Recommendation: one canonical spelling, `"<name>" #<id> (<type>)`.** The name
+fully delimited by quotes, the id glued to its hash, the type outside. The scrub
+then anchors on `"<name>" #<id>`, which an owner would have to type verbatim —
+quotes and id included — to hit by accident. Normalising the format is the
+enabling change for the anchored scrub rather than a cosmetic fix beside it.
+
+**The cost to weigh: normalising the writer does not normalise the ledger.**
+Existing rows keep the four legacy spellings permanently. So either the scrub
+matches five spellings, or a data migration normalises history first — and that
+migration belongs to the migration chain, not to this module.
+
+**Routing.** `transactionController.js` is not this session's file. The format
+change and any normalising migration go to coordination and the migration chain
+respectively; what this module owns is the scrub that consumes the result.
+
+### What the gate costs on the published contract — `pern-fintrack-02`, 2026-09-07
+
+The gate is a precondition in the service **and** a shape change on the
+assessment endpoint, in the same commit. Raised by `pern-fintrack-02`, whose
+first version of it also attached a cost they then withdrew; both halves are
+recorded because the withdrawn half is the one that would have reached Carlos as
+a reason the decision was bigger than it is.
+
+**The coupling, verified in the file.** The SOFT entry publishes `available:
+true` as a bare literal and, directly under it, `leavesResidualUnsettled:
+!isSettled` computed from `isSettled = residual === 0`. So for an account
+holding money the endpoint states in one object that soft delete is available
+and that it will leave the residual unsettled. Under the gate, `available` is
+false for exactly the population where `leavesResidualUnsettled` is true: the
+screen would offer what the service refuses.
+
+**But the adjustment needs no new field, and that is the withdrawn half.** The
+HARD entry already carries this exact shape — `available: isSettled` with
+`reason: isSettled ? undefined : ...`, and a comment saying why naming the route
+out is what makes it an assessment rather than a disabled button. A gated SOFT
+adopts that shape: `available` becomes the settled test, `reason` carries the
+refusal, and the routes out are the two HARD already names. The change is a
+shape SOFT borrows from a sibling, not a contract redesign.
+
+**And `leavesResidualUnsettled` retires rather than being reconciled.** Under
+the gate it can only be true where the operation is refused, so it would never
+be published true on a taken option — a perfect inverse of `available`, carrying
+nothing `available` does not. The field stops describing a consequence and
+starts describing a precondition, which is the class shift, and the precondition
+already has a home in `reason`.
+
+**Nothing downstream pays for it today.** Measured here rather than accepted:
+across the whole frontend, `leavesResidualUnsettled`, `releasesAccountName`,
+`keepsHistory`, `removesPocketAllocations`, `requiresSettlement` and
+`availablePolicies` return **zero matches**, and so does the assessment endpoint
+itself — no URL entry, no options type, no reading of any consequence field. The
+controller wires it and nothing calls it. So the shape change is free, **and
+only until the deletion screens read the assessment**: gate and contract change
+belong in one commit, written before the wiring rather than after it.
+
+### The screen already promises the reversal that does not exist — `pern-fintrack-e4`, 2026-09-07
+
+Theirs to fix, recorded here because it is evidence for the decision rather than
+context. The soft-delete confirmation tells the owner the account "can be
+reactivated later" and "puede reactivarse más adelante", in both dictionaries,
+and the dialog's stylesheet carries a comment justifying a low-stakes confirm on
+the grounds that soft delete is fully reversible. **No writer clears
+`deleted_at` anywhere** — re-verified independently for this entry, zero matches
+in `backend/src` for any statement setting it back to null. There is no
+reactivation path and never has been.
+
+**The sentence is two claims and only one is false**, which matters if it is
+rewritten. "Its balance, transactions and history stay exactly as they are" is
+accurate, and it is the most honest description of soft delete anywhere in the
+product — it is the trap this section documents, stated to the owner's face.
+Only "and it can be reactivated later" is unsupported. A rewrite that replaces
+the whole sentence would delete the one line already telling an owner the money
+stays inside.
+
+**Three instances now, all the same defect class.** A consequence published to
+the owner that the service does not honour: the name-release flag on SOFT
+(fixed), the availability contradiction the gate would create (above, not yet
+reachable), and this reversibility promise (live in two languages today). The
+first two were reachable only by reading the endpoint; this one is on the
+screen. That is the argument for checking the whole published object against any
+ruling rather than the one field the ruling names.
+
+### What the Overview does with that stranded money — `pern-fintrack-cf`, 2026-09-07
+
+Reported unprompted and it bears directly on the decision. The Overview
+deliberately does **not** filter the soft-delete column: verified, the only
+three references to it in `overview_services` are comments recording that
+decision, and there are no predicates on either state column anywhere in the
+module. The reason recorded is that deleting an account marks the column and
+nothing else, so its transactions survive it — a category deleted last week
+still spent money last week.
+
+So money in a soft-deleted account **is still counted** in the bank balance and
+in net worth. `cf` holds that this is correct and is not proposing to change it:
+soft delete is a hide, not a settlement; the money exists and the row exists, so
+filtering it would make a real balance vanish from the owner's net worth while
+the money is still there, which is the worse error.
+
+**The consequence for this decision is a point in favour.** If the CLOSE
+refusal is lifted, the owner's totals do not move — a close settles a balance
+those reads were already counting, to a destination they also count. The repair
+is invisible in the figures, which is what a repair should be. It also means the
+Overview is the surface where stranded money stays visible, and possibly the
+only one: this module's assessment endpoint reports what each operation costs,
+not what is stuck.
+
+### Measured, so the urgency is known
+
+`fintrack_dev`, 2026-09-07: 31 accounts, **all 31 live — zero soft-deleted,
+zero closed**. Derived balances, not the stored column. So no account is
+stranded today; the door is open and nobody has walked through it. This can be
+fixed deliberately, with no migration and no data repair.
+
+## OPEN: releasing a pocket commitment cannot work on the erasing paths, 2026-09-07
+
+Routed here by `pern-fintrack-cf` and it is this module's to answer. Carlos
+ruled that an account removed by any method releases its pocket commitments, and
+the coordination session's mechanism is a **negative row in the allocation
+ledger** per pocket-and-source pair. That mechanism cannot be applied to HARD or
+RTA, and the reason is structural rather than a matter of effort.
+
+### The schema, verified rather than relayed
+
+In the boot DDL, `pocket_allocations` declares `source_account_id INT NOT NULL
+REFERENCES user_accounts(account_id) ON DELETE RESTRICT ON UPDATE CASCADE` and
+`amount DECIMAL(15,2) NOT NULL CHECK (amount <> 0)`. Its own table comment
+states the design: *"Append-only, hence no updated_at: a correction is a new row
+of the opposite sign, never an edit. source_account_id RESTRICTs so deleting an
+account stays a decision taken in a service with an impact report."*
+
+So the table was built for releases — and built to block account deletion while
+any row points at the account.
+
+### Why the two cannot both be had
+
+**A release row carries `source_account_id` like every other row.** It does not
+free the foreign-key edge; it adds a second row holding it. That leaves exactly
+two possibilities on an erasing path, and they are mutually exclusive:
+
+- **Delete the allocation rows.** RESTRICT is satisfied, the account is erased,
+  and the append-only ledger loses the **original positive rows** as well. A
+  month that closed while the account was live stops showing a commitment it
+  genuinely had — `cf`'s cumulative sum is the consumer that would forget it.
+- **Write release rows and keep them.** The history survives and **the account
+  can never be hard-deleted**, because RESTRICT still holds against every row,
+  releases included.
+
+There is no third option under this schema. `ON DELETE SET NULL` is unavailable
+because the column is `NOT NULL`; `CASCADE` would destroy the same history as
+the first option while doing it silently, on any account deletion, and it is a
+migration in `pern-fintrack-02`'s chain besides.
+
+### What the code does today, which is `cf`'s direct question
+
+`eraseAccountTail` runs `DELETE FROM pocket_allocations WHERE source_account_id
+= $1 AND user_id = $2` before dropping the transactions and the account row. So
+**the allocation table is already covered** — the RESTRICT fix does hold for it,
+there is no crash waiting on this path, and today's behaviour is the first
+option: erase the rows, lose the history.
+
+### The reading this produces, and it is not a defect
+
+**Preserving allocation history and erasing the account are mutually exclusive.
+Choosing history means the account row must survive — which is precisely what
+CLOSE is for.** So the coherent statement of Carlos's rule is not one mechanism
+applied four times but one *outcome* reached two ways: CLOSE and SOFT keep the
+row, so a commitment is released with a negative row and the history stands;
+HARD and RTA erase the row, so the commitment goes with it and the allocation
+history goes too.
+
+The assessment endpoint already discloses exactly this split, and did before the
+question was asked: `removesPocketAllocations` is `false` for CLOSE and SOFT,
+`true` for RTA and HARD. The owner is told which choice destroys the backing
+before choosing. Nothing in the engine needs to change for that to be true.
+
+### One question governs all three consequence flags
+
+`cf` cited `keepsHistory` beside the pocket flag, which prompted reading all
+three together. In array order — CLOSE, SOFT, RTA, HARD — they are:
+
+| option | `removesPocketAllocations` | `keepsHistory` | `releasesAccountName` |
+|---|---|---|---|
+| CLOSE | false | true | false |
+| SOFT | false | true | false |
+| RTA | true | false | true |
+| HARD | true | false | true |
+
+**The same partition three times.** Every consequence this endpoint publishes
+reduces to one question: **does the account row survive the operation?** Pocket
+backing, transaction history and the name are all held by the row and all
+released with it. That is why the pocket rule above cannot be a mechanism chosen
+per path — the three flags are not three independent policies, they are three
+views of one fact.
+
+It also says what the `releasesAccountName` correction above really fixed. The
+old `true` on SOFT was the single value breaking this partition: a keeping path
+claiming an erasing path's consequence. The defect was visible as an asymmetry
+in the table before anyone read the creation guard.
+
+**Usable as a check, but only over the fields it actually governs.** The first
+version of this rule said any fifth consequence field should land wholly on one
+side. `pern-fintrack-cf` applied it to the fields already in the array and it
+flags correct code — four of them cut across the partition, all verified in the
+file:
+
+- **The residual pair.** CLOSE publishes `requiresSettlement: !isSettled` and
+  SOFT publishes `leavesResidualUnsettled: !isSettled` — the same computed
+  value, under different names, on two options the partition puts together. Not
+  an inconsistency to merge: they describe the same residual from each path's
+  point of view, one as a step the operation performs and the other as a
+  consequence it leaves behind. Collapsing them into one field name would lose
+  that.
+- **Availability**, and it is the sharpest case. RTA carries `available: true`
+  unconditionally; HARD carries `available: isSettled` with the refusal quoted
+  under it. Those two agree on all three partitioned flags and disagree on
+  whether the option can be taken at all.
+- **CLOSE's `destinations`, `destinationCount` and `availablePolicies`**, and
+  **RTA's `impactReport`, `affectedAccountsCount`, `totalNetAdjustmentAmount`,
+  `unattributedAmount` and `unattributedTransactionCount`** — per-option sets
+  belonging to no side.
+
+**The narrower rule, which is the right one.** The partition governs exactly the
+flags naming **what the account row holds** — pocket backing, transaction
+history, the name — because the row holds all three and releases all three
+together. Everything else the endpoint publishes describes the **residual** or
+the **operation's own mechanics**, and those are per-path by nature. A new field
+must land wholly on one side only if it names something the row holds.
+
+Stated that way the check still catches what found the soft-delete name defect —
+a keeping path claiming an erasing path's consequence — and stops calling
+`available: isSettled` a mistake. The distinction it turns on is worth keeping
+in view: the partition is about **what a choice costs if taken**, never about
+**whether it can be taken**.
+
+**What is open is only the mechanism's scope**, and it is Carlos's, sitting
+beside the pocket proposal already with him: confirm that "release" means the
+negative row on the two keeping paths and means erasure on the two erasing ones.
+If instead a release row is wanted on every path, the account can no longer be
+erased at all, and HARD and RTA stop existing as operations — which is a
+different product, not a different implementation.
+
+**Routing.** The pocket-side helper and the controller pair are the coordination
+session's; the allocation-ledger comment that credits the wrong writer is
+`cf`'s own and they are fixing it; `pern-fintrack-02` is not involved. What is
+in this module is the call site inside the close transaction and the
+`removesPocketAllocations` field, both already built.

@@ -51,16 +51,21 @@ The figures that answer "where do I stand", read at the reference date.
 
 | indicator | formula | nature | owner | level | chart | endpoint | state |
 |---|---|---|---|---|---|---|---|
-| **Liquid Net Worth** | bank + cash + investment − payable | Position | Overview | L1 | figure | `GET /overview` · hero | specified |
-| **Net Worth** | bank + investment + debt position | Position | Overview | L1 | figure | `GET /overview` · hero | on screen (three terms, `OverviewLayout.tsx:134-135`) · computed with a fourth term that D54 removes |
-| **Available Balance** | bank + cash | Position | Overview | L1 | figure | `GET /overview` · hero | computed as `cashPosition`, and wrong: it adds the pocket total (D54) |
-| **Free Cash** | `Σ max(accountBalance − accountAllocated, 0)`, over bank and cash | Position | pocket, imported | L1 | figure | `GET /overview` · hero | specified |
+| **Liquid Net Worth** | bank + cash + investment − payable | Position | Overview | L1 | figure | `GET /overview` · hero | computed · null with a notice when the debt card reports no payable leg |
+| **Net Worth** | bank + investment + debt position | Position | Overview | L1 | figure | `GET /overview` · hero | on screen (three terms, `OverviewLayout.tsx:134-135`) · computed, and the pocket term is gone: the payload's three terms are now the screen's three |
+| **Available Balance** | bank + cash | Position | Overview | L1 | figure | `GET /overview` · hero | computed as `cashPosition` and correct: the pocket term was removed, not sign-flipped |
+| **Free Cash** | `Σ max(accountBalance − accountAllocated, 0)`, over bank and cash | Position | pocket, imported | L1 | figure | `GET /overview` · hero | computed 2026-09-07 · its own read, not composed from the two totals |
 | **Net Monthly Flow** | income of the period − expense of the period | Flow | Overview | L1 | figure | `GET /overview` · hero | computed |
 | **Savings Rate** | net monthly flow ÷ income of the period; null unless income > 0 | Flow, as a rate | Overview | L1 | figure | `GET /overview` · hero | computed |
 
 **The floor in free cash is per account, before the sum.** An account committed
 beyond its balance contributes zero, never a negative that another account's
 surplus silently absorbs.
+
+**So free cash can exceed the available balance, and that is not a defect.**
+With one account overdrawn, the balance takes that account's negative and the
+floor gives free cash a zero for it. The pair answers two questions; neither
+figure is a bound on the other.
 
 **Net monthly flow and the savings rate travel together.** The rate is the flow
 divided by one of the two operands the flow is already built from, so wherever
@@ -101,19 +106,29 @@ card always has something true to print.
 | **budget of the period** | the sum of the budgeted categories | Flow | budget, imported | L1 | figure | expense card | computed |
 | **categorised spend** | expense tied to a category account | Flow | budget, imported | L1 | figure | expense card | computed |
 | **budget variance** | budget − categorised spend | Flow | budget, imported | L1 | figure | expense card | computed |
-| **uncategorised spend** | total spend − categorised spend | Flow | Overview | L1 | figure | expense card | specified |
-| **payable** | the negative debtor balances, as a positive magnitude, at the close | Position | Overview | L1 | figure | debt card | specified (declared in the type, emitted nowhere) |
-| **receivable** | the positive debtor balances, at the close | Position | Overview | L1 | figure | debt card | specified (same) |
-| **settled debtor count** | debtor accounts whose balance is zero at the close | Position | Overview | L2 | figure | debt card | specified (same) |
-| **pocket target** | the sum of the plans' targets | Position | pocket, imported | L1 | figure | pocket card | specified |
-| **pocket allocated** | the signed net of allocations after releases | Position | pocket, imported | L1 | figure | pocket card | specified |
-| **pocket remaining** | target − allocated | Position | pocket, imported | L1 | figure | pocket card | specified |
-| **pocket progress** | allocated ÷ target | Position, as a rate | pocket, imported | L1 | figure | pocket card | specified |
-| **pocket status counts** | pockets funded, overdue and uncovered | Position | pocket, imported | L1 | one summary line, not three figures | pocket card | specified |
+| **uncategorised spend** | total spend − categorised spend | Flow | Overview | L1 | figure | expense card | **not published, and that is the ruling.** The card carries `hasUncategorizedExpense`, a boolean; the amount is one subtraction over two published fields. It becomes a figure only if the developer lifts the contract's wording |
+| **payable** | the negative debtor balances, as a positive magnitude, at the close | Position | Overview | L1 | figure | debt card | computed · **corrected 2026-09-07: it IS emitted**, through the shared stock reader's domain fields, and liquid net worth composes from it |
+| **receivable** | the positive debtor balances, at the close | Position | Overview | L1 | figure | debt card | computed (same path) |
+| **settled debtor count** | debtor accounts whose balance is zero at the close | Position | Overview | L2 | figure | debt card | computed (same path) |
+| **realised result from investments** | the share of the month's realised result that landed on investment accounts | Flow | Overview | L1 | figure | profit-and-loss card | computed 2026-09-07 · a `FILTER` over the rows the total already summed, so it can never exceed the total. Absent from the income and expense statements rather than zero there |
+| **pocket target** | the sum of the plans' targets | Position | pocket, imported | L1 | figure | pocket card | computed |
+| **pocket allocated** | the signed net of allocations after releases | Position | pocket, imported | L1 | figure | pocket card | computed, as the card's own total rather than a second field under another name |
+| **pocket remaining** | target − allocated | Position | pocket, imported | L1 | figure | pocket card | computed · clamped per pocket before summing, so an over-funded goal cannot cancel an underfunded one |
+| **pocket progress** | allocated ÷ target | Position, as a rate | pocket, imported | L1 | figure | pocket card | computed |
+| **pocket status counts** | pockets funded, overdue and uncovered | Position | pocket, imported | L1 | one summary line, not three figures | pocket card | computed |
 
 **Uncategorised spend is a disclosure figure, never a budget category.** It exists
 so that `spend = categorised + uncategorised` is visible on the card, and it is
 never charged against a budget line.
+
+**Corrected 2026-09-07: it is disclosed as a flag, not as an amount.** The frozen
+contract publishes `hasUncategorizedExpense`, true exactly when the total exceeds
+the categorised spend, and the amount is the subtraction of two fields already on
+the card. The recovery plan asked for a fourth field; the contract outranks it,
+and that plan governs sequencing rather than shape. One case is not recoverable
+by subtraction and is the only ground on which the field could be reopened: the
+categorised figure is nullable, and with it null the client has nothing to
+subtract from.
 
 **The variance compares two different universes on purpose.** The budget is
 measured against categorised spend and not against the total, because the tie
@@ -130,19 +145,45 @@ rather than present and null.
 
 | indicator | formula | nature | owner | level | chart | endpoint | state |
 |---|---|---|---|---|---|---|---|
+| **account count** | how many investment accounts exist | Position, as a count | Overview | L1 | figure | investment card | computed and published 2026-09-07 · **not bounded by the month**: it counts the accounts that exist now while every money figure beside it obeys the reference month |
 | **capital contributed** | contributions and account openings | Accumulation | Overview | L1 | figure | investment card | computed |
 | **ledger balance** | the derived balance of the investment accounts | Position | Overview | L1 | figure | investment card | computed |
 | **realised result since opening** | profit-and-loss movements, less the deletion adjustments | Accumulation | Overview | L1 | figure | investment card | computed |
+| **closure adjustment** | what account deletions moved on these accounts: the closure movement type, or the annulment description prefix | Accumulation | Overview | L1 | figure | investment card | computed · 0 for most owners, and the row is hidden at 0 rather than printed |
 | **concentration** | the largest account's balance ÷ the ledger balance | Position, as a rate | Overview | L1 | figure | investment card | computed |
 | **days since the last contribution** | days from the newest funding movement to the reference date | Position, as an age | Overview | L1 | figure | investment card | computed |
 
-**The identity the card asserts:** capital contributed + realised result = ledger
-balance. It does not hold today, and the cause is enumeration rather than
+**The identity the card asserts:** capital contributed + realised result +
+closure adjustment = ledger balance. **It holds, since 2026-09-06.** It used to
+be a two-term identity that failed, and the cause was enumeration rather than
 arithmetic — an account-deletion movement is of the profit-and-loss type **and**
-carries the annulment prefix, so no term claims it while the balance sums it. The
-open question is whether the identity gains a third term or the premise is merely
-written into the contract, and one production count decides which is
-proportionate.
+carries the annulment prefix, so no term claimed it while the balance summed it.
+The third term claims it. The production count that was to decide between adding
+a term and writing the premise into the contract was never taken and is no longer
+needed: the mechanism was the finding, and the frequency stopped being the
+question once the term existed.
+
+**Which arm carries it, on data written today.** The closure term matches by
+movement type **or** by the annulment prefix. No row carries the closure movement
+type yet, so on current data the term is carried entirely by the prefix, which
+sits on free text. A string edit in the deletion module therefore moves this
+figure silently.
+
+**The field's name is imprecise, and was before any of this.** The annulment arm
+is written by the reversal path, a different deletion type from a close, so that
+arm has always been a deletion artifact rather than a closure one. What makes the
+name imprecise is the two-arm shape. What the two arms cost is the use of the
+figure as evidence: a nonzero adjustment is not proof a settlement was written,
+and a zero one is not proof no account was closed — an account emptied before
+closing leaves no transaction row at all, only the stamp.
+
+**What the identity still cannot survive** is a movement type outside the four
+the terms name landing on an investment account — an expense, for instance.
+Nothing in the database ties a movement type to an account type, and the
+transaction controller does not restrict the pair either: the movement name
+arrives in the query string and the allowed-pairs rules there are prose comments
+rather than code. The card would fire its unreconciled notice, so the owner is
+told the figures disagree and is given no way to see why.
 
 ---
 
@@ -167,9 +208,9 @@ null and not zero when no month in the window had any.
 
 | indicator | formula | nature | owner | level | chart | endpoint | state |
 |---|---|---|---|---|---|---|---|
-| **goals balance** | what the goals hold | Position | pocket, imported | L1 | progress | `GET /overview` · goals | computed, and reading the retired model — it returns nothing |
-| **goals target** | what the goals aim at; null when none is set | Position | pocket, imported | L1 | progress | same | same |
-| **goals remaining** | target − balance | Position | pocket, imported | L1 | progress | same | same |
+| **goals balance** | what the goals hold | Position | pocket, imported | L1 | progress | `GET /overview` · goals | computed · **corrected 2026-09-07: the read was repointed and no longer uses the retired model.** It sums the allocation ledger over the `pockets` and `pocket_allocations` tables, bounded by the reference month on both the allocation date and the pocket's creation |
+| **goals target** | what the goals aim at; null when none is set | Position | pocket, imported | L1 | progress | same | same, and null is a real answer: a pocket may exist with no target |
+| **goals remaining** | target − balance | Position | pocket, imported | L1 | progress | same | same, and null whenever the target is |
 | **the consolidated figures** | the hero's and the cards' own values, restated | as each source | Overview | L2 | figure | `GET /overview/all` | computed |
 | **the all-domain movement count** | rows across every domain in the window | Flow | Overview | L2 | figure | `GET /overview/all` | computed |
 | **recent activity** | the five newest movements, excluding the internal account | not an indicator | Overview | L1 | list | its own endpoint, with its own period | computed |

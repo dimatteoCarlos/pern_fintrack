@@ -95,6 +95,8 @@ reportTitleWithImpact:string;
  netAdjustmentColumn: string;
  newBalanceColumn: string;
  totalNetAdjustment: string; 
+ unattributedAmount: string;
+ unattributedNote: string;
 
  //account types for ImpactReportUI
  income_source:string;
@@ -236,6 +238,9 @@ reportTitleWithImpact:"Impact on Affected Accounts",
  netAdjustmentColumn: 'Net Adjustment',
  newBalanceColumn: 'New Balance',
  totalNetAdjustment: 'Total Net Adjustment:',
+ unattributedAmount: 'Not attributable to any account:',
+ unattributedNote:
+  '{count} transactions an earlier deletion already reversed. Shown beside the total, not added to it.',
 
  //account type in ImpactReportUI
  income_source:'Income',
@@ -366,6 +371,9 @@ currentBalanceColumn: 'Saldo Actual',
 netAdjustmentColumn: 'Ajuste Neto',
 newBalanceColumn: 'Nuevo Saldo',
 totalNetAdjustment: 'Ajuste Neto Total:',
+ unattributedAmount: 'No atribuible a ninguna cuenta:',
+ unattributedNote:
+  '{count} transacciones que una eliminación anterior ya revirtió. Se muestra junto al total, no se suma.',
 
  //account type in ImpactReportUI
  income_source:'Ingreso',

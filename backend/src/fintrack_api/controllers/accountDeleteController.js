@@ -8,11 +8,14 @@ import {
   getAnnulmentImpactReport,
   getPocketAllocationImpact,
   getUnattributedAnnulmentTotal,
+  foldNetAdjustmentTotal,
 } from '../services/delete_account/getAnnulmentImpactReport.js';
 
 import { deleteAccountService } from '../services/delete_account/deleteAccountService.js';
 
 import { getClosePreview } from '../services/delete_account/getClosePreview.js';
+
+import { assessAccountDeletion } from '../services/delete_account/assessAccountDeletion.js';
 
 // ===================================
 // ⚙️ DELETION METHOD CONSTANTS
@@ -82,12 +85,23 @@ export const generateImpactReport = async (req, res, next) => {
       getUnattributedAnnulmentTotal(pool, userId, targetAccountId),
     ]);
 
+    // Folded on the server rather than in the browser, which is where it was
+    // being summed: adding money on the client is the thing this codebase does
+    // not do, and the client's sum was short by exactly the unattributed
+    // amount below, because it added the rows it could see.
+    //
+    // The fold itself lives beside the report it sums, not here, because the
+    // assessment endpoint is a second consumer of it. Two copies of a money
+    // fold is how two screens start quoting different totals for one account.
+    const totalNetAdjustmentAmount = foldNetAdjustmentTotal(impactReport);
+
     // 3. SUCCESS RESPONSE
     return res.status(200).json({
       status: 200,
       message: 'RTA Impact Report generated successfully.',
       data: {
         impactReport: impactReport,
+        totalNetAdjustmentAmount,
         pocketImpact,
         // Displayed beside the report, never added to it. Zero and zero is the
         // ordinary answer; a nonzero amount is activity of this account that no
@@ -161,6 +175,69 @@ export const getCloseAccountPreview = async (req, res, next) => {
       data: {
         targetAccountId,
         ...preview,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =========================================
+// 🧭 DELETION ASSESSMENT HANDLER
+// Endpoint: GET /api/fintrack/account/delete/assessment/:targetAccountId
+// =========================================
+/**
+ * Every deletion type this account can take, and what each one costs, in one
+ * read (PLAN_ACCOUNT_DELETION.md unit 6).
+ *
+ * The two preview endpoints above each answer for a type the owner has already
+ * picked. This answers the question that comes before them, and it is the only
+ * place that states the thing neither of them can: the types are not four equal
+ * choices. Hard delete refuses a nonzero residual for any caller, and its own
+ * refusal names RTA as the way to reach zero.
+ *
+ * Read-only and unlocked, on purpose - see the service for why a lock taken
+ * here would be released before the owner confirms anything and would guarantee
+ * nothing. Neither preview endpoint changes; this one is additive, so the
+ * screens already reading them keep working unmodified.
+ */
+export const getDeletionAssessment = async (req, res, next) => {
+  const { userId } = req.user;
+
+  if (!userId) {
+    const message = 'User ID is required';
+    console.warn(pc.blueBright(message));
+    return res.status(400).json({ status: 400, message });
+  }
+
+  const targetAccountId = parseInt(req.params.targetAccountId, 10);
+
+  if (!targetAccountId || isNaN(targetAccountId)) {
+    return next(
+      createError(
+        400,
+        'Target Account ID is required and must be a valid number.',
+      ),
+    );
+  }
+
+  try {
+    console.log(
+      pc.magenta(`Assessing deletion options for account ${targetAccountId}`),
+    );
+
+    const assessment = await assessAccountDeletion(
+      pool,
+      userId,
+      targetAccountId,
+    );
+
+    return res.status(200).json({
+      status: 200,
+      message: 'Deletion assessment generated successfully.',
+      data: {
+        targetAccountId,
+        ...assessment,
       },
     });
   } catch (error) {

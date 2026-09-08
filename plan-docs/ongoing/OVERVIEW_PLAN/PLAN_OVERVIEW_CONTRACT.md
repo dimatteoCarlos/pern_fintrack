@@ -134,10 +134,48 @@ type HeroSection = {
  // card did not report its payable leg, never 0: a figure that could not be
  // computed and a figure that came out zero are different answers.
  liquidNetWorth: number | null;
+ // How much of `cashPosition` nothing has been promised against: the bank and
+ // cash balance less what the pockets have been allocated out of each account,
+ // floored at zero PER ACCOUNT before the sum. Never null — an owner with no
+ // pocket has all of it free — and never negative, because of that floor.
+ freeCash: number;
  currency: CurrencyType; // única para toda la respuesta — D7
  meta: SectionMeta;
 };
 ```
+
+### Type change — 2026-09-07
+
+`HeroSection` gains **one field**, `freeCash`. It is a fourth stock and the place
+where the pocket commitment finally appears in the hero.
+
+**It is the shape the 2026-09-06 correction prescribed, not an exception to it.**
+That correction ruled that a pocket does not constrain spending, so no hero
+figure subtracts it, and that if the Overview ever reports overcommitment the
+committed total goes **beside** the balance and never inside it. This is that:
+`cashPosition` keeps saying what the accounts hold and can be spent, and
+`freeCash` says separately how much of it is unpromised. The objection was only
+ever to folding one into the other and calling the result available.
+
+**The floor is per account and comes before the sum.** One account's remainder
+can go negative — an expense against committed money is always accepted — so
+summing raw remainders lets one account's surplus absorb another's shortfall and
+publishes free cash that no account can honour. The floor is applied inside the
+statement, per account, which is also why the hero cannot compose this figure
+from two totals and why it is a fourth read rather than arithmetic on the cards.
+It is the one figure in the hero that is not composed from a domain card, for
+the same reason `cashPosition` is not: there is no Bank domain in §3.
+
+**A consequence to state rather than hide: `freeCash` can exceed
+`cashPosition`.** With one account overdrawn, the balance figure takes that
+account's negative and the floor gives free cash a zero for it. Both figures are
+correct and they answer different questions.
+
+**Frontend requirement.** `freeCash` renders beside `cashPosition` and never
+instead of it — the pair is the point. It is never null, so it has no dash case
+of its own, and it still renders as a skeleton while the payload is in flight.
+`0` is a real answer here, meaning everything is committed, and is the one place
+in this contract where a zero must be printed rather than treated as an absence.
 
 ### Type change — 2026-09-06
 
@@ -361,8 +399,52 @@ type PocketCard = DomainCardBase & {
 
 type PnlCard = DomainCardBase & {
  domain: 'pnl';
+ // Added 2026-09-07. How much of this month's realised result landed on
+ // investment accounts. A SPLIT of `totalAmount`, never a second total: the
+ // remainder is what came from bank and debtor accounts. Never null; 0 is a real
+ // answer meaning the month's result came from somewhere else.
+ realizedFromInvestment: number;
 };
 ```
+
+### Type change — 2026-09-07
+
+`PnlCard` gains **one field**, `realizedFromInvestment`.
+
+**What it fixes.** This domain reads every account except the internal
+counterparty, which is what §1.4 defines it as and not a defect to narrow. Its
+total therefore mixes two economically different things: a result the market
+produced on a position, and a result recorded against a bank or a debtor account.
+An owner seeing this figure beside the investment card's realised result had no
+way to tell whether they are the same money seen twice or two different results
+that happen to agree. On the development data they DO agree, and that is a
+property of the data — no bank or debtor account there carries a
+profit-and-loss row — rather than of the model.
+
+**It is a split of one sum and not a second query.** The field is a `FILTER`
+over exactly the rows the total already summed, so the share can never exceed the
+total and the two cannot be built over different cuts. Written as a second
+statement they could drift apart and the card would show a part larger than its
+whole with nothing to say why.
+
+**It is NOT the investment card's figure under another name.** That one is an
+accumulation over the whole history of the investment accounts; this is a flow
+bounded by the reference month. They coincide only for an owner whose entire
+investment history falls inside the month being read.
+
+**The remainder is deliberately not a second field.** Both terms are on the
+card, so what came from every other account is one subtraction over two published
+numbers, and a figure a client obtains that way is not one the server owes it.
+
+**It is absent from the income and expense statements rather than zero there.**
+The monthly reader spreads the field in only when the column was selected. An
+income month reporting an investment share of 0 would assert a split that has no
+meaning for income.
+
+**Frontend requirement.** Rendered as a subordinate line under the card's total,
+never as a figure of equal weight — it is a part of the number above it. When it
+equals `totalAmount` the honest label is that the whole month's result came from
+investments, not that there are two results.
 
 > **Anclajes remedidos 2026-08-30, sin cambio de tipos.**
 >
@@ -526,6 +608,12 @@ preguntar "¿por qué está vacío?"; un campo que no existe no invita nada.
 ```ts
 type InvestmentCard = {
  domain: 'investment';
+ // Added 2026-09-07. How many investment accounts the owner has. It decides two
+ // of this card's notices and was consulted without being published, so a client
+ // reading "the concentration figure is not reported" could not tell an owner
+ // with no investment account from one whose accounts hold nothing. Never null;
+ // 0 is the real answer for an owner with no such account.
+ accountCount: number;
  capitalContributed: number; // V1 — nunca null, 0 válido (cuenta recién abierta)
  ledgerBalance: number; // V2 — nunca null
  realizedPnl: number; // V3 — nunca null, 0 válido
@@ -547,6 +635,45 @@ type InvestmentCard = {
  meta: SectionMeta;
 };
 ```
+
+### Type change — 2026-09-07
+
+`InvestmentCard` gains **one field**, `accountCount`, and the prohibition on
+publishing the reconciliation difference is **reaffirmed** against a plan that
+asks for it.
+
+**`accountCount` is a NEW field of this contract, not a restored one.** The
+recovery plan calls it a dropped field. It was dropped from the builder function,
+which computed it, used it to choose between two notices and then left it out of
+the frozen object — but no version of this type ever declared it. The
+`accountCount` that appears elsewhere in this contract belongs to
+`ExpenseCategoryStatus` and is a different quantity on a different type.
+
+**Why it is published rather than left internal.** Two of this card's three
+withheld-concentration cases are distinguished only by the sentence in the
+notice: no investment account at all, versus accounts that hold nothing between
+them. A client that renders figures rather than sentences had no field to branch
+on. With the count, `accountCount === 0` and `accountCount > 0` separate them
+without parsing text.
+
+**It is NOT bounded by the reference month, and that is a known limit rather
+than a defect to discover later.** It counts the accounts that exist now; every
+money figure on this card obeys the month. On a past month the card can report
+three accounts beside a balance built from the two that were open then. Bounding
+it needs a creation date the figures statement does not read, so it is a change
+to that statement and not to this type.
+
+**The reconciliation difference stays unpublished.** The recovery plan's
+investment step asks for a reconciliation field on this card. It contradicts the
+comment three lines above — the client reconciles, the server publishes the terms
+and never the difference between them — and this contract is frozen while that
+plan governs sequencing only, so the prohibition stands until the developer lifts
+it in writing. The cost is bounded: all three terms and the balance are on the
+card, so the difference is one subtraction over four published fields. The one
+thing a client cannot reconstruct is the tolerance — the server compares through
+the decimal library, and a client subtracting in floating point will find a cent
+of difference where the server found none. That is what the notice is for, and
+the notice is what this card publishes instead of the number.
 
 ## 7. ALL — consolidada (§4.2, no recalcula nada)
 
@@ -608,6 +735,56 @@ type RecentActivitySection = {
 };
 ```
 
+### 10.1 `GET /overview/activity` — the reader chooses this period
+
+Added 2026-09-07. §14.1 names three clocks and says this one is the only period a
+consumer genuinely chooses, so it takes its own endpoint rather than a parameter
+on the page. The teaser above stays exactly as it is: the page keeps publishing
+five rows, and this endpoint is an addition rather than a move.
+
+```ts
+type GetOverviewActivityParams = {
+ from?: string;      // YYYY-MM, inclusive. Absent means unbounded below
+ to?: string;        // YYYY-MM, inclusive — the WHOLE month, not its first day
+ page?: number;      // default 1
+ pageSize?: number;  // default 5 — the size of the teaser; max 100, the shared ceiling
+};
+
+type GetOverviewActivityData = {
+ transactions: {
+  rows: MovementTransactionDataType[];
+  page: number;
+  pageSize: number;
+  totalRows: number;
+ };
+ // Echoed, and null on an end the reader did not bound. An unbounded read is
+ // the default, so a response naming no range would leave a client unable to
+ // tell an unbounded answer from the one it asked for.
+ range: {
+  from: string | null;
+  to: string | null;
+ };
+};
+
+type GetOverviewActivityResponse = ApiEnvelope<GetOverviewActivityData>;
+```
+
+**No `ServedWindow` here, and no month ceiling.** The period of this section is
+independent of the month the page reports, so publishing the reference month
+beside it would answer a question nobody asked. And the 422 the other two
+endpoints raise exists because a report about a month that has not happened is
+not a report — this endpoint publishes no figure about a month, it filters rows
+that exist, and a transaction can carry a future actual date in this schema.
+
+**Default unbounded, and that is the teaser's own rule.** Recent activity answers
+what happened last, not what happened in the month being studied: a user reading
+August in November would otherwise open the section and find it empty.
+
+**Frontend requirement.** The section becomes a top-level view with its own range
+control and its own pagination. The five-row teaser on the page keeps its current
+payload and its current shape; what changes is that it now has somewhere to link
+to. Nothing on the page has to change for this endpoint to exist.
+
 ## 11. `GET /overview`
 
 ```ts
@@ -617,7 +794,25 @@ type GetOverviewParams = {
  month?: string; // YYYY-MM, opcional, sólo pasado
 };
 
+// The window the server actually used. Added 2026-09-07, and §14.1 already
+// required it: "el servidor siempre reporta la ventana que usó y el cliente
+// nunca la infiere de su propio reloj". Nothing published it, so a client that
+// sent no month could not tell which month it was given.
+//
+// periodEnd is the REFERENCE DATE and not the last day of the month. The two are
+// equal for a closed month and are not for the month in course, and §14.1 is
+// explicit that a flow never fabricates the days an unfinished month has left.
+// The same value reaches card.window.periodEnd on every card from this same
+// object, so a payload cannot name two different ends for one period.
+type ServedWindow = {
+ referenceMonth: string;  // YYYY-MM-01 — echoed even when the request named no month
+ periodStart: string;     // YYYY-MM-01 — the first day of that month
+ periodEnd: string;       // YYYY-MM-DD — month end, or today for the month in course
+ isCurrentMonth: boolean;
+};
+
 type GetOverviewData = {
+ window: ServedWindow;
  hero: HeroSection;
  all: AllCard;
  domainCards: {
@@ -662,6 +857,16 @@ type ExpenseYtdShare = {
 
 type GetOverviewResponse = ApiEnvelope<GetOverviewData>;
 ```
+
+**Frontend requirement of the served window, 2026-09-07.** The month selector
+reads `window.referenceMonth` instead of holding the month it sent: a request
+that names no month is answered with the owner's current month, and only the
+response knows which that is. `window.isCurrentMonth` is what decides whether
+the period label reads a month name or "so far this month", and `periodEnd` is
+the date that label ends at — for the month in course it is today, not the last
+day of the month, so a component printing the month end would state a period the
+figures were not cut at. No component has to change for the payload to carry the
+field; the ones above are what it unlocks.
 
 **No carga filas de transacción** fuera de `recentActivity` (§5 de
 `PLAN_OVERVIEW.md`, obligación de contrato) — un domain card completo con su
@@ -839,6 +1044,11 @@ type ExpenseCategoryStatus = {
 };
 
 type GetOverviewDomainData = {
+ // The same object §11 publishes, attached by the same expression in the
+ // controller. Two handlers each picking their own fields would be two answers
+ // to "what period is this", which is the question the window exists to answer
+ // once.
+ window: ServedWindow;
  card: IncomeCard | ExpenseCard | InvestmentCard | DebtCard | PocketCard | PnlCard;
  transactions: {
   rows: MovementTransactionDataType[];

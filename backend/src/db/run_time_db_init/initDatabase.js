@@ -30,6 +30,7 @@ import {
   ensureExchangeRateQueryCoverageTable,
   ensurePocketTables,
   ensureBudgetAllocationBackfill,
+  ensureAccountClosureCatalog,
   ensureAccountTypeRequired,
   ensureAccountClosedAt,
   ensureCategoryBudgetCurrency,
@@ -85,6 +86,13 @@ async function assertBudgetFrequenciesMatchConfig(client) {
 // ===========================
 // 📊 DATA BASE INITIALIZATION
 // ============================
+// NOT ON THE DEPLOYED REQUEST PATH. vercel.json builds and routes to
+// backend/index.js, which imports src/app.js and nothing else. The only caller
+// that boots a server is src/index.js, and it guards startServer() with
+// `if (!process.env.VERCEL)`; the other two callers are the standalone init-db
+// script and the parity harness. So every ensure* below serves local
+// development and attended runs, and a deployed instance never executes one.
+// Production receives a schema change exclusively through the migration chain.
 export async function initializeDatabase() {
   const client = await pool.connect();
 
@@ -231,6 +239,12 @@ export async function initializeDatabase() {
     // They delete financial rows and report what they acted on, which belongs to
     // an attended migration run, not to a boot.
     await ensurePocketTables(client);
+
+    // Runtime counterpart of migration 032, which had none. Unlike the calls
+    // below it also seeds catalog rows, because the movement type seeder runs
+    // only inside the first-time branch above and never reaches a database
+    // that already exists.
+    await ensureAccountClosureCatalog(client);
 
     // Runtime counterpart of migration 033. After the catalog seed above, not
     // before: the foreign key it re-adds points at account_types.

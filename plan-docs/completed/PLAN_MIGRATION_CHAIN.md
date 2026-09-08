@@ -194,6 +194,138 @@ with no commit against the file to mark the moment. So the register
 records the tree each entry was read in, and cites shape rather than line: the
 one site that moved between branches proved the rule the same day it was written.
 
+### The production run — three facts no migration file states
+
+**The chain is the only path into production.** `vercel.json` builds and routes
+to `backend/index.js`, which imports `./src/app.js` and nothing else.
+`src/index.js` is the only caller that boots a server and it guards
+`startServer()` with `if (!process.env.VERCEL)`. `initializeDatabase()` has
+three callers — that guarded bootstrap, the standalone init-db script and the
+parity harness — and none is on a request path; `src/app.js` imports neither an
+initializer nor the migration runner. So **no `ensure*()` function has ever run
+in production and none can**. All four outstanding migrations — 031, 032, 033,
+034 — require an attended run; nothing self-heals on deploy. The alternative,
+wiring the initializer into the serverless handler, was weighed and rejected:
+its first-time branch would build the whole schema from the JavaScript path
+against production with no ledger, no ordering and no `DOWN`. Recorded in
+`f68a90f8`, which puts these reachability facts above `initializeDatabase()`
+itself.
+
+**Corrected 2026-09-07 — the seeding prerequisite this paragraph stated does not
+exist.** It said production's ledger was empty, that a run from 001 would stop at
+the second file, and that the ledger had to be seeded first. All three are false
+of production and all three are true of `fintrack_prod_data`, the control copy
+restored from the 2026-08-21 23:04 dump. This is the same confusion §4 paso 0
+resolved on 2026-09-02 and the header of this file superseded on 2026-09-06: the
+empty ledger is a property of the copy, not of the live database.
+
+What production's ledger holds was measured twice on read-only connections, both
+readings recorded outside this file. `PLAN_CURRENCY_TO_PRODUCTION.md` §2, in the
+row `Production's ledger reaches 028`, records **29 rows** on 2026-09-03 — files
+`001` through `028` plus `supabase/001_production_alignment.sql` — each name
+verified individually rather than counted. The `Applied` row of the same table
+records **31** after the run of 2026-09-06, closing on `030_add_jpy_currency.sql`.
+So `runMigrations.js` skips `001` through `030` by name and resumes at `031`,
+which is exactly what the rest of this section describes. There is no first part
+to do before it.
+
+**The halt at `002_accounts.sql` is real and is not about production.**
+`PLAN_CURRENCY_TO_PRODUCTION.md` §3, under `fintrack_prod_data cannot be the
+target`, measured it on 2026-09-06 against that copy and reached the mechanism
+below independently. It is why the rehearsal ran against a database created
+empty: the chain is replayable from empty, not over an existing schema.
+
+**What no one has measured is today.** Every reading above predates this session,
+the most recent by one day, and nobody working on this tree has connected since.
+The ledger's current contents cost one read-only query — `SELECT filename FROM
+migrations ORDER BY id` — and the developer is the only one who runs it. The
+prerequisite for `031` to `034` is that query returning the thirty-one names, not
+a seeding procedure.
+
+**A guard against a missing object is not a guard against a narrower table**, and
+this is the trap in reading the halt out of the file text. Every statement in
+002 is guarded — `CREATE TABLE IF NOT EXISTS`, `DROP TRIGGER IF EXISTS` before
+its `CREATE TRIGGER` — so the file looks re-runnable against any schema that
+already has the objects. It is not re-runnable against one whose table has fewer
+columns: `CREATE TABLE IF NOT EXISTS users` is a no-op that does **not** add the
+missing column, and the `CREATE TRIGGER ... UPDATE OF timezone ON users` that
+follows raises. Add the clause that stops the next reader concluding the halt is
+impossible: **both build paths in the tree agree — the schema it was measured on
+agrees with neither.** `createTables.js` declares `timezone` and the same
+trigger, so a database built by today's boot DDL carries them; the halt is a
+statement about `fintrack_prod_data`, whose schema predates `eb9a0894`, not about
+either path lacking the column. Two peers have now read the file, seen the two
+paths agree, and concluded there was nothing there.
+
+The stranding hazard this implies is already closed, and is worth naming so
+nobody reopens it: `eb9a0894` edited an applied migration in place instead of
+adding an `ALTER`, so the column has no chain route onto a database whose ledger
+already names 002. `backend/src/db/migrations/supabase/001_production_alignment.sql`
+adds the column and the trigger in its first section and writes its
+`('002_accounts.sql')` ledger row afterwards, in that order. Any decision that
+writes a ledger row by hand has to preserve it: mark 002 applied before the
+column exists and both the column and the trigger are stranded permanently.
+
+**What each missing migration breaks, worst first.** This is what an operator
+needs before deciding what to verify, and it is not the numeric order. Measured
+in `main` on 2026-09-07.
+
+- **034 absent — the account lists raise `column ua.closed_at does not exist`.**
+  A failed read on the paths every screen depends on: not a wrong figure, not
+  one feature. `LIVE_ACCOUNT` in `getAccountController.js` is interpolated into
+  nine queries in that controller alone, the shared account reader in
+  `accountUtils.js` carries a tenth, and the close preview, the
+  transfer-destination list, the soft-delete guard, the pocket allocation source
+  read, the category-budget creation path and the edit controller each reference
+  the column directly — eighteen executable references outside comments. **This
+  binds first and hardest, and it fails on a read.** A reader who skims will
+  otherwise assume the account-deletion feature is what is at risk; it is not.
+- **032 absent — a close fails on the foreign key** to the movement-type
+  catalog, because `movement_types` has no row 10. One feature, a write, and the
+  API stays up. It is not a boot failure: the seeder that would raise a check
+  violation sits in the first-time branch and is unreachable on an existing
+  database.
+- **031 absent — the Overview type-predicate reads invert** and admit the
+  compensation account into the owner's own figures. Wrong numbers rather than
+  an error, which is harder to detect and easier to survive.
+- **An abort anywhere stops the rest.** There is no partial-run position that
+  leaves a working API.
+
+**Why the first three collapse into one instruction.** The runner applies each
+file in its own transaction and, on failure, rolls back and throws out of the
+loop, exiting nonzero — nothing after the failing file runs. Since 031 precedes
+034 and 034 is unconditionally required for the API to answer, **any database
+carrying 034 necessarily ran 031 successfully.** So the silent failure cannot be
+observed on its own: a database that failed 031 never received 034, and its
+account lists raise before anyone can read an Overview figure. The loud failure
+always arrives first.
+
+Two consequences worth keeping. The subsumption rests entirely on the runner's
+ordering and its halt, so **applying files by hand out of order defeats it** —
+that is the one path to a database with 034 and without a successful 031, and it
+is operational discipline rather than something the code can enforce. And if the
+runner ever loses halt-on-failure, the four stop being equivalent immediately:
+034 still fails loudly, 031 becomes the only silent casualty. That is a property
+of `runMigrations.js` and it is this document's to keep.
+
+**031 must succeed, not merely be attempted.** The Overview reads now exclude
+the compensation account by type alone, and before 031 that account is
+bank-typed — 031's backfill is `SET account_type_id = 8 WHERE account_name =
+'slack' AND account_type_id = 1`. An inclusive list containing `bank`, or a test
+of inequality against `boundary`, therefore **admits the system's compensation
+writes into the owner's own figures** on a pre-031 database. 031's guard clause
+aborts the file when an account named `slack` carries an unexpected type, and an
+abort stops the rest of the chain too, leaving exactly the state those reads
+invert on. The guard is correct and stays; the consequence is that the Overview
+payload must not be rendered to anyone until 031 has run **and returned
+success**.
+
+**Ignore the "Reconcile by hand" that 031 emits.** Its near-miss `NOTICE` fires
+on a case-variant row and states a hazard that its own commit closed — see the
+first register entry above. Acting on it means retyping an owner's genuine
+account into a system type on a false premise, which is the outcome 031's guard
+clause exists to prevent.
+
 ### Convention from 034 onward
 
 A migration that establishes a constraint carries **one line pointing at this
@@ -220,14 +352,28 @@ el camino oficial.
   arranque del servidor**. Es el camino por el que se construyó producción, y su
   libro de migraciones quedó vacío.
 
+> **Corrected 2026-09-07.** "Every server start" holds for a local start only.
+> The deployed instance never calls `initializeDatabase()` at all — it enters
+> through `backend/index.js`, which imports the Express app directly, and the
+> only bootstrap is guarded by `if (!process.env.VERCEL)`. Production was built
+> by this DDL at some earlier point, but it no longer receives anything from it.
+> See "The production run — three facts no migration file states" in §0-bis.
+
 Los dos divergen. Cuando divergen, la base construida por el segundo camino
 arranca sin fallar y rompe en tiempo de ejecución, que es la peor forma de
 enterarse.
 
-Y el corredor, que debería ser la red de seguridad, no lo es: abre **una sola**
+Y `runMigrations.js`, que debería ser la red de seguridad, no lo es: abre **una sola**
 transacción para la corrida entera (`runMigrations.js:35`) y el `COMMIT;` de
 `001_initial_migration.sql:47` se la lleva. Todo lo que corre después queda en
 autoconfirmación, y el `ROLLBACK` de la línea 81 ya no revierte nada.
+
+> **Fixed — verified 2026-09-07.** This paragraph states the problem as it was,
+> and step 2 of this plan closed it. The runner now opens a `BEGIN` per file
+> inside the loop, and on failure rolls back, throws out of the loop and exits
+> nonzero. No file in `sql_migrations` carries `BEGIN` or `COMMIT`. The
+> halt-on-failure behaviour is load-bearing for the production-run section in
+> §0-bis, which is why it is confirmed here rather than assumed still broken.
 
 ---
 
@@ -237,7 +383,7 @@ autoconfirmación, y el `ROLLBACK` de la línea 81 ya no revierte nada.
 |---|---|---|
 | Copia local de producción: tablas, transacciones, filas del libro | 17 tablas, 785 transacciones, **libro vacío** | 2026-09-01 |
 | Dónde se detiene la cadena sobre esa copia | en el segundo archivo: `002_accounts.sql` le cuelga un disparador sobre `users.timezone` a una tabla que ya existe sin esa columna | 2026-09-01 |
-| Transacción del corredor tras un archivo que trae `COMMIT;` | `txid_current_if_assigned()` devuelve nulo; una tabla creada después sobrevive al `ROLLBACK` | 2026-09-02 |
+| Transacción de `runMigrations.js` tras un archivo que trae `COMMIT;` | `txid_current_if_assigned()` devuelve nulo; una tabla creada después sobrevive al `ROLLBACK` | 2026-09-02 |
 | Archivo de varias sentencias sin control de transacción propio | **atómico**: Postgres lo envuelve en una transacción implícita; una falla en la segunda sentencia no deja la primera | 2026-09-02 |
 | Sentencias de transacción por archivo | 001-007 traen `BEGIN;`/`COMMIT;` propios; 008-024 no traen ninguna (los `BEGIN` de 014-020 son bloques PL/pgSQL) | 2026-09-02 |
 | Libro de `fintrack_dev` | 25 filas para 24 archivos; sobra `012_backfill_budget_policies.sql` (08-08) junto a la real `012_backfill_budget_allocations.sql` (08-14); nada en disco sin registrar | 2026-09-02 |
@@ -255,7 +401,7 @@ que lo nombre, y la corrida siguiente lo repite.
 
 | decisión | razón |
 |---|---|
-| Una transacción por archivo, y la abre el corredor; a 001-007 se les quitan las suyas | el esquema del archivo y su fila del libro tienen que confirmarse juntos, que es el invariante que hoy se rompe |
+| Una transacción por archivo, y la abre `runMigrations.js`; a 001-007 se les quitan las suyas | el esquema del archivo y su fila del libro tienen que confirmarse juntos, que es el invariante que hoy se rompe |
 | La columna que falta entra por `createTables.js`, sin migración nueva | ese archivo construye bases vacías; agregarle una columna no toca ninguna base con datos |
 | La fila fantasma del libro se deja como está | corregirla es reescribir historia sobre una base que se reconstruye, y en producción no existe |
 | La regla del reverso rige **desde la 025 en adelante** | un `DOWN` escrito hoy para una migración ya aplicada es un reverso que nadie va a ejecutar y que nadie puede probar; además obligaría a tocar archivos que el límite de alcance declara intocables |
@@ -312,6 +458,12 @@ producción.
 
 **Lo pendiente en producción son seis archivos, no veinticuatro: 019 a 024.**
 
+**Superado el 2026-09-06.** Ese conteo era correcto el 2026-09-02 y hoy no lo es:
+`019` a `028` se aplicaron el 2026-09-03 y `029` y `030` el 2026-09-06, dejando el
+libro en treinta y una filas. Lo que sigue vigente de este paso es la conclusión
+sobre el instrumento — el libro vacío pertenece a `fintrack_prod_data` — no la
+cuenta de pendientes. El encabezado de este archivo lleva la cuenta viva.
+
 Un primer conteo escrito aquí el mismo día dijo siete. Sumaba la
 `013_normalize_category_budget_name_case.sql`, porque el paso 9 de la alineación
 la deja fuera de las diecisiete filas que inserta —
@@ -323,7 +475,7 @@ una medición **contra la base viva**, con los dos sondeos de solo lectura de
 **19 filas**, la misma cuenta que `fintrack_dev`. Diecinueve son los dieciocho
 archivos de la cadena hasta la 018 más el propio archivo de alineación, y no
 dejan lugar para que falte ninguno. Entre el 22 y el 27 de agosto alguien corrió
-el corredor contra producción y aplicó lo que quedaba, 013 y 018.
+`runMigrations.js` contra producción y aplicó lo que quedaba, 013 y 018.
 
 **Lo que igual se confirma por su nombre, y cuesta una consulta.** La cuenta de
 diecinueve es un argumento aritmético, no una lista. `SELECT filename FROM
@@ -342,9 +494,9 @@ la medición más nueva es la suya. Los otros dos —`NEXT_SESSION.md` §2.1 y
 ejecutó.
 
 **Y su encabezado cree en el invariante que no existe.** La línea 16 de esa misma
-013 dice que el corredor envuelve cada archivo en una transacción junto con su
+013 dice que `runMigrations.js` envuelve cada archivo en una transacción junto con su
 `INSERT INTO migrations`, y declara seguir la convención de la 010 a la 012. Eso
-es justamente lo que el corredor no hace. El paso 2 no cambia una convención: la
+es justamente lo que `runMigrations.js` no hace. El paso 2 no cambia una convención: la
 construye por primera vez, y cuatro archivos ya escritos la dan por cierta.
 
 ---
@@ -381,7 +533,7 @@ del archivo que nombra.
 
 **Qué cambia.**
 
-- El corredor deja de abrir una transacción alrededor del bucle. Abre una **por
+- `runMigrations.js` deja de abrir una transacción alrededor del bucle. Abre una **por
   archivo**, antes de leerlo, y la confirma después de escribir su fila del
   libro. Un fallo revierte el archivo y su fila juntos.
 - La creación de la tabla `migrations` y la lectura del libro quedan fuera de esa
@@ -392,7 +544,7 @@ del archivo que nombra.
   sentencia de esquema.
 
 **Por qué no al revés.** Dejar que cada archivo maneje su transacción y que el
-corredor no abra nada deja la fila del libro fuera, y reproduce el mismo defecto
+`runMigrations.js` no abra nada deja la fila del libro fuera, y reproduce el mismo defecto
 en pequeño.
 
 **Verificación.**
@@ -443,7 +595,7 @@ nuevos. Las veinticuatro ya aplicadas quedan sin reverso **por decisión
 declarada**, no por olvido: eso se anota en el encabezado de la plantilla para
 que el próximo lector no lo lea como una omisión.
 
-**Lo que no incluye.** Un corredor de reversos. Escribir el `DOWN` y ejecutarlo
+**Lo que no incluye.** Una herramienta que ejecute los `DOWN`. Escribirlo y correrlo
 son dos trabajos; este plan sólo obliga a escribirlo.
 
 **Commit.** `docs(db): migrations declare an explicit reverse`.
@@ -582,7 +734,7 @@ se tomó.
 
 **El problema que queda abierto después de todo lo anterior.** Si producción se
 levantó por `createTables.js` con el libro vacío, correr la cadena desde 001
-falla en el segundo archivo. Ya está medido. Arreglar el corredor no lo resuelve:
+falla en el segundo archivo. Ya está medido. Arreglar `runMigrations.js` no lo resuelve:
 lo que falta es marcar como aplicadas las migraciones cuyo efecto el esquema ya
 tiene, que es exactamente lo que hizo el archivo de alineación con sus diecisiete
 filas.

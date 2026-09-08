@@ -28,15 +28,20 @@ const errorColor = 'red';
 // One expression, so a list and the detail of the same account cannot disagree.
 const DERIVED_BALANCE = derivedAccountBalanceSql('ua');
 
-// Soft-deleted accounts are dropped from every LIST this controller serves.
-// The rule is the one accountUtils.js states in its header and the pocket views
-// already obey; this file applied it nowhere, so a deleted account survived in
-// the accounting dashboard after overview had stopped showing it.
+// Accounts that no longer circulate are dropped from every LIST this controller
+// serves — soft-deleted and closed alike. The rule is the one accountUtils.js
+// states in its header and the pocket views already obey; this file applied it
+// nowhere, so a deleted account survived in the accounting dashboard after
+// overview had stopped showing it.
+//
+// Both stamps, not deleted_at alone. They coincide only while CLOSE dual-writes
+// them; the day it stops, a closed account carries closed_at and no deleted_at,
+// and a deleted_at test on its own would put it back in the dashboard.
 //
 // Deliberately NOT applied to the reads by account id: the deletion flow has to
-// display the account it has just deleted, so those keep serving it and ship
-// is_deleted beside it instead.
-const LIVE_ACCOUNT = 'AND ua.deleted_at IS NULL';
+// display the account it has just acted on, so those keep serving it and ship
+// is_deleted and is_closed beside it instead.
+const LIVE_ACCOUNT = 'AND ua.deleted_at IS NULL AND ua.closed_at IS NULL';
 
 //BASIC FUNCTIONS
 const RESPONSE = (res, status, message, data = null) => {
@@ -589,6 +594,73 @@ export const getAccounts = async (req, res, next) => {
 }; //END OF getAccounts
 
 //**********************************
+//GET THE OWNER'S CLOSED ACCOUNTS
+//endpoint:
+// http://localhost:5078/api/fintrack/account/closed
+//
+// The inverse of LIVE_ACCOUNT, which every list above interpolates. A closed
+// account is not gone: its transactions are kept and readable, and this is the
+// only list that serves it.
+//
+// closed_at IS NOT NULL alone, and NOT `deleted_at IS NULL` beside it. CLOSE
+// writes both stamps during the dual-write window, so a deleted_at test would
+// return nothing at all today; and a soft-deleted account carries deleted_at
+// and no closed_at, so it cannot reach this list either way. The predicate is
+// therefore correct before and after the dual-write ends, with no ordering
+// against the deletion module's work.
+//
+// The compensation account is excluded by name and type like everywhere else:
+// it is not the owner's account and nothing can close it.
+export const getClosedAccounts = async (req, res, next) => {
+  console.log(pc[backendColor]('getClosedAccounts'));
+
+  try {
+    const userId = requireUserId(req, res);
+    if (!userId) return;
+
+    const closedAccountsQuery = {
+      text: `SELECT ua.*, ct.currency_code, act.account_type_name,
+        ${DERIVED_BALANCE} AS account_balance,
+        CAST(ua.account_starting_amount AS FLOAT)
+      FROM user_accounts ua
+      JOIN account_types act ON ua.account_type_id = act.account_type_id
+      JOIN currencies ct ON ua.currency_id = ct.currency_id
+      WHERE ua.user_id = $1
+      AND ua.account_name != $2
+      ${NOT_BOUNDARY_ACCOUNT}
+      AND ua.closed_at IS NOT NULL
+      -- Most recently closed first: the account the owner is looking for is
+      -- almost always the one they just closed.
+      ORDER BY ua.closed_at DESC, ua.account_id DESC
+      `,
+      values: [userId, 'slack'],
+    };
+
+    const closedAccountsResult = await pool.query(closedAccountsQuery);
+    const accountList = closedAccountsResult.rows;
+
+    // 200 with an empty list, not the 400 the live list answers with. An owner
+    // who has closed nothing is the normal case, and a screen cannot tell a
+    // 400 meaning 'you have none' from a 400 meaning 'your request was wrong'.
+    const data = { rows: accountList.length, accountList };
+
+    const message = accountList.length
+      ? 'Closed account list successfully completed'
+      : 'No closed accounts';
+    console.log('success:', pc[backendColor](message));
+
+    res.status(200).json({ status: 200, message, data });
+  } catch (error) {
+    console.error(pc.red('Error while getting closed accounts'));
+    if (process.env.NODE_ENV === 'development') {
+      console.log(error.stack);
+    }
+    const { code, message } = handlePostgresError(error);
+    next(createError(code, message));
+  }
+}; //END OF getClosedAccounts
+
+//**********************************
 //GET ACCOUNT INFO BY ACCOUNT_ID
 //endpoint example:
 // http://localhost:5000/api/fintrack/account/${accountId}?&user=${user}
@@ -868,12 +940,20 @@ export const getAccountById = async (req, res, next) => {
     //----------------------------
     // 🗑️ WHETHER THIS ACCOUNT STILL EXISTS FOR THE OWNER
     //
-    // Every list in this controller now drops soft-deleted rows; this route does
-    // not, because the deletion flow has to display the account it has just
-    // deleted. The flag is what lets a screen tell those two cases apart —
-    // without it the caller would have to read the raw stamp and decide for
-    // itself, and a screen that never asked would show a deleted account as live.
+    // Every list in this controller now drops rows that no longer circulate;
+    // this route does not, because the deletion flow has to display the account
+    // it has just acted on. The flags are what let a screen tell those cases
+    // apart — without them the caller would have to read the raw stamps and
+    // decide for itself, and a screen that never asked would show a deleted
+    // account as live.
+    //
+    // Two flags and not one, shipped together, because CLOSE writes both stamps
+    // during the dual-write window: a closed account reports is_deleted true, so
+    // the screen that has just closed an account would be told it was deleted.
+    // is_closed is the one that says what actually happened, and it stays
+    // correct after close stops writing deleted_at.
     data.accountList[0].is_deleted = Boolean(data.accountList[0].deleted_at);
+    data.accountList[0].is_closed = Boolean(data.accountList[0].closed_at);
 
     //----------------------------
     // 📆 THE DAY THE ACCOUNT WAS OPENED, ON THE OWNER'S CALENDAR

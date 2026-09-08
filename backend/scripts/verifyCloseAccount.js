@@ -72,6 +72,30 @@ const readOption = (flag, fallback) => {
 const TIME_ZONE = readOption('--zone', 'America/Caracas');
 const CLOSURE_MOVEMENT_TYPE = 10;
 
+// getInvestmentFigures gained a fourth parameter when feat/overview bound every
+// figure on the card to a reference month. It has no default, and an omitted one
+// reaches the query as NULL: the bounds CTE then yields NULL, every date
+// comparison against it is NULL, and the card comes back all zeros instead of
+// raising. That is why this is computed rather than left off - the two closure
+// assertions below read 0 -> 0 and looked like a settlement that never happened.
+//
+// The month is derived in the same zone the query converts with. Derived in UTC
+// it would name the previous month for the first hours of a month in a western
+// zone, and the settlement this probe writes would land outside the window it
+// then asks about.
+const referenceMonthIn = (timeZone) => {
+ const parts = new Intl.DateTimeFormat('en-CA', {
+  timeZone,
+  year: 'numeric',
+  month: '2-digit',
+ }).formatToParts(new Date());
+ const year = parts.find((part) => part.type === 'year').value;
+ const month = parts.find((part) => part.type === 'month').value;
+ return `${year}-${month}-01`;
+};
+
+const REFERENCE_MONTH = referenceMonthIn(TIME_ZONE);
+
 const near = (a, b) => Math.abs(a - b) < 0.005;
 const money = (n) => Number(n.toFixed(2));
 
@@ -168,7 +192,12 @@ try {
 
  const residualBefore = await derivedBalanceOf(client, target.account_id);
  const transactionsBefore = await countTransactions(client, target.account_id);
- const cardBefore = await getInvestmentFigures(client, investmentIds, TIME_ZONE);
+ const cardBefore = await getInvestmentFigures(
+  client,
+  investmentIds,
+  TIME_ZONE,
+  REFERENCE_MONTH,
+ );
 
  const accountCheck = await accountRow(client, target.account_id, target.user_id);
 
@@ -321,7 +350,12 @@ try {
  const residualAfter = await derivedBalanceOf(client, target.account_id);
  const closedRow = await accountRow(client, target.account_id, target.user_id);
  const transactionsAfter = await countTransactions(client, target.account_id);
- const cardAfter = await getInvestmentFigures(client, investmentIds, TIME_ZONE);
+ const cardAfter = await getInvestmentFigures(
+  client,
+  investmentIds,
+  TIME_ZONE,
+  REFERENCE_MONTH,
+ );
 
  const boundary = await client.query(
   `SELECT ua.account_id, ua.account_balance::float AS stored, ${DERIVED} AS derived

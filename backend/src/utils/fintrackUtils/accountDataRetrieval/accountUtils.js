@@ -3,9 +3,14 @@
 // Account utilities – reusable functions for account-related operations.
 // Used across modules (Budget, Overview, Reports).
 //
-// Consolidated from accountUtilsV2.js. Every query filters deleted_at IS NULL:
-// a soft-deleted account must not count as owned, or it keeps passing
-// ownership checks and keeps appearing in exports.
+// Consolidated from accountUtilsV2.js. A query that asks whether money may
+// move through an account, or whether the owner should see it, filters both
+// stamps - deleted_at IS NULL AND closed_at IS NULL - so neither a deleted nor
+// a closed account counts as owned.
+//
+// Two queries here do not, and each states its reason on the line: resolving
+// the owner of a row is identity, not circulation, and the compensation
+// account has to be found in whatever state it is in.
 
 import { pool } from '../../../db/config/configDB.js';
 import { createError } from '../../errorHandling.js';
@@ -38,6 +43,9 @@ export async function getUserIdFromAccount(clientOrPool, accountId) {
     SELECT user_id
     FROM user_accounts
     WHERE account_id = $1
+      -- Not swept with the rest: this answers who owns a row, not whether
+      -- money may move through it. A closed_at test here makes the reopen
+      -- path fail to resolve the owner of the account it is reopening.
       AND deleted_at IS NULL
   `;
   const result = await db.query(query, [accountId]);
@@ -127,6 +135,10 @@ export async function getSlackAccountId(clientOrPool, userId) {
     WHERE ua.user_id = $1
       AND ua.account_name = 'slack'
       AND act.account_type_name = 'boundary'
+      -- Not swept: no path can close this row. The boundary type is not
+      -- user-creatable and CLOSE only transfers to bank, so closed_at is
+      -- never set on it - and a test that finds nothing here does not fail,
+      -- it creates a second compensation account.
       AND ua.deleted_at IS NULL
   `;
   const result = await db.query(query, [userId]);
@@ -171,6 +183,7 @@ export async function getAccountsByType(userId, accountType) {
       AND ua.account_name != 'slack'
       AND act.account_type_name IS DISTINCT FROM 'boundary'
       AND ua.deleted_at IS NULL
+      AND ua.closed_at IS NULL
     ORDER BY ua.account_name ASC
   `;
   const result = await pool.query(query, [userId, accountType]);
