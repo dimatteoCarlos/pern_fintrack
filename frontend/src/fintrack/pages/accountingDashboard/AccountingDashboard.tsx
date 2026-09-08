@@ -717,15 +717,22 @@ const AccountingDashboard = () => {
               state={{ previousRoute: location.pathname }}
               className='accounting__openAccount'
               aria-label='Open a new account'
-              // The tip the stylesheet prints under the mark. No title as well:
-              // the two would stack, the native one arriving a second later.
-              data-tip='Open a new account'
              >
               <OpenAccountSvg
                className='accounting__openAccount-glyph'
                aria-hidden='true'
                focusable='false'
               />
+
+              {/* A node and not a ::after carrying content: attr(data-tip). The
+                  pseudo-element never painted, while :hover on the same
+                  selector did, so the rules and the file were reaching the
+                  page and the pseudo-element was not. A node renders the text
+                  itself and can be inspected. aria-hidden because aria-label
+                  above already names the link with these words. */}
+              <span className='accounting__openAccount-tip' aria-hidden='true'>
+               {'Open a new account'}
+              </span>
              </Link>
             </div>
 
