@@ -47,17 +47,19 @@ const FORCE_RECREATE_EXCHANGE_RATES =
  * Fail fast if the seeded frequency catalog and MONTHS_PER_PERIOD disagree.
  *
  * NO LONGER CALLED. The budget stopped reading a frequency when it moved to one
- * row per calendar month, so nothing prices a code any more. The table it checks
- * has NOT been dropped, though: budget_frequency_types, budget_policies and
- * budget_policy_allocations are all still in the schema, still seeded and still
- * carrying rows. This guard is kept, uncalled, until the migration that drops
- * them (PLAN_BUDGET_V1 §9.4) removes both at once.
+ * row per calendar month, so nothing prices a code any more.
  *
- * What it protects while those tables live: a frequency code is a lookup key,
- * not a label. A code seeded in the catalog but absent from MONTHS_PER_PERIOD
- * cannot be priced, and a code in the map with no catalog row breaks the foreign
- * key on budget_policy_allocations. Both directions are checked because either
- * one produces silent wrong numbers or a 500, not a clean failure.
+ * The table it reads no longer exists either. Migration 010 created
+ * budget_frequency_types, budget_policies and budget_policy_allocations until
+ * commit 3b72371f rewrote that file in place on 2026-08-12 to create
+ * budget_monthly_allocations instead. A database that ran 010 before that date
+ * keeps all three forever, because the ledger records 010 as applied and the
+ * runner only executes what the ledger does not name; the production copy taken
+ * on 2026-08-21 holds none of them.
+ *
+ * So there is no migration to wait for. Removing this guard is ordinary
+ * cleanup, together with MONTHS_PER_PERIOD in budgetConfig.js, whose only
+ * importer is this file.
  *
  * @param {object} client - Database client (pool or transaction)
  */

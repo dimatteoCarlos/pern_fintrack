@@ -10,9 +10,10 @@
 > | The Supabase production file, and the schema-drift audit that gates it | `on-hold/PLAN_DEPLOYMENT/PLAN_SUPABASE_MIGRATION.md` |
 > | The three-table budget schema this document describes | Deleted by V1. See `DECISIONS.md` §1 |
 >
-> **Read the superseded notice below before trusting any budget-table detail:**
-> `010` was rewritten in place and `012` renamed, so the tables named in the
-> original text no longer exist.
+> **Read both notices below before trusting any budget-table detail:** `010` was
+> rewritten in place and `012` renamed, so the chain no longer creates the tables
+> named in the original text. Whether a given database still holds them is a
+> separate question, and the 2026-09-08 note answers it.
 
 **Status:** Delivered. Verified against `backend/src/db` on `feat/budget`, 2026-08-10.
 **Audit date:** 2026-07-28 · **Closed:** 2026-08-10
@@ -26,6 +27,31 @@
 > chain — see `PLAN_BUDGET_V1.md` §10.1. Everything in this document about
 > `011`, `013`, currency constraints and the infrastructure work stands
 > unchanged.
+
+> 📌 **Refuting one sentence of the notice above, 2026-09-08. The claim is left
+> as written because it records what was believed on 2026-08-12; this note
+> records what was measured.** *"`budget_policies`, `budget_policy_allocations`
+> and `budget_frequency_types` no longer exist"* is false as a statement about
+> databases. What `3b72371f` changed is the file, not any database that had
+> already run it. The runner executes only what the ledger does not name, so an
+> edited `010` is never re-applied and a database that ran the original keeps all
+> three tables permanently. `fintrack_dev` holds them today, with five rows in
+> `budget_frequency_types` and a `RESTRICT` foreign key from
+> `budget_policy_allocations` into it; the production copy taken 2026-08-21 holds
+> none.
+>
+> **The check, so no one has to trust either sentence:** a database holds the
+> three tables if and only if its `migrations` table names
+> `012_backfill_budget_policies.sql`, the file the same commit deleted. The
+> deferred drop in `PLAN_BUDGET_V1.md` §9.4 is therefore a no-op wherever that
+> row is absent and a real drop where it is present.
+>
+> **The D6 justification in the notice above is narrower than it reads.**
+> *"safe only because Supabase has never run this chain"* is true of Supabase and
+> says nothing about the local databases, which had run it. Rewriting an applied
+> migration is what makes a schema depend on when it was built rather than on
+> what the repository says, and it is the origin of four stale code comments
+> corrected on 2026-09-08.
 
 ---
 

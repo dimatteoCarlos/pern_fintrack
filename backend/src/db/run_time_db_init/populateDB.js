@@ -496,11 +496,12 @@ export async function tbltransactionTypes(client = pool) {
 /**
  * Seed the budget frequency catalog.
  *
- * Unlike the other tbl* seeders, this one does NOT create its table. The DDL
- * already lives in migration 010 and in ensureBudgetTables(); a third copy
- * here would be a third thing to keep in sync. A missing table means
- * ensureBudgetTables did not run, and masking that by silently creating one
- * would hide the real failure.
+ * NO LONGER CALLED, and it could not succeed if it were. This seeder never
+ * created its table, and no build path creates it any more: migration 010 and
+ * ensureBudgetTables() both created budget_frequency_types until commit
+ * 3b72371f rewrote them on 2026-08-12 to create budget_monthly_allocations
+ * instead. The table survives only on a database that ran 010 before that date.
+ * See the note on assertBudgetFrequenciesMatchConfig in initDatabase.js.
  *
  * Codes must stay identical to the keys of MONTHS_PER_PERIOD in
  * budgetConfig.js. They are not labels, they are lookup keys.
@@ -526,7 +527,7 @@ export async function tblBudgetFrequencyTypes(client = pool) {
   const exists = await tableExists(client, tblName);
   if (!exists) {
    throw new Error(
-    `${tblName} does not exist. Run migration 010 or ensureBudgetTables() first.`,
+    `${tblName} does not exist and no build path creates it since 3b72371f.`,
    );
   }
 
