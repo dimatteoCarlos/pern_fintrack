@@ -428,7 +428,7 @@ borrables*.
 | Debtor | `debtor` | yes | holds an amount owed in one direction or the other |
 | Income source | `income_source` | yes, **without the zero condition** | owner's ruling, 2026-09-07: *tambien es borrable, pero no se le exige que sea saldo cero* — see 5.1 |
 | Budget account | `category_budget` | yes, **without the zero condition** | owner's ruling, 2026-09-07: *si pueden desaparecer por cierre*. The waiver is a recommendation acted on, not his words — see 5.1 |
-| Pocket saving | `pocket_saving` | **no** | the type is to be removed entirely — see 5.2 |
+| Pocket saving | `pocket_saving` | **no** | the type is to be removed entirely — see 5.3 |
 | Compensation | `boundary` | **no** | the system's counterparty; the refusal is already written |
 
 The first seven catalog rows are seeded by `005_base_catalogs.sql:37-44`;
@@ -486,7 +486,57 @@ he can overturn it in one line if that is not what he meant.
 `cash`, `investment` and `debtor`. The two that classify movements rather than
 hold money are exempt.
 
-### 5.2 The pocket saving type: already deleted, and still creatable
+### 5.2 `income_source_accounts` is created by both build paths and never used
+
+**The owner asked for this measurement on 2026-09-07** — *habria que borrarla
+tambien de la tabla income_source_accounts, hay que verificar si esta tabla
+realmente se usa*. Measured on `feat/deletion`, across `backend/src` and
+`frontend/src`. The answer is that it is not used at all.
+
+| Question | Answer |
+|---|---|
+| Is the table created? | Yes, in both paths: `002_accounts.sql:122` in the chain and `createTables.js:82-84` in the runtime builder |
+| Does anything insert a row? | **No.** The only inserts into any extension table are `accountCategoryCreationcontroller.js:321` into `category_budget_accounts` and `accountCreationController.js:783` into `debtor_accounts` |
+| Does anything read it? | **No.** The single `JOIN income_source_accounts` in the codebase is commented out, at `dashboardController.js:693` |
+| Does any executable line name it? | One, and it is dead: `dashboardController.js:626` assigns `tableName = 'income_source_accounts'` |
+
+**That assignment is provably dead, and the proof is in the same switch rather
+than in an absence.** `tableName` is declared at `dashboardController.js:564` and
+assigned in seven branches, and no line anywhere reads it. One of those branches
+assigns `'investment_accounts'` (`:706`) — a table that is never created in
+either build path, appearing only in a commented-out line of a documentation file
+(`dev_queries.sql:27`). A variable naming a non-existent table without failing is
+a variable nothing uses.
+
+**So the owner's instruction is satisfied and there is nothing to write.**
+Deleting an `income_source` account removes a row from `income_source_accounts`
+through the cascade at `002_accounts.sql:122` if one exists, and none ever does,
+because the account creation path writes only to `user_accounts`. The same holds
+for `pocket_saving_accounts`. **Two of the four extension tables are live and two
+are empty by construction:** `category_budget_accounts` and `debtor_accounts` get
+rows; `income_source_accounts` and `pocket_saving_accounts` never have.
+
+**The owner ruled on the measurement, the same day and in one line:** *yo creo
+que esa tabla es descartable y habria que eliminarla, esto es tarea para
+migration.* So the table is dropped, and **the work is assigned to the migration
+session, not to this plan.** What this document owes it is the measurement above
+and three facts it needs before writing the file:
+
+- **Both build paths declare the table**, so a drop that touches only the chain
+  leaves the runtime builder recreating it: `002_accounts.sql:122` and
+  `createTables.js:82-84`.
+- **The one executable line naming it cannot break.**
+  `dashboardController.js:626` assigns the table's name to a variable nothing
+  reads; it is a string, never executed as SQL, so dropping the table does not
+  reach it. Removing that dead assignment is separate work and is not required
+  for the drop.
+- **The migration suspension is the owner's to lift**, and this ruling assigns
+  the task without saying when it runs. Nothing in CLOSE depends on it.
+
+Nothing else in this plan changes: nobody designing the close writes a stamp, a
+guard or a cleanup for a table that has never held a row.
+
+### 5.3 The pocket saving type: already deleted, and still creatable
 
 The owner ruled the type does not exist and that any surviving rows are to be
 deleted physically. **An applied migration already did exactly that, and this
@@ -531,7 +581,7 @@ it, never before.
 allocations over real accounts, with its own deletion, and it never touches
 `pocket_saving_accounts`. Deleting a pocket there is not closing an account.
 
-### 5.3 The income source closes, and what that costs
+### 5.4 The income source closes, and what that costs
 
 **The owner ruled on 2026-09-07 that an income source closes** — *las cuentas
 income tambien son borrables* — reversing the recommendation recorded earlier
@@ -543,11 +593,11 @@ Three consequences, each measured:
 - **The balance refusal does not apply to it**, for the reason set out in 5.1:
   the income leg is always negative on the income source, so the zero condition
   would refuse every income source that ever received anything.
-- **Its extension row is deleted with it, by the cascade.**
-  `income_source_accounts` keeps its own `ON DELETE CASCADE` primary key
-  (`002_accounts.sql:122`), which is what the owner ruled for the spending
-  category and applies identically here. Nothing on that row is stamped
-  anywhere, so whatever it held is gone.
+- **Its extension row is deleted with it, by the cascade — and there is never
+  one to delete.** `income_source_accounts` keeps its own `ON DELETE CASCADE`
+  primary key (`002_accounts.sql:122`), so the owner's rule is enforced by the
+  schema, but the table has never held a row: no code inserts into it (5.2). The
+  ruling is satisfied vacuously here and substantively on `category_budget`.
 - **Every reader that joins the accounts table to attribute income by source is
   in the join inventory of 4.1** and behaves the same way it does for any other
   closed account: an inner join drops the movement, a left join keeps it with a
@@ -737,6 +787,7 @@ design.
 | The income source closes | *las cuentas income tambien son borrables*, reversing the recommendation recorded earlier the same day |
 | The income source is exempt from the zero condition | *tambien es borrable, pero no se le exige que sea saldo cero* |
 | The budget goes with the budget account | *category_budget tiene un presupuesto asociado, asi que con su borrado, se borra el budget asociado a ella*. Both cascades are therefore intended: `category_budget_accounts` and, through it, `budget_monthly_allocations` — see 3.5 |
+| `income_source_accounts` is dropped | *yo creo que esa tabla es descartable y habria que eliminarla, esto es tarea para migration*. Measured first: created in both build paths, never inserted into, never read — see 5.2. **Assigned to the migration session**, not to this plan |
 | The extension row is deleted with the account, by id | *cuando se borra hay tambien que eliminarla de esta otra tabla, buscando no por nombre sino por id*. The cascade on `002_accounts.sql:141-143` already does exactly this, so no code and no migration are owed — but it reverses the migration session's plan to repoint those four keys, and the repointing count drops from nine to six (4.3) |
 | The pocket saving type | it does not exist; any surviving rows are deleted physically — already done by an applied migration, see 5.2 |
 | The zero condition, on the four money types | derived balance equal to zero, for `bank`, `cash`, `investment` and `debtor` only |
