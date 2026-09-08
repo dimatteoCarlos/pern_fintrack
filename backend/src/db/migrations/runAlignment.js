@@ -23,6 +23,11 @@
  * A statement that fails inside it aborts that transaction, so the trailing
  * COMMIT rolls back and nothing partial survives.
  *
+ * IT RUNS ONCE PER DATABASE AND REFUSES A SECOND TIME. The file calls itself
+ * idempotent and is, until the chain runs on top of it: step 8 then points three
+ * transactions foreign keys back at user_accounts and undoes part of 035 without
+ * failing. See the refusal below for the measurement.
+ *
  * WHY IT DOES NOT WRITE THE LEDGER ROW. Step 9 of the file writes it, together
  * with the sixteen chain rows the alignment makes true, inside the same
  * transaction as the schema it is claiming. A row written from here would be a
@@ -106,12 +111,33 @@ async function runAlignment() {
    [LEDGER_NAME],
   );
 
+  // A REFUSAL RATHER THAN A WARNING, and the file's own header is why it has to
+  // be. It claims "Idempotent throughout: every step is guarded, so re-running
+  // changes nothing", and that holds only before the chain runs on top. Step 8
+  // is an unconditional DROP CONSTRAINT followed by ADD CONSTRAINT pointing the
+  // three transactions keys back at user_accounts. Measured 2026-09-08 on
+  // fintrack_prod_rehearsal_full: a second run after 035 returned
+  // transactions_account_id_fkey, transactions_source_account_id_fkey and
+  // transactions_destination_account_id_fkey to user_accounts, undoing three of
+  // the seven repoints and leaving the fourth, opening_for_account_id, on
+  // account_registry. Nothing failed and nothing said so.
+  //
+  // The hazard is new. Until this runner existed the file could only be applied
+  // by hand, and on the live database step 8 was added five days after the file
+  // ran, so it never executed from here. A runner makes the second run easy, so
+  // the runner is what has to refuse it.
   if (already) {
-   console.log(
-    pc.yellow(
-     `\n⚠ Already recorded here on ${already.toISOString()}.\n`,
-    ) + pc.gray('   The file is idempotent; running it again changes nothing.\n'),
+   console.error(
+    pc.red('\n❌ Refusing: the alignment is already recorded here.\n') +
+     pc.gray(`   Applied ${already.toISOString()}.\n`) +
+     pc.gray('   Re-running is not safe once the chain has run on top: step 8 points\n') +
+     pc.gray('   three transactions foreign keys back at user_accounts, undoing part\n') +
+     pc.gray('   of 035 with no error.\n') +
+     pc.gray('   To rehearse again, build a new database from the production dump.\n'),
    );
+   client.release();
+   await pool.end();
+   process.exit(1);
   }
 
   console.log(pc.yellow(`\n▶ Running ${LEDGER_NAME}\n`));
