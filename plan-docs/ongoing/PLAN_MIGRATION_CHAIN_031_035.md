@@ -284,6 +284,22 @@ matches again.
   *"the day the settlement writer starts producing type 10"*, and that day is
   cancelled rather than pending. The file is not amended for it: an applied
   migration's text records what ran, not what is current.
+- **Measured 2026-09-08: the row exists on three databases and is used on
+  none.** `movement_type_id` 10 is in `movement_types` on `fintrack_dev`,
+  `fintrack_prod_rehearsal` and `fintrack_prod_rehearsal_full`, and the count of
+  `transactions` carrying it is 0 on each. Nothing under `backend/src` inserts a
+  transaction with it either: every occurrence of `'account-closure'` outside
+  `sql_migrations` declares the catalog — `createTables.js` at the two INSERTs
+  and the CHECK, `populateDB.js` in its two catalog arrays — and none of them
+  writes a transaction.
+- **The open question is not whether to ship 032, which is already shipped.** It
+  is whether that row is a placeholder for a writer still owed or a fossil of the
+  retired settlement. The two look identical in the schema and lead to different
+  work: the first leaves someone owing a writer, the second makes the row and the
+  `transaction_types` row beside it dead weight for a later migration to remove
+  deliberately. Carlos's answer to the deletion session's balance question decides
+  it — if a balance has to reach zero through ordinary movements, no closure
+  transaction is ever written and the row has no future writer.
 - **035 was corrected twice before ever being applied**, in
   `fix(db): 035 trigger fires after and fails loud`. The identity trigger moved
   from `BEFORE INSERT` to `AFTER INSERT`, and the `ON CONFLICT (account_id) DO
