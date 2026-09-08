@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from 'react';
 
-import { useCloseAccount } from '../../../../hooks/useCloseAccount.ts';
+import { UseCloseAccountReturnType } from '../../../../hooks/useCloseAccount.ts';
 import { ModalStatusType } from '../../../../types/deletionTypes.ts';
 import { DictionaryDataType } from '../../../../utils/languages.ts';
 
@@ -32,6 +32,14 @@ export type CloseAccountUIPropType = {
  isOpen: boolean;
  targetAccountId: number | string;
  targetAccountName: string;
+ // The account's type name, used for one thing only: a category budget's
+ // budget is deleted with the account, and the owner is told before he
+ // confirms rather than after.
+ targetAccountType: string;
+ // The close state, owned by the page. It lives up there because the balance
+ // decides whether the annulment is still offered beside this dialog, and a
+ // second call to the hook here would fetch the same preview twice.
+ close: UseCloseAccountReturnType;
  onClose: () => void;
  // Called once, only after a successful close - the caller navigates away
  // since the account row no longer exists.
@@ -41,8 +49,9 @@ export type CloseAccountUIPropType = {
 export const CloseAccountUI = ({
  t,
  isOpen,
- targetAccountId,
  targetAccountName,
+ targetAccountType,
+ close,
  onClose,
  onClosed,
 }: CloseAccountUIPropType) => {
@@ -58,7 +67,7 @@ export const CloseAccountUI = ({
   isClosing,
   closeResult,
   fetchLoadError,
- } = useCloseAccount(targetAccountId);
+ } = close;
 
  const status: ModalStatusType = isClosing
   ? 'executing'
@@ -150,6 +159,17 @@ export const CloseAccountUI = ({
       </span>
      )}
     </p>
+
+    {/* THE BUDGET GOES WITH THE ACCOUNT. The owner ruled on 2026-09-07 that a
+        category budget's budget is deleted with its account; he ruled on
+        2026-09-08 that the owner is told before confirming, because the close
+        does not come back. Only this type carries one, so only this type
+        shows the line. */}
+    {targetAccountType === 'category_budget' && (
+     <p className="close-account__budget-warning" role="note">
+      {t('closeAccountBudgetWarning')}
+     </p>
+    )}
 
     {previewError && (
      <p className="close-account__preview-error" role="alert">

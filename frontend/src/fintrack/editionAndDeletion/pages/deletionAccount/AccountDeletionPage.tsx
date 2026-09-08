@@ -21,6 +21,7 @@ import { AccountListType } from '../../../types/responseApiTypes.ts';
 
 import { useLanguageTranslation } from '../../hooks/useLangTranslation.ts';
 import { useRTAImpactAndDeletion } from '../../hooks/useRTAImpactAndDeletion.ts';
+import { useCloseAccount } from '../../hooks/useCloseAccount.ts';
 
 //UI COMPONENTS
 import LeftArrowDarkSvg from '../../../../assets/LeftArrowDarkSvg.svg';
@@ -105,6 +106,35 @@ const AccountDeletionView = ({
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   // const prevAccountIdRef = useRef(targetAccountId);
   //-------------------------------------------
+  //----------------------------------
+  // 🎯 WHETHER THE ANNULMENT IS STILL OFFERED
+  //
+  // The screen offers CLOSE alone, and CLOSE refuses an account that still
+  // holds a balance - so on such an account its single button could only say
+  // no, and the method that brings a balance to zero would be the one method
+  // the screen does not show. The owner ruled on 2026-09-08 that the
+  // annulment comes back for exactly that case.
+  //
+  // Read from the close preview and not from the account's stored balance:
+  // the preview returns the figure the engine derives its own refusal from,
+  // and the stored column is a different number.
+  //
+  // Both a loading preview and a failed one leave the annulment hidden. A
+  // preview that has not answered is not evidence of a balance, and showing
+  // the annulment on that guess would flash a whole section in and out of the
+  // page while the request is in flight.
+  //----------------------------------
+  const close = useCloseAccount(targetAccountId);
+
+  const isBalanceBlockingTheClose =
+    !close.isLoadingPreview &&
+    !close.previewError &&
+    close.residual !== null &&
+    !close.canClose;
+
+  const isAnnulmentOffered =
+    !CLOSE_IS_THE_ONLY_METHOD || isBalanceBlockingTheClose;
+
   //-------------------------------
   // RTA ACCOUNT DELETION HOOK
   //-------------------------------
@@ -137,8 +167,9 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
   } = useRTAImpactAndDeletion(
     targetAccountId,
     targetAccountName,
-    !CLOSE_IS_THE_ONLY_METHOD,
+    isAnnulmentOffered,
   );
+
   //----------------------------------
   // 🎯 DETERMINE PRE/POST OPERATION
   //----------------------------------
@@ -146,8 +177,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
   // which reports through its own hook and navigates away. Gated so a failed
   // impact request cannot replace the close screen with an error view for an
   // operation the owner never started.
-  const isPostOperation =
-    !CLOSE_IS_THE_ONLY_METHOD && (deletionResult || fetchLoadError);
+  const isPostOperation = isAnnulmentOffered && (deletionResult || fetchLoadError);
   // console.log("🚀 ~ AccountDeletionPage ~ isPostOperation:", isPostOperation)
 
   //---------------------------------------
@@ -395,6 +425,14 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
                   : 'otherMethodsSectionDescription',
               )}
             </p>
+            {/* Why the only button on this screen will refuse, said before it
+                is pressed, and where the method that fixes it now is. */}
+            {isBalanceBlockingTheClose && (
+              <p className='deletion-methods-blocked' role='note'>
+                {translateText('closeOnlyBlockedNotice')}
+              </p>
+            )}
+
             <div className='deletion-methods-actions'>
               {!CLOSE_IS_THE_ONLY_METHOD && (
                 <button
@@ -435,7 +473,7 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
               it. Withdrawn from this screen while CLOSE is the only method
               it offers (deletionMethodPolicy.ts). The service, its route and
               its request path are untouched. */}
-          {!CLOSE_IS_THE_ONLY_METHOD && (
+          {isAnnulmentOffered && (
             <>
             {/* 🎯 MAIN CONTENT AREA */}
             <main className='main-content '>
@@ -492,6 +530,8 @@ Flow: TargetAccountId → Get impact report → Show to user → User confirmati
         isOpen={isCloseModalOpen}
         targetAccountId={targetAccountId}
         targetAccountName={targetAccountName}
+        targetAccountType={targetAccountType}
+        close={close}
         onClose={() => setIsCloseModalOpen(false)}
         onClosed={handleBackToAccountingDashboard}
       />
