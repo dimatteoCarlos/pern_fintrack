@@ -16,8 +16,14 @@
   --gray-200: #e5e7eb;
   --gray-500: #6b7280;
   --gray-900: #111827;
+  /* RETIRED: both names exist in tokens.css and this block is on :root, so
+     these overwrote the design system's values for the whole application once
+     this route was visited. tokens.css:371-377 names this file as one of the
+     three that cause it. --radius-lg 0.5rem is exactly --radius-sm, and the
+     shadow was byte-identical to the design system's, so nothing changes on
+     screen - only which file the value comes from.
   --radius-lg: 0.5rem;
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1); */
 }
 
 /* No Impact Report */
@@ -25,7 +31,7 @@
   padding: 1rem;
   background: var(--yellow-50);
   border: 1px solid var(--yellow-300);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
   color: var(--yellow-800);
 }
 
@@ -45,7 +51,7 @@
   padding: 0.75rem;
   background: var(--red-50);
   border: 1px solid var(--red-300);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
   color: var(--red-800);
 
 }
@@ -75,7 +81,7 @@
 /* Table */
 .impact-report-table-wrapper {
   overflow-x: auto;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
   box-shadow: var(--shadow-lg);
 }
 
@@ -171,7 +177,7 @@
   margin-top: 0.5rem;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--yellow-300);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
   background-color: var(--yellow-50);
 }
 

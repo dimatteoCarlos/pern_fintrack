@@ -12,7 +12,10 @@
   --spacing-8: 2rem;
   --spacing-4: 1rem;
   --spacing-2: 0.5rem;
-  --radius-lg: 0.5rem;
+  /* RETIRED, and this one was never even read: the name is declared here and
+     used nowhere in this file, so its only effect was overwriting the design
+     system's --radius-lg app-wide. tokens.css:371-377 names this file.
+  --radius-lg: 0.5rem; */
 }
 
 /* Loading Container */
