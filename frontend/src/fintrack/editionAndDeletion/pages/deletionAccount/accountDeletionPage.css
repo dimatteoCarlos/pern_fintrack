@@ -179,6 +179,19 @@
   line-height: 1.5;
 }
 
+/* The refusal, stated on the panel rather than inside the dialog. The warning
+   content token, not the error one: a balance that is not zero is a condition
+   the owner can meet, not a failure. */
+.deletion-methods-blocked {
+  margin: 0 0 var(--space-4) 0;
+  padding: var(--space-3);
+  border-left: var(--border-width-thick) solid var(--color-feedback-warning-border);
+  background-color: var(--color-feedback-warning-surface);
+  color: var(--color-feedback-warning-content);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
 .deletion-methods-actions {
   display: flex;
   flex-direction: column;

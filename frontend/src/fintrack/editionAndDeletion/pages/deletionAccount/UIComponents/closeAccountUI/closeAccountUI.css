@@ -77,6 +77,18 @@
  font-size: var(--font-size-sm);
 }
 
+/* The budget that goes with the account. Warning rather than error: it is
+   what the close does, not something going wrong. */
+.close-account__budget-warning {
+ margin: 0;
+ padding: var(--space-2) var(--space-3);
+ border-left: var(--border-width-thick) solid var(--color-feedback-warning-border);
+ background-color: var(--color-feedback-warning-surface);
+ color: var(--color-feedback-warning-content);
+ font-size: var(--font-size-sm);
+ line-height: 1.5;
+}
+
 /* ----------------------------------------------------------------- reason */
 
 .close-account__label {

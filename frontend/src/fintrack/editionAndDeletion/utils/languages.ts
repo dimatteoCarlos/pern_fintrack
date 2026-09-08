@@ -138,6 +138,8 @@ reportTitleWithImpact:string;
  // above, so turning the flag off restores the wording with it.
  closeOnlyPageTitle: string;
  closeOnlyDetailsTitle: string;
+ closeOnlyBlockedNotice: string;
+ closeAccountBudgetWarning: string;
  closeOnlySectionTitle: string;
  closeOnlySectionDescription: string;
  closeAccountAction: string;
@@ -335,6 +337,8 @@ reportTitleWithImpact:"Impact on Affected Accounts",
 
   closeOnlyPageTitle: "Close Account",
   closeOnlyDetailsTitle: "Account to Close",
+  closeOnlyBlockedNotice: "This account still holds a balance, so it cannot be closed yet. Bring it to zero with ordinary movements, or use the annulment below, which adjusts the affected accounts.",
+  closeAccountBudgetWarning: "This account carries a budget. The budget is deleted with the account, and the close cannot be undone.",
   closeOnlySectionTitle: "Close this account",
   closeOnlySectionDescription: "Closing removes the account and keeps its history: every movement that names it stays readable, under the same name it had. The balance must be zero first.",
   closeAccountAction: "Close (the account goes, its history stays)",
@@ -487,6 +491,8 @@ totalNetAdjustment: 'Ajuste Neto Total:',
 
   closeOnlyPageTitle: "Cierre de Cuenta",
   closeOnlyDetailsTitle: "Cuenta a Cerrar",
+  closeOnlyBlockedNotice: "Esta cuenta todavía tiene saldo, así que aún no se puede cerrar. Llévelo a cero con movimientos normales, o use la anulación de abajo, que ajusta las cuentas afectadas.",
+  closeAccountBudgetWarning: "Esta cuenta tiene un presupuesto asociado. El presupuesto se elimina junto con la cuenta, y el cierre no se puede deshacer.",
   closeOnlySectionTitle: "Cerrar esta cuenta",
   closeOnlySectionDescription: "El cierre elimina la cuenta y conserva su historia: todo movimiento que la nombra sigue siendo legible, con el nombre que tenía. El saldo debe estar en cero primero.",
   closeAccountAction: "Cierre (la cuenta se va, su historia queda)",

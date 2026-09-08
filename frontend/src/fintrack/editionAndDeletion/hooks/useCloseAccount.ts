@@ -165,4 +165,10 @@ export const useCloseAccount = (targetAccountId: number | string) => {
  };
 };
 
+// The whole return, named once. The page owns this hook now - it needs the
+// balance to decide whether the annulment is still offered - and passes the
+// result down rather than letting the dialog call the hook again, which would
+// be a second request for the same preview.
+export type UseCloseAccountReturnType = ReturnType<typeof useCloseAccount>;
+
 export default useCloseAccount;
